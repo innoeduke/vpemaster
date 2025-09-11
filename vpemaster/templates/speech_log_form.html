@@ -4,7 +4,7 @@
 
 {% block content %}
     <h1>{{ 'Edit Speech Log' if log else 'Add New Speech Log' }}</h1>
-    <form method="POST" action="{{ url_for('save_speech_log', log_id=log.id) if log else url_for('add_speech_log') }}">
+    <form method="POST" action="{{ url_for('speech_logs_bp.save_speech_log', log_id=log.id) if log else url_for('speech_logs_bp.add_speech_log') }}">
         <table class="form-table">
             <tr>
                 <td><label for="meeting_number">Meeting Number:</label></td>
@@ -53,7 +53,7 @@
         </table>
         <div style="text-align: center;">
             <button type="submit" class="add-button">Save Log</button>
-            <a href="{{ url_for('show_speech_logs') }}" class="button cancel-btn">Cancel</a>
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="button cancel-btn">Cancel</a>
         </div>
     </form>
 {% endblock %}

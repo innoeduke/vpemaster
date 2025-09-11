@@ -4,7 +4,7 @@
 
 {% block content %}
     <h1>{{ 'Edit User' if user else 'Add New User' }}</h1>
-    <form method="POST" action="{{ url_for('user_form', user_id=user.id) if user else url_for('user_form') }}">
+    <form method="POST" action="{{ url_for('users_bp.user_form', user_id=user.id) if user else url_for('users_bp.user_form') }}">
         <table class="form-table">
             <tr>
                 <td><label for="username">Username:</label></td>
@@ -29,12 +29,18 @@
             </tr>
             <tr>
                 <td><label for="role">Role:</label></td>
-                <td><input type="text" id="role" name="role" value="{{ user.Role if user else '' }}" required></td>
+                <td>
+                    <select id="role" name="role" required>
+                        <option value="Admin" {% if user and user.Role == 'Admin' %}selected{% endif %}>Admin</option>
+                        <option value="Officer" {% if user and user.Role == 'Officer' %}selected{% endif %}>Officer</option>
+                        <option value="Member" {% if user and user.Role == 'Member' %}selected{% endif %}>Member</option>
+                    </select>
+                </td>
             </tr>
         </table>
         <div style="text-align: center;">
             <button type="submit" class="add-button">{{ 'Save User' if user else 'Add User' }}</button>
-            <a href="{{ url_for('show_users') }}" class="button cancel-btn">Cancel</a>
+            <a href="{{ url_for('users_bp.show_users') }}" class="button cancel-btn">Cancel</a>
         </div>
     </form>
 {% endblock %}

@@ -4,7 +4,7 @@
 
 {% block content %}
     <h1>Speech Logs</h1>
-    <a href="{{ url_for('add_speech_log') }}" class="add-link">Add New Speech Log</a>
+    <a href="{{ url_for('speech_logs_bp.add_speech_log') }}" class="add-button">Add New Speech Log</a>
 
     <table>
         <thead>
@@ -44,13 +44,13 @@
                     {% if log.Project_Status == 'Completed' %}
                         <span class="completed-status">Completed</span>
                     {% else %}
-                        <form action="{{ url_for('complete_speech_log', log_id=log.id) }}" method="post" style="display:inline;">
+                        <form action="{{ url_for('speech_logs_bp.complete_speech_log', log_id=log.id) }}" method="post" style="display:inline;">
                             <button type="submit" class="complete-btn">Complete</button>
                         </form>
                     {% endif %}
                 </td>
                 <td class="action-links">
-                    <a href="{{ url_for('speech_log_form', log_id=log.id) }}" class="button">Edit</a>
+                    <a href="{{ url_for('speech_logs_bp.speech_log_form', log_id=log.id) }}" class="button">Edit</a>
                     <button class="button delete-btn" onclick="showDeleteModal({{ log.id }})">Delete</button>
                 </td>
             </tr>

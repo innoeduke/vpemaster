@@ -5,9 +5,15 @@
 {% block content %}
     <h1>Meeting Agenda</h1>
 
-    <form action="{{ url_for('export_agenda_to_csv') }}" method="get" style="display:inline;">
-        <button type="submit" class="add-button">Export to CSV</button>
-    </form>
+    <div class="button-group">
+        <form action="{{ url_for('agenda_bp.import_agenda_from_csv') }}" method="post" enctype="multipart/form-data" class="form-inline">
+            <input type="file" name="file" id="agenda-file" style="display: none;" onchange="this.form.submit()">
+            <button type="button" class="add-button" onclick="document.getElementById('agenda-file').click()">Import Data</button>
+        </form>
+        <form action="{{ url_for('agenda_bp.export_agenda_to_csv') }}" method="get" class="form-inline">
+            <button type="submit" class="add-button">Export to CSV</button>
+        </form>
+    </div>
 
     <table>
         <thead>

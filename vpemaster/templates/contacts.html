@@ -4,7 +4,7 @@
 
 {% block content %}
     <h1>Contacts</h1>
-    <a href="{{ url_for('contact_form') }}" class="add-button">Add New Contact</a>
+    <a href="{{ url_for('contacts_bp.contact_form') }}" class="add-button">Add New Contact</a>
     <table>
         <thead>
             <tr>
@@ -27,7 +27,7 @@
                 <td>{{ contact.Current_Project }}</td>
                 <td>{{ contact.Completed_Levels }}</td>
                 <td>
-                    <a href="{{ url_for('contact_form', contact_id=contact.id) }}" class="button">Edit</a>
+                    <a href="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) }}" class="button">Edit</a>
                     <button class="button delete-btn" onclick="openModal({{ contact.id }})">Delete</button>
                 </td>
             </tr>

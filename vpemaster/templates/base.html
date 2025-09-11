@@ -3,79 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %} - VPE Master</title>
+    <title>VPE Master - {% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
-    <div class="container-wrapper">
-        <div class="nav-pane">
-            <div class="nav-header">
-                <a href="#" class="nav-toggle" onclick="toggleNav()">
-                    <i class="fas fa-bars"></i>
-                </a>
-                <h2>VPE Master</h2>
-            </div>
-            <ul>
-                <li class="{% if 'agenda' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('agenda') }}">
-                        <i class="fas fa-calendar-alt nav-icon"></i>
-                        <span>Meeting Agenda</span>
-                    </a>
-                </li>
-                <li class="{% if 'contacts' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('show_contacts') }}">
-                        <i class="fas fa-book nav-icon"></i>
-                        <span>Contact Book</span>
-                    </a>
-                </li>
-                <li class="{% if 'speech_logs' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('show_speech_logs') }}">
-                        <i class="fas fa-microphone nav-icon"></i>
-                        <span>Speech Logs</span>
-                    </a>
-                </li>
-                {% if session.get('user_role') == 'Admin' %}
-                <li class="{% if 'users' in request.path %}active{% endif %}">
-                    <a href="{{ url_for('show_users') }}">
-                        <i class="fas fa-users-cog nav-icon"></i>
-                        <span>User Management</span>
-                    </a>
-                </li>
-                {% endif %}
-            </ul>
-            <div class="logout-container">
-                <a href="{{ url_for('logout') }}" class="logout-link">
-                    <i class="fas fa-sign-out-alt nav-icon"></i>
-                    <span>Logout</span>
-                </a>
-            </div>
+
+<div class="container-wrapper">
+    <!-- Mobile Header -->
+    <div class="mobile-header" id="mobile-header">
+        <a href="#" class="nav-toggle" id="mobile-nav-toggle"><i class="fas fa-bars"></i></a>
+    </div>
+
+    <!-- PC Navigation Pane -->
+    <div class="nav-pane" id="nav-pane">
+        <div class="nav-header">
+            <a href="#" class="nav-toggle" id="pc-nav-toggle"><i class="fas fa-bars"></i></a>
+            <h2 class="nav-title">VPE Master</h2>
         </div>
-        <div class="main-content">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <ul class="flash-messages">
-                        {% for category, message in messages %}
-                            <li class="{{ category }}">{{ message }}</li>
-                        {% endfor %}
-                    </ul>
-                {% endif %}
-            {% endwith %}
-            {% block content %}{% endblock %}
+        <ul class="nav-links">
+            <li class="{% if request.endpoint and request.endpoint.startswith('agenda_bp') %}active{% endif %}">
+                <a href="{{ url_for('agenda_bp.agenda') }}">
+                    <i class="fas fa-calendar-alt nav-icon"></i>
+                    <span>Meeting Agenda</span>
+                </a>
+            </li>
+            <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
+                <a href="{{ url_for('contacts_bp.show_contacts') }}">
+                    <i class="fas fa-book nav-icon"></i>
+                    <span>Contact Book</span>
+                </a>
+            </li>
+            <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
+                    <i class="fas fa-microphone nav-icon"></i>
+                    <span>Speech Logs</span>
+                </a>
+            </li>
+            {% if session.get('user_role') == 'Admin' %}
+            <li class="{% if request.endpoint and request.endpoint.startswith('users_bp') %}active{% endif %}">
+                <a href="{{ url_for('users_bp.show_users') }}">
+                    <i class="fas fa-users-cog nav-icon"></i>
+                    <span>User Management</span>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+        <div class="logout-container">
+            <a href="{{ url_for('main_bp.logout') }}">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+            </a>
         </div>
     </div>
 
-    <script>
-        function toggleNav() {
-            const nav = document.querySelector('.nav-pane');
-            const toggleButton = document.querySelector('.nav-toggle');
-            nav.classList.toggle('expanded');
-            if (nav.classList.contains('expanded')) {
-                toggleButton.innerHTML = '<i class="fas fa-times"></i>';
-            } else {
-                toggleButton.innerHTML = '<i class="fas fa-bars"></i>';
+    <div class="main-content" id="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flash-messages">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+
+</div>
+
+<script>
+    const navPane = document.getElementById('nav-pane');
+    const mobileNavToggle = document.getElementById('mobile-nav-toggle');
+    const pcNavToggle = document.getElementById('pc-nav-toggle');
+    const mainContent = document.getElementById('main-content');
+
+    // Toggle function for both buttons
+    const toggleNav = () => {
+        navPane.classList.toggle('expanded');
+    };
+
+    // Event listeners
+    if (mobileNavToggle) {
+        mobileNavToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleNav();
+        });
+    }
+
+    if (pcNavToggle) {
+        pcNavToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleNav();
+        });
+    }
+
+    // Close the mobile menu when a link is clicked
+    const navLinks = document.querySelectorAll('.nav-pane a');
+    navLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth <= 768) {
+                navPane.classList.remove('expanded');
             }
-        }
-    </script>
+        });
+    });
+
+</script>
+
 </body>
 </html>
