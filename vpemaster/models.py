@@ -16,7 +16,7 @@ class SpeechLog(db.Model):
     Meeting_Number = db.Column(db.Integer, nullable=True)
     Meeting_Date = db.Column(db.Date, nullable=True)
     Session = db.Column(db.String(50), nullable=False)
-    Speech_Title = db.Column(db.String(255), nullable=False)
+    Speech_Title = db.Column(db.String(255), nullable=True)
     Pathway = db.Column(db.String(100))
     Level = db.Column(db.String(50))
     Name = db.Column(db.String(100), nullable=False)
