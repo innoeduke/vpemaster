@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Speech Log' if log else 'Add New Speech Log' }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'Edit Speech Log' if log else 'Add New Speech Log' }}</h1>
+    <form method="POST" action="{{ url_for('save_speech_log', log_id=log.id) if log else url_for('add_speech_log') }}">
+        <table class="form-table">
+            <tr>
+                <td><label for="meeting_number">Meeting Number:</label></td>
+                <td><input type="number" id="meeting_number" name="meeting_number" value="{{ log.Meeting_Number if log else '' }}" required></td>
+            </tr>
+            <tr>
+                <td><label for="meeting_date">Meeting Date:</label></td>
+                <td><input type="date" id="meeting_date" name="meeting_date" value="{{ log.Meeting_Date if log else '' }}" required></td>
+            </tr>
+            <tr>
+                <td><label for="session">Session:</label></td>
+                <td><input type="text" id="session" name="session" value="{{ log.Session if log else '' }}" required></td>
+            </tr>
+            <tr>
+                <td><label for="speech_title">Speech Title:</label></td>
+                <td><input type="text" id="speech_title" name="speech_title" value="{{ log.Speech_Title if log else '' }}" required></td>
+            </tr>
+            <tr>
+                <td><label for="pathway">Pathway:</label></td>
+                <td><input type="text" id="pathway" name="pathway" value="{{ log.Pathway if log else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="level">Level:</label></td>
+                <td><input type="text" id="level" name="level" value="{{ log.Level if log else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="name">Name:</label></td>
+                <td><input type="text" id="name" name="name" value="{{ log.Name if log else '' }}" required></td>
+            </tr>
+            <tr>
+                <td><label for="evaluator">Evaluator:</label></td>
+                <td><input type="text" id="evaluator" name="evaluator" value="{{ log.Evaluator if log else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="project_title">Project Title:</label></td>
+                <td><input type="text" id="project_title" name="project_title" value="{{ log.Project_Title if log else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="project_type">Project Type:</label></td>
+                <td><input type="number" id="project_type" name="project_type" value="{{ log.Project_Type if log else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="project_status">Project Status:</label></td>
+                <td><input type="text" id="project_status" name="project_status" value="{{ log.Project_Status if log else '' }}"></td>
+            </tr>
+        </table>
+        <div style="text-align: center;">
+            <button type="submit" class="add-button">Save Log</button>
+            <a href="{{ url_for('show_speech_logs') }}" class="button cancel-btn">Cancel</a>
+        </div>
+    </form>
+{% endblock %}

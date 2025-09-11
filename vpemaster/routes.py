@@ -1,10 +1,48 @@
 from vpemaster import app, db
-from flask import render_template, request, redirect, url_for, flash, send_file
-from vpemaster.models import SpeechLog, Contact
+from flask import render_template, request, redirect, url_for, session, send_file
+from vpemaster.models import SpeechLog, Contact, User
+from werkzeug.security import generate_password_hash, check_password_hash
+from functools import wraps
 from datetime import date, datetime, timedelta
 import io
 import csv
 import os
+
+# Decorator to check if user is logged in
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            # flash('Please log in to access this page.', 'error')
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Login route
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(Username=username).first()
+
+        if user and check_password_hash(user.Pass_Hash, password):
+            session['logged_in'] = True
+            session['user_role'] = user.Role
+            # flash('Login successful!', 'success')
+            return redirect(url_for('agenda'))
+        else:
+            # flash('Login failed. Please check your username and password.', 'error')
+            return redirect(url_for('login'))
+    return render_template('login.html')
+
+# Logout route
+@app.route('/logout')
+def logout():
+    session.pop('logged_in', None)
+    session.pop('user_role', None)
+    # flash('You have been logged out.', 'success')
+    return redirect(url_for('login'))
 
 def _generate_agenda_items():
     """
@@ -82,10 +120,12 @@ def _generate_agenda_items():
     return agenda_items, None
 
 @app.route('/')
+@login_required
 def index():
     return '<h1>Welcome to the VPE Master App!</h1>'
 
 @app.route('/agenda', methods=['GET', 'POST'])
+@login_required
 def agenda():
     agenda_items, error = _generate_agenda_items()
     if error:
@@ -94,11 +134,12 @@ def agenda():
 
 
 @app.route('/export_agenda')
+@login_required
 def export_agenda_to_csv():
 
     agenda_items, error = _generate_agenda_items()
     if error:
-        flash(error, "error")
+        # flash(error, "error")
         return redirect(url_for('agenda'))
 
     # Create CSV file in memory
@@ -122,18 +163,22 @@ def export_agenda_to_csv():
                      download_name='meeting_agenda.csv')
 
 @app.route('/speech_logs')
+@login_required
 def show_speech_logs():
     all_logs = SpeechLog.query.order_by(SpeechLog.Meeting_Number.asc()).all()
     return render_template('speech_logs.html', logs=all_logs)
 
-@app.route('/speech_log/<int:log_id>', methods=['GET'])
-def speech_log_form(log_id=None):
+@app.route('/speech_log/form', methods=['GET'])
+@login_required
+def speech_log_form():
+    log_id = request.args.get('log_id', type=int)
+    log = None
     if log_id:
         log = SpeechLog.query.get_or_404(log_id)
-        return render_template('speech_log_form.html', log=log)
-    return render_template('speech_log_form.html', log=None)
+    return render_template('speech_log_form.html', log=log)
 
 @app.route('/speech_log/<int:log_id>', methods=['POST'])
+@login_required
 def save_speech_log(log_id):
     log = SpeechLog.query.get_or_404(log_id)
     log.Meeting_Number = request.form['meeting_number']
@@ -149,10 +194,11 @@ def save_speech_log(log_id):
     log.Project_Status = request.form['project_status']
 
     db.session.commit()
-    flash('Speech Log updated successfully!')
+    # flash('Speech Log updated successfully!')
     return redirect(url_for('show_speech_logs'))
 
 @app.route('/speech_log/add', methods=['GET', 'POST'])
+@login_required
 def add_speech_log():
     if request.method == 'POST':
         new_log = SpeechLog(
@@ -170,47 +216,51 @@ def add_speech_log():
         )
         db.session.add(new_log)
         db.session.commit()
-        flash('New Speech Log added successfully!')
+        # flash('New Speech Log added successfully!')
         return redirect(url_for('show_speech_logs'))
     return render_template('speech_log_form.html')
 
 @app.route('/speech_log/delete/<int:log_id>', methods=['POST'])
+@login_required
 def delete_speech_log(log_id):
     log = SpeechLog.query.get_or_404(log_id)
     db.session.delete(log)
     db.session.commit()
-    flash('Speech Log deleted successfully!')
+    # flash('Speech Log deleted successfully!')
     return redirect(url_for('show_speech_logs'))
 
 @app.route('/speech_log/complete/<int:log_id>', methods=['POST'])
+@login_required
 def complete_speech_log(log_id):
     log = SpeechLog.query.get_or_404(log_id)
     log.Project_Status = 'Completed'
     db.session.commit()
-    flash('Project status updated to Completed!')
+    # flash('Project status updated to Completed!')
     return redirect(url_for('show_speech_logs'))
 
 @app.route('/contacts')
+@login_required
 def show_contacts():
     contacts = Contact.query.order_by(Contact.Name.asc()).all()
     return render_template('contacts.html', contacts=contacts)
 
-@app.route('/contact/', defaults={'contact_id': None}, methods=['GET', 'POST'])
-@app.route('/contact/<int:contact_id>', methods=['GET', 'POST'])
-def contact_form(contact_id):
+@app.route('/contact/form', methods=['GET', 'POST'])
+@login_required
+def contact_form():
+    contact_id = request.args.get('contact_id', type=int)
+    contact = None
     if contact_id:
         contact = Contact.query.get_or_404(contact_id)
-        if request.method == 'POST':
+
+    if request.method == 'POST':
+        if contact:
             contact.Name = request.form['name']
             contact.Club = request.form['club']
             contact.Current_Project = request.form['current_project']
             contact.Completed_Levels = request.form['completed_levels']
             db.session.commit()
-            flash('Contact updated successfully!')
-            return redirect(url_for('show_contacts'))
-        return render_template('contact_form.html', contact=contact)
-    else:
-        if request.method == 'POST':
+            # flash('Contact updated successfully!')
+        else:
             new_contact = Contact(
                 Name=request.form['name'],
                 Club=request.form['club'],
@@ -220,16 +270,96 @@ def contact_form(contact_id):
             )
             db.session.add(new_contact)
             db.session.commit()
-            flash('New Contact added successfully!')
-            return redirect(url_for('show_contacts'))
-        return render_template('contact_form.html', contact=None)
+            # flash('New Contact added successfully!')
+
+        return redirect(url_for('show_contacts'))
+
+    return render_template('contact_form.html', contact=contact)
 
 @app.route('/contact/delete/<int:contact_id>', methods=['POST'])
+@login_required
 def delete_contact(contact_id):
     contact = Contact.query.get_or_404(contact_id)
     db.session.delete(contact)
     db.session.commit()
-    flash('Contact deleted successfully!')
+    # flash('Contact deleted successfully!')
     return redirect(url_for('show_contacts'))
 
+@app.route('/users')
+@login_required
+def show_users():
+    # Check if the user is an Admin before allowing access
+    if session.get('user_role') != 'Admin':
+        # flash("You don't have permission to view this page.", 'error')
+        return redirect(url_for('agenda'))
 
+    all_users = User.query.order_by(User.Username.asc()).all()
+    return render_template('users.html', users=all_users)
+
+@app.route('/user/form', defaults={'user_id': None}, methods=['GET', 'POST'])
+@app.route('/user/form/<int:user_id>', methods=['GET', 'POST'])
+@login_required
+def user_form(user_id):
+    # Only allow Admin to access this route
+    if session.get('user_role') != 'Admin':
+        # flash("You don't have permission to view this page.", 'error')
+        return redirect(url_for('agenda'))
+
+    user = None
+    if user_id:
+        user = User.query.get_or_404(user_id)
+
+    if request.method == 'POST':
+        # Form submission logic
+        if user:
+            # Edit user
+            user.Username = request.form['username']
+            user.Full_Name = request.form.get('full_name')
+            user.Display_Name = request.form.get('display_name')
+            user.Role = request.form['role']
+            password = request.form.get('password')
+            if password:
+                user.Pass_Hash = generate_password_hash(password)
+
+            db.session.commit()
+            # flash('User updated successfully!', 'success')
+        else:
+            # Add new user
+            username = request.form['username']
+            full_name = request.form.get('full_name')
+            display_name = request.form.get('display_name')
+            password = request.form['password']
+            role = request.form['role']
+
+            pass_hash = generate_password_hash(password)
+
+            new_user = User(
+                Username=username,
+                Full_Name=full_name,
+                Display_Name=display_name,
+                Date_Created=date.today(),
+                Pass_Hash=pass_hash,
+                Role=role
+            )
+
+            db.session.add(new_user)
+            db.session.commit()
+            # flash('New user added successfully!', 'success')
+
+        return redirect(url_for('show_users'))
+
+    return render_template('user_form.html', user=user)
+
+@app.route('/user/delete/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    # Only allow Admin to access this route
+    if session.get('user_role') != 'Admin':
+        # flash("You don't have permission to perform this action.", 'error')
+        return redirect(url_for('agenda'))
+
+    user = User.query.get_or_404(user_id)
+    db.session.delete(user)
+    db.session.commit()
+    # flash('User deleted successfully!', 'success')
+    return redirect(url_for('show_users'))

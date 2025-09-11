@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit User' if user else 'Add New User' }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'Edit User' if user else 'Add New User' }}</h1>
+    <form method="POST" action="{{ url_for('user_form', user_id=user.id) if user else url_for('user_form') }}">
+        <table class="form-table">
+            <tr>
+                <td><label for="username">Username:</label></td>
+                <td><input type="text" id="username" name="username" value="{{ user.Username if user else '' }}" required></td>
+            </tr>
+            <tr>
+                <td><label for="full_name">Full Name:</label></td>
+                <td><input type="text" id="full_name" name="full_name" value="{{ user.Full_Name if user else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="display_name">Display Name:</label></td>
+                <td><input type="text" id="display_name" name="display_name" value="{{ user.Display_Name if user else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="password">Password:</label></td>
+                <td>
+                    <input type="password" id="password" name="password">
+                    {% if user %}
+                        <small class="note">Leave blank to keep current password.</small>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="role">Role:</label></td>
+                <td><input type="text" id="role" name="role" value="{{ user.Role if user else '' }}" required></td>
+            </tr>
+        </table>
+        <div style="text-align: center;">
+            <button type="submit" class="add-button">{{ 'Save User' if user else 'Add User' }}</button>
+            <a href="{{ url_for('show_users') }}" class="button cancel-btn">Cancel</a>
+        </div>
+    </form>
+{% endblock %}

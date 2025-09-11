@@ -9,6 +9,7 @@ class Contact(db.Model):
     Current_Project = db.Column(db.String(100))
     Completed_Levels = db.Column(db.String(255))
 
+
 class SpeechLog(db.Model):
     __tablename__ = 'Speech_Logs'
 
@@ -24,3 +25,14 @@ class SpeechLog(db.Model):
     Project_Title = db.Column(db.String(255))
     Project_Type = db.Column(db.Integer)
     Project_Status = db.Column(db.String(50))
+
+
+class User(db.Model):
+    __tablename__ = 'Users'
+    id = db.Column(db.Integer, primary_key=True)
+    Username = db.Column(db.String(50), nullable=False)
+    Pass_Hash = db.Column(db.String(255), nullable=False)
+    Full_Name = db.Column(db.String(255))
+    Display_Name = db.Column(db.String(255))
+    Date_Created = db.Column(db.Date)
+    Role = db.Column(db.String(255), nullable=False)

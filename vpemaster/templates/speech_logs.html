@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Speech Logs{% endblock %}
+
+{% block content %}
+    <h1>Speech Logs</h1>
+    <a href="{{ url_for('add_speech_log') }}" class="add-link">Add New Speech Log</a>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Meeting Number</th>
+                <th>Meeting Date</th>
+                <th>Session</th>
+                <th>Speech Title</th>
+                <th>Pathway</th>
+                <th>Level</th>
+                <th>Name</th>
+                <th>Evaluator</th>
+                <th>Project Title</th>
+                <th>Project Type</th>
+                <th>Project Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{% if log.Meeting_Number %}{{ log.Meeting_Number }}{% endif %}</td>
+                <td>
+                    {% if log.Meeting_Date %}
+                        {{ log.Meeting_Date.strftime('%Y-%m-%d') }}
+                    {% endif %}
+                </td>
+                <td>{{ log.Session }}</td>
+                <td>{{ log.Speech_Title }}</td>
+                <td>{{ log.Pathway }}</td>
+                <td>{{ log.Level }}</td>
+                <td>{{ log.Name }}</td>
+                <td>{{ log.Evaluator }}</td>
+                <td>{{ log.Project_Title }}</td>
+                <td>{% if log.Project_Type %}{{ log.Project_Type }}{% endif %}</td>
+                <td>
+                    {% if log.Project_Status == 'Completed' %}
+                        <span class="completed-status">Completed</span>
+                    {% else %}
+                        <form action="{{ url_for('complete_speech_log', log_id=log.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="complete-btn">Complete</button>
+                        </form>
+                    {% endif %}
+                </td>
+                <td class="action-links">
+                    <a href="{{ url_for('speech_log_form', log_id=log.id) }}" class="button">Edit</a>
+                    <button class="button delete-btn" onclick="showDeleteModal({{ log.id }})">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- The Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <p>Are you sure you want to delete this speech log?</p>
+            <div class="modal-buttons">
+                <button onclick="hideDeleteModal()" class="button">Cancel</button>
+                <form id="deleteForm" method="POST" style="display:inline;">
+                    <button type="submit" class="button delete-btn">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('deleteModal');
+        const deleteForm = document.getElementById('deleteForm');
+
+        function showDeleteModal(logId) {
+            deleteForm.action = `/speech_log/delete/${logId}`;
+            modal.style.display = 'flex';
+        }
+
+        function hideDeleteModal() {
+            modal.style.display = 'none';
+        }
+    </script>
+{% endblock %}

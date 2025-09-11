@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Meeting Agenda{% endblock %}
+
+{% block content %}
+    <h1>Meeting Agenda</h1>
+
+    <form action="{{ url_for('export_agenda_to_csv') }}" method="get" style="display:inline;">
+        <button type="submit" class="add-button">Export to CSV</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Title</th>
+                <th>Owner</th>
+                <th>Duration (min)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in agenda_items %}
+                {% if item.is_section %}
+                    <tr class="section-row">
+                        <td colspan="4">{{ item.title }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td>{{ item.time }}</td>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.owner }}</td>
+                        <td>{{ item.duration }}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

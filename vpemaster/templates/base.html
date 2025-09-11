@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - VPE Master</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="container-wrapper">
+        <div class="nav-pane">
+            <div class="nav-header">
+                <a href="#" class="nav-toggle" onclick="toggleNav()">
+                    <i class="fas fa-bars"></i>
+                </a>
+                <h2>VPE Master</h2>
+            </div>
+            <ul>
+                <li class="{% if 'agenda' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('agenda') }}">
+                        <i class="fas fa-calendar-alt nav-icon"></i>
+                        <span>Meeting Agenda</span>
+                    </a>
+                </li>
+                <li class="{% if 'contacts' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('show_contacts') }}">
+                        <i class="fas fa-book nav-icon"></i>
+                        <span>Contact Book</span>
+                    </a>
+                </li>
+                <li class="{% if 'speech_logs' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('show_speech_logs') }}">
+                        <i class="fas fa-microphone nav-icon"></i>
+                        <span>Speech Logs</span>
+                    </a>
+                </li>
+                {% if session.get('user_role') == 'Admin' %}
+                <li class="{% if 'users' in request.path %}active{% endif %}">
+                    <a href="{{ url_for('show_users') }}">
+                        <i class="fas fa-users-cog nav-icon"></i>
+                        <span>User Management</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            <div class="logout-container">
+                <a href="{{ url_for('logout') }}" class="logout-link">
+                    <i class="fas fa-sign-out-alt nav-icon"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </div>
+        <div class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <ul class="flash-messages">
+                        {% for category, message in messages %}
+                            <li class="{{ category }}">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    <script>
+        function toggleNav() {
+            const nav = document.querySelector('.nav-pane');
+            const toggleButton = document.querySelector('.nav-toggle');
+            nav.classList.toggle('expanded');
+            if (nav.classList.contains('expanded')) {
+                toggleButton.innerHTML = '<i class="fas fa-times"></i>';
+            } else {
+                toggleButton.innerHTML = '<i class="fas fa-bars"></i>';
+            }
+        }
+    </script>
+</body>
+</html>

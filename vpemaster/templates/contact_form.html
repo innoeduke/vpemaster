@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Edit Contact' if contact else 'Add New Contact' }}{% endblock %}
+
+{% block content %}
+    <h1>{{ 'Edit Contact' if contact else 'Add New Contact' }}</h1>
+    <form method="POST" action="{{ url_for('contact_form', contact_id=contact.id) if contact else url_for('contact_form') }}">
+        <table class="form-table">
+            <tr>
+                <td><label for="name">Name:</label></td>
+                <td><input type="text" id="name" name="name" value="{{ contact.Name if contact else '' }}" required></td>
+            </tr>
+            <tr>
+                <td><label for="club">Club:</label></td>
+                <td><input type="text" id="club" name="club" value="{{ contact.Club if contact else '' }}" placeholder="e.g., Club1 / Club2"></td>
+            </tr>
+            <tr>
+                <td><label for="current_project">Current Project:</label></td>
+                <td><input type="text" id="current_project" name="current_project" value="{{ contact.Current_Project if contact else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="completed_levels">Completed Levels:</label></td>
+                <td><input type="text" id="completed_levels" name="completed_levels" value="{{ contact.Completed_Levels if contact else '' }}" placeholder="e.g., Level1 / Level2"></td>
+            </tr>
+        </table>
+        <div style="text-align: center;">
+            <button type="submit" class="add-button">Save Contact</button>
+            <a href="{{ url_for('show_contacts') }}" class="button cancel-btn">Cancel</a>
+        </div>
+    </form>
+{% endblock %}
