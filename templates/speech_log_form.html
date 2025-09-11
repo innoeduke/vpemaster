@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ 'Edit Speech Log' if log else 'Add New Speech Log' }}</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+        }
+        label, input, select {
+            display: block;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        input, select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: auto;
+        }
+        button[type="reset"] {
+            background-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>{{ 'Edit Speech Log' if log else 'Add New Speech Log' }}</h1>
+
+    <form method="POST">
+        <label for="meeting_number">Meeting Number:</label>
+        <input type="number" id="meeting_number" name="meeting_number" value="{{ log.Meeting_Number if log else '' }}" required>
+
+        <label for="meeting_date">Meeting Date:</label>
+        <input type="date" id="meeting_date" name="meeting_date" value="{{ log.Meeting_Date if log else '' }}" required>
+
+        <label for="session">Session:</label>
+        <input type="text" id="session" name="session" value="{{ log.Session if log else '' }}" required>
+
+        <label for="speech_title">Speech Title:</label>
+        <input type="text" id="speech_title" name="speech_title" value="{{ log.Speech_Title if log else '' }}" required>
+
+        <label for="pathway">Pathway:</label>
+        <input type="text" id="pathway" name="pathway" value="{{ log.Pathway if log else '' }}">
+
+        <label for="level">Level:</label>
+        <input type="text" id="level" name="level" value="{{ log.Level if log else '' }}">
+
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" value="{{ log.Name if log else '' }}" required>
+
+        <label for="evaluator">Evaluator:</label>
+        <input type="text" id="evaluator" name="evaluator" value="{{ log.Evaluator if log else '' }}">
+
+        <label for="project_title">Project Title:</label>
+        <input type="text" id="project_title" name="project_title" value="{{ log.Project_Title if log else '' }}">
+
+        <label for="project_type">Project Type:</label>
+        <input type="number" id="project_type" name="project_type" value="{{ log.Project_Type if log else '' }}">
+
+        <label for="project_status">Project Status:</label>
+        <input type="text" id="project_status" name="project_status" value="{{ log.Project_Status if log else '' }}">
+
+        <button type="submit">{{ 'Update Log' if log else 'Add Log' }}</button>
+        <a href="{{ url_for('show_speech_logs') }}">Cancel</a>
+    </form>
+
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ 'Edit Contact' if contact else 'Add New Contact' }}</title>
+    <style>
+        body { font-family: sans-serif; }
+        .container { max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        h1 { text-align: center; }
+        form div { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="text"] { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+        }
+        .cancel-btn {
+            background-color: #6c757d;
+        }
+        .note {
+            font-size: 0.9em;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>{{ 'Edit Contact' if contact else 'Add New Contact' }}</h1>
+        <form method="POST" action="{{ url_for('contact_form', contact_id=contact.id) if contact else url_for('contact_form') }}">
+            <div>
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" value="{{ contact.Name if contact else '' }}" required>
+            </div>
+            <div>
+                <label for="club">Club:</label>
+                <input type="text" id="club" name="club" value="{{ contact.Club if contact else '' }}" placeholder="e.g., Club1 / Club2">
+            </div>
+            <div>
+                <label for="current_project">Current Project:</label>
+                <input type="text" id="current_project" name="current_project" value="{{ contact.Current_Project if contact else '' }}">
+            </div>
+            <div>
+                <label for="completed_levels">Completed Levels:</label>
+                <input type="text" id="completed_levels" name="completed_levels" value="{{ contact.Completed_Levels if contact else '' }}" placeholder="e.g., Level1 / Level2">
+            </div>
+            <div>
+                <button type="submit" class="button">Save Contact</button>
+                <a href="{{ url_for('show_contacts') }}" class="button cancel-btn">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+</body>
+</html>

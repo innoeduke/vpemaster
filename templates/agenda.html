@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Meeting Agenda</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .section-row {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .export-button {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: #007BFF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Meeting Agenda</h1>
+
+    <a href="{{ url_for('export_agenda_to_csv') }}" class="export-button">Export to CSV</a>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Title</th>
+                <th>Owner</th>
+                <th>Duration (min)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in agenda_items %}
+                {% if item.is_section %}
+                    <tr class="section-row">
+                        <td colspan="4">{{ item.title }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td>{{ item.time }}</td>
+                        <td>{{ item.title }}</td>
+                        <td>{{ item.owner }}</td>
+                        <td>{{ item.duration }}</td>
+                    </tr>
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
