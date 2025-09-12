@@ -72,3 +72,41 @@ FIELDS TERMINATED BY ','
 ENCLOSED BY '"'
 LINES TERMINATED BY '\r\n'
 IGNORE 1 ROWS;
+
+
+Dynamic Leadership
+Engaging Humor
+Motivational Strategies
+Persuasive Influence
+Presentation Mastery
+Visionary Communication
+Non-Path: Distinguished Toastmaster
+Non-Path: Other
+
+
+CREATE TABLE Projects (
+    ID INT PRIMARY KEY,
+    Project_Name VARCHAR(255),
+    Format VARCHAR(50),
+    Duration_Min INT,
+    Duration_Max INT,
+    Introduction VARCHAR(1000),
+    Overview VARCHAR(1000),
+    Purpose VARCHAR(255),
+    Requirements VARCHAR(500),
+    Resources VARCHAR(500),
+    Code_DL VARCHAR(5),
+    Code_EH VARCHAR(5),
+    Code_MS VARCHAR(5),
+    Code_PI VARCHAR(5),
+    Code_PM VARCHAR(5),
+    Code_VC VARCHAR(5)
+);
+
+
+LOAD DATA LOCAL INFILE '/home/shltmc/data/Projects.csv' 
+INTO TABLE Projects
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY '"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;

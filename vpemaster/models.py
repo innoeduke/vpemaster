@@ -41,3 +41,24 @@ class User(db.Model):
     Display_Name = db.Column(db.String(255))
     Date_Created = db.Column(db.Date)
     Role = db.Column(db.String(255), nullable=False)
+
+
+class Project(db.Model):
+    __tablename__ = 'Projects'
+
+    ID = db.Column(db.Integer, primary_key=True)
+    Project_Name = db.Column(db.String(255))
+    Format = db.Column(db.String(50))
+    Duration_Min = db.Column(db.Integer)
+    Duration_Max = db.Column(db.Integer)
+    Introduction = db.Column(db.String(1000))
+    Overview = db.Column(db.String(1000))
+    Purpose = db.Column(db.String(255))
+    Requirements = db.Column(db.String(500))
+    Resources = db.Column(db.String(500))
+    Code_DL = db.Column(db.String(5))
+    Code_EH = db.Column(db.String(5))
+    Code_MS = db.Column(db.String(5))
+    Code_PI = db.Column(db.String(5))
+    Code_PM = db.Column(db.String(5))
+    Code_VC = db.Column(db.String(5))

@@ -42,6 +42,12 @@
                     <span>Speech Logs</span>
                 </a>
             </li>
+            <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
+                <a href="{{ url_for('pathways_bp.pathway_library') }}">
+                    <i class="fas fa-book-open nav-icon"></i>
+                    <span>Pathway Library</span>
+                </a>
+            </li>
             {% if session.get('user_role') == 'Admin' %}
             <li class="{% if request.endpoint and request.endpoint.startswith('users_bp') %}active{% endif %}">
                 <a href="{{ url_for('users_bp.show_users') }}">

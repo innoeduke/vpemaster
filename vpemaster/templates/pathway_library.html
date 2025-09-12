@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Pathway Library{% endblock %}
+
+{% block content %}
+    <h1>Pathway Library</h1>
+
+    <div class="form-container">
+        <div class="form-group form-group--path">
+            <label for="path">Path:</label>
+            <select id="path" name="path">
+                <option value="Code_DL">Dynamic Leadership</option>
+                <option value="Code_EH">Engaging Humor</option>
+                <option value="Code_MS">Motivational Strategies</option>
+                <option value="Code_PI">Persuasive Influence</option>
+                <option value="Code_PM">Presentation Mastery</option>
+                <option value="Code_VC">Visionary Communication</option>
+            </select>
+        </div>
+
+        <div class="form-group form-group--level">
+            <label>Level:</label>
+            <div class="radio-group">
+                {% for i in range(1, 6) %}
+                <label><input type="radio" name="level" value="{{ i }}"> {{ i }}</label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-group form-group--project">
+            <label for="project">Project:</label>
+            <select id="project" name="project">
+                <option value="">-- Select a Project --</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="path-codes">
+        <div class="path-code-box path-dl" id="dl-code" data-path="Code_DL">DL: <span></span></div>
+        <div class="path-code-box path-eh" id="eh-code" data-path="Code_EH">EH: <span></span></div>
+        <div class="path-code-box path-ms" id="ms-code" data-path="Code_MS">MS: <span></span></div>
+        <div class="path-code-box path-pi" id="pi-code" data-path="Code_PI">PI: <span></span></div>
+        <div class="path-code-box path-pm" id="pm-code" data-path="Code_PM">PM: <span></span></div>
+        <div class="path-code-box path-vc" id="vc-code" data-path="Code_VC">VC: <span></span></div>
+    </div>
+
+    <div id="project-details" class="project-details-container" style="display: none;">
+        <div class="project-header">
+            <h2 id="project-name"></h2>
+            {% if session.get('user_role') == 'Admin' %}
+            <button id="edit-project-btn" class="button">Edit</button>
+            {% endif %}
+        </div>
+        <div class="project-section">
+            <h3>Introduction</h3>
+            <p id="project-introduction"></p>
+            <textarea id="edit-introduction" class="edit-textarea" style="display: none;"></textarea>
+        </div>
+        <div class="project-section">
+            <h3>Overview</h3>
+            <p id="project-overview"></p>
+            <textarea id="edit-overview" class="edit-textarea" style="display: none;"></textarea>
+        </div>
+        <div class="project-section">
+            <h3>Purpose</h3>
+            <p id="project-purpose"></p>
+            <textarea id="edit-purpose" class="edit-textarea" style="display: none;"></textarea>
+        </div>
+        <div class="project-section">
+            <h3>Requirements</h3>
+            <p id="project-requirements"></p>
+            <textarea id="edit-requirements" class="edit-textarea" style="display: none;"></textarea>
+        </div>
+        <div class="project-section">
+            <h3>Resources</h3>
+            <p id="project-resources"></p>
+            <textarea id="edit-resources" class="edit-textarea" style="display: none;"></textarea>
+        </div>
+    </div>
+
+    <script>
+        const projects = {{ projects|tojson }};
+        let isEditing = false;
+
+        const pathSelect = document.getElementById('path');
+        const levelRadios = document.querySelectorAll('input[name="level"]');
+        const projectSelect = document.getElementById('project');
+        const projectDetails = document.getElementById('project-details');
+        const pathBoxes = document.querySelectorAll('.path-code-box');
+        const editButton = document.getElementById('edit-project-btn');
+
+        function filterProjects() {
+            const selectedPath = pathSelect.value;
+            const selectedLevel = document.querySelector('input[name="level"]:checked');
+
+            projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
+            projectDetails.style.display = 'none';
+            clearPathCodes();
+            if (isEditing) {
+                toggleEditView(); // Exit edit mode if filtering changes
+            }
+
+            if (selectedLevel) {
+                const levelValue = selectedLevel.value;
+                const filteredProjects = projects.filter(p => {
+                    const code = p[selectedPath];
+                    return code && code.startsWith(levelValue);
+                });
+
+                filteredProjects.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.ID;
+                    option.textContent = p.Project_Name;
+                    projectSelect.appendChild(option);
+                });
+
+                if (projectSelect.options.length > 1) {
+                    projectSelect.selectedIndex = 1;
+                    displayProjectDetails();
+                }
+            }
+        }
+
+        function displayProjectDetails() {
+            const projectId = parseInt(projectSelect.value, 10);
+            const project = projects.find(p => p.ID === projectId);
+
+            if (project) {
+                document.getElementById('project-name').textContent = project.Project_Name;
+                document.getElementById('project-introduction').textContent = project.Introduction;
+                document.getElementById('project-overview').textContent = project.Overview;
+                document.getElementById('project-purpose').textContent = project.Purpose;
+                document.getElementById('project-requirements').textContent = project.Requirements;
+                document.getElementById('project-resources').textContent = project.Resources;
+
+                updatePathCodes(project);
+                projectDetails.style.display = 'block';
+            } else {
+                projectDetails.style.display = 'none';
+                clearPathCodes();
+            }
+
+            if (isEditing) {
+                toggleEditView(); // Revert to view mode if project changes
+            }
+        }
+
+        function updatePathCodes(project) {
+            document.querySelector('#dl-code span').textContent = project.Code_DL || 'N/A';
+            document.querySelector('#eh-code span').textContent = project.Code_EH || 'N/A';
+            document.querySelector('#ms-code span').textContent = project.Code_MS || 'N/A';
+            document.querySelector('#pi-code span').textContent = project.Code_PI || 'N/A';
+            document.querySelector('#pm-code span').textContent = project.Code_PM || 'N/A';
+            document.querySelector('#vc-code span').textContent = project.Code_VC || 'N/A';
+        }
+
+        function clearPathCodes() {
+            document.querySelectorAll('.path-code-box span').forEach(span => span.textContent = '');
+        }
+
+        function toggleEditView() {
+            isEditing = !isEditing;
+
+            const pTags = document.querySelectorAll('.project-section p');
+            const textareas = document.querySelectorAll('.project-section textarea');
+
+            if (isEditing) {
+                editButton.textContent = 'Save';
+                pTags.forEach(p => p.style.display = 'none');
+                textareas.forEach(textarea => {
+                    const pElement = textarea.previousElementSibling.previousElementSibling;
+                    textarea.value = pElement.textContent;
+                    textarea.style.display = 'block';
+                });
+            } else {
+                editButton.textContent = 'Edit';
+                pTags.forEach(p => p.style.display = 'block');
+                textareas.forEach(textarea => textarea.style.display = 'none');
+                // Refresh the view with the latest data
+                displayProjectDetails();
+            }
+        }
+
+        function saveProjectChanges() {
+            const projectId = parseInt(projectSelect.value, 10);
+            if (!projectId) return;
+
+            const data = {
+                Introduction: document.getElementById('edit-introduction').value,
+                Overview: document.getElementById('edit-overview').value,
+                Purpose: document.getElementById('edit-purpose').value,
+                Requirements: document.getElementById('edit-requirements').value,
+                Resources: document.getElementById('edit-resources').value
+            };
+
+            fetch(`/pathway_library/update_project/${projectId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the local projects array so the change is reflected immediately
+                    const projectIndex = projects.findIndex(p => p.ID === projectId);
+                    if (projectIndex > -1) {
+                        projects[projectIndex].Introduction = data.Introduction;
+                        projects[projectIndex].Overview = data.Overview;
+                        projects[projectIndex].Purpose = data.Purpose;
+                        projects[projectIndex].Requirements = data.Requirements;
+                        projects[projectIndex].Resources = data.Resources;
+                    }
+                    toggleEditView(); // Switch back to view mode
+                } else {
+                     alert('Failed to save changes.');
+                }
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                alert('An error occurred while saving.');
+            });
+        }
+
+        window.onload = function() {
+            pathSelect.value = 'Code_PM';
+            document.querySelector('input[name="level"][value="1"]').checked = true;
+            filterProjects();
+        };
+
+        pathSelect.addEventListener('change', filterProjects);
+        levelRadios.forEach(radio => radio.addEventListener('change', filterProjects));
+        projectSelect.addEventListener('change', displayProjectDetails);
+
+        pathBoxes.forEach(box => {
+            box.addEventListener('click', function() {
+                pathSelect.value = this.dataset.path;
+                filterProjects();
+            });
+        });
+
+        if (editButton) {
+            editButton.addEventListener('click', () => {
+                if (isEditing) {
+                    saveProjectChanges();
+                } else {
+                    toggleEditView();
+                }
+            });
+        }
+
+    </script>
+{% endblock %}
+
