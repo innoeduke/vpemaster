@@ -1,0 +1,74 @@
+CREATE TABLE Contacts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Club VARCHAR(100),
+    Date_Created DATE,
+    Current_Project VARCHAR(100),
+    Completed_Levels VARCHAR(255)
+);
+
+
+mysql -h shltmc.mysql.pythonanywhere-services.com -u shltmc 'shltmc$Education' -p --local-infile=1
+
+password: SHLTMC_leadership_D8
+
+LOAD DATA LOCAL INFILE '/home/shltmc/data/Contacts.csv' 
+INTO TABLE Contacts
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY '"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;
+
+
+CREATE TABLE Speech_Logs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    Meeting_Number INT NOT NULL,
+    Meeting_Date DATE NOT NULL,
+    Session VARCHAR(50) NOT NULL,
+    Speech_Title VARCHAR(255),
+    Pathway VARCHAR(100),
+    Level VARCHAR(50),
+    Name VARCHAR(100) NOT NULL,
+    Evaluator VARCHAR(100),
+    Project_Title VARCHAR(255),
+    Project_Type INT,
+    Project_Status VARCHAR(50),
+    
+    -- Optional indexes for better performance on common queries
+    INDEX idx_meeting_date (Meeting_Date),
+    INDEX idx_name (Name),
+    INDEX idx_pathway (Pathway),
+    INDEX idx_level (Level)
+);
+
+
+CREATE TABLE Users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    Account VARCHAR(50) NOT NULL,
+    Name VARCHAR(255),
+    Display_Name VARCHAR(255),
+    Date_Created DATE,
+    Role VARCHAR(255) NOT NULL
+);
+
+
+CREATE TABLE `Session` (
+    `id` INT NOT NULL AUTO_INCREMENT,
+    `Meeting_Number` INT NOT NULL,
+    `Seq_No` INT NOT NULL,
+    `Type` VARCHAR(50) NOT NULL,
+    `Contact_ID` INT,
+    `Speech_ID` INT,
+    `Duration_Min` INT,
+    `Duration_Max` INT,
+    `Notes` VARCHAR(255),
+    `Is_Section` BOOLEAN DEFAULT FALSE,
+    PRIMARY KEY (`id`)
+);
+
+LOAD DATA LOCAL INFILE '/home/shltmc/data/speech_logs.csv' 
+INTO TABLE Speech_Logs
+FIELDS TERMINATED BY ',' 
+ENCLOSED BY '"'
+LINES TERMINATED BY '\r\n'
+IGNORE 1 ROWS;

@@ -23,13 +23,20 @@
             <tr>
                 <td>{{ loop.index }}</td>
                 <td>{{ user.Username }}</td>
-                <td>{{ user.Full_Name }}</td>
+                <td>
+                    {{ user.Full_Name }}
+                    {% if user.Contact_ID != 0 %}
+                        <i class="fas fa-link" style="color: green; margin-left: 5px;"></i>
+                    {% endif %}
+                </td>
                 <td>{{ user.Display_Name }}</td>
                 <td>{{ user.Role }}</td>
                 <td>{{ user.Date_Created.strftime('%Y-%m-%d') }}</td>
-                <td class="action-links">
-                    <a href="{{ url_for('users_bp.user_form', user_id=user.id) }}" class="button">Edit</a>
-                    <button class="button delete-btn" onclick="showDeleteModal({{ user.id }})">Delete</button>
+                <td>
+                    <div class="action-links">
+                        <a href="{{ url_for('users_bp.user_form', user_id=user.id) }}" class="button">Edit</a>
+                        <button class="button delete-btn" onclick="showDeleteModal({{ user.id }})">Delete</button>
+                    </div>
                 </td>
             </tr>
             {% endfor %}

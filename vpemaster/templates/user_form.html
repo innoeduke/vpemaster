@@ -11,12 +11,21 @@
                 <td><input type="text" id="username" name="username" value="{{ user.Username if user else '' }}" required></td>
             </tr>
             <tr>
-                <td><label for="full_name">Full Name:</label></td>
-                <td><input type="text" id="full_name" name="full_name" value="{{ user.Full_Name if user else '' }}"></td>
-            </tr>
-            <tr>
                 <td><label for="display_name">Display Name:</label></td>
                 <td><input type="text" id="display_name" name="display_name" value="{{ user.Display_Name if user else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="contact_id">Contact:</label></td>
+                <td>
+                    <select id="contact_id" name="contact_id">
+                        <option value="0" data-name="">None</option>
+                        {% for contact in contacts %}
+                            <option value="{{ contact.id }}" data-name="{{ contact.Name }}" {% if user and user.Contact_ID == contact.id %}selected{% endif %}>
+                                {{ contact.Name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </td>
             </tr>
             <tr>
                 <td><label for="password">Password:</label></td>
@@ -33,7 +42,7 @@
                     <select id="role" name="role" required>
                         <option value="Admin" {% if user and user.Role == 'Admin' %}selected{% endif %}>Admin</option>
                         <option value="Officer" {% if user and user.Role == 'Officer' %}selected{% endif %}>Officer</option>
-                        <option value="Member" {% if user and user.Role == 'Member' %}selected{% endif %}>Member</option>
+                        <option value="Member" {% if (user and user.Role == 'Member') or not user %}selected{% endif %}>Member</option>
                     </select>
                 </td>
             </tr>
@@ -43,4 +52,12 @@
             <a href="{{ url_for('users_bp.show_users') }}" class="button cancel-btn">Cancel</a>
         </div>
     </form>
+
+    <script>
+        document.getElementById('contact_id').addEventListener('change', function() {
+            var selectedOption = this.options[this.selectedIndex];
+            var contactName = selectedOption.getAttribute('data-name');
+            document.getElementById('full_name').value = contactName;
+        });
+    </script>
 {% endblock %}

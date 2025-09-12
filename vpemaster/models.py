@@ -4,10 +4,13 @@ class Contact(db.Model):
     __tablename__ = 'Contacts'
     id = db.Column(db.Integer, primary_key=True)
     Name = db.Column(db.String(100))
+    Type = db.Column(db.String(50), nullable=False)
     Club = db.Column(db.String(100))
     Date_Created = db.Column(db.Date)
-    Current_Project = db.Column(db.String(100))
+    Working_Path = db.Column(db.String(50))
+    Next_Project = db.Column(db.String(100))
     Completed_Levels = db.Column(db.String(255))
+    DTM = db.Column(db.Boolean, default=False)
 
 
 class SpeechLog(db.Model):
@@ -25,12 +28,14 @@ class SpeechLog(db.Model):
     Project_Title = db.Column(db.String(255))
     Project_Type = db.Column(db.Integer)
     Project_Status = db.Column(db.String(50))
+    Contact_ID = db.Column(db.Integer, nullable=False)
 
 
 class User(db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key=True)
     Username = db.Column(db.String(50), nullable=False)
+    Contact_ID = db.Column(db.Integer, default=0)
     Pass_Hash = db.Column(db.String(255), nullable=False)
     Full_Name = db.Column(db.String(255))
     Display_Name = db.Column(db.String(255))

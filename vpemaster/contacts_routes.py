@@ -1,4 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
+# vpemaster/contacts_routes.py
+
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from vpemaster import db
 from vpemaster.models import Contact
 from .main_routes import login_required
@@ -9,6 +11,10 @@ contacts_bp = Blueprint('contacts_bp', __name__)
 @contacts_bp.route('/contacts')
 @login_required
 def show_contacts():
+    if session.get('user_role') not in ['Admin', 'Officer']:
+        flash("You don't have permission to view this page.", 'error')
+        return redirect(url_for('agenda_bp.agenda'))
+
     contacts = Contact.query.order_by(Contact.Name.asc()).all()
     return render_template('contacts.html', contacts=contacts)
 
@@ -16,6 +22,10 @@ def show_contacts():
 @contacts_bp.route('/contact/form/<int:contact_id>', methods=['GET', 'POST'])
 @login_required
 def contact_form(contact_id=None):
+    if session.get('user_role') not in ['Admin', 'Officer']:
+        flash("You don't have permission to perform this action.", 'error')
+        return redirect(url_for('agenda_bp.agenda'))
+
     contact = None
     if contact_id:
         contact = Contact.query.get_or_404(contact_id)
@@ -24,16 +34,22 @@ def contact_form(contact_id=None):
         if contact:
             contact.Name = request.form['name']
             contact.Club = request.form['club']
-            contact.Current_Project = request.form['current_project']
+            contact.Next_Project = request.form['next_project']
             contact.Completed_Levels = request.form['completed_levels']
+            contact.Type = request.form.get('type')
+            contact.Working_Path = request.form.get('working_path')
+            contact.DTM = 'dtm' in request.form
             db.session.commit()
         else:
             new_contact = Contact(
                 Name=request.form['name'],
                 Club=request.form['club'],
                 Date_Created=date.today(),
-                Current_Project=request.form['current_project'],
-                Completed_Levels=request.form['completed_levels']
+                Next_Project=request.form['next_project'],
+                Completed_Levels=request.form['completed_levels'],
+                Type=request.form.get('type'),
+                Working_Path=request.form.get('working_path'),
+                DTM='dtm' in request.form
             )
             db.session.add(new_contact)
             db.session.commit()
@@ -45,6 +61,10 @@ def contact_form(contact_id=None):
 @contacts_bp.route('/contact/delete/<int:contact_id>', methods=['POST'])
 @login_required
 def delete_contact(contact_id):
+    if session.get('user_role') not in ['Admin', 'Officer']:
+        flash("You don't have permission to perform this action.", 'error')
+        return redirect(url_for('agenda_bp.agenda'))
+
     contact = Contact.query.get_or_404(contact_id)
     db.session.delete(contact)
     db.session.commit()

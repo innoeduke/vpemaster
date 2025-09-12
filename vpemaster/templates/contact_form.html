@@ -7,20 +7,49 @@
     <form method="POST" action="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) if contact else url_for('contacts_bp.contact_form') }}">
         <table class="form-table">
             <tr>
-                <td><label for="name">Name:</label></td>
+                <td><label for="name">Name: <span class="required-field">*</span></label></td>
                 <td><input type="text" id="name" name="name" value="{{ contact.Name if contact else '' }}" required></td>
             </tr>
             <tr>
-                <td><label for="club">Club:</label></td>
-                <td><input type="text" id="club" name="club" value="{{ contact.Club if contact else '' }}" placeholder="e.g., Club1 / Club2"></td>
+                <td><label for="type">Type: <span class="required-field">*</span></label></td>
+                <td>
+                    <select id="type" name="type" required>
+                        <option value="Member" {% if contact and contact.Type == 'Member' %}selected{% endif %}>Member</option>
+                        <option value="Past Member" {% if contact and contact.Type == 'Past Member' %}selected{% endif %}>Past Member</option>
+                        <option value="Guest" {% if contact and contact.Type == 'Guest' %}selected{% endif %}>Guest</option>
+                    </select>
+                </td>
             </tr>
             <tr>
-                <td><label for="current_project">Current Project:</label></td>
-                <td><input type="text" id="current_project" name="current_project" value="{{ contact.Current_Project if contact else '' }}"></td>
+                <td><label for="club">Club:</label></td>
+                <td><input type="text" id="club" name="club" value="{{ contact.Club if contact else '' }}" placeholder="e.g., Club1/Club2"></td>
+            </tr>
+            <tr>
+                <td><label for="working_path">Working Path:</label></td>
+                <td>
+                    <select id="working_path" name="working_path">
+                        <option value="Dynamic Leadership" {% if contact and contact.Working_Path == 'Dynamic Leadership' %}selected{% endif %}>Dynamic Leadership</option>
+                        <option value="Engaging Humor" {% if contact and contact.Working_Path == 'Engaging Humor' %}selected{% endif %}>Engaging Humor</option>
+                        <option value="Motivational Strategies" {% if contact and contact.Working_Path == 'Motivational Strategies' %}selected{% endif %}>Motivational Strategies</option>
+                        <option value="Persuasive Influence" {% if contact and contact.Working_Path == 'Persuasive Influence' %}selected{% endif %}>Persuasive Influence</option>
+                        <option value="Presentation Mastery" {% if contact and contact.Working_Path == 'Presentation Mastery' %}selected{% endif %}>Presentation Mastery</option>
+                        <option value="Visionary Communication" {% if contact and contact.Working_Path == 'Vision_Communication' %}selected{% endif %}>Visionary Communication</option>
+                        <option value="Non-Path: Distinguished Toastmaster" {% if contact and contact.Working_Path == 'Non-Path: Distinguished Toastmaster' %}selected{% endif %}>Non-Path: Distinguished Toastmaster</option>
+                        <option value="Non-Path: Other" {% if contact and contact.Working_Path == 'Non-Path: Other' %}selected{% endif %}>Non-Path: Other</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="next_project">Next Project:</label></td>
+                <td><input type="text" id="next_project" name="next_project" value="{{ contact.Next_Project if contact else '' }}" placeholder="e.g., 2.1, 3.2 ..."></td>
             </tr>
             <tr>
                 <td><label for="completed_levels">Completed Levels:</label></td>
-                <td><input type="text" id="completed_levels" name="completed_levels" value="{{ contact.Completed_Levels if contact else '' }}" placeholder="e.g., Level1 / Level2"></td>
+                <td><input type="text" id="completed_levels" name="completed_levels" value="{{ contact.Completed_Levels if contact else '' }}" placeholder="e.g., EH5/PM3"></td>
+            </tr>
+            <tr>
+                <td><label for="dtm">DTM:</label></td>
+                <td><input type="checkbox" id="dtm" name="dtm" {% if contact and contact.DTM %}checked{% endif %}></td>
             </tr>
         </table>
         <div style="text-align: center;">

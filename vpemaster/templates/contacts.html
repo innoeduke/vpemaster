@@ -11,9 +11,11 @@
                 <th>No.</th>
                 <th>Name</th>
                 <th>Club</th>
-                <th>Date Created</th>
-                <th>Current Project</th>
+                <th>Type</th>
+                <th>Working Path</th>
+                <th>Next Project</th>
                 <th>Completed Levels</th>
+                <th>Date Created</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -21,21 +23,29 @@
             {% for contact in contacts %}
             <tr>
                 <td>{{ loop.index }}</td>
-                <td>{{ contact.Name }}</td>
-                <td>{{ contact.Club }}</td>
-                <td>{{ contact.Date_Created.strftime('%Y-%m-%d') }}</td>
-                <td>{{ contact.Current_Project }}</td>
-                <td>{{ contact.Completed_Levels }}</td>
                 <td>
-                    <a href="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) }}" class="button">Edit</a>
-                    <button class="button delete-btn" onclick="openModal({{ contact.id }})">Delete</button>
+                    {{ contact.Name }}
+                    {% if contact.DTM %}
+                        <sup class="dtm-superscript">DTM</sup>
+                    {% endif %}
+                </td>
+                <td>{{ contact.Club }}</td>
+                <td>{{ contact.Type }}</td>
+                <td>{{ contact.Working_Path }}</td>
+                <td>{{ contact.Next_Project }}</td>
+                <td>{{ contact.Completed_Levels }}</td>
+                <td>{{ contact.Date_Created.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    <div class="action-links">
+                        <a href="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) }}" class="button">Edit</a>
+                        <button class="button delete-btn" onclick="openModal({{ contact.id }})">Delete</button>
+                    </div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
-    <!-- The Modal -->
     <div id="deleteModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal()">&times;</span>

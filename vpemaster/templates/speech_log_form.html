@@ -12,43 +12,51 @@
             </tr>
             <tr>
                 <td><label for="meeting_date">Meeting Date:</label></td>
-                <td><input type="date" id="meeting_date" name="meeting_date" value="{{ log.Meeting_Date if log else '' }}" required></td>
+                <td><input type="date" id="meeting_date" name="meeting_date" value="{{ log.Meeting_Date.strftime('%Y-%m-%d') if log and log.Meeting_Date else '' }}" required></td>
             </tr>
             <tr>
-                <td><label for="session">Session:</label></td>
-                <td><input type="text" id="session" name="session" value="{{ log.Session if log else '' }}" required></td>
+                <td><label for="contact_id">Name:</label></td>
+                <td>
+                    <select id="contact_id" name="contact_id" required>
+                        <option value="">Select a member</option>
+                        {% for member in members %}
+                            <option value="{{ member.id }}" data-pathway="{{ member.Working_Path }}" {% if log and log.Contact_ID == member.id %}selected{% endif %}>
+                                {{ member.Name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="session">Meeting Session:</label></td>
+                <td>
+                    <select id="session" name="session" required>
+                        <option value="Prepared Speech" {% if log and log.Session == 'Prepared Speech' %}selected{% endif %}>Prepared Speech</option>
+                        <option value="Evaluation" {% if log and log.Session == 'Evaluation' %}selected{% endif %}>Evaluation</option>
+                        <option value="Table Topic" {% if log and log.Session == 'Table Topic' %}selected{% endif %}>Table Topic</option>
+                        <option value="Keynote Speech" {% if log and log.Session == 'Keynote Speech' %}selected{% endif %}>Keynote Speech</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="pathway">Pathway:</label></td>
+                <td><input type="text" id="pathway" name="pathway" value="{{ log.Pathway if log else '' }}" readonly></td>
+            </tr>
+            <tr>
+                <td><label for="level">Project Code:</label></td>
+                <td><input type="text" id="level" name="level" value="{{ log.Level if log else '' }}" placeholder="e.g., 2.1"></td>
+            </tr>
+            <tr>
+                <td><label for="project_title">Project Name:</label></td>
+                <td><input type="text" id="project_title" name="project_title" value="{{ log.Project_Title if log else '' }}"></td>
             </tr>
             <tr>
                 <td><label for="speech_title">Speech Title:</label></td>
                 <td><input type="text" id="speech_title" name="speech_title" value="{{ log.Speech_Title if log else '' }}" required></td>
             </tr>
             <tr>
-                <td><label for="pathway">Pathway:</label></td>
-                <td><input type="text" id="pathway" name="pathway" value="{{ log.Pathway if log else '' }}"></td>
-            </tr>
-            <tr>
-                <td><label for="level">Level:</label></td>
-                <td><input type="text" id="level" name="level" value="{{ log.Level if log else '' }}"></td>
-            </tr>
-            <tr>
-                <td><label for="name">Name:</label></td>
-                <td><input type="text" id="name" name="name" value="{{ log.Name if log else '' }}" required></td>
-            </tr>
-            <tr>
                 <td><label for="evaluator">Evaluator:</label></td>
                 <td><input type="text" id="evaluator" name="evaluator" value="{{ log.Evaluator if log else '' }}"></td>
-            </tr>
-            <tr>
-                <td><label for="project_title">Project Title:</label></td>
-                <td><input type="text" id="project_title" name="project_title" value="{{ log.Project_Title if log else '' }}"></td>
-            </tr>
-            <tr>
-                <td><label for="project_type">Project Type:</label></td>
-                <td><input type="number" id="project_type" name="project_type" value="{{ log.Project_Type if log else '' }}"></td>
-            </tr>
-            <tr>
-                <td><label for="project_status">Project Status:</label></td>
-                <td><input type="text" id="project_status" name="project_status" value="{{ log.Project_Status if log else '' }}"></td>
             </tr>
         </table>
         <div style="text-align: center;">
@@ -56,4 +64,17 @@
             <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="button cancel-btn">Cancel</a>
         </div>
     </form>
+
+    <script>
+        document.getElementById('contact_id').addEventListener('change', function() {
+            var selectedOption = this.options[this.selectedIndex];
+            var pathway = selectedOption.getAttribute('data-pathway');
+            document.getElementById('pathway').value = pathway || '';
+        });
+
+        // Trigger the change event on page load to populate the pathway if a member is already selected
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('contact_id').dispatchEvent(new Event('change'));
+        });
+    </script>
 {% endblock %}

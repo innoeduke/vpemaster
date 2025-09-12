@@ -1,6 +1,8 @@
+# vpemaster/users_routes.py
+
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from vpemaster import db, bcrypt
-from vpemaster.models import User
+from vpemaster import db
+from vpemaster.models import User, Contact
 from werkzeug.security import generate_password_hash
 from .main_routes import login_required
 from datetime import date
@@ -27,12 +29,23 @@ def user_form(user_id):
     if user_id:
         user = User.query.get_or_404(user_id)
 
+    # Fetch only contacts with the type 'Member'
+    contacts = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
+
     if request.method == 'POST':
+        contact_id = request.form.get('contact_id', 0, type=int)
+        full_name = ""
+        if contact_id != 0:
+            contact = Contact.query.get(contact_id)
+            if contact:
+                full_name = contact.Name
+
         if user:
             user.Username = request.form['username']
-            user.Full_Name = request.form.get('full_name')
             user.Display_Name = request.form.get('display_name')
             user.Role = request.form['role']
+            user.Contact_ID = contact_id
+            user.Full_Name = full_name
             password = request.form.get('password')
             if password:
                 user.Pass_Hash = generate_password_hash(password)
@@ -40,7 +53,6 @@ def user_form(user_id):
             db.session.commit()
         else:
             username = request.form['username']
-            full_name = request.form.get('full_name')
             display_name = request.form.get('display_name')
             password = request.form['password']
             role = request.form['role']
@@ -53,7 +65,8 @@ def user_form(user_id):
                 Display_Name=display_name,
                 Date_Created=date.today(),
                 Pass_Hash=pass_hash,
-                Role=role
+                Role=role,
+                Contact_ID=contact_id
             )
 
             db.session.add(new_user)
@@ -61,7 +74,7 @@ def user_form(user_id):
 
         return redirect(url_for('users_bp.show_users'))
 
-    return render_template('user_form.html', user=user)
+    return render_template('user_form.html', user=user, contacts=contacts)
 
 @users_bp.route('/user/delete/<int:user_id>', methods=['POST'])
 @login_required
