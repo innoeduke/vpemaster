@@ -15,7 +15,6 @@ class Contact(db.Model):
 
 class SpeechLog(db.Model):
     __tablename__ = 'Speech_Logs'
-
     id = db.Column(db.Integer, primary_key=True)
     Meeting_Number = db.Column(db.Integer, nullable=True)
     Meeting_Date = db.Column(db.Date, nullable=True)
@@ -45,7 +44,6 @@ class User(db.Model):
 
 class Project(db.Model):
     __tablename__ = 'Projects'
-
     ID = db.Column(db.Integer, primary_key=True)
     Project_Name = db.Column(db.String(255))
     Format = db.Column(db.String(50))
@@ -62,3 +60,38 @@ class Project(db.Model):
     Code_PI = db.Column(db.String(5))
     Code_PM = db.Column(db.String(5))
     Code_VC = db.Column(db.String(5))
+
+class Meeting(db.Model):
+    __tablename__ = 'Meetings'
+    ID = db.Column(db.Integer, primary_key=True)
+    Meeting_Number = db.Column(db.SmallInteger, unique=True)
+    Meeting_Date = db.Column(db.Date)
+    Meeting_Template = db.Column(db.String(100))
+    WOD = db.Column(db.String(100))
+    Best_TT_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    Best_Evaluator_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    Best_Speaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    Best_Roletaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+
+class SessionType(db.Model):
+    __tablename__ = 'Session_Types'
+    id = db.Column(db.Integer, primary_key=True)
+    Title = db.Column(db.String(255))
+    Default_Owner = db.Column(db.String(255))
+    Is_Section = db.Column(db.Boolean, default=False)
+    Duration_Min = db.Column(db.Integer)
+    Duration_Max = db.Column(db.Integer)
+
+
+class SessionLog(db.Model):
+    __tablename__ = 'Session_Logs'
+    id = db.Column(db.Integer, primary_key=True)
+    Meeting_Number = db.Column(db.SmallInteger, db.ForeignKey('Meetings.Meeting_Number'))
+    Meeting_Seq = db.Column(db.Integer)
+    Session_Title = db.Column(db.String(255))
+    Type_ID = db.Column(db.Integer, db.ForeignKey('Session_Types.id'))
+    Owner_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    Start_Time = db.Column(db.Time)
+    Duration_Min = db.Column(db.Integer)
+    Duration_Max = db.Column(db.Integer)
+    Notes = db.Column(db.String(1000))

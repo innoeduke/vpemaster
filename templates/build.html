@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Agenda Builder{% endblock %}
+
+{% block content %}
+    <h1>Agenda Builder</h1>
+
+    <div class="button-group">
+        <button id="edit-logs-btn" class="add-button">Edit</button>
+        <button id="add-row-btn" class="add-button" style="display: none;">Add</button>
+        <button id="cancel-edit-btn" class="cancel-btn" style="display: none;">Cancel</button>
+    </div>
+
+    <div class="form-container">
+        <div class="form-group">
+            <label for="meeting-filter">Filter by Meeting Number:</label>
+            <select id="meeting-filter">
+                <option value="">All Meetings</option>
+                {% for num in meeting_numbers %}
+                <option value="{{ num }}">{{ num }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <table id="logs-table">
+        <thead>
+            <tr>
+                <th class="edit-mode-cell" style="display: none;">No</th>
+                <th>Meeting Number</th>
+                <th>Start Time</th>
+                <th>Session Type</th>
+                <th>Owner</th>
+                <th class="non-edit-mode-cell">Duration (min)</th>
+                <th class="edit-mode-cell" style="display: none;">Min Duration</th>
+                <th class="edit-mode-cell" style="display: none;">Max Duration</th>
+                <th class="edit-mode-cell" style="display: none;">Notes</th>
+                <th class="actions-column" style="display: none;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log, is_section in logs %}
+            <tr data-id="{{ log.id }}" data-meeting-number="{{ log.Meeting_Number }}" data-is-section="{{ is_section }}">
+                <td data-field="Meeting_Seq" class="edit-mode-cell" style="display: none;">{{ log.Meeting_Seq }}</td>
+                <td data-field="Meeting_Number">{{ log.Meeting_Number }}</td>
+                <td data-field="Start_Time">{{ log.Start_Time.strftime('%H:%M:%S') if log.Start_Time is not none else '' }}</td>
+
+                {% if is_section %}
+                    <td colspan="3" class="non-edit-mode-cell section-row" data-field="Type_ID" data-value="{{ log.Type_ID }}">
+                        {% for type in session_types %}{% if type.id == log.Type_ID %}{{ type.Title }}{% endif %}{% endfor %}
+                    </td>
+                {% else %}
+                    <td data-field="Type_ID" data-value="{{ log.Type_ID }}">
+                        {% for type in session_types %}{% if type.id == log.Type_ID %}{{ type.Title }}{% endif %}{% endfor %}
+                    </td>
+                    <td data-field="Owner_ID" data-value="{{ log.Owner_ID }}">
+                        {% for contact in contacts %}{% if contact.id == log.Owner_ID %}{{ contact.Name }}{% endif %}{% endfor %}
+                    </td>
+                    <td class="non-edit-mode-cell">
+                        {% if log.Duration_Min and log.Duration_Max %}{{ log.Duration_Min }}'-{{ log.Duration_Max }}'
+                        {% elif log.Duration_Max %}{{ log.Duration_Max }}'
+                        {% endif %}
+                    </td>
+                {% endif %}
+
+                <td data-field="Duration_Min" class="edit-mode-cell" style="display: none;">{{ log.Duration_Min if log.Duration_Min is not none else '' }}</td>
+                <td data-field="Duration_Max" class="edit-mode-cell" style="display: none;">{{ log.Duration_Max if log.Duration_Max is not none else '' }}</td>
+                <td data-field="Notes" class="edit-mode-cell" style="display: none;">{{ log.Notes if log.Notes is not none else '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+<script>
+    const sessionTypes = {{ session_types|tojson }};
+    const contacts = {{ contacts|tojson }};
+    const editButton = document.getElementById('edit-logs-btn');
+    const cancelButton = document.getElementById('cancel-edit-btn');
+    const addRowButton = document.getElementById('add-row-btn');
+    const meetingFilter = document.getElementById('meeting-filter');
+    let isEditing = false;
+
+    if (editButton && cancelButton && addRowButton) {
+        editButton.addEventListener('click', function() {
+            if (isEditing) {
+                saveChanges();
+            } else {
+                toggleEditMode(true);
+            }
+        });
+        cancelButton.addEventListener('click', function() {
+            window.location.reload();
+        });
+        addRowButton.addEventListener('click', function() {
+            addNewRow();
+        });
+    }
+
+    meetingFilter.addEventListener('change', function() {
+        const selectedMeeting = this.value;
+        const rows = document.querySelectorAll('#logs-table tbody tr');
+        rows.forEach(row => {
+            if (selectedMeeting === '' || row.dataset.meetingNumber === selectedMeeting) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+
+    function handleSectionChange(selectElement) {
+        const selectedTypeId = parseInt(selectElement.value, 10);
+        const sessionType = sessionTypes.find(st => st.id === selectedTypeId);
+        const row = selectElement.closest('tr');
+
+        const cellsToToggle = [
+            row.querySelector('[data-field="Owner_ID"]'),
+            row.querySelector('[data-field="Duration_Min"]'),
+            row.querySelector('[data-field="Duration_Max"]'),
+            row.querySelector('[data-field="Start_Time"]'),
+            row.querySelector('[data-field="Notes"]')
+        ];
+
+        if (sessionType && sessionType.Is_Section) {
+            cellsToToggle.forEach(cell => {
+                if (cell) {
+                    const input = cell.querySelector('input, select');
+                    if(input) {
+                        input.value = ''; // Clear value
+                    }
+                    cell.style.visibility = 'hidden';
+                }
+            });
+        } else {
+            cellsToToggle.forEach(cell => {
+                if (cell) {
+                    cell.style.visibility = 'visible';
+                }
+            });
+        }
+    }
+
+
+    function createEditableCell(field, originalValue, isSection) {
+        const cell = document.createElement('td');
+        cell.dataset.field = field;
+
+        if (isSection && ['Owner_ID', 'Duration_Min', 'Duration_Max', 'Start_Time', 'Notes'].includes(field)) {
+            cell.innerHTML = '';
+            return cell;
+        }
+
+        if (field === 'Type_ID') {
+            const select = document.createElement('select');
+            sessionTypes.forEach(type => {
+                select.options.add(new Option(type.Title, type.id));
+            });
+            select.value = originalValue;
+            select.onchange = () => handleSectionChange(select); // Add event listener
+            cell.appendChild(select);
+        } else if (field === 'Owner_ID') {
+            const select = document.createElement('select');
+            select.options.add(new Option('-- Select Owner --', ''));
+            contacts.forEach(contact => {
+                select.options.add(new Option(contact.Name, contact.id));
+            });
+            select.value = originalValue;
+            cell.appendChild(select);
+        } else {
+            const input = document.createElement('input');
+            input.type = (field === 'Start_Time') ? 'time' : 'text';
+            if (field === 'Start_Time') input.step = 1;
+            input.value = originalValue;
+            input.style.width = '100%';
+            input.style.boxSizing = 'border-box';
+            cell.appendChild(input);
+        }
+        return cell;
+    }
+
+    function addNewRow() {
+        const tableBody = document.querySelector('#logs-table tbody');
+        const lastRow = tableBody.lastElementChild;
+        let newSeq = 1;
+        let newStartTime = '';
+
+        if (lastRow) {
+            const lastSeqCell = lastRow.querySelector('[data-field="Meeting_Seq"]');
+            const lastSeqInput = lastSeqCell.querySelector('input');
+            const lastSeq = parseInt(lastSeqInput.value, 10);
+            newSeq = isNaN(lastSeq) ? 1 : lastSeq + 1;
+
+            const lastStartTimeCell = lastRow.querySelector('[data-field="Start_Time"]');
+            const lastStartTimeInput = lastStartTimeCell.querySelector('input');
+            const lastStartTime = lastStartTimeInput.value;
+
+            const lastDurationCell = lastRow.querySelector('[data-field="Duration_Max"]');
+            const lastDurationInput = lastDurationCell.querySelector('input');
+            const lastDuration = parseInt(lastDurationInput.value, 10) || 0;
+
+            if (lastStartTime) {
+                const timeParts = lastStartTime.split(':');
+                const date = new Date();
+                date.setHours(timeParts[0], timeParts[1], timeParts[2] || 0);
+                date.setMinutes(date.getMinutes() + lastDuration + 1);
+
+                newStartTime = [
+                    date.getHours().toString().padStart(2, '0'),
+                    date.getMinutes().toString().padStart(2, '0'),
+                    date.getSeconds().toString().padStart(2, '0')
+                ].join(':');
+            }
+        }
+
+        const newRow = document.createElement('tr');
+        newRow.dataset.id = 'new';
+        newRow.dataset.isSection = 'false';
+
+        const fields = [
+            { name: 'Meeting_Seq', value: newSeq },
+            { name: 'Meeting_Number', value: '' },
+            { name: 'Start_Time', value: newStartTime },
+            { name: 'Type_ID', value: '' },
+            { name: 'Owner_ID', value: '' },
+            { name: 'Duration_Min', value: '' },
+            { name: 'Duration_Max', value: '' },
+            { name: 'Notes', value: '' }
+        ];
+
+        fields.forEach(field => {
+            const cell = createEditableCell(field.name, field.value, false);
+            cell.classList.add('edit-mode-cell');
+            newRow.appendChild(cell);
+        });
+
+        const actionsCell = document.createElement('td');
+        actionsCell.classList.add('actions-column');
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.className = 'button delete-btn icon-btn';
+        deleteBtn.onclick = function() { deleteLogRow(this); };
+        actionsCell.appendChild(deleteBtn);
+        newRow.appendChild(actionsCell);
+
+        tableBody.appendChild(newRow);
+    }
+
+
+    function toggleEditMode(enable) {
+        isEditing = enable;
+        const table = document.getElementById('logs-table');
+        const header = table.querySelector('thead');
+        const rows = table.querySelectorAll('tbody tr');
+
+        header.querySelectorAll('.edit-mode-cell').forEach(th => th.style.display = enable ? '' : 'none');
+        header.querySelectorAll('.non-edit-mode-cell').forEach(th => th.style.display = enable ? 'none' : '');
+        header.querySelector('.actions-column').style.display = enable ? '' : 'none';
+
+        rows.forEach(row => {
+            const isSection = row.dataset.isSection === 'True';
+
+            row.querySelectorAll('.non-edit-mode-cell').forEach(td => td.style.display = enable ? 'none' : '');
+
+            if (enable) {
+                const cellData = {};
+                row.querySelectorAll('td').forEach(cell => {
+                    const field = cell.dataset.field;
+                    if(field) {
+                        cellData[field] = cell.dataset.value || cell.textContent.trim();
+                    }
+                });
+
+                row.innerHTML = '';
+
+                const fieldsOrder = ['Meeting_Seq', 'Meeting_Number', 'Start_Time', 'Type_ID', 'Owner_ID', 'Duration_Min', 'Duration_Max', 'Notes'];
+                fieldsOrder.forEach(field => {
+                    const cell = createEditableCell(field, cellData[field], isSection);
+                    cell.classList.add('edit-mode-cell');
+                    row.appendChild(cell);
+                });
+
+                const actionsCell = document.createElement('td');
+                actionsCell.classList.add('actions-column');
+                const deleteBtn = document.createElement('button');
+                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                deleteBtn.className = 'button delete-btn icon-btn';
+                deleteBtn.onclick = function() { deleteLogRow(this); };
+                actionsCell.appendChild(deleteBtn);
+                row.appendChild(actionsCell);
+            }
+        });
+
+        editButton.textContent = 'Done';
+        editButton.classList.toggle('add-button', !enable);
+        editButton.classList.toggle('done-btn', enable);
+        cancelButton.style.display = 'inline-block';
+        addRowButton.style.display = 'inline-block';
+    }
+
+    function deleteLogRow(btn) {
+        const row = btn.parentNode.parentNode;
+        const logId = row.dataset.id;
+
+        if (logId === 'new') {
+            row.remove();
+            return;
+        }
+
+        if (confirm('Are you sure you want to delete this log?')) {
+            fetch(`/build/delete/${logId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    row.remove();
+                } else {
+                    alert('Error deleting log: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the log.');
+            });
+        }
+    }
+
+    function saveChanges() {
+        const rows = document.querySelectorAll('#logs-table tbody tr');
+        const dataToSave = [];
+
+        rows.forEach(row => {
+            const rowData = { id: row.dataset.id };
+            const cells = row.querySelectorAll('td');
+            cells.forEach(cell => {
+                const field = cell.dataset.field;
+                if (!field) return;
+                const inputElement = cell.querySelector('input, select');
+                if (inputElement) {
+                    rowData[field.toLowerCase()] = inputElement.value;
+                }
+            });
+            if(Object.keys(rowData).length > 1) {
+                dataToSave.push(rowData);
+            }
+        });
+
+        fetch("{{ url_for('build_bp.update_logs') }}", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToSave),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error saving changes: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving.');
+        });
+    }
+</script>
+{% endblock %}

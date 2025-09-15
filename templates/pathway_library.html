@@ -56,6 +56,11 @@
             {% endif %}
         </div>
         <div class="project-section">
+            <h3>Purpose</h3>
+            <p id="project-purpose"></p>
+            <textarea id="edit-purpose" class="edit-textarea" style="display: none;"></textarea>
+        </div>
+        <div class="project-section">
             <h3>Introduction</h3>
             <p id="project-introduction"></p>
             <textarea id="edit-introduction" class="edit-textarea" style="display: none;"></textarea>
@@ -64,11 +69,6 @@
             <h3>Overview</h3>
             <p id="project-overview"></p>
             <textarea id="edit-overview" class="edit-textarea" style="display: none;"></textarea>
-        </div>
-        <div class="project-section">
-            <h3>Purpose</h3>
-            <p id="project-purpose"></p>
-            <textarea id="edit-purpose" class="edit-textarea" style="display: none;"></textarea>
         </div>
         <div class="project-section">
             <h3>Requirements</h3>
@@ -132,9 +132,9 @@
 
             if (project) {
                 document.getElementById('project-name').textContent = project.Project_Name;
+                document.getElementById('project-purpose').textContent = project.Purpose;
                 document.getElementById('project-introduction').textContent = project.Introduction;
                 document.getElementById('project-overview').textContent = project.Overview;
-                document.getElementById('project-purpose').textContent = project.Purpose;
                 document.getElementById('project-requirements').textContent = project.Requirements;
                 document.getElementById('project-resources').textContent = project.Resources;
 

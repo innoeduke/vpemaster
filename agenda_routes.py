@@ -23,12 +23,12 @@ def _generate_agenda_items(filename):
         with open(abs_filename, 'r', encoding='utf-8') as f:
             lines = f.readlines()
     except FileNotFoundError:
-        return f"Error: The agenda file could not be found: {os.path.basename(filename)}", 500
+        return f"Error: The agenda file could not be found: {os.path.basename(filename)}", 500, None
     except Exception as e:
-        return f"An error occurred while reading the agenda file: {e}", 500
+        return f"An error occurred while reading the agenda file: {e}", 500, None
 
     if not lines:
-        return "Error: The agenda file is empty.", 500
+        return "Error: The agenda file is empty.", 500, None
 
     first_line = lines[0].strip()
     time_match = re.search(r'\d{1,2}:\d{2}', first_line)

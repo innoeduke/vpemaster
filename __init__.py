@@ -24,6 +24,7 @@ from vpemaster.speech_logs_routes import speech_logs_bp
 from vpemaster.users_routes import users_bp
 from vpemaster.main_routes import main_bp
 from vpemaster.pathways_routes import pathways_bp
+from vpemaster.build_routes import build_bp
 
 app.register_blueprint(agenda_bp)
 app.register_blueprint(contacts_bp)
@@ -31,3 +32,4 @@ app.register_blueprint(speech_logs_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(main_bp)
 app.register_blueprint(pathways_bp)
+app.register_blueprint(build_bp)

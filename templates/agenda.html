@@ -13,9 +13,10 @@
         <form action="{{ url_for('agenda_bp.export_agenda_to_csv') }}" method="get" class="form-inline">
             <button type="submit" class="add-button">Export to CSV</button>
         </form>
+        <a href="{{ url_for('build_bp.build') }}" class="add-button">Builder</a>
         {% if session.get('user_role') in ['Admin', 'Officer'] %}
         <button id="edit-agenda-btn" class="add-button">Edit</button>
-        <button id="cancel-edit-btn" class="button cancel-btn" style="display: none;">Cancel</button>
+        <button id="cancel-edit-btn" class="cancel-btn" style="display: none;">Cancel</button>
         {% endif %}
     </div>
 
