@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, session
 from vpemaster import db
-from vpemaster.models import SpeechLog, Contact, User
+from vpemaster.models import SpeechLog, Contact, User, Project
 from .main_routes import login_required
 from datetime import datetime
 
@@ -12,16 +12,15 @@ speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 @login_required
 def show_speech_logs():
     user_role = session.get('user_role')
+    all_logs = []
 
     if user_role == 'Member':
         user_id = session.get('user_id')
-        user = User.query.get(user_id)
-        if user and user.Contact_ID:
-            # If the user is a Member, only show their own speech logs
-            all_logs = SpeechLog.query.filter_by(Contact_ID=user.Contact_ID).order_by(SpeechLog.Meeting_Number.asc()).all()
-        else:
-            # If the member is not linked to a contact, show an empty list
-            all_logs = []
+        if user_id:
+            user = User.query.get(user_id)
+            if user and user.Contact_ID:
+                # If the user is a Member, only show their own speech logs
+                all_logs = SpeechLog.query.filter_by(Contact_ID=user.Contact_ID).order_by(SpeechLog.Meeting_Number.asc()).all()
     else:
         # For Admins and Officers, show all speech logs
         all_logs = SpeechLog.query.order_by(SpeechLog.Meeting_Number.asc()).all()
@@ -37,8 +36,22 @@ def speech_log_form():
         log = SpeechLog.query.get_or_404(log_id)
 
     members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
+    projects = Project.query.all()
+    projects_data = [
+        {
+            "ID": p.ID,
+            "Project_Name": p.Project_Name,
+            "Code_DL": p.Code_DL,
+            "Code_EH": p.Code_EH,
+            "Code_MS": p.Code_MS,
+            "Code_PI": p.Code_PI,
+            "Code_PM": p.Code_PM,
+            "Code_VC": p.Code_VC,
+        }
+        for p in projects
+    ]
 
-    return render_template('speech_log_form.html', log=log, members=members)
+    return render_template('speech_log_form.html', log=log, members=members, projects=projects_data)
 
 @speech_logs_bp.route('/speech_log/save/<int:log_id>', methods=['POST'])
 @login_required

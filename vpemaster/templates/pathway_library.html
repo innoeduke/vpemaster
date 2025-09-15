@@ -3,6 +3,7 @@
 {% block title %}Pathway Library{% endblock %}
 
 {% block content %}
+<div id="pathway-library-container">
     <h1>Pathway Library</h1>
 
     <div class="form-container">
@@ -48,7 +49,10 @@
         <div class="project-header">
             <h2 id="project-name"></h2>
             {% if session.get('user_role') == 'Admin' %}
-            <button id="edit-project-btn" class="button">Edit</button>
+            <div class="button-group">
+                <button id="edit-project-btn" class="button">Edit</button>
+                <button id="cancel-project-btn" class="button cancel-btn" style="display: none;">Cancel</button>
+            </div>
             {% endif %}
         </div>
         <div class="project-section">
@@ -77,7 +81,7 @@
             <textarea id="edit-resources" class="edit-textarea" style="display: none;"></textarea>
         </div>
     </div>
-
+</div>
     <script>
         const projects = {{ projects|tojson }};
         let isEditing = false;
@@ -88,6 +92,7 @@
         const projectDetails = document.getElementById('project-details');
         const pathBoxes = document.querySelectorAll('.path-code-box');
         const editButton = document.getElementById('edit-project-btn');
+        const cancelButton = document.getElementById('cancel-project-btn');
 
         function filterProjects() {
             const selectedPath = pathSelect.value;
@@ -161,22 +166,24 @@
         function toggleEditView() {
             isEditing = !isEditing;
 
-            const pTags = document.querySelectorAll('.project-section p');
-            const textareas = document.querySelectorAll('.project-section textarea');
+            const pTags = document.querySelectorAll('#project-details .project-section p');
+            const textareas = document.querySelectorAll('#project-details .project-section textarea');
 
             if (isEditing) {
-                editButton.textContent = 'Save';
+                editButton.textContent = 'Done';
+                cancelButton.style.display = 'inline-block';
                 pTags.forEach(p => p.style.display = 'none');
                 textareas.forEach(textarea => {
-                    const pElement = textarea.previousElementSibling.previousElementSibling;
+                    const pId = textarea.id.replace('edit-', 'project-');
+                    const pElement = document.getElementById(pId);
                     textarea.value = pElement.textContent;
                     textarea.style.display = 'block';
                 });
             } else {
                 editButton.textContent = 'Edit';
+                cancelButton.style.display = 'none';
                 pTags.forEach(p => p.style.display = 'block');
                 textareas.forEach(textarea => textarea.style.display = 'none');
-                // Refresh the view with the latest data
                 displayProjectDetails();
             }
         }
@@ -201,7 +208,6 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Update the local projects array so the change is reflected immediately
                     const projectIndex = projects.findIndex(p => p.ID === projectId);
                     if (projectIndex > -1) {
                         projects[projectIndex].Introduction = data.Introduction;
@@ -210,7 +216,7 @@
                         projects[projectIndex].Requirements = data.Requirements;
                         projects[projectIndex].Resources = data.Resources;
                     }
-                    toggleEditView(); // Switch back to view mode
+                    toggleEditView();
                 } else {
                      alert('Failed to save changes.');
                 }
@@ -248,6 +254,11 @@
             });
         }
 
+        if (cancelButton) {
+            cancelButton.addEventListener('click', () => {
+                toggleEditView();
+            });
+        }
+
     </script>
 {% endblock %}
-

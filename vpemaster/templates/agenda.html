@@ -13,9 +13,13 @@
         <form action="{{ url_for('agenda_bp.export_agenda_to_csv') }}" method="get" class="form-inline">
             <button type="submit" class="add-button">Export to CSV</button>
         </form>
+        {% if session.get('user_role') in ['Admin', 'Officer'] %}
+        <button id="edit-agenda-btn" class="add-button">Edit</button>
+        <button id="cancel-edit-btn" class="button cancel-btn" style="display: none;">Cancel</button>
+        {% endif %}
     </div>
 
-    <table>
+    <table id="agenda-table">
         <thead>
             <tr>
                 <th>Time</th>
@@ -32,13 +36,124 @@
                     </tr>
                 {% else %}
                     <tr>
-                        <td>{{ item.time }}</td>
-                        <td>{{ item.title }}</td>
-                        <td>{{ item.owner }}</td>
-                        <td>{{ item.duration }}</td>
+                        <td class="time-cell">{{ item.time }}</td>
+                        <td class="title-cell">{{ item.title }}</td>
+                        <td class="owner-cell" data-raw-owner="{{ item.raw_owner }}">{{ item.owner }}</td>
+                        <td class="duration-cell">{{ item.duration }}</td>
                     </tr>
                 {% endif %}
             {% endfor %}
         </tbody>
     </table>
+
+<script>
+    const contacts = {{ contacts|tojson }};
+    const editButton = document.getElementById('edit-agenda-btn');
+    const cancelButton = document.getElementById('cancel-edit-btn');
+
+    if (editButton && cancelButton) {
+        editButton.addEventListener('click', function() {
+            const isEditing = this.textContent === 'Done';
+            if (isEditing) {
+                saveAgendaChanges();
+            } else {
+                // Enter Edit Mode
+                toggleEditMode(true);
+                this.textContent = 'Done';
+                cancelButton.style.display = 'inline-block';
+            }
+        });
+
+        cancelButton.addEventListener('click', function() {
+            // Easiest and safest way to discard all changes is to reload the page
+            window.location.reload();
+        });
+    }
+
+    function toggleEditMode(enable) {
+        const table = document.getElementById('agenda-table');
+        const rows = table.querySelectorAll('tbody tr:not(.section-row)');
+
+        rows.forEach(row => {
+            const ownerCell = row.querySelector('.owner-cell');
+            const durationCell = row.querySelector('.duration-cell');
+            const titleCell = row.querySelector('.title-cell');
+
+            if (enable) {
+                // --- Edit Owner Cell ---
+                const rawOwner = ownerCell.dataset.rawOwner;
+                if (titleCell.textContent.trim() !== 'Networking') {
+                    const select = document.createElement('select');
+                    contacts.forEach(contact => {
+                        const option = document.createElement('option');
+                        option.value = contact.Name;
+                        option.textContent = contact.Name;
+                        if (contact.Name === rawOwner) {
+                            option.selected = true;
+                        }
+                        select.appendChild(option);
+                    });
+                    ownerCell.innerHTML = '';
+                    ownerCell.appendChild(select);
+                }
+
+                // --- Edit Duration Cell ---
+                const durationText = durationCell.textContent.trim();
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.value = durationText;
+                input.style.width = '60px';
+                durationCell.innerHTML = '';
+                durationCell.appendChild(input);
+            }
+        });
+    }
+
+    function saveAgendaChanges() {
+        const table = document.getElementById('agenda-table');
+        const rows = table.querySelectorAll('tbody tr');
+        const agendaData = [];
+
+        rows.forEach(row => {
+            if (row.classList.contains('section-row')) {
+                agendaData.push({ type: 'section', title: row.cells[0].textContent.trim() });
+            } else {
+                const ownerCell = row.querySelector('.owner-cell');
+                const ownerSelect = ownerCell.querySelector('select');
+                const owner = ownerSelect ? ownerSelect.value : ownerCell.dataset.rawOwner;
+
+                const durationInput = row.querySelector('.duration-cell input');
+                const duration = durationInput.value;
+
+                agendaData.push({
+                    type: 'item',
+                    title: row.querySelector('.title-cell').textContent.trim(),
+                    owner: owner,
+                    duration: duration
+                });
+            }
+        });
+
+        fetch('{{ url_for("agenda_bp.save_agenda") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(agendaData),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Agenda saved successfully!');
+                window.location.reload();
+            } else {
+                alert('Error saving agenda: ' + data.message);
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the agenda.');
+        });
+    }
+</script>
 {% endblock %}

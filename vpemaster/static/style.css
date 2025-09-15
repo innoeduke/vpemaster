@@ -134,6 +134,7 @@ body {
     margin-top: auto;
     padding: 10px 15px;
     text-align: center;
+    display: none;
 }
 
 .logout-container a {
@@ -162,6 +163,10 @@ body {
 
 .nav-pane.expanded .logout-container a span {
     opacity: 1;
+}
+
+.nav-pane.expanded .logout-container {
+    display: block;
 }
 
 .logout-container a:hover {
@@ -214,7 +219,7 @@ th {
     background-color: #f2f2f2;
 }
 
-.button, .delete-btn, .complete-btn {
+.button, .delete-btn, .complete-btn, .done-btn, .cancel-btn {
     display: inline-block;
     height: 30px;
     line-height: 30px;
@@ -243,10 +248,18 @@ th {
     background-color: #28a745;
 }
 
+.done-btn {
+    background-color: #28a745; /* Green */
+}
+
+.cancel-btn {
+    background-color: #dc3545; /* Red */
+}
+
 .action-links {
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 /* Make Edit/Delete buttons in the action column have the same width */

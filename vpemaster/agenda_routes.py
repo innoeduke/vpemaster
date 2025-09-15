@@ -2,9 +2,9 @@ import os
 import csv
 import io
 import re
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, current_app, jsonify
 from datetime import datetime, timedelta
-from werkzeug.utils import secure_filename # Import secure_filename
+from werkzeug.utils import secure_filename
 from vpemaster.models import Contact
 from .main_routes import login_required
 
@@ -16,11 +16,14 @@ def _generate_agenda_items(filename):
     """
     agenda_items = []
 
+    # Use an absolute path to be safe
+    abs_filename = os.path.join(current_app.root_path, 'agendas', os.path.basename(filename))
+
     try:
-        with open(filename, 'r') as f:
+        with open(abs_filename, 'r', encoding='utf-8') as f:
             lines = f.readlines()
     except FileNotFoundError:
-        return f"Error: The agenda file could not be found at the expected path: {filename}", 500
+        return f"Error: The agenda file could not be found: {os.path.basename(filename)}", 500
     except Exception as e:
         return f"An error occurred while reading the agenda file: {e}", 500
 
@@ -39,6 +42,9 @@ def _generate_agenda_items(filename):
         current_time = datetime.strptime(start_time_str, '%H:%M')
     except ValueError:
         return f"Error: Found '{start_time_str}', but it is not a valid time.", 500
+
+    # Store start time to reconstruct file later
+    agenda_start_time = start_time_str
 
     for i, line in enumerate(lines[1:], 2):
         line = line.strip()
@@ -61,7 +67,7 @@ def _generate_agenda_items(filename):
         except ValueError:
             return f"Error on line {i}: The duration '{duration_str}' is not a valid number.", 500
 
-        agenda_items.append({'time': current_time.strftime('%H:%M'), 'title': title, 'owner': owner, 'duration': duration, 'is_section': False})
+        agenda_items.append({'time': current_time.strftime('%H:%M'), 'title': title, 'owner': owner, 'raw_owner': owner, 'duration': duration, 'is_section': False})
 
         if agenda_items and "Networking" not in agenda_items[-1]['title']:
              current_time += timedelta(minutes=1)
@@ -77,35 +83,65 @@ def _generate_agenda_items(filename):
                 updated_owner = owner
                 if contact.Club == 'Guest':
                     updated_owner = f"{owner} - Guest"
-                elif contact.Club != 'SHLTMC':
+                elif contact.Club and contact.Club != 'SHLTMC':
                     updated_owner = f"{owner}@{contact.Club}"
                 elif contact.Completed_Levels:
                     updated_owner = f"{owner} - {contact.Completed_Levels}"
                 agenda_items[-1]['owner'] = updated_owner
 
-    return agenda_items, None
+    return agenda_items, None, agenda_start_time
 
 
 @agenda_bp.route('/agenda', methods=['GET'])
 @login_required
 def agenda():
     UPLOAD_FOLDER = os.path.join(current_app.root_path, 'agendas')
-
-    # Use the filename from the session, or default to 'default.csv'
     active_filename = session.get('active_agenda_filename', 'default.csv')
     active_agenda_path = os.path.join(UPLOAD_FOLDER, active_filename)
 
-    agenda_items, error_code = _generate_agenda_items(active_agenda_path)
+    agenda_items, error_code, _ = _generate_agenda_items(active_agenda_path)
+
+    contacts_query = Contact.query.order_by(Contact.Name.asc()).all()
+    # Convert contact objects to a list of dictionaries to be JSON-safe
+    contacts_data = [{"Name": c.Name} for c in contacts_query]
 
     if error_code:
         flash(agenda_items, 'error')
-        # If the custom file fails, clear it from session and reload
         if 'active_agenda_filename' in session:
             session.pop('active_agenda_filename')
             return redirect(url_for('agenda_bp.agenda'))
-        return render_template('agenda.html', agenda_items=[])
+        return render_template('agenda.html', agenda_items=[], contacts=contacts_data)
 
-    return render_template('agenda.html', agenda_items=agenda_items)
+    return render_template('agenda.html', agenda_items=agenda_items, contacts=contacts_data)
+
+@agenda_bp.route('/agenda/save', methods=['POST'])
+@login_required
+def save_agenda():
+    if session.get('user_role') not in ['Admin', 'Officer']:
+        return jsonify(success=False, message="Permission denied"), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify(success=False, message="No data received"), 400
+
+    UPLOAD_FOLDER = os.path.join(current_app.root_path, 'agendas')
+    active_filename = session.get('active_agenda_filename', 'default.csv')
+    file_path = os.path.join(UPLOAD_FOLDER, secure_filename(active_filename))
+
+    # To save the file, we need the original start time
+    _, _, start_time = _generate_agenda_items(file_path)
+
+    try:
+        with open(file_path, 'w', newline='', encoding='utf-8') as f:
+            f.write(f"{start_time}\n") # Removed for simplicity in saving
+            for item in data:
+                if item['type'] == 'section':
+                    f.write(f"{item['title']}\n")
+                else:
+                    f.write(f"{item['title']},{item['owner']},{item['duration']}\n")
+        return jsonify(success=True)
+    except Exception as e:
+        return jsonify(success=False, message=str(e)), 500
 
 
 @agenda_bp.route('/agenda/import', methods=['POST'])
@@ -124,16 +160,11 @@ def import_agenda_from_csv():
         return redirect(url_for('agenda_bp.agenda'))
 
     if file and file.filename.endswith('.csv'):
-        # --- FIX IMPLEMENTED HERE ---
-        # Secure the filename to prevent malicious paths
         filename = secure_filename(file.filename)
         save_path = os.path.join(UPLOAD_FOLDER, filename)
         file.save(save_path)
-
-        # Store just the filename in the session
         session['active_agenda_filename'] = filename
         flash(f"'{filename}' has been imported successfully!", 'success')
-        # --- END OF FIX ---
     else:
         flash('Invalid file type. Please upload a .csv file.', 'error')
 
@@ -144,11 +175,10 @@ def import_agenda_from_csv():
 @login_required
 def export_agenda_to_csv():
     UPLOAD_FOLDER = os.path.join(current_app.root_path, 'agendas')
-
     active_filename = session.get('active_agenda_filename', 'default.csv')
     active_agenda_path = os.path.join(UPLOAD_FOLDER, active_filename)
 
-    agenda_items, error_code = _generate_agenda_items(active_agenda_path)
+    agenda_items, error_code, _ = _generate_agenda_items(active_agenda_path)
 
     if error_code:
         flash(agenda_items, "error")
@@ -156,7 +186,6 @@ def export_agenda_to_csv():
 
     output = io.StringIO()
     writer = csv.writer(output)
-
     writer.writerow(['Time', 'Title', 'Owner', 'Duration (min)'])
 
     for item in agenda_items:
@@ -166,8 +195,6 @@ def export_agenda_to_csv():
             writer.writerow([item.get('time', ''), item.get('title', ''), item.get('owner', ''), item.get('duration', '')])
 
     output.seek(0)
-
-    # Use the active filename for the exported file for consistency
     export_filename = f"exported_{active_filename}"
 
     return send_file(io.BytesIO(output.getvalue().encode('utf-8')),

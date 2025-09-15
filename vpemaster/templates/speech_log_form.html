@@ -40,7 +40,18 @@
             </tr>
             <tr>
                 <td><label for="pathway">Pathway:</label></td>
-                <td><input type="text" id="pathway" name="pathway" value="{{ log.Pathway if log else '' }}" readonly></td>
+                <td>
+                    <select id="pathway" name="pathway">
+                        <option value="Dynamic Leadership">Dynamic Leadership</option>
+                        <option value="Engaging Humor">Engaging Humor</option>
+                        <option value="Motivational Strategies">Motivational Strategies</option>
+                        <option value="Persuasive Influence">Persuasive Influence</option>
+                        <option value="Presentation Mastery">Presentation Mastery</option>
+                        <option value="Visionary Communication">Visionary Communication</option>
+                        <option value="Non-Path: Distinguished Toastmaster">Non-Path: Distinguished Toastmaster</option>
+                        <option value="Non-Path: Other">Non-Path: Other</option>
+                    </select>
+                </td>
             </tr>
             <tr>
                 <td><label for="level">Project Code:</label></td>
@@ -48,7 +59,11 @@
             </tr>
             <tr>
                 <td><label for="project_title">Project Name:</label></td>
-                <td><input type="text" id="project_title" name="project_title" value="{{ log.Project_Title if log else '' }}"></td>
+                <td>
+                    <select id="project_title" name="project_title">
+                        <option value="">-- Select a Project --</option>
+                    </select>
+                </td>
             </tr>
             <tr>
                 <td><label for="speech_title">Speech Title:</label></td>
@@ -66,15 +81,74 @@
     </form>
 
     <script>
+        const projects = {{ projects|tojson }};
+        const pathwaySelect = document.getElementById('pathway');
+        const projectCodeInput = document.getElementById('level');
+        const projectTitleSelect = document.getElementById('project_title');
+
         document.getElementById('contact_id').addEventListener('change', function() {
             var selectedOption = this.options[this.selectedIndex];
             var pathway = selectedOption.getAttribute('data-pathway');
-            document.getElementById('pathway').value = pathway || '';
+            if (pathway) {
+                pathwaySelect.value = pathway;
+            }
+            filterProjects();
         });
 
-        // Trigger the change event on page load to populate the pathway if a member is already selected
+        pathwaySelect.addEventListener('change', filterProjects);
+        projectCodeInput.addEventListener('input', filterProjects);
+
+        function validateProjectCode(code) {
+            const regex = /^[1-5](\.\d+){1,2}$/;
+            return regex.test(code);
+        }
+
+        function filterProjects() {
+            const selectedPathway = pathwaySelect.value;
+            const projectCode = projectCodeInput.value;
+
+            projectTitleSelect.innerHTML = '<option value="">-- Select a Project --</option>';
+
+            if (validateProjectCode(projectCode)) {
+                const pathwayCodeMapping = {
+                    "Dynamic Leadership": "Code_DL",
+                    "Engaging Humor": "Code_EH",
+                    "Motivational Strategies": "Code_MS",
+                    "Persuasive Influence": "Code_PI",
+                    "Presentation Mastery": "Code_PM",
+                    "Visionary Communication": "Code_VC"
+                };
+                const pathwayKey = pathwayCodeMapping[selectedPathway];
+
+                const filtered = projects.filter(p => {
+                    const code = p[pathwayKey];
+                    return code && code.startsWith(projectCode);
+                });
+
+                filtered.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.Project_Name;
+                    option.textContent = p.Project_Name;
+                    projectTitleSelect.appendChild(option);
+                });
+
+                if (projectTitleSelect.options.length > 1) {
+                    projectTitleSelect.selectedIndex = 1;
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('contact_id').dispatchEvent(new Event('change'));
+            // Set initial pathway value if log exists
+            {% if log and log.Pathway %}
+                pathwaySelect.value = "{{ log.Pathway }}";
+            {% endif %}
+            filterProjects();
+            // Set initial project title value if log exists
+            {% if log and log.Project_Title %}
+                projectTitleSelect.value = "{{ log.Project_Title }}";
+            {% endif %}
         });
     </script>
 {% endblock %}

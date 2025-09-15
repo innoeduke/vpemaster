@@ -37,8 +37,8 @@
                 <td>{{ contact.Date_Created.strftime('%Y-%m-%d') }}</td>
                 <td>
                     <div class="action-links">
-                        <a href="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) }}" class="button">Edit</a>
-                        <button class="button delete-btn" onclick="openModal({{ contact.id }})">Delete</button>
+                        <a href="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) }}" class="button icon-btn" title="Edit"><i class="fas fa-edit"></i></a>
+                        <button class="button delete-btn icon-btn" onclick="openModal({{ contact.id }})" title="Delete"><i class="fas fa-trash-alt"></i></button>
                     </div>
                 </td>
             </tr>
