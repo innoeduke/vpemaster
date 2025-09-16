@@ -239,12 +239,11 @@ th {
     background-color: #f2f2f2;
 }
 
-/* Base button style */
-.btn {
+.button, .delete-btn, .complete-btn, .done-btn, .cancel-btn {
     display: inline-block;
     height: 30px;
     line-height: 30px;
-    padding: 0 15px;
+    padding: 0 10px;
     margin: 0;
     color: white;
     text-align: center;
@@ -253,30 +252,35 @@ th {
     border: none;
     cursor: pointer;
     font-size: 14px;
-    min-width: 80px; /* Ensure a minimum width */
+    width: auto;
+    min-width: 70px; /* Ensure a minimum width */
 }
 
-/* Modifier classes for button colors */
-.btn-primary {
-    background-color: #007BFF; /* Blue */
+.button {
+    background-color: #007BFF;
 }
 
-.btn-danger {
+.delete-btn {
+    background-color: #dc3545;
+}
+
+.complete-btn, .done-btn {
+    background-color: #28a745;
+}
+
+.cancel-btn {
     background-color: #dc3545; /* Red */
 }
 
-.btn-success {
-    background-color: #28a745; /* Green */
-}
-
-/* Button group styles */
 .button-group {
     display: flex;
     gap: 10px;
+    margin-bottom: 0;
 }
 
-.button-group > .btn {
-    flex-grow: 1; /* Make all buttons in the group the same size */
+.button-group > .add-button,
+.button-group > .cancel-btn {
+    flex-grow: 1;
 }
 
 .action-links {
@@ -286,11 +290,24 @@ th {
 }
 
 /* Make Edit/Delete buttons in the action column have the same width */
-.action-links > .btn-primary,
-.action-links > .btn-danger {
+.action-links > .button,
+.action-links > .delete-btn {
     flex-grow: 1;
 }
 
+.add-link, .add-button {
+    display: inline-block;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 15px;
+    background-color: white;
+    color: black;
+    text-decoration: none;
+    border-radius: 5px;
+    margin-bottom: 0;
+    font-size: 14px;
+    width: auto;
+}
 
 /* Modal styles - Centralized for consistency */
 .modal {
@@ -526,7 +543,6 @@ th {
     background-color: #e9ecef;
     font-weight: bold;
     color: #495057;
-    font-size: 20px;
     text-align: center;
 }
 
