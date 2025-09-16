@@ -1,1 +1,0 @@
-from vpemaster import app
