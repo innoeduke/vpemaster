@@ -3,6 +3,35 @@
 {% block title %}Agenda Builder{% endblock %}
 
 {% block content %}
+    <style>
+        /* This ensures the table layout is respected even with dynamic content */
+        #logs-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .edit-mode-cell input[type="text"], .edit-mode-cell select {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Column widths for NON-EDIT mode */
+        #logs-table .non-edit-mode-header th:nth-child(1) { width: 10%; } /* Time */
+        #logs-table .non-edit-mode-header th:nth-child(2) { width: 45%; } /* Session */
+        #logs-table .non-edit-mode-header th:nth-child(3) { width: 25%; } /* Host */
+        #logs-table .non-edit-mode-header th:nth-child(4) { width: 20%; } /* Duration */
+
+        /* Column widths for EDIT mode */
+        #logs-table .edit-mode-header th:nth-child(1) { width: 5%; }  /* No */
+        #logs-table .edit-mode-header th:nth-child(2) { width: 10%; } /* Start Time */
+        #logs-table .edit-mode-header th:nth-child(3) { width: 20%; } /* Session Type */
+        #logs-table .edit-mode-header th:nth-child(4) { width: 25%; } /* Session Title */
+        #logs-table .edit-mode-header th:nth-child(5) { width: 15%; } /* Owner */
+        #logs-table .edit-mode-header th:nth-child(6) { width: 7%; }  /* Min */
+        #logs-table .edit-mode-header th:nth-child(7) { width: 7%; }  /* Max */
+        #logs-table .edit-mode-header th:nth-child(8) { width: 11%; } /* Actions */
+
+    </style>
     <h1>Agenda Builder</h1>
 
     <div class="form-container">
@@ -26,42 +55,50 @@
             <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
             <button id="load-btn" type="button" class="add-button" onclick="document.getElementById('csv-file').click()">Load</button>
         </form>
-        {% if message %}
-        <span class="inline-message {{ category }}">{{ message }}</span>
-        {% endif %}
     </div>
 
     <table id="logs-table">
         <thead>
-            <tr>
-                <th class="edit-mode-cell" style="display: none;">No</th>
-                <th class="edit-mode-cell" style="display: none;">Meeting Number</th>
+            <tr class="non-edit-mode-header">
+                <th>Time</th>
+                <th>Session</th>
+                <th>Host</th>
+                <th>Duration (min)</th>
+            </tr>
+            <tr class="edit-mode-header" style="display: none;">
+                <th>No</th>
                 <th>Start Time</th>
                 <th>Session Type</th>
+                <th>Session Title</th>
                 <th>Owner</th>
-                <th class="non-edit-mode-cell">Duration (min)</th>
-                <th class="edit-mode-cell" style="display: none;">Min Duration</th>
-                <th class="edit-mode-cell" style="display: none;">Max Duration</th>
-                <th class="edit-mode-cell" style="display: none;">Notes</th>
-                <th class="actions-column" style="display: none;">Actions</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th class="actions-column">Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for log, is_section in logs %}
-            <tr data-id="{{ log.id }}" data-meeting-number="{{ log.Meeting_Number }}" data-is-section="{{ is_section|lower }}">
-                <td data-field="Meeting_Seq" class="edit-mode-cell" style="display: none;">{{ log.Meeting_Seq }}</td>
-                <td data-field="Meeting_Number" class="edit-mode-cell" style="display: none;">{{ log.Meeting_Number }}</td>
+            <tr data-id="{{ log.id }}"
+                data-meeting-number="{{ log.Meeting_Number }}"
+                data-is-section="{{ is_section|lower }}"
+                data-meeting_seq="{{ log.Meeting_Seq }}"
+                data-start_time="{{ log.Start_Time.strftime('%H:%M:%S') if log.Start_Time is not none else '' }}"
+                data-type_id="{{ log.Type_ID }}"
+                data-session_title="{{ log.Session_Title if log.Session_Title is not none else '' }}"
+                data-owner_id="{{ log.Owner_ID }}"
+                data-duration_min="{{ log.Duration_Min if log.Duration_Min is not none else '' }}"
+                data-duration_max="{{ log.Duration_Max if log.Duration_Max is not none else '' }}">
 
                 {% if is_section %}
-                    <td colspan="4" class="non-edit-mode-cell section-row" data-field="Type_ID" data-value="{{ log.Type_ID }}">
-                        {% for type in session_types %}{% if type.id == log.Type_ID %}{{ type.Title }}{% endif %}{% endfor %}
+                    <td colspan="4" class="non-edit-mode-cell section-row">
+                        {{ log.Session_Title }}
                     </td>
                 {% else %}
-                    <td data-field="Start_Time">{{ log.Start_Time.strftime('%H:%M:%S') if log.Start_Time is not none else '' }}</td>
-                    <td data-field="Type_ID" data-value="{{ log.Type_ID }}">
-                        {% for type in session_types %}{% if type.id == log.Type_ID %}{{ type.Title }}{% endif %}{% endfor %}
+                    <td class="non-edit-mode-cell">{{ log.Start_Time.strftime('%H:%M:%S') if log.Start_Time is not none else '' }}</td>
+                    <td class="non-edit-mode-cell">
+                        {{ log.Session_Title }}
                     </td>
-                    <td data-field="Owner_ID" data-value="{{ log.Owner_ID }}">
+                    <td class="non-edit-mode-cell">
                         {% for contact in contacts %}{% if contact.id == log.Owner_ID %}{{ contact.Name }}{% endif %}{% endfor %}
                     </td>
                     <td class="non-edit-mode-cell">
@@ -70,10 +107,6 @@
                         {% endif %}
                     </td>
                 {% endif %}
-
-                <td data-field="Duration_Min" class="edit-mode-cell" style="display: none;">{{ log.Duration_Min if log.Duration_Min is not none else '' }}</td>
-                <td data-field="Duration_Max" class="edit-mode-cell" style="display: none;">{{ log.Duration_Max if log.Duration_Max is not none else '' }}</td>
-                <td data-field="Notes" class="edit-mode-cell" style="display: none;">{{ log.Notes if log.Notes is not none else '' }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -122,31 +155,10 @@
         const selectedTypeId = parseInt(selectElement.value, 10);
         const sessionType = sessionTypes.find(st => st.id === selectedTypeId);
         const row = selectElement.closest('tr');
+        const sessionTitleCell = row.querySelector('[data-field="Session_Title"]');
 
-        const cellsToToggle = [
-            row.querySelector('[data-field="Owner_ID"]'),
-            row.querySelector('[data-field="Duration_Min"]'),
-            row.querySelector('[data-field="Duration_Max"]'),
-            row.querySelector('[data-field="Start_Time"]'),
-            row.querySelector('[data-field="Notes"]')
-        ];
-
-        if (sessionType && sessionType.Is_Section) {
-            cellsToToggle.forEach(cell => {
-                if (cell) {
-                    const input = cell.querySelector('input, select');
-                    if(input) {
-                        input.value = ''; // Clear value
-                    }
-                    cell.style.visibility = 'hidden';
-                }
-            });
-        } else {
-            cellsToToggle.forEach(cell => {
-                if (cell) {
-                    cell.style.visibility = 'visible';
-                }
-            });
+        if (sessionType) {
+            sessionTitleCell.querySelector('input').value = sessionType.Title;
         }
     }
 
@@ -155,17 +167,13 @@
         const cell = document.createElement('td');
         cell.dataset.field = field;
 
-        if (isSection && ['Owner_ID', 'Duration_Min', 'Duration_Max', 'Start_Time', 'Notes'].includes(field)) {
-            cell.innerHTML = '';
+        if (isSection && ['Owner_ID', 'Duration_Min', 'Duration_Max'].includes(field)) {
+            cell.textContent = ''; // Display empty, non-editable cell for these fields in sections
             return cell;
         }
 
         if (field === 'Start_Time') {
-            const input = document.createElement('input');
-            input.type = 'time';
-            input.step = 1;
-            input.value = originalValue;
-            cell.appendChild(input);
+            cell.textContent = originalValue;
             return cell;
         }
 
@@ -200,7 +208,6 @@
         const tableBody = document.querySelector('#logs-table tbody');
         const meetingNumber = meetingFilter.value;
         let newSeq = 1;
-        const newStartTime = '18:55:00'; // Default start time
 
         const newRow = document.createElement('tr');
         newRow.dataset.id = 'new';
@@ -208,13 +215,12 @@
 
         const fields = [
             { name: 'Meeting_Seq', value: newSeq},
-            { name: 'Meeting_Number', value: meetingNumber },
-            { name: 'Start_Time', value: newStartTime },
+            { name: 'Start_Time', value: '' },
             { name: 'Type_ID', value: '' },
+            { name: 'Session_Title', value: '' },
             { name: 'Owner_ID', value: '' },
             { name: 'Duration_Min', value: '' },
-            { name: 'Duration_Max', value: '' },
-            { name: 'Notes', value: '' }
+            { name: 'Duration_Max', value: '' }
         ];
 
         fields.forEach(field => {
@@ -242,50 +248,35 @@
         const header = table.querySelector('thead');
         const rows = table.querySelectorAll('tbody tr');
 
-        header.querySelectorAll('.edit-mode-cell').forEach(th => th.style.display = enable ? '' : 'none');
-        header.querySelectorAll('.non-edit-mode-cell').forEach(th => th.style.display = enable ? 'none' : '');
-        header.querySelector('.actions-column').style.display = enable ? '' : 'none';
+        header.querySelector('.edit-mode-header').style.display = enable ? 'table-row' : 'none';
+        header.querySelector('.non-edit-mode-header').style.display = enable ? 'none' : 'table-row';
 
         rows.forEach(row => {
             const isSection = row.dataset.isSection === 'true';
 
-            row.querySelectorAll('.non-edit-mode-cell').forEach(td => td.style.display = enable ? 'none' : '');
+            // Clear the row before rebuilding
+            row.innerHTML = '';
 
-            if (enable) {
-                const cellData = {};
-                row.querySelectorAll('td').forEach(cell => {
-                    const field = cell.dataset.field;
-                    if(field) {
-                        cellData[field] = cell.dataset.value || cell.textContent.trim();
-                    }
-                });
+            const fieldsOrder = ['Meeting_Seq', 'Start_Time', 'Type_ID', 'Session_Title', 'Owner_ID', 'Duration_Min', 'Duration_Max'];
+            fieldsOrder.forEach(field => {
+                const cell = createEditableCell(field, row.dataset[field.toLowerCase()], isSection);
+                row.appendChild(cell);
+            });
 
-                row.innerHTML = '';
-
-                const fieldsOrder = ['Meeting_Seq', 'Meeting_Number', 'Start_Time', 'Type_ID', 'Owner_ID', 'Duration_Min', 'Duration_Max', 'Notes'];
-                fieldsOrder.forEach(field => {
-                    const cell = createEditableCell(field, cellData[field], isSection);
-                    cell.classList.add('edit-mode-cell');
-                    row.appendChild(cell);
-                });
-
-                const actionsCell = document.createElement('td');
-                actionsCell.classList.add('actions-column');
-                const deleteBtn = document.createElement('button');
-                deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-                deleteBtn.className = 'button delete-btn icon-btn';
-                deleteBtn.onclick = function() { deleteLogRow(this); };
-                actionsCell.appendChild(deleteBtn);
-                row.appendChild(actionsCell);
-            }
+            const actionsCell = document.createElement('td');
+            actionsCell.classList.add('actions-column');
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            deleteBtn.className = 'button delete-btn icon-btn';
+            deleteBtn.onclick = function() { deleteLogRow(this); };
+            actionsCell.appendChild(deleteBtn);
+            row.appendChild(actionsCell);
         });
 
         editButton.textContent = 'Done';
-        editButton.classList.toggle('add-button', !enable);
-        editButton.classList.toggle('done-btn', enable);
         cancelButton.style.display = 'inline-block';
         addRowButton.style.display = 'inline-block';
-        loadButton.style.display = enable ? 'none' : 'inline-block';
+        loadButton.style.display = 'none';
     }
 
     function deleteLogRow(btn) {
@@ -307,7 +298,7 @@
                 if (data.success) {
                     row.remove();
                 } else {
-                    alert('Error deleting log: ' + data.message);
+                    alert('Error deleting log: '.concat(data.message));
                 }
             })
             .catch(error => {
@@ -323,13 +314,17 @@
 
         rows.forEach(row => {
             const rowData = { id: row.dataset.id };
-            const cells = row.querySelectorAll('td');
-            cells.forEach(cell => {
+            row.querySelectorAll('td').forEach(cell => {
                 const field = cell.dataset.field;
                 if (!field) return;
-                const inputElement = cell.querySelector('input, select');
-                if (inputElement) {
-                    rowData[field.toLowerCase()] = inputElement.value;
+
+                if (field === 'Start_Time') {
+                    rowData[field.toLowerCase()] = cell.textContent.trim();
+                } else {
+                    const inputElement = cell.querySelector('input, select');
+                    if (inputElement) {
+                        rowData[field.toLowerCase()] = inputElement.value;
+                    }
                 }
             });
             if(Object.keys(rowData).length > 1) {
@@ -347,7 +342,7 @@
             if (data.success) {
                 window.location.reload();
             } else {
-                alert('Error saving changes: ' + data.message);
+                alert('Error saving changes: '.concat(data.message));
             }
         })
         .catch(error => {

@@ -18,7 +18,7 @@ def build():
     """
     Renders the agenda builder page, displaying all session logs.
     """
-    session_logs = db.session.query(SessionLog, SessionType.Is_Section).join(SessionType, SessionLog.Type_ID == SessionType.id).order_by(SessionLog.Meeting_Number.asc(), SessionLog.Meeting_Seq.asc()).all()
+    session_logs = db.session.query(SessionLog, SessionType.Is_Section).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True).order_by(SessionLog.Meeting_Number.asc(), SessionLog.Meeting_Seq.asc()).all()
 
     # Sort meeting numbers in descending order to have the latest first
     meeting_numbers = db.session.query(distinct(SessionLog.Meeting_Number)).order_by(SessionLog.Meeting_Number.desc()).all()
@@ -29,16 +29,11 @@ def build():
     contacts_query = Contact.query.order_by(Contact.Name.asc()).all()
     contacts_data = [{"id": c.id, "Name": c.Name} for c in contacts_query]
 
-    message = request.args.get('message')
-    category = request.args.get('category')
-
     return render_template('build.html',
                            logs=session_logs,
                            session_types=session_types_data,
                            contacts=contacts_data,
-                           meeting_numbers=[num[0] for num in meeting_numbers],
-                           message=message,
-                           category=category)
+                           meeting_numbers=[num[0] for num in meeting_numbers])
 
 
 @build_bp.route('/build/load', methods=['POST'])
@@ -82,12 +77,15 @@ def load_csv():
         for row in csv_reader:
             if not row: continue # Skip empty rows
 
-            session_title = row[0].strip() if len(row) > 0 else ''
+            session_title_from_csv = row[0].strip() if len(row) > 0 else ''
             owner_name = row[1].strip() if len(row) > 1 and row[1] else ''
 
             # 4. Match Session Type
-            session_type = SessionType.query.filter_by(Title=session_title).first()
+            session_type = SessionType.query.filter_by(Title=session_title_from_csv).first()
             type_id = session_type.id if session_type else 0
+
+            session_title = session_type.Title if session_type else session_title_from_csv
+
 
             # 6. Match Owner
             owner_id = None
@@ -116,7 +114,7 @@ def load_csv():
                 Meeting_Seq=seq,
                 Type_ID=type_id,
                 Owner_ID=owner_id,
-                Notes=session_title, # Using Notes to store the original title
+                Session_Title=session_title,
                 Duration_Min=duration_min,
                 Duration_Max=duration_max
             )
@@ -134,7 +132,7 @@ def load_csv():
             seq += 1
 
         db.session.commit()
-        return redirect(url_for('build_bp.build', message='CSV file successfully loaded.', category='success'))
+        return redirect(url_for('build_bp.build'))
     else:
         return redirect(url_for('build_bp.build', message='Invalid file type. Please upload a CSV file.', category='error'))
 
@@ -168,17 +166,20 @@ def update_logs():
             def sort_key(item):
                 new_seq = int(item.get('meeting_seq', 999))
                 item_id_str = item.get('id')
-
-                priority = 0 # Default priority
+                priority = 0
                 if item_id_str == 'new':
-                    priority = 0 # New items get high priority
+                    priority = 0
                 else:
-                    item_id = int(item_id_str)
-                    original_seq = original_seqs.get(item_id)
-                    if original_seq == new_seq:
-                        priority = 2 # Unchanged items have lower priority
-                    else:
-                        priority = 1 # Changed items have medium priority
+                    try:
+                        item_id = int(item_id_str)
+                        original_seq = original_seqs.get(item_id)
+                        if original_seq == new_seq:
+                            priority = 2
+                        else:
+                            priority = 1
+                    except (ValueError, TypeError):
+                        # This will handle cases where item_id is not a valid integer
+                        priority = 0
 
                 return (new_seq, priority)
 
@@ -199,15 +200,21 @@ def update_logs():
                     except ValueError:
                         meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M').time()
 
+                type_id = item.get('type_id')
+                session_type = SessionType.query.get(type_id)
+                session_title = item.get('session_title')
+
                 if item['id'] == 'new':
+                    if not session_title and session_type:
+                        session_title = session_type.Title
                     new_log = SessionLog(
                         Meeting_Number=meeting_number,
                         Meeting_Seq=seq,
-                        Type_ID=item['type_id'],
+                        Type_ID=type_id,
                         Owner_ID=item['owner_id'] if item['owner_id'] else None,
                         Duration_Min=item['duration_min'] if item['duration_min'] else None,
                         Duration_Max=item['duration_max'] if item['duration_max'] else None,
-                        Notes=item['notes']
+                        Session_Title=session_title
                     )
                     db.session.add(new_log)
                 else:
@@ -215,11 +222,18 @@ def update_logs():
                     if log:
                         log.Meeting_Number = meeting_number
                         log.Meeting_Seq = seq
-                        log.Type_ID = item.get('type_id')
+                        log.Type_ID = type_id
                         log.Owner_ID = item.get('owner_id') if item.get('owner_id') else None
                         log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
                         log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
-                        log.Notes = item.get('notes')
+
+                        if session_title:
+                            log.Session_Title = session_title
+                        elif session_type:
+                            log.Session_Title = session_type.Title
+                        else:
+                            log.Session_Title = ''
+
 
         # Recalculate start times
         for meeting_num in meeting_numbers_to_update:
@@ -230,7 +244,7 @@ def update_logs():
             current_time = meeting.Start_Time
 
             logs_to_update = db.session.query(SessionLog, SessionType.Is_Section)\
-                .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+                .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
                 .filter(SessionLog.Meeting_Number == meeting_num)\
                 .order_by(SessionLog.Meeting_Seq.asc()).all()
 
