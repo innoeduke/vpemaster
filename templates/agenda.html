@@ -3,158 +3,384 @@
 {% block title %}Meeting Agenda{% endblock %}
 
 {% block content %}
+    <style>
+        /* This ensures the table layout is respected even with dynamic content */
+        #logs-table {
+            table-layout: fixed;
+            width: 100%;
+        }
+
+        .edit-mode-cell input[type="text"], .edit-mode-cell select {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Column widths for NON-EDIT mode */
+        #logs-table .non-edit-mode-header th:nth-child(1) { width: 10%; } /* Time */
+        #logs-table .non-edit-mode-header th:nth-child(2) { width: 45%; } /* Session */
+        #logs-table .non-edit-mode-header th:nth-child(3) { width: 25%; } /* Host */
+        #logs-table .non-edit-mode-header th:nth-child(4) { width: 20%; } /* Duration */
+
+        /* Column widths for EDIT mode */
+        #logs-table .edit-mode-header th:nth-child(1) { width: 5%; }  /* No */
+        #logs-table .edit-mode-header th:nth-child(2) { width: 10%; } /* Start Time */
+        #logs-table .edit-mode-header th:nth-child(3) { width: 30%; } /* Session Type */
+        #logs-table .edit-mode-header th:nth-child(4) { width: 20%; } /* Session Title */
+        #logs-table .edit-mode-header th:nth-child(5) { width: 15%; } /* Owner */
+        #logs-table .edit-mode-header th:nth-child(6) { width: 7%; }  /* Min */
+        #logs-table .edit-mode-header th:nth-child(7) { width: 7%; }  /* Max */
+        #logs-table .edit-mode-header th:nth-child(8) { width: 6%; } /* Actions */
+
+    </style>
     <h1>Meeting Agenda</h1>
 
-    <div class="button-group">
-        <form action="{{ url_for('agenda_bp.import_agenda_from_csv') }}" method="post" enctype="multipart/form-data" class="form-inline">
-            <input type="file" name="file" id="agenda-file" style="display: none;" onchange="this.form.submit()">
-            <button type="button" class="add-button" onclick="document.getElementById('agenda-file').click()">Import from CSV</button>
-        </form>
-        <form action="{{ url_for('agenda_bp.export_agenda_to_csv') }}" method="get" class="form-inline">
-            <button type="submit" class="add-button">Export to CSV</button>
-        </form>
-        <a href="{{ url_for('build_bp.build') }}" class="add-button">Builder</a>
-        {% if session.get('user_role') in ['Admin', 'Officer'] %}
-        <button id="edit-agenda-btn" class="add-button">Edit</button>
-        <button id="cancel-edit-btn" class="cancel-btn" style="display: none;">Cancel</button>
-        {% endif %}
+    <div class="action-bar">
+        <div class="inline-filter-group">
+            <label for="meeting-filter">Meeting:</label>
+            <select id="meeting-filter">
+                <option value="">All Meetings</option>
+                {% for num in meeting_numbers %}
+                <option value="{{ num }}">{{ num }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="button-group">
+            <form id="load-form" action="{{ url_for('agenda_bp.load_csv') }}" method="post" enctype="multipart/form-data" style="display: inline;">
+                <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
+                <button id="load-btn" type="button" class="btn btn-primary" onclick="document.getElementById('csv-file').click()">Import</button>
+            </form>
+            <button id="edit-logs-btn" class="btn btn-primary">Edit</button>
+            <button id="add-row-btn" class="btn btn-primary" style="display: none;">Add</button>
+            <button id="cancel-edit-btn" class="btn btn-danger" style="display: none;">Cancel</button>
+
+        </div>
     </div>
 
-    <table id="agenda-table">
+    <table id="logs-table">
         <thead>
-            <tr>
+            <tr class="non-edit-mode-header">
                 <th>Time</th>
-                <th>Title</th>
-                <th>Owner</th>
+                <th>Session</th>
+                <th>Host</th>
                 <th>Duration (min)</th>
+            </tr>
+            <tr class="edit-mode-header" style="display: none;">
+                <th>No</th>
+                <th>Start Time</th>
+                <th>Session Title</th>
+                <th>Session Type</th>
+                <th>Owner</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th class="actions-column">Actions</th>
             </tr>
         </thead>
         <tbody>
-            {% for item in agenda_items %}
-                {% if item.is_section %}
-                    <tr class="section-row">
-                        <td colspan="4">{{ item.title }}</td>
-                    </tr>
+            {% for log, is_section in logs %}
+            <tr data-id="{{ log.id }}"
+                data-meeting-number="{{ log.Meeting_Number }}"
+                data-is-section="{{ is_section|lower }}"
+                data-meeting_seq="{{ log.Meeting_Seq }}"
+                data-start_time="{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}"
+                data-session_title="{{ log.Session_Title if log.Session_Title is not none else '' }}"
+                data-type_id="{{ log.Type_ID }}"
+                data-owner_id="{{ log.Owner_ID }}"
+                data-duration_min="{{ log.Duration_Min if log.Duration_Min is not none else '' }}"
+                data-duration_max="{{ log.Duration_Max if log.Duration_Max is not none else '' }}"
+                class="{{ 'section-row' if is_section else '' }}">
+
+                {% if is_section %}
+                    <td colspan="4" class="non-edit-mode-cell">
+                        {{ log.Session_Title }}
+                    </td>
                 {% else %}
-                    <tr>
-                        <td class="time-cell">{{ item.time }}</td>
-                        <td class="title-cell">{{ item.title }}</td>
-                        <td class="owner-cell" data-raw-owner="{{ item.raw_owner }}">{{ item.owner }}</td>
-                        <td class="duration-cell">{{ item.duration }}</td>
-                    </tr>
+                    <td class="non-edit-mode-cell">{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}</td>
+                    <td class="non-edit-mode-cell">
+                        {{ log.Session_Title }}
+                    </td>
+                    <td class="non-edit-mode-cell">
+                        {% for contact in contacts %}{% if contact.id == log.Owner_ID %}{{ contact.Name }}{% endif %}{% endfor %}
+                    </td>
+                    <td class="non-edit-mode-cell">
+                        {% if log.Duration_Min and log.Duration_Max %}{{ log.Duration_Min }}'-{{ log.Duration_Max }}'
+                        {% elif log.Duration_Max %}{{ log.Duration_Max }}'
+                        {% endif %}
+                    </td>
                 {% endif %}
+            </tr>
             {% endfor %}
         </tbody>
     </table>
 
 <script>
+    const sessionTypes = {{ session_types|tojson }};
     const contacts = {{ contacts|tojson }};
-    const editButton = document.getElementById('edit-agenda-btn');
+    const editButton = document.getElementById('edit-logs-btn');
     const cancelButton = document.getElementById('cancel-edit-btn');
+    const addRowButton = document.getElementById('add-row-btn');
+    const loadButton = document.getElementById('load-btn');
+    const meetingFilter = document.getElementById('meeting-filter');
+    let isEditing = false;
 
-    if (editButton && cancelButton) {
+    if (editButton && cancelButton && addRowButton && loadButton) {
         editButton.addEventListener('click', function() {
-            const isEditing = this.textContent === 'Done';
             if (isEditing) {
-                saveAgendaChanges();
+                saveChanges();
             } else {
-                // Enter Edit Mode
                 toggleEditMode(true);
-                this.textContent = 'Done';
-                cancelButton.style.display = 'inline-block';
             }
         });
-
         cancelButton.addEventListener('click', function() {
-            // Easiest and safest way to discard all changes is to reload the page
             window.location.reload();
         });
+        addRowButton.addEventListener('click', function() {
+            addNewRow();
+        });
     }
+
+    meetingFilter.addEventListener('change', function() {
+        const selectedMeeting = this.value;
+        const rows = document.querySelectorAll('#logs-table tbody tr');
+        rows.forEach(row => {
+            if (selectedMeeting === '' || row.dataset.meetingNumber === selectedMeeting) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+
+
+    function handleSectionChange(selectElement) {
+        const selectedTypeId = parseInt(selectElement.value, 10);
+        const sessionType = sessionTypes.find(st => st.id === selectedTypeId);
+        const row = selectElement.closest('tr');
+        const sessionTitleCell = row.querySelector('[data-field="Session_Title"]');
+        const ownerCell = row.querySelector('[data-field="Owner_ID"] select');
+        const minDurationCell = row.querySelector('[data-field="Duration_Min"] input');
+        const maxDurationCell = row.querySelector('[data-field="Duration_Max"] input');
+
+
+        if (sessionType) {
+            sessionTitleCell.querySelector('input').value = sessionType.Title;
+            if (sessionType.Is_Section) {
+                if(ownerCell) ownerCell.disabled = true;
+                if(minDurationCell) minDurationCell.disabled = true;
+                if(maxDurationCell) maxDurationCell.disabled = true;
+            } else {
+                if(ownerCell) ownerCell.disabled = false;
+                if(minDurationCell) minDurationCell.disabled = false;
+                if(maxDurationCell) maxDurationCell.disabled = false;
+            }
+        }
+    }
+
+
+    function createEditableCell(field, originalValue, isSection) {
+        const cell = document.createElement('td');
+        cell.dataset.field = field;
+
+        if (isSection && ['Owner_ID', 'Duration_Min', 'Duration_Max'].includes(field)) {
+            cell.textContent = ''; // Display empty, non-editable cell for these fields in sections
+            return cell;
+        }
+
+        if (field === 'Start_Time') {
+            cell.textContent = originalValue;
+            return cell;
+        }
+
+        if (field === 'Type_ID') {
+            const select = document.createElement('select');
+            sessionTypes.forEach(type => {
+                select.options.add(new Option(type.Title, type.id));
+            });
+            select.value = originalValue;
+            select.onchange = () => handleSectionChange(select); // Add event listener
+            cell.appendChild(select);
+        } else if (field === 'Owner_ID') {
+            const select = document.createElement('select');
+            select.options.add(new Option('-- Select Owner --', ''));
+            contacts.forEach(contact => {
+                select.options.add(new Option(contact.Name, contact.id));
+            });
+            select.value = originalValue;
+            cell.appendChild(select);
+        } else {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = originalValue;
+            input.style.width = '100%';
+            input.style.boxSizing = 'border-box';
+            cell.appendChild(input);
+        }
+        return cell;
+    }
+
+    function addNewRow() {
+        const tableBody = document.querySelector('#logs-table tbody');
+        const meetingNumber = meetingFilter.value;
+        if (!meetingNumber) {
+            alert('Please select a meeting to add a session to.');
+            return;
+        }
+        let newSeq = 1;
+
+        const newRow = document.createElement('tr');
+        newRow.dataset.id = 'new';
+        newRow.dataset.isSection = 'false';
+        newRow.dataset.meetingNumber = meetingNumber;
+
+        const fields = [
+            { name: 'Meeting_Seq', value: newSeq},
+            { name: 'Start_Time', value: '' },
+            { name: 'Session_Title', value: '' },
+            { name: 'Type_ID', value: '' },
+            { name: 'Owner_ID', value: '' },
+            { name: 'Duration_Min', value: '' },
+            { name: 'Duration_Max', value: '' }
+        ];
+
+        fields.forEach(field => {
+            const cell = createEditableCell(field.name, field.value, false);
+            cell.classList.add('edit-mode-cell');
+            newRow.appendChild(cell);
+        });
+
+        const actionsCell = document.createElement('td');
+        actionsCell.classList.add('actions-column');
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.className = 'button delete-btn icon-btn';
+        deleteBtn.onclick = function() { deleteLogRow(this); };
+        actionsCell.appendChild(deleteBtn);
+        newRow.appendChild(actionsCell);
+
+        tableBody.insertBefore(newRow, tableBody.firstChild);
+    }
+
 
     function toggleEditMode(enable) {
-        const table = document.getElementById('agenda-table');
-        const rows = table.querySelectorAll('tbody tr:not(.section-row)');
+        isEditing = enable;
+        const table = document.getElementById('logs-table');
+        const header = table.querySelector('thead');
+        const rows = table.querySelectorAll('tbody tr');
+
+        header.querySelector('.edit-mode-header').style.display = enable ? 'table-row' : 'none';
+        header.querySelector('.non-edit-mode-header').style.display = enable ? 'none' : 'table-row';
 
         rows.forEach(row => {
-            const ownerCell = row.querySelector('.owner-cell');
-            const durationCell = row.querySelector('.duration-cell');
-            const titleCell = row.querySelector('.title-cell');
-
-            if (enable) {
-                // --- Edit Owner Cell ---
-                const rawOwner = ownerCell.dataset.rawOwner;
-                if (titleCell.textContent.trim() !== 'Networking') {
-                    const select = document.createElement('select');
-                    contacts.forEach(contact => {
-                        const option = document.createElement('option');
-                        option.value = contact.Name;
-                        option.textContent = contact.Name;
-                        if (contact.Name === rawOwner) {
-                            option.selected = true;
-                        }
-                        select.appendChild(option);
-                    });
-                    ownerCell.innerHTML = '';
-                    ownerCell.appendChild(select);
-                }
-
-                // --- Edit Duration Cell ---
-                const durationText = durationCell.textContent.trim();
-                const input = document.createElement('input');
-                input.type = 'number';
-                input.value = durationText;
-                input.style.width = '60px';
-                durationCell.innerHTML = '';
-                durationCell.appendChild(input);
+            const isSection = row.dataset.isSection === 'true';
+            if (isSection) {
+                row.classList.add('section-row');
+            } else {
+                row.classList.remove('section-row');
             }
+
+            // Clear the row before rebuilding
+            row.innerHTML = '';
+
+            const fieldsOrder = ['Meeting_Seq', 'Start_Time', 'Session_Title', 'Type_ID',  'Owner_ID', 'Duration_Min', 'Duration_Max'];
+            fieldsOrder.forEach(field => {
+                const cell = createEditableCell(field, row.dataset[field.toLowerCase()], isSection);
+                row.appendChild(cell);
+            });
+
+            const actionsCell = document.createElement('td');
+            actionsCell.classList.add('actions-column');
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            deleteBtn.className = 'btn delete-btn icon-btn';
+            deleteBtn.onclick = function() { deleteLogRow(this); };
+            actionsCell.appendChild(deleteBtn);
+            row.appendChild(actionsCell);
         });
+
+        editButton.textContent = 'Done';
+        editButton.classList.remove('btn btn-primary');
+        editButton.classList.add('btn btn-green');
+        cancelButton.style.display = 'inline-block';
+        addRowButton.style.display = 'inline-block';
+        loadButton.style.display = 'none';
     }
 
-    function saveAgendaChanges() {
-        const table = document.getElementById('agenda-table');
-        const rows = table.querySelectorAll('tbody tr');
-        const agendaData = [];
+    function deleteLogRow(btn) {
+        const row = btn.parentNode.parentNode;
+        const logId = row.dataset.id;
+
+        if (logId === 'new') {
+            row.remove();
+            return;
+        }
+
+        if (confirm('Are you sure you want to delete this log?')) {
+            fetch(`/build/delete/${logId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    row.remove();
+                } else {
+                    alert('Error deleting log: '.concat(data.message));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while deleting the log.');
+            });
+        }
+    }
+
+    function saveChanges() {
+        const rows = document.querySelectorAll('#logs-table tbody tr');
+        const dataToSave = [];
 
         rows.forEach(row => {
-            if (row.classList.contains('section-row')) {
-                agendaData.push({ type: 'section', title: row.cells[0].textContent.trim() });
-            } else {
-                const ownerCell = row.querySelector('.owner-cell');
-                const ownerSelect = ownerCell.querySelector('select');
-                const owner = ownerSelect ? ownerSelect.value : ownerCell.dataset.rawOwner;
-
-                const durationInput = row.querySelector('.duration-cell input');
-                const duration = durationInput.value;
-
-                agendaData.push({
-                    type: 'item',
-                    title: row.querySelector('.title-cell').textContent.trim(),
-                    owner: owner,
-                    duration: duration
-                });
+            if (row.style.display === 'none') {
+                return;
             }
+            const rowData = {
+                id: row.dataset.id,
+                meeting_number: row.dataset.meetingNumber,
+                meeting_seq: row.querySelector('[data-field="Meeting_Seq"] input').value.trim(),
+                start_time: row.querySelector('[data-field="Start_Time"]').textContent.trim(),
+                session_title: row.querySelector('[data-field="Session_Title"] input').value,
+                type_id: row.querySelector('[data-field="Type_ID"] select').value,
+                owner_id: row.querySelector('[data-field="Owner_ID"] select') ? row.querySelector('[data-field="Owner_ID"] select').value : null,
+                duration_min: row.querySelector('[data-field="Duration_Min"] input') ? row.querySelector('[data-field="Duration_Min"] input').value : null,
+                duration_max: row.querySelector('[data-field="Duration_Max"] input') ? row.querySelector('[data-field="Duration_Max"] input').value : null,
+            };
+            dataToSave.push(rowData);
         });
 
-        fetch('{{ url_for("agenda_bp.save_agenda") }}', {
+        fetch("{{ url_for('agenda_bp.update_logs') }}", {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(agendaData),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToSave),
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Agenda saved successfully!');
                 window.location.reload();
             } else {
-                alert('Error saving agenda: ' + data.message);
+                alert('Error saving changes: '.concat(data.message));
             }
         })
-        .catch((error) => {
+        .catch(error => {
             console.error('Error:', error);
-            alert('An error occurred while saving the agenda.');
+            alert('An error occurred while saving.');
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (meetingFilter.options.length > 1) {
+            meetingFilter.selectedIndex = 1; // Select the first meeting number (largest)
+            meetingFilter.dispatchEvent(new Event('change')); // Trigger the filter
+        }
+    });
 </script>
+
 {% endblock %}

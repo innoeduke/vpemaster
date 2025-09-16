@@ -1,203 +1,289 @@
-import os
-import csv
-import io
-import re
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, send_file, current_app, jsonify
-from datetime import datetime, timedelta
-from werkzeug.utils import secure_filename
-from vpemaster.models import Contact
+
+# vpemaster/build_routes.py
+
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify
 from .main_routes import login_required
+from vpemaster.models import SessionLog, SessionType, Contact, Meeting
+from vpemaster import db
+from sqlalchemy import distinct
+from datetime import datetime, timedelta
+import io
+import csv
+import re
+
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
-def _generate_agenda_items(filename):
-    """
-    Generates the agenda items from a given file.
-    """
-    agenda_items = []
-
-    # Use an absolute path to be safe
-    abs_filename = os.path.join(current_app.root_path, 'agendas', os.path.basename(filename))
-
-    try:
-        with open(abs_filename, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-    except FileNotFoundError:
-        return f"Error: The agenda file could not be found: {os.path.basename(filename)}", 500, None
-    except Exception as e:
-        return f"An error occurred while reading the agenda file: {e}", 500, None
-
-    if not lines:
-        return "Error: The agenda file is empty.", 500, None
-
-    first_line = lines[0].strip()
-    time_match = re.search(r'\d{1,2}:\d{2}', first_line)
-
-    if not time_match:
-        return "Error: Could not find a valid start time in HH:MM format on the first line.", 500
-
-    start_time_str = time_match.group(0)
-
-    try:
-        current_time = datetime.strptime(start_time_str, '%H:%M')
-    except ValueError:
-        return f"Error: Found '{start_time_str}', but it is not a valid time.", 500
-
-    # Store start time to reconstruct file later
-    agenda_start_time = start_time_str
-
-    for i, line in enumerate(lines[1:], 2):
-        line = line.strip()
-        if not line:
+def _group_and_sort_sessions(data):
+    items_by_meeting = {}
+    for item in data:
+        meeting_number = item.get('meeting_number')
+        if not meeting_number:
             continue
+        if meeting_number not in items_by_meeting:
+            items_by_meeting[meeting_number] = []
+        items_by_meeting[meeting_number].append(item)
 
-        parts = line.split(',')
-        if len(parts) == 1:
-            section_title = parts[0].strip()
-            agenda_items.append({'time': '', 'title': section_title, 'is_section': True})
-            continue
+    for meeting_number, items in items_by_meeting.items():
+        original_logs = SessionLog.query.filter_by(Meeting_Number=meeting_number).all()
+        original_seqs = {log.id: log.Meeting_Seq for log in original_logs}
 
-        if len(parts) != 3:
-            return f"Error on line {i}: Each session must have a title, owner, and duration, separated by commas.", 500
+        def sort_key(item):
+            new_seq_str = item.get('meeting_seq', '999')
+            try:
+                new_seq = int(new_seq_str)
+            except (ValueError, TypeError):
+                new_seq = 999
+            item_id_str = item.get('id')
+            priority = 0
+            if item_id_str == 'new':
+                priority = 0
+            else:
+                try:
+                    item_id = int(item_id_str)
+                    original_seq = original_seqs.get(item_id)
+                    if original_seq == new_seq:
+                        priority = 1
+                    else:
+                        priority = 2
+                except (ValueError, TypeError):
+                    priority = 0
+            return (new_seq, priority)
 
-        title, owner, duration_str = [p.strip() for p in parts]
+        items_by_meeting[meeting_number] = sorted(items, key=sort_key)
 
+    return items_by_meeting
+
+def _create_or_update_session(item, meeting_number, seq):
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        new_meeting = Meeting(Meeting_Number=meeting_number)
+        db.session.add(new_meeting)
+        db.session.flush()
+        meeting = new_meeting
+
+    if seq == 1 and item.get('start_time'):
         try:
-            duration = int(duration_str)
+            meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M:%S').time()
         except ValueError:
-            return f"Error on line {i}: The duration '{duration_str}' is not a valid number.", 500
+            meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M').time()
 
-        agenda_items.append({'time': current_time.strftime('%H:%M'), 'title': title, 'owner': owner, 'raw_owner': owner, 'duration': duration, 'is_section': False})
+    type_id = item.get('type_id')
+    session_type = SessionType.query.get(type_id)
+    session_title = item.get('session_title')
 
-        if agenda_items and "Networking" not in agenda_items[-1]['title']:
-             current_time += timedelta(minutes=1)
+    if item['id'] == 'new':
+        if not session_title and session_type:
+            session_title = session_type.Title
+        new_log = SessionLog(
+            Meeting_Number=meeting_number,
+            Meeting_Seq=seq,
+            Type_ID=type_id,
+            Owner_ID=item['owner_id'] if item['owner_id'] else None,
+            Duration_Min=item['duration_min'] if item['duration_min'] else None,
+            Duration_Max=item['duration_max'] if item['duration_max'] else None,
+            Session_Title=session_title
+        )
+        db.session.add(new_log)
+    else:
+        log = SessionLog.query.get(item['id'])
+        if log:
+            log.Meeting_Number = meeting_number
+            log.Meeting_Seq = seq
+            log.Type_ID = type_id
+            log.Owner_ID = item.get('owner_id') if item.get('owner_id') else None
+            log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
+            log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
 
-        if agenda_items and agenda_items[-1]['title'].startswith('Evaluator'):
-            current_time += timedelta(minutes=1)
+            if session_title is not None and session_title != '':
+                log.Session_Title = session_title
+            elif session_type:
+                log.Session_Title = session_type.Title
+            else:
+                log.Session_Title = ''
 
-        current_time += timedelta(minutes=duration)
+def _recalculate_start_times(meeting_numbers_to_update):
+    for meeting_num in meeting_numbers_to_update:
+        meeting = Meeting.query.filter_by(Meeting_Number=meeting_num).first()
+        if not meeting or not meeting.Start_Time:
+            continue
 
-        if owner:
-            contact = Contact.query.filter_by(Name=owner).first()
-            if contact:
-                updated_owner = owner
-                if contact.Club == 'Guest':
-                    updated_owner = f"{owner} - Guest"
-                elif contact.Club and contact.Club != 'SHLTMC':
-                    updated_owner = f"{owner}@{contact.Club}"
-                elif contact.Completed_Levels:
-                    updated_owner = f"{owner} - {contact.Completed_Levels}"
-                agenda_items[-1]['owner'] = updated_owner
+        current_time = meeting.Start_Time
 
-    return agenda_items, None, agenda_start_time
+        logs_to_update = db.session.query(SessionLog, SessionType.Is_Section)\
+            .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
+            .filter(SessionLog.Meeting_Number == meeting_num)\
+            .order_by(SessionLog.Meeting_Seq.asc()).all()
 
+        for log, is_section in logs_to_update:
+            if not is_section:
+                log.Start_Time = current_time
+                duration_to_add = int(log.Duration_Max or 0)
+                dt_current_time = datetime.combine(datetime.today(), current_time)
+                next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
+                current_time = next_dt.time()
+            else:
+                log.Start_Time = None
 
 @agenda_bp.route('/agenda', methods=['GET'])
 @login_required
 def agenda():
-    UPLOAD_FOLDER = os.path.join(current_app.root_path, 'agendas')
-    active_filename = session.get('active_agenda_filename', 'default.csv')
-    active_agenda_path = os.path.join(UPLOAD_FOLDER, active_filename)
+    """
+    Renders the agenda builder page, displaying all session logs.
+    """
+    session_logs = db.session.query(SessionLog, SessionType.Is_Section).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True).order_by(SessionLog.Meeting_Number.asc(), SessionLog.Meeting_Seq.asc()).all()
 
-    agenda_items, error_code, _ = _generate_agenda_items(active_agenda_path)
+    # Sort meeting numbers in descending order to have the latest first
+    meeting_numbers = db.session.query(distinct(SessionLog.Meeting_Number)).order_by(SessionLog.Meeting_Number.desc()).all()
+
+    session_types_query = SessionType.query.order_by(SessionType.Title.asc()).all()
+    session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section} for s in session_types_query]
 
     contacts_query = Contact.query.order_by(Contact.Name.asc()).all()
-    # Convert contact objects to a list of dictionaries to be JSON-safe
-    contacts_data = [{"Name": c.Name} for c in contacts_query]
+    contacts_data = [{"id": c.id, "Name": c.Name} for c in contacts_query]
 
-    if error_code:
-        flash(agenda_items, 'error')
-        if 'active_agenda_filename' in session:
-            session.pop('active_agenda_filename')
-            return redirect(url_for('agenda_bp.agenda'))
-        return render_template('agenda.html', agenda_items=[], contacts=contacts_data)
+    return render_template('build.html',
+                           logs=session_logs,
+                           session_types=session_types_data,
+                           contacts=contacts_data,
+                           meeting_numbers=[num[0] for num in meeting_numbers])
 
-    return render_template('agenda.html', agenda_items=agenda_items, contacts=contacts_data)
 
-@agenda_bp.route('/agenda/save', methods=['POST'])
+@agenda_bp.route('/agenda/load', methods=['POST'])
 @login_required
-def save_agenda():
-    if session.get('user_role') not in ['Admin', 'Officer']:
-        return jsonify(success=False, message="Permission denied"), 403
+def load_csv():
+    if 'file' not in request.files:
+        return redirect(url_for('agenda_bp.build', message='No file part', category='error'))
 
+    file = request.files['file']
+    if file.filename == '':
+        return redirect(url_for('agenda_bp.build', message='No selected file', category='error'))
+
+    if file and file.filename.endswith('.csv'):
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+
+        # 1. Process first line for meeting info
+        first_line = stream.readline().strip()
+        cleaned_line = re.sub(r'^\W+|\W+$', '', first_line)
+        parts = cleaned_line.split(',')
+        if len(parts) < 2:
+            return redirect(url_for('agenda_bp.build', message='Invalid first line format.', category='error'))
+
+        meeting_number, start_time_str = parts[0], parts[1]
+
+        try:
+            current_time = datetime.strptime(start_time_str, '%H:%M').time()
+        except ValueError:
+            return redirect(url_for('agenda_bp.build', message='Invalid start time format in first line.', category='error'))
+
+        meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+        if not meeting:
+            meeting = Meeting(Meeting_Number=meeting_number, Start_Time=current_time)
+            db.session.add(meeting)
+            db.session.flush()
+        else:
+            meeting.Start_Time = current_time # Update start time if meeting exists
+
+        # 2. Process subsequent rows for sessions
+        csv_reader = csv.reader(stream)
+        seq = 1
+        for row in csv_reader:
+            if not row: continue # Skip empty rows
+
+            session_title_from_csv = row[0].strip() if len(row) > 0 else ''
+            owner_name = row[1].strip() if len(row) > 1 and row[1] else ''
+
+            # 4. Match Session Type
+            session_type = SessionType.query.filter_by(Title=session_title_from_csv).first()
+            type_id = session_type.id if session_type else 0
+
+            session_title = session_type.Title if session_type else session_title_from_csv
+
+
+            # 6. Match Owner
+            owner_id = None
+            if owner_name:
+                # Normalize whitespace by splitting and rejoining
+                normalized_name = ' '.join(owner_name.split())
+                owner = Contact.query.filter_by(Name=normalized_name).first()
+                if owner:
+                    owner_id = owner.id
+
+            # 7. Handle Durations
+            duration_min, duration_max = None, None
+            if len(row) > 3:
+                duration_min = row[2].strip() if row[2] else None
+                duration_max = row[3].strip() if row[3] else None
+            elif len(row) > 2:
+                duration_max = row[2].strip() if row[2] else None
+
+            if not duration_max and not duration_min and session_type:
+                duration_max = session_type.Duration_Max
+                duration_min = session_type.Duration_Min
+
+            # Create Session Log
+            new_log = SessionLog(
+                Meeting_Number=meeting_number,
+                Meeting_Seq=seq,
+                Type_ID=type_id,
+                Owner_ID=owner_id,
+                Session_Title=session_title,
+                Duration_Min=duration_min,
+                Duration_Max=duration_max
+            )
+
+            # 7. Calculate Start Time for non-sections
+            if session_type and not session_type.Is_Section:
+                new_log.Start_Time = current_time
+                # Calculate next start time
+                duration_to_add = int(duration_max) if duration_max else 0
+                dt_current_time = datetime.combine(datetime.today(), current_time)
+                next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
+                current_time = next_dt.time()
+
+            db.session.add(new_log)
+            seq += 1
+
+        db.session.commit()
+        return redirect(url_for('agenda_bp.build'))
+    else:
+        return redirect(url_for('agenda_bp.build', message='Invalid file type. Please upload a CSV file.', category='error'))
+
+
+@agenda_bp.route('/agenda/update', methods=['POST'])
+@login_required
+def update_logs():
     data = request.get_json()
     if not data:
         return jsonify(success=False, message="No data received"), 400
 
-    UPLOAD_FOLDER = os.path.join(current_app.root_path, 'agendas')
-    active_filename = session.get('active_agenda_filename', 'default.csv')
-    file_path = os.path.join(UPLOAD_FOLDER, secure_filename(active_filename))
-
-    # To save the file, we need the original start time
-    _, _, start_time = _generate_agenda_items(file_path)
-
     try:
-        with open(file_path, 'w', newline='', encoding='utf-8') as f:
-            f.write(f"{start_time}\n") # Removed for simplicity in saving
-            for item in data:
-                if item['type'] == 'section':
-                    f.write(f"{item['title']}\n")
-                else:
-                    f.write(f"{item['title']},{item['owner']},{item['duration']}\n")
+        items_by_meeting = _group_and_sort_sessions(data)
+
+        for meeting_number, items in items_by_meeting.items():
+            for seq, item in enumerate(items, 1):
+                _create_or_update_session(item, meeting_number, seq)
+
+        _recalculate_start_times(items_by_meeting.keys())
+
+        db.session.commit()
         return jsonify(success=True)
     except Exception as e:
+        db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
 
 
-@agenda_bp.route('/agenda/import', methods=['POST'])
+@agenda_bp.route('/agenda/delete/<int:log_id>', methods=['POST'])
 @login_required
-def import_agenda_from_csv():
-    UPLOAD_FOLDER = os.path.join(current_app.root_path, 'agendas')
-
-    if 'file' not in request.files:
-        flash('No file part in the request.', 'error')
-        return redirect(url_for('agenda_bp.agenda'))
-
-    file = request.files['file']
-
-    if file.filename == '':
-        flash('No file was selected.', 'error')
-        return redirect(url_for('agenda_bp.agenda'))
-
-    if file and file.filename.endswith('.csv'):
-        filename = secure_filename(file.filename)
-        save_path = os.path.join(UPLOAD_FOLDER, filename)
-        file.save(save_path)
-        session['active_agenda_filename'] = filename
-        flash(f"'{filename}' has been imported successfully!", 'success')
-    else:
-        flash('Invalid file type. Please upload a .csv file.', 'error')
-
-    return redirect(url_for('agenda_bp.agenda'))
-
-
-@agenda_bp.route('/export_agenda')
-@login_required
-def export_agenda_to_csv():
-    UPLOAD_FOLDER = os.path.join(current_app.root_path, 'agendas')
-    active_filename = session.get('active_agenda_filename', 'default.csv')
-    active_agenda_path = os.path.join(UPLOAD_FOLDER, active_filename)
-
-    agenda_items, error_code, _ = _generate_agenda_items(active_agenda_path)
-
-    if error_code:
-        flash(agenda_items, "error")
-        return redirect(url_for('agenda_bp.agenda'))
-
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['Time', 'Title', 'Owner', 'Duration (min)'])
-
-    for item in agenda_items:
-        if item.get('is_section'):
-            writer.writerow(['', item['title'], '', ''])
-        else:
-            writer.writerow([item.get('time', ''), item.get('title', ''), item.get('owner', ''), item.get('duration', '')])
-
-    output.seek(0)
-    export_filename = f"exported_{active_filename}"
-
-    return send_file(io.BytesIO(output.getvalue().encode('utf-8')),
-                     mimetype='text/csv',
-                     as_attachment=True,
-                     download_name=export_filename)
+def delete_log(log_id):
+    """
+    Deletes a session log.
+    """
+    log = SessionLog.query.get_or_404(log_id)
+    try:
+        db.session.delete(log)
+        db.session.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
