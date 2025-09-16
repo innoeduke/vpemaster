@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from vpemaster import db
 from vpemaster.models import SpeechLog, Contact, User, Project
 from .main_routes import login_required
-from datetime import datetime
+from sqlalchemy import distinct
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
@@ -13,19 +13,23 @@ speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 def show_speech_logs():
     user_role = session.get('user_role')
     all_logs = []
+    owners = []
 
     if user_role == 'Member':
         user_id = session.get('user_id')
         if user_id:
             user = User.query.get(user_id)
             if user and user.Contact_ID:
-                # If the user is a Member, only show their own speech logs
                 all_logs = SpeechLog.query.filter_by(Contact_ID=user.Contact_ID).order_by(SpeechLog.Meeting_Number.asc()).all()
     else:
-        # For Admins and Officers, show all speech logs
         all_logs = SpeechLog.query.order_by(SpeechLog.Meeting_Number.asc()).all()
+        # Get distinct owner names for the filter
+        owner_names = db.session.query(distinct(SpeechLog.Name)).order_by(SpeechLog.Name.asc()).all()
+        owners = [name[0] for name in owner_names]
 
-    return render_template('speech_logs.html', logs=all_logs)
+    return render_template('speech_logs.html', logs=all_logs, owners=owners)
+
+# ... (rest of the file remains the same)
 
 @speech_logs_bp.route('/speech_log/form', methods=['GET'])
 @login_required

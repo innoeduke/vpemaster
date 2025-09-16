@@ -5,12 +5,6 @@
 {% block content %}
     <h1>Agenda Builder</h1>
 
-    <div class="button-group">
-        <button id="edit-logs-btn" class="add-button">Edit</button>
-        <button id="add-row-btn" class="add-button" style="display: none;">Add</button>
-        <button id="cancel-edit-btn" class="cancel-btn" style="display: none;">Cancel</button>
-    </div>
-
     <div class="form-container">
         <div class="form-group">
             <label for="meeting-filter">Filter by Meeting Number:</label>
@@ -23,11 +17,25 @@
         </div>
     </div>
 
+
+    <div class="button-group">
+        <button id="edit-logs-btn" class="add-button">Edit</button>
+        <button id="add-row-btn" class="add-button" style="display: none;">Add</button>
+        <button id="cancel-edit-btn" class="cancel-btn" style="display: none;">Cancel</button>
+        <form id="load-form" action="{{ url_for('build_bp.load_csv') }}" method="post" enctype="multipart/form-data" style="display: inline;">
+            <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
+            <button id="load-btn" type="button" class="add-button" onclick="document.getElementById('csv-file').click()">Load</button>
+        </form>
+        {% if message %}
+        <span class="inline-message {{ category }}">{{ message }}</span>
+        {% endif %}
+    </div>
+
     <table id="logs-table">
         <thead>
             <tr>
                 <th class="edit-mode-cell" style="display: none;">No</th>
-                <th>Meeting Number</th>
+                <th class="edit-mode-cell" style="display: none;">Meeting Number</th>
                 <th>Start Time</th>
                 <th>Session Type</th>
                 <th>Owner</th>
@@ -42,14 +50,14 @@
             {% for log, is_section in logs %}
             <tr data-id="{{ log.id }}" data-meeting-number="{{ log.Meeting_Number }}" data-is-section="{{ is_section }}">
                 <td data-field="Meeting_Seq" class="edit-mode-cell" style="display: none;">{{ log.Meeting_Seq }}</td>
-                <td data-field="Meeting_Number">{{ log.Meeting_Number }}</td>
-                <td data-field="Start_Time">{{ log.Start_Time.strftime('%H:%M:%S') if log.Start_Time is not none else '' }}</td>
+                <td data-field="Meeting_Number" class="edit-mode-cell" style="display: none;">{{ log.Meeting_Number }}</td>
 
                 {% if is_section %}
-                    <td colspan="3" class="non-edit-mode-cell section-row" data-field="Type_ID" data-value="{{ log.Type_ID }}">
+                    <td colspan="4" class="non-edit-mode-cell section-row" data-field="Type_ID" data-value="{{ log.Type_ID }}">
                         {% for type in session_types %}{% if type.id == log.Type_ID %}{{ type.Title }}{% endif %}{% endfor %}
                     </td>
                 {% else %}
+                    <td data-field="Start_Time">{{ log.Start_Time.strftime('%H:%M:%S') if log.Start_Time is not none else '' }}</td>
                     <td data-field="Type_ID" data-value="{{ log.Type_ID }}">
                         {% for type in session_types %}{% if type.id == log.Type_ID %}{{ type.Title }}{% endif %}{% endfor %}
                     </td>
@@ -77,10 +85,11 @@
     const editButton = document.getElementById('edit-logs-btn');
     const cancelButton = document.getElementById('cancel-edit-btn');
     const addRowButton = document.getElementById('add-row-btn');
+    const loadButton = document.getElementById('load-btn');
     const meetingFilter = document.getElementById('meeting-filter');
     let isEditing = false;
 
-    if (editButton && cancelButton && addRowButton) {
+    if (editButton && cancelButton && addRowButton && loadButton) {
         editButton.addEventListener('click', function() {
             if (isEditing) {
                 saveChanges();
@@ -148,6 +157,14 @@
 
         if (isSection && ['Owner_ID', 'Duration_Min', 'Duration_Max', 'Start_Time', 'Notes'].includes(field)) {
             cell.innerHTML = '';
+            return cell;
+        }
+
+        // Make Start_Time non-editable
+        if (field === 'Start_Time') {
+            const span = document.createElement('span');
+            span.textContent = originalValue;
+            cell.appendChild(span);
             return cell;
         }
 
@@ -296,6 +313,7 @@
         editButton.classList.toggle('done-btn', enable);
         cancelButton.style.display = 'inline-block';
         addRowButton.style.display = 'inline-block';
+        loadButton.style.display = enable ? 'none' : 'inline-block';
     }
 
     function deleteLogRow(btn) {
@@ -365,5 +383,13 @@
             alert('An error occurred while saving.');
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (meetingFilter.options.length > 1) {
+            meetingFilter.selectedIndex = 1; // Select the first meeting number (largest)
+            meetingFilter.dispatchEvent(new Event('change')); // Trigger the filter
+        }
+    });
 </script>
+
 {% endblock %}

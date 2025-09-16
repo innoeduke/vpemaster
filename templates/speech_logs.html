@@ -4,9 +4,24 @@
 
 {% block content %}
     <h1>Speech Logs</h1>
+
+    {% if session.get('user_role') in ['Admin', 'Officer'] %}
+    <div class="form-container">
+        <div class="form-group">
+            <label for="owner-filter">Filter by Speaker:</label>
+            <select id="owner-filter">
+                <option value="">All Speakers</option>
+                {% for owner in owners %}
+                <option value="{{ owner }}">{{ owner }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    {% endif %}
+
     <a href="{{ url_for('speech_logs_bp.speech_log_form') }}" class="add-button">Add New Speech Log</a>
 
-    <table>
+    <table id="speech-logs-table">
         <thead>
             <tr>
                 <th>Meeting Number</th>
@@ -25,7 +40,7 @@
         </thead>
         <tbody>
             {% for log in logs %}
-            <tr>
+            <tr data-owner="{{ log.Name }}">
                 <td>{% if log.Meeting_Number %}{{ log.Meeting_Number }}{% endif %}</td>
                 <td>
                     {% if log.Meeting_Date %}
@@ -81,6 +96,7 @@
     <script>
         const modal = document.getElementById('deleteModal');
         const deleteForm = document.getElementById('deleteForm');
+        const ownerFilter = document.getElementById('owner-filter');
 
         function showDeleteModal(logId) {
             deleteForm.action = `/speech_log/delete/${logId}`;
@@ -89,6 +105,20 @@
 
         function hideDeleteModal() {
             modal.style.display = 'none';
+        }
+
+        if(ownerFilter) {
+            ownerFilter.addEventListener('change', function() {
+                const selectedOwner = this.value;
+                const rows = document.querySelectorAll('#speech-logs-table tbody tr');
+                rows.forEach(row => {
+                    if (selectedOwner === '' || row.dataset.owner === selectedOwner) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
         }
     </script>
 {% endblock %}

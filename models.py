@@ -66,6 +66,7 @@ class Meeting(db.Model):
     ID = db.Column(db.Integer, primary_key=True)
     Meeting_Number = db.Column(db.SmallInteger, unique=True)
     Meeting_Date = db.Column(db.Date)
+    Start_Time = db.Column(db.Time)
     Meeting_Template = db.Column(db.String(100))
     WOD = db.Column(db.String(100))
     Best_TT_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
