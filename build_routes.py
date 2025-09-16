@@ -12,6 +12,117 @@ import re
 
 build_bp = Blueprint('build_bp', __name__)
 
+def _group_and_sort_sessions(data):
+    items_by_meeting = {}
+    for item in data:
+        meeting_number = item.get('meeting_number')
+        if not meeting_number:
+            continue
+        if meeting_number not in items_by_meeting:
+            items_by_meeting[meeting_number] = []
+        items_by_meeting[meeting_number].append(item)
+
+    for meeting_number, items in items_by_meeting.items():
+        original_logs = SessionLog.query.filter_by(Meeting_Number=meeting_number).all()
+        original_seqs = {log.id: log.Meeting_Seq for log in original_logs}
+
+        def sort_key(item):
+            new_seq_str = item.get('meeting_seq', '999')
+            try:
+                new_seq = int(new_seq_str)
+            except (ValueError, TypeError):
+                new_seq = 999
+            item_id_str = item.get('id')
+            priority = 0
+            if item_id_str == 'new':
+                priority = 0
+            else:
+                try:
+                    item_id = int(item_id_str)
+                    original_seq = original_seqs.get(item_id)
+                    if original_seq == new_seq:
+                        priority = 1
+                    else:
+                        priority = 2
+                except (ValueError, TypeError):
+                    priority = 0
+            return (new_seq, priority)
+
+        items_by_meeting[meeting_number] = sorted(items, key=sort_key)
+
+    return items_by_meeting
+
+def _create_or_update_session(item, meeting_number, seq):
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        new_meeting = Meeting(Meeting_Number=meeting_number)
+        db.session.add(new_meeting)
+        db.session.flush()
+        meeting = new_meeting
+
+    if seq == 1 and item.get('start_time'):
+        try:
+            meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M:%S').time()
+        except ValueError:
+            meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M').time()
+
+    type_id = item.get('type_id')
+    session_type = SessionType.query.get(type_id)
+    session_title = item.get('session_title')
+
+    if item['id'] == 'new':
+        if not session_title and session_type:
+            session_title = session_type.Title
+        new_log = SessionLog(
+            Meeting_Number=meeting_number,
+            Meeting_Seq=seq,
+            Type_ID=type_id,
+            Owner_ID=item['owner_id'] if item['owner_id'] else None,
+            Duration_Min=item['duration_min'] if item['duration_min'] else None,
+            Duration_Max=item['duration_max'] if item['duration_max'] else None,
+            Session_Title=session_title
+        )
+        db.session.add(new_log)
+    else:
+        log = SessionLog.query.get(item['id'])
+        if log:
+            log.Meeting_Number = meeting_number
+            log.Meeting_Seq = seq
+            log.Type_ID = type_id
+            log.Owner_ID = item.get('owner_id') if item.get('owner_id') else None
+            log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
+            log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
+
+            if session_title is not None and session_title != '':
+                log.Session_Title = session_title
+            elif session_type:
+                log.Session_Title = session_type.Title
+            else:
+                log.Session_Title = ''
+
+def _recalculate_start_times(meeting_numbers_to_update):
+    for meeting_num in meeting_numbers_to_update:
+        meeting = Meeting.query.filter_by(Meeting_Number=meeting_num).first()
+        if not meeting or not meeting.Start_Time:
+            continue
+
+        current_time = meeting.Start_Time
+
+        logs_to_update = db.session.query(SessionLog, SessionType.Is_Section)\
+            .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
+            .filter(SessionLog.Meeting_Number == meeting_num)\
+            .order_by(SessionLog.Meeting_Seq.asc()).all()
+
+        for log, is_section in logs_to_update:
+            if not is_section:
+                log.Start_Time = current_time
+                duration_to_add = int(log.Duration_Max or 0)
+                dt_current_time = datetime.combine(datetime.today(), current_time)
+                next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
+                current_time = next_dt.time()
+            else:
+                log.Start_Time = None
+
 @build_bp.route('/build', methods=['GET'])
 @login_required
 def build():
@@ -145,118 +256,13 @@ def update_logs():
         return jsonify(success=False, message="No data received"), 400
 
     try:
-        meeting_numbers_to_update = set()
-        items_by_meeting = {}
-
-        for item in data:
-            meeting_number = item.get('meeting_number')
-            if not meeting_number:
-                continue
-            meeting_numbers_to_update.add(meeting_number)
-            if meeting_number not in items_by_meeting:
-                items_by_meeting[meeting_number] = []
-            items_by_meeting[meeting_number].append(item)
+        items_by_meeting = _group_and_sort_sessions(data)
 
         for meeting_number, items in items_by_meeting.items():
-            # Get original sequences for tie-breaking
-            original_logs = SessionLog.query.filter_by(Meeting_Number=meeting_number).all()
-            original_seqs = {log.id: log.Meeting_Seq for log in original_logs}
+            for seq, item in enumerate(items, 1):
+                _create_or_update_session(item, meeting_number, seq)
 
-            # Define a custom sort key to handle re-ordering
-            def sort_key(item):
-                new_seq = int(item.get('meeting_seq', 999))
-                item_id_str = item.get('id')
-                priority = 0
-                if item_id_str == 'new':
-                    priority = 0
-                else:
-                    try:
-                        item_id = int(item_id_str)
-                        original_seq = original_seqs.get(item_id)
-                        if original_seq == new_seq:
-                            priority = 2
-                        else:
-                            priority = 1
-                    except (ValueError, TypeError):
-                        # This will handle cases where item_id is not a valid integer
-                        priority = 0
-
-                return (new_seq, priority)
-
-            # Sort items by the new sequence number, with our priority tie-breaking
-            sorted_items = sorted(items, key=sort_key)
-
-            for seq, item in enumerate(sorted_items, 1):
-                meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
-                if not meeting:
-                    new_meeting = Meeting(Meeting_Number=meeting_number)
-                    db.session.add(new_meeting)
-                    db.session.flush()
-                    meeting = new_meeting
-
-                if seq == 1 and item.get('start_time'):
-                    try:
-                        meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M:%S').time()
-                    except ValueError:
-                        meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M').time()
-
-                type_id = item.get('type_id')
-                session_type = SessionType.query.get(type_id)
-                session_title = item.get('session_title')
-
-                if item['id'] == 'new':
-                    if not session_title and session_type:
-                        session_title = session_type.Title
-                    new_log = SessionLog(
-                        Meeting_Number=meeting_number,
-                        Meeting_Seq=seq,
-                        Type_ID=type_id,
-                        Owner_ID=item['owner_id'] if item['owner_id'] else None,
-                        Duration_Min=item['duration_min'] if item['duration_min'] else None,
-                        Duration_Max=item['duration_max'] if item['duration_max'] else None,
-                        Session_Title=session_title
-                    )
-                    db.session.add(new_log)
-                else:
-                    log = SessionLog.query.get(item['id'])
-                    if log:
-                        log.Meeting_Number = meeting_number
-                        log.Meeting_Seq = seq
-                        log.Type_ID = type_id
-                        log.Owner_ID = item.get('owner_id') if item.get('owner_id') else None
-                        log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
-                        log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
-
-                        if session_title:
-                            log.Session_Title = session_title
-                        elif session_type:
-                            log.Session_Title = session_type.Title
-                        else:
-                            log.Session_Title = ''
-
-
-        # Recalculate start times
-        for meeting_num in meeting_numbers_to_update:
-            meeting = Meeting.query.filter_by(Meeting_Number=meeting_num).first()
-            if not meeting or not meeting.Start_Time:
-                continue
-
-            current_time = meeting.Start_Time
-
-            logs_to_update = db.session.query(SessionLog, SessionType.Is_Section)\
-                .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
-                .filter(SessionLog.Meeting_Number == meeting_num)\
-                .order_by(SessionLog.Meeting_Seq.asc()).all()
-
-            for log, is_section in logs_to_update:
-                if not is_section:
-                    log.Start_Time = current_time
-                    duration_to_add = int(log.Duration_Max or 0)
-                    dt_current_time = datetime.combine(datetime.today(), current_time)
-                    next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
-                    current_time = next_dt.time()
-                else:
-                    log.Start_Time = None
+        _recalculate_start_times(items_by_meeting.keys())
 
         db.session.commit()
         return jsonify(success=True)

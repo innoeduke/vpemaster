@@ -6,9 +6,9 @@
     <h1>Speech Logs</h1>
 
     {% if session.get('user_role') in ['Admin', 'Officer'] %}
-    <div class="form-container">
-        <div class="form-group">
-            <label for="owner-filter">Filter by Speaker:</label>
+    <div class="action-bar">
+        <div class="inline-filter-group">
+            <label for="owner-filter">Speaker:</label>
             <select id="owner-filter">
                 <option value="">All Speakers</option>
                 {% for owner in owners %}
@@ -16,10 +16,9 @@
                 {% endfor %}
             </select>
         </div>
+        <a href="{{ url_for('speech_logs_bp.speech_log_form') }}" class="add-button">Add New Speech Log</a>
     </div>
     {% endif %}
-
-    <a href="{{ url_for('speech_logs_bp.speech_log_form') }}" class="add-button">Add New Speech Log</a>
 
     <table id="speech-logs-table">
         <thead>
@@ -71,9 +70,11 @@
                     {% endif %}
                 </td>
                 {% if session.get('user_role') in ['Admin', 'Officer'] %}
-                <td class="action-links">
-                    <a href="{{ url_for('speech_logs_bp.speech_log_form', log_id=log.id) }}" class="button icon-btn" title="Edit"><i class="fas fa-edit"></i></a>
-                    <button class="button delete-btn icon-btn" onclick="showDeleteModal({{ log.id }})" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                <td>
+                    <div class="action-links">
+                        <a href="{{ url_for('speech_logs_bp.speech_log_form', log_id=log.id) }}" class="button icon-btn" title="Edit"><i class="fas fa-edit"></i></a>
+                        <button class="button delete-btn icon-btn" onclick="showDeleteModal({{ log.id }})" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                    </div>
                 </td>
                 {% endif %}
             </tr>

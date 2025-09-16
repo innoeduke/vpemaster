@@ -32,11 +32,11 @@
         #logs-table .edit-mode-header th:nth-child(8) { width: 11%; } /* Actions */
 
     </style>
-    <h1>Agenda Builder</h1>
+    <h1>Meeting Agenda</h1>
 
-    <div class="form-container">
-        <div class="form-group">
-            <label for="meeting-filter">Filter by Meeting Number:</label>
+    <div class="action-bar">
+        <div class="inline-filter-group">
+            <label for="meeting-filter">Meeting:</label>
             <select id="meeting-filter">
                 <option value="">All Meetings</option>
                 {% for num in meeting_numbers %}
@@ -44,17 +44,16 @@
                 {% endfor %}
             </select>
         </div>
-    </div>
 
-
-    <div class="button-group">
-        <button id="edit-logs-btn" class="add-button">Edit</button>
-        <button id="add-row-btn" class="add-button" style="display: none;">Add</button>
-        <button id="cancel-edit-btn" class="cancel-btn" style="display: none;">Cancel</button>
-        <form id="load-form" action="{{ url_for('build_bp.load_csv') }}" method="post" enctype="multipart/form-data" style="display: inline;">
-            <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
-            <button id="load-btn" type="button" class="add-button" onclick="document.getElementById('csv-file').click()">Load</button>
-        </form>
+        <div class="button-group">
+            <button id="edit-logs-btn" class="add-button">Edit</button>
+            <button id="add-row-btn" class="add-button" style="display: none;">Add</button>
+            <button id="cancel-edit-btn" class="cancel-btn" style="display: none;">Cancel</button>
+            <form id="load-form" action="{{ url_for('build_bp.load_csv') }}" method="post" enctype="multipart/form-data" style="display: inline;">
+                <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
+                <button id="load-btn" type="button" class="add-button" onclick="document.getElementById('csv-file').click()">Load</button>
+            </form>
+        </div>
     </div>
 
     <table id="logs-table">
@@ -82,19 +81,20 @@
                 data-meeting-number="{{ log.Meeting_Number }}"
                 data-is-section="{{ is_section|lower }}"
                 data-meeting_seq="{{ log.Meeting_Seq }}"
-                data-start_time="{{ log.Start_Time.strftime('%H:%M:%S') if log.Start_Time is not none else '' }}"
+                data-start_time="{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}"
                 data-type_id="{{ log.Type_ID }}"
                 data-session_title="{{ log.Session_Title if log.Session_Title is not none else '' }}"
                 data-owner_id="{{ log.Owner_ID }}"
                 data-duration_min="{{ log.Duration_Min if log.Duration_Min is not none else '' }}"
-                data-duration_max="{{ log.Duration_Max if log.Duration_Max is not none else '' }}">
+                data-duration_max="{{ log.Duration_Max if log.Duration_Max is not none else '' }}"
+                class="{{ 'section-row' if is_section else '' }}">
 
                 {% if is_section %}
-                    <td colspan="4" class="non-edit-mode-cell section-row">
+                    <td colspan="4" class="non-edit-mode-cell">
                         {{ log.Session_Title }}
                     </td>
                 {% else %}
-                    <td class="non-edit-mode-cell">{{ log.Start_Time.strftime('%H:%M:%S') if log.Start_Time is not none else '' }}</td>
+                    <td class="non-edit-mode-cell">{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}</td>
                     <td class="non-edit-mode-cell">
                         {{ log.Session_Title }}
                     </td>
@@ -156,9 +156,22 @@
         const sessionType = sessionTypes.find(st => st.id === selectedTypeId);
         const row = selectElement.closest('tr');
         const sessionTitleCell = row.querySelector('[data-field="Session_Title"]');
+        const ownerCell = row.querySelector('[data-field="Owner_ID"] select');
+        const minDurationCell = row.querySelector('[data-field="Duration_Min"] input');
+        const maxDurationCell = row.querySelector('[data-field="Duration_Max"] input');
+
 
         if (sessionType) {
             sessionTitleCell.querySelector('input').value = sessionType.Title;
+            if (sessionType.Is_Section) {
+                if(ownerCell) ownerCell.disabled = true;
+                if(minDurationCell) minDurationCell.disabled = true;
+                if(maxDurationCell) maxDurationCell.disabled = true;
+            } else {
+                if(ownerCell) ownerCell.disabled = false;
+                if(minDurationCell) minDurationCell.disabled = false;
+                if(maxDurationCell) maxDurationCell.disabled = false;
+            }
         }
     }
 
@@ -207,11 +220,16 @@
     function addNewRow() {
         const tableBody = document.querySelector('#logs-table tbody');
         const meetingNumber = meetingFilter.value;
+        if (!meetingNumber) {
+            alert('Please select a meeting to add a session to.');
+            return;
+        }
         let newSeq = 1;
 
         const newRow = document.createElement('tr');
         newRow.dataset.id = 'new';
         newRow.dataset.isSection = 'false';
+        newRow.dataset.meetingNumber = meetingNumber;
 
         const fields = [
             { name: 'Meeting_Seq', value: newSeq},
@@ -253,6 +271,11 @@
 
         rows.forEach(row => {
             const isSection = row.dataset.isSection === 'true';
+            if (isSection) {
+                row.classList.add('section-row');
+            } else {
+                row.classList.remove('section-row');
+            }
 
             // Clear the row before rebuilding
             row.innerHTML = '';
@@ -274,6 +297,8 @@
         });
 
         editButton.textContent = 'Done';
+        editButton.classList.remove('add-button');
+        editButton.classList.add('done-btn');
         cancelButton.style.display = 'inline-block';
         addRowButton.style.display = 'inline-block';
         loadButton.style.display = 'none';
@@ -313,23 +338,21 @@
         const dataToSave = [];
 
         rows.forEach(row => {
-            const rowData = { id: row.dataset.id };
-            row.querySelectorAll('td').forEach(cell => {
-                const field = cell.dataset.field;
-                if (!field) return;
-
-                if (field === 'Start_Time') {
-                    rowData[field.toLowerCase()] = cell.textContent.trim();
-                } else {
-                    const inputElement = cell.querySelector('input, select');
-                    if (inputElement) {
-                        rowData[field.toLowerCase()] = inputElement.value;
-                    }
-                }
-            });
-            if(Object.keys(rowData).length > 1) {
-                dataToSave.push(rowData);
+            if (row.style.display === 'none') {
+                return;
             }
+            const rowData = {
+                id: row.dataset.id,
+                meeting_number: row.dataset.meetingNumber,
+                meeting_seq: row.querySelector('[data-field="Meeting_Seq"] input').value.trim(),
+                start_time: row.querySelector('[data-field="Start_Time"]').textContent.trim(),
+                type_id: row.querySelector('[data-field="Type_ID"] select').value,
+                session_title: row.querySelector('[data-field="Session_Title"] input').value,
+                owner_id: row.querySelector('[data-field="Owner_ID"] select') ? row.querySelector('[data-field="Owner_ID"] select').value : null,
+                duration_min: row.querySelector('[data-field="Duration_Min"] input') ? row.querySelector('[data-field="Duration_Min"] input').value : null,
+                duration_max: row.querySelector('[data-field="Duration_Max"] input') ? row.querySelector('[data-field="Duration_Max"] input').value : null,
+            };
+            dataToSave.push(rowData);
         });
 
         fetch("{{ url_for('build_bp.update_logs') }}", {
