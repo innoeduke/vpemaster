@@ -99,11 +99,11 @@ def load_csv():
                     owner_id = owner.id
 
             # 7. Handle Durations
+            duration_min, duration_max = None, None
             if len(row) > 3:
                 duration_min = row[2].strip() if row[2] else None
                 duration_max = row[3].strip() if row[3] else None
             elif len(row) > 2:
-                duration_min = None
                 duration_max = row[2].strip() if row[2] else None
 
             if not duration_max and not duration_min and session_type:
@@ -148,41 +148,78 @@ def update_logs():
 
     try:
         meeting_numbers_to_update = set()
+        items_by_meeting = {}
 
         for item in data:
             meeting_number = item.get('meeting_number')
-            if not meeting_number: continue
+            if not meeting_number:
+                continue
             meeting_numbers_to_update.add(meeting_number)
+            if meeting_number not in items_by_meeting:
+                items_by_meeting[meeting_number] = []
+            items_by_meeting[meeting_number].append(item)
 
-            meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
-            if not meeting:
-                new_meeting = Meeting(Meeting_Number=meeting_number)
-                db.session.add(new_meeting)
-                db.session.flush()
+        for meeting_number, items in items_by_meeting.items():
+            # Get original sequences for tie-breaking
+            original_logs = SessionLog.query.filter_by(Meeting_Number=meeting_number).all()
+            original_seqs = {log.id: log.Meeting_Seq for log in original_logs}
 
-            if item['id'] == 'new':
-                new_log = SessionLog(
-                    Meeting_Number=item['meeting_number'],
-                    Meeting_Seq=item['meeting_seq'],
-                    Type_ID=item['type_id'],
-                    Owner_ID=item['owner_id'] if item['owner_id'] else None,
-                    Start_Time=item['start_time'] if item['start_time'] else None,
-                    Duration_Min=item['duration_min'] if item['duration_min'] else None,
-                    Duration_Max=item['duration_max'] if item['duration_max'] else None,
-                    Notes=item['notes']
-                )
-                db.session.add(new_log)
-            else:
-                log = SessionLog.query.get(item['id'])
-                if log:
-                    log.Meeting_Number = item.get('meeting_number')
-                    log.Meeting_Seq = item.get('meeting_seq')
-                    log.Type_ID = item.get('type_id')
-                    log.Owner_ID = item.get('owner_id') if item.get('owner_id') else None
-                    log.Start_Time = item.get('start_time') if item.get('start_time') else None
-                    log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
-                    log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
-                    log.Notes = item.get('notes')
+            # Define a custom sort key to handle re-ordering
+            def sort_key(item):
+                new_seq = int(item.get('meeting_seq', 999))
+                item_id_str = item.get('id')
+
+                priority = 0 # Default priority
+                if item_id_str == 'new':
+                    priority = 0 # New items get high priority
+                else:
+                    item_id = int(item_id_str)
+                    original_seq = original_seqs.get(item_id)
+                    if original_seq == new_seq:
+                        priority = 2 # Unchanged items have lower priority
+                    else:
+                        priority = 1 # Changed items have medium priority
+
+                return (new_seq, priority)
+
+            # Sort items by the new sequence number, with our priority tie-breaking
+            sorted_items = sorted(items, key=sort_key)
+
+            for seq, item in enumerate(sorted_items, 1):
+                meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+                if not meeting:
+                    new_meeting = Meeting(Meeting_Number=meeting_number)
+                    db.session.add(new_meeting)
+                    db.session.flush()
+                    meeting = new_meeting
+
+                if seq == 1 and item.get('start_time'):
+                    try:
+                        meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M:%S').time()
+                    except ValueError:
+                        meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M').time()
+
+                if item['id'] == 'new':
+                    new_log = SessionLog(
+                        Meeting_Number=meeting_number,
+                        Meeting_Seq=seq,
+                        Type_ID=item['type_id'],
+                        Owner_ID=item['owner_id'] if item['owner_id'] else None,
+                        Duration_Min=item['duration_min'] if item['duration_min'] else None,
+                        Duration_Max=item['duration_max'] if item['duration_max'] else None,
+                        Notes=item['notes']
+                    )
+                    db.session.add(new_log)
+                else:
+                    log = SessionLog.query.get(item['id'])
+                    if log:
+                        log.Meeting_Number = meeting_number
+                        log.Meeting_Seq = seq
+                        log.Type_ID = item.get('type_id')
+                        log.Owner_ID = item.get('owner_id') if item.get('owner_id') else None
+                        log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
+                        log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
+                        log.Notes = item.get('notes')
 
         # Recalculate start times
         for meeting_num in meeting_numbers_to_update:
@@ -200,7 +237,7 @@ def update_logs():
             for log, is_section in logs_to_update:
                 if not is_section:
                     log.Start_Time = current_time
-                    duration_to_add = log.Duration_Max or 0
+                    duration_to_add = int(log.Duration_Max or 0)
                     dt_current_time = datetime.combine(datetime.today(), current_time)
                     next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
                     current_time = next_dt.time()

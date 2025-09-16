@@ -48,7 +48,7 @@
         </thead>
         <tbody>
             {% for log, is_section in logs %}
-            <tr data-id="{{ log.id }}" data-meeting-number="{{ log.Meeting_Number }}" data-is-section="{{ is_section }}">
+            <tr data-id="{{ log.id }}" data-meeting-number="{{ log.Meeting_Number }}" data-is-section="{{ is_section|lower }}">
                 <td data-field="Meeting_Seq" class="edit-mode-cell" style="display: none;">{{ log.Meeting_Seq }}</td>
                 <td data-field="Meeting_Number" class="edit-mode-cell" style="display: none;">{{ log.Meeting_Number }}</td>
 
@@ -160,11 +160,12 @@
             return cell;
         }
 
-        // Make Start_Time non-editable
         if (field === 'Start_Time') {
-            const span = document.createElement('span');
-            span.textContent = originalValue;
-            cell.appendChild(span);
+            const input = document.createElement('input');
+            input.type = 'time';
+            input.step = 1;
+            input.value = originalValue;
+            cell.appendChild(input);
             return cell;
         }
 
@@ -186,8 +187,7 @@
             cell.appendChild(select);
         } else {
             const input = document.createElement('input');
-            input.type = (field === 'Start_Time') ? 'time' : 'text';
-            if (field === 'Start_Time') input.step = 1;
+            input.type = 'text';
             input.value = originalValue;
             input.style.width = '100%';
             input.style.boxSizing = 'border-box';
@@ -198,45 +198,17 @@
 
     function addNewRow() {
         const tableBody = document.querySelector('#logs-table tbody');
-        const lastRow = tableBody.lastElementChild;
+        const meetingNumber = meetingFilter.value;
         let newSeq = 1;
-        let newStartTime = '';
-
-        if (lastRow) {
-            const lastSeqCell = lastRow.querySelector('[data-field="Meeting_Seq"]');
-            const lastSeqInput = lastSeqCell.querySelector('input');
-            const lastSeq = parseInt(lastSeqInput.value, 10);
-            newSeq = isNaN(lastSeq) ? 1 : lastSeq + 1;
-
-            const lastStartTimeCell = lastRow.querySelector('[data-field="Start_Time"]');
-            const lastStartTimeInput = lastStartTimeCell.querySelector('input');
-            const lastStartTime = lastStartTimeInput.value;
-
-            const lastDurationCell = lastRow.querySelector('[data-field="Duration_Max"]');
-            const lastDurationInput = lastDurationCell.querySelector('input');
-            const lastDuration = parseInt(lastDurationInput.value, 10) || 0;
-
-            if (lastStartTime) {
-                const timeParts = lastStartTime.split(':');
-                const date = new Date();
-                date.setHours(timeParts[0], timeParts[1], timeParts[2] || 0);
-                date.setMinutes(date.getMinutes() + lastDuration + 1);
-
-                newStartTime = [
-                    date.getHours().toString().padStart(2, '0'),
-                    date.getMinutes().toString().padStart(2, '0'),
-                    date.getSeconds().toString().padStart(2, '0')
-                ].join(':');
-            }
-        }
+        const newStartTime = '18:55:00'; // Default start time
 
         const newRow = document.createElement('tr');
         newRow.dataset.id = 'new';
         newRow.dataset.isSection = 'false';
 
         const fields = [
-            { name: 'Meeting_Seq', value: newSeq },
-            { name: 'Meeting_Number', value: '' },
+            { name: 'Meeting_Seq', value: newSeq},
+            { name: 'Meeting_Number', value: meetingNumber },
             { name: 'Start_Time', value: newStartTime },
             { name: 'Type_ID', value: '' },
             { name: 'Owner_ID', value: '' },
@@ -260,7 +232,7 @@
         actionsCell.appendChild(deleteBtn);
         newRow.appendChild(actionsCell);
 
-        tableBody.appendChild(newRow);
+        tableBody.insertBefore(newRow, tableBody.firstChild);
     }
 
 
@@ -275,7 +247,7 @@
         header.querySelector('.actions-column').style.display = enable ? '' : 'none';
 
         rows.forEach(row => {
-            const isSection = row.dataset.isSection === 'True';
+            const isSection = row.dataset.isSection === 'true';
 
             row.querySelectorAll('.non-edit-mode-cell').forEach(td => td.style.display = enable ? 'none' : '');
 
