@@ -5,21 +5,7 @@
 {% block content %}
     <h1>Speech Logs</h1>
 
-    {% if session.get('user_role') in ['Admin', 'Officer'] %}
-    <div class="action-bar">
-        <div class="inline-filter-group">
-            <label for="owner-filter">Speaker:</label>
-            <select id="owner-filter">
-                <option value="">All Speakers</option>
-                {% for owner in owners %}
-                <option value="{{ owner }}">{{ owner }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <a href="{{ url_for('speech_logs_bp.speech_log_form') }}" class="btn btn-primary">Add New Speech Log</a>
-    </div>
-    {% endif %}
-
+<!--
     <table id="speech-logs-table">
         <thead>
             <tr>
@@ -79,6 +65,84 @@
             {% endfor %}
         </tbody>
     </table>
+-->
+
+    <div class="split-container">
+        <div class="split-left">
+            {% if session.get('user_role') in ['Admin', 'Officer'] %}
+            <div class="action-bar">
+                <div class="inline-filter-group">
+                    <label for="owner-filter">Speaker:</label>
+                    <select id="owner-filter">
+                        <option value="">All Speakers</option>
+                        {% for owner in owners %}
+                        <option value="{{ owner }}">{{ owner }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="inline-filter-group">
+                    <label for="meeting-filter">Meeting:</label>
+                    <select id="meeting-filter">
+                        <option value="">All Meetings</option>
+                        {% for num in meeting_numbers %}
+                        <option value="{{ num }}">{{ num }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <a href="{{ url_for('speech_logs_bp.speech_log_form') }}" class="btn btn-primary">Add New Speech Log</a>
+            </div>
+            {% endif %}
+            <div id="speech-logs-list">
+                {% for log in logs %}
+                <div class="speech-log-entry" data-owner="{{ log.Name }}">
+                    <div class="speech-log-details">
+                        <div class="meeting-info">
+                            <span>Meeting {{ log.Meeting_Number if log.Meeting_Number else '' }}</span> | <span>{{ log.Meeting_Date.strftime('%Y-%m-%d') if log.Meeting_Date else '' }}</span>
+                        </div>
+                        <div class="speech-title">{{ log.Speech_Title }}</div>
+                        <div class="project-info">
+                            <span class="project-code">
+                                {% if log.Pathway and 'Non-Path' not in log.Pathway %}
+                                    {% set initials = [] %}
+                                    {% for word in log.Pathway.split() %}
+                                        {% set _ = initials.append(word[0]) %}
+                                    {% endfor %}
+                                    {{ initials | join('') }}{{ log.Level }}
+                                {% endif %}
+                            </span>
+                            <span class="project-title">{{ log.Project_Title }} ({{ log.Session }})</span>
+                        </div>
+                        <br/>
+                        <div class="speaker-info">
+                            <span class="speaker-name">{{ log.Name }}</span> |
+                            <span class="status">
+                                {% if log.Project_Status == 'Completed' %}
+                                    <span class="completed-status">Completed</span>
+                                {% else %}
+                                    <form action="{{ url_for('speech_logs_bp.complete_speech_log', log_id=log.id) }}" method="post" style="display:inline;">
+                                        <button type="submit" class="btn btn-success">Complete</button>
+                                    </form>
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    {% if session.get('user_role') in ['Admin', 'Officer'] %}
+                    <div class="action-links">
+                        <a href="{{ url_for('speech_logs_bp.speech_log_form', log_id=log.id) }}" class="icon-btn" title="Edit"><i class="fas fa-edit"></i></a>
+                        <button class="delete-btn icon-btn" onclick="showDeleteModal({{ log.id }})" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div>
+            <video width="640" height="480" controls controlsList="nodownload">
+                <source src="{{ url_for('static', filename='videos/How to update a speech log.mp4') }}" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
 
     <div id="deleteModal" class="modal">
         <div class="modal-content">
@@ -96,6 +160,7 @@
         const modal = document.getElementById('deleteModal');
         const deleteForm = document.getElementById('deleteForm');
         const ownerFilter = document.getElementById('owner-filter');
+        const meetingFilter = document.getElementById('meeting-filter');
 
         function showDeleteModal(logId) {
             deleteForm.action = `/speech_log/delete/${logId}`;
@@ -106,18 +171,29 @@
             modal.style.display = 'none';
         }
 
-        if(ownerFilter) {
-            ownerFilter.addEventListener('change', function() {
-                const selectedOwner = this.value;
-                const rows = document.querySelectorAll('#speech-logs-table tbody tr');
-                rows.forEach(row => {
-                    if (selectedOwner === '' || row.dataset.owner === selectedOwner) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
+        function filterLogs() {
+            const selectedOwner = ownerFilter.value;
+            const selectedMeeting = meetingFilter.value;
+            const logs = document.querySelectorAll('.speech-log-entry');
+
+            logs.forEach(log => {
+                const ownerMatch = selectedOwner === '' || log.dataset.owner === selectedOwner;
+                // Correctly compare the meeting number as a string
+                const meetingMatch = selectedMeeting === '' || log.dataset.meetingNumber == selectedMeeting;
+
+                if (ownerMatch && meetingMatch) {
+                    log.style.display = 'flex';
+                } else {
+                    log.style.display = 'none';
+                }
             });
+        }
+
+        if (ownerFilter) {
+            ownerFilter.addEventListener('change', filterLogs);
+        }
+        if (meetingFilter) {
+            meetingFilter.addEventListener('change', filterLogs);
         }
     </script>
 {% endblock %}

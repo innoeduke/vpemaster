@@ -23,6 +23,8 @@ from .speech_logs_routes import speech_logs_bp
 from .users_routes import users_bp
 from .main_routes import main_bp
 from .pathways_routes import pathways_bp
+from .tests_routes import tests_bp
+
 
 
 app.register_blueprint(agenda_bp)
@@ -31,3 +33,4 @@ app.register_blueprint(speech_logs_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(main_bp)
 app.register_blueprint(pathways_bp)
+app.register_blueprint(tests_bp)

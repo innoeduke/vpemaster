@@ -19,6 +19,7 @@ def show_speech_logs():
 
     all_logs = []
     owners = []
+    meeting_numbers = []
 
     if user_role == 'Member':
         user_id = session.get('user_id')
@@ -31,8 +32,11 @@ def show_speech_logs():
         # Get distinct owner names for the filter
         owner_names = db.session.query(distinct(SpeechLog.Name)).order_by(SpeechLog.Name.asc()).all()
         owners = [name[0] for name in owner_names]
+        # Get distinct meeting numbers for the filter
+        meeting_numbers_query = db.session.query(distinct(SpeechLog.Meeting_Number)).order_by(SpeechLog.Meeting_Number.desc()).all()
+        meeting_numbers = [num[0] for num in meeting_numbers_query]
 
-    return render_template('speech_logs.html', logs=all_logs, owners=owners)
+    return render_template('speech_logs.html', logs=all_logs, owners=owners, meeting_numbers=meeting_numbers)
 
 
 @speech_logs_bp.route('/speech_log/form', methods=['GET'])

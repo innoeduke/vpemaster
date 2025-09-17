@@ -550,6 +550,53 @@ th {
     margin-bottom: 20px;
 }
 
+/* Style for Speech Log */
+
+.split-container {
+    display: flex;
+    gap: 20px;
+}
+
+.split-left {
+    flex: 1;
+}
+
+.speech-log-entry {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 5px;
+    background-color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.speech-log-details {
+    flex-grow: 1;
+}
+
+.meeting-info {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.project-info {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.speech-title {
+    font-size: 2em;
+    margin-bottom: 10px;
+}
+
+.speaker-info {
+    font-style: italic;
+    color: #333;
+}
+
 /* --- Media Queries for Mobile Devices --- */
 @media (max-width: 768px) {
     .container-wrapper {
@@ -638,5 +685,9 @@ th {
     .form-table input[type="number"],
     .form-table select {
         width: 100%;
+    }
+
+    .split-container {
+        flex-direction: column;
     }
 }
