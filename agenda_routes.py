@@ -1,9 +1,9 @@
 
-# vpemaster/build_routes.py
+# vpemaster/agenda_routes.py
 
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file
 from .main_routes import login_required
-from vpemaster.models import SessionLog, SessionType, Contact, Meeting
+from .models import SessionLog, SessionType, Contact, Meeting
 from vpemaster import db
 from sqlalchemy import distinct
 from datetime import datetime, timedelta
@@ -69,7 +69,10 @@ def _create_or_update_session(item, meeting_number, seq):
             meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M').time()
 
     type_id = item.get('type_id')
-    session_type = SessionType.query.get(type_id)
+    if type_id == '':
+        type_id = None
+
+    session_type = SessionType.query.get(type_id) if type_id is not None else None
     session_title = item.get('session_title')
 
     if item['id'] == 'new':
@@ -119,14 +122,20 @@ def _recalculate_start_times(meeting_numbers_to_update):
             if not is_section:
                 log.Start_Time = current_time
                 duration_to_add = int(log.Duration_Max or 0)
+
+                # Default break is 1 minute
+                break_minutes = 1
+                # Add an extra minute if the session title starts with "Evaluation"
+                if log.Session_Title and log.Session_Title.startswith('Evaluation'):
+                    break_minutes += 1
+
                 dt_current_time = datetime.combine(datetime.today(), current_time)
-                next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
+                next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
                 current_time = next_dt.time()
             else:
                 log.Start_Time = None
 
 @agenda_bp.route('/agenda', methods=['GET'])
-@login_required
 def agenda():
     """
     Renders the agenda builder page, displaying all session logs.
@@ -142,7 +151,7 @@ def agenda():
     contacts_query = Contact.query.order_by(Contact.Name.asc()).all()
     contacts_data = [{"id": c.id, "Name": c.Name} for c in contacts_query]
 
-    return render_template('build.html',
+    return render_template('agenda.html',
                            logs=session_logs,
                            session_types=session_types_data,
                            contacts=contacts_data,
@@ -153,11 +162,11 @@ def agenda():
 @login_required
 def load_csv():
     if 'file' not in request.files:
-        return redirect(url_for('agenda_bp.build', message='No file part', category='error'))
+        return redirect(url_for('agenda_bp.agenda', message='No file part', category='error'))
 
     file = request.files['file']
     if file.filename == '':
-        return redirect(url_for('agenda_bp.build', message='No selected file', category='error'))
+        return redirect(url_for('agenda_bp.agenda', message='No selected file', category='error'))
 
     if file and file.filename.endswith('.csv'):
         stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
@@ -167,14 +176,14 @@ def load_csv():
         cleaned_line = re.sub(r'^\W+|\W+$', '', first_line)
         parts = cleaned_line.split(',')
         if len(parts) < 2:
-            return redirect(url_for('agenda_bp.build', message='Invalid first line format.', category='error'))
+            return redirect(url_for('agenda_bp.agenda', message='Invalid first line format.', category='error'))
 
         meeting_number, start_time_str = parts[0], parts[1]
 
         try:
             current_time = datetime.strptime(start_time_str, '%H:%M').time()
         except ValueError:
-            return redirect(url_for('agenda_bp.build', message='Invalid start time format in first line.', category='error'))
+            return redirect(url_for('agenda_bp.agenda', message='Invalid start time format in first line.', category='error'))
 
         meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
         if not meeting:
@@ -195,7 +204,7 @@ def load_csv():
 
             # 4. Match Session Type
             session_type = SessionType.query.filter_by(Title=session_title_from_csv).first()
-            type_id = session_type.id if session_type else 0
+            type_id = session_type.id if session_type else None
 
             session_title = session_type.Title if session_type else session_title_from_csv
 
@@ -245,9 +254,44 @@ def load_csv():
             seq += 1
 
         db.session.commit()
-        return redirect(url_for('agenda_bp.build'))
+        return redirect(url_for('agenda_bp.agenda'))
     else:
-        return redirect(url_for('agenda_bp.build', message='Invalid file type. Please upload a CSV file.', category='error'))
+        return redirect(url_for('agenda_bp.agenda', message='Invalid file type. Please upload a CSV file.', category='error'))
+
+@agenda_bp.route('/agenda/export/<int:meeting_number>')
+@login_required
+def export_agenda(meeting_number):
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        return "Meeting not found", 404
+
+    logs = db.session.query(
+        SessionLog.Session_Title,
+        Contact.Name,
+        SessionLog.Duration_Min,
+        SessionLog.Duration_Max
+    ).outerjoin(Contact, SessionLog.Owner_ID == Contact.id).filter(
+        SessionLog.Meeting_Number == meeting_number
+    ).order_by(SessionLog.Meeting_Seq.asc()).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # Write the header row
+    start_time = meeting.Start_Time.strftime('%H:%M') if meeting.Start_Time else ''
+    writer.writerow([meeting.Meeting_Number, start_time])
+
+    # Write the session data
+    for log in logs:
+        writer.writerow([log.Session_Title, log.Name or '', log.Duration_Min or '', log.Duration_Max or ''])
+
+    output.seek(0)
+    return send_file(
+        io.BytesIO(output.getvalue().encode('utf-8')),
+        mimetype='text/csv',
+        as_attachment=True,
+        download_name=f'{meeting_number}_agenda.csv'
+    )
 
 
 @agenda_bp.route('/agenda/update', methods=['POST'])

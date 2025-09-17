@@ -45,25 +45,27 @@
             </select>
         </div>
 
+        {% if session.get('user_role') in ['Admin', 'Officer'] %}
         <div class="button-group">
+            <button id="edit-logs-btn" class="btn btn-success">Edit</button>
             <form id="load-form" action="{{ url_for('agenda_bp.load_csv') }}" method="post" enctype="multipart/form-data" style="display: inline;">
                 <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
-                <button id="load-btn" type="button" class="btn btn-primary" onclick="document.getElementById('csv-file').click()">Import</button>
+                <button id="load-btn" type="button" class="btn btn-primary" onclick="document.getElementById('csv-file').click()">Load</button>
             </form>
-            <button id="edit-logs-btn" class="btn btn-primary">Edit</button>
+            <button id="export-btn" class="btn btn-primary">Save As</button>
             <button id="add-row-btn" class="btn btn-primary" style="display: none;">Add</button>
             <button id="cancel-edit-btn" class="btn btn-danger" style="display: none;">Cancel</button>
-
         </div>
+        {% endif %}
     </div>
 
     <table id="logs-table">
         <thead>
             <tr class="non-edit-mode-header">
-                <th>Time</th>
-                <th>Session</th>
-                <th>Host</th>
-                <th>Duration (min)</th>
+                <th><i class="fas fa-clock"></i></th>
+                <th><i class="fas fa-file-alt"></i> Session</th>
+                <th><i class="fas fa-user"></i> Owner</th>
+                <th><i class="fas fa-hourglass-half"></i> Min'</th>
             </tr>
             <tr class="edit-mode-header" style="display: none;">
                 <th>No</th>
@@ -121,6 +123,7 @@
     const addRowButton = document.getElementById('add-row-btn');
     const loadButton = document.getElementById('load-btn');
     const meetingFilter = document.getElementById('meeting-filter');
+    const exportButton = document.getElementById('export-btn')
     let isEditing = false;
 
     if (editButton && cancelButton && addRowButton && loadButton) {
@@ -138,6 +141,15 @@
             addNewRow();
         });
     }
+
+    exportButton.addEventListener('click', function() {
+        const meetingNumber = meetingFilter.value;
+        if (meetingNumber) {
+            window.location.href = `/agenda/export/${meetingNumber}`;
+        } else {
+            alert('Please select a meeting to export.');
+        }
+    });
 
     meetingFilter.addEventListener('change', function() {
         const selectedMeeting = this.value;
@@ -252,7 +264,7 @@
         actionsCell.classList.add('actions-column');
         const deleteBtn = document.createElement('button');
         deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-        deleteBtn.className = 'button delete-btn icon-btn';
+        deleteBtn.className = 'btn btn-danger delete-btn icon-btn';
         deleteBtn.onclick = function() { deleteLogRow(this); };
         actionsCell.appendChild(deleteBtn);
         newRow.appendChild(actionsCell);
@@ -291,18 +303,19 @@
             actionsCell.classList.add('actions-column');
             const deleteBtn = document.createElement('button');
             deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-            deleteBtn.className = 'btn delete-btn icon-btn';
+            deleteBtn.className = 'btn btn-danger delete-btn icon-btn';
             deleteBtn.onclick = function() { deleteLogRow(this); };
             actionsCell.appendChild(deleteBtn);
             row.appendChild(actionsCell);
         });
 
         editButton.textContent = 'Done';
-        editButton.classList.remove('btn btn-primary');
-        editButton.classList.add('btn btn-green');
+        editButton.classList.remove('btn-primary');
+        editButton.classList.add('btn-success');
         cancelButton.style.display = 'inline-block';
         addRowButton.style.display = 'inline-block';
         loadButton.style.display = 'none';
+        exportButton.style.display = 'none';
     }
 
     function deleteLogRow(btn) {

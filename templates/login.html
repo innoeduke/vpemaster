@@ -9,6 +9,7 @@
 </head>
 <body>
     <div class="login-container">
+        <img src="{{ url_for('static', filename='images/SHLTMC-logo.png') }}" alt="SHLTMC Logo" style="width: 150px; margin-bottom: 20px;">
         <h1>VPE Master Login</h1>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -29,9 +30,12 @@
                 <input type="password" id="password" name="password" required>
             </div>
             <div>
-                <button type="submit" class="button">Login</button>
+                <button type="submit" class="btn btn-primary">Login</button>
             </div>
         </form>
+        <div class="guest-login" style="text-align: center; margin-top: 15px;">
+            <a href="{{ url_for('agenda_bp.agenda') }}">Continue as Guest</a>
+        </div>
     </div>
 </body>
 </html>

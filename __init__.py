@@ -15,16 +15,15 @@ db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 
 # Import models to ensure they are registered with the app
-from vpemaster import models
 
 # Import and register the blueprints
-from vpemaster.agenda_routes import agenda_bp
-from vpemaster.contacts_routes import contacts_bp
-from vpemaster.speech_logs_routes import speech_logs_bp
-from vpemaster.users_routes import users_bp
-from vpemaster.main_routes import main_bp
-from vpemaster.pathways_routes import pathways_bp
-from vpemaster.build_routes import build_bp
+from .agenda_routes import agenda_bp
+from .contacts_routes import contacts_bp
+from .speech_logs_routes import speech_logs_bp
+from .users_routes import users_bp
+from .main_routes import main_bp
+from .pathways_routes import pathways_bp
+
 
 app.register_blueprint(agenda_bp)
 app.register_blueprint(contacts_bp)
@@ -32,4 +31,3 @@ app.register_blueprint(speech_logs_bp)
 app.register_blueprint(users_bp)
 app.register_blueprint(main_bp)
 app.register_blueprint(pathways_bp)
-app.register_blueprint(build_bp)

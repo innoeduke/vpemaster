@@ -36,12 +36,14 @@
                 </a>
             </li>
             {% endif %}
+            {% if session.get('user_role') in ['Admin', 'Officer', 'Member'] %}
             <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
                     <i class="fas fa-microphone nav-icon"></i>
                     <span>Speech Logs</span>
                 </a>
             </li>
+            {% endif %}
             <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
                 <a href="{{ url_for('pathways_bp.pathway_library') }}">
                     <i class="fas fa-book-open nav-icon"></i>
@@ -57,12 +59,21 @@
             </li>
             {% endif %}
         </ul>
+        {% if session.logged_in %}
         <div class="logout-container">
             <a href="{{ url_for('main_bp.logout') }}">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Logout</span>
             </a>
         </div>
+        {% else %}
+        <div class="logout-container">
+            <a href="{{ url_for('main_bp.login') }}" style="background-color: #28a745;">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Login</span>
+            </a>
+        </div>
+        {% endif %}
     </div>
 
     <div class="main-content" id="main-content">

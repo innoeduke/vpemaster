@@ -5,6 +5,7 @@ from vpemaster import db
 from vpemaster.models import SpeechLog, Contact, User, Project
 from .main_routes import login_required
 from sqlalchemy import distinct
+from datetime import datetime
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
@@ -12,6 +13,10 @@ speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 @login_required
 def show_speech_logs():
     user_role = session.get('user_role')
+
+    if not user_role:
+        return redirect(url_for('agenda_bp.agenda'))
+
     all_logs = []
     owners = []
 
@@ -29,7 +34,6 @@ def show_speech_logs():
 
     return render_template('speech_logs.html', logs=all_logs, owners=owners)
 
-# ... (rest of the file remains the same)
 
 @speech_logs_bp.route('/speech_log/form', methods=['GET'])
 @login_required

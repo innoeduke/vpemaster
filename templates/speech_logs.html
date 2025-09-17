@@ -16,7 +16,7 @@
                 {% endfor %}
             </select>
         </div>
-        <a href="{{ url_for('speech_logs_bp.speech_log_form') }}" class="add-button">Add New Speech Log</a>
+        <a href="{{ url_for('speech_logs_bp.speech_log_form') }}" class="btn btn-primary">Add New Speech Log</a>
     </div>
     {% endif %}
 
@@ -70,11 +70,9 @@
                     {% endif %}
                 </td>
                 {% if session.get('user_role') in ['Admin', 'Officer'] %}
-                <td>
-                    <div class="action-links">
-                        <a href="{{ url_for('speech_logs_bp.speech_log_form', log_id=log.id) }}" class="button icon-btn" title="Edit"><i class="fas fa-edit"></i></a>
-                        <button class="button delete-btn icon-btn" onclick="showDeleteModal({{ log.id }})" title="Delete"><i class="fas fa-trash-alt"></i></button>
-                    </div>
+                <td class="action-links">
+                    <a href="{{ url_for('speech_logs_bp.speech_log_form', log_id=log.id) }}" class="icon-btn" title="Edit"><i class="fas fa-edit"></i></a>
+                    <button class="delete-btn icon-btn" onclick="showDeleteModal({{ log.id }})" title="Delete"><i class="fas fa-trash-alt"></i></button>
                 </td>
                 {% endif %}
             </tr>

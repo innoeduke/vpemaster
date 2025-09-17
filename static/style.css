@@ -273,6 +273,7 @@ th {
 .button-group {
     display: flex;
     gap: 10px;
+    max-width: 300px;
 }
 
 .button-group > .btn {
@@ -361,6 +362,11 @@ th {
 }
 
 /* --- New Styles for inline forms and buttons --- */
+
+.form-actions {
+    text-align: center;
+    margin-top: 20px;
+}
 .form-inline {
     display: inline-block;
 }

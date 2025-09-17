@@ -8,7 +8,6 @@ from .main_routes import login_required
 pathways_bp = Blueprint('pathways_bp', __name__)
 
 @pathways_bp.route('/pathway_library')
-@login_required
 def pathway_library():
     projects = Project.query.all()
     # Convert projects to a list of dictionaries to be easily used in JavaScript
