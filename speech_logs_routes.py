@@ -13,11 +13,13 @@ speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 @login_required
 def show_speech_logs():
     user_role = session.get('user_role')
+    selected_owner = request.args.get('owner', '')
+    selected_meeting = request.args.get('meeting_number', '')
 
     if not user_role:
         return redirect(url_for('agenda_bp.agenda'))
 
-    all_logs = []
+    query = SpeechLog.query
     owners = []
     meeting_numbers = []
 
@@ -26,9 +28,8 @@ def show_speech_logs():
         if user_id:
             user = User.query.get(user_id)
             if user and user.Contact_ID:
-                all_logs = SpeechLog.query.filter_by(Contact_ID=user.Contact_ID).order_by(SpeechLog.Meeting_Number.asc()).all()
+                query = query.filter_by(Contact_ID=user.Contact_ID)
     else:
-        all_logs = SpeechLog.query.order_by(SpeechLog.Meeting_Number.asc()).all()
         # Get distinct owner names for the filter
         owner_names = db.session.query(distinct(SpeechLog.Name)).order_by(SpeechLog.Name.asc()).all()
         owners = [name[0] for name in owner_names]
@@ -36,7 +37,19 @@ def show_speech_logs():
         meeting_numbers_query = db.session.query(distinct(SpeechLog.Meeting_Number)).order_by(SpeechLog.Meeting_Number.desc()).all()
         meeting_numbers = [num[0] for num in meeting_numbers_query]
 
-    return render_template('speech_logs.html', logs=all_logs, owners=owners, meeting_numbers=meeting_numbers)
+    if selected_owner:
+        query = query.filter(SpeechLog.Name == selected_owner)
+    if selected_meeting:
+        query = query.filter(SpeechLog.Meeting_Number == selected_meeting)
+
+    all_logs = query.order_by(SpeechLog.Meeting_Number.asc()).all()
+
+    return render_template('speech_logs.html',
+                           logs=all_logs,
+                           owners=owners,
+                           meeting_numbers=meeting_numbers,
+                           selected_owner=selected_owner,
+                           selected_meeting=selected_meeting)
 
 
 @speech_logs_bp.route('/speech_log/form', methods=['GET'])
@@ -123,5 +136,9 @@ def delete_speech_log(log_id):
 def complete_speech_log(log_id):
     log = SpeechLog.query.get_or_404(log_id)
     log.Project_Status = 'Completed'
-    db.session.commit()
-    return redirect(url_for('speech_logs_bp.show_speech_logs'))
+    try:
+        db.session.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500

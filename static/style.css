@@ -552,13 +552,20 @@ th {
 
 /* Style for Speech Log */
 
-.split-container {
-    display: flex;
-    gap: 20px;
+.logs-container {
+    max-width: 800px; /* You can adjust this value to your liking */
+    margin: 20px auto 0; /* Adds some space above and centers the container */
 }
 
-.split-left {
-    flex: 1;
+.video-container {
+    width: 100%;
+    max-width: 800px; /* Optional: you can set a max-width for the video on larger screens */
+    margin: auto; /* This will help center the video if a max-width is set */
+}
+
+.video-container video {
+    width: 100%;
+    height: auto;
 }
 
 .speech-log-entry {
