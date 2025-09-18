@@ -3,7 +3,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file
 from .main_routes import login_required
-from .models import SessionLog, SessionType, Contact, Meeting
+from .models import SessionLog, SessionType, Contact, Meeting, Project
 from vpemaster import db
 from sqlalchemy import distinct
 from datetime import datetime, timedelta
@@ -85,6 +85,7 @@ def _create_or_update_session(item, meeting_number, seq):
             Owner_ID=item['owner_id'] if item['owner_id'] else None,
             Duration_Min=item['duration_min'] if item['duration_min'] else None,
             Duration_Max=item['duration_max'] if item['duration_max'] else None,
+            Project_ID=item.get('project_id') if item.get('project_id') else None,
             Session_Title=session_title
         )
         db.session.add(new_log)
@@ -97,6 +98,7 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Owner_ID = item.get('owner_id') if item.get('owner_id') else None
             log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
             log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
+            log.Project_ID = item.get('project_id') if item.get('project_id') else None
 
             if session_title is not None and session_title != '':
                 log.Session_Title = session_title
@@ -136,15 +138,48 @@ def _recalculate_start_times(meeting_numbers_to_update):
                 log.Start_Time = None
 
 @agenda_bp.route('/agenda', methods=['GET'])
+@agenda_bp.route('/agenda', methods=['GET'])
 def agenda():
     """
-    Renders the agenda builder page, displaying all session logs.
+    Renders the agenda builder page, displaying session logs for a selected meeting.
     """
-    session_logs = db.session.query(SessionLog, SessionType.Is_Section).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True).order_by(SessionLog.Meeting_Number.asc(), SessionLog.Meeting_Seq.asc()).all()
+    # Get all available meeting numbers, latest first
+    meeting_numbers_query = db.session.query(distinct(SessionLog.Meeting_Number)).order_by(SessionLog.Meeting_Number.desc()).all()
+    meeting_numbers = [num[0] for num in meeting_numbers_query]
 
-    # Sort meeting numbers in descending order to have the latest first
-    meeting_numbers = db.session.query(distinct(SessionLog.Meeting_Number)).order_by(SessionLog.Meeting_Number.desc()).all()
+    # Get all projects and format them for JavaScript
+    projects = Project.query.all()
+    projects_data = [
+        {
+            "ID": p.ID,
+            "Project_Name": p.Project_Name,
+            "Code_DL": p.Code_DL,
+            "Code_EH": p.Code_EH,
+            "Code_MS": p.Code_MS,
+            "Code_PI": p.Code_PI,
+            "Code_PM": p.Code_PM,
+            "Code_VC": p.Code_VC,
+        }
+        for p in projects
+    ]
 
+    # Determine the selected meeting from URL, default to the latest one if not provided
+    selected_meeting_str = request.args.get('meeting_number')
+    if not selected_meeting_str and meeting_numbers:
+        selected_meeting = meeting_numbers[0]
+    else:
+        selected_meeting = selected_meeting_str
+
+    # Base query for logs
+    query = db.session.query(SessionLog, SessionType.Is_Section).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)
+
+    # Filter by the selected meeting number
+    if selected_meeting:
+        query = query.filter(SessionLog.Meeting_Number == selected_meeting)
+
+    session_logs = query.order_by(SessionLog.Meeting_Seq.asc()).all()
+
+    # Get data for session types and contacts
     session_types_query = SessionType.query.order_by(SessionType.Title.asc()).all()
     session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section} for s in session_types_query]
 
@@ -155,7 +190,9 @@ def agenda():
                            logs=session_logs,
                            session_types=session_types_data,
                            contacts=contacts_data,
-                           meeting_numbers=[num[0] for num in meeting_numbers])
+                           projects=projects_data,
+                           meeting_numbers=meeting_numbers,
+                           selected_meeting=int(selected_meeting) if selected_meeting else None)
 
 
 @agenda_bp.route('/agenda/load', methods=['POST'])
@@ -169,7 +206,15 @@ def load_csv():
         return redirect(url_for('agenda_bp.agenda', message='No selected file', category='error'))
 
     if file and file.filename.endswith('.csv'):
-        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        file_content = file.stream.read()
+        try:
+            # Try decoding with UTF-8 first
+            decoded_content = file_content.decode('utf-8')
+        except UnicodeDecodeError:
+            # If UTF-8 fails, try with GBK
+            decoded_content = file_content.decode('gbk', errors='replace') # 'replace' will prevent further errors
+
+        stream = io.StringIO(decoded_content, newline=None)
 
         # 1. Process first line for meeting info
         first_line = stream.readline().strip()

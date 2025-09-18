@@ -92,6 +92,7 @@ class SessionLog(db.Model):
     Session_Title = db.Column(db.String(255))
     Type_ID = db.Column(db.Integer, db.ForeignKey('Session_Types.id'))
     Owner_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.ID'))
     Start_Time = db.Column(db.Time)
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)

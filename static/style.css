@@ -5,6 +5,38 @@ body {
     background-color: #f4f4f9;
 }
 
+.table-container.non-edit-mode {
+    max-width: 800px;
+    margin: 0 auto; /* This centers the container */
+}
+
+/* This ensures the table layout is respected even with dynamic content */
+#logs-table {
+    table-layout: fixed;
+    width: 100%;
+}
+
+.edit-mode-cell input[type="text"], .edit-mode-cell select {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Column widths for NON-EDIT mode */
+#logs-table .non-edit-mode-header th:nth-child(1) { width: 10%; } /* Time */
+#logs-table .non-edit-mode-header th:nth-child(2) { width: 45%; } /* Session */
+#logs-table .non-edit-mode-header th:nth-child(3) { width: 25%; } /* Host */
+#logs-table .non-edit-mode-header th:nth-child(4) { width: 20%; } /* Duration */
+
+/* Column widths for EDIT mode */
+#logs-table .edit-mode-header th:nth-child(1) { width: 5%; }  /* No */
+#logs-table .edit-mode-header th:nth-child(2) { width: 10%; } /* Start Time */
+#logs-table .edit-mode-header th:nth-child(3) { width: 30%; } /* Session Type */
+#logs-table .edit-mode-header th:nth-child(4) { width: 20%; } /* Session Title */
+#logs-table .edit-mode-header th:nth-child(5) { width: 15%; } /* Owner */
+#logs-table .edit-mode-header th:nth-child(6) { width: 7%; }  /* Min */
+#logs-table .edit-mode-header th:nth-child(7) { width: 7%; }  /* Max */
+#logs-table .edit-mode-header th:nth-child(8) { width: 6%; } /* Actions */
+
 .container-wrapper {
     display: flex;
 }
@@ -12,7 +44,7 @@ body {
 /* Navigation Pane Styles for PC */
 .nav-pane {
     width: 60px;
-    background-color: #333;
+    background-color: #004165;
     color: white;
     height: 100vh;
     display: flex;
