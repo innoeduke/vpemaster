@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file
 from .main_routes import login_required
-from .models import SessionLog, SessionType, Contact, Meeting, Project
+from .models import SessionLog, SessionType, Contact, Meeting, Project, SpeechLog
 from vpemaster import db
 from sqlalchemy import distinct
 from datetime import datetime, timedelta
@@ -53,6 +53,74 @@ def _group_and_sort_sessions(data):
 
     return items_by_meeting
 
+def _sync_speech_log_for_session(session_log, meeting):
+    """Creates, updates, or deletes a SpeechLog for a session based on its Project_ID."""
+    if not session_log:
+        return
+
+    existing_speech_log = SpeechLog.query.filter_by(Session_ID=session_log.id).first()
+
+    # Case 1: Session is NOT a project speech. Delete any existing speech log.
+    if not session_log.Project_ID:
+        if existing_speech_log:
+            db.session.delete(existing_speech_log)
+        return
+
+    # Case 2: Session IS a project speech. Find contact and project.
+    contact = Contact.query.get(session_log.Owner_ID)
+    project = Project.query.get(session_log.Project_ID)
+
+    # If contact or project is missing, we can't sync. Delete orphaned log if it exists.
+    if not contact or not project:
+        if existing_speech_log:
+            db.session.delete(existing_speech_log)
+        return
+
+    # Determine the correct pathway project code for the Level
+    pathway_code = None
+    pathway_map = {
+        "Dynamic Leadership": project.Code_DL,
+        "Engaging Humor": project.Code_EH,
+        "Motivational Strategies": project.Code_MS,
+        "Persuasive Influence": project.Code_PI,
+        "Presentation Mastery": project.Code_PM,
+        "Visionary Communication": project.Code_VC
+    }
+    pathway_code = pathway_map.get(contact.Working_Path)
+
+    # Ensure the meeting object has a date.
+    if not meeting.Meeting_Date:
+        meeting.Meeting_Date = datetime.today().date()
+
+    # Update existing log or create a new one
+    if existing_speech_log:
+        existing_speech_log.Meeting_Number = session_log.Meeting_Number
+        existing_speech_log.Meeting_Date = meeting.Meeting_Date
+        existing_speech_log.Speech_Title = session_log.Session_Title
+        existing_speech_log.Pathway = contact.Working_Path
+        existing_speech_log.Level = pathway_code
+        existing_speech_log.Name = contact.Name
+        existing_speech_log.Contact_ID = session_log.Owner_ID
+        existing_speech_log.Project_ID = project.ID
+        existing_speech_log.Project_Title = project.Project_Name
+    else:
+        new_speech_log = SpeechLog(
+            Meeting_Number=session_log.Meeting_Number,
+            Meeting_Date=meeting.Meeting_Date,
+            Session='Pathway Speech',
+            Speech_Title=session_log.Session_Title,
+            Pathway=contact.Working_Path,
+            Level=pathway_code,
+            Name=contact.Name,
+            Contact_ID=session_log.Owner_ID,
+            Project_ID=project.ID,
+            Project_Title=project.Project_Name,
+            Project_Status='Booked',
+            Session_ID=session_log.id
+        )
+        db.session.add(new_speech_log)
+
+
 def _create_or_update_session(item, meeting_number, seq):
     meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
     if not meeting:
@@ -71,9 +139,10 @@ def _create_or_update_session(item, meeting_number, seq):
     if type_id == '':
         type_id = None
 
-    session_type = SessionType.query.get(type_id) if type_id is not None else None
     session_title = item.get('session_title')
+    project_id = item.get('project_id') if item.get('project_id') else None
 
+    current_log = None
     if item['id'] == 'new':
         new_log = SessionLog(
             Meeting_Number=meeting_number,
@@ -82,10 +151,12 @@ def _create_or_update_session(item, meeting_number, seq):
             Owner_ID=item['owner_id'] if item['owner_id'] else None,
             Duration_Min=item['duration_min'] if item['duration_min'] else None,
             Duration_Max=item['duration_max'] if item['duration_max'] else None,
-            Project_ID=item.get('project_id') if item.get('project_id') else None,
+            Project_ID=project_id,
             Session_Title=session_title
         )
         db.session.add(new_log)
+        db.session.flush()
+        current_log = new_log
     else:
         log = SessionLog.query.get(item['id'])
         if log:
@@ -95,10 +166,15 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Owner_ID = item.get('owner_id') if item.get('owner_id') else None
             log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
             log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
-            log.Project_ID = item.get('project_id') if item.get('project_id') else None
+            log.Project_ID = project_id
 
             if session_title is not None:
                 log.Session_Title = session_title
+            current_log = log
+
+    # Sync speech log after creating/updating the session
+    _sync_speech_log_for_session(current_log, meeting)
+
 
 def _recalculate_start_times(meeting_numbers_to_update):
     for meeting_num in meeting_numbers_to_update:
@@ -130,7 +206,6 @@ def _recalculate_start_times(meeting_numbers_to_update):
             else:
                 log.Start_Time = None
 
-@agenda_bp.route('/agenda', methods=['GET'])
 @agenda_bp.route('/agenda', methods=['GET'])
 def agenda():
     """
@@ -188,7 +263,7 @@ def agenda():
 
     # Get data for session types and contacts
     session_types_query = SessionType.query.order_by(SessionType.Title.asc()).all()
-    session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section} for s in session_types_query]
+    session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section, "Valid_for_Project": s.Valid_for_Project} for s in session_types_query]
 
     contacts_query = Contact.query.order_by(Contact.Name.asc()).all()
     contacts_data = [{"id": c.id, "Name": c.Name, "Working_Path": c.Working_Path,\
@@ -385,3 +460,5 @@ def delete_log(log_id):
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
+
+

@@ -30,8 +30,8 @@ body {
 /* Column widths for EDIT mode */
 #logs-table .edit-mode-header th:nth-child(1) { width: 5%; }  /* No */
 #logs-table .edit-mode-header th:nth-child(2) { width: 10%; } /* Start Time */
-#logs-table .edit-mode-header th:nth-child(3) { width: 30%; } /* Session Type */
-#logs-table .edit-mode-header th:nth-child(4) { width: 20%; } /* Session Title */
+#logs-table .edit-mode-header th:nth-child(3) { width: 20%; } /* Session Type */
+#logs-table .edit-mode-header th:nth-child(4) { width: 30%; } /* Session Title */
 #logs-table .edit-mode-header th:nth-child(5) { width: 15%; } /* Owner */
 #logs-table .edit-mode-header th:nth-child(6) { width: 7%; }  /* Min */
 #logs-table .edit-mode-header th:nth-child(7) { width: 7%; }  /* Max */

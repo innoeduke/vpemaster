@@ -65,9 +65,9 @@
                 <td><input type="text" id="level" name="level" value="{{ log.Level if log else '' }}" placeholder="e.g., 2.1"></td>
             </tr>
             <tr>
-                <td><label for="project_title">Project Name:</label></td>
+                <td><label for="project_id">Project Name:</label></td>
                 <td>
-                    <select id="project_title" name="project_title">
+                    <select id="project_id" name="project_id">
                         <option value="">-- Select a Project --</option>
                     </select>
                 </td>
@@ -91,7 +91,7 @@
         const projects = {{ projects|tojson }};
         const pathwayElement = document.getElementById('pathway');
         const projectCodeInput = document.getElementById('level');
-        const projectTitleSelect = document.getElementById('project_title');
+        const projectSelect = document.getElementById('project_id');
         const userRole = "{{ session.get('user_role') }}";
 
         if (userRole !== 'Member') {
@@ -118,7 +118,7 @@
             const selectedPathway = pathwayElement.value;
             const projectCode = projectCodeInput.value;
 
-            projectTitleSelect.innerHTML = '<option value="">-- Select a Project --</option>';
+            projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
 
             if (validateProjectCode(projectCode)) {
                 const pathwayCodeMapping = {
@@ -138,13 +138,14 @@
 
                 filtered.forEach(p => {
                     const option = document.createElement('option');
-                    option.value = p.Project_Name;
+                    option.value = p.ID;
                     option.textContent = p.Project_Name;
-                    projectTitleSelect.appendChild(option);
+                    projectSelect.appendChild(option);
                 });
 
-                if (projectTitleSelect.options.length > 1) {
-                    projectTitleSelect.selectedIndex = 1;
+                // If there's only one project in the filtered list (plus the placeholder), select it.
+                if (projectSelect.options.length === 2) {
+                    projectSelect.selectedIndex = 1;
                 }
             }
         }
@@ -160,9 +161,10 @@
             {% endif %}
             filterProjects();
             // Set initial project title value if log exists
-            {% if log and log.Project_Title %}
-                projectTitleSelect.value = "{{ log.Project_Title }}";
+            {% if project_id %}
+                projectSelect.value = "{{ project_id }}";
             {% endif %}
         });
     </script>
 {% endblock %}
+

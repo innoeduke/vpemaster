@@ -42,8 +42,8 @@
                 <tr class="edit-mode-header" style="display: none;">
                     <th>No</th>
                     <th>Start Time</th>
-                    <th>Session Title</th>
                     <th>Session Type</th>
+                    <th>Session Title</th>
                     <th>Owner</th>
                     <th>Min</th>
                     <th>Max</th>
@@ -91,10 +91,10 @@
                                         {% endif %}
                                     {% endif %}
                                     ({{ pathway_abbr }}{{ pathway_code }})
-                                {% elif log.session_type_title == "Evaluation" %}
-                                    Evaluation for {{ log.SessionLog.Session_Title }}
                                 {% elif log.session_type_title in ["Keynote Speech", "Panel Discussion", "Debate"] %}
                                     <i class="fas fa-award"></i> {{ log.SessionLog.Session_Title }}
+                                {% elif log.session_type_title == 'Evaluation' %}
+                                    Evaluation for {{ log.SessionLog.Session_Title }}
                                 {% else %}
                                     {{ log.SessionLog.Session_Title }}
                                 {% endif %}
@@ -287,6 +287,30 @@
         window.location.href = `/agenda?meeting_number=${selectedMeeting}`;
     }
 
+    function createSessionTitleControl(typeId, originalValue) {
+        const sessionType = sessionTypes.find(st => st.id === parseInt(typeId, 10));
+
+        if (sessionType && sessionType.Title === 'Evaluation') {
+            const select = document.createElement('select');
+            select.options.add(new Option('-- Select Speaker --', ''));
+            contacts.forEach(contact => {
+                select.options.add(new Option(contact.Name, contact.Name));
+            });
+
+            /*if (originalValue && originalValue.startsWith('Evaluation for ')) {
+                const speakerName = originalValue.replace('Evaluation for ', '');
+                select.value = speakerName;
+            }*/
+            return select;
+        } else {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = originalValue;
+            input.style.width = '100%';
+            input.style.boxSizing = 'border-box';
+            return input;
+        }
+    }
 
     function handleSectionChange(selectElement) {
         const selectedTypeId = parseInt(selectElement.value, 10);
@@ -295,6 +319,18 @@
         const ownerCell = row.querySelector('[data-field="Owner_ID"] select');
         const minDurationCell = row.querySelector('[data-field="Duration_Min"] input');
         const maxDurationCell = row.querySelector('[data-field="Duration_Max"] input');
+        const sessionTitleCell = row.querySelector('[data-field="Session_Title"]');
+
+        sessionTitleCell.innerHTML = ''; // Clear existing control
+        const originalValue = sessionType ? sessionType.Title : '';
+        const newControl = createSessionTitleControl(selectedTypeId, originalValue);
+        sessionTitleCell.appendChild(newControl);
+
+        // Show/hide the project button based on the new session type
+        const projectBtn = row.querySelector('.project-btn');
+        if (projectBtn) {
+            projectBtn.style.display = (sessionType && sessionType.Valid_for_Project) ? 'inline-block' : 'none';
+        }
 
 
         if (sessionType) {
@@ -311,7 +347,7 @@
     }
 
 
-    function createEditableCell(field, originalValue, isSection) {
+    function createEditableCell(field, originalValue, isSection, typeId) {
         const cell = document.createElement('td');
         cell.dataset.field = field;
 
@@ -325,7 +361,10 @@
             return cell;
         }
 
-        if (field === 'Type_ID') {
+        if (field === 'Session_Title') {
+            const control = createSessionTitleControl(typeId, originalValue);
+            cell.appendChild(control);
+        } else if (field === 'Type_ID') {
             const select = document.createElement('select');
             sessionTypes.forEach(type => {
                 select.options.add(new Option(type.Title, type.id));
@@ -388,9 +427,12 @@
         // Create and add the new project button
         const projectBtn = document.createElement('button');
         projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
-        projectBtn.className = 'icon-btn';
+        projectBtn.className = 'icon-btn project-btn'; // Added 'project-btn' class
         projectBtn.title = 'Select Project';
         projectBtn.onclick = function() { openProjectModal(this); };
+
+        // Initially hide the project button; handleSectionChange will show it if needed
+        projectBtn.style.display = 'none';
         actionsCell.appendChild(projectBtn);
 
         const deleteBtn = document.createElement('button');
@@ -434,7 +476,7 @@
             // Clear the row before rebuilding
             row.innerHTML = '';
 
-            const fieldsOrder = ['Meeting_Seq', 'Start_Time', 'Session_Title', 'Type_ID',  'Owner_ID', 'Duration_Min', 'Duration_Max'];
+            const fieldsOrder = ['Meeting_Seq', 'Start_Time','Type_ID', 'Session_Title', 'Owner_ID', 'Duration_Min', 'Duration_Max'];
             fieldsOrder.forEach(field => {
                 const cell = createEditableCell(field, row.dataset[field.toLowerCase()], isSection);
                 row.appendChild(cell);
@@ -446,10 +488,17 @@
             // Create and add the new project button
             const projectBtn = document.createElement('button');
             projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
-            projectBtn.className = 'icon-btn';
+            projectBtn.className = 'icon-btn project-btn'; // Added 'project-btn' class
             projectBtn.title = 'Select Project';
             // Update the project button's onclick
             projectBtn.onclick = function() { openProjectModal(this); };
+
+            const sessionType = sessionTypes.find(st => st.id === parseInt(typeId, 10));
+            if (sessionType && sessionType.Valid_for_Project) {
+                projectBtn.style.display = 'inline-block';
+            } else {
+                projectBtn.style.display = 'none';
+            }
             actionsCell.appendChild(projectBtn);
 
             const deleteBtn = document.createElement('button');
@@ -506,14 +555,29 @@
             if (row.style.display === 'none') {
                 return;
             }
+
+            const titleCell = row.querySelector('[data-field="Session_Title"]');
+            const titleControl = titleCell.querySelector('input, select');
+            let sessionTitle;
+
+            const typeId = parseInt(row.querySelector('[data-field="Type_ID"] select').value, 10);
+            const sessionType = sessionTypes.find(st => st.id === typeId);
+
+            /*if (sessionType && sessionType.Title === 'Evaluation') {
+                const selectedSpeaker = titleControl.value;
+                sessionTitle = selectedSpeaker ? 'Evaluation for ' + selectedSpeaker : 'Evaluation';
+            } else {*/
+            sessionTitle = titleControl.value;
+
+
             const rowData = {
                 id: row.dataset.id,
                 project_id: row.dataset.projectId || row.dataset.project_id,
                 meeting_number: row.dataset.meetingNumber,
                 meeting_seq: row.querySelector('[data-field="Meeting_Seq"] input').value.trim(),
                 start_time: row.querySelector('[data-field="Start_Time"]').textContent.trim(),
-                session_title: row.querySelector('[data-field="Session_Title"] input').value,
-                type_id: row.querySelector('[data-field="Type_ID"] select').value,
+                session_title: sessionTitle,
+                type_id: typeId,
                 owner_id: row.querySelector('[data-field="Owner_ID"] select') ? row.querySelector('[data-field="Owner_ID"] select').value : null,
                 duration_min: row.querySelector('[data-field="Duration_Min"] input') ? row.querySelector('[data-field="Duration_Min"] input').value : null,
                 duration_max: row.querySelector('[data-field="Duration_Max"] input') ? row.querySelector('[data-field="Duration_Max"] input').value : null,

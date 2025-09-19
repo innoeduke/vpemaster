@@ -29,6 +29,7 @@ class SpeechLog(db.Model):
     Project_Status = db.Column(db.String(50))
     Contact_ID = db.Column(db.Integer, nullable=False)
     Session_ID = db.Column(db.Integer, db.ForeignKey('Session_Logs.id'))
+    Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.ID'))
 
 
 class User(db.Model):
@@ -82,6 +83,7 @@ class SessionType(db.Model):
     Default_Owner = db.Column(db.String(255))
     Is_Section = db.Column(db.Boolean, default=False)
     Is_Titleless = db.Column(db.Boolean, default=True)
+    Valid_for_Project = db.Column(db.Boolean, default=False)
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)
 
@@ -99,3 +101,5 @@ class SessionLog(db.Model):
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)
     Notes = db.Column(db.String(1000))
+    meeting = db.relationship('Meeting', backref='session_logs')
+    project = db.relationship('Project', backref='session_logs')

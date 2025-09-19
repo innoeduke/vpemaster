@@ -1,8 +1,8 @@
 # vpemaster/speech_logs_routes.py
 
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 from vpemaster import db
-from vpemaster.models import SpeechLog, Contact, User, Project
+from vpemaster.models import SpeechLog, Contact, User, Project, SessionLog
 from .main_routes import login_required
 from sqlalchemy import distinct
 from datetime import datetime
@@ -42,7 +42,7 @@ def show_speech_logs():
     if selected_meeting:
         query = query.filter(SpeechLog.Meeting_Number == selected_meeting)
 
-    all_logs = query.order_by(SpeechLog.Meeting_Number.asc()).all()
+    all_logs = query.order_by(SpeechLog.Meeting_Number.desc()).all()
 
     return render_template('speech_logs.html',
                            logs=all_logs,
@@ -57,8 +57,16 @@ def show_speech_logs():
 def speech_log_form():
     log_id = request.args.get('log_id', type=int)
     log = None
+    project_id = None
     if log_id:
         log = SpeechLog.query.get_or_404(log_id)
+        if log.Session_ID:
+            session_log = SessionLog.query.get(log.Session_ID)
+            if session_log:
+                project_id = session_log.Project_ID
+        # Fallback to the project ID on the speech log itself
+        elif log.Project_ID:
+            project_id = log.Project_ID
 
     members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
     projects = Project.query.all()
@@ -76,7 +84,8 @@ def speech_log_form():
         for p in projects
     ]
 
-    return render_template('speech_log_form.html', log=log, members=members, projects=projects_data)
+    return render_template('speech_log_form.html', log=log, members=members, projects=projects_data, project_id=project_id)
+
 
 @speech_logs_bp.route('/speech_log/save/<int:log_id>', methods=['POST'])
 @login_required
@@ -84,6 +93,9 @@ def save_speech_log(log_id):
     log = SpeechLog.query.get_or_404(log_id)
     contact_id = request.form.get('contact_id', type=int)
     contact = Contact.query.get(contact_id)
+    project_id_str = request.form.get('project_id')
+    project_id = int(project_id_str) if project_id_str and project_id_str.isdigit() else None
+    project = Project.query.get(project_id) if project_id else None
 
     log.Meeting_Number = request.form['meeting_number']
     log.Meeting_Date = datetime.strptime(request.form['meeting_date'], '%Y-%m-%d').date()
@@ -94,7 +106,16 @@ def save_speech_log(log_id):
     log.Name = contact.Name if contact else ''
     log.Contact_ID = contact.id if contact else 0
     log.Evaluator = request.form['evaluator']
-    log.Project_Title = request.form['project_title']
+    log.Project_Title = project.Project_Name if project else ''
+    log.Project_ID = project.ID if project else None # This line was missing
+
+    # Sync with SessionLog if it exists
+    if log.Session_ID:
+        session_log = SessionLog.query.get(log.Session_ID)
+        if session_log:
+            session_log.Session_Title = log.Speech_Title
+            session_log.Owner_ID = log.Contact_ID
+            session_log.Project_ID = project.ID if project else None
 
     db.session.commit()
     return redirect(url_for('speech_logs_bp.show_speech_logs'))
@@ -104,6 +125,9 @@ def save_speech_log(log_id):
 def add_speech_log():
     contact_id = request.form.get('contact_id', type=int)
     contact = Contact.query.get(contact_id)
+    project_id_str = request.form.get('project_id')
+    project_id = int(project_id_str) if project_id_str and project_id_str.isdigit() else None
+    project = Project.query.get(project_id) if project_id else None
 
     new_log = SpeechLog(
         Meeting_Number=request.form['meeting_number'],
@@ -115,7 +139,8 @@ def add_speech_log():
         Name=contact.Name if contact else '',
         Contact_ID=contact.id if contact else 0,
         Evaluator=request.form['evaluator'],
-        Project_Title=request.form['project_title'],
+        Project_Title=project.Project_Name if project else '',
+        Project_ID=project.ID if project else None,
         Project_Status='Booked'
     )
     db.session.add(new_log)
@@ -142,3 +167,4 @@ def complete_speech_log(log_id):
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
+
