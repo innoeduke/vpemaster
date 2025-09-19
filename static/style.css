@@ -1,6 +1,6 @@
 /* General body and wrapper styles */
 body {
-    font-family: sans-serif;
+    font-family: 'Merriweather', serif;
     margin: 0;
     background-color: #f4f4f9;
 }
@@ -290,7 +290,9 @@ th {
 
 /* Modifier classes for button colors */
 .btn-primary {
-    background-color: #007BFF; /* Blue */
+    border: 1px solid #e3e3e3;
+    color: black;
+    background-color: white; /* Blue: #007BFF */
 }
 
 .btn-danger {
@@ -358,6 +360,28 @@ th {
     justify-content: center;
     gap: 10px;
 }
+
+.project-modal .modal-content {
+    text-align: left;
+}
+
+.project-modal .form-group {
+    margin-bottom: 15px;
+}
+
+.project-modal label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.project-modal select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
 
 /* Form page styles */
 .form-table {
@@ -452,6 +476,7 @@ th {
 
 .form-group {
     /* Base styles for form groups, no flex grow/shrink by default */
+    margin-right: 20px;
 }
 
 .form-group--path,
@@ -554,10 +579,15 @@ th {
     color: red;
 }
 
-/* Style for DTM superscript indicator */
+/* Style for text & fonts */
 .dtm-superscript {
-    color: #004165;
+    color: #772432;
     font-weight: bold;
+    font-size: 0.7em;
+}
+
+.owner-meta {
+    font-size: 0.7em;
 }
 
 .section-row {

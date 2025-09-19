@@ -18,14 +18,14 @@
 
         {% if session.get('user_role') in ['Admin', 'Officer'] %}
         <div class="button-group">
-            <button id="edit-logs-btn" class="btn btn-success">Edit</button>
+            <button id="cancel-edit-btn" class="btn btn-danger" style="display: none;">Cancel</button>
             <form id="load-form" action="{{ url_for('agenda_bp.load_csv') }}" method="post" enctype="multipart/form-data" style="display: inline;">
                 <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
                 <button id="load-btn" type="button" class="btn btn-primary" onclick="document.getElementById('csv-file').click()">Load</button>
             </form>
             <button id="export-btn" class="btn btn-primary">Save As</button>
             <button id="add-row-btn" class="btn btn-primary" style="display: none;">Add</button>
-            <button id="cancel-edit-btn" class="btn btn-danger" style="display: none;">Cancel</button>
+            <button id="edit-logs-btn" class="btn btn-success">Edit</button>
         </div>
         {% endif %}
     </div>
@@ -51,34 +51,78 @@
                 </tr>
             </thead>
             <tbody>
-                {% for log, is_section in logs %}
-                <tr data-id="{{ log.id }}"
-                    data-meeting-number="{{ log.Meeting_Number }}"
-                    data-is-section="{{ is_section|lower }}"
-                    data-meeting_seq="{{ log.Meeting_Seq }}"
-                    data-start_time="{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}"
-                    data-session_title="{{ log.Session_Title if log.Session_Title is not none else '' }}"
-                    data-type_id="{{ log.Type_ID }}"
-                    data-owner_id="{{ log.Owner_ID }}"
-                    data-duration_min="{{ log.Duration_Min if log.Duration_Min is not none else '' }}"
-                    data-duration_max="{{ log.Duration_Max if log.Duration_Max is not none else '' }}"
-                    class="{{ 'section-row' if is_section else '' }}">
+                {% for log in logs %}
+                <tr data-id="{{ log.SessionLog.id }}"
+                    data-project_id="{{ log.SessionLog.Project_ID if log.SessionLog.Project_ID is not none else '' }}"
+                    data-meeting-number="{{ log.SessionLog.Meeting_Number }}"
+                    data-is-section="{{ log.Is_Section|lower }}"
+                    data-meeting_seq="{{ log.SessionLog.Meeting_Seq }}"
+                    data-start_time="{{ log.SessionLog.Start_Time.strftime('%H:%M') if log.SessionLog.Start_Time is not none else '' }}"
+                    data-session_title="{{ log.SessionLog.Session_Title if log.SessionLog.Session_Title is not none else '' }}"
+                    data-type_id="{{ log.SessionLog.Type_ID }}"
+                    data-owner_id="{{ log.SessionLog.Owner_ID }}"
+                    data-duration_min="{{ log.SessionLog.Duration_Min if log.SessionLog.Duration_Min is not none else '' }}"
+                    data-duration_max="{{ log.SessionLog.Duration_Max if log.SessionLog.Duration_Max is not none else '' }}"
+                    class="{{ 'section-row' if log.Is_Section else '' }}">
 
-                    {% if is_section %}
+                    {% if log.Is_Section %}
                         <td colspan="4" class="non-edit-mode-cell">
-                            {{ log.Session_Title }}
+                            {{ log.session_type_title }}
                         </td>
                     {% else %}
-                        <td class="non-edit-mode-cell">{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}</td>
+                        <td class="non-edit-mode-cell">{{ log.SessionLog.Start_Time.strftime('%H:%M') if log.SessionLog.Start_Time is not none else '' }}</td>
                         <td class="non-edit-mode-cell">
-                            {{ log.Session_Title }}
+                            {% if log.Is_Titleless %}
+                                {{ log.session_type_title }}
+                            {% else %}
+                                {% if log.session_type_title == "Pathway Speech" %}
+                                    {{ log.SessionLog.Session_Title }}
+                                    {% set pathway_abbr = '' %}
+                                    {% set pathway_code = '' %}
+                                    {% if log.SessionLog.Owner_ID %}
+                                        {% set contact = contacts|selectattr('id', 'equalto', log.SessionLog.Owner_ID)|first %}
+                                        {% if contact and contact.Working_Path %}
+                                            {% if contact.Working_Path == 'Dynamic Leadership' %}{% set pathway_abbr = 'DL' %}{% set pathway_code = log.Code_DL %}{% endif %}
+                                            {% if contact.Working_Path == 'Engaging Humor' %}{% set pathway_abbr = 'EH' %}{% set pathway_code = log.Code_EH %}{% endif %}
+                                            {% if contact.Working_Path == 'Motivational Strategies' %}{% set pathway_abbr = 'MS' %}{% set pathway_code = log.Code_MS %}{% endif %}
+                                            {% if contact.Working_Path == 'Persuasive Influence' %}{% set pathway_abbr = 'PI' %}{% set pathway_code = log.Code_PI %}{% endif %}
+                                            {% if contact.Working_Path == 'Presentation Mastery' %}{% set pathway_abbr = 'PM' %}{% set pathway_code = log.Code_PM %}{% endif %}
+                                            {% if contact.Working_Path == 'Visionary Communication' %}{% set pathway_abbr = 'VC' %}{% set pathway_code = log.Code_VC %}{% endif %}
+                                        {% endif %}
+                                    {% endif %}
+                                    ({{ pathway_abbr }}{{ pathway_code }})
+                                {% elif log.session_type_title == "Evaluation" %}
+                                    Evaluation for {{ log.SessionLog.Session_Title }}
+                                {% elif log.session_type_title in ["Keynote Speech", "Panel Discussion", "Debate"] %}
+                                    <i class="fas fa-award"></i> {{ log.SessionLog.Session_Title }}
+                                {% else %}
+                                    {{ log.SessionLog.Session_Title }}
+                                {% endif %}
+                            {% endif %}
                         </td>
                         <td class="non-edit-mode-cell">
-                            {% for contact in contacts %}{% if contact.id == log.Owner_ID %}{{ contact.Name }}{% endif %}{% endfor %}
+                            {% for contact in contacts %}
+                                {% if contact.id == log.SessionLog.Owner_ID %}
+                                    {{ contact.Name }}
+                                    {% if contact.DTM %}
+                                        <sup class="dtm-superscript">DTM</sup>
+                                    {% endif %}
+                                    <span class="owner-meta">
+                                    {% if contact.Type == 'Guest' %}
+                                        <br/>Guest
+                                        {% if contact.Club %}
+                                            @{{ contact.Club }}
+                                        {% endif %}
+                                    {% elif contact.Type == 'Member' and contact.Completed_Levels %}
+                                        <br/>{{ contact.Completed_Levels }}
+                                    {% endif %}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
                         </td>
                         <td class="non-edit-mode-cell">
-                            {% if log.Duration_Min and log.Duration_Max %}{{ log.Duration_Min }}'-{{ log.Duration_Max }}'
-                            {% elif log.Duration_Max %}{{ log.Duration_Max }}'
+                            {% if log.SessionLog.Duration_Min and log.SessionLog.Duration_Max %}{{ log.SessionLog.Duration_Min }}'-{{ log.SessionLog.Duration_Max }}'
+                            {% elif log.SessionLog.Duration_Max %}{{ log.SessionLog.Duration_Max }}'
                             {% endif %}
                         </td>
                     {% endif %}
@@ -88,7 +132,7 @@
         </table>
     </div>
 
-    <div id="projectModal" class="modal">
+    <div id="projectModal" class="modal project-modal">
         <div class="modal-content">
             <span class="close" onclick="closeProjectModal()">&times;</span>
             <h2>Select a Project</h2>
@@ -104,13 +148,24 @@
                 </select>
             </div>
             <div class="form-group">
+                <label for="level-select">Level:</label>
+                <select id="level-select">
+                    <option value="">All Levels</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label for="project-select">Project:</label>
                 <select id="project-select">
                     <option value="">-- Select a Project --</option>
                 </select>
             </div>
             <div class="modal-buttons">
-                <button onclick="closeProjectModal()" class="btn">Cancel</button>
+                <button onclick="closeProjectModal()" class="btn btn-danger">Cancel</button>
                 <button onclick="saveProjectSelection()" class="btn btn-primary">Save</button>
             </div>
         </div>
@@ -119,6 +174,7 @@
 <script>
     const sessionTypes = {{ session_types|tojson }};
     const contacts = {{ contacts|tojson }};
+    const projects = {{ projects|tojson }};
     const editButton = document.getElementById('edit-logs-btn');
     const cancelButton = document.getElementById('cancel-edit-btn');
     const addRowButton = document.getElementById('add-row-btn');
@@ -134,7 +190,42 @@
     function openProjectModal(button) {
         activeRowForProject = button.closest('tr');
         projectModal.style.display = 'flex';
-        // You might want to pre-fill the pathway based on the speaker's default
+
+        const pathwayNameToCode = {
+            "Dynamic Leadership": "Code_DL",
+            "Engaging Humor": "Code_EH",
+            "Motivational Strategies": "Code_MS",
+            "Persuasive Influence": "Code_PI",
+            "Presentation Mastery": "Code_PM",
+            "Visionary Communication": "Code_VC"
+        };
+
+        const pathwaySelect = document.getElementById('pathway-select');
+        const levelSelect = document.getElementById('level-select');
+
+        // Reset selects to default
+        pathwaySelect.value = "Code_DL";
+        levelSelect.value = "";
+
+        const ownerId = parseInt(activeRowForProject.querySelector('[data-field="Owner_ID"] select').value, 10);
+        if (ownerId) {
+            const contact = contacts.find(c => c.id === ownerId);
+            if (contact) {
+                // Pre-fill pathway
+                if (contact.Working_Path && pathwayNameToCode[contact.Working_Path]) {
+                    pathwaySelect.value = pathwayNameToCode[contact.Working_Path];
+                }
+                // Pre-fill level from Next_Project
+                if (contact.Next_Project) {
+                    const level = contact.Next_Project.split('.')[0];
+                    if (level && !isNaN(level)) {
+                        levelSelect.value = level;
+                    }
+                }
+            }
+        }
+
+        filterModalProjects();
     }
 
     function closeProjectModal() {
@@ -144,12 +235,33 @@
 
     function filterModalProjects() {
         const pathwaySelect = document.getElementById('pathway-select');
+        const levelSelect = document.getElementById('level-select');
         const projectSelect = document.getElementById('project-select');
         const selectedPathway = pathwaySelect.value;
+        const selectedLevel = levelSelect.value;
 
         projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
 
-        const filtered = projects.filter(p => p[selectedPathway]);
+        let filtered = projects.filter(p => p[selectedPathway]);
+
+        if (selectedLevel) {
+            filtered = filtered.filter(p => p[selectedPathway].startsWith(selectedLevel));
+        }
+
+        // Sort the filtered projects
+        filtered.sort((a, b) => {
+            const codeA = a[selectedPathway] || '';
+            const codeB = b[selectedPathway] || '';
+            const nameA = a.Project_Name || '';
+            const nameB = b.Project_Name || '';
+
+            const codeComparison = codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+            if (codeComparison !== 0) {
+                return codeComparison;
+            }
+            return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+        });
+
         filtered.forEach(p => {
             const option = new Option(`${p[selectedPathway]} - ${p.Project_Name}`, p.ID);
             projectSelect.add(option);
@@ -160,19 +272,12 @@
         const projectSelect = document.getElementById('project-select');
         const selectedProjectId = projectSelect.value;
         if (selectedProjectId && activeRowForProject) {
-            const selectedProject = projects.find(p => p.ID.toString() === selectedProjectId);
-
-            // Update the session title in the table
-            const titleInput = activeRowForProject.querySelector('[data-field="Session_Title"] input');
-            if (titleInput && selectedProject) {
-                titleInput.value = selectedProject.Project_Name;
-            }
-
             // Store the project ID in the row's dataset
             activeRowForProject.dataset.projectId = selectedProjectId;
         }
         closeProjectModal();
     }
+
 
 
     // This function now simply reloads the page with the new filter applied
@@ -187,14 +292,12 @@
         const selectedTypeId = parseInt(selectElement.value, 10);
         const sessionType = sessionTypes.find(st => st.id === selectedTypeId);
         const row = selectElement.closest('tr');
-        const sessionTitleCell = row.querySelector('[data-field="Session_Title"]');
         const ownerCell = row.querySelector('[data-field="Owner_ID"] select');
         const minDurationCell = row.querySelector('[data-field="Duration_Min"] input');
         const maxDurationCell = row.querySelector('[data-field="Duration_Max"] input');
 
 
         if (sessionType) {
-            sessionTitleCell.querySelector('input').value = sessionType.Title;
             if (sessionType.Is_Section) {
                 if(ownerCell) ownerCell.disabled = true;
                 if(minDurationCell) minDurationCell.disabled = true;
@@ -285,14 +388,14 @@
         // Create and add the new project button
         const projectBtn = document.createElement('button');
         projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
-        projectBtn.className = 'btn-primary icon-btn';
+        projectBtn.className = 'icon-btn';
         projectBtn.title = 'Select Project';
         projectBtn.onclick = function() { openProjectModal(this); };
         actionsCell.appendChild(projectBtn);
 
         const deleteBtn = document.createElement('button');
         deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-        deleteBtn.className = 'btn-danger delete-btn icon-btn';
+        deleteBtn.className = 'delete-btn icon-btn';
         deleteBtn.onclick = function() { deleteLogRow(this); };
         actionsCell.appendChild(deleteBtn);
         newRow.appendChild(actionsCell);
@@ -343,7 +446,7 @@
             // Create and add the new project button
             const projectBtn = document.createElement('button');
             projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
-            projectBtn.className = 'btn-primary icon-btn';
+            projectBtn.className = 'icon-btn';
             projectBtn.title = 'Select Project';
             // Update the project button's onclick
             projectBtn.onclick = function() { openProjectModal(this); };
@@ -351,13 +454,13 @@
 
             const deleteBtn = document.createElement('button');
             deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-            deleteBtn.className = 'btn-danger delete-btn icon-btn';
+            deleteBtn.className = 'delete-btn icon-btn';
             deleteBtn.onclick = function() { deleteLogRow(this); };
             actionsCell.appendChild(deleteBtn);
             row.appendChild(actionsCell);
         });
 
-        editButton.textContent = 'Done';
+        editButton.textContent = 'Save';
         editButton.classList.remove('btn-primary');
         editButton.classList.add('btn-success');
         cancelButton.style.display = 'inline-block';
@@ -405,7 +508,7 @@
             }
             const rowData = {
                 id: row.dataset.id,
-                project_id: row.dataset.projectId,
+                project_id: row.dataset.projectId || row.dataset.project_id,
                 meeting_number: row.dataset.meetingNumber,
                 meeting_seq: row.querySelector('[data-field="Meeting_Seq"] input').value.trim(),
                 start_time: row.querySelector('[data-field="Start_Time"]').textContent.trim(),
@@ -466,6 +569,7 @@
     });
 
     document.getElementById('pathway-select').addEventListener('change', filterModalProjects);
+    document.getElementById('level-select').addEventListener('change', filterModalProjects);
 
     // Initial call to populate the project dropdown
     filterModalProjects();

@@ -1,4 +1,3 @@
-
 # vpemaster/agenda_routes.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file
@@ -76,8 +75,6 @@ def _create_or_update_session(item, meeting_number, seq):
     session_title = item.get('session_title')
 
     if item['id'] == 'new':
-        if not session_title and session_type:
-            session_title = session_type.Title
         new_log = SessionLog(
             Meeting_Number=meeting_number,
             Meeting_Seq=seq,
@@ -100,12 +97,8 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
             log.Project_ID = item.get('project_id') if item.get('project_id') else None
 
-            if session_title is not None and session_title != '':
+            if session_title is not None:
                 log.Session_Title = session_title
-            elif session_type:
-                log.Session_Title = session_type.Title
-            else:
-                log.Session_Title = ''
 
 def _recalculate_start_times(meeting_numbers_to_update):
     for meeting_num in meeting_numbers_to_update:
@@ -171,7 +164,21 @@ def agenda():
         selected_meeting = selected_meeting_str
 
     # Base query for logs
-    query = db.session.query(SessionLog, SessionType.Is_Section).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)
+    query = db.session.query(
+        SessionLog,
+        SessionType.Is_Section,
+        SessionType.Title.label('session_type_title'),
+        SessionType.Is_Titleless,
+        Project.Code_DL,
+        Project.Code_EH,
+        Project.Code_MS,
+        Project.Code_PI,
+        Project.Code_PM,
+        Project.Code_VC,
+        SessionLog.Project_ID
+    ).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
+     .outerjoin(Project, SessionLog.Project_ID == Project.ID)
+
 
     # Filter by the selected meeting number
     if selected_meeting:
@@ -184,7 +191,9 @@ def agenda():
     session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section} for s in session_types_query]
 
     contacts_query = Contact.query.order_by(Contact.Name.asc()).all()
-    contacts_data = [{"id": c.id, "Name": c.Name} for c in contacts_query]
+    contacts_data = [{"id": c.id, "Name": c.Name, "Working_Path": c.Working_Path,\
+                    "Next_Project": c.Next_Project, "DTM": c.DTM, "Type": c.Type,\
+                    "Club": c.Club, "Completed_Levels": c.Completed_Levels} for c in contacts_query]
 
     return render_template('agenda.html',
                            logs=session_logs,

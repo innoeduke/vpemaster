@@ -18,7 +18,6 @@
                 <option value="Code_VC">Visionary Communication</option>
             </select>
         </div>
-
         <div class="form-group form-group--level">
             <label>Level:</label>
             <div class="radio-group">
@@ -27,7 +26,6 @@
                 {% endfor %}
             </div>
         </div>
-
         <div class="form-group form-group--project">
             <label for="project">Project:</label>
             <select id="project" name="project">
@@ -50,7 +48,7 @@
             <h2 id="project-name"></h2>
             {% if session.get('user_role') == 'Admin' %}
             <div class="button-group">
-                <button id="edit-project-btn" class="btn btn-primary">Edit</button>
+                <button id="edit-project-btn" class="btn btn-success">Edit</button>
                 <button id="cancel-project-btn" class="btn btn-danger" style="display: none;">Cancel</button>
             </div>
             {% endif %}
