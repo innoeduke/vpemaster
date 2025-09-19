@@ -44,12 +44,31 @@ def show_speech_logs():
 
     all_logs = query.order_by(SpeechLog.Meeting_Number.desc()).all()
 
+    # Also fetch members and projects for the modal form
+    members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
+    projects = Project.query.all()
+    projects_data = [
+        {
+            "ID": p.ID,
+            "Project_Name": p.Project_Name,
+            "Code_DL": p.Code_DL,
+            "Code_EH": p.Code_EH,
+            "Code_MS": p.Code_MS,
+            "Code_PI": p.Code_PI,
+            "Code_PM": p.Code_PM,
+            "Code_VC": p.Code_VC,
+        }
+        for p in projects
+    ]
+
     return render_template('speech_logs.html',
                            logs=all_logs,
                            owners=owners,
                            meeting_numbers=meeting_numbers,
                            selected_owner=selected_owner,
-                           selected_meeting=selected_meeting)
+                           selected_meeting=selected_meeting,
+                           members=members,  # Pass members to the template
+                           projects=projects_data) # Pass projects to the template
 
 
 @speech_logs_bp.route('/speech_log/form', methods=['GET'])
@@ -64,10 +83,24 @@ def speech_log_form():
             session_log = SessionLog.query.get(log.Session_ID)
             if session_log:
                 project_id = session_log.Project_ID
-        # Fallback to the project ID on the speech log itself
         elif log.Project_ID:
             project_id = log.Project_ID
 
+    # Return as JSON for fetch request from the modal
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and log:
+        log_data = {
+            "Meeting_Number": log.Meeting_Number,
+            "Meeting_Date": log.Meeting_Date.strftime('%Y-%m-%d') if log.Meeting_Date else '',
+            "Contact_ID": log.Contact_ID,
+            "Session": log.Session,
+            "Pathway": log.Pathway,
+            "Level": log.Level,
+            "Speech_Title": log.Speech_Title,
+            "Evaluator": log.Evaluator,
+        }
+        return jsonify(log=log_data, project_id=project_id)
+
+    # Fallback to rendering the old standalone form page if needed
     members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
     projects = Project.query.all()
     projects_data = [
@@ -85,7 +118,6 @@ def speech_log_form():
     ]
 
     return render_template('speech_log_form.html', log=log, members=members, projects=projects_data, project_id=project_id)
-
 
 @speech_logs_bp.route('/speech_log/save/<int:log_id>', methods=['POST'])
 @login_required
@@ -167,4 +199,3 @@ def complete_speech_log(log_id):
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
-
