@@ -185,6 +185,8 @@
     let isEditing = false;
     let activeRowForProject = null;
 
+    let projectSpeakers = [];
+
     // --- New functions for the Project Modal ---
 
     function openProjectModal(button) {
@@ -278,8 +280,6 @@
         closeProjectModal();
     }
 
-
-
     // This function now simply reloads the page with the new filter applied
     function applyMeetingFilter() {
         const selectedMeeting = meetingFilter.value;
@@ -293,14 +293,14 @@
         if (sessionType && sessionType.Title === 'Evaluation') {
             const select = document.createElement('select');
             select.options.add(new Option('-- Select Speaker --', ''));
-            contacts.forEach(contact => {
-                select.options.add(new Option(contact.Name, contact.Name));
+
+            projectSpeakers.forEach(speakerName => {
+                select.options.add(new Option(speakerName, speakerName));
             });
 
-            /*if (originalValue && originalValue.startsWith('Evaluation for ')) {
-                const speakerName = originalValue.replace('Evaluation for ', '');
-                select.value = speakerName;
-            }*/
+            if (originalValue) {
+                select.value = originalValue;
+            }
             return select;
         } else {
             const input = document.createElement('input');
@@ -424,6 +424,12 @@
         const actionsCell = document.createElement('td');
         actionsCell.classList.add('actions-column');
 
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.className = 'delete-btn icon-btn';
+        deleteBtn.onclick = function() { deleteLogRow(this); };
+        actionsCell.appendChild(deleteBtn);
+
         // Create and add the new project button
         const projectBtn = document.createElement('button');
         projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
@@ -435,11 +441,6 @@
         projectBtn.style.display = 'none';
         actionsCell.appendChild(projectBtn);
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-        deleteBtn.className = 'delete-btn icon-btn';
-        deleteBtn.onclick = function() { deleteLogRow(this); };
-        actionsCell.appendChild(deleteBtn);
         newRow.appendChild(actionsCell);
 
         tableBody.insertBefore(newRow, tableBody.firstChild);
@@ -452,6 +453,23 @@
         const tableContainer = document.getElementById('table-container'); // Get the container
         const header = table.querySelector('thead');
         const rows = table.querySelectorAll('tbody tr');
+
+        // Retrieve a list of potential project speakers
+        projectSpeakers = [];
+        if (enable) {
+            rows.forEach(row => {
+                const rowTypeId = parseInt(row.dataset.type_id, 10);
+                const rowOwnerId = parseInt(row.dataset.owner_id, 10);
+                const rowSessionType = sessionTypes.find(st => st.id === rowTypeId);
+
+                if (rowSessionType && rowSessionType.Valid_for_Project && rowOwnerId) {
+                    const contact = contacts.find(c => c.id === rowOwnerId);
+                    if (contact && !projectSpeakers.includes(contact.Name)) {
+                        projectSpeakers.push(contact.Name);
+                    }
+                }
+            });
+        }
 
         // Add or remove the class based on the edit mode to control table width
         if (tableContainer) {
@@ -475,21 +493,29 @@
 
             // Clear the row before rebuilding
             row.innerHTML = '';
+            const typeId = row.dataset.type_id;
 
             const fieldsOrder = ['Meeting_Seq', 'Start_Time','Type_ID', 'Session_Title', 'Owner_ID', 'Duration_Min', 'Duration_Max'];
             fieldsOrder.forEach(field => {
-                const cell = createEditableCell(field, row.dataset[field.toLowerCase()], isSection);
+                const cell = createEditableCell(field, row.dataset[field.toLowerCase()], isSection, typeId);
                 row.appendChild(cell);
             });
 
             const actionsCell = document.createElement('td');
             actionsCell.classList.add('actions-column');
 
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            deleteBtn.className = 'delete-btn icon-btn';
+            deleteBtn.onclick = function() { deleteLogRow(this); };
+            actionsCell.appendChild(deleteBtn);
+
             // Create and add the new project button
             const projectBtn = document.createElement('button');
             projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
             projectBtn.className = 'icon-btn project-btn'; // Added 'project-btn' class
             projectBtn.title = 'Select Project';
+
             // Update the project button's onclick
             projectBtn.onclick = function() { openProjectModal(this); };
 
@@ -501,11 +527,6 @@
             }
             actionsCell.appendChild(projectBtn);
 
-            const deleteBtn = document.createElement('button');
-            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-            deleteBtn.className = 'delete-btn icon-btn';
-            deleteBtn.onclick = function() { deleteLogRow(this); };
-            actionsCell.appendChild(deleteBtn);
             row.appendChild(actionsCell);
         });
 
