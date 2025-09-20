@@ -78,18 +78,23 @@
     </div>
 
     <div class="main-content" id="main-content">
+        {% if session.logged_in and session.display_name %}
+        <div class="profile-container">
+            <div class="profile-trigger" id="profile-trigger">
+                <i class="fas fa-user-circle"></i>
+                <span>{{ session.display_name }}</span>
+                <i class="fas fa-caret-down"></i>
+            </div>
+            <div class="profile-menu" id="profile-menu">
+                <a href="{{ url_for('main_bp.profile') }}"><i class="fas fa-user-edit"></i> User Profile</a>
+                <a href="{{ url_for('main_bp.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+        {% endif %}
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <ul class="flash-messages">
-                    {% for category, message in messages %}
-                        <li class="{{ category }}">{{ message }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
         {% endwith %}
         {% block content %}{% endblock %}
     </div>
-
 </div>
 
 <script>
@@ -126,6 +131,24 @@
                 navPane.classList.remove('expanded');
             }
         });
+    });
+
+    const profileTrigger = document.getElementById('profile-trigger');
+    const profileMenu = document.getElementById('profile-menu');
+
+    if (profileTrigger) {
+        profileTrigger.addEventListener('click', function(event) {
+            // Stop the event from propagating to the document click listener
+            event.stopPropagation();
+            profileMenu.classList.toggle('active');
+        });
+    }
+
+    // Close the dropdown if the user clicks outside of it
+    document.addEventListener('click', function(event) {
+        if (profileMenu && profileMenu.classList.contains('active')) {
+            profileMenu.classList.remove('active');
+        }
     });
 
 </script>

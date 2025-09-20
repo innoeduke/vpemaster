@@ -3,6 +3,8 @@
         <span class="close" onclick="closeSpeechLogModal()">&times;</span>
         <h1 id="speechLogModalTitle"></h1>
         <form id="speechLogForm" method="POST">
+            <input type="hidden" id="selected_owner_filter" name="selected_owner_filter">
+            <input type="hidden" id="selected_meeting_filter" name="selected_meeting_filter">
             <table class="form-table">
                 {% if session.get('user_role') in ['Admin', 'Officer'] %}
                 <tr>

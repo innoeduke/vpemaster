@@ -110,6 +110,14 @@
         const userRole = "{{ session.get('user_role') }}";
 
         function openSpeechLogModal(logId) {
+            // Populate hidden fields with current filter values
+            if (ownerFilter) {
+                document.getElementById('selected_owner_filter').value = ownerFilter.value;
+            }
+            if (meetingFilter) {
+                document.getElementById('selected_meeting_filter').value = meetingFilter.value;
+            }
+
             speechLogForm.reset();
             if (logId) {
                 speechLogModalTitle.textContent = 'Edit Speech Log';

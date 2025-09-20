@@ -113,7 +113,7 @@ def speech_log_form():
     ]
     return render_template('speech_log_form.html', log=log, members=members, projects=projects_data, project_id=project_id)
 
-# ... (The rest of the file remains the same) ...
+
 @speech_logs_bp.route('/speech_log/save/<int:log_id>', methods=['POST'])
 @login_required
 def save_speech_log(log_id):
@@ -144,7 +144,12 @@ def save_speech_log(log_id):
             session_log.Project_ID = project.ID if project else None
 
     db.session.commit()
-    return redirect(url_for('speech_logs_bp.show_speech_logs'))
+    selected_owner = request.form.get('selected_owner_filter')
+    selected_meeting = request.form.get('selected_meeting_filter')
+
+    # Redirect back with the filters applied
+    return redirect(url_for('speech_logs_bp.show_speech_logs', owner=selected_owner, meeting_number=selected_meeting))
+
 
 @speech_logs_bp.route('/speech_log/add', methods=['POST'])
 @login_required
@@ -171,7 +176,12 @@ def add_speech_log():
     )
     db.session.add(new_log)
     db.session.commit()
-    return redirect(url_for('speech_logs_bp.show_speech_logs'))
+    selected_owner = request.form.get('selected_owner_filter')
+    selected_meeting = request.form.get('selected_meeting_filter')
+
+    # Redirect back with the filters applied
+    return redirect(url_for('speech_logs_bp.show_speech_logs', owner=selected_owner, meeting_number=selected_meeting))
+
 
 
 @speech_logs_bp.route('/speech_log/delete/<int:log_id>', methods=['POST'])

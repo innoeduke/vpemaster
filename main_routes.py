@@ -41,6 +41,19 @@ def logout():
     session.pop('user_id', None)  # Remove user ID from session
     return redirect(url_for('main_bp.login'))
 
+@main_bp.route('/profile')
+@login_required
+def profile():
+    """
+    Displays the logged-in user's profile page.
+    """
+    user = User.query.get_or_404(session['user_id'])
+    contact = None
+    if user.Contact_ID:
+        contact = Contact.query.get(user.Contact_ID)
+
+    return render_template('profile.html', user=user, contact=contact)
+
 @main_bp.route('/')
 @login_required
 def index():
