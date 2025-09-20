@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from vpemaster import db
-from vpemaster.models import Contact
+from vpemaster.models import Contact, SessionLog
 from .main_routes import login_required
 from datetime import date
 
@@ -84,6 +84,9 @@ def delete_contact(contact_id):
     if session.get('user_role') not in ['Admin', 'Officer']:
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
+
+    # Find all session logs associated with this contact and set Owner_ID to None
+    SessionLog.query.filter_by(Owner_ID=contact_id).update({"Owner_ID": None})
 
     contact = Contact.query.get_or_404(contact_id)
     db.session.delete(contact)

@@ -36,45 +36,7 @@
             </div>
             {% endif %}
             <div id="speech-logs-list">
-                {% for log in logs %}
-                <div class="speech-log-entry" data-owner="{{ log.Name }}" data-meeting-number="{{ log.Meeting_Number }}">
-                    <div class="speech-log-details">
-                        <div class="meeting-info">
-                            <span>Meeting {{ log.Meeting_Number if log.Meeting_Number else '' }}</span> | <span>{{ log.Meeting_Date.strftime('%Y-%m-%d') if log.Meeting_Date else '' }}</span>
-                        </div>
-                        <div class="project-info">
-                            <span class="project-code">
-                                {% if log.Pathway and 'Non-Path' not in log.Pathway %}
-                                    {% set initials = [] %}
-                                    {% for word in log.Pathway.split() %}
-                                        {% set _ = initials.append(word[0]) %}
-                                    {% endfor %}
-                                    {{ initials | join('') }}{{ log.Level }}
-                                {% endif %}
-                            </span>
-                            <span class="project-title">{{ log.Project_Title }} ({{ log.Session }})</span>
-                        </div>
-                        <br/>
-                        <div class="speech-title">{{ log.Speech_Title }}</div>
-                        <div class="speaker-info">
-                            <span class="speaker-name">{{ log.Name }}</span> |
-                            <span class="status">
-                                {% if log.Project_Status == 'Completed' %}
-                                    <span class="completed-status">Completed</span>
-                                {% else %}
-                                    <button onclick="completeLog(this, {{ log.id }})" class="btn btn-success">Complete</button>
-                                {% endif %}
-                            </span>
-                        </div>
-                    </div>
-                    <div class="action-links">
-                        <button class="icon-btn" onclick="openSpeechLogModal({{ log.id }})" title="Edit"><i class="fas fa-edit"></i></button>
-                        {% if session.get('user_role') in ['Admin', 'Officer'] %}
-                        <button class="delete-btn icon-btn" onclick="showDeleteModal({{ log.id }})" title="Delete"><i class="fas fa-trash-alt"></i></button>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
+                {% include '_speech_log_entries.html' %}
             </div>
         </div>
     </div>
@@ -98,6 +60,7 @@
         const deleteForm = document.getElementById('deleteForm');
         const ownerFilter = document.getElementById('owner-filter');
         const meetingFilter = document.getElementById('meeting-filter');
+        const memberContact = {{ member_contact|tojson }};
 
         function showDeleteModal(logId) {
             deleteForm.action = `/speech_log/delete/${logId}`;
@@ -111,7 +74,23 @@
         function filterLogs() {
             const selectedOwner = ownerFilter.value;
             const selectedMeeting = meetingFilter.value;
-            window.location.href = `/speech_logs?owner=${selectedOwner}&meeting_number=${selectedMeeting}`;
+            const url = `/speech_logs?owner=${selectedOwner}&meeting_number=${selectedMeeting}`;
+
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('speech-logs-list').innerHTML = html;
+            })
+            .catch(error => console.error('Error fetching filtered logs:', error));
+        }
+
+        if (ownerFilter) {
+            ownerFilter.addEventListener('change', filterLogs);
+        }
+        if (meetingFilter) {
+            meetingFilter.addEventListener('change', filterLogs);
         }
 
         if (ownerFilter) {
@@ -158,9 +137,7 @@
                 speechLogModalTitle.textContent = 'Edit Speech Log';
                 speechLogForm.action = `/speech_log/save/${logId}`;
                 fetch(`/speech_log/form?log_id=${logId}`, {
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
                     .then(response => response.json())
                     .then(data => {
@@ -168,17 +145,19 @@
                         document.getElementById('meeting_date').value = data.log.Meeting_Date;
                         document.getElementById('contact_id').value = data.log.Contact_ID;
                         document.getElementById('session').value = data.log.Session;
-                        pathwayElement.value = data.log.Pathway;
+
                         if(userRole === 'Member') {
+                            document.getElementById('pathway').value = data.log.Pathway;
                             document.getElementById('pathway_display').textContent = data.log.Pathway;
+                        } else {
+                            pathwayElement.value = data.log.Pathway;
                         }
+
                         projectCodeInput.value = data.log.Level;
                         document.getElementById('speech_title').value = data.log.Speech_Title;
                         document.getElementById('evaluator').value = data.log.Evaluator;
 
-                        // Filter projects and then set the selected project
                         filterProjects();
-                        // Use a small timeout to ensure the options are populated before setting the value
                         setTimeout(() => {
                             projectSelect.value = data.project_id;
                         }, 100);
@@ -186,6 +165,10 @@
             } else {
                 speechLogModalTitle.textContent = 'Add New Speech Log';
                 speechLogForm.action = `{{ url_for('speech_logs_bp.add_speech_log') }}`;
+                if (userRole === 'Member' && memberContact) {
+                    document.getElementById('pathway').value = memberContact.Working_Path;
+                    document.getElementById('pathway_display').textContent = memberContact.Working_Path;
+                }
             }
             speechLogModal.style.display = 'flex';
         }

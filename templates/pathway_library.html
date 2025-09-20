@@ -34,25 +34,25 @@
         </div>
     </div>
 
-    <div class="path-codes">
-        <div class="path-code-box path-dl" id="dl-code" data-path="Code_DL">DL: <span></span></div>
-        <div class="path-code-box path-eh" id="eh-code" data-path="Code_EH">EH: <span></span></div>
-        <div class="path-code-box path-ms" id="ms-code" data-path="Code_MS">MS: <span></span></div>
-        <div class="path-code-box path-pi" id="pi-code" data-path="Code_PI">PI: <span></span></div>
-        <div class="path-code-box path-pm" id="pm-code" data-path="Code_PM">PM: <span></span></div>
-        <div class="path-code-box path-vc" id="vc-code" data-path="Code_VC">VC: <span></span></div>
-    </div>
-
     <div id="project-details" class="project-details-container" style="display: none;">
         <div class="project-header">
             <h2 id="project-name"></h2>
             {% if session.get('user_role') == 'Admin' %}
             <div class="button-group">
-                <button id="cancel-project-btn" class="btn btn-danger" style="display: none;">Cancel</button>
-                <button id="edit-project-btn" class="btn btn-primary">Edit</button>
+                <button id="cancel-project-btn" class="icon-btn" style="display: none;" title="Cancel"><i class="fas fa-times"></i></button>
+                <button id="edit-project-btn" class="icon-btn" title="Edit"><i class="fas fa-edit"></i></button>
             </div>
             {% endif %}
         </div>
+        <div class="path-codes">
+            <div class="path-code-box path-dl" id="dl-code" data-path="Code_DL">DL: <span></span></div>
+            <div class="path-code-box path-eh" id="eh-code" data-path="Code_EH">EH: <span></span></div>
+            <div class="path-code-box path-ms" id="ms-code" data-path="Code_MS">MS: <span></span></div>
+            <div class="path-code-box path-pi" id="pi-code" data-path="Code_PI">PI: <span></span></div>
+            <div class="path-code-box path-pm" id="pm-code" data-path="Code_PM">PM: <span></span></div>
+            <div class="path-code-box path-vc" id="vc-code" data-path="Code_VC">VC: <span></span></div>
+        </div>
+        <br/>
         <div class="project-section">
             <h3>Purpose</h3>
             <p id="project-purpose"></p>
@@ -174,7 +174,7 @@
             const pTags = document.querySelectorAll('#project-details .project-section p');
 
             if (isEditing) {
-                editButton.textContent = 'Save';
+                editButton.innerHTML = '<i class="fas fa-check"></i>';
                 cancelButton.style.display = 'inline-block';
                 pTags.forEach(p => p.style.display = 'none');
                 textareas.forEach(textarea => {
@@ -186,7 +186,7 @@
                     autoResizeTextarea({ target: textarea });
                 });
             } else {
-                editButton.textContent = 'Edit';
+                editButton.innerHTML = '<i class="fas fa-edit"></i>';
                 cancelButton.style.display = 'none';
                 pTags.forEach(p => p.style.display = 'block');
                 textareas.forEach(textarea => textarea.style.display = 'none');

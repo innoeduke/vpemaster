@@ -468,6 +468,11 @@ th {
 
 /* --- Styles for Pathway Library --- */
 
+#pathway-library-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
 .form-container {
     background-color: #fff;
     padding: 20px;
@@ -525,7 +530,6 @@ th {
     justify-content: space-around;
     gap: 10px;
     margin-bottom: 20px;
-    width: 50%;
 }
 
 .path-code-box {
@@ -631,7 +635,8 @@ th {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin: 20px auto; /* This centers the action bar */
+    max-width: 800px; /* This makes it the same width as the table container */
 }
 
 /* Style for Speech Log */

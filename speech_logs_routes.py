@@ -29,6 +29,9 @@ def show_speech_logs():
             user = User.query.get(user_id)
             if user and user.Contact_ID:
                 query = query.filter_by(Contact_ID=user.Contact_ID)
+                member_contact = Contact.query.get(user.Contact_ID)
+                if member_contact:
+                    member_contact_data = { "Working_Path": member_contact.Working_Path }
     else:
         # Get distinct owner names for the filter
         owner_names = db.session.query(distinct(SpeechLog.Name)).order_by(SpeechLog.Name.asc()).all()
@@ -43,6 +46,10 @@ def show_speech_logs():
         query = query.filter(SpeechLog.Meeting_Number == selected_meeting)
 
     all_logs = query.order_by(SpeechLog.Meeting_Number.desc()).all()
+
+    # Handle AJAX request for filtering
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render_template('_speech_log_entries.html', logs=all_logs)
 
     # Also fetch members and projects for the modal form
     members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
@@ -62,13 +69,10 @@ def show_speech_logs():
     ]
 
     return render_template('speech_logs.html',
-                           logs=all_logs,
-                           owners=owners,
-                           meeting_numbers=meeting_numbers,
-                           selected_owner=selected_owner,
-                           selected_meeting=selected_meeting,
-                           members=members,  # Pass members to the template
-                           projects=projects_data) # Pass projects to the template
+                           logs=all_logs, owners=owners, meeting_numbers=meeting_numbers,
+                           selected_owner=selected_owner, selected_meeting=selected_meeting,
+                           members=members, projects=projects_data, member_contact=member_contact_data)
+
 
 
 @speech_logs_bp.route('/speech_log/form', methods=['GET'])

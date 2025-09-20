@@ -4,7 +4,7 @@
 
 {% block content %}
     <h1>Meeting Agenda</h1>
-
+    <br/>
     <div class="action-bar">
         <div class="inline-filter-group">
             <label for="meeting-filter">Meeting#:</label>
@@ -227,7 +227,8 @@
             addButton.style.marginLeft = '5px';
             addButton.style.padding = '0 8px';
             addButton.style.border = 'none';
-            addButton.onclick = () => openContactModal();
+            // Pass the button element itself to the modal opener
+            addButton.onclick = (e) => openContactModal(e.target);
 
             cellContentWrapper.appendChild(select);
             cellContentWrapper.appendChild(addButton);
@@ -348,14 +349,16 @@
         const header = table.querySelector('thead');
         const rows = table.querySelectorAll('tbody tr');
 
+        // FIX: First, gather all project speakers from the current rows
         projectSpeakers = [];
         if (enable) {
             rows.forEach(row => {
                 const rowTypeId = parseInt(row.dataset.typeId, 10);
                 const rowOwnerId = parseInt(row.dataset.ownerId, 10);
-                const rowSessionType = sessionTypes.find(st => st.id === rowTypeId);
+                const sessionType = sessionTypes.find(st => st.id === rowTypeId);
 
-                if (rowSessionType && rowSessionType.Valid_for_Project && rowOwnerId) {
+                // Check if the session is a valid project speech and has an owner
+                if (sessionType && sessionType.Valid_for_Project && rowOwnerId) {
                     const contact = contacts.find(c => c.id === rowOwnerId);
                     if (contact && !projectSpeakers.includes(contact.Name)) {
                         projectSpeakers.push(contact.Name);
@@ -375,6 +378,7 @@
         header.querySelector('.edit-mode-header').style.display = enable ? 'table-row' : 'none';
         header.querySelector('.non-edit-mode-header').style.display = enable ? 'none' : 'table-row';
 
+        // Now, rebuild the rows using the populated projectSpeakers list
         rows.forEach(row => {
             const isSection = row.dataset.isSection === 'true';
             if (isSection) {
@@ -637,7 +641,13 @@
     const contactForm = document.getElementById("contactForm");
     const contactModalTitle = document.getElementById("contactModalTitle");
 
-    function openContactModal() {
+    function openContactModal(button) {
+        if(button) {
+            // Find the <select> element that is a sibling of the clicked button
+            activeOwnerSelect = button.closest('div').querySelector('select');
+        } else {
+            activeOwnerSelect = null;
+        }
         contactForm.reset();
         contactModalTitle.textContent = 'Add New Contact';
         contactForm.action = "{{ url_for('contacts_bp.contact_form') }}";
@@ -680,8 +690,27 @@
         .then(response => response.json())
         .then(data => {
             if (data.success && data.new_contact) {
+                // Add the new contact to our local list
                 contacts.push(data.new_contact);
-                refreshOwnerDropdowns(data.new_contact.id);
+
+                // Refresh all owner dropdowns with the updated list
+                const allOwnerSelects = document.querySelectorAll('[data-field="Owner_ID"] select');
+                allOwnerSelects.forEach(select => {
+                    const currentVal = select.value;
+                    select.innerHTML = '<option value="">-- Select Owner --</option>';
+                    contacts.sort((a, b) => a.Name.localeCompare(b.Name)).forEach(contact => {
+                        select.options.add(new Option(contact.Name, contact.id));
+                    });
+                    if (currentVal) {
+                         select.value = currentVal;
+                    }
+                });
+
+                // If a specific dropdown triggered this, set its value to the new contact
+                if (activeOwnerSelect) {
+                    activeOwnerSelect.value = data.new_contact.id;
+                }
+
                 closeContactModal();
             } else {
                 alert('Error: Could not save the new contact.');
