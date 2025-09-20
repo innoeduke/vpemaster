@@ -1,7 +1,7 @@
 # vpemaster/main_routes.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from vpemaster.models import User
+from vpemaster.models import User, Contact
 from werkzeug.security import check_password_hash
 from functools import wraps
 
@@ -27,7 +27,8 @@ def login():
         if user and check_password_hash(user.Pass_Hash, password):
             session['logged_in'] = True
             session['user_role'] = user.Role
-            session['user_id'] = user.id  # Add user ID to session
+            session['user_id'] = user.id
+            session['display_name'] = user.Display_Name # <-- Add this line
             return redirect(url_for('agenda_bp.agenda'))
         else:
             return redirect(url_for('main_bp.login'))
@@ -38,7 +39,8 @@ def login():
 def logout():
     session.pop('logged_in', None)
     session.pop('user_role', None)
-    session.pop('user_id', None)  # Remove user ID from session
+    session.pop('user_id', None)
+    session.pop('display_name', None) # <-- Add this line
     return redirect(url_for('main_bp.login'))
 
 @main_bp.route('/profile')
