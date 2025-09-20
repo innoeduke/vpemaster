@@ -48,35 +48,35 @@
             <h2 id="project-name"></h2>
             {% if session.get('user_role') == 'Admin' %}
             <div class="button-group">
-                <button id="edit-project-btn" class="btn btn-success">Edit</button>
                 <button id="cancel-project-btn" class="btn btn-danger" style="display: none;">Cancel</button>
+                <button id="edit-project-btn" class="btn btn-primary">Edit</button>
             </div>
             {% endif %}
         </div>
         <div class="project-section">
             <h3>Purpose</h3>
             <p id="project-purpose"></p>
-            <textarea id="edit-purpose" class="edit-textarea" style="display: none;"></textarea>
+            <textarea id="edit-purpose" class="edit-textarea" style="display: none;" rows="3"></textarea>
         </div>
         <div class="project-section">
             <h3>Introduction</h3>
             <p id="project-introduction"></p>
-            <textarea id="edit-introduction" class="edit-textarea" style="display: none;"></textarea>
+            <textarea id="edit-introduction" class="edit-textarea" style="display: none;" rows="3"></textarea>
         </div>
         <div class="project-section">
             <h3>Overview</h3>
             <p id="project-overview"></p>
-            <textarea id="edit-overview" class="edit-textarea" style="display: none;"></textarea>
+            <textarea id="edit-overview" class="edit-textarea" style="display: none;" rows="3"></textarea>
         </div>
         <div class="project-section">
             <h3>Requirements</h3>
             <p id="project-requirements"></p>
-            <textarea id="edit-requirements" class="edit-textarea" style="display: none;"></textarea>
+            <textarea id="edit-requirements" class="edit-textarea" style="display: none;" rows="3"></textarea>
         </div>
         <div class="project-section">
             <h3>Resources</h3>
             <p id="project-resources"></p>
-            <textarea id="edit-resources" class="edit-textarea" style="display: none;"></textarea>
+            <textarea id="edit-resources" class="edit-textarea" style="display: none;" rows="3"></textarea>
         </div>
     </div>
 </div>
@@ -91,6 +91,13 @@
         const pathBoxes = document.querySelectorAll('.path-code-box');
         const editButton = document.getElementById('edit-project-btn');
         const cancelButton = document.getElementById('cancel-project-btn');
+        const textareas = document.querySelectorAll('#project-details .project-section textarea');
+
+        function autoResizeTextarea(event) {
+            const textarea = event.target;
+            textarea.style.height = 'auto'; // Reset height to calculate the new scrollHeight
+            textarea.style.height = textarea.scrollHeight + 'px'; // Set height to content height
+        }
 
         function filterProjects() {
             const selectedPath = pathSelect.value;
@@ -165,10 +172,9 @@
             isEditing = !isEditing;
 
             const pTags = document.querySelectorAll('#project-details .project-section p');
-            const textareas = document.querySelectorAll('#project-details .project-section textarea');
 
             if (isEditing) {
-                editButton.textContent = 'Done';
+                editButton.textContent = 'Save';
                 cancelButton.style.display = 'inline-block';
                 pTags.forEach(p => p.style.display = 'none');
                 textareas.forEach(textarea => {
@@ -176,6 +182,8 @@
                     const pElement = document.getElementById(pId);
                     textarea.value = pElement.textContent;
                     textarea.style.display = 'block';
+                    // Trigger resize when first displaying
+                    autoResizeTextarea({ target: textarea });
                 });
             } else {
                 editButton.textContent = 'Edit';
@@ -257,6 +265,11 @@
                 toggleEditView();
             });
         }
+
+        // Add event listener to all textareas for auto-resizing
+        textareas.forEach(textarea => {
+            textarea.addEventListener('input', autoResizeTextarea);
+        });
 
     </script>
 {% endblock %}

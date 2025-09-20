@@ -1,6 +1,6 @@
 # vpemaster/contacts_routes.py
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from vpemaster import db
 from vpemaster.models import Contact
 from .main_routes import login_required
@@ -30,32 +30,52 @@ def contact_form(contact_id=None):
     if contact_id:
         contact = Contact.query.get_or_404(contact_id)
 
+    # Handle fetch request for populating the modal
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.method == 'GET' and contact:
+        contact_data = {
+            "Name": contact.Name,
+            "Type": contact.Type,
+            "Club": contact.Club,
+            "Working_Path": contact.Working_Path,
+            "Next_Project": contact.Next_Project,
+            "Completed_Levels": contact.Completed_Levels,
+            "DTM": contact.DTM
+        }
+        return jsonify(contact=contact_data)
+
     if request.method == 'POST':
         if contact:
+            # Logic for updating an existing contact
             contact.Name = request.form['name']
-            contact.Club = request.form['club']
-            contact.Next_Project = request.form['next_project']
-            contact.Completed_Levels = request.form['completed_levels']
+            contact.Club = request.form.get('club')
+            contact.Next_Project = request.form.get('next_project')
+            contact.Completed_Levels = request.form.get('completed_levels')
             contact.Type = request.form.get('type')
             contact.Working_Path = request.form.get('working_path')
             contact.DTM = 'dtm' in request.form
-            db.session.commit()
         else:
+            # Logic for adding a new contact
             new_contact = Contact(
                 Name=request.form['name'],
-                Club=request.form['club'],
+                Club=request.form.get('club'),
                 Date_Created=date.today(),
-                Next_Project=request.form['next_project'],
-                Completed_Levels=request.form['completed_levels'],
+                Next_Project=request.form.get('next_project'),
+                Completed_Levels=request.form.get('completed_levels'),
                 Type=request.form.get('type'),
                 Working_Path=request.form.get('working_path'),
                 DTM='dtm' in request.form
             )
             db.session.add(new_contact)
             db.session.commit()
+            # If the request came from the modal, return JSON
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify(success=True, new_contact={'id': new_contact.id, 'Name': new_contact.Name})
+            contact = new_contact
 
+        db.session.commit()
         return redirect(url_for('contacts_bp.show_contacts'))
 
+    # Fallback for direct navigation
     return render_template('contact_form.html', contact=contact)
 
 @contacts_bp.route('/contact/delete/<int:contact_id>', methods=['POST'])

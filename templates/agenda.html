@@ -21,11 +21,11 @@
             <button id="cancel-edit-btn" class="btn btn-danger" style="display: none;">Cancel</button>
             <form id="load-form" action="{{ url_for('agenda_bp.load_csv') }}" method="post" enctype="multipart/form-data" style="display: inline;">
                 <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
-                <button id="load-btn" type="button" class="btn btn-primary" onclick="document.getElementById('csv-file').click()">Load</button>
+                <button id="load-btn" type="button" class="btn btn-info" onclick="document.getElementById('csv-file').click()">Load</button>
             </form>
-            <button id="export-btn" class="btn btn-primary">Save As</button>
-            <button id="add-row-btn" class="btn btn-primary" style="display: none;">Add</button>
-            <button id="edit-logs-btn" class="btn btn-success">Edit</button>
+            <button id="export-btn" class="btn btn-info">Save As</button>
+            <button id="add-row-btn" class="btn btn-info" style="display: none;">Add</button>
+            <button id="edit-logs-btn" class="btn btn-primary">Edit</button>
         </div>
         {% endif %}
     </div>
@@ -53,16 +53,18 @@
             <tbody>
                 {% for log in logs %}
                 <tr data-id="{{ log.SessionLog.id }}"
-                    data-project_id="{{ log.SessionLog.Project_ID if log.SessionLog.Project_ID is not none else '' }}"
+                    data-project-id="{{ log.SessionLog.Project_ID if log.SessionLog.Project_ID is not none else '' }}"
                     data-meeting-number="{{ log.SessionLog.Meeting_Number }}"
+                    data-meeting-date="{{ log.Meeting_Date.strftime('%Y-%m-%d') if log.Meeting_Date else '' }}"
+                    data-speech-log-id="{{ log.speech_log_id if log.speech_log_id is not none else '' }}"
                     data-is-section="{{ log.Is_Section|lower }}"
-                    data-meeting_seq="{{ log.SessionLog.Meeting_Seq }}"
-                    data-start_time="{{ log.SessionLog.Start_Time.strftime('%H:%M') if log.SessionLog.Start_Time is not none else '' }}"
-                    data-session_title="{{ log.SessionLog.Session_Title if log.SessionLog.Session_Title is not none else '' }}"
-                    data-type_id="{{ log.SessionLog.Type_ID }}"
-                    data-owner_id="{{ log.SessionLog.Owner_ID }}"
-                    data-duration_min="{{ log.SessionLog.Duration_Min if log.SessionLog.Duration_Min is not none else '' }}"
-                    data-duration_max="{{ log.SessionLog.Duration_Max if log.SessionLog.Duration_Max is not none else '' }}"
+                    data-meeting-seq="{{ log.SessionLog.Meeting_Seq }}"
+                    data-start-time="{{ log.SessionLog.Start_Time.strftime('%H:%M') if log.SessionLog.Start_Time is not none else '' }}"
+                    data-session-title="{{ log.SessionLog.Session_Title if log.SessionLog.Session_Title is not none else '' }}"
+                    data-type-id="{{ log.SessionLog.Type_ID }}"
+                    data-owner-id="{{ log.SessionLog.Owner_ID }}"
+                    data-duration-min="{{ log.SessionLog.Duration_Min if log.SessionLog.Duration_Min is not none else '' }}"
+                    data-duration-max="{{ log.SessionLog.Duration_Max if log.SessionLog.Duration_Max is not none else '' }}"
                     class="{{ 'section-row' if log.Is_Section else '' }}">
 
                     {% if log.Is_Section %}
@@ -132,44 +134,8 @@
         </table>
     </div>
 
-    <div id="projectModal" class="modal project-modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeProjectModal()">&times;</span>
-            <h2>Select a Project</h2>
-            <div class="form-group">
-                <label for="pathway-select">Pathway:</label>
-                <select id="pathway-select">
-                    <option value="Code_DL">Dynamic Leadership</option>
-                    <option value="Code_EH">Engaging Humor</option>
-                    <option value="Code_MS">Motivational Strategies</option>
-                    <option value="Code_PI">Persuasive Influence</option>
-                    <option value="Code_PM">Presentation Mastery</option>
-                    <option value="Code_VC">Visionary Communication</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="level-select">Level:</label>
-                <select id="level-select">
-                    <option value="">All Levels</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4">4</option>
-                    <option value="5">5</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="project-select">Project:</label>
-                <select id="project-select">
-                    <option value="">-- Select a Project --</option>
-                </select>
-            </div>
-            <div class="modal-buttons">
-                <button onclick="closeProjectModal()" class="btn btn-danger">Cancel</button>
-                <button onclick="saveProjectSelection()" class="btn btn-primary">Save</button>
-            </div>
-        </div>
-    </div>
+    {% include '_speech_log_modal.html' %}
+    {% include '_contact_modal.html' %}
 
 <script>
     const sessionTypes = {{ session_types|tojson }};
@@ -181,109 +147,13 @@
     const loadButton = document.getElementById('load-btn');
     const meetingFilter = document.getElementById('meeting-filter');
     const exportButton = document.getElementById('export-btn')
-    const projectModal = document.getElementById('projectModal');
     let isEditing = false;
     let activeRowForProject = null;
 
     let projectSpeakers = [];
 
-    // --- New functions for the Project Modal ---
-
-    function openProjectModal(button) {
-        activeRowForProject = button.closest('tr');
-        projectModal.style.display = 'flex';
-
-        const pathwayNameToCode = {
-            "Dynamic Leadership": "Code_DL",
-            "Engaging Humor": "Code_EH",
-            "Motivational Strategies": "Code_MS",
-            "Persuasive Influence": "Code_PI",
-            "Presentation Mastery": "Code_PM",
-            "Visionary Communication": "Code_VC"
-        };
-
-        const pathwaySelect = document.getElementById('pathway-select');
-        const levelSelect = document.getElementById('level-select');
-
-        // Reset selects to default
-        pathwaySelect.value = "Code_DL";
-        levelSelect.value = "";
-
-        const ownerId = parseInt(activeRowForProject.querySelector('[data-field="Owner_ID"] select').value, 10);
-        if (ownerId) {
-            const contact = contacts.find(c => c.id === ownerId);
-            if (contact) {
-                // Pre-fill pathway
-                if (contact.Working_Path && pathwayNameToCode[contact.Working_Path]) {
-                    pathwaySelect.value = pathwayNameToCode[contact.Working_Path];
-                }
-                // Pre-fill level from Next_Project
-                if (contact.Next_Project) {
-                    const level = contact.Next_Project.split('.')[0];
-                    if (level && !isNaN(level)) {
-                        levelSelect.value = level;
-                    }
-                }
-            }
-        }
-
-        filterModalProjects();
-    }
-
-    function closeProjectModal() {
-        projectModal.style.display = 'none';
-        activeRowForProject = null;
-    }
-
-    function filterModalProjects() {
-        const pathwaySelect = document.getElementById('pathway-select');
-        const levelSelect = document.getElementById('level-select');
-        const projectSelect = document.getElementById('project-select');
-        const selectedPathway = pathwaySelect.value;
-        const selectedLevel = levelSelect.value;
-
-        projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
-
-        let filtered = projects.filter(p => p[selectedPathway]);
-
-        if (selectedLevel) {
-            filtered = filtered.filter(p => p[selectedPathway].startsWith(selectedLevel));
-        }
-
-        // Sort the filtered projects
-        filtered.sort((a, b) => {
-            const codeA = a[selectedPathway] || '';
-            const codeB = b[selectedPathway] || '';
-            const nameA = a.Project_Name || '';
-            const nameB = b.Project_Name || '';
-
-            const codeComparison = codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
-            if (codeComparison !== 0) {
-                return codeComparison;
-            }
-            return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
-        });
-
-        filtered.forEach(p => {
-            const option = new Option(`${p[selectedPathway]} - ${p.Project_Name}`, p.ID);
-            projectSelect.add(option);
-        });
-    }
-
-    function saveProjectSelection() {
-        const projectSelect = document.getElementById('project-select');
-        const selectedProjectId = projectSelect.value;
-        if (selectedProjectId && activeRowForProject) {
-            // Store the project ID in the row's dataset
-            activeRowForProject.dataset.projectId = selectedProjectId;
-        }
-        closeProjectModal();
-    }
-
-    // This function now simply reloads the page with the new filter applied
     function applyMeetingFilter() {
         const selectedMeeting = meetingFilter.value;
-        // Construct the new URL and navigate to it
         window.location.href = `/agenda?meeting_number=${selectedMeeting}`;
     }
 
@@ -312,6 +182,94 @@
         }
     }
 
+    function createEditableCell(field, originalValue, isSection, typeId) {
+        const cell = document.createElement('td');
+        cell.dataset.field = field;
+
+        if (isSection && ['Owner_ID', 'Duration_Min', 'Duration_Max'].includes(field)) {
+            cell.textContent = '';
+            return cell;
+        }
+
+        if (field === 'Start_Time') {
+            cell.textContent = originalValue;
+            return cell;
+        }
+
+        if (field === 'Session_Title') {
+            const control = createSessionTitleControl(typeId, originalValue);
+            cell.appendChild(control);
+        } else if (field === 'Type_ID') {
+            const select = document.createElement('select');
+            sessionTypes.forEach(type => {
+                select.options.add(new Option(type.Title, type.id));
+            });
+            select.value = originalValue;
+            select.onchange = () => handleSectionChange(select);
+            cell.appendChild(select);
+        } else if (field === 'Owner_ID') {
+            const cellContentWrapper = document.createElement('div');
+            cellContentWrapper.style.display = 'flex';
+            cellContentWrapper.style.alignItems = 'center';
+
+            const select = document.createElement('select');
+            select.style.flexGrow = '1';
+            select.options.add(new Option('-- Select Owner --', ''));
+            contacts.forEach(contact => {
+                select.options.add(new Option(contact.Name, contact.id));
+            });
+            select.value = originalValue;
+
+            const addButton = document.createElement('button');
+            addButton.type = 'button';
+            addButton.innerHTML = '+';
+            addButton.classList.add('btn-success');
+            addButton.style.marginLeft = '5px';
+            addButton.style.padding = '0 8px';
+            addButton.style.border = 'none';
+            addButton.onclick = () => openContactModal();
+
+            cellContentWrapper.appendChild(select);
+            cellContentWrapper.appendChild(addButton);
+            cell.appendChild(cellContentWrapper);
+        } else {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = originalValue;
+            input.style.width = '100%';
+            input.style.boxSizing = 'border-box';
+            cell.appendChild(input);
+        }
+        return cell;
+    }
+
+    function createActionsCell(typeId) {
+        const actionsCell = document.createElement('td');
+        actionsCell.classList.add('actions-column');
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.className = 'delete-btn icon-btn';
+        deleteBtn.onclick = function() { deleteLogRow(this); };
+        actionsCell.appendChild(deleteBtn);
+
+        const projectBtn = document.createElement('button');
+        projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
+        projectBtn.className = 'icon-btn project-btn';
+        projectBtn.title = 'Select Project';
+        projectBtn.onclick = function() { openSpeechLogModal(this); };
+
+        const sessionType = sessionTypes.find(st => st.id === parseInt(typeId, 10));
+        if (sessionType && sessionType.Valid_for_Project) {
+            projectBtn.style.display = 'inline-block';
+        } else {
+            projectBtn.style.display = 'none';
+        }
+        actionsCell.appendChild(projectBtn);
+        return actionsCell;
+    }
+
+
     function handleSectionChange(selectElement) {
         const selectedTypeId = parseInt(selectElement.value, 10);
         const sessionType = sessionTypes.find(st => st.id === selectedTypeId);
@@ -326,7 +284,6 @@
         const newControl = createSessionTitleControl(selectedTypeId, originalValue);
         sessionTitleCell.appendChild(newControl);
 
-        // Show/hide the project button based on the new session type
         const projectBtn = row.querySelector('.project-btn');
         if (projectBtn) {
             projectBtn.style.display = (sessionType && sessionType.Valid_for_Project) ? 'inline-block' : 'none';
@@ -347,50 +304,6 @@
     }
 
 
-    function createEditableCell(field, originalValue, isSection, typeId) {
-        const cell = document.createElement('td');
-        cell.dataset.field = field;
-
-        if (isSection && ['Owner_ID', 'Duration_Min', 'Duration_Max'].includes(field)) {
-            cell.textContent = ''; // Display empty, non-editable cell for these fields in sections
-            return cell;
-        }
-
-        if (field === 'Start_Time') {
-            cell.textContent = originalValue;
-            return cell;
-        }
-
-        if (field === 'Session_Title') {
-            const control = createSessionTitleControl(typeId, originalValue);
-            cell.appendChild(control);
-        } else if (field === 'Type_ID') {
-            const select = document.createElement('select');
-            sessionTypes.forEach(type => {
-                select.options.add(new Option(type.Title, type.id));
-            });
-            select.value = originalValue;
-            select.onchange = () => handleSectionChange(select); // Add event listener
-            cell.appendChild(select);
-        } else if (field === 'Owner_ID') {
-            const select = document.createElement('select');
-            select.options.add(new Option('-- Select Owner --', ''));
-            contacts.forEach(contact => {
-                select.options.add(new Option(contact.Name, contact.id));
-            });
-            select.value = originalValue;
-            cell.appendChild(select);
-        } else {
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = originalValue;
-            input.style.width = '100%';
-            input.style.boxSizing = 'border-box';
-            cell.appendChild(input);
-        }
-        return cell;
-    }
-
     function addNewRow() {
         const tableBody = document.querySelector('#logs-table tbody');
         const meetingNumber = meetingFilter.value;
@@ -408,8 +321,8 @@
         const fields = [
             { name: 'Meeting_Seq', value: newSeq},
             { name: 'Start_Time', value: '' },
-            { name: 'Session_Title', value: '' },
             { name: 'Type_ID', value: '' },
+            { name: 'Session_Title', value: '' },
             { name: 'Owner_ID', value: '' },
             { name: 'Duration_Min', value: '' },
             { name: 'Duration_Max', value: '' }
@@ -421,26 +334,7 @@
             newRow.appendChild(cell);
         });
 
-        const actionsCell = document.createElement('td');
-        actionsCell.classList.add('actions-column');
-
-        const deleteBtn = document.createElement('button');
-        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-        deleteBtn.className = 'delete-btn icon-btn';
-        deleteBtn.onclick = function() { deleteLogRow(this); };
-        actionsCell.appendChild(deleteBtn);
-
-        // Create and add the new project button
-        const projectBtn = document.createElement('button');
-        projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
-        projectBtn.className = 'icon-btn project-btn'; // Added 'project-btn' class
-        projectBtn.title = 'Select Project';
-        projectBtn.onclick = function() { openProjectModal(this); };
-
-        // Initially hide the project button; handleSectionChange will show it if needed
-        projectBtn.style.display = 'none';
-        actionsCell.appendChild(projectBtn);
-
+        const actionsCell = createActionsCell(newRow.dataset.typeId);
         newRow.appendChild(actionsCell);
 
         tableBody.insertBefore(newRow, tableBody.firstChild);
@@ -450,16 +344,15 @@
     function toggleEditMode(enable) {
         isEditing = enable;
         const table = document.getElementById('logs-table');
-        const tableContainer = document.getElementById('table-container'); // Get the container
+        const tableContainer = document.getElementById('table-container');
         const header = table.querySelector('thead');
         const rows = table.querySelectorAll('tbody tr');
 
-        // Retrieve a list of potential project speakers
         projectSpeakers = [];
         if (enable) {
             rows.forEach(row => {
-                const rowTypeId = parseInt(row.dataset.type_id, 10);
-                const rowOwnerId = parseInt(row.dataset.owner_id, 10);
+                const rowTypeId = parseInt(row.dataset.typeId, 10);
+                const rowOwnerId = parseInt(row.dataset.ownerId, 10);
                 const rowSessionType = sessionTypes.find(st => st.id === rowTypeId);
 
                 if (rowSessionType && rowSessionType.Valid_for_Project && rowOwnerId) {
@@ -471,7 +364,6 @@
             });
         }
 
-        // Add or remove the class based on the edit mode to control table width
         if (tableContainer) {
             if (enable) {
                 tableContainer.classList.remove('non-edit-mode');
@@ -491,48 +383,29 @@
                 row.classList.remove('section-row');
             }
 
-            // Clear the row before rebuilding
             row.innerHTML = '';
-            const typeId = row.dataset.type_id;
+            const typeId = row.dataset.typeId;
 
-            const fieldsOrder = ['Meeting_Seq', 'Start_Time','Type_ID', 'Session_Title', 'Owner_ID', 'Duration_Min', 'Duration_Max'];
-            fieldsOrder.forEach(field => {
-                const cell = createEditableCell(field, row.dataset[field.toLowerCase()], isSection, typeId);
+            const fields = [
+                { name: 'Meeting_Seq',   datasetName: 'meetingSeq' },
+                { name: 'Start_Time',    datasetName: 'startTime' },
+                { name: 'Type_ID',       datasetName: 'typeId' },
+                { name: 'Session_Title', datasetName: 'sessionTitle' },
+                { name: 'Owner_ID',      datasetName: 'ownerId' },
+                { name: 'Duration_Min',  datasetName: 'durationMin' },
+                { name: 'Duration_Max',  datasetName: 'durationMax' }
+            ];
+
+            fields.forEach(field => {
+                const cell = createEditableCell(field.name, row.dataset[field.datasetName], isSection, typeId);
                 row.appendChild(cell);
             });
 
-            const actionsCell = document.createElement('td');
-            actionsCell.classList.add('actions-column');
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-            deleteBtn.className = 'delete-btn icon-btn';
-            deleteBtn.onclick = function() { deleteLogRow(this); };
-            actionsCell.appendChild(deleteBtn);
-
-            // Create and add the new project button
-            const projectBtn = document.createElement('button');
-            projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
-            projectBtn.className = 'icon-btn project-btn'; // Added 'project-btn' class
-            projectBtn.title = 'Select Project';
-
-            // Update the project button's onclick
-            projectBtn.onclick = function() { openProjectModal(this); };
-
-            const sessionType = sessionTypes.find(st => st.id === parseInt(typeId, 10));
-            if (sessionType && sessionType.Valid_for_Project) {
-                projectBtn.style.display = 'inline-block';
-            } else {
-                projectBtn.style.display = 'none';
-            }
-            actionsCell.appendChild(projectBtn);
-
+            const actionsCell = createActionsCell(typeId);
             row.appendChild(actionsCell);
         });
 
         editButton.textContent = 'Save';
-        editButton.classList.remove('btn-primary');
-        editButton.classList.add('btn-success');
         cancelButton.style.display = 'inline-block';
         addRowButton.style.display = 'inline-block';
         loadButton.style.display = 'none';
@@ -584,16 +457,12 @@
             const typeId = parseInt(row.querySelector('[data-field="Type_ID"] select').value, 10);
             const sessionType = sessionTypes.find(st => st.id === typeId);
 
-            /*if (sessionType && sessionType.Title === 'Evaluation') {
-                const selectedSpeaker = titleControl.value;
-                sessionTitle = selectedSpeaker ? 'Evaluation for ' + selectedSpeaker : 'Evaluation';
-            } else {*/
             sessionTitle = titleControl.value;
 
 
             const rowData = {
                 id: row.dataset.id,
-                project_id: row.dataset.projectId || row.dataset.project_id,
+                project_id: row.dataset.projectId || row.dataset.projectId,
                 meeting_number: row.dataset.meetingNumber,
                 meeting_seq: row.querySelector('[data-field="Meeting_Seq"] input').value.trim(),
                 start_time: row.querySelector('[data-field="Start_Time"]').textContent.trim(),
@@ -625,7 +494,6 @@
         });
     }
 
-    // The event listener will now trigger a page reload with the new filter
     meetingFilter.addEventListener('change', applyMeetingFilter);
 
     if (editButton && cancelButton && addRowButton && loadButton) {
@@ -653,11 +521,177 @@
         }
     });
 
-    document.getElementById('pathway-select').addEventListener('change', filterModalProjects);
-    document.getElementById('level-select').addEventListener('change', filterModalProjects);
+    // --- Speech Log Modal Logic ---
+    const speechLogModal = document.getElementById('speechLogModal');
+    const speechLogForm = document.getElementById('speechLogForm');
+    const speechLogModalTitle = document.getElementById('speechLogModalTitle');
+    const pathwayElement = document.getElementById('pathway');
+    const projectCodeInput = document.getElementById('level');
+    const projectSelect = document.getElementById('project_id');
+    const userRole = "{{ session.get('user_role') }}";
 
-    // Initial call to populate the project dropdown
-    filterModalProjects();
+    function openSpeechLogModal(button) {
+        activeRowForProject = button.closest('tr');
+        speechLogForm.reset();
+        const speechLogId = activeRowForProject.dataset.speechLogId;
+
+        if (speechLogId) {
+            speechLogModalTitle.textContent = 'Edit Speech Log';
+            speechLogForm.action = `/speech_log/save/${speechLogId}`;
+            fetch(`/speech_log/form?log_id=${speechLogId}`,{
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('meeting_number').value = data.log.Meeting_Number || '';
+                document.getElementById('meeting_date').value = data.log.Meeting_Date || '';
+                document.getElementById('contact_id').value = data.log.Contact_ID || '';
+                document.getElementById('session').value = data.log.Session || '';
+                pathwayElement.value = data.log.Pathway || '';
+                projectCodeInput.value = data.log.Level || '';
+                document.getElementById('speech_title').value = data.log.Speech_Title || '';
+                document.getElementById('evaluator').value = data.log.Evaluator || '';
+
+                filterProjects();
+                setTimeout(() => {
+                    projectSelect.value = data.project_id || '';
+                }, 100);
+            });
+        } else {
+            speechLogModalTitle.textContent = 'Add New Speech Log';
+            speechLogForm.action = `{{ url_for('speech_logs_bp.add_speech_log') }}`;
+
+            document.getElementById('meeting_number').value = activeRowForProject.dataset.meetingNumber || '';
+            document.getElementById('meeting_date').value = activeRowForProject.dataset.meetingDate || '';
+            document.getElementById('contact_id').value = activeRowForProject.dataset.ownerId || '';
+            document.getElementById('session').value = 'Prepared Speech';
+            document.getElementById('speech_title').value = activeRowForProject.dataset.sessionTitle || '';
+
+            document.getElementById('contact_id').dispatchEvent(new Event('change'));
+        }
+        speechLogModal.style.display = 'flex';
+    }
+
+    function closeSpeechLogModal() {
+        speechLogModal.style.display = 'none';
+        activeRowForProject = null;
+    }
+
+    if (userRole !== 'Member') {
+        document.getElementById('contact_id').addEventListener('change', function() {
+            var selectedOption = this.options[this.selectedIndex];
+            var pathway = selectedOption.getAttribute('data-pathway');
+            if (pathway) {
+                pathwayElement.value = pathway;
+            }
+            filterProjects();
+        });
+        pathwayElement.addEventListener('change', filterProjects);
+    }
+
+    projectCodeInput.addEventListener('input', filterProjects);
+
+    function validateProjectCode(code) {
+        if (!code) return false;
+        const regex = /^[1-5](\.\d+){1,2}$/;
+        return regex.test(code);
+    }
+
+    function filterProjects() {
+        const selectedPathway = pathwayElement.value;
+        const projectCode = projectCodeInput.value;
+
+        projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
+
+        if (validateProjectCode(projectCode)) {
+            const pathwayCodeMapping = {
+                "Dynamic Leadership": "Code_DL",
+                "Engaging Humor": "Code_EH",
+                "Motivational Strategies": "Code_MS",
+                "Persuasive Influence": "Code_PI",
+                "Presentation Mastery": "Code_PM",
+                "Visionary Communication": "Code_VC"
+            };
+            const pathwayKey = pathwayCodeMapping[selectedPathway];
+
+            const filtered = projects.filter(p => {
+                const code = p[pathwayKey];
+                return code && code.startsWith(projectCode);
+            });
+
+            filtered.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.ID;
+                option.textContent = p.Project_Name;
+                projectSelect.appendChild(option);
+            });
+
+            if (projectSelect.options.length === 2) {
+                projectSelect.selectedIndex = 1;
+            }
+        }
+    }
+
+    // --- Contact Modal Logic ---
+    const contactModal = document.getElementById("contactModal");
+    const contactForm = document.getElementById("contactForm");
+    const contactModalTitle = document.getElementById("contactModalTitle");
+
+    function openContactModal() {
+        contactForm.reset();
+        contactModalTitle.textContent = 'Add New Contact';
+        contactForm.action = "{{ url_for('contacts_bp.contact_form') }}";
+        contactModal.style.display = "flex";
+    }
+
+    function closeContactModal() {
+        contactModal.style.display = "none";
+    }
+
+    function refreshOwnerDropdowns(selectedId) {
+        const allOwnerSelects = document.querySelectorAll('[data-field="Owner_ID"] select');
+        allOwnerSelects.forEach(select => {
+            const currentVal = select.value;
+            select.innerHTML = '<option value="">-- Select Owner --</option>';
+            contacts.sort((a, b) => a.Name.localeCompare(b.Name)).forEach(contact => {
+                select.options.add(new Option(contact.Name, contact.id));
+            });
+
+            // Set the value to the newly created contact's ID if it was passed
+            // Otherwise, try to restore the previously selected value.
+            if (selectedId) {
+                 select.value = selectedId;
+            } else if (currentVal) {
+                 select.value = currentVal;
+            }
+        });
+    }
+
+    contactForm.addEventListener('submit', function(event) {
+        event.preventDefault();
+        const formData = new FormData(this);
+        const actionUrl = this.action;
+
+        fetch(actionUrl, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new URLSearchParams(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.new_contact) {
+                contacts.push(data.new_contact);
+                refreshOwnerDropdowns(data.new_contact.id);
+                closeContactModal();
+            } else {
+                alert('Error: Could not save the new contact.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the contact.');
+        });
+    });
 
 </script>
 

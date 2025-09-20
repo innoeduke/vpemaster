@@ -1,0 +1,60 @@
+<div id="contactModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeContactModal()">&times;</span>
+        <h1 id="contactModalTitle"></h1>
+        <form id="contactForm" method="POST">
+            <table class="form-table">
+                <tr>
+                    <td><label for="name">Name: <span class="required-field">*</span></label></td>
+                    <td><input type="text" id="name" name="name" required></td>
+                </tr>
+                <tr>
+                    <td><label for="type">Type: <span class="required-field">*</span></label></td>
+                    <td>
+                        <select id="type" name="type" required>
+                            <option value="Member">Member</option>
+                            <option value="Past Member">Past Member</option>
+                            <option value="Guest">Guest</option>
+                            <option value="System">System</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="club">Club:</label></td>
+                    <td><input type="text" id="club" name="club" placeholder="e.g., Club1/Club2"></td>
+                </tr>
+                <tr>
+                    <td><label for="working_path">Working Path:</label></td>
+                    <td>
+                        <select id="working_path" name="working_path">
+                            <option value="Dynamic Leadership">Dynamic Leadership</option>
+                            <option value="Engaging Humor">Engaging Humor</option>
+                            <option value="Motivational Strategies">Motivational Strategies</option>
+                            <option value="Persuasive Influence">Persuasive Influence</option>
+                            <option value="Presentation Mastery">Presentation Mastery</option>
+                            <option value="Visionary Communication">Visionary Communication</option>
+                            <option value="Non-Path: Distinguished Toastmaster">Non-Path: Distinguished Toastmaster</option>
+                            <option value="Non-Path: Other">Non-Path: Other</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="next_project">Next Project:</label></td>
+                    <td><input type="text" id="next_project" name="next_project" placeholder="e.g., 2.1, 3.2 ..."></td>
+                </tr>
+                <tr>
+                    <td><label for="completed_levels">Completed Levels:</label></td>
+                    <td><input type="text" id="completed_levels" name="completed_levels" placeholder="e.g., EH5/PM3"></td>
+                </tr>
+                <tr>
+                    <td><label for="dtm">DTM:</label></td>
+                    <td><input type="checkbox" id="dtm" name="dtm"></td>
+                </tr>
+            </table>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-danger" onclick="closeContactModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -250,9 +250,13 @@ def agenda():
         Project.Code_PI,
         Project.Code_PM,
         Project.Code_VC,
-        SessionLog.Project_ID
+        SessionLog.Project_ID,
+        SpeechLog.id.label('speech_log_id'),
+        Meeting.Meeting_Date
     ).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
-     .outerjoin(Project, SessionLog.Project_ID == Project.ID)
+     .outerjoin(Project, SessionLog.Project_ID == Project.ID)\
+     .outerjoin(SpeechLog, SpeechLog.Session_ID == SessionLog.id)\
+     .join(Meeting, Meeting.Meeting_Number == SessionLog.Meeting_Number)
 
 
     # Filter by the selected meeting number
@@ -270,13 +274,17 @@ def agenda():
                     "Next_Project": c.Next_Project, "DTM": c.DTM, "Type": c.Type,\
                     "Club": c.Club, "Completed_Levels": c.Completed_Levels} for c in contacts_query]
 
+    # Fetch members for the modal
+    members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
+
     return render_template('agenda.html',
                            logs=session_logs,
                            session_types=session_types_data,
                            contacts=contacts_data,
                            projects=projects_data,
                            meeting_numbers=meeting_numbers,
-                           selected_meeting=int(selected_meeting) if selected_meeting else None)
+                           selected_meeting=int(selected_meeting) if selected_meeting else None,
+                           members=members)
 
 
 @agenda_bp.route('/agenda/load', methods=['POST'])
@@ -398,8 +406,12 @@ def export_agenda(meeting_number):
         SessionLog.Session_Title,
         Contact.Name,
         SessionLog.Duration_Min,
-        SessionLog.Duration_Max
-    ).outerjoin(Contact, SessionLog.Owner_ID == Contact.id).filter(
+        SessionLog.Duration_Max,
+        SessionType.Title.label('session_type_title'),
+        SessionType.Is_Titleless
+    ).outerjoin(Contact, SessionLog.Owner_ID == Contact.id)\
+     .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
+     .filter(
         SessionLog.Meeting_Number == meeting_number
     ).order_by(SessionLog.Meeting_Seq.asc()).all()
 
@@ -412,7 +424,8 @@ def export_agenda(meeting_number):
 
     # Write the session data
     for log in logs:
-        writer.writerow([log.Session_Title, log.Name or '', log.Duration_Min or '', log.Duration_Max or ''])
+        session_title = log.session_type_title if log.Is_Titleless else log.Session_Title
+        writer.writerow([session_title, log.Name or '', log.Duration_Min or '', log.Duration_Max or ''])
 
     output.seek(0)
     return send_file(
@@ -460,5 +473,3 @@ def delete_log(log_id):
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
-
-

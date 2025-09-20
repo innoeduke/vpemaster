@@ -174,7 +174,7 @@ body {
     align-items: center;
     justify-content: center;
     padding: 10px 15px;
-    background-color: #dc3545;
+    background-color: #4CAF50;  /* #dc3545; */
     color: white;
     text-decoration: none;
     border-radius: 5px;
@@ -290,17 +290,21 @@ th {
 
 /* Modifier classes for button colors */
 .btn-primary {
-    border: 1px solid #e3e3e3;
-    color: black;
-    background-color: white; /* Blue: #007BFF */
+    background-color: #772432; /* Blue: #007BFF */
 }
 
 .btn-danger {
-    background-color: #dc3545; /* Red */
+    color: #333;
+    background-color: #E5E7EB;  /* Red: #CD202C; */
 }
 
+.btn-info {
+    color: white;
+    background-color: #004165; /* #BFDBFE; */
+}
 .btn-success {
-    background-color: #28a745; /* Green */
+    color: white;
+    background-color: #4CAF50; /* Green */
 }
 
 /* Button group styles */
@@ -326,7 +330,9 @@ th {
     flex-grow: 1;
 }
 
-
+.actions-column {
+    text-align: right;
+}
 /* Modal styles - Centralized for consistency */
 .modal {
     display: none; /* Hidden by default */
@@ -525,25 +531,41 @@ th {
 .path-code-box {
     font-weight: bold;
     color: #fff;
-    padding: 15px;
+    padding: 5px 15px;
     border-radius: 8px;
     text-align: center;
     flex: 1;
     cursor: pointer; /* Add cursor pointer to indicate it's clickable */
 }
 
-.path-dl { background-color: #4a90e2; }
-.path-eh { background-color: #f5a623; }
-.path-ms { background-color: #bd10e0; }
-.path-pi { background-color: #50e3c2; }
-.path-pm { background-color: #d0021b; }
-.path-vc { background-color: #7ed321; }
+.path-dl { background-color: #0047AB; }
+.path-eh { background-color: #FF861F; }
+.path-ms { background-color: #F6D32D; }
+.path-pi { background-color: #CC338B; }
+.path-pm { background-color: #DC143C; }
+.path-vc { background-color: #6600CC; }
 
 .project-details-container {
     background-color: #fff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.project-header .button-group {
+    justify-content: flex-end; /* Aligns button(s) to the right */
+}
+
+.project-header .button-group > .btn {
+    flex-grow: 0; /* Prevents a single button from expanding */
+    flex-basis: calc(50% - 5px); /* Sets the width of each button to half the container, minus half the gap */
 }
 
 .project-section {
@@ -591,9 +613,9 @@ th {
 }
 
 .section-row {
-    background-color: #e9ecef;
+    background-color: #772432;
     font-weight: bold;
-    color: #495057;
+    color: white;
     font-size: 20px;
     text-align: center;
 }
