@@ -9,6 +9,53 @@ from datetime import datetime
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
+def _get_next_project_for_contact(contact, completed_log):
+    """
+    Determines the next project for a contact based on their working path
+    and the speech they just completed.
+    """
+    if not contact or not contact.Working_Path or not completed_log or not completed_log.Project_ID:
+        return
+
+    pathway_to_code_attr = {
+        "Dynamic Leadership": "Code_DL",
+        "Engaging Humor": "Code_EH",
+        "Motivational Strategies": "Code_MS",
+        "Persuasive Influence": "Code_PI",
+        "Presentation Mastery": "Code_PM",
+        "Visionary Communication": "Code_VC",
+    }
+    code_attr = pathway_to_code_attr.get(contact.Working_Path)
+    if not code_attr:
+        return
+
+    # Find the code of the project that was just completed
+    completed_project = Project.query.get(completed_log.Project_ID)
+    if not completed_project:
+        return
+    current_code = getattr(completed_project, code_attr)
+
+    if not current_code:
+        return
+
+    # Simple logic to find the next project in sequence
+    try:
+        level, project_num = map(int, current_code.split('.'))
+        next_project_num = project_num + 1
+
+        # Check if a project with the incremented number exists in the same level
+        next_project = Project.query.filter(getattr(Project, code_attr) == f"{level}.{next_project_num}").first()
+
+        if next_project:
+            contact.Next_Project = f"{level}.{next_project_num}"
+        else:
+            # If not, assume next level, first project
+            contact.Next_Project = f"{level + 1}.1"
+    except (ValueError, IndexError):
+        # Handle cases where the code is not in the expected "level.project" format
+        return
+
+
 @speech_logs_bp.route('/speech_logs')
 @login_required
 def show_speech_logs():
@@ -197,6 +244,12 @@ def delete_speech_log(log_id):
 def complete_speech_log(log_id):
     log = SpeechLog.query.get_or_404(log_id)
     log.Project_Status = 'Completed'
+
+    # New feature: Update next project for the speaker
+    if log.Contact_ID:
+        contact = Contact.query.get(log.Contact_ID)
+        _get_next_project_for_contact(contact, log)
+
     try:
         db.session.commit()
         return jsonify(success=True)
