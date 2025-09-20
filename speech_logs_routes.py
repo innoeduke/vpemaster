@@ -15,6 +15,7 @@ def show_speech_logs():
     user_role = session.get('user_role')
     selected_owner = request.args.get('owner', '')
     selected_meeting = request.args.get('meeting_number', '')
+    member_contact_data = None  # Initialize as None
 
     if not user_role:
         return redirect(url_for('agenda_bp.agenda'))
@@ -31,12 +32,14 @@ def show_speech_logs():
                 query = query.filter_by(Contact_ID=user.Contact_ID)
                 member_contact = Contact.query.get(user.Contact_ID)
                 if member_contact:
-                    member_contact_data = { "Working_Path": member_contact.Working_Path }
+                    # Convert the object to a JSON-serializable dictionary here.
+                    member_contact_data = {
+                        "id": member_contact.id,
+                        "Working_Path": member_contact.Working_Path
+                    }
     else:
-        # Get distinct owner names for the filter
         owner_names = db.session.query(distinct(SpeechLog.Name)).order_by(SpeechLog.Name.asc()).all()
         owners = [name[0] for name in owner_names]
-        # Get distinct meeting numbers for the filter
         meeting_numbers_query = db.session.query(distinct(SpeechLog.Meeting_Number)).order_by(SpeechLog.Meeting_Number.desc()).all()
         meeting_numbers = [num[0] for num in meeting_numbers_query]
 
@@ -47,32 +50,28 @@ def show_speech_logs():
 
     all_logs = query.order_by(SpeechLog.Meeting_Number.desc()).all()
 
-    # Handle AJAX request for filtering
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return render_template('_speech_log_entries.html', logs=all_logs)
 
-    # Also fetch members and projects for the modal form
     members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
     projects = Project.query.all()
     projects_data = [
         {
-            "ID": p.ID,
-            "Project_Name": p.Project_Name,
-            "Code_DL": p.Code_DL,
-            "Code_EH": p.Code_EH,
-            "Code_MS": p.Code_MS,
-            "Code_PI": p.Code_PI,
-            "Code_PM": p.Code_PM,
-            "Code_VC": p.Code_VC,
-        }
-        for p in projects
+            "ID": p.ID, "Project_Name": p.Project_Name, "Code_DL": p.Code_DL,
+            "Code_EH": p.Code_EH, "Code_MS": p.Code_MS, "Code_PI": p.Code_PI,
+            "Code_PM": p.Code_PM, "Code_VC": p.Code_VC,
+        } for p in projects
     ]
 
     return render_template('speech_logs.html',
-                           logs=all_logs, owners=owners, meeting_numbers=meeting_numbers,
-                           selected_owner=selected_owner, selected_meeting=selected_meeting,
-                           members=members, projects=projects_data, member_contact=member_contact_data)
-
+                           logs=all_logs,
+                           owners=owners,
+                           meeting_numbers=meeting_numbers,
+                           selected_owner=selected_owner,
+                           selected_meeting=selected_meeting,
+                           members=members,
+                           projects=projects_data,
+                           member_contact=member_contact_data)
 
 
 @speech_logs_bp.route('/speech_log/form', methods=['GET'])
@@ -83,46 +82,38 @@ def speech_log_form():
     project_id = None
     if log_id:
         log = SpeechLog.query.get_or_404(log_id)
+        if session.get('user_role') == 'Member' and not log.Pathway:
+            contact = Contact.query.get(log.Contact_ID)
+            if contact and contact.Working_Path:
+                log.Pathway = contact.Working_Path
+
         if log.Session_ID:
             session_log = SessionLog.query.get(log.Session_ID)
-            if session_log:
-                project_id = session_log.Project_ID
+            if session_log: project_id = session_log.Project_ID
         elif log.Project_ID:
             project_id = log.Project_ID
 
-    # Return as JSON for fetch request from the modal
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and log:
         log_data = {
             "Meeting_Number": log.Meeting_Number,
             "Meeting_Date": log.Meeting_Date.strftime('%Y-%m-%d') if log.Meeting_Date else '',
-            "Contact_ID": log.Contact_ID,
-            "Session": log.Session,
-            "Pathway": log.Pathway,
-            "Level": log.Level,
-            "Speech_Title": log.Speech_Title,
-            "Evaluator": log.Evaluator,
+            "Contact_ID": log.Contact_ID, "Session": log.Session, "Pathway": log.Pathway,
+            "Level": log.Level, "Speech_Title": log.Speech_Title, "Evaluator": log.Evaluator,
         }
         return jsonify(log=log_data, project_id=project_id)
 
-    # Fallback to rendering the old standalone form page if needed
     members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
     projects = Project.query.all()
     projects_data = [
         {
-            "ID": p.ID,
-            "Project_Name": p.Project_Name,
-            "Code_DL": p.Code_DL,
-            "Code_EH": p.Code_EH,
-            "Code_MS": p.Code_MS,
-            "Code_PI": p.Code_PI,
-            "Code_PM": p.Code_PM,
-            "Code_VC": p.Code_VC,
-        }
-        for p in projects
+            "ID": p.ID, "Project_Name": p.Project_Name, "Code_DL": p.Code_DL,
+            "Code_EH": p.Code_EH, "Code_MS": p.Code_MS, "Code_PI": p.Code_PI,
+            "Code_PM": p.Code_PM, "Code_VC": p.Code_VC,
+        } for p in projects
     ]
-
     return render_template('speech_log_form.html', log=log, members=members, projects=projects_data, project_id=project_id)
 
+# ... (The rest of the file remains the same) ...
 @speech_logs_bp.route('/speech_log/save/<int:log_id>', methods=['POST'])
 @login_required
 def save_speech_log(log_id):
@@ -143,9 +134,8 @@ def save_speech_log(log_id):
     log.Contact_ID = contact.id if contact else 0
     log.Evaluator = request.form['evaluator']
     log.Project_Title = project.Project_Name if project else ''
-    log.Project_ID = project.ID if project else None # This line was missing
+    log.Project_ID = project.ID if project else None
 
-    # Sync with SessionLog if it exists
     if log.Session_ID:
         session_log = SessionLog.query.get(log.Session_ID)
         if session_log:

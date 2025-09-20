@@ -516,14 +516,16 @@
         });
     }
 
-    exportButton.addEventListener('click', function() {
-        const meetingNumber = meetingFilter.value;
-        if (meetingNumber) {
-            window.location.href = `/agenda/export/${meetingNumber}`;
-        } else {
-            alert('Please select a meeting to export.');
-        }
-    });
+    if (exportButton) {
+        exportButton.addEventListener('click', function() {
+            const meetingNumber = meetingFilter.value;
+            if (meetingNumber) {
+                window.location.href = `/agenda/export/${meetingNumber}`;
+            } else {
+                alert('Please select a meeting to export.');
+            }
+        });
+    }
 
     // --- Speech Log Modal Logic ---
     const speechLogModal = document.getElementById('speechLogModal');

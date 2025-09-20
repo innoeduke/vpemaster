@@ -37,6 +37,12 @@
                         </select>
                     </td>
                 </tr>
+                {% else %}
+                    {# ** FIX **: Add ALL required fields as hidden inputs for Members #}
+                    <input type="hidden" id="meeting_number" name="meeting_number">
+                    <input type="hidden" id="meeting_date" name="meeting_date">
+                    <input type="hidden" id="contact_id" name="contact_id">
+                    <input type="hidden" id="session" name="session">
                 {% endif %}
                 <tr>
                     <td><label for="pathway">Pathway:</label></td>
