@@ -14,7 +14,6 @@
                 <th>Type</th>
                 <th>Working Path</th>
                 <th>Next Project</th>
-                <th>Completed Levels</th>
                 <th>Date Created</th>
                 <th>Actions</th>
             </tr>
@@ -33,8 +32,7 @@
                 <td>{{ contact.Type }}</td>
                 <td>{{ contact.Working_Path }}</td>
                 <td>{{ contact.Next_Project }}</td>
-                <td>{{ contact.Completed_Levels }}</td>
-                <td>{{ contact.Date_Created.strftime('%Y-%m-%d') }}</td>
+                <td>{{ contact.Date_Created.strftime('%Y-%m-%d') if contact.Date_Created else '' }}</td>
                 <td>
                     <div class="action-links">
                         <button class="icon-btn" onclick="openContactModal({{ contact.id }})" title="Edit"><i class="fas fa-edit"></i></button>
@@ -78,7 +76,6 @@
         function openContactModal(contactId) {
             contactForm.reset();
             if (contactId) {
-                // Editing an existing contact
                 contactModalTitle.textContent = 'Edit Contact';
                 contactForm.action = `/contact/form/${contactId}`;
                 fetch(`/contact/form/${contactId}`, {
@@ -91,11 +88,9 @@
                     document.getElementById('club').value = data.contact.Club || '';
                     document.getElementById('working_path').value = data.contact.Working_Path || 'Presentation Mastery';
                     document.getElementById('next_project').value = data.contact.Next_Project || '';
-                    document.getElementById('completed_levels').value = data.contact.Completed_Levels || '';
                     document.getElementById('dtm').checked = data.contact.DTM;
                 });
             } else {
-                // Adding a new contact
                 contactModalTitle.textContent = 'Add New Contact';
                 contactForm.action = "{{ url_for('contacts_bp.contact_form') }}";
             }

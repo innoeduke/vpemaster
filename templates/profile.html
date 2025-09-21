@@ -10,34 +10,26 @@
             <td>{{ user.Username }}</td>
         </tr>
         <tr>
-            <td><label>Display Name</label></td>
-            <td>{{ user.Display_Name }}</td>
-        </tr>
-        <tr>
             <td><label>User Role</label></td>
             <td>{{ user.Role }}</td>
         </tr>
-        {% if contact %}
+        {% if user.contact %}
         <tr>
-            <td><label>Full Name (from Contacts)</label></td>
+            <td><label>Full Name</label></td>
             <td>
-                {{ contact.Name }}
-                {% if contact.DTM %}
+                {{ user.contact.Name }}
+                {% if user.contact.DTM %}
                     <sup class="dtm-superscript">DTM</sup>
                 {% endif %}
             </td>
         </tr>
         <tr>
             <td><label>Working Pathway</label></td>
-            <td>{{ contact.Working_Path }}</td>
+            <td>{{ user.contact.Working_Path }}</td>
         </tr>
         <tr>
             <td><label>Next Project</label></td>
-            <td>{{ contact.Next_Project }}</td>
-        </tr>
-        <tr>
-            <td><label>Completed Levels</label></td>
-            <td>{{ contact.Completed_Levels }}</td>
+            <td>{{ user.contact.Next_Project }}</td>
         </tr>
         {% else %}
         <tr>

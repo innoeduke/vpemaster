@@ -12,7 +12,6 @@
                 <th>No.</th>
                 <th>Username</th>
                 <th>Full Name</th>
-                <th>Display Name</th>
                 <th>Role</th>
                 <th>Date Created</th>
                 <th>Actions</th>
@@ -24,14 +23,15 @@
                 <td>{{ loop.index }}</td>
                 <td>{{ user.Username }}</td>
                 <td>
-                    {{ user.Full_Name }}
-                    {% if user.Contact_ID != 0 %}
+                    {% if user.contact %}
+                        {{ user.contact.Name }}
                         <i class="fas fa-link" style="color: green; margin-left: 5px;"></i>
+                    {% else %}
+                        <em style="color: #888;">Not Linked</em>
                     {% endif %}
                 </td>
-                <td>{{ user.Display_Name }}</td>
                 <td>{{ user.Role }}</td>
-                <td>{{ user.Date_Created.strftime('%Y-%m-%d') }}</td>
+                <td>{{ user.Date_Created.strftime('%Y-%m-%d') if user.Date_Created else '' }}</td>
                 <td>
                     <div class="action-links">
                         <a href="{{ url_for('users_bp.user_form', user_id=user.id) }}" class="icon-btn" title="Edit"><i class="fas fa-edit"></i></a>

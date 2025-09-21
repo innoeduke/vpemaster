@@ -11,12 +11,10 @@
 <body>
 
 <div class="container-wrapper">
-    <!-- Mobile Header -->
     <div class="mobile-header" id="mobile-header">
         <a href="#" class="nav-toggle" id="mobile-nav-toggle"><i class="fas fa-bars"></i></a>
     </div>
 
-    <!-- PC Navigation Pane -->
     <div class="nav-pane" id="nav-pane">
         <div class="nav-header">
             <a href="#" class="nav-toggle" id="pc-nav-toggle"><i class="fas fa-bars"></i></a>
@@ -34,14 +32,6 @@
                 <a href="{{ url_for('contacts_bp.show_contacts') }}">
                     <i class="fas fa-book nav-icon"></i>
                     <span>Contact Book</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if session.get('user_role') in ['Admin', 'Officer', 'Member'] %}
-            <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
-                <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
-                    <i class="fas fa-microphone nav-icon"></i>
-                    <span>Speech Logs</span>
                 </a>
             </li>
             {% endif %}
@@ -103,12 +93,10 @@
     const pcNavToggle = document.getElementById('pc-nav-toggle');
     const mainContent = document.getElementById('main-content');
 
-    // Toggle function for both buttons
     const toggleNav = () => {
         navPane.classList.toggle('expanded');
     };
 
-    // Event listeners
     if (mobileNavToggle) {
         mobileNavToggle.addEventListener('click', (e) => {
             e.preventDefault();
@@ -123,7 +111,6 @@
         });
     }
 
-    // Close the mobile menu when a link is clicked
     const navLinks = document.querySelectorAll('.nav-pane a');
     navLinks.forEach(link => {
         link.addEventListener('click', () => {
@@ -138,13 +125,11 @@
 
     if (profileTrigger) {
         profileTrigger.addEventListener('click', function(event) {
-            // Stop the event from propagating to the document click listener
             event.stopPropagation();
             profileMenu.classList.toggle('active');
         });
     }
 
-    // Close the dropdown if the user clicks outside of it
     document.addEventListener('click', function(event) {
         if (profileMenu && profileMenu.classList.contains('active')) {
             profileMenu.classList.remove('active');

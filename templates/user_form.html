@@ -11,16 +11,12 @@
                 <td><input type="text" id="username" name="username" value="{{ user.Username if user else '' }}" required></td>
             </tr>
             <tr>
-                <td><label for="display_name">Display Name:</label></td>
-                <td><input type="text" id="display_name" name="display_name" value="{{ user.Display_Name if user else '' }}"></td>
-            </tr>
-            <tr>
-                <td><label for="contact_id">Contact:</label></td>
+                <td><label for="contact_id">Link to Contact:</label></td>
                 <td>
                     <select id="contact_id" name="contact_id">
-                        <option value="0" data-name="">None</option>
+                        <option value="0">None</option>
                         {% for contact in contacts %}
-                            <option value="{{ contact.id }}" data-name="{{ contact.Name }}" {% if user and user.Contact_ID == contact.id %}selected{% endif %}>
+                            <option value="{{ contact.id }}" {% if user and user.Contact_ID == contact.id %}selected{% endif %}>
                                 {{ contact.Name }}
                             </option>
                         {% endfor %}
@@ -30,7 +26,7 @@
             <tr>
                 <td><label for="password">Password:</label></td>
                 <td>
-                    <input type="password" id="password" name="password">
+                    <input type="password" id="password" name="password" {% if not user %}required{% endif %}>
                     {% if user %}
                         <small class="note">Leave blank to keep current password.</small>
                     {% endif %}
@@ -52,12 +48,4 @@
             <a href="{{ url_for('users_bp.show_users') }}" class="btn btn-danger">Cancel</a>
         </div>
     </form>
-
-    <script>
-        document.getElementById('contact_id').addEventListener('change', function() {
-            var selectedOption = this.options[this.selectedIndex];
-            var contactName = selectedOption.getAttribute('data-name');
-            document.getElementById('full_name').value = contactName;
-        });
-    </script>
 {% endblock %}

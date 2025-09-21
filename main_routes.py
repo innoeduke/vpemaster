@@ -1,7 +1,7 @@
 # vpemaster/main_routes.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, session
-from vpemaster.models import User, Contact
+from vpemaster.models import User
 from werkzeug.security import check_password_hash
 from functools import wraps
 
@@ -28,7 +28,8 @@ def login():
             session['logged_in'] = True
             session['user_role'] = user.Role
             session['user_id'] = user.id
-            session['display_name'] = user.Display_Name # <-- Add this line
+            if user.contact:
+                session['display_name'] = user.contact.Name
             return redirect(url_for('agenda_bp.agenda'))
         else:
             return redirect(url_for('main_bp.login'))
@@ -40,7 +41,7 @@ def logout():
     session.pop('logged_in', None)
     session.pop('user_role', None)
     session.pop('user_id', None)
-    session.pop('display_name', None) # <-- Add this line
+    session.pop('display_name', None)
     return redirect(url_for('main_bp.login'))
 
 @main_bp.route('/profile')
@@ -50,11 +51,7 @@ def profile():
     Displays the logged-in user's profile page.
     """
     user = User.query.get_or_404(session['user_id'])
-    contact = None
-    if user.Contact_ID:
-        contact = Contact.query.get(user.Contact_ID)
-
-    return render_template('profile.html', user=user, contact=contact)
+    return render_template('profile.html', user=user)
 
 @main_bp.route('/')
 @login_required

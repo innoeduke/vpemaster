@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file
 from .main_routes import login_required
-from .models import SessionLog, SessionType, Contact, Meeting, Project, SpeechLog
+from .models import SessionLog, SessionType, Contact, Meeting, Project
 from vpemaster import db
 from sqlalchemy import distinct
 from datetime import datetime, timedelta
@@ -10,8 +10,41 @@ import io
 import csv
 import re
 
-
 agenda_bp = Blueprint('agenda_bp', __name__)
+
+# --- Helper Functions for Data Fetching ---
+
+def _get_agenda_logs(meeting_number):
+    """Fetches all agenda logs and related data for a specific meeting."""
+    query = db.session.query(
+        SessionLog,
+        SessionType.Is_Section,
+        SessionType.Title.label('session_type_title'),
+        SessionType.Is_Titleless,
+        Meeting.Meeting_Date,
+        Project.Code_DL, Project.Code_EH, Project.Code_MS,
+        Project.Code_PI, Project.Code_PM, Project.Code_VC
+    ).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
+     .join(Meeting, Meeting.Meeting_Number == SessionLog.Meeting_Number)\
+     .outerjoin(Project, SessionLog.Project_ID == Project.ID)
+
+    if meeting_number:
+        query = query.filter(SessionLog.Meeting_Number == meeting_number)
+
+    return query.order_by(SessionLog.Meeting_Seq.asc()).all()
+
+def _get_project_speakers(meeting_number):
+    """Gets a list of speakers for a given meeting."""
+    if not meeting_number:
+        return []
+    speaker_logs = db.session.query(Contact.Name)\
+        .join(SessionLog, Contact.id == SessionLog.Owner_ID)\
+        .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+        .filter(
+            SessionLog.Meeting_Number == meeting_number,
+            SessionType.Valid_for_Project == True
+        ).all()
+    return [name[0] for name in speaker_logs]
 
 def _group_and_sort_sessions(data):
     items_by_meeting = {}
@@ -53,74 +86,6 @@ def _group_and_sort_sessions(data):
 
     return items_by_meeting
 
-def _sync_speech_log_for_session(session_log, meeting):
-    """Creates, updates, or deletes a SpeechLog for a session based on its Project_ID."""
-    if not session_log:
-        return
-
-    existing_speech_log = SpeechLog.query.filter_by(Session_ID=session_log.id).first()
-
-    # Case 1: Session is NOT a project speech. Delete any existing speech log.
-    if not session_log.Project_ID:
-        if existing_speech_log:
-            db.session.delete(existing_speech_log)
-        return
-
-    # Case 2: Session IS a project speech. Find contact and project.
-    contact = Contact.query.get(session_log.Owner_ID)
-    project = Project.query.get(session_log.Project_ID)
-
-    # If contact or project is missing, we can't sync. Delete orphaned log if it exists.
-    if not contact or not project:
-        if existing_speech_log:
-            db.session.delete(existing_speech_log)
-        return
-
-    # Determine the correct pathway project code for the Level
-    pathway_code = None
-    pathway_map = {
-        "Dynamic Leadership": project.Code_DL,
-        "Engaging Humor": project.Code_EH,
-        "Motivational Strategies": project.Code_MS,
-        "Persuasive Influence": project.Code_PI,
-        "Presentation Mastery": project.Code_PM,
-        "Visionary Communication": project.Code_VC
-    }
-    pathway_code = pathway_map.get(contact.Working_Path)
-
-    # Ensure the meeting object has a date.
-    if not meeting.Meeting_Date:
-        meeting.Meeting_Date = datetime.today().date()
-
-    # Update existing log or create a new one
-    if existing_speech_log:
-        existing_speech_log.Meeting_Number = session_log.Meeting_Number
-        existing_speech_log.Meeting_Date = meeting.Meeting_Date
-        existing_speech_log.Speech_Title = session_log.Session_Title
-        existing_speech_log.Pathway = contact.Working_Path
-        existing_speech_log.Level = pathway_code
-        existing_speech_log.Name = contact.Name
-        existing_speech_log.Contact_ID = session_log.Owner_ID
-        existing_speech_log.Project_ID = project.ID
-        existing_speech_log.Project_Title = project.Project_Name
-    else:
-        new_speech_log = SpeechLog(
-            Meeting_Number=session_log.Meeting_Number,
-            Meeting_Date=meeting.Meeting_Date,
-            Session='Pathway Speech',
-            Speech_Title=session_log.Session_Title,
-            Pathway=contact.Working_Path,
-            Level=pathway_code,
-            Name=contact.Name,
-            Contact_ID=session_log.Owner_ID,
-            Project_ID=project.ID,
-            Project_Title=project.Project_Name,
-            Project_Status='Booked',
-            Session_ID=session_log.id
-        )
-        db.session.add(new_speech_log)
-
-
 def _create_or_update_session(item, meeting_number, seq):
     meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
     if not meeting:
@@ -141,8 +106,8 @@ def _create_or_update_session(item, meeting_number, seq):
 
     session_title = item.get('session_title')
     project_id = item.get('project_id') if item.get('project_id') else None
+    status = item.get('status') if item.get('status') else 'Booked'
 
-    current_log = None
     if item['id'] == 'new':
         new_log = SessionLog(
             Meeting_Number=meeting_number,
@@ -152,11 +117,10 @@ def _create_or_update_session(item, meeting_number, seq):
             Duration_Min=item['duration_min'] if item['duration_min'] else None,
             Duration_Max=item['duration_max'] if item['duration_max'] else None,
             Project_ID=project_id,
-            Session_Title=session_title
+            Session_Title=session_title,
+            Status=status
         )
         db.session.add(new_log)
-        db.session.flush()
-        current_log = new_log
     else:
         log = SessionLog.query.get(item['id'])
         if log:
@@ -167,14 +131,9 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
             log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
             log.Project_ID = project_id
-
+            log.Status = status
             if session_title is not None:
                 log.Session_Title = session_title
-            current_log = log
-
-    # Sync speech log after creating/updating the session
-    _sync_speech_log_for_session(current_log, meeting)
-
 
 def _recalculate_start_times(meeting_numbers_to_update):
     for meeting_num in meeting_numbers_to_update:
@@ -183,7 +142,6 @@ def _recalculate_start_times(meeting_numbers_to_update):
             continue
 
         current_time = meeting.Start_Time
-
         logs_to_update = db.session.query(SessionLog, SessionType.Is_Section)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
             .filter(SessionLog.Meeting_Number == meeting_num)\
@@ -193,88 +151,35 @@ def _recalculate_start_times(meeting_numbers_to_update):
             if not is_section:
                 log.Start_Time = current_time
                 duration_to_add = int(log.Duration_Max or 0)
-
-                # Default break is 1 minute
                 break_minutes = 1
-                # Add an extra minute if the session title starts with "Evaluation"
                 if log.Session_Title and log.Session_Title.startswith('Evaluation'):
                     break_minutes += 1
-
                 dt_current_time = datetime.combine(datetime.today(), current_time)
                 next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
                 current_time = next_dt.time()
             else:
                 log.Start_Time = None
 
+# --- Main Route ---
+
 @agenda_bp.route('/agenda', methods=['GET'])
 def agenda():
-    """
-    Renders the agenda builder page, displaying session logs for a selected meeting.
-    """
-    # Get all available meeting numbers, latest first
     meeting_numbers_query = db.session.query(distinct(SessionLog.Meeting_Number)).order_by(SessionLog.Meeting_Number.desc()).all()
     meeting_numbers = [num[0] for num in meeting_numbers_query]
 
-    # Get all projects and format them for JavaScript
-    projects = Project.query.all()
-    projects_data = [
-        {
-            "ID": p.ID,
-            "Project_Name": p.Project_Name,
-            "Code_DL": p.Code_DL,
-            "Code_EH": p.Code_EH,
-            "Code_MS": p.Code_MS,
-            "Code_PI": p.Code_PI,
-            "Code_PM": p.Code_PM,
-            "Code_VC": p.Code_VC,
-        }
-        for p in projects
-    ]
-
-    # Determine the selected meeting from URL, default to the latest one if not provided
     selected_meeting_str = request.args.get('meeting_number')
-    if not selected_meeting_str and meeting_numbers:
-        selected_meeting = meeting_numbers[0]
-    else:
-        selected_meeting = selected_meeting_str
+    selected_meeting = int(selected_meeting_str) if selected_meeting_str else (meeting_numbers[0] if meeting_numbers else None)
 
-    # Base query for logs
-    query = db.session.query(
-        SessionLog,
-        SessionType.Is_Section,
-        SessionType.Title.label('session_type_title'),
-        SessionType.Is_Titleless,
-        Project.Code_DL,
-        Project.Code_EH,
-        Project.Code_MS,
-        Project.Code_PI,
-        Project.Code_PM,
-        Project.Code_VC,
-        SessionLog.Project_ID,
-        SpeechLog.id.label('speech_log_id'),
-        Meeting.Meeting_Date
-    ).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
-     .outerjoin(Project, SessionLog.Project_ID == Project.ID)\
-     .outerjoin(SpeechLog, SpeechLog.Session_ID == SessionLog.id)\
-     .join(Meeting, Meeting.Meeting_Number == SessionLog.Meeting_Number)
+    session_logs = _get_agenda_logs(selected_meeting)
+    project_speakers = _get_project_speakers(selected_meeting)
 
-
-    # Filter by the selected meeting number
-    if selected_meeting:
-        query = query.filter(SessionLog.Meeting_Number == selected_meeting)
-
-    session_logs = query.order_by(SessionLog.Meeting_Seq.asc()).all()
-
-    # Get data for session types and contacts
-    session_types_query = SessionType.query.order_by(SessionType.Title.asc()).all()
-    session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section, "Valid_for_Project": s.Valid_for_Project} for s in session_types_query]
-
-    contacts_query = Contact.query.order_by(Contact.Name.asc()).all()
-    contacts_data = [{"id": c.id, "Name": c.Name, "Working_Path": c.Working_Path,\
-                    "Next_Project": c.Next_Project, "DTM": c.DTM, "Type": c.Type,\
-                    "Club": c.Club, "Completed_Levels": c.Completed_Levels} for c in contacts_query]
-
-    # Fetch members for the modal
+    # Data for templates and JavaScript
+    projects = Project.query.all()
+    projects_data = [{"ID": p.ID, "Project_Name": p.Project_Name} for p in projects]
+    session_types = SessionType.query.order_by(SessionType.Title.asc()).all()
+    session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section, "Valid_for_Project": s.Valid_for_Project} for s in session_types]
+    contacts = Contact.query.order_by(Contact.Name.asc()).all()
+    contacts_data = [{"id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type, "Club": c.Club} for c in contacts]
     members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
 
     return render_template('agenda.html',
@@ -283,9 +188,11 @@ def agenda():
                            contacts=contacts_data,
                            projects=projects_data,
                            meeting_numbers=meeting_numbers,
-                           selected_meeting=int(selected_meeting) if selected_meeting else None,
-                           members=members)
+                           selected_meeting=selected_meeting,
+                           members=members,
+                           project_speakers=project_speakers)
 
+# --- Other Routes ---
 
 @agenda_bp.route('/agenda/load', methods=['POST'])
 @login_required
@@ -300,15 +207,11 @@ def load_csv():
     if file and file.filename.endswith('.csv'):
         file_content = file.stream.read()
         try:
-            # Try decoding with UTF-8 first
             decoded_content = file_content.decode('utf-8')
         except UnicodeDecodeError:
-            # If UTF-8 fails, try with GBK
-            decoded_content = file_content.decode('gbk', errors='replace') # 'replace' will prevent further errors
+            decoded_content = file_content.decode('gbk', errors='replace')
 
         stream = io.StringIO(decoded_content, newline=None)
-
-        # 1. Process first line for meeting info
         first_line = stream.readline().strip()
         cleaned_line = re.sub(r'^\W+|\W+$', '', first_line)
         parts = cleaned_line.split(',')
@@ -326,48 +229,34 @@ def load_csv():
         if not meeting:
             meeting = Meeting(Meeting_Number=meeting_number, Start_Time=current_time)
             db.session.add(meeting)
-            db.session.flush()
         else:
-            meeting.Start_Time = current_time # Update start time if meeting exists
+            meeting.Start_Time = current_time
+        db.session.commit()
 
-        # 2. Process subsequent rows for sessions
         csv_reader = csv.reader(stream)
         seq = 1
         for row in csv_reader:
-            if not row: continue # Skip empty rows
-
+            if not row: continue
             session_title_from_csv = row[0].strip() if len(row) > 0 else ''
             owner_name = row[1].strip() if len(row) > 1 and row[1] else ''
-
-            # 4. Match Session Type
             session_type = SessionType.query.filter_by(Title=session_title_from_csv).first()
             type_id = session_type.id if session_type else None
-
-            session_title = session_type.Title if session_type else session_title_from_csv
-
-
-            # 6. Match Owner
+            session_title = session_type.Title if session_type and session_type.Is_Titleless else session_title_from_csv
             owner_id = None
             if owner_name:
-                # Normalize whitespace by splitting and rejoining
                 normalized_name = ' '.join(owner_name.split())
                 owner = Contact.query.filter_by(Name=normalized_name).first()
                 if owner:
                     owner_id = owner.id
-
-            # 7. Handle Durations
             duration_min, duration_max = None, None
             if len(row) > 3:
                 duration_min = row[2].strip() if row[2] else None
                 duration_max = row[3].strip() if row[3] else None
             elif len(row) > 2:
                 duration_max = row[2].strip() if row[2] else None
-
             if not duration_max and not duration_min and session_type:
                 duration_max = session_type.Duration_Max
                 duration_min = session_type.Duration_Min
-
-            # Create Session Log
             new_log = SessionLog(
                 Meeting_Number=meeting_number,
                 Meeting_Seq=seq,
@@ -377,21 +266,16 @@ def load_csv():
                 Duration_Min=duration_min,
                 Duration_Max=duration_max
             )
-
-            # 7. Calculate Start Time for non-sections
             if session_type and not session_type.Is_Section:
                 new_log.Start_Time = current_time
-                # Calculate next start time
                 duration_to_add = int(duration_max) if duration_max else 0
                 dt_current_time = datetime.combine(datetime.today(), current_time)
                 next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
                 current_time = next_dt.time()
-
             db.session.add(new_log)
             seq += 1
-
         db.session.commit()
-        return redirect(url_for('agenda_bp.agenda'))
+        return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
     else:
         return redirect(url_for('agenda_bp.agenda', message='Invalid file type. Please upload a CSV file.', category='error'))
 
@@ -411,18 +295,14 @@ def export_agenda(meeting_number):
         SessionType.Is_Titleless
     ).outerjoin(Contact, SessionLog.Owner_ID == Contact.id)\
      .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
-     .filter(
-        SessionLog.Meeting_Number == meeting_number
-    ).order_by(SessionLog.Meeting_Seq.asc()).all()
+     .filter(SessionLog.Meeting_Number == meeting_number)\
+     .order_by(SessionLog.Meeting_Seq.asc()).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
-
-    # Write the header row
     start_time = meeting.Start_Time.strftime('%H:%M') if meeting.Start_Time else ''
     writer.writerow([meeting.Meeting_Number, start_time])
 
-    # Write the session data
     for log in logs:
         session_title = log.session_type_title if log.Is_Titleless else log.Session_Title
         writer.writerow([session_title, log.Name or '', log.Duration_Min or '', log.Duration_Max or ''])
@@ -435,7 +315,6 @@ def export_agenda(meeting_number):
         download_name=f'{meeting_number}_agenda.csv'
     )
 
-
 @agenda_bp.route('/agenda/update', methods=['POST'])
 @login_required
 def update_logs():
@@ -445,26 +324,19 @@ def update_logs():
 
     try:
         items_by_meeting = _group_and_sort_sessions(data)
-
         for meeting_number, items in items_by_meeting.items():
             for seq, item in enumerate(items, 1):
                 _create_or_update_session(item, meeting_number, seq)
-
         _recalculate_start_times(items_by_meeting.keys())
-
         db.session.commit()
         return jsonify(success=True)
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
 
-
 @agenda_bp.route('/agenda/delete/<int:log_id>', methods=['POST'])
 @login_required
 def delete_log(log_id):
-    """
-    Deletes a session log.
-    """
     log = SessionLog.query.get_or_404(log_id)
     try:
         db.session.delete(log)

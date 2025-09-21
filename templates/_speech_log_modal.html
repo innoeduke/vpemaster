@@ -1,94 +1,28 @@
 <div id="speechLogModal" class="modal">
     <div class="modal-content">
         <span class="close" onclick="closeSpeechLogModal()">&times;</span>
-        <h1 id="speechLogModalTitle"></h1>
-        <form id="speechLogForm" method="POST">
-            <input type="hidden" id="selected_owner_filter" name="selected_owner_filter">
-            <input type="hidden" id="selected_meeting_filter" name="selected_meeting_filter">
+        <h1 id="speechLogModalTitle">Project Details</h1>
+        <form id="speechLogForm">
+            <input type="hidden" id="log_id" name="log_id">
             <table class="form-table">
-                {% if session.get('user_role') in ['Admin', 'Officer'] %}
                 <tr>
-                    <td><label for="meeting_number">Meeting Number:</label></td>
-                    <td><input type="number" id="meeting_number" name="meeting_number" required></td>
-                </tr>
-                <tr>
-                    <td><label for="meeting_date">Meeting Date:</label></td>
-                    <td><input type="date" id="meeting_date" name="meeting_date" required></td>
-                </tr>
-                <tr>
-                    <td><label for="contact_id">Name:</label></td>
+                    <td><label for="project_id">Project:</label></td>
                     <td>
-                        <select id="contact_id" name="contact_id" required>
-                            <option value="">Select a member</option>
-                            {% for member in members %}
-                                <option value="{{ member.id }}" data-pathway="{{ member.Working_Path }}">
-                                    {{ member.Name }}
-                                </option>
+                        <select id="project_id" name="project_id">
+                            <option value="">-- Select a Project --</option>
+                            {% for p in projects %}
+                                <option value="{{ p.ID }}">{{ p.Project_Name }}</option>
                             {% endfor %}
                         </select>
                     </td>
                 </tr>
                 <tr>
-                    <td><label for="session">Meeting Session:</label></td>
-                    <td>
-                        <select id="session" name="session" required>
-                            <option value="Prepared Speech">Prepared Speech</option>
-                            <option value="Evaluation">Evaluation</option>
-                            <option value="Table Topic">Table Topic</option>
-                            <option value="Keynote Speech">Keynote Speech</option>
-                        </select>
-                    </td>
-                </tr>
-                {% else %}
-                    {# ** FIX **: Add ALL required fields as hidden inputs for Members #}
-                    <input type="hidden" id="meeting_number" name="meeting_number">
-                    <input type="hidden" id="meeting_date" name="meeting_date">
-                    <input type="hidden" id="contact_id" name="contact_id">
-                    <input type="hidden" id="session" name="session">
-                {% endif %}
-                <tr>
-                    <td><label for="pathway">Pathway:</label></td>
-                    <td>
-                        {% if session.get('user_role') == 'Member' %}
-                            <input type="hidden" id="pathway" name="pathway">
-                            <p id="pathway_display"></p>
-                        {% else %}
-                        <select id="pathway" name="pathway">
-                            <option value="Dynamic Leadership">Dynamic Leadership</option>
-                            <option value="Engaging Humor">Engaging Humor</option>
-                            <option value="Motivational Strategies">Motivational Strategies</option>
-                            <option value="Persuasive Influence">Persuasive Influence</option>
-                            <option value="Presentation Mastery">Presentation Mastery</option>
-                            <option value="Visionary Communication">Visionary Communication</option>
-                            <option value="Non-Path: Distinguished Toastmaster">Non-Path: Distinguished Toastmaster</option>
-                            <option value="Non-Path: Other">Non-Path: Other</option>
-                        </select>
-                        {% endif %}
-                    </td>
-                </tr>
-                <tr>
-                    <td><label for="level">Project Code:</label></td>
-                    <td><input type="text" id="level" name="level" placeholder="e.g., 2.1"></td>
-                </tr>
-                <tr>
-                    <td><label for="project_id">Project Name:</label></td>
-                    <td>
-                        <select id="project_id" name="project_id">
-                            <option value="">-- Select a Project --</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td><label for="speech_title">Speech Title:</label></td>
-                    <td><input type="text" id="speech_title" name="speech_title" required></td>
-                </tr>
-                <tr>
-                    <td><label for="evaluator">Evaluator:</label></td>
-                    <td><input type="text" id="evaluator" name="evaluator"></td>
+                    <td><label for="session_title">Speech Title:</label></td>
+                    <td><input type="text" id="session_title" name="session_title"></td>
                 </tr>
             </table>
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Save</button>
+                <button type="button" class="btn btn-primary" onclick="saveProjectDetails()">Save</button>
                 <button type="button" class="btn btn-danger" onclick="closeSpeechLogModal()">Cancel</button>
             </div>
         </form>

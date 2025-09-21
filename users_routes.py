@@ -29,49 +29,29 @@ def user_form(user_id):
     if user_id:
         user = User.query.get_or_404(user_id)
 
-    # Fetch only contacts with the type 'Member'
     contacts = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
 
     if request.method == 'POST':
         contact_id = request.form.get('contact_id', 0, type=int)
-        full_name = ""
-        if contact_id != 0:
-            contact = Contact.query.get(contact_id)
-            if contact:
-                full_name = contact.Name
 
         if user:
             user.Username = request.form['username']
-            user.Display_Name = request.form.get('display_name')
             user.Role = request.form['role']
-            user.Contact_ID = contact_id
-            user.Full_Name = full_name
+            user.Contact_ID = contact_id if contact_id != 0 else None
             password = request.form.get('password')
             if password:
                 user.Pass_Hash = generate_password_hash(password)
-
-            db.session.commit()
         else:
-            username = request.form['username']
-            display_name = request.form.get('display_name')
-            password = request.form['password']
-            role = request.form['role']
-
-            pass_hash = generate_password_hash(password)
-
+            pass_hash = generate_password_hash(request.form['password'])
             new_user = User(
-                Username=username,
-                Full_Name=full_name,
-                Display_Name=display_name,
-                Date_Created=date.today(),
+                Username=request.form['username'],
                 Pass_Hash=pass_hash,
-                Role=role,
-                Contact_ID=contact_id
+                Role=request.form['role'],
+                Contact_ID=contact_id if contact_id != 0 else None,
+                Date_Created=date.today()
             )
-
             db.session.add(new_user)
-            db.session.commit()
-
+        db.session.commit()
         return redirect(url_for('users_bp.show_users'))
 
     return render_template('user_form.html', user=user, contacts=contacts)
