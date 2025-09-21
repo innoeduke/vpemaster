@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Speech Logs{% endblock %}
+
+{% block content %}
+    <h1>Speech Logs</h1>
+
+    <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="filters-container">
+        <div class="form-group">
+            <select name="meeting_number" onchange="this.form.submit()">
+                <option value="">All Meetings</option>
+                {% for num in meeting_numbers %}
+                    <option value="{{ num }}" {% if selected_filters.meeting_number == num|string %}selected{% endif %}>Meeting #{{ num }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <select name="pathway" onchange="this.form.submit()">
+                <option value="">All Pathways</option>
+                {% for pathway in pathways %}
+                    <option value="{{ pathway }}" {% if selected_filters.pathway == pathway %}selected{% endif %}>{{ pathway }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <select name="level" onchange="this.form.submit()">
+                <option value="">All Levels</option>
+                {% for level in levels %}
+                    <option value="{{ level }}" {% if selected_filters.level == level|string %}selected{% endif %}>Level {{ level }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <select name="speaker_id" onchange="this.form.submit()">
+                <option value="">All Speakers</option>
+                {% for speaker in speakers %}
+                    <option value="{{ speaker.id }}" {% if selected_filters.speaker_id == speaker.id|string %}selected{% endif %}>{{ speaker.Name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="btn btn-danger">Clear</a>
+        </div>
+    </form>
+
+    {% if grouped_logs %}
+        {% for level, logs in grouped_logs.items() %}
+            <h2 class="level-heading">Level {{ level }}</h2>
+            <div class="logs-container">
+                {% for log in logs %}
+                <div class="speech-log-entry" id="log-card-{{ log.id }}">
+                    <div class="card-header">
+                        <div class="meeting-info">
+                            Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A' }}
+                        </div>
+                        <div class="card-actions">
+                            <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }})" title="Edit"><i class="fas fa-edit"></i></button>
+                        </div>
+                    </div>
+                    <div class="project-info">
+                        {% set project_code = get_project_code(log) %}
+                        <span class="project-code">{{ ('(' + project_code + ')') if project_code else '' }}</span>
+                        <span class="project-name">{{ log.project.Project_Name if log.project else 'N/A' }}</span>
+                    </div>
+                    <div class="speech-title">
+                        "{{ log.Session_Title|replace('"', '') }}"
+                    </div>
+                    <div class="speaker-info">
+                        — {{ log.owner.Name if log.owner else 'N/A' }}
+                    </div>
+                    <div class="card-footer">
+                        <div class="pathway-info">
+                            {{ log.owner.Working_Path if log.owner else 'N/A' }}
+                        </div>
+                        <div class="status-info">
+                            {% if log.Status == 'Completed' %}
+                                <i class="fas fa-check-circle" style="color: green;" title="Completed"></i>
+                            {% else %}
+                                <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p style="text-align: center; margin-top: 20px;">No speech logs found matching your criteria.</p>
+    {% endif %}
+
+    {% include '_speech_edit_modal.html' %}
+
+<script>
+    const allProjects = {{ projects|tojson|safe }};
+    const pathwayMap = {
+        "Dynamic Leadership": "Code_DL",
+        "Engaging Humor": "Code_EH",
+        "Motivational Strategies": "Code_MS",
+        "Persuasive Influence": "Code_PI",
+        "Presentation Mastery": "Code_PM",
+        "Visionary Communication": "Code_VC"
+    };
+
+    function openSpeechEditModal(logId) {
+        fetch(`/speech_log/details/${logId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('edit-log-id').value = data.log.id;
+                document.getElementById('edit-speech-title').value = data.log.Session_Title;
+                document.getElementById('edit-pathway').value = data.log.pathway;
+                document.getElementById('edit-level').value = data.log.level;
+                updateProjectOptions(data.log.Project_ID);
+                document.getElementById('speechEditModal').style.display = 'flex';
+            } else {
+                alert('Error fetching speech log details.');
+            }
+        });
+    }
+
+    function closeSpeechEditModal() {
+        document.getElementById('speechEditModal').style.display = 'none';
+    }
+
+    function updateProjectOptions(selectedProjectId = null) {
+        const pathwaySelect = document.getElementById('edit-pathway');
+        const levelSelect = document.getElementById('edit-level');
+        const projectSelect = document.getElementById('edit-project');
+
+        const selectedPathway = pathwaySelect.value;
+        const selectedLevel = levelSelect.value;
+        const codeAttr = pathwayMap[selectedPathway];
+
+        projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
+
+        if (selectedPathway && selectedLevel && codeAttr) {
+            const filteredProjects = allProjects.filter(p => p[codeAttr] && p[codeAttr].startsWith(selectedLevel + '.'));
+
+            filteredProjects.forEach(p => {
+                const option = new Option(p.Project_Name, p.ID);
+                projectSelect.add(option);
+            });
+
+            if (selectedProjectId) {
+                projectSelect.value = selectedProjectId;
+            }
+        }
+    }
+
+    function saveSpeechChanges(event) {
+        event.preventDefault();
+        const logId = document.getElementById('edit-log-id').value;
+        const form = document.getElementById('speechEditForm');
+        const data = {
+            session_title: form.querySelector('#edit-speech-title').value,
+            project_id: form.querySelector('#edit-project').value,
+            pathway: form.querySelector('#edit-pathway').value
+        };
+
+        fetch(`/speech_log/update/${logId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const card = document.getElementById(`log-card-${logId}`);
+                card.querySelector('.speech-title').innerText = `"${data.session_title.replace(/"/g, '')}"`;
+                card.querySelector('.project-name').innerText = data.project_name;
+                card.querySelector('.project-code').innerText = data.project_code ? `(${data.project_code})` : '';
+                card.querySelector('.pathway-info').innerText = data.pathway;
+                closeSpeechEditModal();
+            } else {
+                alert('Error updating speech log: ' + data.message);
+            }
+        });
+    }
+
+    function completeSpeechLog(button, logId) {
+        fetch(`/speech_log/complete/${logId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const statusContainer = button.parentNode;
+                statusContainer.innerHTML = '<i class="fas fa-check-circle" style="color: green;" title="Completed"></i>';
+            } else {
+                alert('Error updating status: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the status.');
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,120 @@
+/* Base button style */
+.btn {
+    display: inline-block;
+    height: 30px;
+    line-height: 30px;
+    padding: 0 15px;
+    margin: 0;
+    color: white;
+    text-align: center;
+    border-radius: 5px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    min-width: 80px;
+}
+
+/* Modifier classes for button colors */
+.btn-primary {
+    background-color: #772432;
+}
+
+.btn-danger {
+    color: #333;
+    background-color: #E5E7EB;
+}
+
+.btn-info {
+    color: white;
+    background-color: #004165;
+}
+.btn-success {
+    color: white;
+    background-color: #4CAF50;
+}
+
+.btn-sm {
+    height: 24px;
+    line-height: 24px;
+    padding: 0 10px;
+    font-size: 12px;
+    min-width: auto;
+}
+
+/* Button group styles */
+.button-group {
+    display: flex;
+    gap: 10px;
+    max-width: 300px;
+}
+
+.button-group > .btn {
+    flex-grow: 1;
+}
+
+/* Form page styles */
+.form-table {
+    margin: 20px auto;
+    width: 100%;
+    max-width: 600px;
+    border-collapse: collapse;
+}
+
+.form-table td {
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+.form-table label {
+    font-weight: bold;
+}
+
+.form-table input[type="text"],
+.form-table input[type="password"],
+.form-table input[type="number"],
+.form-table select {
+    width: 100%;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.form-actions {
+    text-align: center;
+    margin-top: 20px;
+}
+
+/* Login page styles */
+.login-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.login-form {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    max-width: 400px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.login-form input {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.login-form button {
+    width: 100%;
+    margin-top: 10px;
+}

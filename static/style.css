@@ -5,7 +5,8 @@ body {
     background-color: #f4f4f9;
 }
 
-.table-container.non-edit-mode {
+/* Constrain width only when NOT in edit mode */
+.table-container:not(.edit-mode-active) {
     max-width: 800px;
     margin: 0 auto; /* This centers the container */
 }
@@ -715,8 +716,11 @@ th {
 /* Style for Speech Log */
 
 .logs-container {
-    max-width: 800px; /* You can adjust this value to your liking */
-    margin: 20px auto 0; /* Adds some space above and centers the container */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 20px auto;
 }
 
 .video-container {
@@ -730,41 +734,101 @@ th {
     height: auto;
 }
 
-.speech-log-entry {
-    border: 1px solid #ddd;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 5px;
-    background-color: #fff;
+
+/* --- Styles for Speech Log Cards --- */
+
+.filters-container {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    justify-content: center;
+    background-color: #fff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
 }
 
-.speech-log-details {
-    flex-grow: 1;
+.filters-container .form-group {
+    flex: 1 1 200px;
+    margin-right: 0;
+}
+
+.filters-container select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.level-heading {
+    text-align: left;
+    margin-top: 30px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 3px solid #772432;
+    color: #004165;
+}
+
+.logs-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+.speech-log-entry {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-left: 5px solid #004165;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
 .meeting-info {
     font-size: 0.9em;
     color: #666;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
+    font-weight: bold;
 }
 
 .project-info {
+    font-size: 1.1em;
     font-weight: bold;
     margin-bottom: 5px;
 }
 
+.project-code {
+    color: #772432;
+    margin-right: 5px;
+}
+
 .speech-title {
-    font-size: 2em;
-    margin-bottom: 10px;
+    font-size: 1.4em;
+    font-style: italic;
+    color: #333;
+    margin-bottom: 15px;
+    flex-grow: 1; /* Pushes the speaker name down */
 }
 
 .speaker-info {
-    font-style: italic;
-    color: #333;
+    font-size: 1em;
+    color: #555;
+    text-align: right;
+    margin-top: auto; /* Aligns to the bottom */
 }
+
+.status-info {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}
+
 
 /* --- Media Queries for Mobile Devices --- */
 @media (max-width: 768px) {

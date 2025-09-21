@@ -174,12 +174,25 @@ def agenda():
     project_speakers = _get_project_speakers(selected_meeting)
 
     # Data for templates and JavaScript
-    projects = Project.query.all()
-    projects_data = [{"ID": p.ID, "Project_Name": p.Project_Name} for p in projects]
+    projects = Project.query.order_by(Project.Project_Name).all()
+    projects_data = [
+        {
+            "ID": p.ID, "Project_Name": p.Project_Name, "Code_DL": p.Code_DL,
+            "Code_EH": p.Code_EH, "Code_MS": p.Code_MS, "Code_PI": p.Code_PI,
+            "Code_PM": p.Code_PM, "Code_VC": p.Code_VC
+        } for p in projects
+    ]
+    pathways = [p[0] for p in db.session.query(distinct(Contact.Working_Path)).filter(Contact.Working_Path.isnot(None), ~Contact.Working_Path.like('Non-Path%')).order_by(Contact.Working_Path).all()]
     session_types = SessionType.query.order_by(SessionType.Title.asc()).all()
     session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section, "Valid_for_Project": s.Valid_for_Project} for s in session_types]
     contacts = Contact.query.order_by(Contact.Name.asc()).all()
-    contacts_data = [{"id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type, "Club": c.Club} for c in contacts]
+    contacts_data = [
+        {
+            "id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type,
+            "Club": c.Club, "Working_Path": c.Working_Path, "Next_Project": c.Next_Project,
+            "Completed_Levels": c.Completed_Levels
+        } for c in contacts
+    ]
     members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
 
     return render_template('agenda.html',
@@ -187,12 +200,14 @@ def agenda():
                            session_types=session_types_data,
                            contacts=contacts_data,
                            projects=projects_data,
+                           pathways=pathways,
                            meeting_numbers=meeting_numbers,
                            selected_meeting=selected_meeting,
                            members=members,
                            project_speakers=project_speakers)
 
 # --- Other Routes ---
+# (The rest of the file remains the same)
 
 @agenda_bp.route('/agenda/load', methods=['POST'])
 @login_required

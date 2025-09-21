@@ -1,0 +1,215 @@
+/* Navigation Pane Styles for PC */
+.nav-pane {
+    width: 60px;
+    background-color: #004165;
+    color: white;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    transition: width 0.3s ease-in-out;
+    overflow: hidden;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    z-index: 100;
+}
+
+.nav-pane.expanded {
+    width: 250px;
+}
+
+.nav-header {
+    padding: 10px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    height: 60px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #444;
+}
+
+.nav-pane h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    margin-left: 10px;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.nav-pane.expanded h2 {
+    opacity: 1;
+}
+
+.nav-toggle {
+    display: block;
+    cursor: pointer;
+    color: white;
+    font-size: 1.5rem;
+    text-align: center;
+    width: 30px;
+    text-decoration: none;
+    box-sizing: border-box;
+    line-height: 1;
+}
+
+.nav-pane ul {
+    list-style-type: none;
+    padding: 0;
+    flex-grow: 1;
+    margin: 0;
+}
+
+.nav-pane ul li {
+    margin-bottom: 5px;
+}
+
+.nav-pane ul li a {
+    color: white;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.nav-pane ul li a .nav-icon {
+    font-size: 1.2rem;
+    width: 30px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.nav-pane ul li a span {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    margin-left: 15px;
+}
+
+.nav-pane.expanded ul li a span {
+    opacity: 1;
+}
+
+.nav-pane ul li.active a {
+    background-color: #575757;
+}
+
+.nav-pane ul li a:hover {
+    background-color: #575757;
+}
+
+/* Profile Dropdown */
+.profile-container {
+    position: absolute;
+    top: 15px;
+    right: 25px;
+    z-index: 100;
+}
+
+.profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.profile-trigger:hover {
+    background-color: #f0f0f0;
+}
+
+.profile-trigger i {
+    font-size: 1.2rem;
+    color: #004165;
+}
+
+.profile-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 5px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    min-width: 180px;
+    overflow: hidden;
+}
+
+.profile-menu.active {
+    display: block;
+}
+
+.profile-menu a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 15px;
+    text-decoration: none;
+    color: #333;
+    transition: background-color 0.2s;
+}
+
+.profile-menu a:hover {
+    background-color: #f5f5f5;
+}
+
+.profile-menu a i {
+    width: 20px;
+    text-align: center;
+}
+
+/* Logout link */
+.logout-container {
+    margin-top: auto;
+    padding: 10px 15px;
+    text-align: center;
+    display: none;
+}
+
+.logout-container a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 15px;
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.logout-container a i {
+    font-size: 1.2rem;
+}
+
+.logout-container a span {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    margin-left: 10px;
+}
+
+.nav-pane.expanded .logout-container {
+    display: block;
+}
+
+.nav-pane.expanded .logout-container a span {
+    opacity: 1;
+}
+
+.logout-container a:hover {
+    background-color: #c82333;
+}

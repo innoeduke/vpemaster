@@ -30,12 +30,12 @@
         {% endif %}
     </div>
 
-    <div class="table-container non-edit-mode"
+    <div class='table-container non-edit-mode'
          id="table-container"
-         data-session-types="{{ session_types|tojson }}"
-         data-contacts="{{ contacts|tojson }}"
-         data-projects="{{ projects|tojson }}"
-         data-project-speakers="{{ project_speakers|tojson }}">
+         data-session-types='{{ session_types|tojson|safe }}'
+         data-contacts='{{ contacts|tojson|safe }}'
+         data-projects='{{ projects|tojson|safe }}'
+         data-project-speakers='{{ project_speakers|tojson|safe }}'>
 
         <table id="logs-table">
             <thead>
@@ -65,7 +65,7 @@
                     data-is-section="{{ is_section|lower }}"
                     data-meeting-seq="{{ log.Meeting_Seq }}"
                     data-start-time="{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}"
-                    data-session-title="{{ log.Session_Title if log.Session_Title is not none else '' }}"
+                    data-session-title="{{ session_type_title if is_titleless else (log.Session_Title if log.Session_Title is not none else '') }}"
                     data-type-id="{{ log.Type_ID }}"
                     data-owner-id="{{ log.Owner_ID }}"
                     data-duration-min="{{ log.Duration_Min if log.Duration_Min is not none else '' }}"
@@ -100,13 +100,6 @@
                                     {{ log.Session_Title }}
                                 {% endif %}
                             {% endif %}
-                            {% if log.Project_ID %}
-                                {% if log.Status == 'Completed' %}
-                                    <i class="fas fa-check-circle" style="color: green;" title="Completed"></i>
-                                {% else %}
-                                    <button onclick="completeLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
-                                {% endif %}
-                            {% endif %}
                         </td>
                         <td class="non-edit-mode-cell">
                             {% set owner = contacts|selectattr('id', 'equalto', log.Owner_ID)|first %}
@@ -116,12 +109,13 @@
                                     <sup class="dtm-superscript">DTM</sup>
                                 {% endif %}
                                 <span class="owner-meta">
-                                {% if owner.Type == 'Guest' %}
-                                    <br/>Guest
-                                    {% if owner.Club %}
-                                        @{{ owner.Club }}
+                                    {% if owner.Type == 'Guest' and owner.Club %}
+                                        <br/>@{{ owner.Club }}
+                                    {% elif owner.Type == 'Member' %}
+                                        {% if owner.Completed_Levels %}
+                                            <br/>{{ owner.Completed_Levels }}
+                                        {% endif %}
                                     {% endif %}
-                                {% endif %}
                                 </span>
                             {% endif %}
                         </td>
@@ -137,8 +131,91 @@
         </table>
     </div>
 
-    {% include '_speech_log_modal.html' %}
+    {% include '_speech_edit_modal.html' %}
     {% include '_contact_modal.html' %}
 
+    <script>
+    const allProjects = {{ projects|tojson|safe }};
+    const pathwayMap = {
+        "Dynamic Leadership": "Code_DL",
+        "Engaging Humor": "Code_EH",
+        "Motivational Strategies": "Code_MS",
+        "Persuasive Influence": "Code_PI",
+        "Presentation Mastery": "Code_PM",
+        "Visionary Communication": "Code_VC"
+    };
+
+    function openSpeechEditModal(logId) {
+        fetch(`/speech_log/details/${logId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('edit-log-id').value = data.log.id;
+                document.getElementById('edit-speech-title').value = data.log.Session_Title;
+                document.getElementById('edit-pathway').value = data.log.pathway;
+                document.getElementById('edit-level').value = data.log.level;
+                updateProjectOptions(data.log.Project_ID);
+                document.getElementById('speechEditModal').style.display = 'flex';
+            } else {
+                alert('Error fetching speech log details.');
+            }
+        });
+    }
+
+    function closeSpeechEditModal() {
+        document.getElementById('speechEditModal').style.display = 'none';
+    }
+
+    function updateProjectOptions(selectedProjectId = null) {
+        const pathwaySelect = document.getElementById('edit-pathway');
+        const levelSelect = document.getElementById('edit-level');
+        const projectSelect = document.getElementById('edit-project');
+
+        const selectedPathway = pathwaySelect.value;
+        const selectedLevel = levelSelect.value;
+        const codeAttr = pathwayMap[selectedPathway];
+
+        projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
+
+        if (selectedPathway && selectedLevel && codeAttr) {
+            const filteredProjects = allProjects.filter(p => p[codeAttr] && p[codeAttr].startsWith(selectedLevel + '.'));
+
+            filteredProjects.forEach(p => {
+                const option = new Option(p.Project_Name, p.ID);
+                projectSelect.add(option);
+            });
+
+            if (selectedProjectId) {
+                projectSelect.value = selectedProjectId;
+            }
+        }
+    }
+
+    function saveSpeechChanges(event) {
+        event.preventDefault();
+        const logId = document.getElementById('edit-log-id').value;
+        const form = document.getElementById('speechEditForm');
+        const data = {
+            session_title: form.querySelector('#edit-speech-title').value,
+            project_id: form.querySelector('#edit-project').value,
+            pathway: form.querySelector('#edit-pathway').value
+        };
+
+        fetch(`/speech_log/update/${logId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // For agenda, just reloading is the simplest way to see changes
+                window.location.reload();
+            } else {
+                alert('Error updating speech log: ' + data.message);
+            }
+        });
+    }
+    </script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
 {% endblock %}

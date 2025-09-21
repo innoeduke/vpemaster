@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VPE Master - {% block title %}{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap">
 </head>
@@ -28,6 +33,12 @@
                 </a>
             </li>
             {% if session.get('user_role') in ['Admin', 'Officer'] %}
+            <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
+                    <i class="fas fa-book-reader nav-icon"></i>
+                    <span>Speech Logs</span>
+                </a>
+            </li>
             <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
                 <a href="{{ url_for('contacts_bp.show_contacts') }}">
                     <i class="fas fa-book nav-icon"></i>
