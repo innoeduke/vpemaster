@@ -46,46 +46,6 @@ def _get_project_speakers(meeting_number):
         ).all()
     return [name[0] for name in speaker_logs]
 
-def _group_and_sort_sessions(data):
-    items_by_meeting = {}
-    for item in data:
-        meeting_number = item.get('meeting_number')
-        if not meeting_number:
-            continue
-        if meeting_number not in items_by_meeting:
-            items_by_meeting[meeting_number] = []
-        items_by_meeting[meeting_number].append(item)
-
-    for meeting_number, items in items_by_meeting.items():
-        original_logs = SessionLog.query.filter_by(Meeting_Number=meeting_number).all()
-        original_seqs = {log.id: log.Meeting_Seq for log in original_logs}
-
-        def sort_key(item):
-            new_seq_str = item.get('meeting_seq', '999')
-            try:
-                new_seq = int(new_seq_str)
-            except (ValueError, TypeError):
-                new_seq = 999
-            item_id_str = item.get('id')
-            priority = 0
-            if item_id_str == 'new':
-                priority = 0
-            else:
-                try:
-                    item_id = int(item_id_str)
-                    original_seq = original_seqs.get(item_id)
-                    if original_seq == new_seq:
-                        priority = 1
-                    else:
-                        priority = 2
-                except (ValueError, TypeError):
-                    priority = 0
-            return (new_seq, priority)
-
-        items_by_meeting[meeting_number] = sorted(items, key=sort_key)
-
-    return items_by_meeting
-
 def _create_or_update_session(item, meeting_number, seq):
     meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
     if not meeting:
@@ -93,12 +53,6 @@ def _create_or_update_session(item, meeting_number, seq):
         db.session.add(new_meeting)
         db.session.flush()
         meeting = new_meeting
-
-    if seq == 1 and item.get('start_time'):
-        try:
-            meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M:%S').time()
-        except ValueError:
-            meeting.Start_Time = datetime.strptime(item.get('start_time'), '%H:%M').time()
 
     type_id = item.get('type_id')
     if type_id == '':
@@ -198,7 +152,8 @@ def agenda():
     return render_template('agenda.html',
                            logs=session_logs,
                            session_types=session_types_data,
-                           contacts=contacts_data,
+                           contacts=contacts,
+                           contacts_data=contacts_data,
                            projects=projects_data,
                            pathways=pathways,
                            meeting_numbers=meeting_numbers,
@@ -338,11 +293,17 @@ def update_logs():
         return jsonify(success=False, message="No data received"), 400
 
     try:
-        items_by_meeting = _group_and_sort_sessions(data)
-        for meeting_number, items in items_by_meeting.items():
-            for seq, item in enumerate(items, 1):
-                _create_or_update_session(item, meeting_number, seq)
-        _recalculate_start_times(items_by_meeting.keys())
+        # Since all items are from the same meeting, get the meeting number from the first item.
+        meeting_number = data[0].get('meeting_number')
+        if not meeting_number:
+            return jsonify(success=False, message="Meeting number is missing"), 400
+
+        for seq, item in enumerate(data, 1):
+            _create_or_update_session(item, meeting_number, seq)
+
+        # Recalculate start times for the single updated meeting.
+        _recalculate_start_times([meeting_number])
+
         db.session.commit()
         return jsonify(success=True)
     except Exception as e:

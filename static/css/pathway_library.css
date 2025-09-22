@@ -1,0 +1,71 @@
+/* --- Pathway Library Page --- */
+
+#pathway-library-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.project-details-container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.project-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.project-header .button-group {
+    justify-content: flex-end;
+}
+
+.project-section h3 {
+    border-bottom: 2px solid #772432;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+    color: #772432;
+}
+
+.project-section p {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+.edit-textarea {
+    width: 100%;
+    min-height: 120px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px;
+    font-family: sans-serif;
+    font-size: 14px;
+    resize: vertical;
+}
+
+/* --- Pathway Color Theme Boxes --- */
+.path-codes {
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+.path-code-box {
+    font-weight: bold;
+    color: #fff;
+    padding: 5px 15px;
+    border-radius: 8px;
+    text-align: center;
+    flex: 1;
+    cursor: pointer;
+}
+.path-dl { background-color: #4A90E2; } /* Soft Blue */
+.path-eh { background-color: #F5A623; } /* Warm Amber */
+.path-ms { background-color: #F8E71C; } /* Bright Yellow */
+.path-pi { background-color: #50E3C2; } /* Teal */
+.path-pm { background-color: #E55353; } /* Muted Red/Coral */
+.path-vc { background-color: #9013FE; } /* Soft Purple */

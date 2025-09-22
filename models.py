@@ -11,7 +11,6 @@ class Contact(db.Model):
     Next_Project = db.Column(db.String(100))
     Completed_Levels = db.Column(db.String(255))
     DTM = db.Column(db.Boolean, default=False)
-    # Removed Completed_Levels - This can be calculated from Session_Logs
 
 class User(db.Model):
     __tablename__ = 'Users'
@@ -22,7 +21,6 @@ class User(db.Model):
     Date_Created = db.Column(db.Date)
     Role = db.Column(db.String(50), nullable=False, default='Member')
     contact = db.relationship('Contact')
-    # Removed Full_Name and Display_Name - Fetched from Contact relationship
 
 class Project(db.Model):
     __tablename__ = 'Projects'

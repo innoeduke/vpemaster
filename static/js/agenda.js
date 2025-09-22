@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const projectSpeakers = JSON.parse(tableContainer.dataset.projectSpeakers);
 
     let isEditing = false;
+    let sortable = null; // Variable to hold the sortable instance
 
     // --- Event Listeners ---
     if (meetingFilter) {
@@ -32,7 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleEditMode(true);
             }
         });
-        cancelButton.addEventListener('click', () => window.location.reload());
+        cancelButton.addEventListener('click', () => {
+             if (sortable) {
+                sortable.destroy(); // De-activate drag & drop on cancel
+                sortable = null;
+            }
+            window.location.reload()
+        });
         addRowButton.addEventListener('click', addNewRow);
     }
 
@@ -48,6 +55,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Core Functions ---
+
+    function renumberRows() {
+        const rows = document.querySelectorAll('#logs-table tbody tr');
+        rows.forEach((row, index) => {
+            const seqCell = row.querySelector('[data-field="Meeting_Seq"]');
+            if (seqCell) {
+                seqCell.textContent = index + 1;
+            }
+        });
+    }
+
 
     function toggleEditMode(enable) {
         isEditing = enable;
@@ -65,39 +83,62 @@ document.addEventListener('DOMContentLoaded', () => {
         header.querySelector('.edit-mode-header').style.display = enable ? 'table-row' : 'none';
         header.querySelector('.non-edit-mode-header').style.display = enable ? 'none' : 'table-row';
 
+        let seqCounter = 1;
+
         rows.forEach(row => {
+            if (enable) {
+                row.classList.add('draggable-row');
+            }
             const isSection = row.dataset.isSection === 'true';
-            row.innerHTML = ''; // Clear the row before rebuilding
+            const typeId = row.dataset.typeId;
+            row.innerHTML = '';
+
+            const fieldsMap = {
+                'Meeting_Seq': 'meetingSeq', 'Start_Time': 'startTime',
+                'Type_ID': 'typeId', 'Session_Title': 'sessionTitle',
+                'Owner_ID': 'ownerId', 'Duration_Min': 'durationMin',
+                'Duration_Max': 'durationMax'
+            };
+            const fieldsOrder = ['Meeting_Seq', 'Start_Time', 'Type_ID', 'Session_Title', 'Owner_ID', 'Duration_Min', 'Duration_Max'];
 
             if (isSection) {
-                 const titleCell = createEditableCell('Session_Title', row.dataset.sessionTitle, true, row.dataset.typeId);
-                 titleCell.colSpan = 8;
-                 titleCell.classList.add('section-row');
-                 row.appendChild(titleCell);
-            } else {
-                const fieldsMap = {
-                    'Meeting_Seq': 'meetingSeq', 'Start_Time': 'startTime',
-                    'Type_ID': 'typeId', 'Session_Title': 'sessionTitle',
-                    'Owner_ID': 'ownerId', 'Duration_Min': 'durationMin',
-                    'Duration_Max': 'durationMax'
-                };
-                const fieldsOrder = ['Meeting_Seq', 'Start_Time', 'Type_ID', 'Session_Title', 'Owner_ID', 'Duration_Min', 'Duration_Max'];
+                 // Correctly build section rows with separate cells
+                 const seqCell = createEditableCell('Meeting_Seq', seqCounter, false, typeId);
+                 const titleCell = createEditableCell('Session_Title', row.dataset.sessionTitle, true, typeId);
+                 titleCell.colSpan = 6; // Span across the middle columns
+                 titleCell.classList.add('section-row'); // Apply the dark red style to the title cell
 
+                 row.appendChild(seqCell);
+                 row.appendChild(titleCell);
+                 row.appendChild(createActionsCell(typeId));
+            } else {
                 fieldsOrder.forEach(field => {
                     const datasetKey = fieldsMap[field];
-                    const cell = createEditableCell(field, row.dataset[datasetKey], isSection, row.dataset.typeId);
+                    const value = (field === 'Meeting_Seq') ? seqCounter : row.dataset[datasetKey];
+                    const cell = createEditableCell(field, value, isSection, typeId);
                     row.appendChild(cell);
                 });
-                row.appendChild(createActionsCell(row.dataset.typeId));
+                row.appendChild(createActionsCell(typeId));
             }
+            seqCounter++;
         });
 
-        editButton.textContent = 'Done';
+        editButton.textContent = 'Save';
         cancelButton.style.display = 'inline-block';
         addRowButton.style.display = 'inline-block';
         loadButton.style.display = 'none';
         exportButton.style.display = 'none';
         meetingFilter.disabled = true;
+
+        const tableBody = table.querySelector('tbody');
+        if (enable && tableBody) {
+            sortable = new Sortable(tableBody, {
+                animation: 150,
+                onEnd: function() {
+                    renumberRows();
+                }
+            });
+        }
     }
 
     function saveChanges() {
@@ -105,22 +146,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const dataToSave = [];
 
         rows.forEach(row => {
-            const isSection = row.classList.contains('section-row');
-            if (isSection) return;
+            const isSection = row.dataset.isSection === 'true';
+            let rowData;
 
-            const rowData = {
-                id: row.dataset.id,
-                meeting_number: row.dataset.meetingNumber,
-                meeting_seq: row.querySelector('[data-field="Meeting_Seq"] input').value.trim(),
-                start_time: row.querySelector('[data-field="Start_Time"]').textContent.trim(),
-                type_id: row.querySelector('[data-field="Type_ID"] select').value,
-                session_title: row.querySelector('[data-field="Session_Title"] input, [data-field="Session_Title"] select').value,
-                owner_id: row.querySelector('[data-field="Owner_ID"] select') ? row.querySelector('[data-field="Owner_ID"] select').value : null,
-                duration_min: row.querySelector('[data-field="Duration_Min"] input') ? row.querySelector('[data-field="Duration_Min"] input').value : null,
-                duration_max: row.querySelector('[data-field="Duration_Max"] input') ? row.querySelector('[data-field="Duration_Max"] input').value : null,
-                project_id: row.dataset.projectId,
-                status: row.dataset.status
-            };
+            if (isSection) {
+                rowData = {
+                    id: row.dataset.id,
+                    meeting_number: row.dataset.meetingNumber,
+                    meeting_seq: row.querySelector('[data-field="Meeting_Seq"]').textContent.trim(),
+                    type_id: row.dataset.typeId,
+                    session_title: row.querySelector('[data-field="Session_Title"] input').value,
+                    start_time: '',
+                    owner_id: null,
+                    duration_min: null,
+                    duration_max: null,
+                    project_id: null,
+                    status: null
+                };
+            } else {
+                rowData = {
+                    id: row.dataset.id,
+                    meeting_number: row.dataset.meetingNumber,
+                    meeting_seq: row.querySelector('[data-field="Meeting_Seq"]').textContent.trim(),
+                    start_time: row.querySelector('[data-field="Start_Time"]').textContent.trim(),
+                    type_id: row.querySelector('[data-field="Type_ID"] select').value,
+                    session_title: row.querySelector('[data-field="Session_Title"] input, [data-field="Session_Title"] select').value,
+                    owner_id: row.querySelector('[data-field="Owner_ID"] select') ? row.querySelector('[data-field="Owner_ID"] select').value : null,
+                    duration_min: row.querySelector('[data-field="Duration_Min"] input') ? row.querySelector('[data-field="Duration_Min"] input').value : null,
+                    duration_max: row.querySelector('[data-field="Duration_Max"] input') ? row.querySelector('[data-field="Duration_Max"] input').value : null,
+                    project_id: row.dataset.projectId,
+                    status: row.dataset.status
+                };
+            }
             dataToSave.push(rowData);
         });
 
@@ -217,7 +274,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function createEditableCell(field, originalValue, isSection, typeId) {
         const cell = document.createElement('td');
+        cell.classList.add('edit-mode-cell');
         cell.dataset.field = field;
+
+        if (field === 'Meeting_Seq') {
+            cell.textContent = originalValue;
+            cell.classList.add('seq-no-readonly'); // Apply the drag handle style
+            return cell;
+        }
 
         if (isSection) {
             const input = document.createElement('input');
@@ -246,19 +310,42 @@ document.addEventListener('DOMContentLoaded', () => {
             select.onchange = () => handleSectionChange(select);
             cell.appendChild(select);
         } else if (field === 'Owner_ID') {
+            const ownerCellWrapper = document.createElement('div');
+            ownerCellWrapper.style.display = 'flex';
+            ownerCellWrapper.style.alignItems = 'center';
+            ownerCellWrapper.style.gap = '5px';
+
             const select = document.createElement('select');
+            select.style.width = 'auto';
+            select.style.flexGrow = '1';
+
             select.options.add(new Option('-- Select Owner --', ''));
             contacts.forEach(contact => {
                 select.options.add(new Option(contact.Name, contact.id));
             });
             select.value = originalValue;
-            cell.appendChild(select);
+            ownerCellWrapper.appendChild(select);
+
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.innerHTML = '<i class="fas fa-plus"></i>';
+            addBtn.className = 'btn btn-primary btn-sm';
+            addBtn.title = 'Add New Contact';
+            addBtn.onclick = () => openContactModal();
+            ownerCellWrapper.appendChild(addBtn);
+
+            cell.appendChild(ownerCellWrapper);
         } else {
             const input = document.createElement('input');
             input.type = 'text';
             input.value = originalValue;
-            input.style.width = '100%';
-            input.style.boxSizing = 'border-box';
+
+            // Make the sequence number field read-only and apply the new style
+            if (field === 'Meeting_Seq') {
+                input.readOnly = true;
+                input.classList.add('seq-no-readonly');
+            }
+
             cell.appendChild(input);
         }
         return cell;

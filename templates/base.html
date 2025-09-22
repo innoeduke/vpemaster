@@ -7,7 +7,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/modals.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/agenda.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/speech_logs.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pathway_library.css') }}">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -32,13 +38,15 @@
                     <span>Meeting Agenda</span>
                 </a>
             </li>
-            {% if session.get('user_role') in ['Admin', 'Officer'] %}
+            {% if session.logged_in %}
             <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
                     <i class="fas fa-book-reader nav-icon"></i>
                     <span>Speech Logs</span>
                 </a>
             </li>
+            {% endif %}
+            {% if session.get('user_role') == 'Admin' %}
             <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
                 <a href="{{ url_for('contacts_bp.show_contacts') }}">
                     <i class="fas fa-book nav-icon"></i>
@@ -97,6 +105,8 @@
         {% block content %}{% endblock %}
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
 <script>
     const navPane = document.getElementById('nav-pane');

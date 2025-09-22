@@ -6,8 +6,8 @@
 <div id="pathway-library-container">
     <h1>Pathway Library</h1>
 
-    <div class="form-container">
-        <div class="form-group form-group--path">
+    <div class="filters-container">
+        <div class="form-group">
             <label for="path">Path:</label>
             <select id="path" name="path">
                 <option value="Code_DL">Dynamic Leadership</option>
@@ -18,15 +18,16 @@
                 <option value="Code_VC">Visionary Communication</option>
             </select>
         </div>
-        <div class="form-group form-group--level">
-            <label>Level:</label>
-            <div class="radio-group">
+        <div class="form-group">
+            <label for="level">Level:</label>
+            <select id="level" name="level">
+                <option value="">All Levels</option>
                 {% for i in range(1, 6) %}
-                <label><input type="radio" name="level" value="{{ i }}"> {{ i }}</label>
+                <option value="{{ i }}">Level {{ i }}</option>
                 {% endfor %}
-            </div>
+            </select>
         </div>
-        <div class="form-group form-group--project">
+        <div class="form-group">
             <label for="project">Project:</label>
             <select id="project" name="project">
                 <option value="">-- Select a Project --</option>
@@ -85,7 +86,7 @@
         let isEditing = false;
 
         const pathSelect = document.getElementById('path');
-        const levelRadios = document.querySelectorAll('input[name="level"]');
+        const levelSelect = document.getElementById('level'); // Changed from levelRadios
         const projectSelect = document.getElementById('project');
         const projectDetails = document.getElementById('project-details');
         const pathBoxes = document.querySelectorAll('.path-code-box');
@@ -95,23 +96,22 @@
 
         function autoResizeTextarea(event) {
             const textarea = event.target;
-            textarea.style.height = 'auto'; // Reset height to calculate the new scrollHeight
-            textarea.style.height = textarea.scrollHeight + 'px'; // Set height to content height
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
         }
 
         function filterProjects() {
             const selectedPath = pathSelect.value;
-            const selectedLevel = document.querySelector('input[name="level"]:checked');
+            const levelValue = levelSelect.value; // Changed from querySelector
 
             projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
             projectDetails.style.display = 'none';
             clearPathCodes();
             if (isEditing) {
-                toggleEditView(); // Exit edit mode if filtering changes
+                toggleEditView();
             }
 
-            if (selectedLevel) {
-                const levelValue = selectedLevel.value;
+            if (levelValue) { // Check if a level is selected
                 const filteredProjects = projects.filter(p => {
                     const code = p[selectedPath];
                     return code && code.startsWith(levelValue);
@@ -151,7 +151,7 @@
             }
 
             if (isEditing) {
-                toggleEditView(); // Revert to view mode if project changes
+                toggleEditView();
             }
         }
 
@@ -182,7 +182,6 @@
                     const pElement = document.getElementById(pId);
                     textarea.value = pElement.textContent;
                     textarea.style.display = 'block';
-                    // Trigger resize when first displaying
                     autoResizeTextarea({ target: textarea });
                 });
             } else {
@@ -235,12 +234,12 @@
 
         window.onload = function() {
             pathSelect.value = 'Code_PM';
-            document.querySelector('input[name="level"][value="1"]').checked = true;
+            levelSelect.value = '1'; // Set default level
             filterProjects();
         };
 
         pathSelect.addEventListener('change', filterProjects);
-        levelRadios.forEach(radio => radio.addEventListener('change', filterProjects));
+        levelSelect.addEventListener('change', filterProjects); // Changed from levelRadios
         projectSelect.addEventListener('change', displayProjectDetails);
 
         pathBoxes.forEach(box => {
@@ -266,7 +265,6 @@
             });
         }
 
-        // Add event listener to all textareas for auto-resizing
         textareas.forEach(textarea => {
             textarea.addEventListener('input', autoResizeTextarea);
         });

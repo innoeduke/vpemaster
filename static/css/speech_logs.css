@@ -1,0 +1,128 @@
+/* --- Speech Logs Page --- */
+.speech-logs-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.level-heading {
+    text-align: left;
+    margin-top: 30px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 3px solid #772432;
+    color: #004165;
+}
+
+.logs-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    max-width: 1200px;
+    margin: 20px auto;
+}
+
+/* Redesigned Speech Log Cards */
+.speech-log-entry {
+    background-color: #fff;
+    border: 1px solid #e2e8f0;
+    border-left-width: 6px;
+    border-radius: 8px;
+    padding: 1.25rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+.speech-log-entry:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: translateY(-3px);
+}
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+}
+.status-info .btn-success {
+    font-size: 0.75em;
+    height: auto;
+    line-height: 1;
+    padding: 6px 10px;
+}
+.status-info .fa-check-circle {
+    font-size: 1.5em;
+    color: #28a745;
+}
+
+/* Card Typography */
+.speech-log-entry,
+.speech-log-entry .project-info,
+.speech-log-entry .speaker-info {
+    font-family: sans-serif;
+}
+.meeting-info {
+    font-size: 0.8em;
+    color: #718096;
+    font-weight: 500;
+}
+.project-info {
+    font-size: 0.9em;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+.speech-title {
+    font-family: 'Merriweather', serif;
+    font-size: 1.6em;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 1rem;
+    flex-grow: 1;
+}
+.speaker-info {
+    font-size: 0.9em;
+    color: #718096;
+    text-align: right;
+    margin-bottom: 1rem;
+}
+.pathway-info {
+    font-family: sans-serif;
+    font-size: 0.8em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 0;
+    background-color: transparent;
+    border-radius: 0;
+}
+
+/* Card Accent Colors */
+.speech-log-entry.dynamic-leadership { border-left-color: #4A90E2; }
+.speech-log-entry.dynamic-leadership .project-code,
+.speech-log-entry.dynamic-leadership .pathway-info { color: #4A90E2; }
+
+.speech-log-entry.engaging-humor { border-left-color: #F5A623; }
+.speech-log-entry.engaging-humor .project-code,
+.speech-log-entry.engaging-humor .pathway-info { color: #F5A623; }
+
+.speech-log-entry.motivational-strategies { border-left-color: #F8E71C; }
+.speech-log-entry.motivational-strategies .project-code,
+.speech-log-entry.motivational-strategies .pathway-info { color: #D9CB1A; }
+
+.speech-log-entry.persuasive-influence { border-left-color: #50E3C2; }
+.speech-log-entry.persuasive-influence .project-code,
+.speech-log-entry.persuasive-influence .pathway-info { color: #50E3C2; }
+
+.speech-log-entry.presentation-mastery { border-left-color: #E55353; }
+.speech-log-entry.presentation-mastery .project-code,
+.speech-log-entry.presentation-mastery .pathway-info { color: #E55353; }
+
+.speech-log-entry.visionary-communication { border-left-color: #9013FE; }
+.speech-log-entry.visionary-communication .project-code,
+.speech-log-entry.visionary-communication .pathway-info { color: #9013FE; }

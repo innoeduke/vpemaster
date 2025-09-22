@@ -14,6 +14,7 @@
                 <th>Type</th>
                 <th>Working Path</th>
                 <th>Next Project</th>
+                <th>Completed Levels</th>
                 <th>Date Created</th>
                 <th>Actions</th>
             </tr>
@@ -32,6 +33,7 @@
                 <td>{{ contact.Type }}</td>
                 <td>{{ contact.Working_Path }}</td>
                 <td>{{ contact.Next_Project }}</td>
+                <td>{{ contact.Completed_Levels }}</td>
                 <td>{{ contact.Date_Created.strftime('%Y-%m-%d') if contact.Date_Created else '' }}</td>
                 <td>
                     <div class="action-links">

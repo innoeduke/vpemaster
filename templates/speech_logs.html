@@ -5,88 +5,93 @@
 {% block content %}
     <h1>Speech Logs</h1>
 
-    <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="filters-container">
-        <div class="form-group">
-            <select name="meeting_number" onchange="this.form.submit()">
-                <option value="">All Meetings</option>
-                {% for num in meeting_numbers %}
-                    <option value="{{ num }}" {% if selected_filters.meeting_number == num|string %}selected{% endif %}>Meeting #{{ num }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <select name="pathway" onchange="this.form.submit()">
-                <option value="">All Pathways</option>
-                {% for pathway in pathways %}
-                    <option value="{{ pathway }}" {% if selected_filters.pathway == pathway %}selected{% endif %}>{{ pathway }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <select name="level" onchange="this.form.submit()">
-                <option value="">All Levels</option>
-                {% for level in levels %}
-                    <option value="{{ level }}" {% if selected_filters.level == level|string %}selected{% endif %}>Level {{ level }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <select name="speaker_id" onchange="this.form.submit()">
-                <option value="">All Speakers</option>
-                {% for speaker in speakers %}
-                    <option value="{{ speaker.id }}" {% if selected_filters.speaker_id == speaker.id|string %}selected{% endif %}>{{ speaker.Name }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group">
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="btn btn-danger">Clear</a>
-        </div>
-    </form>
-
-    {% if grouped_logs %}
-        {% for level, logs in grouped_logs.items() %}
-            <h2 class="level-heading">Level {{ level }}</h2>
-            <div class="logs-container">
-                {% for log in logs %}
-                <div class="speech-log-entry" id="log-card-{{ log.id }}">
-                    <div class="card-header">
-                        <div class="meeting-info">
-                            Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A' }}
-                        </div>
-                        <div class="card-actions">
-                            <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }})" title="Edit"><i class="fas fa-edit"></i></button>
-                        </div>
-                    </div>
-                    <div class="project-info">
-                        {% set project_code = get_project_code(log) %}
-                        <span class="project-code">{{ ('(' + project_code + ')') if project_code else '' }}</span>
-                        <span class="project-name">{{ log.project.Project_Name if log.project else 'N/A' }}</span>
-                    </div>
-                    <div class="speech-title">
-                        "{{ log.Session_Title|replace('"', '') }}"
-                    </div>
-                    <div class="speaker-info">
-                        — {{ log.owner.Name if log.owner else 'N/A' }}
-                    </div>
-                    <div class="card-footer">
-                        <div class="pathway-info">
-                            {{ log.owner.Working_Path if log.owner else 'N/A' }}
-                        </div>
-                        <div class="status-info">
-                            {% if log.Status == 'Completed' %}
-                                <i class="fas fa-check-circle" style="color: green;" title="Completed"></i>
-                            {% else %}
-                                <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
+    <div class="speech-logs-content">
+        <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="filters-container">
+            <div class="form-group">
+                <select name="meeting_number" onchange="this.form.submit()">
+                    <option value="">All Meetings</option>
+                    {% for num in meeting_numbers %}
+                        <option value="{{ num }}" {% if selected_filters.meeting_number == num|string %}selected{% endif %}>Meeting #{{ num }}</option>
+                    {% endfor %}
+                </select>
             </div>
-        {% endfor %}
-    {% else %}
-        <p style="text-align: center; margin-top: 20px;">No speech logs found matching your criteria.</p>
-    {% endif %}
+            <div class="form-group">
+                <select name="pathway" onchange="this.form.submit()">
+                    <option value="">All Pathways</option>
+                    {% for pathway in pathways %}
+                        <option value="{{ pathway }}" {% if selected_filters.pathway == pathway %}selected{% endif %}>{{ pathway }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <select name="level" onchange="this.form.submit()">
+                    <option value="">All Levels</option>
+                    {% for level in levels %}
+                        <option value="{{ level }}" {% if selected_filters.level == level|string %}selected{% endif %}>Level {{ level }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if not is_member_view %}
+            <div class="form-group">
+                <select name="speaker_id" onchange="this.form.submit()">
+                    <option value="">All Speakers</option>
+                    {% for speaker in speakers %}
+                        <option value="{{ speaker.id }}" {% if selected_filters.speaker_id == speaker.id|string %}selected{% endif %}>{{ speaker.Name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="btn btn-danger">Clear</a>
+            </div>
+            {% endif %}
+        </form>
+
+        {% if grouped_logs %}
+            {% for level, logs in grouped_logs.items() %}
+                <h2 class="level-heading">Level {{ level }}</h2>
+                <div class="logs-container">
+                    {% for log in logs %}
+                    <div class="speech-log-entry {{ log.owner.Working_Path|lower|replace(' ', '-') if log.owner and log.owner.Working_Path else '' }}" id="log-card-{{ log.id }}">
+                        <div class="card-header">
+                            <div class="meeting-info">
+                                Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A' }}
+                            </div>
+                            <div class="card-actions">
+                                <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }})" title="Edit"><i class="fas fa-edit"></i></button>
+                            </div>
+                        </div>
+                        <div class="speech-title">
+                            "{{ log.Session_Title|replace('"', '') }}"
+                        </div>
+                        <div class="speaker-info">
+                            — {{ log.owner.Name if log.owner else 'N/A' }}
+                        </div>
+                        <div class="project-info">
+                            {% set project_code = get_project_code(log) %}
+                            <span class="project-code">{{ (project_code + ' > ') if project_code else '' }}</span>
+                            <span class="project-name">{{ log.project.Project_Name if log.project else 'N/A' }}</span>
+                        </div>
+                        <div class="card-footer">
+                            <div class="pathway-info">
+                                {{ log.owner.Working_Path if log.owner else 'N/A' }}
+                            </div>
+                            <div class="status-info">
+                                {% if log.Status == 'Completed' %}
+                                    <i class="fas fa-check-circle" title="Completed"></i>
+                                {% else %}
+                                    <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p style="text-align: center; margin-top: 20px;">No speech logs found matching your criteria.</p>
+        {% endif %}
+    </div>
 
     {% include '_speech_edit_modal.html' %}
 
@@ -186,7 +191,7 @@
         .then(data => {
             if (data.success) {
                 const statusContainer = button.parentNode;
-                statusContainer.innerHTML = '<i class="fas fa-check-circle" style="color: green;" title="Completed"></i>';
+                statusContainer.innerHTML = '<i class="fas fa-check-circle" title="Completed"></i>';
             } else {
                 alert('Error updating status: ' + data.message);
             }

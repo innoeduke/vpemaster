@@ -1,0 +1,33 @@
+/* --- Tables --- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    table-layout: auto;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    word-wrap: break-word;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+.action-links {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.action-links > .btn-primary,
+.action-links > .btn-danger {
+    flex-grow: 1;
+}
+
+.actions-column {
+    text-align: right;
+}

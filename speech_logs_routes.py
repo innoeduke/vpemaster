@@ -1,8 +1,8 @@
 # vpemaster/speech_logs_routes.py
 
-from flask import Blueprint, jsonify, render_template, request
+from flask import Blueprint, jsonify, render_template, request, session
 from vpemaster import db
-from vpemaster.models import SessionLog, Contact, Project, Meeting
+from vpemaster.models import SessionLog, Contact, Project, Meeting, User
 from .main_routes import login_required
 from sqlalchemy import distinct, or_
 
@@ -32,12 +32,26 @@ def _get_project_code(log):
 @login_required
 def show_speech_logs():
     """
-    Renders the page that displays all pathway project speeches, with filtering, grouping, and sorting.
+    Renders the page that displays pathway project speeches.
+    - Admins/Officers can filter by any speaker.
+    - Members can only see their own speeches.
     """
+    user_role = session.get('user_role')
+    is_member_view = (user_role == 'Member')
+
     selected_meeting = request.args.get('meeting_number')
     selected_pathway = request.args.get('pathway')
     selected_level = request.args.get('level')
     selected_speaker = request.args.get('speaker_id')
+
+    # If the user is a Member, force the filter to their own Contact ID
+    if is_member_view:
+        user = User.query.get(session.get('user_id'))
+        if user and user.Contact_ID:
+            selected_speaker = user.Contact_ID
+        else:
+            # If member is not linked to a contact, show no logs by setting an invalid ID
+            selected_speaker = -1
 
     query = db.session.query(SessionLog).join(Project)
 
@@ -96,13 +110,14 @@ def show_speech_logs():
         speakers=speakers,
         pathways=pathways,
         levels=range(1, 6),
-        projects=projects_data,  # Pass the serializable data to the template
+        projects=projects_data,
         selected_filters={
             'meeting_number': selected_meeting,
             'pathway': selected_pathway,
             'level': selected_level,
             'speaker_id': selected_speaker
-        }
+        },
+        is_member_view=is_member_view
     )
 
 @speech_logs_bp.route('/speech_log/details/<int:log_id>', methods=['GET'])

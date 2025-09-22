@@ -33,7 +33,7 @@
     <div class='table-container non-edit-mode'
          id="table-container"
          data-session-types='{{ session_types|tojson|safe }}'
-         data-contacts='{{ contacts|tojson|safe }}'
+         data-contacts='{{ contacts_data|tojson|safe }}'
          data-projects='{{ projects|tojson|safe }}'
          data-project-speakers='{{ project_speakers|tojson|safe }}'>
 
@@ -109,12 +109,11 @@
                                     <sup class="dtm-superscript">DTM</sup>
                                 {% endif %}
                                 <span class="owner-meta">
-                                    {% if owner.Type == 'Guest' and owner.Club %}
-                                        <br/>@{{ owner.Club }}
-                                    {% elif owner.Type == 'Member' %}
-                                        {% if owner.Completed_Levels %}
-                                            <br/>{{ owner.Completed_Levels }}
-                                        {% endif %}
+                                    {% if owner.Type == 'Guest' %}
+                                        <br/>Guest{% if owner.Club %}@{{ owner.Club }}{% endif %}
+                                    {% endif %}
+                                    {% if owner.Type == 'Member' and owner.Completed_Levels %}
+                                        <br/>{{ owner.Completed_Levels }}
                                     {% endif %}
                                 </span>
                             {% endif %}
@@ -214,6 +213,43 @@
             } else {
                 alert('Error updating speech log: ' + data.message);
             }
+        });
+    }
+
+    // --- Contact Modal Logic ---
+    const contactModal = document.getElementById("contactModal");
+    const contactForm = document.getElementById("contactForm");
+    const contactModalTitle = document.getElementById("contactModalTitle");
+
+    function openContactModal() {
+        contactForm.reset();
+        contactModalTitle.textContent = 'Add New Contact';
+        contactForm.action = "{{ url_for('contacts_bp.contact_form') }}";
+        contactModal.style.display = "flex";
+    }
+
+    function closeContactModal() {
+        contactModal.style.display = "none";
+    }
+
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default page reload
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            }).then(response => {
+                if (response.ok) {
+                    // Reload the page to see the new contact in the dropdowns
+                    window.location.reload();
+                } else {
+                    alert('Failed to save contact.');
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the contact.');
+            });
         });
     }
     </script>
