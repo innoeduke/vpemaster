@@ -1,3 +1,23 @@
+// --- Contact Modal Logic from agenda.html (moved to global scope) ---
+const contactModal = document.getElementById("contactModal");
+const contactForm = document.getElementById("contactForm");
+const contactModalTitle = document.getElementById("contactModalTitle");
+let activeOwnerInput = null;
+let contactFormUrl = ''; // Will be set on DOMContentLoaded
+
+function openContactModal(searchInput, hiddenInput) {
+    activeOwnerInput = { search: searchInput, hidden: hiddenInput };
+    contactForm.reset();
+    contactModalTitle.textContent = 'Add New Contact';
+    contactForm.action = contactFormUrl; // Use the global URL variable
+    contactModal.style.display = "flex";
+}
+
+function closeContactModal() {
+    contactModal.style.display = "none";
+}
+
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
     const editButton = document.getElementById('edit-logs-btn');
@@ -14,10 +34,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const contacts = JSON.parse(tableContainer.dataset.contacts);
     const projects = JSON.parse(tableContainer.dataset.projects);
     const projectSpeakers = JSON.parse(tableContainer.dataset.projectSpeakers);
+    contactFormUrl = tableContainer.dataset.contactFormUrl; // Set the global URL variable
 
     let isEditing = false;
     let sortable = null; // Variable to hold the sortable instance
-    let activeOwnerInput = null;
 
     // --- Event Listeners ---
     if (meetingFilter) {
@@ -355,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addBtn.innerHTML = '<i class="fas fa-plus"></i>';
             addBtn.className = 'btn btn-primary btn-sm';
             addBtn.title = 'Add New Contact';
-            addBtn.onclick = () => openContactModal();
+            addBtn.onclick = () => openContactModal(searchInput, hiddenInput);
 
             ownerCellWrapper.appendChild(autocompleteContainer);
             ownerCellWrapper.appendChild(addBtn);
@@ -364,6 +384,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let currentFocus;
             searchInput.addEventListener('input', function() {
                 const val = this.value;
+                // Clear the hidden ID to prevent saving an old/invalid ID
+                hiddenInput.value = '';
                 closeAllLists();
                 if (!val) { return false; }
                 currentFocus = -1;
@@ -476,22 +498,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Contact Modal Logic from agenda.html ---
-    const contactModal = document.getElementById("contactModal");
-    const contactForm = document.getElementById("contactForm");
-    const contactModalTitle = document.getElementById("contactModalTitle");
-
-    function openContactModal(searchInput, hiddenInput) {
-        activeOwnerInput = { search: searchInput, hidden: hiddenInput };
-        contactForm.reset();
-        contactModalTitle.textContent = 'Add New Contact';
-        contactForm.action = "{{ url_for('contacts_bp.contact_form') }}";
-        contactModal.style.display = "flex";
-    }
-
-    function closeContactModal() {
-        contactModal.style.display = "none";
-    }
 
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {
