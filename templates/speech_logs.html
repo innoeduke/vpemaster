@@ -95,111 +95,31 @@
 
     {% include '_speech_edit_modal.html' %}
 
-<script>
-    const allProjects = {{ projects|tojson|safe }};
-    const pathwayMap = {
-        "Dynamic Leadership": "Code_DL",
-        "Engaging Humor": "Code_EH",
-        "Motivational Strategies": "Code_MS",
-        "Persuasive Influence": "Code_PI",
-        "Presentation Mastery": "Code_PM",
-        "Visionary Communication": "Code_VC"
-    };
+    <script>
+        const allProjects = {{ projects|tojson|safe }};
+        const pathwayMap = {{ pathway_mapping|tojson|safe }};
+    </script>
 
-    function openSpeechEditModal(logId) {
-        fetch(`/speech_log/details/${logId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('edit-log-id').value = data.log.id;
-                document.getElementById('edit-speech-title').value = data.log.Session_Title;
-                document.getElementById('edit-pathway').value = data.log.pathway;
-                document.getElementById('edit-level').value = data.log.level;
-                updateProjectOptions(data.log.Project_ID);
-                document.getElementById('speechEditModal').style.display = 'flex';
-            } else {
-                alert('Error fetching speech log details.');
-            }
-        });
-    }
-
-    function closeSpeechEditModal() {
-        document.getElementById('speechEditModal').style.display = 'none';
-    }
-
-    function updateProjectOptions(selectedProjectId = null) {
-        const pathwaySelect = document.getElementById('edit-pathway');
-        const levelSelect = document.getElementById('edit-level');
-        const projectSelect = document.getElementById('edit-project');
-
-        const selectedPathway = pathwaySelect.value;
-        const selectedLevel = levelSelect.value;
-        const codeAttr = pathwayMap[selectedPathway];
-
-        projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
-
-        if (selectedPathway && selectedLevel && codeAttr) {
-            const filteredProjects = allProjects.filter(p => p[codeAttr] && p[codeAttr].startsWith(selectedLevel + '.'));
-
-            filteredProjects.forEach(p => {
-                const option = new Option(p.Project_Name, p.ID);
-                projectSelect.add(option);
+    <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
+    <script>
+        function completeSpeechLog(button, logId) {
+            fetch(`/speech_log/complete/${logId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const statusContainer = button.parentNode;
+                    statusContainer.innerHTML = '<i class="fas fa-check-circle" title="Completed"></i>';
+                } else {
+                    alert('Error updating status: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating the status.');
             });
-
-            if (selectedProjectId) {
-                projectSelect.value = selectedProjectId;
-            }
         }
-    }
-
-    function saveSpeechChanges(event) {
-        event.preventDefault();
-        const logId = document.getElementById('edit-log-id').value;
-        const form = document.getElementById('speechEditForm');
-        const data = {
-            session_title: form.querySelector('#edit-speech-title').value,
-            project_id: form.querySelector('#edit-project').value,
-            pathway: form.querySelector('#edit-pathway').value
-        };
-
-        fetch(`/speech_log/update/${logId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const card = document.getElementById(`log-card-${logId}`);
-                card.querySelector('.speech-title').innerText = `"${data.session_title.replace(/"/g, '')}"`;
-                card.querySelector('.project-name').innerText = data.project_name;
-                card.querySelector('.project-code').innerText = data.project_code ? `(${data.project_code})` : '';
-                card.querySelector('.pathway-info').innerText = data.pathway;
-                closeSpeechEditModal();
-            } else {
-                alert('Error updating speech log: ' + data.message);
-            }
-        });
-    }
-
-    function completeSpeechLog(button, logId) {
-        fetch(`/speech_log/complete/${logId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const statusContainer = button.parentNode;
-                statusContainer.innerHTML = '<i class="fas fa-check-circle" title="Completed"></i>';
-            } else {
-                alert('Error updating status: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the status.');
-        });
-    }
-</script>
+    </script>
 {% endblock %}

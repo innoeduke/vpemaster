@@ -17,13 +17,14 @@
         </div>
 
         {% if session.get('user_role') in ['Admin', 'Officer'] %}
-        <div class="button-group">
+        <div class="button-group" style="justify-content: flex-end;">
             <button id="cancel-edit-btn" class="btn btn-danger" style="display: none;">Cancel</button>
+            <button id="create-btn" class="btn btn-success">New</button>
             <form id="load-form" action="{{ url_for('agenda_bp.load_csv') }}" method="post" enctype="multipart/form-data" style="display: inline;">
                 <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
-                <button id="load-btn" type="button" class="btn btn-info" onclick="document.getElementById('csv-file').click()">Load</button>
+                <button id="load-btn" type="button" class="btn btn-info" onclick="document.getElementById('csv-file').click()">Import</button>
             </form>
-            <button id="export-btn" class="btn btn-info">Save As</button>
+            <button id="export-btn" class="btn btn-info">Export</button>
             <button id="add-row-btn" class="btn btn-info" style="display: none;">Add</button>
             <button id="edit-logs-btn" class="btn btn-primary">Edit</button>
         </div>
@@ -57,7 +58,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for log, is_section, session_type_title, is_titleless, meeting_date, code_dl, code_eh, code_ms, code_pi, code_pm, code_vc in logs %}
+                {% for log, is_section, session_type_title, is_titleless, meeting_date, code_dl, code_eh, code_ms, code_pi, code_pm, code_vc, code_dtm in logs %}
                 <tr data-id="{{ log.id }}"
                     data-project-id="{{ log.Project_ID if log.Project_ID is not none else '' }}"
                     data-meeting-number="{{ log.Meeting_Number }}"
@@ -75,7 +76,7 @@
 
                     {% if is_section %}
                         <td colspan="4" class="non-edit-mode-cell">
-                            {{ session_type_title }}
+                            {{ log.Session_Title or session_type_title }}
                         </td>
                     {% else %}
                         <td class="non-edit-mode-cell">{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}</td>
@@ -130,92 +131,52 @@
         </table>
     </div>
 
+    <div id="createAgendaModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeCreateAgendaModal()">&times;</span>
+            <h1>Create New Agenda</h1>
+            <form action="{{ url_for('agenda_bp.create_from_template') }}" method="POST">
+                <table class="form-table">
+                    <tr>
+                        <td><label for="meeting_number">Meeting Number:</label></td>
+                        <td><input type="number" id="meeting_number" name="meeting_number" required></td>
+                    </tr>
+                    <tr>
+                        <td><label for="meeting_date">Meeting Date:</label></td>
+                        <td><input type="date" id="meeting_date" name="meeting_date" required></td>
+                    </tr>
+                    <tr>
+                        <td><label for="start_time">Start Time:</label></td>
+                        <td><input type="time" id="start_time" name="start_time" value="18:55" required></td>
+                    </tr>
+                    <tr>
+                        <td><label for="template_file">Template:</label></td>
+                        <td>
+                            <select id="template_file" name="template_file" required>
+                                {% for template in meeting_templates %}
+                                    <option value="{{ template }}" {% if template == 'default.csv' %}selected{% endif %}>{{ template }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Create Agenda</button>
+                    <button type="button" class="btn btn-danger" onclick="closeCreateAgendaModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     {% include '_speech_edit_modal.html' %}
     {% include '_contact_modal.html' %}
 
     <script>
-    const allProjects = {{ projects|tojson|safe }};
-    const pathwayMap = {
-        "Dynamic Leadership": "Code_DL",
-        "Engaging Humor": "Code_EH",
-        "Motivational Strategies": "Code_MS",
-        "Persuasive Influence": "Code_PI",
-        "Presentation Mastery": "Code_PM",
-        "Visionary Communication": "Code_VC"
-    };
-
-    function openSpeechEditModal(logId) {
-        fetch(`/speech_log/details/${logId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                document.getElementById('edit-log-id').value = data.log.id;
-                document.getElementById('edit-speech-title').value = data.log.Session_Title;
-                document.getElementById('edit-pathway').value = data.log.pathway;
-                document.getElementById('edit-level').value = data.log.level;
-                updateProjectOptions(data.log.Project_ID);
-                document.getElementById('speechEditModal').style.display = 'flex';
-            } else {
-                alert('Error fetching speech log details.');
-            }
-        });
-    }
-
-    function closeSpeechEditModal() {
-        document.getElementById('speechEditModal').style.display = 'none';
-    }
-
-    function updateProjectOptions(selectedProjectId = null) {
-        const pathwaySelect = document.getElementById('edit-pathway');
-        const levelSelect = document.getElementById('edit-level');
-        const projectSelect = document.getElementById('edit-project');
-
-        const selectedPathway = pathwaySelect.value;
-        const selectedLevel = levelSelect.value;
-        const codeAttr = pathwayMap[selectedPathway];
-
-        projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
-
-        if (selectedPathway && selectedLevel && codeAttr) {
-            const filteredProjects = allProjects.filter(p => p[codeAttr] && p[codeAttr].startsWith(selectedLevel + '.'));
-
-            filteredProjects.forEach(p => {
-                const option = new Option(p.Project_Name, p.ID);
-                projectSelect.add(option);
-            });
-
-            if (selectedProjectId) {
-                projectSelect.value = selectedProjectId;
-            }
-        }
-    }
-
-    function saveSpeechChanges(event) {
-        event.preventDefault();
-        const logId = document.getElementById('edit-log-id').value;
-        const form = document.getElementById('speechEditForm');
-        const data = {
-            session_title: form.querySelector('#edit-speech-title').value,
-            project_id: form.querySelector('#edit-project').value,
-            pathway: form.querySelector('#edit-pathway').value
-        };
-
-        fetch(`/speech_log/update/${logId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // For agenda, just reloading is the simplest way to see changes
-                window.location.reload();
-            } else {
-                alert('Error updating speech log: ' + data.message);
-            }
-        });
-    }
-
+        const allProjects = {{ projects|tojson|safe }};
+        const pathwayMap = {{ config.PATHWAY_MAPPING|tojson|safe }};
+    </script>
+    <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
+    <script>
     // --- Contact Modal Logic ---
     const contactModal = document.getElementById("contactModal");
     const contactForm = document.getElementById("contactForm");
@@ -252,6 +213,21 @@
             });
         });
     }
+
+    // --- Create Agenda Modal Logic ---
+    const createAgendaModal = document.getElementById("createAgendaModal");
+    const createBtn = document.getElementById("create-btn");
+
+    if (createBtn) {
+        createBtn.onclick = function() {
+            createAgendaModal.style.display = "flex";
+        }
+    }
+
+    function closeCreateAgendaModal() {
+        createAgendaModal.style.display = "none";
+    }
+
     </script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
 {% endblock %}

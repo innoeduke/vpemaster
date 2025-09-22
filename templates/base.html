@@ -41,12 +41,12 @@
             {% if session.logged_in %}
             <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
-                    <i class="fas fa-book-reader nav-icon"></i>
+                    <i class="fas fa-microphone nav-icon"></i>
                     <span>Speech Logs</span>
                 </a>
             </li>
             {% endif %}
-            {% if session.get('user_role') == 'Admin' %}
+            {% if session.get('user_role') in ['Admin','Officer'] %}
             <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
                 <a href="{{ url_for('contacts_bp.show_contacts') }}">
                     <i class="fas fa-book nav-icon"></i>

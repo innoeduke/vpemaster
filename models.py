@@ -40,6 +40,7 @@ class Project(db.Model):
     Code_PI = db.Column(db.String(5))
     Code_PM = db.Column(db.String(5))
     Code_VC = db.Column(db.String(5))
+    Code_DTM = db.Column(db.String(5))
 
 class Meeting(db.Model):
     __tablename__ = 'Meetings'

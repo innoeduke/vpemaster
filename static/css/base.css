@@ -72,6 +72,37 @@ h1 {
     border-radius: 4px;
 }
 
+.search-container {
+    position: relative;
+    display: inline-block;
+}
+
+.search-box {
+    width: 300px;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    flex-grow: 0;
+    padding-right: 30px; /* Make space for the clear button */
+}
+
+#clearSearchBtn {
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 20px;
+    color: #888;
+}
+
+#clearSearchBtn:hover {
+    color: #000;
+}
+
 /* --- Shared Component: Icon Buttons --- */
 .icon-btn {
     background: none;

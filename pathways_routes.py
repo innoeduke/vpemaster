@@ -26,6 +26,7 @@ def pathway_library():
             "Code_PI": p.Code_PI,
             "Code_PM": p.Code_PM,
             "Code_VC": p.Code_VC,
+            "Code_DTM": p.Code_DTM
         }
         for p in projects
     ]

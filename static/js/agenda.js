@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelButton = document.getElementById('cancel-edit-btn');
     const addRowButton = document.getElementById('add-row-btn');
     const loadButton = document.getElementById('load-btn');
+    const createButton = document.getElementById('create-btn');
     const meetingFilter = document.getElementById('meeting-filter');
     const exportButton = document.getElementById('export-btn');
     const tableContainer = document.getElementById('table-container');
@@ -126,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         editButton.textContent = 'Save';
         cancelButton.style.display = 'inline-block';
         addRowButton.style.display = 'inline-block';
+        createButton.style.display = 'none';
         loadButton.style.display = 'none';
         exportButton.style.display = 'none';
         meetingFilter.disabled = true;
@@ -149,13 +151,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const isSection = row.dataset.isSection === 'true';
             let rowData;
 
+            const titleCell = row.querySelector('[data-field="Session_Title"]');
+            const titleControl = titleCell.querySelector('input, select');
+            let sessionTitleValue;
+
+            if (titleControl) {
+                sessionTitleValue = titleControl.value;
+            } else {
+                sessionTitleValue = titleCell.textContent.trim();
+            }
+
             if (isSection) {
                 rowData = {
                     id: row.dataset.id,
                     meeting_number: row.dataset.meetingNumber,
                     meeting_seq: row.querySelector('[data-field="Meeting_Seq"]').textContent.trim(),
                     type_id: row.dataset.typeId,
-                    session_title: row.querySelector('[data-field="Session_Title"] input').value,
+                    session_title: sessionTitleValue,
                     start_time: '',
                     owner_id: null,
                     duration_min: null,
@@ -170,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     meeting_seq: row.querySelector('[data-field="Meeting_Seq"]').textContent.trim(),
                     start_time: row.querySelector('[data-field="Start_Time"]').textContent.trim(),
                     type_id: row.querySelector('[data-field="Type_ID"] select').value,
-                    session_title: row.querySelector('[data-field="Session_Title"] input, [data-field="Session_Title"] select').value,
+                    session_title: sessionTitleValue,
                     owner_id: row.querySelector('[data-field="Owner_ID"] select') ? row.querySelector('[data-field="Owner_ID"] select').value : null,
                     duration_min: row.querySelector('[data-field="Duration_Min"] input') ? row.querySelector('[data-field="Duration_Min"] input').value : null,
                     duration_max: row.querySelector('[data-field="Duration_Max"] input') ? row.querySelector('[data-field="Duration_Max"] input').value : null,
@@ -253,15 +265,19 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sessionType && sessionType.Title === 'Evaluation') {
             const select = document.createElement('select');
             select.options.add(new Option('-- Select Speaker --', ''));
-
             projectSpeakers.forEach(speakerName => {
                 select.options.add(new Option(speakerName, speakerName));
             });
-
             if (originalValue) {
                 select.value = originalValue;
             }
             return select;
+        } else if (sessionType && sessionType.Title === 'Pathway Speech') {
+            const span = document.createElement('span');
+            span.textContent = originalValue;
+            span.title = 'Edit the speech title in the project modal';
+            span.classList.add('readonly-title');
+            return span;
         } else {
             const input = document.createElement('input');
             input.type = 'text';
@@ -302,9 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (field === 'Type_ID') {
             const select = document.createElement('select');
             sessionTypes.forEach(type => {
-                if (!type.Is_Section) {
-                    select.options.add(new Option(type.Title, type.id));
-                }
+                select.options.add(new Option(type.Title, type.id));
             });
             select.value = originalValue;
             select.onchange = () => handleSectionChange(select);
@@ -355,12 +369,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const actionsCell = document.createElement('td');
         actionsCell.classList.add('actions-column');
 
-        const deleteBtn = document.createElement('button');
-        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-        deleteBtn.className = 'delete-btn icon-btn';
-        deleteBtn.onclick = function() { deleteLogRow(this); };
-        actionsCell.appendChild(deleteBtn);
-
         const projectBtn = document.createElement('button');
         projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
         projectBtn.className = 'icon-btn project-btn';
@@ -378,6 +386,13 @@ document.addEventListener('DOMContentLoaded', () => {
             projectBtn.style.display = 'none';
         }
         actionsCell.appendChild(projectBtn);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.className = 'delete-btn icon-btn';
+        deleteBtn.onclick = function() { deleteLogRow(this); };
+        actionsCell.appendChild(deleteBtn);
+
         return actionsCell;
     }
 

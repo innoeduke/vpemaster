@@ -1,10 +1,10 @@
 # vpemaster/speech_logs_routes.py
 
-from flask import Blueprint, jsonify, render_template, request, session
+from flask import Blueprint, jsonify, render_template, request, session, current_app
 from vpemaster import db
-from vpemaster.models import SessionLog, Contact, Project, Meeting, User
+from vpemaster.models import SessionLog, Contact, Project, User
 from .main_routes import login_required
-from sqlalchemy import distinct, or_
+from sqlalchemy import distinct
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
@@ -13,14 +13,7 @@ def _get_project_code(log):
     if not log or not log.project or not log.owner or not log.owner.Working_Path:
         return None
 
-    pathway_to_code_attr = {
-        "Dynamic Leadership": "Code_DL",
-        "Engaging Humor": "Code_EH",
-        "Motivational Strategies": "Code_MS",
-        "Persuasive Influence": "Code_PI",
-        "Presentation Mastery": "Code_PM",
-        "Visionary Communication": "Code_VC",
-    }
+    pathway_to_code_attr = current_app.config['PATHWAY_MAPPING']
     code_attr = pathway_to_code_attr.get(log.owner.Working_Path)
     if not code_attr:
         return None
@@ -80,6 +73,10 @@ def show_speech_logs():
             except (ValueError, IndexError):
                 continue
 
+    # Sort logs within each level group by project code
+    for level in grouped_logs:
+        grouped_logs[level].sort(key=lambda log: _get_project_code(log) or "")
+
     sorted_grouped_logs = dict(sorted(grouped_logs.items()))
 
     meeting_numbers = sorted([m[0] for m in db.session.query(distinct(SessionLog.Meeting_Number)).join(Project).all()], reverse=True)
@@ -97,7 +94,8 @@ def show_speech_logs():
             "Code_MS": p.Code_MS,
             "Code_PI": p.Code_PI,
             "Code_PM": p.Code_PM,
-            "Code_VC": p.Code_VC
+            "Code_VC": p.Code_VC,
+            "Code_DTM": p.Code_DTM
         }
         for p in projects
     ]
@@ -117,7 +115,8 @@ def show_speech_logs():
             'level': selected_level,
             'speaker_id': selected_speaker
         },
-        is_member_view=is_member_view
+        is_member_view=is_member_view,
+        pathway_mapping=current_app.config['PATHWAY_MAPPING']
     )
 
 @speech_logs_bp.route('/speech_log/details/<int:log_id>', methods=['GET'])
@@ -170,7 +169,8 @@ def update_speech_log(log_id):
                        session_title=log.Session_Title,
                        project_name=project_name,
                        project_code=project_code,
-                       pathway=pathway)
+                       pathway=pathway,
+                       project_id=log.Project_ID)
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
@@ -180,14 +180,7 @@ def _get_next_project_for_contact(contact, completed_log):
     if not contact or not contact.Working_Path or not completed_log or not completed_log.Project_ID:
         return
 
-    pathway_to_code_attr = {
-        "Dynamic Leadership": "Code_DL",
-        "Engaging Humor": "Code_EH",
-        "Motivational Strategies": "Code_MS",
-        "Persuasive Influence": "Code_PI",
-        "Presentation Mastery": "Code_PM",
-        "Visionary Communication": "Code_VC",
-    }
+    pathway_to_code_attr = current_app.config['PATHWAY_MAPPING']
     code_attr = pathway_to_code_attr.get(contact.Working_Path)
     if not code_attr:
         return

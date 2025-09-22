@@ -4,8 +4,15 @@
 
 {% block content %}
     <h1>Contacts</h1>
-    <button class="btn btn-primary" onclick="openContactModal()">Add New Contact</button>
-    <table>
+    <div class="action-bar" style="justify-content: center;">
+        <div class="search-container">
+            <input type="text" id="searchInput" onkeyup="searchContacts()" placeholder="Search by name..." class="search-box">
+            <button id="clearSearchBtn" onclick="clearSearch()" style="display: none;">&times;</button>
+        </div>
+        <button class="btn btn-primary" onclick="openContactModal()" style="margin-left: 10px;">New Contact</button>
+    </div>
+
+    <table id="contactsTable">
         <thead>
             <tr>
                 <th>No.</th>
@@ -101,6 +108,38 @@
 
         function closeContactModal() {
             contactModal.style.display = "none";
+        }
+
+        function searchContacts() {
+            const input = document.getElementById('searchInput');
+            const filter = input.value.toUpperCase();
+            const table = document.getElementById('contactsTable');
+            const tr = table.getElementsByTagName('tr');
+            const clearBtn = document.getElementById('clearSearchBtn');
+
+            if (input.value.length > 0) {
+                clearBtn.style.display = 'block';
+            } else {
+                clearBtn.style.display = 'none';
+            }
+
+            for (let i = 1; i < tr.length; i++) { // Start from 1 to skip the header row
+                const td = tr[i].getElementsByTagName('td')[1]; // The second column is the Name
+                if (td) {
+                    const txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            searchContacts();
         }
     </script>
 {% endblock %}

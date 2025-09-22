@@ -1,6 +1,6 @@
 # vpemaster/agenda_routes.py
 
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
 from .main_routes import login_required
 from .models import SessionLog, SessionType, Contact, Meeting, Project
 from vpemaster import db
@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import io
 import csv
 import re
+import os
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -23,7 +24,8 @@ def _get_agenda_logs(meeting_number):
         SessionType.Is_Titleless,
         Meeting.Meeting_Date,
         Project.Code_DL, Project.Code_EH, Project.Code_MS,
-        Project.Code_PI, Project.Code_PM, Project.Code_VC
+        Project.Code_PI, Project.Code_PM, Project.Code_VC,
+        Project.Code_DTM
     ).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
      .join(Meeting, Meeting.Meeting_Number == SessionLog.Meeting_Number)\
      .outerjoin(Project, SessionLog.Project_ID == Project.ID)
@@ -133,7 +135,7 @@ def agenda():
         {
             "ID": p.ID, "Project_Name": p.Project_Name, "Code_DL": p.Code_DL,
             "Code_EH": p.Code_EH, "Code_MS": p.Code_MS, "Code_PI": p.Code_PI,
-            "Code_PM": p.Code_PM, "Code_VC": p.Code_VC
+            "Code_PM": p.Code_PM, "Code_VC": p.Code_VC, "Code_DTM": p.Code_DTM
         } for p in projects
     ]
     pathways = [p[0] for p in db.session.query(distinct(Contact.Working_Path)).filter(Contact.Working_Path.isnot(None), ~Contact.Working_Path.like('Non-Path%')).order_by(Contact.Working_Path).all()]
@@ -149,6 +151,12 @@ def agenda():
     ]
     members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
 
+    template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
+    try:
+        meeting_templates = [f for f in os.listdir(template_dir) if f.endswith('.csv')]
+    except FileNotFoundError:
+        meeting_templates = []
+
     return render_template('agenda.html',
                            logs=session_logs,
                            session_types=session_types_data,
@@ -159,10 +167,93 @@ def agenda():
                            meeting_numbers=meeting_numbers,
                            selected_meeting=selected_meeting,
                            members=members,
-                           project_speakers=project_speakers)
+                           project_speakers=project_speakers,
+                           meeting_templates=meeting_templates)
 
 # --- Other Routes ---
 # (The rest of the file remains the same)
+
+@agenda_bp.route('/agenda/create', methods=['POST'])
+@login_required
+def create_from_template():
+    meeting_number = request.form.get('meeting_number')
+    meeting_date_str = request.form.get('meeting_date')
+    start_time_str = request.form.get('start_time')
+    template_file = request.form.get('template_file')
+
+    try:
+        meeting_date = datetime.strptime(meeting_date_str, '%Y-%m-%d').date()
+        start_time = datetime.strptime(start_time_str, '%H:%M').time()
+    except (ValueError, TypeError):
+        return redirect(url_for('agenda_bp.agenda', message='Invalid date or time format.', category='error'))
+
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        meeting = Meeting(Meeting_Number=meeting_number, Meeting_Date=meeting_date, Start_Time=start_time)
+        db.session.add(meeting)
+    else:
+        meeting.Meeting_Date = meeting_date
+        meeting.Start_Time = start_time
+
+    SessionLog.query.filter_by(Meeting_Number=meeting_number).delete()
+    db.session.commit()
+
+    template_path = os.path.join(current_app.static_folder, 'mtg_templates', template_file)
+    try:
+        with open(template_path, 'r', encoding='utf-8') as f:
+            stream = io.StringIO(f.read())
+            stream.readline()
+            csv_reader = csv.reader(stream)
+            seq = 1
+            current_time = start_time
+            for row in csv_reader:
+                if not row or not row[0].strip():
+                    continue
+
+                session_title_from_csv = row[0].strip()
+                owner_name = row[1].strip() if len(row) > 1 else ''
+                duration_min = row[2].strip() if len(row) > 2 else None
+                duration_max = row[3].strip() if len(row) > 3 else None
+
+                session_type = SessionType.query.filter_by(Title=session_title_from_csv).first()
+                type_id = session_type.id if session_type else None
+
+                if not duration_max and not duration_min and session_type:
+                    duration_max = session_type.Duration_Max
+                    duration_min = session_type.Duration_Min
+
+                session_title = session_type.Title if session_type and session_type.Is_Titleless else session_title_from_csv
+                owner_id = None
+                if owner_name:
+                    owner = Contact.query.filter_by(Name=owner_name).first()
+                    if owner:
+                        owner_id = owner.id
+
+                new_log = SessionLog(
+                    Meeting_Number=meeting_number,
+                    Meeting_Seq=seq,
+                    Type_ID=type_id,
+                    Owner_ID=owner_id,
+                    Session_Title=session_title,
+                    Duration_Min=duration_min,
+                    Duration_Max=duration_max
+                )
+
+                if session_type and not session_type.Is_Section:
+                    new_log.Start_Time = current_time
+                    duration_to_add = int(duration_max or 0)
+                    dt_current_time = datetime.combine(datetime.today(), current_time)
+                    next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
+                    current_time = next_dt.time()
+
+                db.session.add(new_log)
+                seq += 1
+            db.session.commit()
+    except FileNotFoundError:
+        return redirect(url_for('agenda_bp.agenda', message=f'Template file not found: {template_file}', category='error'))
+
+    return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
+
 
 @agenda_bp.route('/agenda/load', methods=['POST'])
 @login_required
@@ -185,29 +276,34 @@ def load_csv():
         first_line = stream.readline().strip()
         cleaned_line = re.sub(r'^\W+|\W+$', '', first_line)
         parts = cleaned_line.split(',')
-        if len(parts) < 2:
-            return redirect(url_for('agenda_bp.agenda', message='Invalid first line format.', category='error'))
+        if len(parts) < 3:
+            return redirect(url_for('agenda_bp.agenda', message='Invalid first line format. Expected Meeting_Number,Meeting_Date,Start_Time', category='error'))
 
-        meeting_number, start_time_str = parts[0], parts[1]
+        meeting_number, meeting_date_str, start_time_str = parts[0], parts[1], parts[2]
 
         try:
             current_time = datetime.strptime(start_time_str, '%H:%M').time()
         except ValueError:
             return redirect(url_for('agenda_bp.agenda', message='Invalid start time format in first line.', category='error'))
 
+        try:
+            meeting_date = datetime.strptime(meeting_date_str, '%m/%d/%y').date()
+        except ValueError:
+            return redirect(url_for('agenda_bp.agenda', message='Invalid date format in first line. Please use MM/DD/YY.', category='error'))
+
         meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
         if not meeting:
-            meeting = Meeting(Meeting_Number=meeting_number, Start_Time=current_time)
+            meeting = Meeting(Meeting_Number=meeting_number, Meeting_Date=meeting_date, Start_Time=current_time)
             db.session.add(meeting)
         else:
+            meeting.Meeting_Date = meeting_date
             meeting.Start_Time = current_time
         db.session.commit()
 
         csv_reader = csv.reader(stream)
         seq = 1
         for row in csv_reader:
-            if not row: continue
-            session_title_from_csv = row[0].strip() if len(row) > 0 else ''
+            if not (session_title_from_csv := row[0].strip() if len(row) > 0 else ''): continue
             owner_name = row[1].strip() if len(row) > 1 and row[1] else ''
             session_type = SessionType.query.filter_by(Title=session_title_from_csv).first()
             type_id = session_type.id if session_type else None
@@ -271,7 +367,8 @@ def export_agenda(meeting_number):
     output = io.StringIO()
     writer = csv.writer(output)
     start_time = meeting.Start_Time.strftime('%H:%M') if meeting.Start_Time else ''
-    writer.writerow([meeting.Meeting_Number, start_time])
+    meeting_date = meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting.Meeting_Date else ''
+    writer.writerow([meeting.Meeting_Number, meeting_date, start_time])
 
     for log in logs:
         session_title = log.session_type_title if log.Is_Titleless else log.Session_Title
