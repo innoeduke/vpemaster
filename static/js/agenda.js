@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let isEditing = false;
     let sortable = null; // Variable to hold the sortable instance
+    let activeOwnerInput = null;
 
     // --- Event Listeners ---
     if (meetingFilter) {
@@ -183,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     start_time: row.querySelector('[data-field="Start_Time"]').textContent.trim(),
                     type_id: row.querySelector('[data-field="Type_ID"] select').value,
                     session_title: sessionTitleValue,
-                    owner_id: row.querySelector('[data-field="Owner_ID"] select') ? row.querySelector('[data-field="Owner_ID"] select').value : null,
+                    owner_id: row.querySelector('input[name="owner_id"]').value,
                     duration_min: row.querySelector('[data-field="Duration_Min"] input') ? row.querySelector('[data-field="Duration_Min"] input').value : null,
                     duration_max: row.querySelector('[data-field="Duration_Max"] input') ? row.querySelector('[data-field="Duration_Max"] input').value : null,
                     project_id: row.dataset.projectId,
@@ -329,16 +330,25 @@ document.addEventListener('DOMContentLoaded', () => {
             ownerCellWrapper.style.alignItems = 'center';
             ownerCellWrapper.style.gap = '5px';
 
-            const select = document.createElement('select');
-            select.style.width = 'auto';
-            select.style.flexGrow = '1';
+            const autocompleteContainer = document.createElement('div');
+            autocompleteContainer.classList.add('autocomplete-container');
+            autocompleteContainer.style.flexGrow = '1';
 
-            select.options.add(new Option('-- Select Owner --', ''));
-            contacts.forEach(contact => {
-                select.options.add(new Option(contact.Name, contact.id));
-            });
-            select.value = originalValue;
-            ownerCellWrapper.appendChild(select);
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.placeholder = 'Search for owner...';
+            const contact = contacts.find(c => c.id == originalValue);
+            if (contact) {
+                searchInput.value = contact.Name;
+            }
+
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'owner_id';
+            hiddenInput.value = originalValue || '';
+
+            autocompleteContainer.appendChild(searchInput);
+            autocompleteContainer.appendChild(hiddenInput);
 
             const addBtn = document.createElement('button');
             addBtn.type = 'button';
@@ -346,9 +356,50 @@ document.addEventListener('DOMContentLoaded', () => {
             addBtn.className = 'btn btn-primary btn-sm';
             addBtn.title = 'Add New Contact';
             addBtn.onclick = () => openContactModal();
-            ownerCellWrapper.appendChild(addBtn);
 
+            ownerCellWrapper.appendChild(autocompleteContainer);
+            ownerCellWrapper.appendChild(addBtn);
             cell.appendChild(ownerCellWrapper);
+
+            let currentFocus;
+            searchInput.addEventListener('input', function() {
+                const val = this.value;
+                closeAllLists();
+                if (!val) { return false; }
+                currentFocus = -1;
+
+                const suggestions = document.createElement('div');
+                suggestions.id = this.id + 'autocomplete-list';
+                suggestions.classList.add('autocomplete-items');
+                this.parentNode.appendChild(suggestions);
+
+                const filteredContacts = contacts.filter(c => c.Name.toUpperCase().includes(val.toUpperCase()));
+
+                filteredContacts.forEach(c => {
+                    const item = document.createElement('div');
+                    item.innerHTML = "<strong>" + c.Name.substr(0, val.length) + "</strong>";
+                    item.innerHTML += c.Name.substr(val.length);
+                    item.innerHTML += "<input type='hidden' value='" + c.Name + "' data-id='" + c.id + "'>";
+                    item.addEventListener('click', function() {
+                        searchInput.value = this.getElementsByTagName('input')[0].value;
+                        hiddenInput.value = this.getElementsByTagName('input')[0].dataset.id;
+                        closeAllLists();
+                    });
+                    suggestions.appendChild(item);
+                });
+            });
+
+            function closeAllLists(elmnt) {
+                const items = document.getElementsByClassName('autocomplete-items');
+                for (let i = 0; i < items.length; i++) {
+                    if (elmnt != items[i] && elmnt != searchInput) {
+                        items[i].parentNode.removeChild(items[i]);
+                    }
+                }
+            }
+            document.addEventListener('click', function(e) {
+                closeAllLists(e.target);
+            });
         } else {
             const input = document.createElement('input');
             input.type = 'text';
@@ -424,4 +475,50 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     };
+
+    // --- Contact Modal Logic from agenda.html ---
+    const contactModal = document.getElementById("contactModal");
+    const contactForm = document.getElementById("contactForm");
+    const contactModalTitle = document.getElementById("contactModalTitle");
+
+    function openContactModal(searchInput, hiddenInput) {
+        activeOwnerInput = { search: searchInput, hidden: hiddenInput };
+        contactForm.reset();
+        contactModalTitle.textContent = 'Add New Contact';
+        contactForm.action = "{{ url_for('contacts_bp.contact_form') }}";
+        contactModal.style.display = "flex";
+    }
+
+    function closeContactModal() {
+        contactModal.style.display = "none";
+    }
+
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            fetch(this.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            }).then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (activeOwnerInput) {
+                        activeOwnerInput.search.value = data.contact.Name;
+                        activeOwnerInput.hidden.value = data.contact.id;
+                    }
+                    contacts.push(data.contact);
+                    closeContactModal();
+                } else {
+                    alert('Failed to save contact.');
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving the contact.');
+            });
+        });
+    }
 });

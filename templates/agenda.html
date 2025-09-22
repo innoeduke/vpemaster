@@ -176,58 +176,5 @@
         const pathwayMap = {{ config.PATHWAY_MAPPING|tojson|safe }};
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
-    <script>
-    // --- Contact Modal Logic ---
-    const contactModal = document.getElementById("contactModal");
-    const contactForm = document.getElementById("contactForm");
-    const contactModalTitle = document.getElementById("contactModalTitle");
-
-    function openContactModal() {
-        contactForm.reset();
-        contactModalTitle.textContent = 'Add New Contact';
-        contactForm.action = "{{ url_for('contacts_bp.contact_form') }}";
-        contactModal.style.display = "flex";
-    }
-
-    function closeContactModal() {
-        contactModal.style.display = "none";
-    }
-
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent default page reload
-            const formData = new FormData(this);
-            fetch(this.action, {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (response.ok) {
-                    // Reload the page to see the new contact in the dropdowns
-                    window.location.reload();
-                } else {
-                    alert('Failed to save contact.');
-                }
-            }).catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while saving the contact.');
-            });
-        });
-    }
-
-    // --- Create Agenda Modal Logic ---
-    const createAgendaModal = document.getElementById("createAgendaModal");
-    const createBtn = document.getElementById("create-btn");
-
-    if (createBtn) {
-        createBtn.onclick = function() {
-            createAgendaModal.style.display = "flex";
-        }
-    }
-
-    function closeCreateAgendaModal() {
-        createAgendaModal.style.display = "none";
-    }
-
-    </script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
 {% endblock %}
