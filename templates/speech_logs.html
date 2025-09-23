@@ -9,7 +9,7 @@
         <form id="speech-logs-filter-form" method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="filters-container">
             <div class="form-group search-container">
                 <input type="text" id="meeting-search" class="search-box" placeholder="Search by Meeting #" value="{{ selected_filters.meeting_number or '' }}">
-                <button type="button" id="clear-meeting-search" class="clear-search-btn" onclick="clearSearch('meeting-search')" style="display: none;">&times;</button>
+                <button type="button" id="clear-meeting-search" class="clear-search-btn" style="display: none;">&times;</button>
             </div>
 
             <div class="form-group">
@@ -32,7 +32,7 @@
             {% if not is_member_view %}
             <div class="form-group search-container">
                 <input type="text" id="speaker-search" class="search-box" placeholder="Search by Speaker">
-                <button type="button" id="clear-speaker-search" class="clear-search-btn" onclick="clearSearch('speaker-search')" style="display: none;">&times;</button>
+                <button type="button" id="clear-speaker-search" class="clear-search-btn" style="display: none;">&times;</button>
             </div>
             <div class="form-group">
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="btn btn-danger">Clear All</a>
@@ -92,36 +92,12 @@
         const allProjects = {{ projects|tojson|safe }};
         const pathwayMap = {{ pathway_mapping|tojson|safe }};
 
-        function filterLogs() {
-            const meetingFilter = document.getElementById('meeting-search').value;
-            const speakerFilter = document.getElementById('speaker-search').value.toUpperCase();
-            const logs = document.querySelectorAll('.speech-log-entry');
-
-            document.getElementById('clear-meeting-search').style.display = meetingFilter.length > 0 ? 'block' : 'none';
-            document.getElementById('clear-speaker-search').style.display = speakerFilter.length > 0 ? 'block' : 'none';
-
-            logs.forEach(log => {
-                const meetingInfo = log.querySelector('.meeting-info').textContent;
-                const speakerInfo = log.querySelector('.speaker-info').textContent.toUpperCase();
-
-                const meetingMatch = meetingInfo.includes(meetingFilter);
-                const speakerMatch = speakerInfo.includes(speakerFilter);
-
-                if (meetingMatch && speakerMatch) {
-                    log.style.display = "";
-                } else {
-                    log.style.display = "none";
-                }
-            });
-        }
-
-        function clearSearch(inputId) {
-            document.getElementById(inputId).value = '';
-            filterLogs();
-        }
-
-        document.getElementById('meeting-search').addEventListener('keyup', filterLogs);
-        document.getElementById('speaker-search').addEventListener('keyup', filterLogs);
+        document.addEventListener('DOMContentLoaded', function() {
+            setupSearch('meeting-search', '.logs-container', '.speech-log-entry', '.meeting-info');
+            if(document.getElementById('speaker-search')) {
+                setupSearch('speaker-search', '.logs-container', '.speech-log-entry', '.speaker-info');
+            }
+        });
     </script>
 
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>

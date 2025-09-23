@@ -106,57 +106,52 @@
     </div>
 </div>
 
+{% include '_delete_modal.html' %}
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
 
 <script>
+    // --- Navigation and Profile Menu Logic ---
     const navPane = document.getElementById('nav-pane');
     const mobileNavToggle = document.getElementById('mobile-nav-toggle');
     const pcNavToggle = document.getElementById('pc-nav-toggle');
-    const mainContent = document.getElementById('main-content');
 
-    const toggleNav = () => {
-        navPane.classList.toggle('expanded');
-    };
-
-    if (mobileNavToggle) {
-        mobileNavToggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleNav();
-        });
-    }
-
-    if (pcNavToggle) {
-        pcNavToggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleNav();
-        });
-    }
-
-    const navLinks = document.querySelectorAll('.nav-pane a');
-    navLinks.forEach(link => {
-        link.addEventListener('click', () => {
-            if (window.innerWidth <= 768) {
-                navPane.classList.remove('expanded');
-            }
-        });
-    });
+    if (mobileNavToggle) { mobileNavToggle.addEventListener('click', (e) => { e.preventDefault(); navPane.classList.toggle('expanded'); }); }
+    if (pcNavToggle) { pcNavToggle.addEventListener('click', (e) => { e.preventDefault(); navPane.classList.toggle('expanded'); }); }
 
     const profileTrigger = document.getElementById('profile-trigger');
     const profileMenu = document.getElementById('profile-menu');
 
     if (profileTrigger) {
-        profileTrigger.addEventListener('click', function(event) {
+        profileTrigger.addEventListener('click', (event) => {
             event.stopPropagation();
             profileMenu.classList.toggle('active');
         });
     }
-
-    document.addEventListener('click', function(event) {
+    document.addEventListener('click', () => {
         if (profileMenu && profileMenu.classList.contains('active')) {
             profileMenu.classList.remove('active');
         }
     });
 
+    // --- Generic Delete Modal Logic ---
+    const deleteModal = document.getElementById("deleteModal");
+    const deleteForm = document.getElementById("deleteForm");
+    const deleteModalText = document.getElementById("deleteModalText");
+
+    function openDeleteModal(actionUrl, itemName) {
+        if (deleteForm && deleteModal && deleteModalText) {
+            deleteForm.action = actionUrl;
+            deleteModalText.textContent = `Are you sure you want to delete this ${itemName}?`;
+            deleteModal.style.display = "flex";
+        }
+    }
+
+    function closeDeleteModal() {
+        if (deleteModal) {
+            deleteModal.style.display = "none";
+        }
+    }
 </script>
 
 </body>
