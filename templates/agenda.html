@@ -14,6 +14,9 @@
                 <option value="{{ num }}" {% if num == selected_meeting %}selected{% endif %}>{{ num }}</option>
                 {% endfor %}
             </select>
+            {% if selected_meeting_date %}
+            <span id="meeting-date-display" style="margin-left: 5px;">{{ selected_meeting_date.strftime('%B %d, %Y') }}</span>
+            {% endif %}
         </div>
 
         {% if session.get('user_role') in ['Admin', 'Officer'] %}
@@ -22,9 +25,9 @@
             <button id="create-btn" class="btn btn-success">New</button>
             <form id="load-form" action="{{ url_for('agenda_bp.load_csv') }}" method="post" enctype="multipart/form-data" style="display: inline;">
                 <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
-                <button id="load-btn" type="button" class="btn btn-primary" onclick="document.getElementById('csv-file').click()">Import</button>
+                <button id="load-btn" type="button" class="btn btn-info" onclick="document.getElementById('csv-file').click()">Import</button>
             </form>
-            <button id="export-btn" class="btn btn-primary">Export</button>
+            <button id="export-btn" class="btn btn-info">Export</button>
             <button id="add-row-btn" class="btn btn-info" style="display: none;">Add</button>
             <button id="edit-logs-btn" class="btn btn-primary">Edit</button>
         </div>
@@ -32,12 +35,11 @@
     </div>
 
     <div class='table-container non-edit-mode'
-        id="table-container"
-        data-session-types='{{ session_types|tojson|safe }}'
-        data-contacts='{{ contacts_data|tojson|safe }}'
-        data-projects='{{ projects|tojson|safe }}'
-        data-project-speakers='{{ project_speakers|tojson|safe }}'
-        data-contact-form-url="{{ url_for('contacts_bp.contact_form') }}">
+         id="table-container"
+         data-session-types='{{ session_types|tojson|safe }}'
+         data-contacts='{{ contacts_data|tojson|safe }}'
+         data-projects='{{ projects|tojson|safe }}'
+         data-project-speakers='{{ project_speakers|tojson|safe }}'>
 
         <table id="logs-table">
             <thead>
@@ -69,7 +71,7 @@
                     data-start-time="{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}"
                     data-session-title="{{ session_type_title if is_titleless else (log.Session_Title if log.Session_Title is not none else '') }}"
                     data-type-id="{{ log.Type_ID }}"
-                    data-owner-id="{{ log.Owner_ID if log.Owner_ID is not none else '' }}"
+                    data-owner-id="{{ log.Owner_ID }}"
                     data-duration-min="{{ log.Duration_Min if log.Duration_Min is not none else '' }}"
                     data-duration-max="{{ log.Duration_Max if log.Duration_Max is not none else '' }}"
                     data-status="{{ log.Status if log.Status else '' }}"

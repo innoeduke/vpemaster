@@ -118,3 +118,35 @@
     width: 100%;
     margin-top: 10px;
 }
+
+/* --- Shared Component: Search Container --- */
+.search-container {
+    position: relative;
+    display: inline-block;
+}
+
+.search-box {
+    width: 300px;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    flex-grow: 0;
+    padding-right: 30px; /* Make space for the clear button */
+}
+
+.clear-search-btn {
+    position: absolute;
+    top: 50%;
+    right: 5px;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 20px;
+    color: #888;
+}
+
+.clear-search-btn:hover {
+    color: #000;
+}

@@ -60,6 +60,15 @@ def _create_or_update_session(item, meeting_number, seq):
     if type_id == '':
         type_id = None
 
+    # --- Start of Changed Code ---
+    owner_id_val = item.get('owner_id')
+    # Ensure empty strings, the string 'None', or 0 are treated as NULL
+    if not owner_id_val or owner_id_val in ['None', '0']:
+        owner_id = None
+    else:
+        owner_id = int(owner_id_val)
+    # --- End of Changed Code ---
+
     session_title = item.get('session_title')
     project_id = item.get('project_id') if item.get('project_id') else None
     status = item.get('status') if item.get('status') else 'Booked'
@@ -69,7 +78,7 @@ def _create_or_update_session(item, meeting_number, seq):
             Meeting_Number=meeting_number,
             Meeting_Seq=seq,
             Type_ID=type_id,
-            Owner_ID=item['owner_id'] if item['owner_id'] else None,
+            Owner_ID=owner_id, # Use corrected variable
             Duration_Min=item['duration_min'] if item['duration_min'] else None,
             Duration_Max=item['duration_max'] if item['duration_max'] else None,
             Project_ID=project_id,
@@ -83,7 +92,7 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Meeting_Number = meeting_number
             log.Meeting_Seq = seq
             log.Type_ID = type_id
-            log.Owner_ID = item.get('owner_id') if item.get('owner_id') else None
+            log.Owner_ID = owner_id # Use corrected variable
             log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
             log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
             log.Project_ID = project_id
@@ -126,6 +135,12 @@ def agenda():
     selected_meeting_str = request.args.get('meeting_number')
     selected_meeting = int(selected_meeting_str) if selected_meeting_str else (meeting_numbers[0] if meeting_numbers else None)
 
+    selected_meeting_date = None
+    if selected_meeting:
+        meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting).first()
+        if meeting:
+            selected_meeting_date = meeting.Meeting_Date
+
     session_logs = _get_agenda_logs(selected_meeting)
     project_speakers = _get_project_speakers(selected_meeting)
 
@@ -166,6 +181,7 @@ def agenda():
                            pathways=pathways,
                            meeting_numbers=meeting_numbers,
                            selected_meeting=selected_meeting,
+                           selected_meeting_date=selected_meeting_date,
                            members=members,
                            project_speakers=project_speakers,
                            meeting_templates=meeting_templates)

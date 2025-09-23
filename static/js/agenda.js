@@ -1,23 +1,3 @@
-// --- Contact Modal Logic from agenda.html (moved to global scope) ---
-const contactModal = document.getElementById("contactModal");
-const contactForm = document.getElementById("contactForm");
-const contactModalTitle = document.getElementById("contactModalTitle");
-let activeOwnerInput = null;
-let contactFormUrl = ''; // Will be set on DOMContentLoaded
-
-function openContactModal(searchInput, hiddenInput) {
-    activeOwnerInput = { search: searchInput, hidden: hiddenInput };
-    contactForm.reset();
-    contactModalTitle.textContent = 'Add New Contact';
-    contactForm.action = contactFormUrl; // Use the global URL variable
-    contactModal.style.display = "flex";
-}
-
-function closeContactModal() {
-    contactModal.style.display = "none";
-}
-
-
 document.addEventListener('DOMContentLoaded', () => {
     // --- DOM Elements ---
     const editButton = document.getElementById('edit-logs-btn');
@@ -33,11 +13,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const sessionTypes = JSON.parse(tableContainer.dataset.sessionTypes);
     const contacts = JSON.parse(tableContainer.dataset.contacts);
     const projects = JSON.parse(tableContainer.dataset.projects);
-    const projectSpeakers = JSON.parse(tableContainer.dataset.projectSpeakers);
-    contactFormUrl = tableContainer.dataset.contactFormUrl; // Set the global URL variable
+    let projectSpeakers = JSON.parse(tableContainer.dataset.projectSpeakers);
 
     let isEditing = false;
     let sortable = null; // Variable to hold the sortable instance
+    let activeOwnerInput = null;
+
+    const sessionPairs = {
+        'Ah-Counter Introduction': 'Ah-Counter Report',
+        'Grammarian Introduction': 'Grammarian Report',
+        'Timer Introduction': 'Timer Report',
+        "General Evaluator's Address": 'General Evaluation Report',
+        "Toastmaster of the Evening's Address": 'Voting and Awards',
+        "President's Address": 'Announcements / Meeting Closing'
+    };
 
     // --- Event Listeners ---
     if (meetingFilter) {
@@ -86,6 +75,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 seqCell.textContent = index + 1;
             }
         });
+    }
+
+    // --- New function to update the speaker list dynamically ---
+    function updateProjectSpeakers() {
+        const currentSpeakers = [];
+        const rows = document.querySelectorAll('#logs-table tbody tr');
+        rows.forEach(row => {
+            const typeSelect = row.querySelector('[data-field="Type_ID"] select');
+            if (typeSelect) {
+                const sessionType = sessionTypes.find(st => st.id == typeSelect.value);
+                if (sessionType && sessionType.Title === 'Pathway Speech') {
+                    const ownerInput = row.querySelector('.autocomplete-container input[type="text"]');
+                    if (ownerInput && ownerInput.value) {
+                        currentSpeakers.push(ownerInput.value);
+                    }
+                }
+            }
+        });
+        projectSpeakers = [...new Set(currentSpeakers)]; // Update the global list
     }
 
 
@@ -284,6 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const sessionType = sessionTypes.find(st => st.id === parseInt(typeId, 10));
 
         if (sessionType && sessionType.Title === 'Evaluation') {
+            updateProjectSpeakers(); // Refresh the list before creating the dropdown
             const select = document.createElement('select');
             select.options.add(new Option('-- Select Speaker --', ''));
             projectSpeakers.forEach(speakerName => {
@@ -314,9 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
         cell.classList.add('edit-mode-cell');
         cell.dataset.field = field;
 
-        if (field === 'Meeting_Seq') {
-            cell.textContent = originalValue;
-            cell.classList.add('seq-no-readonly'); // Apply the drag handle style
+        if (field === 'Meeting_Seq' || field === 'Start_Time') {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = originalValue;
+            input.readOnly = true;
+            input.classList.add('non-editable-input');
+            cell.appendChild(input);
             return cell;
         }
 
@@ -328,14 +341,10 @@ document.addEventListener('DOMContentLoaded', () => {
             return cell;
         }
 
-        if (field === 'Start_Time') {
-            cell.textContent = originalValue;
-            return cell;
-        }
-
         if (field === 'Session_Title') {
             const control = createSessionTitleControl(typeId, originalValue);
             cell.appendChild(control);
+
         } else if (field === 'Type_ID') {
             const select = document.createElement('select');
             sessionTypes.forEach(type => {
@@ -346,9 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cell.appendChild(select);
         } else if (field === 'Owner_ID') {
             const ownerCellWrapper = document.createElement('div');
-            ownerCellWrapper.style.display = 'flex';
-            ownerCellWrapper.style.alignItems = 'center';
-            ownerCellWrapper.style.gap = '5px';
+            ownerCellWrapper.classList.add('owner-cell-wrapper');
 
             const autocompleteContainer = document.createElement('div');
             autocompleteContainer.classList.add('autocomplete-container');
@@ -375,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addBtn.innerHTML = '<i class="fas fa-plus"></i>';
             addBtn.className = 'btn btn-primary btn-sm';
             addBtn.title = 'Add New Contact';
-            addBtn.onclick = () => openContactModal(searchInput, hiddenInput);
+            addBtn.onclick = () => openContactModal();
 
             ownerCellWrapper.appendChild(autocompleteContainer);
             ownerCellWrapper.appendChild(addBtn);
@@ -384,8 +391,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let currentFocus;
             searchInput.addEventListener('input', function() {
                 const val = this.value;
-                // Clear the hidden ID to prevent saving an old/invalid ID
-                hiddenInput.value = '';
                 closeAllLists();
                 if (!val) { return false; }
                 currentFocus = -1;
@@ -406,10 +411,48 @@ document.addEventListener('DOMContentLoaded', () => {
                         searchInput.value = this.getElementsByTagName('input')[0].value;
                         hiddenInput.value = this.getElementsByTagName('input')[0].dataset.id;
                         closeAllLists();
+
+                        const selectedContactId = this.getElementsByTagName('input')[0].dataset.id;
+                        const currentRow = searchInput.closest('tr');
+                        const currentSessionType = sessionTypes.find(st => st.id == currentRow.querySelector('[data-field="Type_ID"] select').value);
+
+                        if (currentSessionType && sessionPairs[currentSessionType.Title]) {
+                            const pairedSessionTitle = sessionPairs[currentSessionType.Title];
+                            const allRows = document.querySelectorAll('#logs-table tbody tr');
+                            allRows.forEach(row => {
+                                const typeSelect = row.querySelector('[data-field="Type_ID"] select');
+                                if (typeSelect) {
+                                    const sessionType = sessionTypes.find(st => st.id == typeSelect.value);
+                                    if (sessionType && sessionType.Title === pairedSessionTitle) {
+                                        const pairedHiddenInput = row.querySelector('input[name="owner_id"]');
+                                        const pairedSearchInput = row.querySelector('.autocomplete-container input[type="text"]');
+                                        if (pairedHiddenInput && pairedSearchInput) {
+                                            const newContact = contacts.find(c => c.id == selectedContactId);
+                                            if (newContact) {
+                                                pairedHiddenInput.value = newContact.id;
+                                                pairedSearchInput.value = newContact.Name;
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
                     });
                     suggestions.appendChild(item);
                 });
             });
+
+
+            const sessionType = sessionTypes.find(st => st.id == typeId);
+            if(sessionType) {
+                const pairedSession = Object.values(sessionPairs).includes(sessionType.Title);
+                if (pairedSession) {
+                    searchInput.readOnly = true;
+                    searchInput.classList.add('non-editable-input');
+                    addBtn.style.display = 'none';
+                }
+            }
+
 
             function closeAllLists(elmnt) {
                 const items = document.getElementsByClassName('autocomplete-items');
@@ -498,6 +541,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- Contact Modal Logic from agenda.html ---
+    const contactModal = document.getElementById("contactModal");
+    const contactForm = document.getElementById("contactForm");
+    const contactModalTitle = document.getElementById("contactModalTitle");
+
+    function openContactModal(searchInput, hiddenInput) {
+        activeOwnerInput = { search: searchInput, hidden: hiddenInput };
+        contactForm.reset();
+        contactModalTitle.textContent = 'Add New Contact';
+        contactForm.action = "{{ url_for('contacts_bp.contact_form') }}";
+        contactModal.style.display = "flex";
+    }
+
+    function closeContactModal() {
+        contactModal.style.display = "none";
+    }
 
     if (contactForm) {
         contactForm.addEventListener('submit', function(e) {

@@ -1,8 +1,4 @@
 /* --- Agenda Page --- */
-.table-container:not(.edit-mode-active) {
-    max-width: 800px;
-    margin: 0 auto;
-}
 
 .action-bar {
     display: flex;
@@ -10,6 +6,18 @@
     align-items: center;
     margin: 20px auto;
     max-width: 800px;
+}
+
+.inline-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#meeting-date-display {
+    font-size: 1em;
+    color: #333;
+    white-space: nowrap;
 }
 
 .section-row {
@@ -22,6 +30,45 @@
 
 
 /* Agenda Edit Mode */
+
+.non-editable-input {
+    border: none;
+    background-color: transparent;
+    width: 100%;
+    box-sizing: border-box;
+    cursor: default;
+    padding: 8px; /* Match table cell padding */
+}
+
+/* Finetuned Column Widths for Edit Mode */
+#logs-table .edit-mode-header th:nth-child(1) { width: 4%; }  /* No */
+#logs-table .edit-mode-header th:nth-child(2) { width: 5%; } /* Start Time */
+#logs-table .edit-mode-header th:nth-child(3) { width: 20%; } /* Session Type */
+#logs-table .edit-mode-header th:nth-child(4) { width: 35%; } /* Session Title */
+#logs-table .edit-mode-header th:nth-child(5) { width: 20%; } /* Owner */
+#logs-table .edit-mode-header th:nth-child(6) { width: 5%; }  /* Min */
+#logs-table .edit-mode-header th:nth-child(7) { width: 5%; }  /* Max */
+#logs-table .edit-mode-header th:nth-child(8) { width: 6%; } /* Actions */
+
+.table-container:not(.edit-mode-active) {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.table-container.edit-mode-active th,
+.table-container.edit-mode-active td {
+    vertical-align: middle;
+}
+
+.table-container.edit-mode-active td select,
+.table-container.edit-mode-active td input[type="text"],
+.table-container.edit-mode-active td input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+    height: 30px; /* Consistent height */
+    padding: 5px;
+}
+
 .seq-no-readonly {
     background-color: #f2f2f2;
     text-align: center;
@@ -43,6 +90,16 @@
 .autocomplete-container {
     position: relative;
     width: 100%;
+}
+
+.table-container .owner-cell-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.table-container .autocomplete-container {
+    flex-grow: 1;
 }
 
 .autocomplete-items {
