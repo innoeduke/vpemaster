@@ -42,13 +42,13 @@
 
 /* Finetuned Column Widths for Edit Mode */
 #logs-table .edit-mode-header th:nth-child(1) { width: 4%; }  /* No */
-#logs-table .edit-mode-header th:nth-child(2) { width: 5%; } /* Start Time */
-#logs-table .edit-mode-header th:nth-child(3) { width: 20%; } /* Session Type */
+#logs-table .edit-mode-header th:nth-child(2) { width: 8%; } /* Start Time */
+#logs-table .edit-mode-header th:nth-child(3) { width: 18%; } /* Session Type */
 #logs-table .edit-mode-header th:nth-child(4) { width: 35%; } /* Session Title */
 #logs-table .edit-mode-header th:nth-child(5) { width: 20%; } /* Owner */
 #logs-table .edit-mode-header th:nth-child(6) { width: 5%; }  /* Min */
 #logs-table .edit-mode-header th:nth-child(7) { width: 5%; }  /* Max */
-#logs-table .edit-mode-header th:nth-child(8) { width: 6%; } /* Actions */
+#logs-table .edit-mode-header th:nth-child(8) { width: 5%; } /* Actions */
 
 .table-container:not(.edit-mode-active) {
     max-width: 800px;
@@ -67,6 +67,20 @@
     box-sizing: border-box;
     height: 30px; /* Consistent height */
     padding: 5px;
+}
+
+.table-container.edit-mode-active tr[data-is-section="true"] td[data-field="Session_Title"] input {
+    width: 50%;
+    text-align: center;
+}
+
+.table-container.edit-mode-active td[data-field="Meeting_Seq"] input,
+.table-container.edit-mode-active td[data-field="Start_Time"] input {
+    border: none;
+    background-color: transparent;
+    outline: none;
+    /* This is the key line to make the input non-editable */
+    pointer-events: none;
 }
 
 .seq-no-readonly {

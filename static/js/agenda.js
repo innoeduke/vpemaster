@@ -11,21 +11,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportButton = document.getElementById('export-btn');
     const tableContainer = document.getElementById('table-container');
     const tableBody = document.querySelector('#logs-table tbody');
+    const contactForm = document.getElementById("contactForm");
 
     // --- Data from Template ---
     const sessionTypes = JSON.parse(tableContainer.dataset.sessionTypes);
-    const contacts = JSON.parse(tableContainer.dataset.contacts);
+    let contacts = JSON.parse(tableContainer.dataset.contacts);
     let projectSpeakers = JSON.parse(tableContainer.dataset.projectSpeakers);
 
     // --- State ---
     let isEditing = false;
     let sortable = null;
+    let activeOwnerInput = null;
+
+    const sessionPairs = {
+        'Ah-Counter Introduction': 'Ah-Counter Report',
+        'Grammarian Introduction': 'Grammarian Report',
+        'Timer Introduction': 'Timer Report',
+        "General Evaluator's Address": 'General Evaluation Report',
+        "Toastmaster of the Evening's Address": 'Voting and Awards',
+        "President's Address": 'Announcements / Meeting Closing'
+    };
 
     // --- Constants ---
     const fieldsOrder = ['Meeting_Seq', 'Start_Time', 'Type_ID', 'Session_Title', 'Owner_ID', 'Duration_Min', 'Duration_Max'];
 
     // --- Event Listeners ---
     function initializeEventListeners() {
+
+        if (contactForm) {
+            contactForm.addEventListener('submit', handleContactFormSubmit);
+        }
         if (meetingFilter) {
             meetingFilter.addEventListener('change', () => {
                 window.location.href = `/agenda?meeting_number=${meetingFilter.value}`;
@@ -35,13 +50,26 @@ document.addEventListener('DOMContentLoaded', () => {
             editButton.addEventListener('click', () => isEditing ? saveChanges() : toggleEditMode(true));
         }
         if (cancelButton) {
-            cancelButton.addEventListener('click', () => window.location.reload());
+            cancelButton.addEventListener('click', () => {
+                if (isEditing) {
+                    toggleEditMode(false);
+                    window.location.reload();
+                }
+            });
         }
         if (addRowButton) {
             addRowButton.addEventListener('click', addNewRow);
         }
         if (exportButton) {
             exportButton.addEventListener('click', exportAgenda);
+        }
+        if (createButton) {
+            createButton.addEventListener('click', () => {
+                 const createAgendaModal = document.getElementById('createAgendaModal');
+                 if (createAgendaModal) {
+                    createAgendaModal.style.display = 'flex';
+                }
+            });
         }
         if (tableBody) {
             tableBody.addEventListener('click', (event) => {
@@ -66,6 +94,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveChanges() {
         const dataToSave = Array.from(tableBody.querySelectorAll('tr')).map(getRowData);
+
+        if (dataToSave.length === 0) {
+            console.log('No data to save. Ignoring request.');
+            toggleEditMode(false);
+            window.location.reload();
+            if (meetingFilter && meetingFilter.options.length > 0) {
+                meetingFilter.value = meetingFilter.options[0].value;
+                // Trigger the change event to load the agenda for the new selection
+                meetingFilter.dispatchEvent(new Event('change'));
+            }
+            return;
+        }
 
         fetch("/agenda/update", {
             method: 'POST',
@@ -99,6 +139,11 @@ document.addEventListener('DOMContentLoaded', () => {
             meetingNumber: meetingFilter.value,
             projectId: '',
             status: 'Booked',
+            typeId: sessionTypes.find(st => st.Title === 'Opening')?.id || '',
+            sessionTitle: '',
+            ownerId: '',
+            durationMin: '',
+            durationMax: ''
         });
 
         buildEditableRow(newRow, tableBody.children.length);
@@ -129,6 +174,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Helper Functions ---
 
+    function handleContactFormSubmit(event) {
+        event.preventDefault(); // Stop the default redirect
+        const form = event.target;
+        const formData = new FormData(form);
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                // This header tells your Flask backend it's an AJAX request
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add the new contact to our local JavaScript array
+                contacts.push(data.contact);
+                closeContactModal(); // Close the modal
+                if (activeOwnerInput) {
+                    activeOwnerInput.value = data.contact.Name;
+                    const hiddenInput = activeOwnerInput.nextElementSibling;
+                    if (hiddenInput && hiddenInput.type === 'hidden' && hiddenInput.name === 'owner_id') {
+                        hiddenInput.value = data.contact.id;
+                    }
+                }
+            } else {
+                alert('Error saving contact.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the contact.');
+        });
+    }
+
     function updateHeaderVisibility(isEditMode) {
         const header = document.querySelector('#logs-table thead');
         header.querySelector('.edit-mode-header').style.display = isEditMode ? 'table-row' : 'none';
@@ -145,23 +226,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Rebuilds a table row for edit mode, handling regular and section rows.
-     */
     function buildEditableRow(row, seq) {
         const originalData = { ...row.dataset };
-        row.innerHTML = ''; // Clear existing content
+        row.innerHTML = '';
 
         if (originalData.isSection === 'true') {
-            // *** THIS IS THE CORRECTED LOGIC FOR SECTION ROWS ***
             const seqCell = createEditableCell('Meeting_Seq', seq, true, null);
             const titleCell = createEditableCell('Session_Title', originalData.sessionTitle, true, null);
             titleCell.colSpan = 6;
-            titleCell.classList.add('section-row'); // Apply styling
+            titleCell.classList.add('section-row');
 
             row.append(seqCell, titleCell, createActionsCell(originalData.typeId));
         } else {
-            // Logic for regular rows remains the same
             fieldsOrder.forEach(field => {
                 const value = (field === 'Meeting_Seq') ? seq : originalData[field.toLowerCase().replace(/_([a-z])/g, g => g[1].toUpperCase())];
                 row.appendChild(createEditableCell(field, value, false, originalData.typeId));
@@ -286,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isSection) {
             const input = document.createElement('input');
             input.type = 'text';
-            input.value = value;
+            input.value = value || '';
             if (field === 'Meeting_Seq') {
                  input.readOnly = true;
             }
@@ -299,7 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'Start_Time':
                 const input = document.createElement('input');
                 input.type = 'text';
-                input.value = value;
+                input.value = value || '';
                 input.readOnly = true;
                 cell.appendChild(input);
                 break;
@@ -315,7 +391,7 @@ document.addEventListener('DOMContentLoaded', () => {
             default:
                 const defaultInput = document.createElement('input');
                 defaultInput.type = 'text';
-                defaultInput.value = value;
+                defaultInput.value = value || '';
                 cell.appendChild(defaultInput);
         }
         return cell;
@@ -372,7 +448,10 @@ document.addEventListener('DOMContentLoaded', () => {
         addBtn.type = 'button';
         addBtn.innerHTML = '<i class="fas fa-plus"></i>';
         addBtn.className = 'btn btn-primary btn-sm';
-        addBtn.onclick = () => openContactModal(); // Assumes openContactModal is defined globally
+        addBtn.addEventListener('click', () => {
+            activeOwnerInput = searchInput;
+            openContactModal();
+        });
 
         setupAutocomplete(searchInput, hiddenInput);
 
@@ -384,6 +463,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function setupAutocomplete(searchInput, hiddenInput) {
         let currentFocus;
         searchInput.addEventListener("input", function() {
+            if (this.readOnly) return;
+
             let container, item, val = this.value;
             closeAllLists();
             if (!val) return;
@@ -401,6 +482,35 @@ document.addEventListener('DOMContentLoaded', () => {
                     searchInput.value = this.querySelector("input").value;
                     hiddenInput.value = this.querySelector("input").dataset.id;
                     closeAllLists();
+
+                    const selectedContactId = this.getElementsByTagName('input')[0].dataset.id;
+                    const currentRow = searchInput.closest('tr');
+                    const currentSessionType = sessionTypes.find(st => st.id == currentRow.querySelector('[data-field="Type_ID"] select').value);
+
+                    if (currentSessionType && sessionPairs[currentSessionType.Title]) {
+                        const pairedSessionTitle = sessionPairs[currentSessionType.Title];
+                        const allRows = document.querySelectorAll('#logs-table tbody tr');
+                        allRows.forEach(row => {
+                            const typeSelect = row.querySelector('[data-field="Type_ID"] select');
+                            if (typeSelect) {
+                                const sessionType = sessionTypes.find(st => st.id == typeSelect.value);
+                                if (sessionType && sessionType.Title === pairedSessionTitle) {
+                                    const pairedHiddenInput = row.querySelector('input[name="owner_id"]');
+                                    const pairedSearchInput = row.querySelector('.autocomplete-container input[type="text"]');
+                                    if (pairedHiddenInput && pairedSearchInput) {
+                                        const newContact = contacts.find(c => c.id == selectedContactId);
+                                        if (newContact) {
+                                            pairedHiddenInput.value = newContact.id;
+                                            pairedSearchInput.value = newContact.Name;
+
+                                            pairedSearchInput.readOnly = true;
+                                            pairedSearchInput.style.pointerEvents = 'none'; // This is a powerful trick
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
                 });
                 container.appendChild(item);
             });
@@ -426,7 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
         projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
         projectBtn.className = 'icon-btn project-btn';
         projectBtn.type = 'button';
-        projectBtn.onclick = function() { openSpeechEditModal(this.closest('tr').dataset.id); }; // Assumes openSpeechEditModal is global
+        projectBtn.onclick = function() { openSpeechEditModal(this.closest('tr').dataset.id); };
         const sessionType = sessionTypes.find(st => st.id == typeId);
         projectBtn.style.display = (sessionType && sessionType.Valid_for_Project) ? 'inline-block' : 'none';
 
@@ -442,3 +552,44 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Init ---
     initializeEventListeners();
 });
+
+function closeCreateAgendaModal() {
+    const createAgendaModal = document.getElementById('createAgendaModal');
+    if (createAgendaModal) {
+        createAgendaModal.style.display = 'none';
+    }
+}
+
+function openContactModal(contactId) {
+    const contactModal = document.getElementById("contactModal");
+    const contactForm = document.getElementById("contactForm");
+    const contactModalTitle = document.getElementById("contactModalTitle");
+
+    activeOwnerInput = null;
+    contactForm.reset();
+    if (contactId) {
+        contactModalTitle.textContent = 'Edit Contact';
+        contactForm.action = `/contact/form/${contactId}`;
+        fetch(`/contact/form/${contactId}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('name').value = data.contact.Name || '';
+            document.getElementById('type').value = data.contact.Type || 'Member';
+            document.getElementById('club').value = data.contact.Club || '';
+            document.getElementById('working_path').value = data.contact.Working_Path || 'Presentation Mastery';
+            document.getElementById('next_project').value = data.contact.Next_Project || '';
+            document.getElementById('dtm').checked = data.contact.DTM;
+        });
+    } else {
+        contactModalTitle.textContent = 'Add New Contact';
+        contactForm.action = "/contact/form";
+    }
+    contactModal.style.display = "flex";
+}
+
+function closeContactModal() {
+    const contactModal = document.getElementById("contactModal");
+    contactModal.style.display = "none";
+}
