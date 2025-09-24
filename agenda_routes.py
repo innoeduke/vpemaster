@@ -368,27 +368,92 @@ def export_agenda(meeting_number):
     if not meeting:
         return "Meeting not found", 404
 
+    # Corrected Query to fetch all necessary data
     logs = db.session.query(
         SessionLog.Session_Title,
-        Contact.Name,
+        SessionLog.Start_Time,
         SessionLog.Duration_Min,
         SessionLog.Duration_Max,
+        Contact.Name,
+        Contact.DTM,
+        Contact.Type,
+        Contact.Club,
+        Contact.Completed_Levels,
+        Contact.Working_Path,
         SessionType.Title.label('session_type_title'),
-        SessionType.Is_Titleless
+        SessionType.Is_Titleless,
+        Project.Code_DL,
+        Project.Code_EH,
+        Project.Code_MS,
+        Project.Code_PI,
+        Project.Code_PM,
+        Project.Code_VC,
+        Project.Code_DTM
     ).outerjoin(Contact, SessionLog.Owner_ID == Contact.id)\
      .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
+     .outerjoin(Project, SessionLog.Project_ID == Project.ID)\
      .filter(SessionLog.Meeting_Number == meeting_number)\
      .order_by(SessionLog.Meeting_Seq.asc()).all()
 
     output = io.StringIO()
     writer = csv.writer(output)
-    start_time = meeting.Start_Time.strftime('%H:%M') if meeting.Start_Time else ''
-    meeting_date = meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting.Meeting_Date else ''
-    writer.writerow([meeting.Meeting_Number, meeting_date, start_time])
+    pathway_mapping = current_app.config['PATHWAY_MAPPING']
+
+    # Write column headers
+    writer.writerow(['Start Time', 'Session Title', 'Owner', 'Duration'])
 
     for log in logs:
+        # Format session title
         session_title = log.session_type_title if log.Is_Titleless else log.Session_Title
-        writer.writerow([session_title, log.Name or '', log.Duration_Min or '', log.Duration_Max or ''])
+
+        # Add project code to title if applicable
+        if log.session_type_title == "Pathway Speech" and log.Working_Path:
+            pathway_abbr = pathway_mapping.get(log.Working_Path)
+            if pathway_abbr:
+                project_code = getattr(log, f"Code_{pathway_abbr}", None)
+                if project_code:
+                    session_title = f"{session_title} ({pathway_abbr}{project_code})"
+
+        # Format owner information
+        owner_info = ''
+        if log.Name:
+            owner_info = log.Name
+            if log.DTM:
+                owner_info += ', DTM'
+            meta_parts = []
+            if log.Type == 'Guest':
+                guest_info = 'Guest'
+                if log.Club:
+                    guest_info += f'@{log.Club}'
+                meta_parts.append(guest_info)
+            elif log.Type == 'Member' and log.Completed_Levels:
+                meta_parts.append(log.Completed_Levels)
+            if meta_parts:
+                owner_info += ' - ' + ', '.join(meta_parts)
+
+        # Format start time
+        start_time = log.Start_Time.strftime('%H:%M') if log.Start_Time else ''
+
+        # Format duration safely
+        duration = ''
+        min_dur = log.Duration_Min
+        max_dur = log.Duration_Max
+        if min_dur is not None and max_dur is not None:
+            if min_dur == max_dur:
+                duration = f"[{min_dur}']"
+            else:
+                duration = f"[{min_dur}'-{max_dur}']"
+        elif min_dur is not None:
+            duration = f"[{min_dur}']"
+        elif max_dur is not None:
+            duration = f"[{max_dur}']"
+
+        writer.writerow([
+            start_time,
+            session_title,
+            owner_info,
+            duration
+        ])
 
     output.seek(0)
     return send_file(

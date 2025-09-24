@@ -1,3 +1,4 @@
+// static/js/speech_modal.js
 // const allProjects = {{ projects|tojson|safe }};
 
 function openSpeechEditModal(logId) {
@@ -28,7 +29,8 @@ function updateProjectOptions(selectedProjectId = null) {
 
     const selectedPathway = pathwaySelect.value;
     const selectedLevel = levelSelect.value;
-    const codeAttr = pathwayMap[selectedPathway];
+    const codeSuffix = pathwayMap[selectedPathway];
+    const codeAttr = `Code_${codeSuffix}`;
 
     projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
 

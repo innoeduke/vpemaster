@@ -7,11 +7,6 @@
 
     <div class="speech-logs-content">
         <form id="speech-logs-filter-form" method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="filters-container">
-            <div class="form-group search-container">
-                <input type="text" id="meeting-search" class="search-box" placeholder="Search by Meeting #" value="{{ selected_filters.meeting_number or '' }}">
-                <button type="button" id="clear-meeting-search" class="clear-search-btn" style="display: none;">&times;</button>
-            </div>
-
             <div class="form-group">
                 <select name="pathway" onchange="this.form.submit()">
                     <option value="">All Pathways</option>
@@ -29,6 +24,10 @@
                 </select>
             </div>
 
+            <div class="form-group search-container">
+                <input type="text" id="meeting-search" class="search-box" placeholder="Search by Meeting #" value="{{ selected_filters.meeting_number or '' }}">
+                <button type="button" id="clear-meeting-search" class="clear-search-btn" style="display: none;">&times;</button>
+            </div>
             {% if not is_member_view %}
             <div class="form-group search-container">
                 <input type="text" id="speaker-search" class="search-box" placeholder="Search by Speaker">

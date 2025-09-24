@@ -10,12 +10,12 @@
         <div class="form-group">
             <label for="path">Path:</label>
             <select id="path" name="path">
-                <option value="Code_DL">Dynamic Leadership</option>
-                <option value="Code_EH">Engaging Humor</option>
-                <option value="Code_MS">Motivational Strategies</option>
-                <option value="Code_PI">Persuasive Influence</option>
-                <option value="Code_PM">Presentation Mastery</option>
-                <option value="Code_VC">Visionary Communication</option>
+                <option value="DL">Dynamic Leadership</option>
+                <option value="EH">Engaging Humor</option>
+                <option value="MS">Motivational Strategies</option>
+                <option value="PI">Persuasive Influence</option>
+                <option value="PM">Presentation Mastery</option>
+                <option value="VC">Visionary Communication</option>
             </select>
         </div>
         <div class="form-group">
@@ -46,12 +46,12 @@
             {% endif %}
         </div>
         <div class="path-codes">
-            <div class="path-code-box path-dl" id="dl-code" data-path="Code_DL">DL: <span></span></div>
-            <div class="path-code-box path-eh" id="eh-code" data-path="Code_EH">EH: <span></span></div>
-            <div class="path-code-box path-ms" id="ms-code" data-path="Code_MS">MS: <span></span></div>
-            <div class="path-code-box path-pi" id="pi-code" data-path="Code_PI">PI: <span></span></div>
-            <div class="path-code-box path-pm" id="pm-code" data-path="Code_PM">PM: <span></span></div>
-            <div class="path-code-box path-vc" id="vc-code" data-path="Code_VC">VC: <span></span></div>
+            <div class="path-code-box path-dl" id="dl-code" data-path="DL">DL: <span></span></div>
+            <div class="path-code-box path-eh" id="eh-code" data-path="EH">EH: <span></span></div>
+            <div class="path-code-box path-ms" id="ms-code" data-path="MS">MS: <span></span></div>
+            <div class="path-code-box path-pi" id="pi-code" data-path="PI">PI: <span></span></div>
+            <div class="path-code-box path-pm" id="pm-code" data-path="PM">PM: <span></span></div>
+            <div class="path-code-box path-vc" id="vc-code" data-path="VC">VC: <span></span></div>
         </div>
         <br/>
         <div class="project-section">
@@ -101,7 +101,8 @@
         }
 
         function filterProjects() {
-            const selectedPath = pathSelect.value;
+            const selectedPathSuffix = pathSelect.value;
+            const selectedPath = "Code_" + selectedPathSuffix;
             const levelValue = levelSelect.value; // Changed from querySelector
 
             projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
@@ -233,7 +234,7 @@
         }
 
         window.onload = function() {
-            pathSelect.value = 'Code_PM';
+            pathSelect.value = 'PM';
             levelSelect.value = '1'; // Set default level
             filterProjects();
         };

@@ -72,21 +72,6 @@ h1 {
     border-radius: 4px;
 }
 
-.search-container {
-    position: relative;
-    display: inline-block;
-}
-
-.search-box {
-    width: 300px;
-    padding: 8px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    flex-grow: 0;
-    padding-right: 30px; /* Make space for the clear button */
-}
-
 #clearSearchBtn {
     position: absolute;
     top: 50%;

@@ -1,5 +1,4 @@
-# vpemaster/speech_logs_routes.py
-
+# innoeduke/vpemaster/vpemaster-dev0.3/speech_logs_routes.py
 from flask import Blueprint, jsonify, render_template, request, session, current_app
 from vpemaster import db
 from vpemaster.models import SessionLog, Contact, Project, User
@@ -14,11 +13,11 @@ def _get_project_code(log):
         return None
 
     pathway_to_code_attr = current_app.config['PATHWAY_MAPPING']
-    code_attr = pathway_to_code_attr.get(log.owner.Working_Path)
-    if not code_attr:
+    code_suffix = pathway_to_code_attr.get(log.owner.Working_Path)
+    if not code_suffix:
         return None
 
-    return getattr(log.project, code_attr, None)
+    return getattr(log.project, f"Code_{code_suffix}", None)
 
 
 @speech_logs_bp.route('/speech_logs')
@@ -181,14 +180,14 @@ def _get_next_project_for_contact(contact, completed_log):
         return
 
     pathway_to_code_attr = current_app.config['PATHWAY_MAPPING']
-    code_attr = pathway_to_code_attr.get(contact.Working_Path)
-    if not code_attr:
+    code_suffix = pathway_to_code_attr.get(contact.Working_Path)
+    if not code_suffix:
         return
 
     completed_project = Project.query.get(completed_log.Project_ID)
     if not completed_project:
         return
-    current_code = getattr(completed_project, code_attr)
+    current_code = getattr(completed_project, f"Code_{code_suffix}")
 
     if not current_code:
         return
@@ -196,12 +195,12 @@ def _get_next_project_for_contact(contact, completed_log):
     try:
         level, project_num = map(int, current_code.split('.'))
         next_project_num = project_num + 1
-        next_project = Project.query.filter(getattr(Project, code_attr) == f"{level}.{next_project_num}").first()
+        next_project = Project.query.filter(getattr(Project, f"Code_{code_suffix}") == f"{level}.{next_project_num}").first()
 
         if next_project:
-            contact.Next_Project = f"{level}.{next_project_num}"
+            contact.Next_Project = f"{code_suffix}{level}.{next_project_num}"
         else:
-            contact.Next_Project = f"{level + 1}.1"
+            contact.Next_Project = f"{code_suffix}{level + 1}.1"
     except (ValueError, IndexError):
         return
 

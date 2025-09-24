@@ -11,14 +11,15 @@ app.config['SECRET_KEY'] = 'your_super_secret_key_here' # Replace with your secr
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqldb://shltmc:SHLTMC_leadership_D8@shltmc.mysql.pythonanywhere-services.com/shltmc$Education'
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_recycle' : 280}
 
+
 app.config['PATHWAY_MAPPING'] = {
-    "Dynamic Leadership": "Code_DL",
-    "Engaging Humor": "Code_EH",
-    "Motivational Strategies": "Code_MS",
-    "Persuasive Influence": "Code_PI",
-    "Presentation Mastery": "Code_PM",
-    "Visionary Communication": "Code_VC",
-    "Distinguished Toastmasters": "Code_DTM"
+    "Dynamic Leadership": "DL",
+    "Engaging Humor": "EH",
+    "Motivational Strategies": "MS",
+    "Persuasive Influence": "PI",
+    "Presentation Mastery": "PM",
+    "Visionary Communication": "VC",
+    "Distinguished Toastmasters": "DTM"
 }
 
 db = SQLAlchemy(app)

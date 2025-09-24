@@ -90,13 +90,12 @@
                                 {% if session_type_title == "Pathway Speech" %}
                                     {{ log.Session_Title }}
                                     {% set contact = contacts|selectattr('id', 'equalto', log.Owner_ID)|first %}
-                                    {% if contact and contact.Working_Path %}
-                                        {% if contact.Working_Path == 'Dynamic Leadership' %}(DL{{ code_dl }}){% endif %}
-                                        {% if contact.Working_Path == 'Engaging Humor' %}(EH{{ code_eh }}){% endif %}
-                                        {% if contact.Working_Path == 'Motivational Strategies' %}(MS{{ code_ms }}){% endif %}
-                                        {% if contact.Working_Path == 'Persuasive Influence' %}(PI{{ code_pi }}){% endif %}
-                                        {% if contact.Working_Path == 'Presentation Mastery' %}(PM{{ code_pm }}){% endif %}
-                                        {% if contact.Working_Path == 'Visionary Communication' %}(VC{{ code_vc }}){% endif %}
+                                    {% if contact and contact.Working_Path and config.PATHWAY_MAPPING[contact.Working_Path] %}
+                                        {% set pathway_code_map = {'DL': code_dl, 'EH': code_eh, 'MS': code_ms, 'PI': code_pi, 'PM': code_pm, 'VC': code_vc, 'DTM': code_dtm} %}
+                                        {% set pathway_suffix = config.PATHWAY_MAPPING[contact.Working_Path] %}
+                                        {% if pathway_suffix and pathway_code_map[pathway_suffix] %}
+                                            ({{ pathway_suffix }}{{ pathway_code_map[pathway_suffix] }})
+                                        {% endif %}
                                     {% endif %}
                                 {% elif session_type_title == 'Evaluation' %}
                                     Evaluation for {{ log.Session_Title }}
