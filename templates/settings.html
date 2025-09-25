@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+    <h1>System Settings</h1>
+
+    <div class="settings-container">
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="openTab(event, 'general')">General</button>
+            <button class="tab-btn" onclick="openTab(event, 'agenda-settings')">Agenda</button>
+            <button class="tab-btn" onclick="openTab(event, 'user-settings')">Users</button>
+        </div>
+
+        <div id="general" class="tab-content" style="display: block;">
+            <h2>General Settings</h2>
+            <p>General application settings will be managed here.</p>
+        </div>
+
+        <div id="agenda-settings" class="tab-content">
+            <h2>Agenda Settings</h2>
+            <p>Settings related to the meeting agenda, templates, and session types will be configured here.</p>
+        </div>
+
+        <div id="user-settings" class="tab-content">
+            <h2>User Settings</h2>
+            <p>User-related configurations and permissions will be handled on this tab.</p>
+        </div>
+    </div>
+
+<script>
+    function openTab(evt, tabName) {
+        // Get all elements with class="tab-content" and hide them
+        const tabcontent = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].style.display = "none";
+        }
+
+        // Get all elements with class="tab-btn" and remove the class "active"
+        const tablinks = document.getElementsByClassName("tab-btn");
+        for (let i = 0; i < tablinks.length; i++) {
+            tablinks[i].className = tablinks[i].className.replace(" active", "");
+        }
+
+        // Show the current tab, and add an "active" class to the button that opened the tab
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.className += " active";
+    }
+</script>
+{% endblock %}
+

@@ -1,0 +1,44 @@
+/* --- Settings Page --- */
+.settings-container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Tab Navigation */
+.tab-nav {
+    overflow: hidden;
+    border-bottom: 1px solid #ccc;
+    margin-bottom: 20px;
+}
+
+.tab-nav .tab-btn {
+    background-color: inherit;
+    float: left;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    padding: 14px 16px;
+    transition: 0.3s;
+    font-size: 17px;
+    border-radius: 6px 6px 0 0;
+}
+
+.tab-nav .tab-btn:hover {
+    background-color: #ddd;
+}
+
+.tab-nav .tab-btn.active {
+    background-color: #004165;
+    color: white;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+    padding: 6px 12px;
+    border-top: none;
+}

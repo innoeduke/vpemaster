@@ -63,6 +63,7 @@ class SessionType(db.Model):
     Default_Owner = db.Column(db.String(255))
     Is_Section = db.Column(db.Boolean, default=False)
     Is_Titleless = db.Column(db.Boolean, default=True)
+    Role = db.Column(db.String(255), default='')
     Valid_for_Project = db.Column(db.Boolean, default=False)
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)
