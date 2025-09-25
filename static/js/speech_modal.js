@@ -1,14 +1,20 @@
 // static/js/speech_modal.js
 // const allProjects = {{ projects|tojson|safe }};
 
-function openSpeechEditModal(logId) {
+function openSpeechEditModal(logId, workingPath = null) {
     fetch(`/speech_log/details/${logId}`)
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             document.getElementById('edit-log-id').value = data.log.id;
             document.getElementById('edit-speech-title').value = data.log.Session_Title;
-            document.getElementById('edit-pathway').value = data.log.pathway;
+
+            let pathway = data.log.pathway;
+            if (window.location.pathname.includes('/agenda') && workingPath) {
+                pathway = workingPath;
+            }
+            document.getElementById('edit-pathway').value = pathway;
+
             document.getElementById('edit-level').value = data.log.level;
             updateProjectOptions(data.log.Project_ID);
             document.getElementById('speechEditModal').style.display = 'flex';
@@ -17,6 +23,7 @@ function openSpeechEditModal(logId) {
         }
     });
 }
+
 
 function closeSpeechEditModal() {
     document.getElementById('speechEditModal').style.display = 'none';

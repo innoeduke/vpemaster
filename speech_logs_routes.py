@@ -36,6 +36,7 @@ def show_speech_logs():
     selected_pathway = request.args.get('pathway')
     selected_level = request.args.get('level')
     selected_speaker = request.args.get('speaker_id')
+    selected_status = request.args.get('status')
 
     # If the user is a Member, force the filter to their own Contact ID
     if is_member_view:
@@ -52,6 +53,8 @@ def show_speech_logs():
         query = query.filter(SessionLog.Meeting_Number == selected_meeting)
     if selected_speaker:
         query = query.filter(SessionLog.Owner_ID == selected_speaker)
+    if selected_status:
+        query = query.filter(SessionLog.Status == selected_status)
 
     initial_logs = query.order_by(SessionLog.Meeting_Number.desc()).all()
 
@@ -81,7 +84,9 @@ def show_speech_logs():
 
     meeting_numbers = sorted([m[0] for m in db.session.query(distinct(SessionLog.Meeting_Number)).join(Project).all()], reverse=True)
     speakers = db.session.query(Contact).join(SessionLog, Contact.id == SessionLog.Owner_ID).distinct().order_by(Contact.Name).all()
-    pathways = [p[0] for p in db.session.query(distinct(Contact.Working_Path)).filter(Contact.Working_Path.isnot(None), ~Contact.Working_Path.like('Non-Path%')).order_by(Contact.Working_Path).all()]
+
+    # Updated logic to get pathways from the app config
+    pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
 
     # Convert project objects to a list of dictionaries
     projects = Project.query.order_by(Project.Project_Name).all()
@@ -113,7 +118,8 @@ def show_speech_logs():
             'meeting_number': selected_meeting,
             'pathway': selected_pathway,
             'level': selected_level,
-            'speaker_id': selected_speaker
+            'speaker_id': selected_speaker,
+            'status': selected_status
         },
         is_member_view=is_member_view,
         pathway_mapping=current_app.config['PATHWAY_MAPPING']

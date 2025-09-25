@@ -1,6 +1,6 @@
 # vpemaster/contacts_routes.py
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from vpemaster import db
 from vpemaster.models import Contact, SessionLog
 from .main_routes import login_required
@@ -28,7 +28,8 @@ def show_contacts():
         return redirect(url_for('agenda_bp.agenda'))
 
     contacts = Contact.query.order_by(Contact.Name.asc()).all()
-    return render_template('contacts.html', contacts=contacts)
+    pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
+    return render_template('contacts.html', contacts=contacts, pathways=pathways)
 
 @contacts_bp.route('/contact/form', methods=['GET', 'POST'])
 @contacts_bp.route('/contact/form/<int:contact_id>', methods=['GET', 'POST'])
@@ -81,7 +82,8 @@ def contact_form(contact_id=None):
         db.session.commit()
         return redirect(url_for('contacts_bp.show_contacts'))
 
-    return render_template('contact_form.html', contact=contact)
+    pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
+    return render_template('contact_form.html', contact=contact, pathways=pathways)
 
 @contacts_bp.route('/contact/delete/<int:contact_id>', methods=['POST'])
 @login_required

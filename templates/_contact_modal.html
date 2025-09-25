@@ -27,14 +27,9 @@
                     <td><label for="working_path">Working Path:</label></td>
                     <td>
                         <select id="working_path" name="working_path">
-                            <option value="Dynamic Leadership">Dynamic Leadership</option>
-                            <option value="Engaging Humor">Engaging Humor</option>
-                            <option value="Motivational Strategies">Motivational Strategies</option>
-                            <option value="Persuasive Influence">Persuasive Influence</option>
-                            <option value="Presentation Mastery">Presentation Mastery</option>
-                            <option value="Visionary Communication">Visionary Communication</option>
-                            <option value="Distinguished Toastmaster">Non-Path: Distinguished Toastmaster</option>
-                            <option value="Other">Non-Path: Other</option>
+                            {% for pathway in pathways %}
+                                <option value="{{ pathway }}">{{ pathway }}</option>
+                            {% endfor %}
                         </select>
                     </td>
                 </tr>

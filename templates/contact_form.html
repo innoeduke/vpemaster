@@ -29,14 +29,9 @@
                 <td><label for="working_path">Working Path:</label></td>
                 <td>
                     <select id="working_path" name="working_path">
-                        <option value="Dynamic Leadership" {% if contact and contact.Working_Path == 'Dynamic Leadership' %}selected{% endif %}>Dynamic Leadership</option>
-                        <option value="Engaging Humor" {% if contact and contact.Working_Path == 'Engaging Humor' %}selected{% endif %}>Engaging Humor</option>
-                        <option value="Motivational Strategies" {% if contact and contact.Working_Path == 'Motivational Strategies' %}selected{% endif %}>Motivational Strategies</option>
-                        <option value="Persuasive Influence" {% if contact and contact.Working_Path == 'Persuasive Influence' %}selected{% endif %}>Persuasive Influence</option>
-                        <option value="Presentation Mastery" {% if contact and contact.Working_Path == 'Presentation Mastery' %}selected{% endif %}>Presentation Mastery</option>
-                        <option value="Visionary Communication" {% if contact and contact.Working_Path == 'Vision_Communication' %}selected{% endif %}>Visionary Communication</option>
-                        <option value="Non-Path: Distinguished Toastmaster" {% if contact and contact.Working_Path == 'Non-Path: Distinguished Toastmaster' %}selected{% endif %}>Non-Path: Distinguished Toastmaster</option>
-                        <option value="Non-Path: Other" {% if contact and contact.Working_Path == 'Non-Path: Other' %}selected{% endif %}>Non-Path: Other</option>
+                        {% for pathway in pathways %}
+                            <option value="{{ pathway }}" {% if contact and contact.Working_Path == pathway %}selected{% endif %}>{{ pathway }}</option>
+                        {% endfor %}
                     </select>
                 </td>
             </tr>

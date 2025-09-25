@@ -532,7 +532,14 @@ document.addEventListener('DOMContentLoaded', () => {
         projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
         projectBtn.className = 'icon-btn project-btn';
         projectBtn.type = 'button';
-        projectBtn.onclick = function() { openSpeechEditModal(this.closest('tr').dataset.id); };
+        projectBtn.onclick = function() {
+            const row = this.closest('tr');
+            const logId = row.dataset.id;
+            const ownerId = row.querySelector('input[name="owner_id"]').value;
+            const contact = contacts.find(c => c.id == ownerId);
+            const workingPath = contact ? contact.Working_Path : null;
+            openSpeechEditModal(logId, workingPath);
+        };
         const sessionType = sessionTypes.find(st => st.id == typeId);
         projectBtn.style.display = (sessionType && sessionType.Valid_for_Project) ? 'inline-block' : 'none';
 

@@ -115,4 +115,15 @@
         */
         flex: 1 0 calc(33.333% - 10px);
     }
+
+    /* --- Speech Logs Filter Responsive Fixes --- */
+    .filters-container {
+        flex-direction: column;
+    }
+
+    #speech-logs-filter-form .filter-row,
+    #speech-logs-filter-form .search-group {
+        flex-direction: column;
+        width: 100%;
+    }
 }

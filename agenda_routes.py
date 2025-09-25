@@ -153,7 +153,7 @@ def agenda():
             "Code_PM": p.Code_PM, "Code_VC": p.Code_VC, "Code_DTM": p.Code_DTM
         } for p in projects
     ]
-    pathways = [p[0] for p in db.session.query(distinct(Contact.Working_Path)).filter(Contact.Working_Path.isnot(None), ~Contact.Working_Path.like('Non-Path%')).order_by(Contact.Working_Path).all()]
+    pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
     session_types = SessionType.query.order_by(SessionType.Title.asc()).all()
     session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section, "Valid_for_Project": s.Valid_for_Project} for s in session_types]
     contacts = Contact.query.order_by(Contact.Name.asc()).all()
@@ -186,8 +186,6 @@ def agenda():
                            project_speakers=project_speakers,
                            meeting_templates=meeting_templates)
 
-# --- Other Routes ---
-# (The rest of the file remains the same)
 
 @agenda_bp.route('/agenda/create', methods=['POST'])
 @login_required

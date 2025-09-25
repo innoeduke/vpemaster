@@ -4,6 +4,32 @@
     margin: 0 auto;
 }
 
+#speech-logs-filter-form .filter-row {
+    display: flex;
+    width: 100%;
+    gap: 15px;
+}
+
+#speech-logs-filter-form .filter-row:first-child .form-group {
+    flex: 1 1 0; /* Ensures all three dropdowns are equal width */
+}
+
+#speech-logs-filter-form .filter-row:last-child {
+    align-items: center;
+    justify-content: space-between; /* Pushes search to the left and button to the right */
+}
+
+#speech-logs-filter-form .search-group {
+    display: flex;
+    gap: 15px;
+    /* Sets the width to match the first two dropdowns plus the gap between them */
+    flex-basis: calc(66.666% - 7.5px);
+}
+
+#speech-logs-filter-form .search-group .form-group {
+    flex: 1 1 0; /* Ensures both search bars are equal width */
+}
+
 .level-heading {
     text-align: left;
     margin-top: 30px;
