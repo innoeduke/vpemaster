@@ -37,6 +37,7 @@
                 <td>
                     <select id="role" name="role" required>
                         <option value="Admin" {% if user and user.Role == 'Admin' %}selected{% endif %}>Admin</option>
+                        <option value="VPE" {% if user and user.Role == 'VPE' %}selected{% endif %}>VPE</option>
                         <option value="Officer" {% if user and user.Role == 'Officer' %}selected{% endif %}>Officer</option>
                         <option value="Member" {% if (user and user.Role == 'Member') or not user %}selected{% endif %}>Member</option>
                     </select>
@@ -49,3 +50,4 @@
         </div>
     </form>
 {% endblock %}
+

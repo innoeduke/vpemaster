@@ -19,7 +19,7 @@
             {% endif %}
         </div>
 
-        {% if session.get('user_role') in ['Admin', 'Officer'] %}
+        {% if session.get('user_role') in ['Admin', 'VPE'] %}
         <div class="button-group" style="justify-content: flex-end;">
             <button id="cancel-edit-btn" class="btn btn-danger" style="display: none;">Cancel</button>
             <button id="create-btn" class="btn btn-success">New</button>
@@ -186,3 +186,4 @@
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
 {% endblock %}
+

@@ -7,13 +7,13 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tables.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/modals.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/agenda.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/speech_logs.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pathway_library.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
 
@@ -47,7 +47,7 @@
                 </a>
             </li>
             {% endif %}
-            {% if session.get('user_role') in ['Admin','Officer'] %}
+            {% if session.get('user_role') in ['Admin', 'VPE', 'Officer'] %}
             <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
                 <a href="{{ url_for('contacts_bp.show_contacts') }}">
                     <i class="fas fa-book nav-icon"></i>

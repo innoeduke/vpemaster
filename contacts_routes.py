@@ -23,7 +23,7 @@ def search_contacts_by_name():
 @contacts_bp.route('/contacts')
 @login_required
 def show_contacts():
-    if session.get('user_role') not in ['Admin', 'Officer']:
+    if session.get('user_role') not in ['Admin', 'VPE', 'Officer']:
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -35,7 +35,7 @@ def show_contacts():
 @contacts_bp.route('/contact/form/<int:contact_id>', methods=['GET', 'POST'])
 @login_required
 def contact_form(contact_id=None):
-    if session.get('user_role') not in ['Admin', 'Officer']:
+    if session.get('user_role') not in ['Admin', 'VPE', 'Officer']:
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -88,7 +88,7 @@ def contact_form(contact_id=None):
 @contacts_bp.route('/contact/delete/<int:contact_id>', methods=['POST'])
 @login_required
 def delete_contact(contact_id):
-    if session.get('user_role') not in ['Admin', 'Officer']:
+    if session.get('user_role') not in ['Admin', 'VPE', 'Officer']:
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -97,3 +97,4 @@ def delete_contact(contact_id):
     db.session.delete(contact)
     db.session.commit()
     return redirect(url_for('contacts_bp.show_contacts'))
+
