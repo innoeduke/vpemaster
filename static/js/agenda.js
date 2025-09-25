@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const editButton = document.getElementById('edit-logs-btn');
     const cancelButton = document.getElementById('cancel-edit-btn');
     const addRowButton = document.getElementById('add-row-btn');
-    const loadButton = document.getElementById('load-btn');
     const createButton = document.getElementById('create-btn');
     const meetingFilter = document.getElementById('meeting-filter');
     const exportButton = document.getElementById('export-btn');
@@ -251,7 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
         cancelButton.style.display = isEditMode ? 'inline-block' : 'none';
         addRowButton.style.display = isEditMode ? 'inline-block' : 'none';
         createButton.style.display = isEditMode ? 'none' : 'inline-block';
-        loadButton.style.display = isEditMode ? 'none' : 'inline-block';
         exportButton.style.display = isEditMode ? 'none' : 'inline-block';
     }
 

@@ -90,7 +90,18 @@
         flex-direction: column;
     }
 
-    /* --- Pathway Library Responsive Fixes (Corrected) --- */
+    /* --- Agenda Page Responsive Fixes --- */
+    .action-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .action-bar .button-group {
+        margin-top: 15px;
+        justify-content: center;
+    }
+
+    /* --- Pathway Library Responsive Fixes --- */
     #pathway-library-container .filters-container {
         flex-direction: column; /* Stack the main filter container */
     }

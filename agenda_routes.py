@@ -8,7 +8,6 @@ from sqlalchemy import distinct
 from datetime import datetime, timedelta
 import io
 import csv
-import re
 import os
 
 agenda_bp = Blueprint('agenda_bp', __name__)
@@ -60,14 +59,12 @@ def _create_or_update_session(item, meeting_number, seq):
     if type_id == '':
         type_id = None
 
-    # --- Start of Changed Code ---
     owner_id_val = item.get('owner_id')
     # Ensure empty strings, the string 'None', or 0 are treated as NULL
     if not owner_id_val or owner_id_val in ['None', '0']:
         owner_id = None
     else:
         owner_id = int(owner_id_val)
-    # --- End of Changed Code ---
 
     session_title = item.get('session_title')
     project_id = item.get('project_id') if item.get('project_id') else None
@@ -268,96 +265,6 @@ def create_from_template():
 
     return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
 
-
-@agenda_bp.route('/agenda/load', methods=['POST'])
-@login_required
-def load_csv():
-    if 'file' not in request.files:
-        return redirect(url_for('agenda_bp.agenda', message='No file part', category='error'))
-
-    file = request.files['file']
-    if file.filename == '':
-        return redirect(url_for('agenda_bp.agenda', message='No selected file', category='error'))
-
-    if file and file.filename.endswith('.csv'):
-        file_content = file.stream.read()
-        try:
-            decoded_content = file_content.decode('utf-8')
-        except UnicodeDecodeError:
-            decoded_content = file_content.decode('gbk', errors='replace')
-
-        stream = io.StringIO(decoded_content, newline=None)
-        first_line = stream.readline().strip()
-        cleaned_line = re.sub(r'^\W+|\W+$', '', first_line)
-        parts = cleaned_line.split(',')
-        if len(parts) < 3:
-            return redirect(url_for('agenda_bp.agenda', message='Invalid first line format. Expected Meeting_Number,Meeting_Date,Start_Time', category='error'))
-
-        meeting_number, meeting_date_str, start_time_str = parts[0], parts[1], parts[2]
-
-        try:
-            current_time = datetime.strptime(start_time_str, '%H:%M').time()
-        except ValueError:
-            return redirect(url_for('agenda_bp.agenda', message='Invalid start time format in first line.', category='error'))
-
-        try:
-            meeting_date = datetime.strptime(meeting_date_str, '%m/%d/%y').date()
-        except ValueError:
-            return redirect(url_for('agenda_bp.agenda', message='Invalid date format in first line. Please use MM/DD/YY.', category='error'))
-
-        meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
-        if not meeting:
-            meeting = Meeting(Meeting_Number=meeting_number, Meeting_Date=meeting_date, Start_Time=current_time)
-            db.session.add(meeting)
-        else:
-            meeting.Meeting_Date = meeting_date
-            meeting.Start_Time = current_time
-        db.session.commit()
-
-        csv_reader = csv.reader(stream)
-        seq = 1
-        for row in csv_reader:
-            if not (session_title_from_csv := row[0].strip() if len(row) > 0 else ''): continue
-            owner_name = row[1].strip() if len(row) > 1 and row[1] else ''
-            session_type = SessionType.query.filter_by(Title=session_title_from_csv).first()
-            type_id = session_type.id if session_type else None
-            session_title = session_type.Title if session_type and session_type.Is_Titleless else session_title_from_csv
-            owner_id = None
-            if owner_name:
-                normalized_name = ' '.join(owner_name.split())
-                owner = Contact.query.filter_by(Name=normalized_name).first()
-                if owner:
-                    owner_id = owner.id
-            duration_min, duration_max = None, None
-            if len(row) > 3:
-                duration_min = row[2].strip() if row[2] else None
-                duration_max = row[3].strip() if row[3] else None
-            elif len(row) > 2:
-                duration_max = row[2].strip() if row[2] else None
-            if not duration_max and not duration_min and session_type:
-                duration_max = session_type.Duration_Max
-                duration_min = session_type.Duration_Min
-            new_log = SessionLog(
-                Meeting_Number=meeting_number,
-                Meeting_Seq=seq,
-                Type_ID=type_id,
-                Owner_ID=owner_id,
-                Session_Title=session_title,
-                Duration_Min=duration_min,
-                Duration_Max=duration_max
-            )
-            if session_type and not session_type.Is_Section:
-                new_log.Start_Time = current_time
-                duration_to_add = int(duration_max) if duration_max else 0
-                dt_current_time = datetime.combine(datetime.today(), current_time)
-                next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
-                current_time = next_dt.time()
-            db.session.add(new_log)
-            seq += 1
-        db.session.commit()
-        return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
-    else:
-        return redirect(url_for('agenda_bp.agenda', message='Invalid file type. Please upload a CSV file.', category='error'))
 
 @agenda_bp.route('/agenda/export/<int:meeting_number>')
 @login_required

@@ -23,10 +23,6 @@
         <div class="button-group" style="justify-content: flex-end;">
             <button id="cancel-edit-btn" class="btn btn-danger" style="display: none;">Cancel</button>
             <button id="create-btn" class="btn btn-success">New</button>
-            <form id="load-form" action="{{ url_for('agenda_bp.load_csv') }}" method="post" enctype="multipart/form-data" style="display: inline;">
-                <input type="file" name="file" id="csv-file" style="display: none;" onchange="document.getElementById('load-form').submit()">
-                <button id="load-btn" type="button" class="btn btn-info" onclick="document.getElementById('csv-file').click()">Import</button>
-            </form>
             <button id="export-btn" class="btn btn-info">Export</button>
             <button id="add-row-btn" class="btn btn-info" style="display: none;">Add</button>
             <button id="edit-logs-btn" class="btn btn-primary">Edit</button>
@@ -163,7 +159,7 @@
                     </tr>
                 </table>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Create Agenda</button>
+                    <button type="submit" class="btn btn-primary">Create Meeting</button>
                     <button type="button" class="btn btn-danger" onclick="closeCreateAgendaModal()">Cancel</button>
                 </div>
             </form>
