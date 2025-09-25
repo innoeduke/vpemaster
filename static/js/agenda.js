@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Constants ---
-    const fieldsOrder = ['Meeting_Seq', 'Start_Time', 'Type_ID', 'Session_Title', 'Owner_ID', 'Duration_Min', 'Duration_Max'];
+    const fieldsOrder = ['Meeting_Seq', 'Start_Time', 'Type_ID', 'Session_Title', 'Owner_ID', 'Designation', 'Duration_Min', 'Duration_Max'];
 
     // --- Event Listeners ---
     function initializeEventListeners() {
@@ -209,21 +209,41 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+
     function updateHeaderVisibility(isEditMode) {
         const header = document.querySelector('#logs-table thead');
         header.querySelector('.edit-mode-header').style.display = isEditMode ? 'table-row' : 'none';
         header.querySelector('.non-edit-mode-header').style.display = isEditMode ? 'none' : 'table-row';
     }
 
+
     function updateRowsForEditMode(isEditMode) {
         const rows = tableBody.querySelectorAll('tr');
         rows.forEach((row, index) => {
             row.classList.toggle('draggable-row', isEditMode);
             if (isEditMode) {
+                const ownerId = row.dataset.ownerId;
+                let designation = row.dataset.designation;
+
+                if (ownerId && !designation) {
+                    const contact = contacts.find(c => c.id == ownerId);
+                    if (contact) {
+                        if (contact.DTM) {
+                            designation = 'DTM';
+                        } else if (contact.Type === 'Guest') {
+                            designation = contact.Club ? `Guest@${contact.Club}` : 'Guest';
+                        } else if (contact.Type === 'Member') {
+                            designation = contact.Completed_Levels ? contact.Completed_Levels.replace(/ /g, '/') : null;
+                        }
+                    }
+                }
+                // Fallback for null/undefined to empty string
+                row.dataset.designation = designation || '';
                 buildEditableRow(row, index + 1);
             }
         });
     }
+
 
     function buildEditableRow(row, seq) {
         const originalData = { ...row.dataset };
@@ -232,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (originalData.isSection === 'true') {
             const seqCell = createEditableCell('Meeting_Seq', seq, true, null);
             const titleCell = createEditableCell('Session_Title', originalData.sessionTitle, true, null);
-            titleCell.colSpan = 6;
+            titleCell.colSpan = 7;
             titleCell.classList.add('section-row');
 
             row.append(seqCell, titleCell, createActionsCell(originalData.typeId));
@@ -297,6 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type_id: row.querySelector('[data-field="Type_ID"] select').value,
             session_title: sessionTitleValue,
             owner_id: row.querySelector('input[name="owner_id"]').value,
+            designation: row.querySelector('[data-field="Designation"] input')?.value || null,
             duration_min: row.querySelector('[data-field="Duration_Min"] input')?.value || null,
             duration_max: row.querySelector('[data-field="Duration_Max"] input')?.value || null,
             project_id: row.dataset.projectId,
@@ -484,6 +505,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const selectedContactId = this.getElementsByTagName('input')[0].dataset.id;
                     const currentRow = searchInput.closest('tr');
+                    const designationInput = currentRow.querySelector('[data-field="Designation"] input');
+                    const selectedContact = contacts.find(c => c.id == selectedContactId);
+
+                    if (designationInput && selectedContact) {
+                        designationInput.value = selectedContact.Completed_Levels || '';
+                    }
+
                     const currentSessionType = sessionTypes.find(st => st.id == currentRow.querySelector('[data-field="Type_ID"] select').value);
 
                     if (currentSessionType && sessionPairs[currentSessionType.Title]) {

@@ -51,6 +51,7 @@
                     <th>Session Type</th>
                     <th>Session Title</th>
                     <th>Owner</th>
+                    <th>Designation</th>
                     <th>Min</th>
                     <th>Max</th>
                     <th class="actions-column">Actions</th>
@@ -68,6 +69,7 @@
                     data-session-title="{{ session_type_title if is_titleless else (log.Session_Title if log.Session_Title is not none else '') }}"
                     data-type-id="{{ log.Type_ID }}"
                     data-owner-id="{{ log.Owner_ID }}"
+                    data-designation="{{ log.Designation if log.Designation is not none else '' }}"
                     data-duration-min="{{ log.Duration_Min if log.Duration_Min is not none else '' }}"
                     data-duration-max="{{ log.Duration_Max if log.Duration_Max is not none else '' }}"
                     data-status="{{ log.Status if log.Status else '' }}"
@@ -109,10 +111,9 @@
                                 {% endif %}
                                 <span class="owner-meta">
                                     {% if owner.Type == 'Guest' %}
-                                        <br/>Guest{% if owner.Club %}@{{ owner.Club }}{% endif %}
-                                    {% endif %}
-                                    {% if owner.Type == 'Member' and owner.Completed_Levels %}
-                                        <br/>{{ owner.Completed_Levels }}
+                                        <br/>{{ log.Designation }}
+                                    {% elif log.Designation %}
+                                        <br/>{{ log.Designation }}
                                     {% endif %}
                                 </span>
                             {% endif %}

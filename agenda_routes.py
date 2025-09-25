@@ -67,8 +67,23 @@ def _create_or_update_session(item, meeting_number, seq):
         owner_id = int(owner_id_val)
 
     session_title = item.get('session_title')
+    designation = item.get('designation')
     project_id = item.get('project_id') if item.get('project_id') else None
     status = item.get('status') if item.get('status') else 'Booked'
+
+    if owner_id and not designation:
+        owner = Contact.query.get(owner_id)
+        if owner:
+            if owner.DTM:
+                designation = 'DTM'
+            elif owner.Type == 'Guest':
+                designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
+            elif owner.Type == 'Member':
+                designation = owner.Completed_Levels.replace(' ', '/') if owner.Completed_Levels else None
+
+    if designation is None:
+        designation = ''
+
 
     if item['id'] == 'new':
         new_log = SessionLog(
@@ -76,6 +91,7 @@ def _create_or_update_session(item, meeting_number, seq):
             Meeting_Seq=seq,
             Type_ID=type_id,
             Owner_ID=owner_id, # Use corrected variable
+            Designation=designation,
             Duration_Min=item['duration_min'] if item['duration_min'] else None,
             Duration_Max=item['duration_max'] if item['duration_max'] else None,
             Project_ID=project_id,
@@ -90,6 +106,7 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Meeting_Seq = seq
             log.Type_ID = type_id
             log.Owner_ID = owner_id # Use corrected variable
+            log.Designation = designation
             log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
             log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
             log.Project_ID = project_id
@@ -240,10 +257,20 @@ def create_from_template():
 
                 session_title = session_type.Title if session_type and session_type.Is_Titleless else session_title_from_csv
                 owner_id = None
+                designation = None
                 if owner_name:
                     owner = Contact.query.filter_by(Name=owner_name).first()
                     if owner:
                         owner_id = owner.id
+                        if owner.DTM:
+                            designation = 'DTM'
+                        elif owner.Type == 'Guest':
+                            designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
+                        elif owner.Type == 'Member':
+                            designation = owner.Completed_Levels.replace(' ', '/') if owner.Completed_Levels else None
+
+                if designation is None:
+                    designation = ''
 
                 new_log = SessionLog(
                     Meeting_Number=meeting_number,
@@ -251,6 +278,7 @@ def create_from_template():
                     Type_ID=type_id,
                     Owner_ID=owner_id,
                     Session_Title=session_title,
+                    Designation=designation,
                     Duration_Min=duration_min,
                     Duration_Max=duration_max
                 )
@@ -270,7 +298,6 @@ def create_from_template():
 
     return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
 
-
 @agenda_bp.route('/agenda/export/<int:meeting_number>')
 @login_required
 def export_agenda(meeting_number):
@@ -284,6 +311,7 @@ def export_agenda(meeting_number):
         SessionLog.Start_Time,
         SessionLog.Duration_Min,
         SessionLog.Duration_Max,
+        SessionLog.Designation,
         Contact.Name,
         Contact.DTM,
         Contact.Type,
@@ -338,6 +366,8 @@ def export_agenda(meeting_number):
                 meta_parts.append(guest_info)
             elif log.Type == 'Member' and log.Completed_Levels:
                 meta_parts.append(log.Completed_Levels)
+            elif log.Designation:
+                meta_parts.append(log.Designation)
             if meta_parts:
                 owner_info += ' - ' + ', '.join(meta_parts)
 

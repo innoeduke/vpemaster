@@ -75,6 +75,7 @@ class SessionLog(db.Model):
     Session_Title = db.Column(db.String(255)) # For custom titles like speeches
     Type_ID = db.Column(db.Integer, db.ForeignKey('Session_Types.id'), nullable=False)
     Owner_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    Designation = db.Column(db.String(255), default='')
     Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.ID'))
     Start_Time = db.Column(db.Time)
     Duration_Min = db.Column(db.Integer)
