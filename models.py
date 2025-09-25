@@ -54,6 +54,7 @@ class Meeting(db.Model):
     Best_Evaluator_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     Best_Speaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     Best_Roletaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    GE_Style = db.Column(db.String(20), default='instant')
 
 class SessionType(db.Model):
     __tablename__ = 'Session_Types'

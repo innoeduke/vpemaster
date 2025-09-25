@@ -327,7 +327,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateProjectSpeakers() {
         const currentSpeakers = new Set();
         tableBody.querySelectorAll('tr').forEach(row => {
-            if (parseInt(row.dataset.projectId, 10) > 1) {
+            if (parseInt(row.dataset.projectId, 10) > 0) {
                 const ownerInput = row.querySelector('.autocomplete-container input[type="text"]');
                 if (ownerInput && ownerInput.value) {
                     currentSpeakers.add(ownerInput.value);

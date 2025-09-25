@@ -114,7 +114,7 @@ def _recalculate_start_times(meeting_numbers_to_update):
                 log.Start_Time = current_time
                 duration_to_add = int(log.Duration_Max or 0)
                 break_minutes = 1
-                if log.Type_ID == 31:  # Evaluation sessions
+                if log.Type_ID == 31 and meeting.GE_Style == 'instant':  # Evaluation sessions
                     break_minutes += 1
                 dt_current_time = datetime.combine(datetime.today(), current_time)
                 next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
@@ -191,6 +191,7 @@ def create_from_template():
     meeting_date_str = request.form.get('meeting_date')
     start_time_str = request.form.get('start_time')
     template_file = request.form.get('template_file')
+    ge_style = request.form.get('ge_style')
 
     try:
         meeting_date = datetime.strptime(meeting_date_str, '%Y-%m-%d').date()
@@ -200,11 +201,12 @@ def create_from_template():
 
     meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
     if not meeting:
-        meeting = Meeting(Meeting_Number=meeting_number, Meeting_Date=meeting_date, Start_Time=start_time)
+        meeting = Meeting(Meeting_Number=meeting_number, Meeting_Date=meeting_date, Start_Time=start_time, GE_Style=ge_style)
         db.session.add(meeting)
     else:
         meeting.Meeting_Date = meeting_date
         meeting.Start_Time = start_time
+        meeting.GE_Style = ge_style
 
     SessionLog.query.filter_by(Meeting_Number=meeting_number).delete()
     db.session.commit()
@@ -232,6 +234,9 @@ def create_from_template():
                 if not duration_max and not duration_min and session_type:
                     duration_max = session_type.Duration_Max
                     duration_min = session_type.Duration_Min
+
+                if type_id == 16 and ge_style == 'delayed':
+                    duration_max = 5
 
                 session_title = session_type.Title if session_type and session_type.Is_Titleless else session_title_from_csv
                 owner_id = None
