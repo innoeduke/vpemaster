@@ -101,3 +101,40 @@ function initializeSearchFilter(inputId, clearBtnId, targetSelector, textSelecto
     // Initial call to set button visibility
     filterItems();
 }
+
+
+// --- Shared Modal Functions ---
+
+function openContactModal(contactId) {
+    const contactModal = document.getElementById("contactModal");
+    const contactForm = document.getElementById("contactForm");
+    const contactModalTitle = document.getElementById("contactModalTitle");
+
+    contactForm.reset();
+    if (contactId) {
+        contactModalTitle.textContent = 'Edit Contact';
+        contactForm.action = `/contact/form/${contactId}`;
+        fetch(`/contact/form/${contactId}`, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('name').value = data.contact.Name || '';
+            document.getElementById('type').value = data.contact.Type || 'Member';
+            document.getElementById('club').value = data.contact.Club || '';
+            document.getElementById('working_path').value = data.contact.Working_Path || 'Presentation Mastery';
+            document.getElementById('next_project').value = data.contact.Next_Project || '';
+            document.getElementById('completed_levels').value = data.contact.Completed_Levels || '';
+            document.getElementById('dtm').checked = data.contact.DTM;
+        });
+    } else {
+        contactModalTitle.textContent = 'Add New Contact';
+        contactForm.action = "/contact/form";
+    }
+    contactModal.style.display = "flex";
+}
+
+function closeContactModal() {
+    const contactModal = document.getElementById("contactModal");
+    contactModal.style.display = "none";
+}

@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'Grammarian Introduction': 'Grammarian Report',
         'Timer Introduction': 'Timer Report',
         "General Evaluator's Address": 'General Evaluation Report',
-        "Toastmaster of the Evening's Address": 'Voting and Awards',
-        "President's Address": 'Announcements / Meeting Closing'
+        "Toastmaster of the Evening's Address": 'Voting and Announcements',
+        "President's Address": 'Awards / Meeting Closing'
     };
 
     // --- Constants ---
@@ -324,14 +324,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateProjectSpeakers() {
         const currentSpeakers = new Set();
         tableBody.querySelectorAll('tr').forEach(row => {
-            const typeSelect = row.querySelector('[data-field="Type_ID"] select');
-            if (typeSelect) {
-                const sessionType = sessionTypes.find(st => st.id == typeSelect.value);
-                if (sessionType && sessionType.Title === 'Pathway Speech') {
-                    const ownerInput = row.querySelector('.autocomplete-container input[type="text"]');
-                    if (ownerInput && ownerInput.value) {
-                        currentSpeakers.add(ownerInput.value);
-                    }
+            if (parseInt(row.dataset.projectId, 10) > 1) {
+                const ownerInput = row.querySelector('.autocomplete-container input[type="text"]');
+                if (ownerInput && ownerInput.value) {
+                    currentSpeakers.add(ownerInput.value);
                 }
             }
         });
@@ -558,38 +554,4 @@ function closeCreateAgendaModal() {
     if (createAgendaModal) {
         createAgendaModal.style.display = 'none';
     }
-}
-
-function openContactModal(contactId) {
-    const contactModal = document.getElementById("contactModal");
-    const contactForm = document.getElementById("contactForm");
-    const contactModalTitle = document.getElementById("contactModalTitle");
-
-    activeOwnerInput = null;
-    contactForm.reset();
-    if (contactId) {
-        contactModalTitle.textContent = 'Edit Contact';
-        contactForm.action = `/contact/form/${contactId}`;
-        fetch(`/contact/form/${contactId}`, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => response.json())
-        .then(data => {
-            document.getElementById('name').value = data.contact.Name || '';
-            document.getElementById('type').value = data.contact.Type || 'Member';
-            document.getElementById('club').value = data.contact.Club || '';
-            document.getElementById('working_path').value = data.contact.Working_Path || 'Presentation Mastery';
-            document.getElementById('next_project').value = data.contact.Next_Project || '';
-            document.getElementById('dtm').checked = data.contact.DTM;
-        });
-    } else {
-        contactModalTitle.textContent = 'Add New Contact';
-        contactForm.action = "/contact/form";
-    }
-    contactModal.style.display = "flex";
-}
-
-function closeContactModal() {
-    const contactModal = document.getElementById("contactModal");
-    contactModal.style.display = "none";
 }

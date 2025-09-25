@@ -4,6 +4,7 @@ from vpemaster import db
 from vpemaster.models import SessionLog, Contact, Project, User
 from .main_routes import login_required
 from sqlalchemy import distinct
+import re
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
@@ -13,11 +14,11 @@ def _get_project_code(log):
         return None
 
     pathway_to_code_attr = current_app.config['PATHWAY_MAPPING']
-    code_suffix = pathway_to_code_attr.get(log.owner.Working_Path)
-    if not code_suffix:
+    code_prefix = pathway_to_code_attr.get(log.owner.Working_Path)
+    if not code_prefix:
         return None
 
-    return getattr(log.project, f"Code_{code_suffix}", None)
+    return getattr(log.project, f"Code_{code_prefix}", None)
 
 
 @speech_logs_bp.route('/speech_logs')
@@ -126,13 +127,15 @@ def get_speech_log_details(log_id):
     """
     log = SessionLog.query.get_or_404(log_id)
     project_code = _get_project_code(log)
-    level = int(project_code.split('.')[0]) if project_code else None
+    level = int(project_code.split('.')[0]) if project_code else 1
+
+    pathway = log.owner.Working_Path if log.owner and log.owner.Working_Path else "Presentation Mastery"
 
     log_data = {
         "id": log.id,
         "Session_Title": log.Session_Title,
         "Project_ID": log.Project_ID,
-        "pathway": log.owner.Working_Path if log.owner else None,
+        "pathway": pathway,
         "level": level
     }
 
@@ -152,7 +155,10 @@ def update_speech_log(log_id):
         log.Session_Title = data['session_title']
 
     if 'pathway' in data and log.owner:
-        log.owner.Working_Path = data['pathway']
+        owner = Contact.query.get(log.Owner_ID)
+        if owner:
+            owner.Working_Path = data['pathway']
+            db.session.add(owner)
 
     if 'project_id' in data:
         log.Project_ID = data['project_id']
@@ -192,15 +198,53 @@ def _get_next_project_for_contact(contact, completed_log):
     if not current_code:
         return
 
+    projects_per_level = {1: 3, 2: 3, 3: 3, 4: 2, 5: 3}
+
     try:
         level, project_num = map(int, current_code.split('.'))
-        next_project_num = project_num + 1
-        next_project = Project.query.filter(getattr(Project, f"Code_{code_suffix}") == f"{level}.{next_project_num}").first()
 
-        if next_project:
-            contact.Next_Project = f"{code_suffix}{level}.{next_project_num}"
-        else:
-            contact.Next_Project = f"{code_suffix}{level + 1}.1"
+        # Get all completed project IDs for this user in this pathway
+        completed_project_ids = [
+            log.Project_ID for log in SessionLog.query
+            .join(Contact, SessionLog.Owner_ID == Contact.id)
+            .filter(Contact.id == contact.id, Contact.Working_Path == contact.Working_Path, SessionLog.Status == 'Completed')
+            .all()
+        ]
+
+        while True:
+            if project_num < projects_per_level.get(level, 0):
+                project_num += 1
+            else:
+                project_num = 1
+                level_completed = level
+                level += 1
+
+                # Smart update for Completed_Levels
+                completed_pathways = {}
+                if contact.Completed_Levels:
+                    parts = contact.Completed_Levels.split('/')
+                    for part in parts:
+                        match = re.match(r"([A-Z]+)(\d+)", part)
+                        if match:
+                            path, l = match.groups()
+                            completed_pathways[path] = int(l)
+
+                completed_pathways[code_suffix] = level_completed
+
+                new_completed_levels = [f"{path}{lvl}" for path, lvl in sorted(completed_pathways.items())]
+                contact.Completed_Levels = "/".join(new_completed_levels)
+
+
+            if level > 5:
+                contact.Next_Project = "DTM"
+                break
+
+            next_project_code = f"{level}.{project_num}"
+            next_project = Project.query.filter(getattr(Project, f"Code_{code_suffix}") == next_project_code).first()
+
+            if next_project and next_project.ID not in completed_project_ids:
+                contact.Next_Project = f"{code_suffix}{next_project_code}"
+                break
     except (ValueError, IndexError):
         return
 

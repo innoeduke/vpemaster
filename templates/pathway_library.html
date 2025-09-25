@@ -16,6 +16,7 @@
                 <option value="PI">Persuasive Influence</option>
                 <option value="PM">Presentation Mastery</option>
                 <option value="VC">Visionary Communication</option>
+                <option value="VC">Distinguished Toastmasters</option>
             </select>
         </div>
         <div class="form-group">
@@ -52,6 +53,7 @@
             <div class="path-code-box path-pi" id="pi-code" data-path="PI">PI: <span></span></div>
             <div class="path-code-box path-pm" id="pm-code" data-path="PM">PM: <span></span></div>
             <div class="path-code-box path-vc" id="vc-code" data-path="VC">VC: <span></span></div>
+            <div class="path-code-box path-dtm" id="dtm-code" data-path="DTM">VC: <span></span></div>
         </div>
         <br/>
         <div class="project-section">
@@ -163,6 +165,7 @@
             document.querySelector('#pi-code span').textContent = project.Code_PI || 'N/A';
             document.querySelector('#pm-code span').textContent = project.Code_PM || 'N/A';
             document.querySelector('#vc-code span').textContent = project.Code_VC || 'N/A';
+            document.querySelector('#dtm-code span').textContent = project.Code_DTM || 'N/A';
         }
 
         function clearPathCodes() {

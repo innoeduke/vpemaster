@@ -87,6 +87,11 @@ function saveSpeechChanges(event) {
                             sessionTitleCell.textContent = data.session_title;
                         }
                     }
+                    const project = allProjects.find(p => p.ID == data.project_id);
+                    if (project) {
+                        agendaRow.dataset.durationMin = project.Duration_Min;
+                        agendaRow.dataset.durationMax = project.Duration_Max;
+                    }
                 }
                 closeSpeechEditModal();
             } else {
