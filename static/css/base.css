@@ -3,10 +3,12 @@ body {
     font-family: 'Merriweather', serif;
     margin: 0;
     background-color: #f4f4f9;
+    overflow-x: hidden; /* Prevent horizontal scrolling */
 }
 
 .container-wrapper {
     display: flex;
+    width: 100vw;
 }
 
 /* Main content area */
@@ -15,6 +17,7 @@ body {
     padding: 20px;
     width: calc(100% - 60px);
     transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+    box-sizing: border-box; /* Ensure padding is included in the width calculation */
 }
 
 .nav-pane.expanded ~ .main-content {
