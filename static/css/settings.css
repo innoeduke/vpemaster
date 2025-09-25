@@ -1,44 +1,64 @@
-/* --- Settings Page --- */
-.settings-container {
-    max-width: 900px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* Tab Navigation */
+/* Tab navigation buttons */
 .tab-nav {
-    overflow: hidden;
     border-bottom: 1px solid #ccc;
-    margin-bottom: 20px;
+    display: flex;
 }
 
-.tab-nav .tab-btn {
+.tab-btn {
     background-color: inherit;
-    float: left;
     border: none;
     outline: none;
     cursor: pointer;
     padding: 14px 16px;
     transition: 0.3s;
     font-size: 17px;
-    border-radius: 6px 6px 0 0;
+    border-bottom: 3px solid transparent;
 }
 
-.tab-nav .tab-btn:hover {
-    background-color: #ddd;
+.tab-btn:hover {
+    background-color: #f1f1f1;
 }
 
-.tab-nav .tab-btn.active {
-    background-color: #004165;
-    color: white;
+.tab-btn.active {
+    border-bottom: 3px solid #772432;
+    color: #772432;
+    font-weight: bold;
 }
 
-/* Tab Content */
+/* Tab content */
 .tab-content {
+    padding: 20px 12px;
     display: none;
-    padding: 6px 12px;
     border-top: none;
 }
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.settings-header h2 {
+    margin: 0;
+}
+
+#sessions-table input[type="checkbox"] {
+    transform: scale(1.2);
+    cursor: pointer;
+}
+
+#sessions-table input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+
+.form-control-sm {
+    width: 100%;
+    padding: 4px 8px;
+    font-size: 14px;
+    line-height: 1.5;
+    border-radius: .2rem;
+    border: 1px solid #ced4da;
+    box-sizing: border-box;
+}
+

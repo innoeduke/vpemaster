@@ -8,6 +8,7 @@
     <div class="settings-container">
         <div class="tab-nav">
             <button class="tab-btn active" onclick="openTab(event, 'general')">General</button>
+            <button class="tab-btn" onclick="openTab(event, 'sessions')">Sessions</button>
             <button class="tab-btn" onclick="openTab(event, 'agenda-settings')">Agenda</button>
             <button class="tab-btn" onclick="openTab(event, 'user-settings')">Users</button>
         </div>
@@ -15,6 +16,52 @@
         <div id="general" class="tab-content" style="display: block;">
             <h2>General Settings</h2>
             <p>General application settings will be managed here.</p>
+        </div>
+
+        <div id="sessions" class="tab-content">
+            <div class="settings-header">
+                <h2>Session Types</h2>
+                <div class="button-group">
+                    <button id="edit-sessions-btn" class="btn btn-primary">Edit</button>
+                    <button id="cancel-sessions-btn" class="btn btn-danger" style="display: none;">Cancel</button>
+                </div>
+            </div>
+            <table id="sessions-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Title</th>
+                        <th>Default Owner</th>
+                        <th>Role</th>
+                        <th>Min (mins)</th>
+                        <th>Max (mins)</th>
+                        <th>Section</th>
+                        <th>Titleless</th>
+                        <th>Project</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for st in session_types %}
+                    <tr data-id="{{ st.id }}">
+                        <td>{{ st.id }}</td>
+                        <td data-field="Title">{{ st.Title }}</td>
+                        <td data-field="Default_Owner">{{ st.Default_Owner if st.Default_Owner is not none else '' }}</td>
+                        <td data-field="Role">{{ st.Role if st.Role is not none else '' }}</td>
+                        <td data-field="Duration_Min">{{ st.Duration_Min if st.Duration_Min is not none else '' }}</td>
+                        <td data-field="Duration_Max">{{ st.Duration_Max if st.Duration_Max is not none else '' }}</td>
+                        <td data-field="Is_Section">
+                            <input type="checkbox" {% if st.Is_Section %}checked{% endif %} disabled>
+                        </td>
+                        <td data-field="Is_Titleless">
+                            <input type="checkbox" {% if st.Is_Titleless %}checked{% endif %} disabled>
+                        </td>
+                        <td data-field="Valid_for_Project">
+                            <input type="checkbox" {% if st.Valid_for_Project %}checked{% endif %} disabled>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
 
         <div id="agenda-settings" class="tab-content">
@@ -30,21 +77,135 @@
 
 <script>
     function openTab(evt, tabName) {
-        // Get all elements with class="tab-content" and hide them
         const tabcontent = document.getElementsByClassName("tab-content");
         for (let i = 0; i < tabcontent.length; i++) {
             tabcontent[i].style.display = "none";
         }
 
-        // Get all elements with class="tab-btn" and remove the class "active"
         const tablinks = document.getElementsByClassName("tab-btn");
         for (let i = 0; i < tablinks.length; i++) {
             tablinks[i].className = tablinks[i].className.replace(" active", "");
         }
 
-        // Show the current tab, and add an "active" class to the button that opened the tab
         document.getElementById(tabName).style.display = "block";
         evt.currentTarget.className += " active";
+    }
+
+    // --- Session Types Edit Logic ---
+    const editSessionsBtn = document.getElementById('edit-sessions-btn');
+    const cancelSessionsBtn = document.getElementById('cancel-sessions-btn');
+    const sessionsTableBody = document.querySelector('#sessions-table tbody');
+    let isEditingSessions = false;
+    let originalSessionsData = {};
+
+    editSessionsBtn.addEventListener('click', () => {
+        if (isEditingSessions) {
+            saveSessionChanges();
+        } else {
+            toggleSessionEditMode(true);
+        }
+    });
+
+    cancelSessionsBtn.addEventListener('click', () => {
+        toggleSessionEditMode(false);
+        sessionsTableBody.querySelectorAll('tr').forEach(row => {
+            const id = row.dataset.id;
+            const originalRow = originalSessionsData[id];
+            row.querySelectorAll('td[data-field]').forEach(cell => {
+                const field = cell.dataset.field;
+                if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                    cell.innerHTML = `<input type="checkbox" ${originalRow[field] ? 'checked' : ''} disabled>`;
+                } else {
+                    cell.textContent = originalRow[field];
+                }
+            });
+        });
+    });
+
+    function toggleSessionEditMode(enable) {
+        isEditingSessions = enable;
+        editSessionsBtn.textContent = enable ? 'Save' : 'Edit';
+        cancelSessionsBtn.style.display = enable ? 'inline-block' : 'none';
+
+        sessionsTableBody.querySelectorAll('tr').forEach(row => {
+            const id = row.dataset.id;
+            if (enable) {
+                originalSessionsData[id] = {};
+            }
+            row.querySelectorAll('td[data-field]').forEach(cell => {
+                const field = cell.dataset.field;
+                const currentValue = cell.textContent.trim();
+
+                if (enable) {
+                    originalSessionsData[id][field] = currentValue;
+                }
+
+                if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                    const checkbox = cell.querySelector('input[type="checkbox"]');
+                    if (enable) {
+                        originalSessionsData[id][field] = checkbox.checked;
+                        checkbox.disabled = false;
+                    } else {
+                        checkbox.disabled = true;
+                    }
+                } else {
+                    if (enable) {
+                        const input = document.createElement('input');
+                        input.type = (field.includes('Duration')) ? 'number' : 'text';
+                        input.value = currentValue;
+                        input.className = 'form-control-sm';
+                        cell.textContent = '';
+                        cell.appendChild(input);
+                    }
+                }
+            });
+        });
+    }
+
+    function saveSessionChanges() {
+        const dataToSave = [];
+        sessionsTableBody.querySelectorAll('tr').forEach(row => {
+            const rowData = { id: row.dataset.id };
+            row.querySelectorAll('td[data-field]').forEach(cell => {
+                const field = cell.dataset.field;
+                if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                    rowData[field] = cell.querySelector('input[type="checkbox"]').checked;
+                } else {
+                    rowData[field] = cell.querySelector('input').value;
+                }
+            });
+            dataToSave.push(rowData);
+        });
+
+        fetch('/settings/sessions/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataToSave)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                toggleSessionEditMode(false);
+                sessionsTableBody.querySelectorAll('tr').forEach(row => {
+                    const id = row.dataset.id;
+                    const updatedRow = dataToSave.find(item => item.id == id);
+                    row.querySelectorAll('td[data-field]').forEach(cell => {
+                        const field = cell.dataset.field;
+                        if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                            cell.innerHTML = `<input type="checkbox" ${updatedRow[field] ? 'checked' : ''} disabled>`;
+                        } else {
+                             cell.textContent = updatedRow[field];
+                        }
+                    });
+                });
+            } else {
+                alert('Error saving changes: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving.');
+        });
     }
 </script>
 {% endblock %}
