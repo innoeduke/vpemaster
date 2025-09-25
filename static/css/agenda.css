@@ -93,8 +93,8 @@
     cursor: grabbing;
 }
 
-.draggable-row {
-    cursor: grab;
+.drag-handle {
+    cursor: move;
 }
 
 .draggable-row:grabbing {

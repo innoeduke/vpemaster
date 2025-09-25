@@ -237,9 +237,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             row.append(seqCell, titleCell, createActionsCell(originalData.typeId));
         } else {
-            fieldsOrder.forEach(field => {
+            fieldsOrder.forEach((field, index) => {
                 const value = (field === 'Meeting_Seq') ? seq : originalData[field.toLowerCase().replace(/_([a-z])/g, g => g[1].toUpperCase())];
-                row.appendChild(createEditableCell(field, value, false, originalData.typeId));
+                const cell = createEditableCell(field, value, false, originalData.typeId);
+                if (index < 3) { // Check if it's one of the first three columns
+                    cell.classList.add('drag-handle');
+                }
+                row.appendChild(cell);
             });
             row.appendChild(createActionsCell(originalData.typeId));
         }
@@ -258,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(sortable) sortable.destroy();
             sortable = new Sortable(tableBody, {
                 animation: 150,
+                handle: '.drag-handle',
                 onEnd: renumberRows,
             });
         } else {
