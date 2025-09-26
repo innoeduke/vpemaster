@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/agenda.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/speech_logs.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pathway_library.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/booking.css') }}">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
 
@@ -40,6 +41,12 @@
                 </a>
             </li>
             {% if session.logged_in %}
+            <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}">
+                <a href="{{ url_for('booking_bp.booking') }}">
+                    <i class="fas fa-user-check nav-icon"></i>
+                    <span>Booking</span>
+                </a>
+            </li>
             <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
                     <i class="fas fa-microphone nav-icon"></i>

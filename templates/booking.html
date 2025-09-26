@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Booking{% endblock %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/booking.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="booking-content-container">
+    <h1>Role Booking</h1>
+
+    {% if user_bookings %}
+    <div class="my-bookings-container">
+        <h3>My Upcoming Roles</h3>
+        <ul>
+            {% for booking in user_bookings %}
+            <li>
+                <div class="booking-info">
+                    Meeting #{{ booking.Meeting_Number }}
+                    <span>({{ booking.Meeting_Date.strftime('%Y-%m-%d') }})</span>
+                </div>
+                <div class="booking-role">
+                    <i class="fas {{ booking.icon }}"></i>
+                    <span>{{ booking.Role }}</span>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+
+    <div class="booking-filter-container">
+        <h3>Upcoming Meetings</h3>
+        <select id="meeting-filter" onchange="location = this.value;">
+            {% for meeting in upcoming_meetings %}
+            <option value="{{ url_for('booking_bp.booking', meeting_number=meeting.number) }}"
+                    {% if meeting.number == selected_meeting %}selected{% endif %}
+                    data-meeting-number="{{ meeting.number }}">
+                #{{ meeting.number }} - {{ meeting.date }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <table id="bookingTable">
+        <thead>
+            <tr>
+                <th>Role</th>
+                <th>Owner</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for role in roles %}
+            <tr data-role-name="{{ role.Role }}" data-session-log-id="{{ role.SessionLog_ID }}">
+                <td data-label="Role">
+                    <i class="fas {{ role.icon }}"></i>
+                    <span>{{ role.Role }}</span>
+                </td>
+                <td data-label="Owner">
+                    {% if role.Owner %}
+                        <span class="owner-name">{{ role.Owner }}</span>
+                    {% else %}
+                        <span class="available-role">Available</span>
+                    {% endif %}
+                </td>
+                <td data-label="Action">
+                    {% if user_role in ['Admin', 'VPE'] %}
+                        <div class="action-links">
+                            <select class="contact-select btn">
+                                <option value="">-- Assign / Unassign --</option>
+                                {% for contact in contacts %}
+                                <option value="{{ contact.id }}" {% if contact.id == role.Owner_ID %}selected{% endif %}>{{ contact.Name }}</option>
+                                {% endfor %}
+                            </select>
+                             {% if role.Owner_ID == current_contact_id %}
+                            <button class="btn btn-danger btn-sm cancel-btn-vpe" title="Cancel"><i class="fas fa-times"></i></button>
+                            {% endif %}
+                        </div>
+                    {% else %}
+                        {% if role.Owner_ID == current_contact_id %}
+                            <button class="btn btn-primary cancel-btn">Cancel</button>
+                        {% elif role.Owner %}
+                            <button class="btn btn-secondary" disabled>Booked</button>
+                        {% else %}
+                            <button class="btn btn-success book-btn">Book</button>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const meetingFilter = document.getElementById('meeting-filter');
+        let meetingNumber = null;
+
+        if (meetingFilter.selectedIndex !== -1) {
+            meetingNumber = meetingFilter.options[meetingFilter.selectedIndex].dataset.meetingNumber;
+        }
+
+        if (!meetingNumber) {
+            console.error("No meeting number selected or available.");
+            return;
+        }
+
+        document.querySelectorAll('.book-btn, .cancel-btn, .cancel-btn-vpe').forEach(button => {
+            button.addEventListener('click', function () {
+                const row = this.closest('tr');
+                const roleName = row.dataset.roleName;
+                const sessionLogId = row.dataset.sessionLogId;
+                let newOwnerId;
+
+                if (this.classList.contains('book-btn')) {
+                    const currentContactId = {{ current_contact_id|tojson }};
+                     if (!currentContactId) {
+                        alert("Your user account is not linked to a contact. Cannot book roles.");
+                        return;
+                    }
+                    newOwnerId = currentContactId;
+                } else if (this.classList.contains('cancel-btn') || this.classList.contains('cancel-btn-vpe')) {
+                    newOwnerId = 'cancel';
+                }
+                updateRoleOwner(meetingNumber, roleName, sessionLogId, newOwnerId);
+            });
+        });
+
+        document.querySelectorAll('.contact-select').forEach(select => {
+            select.addEventListener('change', function() {
+                const row = this.closest('tr');
+                const roleName = row.dataset.roleName;
+                const sessionLogId = row.dataset.sessionLogId;
+                const newOwnerId = this.value || null;
+                updateRoleOwner(meetingNumber, roleName, sessionLogId, newOwnerId);
+            });
+        });
+
+        function updateRoleOwner(meetingNumber, roleName, sessionLogId, newOwnerId) {
+            fetch('/booking/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    meeting_number: meetingNumber,
+                    role: roleName,
+                    session_log_id: sessionLogId,
+                    new_owner_id: newOwnerId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    });
+</script>
+
+{% endblock %}
+

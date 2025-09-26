@@ -1,0 +1,244 @@
+/* General Container for the booking page */
+.booking-content-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Merriweather', serif;
+}
+
+.booking-content-container h1 {
+    text-align: center;
+    font-size: 2.5em; /* Fine-tuned */
+    margin-bottom: 30px;
+    color: #333;
+}
+
+/* My Upcoming Roles Container */
+.my-bookings-container {
+    max-width: 800px; /* Fine-tuned */
+    margin: 0 auto 30px auto;
+    background-color: #fdfdfd;
+    padding: 25px 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+
+/* Style for the filter container */
+.booking-filter-container {
+    max-width: 800px; /* Fine-tuned */
+    margin: 0 auto 20px auto;
+    background-color: #fdfdfd;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+/* Consolidated Heading Styles */
+.my-bookings-container h3,
+.booking-filter-container h3 {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+    padding-right: 15px; /* for spacing in filter */
+    text-align: center;
+}
+
+.my-bookings-container h3 {
+    padding-right: 0; /* override for this specific heading */
+    margin-bottom: 20px;
+}
+
+
+.my-bookings-container ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.my-bookings-container li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.my-bookings-container li:last-child {
+    border-bottom: none;
+}
+
+.booking-info {
+    font-weight: bold;
+    color: #555;
+}
+
+.booking-info span {
+    font-weight: normal;
+    color: #777;
+}
+
+.booking-role {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.booking-role .fas {
+    color: #772432;
+    font-size: 1.2em;
+}
+
+
+#meeting-filter {
+    font-size: 1em;
+    padding: 8px 12px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+}
+
+
+/* Booking Table Styles */
+#bookingTable {
+    width: 800px; /* Fine-tuned */
+    border-collapse: collapse;
+    margin: 0 auto;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#bookingTable th,
+#bookingTable td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+#bookingTable th {
+    background-color: #f8f8f8;
+    font-weight: 700;
+}
+
+#bookingTable td .fas {
+    margin-right: 10px;
+    color: #772432;
+    font-size: 1.1em;
+}
+
+#bookingTable .available-role {
+    color: #28a745;
+    font-weight: bold;
+}
+
+#bookingTable .btn-secondary[disabled] {
+    background-color: #e9ecef;
+    color: #adb5bd;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+}
+
+.action-links {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.contact-select {
+    color: #212529;
+}
+.cancel-btn-vpe {
+    padding: 5px 8px;
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+    .booking-content-container {
+        padding: 10px;
+    }
+
+    .booking-filter-container {
+        flex-direction: column;
+    }
+
+    .my-bookings-container ul li {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    #bookingTable {
+        display: block;
+        width: 100%;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    #bookingTable thead {
+        display: none;
+    }
+
+    #bookingTable tbody,
+    #bookingTable tr,
+    #bookingTable td {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    #bookingTable tr {
+        margin-bottom: 15px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        border-radius: 8px;
+        background: #fff;
+    }
+
+    #bookingTable td {
+        border: none;
+        padding-left: 20px;
+        padding-right: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #bookingTable td[data-label="Role"] {
+        font-weight: bold;
+        background-color: #f8f8f8;
+        padding-top: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+
+    #bookingTable td[data-label="Owner"],
+    #bookingTable td[data-label="Action"] {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    #bookingTable td[data-label="Action"] {
+         padding-bottom: 15px;
+    }
+
+    #bookingTable td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    #bookingTable td[data-label="Role"]::before {
+        display: none; /* Hide for the main role display */
+    }
+
+    #bookingTable .action-links,
+    #bookingTable .contact-select {
+        width: 100%;
+    }
+}
+

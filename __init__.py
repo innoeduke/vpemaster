@@ -36,6 +36,7 @@ from .main_routes import main_bp
 from .pathways_routes import pathways_bp
 from .tests_routes import tests_bp
 from .settings_routes import settings_bp
+from .booking_routes import booking_bp
 
 
 
@@ -47,3 +48,4 @@ app.register_blueprint(main_bp)
 app.register_blueprint(pathways_bp)
 app.register_blueprint(tests_bp)
 app.register_blueprint(settings_bp)
+app.register_blueprint(booking_bp)
