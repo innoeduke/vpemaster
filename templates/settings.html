@@ -37,7 +37,7 @@
                         <th>Min (mins)</th>
                         <th>Max (mins)</th>
                         <th>Section</th>
-                        <th>Titleless</th>
+                        <th>Predefined</th>
                         <th>Project</th>
                     </tr>
                 </thead>
@@ -54,8 +54,8 @@
                         <td data-field="Is_Section">
                             <input type="checkbox" {% if st.Is_Section %}checked{% endif %} disabled>
                         </td>
-                        <td data-field="Is_Titleless">
-                            <input type="checkbox" {% if st.Is_Titleless %}checked{% endif %} disabled>
+                        <td data-field="Predefined">
+                            <input type="checkbox" {% if st.Predefined%}checked{% endif %} disabled>
                         </td>
                         <td data-field="Valid_for_Project">
                             <input type="checkbox" {% if st.Valid_for_Project %}checked{% endif %} disabled>
@@ -178,7 +178,7 @@
                 const originalRow = originalSessionsData[id];
                 row.querySelectorAll('td[data-field]').forEach(cell => {
                     const field = cell.dataset.field;
-                    if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
                         cell.innerHTML = `<input type="checkbox" ${originalRow[field] ? 'checked' : ''} disabled>`;
                     } else {
                         cell.textContent = originalRow[field];
@@ -205,7 +205,7 @@
                         originalSessionsData[id][field] = currentValue;
                     }
 
-                    if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
                         const checkbox = cell.querySelector('input[type="checkbox"]');
                         if (enable) {
                             originalSessionsData[id][field] = checkbox.checked;
@@ -233,7 +233,7 @@
                 const rowData = { id: row.dataset.id };
                 row.querySelectorAll('td[data-field]').forEach(cell => {
                     const field = cell.dataset.field;
-                    if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
                         rowData[field] = cell.querySelector('input[type="checkbox"]').checked;
                     } else {
                         rowData[field] = cell.querySelector('input').value;
@@ -256,7 +256,7 @@
                         const updatedRow = dataToSave.find(item => item.id == id);
                         row.querySelectorAll('td[data-field]').forEach(cell => {
                             const field = cell.dataset.field;
-                            if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                            if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
                                 cell.innerHTML = `<input type="checkbox" ${updatedRow[field] ? 'checked' : ''} disabled>`;
                             } else {
                                  cell.textContent = updatedRow[field];

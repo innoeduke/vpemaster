@@ -20,7 +20,7 @@ def _get_agenda_logs(meeting_number):
         SessionLog,
         SessionType.Is_Section,
         SessionType.Title.label('session_type_title'),
-        SessionType.Is_Titleless,
+        SessionType.Predefined,
         Meeting.Meeting_Date,
         Project.Code_DL, Project.Code_EH, Project.Code_MS,
         Project.Code_PI, Project.Code_PM, Project.Code_VC,
@@ -187,7 +187,7 @@ def agenda():
     ]
     pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
     session_types = SessionType.query.order_by(SessionType.Title.asc()).all()
-    session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section, "Valid_for_Project": s.Valid_for_Project} for s in session_types]
+    session_types_data = [{"id": s.id, "Title": s.Title, "Is_Section": s.Is_Section, "Valid_for_Project": s.Valid_for_Project, "Predefined": s.Predefined} for s in session_types]
     contacts = Contact.query.order_by(Contact.Name.asc()).all()
     contacts_data = [
         {
@@ -273,7 +273,7 @@ def create_from_template():
                 if type_id == 16 and ge_style == 'delayed':
                     duration_max = 5
 
-                session_title = session_type.Title if session_type and session_type.Is_Titleless else session_title_from_csv
+                session_title = session_type.Title if session_type and session_type.Predefined else session_title_from_csv
                 owner_id = None
                 designation = None
                 if owner_name:
@@ -337,7 +337,7 @@ def export_agenda(meeting_number):
         Contact.Completed_Levels,
         Contact.Working_Path,
         SessionType.Title.label('session_type_title'),
-        SessionType.Is_Titleless,
+        SessionType.Predefined,
         Project.Code_DL,
         Project.Code_EH,
         Project.Code_MS,
@@ -360,7 +360,7 @@ def export_agenda(meeting_number):
 
     for log in logs:
         # Format session title
-        session_title = log.session_type_title if log.Is_Titleless else log.Session_Title
+        session_title = log.session_type_title if log.Predefined else log.Session_Title
 
         # Add project code to title if applicable
         if log.session_type_title == "Pathway Speech" and log.Working_Path:

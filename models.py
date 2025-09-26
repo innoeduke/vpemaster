@@ -62,7 +62,7 @@ class SessionType(db.Model):
     Title = db.Column(db.String(255), nullable=False, unique=True)
     Default_Owner = db.Column(db.String(255))
     Is_Section = db.Column(db.Boolean, default=False)
-    Is_Titleless = db.Column(db.Boolean, default=True)
+    Predefined = db.Column(db.Boolean, default=True)
     Role = db.Column(db.String(255), default='')
     Role_Group = db.Column(db.String(50))
     Valid_for_Project = db.Column(db.Boolean, default=False)

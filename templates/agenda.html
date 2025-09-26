@@ -58,7 +58,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for log, is_section, session_type_title, is_titleless, meeting_date, code_dl, code_eh, code_ms, code_pi, code_pm, code_vc, code_dtm in logs %}
+                {% for log, is_section, session_type_title, predefined, meeting_date, code_dl, code_eh, code_ms, code_pi, code_pm, code_vc, code_dtm in logs %}
                 <tr data-id="{{ log.id }}"
                     data-project-id="{{ log.Project_ID if log.Project_ID is not none else '' }}"
                     data-meeting-number="{{ log.Meeting_Number }}"
@@ -66,7 +66,7 @@
                     data-is-section="{{ is_section|lower }}"
                     data-meeting-seq="{{ log.Meeting_Seq }}"
                     data-start-time="{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}"
-                    data-session-title="{{ session_type_title if is_titleless else (log.Session_Title if log.Session_Title is not none else '') }}"
+                    data-session-title="{{ session_type_title if predefined else (log.Session_Title if log.Session_Title is not none else '') }}"
                     data-type-id="{{ log.Type_ID }}"
                     data-owner-id="{{ log.Owner_ID }}"
                     data-designation="{{ log.Designation if log.Designation is not none else '' }}"
@@ -82,7 +82,7 @@
                     {% else %}
                         <td class="non-edit-mode-cell">{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}</td>
                         <td class="non-edit-mode-cell">
-                            {% if is_titleless %}
+                            {% if predefined %}
                                 {{ session_type_title }}
                             {% else %}
                                 {% if session_type_title == "Pathway Speech" %}
