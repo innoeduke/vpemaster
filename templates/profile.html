@@ -3,14 +3,14 @@
 {% block title %}User Profile{% endblock %}
 
 {% block content %}
-    <h1>User Profile</h1>
+    <h2 style="text-align: center; margin-top: 40px; margin-bottom: 20px;">Basic Information</h2>
     <table class="form-table" style="max-width: 700px;">
         <tr>
-            <td><label>Username</label></td>
+            <td><label>User Id</label></td>
             <td>{{ user.Username }}</td>
         </tr>
         <tr>
-            <td><label>User Role</label></td>
+            <td><label>Account Type</label></td>
             <td>{{ user.Role }}</td>
         </tr>
         {% if user.contact %}
@@ -24,7 +24,7 @@
             </td>
         </tr>
         <tr>
-            <td><label>Working Pathway</label></td>
+            <td><label>Current Path</label></td>
             <td>{{ user.contact.Working_Path }}</td>
         </tr>
         <tr>
@@ -39,4 +39,26 @@
         </tr>
         {% endif %}
     </table>
+
+    <h2 style="text-align: center; margin-top: 40px; margin-bottom: 20px;">Reset Password</h2>
+    <form method="POST" action="{{ url_for('main_bp.profile') }}" style="max-width: 700px; margin: 0 auto;">
+        <table class="form-table">
+            <tr>
+                <td><label for="new_password">New Password:</label></td>
+                <td>
+                    <input type="password" id="new_password" name="new_password" required minlength="8">
+                    <small class="note">Minimum 8 characters.</small>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="confirm_password">Confirm Password:</label></td>
+                <td>
+                    <input type="password" id="confirm_password" name="confirm_password" required minlength="8">
+                </td>
+            </tr>
+        </table>
+        <div class="form-actions" style="margin-top: 10px;">
+            <button type="submit" class="btn btn-primary">Update Password</button>
+        </div>
+    </form>
 {% endblock %}

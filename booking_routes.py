@@ -1,17 +1,14 @@
 # vpemaster/booking_routes.py
 
-from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify, current_app
+from flask import Blueprint, render_template, request, session, jsonify
 from .main_routes import login_required
 from .models import SessionLog, SessionType, Contact, Meeting, User
 from vpemaster import db
-from sqlalchemy import desc, case
-from datetime import datetime, timedelta
+from datetime import datetime
 
 booking_bp = Blueprint('booking_bp', __name__)
 
 ROLE_ICONS = {
-    "SAA": "fa-shield-alt",
-    "President": "fa-crown",
     "TME": "fa-microphone",
     "Ah-Counter": "fa-calculator",
     "Grammarian": "fa-book",
@@ -31,6 +28,7 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
     query = db.session.query(
         SessionLog.id.label('session_id'),
         SessionType.Role.label('role'),
+        SessionType.Role_Group.label('role_group'),
         SessionLog.Session_Title,
         SessionLog.Owner_ID,
         Contact.Name.label('owner_name')
@@ -38,6 +36,9 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
      .outerjoin(Contact, SessionLog.Owner_ID == Contact.id)\
      .filter(SessionLog.Meeting_Number == selected_meeting_number)\
      .filter(SessionType.Role != '', SessionType.Role.isnot(None))
+
+    if user_role not in ['Admin', 'VPE']:
+        query = query.filter(SessionType.Role_Group == 'Member')
 
     session_logs = query.all()
 

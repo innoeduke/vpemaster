@@ -38,6 +38,7 @@ def update_session_types():
                 session_type.Title = item.get('Title')
                 session_type.Default_Owner = item.get('Default_Owner')
                 session_type.Role = item.get('Role')
+                session_type.Role_Group = item.get('Role_Group')
                 session_type.Is_Section = item.get('Is_Section', False)
                 session_type.Is_Titleless = item.get('Is_Titleless', False)
                 session_type.Valid_for_Project = item.get('Valid_for_Project', False)

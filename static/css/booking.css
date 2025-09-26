@@ -261,17 +261,15 @@ h1 {
     }
 
     .booking-table td:nth-of-type(2) { /* Owner */
-        flex: 2;
+        flex: 1.5;
         justify-content: flex-end;
     }
 
     .booking-table td:nth-of-type(3) { /* Action */
-        flex: 1.5;
+        flex: 2.5;
         justify-content: flex-end;
     }
 }
-
-/* Add to static/css/booking.css */
 
 /* Role Cell modifications */
 .booking-table .role-cell {

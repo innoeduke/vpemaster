@@ -45,14 +45,34 @@ def logout():
     session.pop('display_name', None)
     return redirect(url_for('main_bp.login'))
 
-@main_bp.route('/profile')
+@main_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
 def profile():
     """
-    Displays the logged-in user's profile page.
+    Displays the logged-in user's profile page and handles password reset.
     """
     user = User.query.get_or_404(session['user_id'])
+
+    if request.method == 'POST':
+        # Check if the request contains password fields for reset
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if new_password:
+            if len(new_password) < 8:
+                flash('Password must be at least 8 characters long.', 'error')
+            elif new_password == confirm_password:
+                # Update password hash
+                user.Pass_Hash = generate_password_hash(new_password)
+                db.session.commit()
+                flash('Your password has been updated successfully!', 'success')
+                # POST-redirect-GET pattern
+                return redirect(url_for('main_bp.profile'))
+            else:
+                flash('The new passwords do not match.', 'error')
+
     return render_template('profile.html', user=user)
+
 
 @main_bp.route('/')
 @login_required

@@ -28,6 +28,7 @@
                     <select name="status" onchange="this.form.submit()">
                         <option value="">All Statuses</option>
                         <option value="Booked" {% if selected_filters.status == 'Booked' %}selected{% endif %}>Booked</option>
+                        <option value="Delivered" {% if selected_filters.status == 'Delivered' %}selected{% endif %}>Delivered</option>
                         <option value="Completed" {% if selected_filters.status == 'Completed' %}selected{% endif %}>Completed</option>
                     </select>
                 </div>
@@ -85,8 +86,19 @@
                             <div class="status-info">
                                 {% if log.Status == 'Completed' %}
                                     <i class="fas fa-check-circle" title="Completed"></i>
+                                {% elif log.Status == 'Delivered' %}
+                                    {% if session.get('user_role') in ['Admin', 'VPE'] %}
+                                        <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                                    {% else %}
+                                        <span style="color: #772432; font-weight: bold; font-size: 0.9em;">Delivered</span>
+                                    {% endif %}
                                 {% else %}
-                                    <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                                    {% if session.get('user_role') in ['Admin', 'VPE'] %}
+                                        <button onclick="suspendSpeechLog(this, {{ log.id }})" class="icon-btn" title="Suspend" style="color: #E55353; font-size: 1.5em; margin-right: 5px;"><i class="fas fa-pause-circle"></i></button>
+                                        <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                                    {% else %}
+                                        <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </div>
@@ -132,6 +144,30 @@
             .catch(error => {
                 console.error('Error:', error);
                 alert('An error occurred while updating the status.');
+            });
+        }
+
+        function suspendSpeechLog(button, logId) {
+            if (!confirm('Are you sure you want to suspend this speech and mark it as Delivered?')) {
+                return;
+            }
+
+            fetch(`/speech_log/suspend/${logId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Force a page reload to re-render the card with the new status and button logic
+                    window.location.reload();
+                } else {
+                    alert('Error suspending status: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while suspending the status.');
             });
         }
     </script>

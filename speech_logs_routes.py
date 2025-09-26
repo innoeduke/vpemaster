@@ -186,6 +186,21 @@ def update_speech_log(log_id):
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
 
+@speech_logs_bp.route('/speech_log/suspend/<int:log_id>', methods=['POST'])
+@login_required
+def suspend_speech_log(log_id):
+    if session.get('user_role') not in ['Admin', 'VPE']:
+        return jsonify(success=False, message="Permission denied"), 403
+
+    log = SessionLog.query.get_or_404(log_id)
+    log.Status = 'Delivered'
+    try:
+        db.session.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
 
 def _get_next_project_for_contact(contact, completed_log):
     if not contact or not contact.Working_Path or not completed_log or not completed_log.Project_ID:
