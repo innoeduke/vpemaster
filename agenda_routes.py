@@ -147,7 +147,25 @@ def agenda():
     meeting_numbers = [num[0] for num in meeting_numbers_query]
 
     selected_meeting_str = request.args.get('meeting_number')
-    selected_meeting = int(selected_meeting_str) if selected_meeting_str else (meeting_numbers[0] if meeting_numbers else None)
+
+    if selected_meeting_str:
+        selected_meeting = int(selected_meeting_str)
+    else:
+        # Find the most recent upcoming meeting number
+        upcoming_meeting = Meeting.query\
+            .filter(Meeting.Meeting_Date >= datetime.today().date())\
+            .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc())\
+            .first()
+
+        if upcoming_meeting:
+            selected_meeting = upcoming_meeting.Meeting_Number
+        elif meeting_numbers:
+            # Fallback to the most recent existing meeting (highest meeting number)
+            selected_meeting = meeting_numbers[0]
+        else:
+            selected_meeting = None
+
+    selected_meeting_date = None
 
     selected_meeting_date = None
     if selected_meeting:
