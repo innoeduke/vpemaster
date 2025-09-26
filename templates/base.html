@@ -8,18 +8,15 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tables.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/modals.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/agenda.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/speech_logs.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/pathway_library.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/booking.css') }}">
-
     <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap">
+    {% block head_extra %}{% endblock %}
 </head>
 <body>
 
@@ -43,7 +40,7 @@
             {% if session.logged_in %}
             <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}">
                 <a href="{{ url_for('booking_bp.booking') }}">
-                    <i class="fas fa-user-check nav-icon"></i>
+                    <i class="fas fa-hand-pointer nav-icon"></i>
                     <span>Booking</span>
                 </a>
             </li>
