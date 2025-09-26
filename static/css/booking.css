@@ -67,17 +67,6 @@ h1 {
     z-index: 0;
 }
 
-.timeline-event {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    z-index: 1;
-    text-align: center;
-    min-width: 120px;
-    margin: 0 15px;
-}
-
 .timeline-header {
     font-size: 0.9em;
     color: #555;
@@ -104,16 +93,37 @@ h1 {
     margin-top: 5px;
 }
 
-.timeline-role {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9em;
-}
-
 .timeline-role i {
     color: #772432;
 }
+
+.timeline-event {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    min-width: 120px;
+    margin: 0 15px;
+}
+
+
+.timeline-event:hover {
+    background-color: #F2DF74; /* Highlight the entire column on hover */
+}
+
+.timeline-role {
+    cursor: default; /* Reset cursor for nested roles */
+    padding: 0;
+    transition: none;
+    background-color: transparent; /* Ensure no residual background from previous logic */
+}
+
+.timeline-role:hover {
+    background-color: transparent; /* Ensure no hover effect on the inner element */
+}
+
 
 
 /* Booking Table */
@@ -259,5 +269,29 @@ h1 {
         flex: 1.5;
         justify-content: flex-end;
     }
+}
+
+/* Add to static/css/booking.css */
+
+/* Role Cell modifications */
+.booking-table .role-cell {
+    /* Align icon and text container to be side-by-side */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+}
+
+.booking-table .role-display-text {
+    /* Make the text content stack vertically */
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2; /* Tighter line spacing for stacked text */
+}
+
+.booking-table .speaker-for {
+    font-size: 0.75em; /* Smaller font for the speaker's name */
+    font-weight: normal; /* Less bold for the speaker's name */
+    color: #555; /* A bit softer color */
 }
 

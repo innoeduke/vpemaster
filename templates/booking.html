@@ -17,7 +17,7 @@
             {% if user_bookings_by_date %}
             <div class="horizontal-timeline">
                 {% for group in user_bookings_by_date %}
-                <div class="timeline-event">
+                <div class="timeline-event" data-meeting-number="{{ group.date_info.meeting_number }}">
                     <div class="timeline-header">
                         <span class="meeting-number">#{{ group.date_info.meeting_number }}</span>
                         <span>{{ group.date_info.short_date }}</span>
@@ -61,7 +61,15 @@
         <tbody>
             {% for role in roles %}
             <tr data-session-id="{{ role.session_id }}">
-                <td class="role-cell"><i class="fas {{ role.icon }}"></i> <span>{{ role.role }}</span></td>
+                <td class="role-cell">
+                    <i class="fas {{ role.icon }}"></i>
+                    <div class="role-display-text">
+                        <span>{{ role.role }}</span>
+                        {% if role.speaker_name %}
+                            <span class="speaker-for">for {{ role.speaker_name }}</span>
+                        {% endif %}
+                    </div>
+                </td>
                 <td>
                     {% if role.owner_name %}
                         {{ role.owner_name }}
@@ -111,6 +119,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    document.querySelectorAll('.timeline-event').forEach(item => {
+        item.addEventListener('click', function() {
+            // The meeting number is now on the timeline-event element itself
+            const meetingNumber = this.dataset.meetingNumber;
+            if (meetingNumber) {
+                window.location.href = '/booking/' + meetingNumber;
+            }
+        });
+    });
 });
 
 function bookOrCancelRole(sessionId, action, roleKey) {

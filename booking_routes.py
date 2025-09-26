@@ -45,20 +45,23 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
     roles_dict = {}
     for log in session_logs:
         role_key = log.role
+        speaker_name_for_display = None
+        role_display = role_key
 
         # Roles that must always have unique entries (one row per session log):
-        # Prepared Speaker and Individual Evaluator
         if role_key in ["Prepared Speaker", "Individual Evaluator"]:
-            # --- Unique Slot Logic ---
-            # 1. Determine Display Name
-            # Check for specific "Evaluation for" title, gracefully handling Session_Title being None
-            if role_key == "Individual Evaluator" and "Evaluation for" in (log.Session_Title or ''):
-                speaker_name = log.Session_Title.replace("Evaluation for", "").strip()
-                role_display = f"Individual Evaluator ({speaker_name})"
-            else:
-                role_display = role_key
 
-            # 2. Use a unique key for each slot (session log ID)
+            # CORRECTED LOGIC: Check if a speaker name is attached to the evaluation session in the log
+            # The Session_Title field for this role is the speaker's name (e.g., 'Rosalía Shi').
+            if role_key == "Individual Evaluator" and (log.Session_Title or ''):
+                speaker_name_for_display = log.Session_Title.strip()
+                role_display = "Individual Evaluator"
+            else:
+                # For Prepared Speaker or an Evaluation without a title
+                role_display = role_key
+                speaker_name_for_display = None
+
+            # Use a unique key for each slot (session log ID)
             role_key_unique = f"{role_key}_{log.session_id}"
 
             # Create the entry - no consolidation needed for these roles
@@ -67,12 +70,12 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
                 'role_key': role_key,
                 'owner_id': log.Owner_ID,
                 'owner_name': log.owner_name,
-                'session_ids': [log.session_id]
+                'session_ids': [log.session_id],
+                'speaker_name': speaker_name_for_display, # <-- NOW CORRECTLY SET
             }
 
         # Roles that are unique per meeting (SAA, TME, etc.) and should be consolidated
         else:
-            role_display = role_key
             role_key_unique = role_key # The key is the role name
 
             if role_key_unique not in roles_dict:
@@ -81,15 +84,16 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
                     'role_key': role_key,
                     'owner_id': log.Owner_ID,
                     'owner_name': log.owner_name,
-                    'session_ids': [log.session_id] # Store all associated session IDs
+                    'session_ids': [log.session_id],
+                    'speaker_name': None, # <-- NEW KEY
                 }
             else:
                 # Append session ID and update owner if a new one is found
                 roles_dict[role_key_unique]['session_ids'].append(log.session_id)
-                # If one of the sessions is assigned, the whole role is considered assigned
                 if log.Owner_ID:
                     roles_dict[role_key_unique]['owner_id'] = log.Owner_ID
                     roles_dict[role_key_unique]['owner_name'] = log.owner_name
+                roles_dict[role_key_unique]['speaker_name'] = None # Ensure it is included
 
     # Convert dict to list and add icons
     roles_with_icons = []
