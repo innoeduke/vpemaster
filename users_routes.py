@@ -15,8 +15,7 @@ def show_users():
     if session.get('user_role') != 'Admin':
         return redirect(url_for('agenda_bp.agenda'))
 
-    all_users = User.query.order_by(User.Username.asc()).all()
-    return render_template('users.html', users=all_users)
+    return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
 @users_bp.route('/user/form', defaults={'user_id': None}, methods=['GET', 'POST'])
 @users_bp.route('/user/form/<int:user_id>', methods=['GET', 'POST'])
@@ -52,7 +51,7 @@ def user_form(user_id):
             )
             db.session.add(new_user)
         db.session.commit()
-        return redirect(url_for('users_bp.show_users'))
+        return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
     return render_template('user_form.html', user=user, contacts=contacts)
 
@@ -65,4 +64,4 @@ def delete_user(user_id):
     user = User.query.get_or_404(user_id)
     db.session.delete(user)
     db.session.commit()
-    return redirect(url_for('users_bp.show_users'))
+    return redirect(url_for('settings_bp.settings', default_tab='user-settings'))

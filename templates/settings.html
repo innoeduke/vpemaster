@@ -69,9 +69,47 @@
             <p>Settings related to the meeting agenda, templates, and session types will be configured here.</p>
         </div>
 
+
         <div id="user-settings" class="tab-content">
-            <h2>User Settings</h2>
-            <p>User-related configurations and permissions will be handled on this tab.</p>
+            <h2>User Management</h2>
+            <a href="{{ url_for('users_bp.user_form') }}" class="btn btn-primary">Add New User</a>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>No.</th>
+                        <th>Username</th>
+                        <th>Full Name</th>
+                        <th>Role</th>
+                        <th>Date Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in all_users %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ user.Username }}</td>
+                        <td>
+                            {% if user.contact %}
+                                {{ user.contact.Name }}
+                                <i class="fas fa-link" style="color: green; margin-left: 5px;"></i>
+                            {% else %}
+                                <em style="color: #888;">Not Linked</em>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.Role }}</td>
+                        <td>{{ user.Date_Created.strftime('%Y-%m-%d') if user.Date_Created else '' }}</td>
+                        <td>
+                            <div class="action-links">
+                                <a href="{{ url_for('users_bp.user_form', user_id=user.id) }}" class="icon-btn" title="Edit"><i class="fas fa-edit"></i></a>
+                                <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('users_bp.delete_user', user_id=user.id) }}', 'user')" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -88,125 +126,151 @@
         }
 
         document.getElementById(tabName).style.display = "block";
-        evt.currentTarget.className += " active";
+
+        // Handle both click event (has evt) and programmatic call (uses tabName)
+        let targetElement = null;
+        if (evt && evt.currentTarget) {
+            targetElement = evt.currentTarget;
+        } else {
+            // Find the button associated with the tabName
+            for (let i = 0; i < tablinks.length; i++) {
+                if (tablinks[i].getAttribute('onclick').includes(`'${tabName}'`)) {
+                    targetElement = tablinks[i];
+                    break;
+                }
+            }
+        }
+
+        if (targetElement) {
+            targetElement.className += " active";
+        }
     }
 
-    // --- Session Types Edit Logic ---
-    const editSessionsBtn = document.getElementById('edit-sessions-btn');
-    const cancelSessionsBtn = document.getElementById('cancel-sessions-btn');
-    const sessionsTableBody = document.querySelector('#sessions-table tbody');
-    let isEditingSessions = false;
-    let originalSessionsData = {};
+    document.addEventListener('DOMContentLoaded', () => {
+        // Check URL for default_tab parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const defaultTab = urlParams.get('default_tab');
+        if (defaultTab) {
+            // Pass null for evt to indicate a programmatic call
+            openTab(null, defaultTab);
+        }
 
-    editSessionsBtn.addEventListener('click', () => {
-        if (isEditingSessions) {
-            saveSessionChanges();
-        } else {
-            toggleSessionEditMode(true);
+        // --- Session Types Edit Logic ---
+        const editSessionsBtn = document.getElementById('edit-sessions-btn');
+        const cancelSessionsBtn = document.getElementById('cancel-sessions-btn');
+        const sessionsTableBody = document.querySelector('#sessions-table tbody');
+        let isEditingSessions = false;
+        let originalSessionsData = {};
+
+        editSessionsBtn.addEventListener('click', () => {
+            if (isEditingSessions) {
+                saveSessionChanges();
+            } else {
+                toggleSessionEditMode(true);
+            }
+        });
+
+        cancelSessionsBtn.addEventListener('click', () => {
+            toggleSessionEditMode(false);
+            sessionsTableBody.querySelectorAll('tr').forEach(row => {
+                const id = row.dataset.id;
+                const originalRow = originalSessionsData[id];
+                row.querySelectorAll('td[data-field]').forEach(cell => {
+                    const field = cell.dataset.field;
+                    if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                        cell.innerHTML = `<input type="checkbox" ${originalRow[field] ? 'checked' : ''} disabled>`;
+                    } else {
+                        cell.textContent = originalRow[field];
+                    }
+                });
+            });
+        });
+
+        function toggleSessionEditMode(enable) {
+            isEditingSessions = enable;
+            editSessionsBtn.textContent = enable ? 'Save' : 'Edit';
+            cancelSessionsBtn.style.display = enable ? 'inline-block' : 'none';
+
+            sessionsTableBody.querySelectorAll('tr').forEach(row => {
+                const id = row.dataset.id;
+                if (enable) {
+                    originalSessionsData[id] = {};
+                }
+                row.querySelectorAll('td[data-field]').forEach(cell => {
+                    const field = cell.dataset.field;
+                    const currentValue = cell.textContent.trim();
+
+                    if (enable) {
+                        originalSessionsData[id][field] = currentValue;
+                    }
+
+                    if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                        const checkbox = cell.querySelector('input[type="checkbox"]');
+                        if (enable) {
+                            originalSessionsData[id][field] = checkbox.checked;
+                            checkbox.disabled = false;
+                        } else {
+                            checkbox.disabled = true;
+                        }
+                    } else {
+                        if (enable) {
+                            const input = document.createElement('input');
+                            input.type = (field.includes('Duration')) ? 'number' : 'text';
+                            input.value = currentValue;
+                            input.className = 'form-control-sm';
+                            cell.textContent = '';
+                            cell.appendChild(input);
+                        }
+                    }
+                });
+            });
+        }
+
+        function saveSessionChanges() {
+            const dataToSave = [];
+            sessionsTableBody.querySelectorAll('tr').forEach(row => {
+                const rowData = { id: row.dataset.id };
+                row.querySelectorAll('td[data-field]').forEach(cell => {
+                    const field = cell.dataset.field;
+                    if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                        rowData[field] = cell.querySelector('input[type="checkbox"]').checked;
+                    } else {
+                        rowData[field] = cell.querySelector('input').value;
+                    }
+                });
+                dataToSave.push(rowData);
+            });
+
+            fetch('/settings/sessions/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSave)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toggleSessionEditMode(false);
+                    sessionsTableBody.querySelectorAll('tr').forEach(row => {
+                        const id = row.dataset.id;
+                        const updatedRow = dataToSave.find(item => item.id == id);
+                        row.querySelectorAll('td[data-field]').forEach(cell => {
+                            const field = cell.dataset.field;
+                            if (field.startsWith('Is_') || field === 'Valid_for_Project') {
+                                cell.innerHTML = `<input type="checkbox" ${updatedRow[field] ? 'checked' : ''} disabled>`;
+                            } else {
+                                 cell.textContent = updatedRow[field];
+                            }
+                        });
+                    });
+                } else {
+                    alert('Error saving changes: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while saving.');
+            });
         }
     });
-
-    cancelSessionsBtn.addEventListener('click', () => {
-        toggleSessionEditMode(false);
-        sessionsTableBody.querySelectorAll('tr').forEach(row => {
-            const id = row.dataset.id;
-            const originalRow = originalSessionsData[id];
-            row.querySelectorAll('td[data-field]').forEach(cell => {
-                const field = cell.dataset.field;
-                if (field.startsWith('Is_') || field === 'Valid_for_Project') {
-                    cell.innerHTML = `<input type="checkbox" ${originalRow[field] ? 'checked' : ''} disabled>`;
-                } else {
-                    cell.textContent = originalRow[field];
-                }
-            });
-        });
-    });
-
-    function toggleSessionEditMode(enable) {
-        isEditingSessions = enable;
-        editSessionsBtn.textContent = enable ? 'Save' : 'Edit';
-        cancelSessionsBtn.style.display = enable ? 'inline-block' : 'none';
-
-        sessionsTableBody.querySelectorAll('tr').forEach(row => {
-            const id = row.dataset.id;
-            if (enable) {
-                originalSessionsData[id] = {};
-            }
-            row.querySelectorAll('td[data-field]').forEach(cell => {
-                const field = cell.dataset.field;
-                const currentValue = cell.textContent.trim();
-
-                if (enable) {
-                    originalSessionsData[id][field] = currentValue;
-                }
-
-                if (field.startsWith('Is_') || field === 'Valid_for_Project') {
-                    const checkbox = cell.querySelector('input[type="checkbox"]');
-                    if (enable) {
-                        originalSessionsData[id][field] = checkbox.checked;
-                        checkbox.disabled = false;
-                    } else {
-                        checkbox.disabled = true;
-                    }
-                } else {
-                    if (enable) {
-                        const input = document.createElement('input');
-                        input.type = (field.includes('Duration')) ? 'number' : 'text';
-                        input.value = currentValue;
-                        input.className = 'form-control-sm';
-                        cell.textContent = '';
-                        cell.appendChild(input);
-                    }
-                }
-            });
-        });
-    }
-
-    function saveSessionChanges() {
-        const dataToSave = [];
-        sessionsTableBody.querySelectorAll('tr').forEach(row => {
-            const rowData = { id: row.dataset.id };
-            row.querySelectorAll('td[data-field]').forEach(cell => {
-                const field = cell.dataset.field;
-                if (field.startsWith('Is_') || field === 'Valid_for_Project') {
-                    rowData[field] = cell.querySelector('input[type="checkbox"]').checked;
-                } else {
-                    rowData[field] = cell.querySelector('input').value;
-                }
-            });
-            dataToSave.push(rowData);
-        });
-
-        fetch('/settings/sessions/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dataToSave)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                toggleSessionEditMode(false);
-                sessionsTableBody.querySelectorAll('tr').forEach(row => {
-                    const id = row.dataset.id;
-                    const updatedRow = dataToSave.find(item => item.id == id);
-                    row.querySelectorAll('td[data-field]').forEach(cell => {
-                        const field = cell.dataset.field;
-                        if (field.startsWith('Is_') || field === 'Valid_for_Project') {
-                            cell.innerHTML = `<input type="checkbox" ${updatedRow[field] ? 'checked' : ''} disabled>`;
-                        } else {
-                             cell.textContent = updatedRow[field];
-                        }
-                    });
-                });
-            } else {
-                alert('Error saving changes: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while saving.');
-        });
-    }
 </script>
 {% endblock %}
-

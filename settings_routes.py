@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
 from .main_routes import login_required
-from .models import SessionType
+from .models import SessionType, User
 from vpemaster import db
 
 settings_bp = Blueprint('settings_bp', __name__)
@@ -17,7 +17,9 @@ def settings():
         return redirect(url_for('agenda_bp.agenda'))
 
     session_types = SessionType.query.order_by(SessionType.id.asc()).all()
-    return render_template('settings.html', session_types=session_types)
+
+    all_users = User.query.order_by(User.Username.asc()).all()
+    return render_template('settings.html', session_types=session_types, all_users=all_users)
 
 @settings_bp.route('/settings/sessions/update', methods=['POST'])
 @login_required

@@ -51,25 +51,17 @@
                 </a>
             </li>
             {% endif %}
-            {% if session.get('user_role') in ['Admin', 'VPE', 'Officer'] %}
-            <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
-                <a href="{{ url_for('contacts_bp.show_contacts') }}">
-                    <i class="fas fa-book nav-icon"></i>
-                    <span>Contact Book</span>
-                </a>
-            </li>
-            {% endif %}
             <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
                 <a href="{{ url_for('pathways_bp.pathway_library') }}">
                     <i class="fas fa-book-open nav-icon"></i>
                     <span>Pathway Library</span>
                 </a>
             </li>
-            {% if session.get('user_role') == 'Admin' %}
-            <li class="{% if request.endpoint and request.endpoint.startswith('users_bp') %}active{% endif %}">
-                <a href="{{ url_for('users_bp.show_users') }}">
-                    <i class="fas fa-users-cog nav-icon"></i>
-                    <span>User Management</span>
+            {% if session.get('user_role') in ['Admin', 'VPE'] %}
+            <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
+                <a href="{{ url_for('contacts_bp.show_contacts') }}">
+                    <i class="fas fa-book nav-icon"></i>
+                    <span>Contact Book</span>
                 </a>
             </li>
             <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
