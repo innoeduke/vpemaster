@@ -1,11 +1,13 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from datetime import timedelta
 
 app = Flask(__name__)
 
 # Secret key for session management
-app.config['SECRET_KEY'] = 'your_super_secret_key_here' # Replace with your secret key
+app.config['SECRET_KEY'] = '1a89cb38dec3f3b5d3800bf919473a01315ca601e896c1fdcdca59ae8fc2291d' # Replace with your secret key
+app.config['PERMANENT_SESSION_LIFETIME']=timedelta(days=30)
 
 # Configure the database connection
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqldb://shltmc:SHLTMC_leadership_D8@shltmc.mysql.pythonanywhere-services.com/shltmc$Education'
