@@ -485,6 +485,14 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener("input", function() {
             if (this.readOnly) return;
 
+            if (this.value === '') {
+                hiddenInput.value = '';
+                const currentRow = searchInput.closest('tr');
+                const designationInput = currentRow.querySelector('[data-field="Designation"] input');
+                if (designationInput) {
+                    designationInput.value = '';
+                }
+            }
             let container, item, val = this.value;
             closeAllLists();
             if (!val) return;
