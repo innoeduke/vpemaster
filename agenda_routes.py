@@ -316,6 +316,7 @@ def create_from_template():
 
     return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
 
+
 @agenda_bp.route('/agenda/export/<int:meeting_number>')
 @login_required
 def export_agenda(meeting_number):
@@ -344,7 +345,11 @@ def export_agenda(meeting_number):
         Project.Code_PI,
         Project.Code_PM,
         Project.Code_VC,
-        Project.Code_DTM
+        Project.Code_DTM,
+        Project.Purpose,
+        Project.Project_Name,
+        Project.Duration_Min,
+        Project.Duration_Max
     ).outerjoin(Contact, SessionLog.Owner_ID == Contact.id)\
      .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
      .outerjoin(Project, SessionLog.Project_ID == Project.ID)\
@@ -355,10 +360,12 @@ def export_agenda(meeting_number):
     writer = csv.writer(output)
     pathway_mapping = current_app.config['PATHWAY_MAPPING']
 
-    # Write column headers
+    # Write column headers for the main agenda
     writer.writerow(['Start Time', 'Session Title', 'Owner', 'Duration'])
 
     for log in logs:
+        # ... (Existing code to format and write the main agenda rows)
+        # This part remains the same.
         # Format session title
         session_title = log.session_type_title if log.Predefined else log.Session_Title
 
@@ -413,13 +420,55 @@ def export_agenda(meeting_number):
             duration
         ])
 
+
+    # --- Start of Speech Projects Export Section ---
+
+    writer.writerow([])  # Blank row for spacing
+    writer.writerow(['Speech Projects'])
+
+    speech_projects = db.session.query(
+        Project,
+        Contact.Working_Path
+    ).join(SessionLog, Project.ID == SessionLog.Project_ID)\
+     .join(Contact, SessionLog.Owner_ID == Contact.id)\
+     .filter(SessionLog.Meeting_Number == meeting_number)\
+     .all()
+
+    projects_to_sort = []
+    for project, working_path in speech_projects:
+        pathway_abbr = pathway_mapping.get(working_path)
+        if pathway_abbr:
+            project_code = getattr(project, f"Code_{pathway_abbr}", None)
+            if project_code:
+                projects_to_sort.append((project_code, project, working_path, pathway_abbr))
+
+    sorted_projects = sorted(projects_to_sort, key=lambda x: x[0])
+
+    for project_code, project, working_path, pathway_abbr in sorted_projects:
+        # BUG FIX 2: More accurate logic for Required/Elective
+        try:
+            level, project_num = map(int, project_code.split('.'))
+            if level <= 2 or project_num == 1:
+                project_type = "Required"
+            else:
+                project_type = "Elective"
+        except (ValueError, IndexError):
+            project_type = "N/A" # Fallback if code format is unexpected
+
+        duration = f"[{project.Duration_Min}'-{project.Duration_Max}']"
+        writer.writerow([f"{working_path} ({pathway_abbr}{project_code}) {project.Project_Name} ({project_type}) {duration}"])
+        writer.writerow([project.Purpose])
+        writer.writerow([])
+
     output.seek(0)
     return send_file(
-        io.BytesIO(output.getvalue().encode('utf-8')),
+        # BUG FIX 1: Use 'utf-8-sig' to handle special characters like 'é'
+        io.BytesIO(output.getvalue().encode('utf-8-sig')),
         mimetype='text/csv',
         as_attachment=True,
         download_name=f'{meeting_number}_agenda.csv'
     )
+
 
 @agenda_bp.route('/agenda/update', methods=['POST'])
 @login_required
