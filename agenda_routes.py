@@ -24,7 +24,9 @@ def _get_agenda_logs(meeting_number):
         Meeting.Meeting_Date,
         Project.Code_DL, Project.Code_EH, Project.Code_MS,
         Project.Code_PI, Project.Code_PM, Project.Code_VC,
-        Project.Code_DTM
+        Project.Code_DTM,
+        Project.Purpose,
+        Project.Project_Name
     ).join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
      .join(Meeting, Meeting.Meeting_Number == SessionLog.Meeting_Number)\
      .outerjoin(Project, SessionLog.Project_ID == Project.ID)

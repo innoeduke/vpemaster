@@ -58,7 +58,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for log, is_section, session_type_title, predefined, meeting_date, code_dl, code_eh, code_ms, code_pi, code_pm, code_vc, code_dtm in logs %}
+                {% for log, is_section, session_type_title, predefined, meeting_date, code_dl, code_eh, code_ms, code_pi, code_pm, code_vc, code_dtm, purpose, project_name in logs %}
                 <tr data-id="{{ log.id }}"
                     data-project-id="{{ log.Project_ID if log.Project_ID is not none else '' }}"
                     data-meeting-number="{{ log.Meeting_Number }}"
@@ -86,15 +86,25 @@
                                 {{ session_type_title }}
                             {% else %}
                                 {% if session_type_title == "Pathway Speech" %}
-                                    {{ log.Session_Title }}
-                                    {% set contact = contacts|selectattr('id', 'equalto', log.Owner_ID)|first %}
-                                    {% if contact and contact.Working_Path and config.PATHWAY_MAPPING[contact.Working_Path] %}
-                                        {% set pathway_code_map = {'DL': code_dl, 'EH': code_eh, 'MS': code_ms, 'PI': code_pi, 'PM': code_pm, 'VC': code_vc, 'DTM': code_dtm} %}
-                                        {% set pathway_suffix = config.PATHWAY_MAPPING[contact.Working_Path] %}
-                                        {% if pathway_suffix and pathway_code_map[pathway_suffix] %}
-                                            ({{ pathway_suffix }}{{ pathway_code_map[pathway_suffix] }})
+                                    <div class="tooltip-container" tabindex="0">
+                                        {{ log.Session_Title }}
+                                        {% set contact = contacts|selectattr('id', 'equalto', log.Owner_ID)|first %}
+                                        {% if contact and contact.Working_Path and config.PATHWAY_MAPPING[contact.Working_Path] %}
+                                            {% set pathway_code_map = {'DL': code_dl, 'EH': code_eh, 'MS': code_ms, 'PI': code_pi, 'PM': code_pm, 'VC': code_vc, 'DTM': code_dtm} %}
+                                            {% set pathway_suffix = config.PATHWAY_MAPPING[contact.Working_Path] %}
+                                            {% if pathway_suffix and pathway_code_map[pathway_suffix] %}
+                                                ({{ pathway_suffix }}{{ pathway_code_map[pathway_suffix] }})
+                                            {% endif %}
                                         {% endif %}
-                                    {% endif %}
+                                        {% if purpose %}
+                                            <div class="tooltip">
+                                                {% if project_name %}
+                                                    <strong>{{ project_name }}</strong><br><br>
+                                                {% endif %}
+                                                {{ purpose }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
                                 {% elif session_type_title == 'Evaluation' %}
                                     Evaluation for {{ log.Session_Title }}
                                 {% else %}

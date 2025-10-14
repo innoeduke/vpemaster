@@ -137,3 +137,66 @@
 .autocomplete-items div:hover {
     background-color: #e9e9e9;
 }
+
+/* --- Tooltip for Speech Purpose --- */
+.tooltip-container {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    outline: none; /* Removes the focus outline on mobile tap */
+}
+
+.tooltip-container .tooltip {
+    visibility: hidden;
+    width: 320px;
+    background-color: #333;
+    color: #fff;
+    text-align: left;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -160px; /* Half of width */
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.9em;
+    line-height: 1.4;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.tooltip-container .tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #333 transparent transparent transparent;
+}
+
+.tooltip-container:hover .tooltip,
+.tooltip-container:focus .tooltip,
+.tooltip-container:focus-within .tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+@media (max-width: 768px) {
+    .tooltip-container .tooltip {
+        width: 80vw;
+        max-width: 300px;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-left: 0;
+        bottom: 130%;
+    }
+
+    .tooltip-container .tooltip::after {
+        left: 50%;
+        transform: translateX(-50%);
+        margin-left: 0;
+    }
+}
