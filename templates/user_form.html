@@ -11,6 +11,10 @@
                 <td><input type="text" id="username" name="username" value="{{ user.Username if user else '' }}" required></td>
             </tr>
             <tr>
+                <td><label for="email">Email:</label></td>
+                <td><input type="email" id="email" name="email" value="{{ user.Email if user and user.Email else '' }}"></td>
+            </tr>
+            <tr>
                 <td><label for="contact_id">Link to Contact:</label></td>
                 <td>
                     <select id="contact_id" name="contact_id">
@@ -50,4 +54,3 @@
         </div>
     </form>
 {% endblock %}
-

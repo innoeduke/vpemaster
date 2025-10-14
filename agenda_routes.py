@@ -134,7 +134,7 @@ def _recalculate_start_times(meeting_numbers_to_update):
                 log.Start_Time = current_time
                 duration_to_add = int(log.Duration_Max or 0)
                 break_minutes = 1
-                if log.Type_ID == 31 and meeting.GE_Style == 'instant':  # Evaluation sessions
+                if log.Type_ID == 31 and meeting.GE_Style == 'immediate':  # Evaluation sessions
                     break_minutes += 1
                 dt_current_time = datetime.combine(datetime.today(), current_time)
                 next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
@@ -273,7 +273,7 @@ def create_from_template():
                     duration_max = session_type.Duration_Max
                     duration_min = session_type.Duration_Min
 
-                if type_id == 16 and ge_style == 'delayed':
+                if type_id == 16 and ge_style == 'deferred':
                     duration_max = 5
 
                 session_title = session_type.Title if session_type and session_type.Predefined else session_title_from_csv

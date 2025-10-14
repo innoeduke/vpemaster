@@ -71,6 +71,7 @@
 }
 
 .form-table input[type="text"],
+.form-table input[type="email"],
 .form-table input[type="password"],
 .form-table input[type="number"],
 .form-table select {

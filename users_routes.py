@@ -35,6 +35,7 @@ def user_form(user_id):
 
         if user:
             user.Username = request.form['username']
+            user.Email = request.form.get('email')
             user.Role = request.form['role']
             user.Contact_ID = contact_id if contact_id != 0 else None
             password = request.form.get('password')
@@ -44,6 +45,7 @@ def user_form(user_id):
             pass_hash = generate_password_hash(request.form['password'])
             new_user = User(
                 Username=request.form['username'],
+                Email=request.form.get('email'),
                 Pass_Hash=pass_hash,
                 Role=request.form['role'],
                 Contact_ID=contact_id if contact_id != 0 else None,

@@ -4,6 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from vpemaster.models import User
 from werkzeug.security import check_password_hash
 from functools import wraps
+from sqlalchemy import or_
 
 main_bp = Blueprint('main_bp', __name__)
 
@@ -20,9 +21,11 @@ def login_required(f):
 @main_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        login_identifier = request.form['username'] # This can be username or email
         password = request.form['password']
-        user = User.query.filter_by(Username=username).first()
+
+        # Query for user by username or email
+        user = User.query.filter(or_(User.Username == login_identifier, User.Email == login_identifier)).first()
 
         if user and check_password_hash(user.Pass_Hash, password):
             session.permanent = True

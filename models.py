@@ -16,6 +16,7 @@ class User(db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key=True)
     Username = db.Column(db.String(50), nullable=False, unique=True)
+    Email = db.Column(db.String(120), unique=True, nullable=True)
     Contact_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
     Pass_Hash = db.Column(db.String(255), nullable=False)
     Date_Created = db.Column(db.Date)
@@ -54,7 +55,7 @@ class Meeting(db.Model):
     Best_Evaluator_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     Best_Speaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     Best_Roletaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
-    GE_Style = db.Column(db.String(20), default='instant')
+    GE_Style = db.Column(db.String(20), default='immediate')
 
 class SessionType(db.Model):
     __tablename__ = 'Session_Types'
