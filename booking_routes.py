@@ -54,32 +54,27 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
         # Roles that must always have unique entries (one row per session log):
         if role_key in ["Prepared Speaker", "Individual Evaluator", "Backup Speaker"]:
 
-            # CORRECTED LOGIC: Check if a speaker name is attached to the evaluation session in the log
-            # The Session_Title field for this role is the speaker's name (e.g., 'Rosalía Shi').
             if role_key == "Individual Evaluator" and (log.Session_Title or ''):
                 speaker_name_for_display = log.Session_Title.strip()
                 role_display = "Individual Evaluator"
             else:
-                # For Prepared Speaker or an Evaluation without a title
                 role_display = role_key
                 speaker_name_for_display = None
 
-            # Use a unique key for each slot (session log ID)
             role_key_unique = f"{role_key}_{log.session_id}"
 
-            # Create the entry - no consolidation needed for these roles
             roles_dict[role_key_unique] = {
                 'role': role_display,
                 'role_key': role_key,
                 'owner_id': log.Owner_ID,
                 'owner_name': log.owner_name,
                 'session_ids': [log.session_id],
-                'speaker_name': speaker_name_for_display, # <-- NOW CORRECTLY SET
+                'speaker_name': speaker_name_for_display,
             }
 
-        # Roles that are unique per meeting (SAA, TME, etc.) and should be consolidated
+        # Roles that are unique per meeting and should be consolidated
         else:
-            role_key_unique = role_key # The key is the role name
+            role_key_unique = role_key
 
             if role_key_unique not in roles_dict:
                 roles_dict[role_key_unique] = {
@@ -88,24 +83,21 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
                     'owner_id': log.Owner_ID,
                     'owner_name': log.owner_name,
                     'session_ids': [log.session_id],
-                    'speaker_name': None, # <-- NEW KEY
+                    'speaker_name': None,
                 }
             else:
-                # Append session ID and update owner if a new one is found
                 roles_dict[role_key_unique]['session_ids'].append(log.session_id)
                 if log.Owner_ID:
                     roles_dict[role_key_unique]['owner_id'] = log.Owner_ID
                     roles_dict[role_key_unique]['owner_name'] = log.owner_name
-                roles_dict[role_key_unique]['speaker_name'] = None # Ensure it is included
+                roles_dict[role_key_unique]['speaker_name'] = None
 
     # Convert dict to list and add icons
     roles_with_icons = []
     for key, role_data in roles_dict.items():
         role_data['icon'] = ROLE_ICONS.get(role_data['role_key'], ROLE_ICONS['Default'])
-        # Use the first session_id for actions. The backend will handle finding all related ones.
         role_data['session_id'] = role_data['session_ids'][0]
         roles_with_icons.append(role_data)
-
 
     # Apply filtering and sorting
     if user_role not in ['Admin', 'VPE']:
@@ -124,8 +116,6 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
             .filter(SessionLog.Meeting_Number <= selected_meeting_number).first()
 
         if recent_speaker_log:
-            # The rule should prevent booking a NEW speech, but not hide an existing one.
-            # Keep roles that are NOT 'Prepared Speaker', OR keep the 'Prepared Speaker' role if it belongs to the current user.
             roles_with_icons = [
                 role for role in roles_with_icons
                 if role['role_key'] != 'Prepared Speaker' or (role['role_key'] == 'Prepared Speaker' and role['owner_id'] == current_user_contact_id)
@@ -137,11 +127,6 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
             x['role']
         ))
 
-        # Sort for members/officers
-        roles_with_icons.sort(key=lambda x: (
-            0 if x['owner_id'] == current_user_contact_id else 1 if not x['owner_id'] else 2,
-            x['role']
-        ))
     else:
         # Sort for VPE/Admin (by default meeting order)
          roles_with_icons.sort(key=lambda x: x['session_id'])
@@ -203,7 +188,7 @@ def booking(selected_meeting_number):
             user_bookings_by_date[date_str] = {
                 'date_info': {
                     'meeting_number': log.Meeting_Number,
-                    'short_date': log.Meeting_Date.strftime('%m-%d')
+                    'short_date': log.Meeting_Date.strftime('%m/%d/%Y')
                 },
                 'bookings': []
             }
@@ -278,4 +263,5 @@ def book_or_assign_role():
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e))
+
 

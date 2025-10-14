@@ -77,6 +77,13 @@ h1 {
     font-weight: bold;
 }
 
+.timeline-header .meeting-date {
+    font-weight: normal;
+    color: #888;
+    margin-left: 5px;
+    font-size: 0.8em;
+}
+
 .timeline-marker {
     width: 15px;
     height: 15px;

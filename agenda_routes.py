@@ -134,9 +134,10 @@ def _recalculate_start_times(meeting_numbers_to_update):
                 log.Start_Time = current_time
                 duration_to_add = int(log.Duration_Max or 0)
                 break_minutes = 1
+                # Add 1 min extra break after each IE session for immediate style only.
                 if log.Type_ID == 31 and meeting.GE_Style == 'immediate':  # Evaluation sessions
                     break_minutes += 1
-                dt_current_time = datetime.combine(datetime.today(), current_time)
+                dt_current_time = datetime.combine(meeting.Meeting_Date, current_time)
                 next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
                 current_time = next_dt.time()
             else:
@@ -169,12 +170,13 @@ def agenda():
             selected_meeting = None
 
     selected_meeting_date = None
+    selected_ge_style = None
 
-    selected_meeting_date = None
     if selected_meeting:
         meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting).first()
         if meeting:
             selected_meeting_date = meeting.Meeting_Date
+            selected_ge_style = meeting.GE_Style
 
     session_logs = _get_agenda_logs(selected_meeting)
     project_speakers = _get_project_speakers(selected_meeting)
@@ -217,6 +219,7 @@ def agenda():
                            meeting_numbers=meeting_numbers,
                            selected_meeting=selected_meeting,
                            selected_meeting_date=selected_meeting_date,
+                           selected_ge_style=selected_ge_style,
                            members=members,
                            project_speakers=project_speakers,
                            meeting_templates=meeting_templates)
@@ -273,8 +276,12 @@ def create_from_template():
                     duration_max = session_type.Duration_Max
                     duration_min = session_type.Duration_Min
 
-                if type_id == 16 and ge_style == 'deferred':
-                    duration_max = 5
+                # Adjust General Evaluation Report duration based on GE style
+                if session_type and session_type.Title == "General Evaluation Report":
+                    if ge_style == 'deferred':
+                        duration_max = 5
+                    else: # immediate
+                        duration_max = 3
 
                 session_title = session_type.Title if session_type and session_type.Predefined else session_title_from_csv
                 owner_id = None
@@ -307,7 +314,7 @@ def create_from_template():
                 if session_type and not session_type.Is_Section:
                     new_log.Start_Time = current_time
                     duration_to_add = int(duration_max or 0)
-                    dt_current_time = datetime.combine(datetime.today(), current_time)
+                    dt_current_time = datetime.combine(meeting_date, current_time)
                     next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
                     current_time = next_dt.time()
 
@@ -472,6 +479,37 @@ def export_agenda(meeting_number):
         download_name=f'{meeting_number}_agenda.csv'
     )
 
+@agenda_bp.route('/agenda/ge-style/update', methods=['POST'])
+@login_required
+def update_ge_style():
+    data = request.get_json()
+    meeting_number = data.get('meeting_number')
+    new_style = data.get('ge_style')
+
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found"), 404
+
+    meeting.GE_Style = new_style
+
+    # Adjust GE Report session duration based on the new style
+    ge_report_type = SessionType.query.filter_by(Title="General Evaluation Report").first()
+    if ge_report_type:
+        ge_report_log = SessionLog.query.filter_by(Meeting_Number=meeting_number, Type_ID=ge_report_type.id).first()
+        if ge_report_log:
+            if new_style == 'deferred':
+                ge_report_log.Duration_Max = 5
+            else:  # 'immediate'
+                ge_report_log.Duration_Max = 3
+
+    db.session.commit()
+
+    # After committing the style and duration changes, recalculate start times
+    _recalculate_start_times([meeting_number])
+    db.session.commit() # Commit again after recalculating
+
+    return jsonify(success=True)
+
 
 @agenda_bp.route('/agenda/update', methods=['POST'])
 @login_required
@@ -509,3 +547,4 @@ def delete_log(log_id):
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
+

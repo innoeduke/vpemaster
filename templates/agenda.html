@@ -15,8 +15,15 @@
                 {% endfor %}
             </select>
             {% if selected_meeting_date %}
-            <span id="meeting-date-display" style="margin-left: 5px;">{{ selected_meeting_date.strftime('%B %d, %Y') }}</span>
+            <span id="meeting-date-display">{{ selected_meeting_date.strftime('%B %d, %Y') }}</span>
             {% endif %}
+            <div id="ge-style-toggle" style="display: none; margin-left: 15px;">
+                <label for="ge-style-select">GE Style:</label>
+                <select id="ge-style-select" name="ge_style">
+                    <option value="immediate" {% if selected_ge_style == 'immediate' %}selected{% endif %}>Immediate</option>
+                    <option value="deferred" {% if selected_ge_style == 'deferred' %}selected{% endif %}>Deferred</option>
+                </select>
+            </div>
         </div>
 
         {% if session.get('user_role') in ['Admin', 'VPE'] %}
@@ -35,7 +42,8 @@
          data-session-types='{{ session_types|tojson|safe }}'
          data-contacts='{{ contacts_data|tojson|safe }}'
          data-projects='{{ projects|tojson|safe }}'
-         data-project-speakers='{{ project_speakers|tojson|safe }}'>
+         data-project-speakers='{{ project_speakers|tojson|safe }}'
+         data-ge-style="{{ selected_ge_style }}">
 
         <table id="logs-table">
             <thead>
@@ -83,33 +91,28 @@
                     {% else %}
                         <td class="non-edit-mode-cell">{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}</td>
                         <td class="non-edit-mode-cell">
-                            {% if predefined %}
-                                {{ session_type_title }}
-                            {% else %}
-                                {% if session_type_title == "Pathway Speech" %}
+                             {% if session_type_title == "Pathway Speech" %}
+                                <div class="speech-tooltip-wrapper">
+                                    {{ log.Session_Title }}
                                     {% set contact = contacts|selectattr('id', 'equalto', log.Owner_ID)|first %}
-                                    {% set project_code_str = '' %}
                                     {% if contact and contact.Working_Path and config.PATHWAY_MAPPING[contact.Working_Path] %}
                                         {% set pathway_code_map = {'DL': code_dl, 'EH': code_eh, 'MS': code_ms, 'PI': code_pi, 'PM': code_pm, 'VC': code_vc, 'DTM': code_dtm} %}
                                         {% set pathway_suffix = config.PATHWAY_MAPPING[contact.Working_Path] %}
                                         {% if pathway_suffix and pathway_code_map[pathway_suffix] %}
-                                            {% set project_code_str = ' (' ~ pathway_suffix ~ pathway_code_map[pathway_suffix] ~ ')' %}
+                                            ({{ pathway_suffix }}{{ pathway_code_map[pathway_suffix] }})
                                         {% endif %}
                                     {% endif %}
-                                    <div class="tooltip-container" tabindex="0">
-                                        {{ log.Session_Title }}{{ project_code_str }}
-                                        {% if purpose %}
-                                        <div class="speech-tooltip">
-                                            <strong>{{ project_name }}</strong><br>
-                                            {{ purpose }}
-                                        </div>
-                                        {% endif %}
+                                    <div class="speech-tooltip">
+                                        <strong>{{ project_name }}</strong><br>
+                                        {{ purpose }}
                                     </div>
-                                {% elif session_type_title == 'Evaluation' %}
-                                    Evaluation for {{ log.Session_Title }}
-                                {% else %}
-                                    {{ log.Session_Title }}
-                                {% endif %}
+                                </div>
+                            {% elif session_type_title == 'Evaluation' %}
+                                Evaluation for {{ log.Session_Title }}
+                            {% elif predefined %}
+                                {{ session_type_title }}
+                            {% else %}
+                                {{ log.Session_Title }}
                             {% endif %}
                         </td>
                         <td class="non-edit-mode-cell">

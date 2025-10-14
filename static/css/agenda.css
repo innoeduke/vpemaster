@@ -8,16 +8,19 @@
     max-width: 800px;
 }
 
-/* Hide sessions marked as hidden in non-edit mode */
-.table-container:not(.edit-mode-active) .hidden-session {
-    display: none;
+.action-bar .button-group {
+    justify-content: flex-end;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
 }
+
 
 .inline-filter-group {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-grow: 1; /* Allow this group to take up space */
 }
+
 
 #meeting-date-display {
     font-size: 1em;
@@ -35,6 +38,13 @@
 
 
 /* Agenda Edit Mode */
+.table-container.edit-mode-active tr.hidden-session-view {
+    background-color: #fffbe6; /* Yellow background for hidden sessions in edit mode */
+}
+
+.hidden-session-view {
+    display: none;
+}
 
 .non-editable-input {
     border: none;
@@ -59,6 +69,13 @@
     max-width: 800px;
     margin: 0 auto;
 }
+.table-container.edit-mode-active tr:not(.hidden-session-view) .hidden-session-view {
+    display: table-row;
+}
+.table-container.edit-mode-active .hidden-session-view {
+    display: table-row;
+}
+
 
 .table-container.edit-mode-active th,
 .table-container.edit-mode-active td {
@@ -143,46 +160,44 @@
     background-color: #e9e9e9;
 }
 
-/* --- Tooltip Styles --- */
-.tooltip-container {
+/* --- Speech Project Tooltip --- */
+.speech-project-hover {
     position: relative;
-    display: inline-block;
-    cursor: pointer;
+    cursor: help;
 }
 
-.speech-tooltip {
+.speech-project-tooltip {
     visibility: hidden;
-    width: 320px;
-    background-color: #333;
+    width: 280px;
+    background-color: #555;
     color: #fff;
     text-align: left;
     border-radius: 6px;
-    padding: 10px;
+    padding: 8px;
     position: absolute;
     z-index: 1;
     bottom: 125%;
     left: 50%;
-    margin-left: -160px; /* half of width */
+    margin-left: -140px; /* Use half of the width to center */
     opacity: 0;
     transition: opacity 0.3s;
-    white-space: normal; /* Allow text to wrap */
+    font-size: 0.8em;
+    line-height: 1.4;
 }
 
-/* Arrow for the tooltip */
-.speech-tooltip::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: #333 transparent transparent transparent;
+.speech-project-tooltip strong {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 4px;
 }
 
-.tooltip-container:hover .speech-tooltip,
-.tooltip-container:focus .speech-tooltip,
-.tooltip-container:focus-within .speech-tooltip {
+.speech-project-hover:hover .speech-project-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* For mobile touch */
+.speech-project-hover:active .speech-project-tooltip {
     visibility: visible;
     opacity: 1;
 }

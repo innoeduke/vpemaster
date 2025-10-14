@@ -20,7 +20,7 @@
                 <div class="timeline-event" data-meeting-number="{{ group.date_info.meeting_number }}">
                     <div class="timeline-header">
                         <span class="meeting-number">#{{ group.date_info.meeting_number }}</span>
-                        <span>{{ group.date_info.short_date }}</span>
+                        <span class="meeting-date">{{ group.date_info.short_date }}</span>
                     </div>
                     <div class="timeline-marker"></div>
                     <div class="timeline-roles-list">
@@ -168,4 +168,3 @@ function assignRole(sessionId, roleKey, contactId) {
 }
 </script>
 {% endblock %}
-

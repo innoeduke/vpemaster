@@ -32,12 +32,19 @@
 .nav-pane h2 {
     margin: 0;
     font-size: 1.2rem;
-    color: white;
+    color: #f2c94c;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
     margin-left: 10px;
     white-space: nowrap;
     line-height: 1;
+}
+
+.nav-pane h2 sup {
+    font-size: 0.6em;
+    font-weight: normal;
+    color: white;
+    margin-left: 2px;
 }
 
 .nav-pane.expanded h2 {

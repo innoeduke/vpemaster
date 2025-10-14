@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const tableContainer = document.getElementById('table-container');
     const tableBody = document.querySelector('#logs-table tbody');
     const contactForm = document.getElementById("contactForm");
+    const geStyleToggle = document.getElementById('ge-style-toggle');
+    const geStyleSelect = document.getElementById('ge-style-select');
+
 
     // --- Data from Template ---
     const sessionTypes = JSON.parse(tableContainer.dataset.sessionTypes);
@@ -77,9 +80,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+        if (geStyleSelect) {
+            geStyleSelect.addEventListener('change', handleGeStyleChange);
+        }
     }
 
     // --- Core Functions ---
+
+    function handleGeStyleChange() {
+        const meetingNumber = meetingFilter.value;
+        const newStyle = geStyleSelect.value;
+
+        fetch(`/agenda/ge-style/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ meeting_number: meetingNumber, ge_style: newStyle }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // The backend recalculates, so we just need to refresh the page to see changes
+                window.location.reload();
+            } else {
+                alert('Error updating GE Style: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the GE Style.');
+        });
+    }
+
 
     function toggleEditMode(enable) {
         isEditing = enable;
@@ -275,6 +306,9 @@ document.addEventListener('DOMContentLoaded', () => {
         addRowButton.style.display = isEditMode ? 'inline-block' : 'none';
         createButton.style.display = isEditMode ? 'none' : 'inline-block';
         exportButton.style.display = isEditMode ? 'none' : 'inline-block';
+        if (geStyleToggle) {
+            geStyleToggle.style.display = isEditMode ? 'block' : 'none';
+        }
     }
 
     function initializeSortable(enable) {
@@ -601,3 +635,4 @@ function closeCreateAgendaModal() {
         createAgendaModal.style.display = 'none';
     }
 }
+
