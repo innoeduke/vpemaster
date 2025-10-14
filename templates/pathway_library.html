@@ -6,6 +6,37 @@
 <div id="pathway-library-container">
     <h1>Pathway Library</h1>
 
+    <style>
+        .markdown-editor-container {
+            display: flex;
+            gap: 15px;
+        }
+        .markdown-editor-container.hidden {
+            display: none !important;
+        }
+        .markdown-editor-container textarea,
+        .markdown-preview {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            min-height: 120px;
+            box-sizing: border-box;
+            border-radius: 4px;
+        }
+        .markdown-editor-container textarea {
+            border-right: none;
+            resize: vertical;
+            font-family: monospace;
+        }
+        .markdown-preview {
+            background-color: #f8f8f8;
+            border-left: 1px solid #ccc;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+        /* The plain-text-content class is no longer needed since content is raw HTML */
+    </style>
+
     <div class="filters-container">
         <div class="form-group">
             <label for="path">Path:</label>
@@ -16,7 +47,7 @@
                 <option value="PI">Persuasive Influence</option>
                 <option value="PM">Presentation Mastery</option>
                 <option value="VC">Visionary Communication</option>
-                <option value="VC">Distinguished Toastmasters</option>
+                <option value="DTM">Distinguished Toastmasters</option>
             </select>
         </div>
         <div class="form-group">
@@ -53,33 +84,48 @@
             <div class="path-code-box path-pi" id="pi-code" data-path="PI">PI: <span></span></div>
             <div class="path-code-box path-pm" id="pm-code" data-path="PM">PM: <span></span></div>
             <div class="path-code-box path-vc" id="vc-code" data-path="VC">VC: <span></span></div>
-            <div class="path-code-box path-dtm" id="dtm-code" data-path="DTM">VC: <span></span></div>
+            <div class="path-code-box path-dtm" id="dtm-code" data-path="DTM">DTM: <span></span></div>
         </div>
         <br/>
         <div class="project-section">
             <h3>Purpose</h3>
             <p id="project-purpose"></p>
-            <textarea id="edit-purpose" class="edit-textarea" style="display: none;" rows="3"></textarea>
+            <div id="editor-purpose-container" class="markdown-editor-container hidden">
+                <textarea id="edit-purpose" class="edit-textarea" rows="3"></textarea>
+                <div class="markdown-preview" id="preview-purpose"></div>
+            </div>
         </div>
         <div class="project-section">
             <h3>Introduction</h3>
             <p id="project-introduction"></p>
-            <textarea id="edit-introduction" class="edit-textarea" style="display: none;" rows="3"></textarea>
+            <div id="editor-introduction-container" class="markdown-editor-container hidden">
+                <textarea id="edit-introduction" class="edit-textarea" rows="3"></textarea>
+                <div class="markdown-preview" id="preview-introduction"></div>
+            </div>
         </div>
         <div class="project-section">
             <h3>Overview</h3>
             <p id="project-overview"></p>
-            <textarea id="edit-overview" class="edit-textarea" style="display: none;" rows="3"></textarea>
+            <div id="editor-overview-container" class="markdown-editor-container hidden">
+                <textarea id="edit-overview" class="edit-textarea" rows="3"></textarea>
+                <div class="markdown-preview" id="preview-overview"></div>
+            </div>
         </div>
         <div class="project-section">
             <h3>Requirements</h3>
             <p id="project-requirements"></p>
-            <textarea id="edit-requirements" class="edit-textarea" style="display: none;" rows="3"></textarea>
+            <div id="editor-requirements-container" class="markdown-editor-container hidden">
+                <textarea id="edit-requirements" class="edit-textarea" rows="3"></textarea>
+                <div class="markdown-preview" id="preview-requirements"></div>
+            </div>
         </div>
         <div class="project-section">
             <h3>Resources</h3>
             <p id="project-resources"></p>
-            <textarea id="edit-resources" class="edit-textarea" style="display: none;" rows="3"></textarea>
+            <div id="editor-resources-container" class="markdown-editor-container hidden">
+                <textarea id="edit-resources" class="edit-textarea" rows="3"></textarea>
+                <div class="markdown-preview" id="preview-resources"></div>
+            </div>
         </div>
     </div>
 </div>
@@ -87,34 +133,144 @@
         const projects = {{ projects|tojson }};
         let isEditing = false;
 
-        const pathSelect = document.getElementById('path');
-        const levelSelect = document.getElementById('level'); // Changed from levelRadios
-        const projectSelect = document.getElementById('project');
-        const projectDetails = document.getElementById('project-details');
-        const pathBoxes = document.querySelectorAll('.path-code-box');
-        const editButton = document.getElementById('edit-project-btn');
-        const cancelButton = document.getElementById('cancel-project-btn');
-        const textareas = document.querySelectorAll('#project-details .project-section textarea');
+        // --- Functions defined globally for accessibility ---
 
-        function autoResizeTextarea(event) {
-            const textarea = event.target;
+        // NOTE: This client-side function is ONLY used for the LIVE PREVIEW,
+        // the server-side Python module handles the actual display rendering.
+        function markdownToHtml(markdown) {
+            let html = markdown || '';
+
+            html = html.replace(/\n/g, '<br>');
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            html = html.replace(/_(.*?)_/g, '<em>$1</em>');
+            html = html.replace(/<br>\* (.*?)(<br>|$)/g, '<li>$1</li>');
+            if (html.includes('<li>')) {
+                html = '<ul>' + html + '</ul>';
+                html = html.replace(/<br><ul>/g, '<ul>');
+                html = html.replace(/<\/li><br>/g, '</li>');
+            }
+            return html;
+        }
+
+        function autoResizeTextarea(textarea) {
             textarea.style.height = 'auto';
             textarea.style.height = textarea.scrollHeight + 'px';
         }
 
+        function updatePreview(textarea) {
+            const fieldName = textarea.id.replace('edit-', '');
+            const previewElement = document.getElementById(`preview-${fieldName}`);
+            if (previewElement) {
+                previewElement.innerHTML = markdownToHtml(textarea.value);
+            }
+            autoResizeTextarea(textarea);
+        }
+
+        function updatePathCodes(project) {
+            document.querySelector('#dl-code span').textContent = project.Code_DL || 'N/A';
+            document.querySelector('#eh-code span').textContent = project.Code_EH || 'N/A';
+            document.querySelector('#ms-code span').textContent = project.Code_MS || 'N/A';
+            document.querySelector('#pi-code span').textContent = project.Code_PI || 'N/A';
+            document.querySelector('#pm-code span').textContent = project.Code_PM || 'N/A';
+            document.querySelector('#vc-code span').textContent = project.Code_VC || 'N/A';
+            document.querySelector('#dtm-code span').textContent = project.Code_DTM || 'N/A';
+        }
+
+        function clearPathCodes() {
+            document.querySelectorAll('.path-code-box span').forEach(span => span.textContent = '');
+        }
+
+        function toggleEditView() {
+            const editButton = document.getElementById('edit-project-btn');
+            const cancelButton = document.getElementById('cancel-project-btn');
+            const pTags = document.querySelectorAll('#project-details .project-section p');
+            const textareas = document.querySelectorAll('#project-details .project-section textarea');
+            const editorContainers = document.querySelectorAll('.markdown-editor-container');
+
+            const projectSelect = document.getElementById('project');
+            const projectId = parseInt(projectSelect.value, 10);
+            const currentProject = projects.find(p => p.ID === projectId);
+
+
+            if (isEditing) {
+                editButton.innerHTML = '<i class="fas fa-check"></i>';
+                cancelButton.style.display = 'inline-block';
+
+                pTags.forEach(p => p.style.display = 'none');
+                editorContainers.forEach(container => container.classList.remove('hidden'));
+
+                textareas.forEach(textarea => {
+                    const fieldName = textarea.id.replace('edit-', '');
+
+                    if (currentProject) {
+                        // FIX: Use the raw Markdown field (e.g., Introduction_raw) to populate the textarea
+                        const rawContent = currentProject[`${fieldName}_raw`] || '';
+                        textarea.value = rawContent;
+
+                        updatePreview(textarea);
+                    }
+                });
+            } else {
+                editButton.innerHTML = '<i class="fas fa-edit"></i>';
+                cancelButton.style.display = 'none';
+
+                pTags.forEach(p => p.style.display = 'block');
+                editorContainers.forEach(container => container.classList.add('hidden'));
+
+                displayProjectDetails();
+            }
+        }
+
+        function displayProjectDetails() {
+            const projectSelect = document.getElementById('project');
+            const projectDetails = document.getElementById('project-details');
+
+            const projectId = parseInt(projectSelect.value, 10);
+            const project = projects.find(p => p.ID === projectId);
+
+            if (project) {
+                document.getElementById('project-name').textContent = project.Project_Name || '';
+
+                // The server now provides rendered HTML, so we use innerHTML
+                document.getElementById('project-purpose').innerHTML = project.Purpose || '';
+                document.getElementById('project-introduction').innerHTML = project.Introduction || '';
+                document.getElementById('project-overview').innerHTML = project.Overview || '';
+                document.getElementById('project-requirements').innerHTML = project.Requirements || '';
+                document.getElementById('project-resources').innerHTML = project.Resources || '';
+
+                updatePathCodes(project);
+                projectDetails.style.display = 'block';
+            } else {
+                projectDetails.style.display = 'none';
+                clearPathCodes();
+            }
+
+            if (isEditing) {
+                toggleEditView();
+            }
+        }
+
         function filterProjects() {
+            const pathSelect = document.getElementById('path');
+            const levelSelect = document.getElementById('level');
+            const projectSelect = document.getElementById('project');
+            const projectDetails = document.getElementById('project-details');
+
             const selectedPathSuffix = pathSelect.value;
             const selectedPath = "Code_" + selectedPathSuffix;
-            const levelValue = levelSelect.value; // Changed from querySelector
+            const levelValue = levelSelect.value;
 
             projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
             projectDetails.style.display = 'none';
             clearPathCodes();
             if (isEditing) {
+                isEditing = false;
                 toggleEditView();
             }
 
-            if (levelValue) { // Check if a level is selected
+            if (levelValue) {
                 const filteredProjects = projects.filter(p => {
                     const code = p[selectedPath];
                     return code && code.startsWith(levelValue);
@@ -134,73 +290,12 @@
             }
         }
 
-        function displayProjectDetails() {
-            const projectId = parseInt(projectSelect.value, 10);
-            const project = projects.find(p => p.ID === projectId);
-
-            if (project) {
-                document.getElementById('project-name').textContent = project.Project_Name;
-                document.getElementById('project-purpose').textContent = project.Purpose;
-                document.getElementById('project-introduction').textContent = project.Introduction;
-                document.getElementById('project-overview').textContent = project.Overview;
-                document.getElementById('project-requirements').textContent = project.Requirements;
-                document.getElementById('project-resources').textContent = project.Resources;
-
-                updatePathCodes(project);
-                projectDetails.style.display = 'block';
-            } else {
-                projectDetails.style.display = 'none';
-                clearPathCodes();
-            }
-
-            if (isEditing) {
-                toggleEditView();
-            }
-        }
-
-        function updatePathCodes(project) {
-            document.querySelector('#dl-code span').textContent = project.Code_DL || 'N/A';
-            document.querySelector('#eh-code span').textContent = project.Code_EH || 'N/A';
-            document.querySelector('#ms-code span').textContent = project.Code_MS || 'N/A';
-            document.querySelector('#pi-code span').textContent = project.Code_PI || 'N/A';
-            document.querySelector('#pm-code span').textContent = project.Code_PM || 'N/A';
-            document.querySelector('#vc-code span').textContent = project.Code_VC || 'N/A';
-            document.querySelector('#dtm-code span').textContent = project.Code_DTM || 'N/A';
-        }
-
-        function clearPathCodes() {
-            document.querySelectorAll('.path-code-box span').forEach(span => span.textContent = '');
-        }
-
-        function toggleEditView() {
-            isEditing = !isEditing;
-
-            const pTags = document.querySelectorAll('#project-details .project-section p');
-
-            if (isEditing) {
-                editButton.innerHTML = '<i class="fas fa-check"></i>';
-                cancelButton.style.display = 'inline-block';
-                pTags.forEach(p => p.style.display = 'none');
-                textareas.forEach(textarea => {
-                    const pId = textarea.id.replace('edit-', 'project-');
-                    const pElement = document.getElementById(pId);
-                    textarea.value = pElement.textContent;
-                    textarea.style.display = 'block';
-                    autoResizeTextarea({ target: textarea });
-                });
-            } else {
-                editButton.innerHTML = '<i class="fas fa-edit"></i>';
-                cancelButton.style.display = 'none';
-                pTags.forEach(p => p.style.display = 'block');
-                textareas.forEach(textarea => textarea.style.display = 'none');
-                displayProjectDetails();
-            }
-        }
-
         function saveProjectChanges() {
+            const projectSelect = document.getElementById('project');
             const projectId = parseInt(projectSelect.value, 10);
             if (!projectId) return;
 
+            // Send raw markdown content
             const data = {
                 Introduction: document.getElementById('edit-introduction').value,
                 Overview: document.getElementById('edit-overview').value,
@@ -219,12 +314,20 @@
                 if (data.success) {
                     const projectIndex = projects.findIndex(p => p.ID === projectId);
                     if (projectIndex > -1) {
+                        // Update the local array with BOTH rendered HTML and raw Markdown
                         projects[projectIndex].Introduction = data.Introduction;
                         projects[projectIndex].Overview = data.Overview;
                         projects[projectIndex].Purpose = data.Purpose;
                         projects[projectIndex].Requirements = data.Requirements;
                         projects[projectIndex].Resources = data.Resources;
+
+                        projects[projectIndex].Introduction_raw = data.Introduction_raw;
+                        projects[projectIndex].Overview_raw = data.Overview_raw;
+                        projects[projectIndex].Purpose_raw = data.Purpose_raw;
+                        projects[projectIndex].Requirements_raw = data.Requirements_raw;
+                        projects[projectIndex].Resources_raw = data.Resources_raw;
                     }
+                    isEditing = false;
                     toggleEditView();
                 } else {
                      alert('Failed to save changes.');
@@ -236,42 +339,57 @@
             });
         }
 
-        window.onload = function() {
-            pathSelect.value = 'PM';
-            levelSelect.value = '1'; // Set default level
-            filterProjects();
-        };
 
-        pathSelect.addEventListener('change', filterProjects);
-        levelSelect.addEventListener('change', filterProjects); // Changed from levelRadios
-        projectSelect.addEventListener('change', displayProjectDetails);
+        document.addEventListener('DOMContentLoaded', function() {
+            const pathSelect = document.getElementById('path');
+            const levelSelect = document.getElementById('level');
+            const projectSelect = document.getElementById('project');
+            const pathBoxes = document.querySelectorAll('.path-code-box');
+            const editButton = document.getElementById('edit-project-btn');
+            const cancelButton = document.getElementById('cancel-project-btn');
+            const textareas = document.querySelectorAll('#project-details .project-section textarea');
 
-        pathBoxes.forEach(box => {
-            box.addEventListener('click', function() {
-                pathSelect.value = this.dataset.path;
+            if (pathSelect && levelSelect) {
+                pathSelect.value = 'PM';
+                levelSelect.value = '1';
                 filterProjects();
-            });
-        });
+            }
 
-        if (editButton) {
-            editButton.addEventListener('click', () => {
-                if (isEditing) {
-                    saveProjectChanges();
-                } else {
+            if (pathSelect) pathSelect.addEventListener('change', filterProjects);
+            if (levelSelect) levelSelect.addEventListener('change', filterProjects);
+            if (projectSelect) projectSelect.addEventListener('change', displayProjectDetails);
+
+            pathBoxes.forEach(box => {
+                box.addEventListener('click', function() {
+                    if (pathSelect) pathSelect.value = this.dataset.path;
+                    filterProjects();
+                });
+            });
+
+            if (editButton) {
+                editButton.addEventListener('click', () => {
+                    if (isEditing) {
+                        saveProjectChanges();
+                    } else {
+                        isEditing = true;
+                        toggleEditView();
+                    }
+                });
+            }
+
+            if (cancelButton) {
+                cancelButton.addEventListener('click', () => {
+                    isEditing = false;
                     toggleEditView();
-                }
-            });
-        }
+                });
+            }
 
-        if (cancelButton) {
-            cancelButton.addEventListener('click', () => {
-                toggleEditView();
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', function(event) {
+                    updatePreview(event.target);
+                });
             });
-        }
 
-        textareas.forEach(textarea => {
-            textarea.addEventListener('input', autoResizeTextarea);
         });
-
     </script>
 {% endblock %}
