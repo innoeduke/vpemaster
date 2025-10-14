@@ -5,22 +5,20 @@
     justify-content: space-between;
     align-items: center;
     margin: 20px auto;
-    max-width: 800px;
+    max-width: 100%;
 }
 
-.action-bar .button-group {
-    justify-content: flex-end;
-    flex-shrink: 0; /* Prevent buttons from shrinking */
+.action-bar-left, .action-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
-
 
 .inline-filter-group {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex-grow: 1; /* Allow this group to take up space */
 }
-
 
 #meeting-date-display {
     font-size: 1em;
@@ -36,15 +34,63 @@
     text-align: center;
 }
 
-
-/* Agenda Edit Mode */
-.table-container.edit-mode-active tr.hidden-session-view {
-    background-color: #fffbe6; /* Yellow background for hidden sessions in edit mode */
-}
-
-.hidden-session-view {
+/* Hidden Rows */
+.hidden-row {
     display: none;
 }
+.edit-mode-active .hidden-row {
+    display: table-row;
+}
+.edit-mode-active .hidden-row td {
+    background-color: #fffbe6; /* Light yellow */
+}
+
+
+/* --- Tooltip --- */
+.speech-tooltip-wrapper {
+    position: relative;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.speech-tooltip {
+    visibility: hidden;
+    width: 320px;
+    background-color: #333;
+    color: #fff;
+    text-align: left;
+    border-radius: 6px;
+    padding: 10px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -160px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 14px;
+}
+
+.speech-tooltip-wrapper:hover .speech-tooltip,
+.speech-tooltip-wrapper:focus .speech-tooltip {
+    visibility: visible;
+    opacity: 1;
+}
+
+.speech-tooltip .tooltip-title {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 8px; /* Creates space between title and purpose */
+}
+
+.speech-tooltip .tooltip-purpose {
+    font-size: 0.85em; /* Smaller font size relative to the tooltip's base */
+    font-style: italic;
+    line-height: 1.4;
+}
+
+
+/* Agenda Edit Mode */
 
 .non-editable-input {
     border: none;
@@ -65,43 +111,35 @@
 #logs-table .edit-mode-header th:nth-child(7) { width: 5%; }  /* Max */
 #logs-table .edit-mode-header th:nth-child(8) { width: 5%; } /* Actions */
 
-.table-container:not(.edit-mode-active) {
-    max-width: 800px;
+.table-container {
+    max-width: 100%;
     margin: 0 auto;
 }
-.table-container.edit-mode-active tr:not(.hidden-session-view) .hidden-session-view {
-    display: table-row;
-}
-.table-container.edit-mode-active .hidden-session-view {
-    display: table-row;
-}
 
-
-.table-container.edit-mode-active th,
-.table-container.edit-mode-active td {
+.edit-mode-active th,
+.edit-mode-active td {
     vertical-align: middle;
 }
 
-.table-container.edit-mode-active td select,
-.table-container.edit-mode-active td input[type="text"],
-.table-container.edit-mode-active td input[type="number"] {
+.edit-mode-active td select,
+.edit-mode-active td input[type="text"],
+.edit-mode-active td input[type="number"] {
     width: 100%;
     box-sizing: border-box;
     height: 30px; /* Consistent height */
     padding: 5px;
 }
 
-.table-container.edit-mode-active tr[data-is-section="true"] td[data-field="Session_Title"] input {
+.edit-mode-active tr[data-is-section="true"] td[data-field="Session_Title"] input {
     width: 50%;
     text-align: center;
 }
 
-.table-container.edit-mode-active td[data-field="Meeting_Seq"] input,
-.table-container.edit-mode-active td[data-field="Start_Time"] input {
+.edit-mode-active td[data-field="Meeting_Seq"] input,
+.edit-mode-active td[data-field="Start_Time"] input {
     border: none;
     background-color: transparent;
     outline: none;
-    /* This is the key line to make the input non-editable */
     pointer-events: none;
 }
 
@@ -158,47 +196,5 @@
 
 .autocomplete-items div:hover {
     background-color: #e9e9e9;
-}
-
-/* --- Speech Project Tooltip --- */
-.speech-project-hover {
-    position: relative;
-    cursor: help;
-}
-
-.speech-project-tooltip {
-    visibility: hidden;
-    width: 280px;
-    background-color: #555;
-    color: #fff;
-    text-align: left;
-    border-radius: 6px;
-    padding: 8px;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%;
-    left: 50%;
-    margin-left: -140px; /* Use half of the width to center */
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 0.8em;
-    line-height: 1.4;
-}
-
-.speech-project-tooltip strong {
-    font-weight: bold;
-    display: block;
-    margin-bottom: 4px;
-}
-
-.speech-project-hover:hover .speech-project-tooltip {
-    visibility: visible;
-    opacity: 1;
-}
-
-/* For mobile touch */
-.speech-project-hover:active .speech-project-tooltip {
-    visibility: visible;
-    opacity: 1;
 }
 

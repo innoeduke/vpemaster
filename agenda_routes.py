@@ -120,7 +120,7 @@ def _create_or_update_session(item, meeting_number, seq):
 def _recalculate_start_times(meeting_numbers_to_update):
     for meeting_num in meeting_numbers_to_update:
         meeting = Meeting.query.filter_by(Meeting_Number=meeting_num).first()
-        if not meeting or not meeting.Start_Time:
+        if not meeting or not meeting.Start_Time or not meeting.Meeting_Date:
             continue
 
         current_time = meeting.Start_Time
@@ -134,8 +134,8 @@ def _recalculate_start_times(meeting_numbers_to_update):
                 log.Start_Time = current_time
                 duration_to_add = int(log.Duration_Max or 0)
                 break_minutes = 1
-                # Add 1 min extra break after each IE session for immediate style only.
-                if log.Type_ID == 31 and meeting.GE_Style == 'immediate':  # Evaluation sessions
+                # General Evaluation Report ID is 31, Individual Evaluation is 16
+                if log.Type_ID == 16 and meeting.GE_Style == 'immediate':
                     break_minutes += 1
                 dt_current_time = datetime.combine(meeting.Meeting_Date, current_time)
                 next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
@@ -151,9 +151,10 @@ def agenda():
     meeting_numbers = [num[0] for num in meeting_numbers_query]
 
     selected_meeting_str = request.args.get('meeting_number')
+    selected_meeting_num = None
 
     if selected_meeting_str:
-        selected_meeting = int(selected_meeting_str)
+        selected_meeting_num = int(selected_meeting_str)
     else:
         # Find the most recent upcoming meeting number
         upcoming_meeting = Meeting.query\
@@ -162,24 +163,18 @@ def agenda():
             .first()
 
         if upcoming_meeting:
-            selected_meeting = upcoming_meeting.Meeting_Number
+            selected_meeting_num = upcoming_meeting.Meeting_Number
         elif meeting_numbers:
             # Fallback to the most recent existing meeting (highest meeting number)
-            selected_meeting = meeting_numbers[0]
-        else:
-            selected_meeting = None
+            selected_meeting_num = meeting_numbers[0]
 
-    selected_meeting_date = None
-    selected_ge_style = None
+    selected_meeting = None
+    if selected_meeting_num:
+        selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_num).first()
 
-    if selected_meeting:
-        meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting).first()
-        if meeting:
-            selected_meeting_date = meeting.Meeting_Date
-            selected_ge_style = meeting.GE_Style
 
-    session_logs = _get_agenda_logs(selected_meeting)
-    project_speakers = _get_project_speakers(selected_meeting)
+    session_logs = _get_agenda_logs(selected_meeting_num)
+    project_speakers = _get_project_speakers(selected_meeting_num)
 
     # Data for templates and JavaScript
     projects = Project.query.order_by(Project.Project_Name).all()
@@ -187,7 +182,8 @@ def agenda():
         {
             "ID": p.ID, "Project_Name": p.Project_Name, "Code_DL": p.Code_DL,
             "Code_EH": p.Code_EH, "Code_MS": p.Code_MS, "Code_PI": p.Code_PI,
-            "Code_PM": p.Code_PM, "Code_VC": p.Code_VC, "Code_DTM": p.Code_DTM
+            "Code_PM": p.Code_PM, "Code_VC": p.Code_VC, "Code_DTM": p.Code_DTM,
+            "Purpose": p.Purpose
         } for p in projects
     ]
     pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
@@ -218,8 +214,6 @@ def agenda():
                            pathways=pathways,
                            meeting_numbers=meeting_numbers,
                            selected_meeting=selected_meeting,
-                           selected_meeting_date=selected_meeting_date,
-                           selected_ge_style=selected_ge_style,
                            members=members,
                            project_speakers=project_speakers,
                            meeting_templates=meeting_templates)
@@ -276,12 +270,11 @@ def create_from_template():
                     duration_max = session_type.Duration_Max
                     duration_min = session_type.Duration_Min
 
-                # Adjust General Evaluation Report duration based on GE style
-                if session_type and session_type.Title == "General Evaluation Report":
-                    if ge_style == 'deferred':
-                        duration_max = 5
-                    else: # immediate
-                        duration_max = 3
+                if type_id == 31 and ge_style == 'deferred': # GE Report
+                    duration_max = 5
+                elif type_id == 31 and ge_style == 'immediate':
+                    duration_max = 3
+
 
                 session_title = session_type.Title if session_type and session_type.Predefined else session_title_from_csv
                 owner_id = None
@@ -357,9 +350,7 @@ def export_agenda(meeting_number):
         Project.Code_VC,
         Project.Code_DTM,
         Project.Purpose,
-        Project.Project_Name,
-        Project.Duration_Min,
-        Project.Duration_Max
+        Project.Project_Name
     ).outerjoin(Contact, SessionLog.Owner_ID == Contact.id)\
      .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
      .outerjoin(Project, SessionLog.Project_ID == Project.ID)\
@@ -479,37 +470,6 @@ def export_agenda(meeting_number):
         download_name=f'{meeting_number}_agenda.csv'
     )
 
-@agenda_bp.route('/agenda/ge-style/update', methods=['POST'])
-@login_required
-def update_ge_style():
-    data = request.get_json()
-    meeting_number = data.get('meeting_number')
-    new_style = data.get('ge_style')
-
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
-    if not meeting:
-        return jsonify(success=False, message="Meeting not found"), 404
-
-    meeting.GE_Style = new_style
-
-    # Adjust GE Report session duration based on the new style
-    ge_report_type = SessionType.query.filter_by(Title="General Evaluation Report").first()
-    if ge_report_type:
-        ge_report_log = SessionLog.query.filter_by(Meeting_Number=meeting_number, Type_ID=ge_report_type.id).first()
-        if ge_report_log:
-            if new_style == 'deferred':
-                ge_report_log.Duration_Max = 5
-            else:  # 'immediate'
-                ge_report_log.Duration_Max = 3
-
-    db.session.commit()
-
-    # After committing the style and duration changes, recalculate start times
-    _recalculate_start_times([meeting_number])
-    db.session.commit() # Commit again after recalculating
-
-    return jsonify(success=True)
-
 
 @agenda_bp.route('/agenda/update', methods=['POST'])
 @login_required
@@ -542,6 +502,41 @@ def delete_log(log_id):
     log = SessionLog.query.get_or_404(log_id)
     try:
         db.session.delete(log)
+        db.session.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+@agenda_bp.route('/agenda/ge-style/update', methods=['POST'])
+@login_required
+def update_ge_style():
+    data = request.get_json()
+    meeting_number = data.get('meeting_number')
+    new_style = data.get('ge_style')
+
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found"), 404
+
+    meeting.GE_Style = new_style
+
+    # Adjust durations based on the new style
+    # General Evaluation Report ID is 31
+    ge_report_session_type = SessionType.query.get(31)
+    if ge_report_session_type:
+        ge_report_log = SessionLog.query.filter_by(
+            Meeting_Number=meeting_number,
+            Type_ID=ge_report_session_type.id
+        ).first()
+        if ge_report_log:
+            if new_style == 'deferred':
+                ge_report_log.Duration_Max = 5
+            else: # immediate
+                ge_report_log.Duration_Max = 3
+
+    try:
+        _recalculate_start_times([meeting_number])
         db.session.commit()
         return jsonify(success=True)
     except Exception as e:

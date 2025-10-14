@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VPE Master - {% block title %}{% endblock %}</title>
+    <title>Meeting Manager - {% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
@@ -28,7 +28,7 @@
     <div class="nav-pane" id="nav-pane">
         <div class="nav-header">
             <a href="#" class="nav-toggle" id="pc-nav-toggle"><i class="fas fa-bars"></i></a>
-            <h2 class="nav-title">VPE Master<sup>BETA</sup></h2>
+            <h2 class="nav-title">Meeting Manager<sup>BETA</sup></h2>
         </div>
         <ul class="nav-links">
             <li class="{% if request.endpoint and request.endpoint.startswith('agenda_bp') %}active{% endif %}">
@@ -160,5 +160,4 @@
 
 </body>
 </html>
-
 

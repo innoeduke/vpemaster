@@ -2,7 +2,8 @@ document.addEventListener('DOMContentLoaded', () => {
     'use strict';
 
     // --- DOM Elements ---
-    const editButton = document.getElementById('edit-logs-btn');
+    const editBtn = document.getElementById('edit-btn');
+    const saveBtn = document.getElementById('edit-logs-btn');
     const cancelButton = document.getElementById('cancel-edit-btn');
     const addRowButton = document.getElementById('add-row-btn');
     const createButton = document.getElementById('create-btn');
@@ -13,6 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const contactForm = document.getElementById("contactForm");
     const geStyleToggle = document.getElementById('ge-style-toggle');
     const geStyleSelect = document.getElementById('ge-style-select');
+    const viewModeButtons = document.getElementById('view-mode-buttons');
+    const editModeButtons = document.getElementById('edit-mode-buttons');
 
 
     // --- Data from Template ---
@@ -48,8 +51,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 window.location.href = `/agenda?meeting_number=${meetingFilter.value}`;
             });
         }
-        if (editButton) {
-            editButton.addEventListener('click', () => isEditing ? saveChanges() : toggleEditMode(true));
+        if (editBtn) {
+            editBtn.addEventListener('click', () => toggleEditMode(true));
+        }
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveChanges);
         }
         if (cancelButton) {
             cancelButton.addEventListener('click', () => {
@@ -87,31 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Core Functions ---
 
-    function handleGeStyleChange() {
-        const meetingNumber = meetingFilter.value;
-        const newStyle = geStyleSelect.value;
-
-        fetch(`/agenda/ge-style/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ meeting_number: meetingNumber, ge_style: newStyle }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // The backend recalculates, so we just need to refresh the page to see changes
-                window.location.reload();
-            } else {
-                alert('Error updating GE Style: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the GE Style.');
-        });
-    }
-
-
     function toggleEditMode(enable) {
         isEditing = enable;
         tableContainer.classList.toggle('edit-mode-active', enable);
@@ -126,14 +107,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const dataToSave = Array.from(tableBody.querySelectorAll('tr')).map(getRowData);
 
         if (dataToSave.length === 0) {
-            console.log('No data to save. Ignoring request.');
             toggleEditMode(false);
             window.location.reload();
-            if (meetingFilter && meetingFilter.options.length > 0) {
-                meetingFilter.value = meetingFilter.options[0].value;
-                // Trigger the change event to load the agenda for the new selection
-                meetingFilter.dispatchEvent(new Event('change'));
-            }
             return;
         }
 
@@ -203,6 +178,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Helper Functions ---
+    function handleGeStyleChange() {
+        const meetingNumber = meetingFilter.value;
+        const newStyle = geStyleSelect.value;
+
+        fetch(`/agenda/ge-style/update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ meeting_number: meetingNumber, ge_style: newStyle }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // The backend recalculates, so we just need to refresh the page to see changes
+                window.location.reload();
+            } else {
+                alert('Error updating GE Style: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while updating the GE Style.');
+        });
+    }
+
 
     function handleContactFormSubmit(event) {
         event.preventDefault(); // Stop the default redirect
@@ -301,13 +300,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateActionButtonsVisibility(isEditMode) {
-        editButton.textContent = isEditMode ? 'Save' : 'Edit';
-        cancelButton.style.display = isEditMode ? 'inline-block' : 'none';
-        addRowButton.style.display = isEditMode ? 'inline-block' : 'none';
-        createButton.style.display = isEditMode ? 'none' : 'inline-block';
-        exportButton.style.display = isEditMode ? 'none' : 'inline-block';
+        if (viewModeButtons) viewModeButtons.style.display = isEditMode ? 'none' : 'flex';
+        if (editModeButtons) editModeButtons.style.display = isEditMode ? 'flex' : 'none';
         if (geStyleToggle) {
-            geStyleToggle.style.display = isEditMode ? 'block' : 'none';
+            geStyleToggle.style.display = isEditMode ? 'flex' : 'none';
         }
     }
 

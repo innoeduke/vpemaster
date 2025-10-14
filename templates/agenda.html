@@ -3,47 +3,53 @@
 {% block title %}Meeting Agenda{% endblock %}
 
 {% block content %}
-    <h1>Meeting Agenda</h1>
+    <h1>Meeting Manager</h1>
     <br/>
     <div class="action-bar">
-        <div class="inline-filter-group">
-            <label for="meeting-filter">Meeting#:</label>
-            <select id="meeting-filter">
-                <option value="">All Meetings</option>
-                {% for num in meeting_numbers %}
-                <option value="{{ num }}" {% if num == selected_meeting %}selected{% endif %}>{{ num }}</option>
-                {% endfor %}
-            </select>
-            {% if selected_meeting_date %}
-            <span id="meeting-date-display">{{ selected_meeting_date.strftime('%B %d, %Y') }}</span>
-            {% endif %}
-            <div id="ge-style-toggle" style="display: none; margin-left: 15px;">
+        <div class="action-bar-left">
+            <div class="inline-filter-group">
+                <label for="meeting-filter">Meeting#:</label>
+                <select id="meeting-filter" {% if is_editing %}disabled{% endif %}>
+                    <option value="">All Meetings</option>
+                    {% for num in meeting_numbers %}
+                    <option value="{{ num }}" {% if selected_meeting and num == selected_meeting.Meeting_Number %}selected{% endif %}>{{ num }}</option>
+                    {% endfor %}
+                </select>
+                {% if selected_meeting %}
+                <span id="meeting-date-display">{{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') }}</span>
+                {% endif %}
+            </div>
+            <div id="ge-style-toggle" class="inline-filter-group" style="display: none;">
                 <label for="ge-style-select">GE Style:</label>
-                <select id="ge-style-select" name="ge_style">
-                    <option value="immediate" {% if selected_ge_style == 'immediate' %}selected{% endif %}>Immediate</option>
-                    <option value="deferred" {% if selected_ge_style == 'deferred' %}selected{% endif %}>Deferred</option>
+                <select id="ge-style-select">
+                    <option value="immediate" {% if selected_meeting and selected_meeting.GE_Style == 'immediate' %}selected{% endif %}>Immediate</option>
+                    <option value="deferred" {% if selected_meeting and selected_meeting.GE_Style == 'deferred' %}selected{% endif %}>Deferred</option>
                 </select>
             </div>
         </div>
-
-        {% if session.get('user_role') in ['Admin', 'VPE'] %}
-        <div class="button-group" style="justify-content: flex-end;">
-            <button id="cancel-edit-btn" class="btn btn-danger" style="display: none;">Cancel</button>
-            <button id="create-btn" class="btn btn-success">New</button>
-            <button id="export-btn" class="btn btn-info">Export</button>
-            <button id="add-row-btn" class="btn btn-info" style="display: none;">Add</button>
-            <button id="edit-logs-btn" class="btn btn-primary">Edit</button>
+        <div class="action-bar-right">
+             {% if session.get('user_role') in ['Admin', 'VPE'] %}
+                <div class="button-group" id="edit-mode-buttons" style="display: none;">
+                    <button id="cancel-edit-btn" class="btn btn-danger">Cancel</button>
+                    <button id="add-row-btn" class="btn btn-info">Add</button>
+                    <button id="edit-logs-btn" class="btn btn-primary">Save</button>
+                </div>
+                <div class="button-group" id="view-mode-buttons">
+                    <button id="create-btn" class="btn btn-success">New</button>
+                    <button id="export-btn" class="btn btn-info">Export</button>
+                    <button id="edit-btn" class="btn btn-primary">Edit</button>
+                </div>
+            {% endif %}
         </div>
-        {% endif %}
     </div>
 
-    <div class='table-container non-edit-mode'
+
+    <div class='table-container'
          id="table-container"
          data-session-types='{{ session_types|tojson|safe }}'
          data-contacts='{{ contacts_data|tojson|safe }}'
          data-projects='{{ projects|tojson|safe }}'
-         data-project-speakers='{{ project_speakers|tojson|safe }}'
-         data-ge-style="{{ selected_ge_style }}">
+         data-project-speakers='{{ project_speakers|tojson|safe }}'>
 
         <table id="logs-table">
             <thead>
@@ -82,7 +88,7 @@
                     data-duration-min="{{ log.Duration_Min if log.Duration_Min is not none else '' }}"
                     data-duration-max="{{ log.Duration_Max if log.Duration_Max is not none else '' }}"
                     data-status="{{ log.Status if log.Status else '' }}"
-                    class="{{ 'section-row' if is_section else '' }} {{ 'hidden-session' if is_hidden else '' }}">
+                    class="{{ 'section-row' if is_section else '' }} {{ 'hidden-row' if is_hidden else '' }}">
 
                     {% if is_section %}
                         <td colspan="4" class="non-edit-mode-cell">
@@ -91,29 +97,42 @@
                     {% else %}
                         <td class="non-edit-mode-cell">{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}</td>
                         <td class="non-edit-mode-cell">
-                             {% if session_type_title == "Pathway Speech" %}
-                                <div class="speech-tooltip-wrapper">
+                             <div class="speech-tooltip-wrapper">
+                                {# Display Title #}
+                                {% if log.Project_ID %}
+                                    {% if log.Session_Title and log.Session_Title.startswith('"') %}
+                                        {{ log.Session_Title }}
+                                    {% else %}
+                                        "{{ log.Session_Title }}"
+                                    {% endif %}
+                                {% elif session_type_title == 'Evaluation' %}
+                                    Evaluation for {{ log.Session_Title }}
+                                {% elif predefined %}
+                                    {{ session_type_title }}
+                                {% else %}
                                     {{ log.Session_Title }}
+                                {% endif %}
+
+                                {# Append Project Code if it's a project #}
+                                {% if log.Project_ID %}
                                     {% set contact = contacts|selectattr('id', 'equalto', log.Owner_ID)|first %}
-                                    {% if contact and contact.Working_Path and config.PATHWAY_MAPPING[contact.Working_Path] %}
-                                        {% set pathway_code_map = {'DL': code_dl, 'EH': code_eh, 'MS': code_ms, 'PI': code_pi, 'PM': code_pm, 'VC': code_vc, 'DTM': code_dtm} %}
+                                    {% if contact and contact.Working_Path and config.PATHWAY_MAPPING.get(contact.Working_Path) %}
                                         {% set pathway_suffix = config.PATHWAY_MAPPING[contact.Working_Path] %}
+                                        {% set pathway_code_map = {'DL': code_dl, 'EH': code_eh, 'MS': code_ms, 'PI': code_pi, 'PM': code_pm, 'VC': code_vc, 'DTM': code_dtm} %}
                                         {% if pathway_suffix and pathway_code_map[pathway_suffix] %}
                                             ({{ pathway_suffix }}{{ pathway_code_map[pathway_suffix] }})
                                         {% endif %}
                                     {% endif %}
-                                    <div class="speech-tooltip">
-                                        <strong>{{ project_name }}</strong><br>
-                                        {{ purpose }}
-                                    </div>
+                                {% endif %}
+
+                                {# Tooltip for Projects #}
+                                {% if log.Project_ID %}
+                                <div class="speech-tooltip">
+                                    <span class="tooltip-title">{{ project_name }}</span>
+                                    <span class="tooltip-purpose">{{ purpose }}</span>
                                 </div>
-                            {% elif session_type_title == 'Evaluation' %}
-                                Evaluation for {{ log.Session_Title }}
-                            {% elif predefined %}
-                                {{ session_type_title }}
-                            {% else %}
-                                {{ log.Session_Title }}
-                            {% endif %}
+                                {% endif %}
+                            </div>
                         </td>
                         <td class="non-edit-mode-cell">
                             {% set owner = contacts|selectattr('id', 'equalto', log.Owner_ID)|first %}
