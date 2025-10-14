@@ -22,6 +22,7 @@
             <div class="settings-header">
                 <h2>Session Types</h2>
                 <div class="button-group">
+                    <button id="add-session-btn" class="btn btn-success">Add New</button>
                     <button id="edit-sessions-btn" class="btn btn-primary">Edit</button>
                     <button id="cancel-sessions-btn" class="btn btn-danger" style="display: none;">Cancel</button>
                 </div>
@@ -39,6 +40,7 @@
                         <th>Section</th>
                         <th>Predefined</th>
                         <th>Project</th>
+                        <th>Hidden</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,6 +61,9 @@
                         </td>
                         <td data-field="Valid_for_Project">
                             <input type="checkbox" {% if st.Valid_for_Project %}checked{% endif %} disabled>
+                        </td>
+                        <td data-field="Is_Hidden">
+                            <input type="checkbox" {% if st.Is_Hidden %}checked{% endif %} disabled>
                         </td>
                     </tr>
                     {% endfor %}
@@ -113,7 +118,7 @@
             </table>
         </div>
     </div>
-
+{% include '_session_modal.html' %}
 <script>
     function openTab(evt, tabName) {
         const tabcontent = document.getElementsByClassName("tab-content");
@@ -128,35 +133,32 @@
 
         document.getElementById(tabName).style.display = "block";
 
-        // Handle both click event (has evt) and programmatic call (uses tabName)
-        let targetElement = null;
-        if (evt && evt.currentTarget) {
-            targetElement = evt.currentTarget;
-        } else {
-            // Find the button associated with the tabName
-            for (let i = 0; i < tablinks.length; i++) {
-                if (tablinks[i].getAttribute('onclick').includes(`'${tabName}'`)) {
-                    targetElement = tablinks[i];
-                    break;
-                }
-            }
-        }
-
+        let targetElement = evt ? evt.currentTarget : Array.from(tablinks).find(btn => btn.getAttribute('onclick').includes(`'${tabName}'`));
         if (targetElement) {
             targetElement.className += " active";
         }
     }
 
+    function openAddSessionModal() {
+        document.getElementById('addSessionModal').style.display = 'flex';
+    }
+
+    function closeAddSessionModal() {
+        document.getElementById('addSessionModal').style.display = 'none';
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-        // Check URL for default_tab parameter
         const urlParams = new URLSearchParams(window.location.search);
         const defaultTab = urlParams.get('default_tab');
         if (defaultTab) {
-            // Pass null for evt to indicate a programmatic call
             openTab(null, defaultTab);
         }
 
-        // --- Session Types Edit Logic ---
+        const addSessionBtn = document.getElementById('add-session-btn');
+        if (addSessionBtn) {
+            addSessionBtn.addEventListener('click', openAddSessionModal);
+        }
+
         const editSessionsBtn = document.getElementById('edit-sessions-btn');
         const cancelSessionsBtn = document.getElementById('cancel-sessions-btn');
         const sessionsTableBody = document.querySelector('#sessions-table tbody');
@@ -178,7 +180,7 @@
                 const originalRow = originalSessionsData[id];
                 row.querySelectorAll('td[data-field]').forEach(cell => {
                     const field = cell.dataset.field;
-                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
+                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field === 'Predefined') {
                         cell.innerHTML = `<input type="checkbox" ${originalRow[field] ? 'checked' : ''} disabled>`;
                     } else {
                         cell.textContent = originalRow[field];
@@ -199,13 +201,7 @@
                 }
                 row.querySelectorAll('td[data-field]').forEach(cell => {
                     const field = cell.dataset.field;
-                    const currentValue = cell.textContent.trim();
-
-                    if (enable) {
-                        originalSessionsData[id][field] = currentValue;
-                    }
-
-                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
+                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field === 'Predefined') {
                         const checkbox = cell.querySelector('input[type="checkbox"]');
                         if (enable) {
                             originalSessionsData[id][field] = checkbox.checked;
@@ -214,7 +210,9 @@
                             checkbox.disabled = true;
                         }
                     } else {
+                        const currentValue = cell.textContent.trim();
                         if (enable) {
+                            originalSessionsData[id][field] = currentValue;
                             const input = document.createElement('input');
                             input.type = (field.includes('Duration')) ? 'number' : 'text';
                             input.value = currentValue;
@@ -233,7 +231,7 @@
                 const rowData = { id: row.dataset.id };
                 row.querySelectorAll('td[data-field]').forEach(cell => {
                     const field = cell.dataset.field;
-                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
+                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field === 'Predefined') {
                         rowData[field] = cell.querySelector('input[type="checkbox"]').checked;
                     } else {
                         rowData[field] = cell.querySelector('input').value;
@@ -256,7 +254,7 @@
                         const updatedRow = dataToSave.find(item => item.id == id);
                         row.querySelectorAll('td[data-field]').forEach(cell => {
                             const field = cell.dataset.field;
-                            if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
+                             if (field.startsWith('Is_') || field === 'Valid_for_Project' || field === 'Predefined') {
                                 cell.innerHTML = `<input type="checkbox" ${updatedRow[field] ? 'checked' : ''} disabled>`;
                             } else {
                                  cell.textContent = updatedRow[field];
@@ -275,3 +273,4 @@
     });
 </script>
 {% endblock %}
+

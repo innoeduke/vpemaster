@@ -19,6 +19,8 @@ ROLE_ICONS = {
     "Prepared Speaker": "fa-user-tie",
     "Individual Evaluator": "fa-pen-square",
     "Keynote Speaker": "fa-star",
+    "Backup Speaker": "fa-user-secret",
+    "Photographer": "fa-camera",
     "Default": "fa-question-circle"
 }
 
@@ -50,7 +52,7 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
         role_display = role_key
 
         # Roles that must always have unique entries (one row per session log):
-        if role_key in ["Prepared Speaker", "Individual Evaluator"]:
+        if role_key in ["Prepared Speaker", "Individual Evaluator", "Backup Speaker"]:
 
             # CORRECTED LOGIC: Check if a speaker name is attached to the evaluation session in the log
             # The Session_Title field for this role is the speaker's name (e.g., 'Rosalía Shi').
@@ -262,7 +264,7 @@ def book_or_assign_role():
         owner_id_to_set = int(contact_id) if contact_id != '0' else None
 
     # For repeatable roles, only update the specific session
-    if role_key in ["Prepared Speaker", "Individual Evaluator"]:
+    if role_key in ["Prepared Speaker", "Individual Evaluator", "Backup Speaker"]:
         log_to_update = SessionLog.query.get(session_id)
         if log_to_update:
             log_to_update.Owner_ID = owner_id_to_set
@@ -276,3 +278,4 @@ def book_or_assign_role():
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e))
+

@@ -8,6 +8,11 @@
     max-width: 800px;
 }
 
+/* Hide sessions marked as hidden in non-edit mode */
+.table-container:not(.edit-mode-active) .hidden-session {
+    display: none;
+}
+
 .inline-filter-group {
     display: flex;
     align-items: center;
@@ -138,15 +143,14 @@
     background-color: #e9e9e9;
 }
 
-/* --- Tooltip for Speech Purpose --- */
+/* --- Tooltip Styles --- */
 .tooltip-container {
     position: relative;
     display: inline-block;
-    cursor: help;
-    outline: none; /* Removes the focus outline on mobile tap */
+    cursor: pointer;
 }
 
-.tooltip-container .tooltip {
+.speech-tooltip {
     visibility: hidden;
     width: 320px;
     background-color: #333;
@@ -155,18 +159,17 @@
     border-radius: 6px;
     padding: 10px;
     position: absolute;
-    z-index: 10;
+    z-index: 1;
     bottom: 125%;
     left: 50%;
-    margin-left: -160px; /* Half of width */
+    margin-left: -160px; /* half of width */
     opacity: 0;
     transition: opacity 0.3s;
-    font-size: 0.9em;
-    line-height: 1.4;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    white-space: normal; /* Allow text to wrap */
 }
 
-.tooltip-container .tooltip::after {
+/* Arrow for the tooltip */
+.speech-tooltip::after {
     content: "";
     position: absolute;
     top: 100%;
@@ -177,26 +180,10 @@
     border-color: #333 transparent transparent transparent;
 }
 
-.tooltip-container:hover .tooltip,
-.tooltip-container:focus .tooltip,
-.tooltip-container:focus-within .tooltip {
+.tooltip-container:hover .speech-tooltip,
+.tooltip-container:focus .speech-tooltip,
+.tooltip-container:focus-within .speech-tooltip {
     visibility: visible;
     opacity: 1;
 }
 
-@media (max-width: 768px) {
-    .tooltip-container .tooltip {
-        width: 80vw;
-        max-width: 300px;
-        left: 50%;
-        transform: translateX(-50%);
-        margin-left: 0;
-        bottom: 130%;
-    }
-
-    .tooltip-container .tooltip::after {
-        left: 50%;
-        transform: translateX(-50%);
-        margin-left: 0;
-    }
-}

@@ -1,0 +1,64 @@
+<div id="addSessionModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeAddSessionModal()">&times;</span>
+        <h1>Add New Session Type</h1>
+        <form action="{{ url_for('settings_bp.add_session_type') }}" method="POST">
+            <table class="form-table">
+                <tr>
+                    <td><label for="title">Title:</label></td>
+                    <td><input type="text" id="title" name="title" required></td>
+                </tr>
+                <tr>
+                    <td><label for="default_owner">Default Owner:</label></td>
+                    <td><input type="text" id="default_owner" name="default_owner"></td>
+                </tr>
+                <tr>
+                    <td><label for="role">Role:</label></td>
+                    <td><input type="text" id="role" name="role"></td>
+                </tr>
+                <tr>
+                    <td><label for="role_group">Role Group:</label></td>
+                    <td>
+                        <select id="role_group" name="role_group">
+                            <option value="">None</option>
+                            <option value="Member">Member</option>
+                            <option value="Officer">Officer</option>
+                            <option value="VPE">VPE</option>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td><label for="duration_min">Min Duration:</label></td>
+                    <td><input type="number" id="duration_min" name="duration_min"></td>
+                </tr>
+                <tr>
+                    <td><label for="duration_max">Max Duration:</label></td>
+                    <td><input type="number" id="duration_max" name="duration_max"></td>
+                </tr>
+                 <tr>
+                    <td colspan="2" style="text-align: center; padding-top: 15px;">
+                        <label for="is_section" style="display: inline-block; margin-right: 15px;">Is Section:</label>
+                        <input type="checkbox" id="is_section" name="is_section" style="transform: scale(1.2);">
+
+                        <label for="predefined" style="display: inline-block; margin-left: 30px; margin-right: 15px;">Predefined:</label>
+                        <input type="checkbox" id="predefined" name="predefined" style="transform: scale(1.2);">
+                    </td>
+                </tr>
+                <tr>
+                     <td colspan="2" style="text-align: center; padding-top: 15px;">
+                        <label for="valid_for_project" style="display: inline-block; margin-right: 15px;">For Project:</label>
+                        <input type="checkbox" id="valid_for_project" name="valid_for_project" style="transform: scale(1.2);">
+
+                        <label for="is_hidden" style="display: inline-block; margin-left: 30px; margin-right: 15px;">Is Hidden:</label>
+                        <input type="checkbox" id="is_hidden" name="is_hidden" style="transform: scale(1.2);">
+                    </td>
+                </tr>
+            </table>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Session</button>
+                <button type="button" class="btn btn-danger" onclick="closeAddSessionModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+

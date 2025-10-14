@@ -21,6 +21,7 @@ def _get_agenda_logs(meeting_number):
         SessionType.Is_Section,
         SessionType.Title.label('session_type_title'),
         SessionType.Predefined,
+        SessionType.Is_Hidden,
         Meeting.Meeting_Date,
         Project.Code_DL, Project.Code_EH, Project.Code_MS,
         Project.Code_PI, Project.Code_PM, Project.Code_VC,
