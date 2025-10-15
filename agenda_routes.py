@@ -231,30 +231,11 @@ def export_agenda(meeting_number):
     if not meeting:
         return "Meeting not found", 404
 
-    # Corrected Query to fetch all necessary data
     logs = db.session.query(
-        SessionLog.Session_Title,
-        SessionLog.Start_Time,
-        SessionLog.Duration_Min,
-        SessionLog.Duration_Max,
-        SessionLog.Designation,
-        Contact.Name,
-        Contact.DTM,
-        Contact.Type,
-        Contact.Club,
-        Contact.Completed_Levels,
-        Contact.Working_Path,
-        SessionType.Title.label('session_type_title'),
-        SessionType.Predefined,
-        Project.Code_DL,
-        Project.Code_EH,
-        Project.Code_MS,
-        Project.Code_PI,
-        Project.Code_PM,
-        Project.Code_VC,
-        Project.Code_DTM,
-        Project.Purpose,
-        Project.Project_Name
+        SessionLog,
+        SessionType,
+        Contact,
+        Project
     ).outerjoin(Contact, SessionLog.Owner_ID == Contact.id)\
      .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
      .outerjoin(Project, SessionLog.Project_ID == Project.ID)\
@@ -265,58 +246,60 @@ def export_agenda(meeting_number):
     writer = csv.writer(output)
     pathway_mapping = current_app.config['PATHWAY_MAPPING']
 
-    # Write column headers for the main agenda
     writer.writerow(['Start Time', 'Session Title', 'Owner', 'Duration'])
 
-    for log in logs:
-        # ... (Existing code to format and write the main agenda rows)
-        # This part remains the same.
-        # Format session title
-        session_title = log.session_type_title if log.Predefined else log.Session_Title
+    for log, session_type, contact, project in logs:
+        if session_type and session_type.Is_Section:
+            writer.writerow([])
+            writer.writerow(['', log.Session_Title or session_type.Title, '', ''])
+            continue
 
-        # Add project code to title if applicable
-        if log.session_type_title == "Pathway Speech" and log.Working_Path:
-            pathway_abbr = pathway_mapping.get(log.Working_Path)
-            if pathway_abbr:
-                project_code = getattr(log, f"Code_{pathway_abbr}", None)
-                if project_code:
-                    session_title = f"{session_title} ({pathway_abbr}{project_code})"
-
-        # Format owner information
-        owner_info = ''
-        if log.Name:
-            owner_info = log.Name
-            if log.DTM:
-                owner_info += ', DTM'
-            meta_parts = []
-            if log.Type == 'Guest':
-                guest_info = 'Guest'
-                if log.Club:
-                    guest_info += f'@{log.Club}'
-                meta_parts.append(guest_info)
-            elif log.Type == 'Member' and log.Completed_Levels:
-                meta_parts.append(log.Completed_Levels)
-            elif log.Designation:
-                meta_parts.append(log.Designation)
-            if meta_parts:
-                owner_info += ' - ' + ', '.join(meta_parts)
-
-        # Format start time
         start_time = log.Start_Time.strftime('%H:%M') if log.Start_Time else ''
 
-        # Format duration safely
+        # --- FIX for Session and Speech Titles ---
+        session_title = log.Session_Title if log.Session_Title else (session_type.Title if session_type else '')
+
+        # 1. Handle "Evaluation for <speaker>" format
+        if log.Type_ID == 31 and log.Session_Title: # Individual Evaluation
+            session_title = f"Evaluation for {log.Session_Title}"
+
+        # 2. Handle Pathway Speech format
+        elif log.Project_ID and contact and contact.Working_Path:
+            pathway_abbr = pathway_mapping.get(contact.Working_Path)
+            if pathway_abbr and project:
+                project_code = getattr(project, f"Code_{pathway_abbr}", None)
+                if project_code:
+                    title_part = f'"{log.Session_Title}" ' if log.Session_Title else ''
+                    session_title = f"{title_part}({pathway_abbr}{project_code})"
+
+        # 3. Clean up double quotes for all titles
+        if session_title:
+            session_title = session_title.replace('""', '"')
+
+        # --- FIX for Owner Information ---
+        owner_info = ''
+        if contact:
+            owner_info = contact.Name
+            meta_parts = []
+            if contact.DTM:
+                meta_parts.append('DTM')
+
+            if log.Designation:
+                 meta_parts.append(log.Designation)
+            elif contact.Type == 'Member' and contact.Completed_Levels:
+                meta_parts.append(contact.Completed_Levels.replace('/', ' '))
+
+            if meta_parts:
+                owner_info += ' - ' + ' '.join(meta_parts)
+
         duration = ''
         min_dur = log.Duration_Min
         max_dur = log.Duration_Max
-        if min_dur is not None and max_dur is not None:
-            if min_dur == max_dur:
-                duration = f"[{min_dur}']"
-            else:
+        if max_dur is not None:
+            if min_dur is not None and min_dur > 0 and min_dur != max_dur:
                 duration = f"[{min_dur}'-{max_dur}']"
-        elif min_dur is not None:
-            duration = f"[{min_dur}']"
-        elif max_dur is not None:
-            duration = f"[{max_dur}']"
+            else:
+                duration = f"[{max_dur}']"
 
         writer.writerow([
             start_time,
@@ -325,49 +308,45 @@ def export_agenda(meeting_number):
             duration
         ])
 
-
-    # --- Start of Speech Projects Export Section ---
-
-    writer.writerow([])  # Blank row for spacing
+    writer.writerow([])
     writer.writerow(['Speech Projects'])
 
-    speech_projects = db.session.query(
+    speech_projects_query = db.session.query(
         Project,
-        Contact.Working_Path
+        Contact.Working_Path,
+        SessionLog.Session_Title
     ).join(SessionLog, Project.ID == SessionLog.Project_ID)\
      .join(Contact, SessionLog.Owner_ID == Contact.id)\
      .filter(SessionLog.Meeting_Number == meeting_number)\
      .all()
 
     projects_to_sort = []
-    for project, working_path in speech_projects:
+    for project, working_path, speech_title in speech_projects_query:
         pathway_abbr = pathway_mapping.get(working_path)
         if pathway_abbr:
             project_code = getattr(project, f"Code_{pathway_abbr}", None)
             if project_code:
-                projects_to_sort.append((project_code, project, working_path, pathway_abbr))
+                projects_to_sort.append((project_code, project, working_path, pathway_abbr, speech_title))
 
     sorted_projects = sorted(projects_to_sort, key=lambda x: x[0])
 
-    for project_code, project, working_path, pathway_abbr in sorted_projects:
-        # BUG FIX 2: More accurate logic for Required/Elective
-        try:
-            level, project_num = map(int, project_code.split('.'))
-            if level <= 2 or project_num == 1:
-                project_type = "Required"
-            else:
-                project_type = "Elective"
-        except (ValueError, IndexError):
-            project_type = "N/A" # Fallback if code format is unexpected
+    elective_codes = ['3.2', '3.3', '4.2', '5.3']
+
+    for project_code, project, working_path, pathway_abbr, speech_title in sorted_projects:
+        project_type = "Elective" if project_code in elective_codes else "Required"
 
         duration = f"[{project.Duration_Min}'-{project.Duration_Max}']"
-        writer.writerow([f"{working_path} ({pathway_abbr}{project_code}) {project.Project_Name} ({project_type}) {duration}"])
+        title_part = f'"{speech_title}" ' if speech_title else ''
+
+        # Clean up double quotes here as well
+        full_title = f"{working_path} ({pathway_abbr}{project_code}) {project.Project_Name} ({project_type}) {duration}"
+        writer.writerow([full_title.replace('""', '"')])
         writer.writerow([project.Purpose])
         writer.writerow([])
 
+
     output.seek(0)
     return send_file(
-        # BUG FIX 1: Use 'utf-8-sig' to handle special characters like 'é'
         io.BytesIO(output.getvalue().encode('utf-8-sig')),
         mimetype='text/csv',
         as_attachment=True,
