@@ -86,9 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
-        if (geStyleSelect) {
-            geStyleSelect.addEventListener('change', handleGeStyleChange);
-        }
     }
 
     // --- Core Functions ---
@@ -105,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveChanges() {
         const dataToSave = Array.from(tableBody.querySelectorAll('tr')).map(getRowData);
+        const newGeStyle = geStyleSelect.value;
 
         if (dataToSave.length === 0) {
             toggleEditMode(false);
@@ -115,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetch("/agenda/update", {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dataToSave),
+            body: JSON.stringify({ agenda_data: dataToSave, ge_style: newGeStyle }),
         })
         .then(response => response.json())
         .then(data => {
@@ -178,30 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Helper Functions ---
-    function handleGeStyleChange() {
-        const meetingNumber = meetingFilter.value;
-        const newStyle = geStyleSelect.value;
-
-        fetch(`/agenda/ge-style/update`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ meeting_number: meetingNumber, ge_style: newStyle }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // The backend recalculates, so we just need to refresh the page to see changes
-                window.location.reload();
-            } else {
-                alert('Error updating GE Style: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the GE Style.');
-        });
-    }
-
 
     function handleContactFormSubmit(event) {
         event.preventDefault(); // Stop the default redirect
@@ -631,4 +605,3 @@ function closeCreateAgendaModal() {
         createAgendaModal.style.display = 'none';
     }
 }
-

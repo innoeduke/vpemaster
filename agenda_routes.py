@@ -117,31 +117,36 @@ def _create_or_update_session(item, meeting_number, seq):
             if session_title is not None:
                 log.Session_Title = session_title
 
-def _recalculate_start_times(meeting_numbers_to_update):
-    for meeting_num in meeting_numbers_to_update:
-        meeting = Meeting.query.filter_by(Meeting_Number=meeting_num).first()
+def _recalculate_start_times(meetings_to_update):
+    for meeting in meetings_to_update:
         if not meeting or not meeting.Start_Time or not meeting.Meeting_Date:
             continue
 
         current_time = meeting.Start_Time
-        logs_to_update = db.session.query(SessionLog, SessionType.Is_Section)\
+        # Fetch Is_Hidden along with Is_Section
+        logs_to_update = db.session.query(SessionLog, SessionType.Is_Section, SessionType.Is_Hidden)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
-            .filter(SessionLog.Meeting_Number == meeting_num)\
+            .filter(SessionLog.Meeting_Number == meeting.Meeting_Number)\
             .order_by(SessionLog.Meeting_Seq.asc()).all()
 
-        for log, is_section in logs_to_update:
-            if not is_section:
-                log.Start_Time = current_time
-                duration_to_add = int(log.Duration_Max or 0)
-                break_minutes = 1
-                # General Evaluation Report ID is 31, Individual Evaluation is 16
-                if log.Type_ID == 16 and meeting.GE_Style == 'immediate':
-                    break_minutes += 1
-                dt_current_time = datetime.combine(meeting.Meeting_Date, current_time)
-                next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
-                current_time = next_dt.time()
-            else:
+        for log, is_section, is_hidden in logs_to_update:
+            # --- THIS IS THE FIX ---
+            # If the session is a section header OR if it's hidden, set its time to None and continue.
+            if is_section or is_hidden:
                 log.Start_Time = None
+                continue
+            # --- END OF FIX ---
+
+            # The rest of the logic only runs for visible, non-section items.
+            log.Start_Time = current_time
+            duration_to_add = int(log.Duration_Max or 0)
+            break_minutes = 1
+            # Individual Evaluation Type_ID is 31
+            if log.Type_ID == 31 and meeting.GE_Style == 'immediate':
+                break_minutes += 1
+            dt_current_time = datetime.combine(meeting.Meeting_Date, current_time)
+            next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
+            current_time = next_dt.time()
 
 # --- Main Route ---
 
@@ -217,107 +222,6 @@ def agenda():
                            members=members,
                            project_speakers=project_speakers,
                            meeting_templates=meeting_templates)
-
-
-@agenda_bp.route('/agenda/create', methods=['POST'])
-@login_required
-def create_from_template():
-    meeting_number = request.form.get('meeting_number')
-    meeting_date_str = request.form.get('meeting_date')
-    start_time_str = request.form.get('start_time')
-    template_file = request.form.get('template_file')
-    ge_style = request.form.get('ge_style')
-
-    try:
-        meeting_date = datetime.strptime(meeting_date_str, '%Y-%m-%d').date()
-        start_time = datetime.strptime(start_time_str, '%H:%M').time()
-    except (ValueError, TypeError):
-        return redirect(url_for('agenda_bp.agenda', message='Invalid date or time format.', category='error'))
-
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
-    if not meeting:
-        meeting = Meeting(Meeting_Number=meeting_number, Meeting_Date=meeting_date, Start_Time=start_time, GE_Style=ge_style)
-        db.session.add(meeting)
-    else:
-        meeting.Meeting_Date = meeting_date
-        meeting.Start_Time = start_time
-        meeting.GE_Style = ge_style
-
-    SessionLog.query.filter_by(Meeting_Number=meeting_number).delete()
-    db.session.commit()
-
-    template_path = os.path.join(current_app.static_folder, 'mtg_templates', template_file)
-    try:
-        with open(template_path, 'r', encoding='utf-8') as f:
-            stream = io.StringIO(f.read())
-            stream.readline()
-            csv_reader = csv.reader(stream)
-            seq = 1
-            current_time = start_time
-            for row in csv_reader:
-                if not row or not row[0].strip():
-                    continue
-
-                session_title_from_csv = row[0].strip()
-                owner_name = row[1].strip() if len(row) > 1 else ''
-                duration_min = row[2].strip() if len(row) > 2 else None
-                duration_max = row[3].strip() if len(row) > 3 else None
-
-                session_type = SessionType.query.filter_by(Title=session_title_from_csv).first()
-                type_id = session_type.id if session_type else None
-
-                if not duration_max and not duration_min and session_type:
-                    duration_max = session_type.Duration_Max
-                    duration_min = session_type.Duration_Min
-
-                if type_id == 31 and ge_style == 'deferred': # GE Report
-                    duration_max = 5
-                elif type_id == 31 and ge_style == 'immediate':
-                    duration_max = 3
-
-
-                session_title = session_type.Title if session_type and session_type.Predefined else session_title_from_csv
-                owner_id = None
-                designation = None
-                if owner_name:
-                    owner = Contact.query.filter_by(Name=owner_name).first()
-                    if owner:
-                        owner_id = owner.id
-                        if owner.DTM:
-                            designation = 'DTM'
-                        elif owner.Type == 'Guest':
-                            designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
-                        elif owner.Type == 'Member':
-                            designation = owner.Completed_Levels.replace(' ', '/') if owner.Completed_Levels else None
-
-                if designation is None:
-                    designation = ''
-
-                new_log = SessionLog(
-                    Meeting_Number=meeting_number,
-                    Meeting_Seq=seq,
-                    Type_ID=type_id,
-                    Owner_ID=owner_id,
-                    Session_Title=session_title,
-                    Designation=designation,
-                    Duration_Min=duration_min,
-                    Duration_Max=duration_max
-                )
-
-                if session_type and not session_type.Is_Section:
-                    new_log.Start_Time = current_time
-                    duration_to_add = int(duration_max or 0)
-                    dt_current_time = datetime.combine(meeting_date, current_time)
-                    next_dt = dt_current_time + timedelta(minutes=duration_to_add + 1)
-                    current_time = next_dt.time()
-
-                db.session.add(new_log)
-                seq += 1
-            db.session.commit()
-    except FileNotFoundError:
-        return redirect(url_for('agenda_bp.agenda', message=f'Template file not found: {template_file}', category='error'))
-
-    return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
 
 
 @agenda_bp.route('/agenda/export/<int:meeting_number>')
@@ -470,26 +374,160 @@ def export_agenda(meeting_number):
         download_name=f'{meeting_number}_agenda.csv'
     )
 
+@agenda_bp.route('/agenda/create', methods=['POST'])
+@login_required
+def create_from_template():
+    meeting_number = request.form.get('meeting_number')
+    meeting_date_str = request.form.get('meeting_date')
+    start_time_str = request.form.get('start_time')
+    template_file = request.form.get('template_file')
+    ge_style = request.form.get('ge_style')
+
+    try:
+        meeting_date = datetime.strptime(meeting_date_str, '%Y-%m-%d').date()
+        start_time = datetime.strptime(start_time_str, '%H:%M').time()
+    except (ValueError, TypeError):
+        return redirect(url_for('agenda_bp.agenda', message='Invalid date or time format.', category='error'))
+
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        meeting = Meeting(Meeting_Number=meeting_number, Meeting_Date=meeting_date, Start_Time=start_time, GE_Style=ge_style)
+        db.session.add(meeting)
+    else:
+        meeting.Meeting_Date = meeting_date
+        meeting.Start_Time = start_time
+        meeting.GE_Style = ge_style
+
+    SessionLog.query.filter_by(Meeting_Number=meeting_number).delete()
+    db.session.commit() # Commit the meeting creation/update
+
+    template_path = os.path.join(current_app.static_folder, 'mtg_templates', template_file)
+    try:
+        with open(template_path, 'r', encoding='utf-8') as f:
+            stream = io.StringIO(f.read())
+            stream.readline()
+            csv_reader = csv.reader(stream)
+            seq = 1
+            current_time = start_time
+            for row in csv_reader:
+                if not row or not row[0].strip():
+                    continue
+
+                session_title_from_csv = row[0].strip()
+                owner_name = row[1].strip() if len(row) > 1 else ''
+                duration_min = row[2].strip() if len(row) > 2 else None
+                duration_max = row[3].strip() if len(row) > 3 else None
+
+                session_type = SessionType.query.filter_by(Title=session_title_from_csv).first()
+                type_id = session_type.id if session_type else None
+
+                if not duration_max and not duration_min and session_type:
+                    duration_max = session_type.Duration_Max
+                    duration_min = session_type.Duration_Min
+
+                # --- THIS IS THE FIX ---
+                # CORRECTED IDs and logic for duration and breaks
+                if type_id == 16:  # General Evaluation Report
+                    if ge_style == 'immediate':
+                        duration_max = 3
+                    else:  # deferred
+                        duration_max = 5
+
+                break_minutes = 1
+                if type_id == 31 and ge_style == 'immediate': # Individual Evaluation
+                    break_minutes += 1
+                # --- END OF FIX ---
+
+                session_title = session_type.Title if session_type and session_type.Predefined else session_title_from_csv
+
+                # ... (rest of the owner and designation logic is unchanged)
+                owner_id = None
+                designation = None
+                if owner_name:
+                    owner = Contact.query.filter_by(Name=owner_name).first()
+                    if owner:
+                        owner_id = owner.id
+                        if owner.DTM:
+                            designation = 'DTM'
+                        elif owner.Type == 'Guest':
+                            designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
+                        elif owner.Type == 'Member':
+                            designation = owner.Completed_Levels.replace(' ', '/') if owner.Completed_Levels else None
+
+                if designation is None:
+                    designation = ''
+
+                new_log = SessionLog(
+                    Meeting_Number=meeting_number,
+                    Meeting_Seq=seq,
+                    Type_ID=type_id,
+                    Owner_ID=owner_id,
+                    Session_Title=session_title,
+                    Designation=designation,
+                    Duration_Min=duration_min,
+                    Duration_Max=duration_max
+                )
+
+                if session_type and not session_type.Is_Section:
+                    new_log.Start_Time = current_time
+                    duration_to_add = int(duration_max or 0)
+                    dt_current_time = datetime.combine(meeting_date, current_time)
+                    # Use the calculated break_minutes
+                    next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
+                    current_time = next_dt.time()
+
+                db.session.add(new_log)
+                seq += 1
+            db.session.commit()
+    except FileNotFoundError:
+        return redirect(url_for('agenda_bp.agenda', message=f'Template file not found: {template_file}', category='error'))
+
+    return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
+
+
 
 @agenda_bp.route('/agenda/update', methods=['POST'])
 @login_required
 def update_logs():
     data = request.get_json()
-    if not data:
+    agenda_data = data.get('agenda_data', [])
+    new_style = data.get('ge_style')
+
+    if not agenda_data:
         return jsonify(success=False, message="No data received"), 400
 
     try:
-        # Since all items are from the same meeting, get the meeting number from the first item.
-        meeting_number = data[0].get('meeting_number')
+        meeting_number = agenda_data[0].get('meeting_number')
         if not meeting_number:
             return jsonify(success=False, message="Meeting number is missing"), 400
 
-        for seq, item in enumerate(data, 1):
+        meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+        if not meeting:
+             return jsonify(success=False, message="Meeting not found"), 404
+
+        # 1. Update and IMMEDIATELY commit the GE style change.
+        if new_style and meeting.GE_Style != new_style:
+            meeting.GE_Style = new_style
+            db.session.commit()
+
+        # 2. Update the duration for the GE Report in the submitted data.
+        for item in agenda_data:
+            # CORRECTED ID: General Evaluation Report is 16
+            if str(item.get('type_id')) == '16':
+                if new_style == 'immediate':
+                    item['duration_max'] = 3
+                else:  # 'deferred'
+                    item['duration_max'] = 5
+                break
+
+        # 3. Save all session data.
+        for seq, item in enumerate(agenda_data, 1):
             _create_or_update_session(item, meeting_number, seq)
 
-        # Recalculate start times for the single updated meeting.
-        _recalculate_start_times([meeting_number])
+        # 4. Recalculate start times using the now-committed GE style.
+        _recalculate_start_times([meeting])
 
+        # Commit the final session and time changes.
         db.session.commit()
         return jsonify(success=True)
     except Exception as e:
@@ -507,39 +545,3 @@ def delete_log(log_id):
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
-
-@agenda_bp.route('/agenda/ge-style/update', methods=['POST'])
-@login_required
-def update_ge_style():
-    data = request.get_json()
-    meeting_number = data.get('meeting_number')
-    new_style = data.get('ge_style')
-
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
-    if not meeting:
-        return jsonify(success=False, message="Meeting not found"), 404
-
-    meeting.GE_Style = new_style
-
-    # Adjust durations based on the new style
-    # General Evaluation Report ID is 31
-    ge_report_session_type = SessionType.query.get(31)
-    if ge_report_session_type:
-        ge_report_log = SessionLog.query.filter_by(
-            Meeting_Number=meeting_number,
-            Type_ID=ge_report_session_type.id
-        ).first()
-        if ge_report_log:
-            if new_style == 'deferred':
-                ge_report_log.Duration_Max = 5
-            else: # immediate
-                ge_report_log.Duration_Max = 3
-
-    try:
-        _recalculate_start_times([meeting_number])
-        db.session.commit()
-        return jsonify(success=True)
-    except Exception as e:
-        db.session.rollback()
-        return jsonify(success=False, message=str(e)), 500
-
