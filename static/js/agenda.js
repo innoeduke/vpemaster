@@ -37,6 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
         "President's Address": 'Awards / Meeting Closing'
     };
 
+    const reverseSessionPairs = {};
+    for (const key in sessionPairs) {
+        reverseSessionPairs[sessionPairs[key]] = key;
+    }
+
     // --- Constants ---
     const fieldsOrder = ['Meeting_Seq', 'Start_Time', 'Type_ID', 'Session_Title', 'Owner_ID', 'Designation', 'Duration_Min', 'Duration_Max'];
 
@@ -484,6 +489,54 @@ document.addEventListener('DOMContentLoaded', () => {
         return wrapper;
     }
 
+    function updatePairedSession(currentRow, newContact) {
+        const typeSelect = currentRow.querySelector('[data-field="Type_ID"] select');
+        if (!typeSelect) return;
+
+        const currentSessionType = sessionTypes.find(st => st.id == typeSelect.value);
+        if (!currentSessionType) return;
+
+        // Find the paired title, looking in both forward and reverse maps
+        const pairedSessionTitle = sessionPairs[currentSessionType.Title] || reverseSessionPairs[currentSessionType.Title];
+        if (!pairedSessionTitle) return;
+
+        const allRows = document.querySelectorAll('#logs-table tbody tr');
+        const pairedRow = Array.from(allRows).find(row => {
+            const rowTypeSelect = row.querySelector('[data-field="Type_ID"] select');
+            if (rowTypeSelect) {
+                const rowSessionType = sessionTypes.find(st => st.id == rowTypeSelect.value);
+                return rowSessionType && rowSessionType.Title === pairedSessionTitle;
+            }
+            return false;
+        });
+
+        if (pairedRow) {
+            const pairedHiddenInput = pairedRow.querySelector('input[name="owner_id"]');
+            const pairedSearchInput = pairedRow.querySelector('.autocomplete-container input[type="text"]');
+            const pairedDesignationInput = pairedRow.querySelector('[data-field="Designation"] input');
+
+            if (newContact) { // Setting a new owner
+                pairedHiddenInput.value = newContact.id;
+                pairedSearchInput.value = newContact.Name;
+                if (pairedDesignationInput) {
+                     const designation = newContact.DTM ? 'DTM' : (newContact.Completed_Levels || '');
+                     pairedDesignationInput.value = designation.replace(/ /g, '/');
+                }
+                pairedSearchInput.readOnly = true;
+                pairedSearchInput.style.pointerEvents = 'none';
+            } else { // Clearing the owner
+                pairedHiddenInput.value = '';
+                pairedSearchInput.value = '';
+                if (pairedDesignationInput) {
+                    pairedDesignationInput.value = '';
+                }
+                pairedSearchInput.readOnly = false;
+                pairedSearchInput.style.pointerEvents = 'auto';
+            }
+        }
+    }
+
+
     function setupAutocomplete(searchInput, hiddenInput) {
         let currentFocus;
         searchInput.addEventListener("input", function() {
@@ -496,7 +549,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (designationInput) {
                     designationInput.value = '';
                 }
+                // Clear the pair
+                updatePairedSession(currentRow, null);
             }
+
             let container, item, val = this.value;
             closeAllLists();
             if (!val) return;
@@ -526,30 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const currentSessionType = sessionTypes.find(st => st.id == currentRow.querySelector('[data-field="Type_ID"] select').value);
 
-                    if (currentSessionType && sessionPairs[currentSessionType.Title]) {
-                        const pairedSessionTitle = sessionPairs[currentSessionType.Title];
-                        const allRows = document.querySelectorAll('#logs-table tbody tr');
-                        allRows.forEach(row => {
-                            const typeSelect = row.querySelector('[data-field="Type_ID"] select');
-                            if (typeSelect) {
-                                const sessionType = sessionTypes.find(st => st.id == typeSelect.value);
-                                if (sessionType && sessionType.Title === pairedSessionTitle) {
-                                    const pairedHiddenInput = row.querySelector('input[name="owner_id"]');
-                                    const pairedSearchInput = row.querySelector('.autocomplete-container input[type="text"]');
-                                    if (pairedHiddenInput && pairedSearchInput) {
-                                        const newContact = contacts.find(c => c.id == selectedContactId);
-                                        if (newContact) {
-                                            pairedHiddenInput.value = newContact.id;
-                                            pairedSearchInput.value = newContact.Name;
-
-                                            pairedSearchInput.readOnly = true;
-                                            pairedSearchInput.style.pointerEvents = 'none'; // This is a powerful trick
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    }
+                    updatePairedSession(currentRow, selectedContact);
                 });
                 container.appendChild(item);
             });

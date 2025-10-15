@@ -257,7 +257,7 @@ def _get_next_project_for_contact(contact, completed_log):
 
 
             if level > 5:
-                contact.Next_Project = "DTM"
+                contact.Next_Project = None
                 break
 
             next_project_code = f"{level}.{project_num}"

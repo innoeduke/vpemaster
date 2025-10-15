@@ -77,9 +77,9 @@ def _create_or_update_session(item, meeting_number, seq):
     if owner_id and not designation:
         owner = Contact.query.get(owner_id)
         if owner:
-            if owner.DTM:
-                designation = 'DTM'
-            elif owner.Type == 'Guest':
+            # if owner.DTM:
+            #    designation = 'DTM'
+            if owner.Type == 'Guest':
                 designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
             elif owner.Type == 'Member':
                 designation = owner.Completed_Levels.replace(' ', '/') if owner.Completed_Levels else None
