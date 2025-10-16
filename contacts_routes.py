@@ -46,46 +46,75 @@ def contact_form(contact_id=None):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.method == 'GET' and contact:
         contact_data = {
             "Name": contact.Name,
+            "Email": contact.Email,
             "Type": contact.Type,
             "Club": contact.Club,
-            "Phone_Number": contact.Phone_Number,
-            "Bio": contact.Bio,
             "Working_Path": contact.Working_Path,
             "Next_Project": contact.Next_Project,
             "Completed_Levels": contact.Completed_Levels,
-            "DTM": contact.DTM
+            "DTM": contact.DTM,
+            "Phone_Number": contact.Phone_Number,
+            "Bio": contact.Bio
         }
         return jsonify(contact=contact_data)
 
     if request.method == 'POST':
+        contact_name = request.form.get('name')
+        email = request.form.get('email')
+
         if contact:
-            contact.Name = request.form['name']
+            # Logic for updating an existing contact
+            contact.Name = contact_name
+            contact.Email = email
             contact.Club = request.form.get('club')
-            contact.Phone_Number = request.form.get('phone_number')
-            contact.Bio = request.form.get('bio')
             contact.Next_Project = request.form.get('next_project')
             contact.Completed_Levels = request.form.get('completed_levels')
             contact.Type = request.form.get('type')
             contact.Working_Path = request.form.get('working_path')
             contact.DTM = 'dtm' in request.form
+            contact.Phone_Number = request.form.get('phone_number')
+            contact.Bio = request.form.get('bio')
+            db.session.commit()
         else:
+            # Logic for creating a new contact
+            existing_contact = Contact.query.filter_by(Name=contact_name).first()
+            if existing_contact:
+                message = f"A contact with the name '{contact_name}' already exists."
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify(success=False, message=message)
+                else:
+                    flash(message, 'error')
+                    return redirect(url_for('contacts_bp.show_contacts'))
+
+            if email:
+                existing_email = Contact.query.filter_by(Email=email).first()
+                if existing_email:
+                    message = f"A contact with the email '{email}' already exists."
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify(success=False, message=message)
+                    else:
+                        flash(message, 'error')
+                        return redirect(url_for('contacts_bp.show_contacts'))
+
             new_contact = Contact(
-                Name=request.form['name'],
+                Name=contact_name,
+                Email=email,
                 Club=request.form.get('club'),
-                Phone_Number=request.form.get('phone_number'),
-                Bio=request.form.get('bio'),
                 Date_Created=date.today(),
                 Next_Project=request.form.get('next_project'),
                 Completed_Levels=request.form.get('completed_levels'),
                 Type=request.form.get('type'),
                 Working_Path=request.form.get('working_path'),
                 DTM='dtm' in request.form,
+                Phone_Number = request.form.get('phone_number'),
+                Bio = request.form.get('bio')
             )
             db.session.add(new_contact)
             db.session.commit()
+
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify(success=True, contact={'id': new_contact.id, 'Name': new_contact.Name})
-        db.session.commit()
+                return jsonify(success=True, contact={'id': new_contact.id, 'Name': new_contact.Name, 'Phone_Number': new_contact.Phone_Number, 'Bio': new_contact.Bio})
+
         return redirect(url_for('contacts_bp.show_contacts'))
 
     pathways = list(current_app.config['PATHWAY_MAPPING'].keys())

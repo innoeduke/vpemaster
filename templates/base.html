@@ -57,13 +57,15 @@
                     <span>Pathway Library</span>
                 </a>
             </li>
-            {% if session.get('user_role') == 'Admin' %}
+            {% if session.get('user_role') in ['Admin', 'VPE'] %}
             <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
                 <a href="{{ url_for('contacts_bp.show_contacts') }}">
                     <i class="fas fa-book nav-icon"></i>
                     <span>Contact Book</span>
                 </a>
             </li>
+            {% endif %}
+            {% if session.get('user_role') == 'Admin' %}
             <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
                 <a href="{{ url_for('settings_bp.settings') }}">
                     <i class="fas fa-cog nav-icon"></i>

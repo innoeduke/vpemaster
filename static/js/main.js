@@ -120,6 +120,7 @@ function openContactModal(contactId) {
         .then(response => response.json())
         .then(data => {
             document.getElementById('name').value = data.contact.Name || '';
+            document.getElementById('email').value = data.contact.Email || '';
             document.getElementById('type').value = data.contact.Type || 'Member';
             document.getElementById('club').value = data.contact.Club || '';
             document.getElementById('phone_number').value = data.contact.Phone_Number || '';

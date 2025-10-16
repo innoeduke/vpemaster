@@ -209,7 +209,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             } else {
-                alert('Error saving contact.');
+                // Display the specific error message from the server
+                alert(data.message || 'An error occurred while saving the contact.');
             }
         })
         .catch(error => {
@@ -217,7 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('An error occurred while saving the contact.');
         });
     }
-
 
     function updateHeaderVisibility(isEditMode) {
         const header = document.querySelector('#logs-table thead');
