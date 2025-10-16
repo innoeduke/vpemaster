@@ -18,6 +18,7 @@ body {
     width: calc(100% - 60px);
     transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
     box-sizing: border-box; /* Ensure padding is included in the width calculation */
+    position: relative; /* Add this to create a positioning context */
 }
 
 .nav-pane.expanded ~ .main-content {

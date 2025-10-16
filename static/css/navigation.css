@@ -116,7 +116,7 @@
     position: absolute;
     top: 15px;
     right: 25px;
-    z-index: 100;
+    z-index: 1002;
 }
 
 .profile-trigger {
