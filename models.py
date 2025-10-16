@@ -11,6 +11,8 @@ class Contact(db.Model):
     Next_Project = db.Column(db.String(100))
     Completed_Levels = db.Column(db.String(255))
     DTM = db.Column(db.Boolean, default=False)
+    Phone_Number = db.Column(db.String(50), nullable=True)
+    Bio = db.Column(db.Text, nullable=True)
 
 class User(db.Model):
     __tablename__ = 'Users'

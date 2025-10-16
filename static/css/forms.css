@@ -74,12 +74,17 @@
 .form-table input[type="email"],
 .form-table input[type="password"],
 .form-table input[type="number"],
-.form-table select {
+.form-table select,
+.form-table textarea {
     width: 100%;
     padding: 8px;
     box-sizing: border-box;
     border: 1px solid #ccc;
     border-radius: 4px;
+}
+.form-table textarea {
+    min-height: 160px;
+    resize: vertical;
 }
 
 .form-actions {

@@ -4,44 +4,64 @@
 
 {% block content %}
     <h2 style="text-align: center; margin-top: 40px; margin-bottom: 20px;">Basic Information</h2>
-    <table class="form-table" style="max-width: 700px;">
-        <tr>
-            <td><label>User Id</label></td>
-            <td>{{ user.Username }}</td>
-        </tr>
-        <tr>
-            <td><label>Account Type</label></td>
-            <td>{{ user.Role }}</td>
-        </tr>
-        {% if user.contact %}
-        <tr>
-            <td><label>Full Name</label></td>
-            <td>
-                {{ user.contact.Name }}
-                {% if user.contact.DTM %}
-                    <sup class="dtm-superscript">DTM</sup>
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <td><label>Current Path</label></td>
-            <td>{{ user.contact.Working_Path }}</td>
-        </tr>
-        <tr>
-            <td><label>Next Project</label></td>
-            <td>{{ user.contact.Next_Project }}</td>
-        </tr>
-        {% else %}
-        <tr>
-            <td colspan="2" style="text-align: center;">
-                <em>This user account is not linked to a contact record.</em>
-            </td>
-        </tr>
-        {% endif %}
-    </table>
+    <form method="POST" action="{{ url_for('main_bp.profile') }}" style="max-width: 700px; margin: 0 auto;">
+        <input type="hidden" name="action" value="update_profile">
+        <table class="form-table">
+            <tr>
+                <td><label for="username">Username:</label></td>
+                <td>{{ user.Username }}</td>
+            </tr>
+            <tr>
+                <td><label>Account Type</label></td>
+                <td>{{ user.Role }}</td>
+            </tr>
+            {% if user.contact %}
+            <tr>
+                <td><label>Full Name</label></td>
+                <td>
+                    {{ user.contact.Name }}
+                    {% if user.contact.DTM %}
+                        <sup class="dtm-superscript">DTM</sup>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td><label for="email">Email:</label></td>
+                <td><input type="email" id="email" name="email" value="{{ user.Email if user.Email else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="phone_number">Phone Number:</label></td>
+                <td><input type="text" id="phone_number" name="phone_number" value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="bio">Bio:</label></td>
+                <td><textarea id="bio" name="bio" rows="4" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">{{ user.contact.Bio if user.contact.Bio else '' }}</textarea></td>
+            </tr>
+            <tr>
+                <td><label>Current Path</label></td>
+                <td>{{ user.contact.Working_Path }}</td>
+            </tr>
+            <tr>
+                <td><label>Next Project</label></td>
+                <td>{{ user.contact.Next_Project }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="2" style="text-align: center;">
+                    <em>This user account is not linked to a contact record.</em>
+                </td>
+            </tr>
+            {% endif %}
+        </table>
+        <div class="form-actions" style="margin-top: 10px;">
+            <button type="submit" class="btn btn-primary">Update Profile</button>
+        </div>
+    </form>
+
 
     <h2 style="text-align: center; margin-top: 40px; margin-bottom: 20px;">Reset Password</h2>
     <form method="POST" action="{{ url_for('main_bp.profile') }}" style="max-width: 700px; margin: 0 auto;">
+        <input type="hidden" name="action" value="reset_password">
         <table class="form-table">
             <tr>
                 <td><label for="new_password">New Password:</label></td>

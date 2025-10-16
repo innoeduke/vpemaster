@@ -48,6 +48,8 @@ def contact_form(contact_id=None):
             "Name": contact.Name,
             "Type": contact.Type,
             "Club": contact.Club,
+            "Phone_Number": contact.Phone_Number,
+            "Bio": contact.Bio,
             "Working_Path": contact.Working_Path,
             "Next_Project": contact.Next_Project,
             "Completed_Levels": contact.Completed_Levels,
@@ -59,6 +61,8 @@ def contact_form(contact_id=None):
         if contact:
             contact.Name = request.form['name']
             contact.Club = request.form.get('club')
+            contact.Phone_Number = request.form.get('phone_number')
+            contact.Bio = request.form.get('bio')
             contact.Next_Project = request.form.get('next_project')
             contact.Completed_Levels = request.form.get('completed_levels')
             contact.Type = request.form.get('type')
@@ -68,12 +72,14 @@ def contact_form(contact_id=None):
             new_contact = Contact(
                 Name=request.form['name'],
                 Club=request.form.get('club'),
+                Phone_Number=request.form.get('phone_number'),
+                Bio=request.form.get('bio'),
                 Date_Created=date.today(),
                 Next_Project=request.form.get('next_project'),
                 Completed_Levels=request.form.get('completed_levels'),
                 Type=request.form.get('type'),
                 Working_Path=request.form.get('working_path'),
-                DTM='dtm' in request.form
+                DTM='dtm' in request.form,
             )
             db.session.add(new_contact)
             db.session.commit()

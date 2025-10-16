@@ -1,8 +1,7 @@
-# vpemaster/main_routes.py
-
-from flask import Blueprint, render_template, request, redirect, url_for, session
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from vpemaster import db
 from vpemaster.models import User
-from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from sqlalchemy import or_
 
@@ -57,22 +56,34 @@ def profile():
     user = User.query.get_or_404(session['user_id'])
 
     if request.method == 'POST':
-        # Check if the request contains password fields for reset
-        new_password = request.form.get('new_password')
-        confirm_password = request.form.get('confirm_password')
+        action = request.form.get('action')
 
-        if new_password:
-            if len(new_password) < 8:
-                flash('Password must be at least 8 characters long.', 'error')
-            elif new_password == confirm_password:
-                # Update password hash
-                user.Pass_Hash = generate_password_hash(new_password)
-                db.session.commit()
-                flash('Your password has been updated successfully!', 'success')
-                # POST-redirect-GET pattern
-                return redirect(url_for('main_bp.profile'))
-            else:
-                flash('The new passwords do not match.', 'error')
+        if action == 'update_profile':
+            user.Email = request.form.get('email')
+            if user.contact:
+                user.contact.Phone_Number = request.form.get('phone_number')
+                user.contact.Bio = request.form.get('bio')
+            db.session.commit()
+            flash('Profile updated successfully!', 'success')
+            return redirect(url_for('main_bp.profile'))
+
+        elif action == 'reset_password':
+            # Check if the request contains password fields for reset
+            new_password = request.form.get('new_password')
+            confirm_password = request.form.get('confirm_password')
+
+            if new_password:
+                if len(new_password) < 8:
+                    flash('Password must be at least 8 characters long.', 'error')
+                elif new_password == confirm_password:
+                    # Update password hash
+                    user.Pass_Hash = generate_password_hash(new_password)
+                    db.session.commit()
+                    flash('Your password has been updated successfully!', 'success')
+                    # POST-redirect-GET pattern
+                    return redirect(url_for('main_bp.profile'))
+                else:
+                    flash('The new passwords do not match.', 'error')
 
     return render_template('profile.html', user=user)
 

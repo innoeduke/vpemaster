@@ -122,6 +122,8 @@ function openContactModal(contactId) {
             document.getElementById('name').value = data.contact.Name || '';
             document.getElementById('type').value = data.contact.Type || 'Member';
             document.getElementById('club').value = data.contact.Club || '';
+            document.getElementById('phone_number').value = data.contact.Phone_Number || '';
+            document.getElementById('bio').value = data.contact.Bio || '';
             document.getElementById('working_path').value = data.contact.Working_Path || 'Presentation Mastery';
             document.getElementById('next_project').value = data.contact.Next_Project || '';
             document.getElementById('completed_levels').value = data.contact.Completed_Levels || '';
