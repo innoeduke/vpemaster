@@ -79,7 +79,7 @@ def _create_or_update_session(item, meeting_number, seq):
         if owner:
             if owner.DTM:
                 designation = None
-            if owner.Type == 'Guest':
+            elif owner.Type == 'Guest':
                 designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
             elif owner.Type == 'Member':
                 designation = owner.Completed_Levels.replace(' ', '/') if owner.Completed_Levels else None
