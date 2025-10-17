@@ -59,8 +59,15 @@
     }
 }
 
-
 @media (max-width: 768px) {
+
+    /* Hides the specified columns in edit mode on mobile */
+    .edit-mode-active #logs-table .col-no,
+    .edit-mode-active #logs-table .col-designation,
+    .edit-mode-active #logs-table .col-duration-min {
+        display: none;
+    }
+
     .container-wrapper {
         display: block;
     }

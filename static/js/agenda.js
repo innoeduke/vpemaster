@@ -262,7 +262,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (originalData.isSection === 'true') {
             const seqCell = createEditableCell('Meeting_Seq', seq, true, null);
             const titleCell = createEditableCell('Session_Title', originalData.sessionTitle, true, null);
-            titleCell.colSpan = 7;
+
+            // Dynamically set colspan based on screen size to fix mobile browser bug
+            if (window.innerWidth <= 768) {
+                titleCell.colSpan = 5; // Spans the 5 visible columns on mobile
+            } else {
+                titleCell.colSpan = 7; // Spans the 7 visible columns on desktop
+            }
+
             titleCell.classList.add('section-row');
 
             row.append(seqCell, titleCell, createActionsCell(originalData.typeId));
@@ -388,6 +395,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function createEditableCell(field, value, isSection, typeId) {
         const cell = document.createElement('td');
         cell.dataset.field = field;
+
+        // Add classes for CSS targeting
+        const fieldToClass = {
+            'Meeting_Seq': 'col-no',
+            'Start_Time': 'col-start-time',
+            'Type_ID': 'col-session-type',
+            'Session_Title': 'col-session-title',
+            'Owner_ID': 'col-owner',
+            'Designation': 'col-designation',
+            'Duration_Min': 'col-duration-min',
+            'Duration_Max': 'col-duration-max'
+        };
+        if (fieldToClass[field]) {
+            cell.classList.add(fieldToClass[field]);
+        }
 
         if (isSection) {
             const input = document.createElement('input');
