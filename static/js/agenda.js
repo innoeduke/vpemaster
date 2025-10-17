@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'use strict';
 
     // --- DOM Elements ---
+    const agendaContent = document.getElementById('agenda-content');
     const editBtn = document.getElementById('edit-btn');
     const saveBtn = document.getElementById('edit-logs-btn');
     const cancelButton = document.getElementById('cancel-edit-btn');
@@ -97,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function toggleEditMode(enable) {
         isEditing = enable;
-        tableContainer.classList.toggle('edit-mode-active', enable);
+        agendaContent.classList.toggle('edit-mode-active', enable);
         updateHeaderVisibility(enable);
         updateRowsForEditMode(enable);
         updateActionButtonsVisibility(enable);

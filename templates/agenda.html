@@ -3,7 +3,16 @@
 {% block title %}Meeting Agenda{% endblock %}
 
 {% block content %}
+<div id="agenda-content"> {# Wrapper for edit-mode class #}
     <h1>Meeting Agenda</h1>
+
+    {# This is the updated warning block for the full-screen overlay #}
+    <div class="orientation-warning">
+        <i class="fas fa-mobile-alt warning-icon"></i>
+        <h2>Please Rotate Your Device</h2>
+        <p>For the best experience, please rotate your device to landscape mode to edit the agenda.</p>
+    </div>
+
     <br/>
     <div class="action-bar">
         <div class="action-bar-left">
@@ -217,5 +226,5 @@
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
+</div> {# End of #agenda-content wrapper #}
 {% endblock %}
-
