@@ -78,8 +78,15 @@
 
         <div id="user-settings" class="tab-content">
             <h2>User Management</h2>
-            <a href="{{ url_for('users_bp.user_form') }}" class="btn btn-primary">Add New User</a>
-
+            <div class="settings-header">
+                <div class="button-group">
+                    <a href="{{ url_for('users_bp.user_form') }}" class="btn btn-primary">Add New User</a>
+                    <form action="{{ url_for('users_bp.bulk_import_users') }}" method="post" enctype="multipart/form-data" id="bulk-import-form" style="display: inline;">
+                        <input type="file" name="file" id="bulk-import-file" style="display: none;" onchange="document.getElementById('bulk-import-form').submit()">
+                        <button type="button" class="btn btn-info" onclick="document.getElementById('bulk-import-file').click()">Bulk Import</button>
+                    </form>
+                </div>
+            </div>
             <table>
                 <thead>
                     <tr>
