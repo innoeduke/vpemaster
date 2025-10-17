@@ -18,6 +18,7 @@ class Contact(db.Model):
 class User(db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key=True)
+    Member_ID = db.Column(db.String(50), unique=True, nullable=True)
     Username = db.Column(db.String(50), nullable=False, unique=True)
     Email = db.Column(db.String(120), unique=True, nullable=True)
     Contact_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)

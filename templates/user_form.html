@@ -15,6 +15,10 @@
                 <td><input type="email" id="email" name="email" value="{{ user.Email if user and user.Email else '' }}"></td>
             </tr>
             <tr>
+                <td><label for="member_id">Member ID:</label></td>
+                <td><input type="text" id="member_id" name="member_id" value="{{ user.Member_ID if user and user.Member_ID else '' }}"></td>
+            </tr>
+            <tr>
                 <td><label for="contact_id">Link to Contact:</label></td>
                 <td>
                     <select id="contact_id" name="contact_id">
