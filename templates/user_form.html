@@ -23,9 +23,9 @@
                 <td>
                     <select id="mentor_id" name="mentor_id">
                         <option value="0">None</option>
-                        {% for u in users %}
-                            <option value="{{ u.id }}" {% if user and user.Mentor_ID == u.id %}selected{% endif %}>
-                                {{ u.Username }}
+                        {% for contact in contacts %}
+                            <option value="{{ contact.id }}" {% if user and user.Mentor_ID == contact.id %}selected{% endif %}>
+                                {{ contact.Name }}
                             </option>
                         {% endfor %}
                     </select>

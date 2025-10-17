@@ -18,15 +18,16 @@ class Contact(db.Model):
 class User(db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key=True)
-    Member_ID = db.Column(db.String(50), unique=True, nullable=True)
     Username = db.Column(db.String(50), nullable=False, unique=True)
     Email = db.Column(db.String(120), unique=True, nullable=True)
+    Member_ID = db.Column(db.String(50), unique=True, nullable=True)
+    Mentor_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
     Contact_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
-    Mentor_ID = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=True)
     Pass_Hash = db.Column(db.String(255), nullable=False)
     Date_Created = db.Column(db.Date)
     Role = db.Column(db.String(50), nullable=False, default='Member')
-    contact = db.relationship('Contact')
+    contact = db.relationship('Contact', foreign_keys=[Contact_ID])
+    mentor = db.relationship('Contact', foreign_keys=[Mentor_ID])
 
 class Project(db.Model):
     __tablename__ = 'Projects'
