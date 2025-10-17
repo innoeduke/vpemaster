@@ -176,8 +176,13 @@ h1 {
 
 /* Owner Cell */
 .owner-available {
-    color: #28a745;
+    color: #155724;
     font-weight: bold;
+    background-color: #d4edda;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #c3e6cb;
+    font-size: 0.9em;
 }
 
 /* Action Cell */
@@ -210,6 +215,13 @@ h1 {
 
 .assign-controls select {
     color: #333; /* Make text visible */
+}
+
+/* Style for unassigned role dropdowns for VPE/Admin */
+.admin-assign-select.unassigned-role {
+    border-color: #28a745; /* Green border */
+    background-color: #e9f7ef; /* Light green background */
+    font-weight: bold;
 }
 
 /* --- Responsive Design --- */
@@ -275,6 +287,34 @@ h1 {
     .booking-table td:nth-of-type(3) { /* Action */
         flex: 2.5;
         justify-content: flex-end;
+    }
+
+    /* --- VPE/Admin Mobile View Overrides --- */
+    .booking-table.is-admin-view tr {
+        flex-wrap: wrap; /* Allow items to wrap to the next line */
+        padding: 0.5rem 0.75rem; /* Adjust padding slightly */
+    }
+
+    .booking-table.is-admin-view .role-cell {
+        flex-basis: 100%; /* Role takes the full top row */
+        margin-bottom: 8px; /* Add space between role and dropdown */
+        justify-content: flex-start; /* Align left */
+        min-height: auto;
+    }
+
+    .booking-table.is-admin-view .owner-name-cell {
+        display: none; /* Hide the redundant owner name cell */
+    }
+
+    .booking-table.is-admin-view .action-cell {
+        flex-basis: 100%; /* Dropdown takes the full bottom row */
+        justify-content: flex-start; /* Align left */
+    }
+
+    .booking-table.is-admin-view .assign-controls,
+    .booking-table.is-admin-view .admin-assign-select {
+        width: 100%; /* Make dropdown and its container full-width */
+        font-size: 0.9em;
     }
 }
 

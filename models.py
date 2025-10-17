@@ -4,6 +4,7 @@ class Contact(db.Model):
     __tablename__ = 'Contacts'
     id = db.Column(db.Integer, primary_key=True)
     Name = db.Column(db.String(100), nullable=False, unique=True)
+    Email = db.Column(db.String(120), unique=True, nullable=True)
     Type = db.Column(db.String(50), nullable=False, default='Guest')
     Club = db.Column(db.String(100))
     Date_Created = db.Column(db.Date)

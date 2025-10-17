@@ -46,7 +46,7 @@ def contact_form(contact_id=None):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.method == 'GET' and contact:
         contact_data = {
             "Name": contact.Name,
-            "Email": contact.Email,
+            "Email": contact.Email or None,
             "Type": contact.Type,
             "Club": contact.Club,
             "Working_Path": contact.Working_Path,
@@ -60,7 +60,7 @@ def contact_form(contact_id=None):
 
     if request.method == 'POST':
         contact_name = request.form.get('name')
-        email = request.form.get('email')
+        email = request.form.get('email') or None
 
         if contact:
             # Logic for updating an existing contact

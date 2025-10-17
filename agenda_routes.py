@@ -77,8 +77,8 @@ def _create_or_update_session(item, meeting_number, seq):
     if owner_id and not designation:
         owner = Contact.query.get(owner_id)
         if owner:
-            # if owner.DTM:
-            #    designation = 'DTM'
+            if owner.DTM:
+                designation = None
             if owner.Type == 'Guest':
                 designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
             elif owner.Type == 'Member':
@@ -427,7 +427,7 @@ def create_from_template():
                     if owner:
                         owner_id = owner.id
                         if owner.DTM:
-                            designation = 'DTM'
+                            designation = None
                         elif owner.Type == 'Guest':
                             designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
                         elif owner.Type == 'Member':

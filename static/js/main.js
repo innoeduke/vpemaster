@@ -158,4 +158,4 @@ document.addEventListener('DOMContentLoaded', function() {
     if (navOverlay) {
         navOverlay.addEventListener('click', closeNav);
     }
-+});
+});

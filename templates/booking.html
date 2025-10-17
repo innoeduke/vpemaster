@@ -50,7 +50,7 @@
     </div>
 
 
-    <table class="booking-table">
+    <table class="booking-table {% if is_vpe_or_admin %}is-admin-view{% endif %}">
         <thead>
             <tr>
                 <th>Role</th>
@@ -70,17 +70,17 @@
                         {% endif %}
                     </div>
                 </td>
-                <td>
+                <td class="owner-name-cell">
                     {% if role.owner_name %}
                         {{ role.owner_name }}
                     {% else %}
-                        <span class="owner-available">Available</span>
+                        {# This is now intentionally left empty #}
                     {% endif %}
                 </td>
-                <td>
+                <td class="action-cell">
                     {% if is_vpe_or_admin %}
                         <div class="assign-controls">
-                            <select class="admin-assign-select" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
+                            <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
                                 <option value="0">-- Assign / Unassign --</option>
                                 {% for contact in contacts %}
                                 <option value="{{ contact.id }}" {% if role.owner_id == contact.id %}selected{% endif %}>{{ contact.Name }}</option>
