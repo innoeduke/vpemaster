@@ -19,6 +19,19 @@
                 <td><input type="text" id="member_id" name="member_id" value="{{ user.Member_ID if user and user.Member_ID else '' }}"></td>
             </tr>
             <tr>
+                <td><label for="mentor_id">Mentor:</label></td>
+                <td>
+                    <select id="mentor_id" name="mentor_id">
+                        <option value="0">None</option>
+                        {% for u in users %}
+                            <option value="{{ u.id }}" {% if user and user.Mentor_ID == u.id %}selected{% endif %}>
+                                {{ u.Username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
                 <td><label for="contact_id">Link to Contact:</label></td>
                 <td>
                     <select id="contact_id" name="contact_id">

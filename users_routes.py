@@ -32,11 +32,13 @@ def user_form(user_id):
 
     if request.method == 'POST':
         contact_id = request.form.get('contact_id', 0, type=int)
+        mentor_id = request.form.get('mentor_id', 0, type=int)
 
         if user:
             user.Username = request.form['username']
             user.Email = request.form.get('email')
             user.Member_ID = request.form.get('member_id')
+            user.Mentor_ID = mentor_id if mentor_id != 0 else None
             user.Role = request.form['role']
             user.Contact_ID = contact_id if contact_id != 0 else None
             password = request.form.get('password')
@@ -51,6 +53,7 @@ def user_form(user_id):
                 Pass_Hash=pass_hash,
                 Role=request.form['role'],
                 Contact_ID=contact_id if contact_id != 0 else None,
+                Mentor_ID=mentor_id if mentor_id != 0 else None,
                 Date_Created=date.today()
             )
             db.session.add(new_user)
