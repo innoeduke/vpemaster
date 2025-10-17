@@ -108,7 +108,7 @@
         left: 0;
         width: 250px;
         height: 100%;
-        z-index: 1002;
+        z-index: 1003;
         transform: translateX(-100%);
         transition: transform 0.3s ease-in-out;
         overflow-y: auto;
@@ -129,6 +129,22 @@
     }
     .nav-pane ul li a span {
         opacity: 1;
+    }
+
+    /* --- Nav Pane Overlay Styles for Mobile --- */
+    #nav-overlay {
+        display: none; /* Hidden by default */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+        z-index: 1002; /* Below nav-pane, above everything else */
+    }
+
+    .nav-pane.expanded + #nav-overlay {
+        display: block; /* Show the overlay when nav is expanded */
     }
 
     /* Adjust main content to not be covered by the fixed header */

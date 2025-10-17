@@ -141,3 +141,21 @@ function closeContactModal() {
     const contactModal = document.getElementById("contactModal");
     contactModal.style.display = "none";
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const navPane = document.getElementById('nav-pane');
+    const navOverlay = document.getElementById('nav-overlay');
+    const mobileNavToggle = document.getElementById('mobile-nav-toggle');
+
+    // Function to close the nav
+    function closeNav() {
+        if (navPane.classList.contains('expanded')) {
+            navPane.classList.remove('expanded');
+        }
+    }
+
+    // Add click listener to the overlay
+    if (navOverlay) {
+        navOverlay.addEventListener('click', closeNav);
+    }
++});

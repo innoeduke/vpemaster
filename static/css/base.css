@@ -16,14 +16,16 @@ body {
     margin-left: 60px;
     padding: 20px;
     width: calc(100% - 60px);
-    transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
     box-sizing: border-box; /* Ensure padding is included in the width calculation */
     position: relative; /* Add this to create a positioning context */
 }
 
-.nav-pane.expanded ~ .main-content {
-    margin-left: 250px;
-    width: calc(100% - 250px);
+/* Apply push effect only on screens wider than 768px (PC/Desktop) */
+@media (min-width: 769px) {
+    .nav-pane.expanded ~ .main-content {
+        margin-left: 250px;
+        width: calc(100% - 250px);
+    }
 }
 
 h1 {
