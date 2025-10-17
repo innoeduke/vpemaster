@@ -4,6 +4,7 @@ from vpemaster.models import User, Contact
 from werkzeug.security import generate_password_hash
 from .main_routes import login_required
 from datetime import date
+from sqlalchemy import or_
 import csv
 import io
 
@@ -17,12 +18,14 @@ def _create_or_update_user(user=None, **kwargs):
         user = User(Date_Created=date.today())
         password = kwargs.get('password') or 'leadership'
         user.Pass_Hash = generate_password_hash(password)
+        user.Status = 'active'
         db.session.add(user)
     else:
         # Updating an existing user
         password = kwargs.get('password')
         if password:
             user.Pass_Hash = generate_password_hash(password)
+        user.Status = kwargs.get('status')
 
     user.Username = kwargs.get('username')
     user.Email = kwargs.get('email')
@@ -55,7 +58,8 @@ def user_form(user_id):
     if user_id:
         user = User.query.get_or_404(user_id)
 
-    contacts = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
+    member_contacts = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
+    mentor_contacts = Contact.query.filter(or_(Contact.Type == 'Member', Contact.Type == 'Past Member')).order_by(Contact.Name.asc()).all()
     users = User.query.order_by(User.Username.asc()).all()
 
     if request.method == 'POST':
@@ -65,6 +69,7 @@ def user_form(user_id):
             email=request.form.get('email'),
             member_id=request.form.get('member_id'),
             role=request.form.get('role'),
+            status=request.form.get('status'),
             contact_id=request.form.get('contact_id', 0, type=int),
             mentor_id=request.form.get('mentor_id', 0, type=int),
             password=request.form.get('password')
@@ -72,7 +77,7 @@ def user_form(user_id):
         db.session.commit()
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
-    return render_template('user_form.html', user=user, contacts=contacts, users=users)
+    return render_template('user_form.html', user=user, contacts=member_contacts, users=users, mentor_contacts=mentor_contacts)
 
 @users_bp.route('/user/delete/<int:user_id>', methods=['POST'])
 @login_required

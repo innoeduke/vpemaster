@@ -26,6 +26,7 @@ class User(db.Model):
     Pass_Hash = db.Column(db.String(255), nullable=False)
     Date_Created = db.Column(db.Date)
     Role = db.Column(db.String(50), nullable=False, default='Member')
+    Status = db.Column(db.String(50), nullable=False, default='active')
     contact = db.relationship('Contact', foreign_keys=[Contact_ID])
     mentor = db.relationship('Contact', foreign_keys=[Mentor_ID])
 

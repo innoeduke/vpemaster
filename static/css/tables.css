@@ -31,3 +31,8 @@ th {
 .actions-column {
     text-align: right;
 }
+
+.inactive-user {
+    color: #999;
+    background-color: #f9f9f9;
+}

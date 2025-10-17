@@ -27,6 +27,9 @@ def login():
         user = User.query.filter(or_(User.Username == login_identifier, User.Email == login_identifier)).first()
 
         if user and check_password_hash(user.Pass_Hash, password):
+            if user.Status != 'active':
+                flash('Your account is inactive. Please contact an administrator.', 'error')
+                return redirect(url_for('main_bp.login'))
             session.permanent = True
             session['logged_in'] = True
             session['user_role'] = user.Role
@@ -35,6 +38,7 @@ def login():
                 session['display_name'] = user.contact.Name
             return redirect(url_for('agenda_bp.agenda'))
         else:
+            flash('Invalid username or password.', 'error')
             return redirect(url_for('main_bp.login'))
     return render_template('login.html')
 

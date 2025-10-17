@@ -22,13 +22,13 @@
                 <td><label for="mentor_id">Mentor:</label></td>
                 <td>
                     <select id="mentor_id" name="mentor_id">
-                        <option value="0">None</option>
-                        {% for contact in contacts %}
+                         <option value="0">None</option>
+                        {% for contact in mentor_contacts %}
                             <option value="{{ contact.id }}" {% if user and user.Mentor_ID == contact.id %}selected{% endif %}>
                                 {{ contact.Name }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                             </option>
+                         {% endfor %}
+                     </select>
                 </td>
             </tr>
             <tr>
@@ -61,6 +61,15 @@
                         <option value="VPE" {% if user and user.Role == 'VPE' %}selected{% endif %}>VPE</option>
                         <option value="Officer" {% if user and user.Role == 'Officer' %}selected{% endif %}>Officer</option>
                         <option value="Member" {% if (user and user.Role == 'Member') or not user %}selected{% endif %}>Member</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="status">Status:</label></td>
+                <td>
+                    <select id="status" name="status" required>
+                        <option value="active" {% if (user and user.Status == 'active') or not user %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if user and user.Status == 'inactive' %}selected{% endif %}>Inactive</option>
                     </select>
                 </td>
             </tr>

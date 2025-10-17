@@ -8,23 +8,19 @@
         <input type="hidden" name="action" value="update_profile">
         <table class="form-table">
             <tr>
-                <td><label for="username">Username:</label></td>
-                <td>{{ user.Username }}</td>
-            </tr>
-            <tr>
-                <td><label>Account Type</label></td>
-                <td>{{ user.Role }}</td>
-            </tr>
-            {% if user.contact %}
-            <tr>
                 <td><label>Full Name</label></td>
                 <td>
-                    {{ user.contact.Name }}
+                    {{ user.contact.Name if user.contact else '' }} ({{ user.Username }})
                     {% if user.contact.DTM %}
                         <sup class="dtm-superscript">DTM</sup>
                     {% endif %}
                 </td>
             </tr>
+            <tr>
+                <td><label>Role</label></td>
+                <td>{{ user.Role }}</td>
+            </tr>
+            {% if user.contact %}
             <tr>
                 <td><label for="email">Email:</label></td>
                 <td><input type="email" id="email" name="email" value="{{ user.Email if user.Email else '' }}"></td>
@@ -34,16 +30,16 @@
                 <td><input type="text" id="phone_number" name="phone_number" value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}"></td>
             </tr>
             <tr>
-                <td><label for="bio">Bio:</label></td>
-                <td><textarea id="bio" name="bio" rows="4" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">{{ user.contact.Bio if user.contact.Bio else '' }}</textarea></td>
-            </tr>
-            <tr>
                 <td><label>Current Path</label></td>
                 <td>{{ user.contact.Working_Path }}</td>
             </tr>
             <tr>
                 <td><label>Next Project</label></td>
                 <td>{{ user.contact.Next_Project }}</td>
+            </tr>
+            <tr>
+                <td><label for="bio">Bio:</label></td>
+                <td><textarea id="bio" name="bio" rows="4" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;">{{ user.contact.Bio if user.contact.Bio else '' }}</textarea></td>
             </tr>
             {% else %}
             <tr>
