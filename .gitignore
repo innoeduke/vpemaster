@@ -1,4 +1,7 @@
 .DS_Store
-__init__.py
+.env
+.env_pythonanywhere
 __pycache__/
+
+
 
