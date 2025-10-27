@@ -1,8 +1,8 @@
 # vpemaster/contacts_routes.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
-from vpemaster import db
-from vpemaster.models import Contact, SessionLog
+from . import db
+from .models import Contact, SessionLog
 from .main_routes import login_required
 from datetime import date
 

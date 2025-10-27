@@ -1,8 +1,8 @@
 # vpemaster/pathways_routes.py
 
 from flask import Blueprint, render_template, request, jsonify, session
-from vpemaster import db
-from vpemaster.models import Project
+from . import db
+from .models import Project
 from .main_routes import login_required
 import markdown
 

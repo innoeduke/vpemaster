@@ -1,4 +1,4 @@
-from vpemaster import db
+from . import db
 
 class Contact(db.Model):
     __tablename__ = 'Contacts'
@@ -98,3 +98,19 @@ class SessionLog(db.Model):
     project = db.relationship('Project', backref='session_logs')
     owner = db.relationship('Contact', backref='session_logs')
     session_type = db.relationship('SessionType', backref='session_logs')
+
+class LevelRole(db.Model):
+    __tablename__ = 'level_roles'
+    id = db.Column(db.Integer, primary_key=True)
+    level = db.Column(db.Integer, nullable=False)
+    role = db.Column(db.String(255), nullable=False)
+    type = db.Column(db.String(50), nullable=False)
+    count_required = db.Column(db.Integer, nullable=False, default=0)
+
+class Presentation(db.Model):
+    __tablename__ = 'presentations'
+    id = db.Column(db.Integer, primary_key=True)
+    level = db.Column(db.SmallInteger, nullable=False)
+    code = db.Column(db.String(50), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    series = db.Column(db.String(100))

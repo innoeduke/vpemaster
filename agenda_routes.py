@@ -3,7 +3,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
 from .main_routes import login_required
 from .models import SessionLog, SessionType, Contact, Meeting, Project
-from vpemaster import db
+from . import db
 from sqlalchemy import distinct
 from datetime import datetime, timedelta
 import io

@@ -1,319 +1,893 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block title %}Settings{% endblock %} {% block
+content %}
+<h1>System Settings</h1>
 
-{% block title %}Settings{% endblock %}
+<div class="settings-container">
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="openTab(event, 'general')">
+      General
+    </button>
+    <button class="tab-btn" onclick="openTab(event, 'sessions')">
+      Sessions
+    </button>
+    <button class="tab-btn" onclick="openTab(event, 'agenda-settings')">
+      Agenda
+    </button>
+    <button class="tab-btn" onclick="openTab(event, 'level-roles')">
+      Level Roles
+    </button>
+    <button class="tab-btn" onclick="openTab(event, 'presentations')">
+      Presentations
+    </button>
+    <button class="tab-btn" onclick="openTab(event, 'user-settings')">
+      Users
+    </button>
+  </div>
 
-{% block content %}
-    <h1>System Settings</h1>
+  <div id="general" class="tab-content" style="display: block">
+    <h2>General Settings</h2>
+    <p>General application settings will be managed here.</p>
+  </div>
 
-    <div class="settings-container">
-        <div class="tab-nav">
-            <button class="tab-btn active" onclick="openTab(event, 'general')">General</button>
-            <button class="tab-btn" onclick="openTab(event, 'sessions')">Sessions</button>
-            <button class="tab-btn" onclick="openTab(event, 'agenda-settings')">Agenda</button>
-            <button class="tab-btn" onclick="openTab(event, 'user-settings')">Users</button>
-        </div>
-
-        <div id="general" class="tab-content" style="display: block;">
-            <h2>General Settings</h2>
-            <p>General application settings will be managed here.</p>
-        </div>
-
-        <div id="sessions" class="tab-content">
-            <div class="settings-header">
-                <h2>Session Types</h2>
-                <div class="button-group">
-                    <button id="add-session-btn" class="btn btn-success">Add New</button>
-                    <button id="edit-sessions-btn" class="btn btn-primary">Edit</button>
-                    <button id="cancel-sessions-btn" class="btn btn-danger" style="display: none;">Cancel</button>
-                </div>
-            </div>
-            <table id="sessions-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Title</th>
-                        <th>Default Owner</th>
-                        <th>Role</th>
-                        <th>Role Group</th>
-                        <th>Min (mins)</th>
-                        <th>Max (mins)</th>
-                        <th>Section</th>
-                        <th>Predefined</th>
-                        <th>Project</th>
-                        <th>Hidden</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for st in session_types %}
-                    <tr data-id="{{ st.id }}">
-                        <td>{{ st.id }}</td>
-                        <td data-field="Title">{{ st.Title }}</td>
-                        <td data-field="Default_Owner">{{ st.Default_Owner if st.Default_Owner is not none else '' }}</td>
-                        <td data-field="Role">{{ st.Role if st.Role is not none else '' }}</td>
-                        <td data-field="Role_Group">{{ st.Role_Group if st.Role_Group is not none else '' }}</td>
-                        <td data-field="Duration_Min">{{ st.Duration_Min if st.Duration_Min is not none else '' }}</td>
-                        <td data-field="Duration_Max">{{ st.Duration_Max if st.Duration_Max is not none else '' }}</td>
-                        <td data-field="Is_Section">
-                            <input type="checkbox" {% if st.Is_Section %}checked{% endif %} disabled>
-                        </td>
-                        <td data-field="Predefined">
-                            <input type="checkbox" {% if st.Predefined%}checked{% endif %} disabled>
-                        </td>
-                        <td data-field="Valid_for_Project">
-                            <input type="checkbox" {% if st.Valid_for_Project %}checked{% endif %} disabled>
-                        </td>
-                        <td data-field="Is_Hidden">
-                            <input type="checkbox" {% if st.Is_Hidden %}checked{% endif %} disabled>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <div id="agenda-settings" class="tab-content">
-            <h2>Agenda Settings</h2>
-            <p>Settings related to the meeting agenda, templates, and session types will be configured here.</p>
-        </div>
-
-        <div id="user-settings" class="tab-content">
-            <h2>User Management</h2>
-            <div class="settings-header">
-                <div class="button-group">
-                    <a href="{{ url_for('users_bp.user_form') }}" class="btn btn-primary">Add New User</a>
-                    <form action="{{ url_for('users_bp.bulk_import_users') }}" method="post" enctype="multipart/form-data" id="bulk-import-form" style="display: inline;">
-                        <input type="file" name="file" id="bulk-import-file" style="display: none;" onchange="document.getElementById('bulk-import-form').submit()">
-                        <button type="button" class="btn btn-info" onclick="document.getElementById('bulk-import-file').click()">Bulk Import</button>
-                    </form>
-                </div>
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>No.</th>
-                        <th>Full Name (Username)</th>
-                        <th>Role</th>
-                        <th>Email</th>
-                        <th>Phone</th>
-                        <th>Mentor</th>
-                        <th>Status</th>
-                        <th>Date Created</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in all_users %}
-                    <tr class="{{ 'inactive-user' if user.Status == 'inactive' else '' }}">
-                        <td>{{ loop.index }}</td>
-                        <td>
-                            {% if user.contact %}
-                                {{ user.contact.Name }}
-                                ({{ user.Username }})
-                                <i class="fas fa-link" style="color: green; margin-left: 5px;"></i>
-                            {% else %}
-                                <em style="color: #888;">Not Linked</em>
-                            {% endif %}
-                        </td>
-                        <td>{{ user.Role }}</td>
-                        <td>{{ user.Email if user.Email else '' }}</td>
-                        <td>{{ user.contact.Phone_Number if user.contact and user.contact.Phone_Number else '' }}</td>
-                        <td>{{ user.mentor.Name if user.mentor else '' }}</td>
-                        <td>{{ user.Status }}</td>
-                        <td>{{ user.Date_Created.strftime('%Y-%m-%d') if user.Date_Created else '' }}</td>
-                        <td>
-                            <div class="action-links">
-                                <a href="{{ url_for('users_bp.user_form', user_id=user.id) }}" class="icon-btn" title="Edit"><i class="fas fa-edit"></i></a>
-                                <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('users_bp.delete_user', user_id=user.id) }}', 'user')" title="Delete"><i class="fas fa-trash-alt"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+  <div id="sessions" class="tab-content">
+    <div class="settings-header">
+      <h2>Session Types</h2>
+      <div class="button-group">
+        <button id="add-session-btn" class="btn btn-success">Add New</button>
+        <button id="edit-sessions-btn" class="btn btn-primary">Edit</button>
+        <button
+          id="cancel-sessions-btn"
+          class="btn btn-danger"
+          style="display: none"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
+    <table id="sessions-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Title</th>
+          <th>Default Owner</th>
+          <th>Role</th>
+          <th>Role Group</th>
+          <th>Min (mins)</th>
+          <th>Max (mins)</th>
+          <th>Section</th>
+          <th>Predefined</th>
+          <th>Project</th>
+          <th>Hidden</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for st in session_types %}
+        <tr data-id="{{ st.id }}">
+          <td>{{ st.id }}</td>
+          <td data-field="Title">{{ st.Title }}</td>
+          <td data-field="Default_Owner">
+            {{ st.Default_Owner if st.Default_Owner is not none else '' }}
+          </td>
+          <td data-field="Role">
+            {{ st.Role if st.Role is not none else '' }}
+          </td>
+          <td data-field="Role_Group">
+            {{ st.Role_Group if st.Role_Group is not none else '' }}
+          </td>
+          <td data-field="Duration_Min">
+            {{ st.Duration_Min if st.Duration_Min is not none else '' }}
+          </td>
+          <td data-field="Duration_Max">
+            {{ st.Duration_Max if st.Duration_Max is not none else '' }}
+          </td>
+          <td data-field="Is_Section">
+            <input
+              type="checkbox"
+              {%
+              if
+              st.Is_Section
+              %}checked{%
+              endif
+              %}
+              disabled
+            />
+          </td>
+          <td data-field="Predefined">
+            <input
+              type="checkbox"
+              {%
+              if
+              st.Predefined%}checked{%
+              endif
+              %}
+              disabled
+            />
+          </td>
+          <td data-field="Valid_for_Project">
+            <input
+              type="checkbox"
+              {%
+              if
+              st.Valid_for_Project
+              %}checked{%
+              endif
+              %}
+              disabled
+            />
+          </td>
+          <td data-field="Is_Hidden">
+            <input
+              type="checkbox"
+              {%
+              if
+              st.Is_Hidden
+              %}checked{%
+              endif
+              %}
+              disabled
+            />
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-    {% include '_session_modal.html' %}
+  <div id="agenda-settings" class="tab-content">
+    <h2>Agenda Settings</h2>
+    <p>
+      Settings related to the meeting agenda, templates, and session types will
+      be configured here.
+    </p>
+  </div>
+
+  <div id="user-settings" class="tab-content">
+    <div class="settings-header">
+      <h2>User Management</h2>
+      <div class="button-group">
+        <a href="{{ url_for('users_bp.user_form') }}" class="btn btn-primary"
+          >Add New User</a
+        >
+        <form
+          action="{{ url_for('users_bp.bulk_import_users') }}"
+          method="post"
+          enctype="multipart/form-data"
+          id="bulk-import-form"
+          style="display: inline"
+        >
+          <input
+            type="file"
+            name="file"
+            id="bulk-import-file"
+            style="display: none"
+            onchange="document.getElementById('bulk-import-form').submit()"
+          />
+          <button
+            type="button"
+            class="btn btn-info"
+            onclick="document.getElementById('bulk-import-file').click()"
+          >
+            Bulk Import
+          </button>
+        </form>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>No.</th>
+          <th>Full Name (Username)</th>
+          <th>Role</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Mentor</th>
+          <th>Status</th>
+          <th>Date Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in all_users %}
+        <tr class="{{ 'inactive-user' if user.Status == 'inactive' else '' }}">
+          <td>{{ loop.index }}</td>
+          <td>
+            {% if user.contact %} {{ user.contact.Name }} ({{ user.Username }})
+            <i class="fas fa-link" style="color: green; margin-left: 5px"></i>
+            {% else %}
+            <em style="color: #888">Not Linked</em>
+            {% endif %}
+          </td>
+          <td>{{ user.Role }}</td>
+          <td>{{ user.Email if user.Email else '' }}</td>
+          <td>
+            {{ user.contact.Phone_Number if user.contact and
+            user.contact.Phone_Number else '' }}
+          </td>
+          <td>{{ user.mentor.Name if user.mentor else '' }}</td>
+          <td>{{ user.Status }}</td>
+          <td>
+            {{ user.Date_Created.strftime('%Y-%m-%d') if user.Date_Created else
+            '' }}
+          </td>
+          <td>
+            <div class="action-links">
+              <a
+                href="{{ url_for('users_bp.user_form', user_id=user.id) }}"
+                class="icon-btn"
+                title="Edit"
+                ><i class="fas fa-edit"></i
+              ></a>
+              <button
+                class="delete-btn icon-btn"
+                onclick="openDeleteModal('{{ url_for('users_bp.delete_user', user_id=user.id) }}', 'user')"
+                title="Delete"
+              >
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div id="level-roles" class="tab-content">
+    <div class="settings-header">
+      <h2>Level Roles</h2>
+      <div class="button-group">
+        <button id="add-level-role-btn" class="btn btn-success">Add New</button>
+        <button id="edit-level-roles-btn" class="btn btn-primary">Edit</button>
+        <button
+          id="cancel-level-roles-btn"
+          class="btn btn-danger"
+          style="display: none"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+    <table id="level-roles-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Level</th>
+          <th>Role</th>
+          <th>Type</th>
+          <th>Count Required</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for lr in level_roles %}
+        <tr data-id="{{ lr.id }}">
+          <td>{{ lr.id }}</td>
+          <td data-field="level">{{ lr.level }}</td>
+          <td data-field="role">{{ lr.role }}</td>
+          <td data-field="type">{{ lr.type }}</td>
+          <td data-field="count_required">{{ lr.count_required }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div id="presentations" class="tab-content">
+    <div class="settings-header">
+      <h2>Presentations</h2>
+      <div class="button-group">
+        <button id="add-presentation-btn" class="btn btn-success">
+          Add New
+        </button>
+        <button id="edit-presentations-btn" class="btn btn-primary">
+          Edit
+        </button>
+        <button
+          id="cancel-presentations-btn"
+          class="btn btn-danger"
+          style="display: none"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+    <table id="presentations-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Level</th>
+          <th>Code</th>
+          <th>Title</th>
+          <th>Series</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in presentations %}
+        <tr data-id="{{ p.id }}">
+          <td>{{ p.id }}</td>
+          <td data-field="level">{{ p.level }}</td>
+          <td data-field="code">{{ p.code }}</td>
+          <td data-field="title">{{ p.title }}</td>
+          <td data-field="series">{{ p.series if p.series else '' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% include '_session_modal.html' %}
+
+<!-- Level Role Modal -->
+<div id="addLevelRoleModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeAddLevelRoleModal()">&times;</span>
+    <h1>Add New Level Role</h1>
+    <form action="{{ url_for('settings_bp.add_level_role') }}" method="POST">
+      <table class="form-table">
+        <tr>
+          <td><label for="level">Level:</label></td>
+          <td><input type="number" id="level" name="level" required /></td>
+        </tr>
+        <tr>
+          <td><label for="role">Role:</label></td>
+          <td><input type="text" id="role" name="role" required /></td>
+        </tr>
+        <tr>
+          <td><label for="type">Type:</label></td>
+          <td>
+            <select id="type" name="type" required>
+              <option value="">Select Type</option>
+              <option value="required">Required</option>
+              <option value="elective">Elective</option>
+            </select>
+          </td>
+        </tr>
+        <tr>
+          <td><label for="count_required">Count Required:</label></td>
+          <td>
+            <input
+              type="number"
+              id="count_required"
+              name="count_required"
+              required
+            />
+          </td>
+        </tr>
+      </table>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Level Role</button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          onclick="closeAddLevelRoleModal()"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Presentation Modal -->
+<div id="addPresentationModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeAddPresentationModal()">&times;</span>
+    <h1>Add New Presentation</h1>
+    <form action="{{ url_for('settings_bp.add_presentation') }}" method="POST">
+      <table class="form-table">
+        <tr>
+          <td><label for="level">Level:</label></td>
+          <td><input type="number" id="level" name="level" required /></td>
+        </tr>
+        <tr>
+          <td><label for="code">Code:</label></td>
+          <td><input type="text" id="code" name="code" required /></td>
+        </tr>
+        <tr>
+          <td><label for="title">Title:</label></td>
+          <td><input type="text" id="title" name="title" required /></td>
+        </tr>
+        <tr>
+          <td><label for="series">Series:</label></td>
+          <td><input type="text" id="series" name="series" /></td>
+        </tr>
+      </table>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Presentation</button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          onclick="closeAddPresentationModal()"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <script>
-    function openTab(evt, tabName) {
-        const tabcontent = document.getElementsByClassName("tab-content");
-        for (let i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
-        }
-
-        const tablinks = document.getElementsByClassName("tab-btn");
-        for (let i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
-        }
-
-        document.getElementById(tabName).style.display = "block";
-
-        // Handle both click event (has evt) and programmatic call (uses tabName)
-        let targetElement = null;
-        if (evt && evt.currentTarget) {
-            targetElement = evt.currentTarget;
-        } else {
-            // Find the button associated with the tabName
-            for (let i = 0; i < tablinks.length; i++) {
-                if (tablinks[i].getAttribute('onclick').includes(`'${tabName}'`)) {
-                    targetElement = tablinks[i];
-                    break;
-                }
-            }
-        }
-
-        if (targetElement) {
-            targetElement.className += " active";
-        }
+  function openTab(evt, tabName) {
+    const tabcontent = document.getElementsByClassName("tab-content");
+    for (let i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        // Check URL for default_tab parameter
-        const urlParams = new URLSearchParams(window.location.search);
-        const defaultTab = urlParams.get('default_tab');
-        if (defaultTab) {
-            // Pass null for evt to indicate a programmatic call
-            openTab(null, defaultTab);
+    const tablinks = document.getElementsByClassName("tab-btn");
+    for (let i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    document.getElementById(tabName).style.display = "block";
+
+    // Handle both click event (has evt) and programmatic call (uses tabName)
+    let targetElement = null;
+    if (evt && evt.currentTarget) {
+      targetElement = evt.currentTarget;
+    } else {
+      // Find the button associated with the tabName
+      for (let i = 0; i < tablinks.length; i++) {
+        if (tablinks[i].getAttribute("onclick").includes(`'${tabName}'`)) {
+          targetElement = tablinks[i];
+          break;
         }
+      }
+    }
 
-        // --- Add Session Modal ---
-        const addSessionBtn = document.getElementById('add-session-btn');
-        const sessionModal = document.getElementById('addSessionModal');
-        const closeSessionModalBtn = sessionModal.querySelector('.close');
+    if (targetElement) {
+      targetElement.className += " active";
+    }
+  }
 
-        addSessionBtn.addEventListener('click', () => {
-            sessionModal.style.display = 'flex';
-        });
+  document.addEventListener("DOMContentLoaded", () => {
+    // Check URL for default_tab parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const defaultTab = urlParams.get("default_tab");
+    if (defaultTab) {
+      // Pass null for evt to indicate a programmatic call
+      openTab(null, defaultTab);
+    }
 
-        closeSessionModalBtn.addEventListener('click', () => {
-            sessionModal.style.display = 'none';
-        });
+    // --- Add Session Modal ---
+    const addSessionBtn = document.getElementById("add-session-btn");
+    const sessionModal = document.getElementById("addSessionModal");
+    const closeSessionModalBtn = sessionModal.querySelector(".close");
 
-        window.addEventListener('click', (event) => {
-            if (event.target == sessionModal) {
-                sessionModal.style.display = 'none';
-            }
-        });
-
-
-        // --- Session Types Edit Logic ---
-        const editSessionsBtn = document.getElementById('edit-sessions-btn');
-        const cancelSessionsBtn = document.getElementById('cancel-sessions-btn');
-        const sessionsTableBody = document.querySelector('#sessions-table tbody');
-        let isEditingSessions = false;
-        let originalSessionsData = {};
-
-        editSessionsBtn.addEventListener('click', () => {
-            if (isEditingSessions) {
-                saveSessionChanges();
-            } else {
-                toggleSessionEditMode(true);
-            }
-        });
-
-        cancelSessionsBtn.addEventListener('click', () => {
-            toggleSessionEditMode(false);
-            sessionsTableBody.querySelectorAll('tr').forEach(row => {
-                const id = row.dataset.id;
-                const originalRow = originalSessionsData[id];
-                row.querySelectorAll('td[data-field]').forEach(cell => {
-                    const field = cell.dataset.field;
-                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
-                        cell.innerHTML = `<input type="checkbox" ${originalRow[field] ? 'checked' : ''} disabled>`;
-                    } else {
-                        cell.textContent = originalRow[field];
-                    }
-                });
-            });
-        });
-
-        function toggleSessionEditMode(enable) {
-            isEditingSessions = enable;
-            editSessionsBtn.textContent = enable ? 'Save' : 'Edit';
-            cancelSessionsBtn.style.display = enable ? 'inline-block' : 'none';
-
-            sessionsTableBody.querySelectorAll('tr').forEach(row => {
-                const id = row.dataset.id;
-                if (enable) {
-                    originalSessionsData[id] = {};
-                }
-                row.querySelectorAll('td[data-field]').forEach(cell => {
-                    const field = cell.dataset.field;
-                    const currentValue = cell.textContent.trim();
-
-                    if (enable) {
-                        originalSessionsData[id][field] = currentValue;
-                    }
-
-                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
-                        const checkbox = cell.querySelector('input[type="checkbox"]');
-                        if (enable) {
-                            originalSessionsData[id][field] = checkbox.checked;
-                            checkbox.disabled = false;
-                        } else {
-                            checkbox.disabled = true;
-                        }
-                    } else {
-                        if (enable) {
-                            const input = document.createElement('input');
-                            input.type = (field.includes('Duration')) ? 'number' : 'text';
-                            input.value = currentValue;
-                            input.className = 'form-control-sm';
-                            cell.textContent = '';
-                            cell.appendChild(input);
-                        }
-                    }
-                });
-            });
-        }
-
-        function saveSessionChanges() {
-            const dataToSave = [];
-            sessionsTableBody.querySelectorAll('tr').forEach(row => {
-                const rowData = { id: row.dataset.id };
-                row.querySelectorAll('td[data-field]').forEach(cell => {
-                    const field = cell.dataset.field;
-                    if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
-                        rowData[field] = cell.querySelector('input[type="checkbox"]').checked;
-                    } else {
-                        rowData[field] = cell.querySelector('input').value;
-                    }
-                });
-                dataToSave.push(rowData);
-            });
-
-            fetch('/settings/sessions/update', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dataToSave)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    toggleSessionEditMode(false);
-                    sessionsTableBody.querySelectorAll('tr').forEach(row => {
-                        const id = row.dataset.id;
-                        const updatedRow = dataToSave.find(item => item.id == id);
-                        row.querySelectorAll('td[data-field]').forEach(cell => {
-                            const field = cell.dataset.field;
-                            if (field.startsWith('Is_') || field === 'Valid_for_Project' || field == 'Predefined') {
-                                cell.innerHTML = `<input type="checkbox" ${updatedRow[field] ? 'checked' : ''} disabled>`;
-                            } else {
-                                 cell.textContent = updatedRow[field];
-                            }
-                        });
-                    });
-                } else {
-                    alert('Error saving changes: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while saving.');
-            });
-        }
+    addSessionBtn.addEventListener("click", () => {
+      sessionModal.style.display = "flex";
     });
+
+    closeSessionModalBtn.addEventListener("click", () => {
+      sessionModal.style.display = "none";
+    });
+
+    window.addEventListener("click", (event) => {
+      if (event.target == sessionModal) {
+        sessionModal.style.display = "none";
+      }
+    });
+
+    // --- Session Types Edit Logic ---
+    const editSessionsBtn = document.getElementById("edit-sessions-btn");
+    const cancelSessionsBtn = document.getElementById("cancel-sessions-btn");
+    const sessionsTableBody = document.querySelector("#sessions-table tbody");
+    let isEditingSessions = false;
+    let originalSessionsData = {};
+
+    editSessionsBtn.addEventListener("click", () => {
+      if (isEditingSessions) {
+        saveSessionChanges();
+      } else {
+        toggleSessionEditMode(true);
+      }
+    });
+
+    cancelSessionsBtn.addEventListener("click", () => {
+      toggleSessionEditMode(false);
+      sessionsTableBody.querySelectorAll("tr").forEach((row) => {
+        const id = row.dataset.id;
+        const originalRow = originalSessionsData[id];
+        row.querySelectorAll("td[data-field]").forEach((cell) => {
+          const field = cell.dataset.field;
+          if (
+            field.startsWith("Is_") ||
+            field === "Valid_for_Project" ||
+            field == "Predefined"
+          ) {
+            cell.innerHTML = `<input type="checkbox" ${
+              originalRow[field] ? "checked" : ""
+            } disabled>`;
+          } else {
+            cell.textContent = originalRow[field];
+          }
+        });
+      });
+    });
+
+    function toggleSessionEditMode(enable) {
+      isEditingSessions = enable;
+      editSessionsBtn.textContent = enable ? "Save" : "Edit";
+      cancelSessionsBtn.style.display = enable ? "inline-block" : "none";
+
+      sessionsTableBody.querySelectorAll("tr").forEach((row) => {
+        const id = row.dataset.id;
+        if (enable) {
+          originalSessionsData[id] = {};
+        }
+        row.querySelectorAll("td[data-field]").forEach((cell) => {
+          const field = cell.dataset.field;
+          const currentValue = cell.textContent.trim();
+
+          if (enable) {
+            originalSessionsData[id][field] = currentValue;
+          }
+
+          if (
+            field.startsWith("Is_") ||
+            field === "Valid_for_Project" ||
+            field == "Predefined"
+          ) {
+            const checkbox = cell.querySelector('input[type="checkbox"]');
+            if (enable) {
+              originalSessionsData[id][field] = checkbox.checked;
+              checkbox.disabled = false;
+            } else {
+              checkbox.disabled = true;
+            }
+          } else {
+            if (enable) {
+              const input = document.createElement("input");
+              input.type = field.includes("Duration") ? "number" : "text";
+              input.value = currentValue;
+              input.className = "form-control-sm";
+              cell.textContent = "";
+              cell.appendChild(input);
+            }
+          }
+        });
+      });
+    }
+
+    function saveSessionChanges() {
+      const dataToSave = [];
+      sessionsTableBody.querySelectorAll("tr").forEach((row) => {
+        const rowData = { id: row.dataset.id };
+        row.querySelectorAll("td[data-field]").forEach((cell) => {
+          const field = cell.dataset.field;
+          if (
+            field.startsWith("Is_") ||
+            field === "Valid_for_Project" ||
+            field == "Predefined"
+          ) {
+            rowData[field] = cell.querySelector(
+              'input[type="checkbox"]'
+            ).checked;
+          } else {
+            rowData[field] = cell.querySelector("input").value;
+          }
+        });
+        dataToSave.push(rowData);
+      });
+
+      fetch("/settings/sessions/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToSave),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            toggleSessionEditMode(false);
+            sessionsTableBody.querySelectorAll("tr").forEach((row) => {
+              const id = row.dataset.id;
+              const updatedRow = dataToSave.find((item) => item.id == id);
+              row.querySelectorAll("td[data-field]").forEach((cell) => {
+                const field = cell.dataset.field;
+                if (
+                  field.startsWith("Is_") ||
+                  field === "Valid_for_Project" ||
+                  field == "Predefined"
+                ) {
+                  cell.innerHTML = `<input type="checkbox" ${
+                    updatedRow[field] ? "checked" : ""
+                  } disabled>`;
+                } else {
+                  cell.textContent = updatedRow[field];
+                }
+              });
+            });
+          } else {
+            alert("Error saving changes: " + data.message);
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("An error occurred while saving.");
+        });
+    }
+
+    // --- Level Roles Modal ---
+    const addLevelRoleBtn = document.getElementById("add-level-role-btn");
+    const levelRoleModal = document.getElementById("addLevelRoleModal");
+    const closeLevelRoleModalBtn = levelRoleModal.querySelector(".close");
+
+    addLevelRoleBtn.addEventListener("click", () => {
+      levelRoleModal.style.display = "flex";
+    });
+
+    closeLevelRoleModalBtn.addEventListener("click", () => {
+      levelRoleModal.style.display = "none";
+    });
+
+    window.addEventListener("click", (event) => {
+      if (event.target == levelRoleModal) {
+        levelRoleModal.style.display = "none";
+      }
+    });
+
+    // --- Level Roles Edit Logic ---
+    const editLevelRolesBtn = document.getElementById("edit-level-roles-btn");
+    const cancelLevelRolesBtn = document.getElementById(
+      "cancel-level-roles-btn"
+    );
+    const levelRolesTableBody = document.querySelector(
+      "#level-roles-table tbody"
+    );
+    let isEditingLevelRoles = false;
+    let originalLevelRolesData = {};
+
+    editLevelRolesBtn.addEventListener("click", () => {
+      if (isEditingLevelRoles) {
+        saveLevelRoleChanges();
+      } else {
+        toggleLevelRoleEditMode(true);
+      }
+    });
+
+    cancelLevelRolesBtn.addEventListener("click", () => {
+      toggleLevelRoleEditMode(false);
+      levelRolesTableBody.querySelectorAll("tr").forEach((row) => {
+        const id = row.dataset.id;
+        const originalRow = originalLevelRolesData[id];
+        row.querySelectorAll("td[data-field]").forEach((cell) => {
+          const field = cell.dataset.field;
+          cell.textContent = originalRow[field];
+        });
+      });
+    });
+
+    function toggleLevelRoleEditMode(enable) {
+      isEditingLevelRoles = enable;
+      editLevelRolesBtn.textContent = enable ? "Save" : "Edit";
+      cancelLevelRolesBtn.style.display = enable ? "inline-block" : "none";
+
+      levelRolesTableBody.querySelectorAll("tr").forEach((row) => {
+        const id = row.dataset.id;
+        if (enable) {
+          originalLevelRolesData[id] = {};
+        }
+        row.querySelectorAll("td[data-field]").forEach((cell) => {
+          const field = cell.dataset.field;
+          const currentValue = cell.textContent.trim();
+
+          if (enable) {
+            originalLevelRolesData[id][field] = currentValue;
+
+            if (field === "type") {
+              // Create dropdown for type field
+              const select = document.createElement("select");
+              select.className = "form-control-sm";
+              const options = ["required", "elective"];
+              options.forEach((opt) => {
+                const option = document.createElement("option");
+                option.value = opt;
+                option.textContent = opt;
+                if (opt === currentValue.toLowerCase()) {
+                  option.selected = true;
+                }
+                select.appendChild(option);
+              });
+              cell.textContent = "";
+              cell.appendChild(select);
+            } else {
+              // Create input for other fields
+              const input = document.createElement("input");
+              input.type =
+                field.includes("level") || field.includes("count")
+                  ? "number"
+                  : "text";
+              input.value = currentValue;
+              input.className = "form-control-sm";
+              cell.textContent = "";
+              cell.appendChild(input);
+            }
+          } else {
+            // Get value from input or select
+            const input = cell.querySelector("input");
+            const select = cell.querySelector("select");
+            if (input) {
+              cell.textContent = input.value;
+            } else if (select) {
+              cell.textContent = select.value;
+            }
+          }
+        });
+      });
+    }
+
+    function saveLevelRoleChanges() {
+      const dataToSave = [];
+      levelRolesTableBody.querySelectorAll("tr").forEach((row) => {
+        const rowData = { id: row.dataset.id };
+        row.querySelectorAll("td[data-field]").forEach((cell) => {
+          const field = cell.dataset.field;
+          const input = cell.querySelector("input");
+          const select = cell.querySelector("select");
+          rowData[field] = input
+            ? input.value
+            : select
+            ? select.value
+            : cell.textContent;
+        });
+        dataToSave.push(rowData);
+      });
+
+      fetch("/settings/level-roles/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToSave),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            toggleLevelRoleEditMode(false);
+            levelRolesTableBody.querySelectorAll("tr").forEach((row) => {
+              const id = row.dataset.id;
+              const updatedRow = dataToSave.find((item) => item.id == id);
+              row.querySelectorAll("td[data-field]").forEach((cell) => {
+                const field = cell.dataset.field;
+                cell.textContent = updatedRow[field];
+              });
+            });
+          } else {
+            alert("Error saving changes: " + data.message);
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("An error occurred while saving.");
+        });
+    }
+
+    function closeAddLevelRoleModal() {
+      document.getElementById("addLevelRoleModal").style.display = "none";
+    }
+
+    // --- Presentations Modal ---
+    const addPresentationBtn = document.getElementById("add-presentation-btn");
+    const presentationModal = document.getElementById("addPresentationModal");
+    const closePresentationModalBtn = presentationModal.querySelector(".close");
+
+    addPresentationBtn.addEventListener("click", () => {
+      presentationModal.style.display = "flex";
+    });
+
+    closePresentationModalBtn.addEventListener("click", () => {
+      presentationModal.style.display = "none";
+    });
+
+    window.addEventListener("click", (event) => {
+      if (event.target == presentationModal) {
+        presentationModal.style.display = "none";
+      }
+    });
+
+    // --- Presentations Edit Logic ---
+    const editPresentationsBtn = document.getElementById(
+      "edit-presentations-btn"
+    );
+    const cancelPresentationsBtn = document.getElementById(
+      "cancel-presentations-btn"
+    );
+    const presentationsTableBody = document.querySelector(
+      "#presentations-table tbody"
+    );
+    let isEditingPresentations = false;
+    let originalPresentationsData = {};
+
+    editPresentationsBtn.addEventListener("click", () => {
+      if (isEditingPresentations) {
+        savePresentationChanges();
+      } else {
+        togglePresentationEditMode(true);
+      }
+    });
+
+    cancelPresentationsBtn.addEventListener("click", () => {
+      togglePresentationEditMode(false);
+      presentationsTableBody.querySelectorAll("tr").forEach((row) => {
+        const id = row.dataset.id;
+        const originalRow = originalPresentationsData[id];
+        row.querySelectorAll("td[data-field]").forEach((cell) => {
+          const field = cell.dataset.field;
+          cell.textContent = originalRow[field];
+        });
+      });
+    });
+
+    function togglePresentationEditMode(enable) {
+      isEditingPresentations = enable;
+      editPresentationsBtn.textContent = enable ? "Save" : "Edit";
+      cancelPresentationsBtn.style.display = enable ? "inline-block" : "none";
+
+      presentationsTableBody.querySelectorAll("tr").forEach((row) => {
+        const id = row.dataset.id;
+        if (enable) {
+          originalPresentationsData[id] = {};
+        }
+        row.querySelectorAll("td[data-field]").forEach((cell) => {
+          const field = cell.dataset.field;
+          const currentValue = cell.textContent.trim();
+
+          if (enable) {
+            originalPresentationsData[id][field] = currentValue;
+            const input = document.createElement("input");
+            input.type = field === "level" ? "number" : "text";
+            input.value = currentValue;
+            input.className = "form-control-sm";
+            cell.textContent = "";
+            cell.appendChild(input);
+          } else {
+            const input = cell.querySelector("input");
+            if (input) {
+              cell.textContent = input.value;
+            }
+          }
+        });
+      });
+    }
+
+    function savePresentationChanges() {
+      const dataToSave = [];
+      presentationsTableBody.querySelectorAll("tr").forEach((row) => {
+        const rowData = { id: row.dataset.id };
+        row.querySelectorAll("td[data-field]").forEach((cell) => {
+          const field = cell.dataset.field;
+          const input = cell.querySelector("input");
+          rowData[field] = input ? input.value : cell.textContent;
+        });
+        dataToSave.push(rowData);
+      });
+
+      fetch("/settings/presentations/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToSave),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            togglePresentationEditMode(false);
+            presentationsTableBody.querySelectorAll("tr").forEach((row) => {
+              const id = row.dataset.id;
+              const updatedRow = dataToSave.find((item) => item.id == id);
+              row.querySelectorAll("td[data-field]").forEach((cell) => {
+                const field = cell.dataset.field;
+                cell.textContent = updatedRow[field];
+              });
+            });
+          } else {
+            alert("Error saving changes: " + data.message);
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("An error occurred while saving.");
+        });
+    }
+
+    function closeAddPresentationModal() {
+      document.getElementById("addPresentationModal").style.display = "none";
+    }
+  });
 </script>
 {% endblock %}
-

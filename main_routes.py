@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from vpemaster import db
-from vpemaster.models import User
+from . import db
+from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from sqlalchemy import or_

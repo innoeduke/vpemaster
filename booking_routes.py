@@ -3,7 +3,7 @@
 from flask import Blueprint, render_template, request, session, jsonify
 from .main_routes import login_required
 from .models import SessionLog, SessionType, Contact, Meeting, User
-from vpemaster import db
+from . import db
 from datetime import datetime
 
 booking_bp = Blueprint('booking_bp', __name__)
