@@ -319,7 +319,7 @@ content %}
 <!-- Level Role Modal -->
 <div id="addLevelRoleModal" class="modal">
   <div class="modal-content">
-    <span class="close" onclick="closeAddLevelRoleModal()">&times;</span>
+    <span class="close" onclick="closeModal('addLevelRoleModal')">&times;</span>
     <h1>Add New Level Role</h1>
     <form action="{{ url_for('settings_bp.add_level_role') }}" method="POST">
       <table class="form-table">
@@ -358,7 +358,7 @@ content %}
         <button
           type="button"
           class="btn btn-danger"
-          onclick="closeAddLevelRoleModal()"
+          onclick="closeModal('addLevelRoleModal')"
         >
           Cancel
         </button>
@@ -370,7 +370,9 @@ content %}
 <!-- Presentation Modal -->
 <div id="addPresentationModal" class="modal">
   <div class="modal-content">
-    <span class="close" onclick="closeAddPresentationModal()">&times;</span>
+    <span class="close" onclick="closeModal('addPresentationModal')"
+      >&times;</span
+    >
     <h1>Add New Presentation</h1>
     <form action="{{ url_for('settings_bp.add_presentation') }}" method="POST">
       <table class="form-table">
@@ -396,7 +398,7 @@ content %}
         <button
           type="button"
           class="btn btn-danger"
-          onclick="closeAddPresentationModal()"
+          onclick="closeModal('addPresentationModal')"
         >
           Cancel
         </button>
@@ -436,6 +438,84 @@ content %}
     if (targetElement) {
       targetElement.className += " active";
     }
+  }
+
+  function closeModal(modalId) {
+    document.getElementById(modalId).style.display = "none";
+  }
+
+  function saveTableChanges(config) {
+    const { tableBody, url, toggleEditFn, getCellValue, updateCell } = config;
+    const dataToSave = [];
+
+    tableBody.querySelectorAll("tr").forEach((row) => {
+      const rowData = { id: row.dataset.id };
+      row.querySelectorAll("td[data-field]").forEach((cell) => {
+        const field = cell.dataset.field;
+        rowData[field] = getCellValue(cell, field);
+      });
+      dataToSave.push(rowData);
+    });
+
+    fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dataToSave),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          toggleEditFn(false);
+          tableBody.querySelectorAll("tr").forEach((row) => {
+            const id = row.dataset.id;
+            const updatedRow = dataToSave.find((item) => item.id == id);
+            row.querySelectorAll("td[data-field]").forEach((cell) => {
+              const field = cell.dataset.field;
+              updateCell(cell, field, updatedRow[field]);
+            });
+          });
+        } else {
+          alert("Error saving changes: " + data.message);
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("An error occurred while saving.");
+      });
+  }
+
+  function toggleEditMode(config) {
+    const {
+      enable,
+      editBtn,
+      cancelBtn,
+      tableBody,
+      originalData,
+      createEditor,
+      restoreCell,
+    } = config;
+
+    // Update state
+    editBtn.textContent = enable ? "Save" : "Edit";
+    cancelBtn.style.display = enable ? "inline-block" : "none";
+
+    tableBody.querySelectorAll("tr").forEach((row) => {
+      const id = row.dataset.id;
+      if (enable) {
+        originalData[id] = {};
+      }
+      row.querySelectorAll("td[data-field]").forEach((cell) => {
+        const field = cell.dataset.field;
+        const currentValue = cell.textContent.trim();
+
+        if (enable) {
+          originalData[id][field] = currentValue;
+          createEditor(cell, field, currentValue);
+        } else {
+          restoreCell(cell, field);
+        }
+      });
+    });
   }
 
   document.addEventListener("DOMContentLoaded", () => {
@@ -504,105 +584,90 @@ content %}
     });
 
     function toggleSessionEditMode(enable) {
-      isEditingSessions = enable;
-      editSessionsBtn.textContent = enable ? "Save" : "Edit";
-      cancelSessionsBtn.style.display = enable ? "inline-block" : "none";
-
-      sessionsTableBody.querySelectorAll("tr").forEach((row) => {
-        const id = row.dataset.id;
-        if (enable) {
-          originalSessionsData[id] = {};
+      const createEditor = (cell, field, currentValue) => {
+        if (
+          field.startsWith("Is_") ||
+          field === "Valid_for_Project" ||
+          field == "Predefined"
+        ) {
+          const checkbox = cell.querySelector('input[type="checkbox"]');
+          originalSessionsData[cell.closest("tr").dataset.id][field] =
+            checkbox.checked;
+          checkbox.disabled = false;
+        } else {
+          const input = document.createElement("input");
+          input.type = field.includes("Duration") ? "number" : "text";
+          input.value = currentValue;
+          input.className = "form-control-sm";
+          cell.textContent = "";
+          cell.appendChild(input);
         }
-        row.querySelectorAll("td[data-field]").forEach((cell) => {
-          const field = cell.dataset.field;
-          const currentValue = cell.textContent.trim();
+      };
 
-          if (enable) {
-            originalSessionsData[id][field] = currentValue;
+      const restoreCell = (cell, field) => {
+        if (
+          field.startsWith("Is_") ||
+          field === "Valid_for_Project" ||
+          field == "Predefined"
+        ) {
+          const checkbox = cell.querySelector('input[type="checkbox"]');
+          if (checkbox) {
+            checkbox.disabled = true;
           }
+        } else {
+          const input = cell.querySelector("input");
+          if (input) {
+            cell.textContent = input.value;
+          }
+        }
+      };
 
-          if (
-            field.startsWith("Is_") ||
-            field === "Valid_for_Project" ||
-            field == "Predefined"
-          ) {
-            const checkbox = cell.querySelector('input[type="checkbox"]');
-            if (enable) {
-              originalSessionsData[id][field] = checkbox.checked;
-              checkbox.disabled = false;
-            } else {
-              checkbox.disabled = true;
-            }
-          } else {
-            if (enable) {
-              const input = document.createElement("input");
-              input.type = field.includes("Duration") ? "number" : "text";
-              input.value = currentValue;
-              input.className = "form-control-sm";
-              cell.textContent = "";
-              cell.appendChild(input);
-            }
-          }
-        });
+      isEditingSessions = enable;
+      toggleEditMode({
+        enable,
+        editBtn: editSessionsBtn,
+        cancelBtn: cancelSessionsBtn,
+        tableBody: sessionsTableBody,
+        originalData: originalSessionsData,
+        createEditor,
+        restoreCell,
       });
     }
 
     function saveSessionChanges() {
-      const dataToSave = [];
-      sessionsTableBody.querySelectorAll("tr").forEach((row) => {
-        const rowData = { id: row.dataset.id };
-        row.querySelectorAll("td[data-field]").forEach((cell) => {
-          const field = cell.dataset.field;
-          if (
-            field.startsWith("Is_") ||
-            field === "Valid_for_Project" ||
-            field == "Predefined"
-          ) {
-            rowData[field] = cell.querySelector(
-              'input[type="checkbox"]'
-            ).checked;
-          } else {
-            rowData[field] = cell.querySelector("input").value;
-          }
-        });
-        dataToSave.push(rowData);
-      });
+      const getCellValue = (cell, field) => {
+        if (
+          field.startsWith("Is_") ||
+          field === "Valid_for_Project" ||
+          field == "Predefined"
+        ) {
+          return cell.querySelector('input[type="checkbox"]').checked;
+        } else {
+          return cell.querySelector("input").value;
+        }
+      };
 
-      fetch("/settings/sessions/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataToSave),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            toggleSessionEditMode(false);
-            sessionsTableBody.querySelectorAll("tr").forEach((row) => {
-              const id = row.dataset.id;
-              const updatedRow = dataToSave.find((item) => item.id == id);
-              row.querySelectorAll("td[data-field]").forEach((cell) => {
-                const field = cell.dataset.field;
-                if (
-                  field.startsWith("Is_") ||
-                  field === "Valid_for_Project" ||
-                  field == "Predefined"
-                ) {
-                  cell.innerHTML = `<input type="checkbox" ${
-                    updatedRow[field] ? "checked" : ""
-                  } disabled>`;
-                } else {
-                  cell.textContent = updatedRow[field];
-                }
-              });
-            });
-          } else {
-            alert("Error saving changes: " + data.message);
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-          alert("An error occurred while saving.");
-        });
+      const updateCell = (cell, field, value) => {
+        if (
+          field.startsWith("Is_") ||
+          field === "Valid_for_Project" ||
+          field == "Predefined"
+        ) {
+          cell.innerHTML = `<input type="checkbox" ${
+            value ? "checked" : ""
+          } disabled>`;
+        } else {
+          cell.textContent = value;
+        }
+      };
+
+      saveTableChanges({
+        tableBody: sessionsTableBody,
+        url: "/settings/sessions/update",
+        toggleEditFn: toggleSessionEditMode,
+        getCellValue,
+        updateCell,
+      });
     }
 
     // --- Level Roles Modal ---
@@ -656,110 +721,77 @@ content %}
     });
 
     function toggleLevelRoleEditMode(enable) {
-      isEditingLevelRoles = enable;
-      editLevelRolesBtn.textContent = enable ? "Save" : "Edit";
-      cancelLevelRolesBtn.style.display = enable ? "inline-block" : "none";
-
-      levelRolesTableBody.querySelectorAll("tr").forEach((row) => {
-        const id = row.dataset.id;
-        if (enable) {
-          originalLevelRolesData[id] = {};
+      const createEditor = (cell, field, currentValue) => {
+        if (field === "type") {
+          // Create dropdown for type field
+          const select = document.createElement("select");
+          select.className = "form-control-sm";
+          const options = ["required", "elective"];
+          options.forEach((opt) => {
+            const option = document.createElement("option");
+            option.value = opt;
+            option.textContent = opt;
+            if (opt === currentValue.toLowerCase()) {
+              option.selected = true;
+            }
+            select.appendChild(option);
+          });
+          cell.textContent = "";
+          cell.appendChild(select);
+        } else {
+          // Create input for other fields
+          const input = document.createElement("input");
+          input.type =
+            field.includes("level") || field.includes("count")
+              ? "number"
+              : "text";
+          input.value = currentValue;
+          input.className = "form-control-sm";
+          cell.textContent = "";
+          cell.appendChild(input);
         }
-        row.querySelectorAll("td[data-field]").forEach((cell) => {
-          const field = cell.dataset.field;
-          const currentValue = cell.textContent.trim();
+      };
 
-          if (enable) {
-            originalLevelRolesData[id][field] = currentValue;
+      const restoreCell = (cell, field) => {
+        const input = cell.querySelector("input");
+        const select = cell.querySelector("select");
+        if (input) {
+          cell.textContent = input.value;
+        } else if (select) {
+          cell.textContent = select.value;
+        }
+      };
 
-            if (field === "type") {
-              // Create dropdown for type field
-              const select = document.createElement("select");
-              select.className = "form-control-sm";
-              const options = ["required", "elective"];
-              options.forEach((opt) => {
-                const option = document.createElement("option");
-                option.value = opt;
-                option.textContent = opt;
-                if (opt === currentValue.toLowerCase()) {
-                  option.selected = true;
-                }
-                select.appendChild(option);
-              });
-              cell.textContent = "";
-              cell.appendChild(select);
-            } else {
-              // Create input for other fields
-              const input = document.createElement("input");
-              input.type =
-                field.includes("level") || field.includes("count")
-                  ? "number"
-                  : "text";
-              input.value = currentValue;
-              input.className = "form-control-sm";
-              cell.textContent = "";
-              cell.appendChild(input);
-            }
-          } else {
-            // Get value from input or select
-            const input = cell.querySelector("input");
-            const select = cell.querySelector("select");
-            if (input) {
-              cell.textContent = input.value;
-            } else if (select) {
-              cell.textContent = select.value;
-            }
-          }
-        });
+      isEditingLevelRoles = enable;
+      toggleEditMode({
+        enable,
+        editBtn: editLevelRolesBtn,
+        cancelBtn: cancelLevelRolesBtn,
+        tableBody: levelRolesTableBody,
+        originalData: originalLevelRolesData,
+        createEditor,
+        restoreCell,
       });
     }
 
     function saveLevelRoleChanges() {
-      const dataToSave = [];
-      levelRolesTableBody.querySelectorAll("tr").forEach((row) => {
-        const rowData = { id: row.dataset.id };
-        row.querySelectorAll("td[data-field]").forEach((cell) => {
-          const field = cell.dataset.field;
-          const input = cell.querySelector("input");
-          const select = cell.querySelector("select");
-          rowData[field] = input
-            ? input.value
-            : select
-            ? select.value
-            : cell.textContent;
-        });
-        dataToSave.push(rowData);
+      const getCellValue = (cell, field) => {
+        const input = cell.querySelector("input");
+        const select = cell.querySelector("select");
+        return input ? input.value : select ? select.value : cell.textContent;
+      };
+
+      const updateCell = (cell, field, value) => {
+        cell.textContent = value;
+      };
+
+      saveTableChanges({
+        tableBody: levelRolesTableBody,
+        url: "/settings/level-roles/update",
+        toggleEditFn: toggleLevelRoleEditMode,
+        getCellValue,
+        updateCell,
       });
-
-      fetch("/settings/level-roles/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataToSave),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            toggleLevelRoleEditMode(false);
-            levelRolesTableBody.querySelectorAll("tr").forEach((row) => {
-              const id = row.dataset.id;
-              const updatedRow = dataToSave.find((item) => item.id == id);
-              row.querySelectorAll("td[data-field]").forEach((cell) => {
-                const field = cell.dataset.field;
-                cell.textContent = updatedRow[field];
-              });
-            });
-          } else {
-            alert("Error saving changes: " + data.message);
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-          alert("An error occurred while saving.");
-        });
-    }
-
-    function closeAddLevelRoleModal() {
-      document.getElementById("addLevelRoleModal").style.display = "none";
     }
 
     // --- Presentations Modal ---
@@ -815,78 +847,51 @@ content %}
     });
 
     function togglePresentationEditMode(enable) {
-      isEditingPresentations = enable;
-      editPresentationsBtn.textContent = enable ? "Save" : "Edit";
-      cancelPresentationsBtn.style.display = enable ? "inline-block" : "none";
+      const createEditor = (cell, field, currentValue) => {
+        const input = document.createElement("input");
+        input.type = field === "level" ? "number" : "text";
+        input.value = currentValue;
+        input.className = "form-control-sm";
+        cell.textContent = "";
+        cell.appendChild(input);
+      };
 
-      presentationsTableBody.querySelectorAll("tr").forEach((row) => {
-        const id = row.dataset.id;
-        if (enable) {
-          originalPresentationsData[id] = {};
+      const restoreCell = (cell, field) => {
+        const input = cell.querySelector("input");
+        if (input) {
+          cell.textContent = input.value;
         }
-        row.querySelectorAll("td[data-field]").forEach((cell) => {
-          const field = cell.dataset.field;
-          const currentValue = cell.textContent.trim();
+      };
 
-          if (enable) {
-            originalPresentationsData[id][field] = currentValue;
-            const input = document.createElement("input");
-            input.type = field === "level" ? "number" : "text";
-            input.value = currentValue;
-            input.className = "form-control-sm";
-            cell.textContent = "";
-            cell.appendChild(input);
-          } else {
-            const input = cell.querySelector("input");
-            if (input) {
-              cell.textContent = input.value;
-            }
-          }
-        });
+      isEditingPresentations = enable;
+      toggleEditMode({
+        enable,
+        editBtn: editPresentationsBtn,
+        cancelBtn: cancelPresentationsBtn,
+        tableBody: presentationsTableBody,
+        originalData: originalPresentationsData,
+        createEditor,
+        restoreCell,
       });
     }
 
     function savePresentationChanges() {
-      const dataToSave = [];
-      presentationsTableBody.querySelectorAll("tr").forEach((row) => {
-        const rowData = { id: row.dataset.id };
-        row.querySelectorAll("td[data-field]").forEach((cell) => {
-          const field = cell.dataset.field;
-          const input = cell.querySelector("input");
-          rowData[field] = input ? input.value : cell.textContent;
-        });
-        dataToSave.push(rowData);
+      const getCellValue = (cell, field) => {
+        const input = cell.querySelector("input");
+        return input ? input.value : cell.textContent;
+      };
+
+      const updateCell = (cell, field, value) => {
+        cell.textContent = value;
+      };
+
+      saveTableChanges({
+        tableBody: presentationsTableBody,
+        url: "/settings/presentations/update",
+        toggleEditFn: togglePresentationEditMode,
+        getCellValue,
+        updateCell,
       });
-
-      fetch("/settings/presentations/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataToSave),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            togglePresentationEditMode(false);
-            presentationsTableBody.querySelectorAll("tr").forEach((row) => {
-              const id = row.dataset.id;
-              const updatedRow = dataToSave.find((item) => item.id == id);
-              row.querySelectorAll("td[data-field]").forEach((cell) => {
-                const field = cell.dataset.field;
-                cell.textContent = updatedRow[field];
-              });
-            });
-          } else {
-            alert("Error saving changes: " + data.message);
-          }
-        })
-        .catch((error) => {
-          console.error("Error:", error);
-          alert("An error occurred while saving.");
-        });
-    }
-
-    function closeAddPresentationModal() {
-      document.getElementById("addPresentationModal").style.display = "none";
     }
   });
 </script>

@@ -188,7 +188,7 @@ def agenda():
             "ID": p.ID, "Project_Name": p.Project_Name, "Code_DL": p.Code_DL,
             "Code_EH": p.Code_EH, "Code_MS": p.Code_MS, "Code_PI": p.Code_PI,
             "Code_PM": p.Code_PM, "Code_VC": p.Code_VC, "Code_DTM": p.Code_DTM,
-            "Purpose": p.Purpose
+            "Purpose": p.Purpose, "Duration_Min": p.Duration_Min, "Duration_Max": p.Duration_Max
         } for p in projects
     ]
     pathways = list(current_app.config['PATHWAY_MAPPING'].keys())

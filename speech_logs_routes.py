@@ -100,7 +100,9 @@ def show_speech_logs():
             "Code_PI": p.Code_PI,
             "Code_PM": p.Code_PM,
             "Code_VC": p.Code_VC,
-            "Code_DTM": p.Code_DTM
+            "Code_DTM": p.Code_DTM,
+            "Duration_Min": p.Duration_Min,
+            "Duration_Max": p.Duration_Max
         }
         for p in projects
     ]
@@ -168,6 +170,12 @@ def update_speech_log(log_id):
 
     if 'project_id' in data:
         log.Project_ID = data['project_id']
+        
+        # Update durations from the selected project
+        updated_project = Project.query.get(log.Project_ID)
+        if updated_project:
+            log.Duration_Min = updated_project.Duration_Min
+            log.Duration_Max = updated_project.Duration_Max
 
     try:
         db.session.commit()

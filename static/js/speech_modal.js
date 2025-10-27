@@ -105,6 +105,21 @@ function saveSpeechChanges(event) {
             if (project) {
               agendaRow.dataset.durationMin = project.Duration_Min;
               agendaRow.dataset.durationMax = project.Duration_Max;
+
+              // Update the duration input fields
+              const durationMinInput = agendaRow.querySelector(
+                '[data-field="Duration_Min"] input'
+              );
+              const durationMaxInput = agendaRow.querySelector(
+                '[data-field="Duration_Max"] input'
+              );
+
+              if (durationMinInput) {
+                durationMinInput.value = project.Duration_Min || "";
+              }
+              if (durationMaxInput) {
+                durationMaxInput.value = project.Duration_Max || "";
+              }
             }
           }
           closeSpeechEditModal();
