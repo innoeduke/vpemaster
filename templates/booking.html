@@ -141,83 +141,93 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const isVpeOrAdmin = {{ is_vpe_or_admin|tojson }};
+    document.addEventListener('DOMContentLoaded', function() {
+        const isVpeOrAdmin = {{ is_vpe_or_admin|tojson }};
+        // Define levelFilter *inside* DOMContentLoaded
+        const levelFilter = document.getElementById('level-filter');
+        // Define meetingFilter *inside* DOMContentLoaded as well for consistency
+        const meetingFilter = document.getElementById('meeting-filter');
 
-    if (isVpeOrAdmin) {
-        document.querySelectorAll('.admin-assign-select').forEach(select => {
-            select.addEventListener('change', function() {
-                const sessionId = this.dataset.sessionId;
-                const roleKey = this.dataset.roleKey;
-                const contactId = this.value;
-                assignRole(sessionId, roleKey, contactId);
+        if (isVpeOrAdmin) {
+            document.querySelectorAll('.admin-assign-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    const sessionId = this.dataset.sessionId;
+                    const roleKey = this.dataset.roleKey;
+                    const contactId = this.value;
+                    assignRole(sessionId, roleKey, contactId);
+                });
+            });
+        }
+
+        // --- MOVE THIS BLOCK INSIDE ---
+        if (levelFilter) {
+            levelFilter.addEventListener('change', function() {
+                const selectedLevel = this.value;
+                // Get current meeting selection *inside* the event listener
+                const currentMeeting = meetingFilter ? meetingFilter.value : '{{ selected_meeting_number or "" }}'; // Fallback if meetingFilter not found
+                let url = `/booking/${currentMeeting || ''}`; // Use currentMeeting or fallback
+                if (selectedLevel) {
+                    url += `?level=${selectedLevel}`; // Add level parameter if selected
+                }
+                window.location.href = url; // Navigate to the new URL
+            });
+        }
+        // --- END MOVED BLOCK ---
+
+        // Update selected level display if a level is selected
+        const selectedLevelDisplay = document.getElementById('selected-level-display');
+        const initialSelectedLevel = {{ selected_level|tojson }};
+        if (selectedLevelDisplay && initialSelectedLevel) {
+            selectedLevelDisplay.textContent = initialSelectedLevel;
+        }
+
+        document.querySelectorAll('.timeline-event').forEach(item => {
+            item.addEventListener('click', function() {
+                const meetingNumber = this.dataset.meetingNumber;
+                // Get current level selection *inside* the event listener
+                const currentLevel = levelFilter ? levelFilter.value : ''; // Get current level selection or empty string
+                if (meetingNumber) {
+                        let url = '/booking/' + meetingNumber;
+                        if (currentLevel) {
+                            url += `?level=${currentLevel}`; // Preserve level filter
+                        }
+                    window.location.href = url;
+                }
             });
         });
-    }
+    }); // End of DOMContentLoaded listener
 
-    if (levelFilter) {
-        levelFilter.addEventListener('change', function() {
-            const selectedLevel = this.value;
-            const currentMeeting = meetingFilter.value; // Get current meeting selection
-            let url = `/booking/${currentMeeting}`; // Base URL with meeting
-            if (selectedLevel) {
-                url += `?level=${selectedLevel}`; // Add level parameter if selected
-            }
-            window.location.href = url; // Navigate to the new URL
-        });
-    }
-     // Update selected level display if a level is selected
-    const selectedLevelDisplay = document.getElementById('selected-level-display');
-    const initialSelectedLevel = {{ selected_level|tojson }};
-    if (selectedLevelDisplay && initialSelectedLevel) {
-        selectedLevelDisplay.textContent = initialSelectedLevel;
-    }
-
-    document.querySelectorAll('.timeline-event').forEach(item => {
-        item.addEventListener('click', function() {
-            const meetingNumber = this.dataset.meetingNumber;
-             const currentLevel = levelFilter.value; // Get current level selection
-            if (meetingNumber) {
-                 let url = '/booking/' + meetingNumber;
-                 if (currentLevel) {
-                     url += `?level=${currentLevel}`; // Preserve level filter
-                 }
-                window.location.href = url;
+    // Functions remain outside DOMContentLoaded as they are definitions
+    function bookOrCancelRole(sessionId, action, roleKey) {
+        fetch('/booking/book', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId, action: action, role_key: roleKey })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload(true); // Force reload from server
+            } else {
+                alert('Error: ' + data.message);
             }
         });
-    });
-});
+    }
 
-function bookOrCancelRole(sessionId, action, roleKey) {
-    fetch('/booking/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, action: action, role_key: roleKey })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.reload(true); // Force reload from server
-        } else {
-            alert('Error: ' + data.message);
-        }
-    });
-}
-
-function assignRole(sessionId, roleKey, contactId) {
-     fetch('/booking/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ session_id: sessionId, action: 'assign', role_key: roleKey, contact_id: contactId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.reload();
-        } else {
-            alert('Error: ' + data.message);
-        }
-    });
-}
+    function assignRole(sessionId, roleKey, contactId) {
+            fetch('/booking/book', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sessionId, action: 'assign', role_key: roleKey, contact_id: contactId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        });
+    }
 </script>
 {% endblock %}

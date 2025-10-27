@@ -5,6 +5,8 @@ from flask import Blueprint, render_template, request, session, jsonify, current
 from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole 
 from . import db
 from datetime import datetime
+import re
+from sqlalchemy import text
 
 booking_bp = Blueprint('booking_bp', __name__)
 
@@ -148,8 +150,21 @@ def booking(selected_meeting_number):
     # Get user info
     user_role = session.get('user_role', 'Guest')
     user = User.query.get(session.get('user_id'))
-    selected_level = request.args.get('level', type=int)
     current_user_contact_id = user.Contact_ID if user else None
+
+    # Determine Default Level
+    default_level = 1
+    if user and user.contact and user.contact.Next_Project:
+        next_project_str = user.contact.Next_Project
+        match = re.match(r"([A-Z]+)(\d+)\.?(\d*)", next_project_str)
+        if match:
+            try:
+                default_level = int(match.group(2))
+            except (ValueError, IndexError):
+                default_level = 1
+
+    # Get selected level
+    selected_level = request.args.get('level', default=default_level, type=int)
 
     # Get meeting info
     upcoming_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
@@ -160,85 +175,96 @@ def booking(selected_meeting_number):
         selected_meeting_number = upcoming_meetings[0][0]
 
     if not selected_meeting_number:
-        return render_template('booking.html', roles=[], upcoming_meetings=[],
-                               selected_meeting_number=None, user_bookings_by_date=[],
-                               contacts=[], completed_roles=[], selected_level=selected_level)
+         return render_template('booking.html', roles=[], upcoming_meetings=[],
+                                selected_meeting_number=None, user_bookings_by_date=[],
+                                contacts=[], completed_roles=[], selected_level=selected_level)
 
     # Get roles for the selected meeting
     roles_with_icons = _get_roles_for_meeting(selected_meeting_number, user_role, current_user_contact_id)
 
     # Get user's upcoming roles for the timeline
     user_bookings_query = db.session.query(
-        SessionLog.id,
-        SessionType.Role,
-        Meeting.Meeting_Number,
-        Meeting.Meeting_Date
+        SessionLog.id, SessionType.Role, Meeting.Meeting_Number, Meeting.Meeting_Date
     ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
      .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
      .filter(SessionLog.Owner_ID == current_user_contact_id)\
      .filter(Meeting.Meeting_Date >= datetime.today().date())\
      .filter(SessionType.Role != '', SessionType.Role.isnot(None))\
      .order_by(Meeting.Meeting_Date, SessionType.Role).distinct()
-
     user_bookings = user_bookings_query.all()
-
-    # Process for timeline display
     user_bookings_by_date = {}
     processed_roles = set()
-
     for log in user_bookings:
-        # This check prevents double counting
         role_meeting_key = (log.Meeting_Number, log.Role)
-        if role_meeting_key in processed_roles:
-            continue
+        if role_meeting_key in processed_roles: continue
         processed_roles.add(role_meeting_key)
-
         date_str = log.Meeting_Date.strftime('%Y-%m-%d')
         if date_str not in user_bookings_by_date:
             user_bookings_by_date[date_str] = {
-                'date_info': {
-                    'meeting_number': log.Meeting_Number,
-                    'short_date': log.Meeting_Date.strftime('%m/%d/%Y')
-                },
+                'date_info': { 'meeting_number': log.Meeting_Number, 'short_date': log.Meeting_Date.strftime('%m/%d/%Y') },
                 'bookings': []
             }
-
         user_bookings_by_date[date_str]['bookings'].append({
-            'role': log.Role, # Use the logical Role
-            'role_key': log.Role, # Pass the logical Role as the key
-            'icon': ROLE_ICONS.get(log.Role, ROLE_ICONS['Default']),
-            'session_id': log.id
+            'role': log.Role, 'role_key': log.Role, 'icon': ROLE_ICONS.get(log.Role, ROLE_ICONS['Default']), 'session_id': log.id
         })
-
     user_bookings_timeline = sorted(user_bookings_by_date.values(), key=lambda x: x['date_info']['meeting_number'])
 
+
+    # --- Get Completed Roles using Raw SQL ---
     completed_roles = []
     if current_user_contact_id and selected_level:
-        completed_roles_query = db.session.query(
-            SessionLog.id,
-            SessionType.Role,
-            Meeting.Meeting_Number,
-            Meeting.Meeting_Date
-        ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
-         .join(LevelRole, SessionType.Role == LevelRole.role)\
-         .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
-         .filter(SessionLog.Owner_ID == current_user_contact_id)\
-         .filter(SessionLog.Status == 'Completed')\
-         .filter(LevelRole.level == selected_level)\
-         .filter(SessionType.Role != '', SessionType.Role.isnot(None))\
-         .order_by(Meeting.Meeting_Date.desc(), SessionType.Role) # Order by most recent first
+        level_pattern = f"%{selected_level}"
 
-        # Fetch results
-        completed_logs = completed_roles_query.all()
+        raw_sql = """
+            SELECT
+                sl.id,
+                st.Role,
+                m.Meeting_Number,
+                m.Meeting_Date,
+                sl.Status,
+                sl.current_path_level
+            FROM Session_Logs sl
+            JOIN Session_Types st ON sl.Type_ID = st.id
+            JOIN Meetings m ON sl.Meeting_Number = m.Meeting_Number
+            WHERE sl.Owner_ID = :owner_id
+              AND st.Role IS NOT NULL
+              AND st.Role != ''
+              AND sl.current_path_level IS NOT NULL
+              AND sl.current_path_level != ''
+              AND sl.current_path_level LIKE :level_pattern
+            ORDER BY m.Meeting_Date DESC, st.Role ASC
+        """
+        params = {
+            "owner_id": current_user_contact_id,
+            "level_pattern": level_pattern
+        }
+
+        completed_logs = [] # Initialize before try block
+        try:
+            db.session.rollback() # Ensure fresh transaction state
+            result_proxy = db.session.execute(text(raw_sql), params)
+            completed_logs_raw = result_proxy.mappings().fetchall()
+            completed_logs = completed_logs_raw
+
+        except Exception as e:
+             # Optionally log the error e
+             print(f"Error executing raw SQL for completed roles: {e}") # Basic print logging
+             completed_logs = [] # Ensure it's empty on error
 
         # Process for display
-        for log in completed_logs:
-             completed_roles.append({
-                'role': log.Role,
-                'meeting_number': log.Meeting_Number,
-                'date': log.Meeting_Date.strftime('%Y-%m-%d'),
-                'icon': ROLE_ICONS.get(log.Role, ROLE_ICONS['Default'])
-             })
+        for log_dict in completed_logs: # Iterate over list of dicts
+             role_name = log_dict.get('Role') # Use .get for safety
+             meeting_num = log_dict.get('Meeting_Number')
+             meeting_date = log_dict.get('Meeting_Date')
+
+             if role_name and meeting_date: # Basic check for essential data
+                 icon = ROLE_ICONS.get(role_name, ROLE_ICONS['Default'])
+                 completed_roles.append({
+                    'role': role_name,
+                    'meeting_number': meeting_num,
+                    'date': meeting_date.strftime('%Y-%m-%d'), # Format date
+                    'icon': icon
+                 })
 
     # Get contacts for admin dropdown
     contacts = Contact.query.order_by(Contact.Name).all()
@@ -251,10 +277,8 @@ def booking(selected_meeting_number):
                            current_user_contact_id=current_user_contact_id,
                            user_bookings_by_date=user_bookings_timeline,
                            contacts=contacts,
-                           completed_roles=completed_roles, 
+                           completed_roles=completed_roles,
                            selected_level=selected_level)
-
-
 @booking_bp.route('/booking/book', methods=['POST'])
 @login_required
 def book_or_assign_role():
