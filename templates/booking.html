@@ -38,6 +38,37 @@
             {% endif %}
         </div>
     </div>
+    <div class="completed-roles-container">
+        <div class="completed-roles-header">
+            <h3>My Completed Roles (Level <span id="selected-level-display">{{ selected_level if selected_level else 'N/A' }}</span>)</h3>
+            <div class="form-group">
+                <label for="level-filter">Filter by Level:</label>
+                <select id="level-filter">
+                    <option value="">-- Select Level --</option>
+                    {% for i in range(1, 6) %}
+                    <option value="{{ i }}" {% if i == selected_level %}selected{% endif %}>Level {{ i }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        {% if selected_level %}
+            {% if completed_roles %}
+                <ul class="completed-roles-list">
+                    {% for role in completed_roles %}
+                    <li>
+                        <i class="fas {{ role.icon }}"></i>
+                        {{ role.role }}
+                        <span class="meeting-ref">(Meeting #{{ role.meeting_number }} on {{ role.date }})</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No completed roles found for Level {{ selected_level }}.</p>
+            {% endif %}
+        {% else %}
+            <p>Please select a level to view completed roles.</p>
+        {% endif %}
+    </div>
     <div class="booking-filter-container">
         <i class="fas fa-calendar-alt"></i>
         <select id="meeting-filter" onchange="window.location.href = '/booking/' + this.value;">
@@ -124,12 +155,34 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    if (levelFilter) {
+        levelFilter.addEventListener('change', function() {
+            const selectedLevel = this.value;
+            const currentMeeting = meetingFilter.value; // Get current meeting selection
+            let url = `/booking/${currentMeeting}`; // Base URL with meeting
+            if (selectedLevel) {
+                url += `?level=${selectedLevel}`; // Add level parameter if selected
+            }
+            window.location.href = url; // Navigate to the new URL
+        });
+    }
+     // Update selected level display if a level is selected
+    const selectedLevelDisplay = document.getElementById('selected-level-display');
+    const initialSelectedLevel = {{ selected_level|tojson }};
+    if (selectedLevelDisplay && initialSelectedLevel) {
+        selectedLevelDisplay.textContent = initialSelectedLevel;
+    }
+
     document.querySelectorAll('.timeline-event').forEach(item => {
         item.addEventListener('click', function() {
-            // The meeting number is now on the timeline-event element itself
             const meetingNumber = this.dataset.meetingNumber;
+             const currentLevel = levelFilter.value; // Get current level selection
             if (meetingNumber) {
-                window.location.href = '/booking/' + meetingNumber;
+                 let url = '/booking/' + meetingNumber;
+                 if (currentLevel) {
+                     url += `?level=${currentLevel}`; // Preserve level filter
+                 }
+                window.location.href = url;
             }
         });
     });

@@ -1,8 +1,8 @@
 # vpemaster/booking_routes.py
 
-from flask import Blueprint, render_template, request, session, jsonify
 from .main_routes import login_required
-from .models import SessionLog, SessionType, Contact, Meeting, User
+from flask import Blueprint, render_template, request, session, jsonify, current_app 
+from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole 
 from . import db
 from datetime import datetime
 
@@ -107,28 +107,35 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
             if not role['owner_id'] or role['owner_id'] == current_user_contact_id
         ]
 
-        # Recent speaker rule
-        three_meetings_ago = selected_meeting_number - 2
-        recent_speaker_log = db.session.query(SessionLog.id).join(SessionType)\
-            .filter(SessionLog.Owner_ID == current_user_contact_id)\
-            .filter(SessionType.Role == 'Prepared Speaker')\
-            .filter(SessionLog.Meeting_Number >= three_meetings_ago)\
-            .filter(SessionLog.Meeting_Number <= selected_meeting_number).first()
+        # Recent speaker rule - Check config before applying
+        pathway_mapping = current_app.config.get('PATHWAY_MAPPING', {}) # Get pathway mapping
+        user_contact = Contact.query.get(current_user_contact_id) if current_user_contact_id else None
+        user_path = user_contact.Working_Path if user_contact else None
+        code_suffix = pathway_mapping.get(user_path) if user_path else None
 
-        if recent_speaker_log:
-            roles_with_icons = [
-                role for role in roles_with_icons
-                if role['role_key'] != 'Prepared Speaker' or (role['role_key'] == 'Prepared Speaker' and role['owner_id'] == current_user_contact_id)
-            ]
+        if code_suffix: # Only apply if user has a valid pathway
+            three_meetings_ago = selected_meeting_number - 2
+            recent_speaker_log = db.session.query(SessionLog.id).join(SessionType)\
+                .filter(SessionLog.Owner_ID == current_user_contact_id)\
+                .filter(SessionType.Role == 'Prepared Speaker')\
+                .filter(SessionLog.Meeting_Number >= three_meetings_ago)\
+                .filter(SessionLog.Meeting_Number <= selected_meeting_number).first()
+
+            if recent_speaker_log:
+                roles_with_icons = [
+                    role for role in roles_with_icons
+                    if role['role_key'] != 'Prepared Speaker' or (role['role_key'] == 'Prepared Speaker' and role['owner_id'] == current_user_contact_id)
+                ]
+
 
         # Sort for members/officers: 1st your roles, 2nd available roles.
         roles_with_icons.sort(key=lambda x: (
             0 if x['owner_id'] == current_user_contact_id else 1 if not x['owner_id'] else 2,
-            x['role']
+            x['role'] # Sort alphabetically within groups
         ))
 
     else:
-        # Sort for VPE/Admin (by default meeting order)
+        # Sort for VPE/Admin by session_id (approximates meeting order)
          roles_with_icons.sort(key=lambda x: x['session_id'])
 
     return roles_with_icons
@@ -141,6 +148,7 @@ def booking(selected_meeting_number):
     # Get user info
     user_role = session.get('user_role', 'Guest')
     user = User.query.get(session.get('user_id'))
+    selected_level = request.args.get('level', type=int)
     current_user_contact_id = user.Contact_ID if user else None
 
     # Get meeting info
@@ -152,7 +160,9 @@ def booking(selected_meeting_number):
         selected_meeting_number = upcoming_meetings[0][0]
 
     if not selected_meeting_number:
-        return render_template('booking.html', roles=[], upcoming_meetings=[], selected_meeting_number=None, user_bookings_by_date=[], contacts=[])
+        return render_template('booking.html', roles=[], upcoming_meetings=[],
+                               selected_meeting_number=None, user_bookings_by_date=[],
+                               contacts=[], completed_roles=[], selected_level=selected_level)
 
     # Get roles for the selected meeting
     roles_with_icons = _get_roles_for_meeting(selected_meeting_number, user_role, current_user_contact_id)
@@ -202,6 +212,34 @@ def booking(selected_meeting_number):
 
     user_bookings_timeline = sorted(user_bookings_by_date.values(), key=lambda x: x['date_info']['meeting_number'])
 
+    completed_roles = []
+    if current_user_contact_id and selected_level:
+        completed_roles_query = db.session.query(
+            SessionLog.id,
+            SessionType.Role,
+            Meeting.Meeting_Number,
+            Meeting.Meeting_Date
+        ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
+         .join(LevelRole, SessionType.Role == LevelRole.role)\
+         .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+         .filter(SessionLog.Owner_ID == current_user_contact_id)\
+         .filter(SessionLog.Status == 'Completed')\
+         .filter(LevelRole.level == selected_level)\
+         .filter(SessionType.Role != '', SessionType.Role.isnot(None))\
+         .order_by(Meeting.Meeting_Date.desc(), SessionType.Role) # Order by most recent first
+
+        # Fetch results
+        completed_logs = completed_roles_query.all()
+
+        # Process for display
+        for log in completed_logs:
+             completed_roles.append({
+                'role': log.Role,
+                'meeting_number': log.Meeting_Number,
+                'date': log.Meeting_Date.strftime('%Y-%m-%d'),
+                'icon': ROLE_ICONS.get(log.Role, ROLE_ICONS['Default'])
+             })
+
     # Get contacts for admin dropdown
     contacts = Contact.query.order_by(Contact.Name).all()
 
@@ -212,7 +250,9 @@ def booking(selected_meeting_number):
                            is_vpe_or_admin=(user_role in ['Admin', 'VPE']),
                            current_user_contact_id=current_user_contact_id,
                            user_bookings_by_date=user_bookings_timeline,
-                           contacts=contacts)
+                           contacts=contacts,
+                           completed_roles=completed_roles, 
+                           selected_level=selected_level)
 
 
 @booking_bp.route('/booking/book', methods=['POST'])
@@ -221,7 +261,7 @@ def book_or_assign_role():
     data = request.get_json()
     session_id = data.get('session_id')
     action = data.get('action')
-    role_key = data.get('role_key')
+    role_key = data.get('role_key') # The specific role being acted upon
 
     user = User.query.get(session.get('user_id'))
     current_user_contact_id = user.Contact_ID if user else None
@@ -231,29 +271,38 @@ def book_or_assign_role():
     if not log:
         return jsonify(success=False, message="Session not found.")
 
-    # Find all session logs for this role in this meeting
-    sessions_to_update = SessionLog.query.join(SessionType)\
-        .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-        .filter(SessionType.Role == role_key).all()
+    # Find *all* session logs for this role *key* in this meeting
+    # This ensures consistency for roles like GE, TME etc. that might have multiple log entries
+    session_type_id = log.Type_ID # Get the type ID from the specific log
+    session_type = SessionType.query.get(session_type_id)
+    logical_role_key = session_type.Role if session_type else None # Use the Role field
 
-    if not sessions_to_update:
-        return jsonify(success=False, message="No matching roles found to update.")
+    if not logical_role_key:
+         return jsonify(success=False, message="Could not determine the role key.")
+
+
+    sessions_to_update_query = SessionLog.query.join(SessionType)\
+        .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+        .filter(SessionType.Role == logical_role_key) # Use the logical role key
 
     owner_id_to_set = None
     if action == 'book':
         owner_id_to_set = current_user_contact_id
     elif action == 'cancel':
-        owner_id_to_set = None
+        owner_id_to_set = None # Set to None (NULL in DB)
     elif action == 'assign' and user_role in ['Admin', 'VPE']:
         contact_id = data.get('contact_id', '0')
-        owner_id_to_set = int(contact_id) if contact_id != '0' else None
+        owner_id_to_set = int(contact_id) if contact_id != '0' else None # Set to None if '0'
 
-    # For repeatable roles, only update the specific session
-    if role_key in ["Prepared Speaker", "Individual Evaluator", "Backup Speaker"]:
-        log_to_update = SessionLog.query.get(session_id)
+    # For roles that can appear multiple times (Speaker, Evaluator, Backup), only update the specific session_id
+    if logical_role_key in ["Prepared Speaker", "Individual Evaluator", "Backup Speaker"]:
+        log_to_update = SessionLog.query.get(session_id) # Get the specific log again
         if log_to_update:
             log_to_update.Owner_ID = owner_id_to_set
-    else: # For unique roles, update all associated sessions
+    else: # For unique roles (TME, GE, etc.), update all associated session logs in that meeting
+        sessions_to_update = sessions_to_update_query.all()
+        if not sessions_to_update:
+             return jsonify(success=False, message="No matching roles found to update.") # Should not happen if log was found
         for session_log in sessions_to_update:
             session_log.Owner_ID = owner_id_to_set
 

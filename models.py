@@ -1,4 +1,4 @@
-from . import db
+from vpemaster import db
 
 class Contact(db.Model):
     __tablename__ = 'Contacts'
@@ -92,8 +92,9 @@ class SessionLog(db.Model):
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)
     Notes = db.Column(db.String(1000))
-    Status = db.Column(db.String(50)) # New field for 'Booked', 'Completed'
-
+    Status = db.Column(db.String(50)) 
+    Current_Path_Level=db.Column(db.String(10))
+    
     meeting = db.relationship('Meeting', backref='session_logs')
     project = db.relationship('Project', backref='session_logs')
     owner = db.relationship('Contact', backref='session_logs')
@@ -106,6 +107,7 @@ class LevelRole(db.Model):
     role = db.Column(db.String(255), nullable=False)
     type = db.Column(db.String(50), nullable=False)
     count_required = db.Column(db.Integer, nullable=False, default=0)
+
 
 class Presentation(db.Model):
     __tablename__ = 'presentations'
