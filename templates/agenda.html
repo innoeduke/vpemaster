@@ -81,87 +81,85 @@
                 </tr>
             </thead>
             <tbody>
-                {% for log, is_section, session_type_title, predefined, is_hidden, meeting_date, code_dl, code_eh, code_ms, code_pi, code_pm, code_vc, code_dtm, purpose, project_name in logs %}
-                <tr data-id="{{ log.id }}"
-                    data-project-id="{{ log.Project_ID if log.Project_ID is not none else '' }}"
-                    data-meeting-number="{{ log.Meeting_Number }}"
-                    data-meeting-date="{{ meeting_date.strftime('%Y-%m-%d') if meeting_date else '' }}"
-                    data-is-section="{{ is_section|lower }}"
-                    data-is-hidden="{{ is_hidden|lower }}"
-                    data-meeting-seq="{{ log.Meeting_Seq }}"
-                    data-start-time="{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}"
-                    data-session-title="{{ session_type_title if predefined else (log.Session_Title if log.Session_Title is not none else '') }}"
-                    data-type-id="{{ log.Type_ID }}"
-                    data-owner-id="{{ log.Owner_ID }}"
-                    data-designation="{{ log.Designation if log.Designation is not none else '' }}"
-                    data-duration-min="{{ log.Duration_Min if log.Duration_Min is not none else '' }}"
-                    data-duration-max="{{ log.Duration_Max if log.Duration_Max is not none else '' }}"
-                    data-status="{{ log.Status if log.Status else '' }}"
-                    class="{{ 'section-row' if is_section else '' }} {{ 'hidden-row' if is_hidden else '' }}">
+                {% for log_dict in logs_data %}
+                <tr data-id="{{ log_dict.id }}"
+                    data-project-id="{{ log_dict.Project_ID if log_dict.Project_ID is not none else '' }}"
+                    data-meeting-number="{{ log_dict.Meeting_Number }}"
+                    data-meeting-date="{{ log_dict.meeting_date_str }}"
+                    data-is-section="{{ log_dict.is_section|lower }}"
+                    data-is-hidden="{{ log_dict.is_hidden|lower }}"
+                    data-meeting-seq="{{ log_dict.Meeting_Seq }}"
+                    data-start-time="{{ log_dict.Start_Time_str }}"
+                    {# Use predefined title if available, otherwise fallback to log title #}
+                    data-session-title="{{ log_dict.session_type_title if log_dict.predefined else (log_dict.Session_Title if log_dict.Session_Title is not none else '') }}"
+                    data-type-id="{{ log_dict.Type_ID }}"
+                    data-owner-id="{{ log_dict.Owner_ID }}"
+                    data-designation="{{ log_dict.Designation if log_dict.Designation is not none else '' }}"
+                    data-duration-min="{{ log_dict.Duration_Min if log_dict.Duration_Min is not none else '' }}"
+                    data-duration-max="{{ log_dict.Duration_Max if log_dict.Duration_Max is not none else '' }}"
+                    data-status="{{ log_dict.Status if log_dict.Status else '' }}"
+                    data-role="{{ log_dict.role or '' }}"
+                    data-current-path-level="{{ log_dict.current_path_level or '' }}"
+                    class="{{ 'section-row' if log_dict.is_section else '' }} {{ 'hidden-row' if log_dict.is_hidden else '' }}">
 
-                    {% if is_section %}
+                    {# --- Row Content using log_dict --- #}
+                    {% if log_dict.is_section %}
                         <td colspan="4" class="non-edit-mode-cell">
-                            {{ log.Session_Title or session_type_title }}
+                            {# Display section title #}
+                            {{ log_dict.Session_Title or log_dict.session_type_title }}
                         </td>
                     {% else %}
-                        <td class="non-edit-mode-cell">{{ log.Start_Time.strftime('%H:%M') if log.Start_Time is not none else '' }}</td>
+                        <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>
                         <td class="non-edit-mode-cell">
                              <div class="speech-tooltip-wrapper">
                                 {# Display Title #}
-                                {% if log.Project_ID %}
-                                    {% if log.Session_Title and log.Session_Title.startswith('"') %}
-                                        {{ log.Session_Title }}
+                                {% if log_dict.Project_ID %}
+                                    {% if log_dict.Session_Title and log_dict.Session_Title.startswith('"') %}
+                                        {{ log_dict.Session_Title }}
                                     {% else %}
-                                        "{{ log.Session_Title }}"
+                                        "{{ log_dict.Session_Title }}"
                                     {% endif %}
-                                {% elif session_type_title == 'Evaluation' %}
-                                    Evaluation for {{ log.Session_Title }}
-                                {% elif predefined %}
-                                    {{ session_type_title }}
+                                {% elif log_dict.session_type_title == 'Evaluation' %}
+                                    Evaluation for {{ log_dict.Session_Title }}
+                                {% elif log_dict.predefined %}
+                                    {{ log_dict.session_type_title }}
                                 {% else %}
-                                    {{ log.Session_Title }}
+                                    {{ log_dict.Session_Title }}
                                 {% endif %}
 
                                 {# Append Project Code if it's a project #}
-                                {% if log.Project_ID %}
-                                    {% set contact = contacts|selectattr('id', 'equalto', log.Owner_ID)|first %}
-                                    {% if contact and contact.Working_Path and config.PATHWAY_MAPPING.get(contact.Working_Path) %}
-                                        {% set pathway_suffix = config.PATHWAY_MAPPING[contact.Working_Path] %}
-                                        {% set pathway_code_map = {'DL': code_dl, 'EH': code_eh, 'MS': code_ms, 'PI': code_pi, 'PM': code_pm, 'VC': code_vc, 'DTM': code_dtm} %}
-                                        {% if pathway_suffix and pathway_code_map[pathway_suffix] %}
-                                            ({{ pathway_suffix }}{{ pathway_code_map[pathway_suffix] }})
-                                        {% endif %}
-                                    {% endif %}
+                                {% if log_dict.project_code_display %}
+                                    ({{ log_dict.project_code_display }})
                                 {% endif %}
 
                                 {# Tooltip for Projects #}
-                                {% if log.Project_ID %}
+                                {% if log_dict.Project_ID %}
                                 <div class="speech-tooltip">
-                                    <span class="tooltip-title">{{ project_name }}</span>
-                                    <span class="tooltip-purpose">{{ purpose }}</span>
+                                    <span class="tooltip-title">{{ log_dict.project_name }}</span>
+                                    <span class="tooltip-purpose">{{ log_dict.project_purpose }}</span>
                                 </div>
                                 {% endif %}
                             </div>
                         </td>
                         <td class="non-edit-mode-cell">
-                            {% set owner = contacts|selectattr('id', 'equalto', log.Owner_ID)|first %}
-                            {% if owner %}
-                                {{ owner.Name }}
-                                {% if owner.DTM %}
+                             {# Use pre-fetched owner data from log_dict #}
+                            {% if log_dict.owner_name %}
+                                {{ log_dict.owner_name }}
+                                {% if log_dict.owner_dtm %}
                                     <sup class="dtm-superscript">DTM</sup>
                                 {% endif %}
                                 <span class="owner-meta">
-                                    {% if owner.Type == 'Guest' %}
-                                        <br/>{{ log.Designation }}
-                                    {% elif log.Designation %}
-                                        <br/>{{ log.Designation }}
+                                    {% if log_dict.owner_type == 'Guest' %}
+                                        <br/>{{ log_dict.Designation }} {# Use designation directly #}
+                                    {% elif log_dict.Designation %}
+                                        <br/>{{ log_dict.Designation }}
                                     {% endif %}
                                 </span>
                             {% endif %}
                         </td>
                         <td class="non-edit-mode-cell">
-                            {% if log.Duration_Min and log.Duration_Max %}{{ log.Duration_Min }}'-{{ log.Duration_Max }}'
-                            {% elif log.Duration_Max %}{{ log.Duration_Max }}'
+                            {% if log_dict.Duration_Min and log_dict.Duration_Max %}{{ log_dict.Duration_Min }}'-{{ log_dict.Duration_Max }}'
+                            {% elif log_dict.Duration_Max %}{{ log_dict.Duration_Max }}'
                             {% endif %}
                         </td>
                     {% endif %}
@@ -219,8 +217,10 @@
 
     {% include '_speech_edit_modal.html' %}
     {% include '_contact_modal.html' %}
+    {% include 'role_modal.html' %}
 
     <script>
+        const pathwaysData = {{ config.PATHWAY_MAPPING|tojson|safe }};
         const allProjects = {{ projects|tojson|safe }};
         const pathwayMap = {{ config.PATHWAY_MAPPING|tojson|safe }};
     </script>

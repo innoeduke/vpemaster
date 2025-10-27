@@ -1,0 +1,36 @@
+<div id="roleEditModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeRoleEditModal()">&times;</span>
+    <h1>Edit Role Details</h1>
+    <form id="roleEditForm" onsubmit="saveRoleChanges(event)">
+      <input type="hidden" id="edit-role-log-id" name="log_id" />
+      <table class="form-table">
+        <tr>
+          <td><label>Role:</label></td>
+          <td><span id="role-name-display"></span></td>
+        </tr>
+        <tr>
+          <td><label for="edit-current-path-level">Path & Level:</label></td>
+          <td>
+            <input
+              type="text"
+              id="edit-current-path-level"
+              name="current_path_level"
+              placeholder="e.g., PM1, EH3..."
+            />
+          </td>
+        </tr>
+      </table>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          onclick="closeRoleEditModal()"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
