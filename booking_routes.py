@@ -215,56 +215,47 @@ def booking(selected_meeting_number):
     if current_user_contact_id and selected_level:
         level_pattern = f"%{selected_level}"
 
-        raw_sql = """
-            SELECT
-                sl.id,
-                st.Role,
-                m.Meeting_Number,
-                m.Meeting_Date,
-                sl.Status,
-                sl.current_path_level
-            FROM Session_Logs sl
-            JOIN Session_Types st ON sl.Type_ID = st.id
-            JOIN Meetings m ON sl.Meeting_Number = m.Meeting_Number
-            WHERE sl.Owner_ID = :owner_id
-              AND st.Role IS NOT NULL
-              AND st.Role != ''
-              AND sl.current_path_level IS NOT NULL
-              AND sl.current_path_level != ''
-              AND sl.current_path_level LIKE :level_pattern
-            ORDER BY m.Meeting_Date DESC, st.Role ASC
-        """
-        params = {
-            "owner_id": current_user_contact_id,
-            "level_pattern": level_pattern
-        }
-
-        completed_logs = [] # Initialize before try block
         try:
-            db.session.rollback() # Ensure fresh transaction state
-            result_proxy = db.session.execute(text(raw_sql), params)
-            completed_logs_raw = result_proxy.mappings().fetchall()
-            completed_logs = completed_logs_raw
+            # This is the new ORM query replacing the raw SQL
+            completed_logs_query = db.session.query(
+                SessionLog.id,
+                SessionType.Role,
+                Meeting.Meeting_Number,
+                Meeting.Meeting_Date,
+                SessionLog.Status,
+                SessionLog.current_path_level
+            ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
+             .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+             .filter(SessionLog.Owner_ID == current_user_contact_id)\
+             .filter(SessionType.Role.isnot(None))\
+             .filter(SessionType.Role != '')\
+             .filter(SessionLog.current_path_level.isnot(None))\
+             .filter(SessionLog.current_path_level != '')\
+             .filter(SessionLog.current_path_level.like(level_pattern))\
+             .order_by(Meeting.Meeting_Date.desc(), SessionType.Role.asc())
+
+            completed_logs = completed_logs_query.all()
 
         except Exception as e:
-             # Optionally log the error e
-             print(f"Error executing raw SQL for completed roles: {e}") # Basic print logging
-             completed_logs = [] # Ensure it's empty on error
+            # Optionally log the error e
+            print(f"Error executing ORM query for completed roles: {e}") # Basic print logging
+            completed_logs = [] # Ensure it's empty on error
 
         # Process for display
-        for log_dict in completed_logs: # Iterate over list of dicts
-             role_name = log_dict.get('Role') # Use .get for safety
-             meeting_num = log_dict.get('Meeting_Number')
-             meeting_date = log_dict.get('Meeting_Date')
+        # Updated loop to use attribute access (log.Role) instead of dict access (log_dict.get('Role'))
+        for log in completed_logs: # Iterate over KeyedTuple results
+            role_name = log.Role
+            meeting_num = log.Meeting_Number
+            meeting_date = log.Meeting_Date
 
-             if role_name and meeting_date: # Basic check for essential data
-                 icon = ROLE_ICONS.get(role_name, ROLE_ICONS['Default'])
-                 completed_roles.append({
+            if role_name and meeting_date: # Basic check for essential data
+                icon = ROLE_ICONS.get(role_name, ROLE_ICONS['Default'])
+                completed_roles.append({
                     'role': role_name,
                     'meeting_number': meeting_num,
                     'date': meeting_date.strftime('%Y-%m-%d'), # Format date
                     'icon': icon
-                 })
+                })
 
     # Get contacts for admin dropdown
     contacts = Contact.query.order_by(Contact.Name).all()
@@ -279,6 +270,8 @@ def booking(selected_meeting_number):
                            contacts=contacts,
                            completed_roles=completed_roles,
                            selected_level=selected_level)
+
+
 @booking_bp.route('/booking/book', methods=['POST'])
 @login_required
 def book_or_assign_role():

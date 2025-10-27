@@ -93,8 +93,8 @@ class SessionLog(db.Model):
     Duration_Max = db.Column(db.Integer)
     Notes = db.Column(db.String(1000))
     Status = db.Column(db.String(50)) 
-    Current_Path_Level=db.Column(db.String(10))
-    
+    current_path_level=db.Column(db.String(10))
+
     meeting = db.relationship('Meeting', backref='session_logs')
     project = db.relationship('Project', backref='session_logs')
     owner = db.relationship('Contact', backref='session_logs')
