@@ -213,17 +213,13 @@ def booking(selected_meeting_number):
     # --- Get Completed Roles using Raw SQL ---
     completed_roles = []
     if current_user_contact_id and selected_level:
-        level_pattern = f"%{selected_level}"
+        level_pattern = f"%{selected_level}%" # Pattern to match the level in current_path_level
 
         try:
-            # This is the new ORM query replacing the raw SQL
             completed_logs_query = db.session.query(
-                SessionLog.id,
-                SessionType.Role,
-                Meeting.Meeting_Number,
-                Meeting.Meeting_Date,
-                SessionLog.Status,
-                SessionLog.current_path_level
+                # Select distinct combinations of meeting number and role first
+                distinct(Meeting.Meeting_Number),
+                SessionType.Role
             ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
              .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
              .filter(SessionLog.Owner_ID == current_user_contact_id)\
@@ -232,30 +228,43 @@ def booking(selected_meeting_number):
              .filter(SessionLog.current_path_level.isnot(None))\
              .filter(SessionLog.current_path_level != '')\
              .filter(SessionLog.current_path_level.like(level_pattern))\
-             .order_by(Meeting.Meeting_Date.desc(), SessionType.Role.asc())
+             .order_by(Meeting.Meeting_Number.desc(), SessionType.Role.asc()) # Order by meeting then role
 
-            completed_logs = completed_logs_query.all()
+            # Get the unique meeting/role pairs
+            unique_completed_roles = completed_logs_query.all()
+
+            # Now, for each unique pair, fetch ONE representative log entry
+            # to get the date. This avoids multiple entries for the same role in the same meeting.
+            processed_roles = set() # Keep track of (meeting_num, role_name) already added
+            for meeting_num, role_name in unique_completed_roles:
+                role_meeting_key = (meeting_num, role_name)
+                if role_meeting_key in processed_roles:
+                    continue # Skip if already processed
+
+                # Find the date for this meeting (can fetch it once per meeting if needed,
+                # but fetching with the role ensures we get a relevant entry)
+                first_log_for_role = db.session.query(Meeting.Meeting_Date)\
+                    .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number)\
+                    .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+                    .filter(Meeting.Meeting_Number == meeting_num)\
+                    .filter(SessionType.Role == role_name)\
+                    .filter(SessionLog.Owner_ID == current_user_contact_id)\
+                    .first() # Get the first match to retrieve the date
+
+                if first_log_for_role:
+                    meeting_date = first_log_for_role.Meeting_Date
+                    icon = ROLE_ICONS.get(role_name, ROLE_ICONS['Default'])
+                    completed_roles.append({
+                        'role': role_name,
+                        'meeting_number': meeting_num,
+                        'date': meeting_date.strftime('%Y-%m-%d'),
+                        'icon': icon
+                    })
+                    processed_roles.add(role_meeting_key) # Mark as processed
 
         except Exception as e:
-            # Optionally log the error e
-            print(f"Error executing ORM query for completed roles: {e}") # Basic print logging
-            completed_logs = [] # Ensure it's empty on error
-
-        # Process for display
-        # Updated loop to use attribute access (log.Role) instead of dict access (log_dict.get('Role'))
-        for log in completed_logs: # Iterate over KeyedTuple results
-            role_name = log.Role
-            meeting_num = log.Meeting_Number
-            meeting_date = log.Meeting_Date
-
-            if role_name and meeting_date: # Basic check for essential data
-                icon = ROLE_ICONS.get(role_name, ROLE_ICONS['Default'])
-                completed_roles.append({
-                    'role': role_name,
-                    'meeting_number': meeting_num,
-                    'date': meeting_date.strftime('%Y-%m-%d'), # Format date
-                    'icon': icon
-                })
+            print(f"Error executing ORM query for completed roles: {e}")
+            completed_roles = [] # Ensure it's empty on error
 
     # Get contacts for admin dropdown
     contacts = Contact.query.order_by(Contact.Name).all()
