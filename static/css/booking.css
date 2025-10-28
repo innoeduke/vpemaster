@@ -19,7 +19,7 @@ h1 {
     flex: 1;
 }
 
-.my-bookings-container h3 {
+.booking-section-header {
     text-align: left;
     margin: 15px 0;
     font-size: 1.2em;
@@ -340,27 +340,35 @@ h1 {
     color: #555; /* A bit softer color */
 }
 
+.completed-roles-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.completed-roles-section-header .form-group {
+    margin-bottom: 15px; /* Aligns baseline with the header */
+}
+
+.completed-roles-section-header .form-group label {
+    font-size: 0.8em;
+    font-weight: normal;
+    color: #555;
+}
+
 .completed-roles-container {
-    margin-top: 30px;
+    margin-top: 0; /* Was 30px, now handled by header */
     padding: 15px;
     background-color: #f8f9fa;
     border-radius: 8px;
 }
-.completed-roles-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-.completed-roles-header h3 {
-    margin: 0;
-    font-size: 1.2em;
-}
+
 #level-filter {
     padding: 5px 8px;
     border-radius: 4px;
     border: 1px solid #ccc;
 }
+
 .completed-roles-list {
     list-style: none;
     padding: 0;
@@ -368,21 +376,49 @@ h1 {
     max-height: 200px; /* Limit height and make scrollable */
     overflow-y: auto;
 }
+
 .completed-roles-list li {
     padding: 8px 0;
     border-bottom: 1px solid #e0e0e0;
     font-size: 0.9em;
     color: #555;
+    break-inside: avoid-column; 
 }
+
 .completed-roles-list li:last-child {
     border-bottom: none;
 }
+
  .completed-roles-list i {
      margin-right: 8px;
-     color: #772432; /* Match theme */
+     color: #772432; 
  }
+
 .completed-roles-list .meeting-ref {
     font-size: 0.8em;
     color: #888;
     margin-left: 10px;
+}
+
+@media (min-width: 769px) {
+    .completed-roles-list {
+        display: grid;
+        /* This tells the grid to fill columns first, not rows */
+        grid-auto-flow: column;
+        /* This defines 2 equal-width columns */
+        grid-template-columns: 1fr 1fr;
+        /* This is the key: it sets the "break point" at 3 items */
+        grid-template-rows: repeat(3, auto); 
+        /* Adds the 25px gap only between columns */
+        gap: 0 25px;
+
+        /* These overrides from before are still needed */
+        max-height: none; 
+        overflow-y: visible;
+    }
+
+    /* This hides the border under the 3rd item (last in the first column) */
+    .completed-roles-list li:nth-child(3) {
+        border-bottom: none;
+    }
 }
