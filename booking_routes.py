@@ -6,23 +6,34 @@ from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole
 from . import db
 from datetime import datetime
 import re
-from sqlalchemy import text
+from sqlalchemy import text, or_
 
 booking_bp = Blueprint('booking_bp', __name__)
 
 ROLE_ICONS = {
+    # leader roles
     "TME": "fa-microphone",
-    "Ah-Counter": "fa-calculator",
-    "Grammarian": "fa-book",
-    "Timer": "fa-stopwatch",
     "GE": "fa-search",
     "Topicmaster": "fa-comments",
-    "Sharing Master": "fa-share-alt",
+    # functional roles
+    "Grammarian": "fa-book",
+    "Timer": "fa-stopwatch",
+    "Ah-Counter": "fa-calculator",
+    "Topics Speaker": "fa-comment",
     "Prepared Speaker": "fa-user-tie",
     "Individual Evaluator": "fa-pen-square",
-    "Keynote Speaker": "fa-star",
     "Backup Speaker": "fa-user-secret",
+    # specialized roles
+    "Welcome Officer": "fa-handshake",
+    "Keynote Speaker": "fa-star",
+    "Sharing Master": "fa-share-alt",
+    "Meeting Manager": "fa-clipboard-list",
     "Photographer": "fa-camera",
+    # event-based roles
+    "Panelist": "fa-users",
+    "Debater": "fa-balance-scale",
+    "Club Mentor": "fa-user-graduate",
+    "Introductory Mentor": "fa-hands-helping",
     "Default": "fa-question-circle"
 }
 
@@ -42,7 +53,7 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
      .filter(SessionType.Role != '', SessionType.Role.isnot(None))
 
     if user_role not in ['Admin', 'VPE']:
-        query = query.filter(SessionType.Role_Group == 'Member')
+        query = query.filter(SessionType.Role_Group != 'Officer')
 
     session_logs = query.all()
 
@@ -217,10 +228,10 @@ def booking(selected_meeting_number):
 
         try:
             completed_logs_query = db.session.query(
-                # Select distinct combinations of meeting number and role first
-                distinct(Meeting.Meeting_Number),
+                Meeting.Meeting_Number,
                 SessionType.Role
-            ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
+            ).select_from(SessionLog)\
+             .join(SessionType, SessionLog.Type_ID == SessionType.id)\
              .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
              .filter(SessionLog.Owner_ID == current_user_contact_id)\
              .filter(SessionType.Role.isnot(None))\
@@ -228,6 +239,7 @@ def booking(selected_meeting_number):
              .filter(SessionLog.current_path_level.isnot(None))\
              .filter(SessionLog.current_path_level != '')\
              .filter(SessionLog.current_path_level.like(level_pattern))\
+             .distinct()\
              .order_by(Meeting.Meeting_Number.desc(), SessionType.Role.asc()) # Order by meeting then role
 
             # Get the unique meeting/role pairs

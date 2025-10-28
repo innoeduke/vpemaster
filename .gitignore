@@ -1,5 +1,6 @@
 .DS_Store
 .env
 .env_pythonanywhere
+venv/
 __pycache__/
-.pyc
+.py[cod]

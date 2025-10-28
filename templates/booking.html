@@ -38,19 +38,20 @@
             {% endif %}
         </div>
     </div>
-    <div class="completed-roles-container">
-        <div class="completed-roles-header">
-            <h3>My Completed Roles (Level <span id="selected-level-display">{{ selected_level if selected_level else 'N/A' }}</span>)</h3>
-            <div class="form-group">
-                <label for="level-filter">Filter by Level:</label>
-                <select id="level-filter">
-                    <option value="">-- Select Level --</option>
-                    {% for i in range(1, 6) %}
-                    <option value="{{ i }}" {% if i == selected_level %}selected{% endif %}>Level {{ i }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+    <div class="completed-roles-section-header">
+        <h3 class="booking-section-header">My Completed Roles (Level <span id="selected-level-display">{{ selected_level if selected_level else 'N/A' }}</span>)</h3>
+        
+        <div class="form-group">
+            <label for="level-filter">Filter by Level:</label>
+            <select id="level-filter">
+                <option value="">-- Select Level --</option>
+                {% for i in range(1, 6) %}
+                <option value="{{ i }}" {% if i == selected_level %}selected{% endif %}>Level {{ i }}</option>
+                {% endfor %}
+            </select>
         </div>
+    </div>
+    <div class="completed-roles-container">
         {% if selected_level %}
             {% if completed_roles %}
                 <ul class="completed-roles-list">
@@ -69,6 +70,8 @@
             <p>Please select a level to view completed roles.</p>
         {% endif %}
     </div>
+    <br/>
+    <h3 class="booking-section-header">Available Roles</h3>
     <div class="booking-filter-container">
         <i class="fas fa-calendar-alt"></i>
         <select id="meeting-filter" onchange="window.location.href = '/booking/' + this.value;">
@@ -79,7 +82,6 @@
             {% endfor %}
         </select>
     </div>
-
 
     <table class="booking-table {% if is_vpe_or_admin %}is-admin-view{% endif %}">
         <thead>
@@ -136,7 +138,6 @@
     </table>
     <p style="font-size:0.7em;">
         <br/>- The Prepared Speaker role can be booked once every three weeks.
-        <br/>- Guest roles like ah-counter, gramarian etc. are unavailable here.
     </p>
 </div>
 
