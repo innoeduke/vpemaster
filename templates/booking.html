@@ -70,8 +70,32 @@
             <p>Please select a level to view completed roles.</p>
         {% endif %}
     </div>
+    <div class="alert-info-static">
+        <div class="alert-icon">
+            <i class="fas fa-info-circle"></i>
+        </div>
+        <div class="alert-content">
+            Role completions are tracked at your current working level—the lowest incomplete level in your path.
+        </div>
+    </div>
     <br/>
     <h3 class="booking-section-header">Available Roles</h3>
+    <div class="alert-closable alert-danger">
+        <div class="alert-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <div class="alert-content">
+            <strong>!!! IMPORTANT</strong>
+            <ol>
+                <li><strong>Ensure your availability before booking a role.</strong></li>
+                <li>Members may book one speech every three weeks (3-Week Policy).</li>
+                <li>The 3-Week Policy does not apply to Backup Speakers.</li>
+                <li><strong>Only one future Backup Speaker role can be booked at a time.</strong></li>
+                <li>Unfilled speech roles become available to Backup Speakers each MONDAY.</li>
+            </ol>
+        </div>
+        <span class="close-alert" onclick="this.parentElement.style.display='none';">&times;</span>
+    </div>
     <div class="booking-filter-container">
         <i class="fas fa-calendar-alt"></i>
         <select id="meeting-filter" onchange="window.location.href = '/booking/' + this.value;">
@@ -136,9 +160,7 @@
             {% endfor %}
         </tbody>
     </table>
-    <p style="font-size:0.7em;">
-        <br/>- The Prepared Speaker role can be booked once every three weeks.
-    </p>
+    
 </div>
 
 <script>

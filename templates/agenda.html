@@ -4,6 +4,9 @@
 
 {% block content %}
 <div id="agenda-content"> {# Wrapper for edit-mode class #}
+    <div style="text-align: center; margin-bottom: 15px;">
+        <img src="{{ url_for('static', filename='images/SHLTMC-logo.png') }}" alt="SHLTMC Logo" style="max-width: 200px; height: auto;">
+    </div>
     <h1>Meeting Agenda</h1>
 
     {# This is the updated warning block for the full-screen overlay #}
@@ -91,7 +94,7 @@
                     data-meeting-seq="{{ log_dict.Meeting_Seq }}"
                     data-start-time="{{ log_dict.Start_Time_str }}"
                     {# Use predefined title if available, otherwise fallback to log title #}
-                    data-session-title="{{ log_dict.session_type_title if log_dict.predefined else (log_dict.Session_Title if log_dict.Session_Title is not none else '') }}"
+                    data-session-title="{{ log_dict.Session_Title if log_dict.Session_Title is not none else '' }}"
                     data-type-id="{{ log_dict.Type_ID }}"
                     data-owner-id="{{ log_dict.Owner_ID }}"
                     data-designation="{{ log_dict.Designation if log_dict.Designation is not none else '' }}"
@@ -112,19 +115,21 @@
                         <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>
                         <td class="non-edit-mode-cell">
                              <div class="speech-tooltip-wrapper">
+                                {% set cleaned_title = log_dict.Session_Title|replace('"', '') if log_dict.Session_Title else '' %}
+
                                 {# Display Title #}
-                                {% if log_dict.Project_ID %}
-                                    {% if log_dict.Session_Title and log_dict.Session_Title.startswith('"') %}
-                                        {{ log_dict.Session_Title }}
-                                    {% else %}
-                                        "{{ log_dict.Session_Title }}"
-                                    {% endif %}
+                                {% if log_dict.session_type_title == 'Pathway Speech' %}
+                                    "{{ cleaned_title }}"
+                                {% elif log_dict.session_type_title == 'Presentation' %}
+                                    {{ cleaned_title }}
+                                {% elif log_dict.Project_ID %}
+                                    "{{ cleaned_title }}"
                                 {% elif log_dict.session_type_title == 'Evaluation' %}
-                                    Evaluation for {{ log_dict.Session_Title }}
+                                    Evaluation for {{ cleaned_title }}
                                 {% elif log_dict.predefined %}
                                     {{ log_dict.session_type_title }}
                                 {% else %}
-                                    {{ log_dict.Session_Title }}
+                                    {{ cleaned_title }}
                                 {% endif %}
 
                                 {# Append Project Code if it's a project #}
@@ -220,9 +225,12 @@
     {% include 'role_modal.html' %}
 
     <script>
-        const pathwaysData = {{ config.PATHWAY_MAPPING|tojson|safe }};
-        const allProjects = {{ projects|tojson|safe }};
-        const pathwayMap = {{ config.PATHWAY_MAPPING|tojson|safe }};
+        // Pass Python data to global JS variables used by speech_modal.js
+        var allProjects = {{ projects|tojson|safe }};
+        var pathwayMap = {{ pathway_mapping|tojson|safe }};
+        var allPresentations = {{ presentations|tojson|safe }};
+        var presentationSeries = {{ presentation_series|tojson|safe }};
+    
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>

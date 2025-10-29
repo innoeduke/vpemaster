@@ -1,9 +1,10 @@
 # innoeduke/vpemaster/vpemaster-dev0.3/speech_logs_routes.py
 from flask import Blueprint, jsonify, render_template, request, session, current_app
-from vpemaster import db
-from vpemaster.models import SessionLog, Contact, Project, User
+from . import db
+from .models import SessionLog, Contact, Project, User, Presentation, SessionType
 from .main_routes import login_required
-from sqlalchemy import distinct
+from sqlalchemy import distinct, or_
+from datetime import datetime
 import re
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
@@ -47,7 +48,9 @@ def show_speech_logs():
             # If member is not linked to a contact, show no logs by setting an invalid ID
             selected_speaker = -1
 
-    query = db.session.query(SessionLog).join(Project)
+    query = db.session.query(SessionLog).join(SessionType).filter(
+        or_(SessionType.Valid_for_Project == True, SessionType.Title == 'Presentation')
+    )
 
     if selected_meeting:
         query = query.filter(SessionLog.Meeting_Number == selected_meeting)
@@ -60,6 +63,22 @@ def show_speech_logs():
 
     grouped_logs = {}
     for log in initial_logs:
+        # --- Handle Presentations ---
+        if log.session_type and log.session_type.Title == 'Presentation':
+            presentation = Presentation.query.get(log.Project_ID)
+            if not presentation:
+                continue
+            
+            level = presentation.level
+            if selected_level and level != int(selected_level):
+                continue
+            
+            if level not in grouped_logs:
+                grouped_logs[level] = []
+            grouped_logs[level].append(log)
+            continue # Skip to next log
+
+        # --- Handle Pathway Speeches ---
         if selected_pathway and (not log.owner or log.owner.Working_Path != selected_pathway):
             continue
 
@@ -76,9 +95,12 @@ def show_speech_logs():
             except (ValueError, IndexError):
                 continue
 
-    # Sort logs within each level group by project code
+    # Sort logs within each level group
     for level in grouped_logs:
-        grouped_logs[level].sort(key=lambda log: _get_project_code(log) or "")
+        grouped_logs[level].sort(key=lambda log: (
+            _get_project_code(log) or "" # Sort by pathway code
+            # Add a sort key for presentations if needed, e.g., by title
+        ))
 
     sorted_grouped_logs = dict(sorted(grouped_logs.items()))
 
@@ -107,6 +129,21 @@ def show_speech_logs():
         for p in projects
     ]
 
+    all_presentations = Presentation.query.order_by(Presentation.level, Presentation.code).all()
+    presentations_data = [
+        {"id": p.id, "title": p.title, "level": p.level, "code": p.code, "series": p.series} 
+        for p in all_presentations
+    ]
+    presentation_series = sorted(list(set(p.series for p in all_presentations if p.series)))
+    
+    SERIES_INITIALS = {
+        "Successful Club Series": "SC",
+        "Better Speaker Series": "BS",
+        "Leadership Excellence Series": "LE"
+    }
+
+    today_date = datetime.today().date()
+
     return render_template(
         'speech_logs.html',
         grouped_logs=sorted_grouped_logs,
@@ -115,7 +152,12 @@ def show_speech_logs():
         speakers=speakers,
         pathways=pathways,
         levels=range(1, 6),
-        projects=projects_data,
+        projects=projects_data, # This is used for allProjects in JS
+        presentations=presentations_data, # Pass presentation data for JS
+        presentation_series=presentation_series, # Pass series data for JS
+        series_initials=SERIES_INITIALS, # Pass initials map for template
+        get_presentation_by_id=lambda pid: next((p for p in all_presentations if p.id == pid), None),
+        today_date=today_date,
         selected_filters={
             'meeting_number': selected_meeting,
             'pathway': selected_pathway,
@@ -126,6 +168,7 @@ def show_speech_logs():
         is_member_view=is_member_view,
         pathway_mapping=current_app.config['PATHWAY_MAPPING']
     )
+
 
 @speech_logs_bp.route('/speech_log/details/<int:log_id>', methods=['GET'])
 @login_required
@@ -159,8 +202,20 @@ def update_speech_log(log_id):
     log = SessionLog.query.get_or_404(log_id)
     data = request.get_json()
 
+    session_type_title = data.get('session_type_title')
+
     if 'session_title' in data:
         log.Session_Title = data['session_title']
+
+    # If it's a presentation and the title is *still* blank, then default to the presentation's name
+    if session_type_title == 'Presentation' and data.get('project_id') and not log.Session_Title:
+        try:
+            presentation_id = int(data['project_id'])
+            presentation = Presentation.query.get(presentation_id)
+            if presentation:
+                log.Session_Title = presentation.title # Default to presentation title
+        except (ValueError, TypeError):
+            pass # Keep it blank if lookup fails
 
     if 'pathway' in data and log.owner:
         owner = Contact.query.get(log.Owner_ID)
@@ -171,28 +226,53 @@ def update_speech_log(log_id):
     if 'project_id' in data:
         log.Project_ID = data['project_id']
         
-        # Update durations from the selected project
-        updated_project = Project.query.get(log.Project_ID)
-        if updated_project:
-            log.Duration_Min = updated_project.Duration_Min
-            log.Duration_Max = updated_project.Duration_Max
+        if session_type_title == 'Presentation':
+            log.Duration_Min = 10
+            log.Duration_Max = 15
+        elif log.Project_ID:
+            updated_project = Project.query.get(log.Project_ID)
+            if updated_project:
+                log.Duration_Min = updated_project.Duration_Min
+                log.Duration_Max = updated_project.Duration_Max
+        else:
+            # It's a generic speech, clear durations
+            log.Duration_Min = None
+            log.Duration_Max = None
 
     try:
         db.session.commit()
-        updated_project = Project.query.get(log.Project_ID)
-        project_name = updated_project.Project_Name if updated_project else "N/A"
-        project_code = _get_project_code(log)
+        project_name = "N/A"
+        project_code = None
         pathway = log.owner.Working_Path if log.owner else "N/A"
 
+        if session_type_title == 'Presentation' and log.Project_ID:
+            presentation = Presentation.query.get(log.Project_ID)
+            if presentation:
+                project_name = presentation.title
+                pathway = presentation.series # Use series as "pathway" display
+                SERIES_INITIALS = { "Successful Club Series": "SC", "Better Speaker Series": "BS", "Leadership Excellence Series": "LE" }
+                series_initial = SERIES_INITIALS.get(presentation.series, "")
+                project_code = f"{series_initial}{presentation.code}"
+        elif log.Project_ID: # Pathway speech
+            updated_project = Project.query.get(log.Project_ID)
+            if updated_project:
+                project_name = updated_project.Project_Name
+            project_code = _get_project_code(log) # Get pathway code
+
         return jsonify(success=True,
-                       session_title=log.Session_Title,
-                       project_name=project_name,
-                       project_code=project_code,
-                       pathway=pathway,
-                       project_id=log.Project_ID)
+                        session_title=log.Session_Title,
+                        project_name=project_name,
+                        project_code=project_code,
+                        pathway=pathway,
+                        project_id=log.Project_ID,
+                        duration_min=log.Duration_Min,
+                        duration_max=log.Duration_Max)
+                        
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
+
+
 
 @speech_logs_bp.route('/speech_log/suspend/<int:log_id>', methods=['POST'])
 @login_required

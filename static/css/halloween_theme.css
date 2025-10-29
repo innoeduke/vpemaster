@@ -1,0 +1,269 @@
+/* static/css/halloween_theme.css */
+
+/* --- Base Overrides (from base.css adjustments) --- */
+body {
+    background-color: #2a0a3a; /* Deep dark purple from logo gradient */
+    color: #e0e0e0; /* Light gray text for contrast */
+}
+
+/* Make sure main content areas contrast against the body */
+.main-content > div:not(.profile-container):not(.orientation-warning),
+.main-content > h1,
+.main-content > form,
+.filters-container, /* Style filter containers */
+.project-details-container, /* Style pathway library details */
+.settings-container, /* Style settings container */
+.login-form, /* Style login form background */
+.modal-content /* Style modal backgrounds */
+ {
+    background-color: #3e1a4e; /* Darker purple for content areas */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    margin-bottom: 20px;
+    border: 1px solid #5a2e6a; /* Add a subtle border */
+}
+
+/* Ensure headings inside containers are light */
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.modal-content h1 {
+    color: #f0f0f0;
+}
+
+/* Navigation Pane */
+.nav-pane {
+    background-color: #5a2e6a; /* Darker purple */
+    color: #f0f0f0; /* Light text */
+    box-shadow: 2px 0 8px rgba(0,0,0,0.5); /* Stronger shadow */
+}
+
+.nav-pane ul li.active a,
+.nav-pane ul li a:hover {
+    background-color: #8c4c9e; /* Lighter purple for active/hover */
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #ff8c00; /* Dark orange from logo */
+    color: #2a0a3a; /* Dark purple text */
+    font-weight: bold;
+}
+.btn-primary:hover {
+    background-color: #ff6a00; /* Slightly darker orange */
+    color: #fff;
+}
+.btn-danger { /* For Cancel/Delete */
+    background-color: #a04000; /* Darker orange/brownish */
+    color: white;
+}
+.btn-danger:hover {
+     background-color: #7a3000;
+}
+.btn-info { /* For Export/Add/Bulk Import */
+    background-color: #8c4c9e; /* Lighter purple */
+    color: white;
+}
+.btn-info:hover {
+    background-color: #5a2e6a;
+}
+.btn-success { /* For New/Create */
+     background-color: #ff6a00; /* Use a bright orange */
+     color: #2a0a3a;
+     font-weight: bold;
+}
+.btn-success:hover {
+    background-color: #ff8c00;
+    color: #fff;
+}
+/* Secondary Button (if you have one, e.g., for non-primary actions) */
+.btn-secondary {
+    background-color: #4a2a5a; /* A mid-range purple */
+    color: #f0f0f0;
+    border: 1px solid #6a3e7a;
+}
+.btn-secondary:hover {
+    background-color: #6a3e7a;
+}
+
+/* Tables */
+th {
+    background-color: #5a2e6a; /* Dark purple */
+    color: #f0f0f0; /* Light text */
+    border: 1px solid #8c4c9e; /* Lighter purple border */
+}
+td {
+    border: 1px solid #4a2a5a; /* Darker border for cells */
+}
+tbody tr:nth-child(even) {
+    background-color: #4a2a5a; /* Slightly lighter row background */
+}
+tbody tr:nth-child(odd) {
+    background-color: #3e1a4e; /* Darker row background */
+}
+tbody tr:hover { /* Add hover effect for rows */
+    background-color: #6a3e7a;
+}
+/* Ensure table text is light */
+td, th {
+    color: #e0e0e0;
+}
+
+/* Form Inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+    border: 1px solid #8c4c9e; /* Purple border */
+    border-radius: 4px;
+    background-color: #5a2e6a; /* Dark purple background */
+    color: #f0f0f0; /* Light text */
+    margin-bottom: 10px;
+}
+/* Style for select dropdown arrow */
+select {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23f0f0f0%22%20d%3D%22M287%2C114.7L157.4%2C244.3c-2.4%2C2.4-5.9%2C2.4-8.3%2C0L5.3%2C114.7c-2.4-2.4-2.4-5.9%2C0-8.3l12.5-12.5c2.4-2.4%2C5.9-2.4%2C8.3%2C0l126.9%2C126.9l126.9-126.9c2.4-2.4%2C5.9-2.4%2C8.3%2C0l12.5%2C12.5C289.4%2C108.8%2C289.4%2C112.3%2C287%2C114.7z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 0.7em top 50%, 0 0;
+    background-size: 0.65em auto, 100%;
+}
+/* Autocomplete items */
+.autocomplete-items div {
+    padding: 10px;
+    cursor: pointer;
+    background-color: #5a2e6a; /* Darker background for items */
+    border-bottom: 1px solid #8c4c9e; /* Purple border */
+    color: #f0f0f0;
+}
+.autocomplete-items div:hover {
+    background-color: #8c4c9e; /* Lighter purple on hover */
+}
+/* Ensure form labels are light */
+label {
+    color: #f0f0f0;
+}
+
+/* Alert Box */
+.alert-closable.alert-danger {
+    color: #ffecb3; /* Light orange/yellow text */
+    background-color: #6a3e7a; /* Dark purple background */
+    border-color: #a04000; /* Dark orange border */
+}
+.alert-icon {
+    font-size: 1.2em;
+    padding-top: 2px;
+    flex-shrink: 0;
+}
+.alert-icon i {
+     color: #ff8c00; /* Bright orange icon */
+}
+.close-alert {
+    opacity: 0.6;
+    color: #ffecb3; /* Match text color */
+}
+.close-alert:hover {
+    opacity: 0.9;
+}
+
+
+/* --- Booking Page Overrides (from booking.css adjustments) --- */
+
+/* Timeline & Role Icons */
+.timeline-marker {
+    background-color: #ff8c00; /* Orange */
+    border: 2px solid #3e1a4e; /* Dark purple border */
+}
+.timeline-role i,
+.booking-table .role-cell i,
+.completed-roles-list i {
+    color: #ff8c00; /* Orange */
+}
+
+/* Timeline text colors */
+.timeline-header,
+.timeline-header .meeting-date,
+.timeline-role {
+    color: #e0e0e0; /* Light text */
+}
+
+/* Completed Roles Section */
+.completed-roles-container {
+    background-color: #4a2a5a; /* Mid purple */
+    border-radius: 8px;
+}
+.completed-roles-list li {
+    border-bottom: 1px solid #6a3e7a; /* Lighter purple border */
+    color: #e0e0e0; /* Light text */
+}
+.completed-roles-section-header h3 {
+     color: #f0f0f0;
+}
+.completed-roles-section-header .form-group label {
+    color: #ccc;
+}
+.completed-roles-list .meeting-ref { /* Ensure meeting ref is visible */
+    color: #bbb;
+}
+
+/* Available Roles Filter Dropdown */
+.booking-filter-container i { /* Calendar icon */
+    color: #f0f0f0;
+}
+#meeting-filter { /* The dropdown itself */
+    border: 1px solid #8c4c9e; /* Purple border */
+    background-color: #5a2e6a; /* Dark purple background */
+    color: #f0f0f0; /* Light text */
+}
+
+/* Available Roles Table Specifics */
+.booking-table {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4); /* Stronger shadow for dark bg */
+}
+.booking-table .role-cell { /* Role text */
+    font-weight: bold;
+    color: #f5f5f5;
+}
+.booking-table .speaker-for { /* "for Speaker" text */
+    color: #ccc;
+}
+.owner-available { /* "Available" text */
+    color: #a7d7ae; /* Light green */
+    background-color: #3e1a4e; /* Dark bg */
+    border: 1px solid #a7d7ae;
+}
+/* Buttons in Booking Table */
+.btn-book { background-color: #ff8c00; color: #2a0a3a; font-weight: bold; }
+.btn-book:hover { background-color: #ff6a00; color: #fff; }
+.btn-cancel { background-color: #a04000; color: white; }
+.btn-cancel:hover { background-color: #7a3000; }
+.btn-booked {
+    background-color: #5a2e6a; /* Darker purple */
+    color: #aaa; /* Grayed out text */
+    cursor: not-allowed;
+    border: 1px solid #8c4c9e;
+}
+.admin-assign-select.unassigned-role { /* VPE dropdown */
+    border-color: #ff8c00; /* Orange border */
+    background-color: #6a3e7a; /* Slightly lighter purple bg */
+    font-weight: bold;
+}
+
+/* Modals */
+.modal-content {
+     border: 1px solid #8c4c9e;
+}
+.modal .close { /* Close button 'x' */
+    color: #aaa;
+}
+.modal .close:hover,
+.modal .close:focus {
+    color: #f0f0f0; /* Light color on hover */
+}

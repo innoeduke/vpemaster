@@ -98,7 +98,12 @@ document.addEventListener("DOMContentLoaded", () => {
           deleteLogRow(event.target.closest("tr"));
         } else if (event.target.closest(".role-edit-btn")) {
           const row = event.target.closest("tr");
-          openRoleEditModal(row.dataset.id);
+          const currentLogId = row.dataset.id;
+          if (currentLogId === "new") {
+            saveChanges();
+          } else {
+            openRoleEditModal(currentLogId);
+          }
         }
       });
     }
@@ -305,7 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
       row.append(
         createEditableCell("Meeting_Seq", seq, true, typeId), // Pass typeId
         titleCell,
-        createActionsCell(typeId, hasRole) // Pass hasRole
+        createActionsCell(originalData.id, typeId, hasRole)
       );
     } else {
       fieldsOrder.forEach((field, index) => {
@@ -324,7 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         row.appendChild(cell);
       });
-      row.appendChild(createActionsCell(typeId, hasRole));
+      row.appendChild(createActionsCell(originalData.id, typeId, hasRole));
     }
   }
 
@@ -430,9 +435,25 @@ document.addEventListener("DOMContentLoaded", () => {
   function handleSectionChange(selectElement) {
     const row = selectElement.closest("tr");
     const typeId = selectElement.value;
+    row.dataset.typeId = typeId;
     const sessionType = sessionTypes.find((st) => st.id == typeId);
-
     const titleCell = row.querySelector('[data-field="Session_Title"]');
+
+    // Get current title from the control *before* clearing the cell
+    const oldTitleControl = titleCell.querySelector("input, select, span");
+    let currentTitle = oldTitleControl
+      ? oldTitleControl.value || oldTitleControl.textContent
+      : "";
+
+    // If new type is predefined, use its title. Otherwise, keep the custom title.
+    let newTitle =
+      sessionType && sessionType.Predefined ? sessionType.Title : currentTitle;
+
+    // Special case: If changing *to* Evaluation, keep the speaker name
+    if (sessionType && sessionType.Title === "Evaluation") {
+      newTitle = currentTitle;
+    }
+
     titleCell.innerHTML = "";
     titleCell.appendChild(
       createSessionTitleControl(typeId, sessionType ? sessionType.Title : "")
@@ -643,10 +664,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const designationInput = currentRow.querySelector(
           '[data-field="Designation"] input'
         );
-        if (designationInput) {
-          designationInput.value = "";
-        }
-        // Clear the pair
+        currentRow.dataset.ownerId = "";
+        designationInput.value = "";
+        currentRow.dataset.designation = "";
         updatePairedSession(currentRow, null);
       }
 
@@ -687,6 +707,10 @@ document.addEventListener("DOMContentLoaded", () => {
             if (designationInput && selectedContact) {
               designationInput.value = selectedContact.Completed_Levels || "";
             }
+            currentRow.dataset.ownerId = selectedContactId;
+            if (designationInput) {
+              currentRow.dataset.designation = designationInput.value;
+            }
 
             const currentSessionType = sessionTypes.find(
               (st) =>
@@ -711,7 +735,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("click", (e) => closeAllLists(e.target));
   }
 
-  function createActionsCell(typeId, hasRole) {
+  function createActionsCell(logId, typeId, hasRole) {
     const cell = document.createElement("td");
     cell.className = "actions-column";
 
@@ -727,7 +751,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const ownerId = row.querySelector('input[name="owner_id"]').value;
       const contact = contacts.find((c) => c.id == ownerId);
       const workingPath = contact ? contact.Working_Path : null;
-      openSpeechEditModal(logId, workingPath);
+      const typeId = row.querySelector('[data-field="Type_ID"] select').value;
+      const sessionType = sessionTypes.find((st) => st.id == typeId);
+      const sessionTypeTitle = sessionType ? sessionType.Title : null;
+      openSpeechEditModal(logId, workingPath, sessionTypeTitle);
+      if (logId === "new") {
+        saveChanges();
+      } else {
+        const ownerId = row.querySelector('input[name="owner_id"]').value;
+        const contact = contacts.find((c) => c.id == ownerId);
+        const workingPath = contact ? contact.Working_Path : null;
+        const typeId = row.querySelector('[data-field="Type_ID"] select').value;
+        const sessionType = sessionTypes.find((st) => st.id == typeId);
+        const sessionTypeTitle = sessionType ? sessionType.Title : null;
+        openSpeechEditModal(logId, workingPath, sessionTypeTitle);
+      }
     };
     projectBtn.style.display =
       sessionType &&

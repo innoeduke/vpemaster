@@ -85,12 +85,19 @@ h1 {
 }
 
 .timeline-marker {
-    width: 15px;
-    height: 15px;
-    background-color: #772432;
-    border-radius: 50%;
-    border: 2px solid white;
-    margin: 5px 0;
+    width: 0;
+    height: 0;
+    background-color: transparent; /* No background */
+    border-radius: 0; /* Not a circle */
+    border: none; /* No white border */
+    
+    /* Create an upward-pointing triangle */
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 12px solid #772432; /* The triangle color */
+
+    /* Adjust margin to sit just on top of the line */
+    margin: 2px 0 5px 0;
 }
 
 .timeline-roles-list {
@@ -113,11 +120,14 @@ h1 {
     text-align: center;
     min-width: 120px;
     margin: 0 15px;
+    border: 1px solid transparent; 
+    border-radius: 4px;
+    padding: 0 10px;
 }
 
-
 .timeline-event:hover {
-    background-color: #F2DF74; /* Highlight the entire column on hover */
+    background-color: #eef2f7; /* #f8e9eb; light theme marron*/
+    border-color: #ccc;
 }
 
 .timeline-role {
@@ -130,8 +140,6 @@ h1 {
 .timeline-role:hover {
     background-color: transparent; /* Ensure no hover effect on the inner element */
 }
-
-
 
 /* Booking Table */
 .booking-table {
@@ -164,6 +172,7 @@ h1 {
 
 /* Role Cell */
 .role-cell {
+    font-family: 'Montserrat', sans-serif;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -223,6 +232,7 @@ h1 {
     background-color: #e9f7ef; /* Light green background */
     font-weight: bold;
 }
+
 
 /* --- Responsive Design --- */
 @media screen and (max-width: 768px) {
@@ -406,7 +416,7 @@ h1 {
         /* This tells the grid to fill columns first, not rows */
         grid-auto-flow: column;
         /* This defines 2 equal-width columns */
-        grid-template-columns: 1fr 1fr;
+        grid-auto-columns: 1fr;
         /* This is the key: it sets the "break point" at 3 items */
         grid-template-rows: repeat(3, auto); 
         /* Adds the 25px gap only between columns */

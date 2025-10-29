@@ -7,6 +7,7 @@ from . import db
 from datetime import datetime
 import re
 from sqlalchemy import text, or_
+from .utils import derive_current_path_level
 
 booking_bp = Blueprint('booking_bp', __name__)
 
@@ -120,7 +121,29 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
             if not role['owner_id'] or role['owner_id'] == current_user_contact_id
         ]
 
-        # Recent speaker rule - Check config before applying
+        # --- Backup Speaker Rule: Check if user already has one booked for the future ---
+        has_upcoming_backup_speaker = False
+        if current_user_contact_id: # Only check if user is logged in and linked
+            existing_backup_booking = db.session.query(SessionLog.id)\
+                .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+                .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+                .filter(SessionLog.Owner_ID == current_user_contact_id)\
+                .filter(SessionType.Role == "Backup Speaker")\
+                .filter(Meeting.Meeting_Date >= datetime.today().date())\
+                .first()
+            if existing_backup_booking:
+                has_upcoming_backup_speaker = True
+        
+        # If they have an upcoming backup speaker, remove available backup speaker slots
+        if has_upcoming_backup_speaker:
+            roles_with_icons = [
+                role for role in roles_with_icons
+                # Keep the role if it's NOT a Backup Speaker OR 
+                # if it IS a Backup Speaker AND the current user already owns it (allow seeing own booking)
+                if role['role_key'] != 'Backup Speaker' or (role['role_key'] == 'Backup Speaker' and role['owner_id'] == current_user_contact_id)
+            ]
+
+        # 3-Week Policy speaker rule - Check config before applying
         pathway_mapping = current_app.config.get('PATHWAY_MAPPING', {}) # Get pathway mapping
         user_contact = Contact.query.get(current_user_contact_id) if current_user_contact_id else None
         user_path = user_contact.Working_Path if user_contact else None
@@ -225,6 +248,7 @@ def booking(selected_meeting_number):
     completed_roles = []
     if current_user_contact_id and selected_level:
         level_pattern = f"%{selected_level}%" # Pattern to match the level in current_path_level
+        today = datetime.today().date()
 
         try:
             completed_logs_query = db.session.query(
@@ -236,9 +260,11 @@ def booking(selected_meeting_number):
              .filter(SessionLog.Owner_ID == current_user_contact_id)\
              .filter(SessionType.Role.isnot(None))\
              .filter(SessionType.Role != '')\
+             .filter(SessionType.Role != 'Prepared Speaker')\
              .filter(SessionLog.current_path_level.isnot(None))\
              .filter(SessionLog.current_path_level != '')\
              .filter(SessionLog.current_path_level.like(level_pattern))\
+             .filter(Meeting.Meeting_Date < today)\
              .distinct()\
              .order_by(Meeting.Meeting_Number.desc(), SessionType.Role.asc()) # Order by meeting then role
 
@@ -299,7 +325,6 @@ def book_or_assign_role():
     data = request.get_json()
     session_id = data.get('session_id')
     action = data.get('action')
-    role_key = data.get('role_key') # The specific role being acted upon
 
     user = User.query.get(session.get('user_id'))
     current_user_contact_id = user.Contact_ID if user else None
@@ -309,46 +334,62 @@ def book_or_assign_role():
     if not log:
         return jsonify(success=False, message="Session not found.")
 
-    # Find *all* session logs for this role *key* in this meeting
-    # This ensures consistency for roles like GE, TME etc. that might have multiple log entries
-    session_type_id = log.Type_ID # Get the type ID from the specific log
+    session_type_id = log.Type_ID 
     session_type = SessionType.query.get(session_type_id)
-    logical_role_key = session_type.Role if session_type else None # Use the Role field
+    logical_role_key = session_type.Role if session_type else None 
 
     if not logical_role_key:
          return jsonify(success=False, message="Could not determine the role key.")
 
-
     sessions_to_update_query = SessionLog.query.join(SessionType)\
         .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-        .filter(SessionType.Role == logical_role_key) # Use the logical role key
+        .filter(SessionType.Role == logical_role_key) 
 
     owner_id_to_set = None
+    owner_contact = None 
+
     if action == 'book':
         owner_id_to_set = current_user_contact_id
+        if owner_id_to_set:
+             owner_contact = Contact.query.get(owner_id_to_set) 
     elif action == 'cancel':
-        owner_id_to_set = None # Set to None (NULL in DB)
+        pass
     elif action == 'assign' and user_role in ['Admin', 'VPE']:
         contact_id = data.get('contact_id', '0')
-        owner_id_to_set = int(contact_id) if contact_id != '0' else None # Set to None if '0'
+        owner_id_to_set = int(contact_id) if contact_id != '0' else None 
+        if owner_id_to_set:
+            owner_contact = Contact.query.get(owner_id_to_set)
+    else:
+        return jsonify(success=False, message="Invalid action or permissions.")
 
-    # For roles that can appear multiple times (Speaker, Evaluator, Backup), only update the specific session_id
+    new_path_level = derive_current_path_level(log, owner_contact) if owner_contact else None
+
+    # --- Apply the update ---
     if logical_role_key in ["Prepared Speaker", "Individual Evaluator", "Backup Speaker"]:
-        log_to_update = SessionLog.query.get(session_id) # Get the specific log again
+        # Update only the specific log entry for these roles
+        log_to_update = SessionLog.query.get(session_id) 
         if log_to_update:
             log_to_update.Owner_ID = owner_id_to_set
-    else: # For unique roles (TME, GE, etc.), update all associated session logs in that meeting
+            log_to_update.current_path_level = new_path_level # Update path level
+    else: 
+        # Update all log entries associated with this unique role in this meeting
         sessions_to_update = sessions_to_update_query.all()
         if not sessions_to_update:
-             return jsonify(success=False, message="No matching roles found to update.") # Should not happen if log was found
+             # This case should ideally not happen if the initial log was found
+             return jsonify(success=False, message="No matching roles found to update.") 
+        
+        # Apply the update to all found sessions for this role
         for session_log in sessions_to_update:
             session_log.Owner_ID = owner_id_to_set
+            session_log.current_path_level = new_path_level
 
+    # --- Commit and respond ---
     try:
         db.session.commit()
         return jsonify(success=True)
     except Exception as e:
         db.session.rollback()
-        return jsonify(success=False, message=str(e))
-
+        # Consider logging the error e for debugging
+        print(f"Error during booking/assignment: {e}") 
+        return jsonify(success=False, message="An internal error occurred. Please try again.")
 

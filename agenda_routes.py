@@ -2,13 +2,14 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
 from .main_routes import login_required
-from .models import SessionLog, SessionType, Contact, Meeting, Project
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation
 from . import db
 from sqlalchemy import distinct, orm
 from datetime import datetime, timedelta
 import io
 import csv
 import os
+from .utils import derive_current_path_level
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -57,6 +58,7 @@ def _create_or_update_session(item, meeting_number, seq):
     # --- Owner ID Handling (no changes needed) ---
     owner_id_val = item.get('owner_id')
     owner_id = int(owner_id_val) if owner_id_val and owner_id_val not in ['None', '0'] else None
+    owner_contact = Contact.query.get(owner_id) if owner_id else None
 
     # --- Project ID and Status (no changes needed) ---
     project_id = item.get('project_id') if item.get('project_id') else None
@@ -80,20 +82,21 @@ def _create_or_update_session(item, meeting_number, seq):
 
 
     # --- Automatic current_path_level Derivation ---
-    current_path_level = item.get('current_path_level') # Get manually set value first
-    if session_type and session_type.Role in ['Prepared Speaker', 'Table Topics'] and project_id and owner_id:
-        project = Project.query.get(project_id)
-        owner = Contact.query.get(owner_id) # Fetch owner again if needed
-        pathway_mapping = current_app.config['PATHWAY_MAPPING']
+    temp_log_data = {
+        'Project_ID': project_id,
+        'Type_ID': type_id,
+        'session_type': session_type, # Pass fetched session_type
+        'project': Project.query.get(project_id) if project_id else None # Fetch project if needed
+    }
+    # Create a temporary object-like structure or fetch existing log if updating
+    log_for_derivation = SessionLog.query.get(item['id']) if item.get('id') != 'new' else type('obj', (object,), temp_log_data)()
+    if item.get('id') == 'new': # If new, update the temp obj with necessary fields
+        log_for_derivation.Project_ID = project_id
+        log_for_derivation.Type_ID = type_id
+        log_for_derivation.session_type = session_type
+        log_for_derivation.project = temp_log_data['project']
 
-        if project and owner and owner.Working_Path:
-            pathway_suffix = pathway_mapping.get(owner.Working_Path)
-            if pathway_suffix:
-                project_code_val = getattr(project, f"Code_{pathway_suffix}", None)
-                if project_code_val:
-                    # Overwrite with derived value
-                    current_path_level = f"{pathway_suffix}{project_code_val}"
-
+    current_path_level = derive_current_path_level(log_for_derivation, owner_contact)
 
     # --- Create or Update SessionLog ---
     if item['id'] == 'new':
@@ -108,7 +111,7 @@ def _create_or_update_session(item, meeting_number, seq):
             Project_ID=project_id,
             Session_Title=session_title,
             Status=status,
-            current_path_level=current_path_level # Save derived or manual value
+            current_path_level=current_path_level 
         )
         db.session.add(new_log)
     else:
@@ -125,7 +128,7 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Status = status
             if session_title is not None:
                 log.Session_Title = session_title
-            log.current_path_level = current_path_level # Save derived or manual value
+            log.current_path_level = current_path_level 
 
 def _recalculate_start_times(meetings_to_update):
     for meeting in meetings_to_update:
@@ -162,6 +165,13 @@ def _recalculate_start_times(meetings_to_update):
 
 @agenda_bp.route('/agenda', methods=['GET'])
 def agenda():
+
+    SERIES_INITIALS = {
+        "Successful Club Series": "SC",
+        "Better Speaker Series": "BS",
+        "Leadership Excellence Series": "LE"
+    }
+
     # --- Determine Selected Meeting ---
     meeting_numbers_query = db.session.query(distinct(SessionLog.Meeting_Number)).order_by(SessionLog.Meeting_Number.desc()).all()
     meeting_numbers = [num[0] for num in meeting_numbers_query]
@@ -196,6 +206,13 @@ def agenda():
     raw_session_logs = _get_agenda_logs(selected_meeting_num)
     project_speakers = _get_project_speakers(selected_meeting_num)
 
+    all_presentations = Presentation.query.order_by(Presentation.level, Presentation.code).all()
+    presentation_series = sorted(list(set(p.series for p in all_presentations if p.series)))
+    presentations_data = [
+        {"id": p.id, "title": p.title, "level": p.level, "series": p.series, "code": p.code} 
+        for p in all_presentations
+    ]
+
     # --- Process Raw Logs into Dictionaries ---
     logs_data = []
     pathway_mapping = current_app.config['PATHWAY_MAPPING']
@@ -207,8 +224,24 @@ def agenda():
 
         # Determine project code if applicable
         project_code_str = None
-        pathway_suffix = None
-        if project and owner and owner.Working_Path:
+        session_title_for_dict = log.Session_Title
+        project_name_for_dict = project.Project_Name if project else ''
+        project_purpose_for_dict = project.Purpose if project else ''
+
+        if session_type and session_type.Title == 'Presentation' and log.Project_ID:
+            # Find in the already-fetched list
+            presentation = next((p for p in all_presentations if p.id == log.Project_ID), None)
+            if presentation:
+                if not session_title_for_dict: 
+                    session_title_for_dict = presentation.title 
+                project_name_for_dict = presentation.series # For tooltip
+                project_purpose_for_dict = f"Level {presentation.level} - {presentation.title}"
+                
+                series_key = " ".join(presentation.series.split()) if presentation.series else ""
+                
+                series_initial = SERIES_INITIALS.get(series_key, "")
+                project_code_str = f"{series_initial}{presentation.code}"
+        elif project and owner and owner.Working_Path: # Else if pathway...
             pathway_suffix = pathway_mapping.get(owner.Working_Path)
             if pathway_suffix:
                 project_code_val = getattr(project, f"Code_{pathway_suffix}", None)
@@ -222,7 +255,7 @@ def agenda():
             'Meeting_Number': log.Meeting_Number,
             'Meeting_Seq': log.Meeting_Seq,
             'Start_Time_str': log.Start_Time.strftime('%H:%M') if log.Start_Time else '',
-            'Session_Title': log.Session_Title,
+            'Session_Title': session_title_for_dict,
             'Type_ID': log.Type_ID,
             'Owner_ID': log.Owner_ID,
             'Designation': log.Designation,
@@ -241,8 +274,8 @@ def agenda():
             'meeting_date_str': meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting and meeting.Meeting_Date else '',
             'meeting_date_formatted': meeting.Meeting_Date.strftime('%B %d, %Y') if meeting and meeting.Meeting_Date else '',
             # Project fields
-            'project_name': project.Project_Name if project else '',
-            'project_purpose': project.Purpose if project else '',
+            'project_name': project_name_for_dict,
+            'project_purpose': project_purpose_for_dict,
             'project_code_display': project_code_str,
             # Owner fields
             'owner_name': owner.Name if owner else '',
@@ -297,11 +330,15 @@ def agenda():
                            contacts_data=contacts_data,     # For JS autocomplete/modals
                            projects=projects_data,          # For JS modals/tooltips
                            pathways=pathways,               # For modals
+                           pathway_mapping=current_app.config['PATHWAY_MAPPING'],
                            meeting_numbers=meeting_numbers,
                            selected_meeting=selected_meeting, # Pass the Meeting object
                            members=members,                 # If needed elsewhere
                            project_speakers=project_speakers, # For JS
-                           meeting_templates=meeting_templates)
+                           meeting_templates=meeting_templates,
+                           series_initials=SERIES_INITIALS,
+                           presentations=presentations_data, 
+                           presentation_series=presentation_series)
 
 
 @agenda_bp.route('/agenda/export/<int:meeting_number>')

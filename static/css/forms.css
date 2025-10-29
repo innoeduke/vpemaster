@@ -1,5 +1,6 @@
 /* Base button style */
 .btn {
+    font-family: 'Montserrat', sans-serif;
     display: inline-block;
     height: 30px;
     line-height: 30px;

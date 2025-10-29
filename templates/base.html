@@ -1,167 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meeting Manager - {% block title %}{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/forms.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/tables.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/modals.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/agenda.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/speech_logs.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/pathway_library.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/base.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/navigation.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/forms.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/settings.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/tables.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/modals.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/agenda.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/speech_logs.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/pathway_library.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/responsive.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/booking.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Inter:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
     {% block head_extra %}{% endblock %}
-</head>
-<body>
+  </head>
+  <body>
+    <div class="container-wrapper">
+      <div class="mobile-header" id="mobile-header">
+        <a href="#" class="nav-toggle" id="mobile-nav-toggle"
+          ><i class="fas fa-bars"></i
+        ></a>
+      </div>
 
-<div class="container-wrapper">
-    <div class="mobile-header" id="mobile-header">
-        <a href="#" class="nav-toggle" id="mobile-nav-toggle"><i class="fas fa-bars"></i></a>
-    </div>
-
-    <div class="nav-pane" id="nav-pane">
+      <div class="nav-pane" id="nav-pane">
         <div class="nav-header">
-            <a href="#" class="nav-toggle" id="pc-nav-toggle"><i class="fas fa-bars"></i></a>
-            <h2 class="nav-title">Meeting Manager<sup>BETA</sup></h2>
+          <a href="#" class="nav-toggle" id="pc-nav-toggle"
+            ><i class="fas fa-bars"></i
+          ></a>
+          <h2 class="nav-title">Meeting Manager<sup>BETA</sup></h2>
         </div>
         <ul class="nav-links">
-            <li class="{% if request.endpoint and request.endpoint.startswith('agenda_bp') %}active{% endif %}">
-                <a href="{{ url_for('agenda_bp.agenda') }}">
-                    <i class="fas fa-calendar-alt nav-icon"></i>
-                    <span>Meeting Agenda</span>
-                </a>
-            </li>
-            {% if session.logged_in %}
-            <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}">
-                <a href="{{ url_for('booking_bp.booking') }}">
-                    <i class="fas fa-hand-pointer nav-icon"></i>
-                    <span>Booking</span>
-                </a>
-            </li>
-            <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
-                <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
-                    <i class="fas fa-microphone nav-icon"></i>
-                    <span>Speech Logs</span>
-                </a>
-            </li>
-            {% endif %}
-            <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
-                <a href="{{ url_for('pathways_bp.pathway_library') }}">
-                    <i class="fas fa-book-open nav-icon"></i>
-                    <span>Pathway Library</span>
-                </a>
-            </li>
-            {% if session.get('user_role') in ['Admin', 'VPE'] %}
-            <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
-                <a href="{{ url_for('contacts_bp.show_contacts') }}">
-                    <i class="fas fa-book nav-icon"></i>
-                    <span>Contact Book</span>
-                </a>
-            </li>
-            {% endif %}
-            {% if session.get('user_role') == 'Admin' %}
-            <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
-                <a href="{{ url_for('settings_bp.settings') }}">
-                    <i class="fas fa-cog nav-icon"></i>
-                    <span>Settings</span>
-                </a>
-            </li>
-            {% endif %}
+          <li
+            class="{% if request.endpoint and request.endpoint.startswith('agenda_bp') %}active{% endif %}"
+          >
+            <a href="{{ url_for('agenda_bp.agenda') }}">
+              <i class="fas fa-calendar-alt nav-icon"></i>
+              <span>Meeting Agenda</span>
+            </a>
+          </li>
+          {% if session.logged_in %}
+          <li
+            class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}"
+          >
+            <a href="{{ url_for('booking_bp.booking') }}">
+              <i class="fas fa-hand-pointer nav-icon"></i>
+              <span>Booking</span>
+            </a>
+          </li>
+          <li
+            class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}"
+          >
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
+              <i class="fas fa-microphone nav-icon"></i>
+              <span>Speech Logs</span>
+            </a>
+          </li>
+          {% endif %}
+          <li
+            class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}"
+          >
+            <a href="{{ url_for('pathways_bp.pathway_library') }}">
+              <i class="fas fa-book-open nav-icon"></i>
+              <span>Pathway Library</span>
+            </a>
+          </li>
+          {% if session.get('user_role') in ['Admin', 'VPE'] %}
+          <li
+            class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}"
+          >
+            <a href="{{ url_for('contacts_bp.show_contacts') }}">
+              <i class="fas fa-book nav-icon"></i>
+              <span>Contact Book</span>
+            </a>
+          </li>
+          {% endif %} {% if session.get('user_role') == 'Admin' %}
+          <li
+            class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}"
+          >
+            <a href="{{ url_for('settings_bp.settings') }}">
+              <i class="fas fa-cog nav-icon"></i>
+              <span>Settings</span>
+            </a>
+          </li>
+          {% endif %}
         </ul>
         {% if session.logged_in %}
         <div class="logout-container">
-            <a href="{{ url_for('main_bp.logout') }}" class="btn btn-primary">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-            </a>
+          <a href="{{ url_for('main_bp.logout') }}" class="btn btn-primary">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+          </a>
         </div>
         {% else %}
         <div class="logout-container">
-            <a href="{{ url_for('main_bp.login') }}" class="btn btn-success">
-                <i class="fas fa-sign-in-alt"></i>
-                <span>Login</span>
-            </a>
+          <a href="{{ url_for('main_bp.login') }}" class="btn btn-success">
+            <i class="fas fa-sign-in-alt"></i>
+            <span>Login</span>
+          </a>
         </div>
         {% endif %}
-    </div>
+      </div>
 
-    <div id="nav-overlay"></div>
+      <div id="nav-overlay"></div>
 
-    <div class="main-content" id="main-content">
+      <div class="main-content" id="main-content">
         {% if session.logged_in and session.display_name %}
         <div class="profile-container">
-            <div class="profile-trigger" id="profile-trigger">
-                <i class="fas fa-user-circle"></i>
-                <span>{{ session.display_name }}</span>
-                <i class="fas fa-caret-down"></i>
-            </div>
-            <div class="profile-menu" id="profile-menu">
-                <a href="{{ url_for('main_bp.profile') }}"><i class="fas fa-user-edit"></i> User Profile</a>
-                <a href="{{ url_for('main_bp.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
-            </div>
+          <div class="profile-trigger" id="profile-trigger">
+            <i class="fas fa-user-circle"></i>
+            <span>{{ session.display_name }}</span>
+            <i class="fas fa-caret-down"></i>
+          </div>
+          <div class="profile-menu" id="profile-menu">
+            <a href="{{ url_for('main_bp.profile') }}"
+              ><i class="fas fa-user-edit"></i> User Profile</a
+            >
+            <a href="{{ url_for('main_bp.logout') }}"
+              ><i class="fas fa-sign-out-alt"></i> Logout</a
+            >
+          </div>
         </div>
-        {% endif %}
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% endwith %}
-        {% block content %}{% endblock %}
+        {% endif %} {% with messages =
+        get_flashed_messages(with_categories=true) %} {% endwith %} {% block
+        content %}{% endblock %}
+      </div>
     </div>
-</div>
 
-{% include '_delete_modal.html' %}
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
-<script src="{{ url_for('static', filename='js/main.js') }}"></script>
-<script src="{{ url_for('static', filename='js/search.js') }}"></script>
+    {% include '_delete_modal.html' %}
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/search.js') }}"></script>
 
-<script>
-    // --- Navigation and Profile Menu Logic ---
-    const navPane = document.getElementById('nav-pane');
-    const mobileNavToggle = document.getElementById('mobile-nav-toggle');
-    const pcNavToggle = document.getElementById('pc-nav-toggle');
+    <script>
+      // --- Navigation and Profile Menu Logic ---
+      const navPane = document.getElementById("nav-pane");
+      const mobileNavToggle = document.getElementById("mobile-nav-toggle");
+      const pcNavToggle = document.getElementById("pc-nav-toggle");
 
-    if (mobileNavToggle) { mobileNavToggle.addEventListener('click', (e) => { e.preventDefault(); navPane.classList.toggle('expanded'); }); }
-    if (pcNavToggle) { pcNavToggle.addEventListener('click', (e) => { e.preventDefault(); navPane.classList.toggle('expanded'); }); }
-
-    const profileTrigger = document.getElementById('profile-trigger');
-    const profileMenu = document.getElementById('profile-menu');
-
-    if (profileTrigger) {
-        profileTrigger.addEventListener('click', (event) => {
-            event.stopPropagation();
-            profileMenu.classList.toggle('active');
+      if (mobileNavToggle) {
+        mobileNavToggle.addEventListener("click", (e) => {
+          e.preventDefault();
+          navPane.classList.toggle("expanded");
         });
-    }
-    document.addEventListener('click', () => {
-        if (profileMenu && profileMenu.classList.contains('active')) {
-            profileMenu.classList.remove('active');
+      }
+      if (pcNavToggle) {
+        pcNavToggle.addEventListener("click", (e) => {
+          e.preventDefault();
+          navPane.classList.toggle("expanded");
+        });
+      }
+
+      const profileTrigger = document.getElementById("profile-trigger");
+      const profileMenu = document.getElementById("profile-menu");
+
+      if (profileTrigger) {
+        profileTrigger.addEventListener("click", (event) => {
+          event.stopPropagation();
+          profileMenu.classList.toggle("active");
+        });
+      }
+      document.addEventListener("click", () => {
+        if (profileMenu && profileMenu.classList.contains("active")) {
+          profileMenu.classList.remove("active");
         }
-    });
+      });
 
-    // --- Generic Delete Modal Logic ---
-    const deleteModal = document.getElementById("deleteModal");
-    const deleteForm = document.getElementById("deleteForm");
-    const deleteModalText = document.getElementById("deleteModalText");
+      // --- Generic Delete Modal Logic ---
+      const deleteModal = document.getElementById("deleteModal");
+      const deleteForm = document.getElementById("deleteForm");
+      const deleteModalText = document.getElementById("deleteModalText");
 
-    function openDeleteModal(actionUrl, itemName) {
+      function openDeleteModal(actionUrl, itemName) {
         if (deleteForm && deleteModal && deleteModalText) {
-            deleteForm.action = actionUrl;
-            deleteModalText.textContent = `Are you sure you want to delete this ${itemName}?`;
-            deleteModal.style.display = "flex";
+          deleteForm.action = actionUrl;
+          deleteModalText.textContent = `Are you sure you want to delete this ${itemName}?`;
+          deleteModal.style.display = "flex";
         }
-    }
+      }
 
-    function closeDeleteModal() {
+      function closeDeleteModal() {
         if (deleteModal) {
-            deleteModal.style.display = "none";
+          deleteModal.style.display = "none";
         }
-    }
-</script>
-
-</body>
+      }
+    </script>
+  </body>
 </html>
-
