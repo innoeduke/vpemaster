@@ -227,6 +227,8 @@ def agenda():
         session_title_for_dict = log.Session_Title
         project_name_for_dict = project.Project_Name if project else ''
         project_purpose_for_dict = project.Purpose if project else ''
+        pathway_code_for_dict = None
+        level_for_dict = None
 
         if session_type and session_type.Title == 'Presentation' and log.Project_ID:
             # Find in the already-fetched list
@@ -247,6 +249,11 @@ def agenda():
                 project_code_val = getattr(project, f"Code_{pathway_suffix}", None)
                 if project_code_val:
                     project_code_str = f"{pathway_suffix}{project_code_val}"
+                    pathway_code_for_dict = pathway_suffix
+                    try:
+                        level_for_dict = int(project_code_val.split('.')[0])
+                    except (ValueError, IndexError):
+                        level_for_dict = None
 
         log_dict = {
             # SessionLog fields
@@ -277,6 +284,8 @@ def agenda():
             'project_name': project_name_for_dict,
             'project_purpose': project_purpose_for_dict,
             'project_code_display': project_code_str,
+            'pathway_code': pathway_code_for_dict,
+            'level': level_for_dict,
             # Owner fields
             'owner_name': owner.Name if owner else '',
             'owner_dtm': owner.DTM if owner else False,

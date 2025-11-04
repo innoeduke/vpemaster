@@ -114,37 +114,48 @@
                     {% else %}
                         <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>
                         <td class="non-edit-mode-cell">
-                             <div class="speech-tooltip-wrapper">
-                                {% set cleaned_title = log_dict.Session_Title|replace('"', '') if log_dict.Session_Title else '' %}
+                            
+                            {# Check if it's a linkable pathway project (has ID and a valid path code) #}
+                            {% if log_dict.Project_ID and log_dict.pathway_code %}
+                               <a href="{{ url_for('pathways_bp.pathway_library') }}?path={{ log_dict.pathway_code }}&level={{ log_dict.level }}&project_id={{ log_dict.Project_ID }}" class="project-link" title="View in Pathway Library">
+                            {% endif %}
 
-                                {# Display Title #}
-                                {% if log_dict.session_type_title == 'Pathway Speech' %}
-                                    "{{ cleaned_title }}"
-                                {% elif log_dict.session_type_title == 'Presentation' %}
-                                    {{ cleaned_title }}
-                                {% elif log_dict.Project_ID %}
-                                    "{{ cleaned_title }}"
-                                {% elif log_dict.session_type_title == 'Evaluation' %}
-                                    Evaluation for {{ cleaned_title }}
-                                {% elif log_dict.predefined %}
-                                    {{ log_dict.session_type_title }}
-                                {% else %}
-                                    {{ cleaned_title }}
-                                {% endif %}
+                            <div class="speech-tooltip-wrapper">
+                               {% set cleaned_title = log_dict.Session_Title|replace('"', '') if log_dict.Session_Title else '' %}
 
-                                {# Append Project Code if it's a project #}
-                                {% if log_dict.project_code_display %}
-                                    ({{ log_dict.project_code_display }})
-                                {% endif %}
+                               {# Display Title #}
+                               {% if log_dict.session_type_title == 'Pathway Speech' %}
+                                   "{{ cleaned_title }}"
+                               {% elif log_dict.session_type_title == 'Presentation' %}
+                                   {{ cleaned_title }}
+                               {% elif log_dict.Project_ID %}
+                                   "{{ cleaned_title }}"
+                               {% elif log_dict.session_type_title == 'Evaluation' %}
+                                   Evaluation for {{ cleaned_title }}
+                               {% elif log_dict.predefined %}
+                                   {{ log_dict.session_type_title }}
+                               {% else %}
+                                   {{ cleaned_title }}
+                               {% endif %}
 
-                                {# Tooltip for Projects #}
-                                {% if log_dict.Project_ID %}
-                                <div class="speech-tooltip">
-                                    <span class="tooltip-title">{{ log_dict.project_name }}</span>
-                                    <span class="tooltip-purpose">{{ log_dict.project_purpose }}</span>
-                                </div>
-                                {% endif %}
+                               {# Append Project Code if it's a project #}
+                               {% if log_dict.project_code_display %}
+                                   ({{ log_dict.project_code_display }})
+                               {% endif %}
+
+                               {# Tooltip for Projects #}
+                               {% if log_dict.Project_ID %}
+                               <div class="speech-tooltip">
+                                   <span class="tooltip-title">{{ log_dict.project_name }}</span>
+                                   <span class="tooltip-purpose">{{ log_dict.project_purpose }}</span>
+                               </div>
+                               {% endif %}
                             </div>
+
+                            {% if log_dict.Project_ID and log_dict.pathway_code %}
+                               </a>
+                            {% endif %}
+
                         </td>
                         <td class="non-edit-mode-cell">
                              {# Use pre-fetched owner data from log_dict #}
