@@ -110,7 +110,8 @@
               <span>Pathway Library</span>
             </a>
           </li>
-          {% if session.get('user_role') in ['Admin', 'VPE'] %}
+          {% if session.get('user_role') in ['Admin', 'VPE', 'Meeting Manager']
+          %}
           <li
             class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}"
           >

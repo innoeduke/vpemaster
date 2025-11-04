@@ -55,7 +55,7 @@ def pathway_library():
 @pathways_bp.route('/pathway_library/update_project/<int:project_id>', methods=['POST'])
 @login_required
 def update_project(project_id):
-    if session.get('user_role') != 'Admin':
+    if session.get('user_role') not in ['Admin', 'VPE']:
         return jsonify(success=False, message="Permission denied"), 403
 
     project = Project.query.get_or_404(project_id)

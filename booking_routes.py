@@ -53,7 +53,7 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
      .filter(SessionLog.Meeting_Number == selected_meeting_number)\
      .filter(SessionType.Role != '', SessionType.Role.isnot(None))
 
-    if user_role not in ['Admin', 'VPE']:
+    if user_role not in ['Admin', 'VPE', 'Meeting Manager']:
         query = query.filter(SessionType.Role_Group != 'Officer')
 
     session_logs = query.all()
@@ -114,7 +114,7 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
         roles_with_icons.append(role_data)
 
     # Apply filtering and sorting
-    if user_role not in ['Admin', 'VPE']:
+    if user_role not in ['Admin', 'VPE', 'Meeting Manager']:
         # Filter out roles booked by others
         roles_with_icons = [
             role for role in roles_with_icons
@@ -311,7 +311,7 @@ def booking(selected_meeting_number):
                            roles=roles_with_icons,
                            upcoming_meetings=upcoming_meetings,
                            selected_meeting_number=selected_meeting_number,
-                           is_vpe_or_admin=(user_role in ['Admin', 'VPE']),
+                           is_vpe_or_admin=(user_role in ['Admin', 'VPE', 'Meeting Manager']),
                            current_user_contact_id=current_user_contact_id,
                            user_bookings_by_date=user_bookings_timeline,
                            contacts=contacts,
@@ -354,7 +354,7 @@ def book_or_assign_role():
              owner_contact = Contact.query.get(owner_id_to_set) 
     elif action == 'cancel':
         pass
-    elif action == 'assign' and user_role in ['Admin', 'VPE']:
+    elif action == 'assign' and user_role in ['Admin', 'VPE', 'Meeting Manager']:
         contact_id = data.get('contact_id', '0')
         owner_id_to_set = int(contact_id) if contact_id != '0' else None 
         if owner_id_to_set:

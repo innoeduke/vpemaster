@@ -3,7 +3,7 @@ from flask import Blueprint, jsonify, render_template, request, session, current
 from . import db
 from .models import SessionLog, Contact, Project, User, Presentation, SessionType
 from .main_routes import login_required
-from sqlalchemy import distinct, or_
+from sqlalchemy import distinct, or_, and_
 from datetime import datetime
 import re
 
@@ -31,7 +31,7 @@ def show_speech_logs():
     - Members can only see their own speeches.
     """
     user_role = session.get('user_role')
-    is_member_view = (user_role == 'Member')
+    is_member_view = (user_role in ['Member', 'Officer', 'Meeting Manager'])
 
     selected_meeting = request.args.get('meeting_number')
     selected_pathway = request.args.get('pathway')
@@ -177,6 +177,15 @@ def get_speech_log_details(log_id):
     Fetches details for a specific speech log to populate the edit modal.
     """
     log = SessionLog.query.get_or_404(log_id)
+
+    user_role = session.get('user_role')
+    user = User.query.get(session.get('user_id'))
+    current_user_contact_id = user.Contact_ID if user else None
+
+    if user_role not in ['Admin', 'VPE']:
+        if log.Owner_ID != current_user_contact_id:
+            return jsonify(success=False, message="Permission denied. You can only view details for your own speech logs."), 403
+    
     project_code = _get_project_code(log)
     level = int(project_code.split('.')[0]) if project_code else 1
 
@@ -200,6 +209,15 @@ def update_speech_log(log_id):
     Updates a speech log with new data from the edit modal.
     """
     log = SessionLog.query.get_or_404(log_id)
+
+    user_role = session.get('user_role')
+    user = User.query.get(session.get('user_id'))
+    current_user_contact_id = user.Contact_ID if user else None
+
+    if user_role not in ['Admin', 'VPE']:
+        if log.Owner_ID != current_user_contact_id:
+            return jsonify(success=False, message="Permission denied. You can only edit your own speech logs."), 403
+
     data = request.get_json()
 
     session_type_title = data.get('session_type_title')
@@ -361,6 +379,18 @@ def _get_next_project_for_contact(contact, completed_log):
 @login_required
 def complete_speech_log(log_id):
     log = SessionLog.query.get_or_404(log_id)
+
+    user_role = session.get('user_role')
+    user = User.query.get(session.get('user_id'))
+    current_user_contact_id = user.Contact_ID if user else None
+
+    if user_role not in ['Admin', 'VPE']:
+        if log.Owner_ID != current_user_contact_id:
+             return jsonify(success=False, message="Permission denied."), 403
+        # Also check if meeting is in the past for non-admins
+        if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date >= datetime.today().date():
+             return jsonify(success=False, message="You can only complete logs for past meetings."), 403
+
     log.Status = 'Completed'
 
     if log.Owner_ID:

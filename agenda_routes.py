@@ -1,7 +1,7 @@
 # vpemaster/agenda_routes.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
-from .main_routes import login_required
+from .main_routes import login_required, session
 from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation
 from . import db
 from sqlalchemy import distinct, orm

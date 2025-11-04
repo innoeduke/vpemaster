@@ -1,67 +1,105 @@
-{% extends "base.html" %}
+{% extends "base.html" %} {% block title %}Contacts{% endblock %} {% block
+content %}
+<h1>Contacts</h1>
+<div class="action-bar" style="justify-content: center">
+  <div class="search-container">
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Search by name..."
+      class="search-box"
+    />
+    <button
+      id="clear-searchInput"
+      class="clear-search-btn"
+      style="display: none"
+    >
+      &times;
+    </button>
+  </div>
+  {% if session.get('user_role') in ['Admin', 'VPE', 'Officer','Meeting
+  Manager'] %}
+  <button
+    class="btn btn-primary"
+    onclick="openContactModal()"
+    style="margin-left: 10px"
+  >
+    New Contact
+  </button>
+  {% endif %}
+</div>
 
-{% block title %}Contacts{% endblock %}
-
-{% block content %}
-    <h1>Contacts</h1>
-    <div class="action-bar" style="justify-content: center;">
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Search by name..." class="search-box">
-            <button id="clear-searchInput" class="clear-search-btn" style="display: none;">&times;</button>
+<table id="contactsTable">
+  <thead>
+    <tr>
+      <th>No.</th>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Club</th>
+      <th>Working Path</th>
+      <th>Next Project</th>
+      <th>Completed Levels</th>
+      <th>Date Created</th>
+      {% if session.get('user_role') in ['Admin', 'VPE', 'Officer','Meeting
+      Manager'] %}
+      <th>Actions</th>
+      {% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for contact in contacts %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>
+        {{ contact.Name }} {% if contact.DTM %}
+        <sup class="dtm-superscript">DTM</sup>
+        {% endif %}
+      </td>
+      <td>{{ contact.Type }}</td>
+      <td>{{ contact.Club }}</td>
+      <td>{{ contact.Working_Path }}</td>
+      <td>{{ contact.Next_Project }}</td>
+      <td>{{ contact.Completed_Levels }}</td>
+      <td>
+        {{ contact.Date_Created.strftime('%Y-%m-%d') if contact.Date_Created
+        else '' }}
+      </td>
+      {% if session.get('user_role') in ['Admin', 'VPE', 'Officer','Meeting
+      Manager'] %}
+      <td></td>
+      <td>
+        <div class="action-links">
+          <button
+            class="icon-btn"
+            onclick="openContactModal({{ contact.id }})"
+            title="Edit"
+          >
+            <i class="fas fa-edit"></i>
+          </button>
+          <button
+            class="delete-btn icon-btn"
+            onclick="openDeleteModal('{{ url_for('contacts_bp.delete_contact',contact_id=contact.id) }}', 'contact')"
+            title="Delete"
+          >
+            <i class="fas fa-trash-alt"></i>
+          </button>
         </div>
-        <button class="btn btn-primary" onclick="openContactModal()" style="margin-left: 10px;">New Contact</button>
-    </div>
+      </td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
 
-    <table id="contactsTable">
-        <thead>
-            <tr>
-                <th>No.</th>
-                <th>Name</th>
-                <th>Type</th>
-                <th>Club</th>
-                <th>Working Path</th>
-                <th>Next Project</th>
-                <th>Completed Levels</th>
-                <th>Date Created</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for contact in contacts %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>
-                    {{ contact.Name }}
-                    {% if contact.DTM %}
-                        <sup class="dtm-superscript">DTM</sup>
-                    {% endif %}
-                </td>
-                <td>{{ contact.Type }}</td>
-                <td>{{ contact.Club }}</td>
-                <td>{{ contact.Working_Path }}</td>
-                <td>{{ contact.Next_Project }}</td>
-                <td>{{ contact.Completed_Levels }}</td>
-                <td>{{ contact.Date_Created.strftime('%Y-%m-%d') if contact.Date_Created else '' }}</td>
-                <td>
-                    <div class="action-links">
-                        <button class="icon-btn" onclick="openContactModal({{ contact.id }})" title="Edit"><i class="fas fa-edit"></i></button>
-                        <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('contacts_bp.delete_contact', contact_id=contact.id) }}', 'contact')" title="Delete"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% include '_contact_modal.html' %}
 
-    {% include '_contact_modal.html' %}
+<script>
+  const contactModal = document.getElementById("contactModal");
+  const contactForm = document.getElementById("contactForm");
+  const contactModalTitle = document.getElementById("contactModalTitle");
 
-    <script>
-        const contactModal = document.getElementById("contactModal");
-        const contactForm = document.getElementById("contactForm");
-        const contactModalTitle = document.getElementById("contactModalTitle");
-
-        document.addEventListener('DOMContentLoaded', function() {
-            setupSearch('searchInput', '#contactsTable', 'tbody tr', 'td:nth-child(2)');
-        });
-    </script>
+  document.addEventListener("DOMContentLoaded", function () {
+    setupSearch("searchInput", "#contactsTable", "tbody tr", "td:nth-child(2)");
+  });
+</script>
 {% endblock %}
