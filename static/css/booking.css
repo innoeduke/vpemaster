@@ -35,7 +35,7 @@ h1 {
     gap: 10px;
 }
 
-#meeting-filter {
+.booking-filter-container #meeting-filter {
     font-size: 1.1em;
     width: auto;
     min-width: 250px;
