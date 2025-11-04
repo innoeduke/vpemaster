@@ -97,14 +97,21 @@
         <span class="close-alert" onclick="this.parentElement.style.display='none';">&times;</span>
     </div>
     <div class="booking-filter-container">
-        <i class="fas fa-calendar-alt"></i>
-        <select id="meeting-filter" onchange="window.location.href = '/booking/' + this.value;">
-            {% for meeting_num, meeting_date in upcoming_meetings %}
-                <option value="{{ meeting_num }}" {% if meeting_num == selected_meeting_number %}selected{% endif %}>
-                    #{{ meeting_num }} - {{ meeting_date.strftime('%B %d, %Y') }}
-                </option>
-            {% endfor %}
-        </select>
+        <div class="filter-left">
+            <i class="fas fa-calendar-alt"></i>
+            <select id="meeting-filter" onchange="window.location.href = '/booking/' + this.value;">
+                {% for meeting_num, meeting_date in upcoming_meetings %}
+                    <option value="{{ meeting_num }}" {% if meeting_num == selected_meeting_number %}selected{% endif %}>
+                        #{{ meeting_num }} - {{ meeting_date.strftime('%B %d, %Y') }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-right">
+            <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}" target="_blank" class="btn btn-info role-guide-link">
+                <i class="fas fa-book-open"></i> View Role Guide
+            </a>
+        </div>
     </div>
 
     <table class="booking-table {% if is_vpe_or_admin %}is-admin-view{% endif %}">

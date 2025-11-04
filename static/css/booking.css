@@ -29,10 +29,23 @@ h1 {
 
 .booking-filter-container {
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between; /* Pushes items apart */
     align-items: center;
     padding: 15px 0;
+    gap: 20px; /* Add space between filter and button */
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+
+.booking-filter-container .filter-left {
+    display: flex;
+    align-items: center;
     gap: 10px;
+    flex-shrink: 0; /* Don't let the filter shrink */
+}
+
+.booking-filter-container .filter-right {
+    flex-grow: 1; /* Allow button to take space */
+    text-align: right;
 }
 
 .booking-filter-container #meeting-filter {
@@ -43,6 +56,16 @@ h1 {
     border: 1px solid;
     border-radius: 16px;
     padding: 5px;
+}
+
+.booking-filter-container .role-guide-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    padding: 8px 15px; /* A bit more padding for height */
+    height: auto;
+    line-height: 1.5;
 }
 
 
@@ -250,8 +273,25 @@ h1 {
     }
 
     .booking-filter-container {
-        justify-content: flex-start;
+        flex-direction: column; /* Stack items vertically */
+        align-items: stretch; /* Make children full-width */
         padding: 30px 0;
+    }
+
+    .booking-filter-container .filter-left,
+    .booking-filter-container .filter-right {
+        width: 100%;
+        text-align: center; /* Center content on mobile */
+    }
+    
+    .booking-filter-container .filter-left #meeting-filter {
+        flex-grow: 1; /* Allow filter to fill space */
+    }
+
+    .booking-filter-container .role-guide-link {
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: center; /* Center button text/icon */
     }
 
     .booking-table thead {
@@ -408,6 +448,22 @@ h1 {
     font-size: 0.8em;
     color: #888;
     margin-left: 10px;
+}
+
+.role-guide-container {
+    text-align: center;
+    margin-bottom: 30px; /* Add space below the button */
+}
+
+.role-guide-container .btn-info {
+    /* Use the existing btn-info style but add an icon gap */
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: bold;
+    padding: 8px 15px; /* A bit more padding for height */
+    height: auto;
+    line-height: 1.5;
 }
 
 @media (min-width: 769px) {
