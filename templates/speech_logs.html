@@ -67,7 +67,12 @@
                                 Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A' }}
                             </div>
                             <div class="card-actions">
-                                <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)" title="Edit"><i class="fas fa-edit"></i></button> {# Pass session type title to modal function #}
+                                {% if log.media %}
+                                <a href="{{ log.media.url }}" target="_blank" class="icon-btn" title="Watch Speech" style="font-size: 1.1em; color: #004165;">
+                                    <i class="fas fa-play-circle"></i>
+                                </a>
+                                {% endif %}
+                                <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)" title="Edit"><i class="fas fa-edit"></i></button> 
                             </div>
                         </div>
                         <div class="speech-title">

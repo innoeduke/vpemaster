@@ -1,10 +1,11 @@
 # innoeduke/vpemaster/vpemaster-dev0.3/speech_logs_routes.py
 from flask import Blueprint, jsonify, render_template, request, session, current_app
 from . import db
-from .models import SessionLog, Contact, Project, User, Presentation, SessionType
+from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media
 from .main_routes import login_required
 from .auth import is_authorized
 from sqlalchemy import distinct, or_, and_
+from sqlalchemy.orm import joinedload
 from datetime import datetime
 import re
 
@@ -50,9 +51,11 @@ def show_speech_logs():
             # If member is not linked to a contact, show no logs by setting an invalid ID
             selected_speaker = -1
 
-    query = db.session.query(SessionLog).join(SessionType).filter(
-        or_(SessionType.Valid_for_Project == True,
-            SessionType.Title == 'Presentation')
+    query = db.session.query(SessionLog)\
+        .options(joinedload(SessionLog.media))\
+        .join(SessionType).filter(
+            or_(SessionType.Valid_for_Project == True,
+                SessionType.Title == 'Presentation')
     )
 
     if selected_meeting:
@@ -185,7 +188,9 @@ def get_speech_log_details(log_id):
     """
     Fetches details for a specific speech log to populate the edit modal.
     """
-    log = SessionLog.query.get_or_404(log_id)
+    log = db.session.query(SessionLog)\
+        .options(joinedload(SessionLog.media))\
+        .get_or_404(log_id)
 
     user_role = session.get('user_role')
     user = User.query.get(session.get('user_id'))
@@ -205,7 +210,8 @@ def get_speech_log_details(log_id):
         "Session_Title": log.Session_Title,
         "Project_ID": log.Project_ID,
         "pathway": pathway,
-        "level": level
+        "level": level,
+        "Media_URL": log.media.url if log.media else ""
     }
 
     return jsonify(success=True, log=log_data)
@@ -231,6 +237,7 @@ def update_speech_log(log_id):
     data = request.get_json()
 
     session_type_title = data.get('session_type_title')
+    media_url = data.get('media_url') or None
 
     if 'session_title' in data:
         log.Session_Title = data['session_title']
@@ -267,6 +274,16 @@ def update_speech_log(log_id):
             log.Duration_Min = None
             log.Duration_Max = None
 
+    if media_url:
+        # If URL is provided, update or create media record
+        if log.media:
+            log.media.url = media_url
+        else:
+            log.media = Media(url=media_url)
+    elif log.media:
+        # If URL is blank but a media record exists, delete it
+        db.session.delete(log.media)
+
     try:
         db.session.commit()
         project_name = "N/A"
@@ -295,7 +312,8 @@ def update_speech_log(log_id):
                        pathway=pathway,
                        project_id=log.Project_ID,
                        duration_min=log.Duration_Min,
-                       duration_max=log.Duration_Max)
+                       duration_max=log.Duration_Max,
+                       media_url=media_url)
 
     except Exception as e:
         db.session.rollback()

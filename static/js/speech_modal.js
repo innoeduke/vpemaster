@@ -21,7 +21,9 @@ function openSpeechEditModal(
       if (data.success) {
         document.getElementById("edit-log-id").value = data.log.id;
         document.getElementById("edit-speech-title").value =
-          data.log.Session_Title || ""; // Handle null
+          data.log.Session_Title || "";
+        document.getElementById("edit-media-url").value =
+          data.log.Media_URL || "";
 
         const currentSessionType = passedSessionType || "Pathway Speech"; // Default if not passed
         document.getElementById("edit-session-type-title").value =
@@ -251,7 +253,8 @@ function saveSpeechChanges(event) {
   let data = {
     session_title: form.querySelector("#edit-speech-title").value,
     project_id: form.querySelector("#edit-project").value || null,
-    session_type_title: sessionType, // <-- ADDED: Send session type
+    session_type_title: sessionType,
+    media_url: form.querySelector("#edit-media-url").value || null,
   };
 
   if (sessionType !== "Presentation") {

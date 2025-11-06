@@ -1,4 +1,5 @@
-from vpemaster import db
+from . import db
+
 
 class Contact(db.Model):
     __tablename__ = 'Contacts'
@@ -15,20 +16,24 @@ class Contact(db.Model):
     Phone_Number = db.Column(db.String(50), nullable=True)
     Bio = db.Column(db.Text, nullable=True)
 
+
 class User(db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key=True)
     Username = db.Column(db.String(50), nullable=False, unique=True)
     Email = db.Column(db.String(120), unique=True, nullable=True)
     Member_ID = db.Column(db.String(50), unique=True, nullable=True)
-    Mentor_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
-    Contact_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
+    Mentor_ID = db.Column(db.Integer, db.ForeignKey(
+        'Contacts.id'), nullable=True)
+    Contact_ID = db.Column(db.Integer, db.ForeignKey(
+        'Contacts.id'), nullable=True)
     Pass_Hash = db.Column(db.String(255), nullable=False)
     Date_Created = db.Column(db.Date)
     Role = db.Column(db.String(50), nullable=False, default='Member')
     Status = db.Column(db.String(50), nullable=False, default='active')
     contact = db.relationship('Contact', foreign_keys=[Contact_ID])
     mentor = db.relationship('Contact', foreign_keys=[Mentor_ID])
+
 
 class Project(db.Model):
     __tablename__ = 'Projects'
@@ -50,6 +55,7 @@ class Project(db.Model):
     Code_VC = db.Column(db.String(5))
     Code_DTM = db.Column(db.String(5))
 
+
 class Meeting(db.Model):
     __tablename__ = 'Meetings'
     ID = db.Column(db.Integer, primary_key=True)
@@ -63,6 +69,7 @@ class Meeting(db.Model):
     Best_Speaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     Best_Roletaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     GE_Style = db.Column(db.String(20), default='immediate')
+
 
 class SessionType(db.Model):
     __tablename__ = 'Session_Types'
@@ -78,13 +85,17 @@ class SessionType(db.Model):
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)
 
+
 class SessionLog(db.Model):
     __tablename__ = 'Session_Logs'
     id = db.Column(db.Integer, primary_key=True)
-    Meeting_Number = db.Column(db.SmallInteger, db.ForeignKey('Meetings.Meeting_Number'), nullable=False)
+    Meeting_Number = db.Column(db.SmallInteger, db.ForeignKey(
+        'Meetings.Meeting_Number'), nullable=False)
     Meeting_Seq = db.Column(db.Integer)
-    Session_Title = db.Column(db.String(255)) # For custom titles like speeches
-    Type_ID = db.Column(db.Integer, db.ForeignKey('Session_Types.id'), nullable=False)
+    # For custom titles like speeches
+    Session_Title = db.Column(db.String(255))
+    Type_ID = db.Column(db.Integer, db.ForeignKey(
+        'Session_Types.id'), nullable=False)
     Owner_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     Designation = db.Column(db.String(255), default='')
     Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.ID'))
@@ -92,13 +103,17 @@ class SessionLog(db.Model):
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)
     Notes = db.Column(db.String(1000))
-    Status = db.Column(db.String(50)) 
-    current_path_level=db.Column(db.String(10))
+    Status = db.Column(db.String(50))
+    current_path_level = db.Column(db.String(10))
 
     meeting = db.relationship('Meeting', backref='session_logs')
     project = db.relationship('Project', backref='session_logs')
     owner = db.relationship('Contact', backref='session_logs')
     session_type = db.relationship('SessionType', backref='session_logs')
+
+    media = db.relationship('Media', backref='session_log',
+                            uselist=False, cascade='all, delete-orphan')
+
 
 class LevelRole(db.Model):
     __tablename__ = 'level_roles'
@@ -116,3 +131,12 @@ class Presentation(db.Model):
     code = db.Column(db.String(50), nullable=False)
     title = db.Column(db.String(255), nullable=False)
     series = db.Column(db.String(100))
+
+
+class Media(db.Model):
+    __tablename__ = 'Media'
+    id = db.Column(db.Integer, primary_key=True)
+    log_id = db.Column(db.Integer, db.ForeignKey(
+        'Session_Logs.id', ondelete='SET NULL'), nullable=True)
+    url = db.Column(db.String(1024), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
