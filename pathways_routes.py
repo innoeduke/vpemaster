@@ -4,13 +4,16 @@ from flask import Blueprint, render_template, request, jsonify, session
 from . import db
 from .models import Project
 from .main_routes import login_required
+from .auth import is_authorized
 import markdown
 
 pathways_bp = Blueprint('pathways_bp', __name__)
 
+
 def _render_markdown(text):
     """Renders raw Markdown text to HTML."""
     return markdown.markdown(text or '', extensions=['fenced_code'])
+
 
 @pathways_bp.route('/pathway_library')
 def pathway_library():
@@ -55,7 +58,7 @@ def pathway_library():
 @pathways_bp.route('/pathway_library/update_project/<int:project_id>', methods=['POST'])
 @login_required
 def update_project(project_id):
-    if session.get('user_role') not in ['Admin', 'VPE']:
+    if not is_authorized(session.get('user_role'), 'PATHWAY_LIB_EDIT'):
         return jsonify(success=False, message="Permission denied"), 403
 
     project = Project.query.get_or_404(project_id)

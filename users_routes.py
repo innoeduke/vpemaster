@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
-from vpemaster import db
-from vpemaster.models import User, Contact
+from . import db
+from .models import User, Contact
+from .auth import is_authorized
 from werkzeug.security import generate_password_hash
 from .main_routes import login_required
 from datetime import date
@@ -9,6 +10,7 @@ import csv
 import io
 
 users_bp = Blueprint('users_bp', __name__)
+
 
 def _create_or_update_user(user=None, **kwargs):
     """Helper function to create or update a user."""
@@ -42,24 +44,27 @@ def _create_or_update_user(user=None, **kwargs):
 @users_bp.route('/users')
 @login_required
 def show_users():
-    if session.get('user_role') != 'Admin':
+    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+
 
 @users_bp.route('/user/form', defaults={'user_id': None}, methods=['GET', 'POST'])
 @users_bp.route('/user/form/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def user_form(user_id):
-    if session.get('user_role') != 'Admin':
+    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     user = None
     if user_id:
         user = User.query.get_or_404(user_id)
 
-    member_contacts = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
-    mentor_contacts = Contact.query.filter(or_(Contact.Type == 'Member', Contact.Type == 'Past Member')).order_by(Contact.Name.asc()).all()
+    member_contacts = Contact.query.filter_by(
+        Type='Member').order_by(Contact.Name.asc()).all()
+    mentor_contacts = Contact.query.filter(or_(
+        Contact.Type == 'Member', Contact.Type == 'Past Member')).order_by(Contact.Name.asc()).all()
     users = User.query.order_by(User.Username.asc()).all()
 
     if request.method == 'POST':
@@ -79,10 +84,11 @@ def user_form(user_id):
 
     return render_template('user_form.html', user=user, contacts=member_contacts, users=users, mentor_contacts=mentor_contacts)
 
+
 @users_bp.route('/user/delete/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
-    if session.get('user_role') != 'Admin':
+    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     user = User.query.get_or_404(user_id)
@@ -94,7 +100,7 @@ def delete_user(user_id):
 @users_bp.route('/user/bulk_import', methods=['POST'])
 @login_required
 def bulk_import_users():
-    if session.get('user_role') != 'Admin':
+    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
@@ -120,15 +126,18 @@ def bulk_import_users():
             if not row or len(row) < 2:
                 continue
 
-            fullname, username, member_id, email, mentor_name = (row + [None]*5)[:5]
+            fullname, username, member_id, email, mentor_name = (
+                row + [None]*5)[:5]
 
             if not fullname or not username:
-                failed_users.append(f"Skipping row: Fullname and Username are mandatory. Row: {row}")
+                failed_users.append(
+                    f"Skipping row: Fullname and Username are mandatory. Row: {row}")
                 continue
 
             # Duplication check
             if User.query.filter_by(Username=username).first():
-                failed_users.append(f"Skipping user '{username}': User already exists.")
+                failed_users.append(
+                    f"Skipping user '{username}': User already exists.")
                 continue
 
             contact = Contact.query.filter_by(Name=fullname).first()

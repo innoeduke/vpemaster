@@ -3,11 +3,13 @@ from flask import Blueprint, jsonify, render_template, request, session, current
 from . import db
 from .models import SessionLog, Contact, Project, User, Presentation, SessionType
 from .main_routes import login_required
+from .auth import is_authorized
 from sqlalchemy import distinct, or_, and_
 from datetime import datetime
 import re
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
+
 
 def _get_project_code(log):
     """Helper function to get the project code for a given log."""
@@ -30,8 +32,8 @@ def show_speech_logs():
     - Admins/Officers can filter by any speaker.
     - Members can only see their own speeches.
     """
-    user_role = session.get('user_role')
-    is_member_view = (user_role in ['Member', 'Officer', 'Meeting Manager'])
+    is_member_view = is_authorized(
+        session.get('user_role'), 'SPEECH_LOGS_VIEW_OWN')
 
     selected_meeting = request.args.get('meeting_number')
     selected_pathway = request.args.get('pathway')
@@ -49,7 +51,8 @@ def show_speech_logs():
             selected_speaker = -1
 
     query = db.session.query(SessionLog).join(SessionType).filter(
-        or_(SessionType.Valid_for_Project == True, SessionType.Title == 'Presentation')
+        or_(SessionType.Valid_for_Project == True,
+            SessionType.Title == 'Presentation')
     )
 
     if selected_meeting:
@@ -68,15 +71,15 @@ def show_speech_logs():
             presentation = Presentation.query.get(log.Project_ID)
             if not presentation:
                 continue
-            
+
             level = presentation.level
             if selected_level and level != int(selected_level):
                 continue
-            
+
             if level not in grouped_logs:
                 grouped_logs[level] = []
             grouped_logs[level].append(log)
-            continue # Skip to next log
+            continue  # Skip to next log
 
         # --- Handle Pathway Speeches ---
         if selected_pathway and (not log.owner or log.owner.Working_Path != selected_pathway):
@@ -98,14 +101,16 @@ def show_speech_logs():
     # Sort logs within each level group
     for level in grouped_logs:
         grouped_logs[level].sort(key=lambda log: (
-            _get_project_code(log) or "" # Sort by pathway code
+            _get_project_code(log) or ""  # Sort by pathway code
             # Add a sort key for presentations if needed, e.g., by title
         ))
 
     sorted_grouped_logs = dict(sorted(grouped_logs.items()))
 
-    meeting_numbers = sorted([m[0] for m in db.session.query(distinct(SessionLog.Meeting_Number)).join(Project).all()], reverse=True)
-    speakers = db.session.query(Contact).join(SessionLog, Contact.id == SessionLog.Owner_ID).distinct().order_by(Contact.Name).all()
+    meeting_numbers = sorted([m[0] for m in db.session.query(
+        distinct(SessionLog.Meeting_Number)).join(Project).all()], reverse=True)
+    speakers = db.session.query(Contact).join(
+        SessionLog, Contact.id == SessionLog.Owner_ID).distinct().order_by(Contact.Name).all()
 
     # Updated logic to get pathways from the app config
     pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
@@ -129,13 +134,16 @@ def show_speech_logs():
         for p in projects
     ]
 
-    all_presentations = Presentation.query.order_by(Presentation.level, Presentation.code).all()
+    all_presentations = Presentation.query.order_by(
+        Presentation.level, Presentation.code).all()
     presentations_data = [
-        {"id": p.id, "title": p.title, "level": p.level, "code": p.code, "series": p.series} 
+        {"id": p.id, "title": p.title, "level": p.level,
+            "code": p.code, "series": p.series}
         for p in all_presentations
     ]
-    presentation_series = sorted(list(set(p.series for p in all_presentations if p.series)))
-    
+    presentation_series = sorted(
+        list(set(p.series for p in all_presentations if p.series)))
+
     SERIES_INITIALS = {
         "Successful Club Series": "SC",
         "Better Speaker Series": "BS",
@@ -152,11 +160,12 @@ def show_speech_logs():
         speakers=speakers,
         pathways=pathways,
         levels=range(1, 6),
-        projects=projects_data, # This is used for allProjects in JS
-        presentations=presentations_data, # Pass presentation data for JS
-        presentation_series=presentation_series, # Pass series data for JS
-        series_initials=SERIES_INITIALS, # Pass initials map for template
-        get_presentation_by_id=lambda pid: next((p for p in all_presentations if p.id == pid), None),
+        projects=projects_data,  # This is used for allProjects in JS
+        presentations=presentations_data,  # Pass presentation data for JS
+        presentation_series=presentation_series,  # Pass series data for JS
+        series_initials=SERIES_INITIALS,  # Pass initials map for template
+        get_presentation_by_id=lambda pid: next(
+            (p for p in all_presentations if p.id == pid), None),
         today_date=today_date,
         selected_filters={
             'meeting_number': selected_meeting,
@@ -182,10 +191,10 @@ def get_speech_log_details(log_id):
     user = User.query.get(session.get('user_id'))
     current_user_contact_id = user.Contact_ID if user else None
 
-    if user_role not in ['Admin', 'VPE']:
+    if not is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL'):
         if log.Owner_ID != current_user_contact_id:
             return jsonify(success=False, message="Permission denied. You can only view details for your own speech logs."), 403
-    
+
     project_code = _get_project_code(log)
     level = int(project_code.split('.')[0]) if project_code else 1
 
@@ -214,8 +223,9 @@ def update_speech_log(log_id):
     user = User.query.get(session.get('user_id'))
     current_user_contact_id = user.Contact_ID if user else None
 
-    if user_role not in ['Admin', 'VPE']:
-        if log.Owner_ID != current_user_contact_id:
+    if not is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL'):
+        is_owner = (user.Contact_ID == log.Owner_ID)
+        if not (is_authorized(user_role, 'SPEECH_LOGS_VIEW_OWN') and is_owner):
             return jsonify(success=False, message="Permission denied. You can only edit your own speech logs."), 403
 
     data = request.get_json()
@@ -231,9 +241,9 @@ def update_speech_log(log_id):
             presentation_id = int(data['project_id'])
             presentation = Presentation.query.get(presentation_id)
             if presentation:
-                log.Session_Title = presentation.title # Default to presentation title
+                log.Session_Title = presentation.title  # Default to presentation title
         except (ValueError, TypeError):
-            pass # Keep it blank if lookup fails
+            pass  # Keep it blank if lookup fails
 
     if 'pathway' in data and log.owner:
         owner = Contact.query.get(log.Owner_ID)
@@ -243,7 +253,7 @@ def update_speech_log(log_id):
 
     if 'project_id' in data:
         log.Project_ID = data['project_id']
-        
+
         if session_type_title == 'Presentation':
             log.Duration_Min = 10
             log.Duration_Max = 15
@@ -267,35 +277,35 @@ def update_speech_log(log_id):
             presentation = Presentation.query.get(log.Project_ID)
             if presentation:
                 project_name = presentation.title
-                pathway = presentation.series # Use series as "pathway" display
-                SERIES_INITIALS = { "Successful Club Series": "SC", "Better Speaker Series": "BS", "Leadership Excellence Series": "LE" }
+                pathway = presentation.series  # Use series as "pathway" display
+                SERIES_INITIALS = {"Successful Club Series": "SC",
+                                   "Better Speaker Series": "BS", "Leadership Excellence Series": "LE"}
                 series_initial = SERIES_INITIALS.get(presentation.series, "")
                 project_code = f"{series_initial}{presentation.code}"
-        elif log.Project_ID: # Pathway speech
+        elif log.Project_ID:  # Pathway speech
             updated_project = Project.query.get(log.Project_ID)
             if updated_project:
                 project_name = updated_project.Project_Name
-            project_code = _get_project_code(log) # Get pathway code
+            project_code = _get_project_code(log)  # Get pathway code
 
         return jsonify(success=True,
-                        session_title=log.Session_Title,
-                        project_name=project_name,
-                        project_code=project_code,
-                        pathway=pathway,
-                        project_id=log.Project_ID,
-                        duration_min=log.Duration_Min,
-                        duration_max=log.Duration_Max)
-                        
+                       session_title=log.Session_Title,
+                       project_name=project_name,
+                       project_code=project_code,
+                       pathway=pathway,
+                       project_id=log.Project_ID,
+                       duration_min=log.Duration_Min,
+                       duration_max=log.Duration_Max)
+
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
 
 
-
 @speech_logs_bp.route('/speech_log/suspend/<int:log_id>', methods=['POST'])
 @login_required
 def suspend_speech_log(log_id):
-    if session.get('user_role') not in ['Admin', 'VPE']:
+    if not is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL'):
         return jsonify(success=False, message="Permission denied"), 403
 
     log = SessionLog.query.get_or_404(log_id)
@@ -358,22 +368,24 @@ def _get_next_project_for_contact(contact, completed_log):
 
                 completed_pathways[code_suffix] = level_completed
 
-                new_completed_levels = [f"{path}{lvl}" for path, lvl in sorted(completed_pathways.items())]
+                new_completed_levels = [
+                    f"{path}{lvl}" for path, lvl in sorted(completed_pathways.items())]
                 contact.Completed_Levels = "/".join(new_completed_levels)
-
 
             if level > 5:
                 contact.Next_Project = None
                 break
 
             next_project_code = f"{level}.{project_num}"
-            next_project = Project.query.filter(getattr(Project, f"Code_{code_suffix}") == next_project_code).first()
+            next_project = Project.query.filter(
+                getattr(Project, f"Code_{code_suffix}") == next_project_code).first()
 
             if next_project and next_project.ID not in completed_project_ids:
                 contact.Next_Project = f"{code_suffix}{next_project_code}"
                 break
     except (ValueError, IndexError):
         return
+
 
 @speech_logs_bp.route('/speech_log/complete/<int:log_id>', methods=['POST'])
 @login_required
@@ -384,12 +396,12 @@ def complete_speech_log(log_id):
     user = User.query.get(session.get('user_id'))
     current_user_contact_id = user.Contact_ID if user else None
 
-    if user_role not in ['Admin', 'VPE']:
+    if not is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL'):
         if log.Owner_ID != current_user_contact_id:
-             return jsonify(success=False, message="Permission denied."), 403
+            return jsonify(success=False, message="Permission denied."), 403
         # Also check if meeting is in the past for non-admins
         if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date >= datetime.today().date():
-             return jsonify(success=False, message="You can only complete logs for past meetings."), 403
+            return jsonify(success=False, message="You can only complete logs for past meetings."), 403
 
     log.Status = 'Completed'
 

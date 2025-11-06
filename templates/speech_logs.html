@@ -109,7 +109,7 @@
                                 {% if log.Status == 'Completed' %}
                                     <i class="fas fa-check-circle" title="Completed"></i>
                                 {% elif log.Status == 'Delivered' %}
-                                    {% if session.get('user_role') in ['Admin', 'VPE'] %}
+                                    {% if is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
                                         <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
                                     {% else %}
                                         <span style="color: #772432; font-weight: bold; font-size: 0.9em;">Delivered</span>
@@ -117,7 +117,7 @@
                                 {% else %} {# Booked or Null #}
                                      {# Only show complete/suspend if the meeting date is in the past #}
                                     {% if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date < today_date %}
-                                        {% if session.get('user_role') in ['Admin', 'VPE'] %}
+                                        {% if is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
                                             <button onclick="suspendSpeechLog(this, {{ log.id }})" class="icon-btn" title="Suspend" style="color: #E55353; font-size: 1.5em; margin-right: 5px;"><i class="fas fa-pause-circle"></i></button>
                                         {% endif %}
                                         {# All users can mark their own past speeches as complete #}

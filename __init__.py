@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from datetime import timedelta
 from dotenv import load_dotenv
+from .auth import is_authorized
 import os
 
 load_dotenv()
@@ -31,6 +32,10 @@ app.config['PATHWAY_MAPPING'] = {
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+
+@app.context_processor
+def inject_authorization():
+    return dict(is_authorized=is_authorized)
 
 # Import models to ensure they are registered with the app
 

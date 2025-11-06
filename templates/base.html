@@ -93,6 +93,16 @@
               <span>Booking</span>
             </a>
           </li>
+          {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_VIEW') %}
+          <li
+            class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}"
+          >
+            <a href="{{ url_for('contacts_bp.show_contacts') }}">
+              <i class="fas fa-book nav-icon"></i>
+              <span>Contact Book</span>
+            </a>
+          </li>
+          {% endif %}
           <li
             class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}"
           >
@@ -110,17 +120,7 @@
               <span>Pathway Library</span>
             </a>
           </li>
-          {% if session.get('user_role') in ['Admin', 'VPE', 'Meeting Manager']
-          %}
-          <li
-            class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}"
-          >
-            <a href="{{ url_for('contacts_bp.show_contacts') }}">
-              <i class="fas fa-book nav-icon"></i>
-              <span>Contact Book</span>
-            </a>
-          </li>
-          {% endif %} {% if session.get('user_role') == 'Admin' %}
+          {% if is_authorized(session.get('user_role'), 'SETTING_VIEW_ALL') %}
           <li
             class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}"
           >
