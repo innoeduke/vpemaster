@@ -79,7 +79,9 @@
                                             <i class="fas fa-play-circle"></i>
                                         </a>
                                         {% endif %}
+                                        {% if is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
                                         <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)" title="Edit"><i class="fas fa-edit"></i></button>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 <div class="speech-title">
@@ -153,7 +155,7 @@
                                         <i class="fas fa-play-circle"></i>
                                     </a>
                                     {% endif %}
-                                    {% if log.session_type.Valid_for_Project %}
+                                    {% if log.session_type.Valid_for_Project and is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
                                         <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)" title="Edit"><i class="fas fa-edit"></i></button>
                                     {% endif %}
                                 </div>

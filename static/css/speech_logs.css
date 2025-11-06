@@ -249,4 +249,5 @@ speech-log-entry.card-type-speech {
 .card-actions .btn-play {
     font-size: 1.1em;
     color: #004165; /* Theme blue */
+    text-decoration: none;
 }

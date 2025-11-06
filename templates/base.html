@@ -89,7 +89,7 @@
             class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}"
           >
             <a href="{{ url_for('booking_bp.booking') }}">
-              <i class="fas fa-hand-pointer nav-icon"></i>
+              <i class="fas fa-tag nav-icon"></i>
               <span>Booking</span>
             </a>
           </li>
@@ -107,8 +107,8 @@
             class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}"
           >
             <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
-              <i class="fas fa-microphone nav-icon"></i>
-              <span>Speech Logs</span>
+              <i class="fas fa-tasks nav-icon"></i>
+              <span>Activities</span>
             </a>
           </li>
           {% endif %}
@@ -116,7 +116,7 @@
             class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}"
           >
             <a href="{{ url_for('pathways_bp.pathway_library') }}">
-              <i class="fas fa-book-open nav-icon"></i>
+              <i class="fas fa-landmark nav-icon"></i>
               <span>Pathway Library</span>
             </a>
           </li>
