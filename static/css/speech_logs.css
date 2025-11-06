@@ -4,6 +4,13 @@
     margin: 0 auto;
 }
 
+.section-heading {
+    text-align: left;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    color: #333;
+}
+
 #speech-logs-filter-form .filter-row {
     display: flex;
     width: 100%;
@@ -41,10 +48,11 @@
 
 .logs-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
     max-width: 1200px;
     margin: 20px auto;
+    align-items: start; /* <-- This is the main fix. Stops grid items from stretching. */
 }
 
 /* Redesigned Speech Log Cards */
@@ -53,7 +61,7 @@
     border: 1px solid #e2e8f0;
     border-left-width: 6px;
     border-radius: 8px;
-    padding: 1.25rem;
+    padding: 1rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
     display: flex;
     flex-direction: column;
@@ -68,7 +76,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 .card-footer {
     display: flex;
@@ -87,6 +95,46 @@
     color: #28a745;
 }
 
+/* New card variant for roles */
+.speech-log-entry.role-log-entry {
+    border-left-color: #4A90E2; /* Use a neutral blue for roles */
+}
+
+.speech-log-entry.role-log-entry .pathway-info {
+    color: #4A90E2;
+}
+
+/* This is the main content for the role card */
+.role-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 1.4em; /* Slightly smaller */
+    font-weight: 700;
+    color: #2d3748;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem; /* Reduced margin */
+    display: flex;
+    flex-direction: column; /* Stack icon on top of text */
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.role-title i {
+    color: #4A90E2;
+    font-size: 1.5 em; /* Made icon larger */
+    margin-bottom: 8px; /* Space between icon and text */
+    gap: 0;
+}
+
+.role-log-entry .speaker-info {
+    text-align: center; /* Center the speaker name */
+    margin-bottom: 0.75rem; /* Add space before footer */
+}
+
+.role-log-entry .card-footer {
+    margin-top: 0;
+}
+
 /* Card Typography */
 .speech-log-entry,
 .speech-log-entry .project-info,
@@ -94,38 +142,54 @@
     font-family: sans-serif;
 }
 .meeting-info {
-    font-size: 0.8em;
+    font-size: 0.75em;
     color: #718096;
     font-weight: 500;
 }
 .project-info {
-    font-size: 0.9em;
+    font-size: 0.8em;
     font-weight: 700;
     margin-bottom: 0.25rem;
 }
 .speech-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.6em;
+    font-family: 'Montserrat', serif;
+    font-size: 1.4em;
     font-weight: 700;
     color: #2d3748;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     flex-grow: 1;
 }
 .speaker-info {
-    font-size: 0.9em;
+    font-size: 0.85em;
     color: #718096;
     text-align: right;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 .pathway-info {
     font-family: sans-serif;
-    font-size: 0.8em;
+    font-size: 0.75em;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     padding: 0;
     background-color: transparent;
     border-radius: 0;
+}
+
+speech-log-entry.card-type-speech {
+    border-left-color: #E55353;
+}
+.speech-log-entry.card-type-speech .project-code,
+.speech-log-entry.card-type-speech .pathway-info {
+    color: #E55353;
+}
+
+.speech-log-entry.card-type-presentation {
+    border-left-color: #F5A623;
+}
+.speech-log-entry.card-type-presentation .project-code,
+.speech-log-entry.card-type-presentation .pathway-info {
+    color: #F5A623;
 }
 
 /* Card Accent Colors */
@@ -152,3 +216,37 @@
 .speech-log-entry.visionary-communication { border-left-color: #9013FE; }
 .speech-log-entry.visionary-communication .project-code,
 .speech-log-entry.visionary-communication .pathway-info { color: #9013FE; }
+
+/* Styles moved from speech_logs.html */
+.section-divider {
+    margin: 30px 0;
+    border: 0;
+    border-top: 1px solid #eee; /* A light divider */
+}
+
+.no-logs-message {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.status-info .status-delivered {
+    color: #772432;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+.status-info .btn-suspend {
+    color: #E55353;
+    font-size: 1.5em;
+    margin-right: 5px;
+}
+
+.status-info .status-booked {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.card-actions .btn-play {
+    font-size: 1.1em;
+    color: #004165; /* Theme blue */
+}

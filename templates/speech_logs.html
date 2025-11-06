@@ -3,9 +3,10 @@
 {% block title %}Speech Logs{% endblock %}
 
 {% block content %}
-    <h1>Speech Logs</h1>
+    <h1>Activity Logs</h1>
 
     <div class="speech-logs-content">
+        
         <form id="speech-logs-filter-form" method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="filters-container">
             <div class="filter-row">
                 <div class="form-group">
@@ -19,15 +20,14 @@
                 <div class="form-group">
                     <select name="level" onchange="this.form.submit()">
                         <option value="">All Levels</option>
-                        {% for level in levels %}
+                        <option value="General" {% if selected_filters.level == 'General' %}selected{% endif %}>General</option> {% for level in levels %}
                             <option value="{{ level }}" {% if selected_filters.level == level|string %}selected{% endif %}>Level {{ level }}</option>
                         {% endfor %}
                     </select>
                 </div>
                 <div class="form-group">
                     <select name="status" onchange="this.form.submit()">
-                        <option value="">All Statuses</option>
-                        <option value="Booked" {% if selected_filters.status == 'Booked' %}selected{% endif %}>Booked</option>
+                        <option value="">All Statuses (Speeches)</option> <option value="Booked" {% if selected_filters.status == 'Booked' %}selected{% endif %}>Booked</option>
                         <option value="Delivered" {% if selected_filters.status == 'Delivered' %}selected{% endif %}>Delivered</option>
                         <option value="Completed" {% if selected_filters.status == 'Completed' %}selected{% endif %}>Completed</option>
                     </select>
@@ -58,87 +58,129 @@
             {% for level, logs in grouped_logs.items() %}
                 <h2 class="level-heading">Level {{ level }}</h2>
                 <div class="logs-container">
+                    
                     {% for log in logs %}
-                    <div class="speech-log-entry {{ log.owner.Working_Path|lower|replace(' ', '-') if log.owner and log.owner.Working_Path else '' }}"
-                         id="log-card-{{ log.id }}"
-                         data-session-type-title="{{ log.session_type.Title if log.session_type else 'Pathway Speech' }}"> {# Added session type title for JS #}
-                        <div class="card-header">
-                            <div class="meeting-info">
-                                Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A' }}
-                            </div>
-                            <div class="card-actions">
-                                {% if log.media %}
-                                <a href="{{ log.media.url }}" target="_blank" class="icon-btn" title="Watch Speech" style="font-size: 1.1em; color: #004165;">
-                                    <i class="fas fa-play-circle"></i>
-                                </a>
-                                {% endif %}
-                                <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)" title="Edit"><i class="fas fa-edit"></i></button> 
-                            </div>
-                        </div>
-                        <div class="speech-title">
-                            "{{ log.Session_Title|replace('"', '') if log.Session_Title else 'N/A' }}"
-                        </div>
-                        <div class="speaker-info">
-                            — {{ log.owner.Name if log.owner else 'N/A' }}
-                        </div>
-                        <div class="project-info">
-                            {% set project_code = get_project_code(log) %}
-                             {# Handle Presentation display #}
-                            {% if log.session_type and log.session_type.Title == 'Presentation' %}
-                                {% set presentation = get_presentation_by_id(log.Project_ID) %} {# Assumes a helper function or direct access #}
-                                <span class="project-name">{{ presentation.title if presentation else 'N/A' }}</span>
-                                
-                                {% if presentation and presentation.series in series_initials %}
-                                    {% set p_code = series_initials[presentation.series] + presentation.code|string %}
-                                {% else %}
-                                    {% set p_code = '(L' + presentation.level|string + ')' if presentation else '' %}
-                                {% endif %}
-                                <span class="project-code">{{ p_code }}</span>
-                                {% else %}
-                            {# Original Pathway Speech display #}
-                                <span class="project-code">{{ (project_code + ' > ') if project_code else '' }}</span>
-                                <span class="project-name">{{ log.project.Project_Name if log.project else 'N/A' }}</span>
+                        {% if log.log_type == 'speech' or log.log_type == 'presentation' %}
+                            {% set card_type_class = 'card-type-speech' %}
+                            {% if log.log_type == 'presentation' %}
+                                {% set card_type_class = 'card-type-presentation' %}
                             {% endif %}
-                        </div>
-                        <div class="card-footer">
-                            <div class="pathway-info">
-                                 {# Show Series for Presentation, Pathway otherwise #}
-                                {% if log.session_type and log.session_type.Title == 'Presentation' %}
-                                    {% set presentation = get_presentation_by_id(log.Project_ID) %}
-                                    {{ presentation.series if presentation else 'N/A' }}
-                                {% else %}
-                                    {{ log.owner.Working_Path if log.owner else 'N/A' }}
-                                {% endif %}
-                            </div>
-                            <div class="status-info">
-                                {% if log.Status == 'Completed' %}
-                                    <i class="fas fa-check-circle" title="Completed"></i>
-                                {% elif log.Status == 'Delivered' %}
-                                    {% if is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
-                                        <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
-                                    {% else %}
-                                        <span style="color: #772432; font-weight: bold; font-size: 0.9em;">Delivered</span>
-                                    {% endif %}
-                                {% else %} {# Booked or Null #}
-                                     {# Only show complete/suspend if the meeting date is in the past #}
-                                    {% if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date < today_date %}
-                                        {% if is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
-                                            <button onclick="suspendSpeechLog(this, {{ log.id }})" class="icon-btn" title="Suspend" style="color: #E55353; font-size: 1.5em; margin-right: 5px;"><i class="fas fa-pause-circle"></i></button>
+                            
+                            <div class="speech-log-entry {{ card_type_class }}"
+                                id="log-card-{{ log.id }}"
+                                data-session-type-title="{{ log.session_type.Title if log.session_type else 'Pathway Speech' }}">
+                                <div class="card-header">
+                                    <div class="meeting-info">
+                                        Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A' }}
+                                    </div>
+                                    <div class="card-actions">
+                                        {% if log.media %}
+                                        <a href="{{ log.media.url }}" target="_blank" class="icon-btn btn-play" title="Watch Speech">
+                                            <i class="fas fa-play-circle"></i>
+                                        </a>
                                         {% endif %}
-                                        {# All users can mark their own past speeches as complete #}
-                                        <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
-                                    {% else %}
-                                        <span style="font-size: 0.9em; color: #666;">Booked</span> {# Indicate booked status for future meetings #}
+                                        <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)" title="Edit"><i class="fas fa-edit"></i></button>
+                                    </div>
+                                </div>
+                                <div class="speech-title">
+                                    "{{ log.Session_Title|replace('"', '') if log.Session_Title else 'N/A' }}"
+                                </div>
+                                <div class="speaker-info">
+                                    — {{ log.owner.Name if log.owner else 'N/A' }}
+                                </div>
+                                <div class="project-info">
+                                    {% set project_code = get_project_code(log) %}
+                                    {# Handle Presentation display #}
+                                    {% if log.session_type and log.session_type.Title == 'Presentation' %}
+                                        {% set presentation = get_presentation_by_id(log.Project_ID) %} {# Assumes a helper function or direct access #}
+                                        <span class="project-name">{{ presentation.title if presentation else 'N/A' }}</span>
+                                        
+                                        {% if presentation and presentation.series in series_initials %}
+                                            {% set p_code = series_initials[presentation.series] + presentation.code|string %}
+                                        {% else %}
+                                            {% set p_code = '(L' + presentation.level|string + ')' if presentation else '' %}
+                                        {% endif %}
+                                        <span class="project-code">{{ p_code }}</span>
+                                        {% else %}
+                                    {# Original Pathway Speech display #}
+                                        <span class="project-code">{{ (project_code + ' > ') if project_code else '' }}</span>
+                                        <span class="project-name">{{ log.project.Project_Name if log.project else 'N/A' }}</span>
                                     {% endif %}
-                                {% endif %}
+                                </div>
+                                <div class="card-footer">
+                                    <div class="pathway-info">
+                                        {# Show Series for Presentation, Pathway otherwise #}
+                                        {% if log.session_type and log.session_type.Title == 'Presentation' %}
+                                            {% set presentation = get_presentation_by_id(log.Project_ID) %}
+                                            {{ presentation.series if presentation else 'N/A' }}
+                                        {% else %}
+                                            {{ log.owner.Working_Path if log.owner else 'N/A' }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="status-info">
+                                        {% if log.Status == 'Completed' %}
+                                            <i class="fas fa-check-circle" title="Completed"></i>
+                                        {% elif log.Status == 'Delivered' %}
+                                            {% if is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
+                                                <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                                            {% else %}
+                                                <span class="status-delivered">Delivered</span>
+                                            {% endif %}
+                                        {% else %} {# Booked or Null #}
+                                            {# Only show complete/suspend if the meeting date is in the past #}
+                                            {% if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date < today_date %}
+                                                {% if is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
+                                                    <button onclick="suspendSpeechLog(this, {{ log.id }})" class="icon-btn btn-suspend" title="Suspend"><i class="fas fa-pause-circle"></i></button>
+                                                {% endif %}
+                                                {# All users can mark their own past speeches as complete #}
+                                                <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                                            {% else %}
+                                                <span class="status-booked">Booked</span> {# Indicate booked status for future meetings #}
+                                            {% endif %}
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                        <div class="speech-log-entry role-log-entry">
+                            <div class="card-header">
+                                <div class="meeting-info">
+                                    Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A' }}
+                                </div>
+                                <div class="card-actions">
+                                    {% if log.media %}
+                                    <a href="{{ log.media.url }}" target="_blank" class="icon-btn btn-play" title="Watch Media">
+                                        <i class="fas fa-play-circle"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if log.session_type.Valid_for_Project %}
+                                        <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)" title="Edit"><i class="fas fa-edit"></i></button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="role-title">
+                                <i class="fas {{ role_icons.get(log.session_type.Role, 'fa-question-circle') }}"></i>
+                                {{ log.session_type.Role }}
+                            </div>
+                            <div class="speaker-info">
+                                {{ log.owner.Name if log.owner else 'N/A' }}
+                            </div>
+                            <div class="card-footer">
+                                <div class="pathway-info">
+                                    {{ log.current_path_level if log.current_path_level else 'N/A' }}
+                                </div>
+                                <div class="status-info">
+                                    <i class="fas fa-check-circle" title="Completed"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                        {% endif %}
+                    
                     {% endfor %}
                 </div>
             {% endfor %}
         {% else %}
-            <p style="text-align: center; margin-top: 20px;">No speech logs found matching your criteria.</p>
+            <p class="no-logs-message">No activities found matching your criteria.</p>
         {% endif %}
     </div>
 

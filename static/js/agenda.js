@@ -768,11 +768,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
     projectBtn.style.display =
-      sessionType &&
-      sessionType.Valid_for_Project &&
-      sessionType.Role !== "Individual Evaluator"
-        ? "inline-block"
-        : "none";
+      sessionType && sessionType.Valid_for_Project ? "inline-block" : "none";
 
     const roleEditBtn = document.createElement("button");
     roleEditBtn.innerHTML = '<i class="fas fa-user-tag"></i>'; // Example icon

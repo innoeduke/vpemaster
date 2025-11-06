@@ -15,21 +15,23 @@ agenda_bp = Blueprint('agenda_bp', __name__)
 
 # --- Helper Functions for Data Fetching ---
 
+
 def _get_agenda_logs(meeting_number):
     """Fetches all agenda logs and related data for a specific meeting."""
     query = db.session.query(SessionLog)\
         .options(
-            orm.joinedload(SessionLog.session_type), # Eager load SessionType
+            orm.joinedload(SessionLog.session_type),  # Eager load SessionType
             orm.joinedload(SessionLog.meeting),      # Eager load Meeting
             orm.joinedload(SessionLog.project),      # Eager load Project
             orm.joinedload(SessionLog.owner)         # Eager load Owner
-        )
+    )
 
     if meeting_number:
         query = query.filter(SessionLog.Meeting_Number == meeting_number)
 
     # Order by sequence
     return query.order_by(SessionLog.Meeting_Seq.asc()).all()
+
 
 def _get_project_speakers(meeting_number):
     """Gets a list of speakers for a given meeting."""
@@ -41,62 +43,71 @@ def _get_project_speakers(meeting_number):
         .filter(
             SessionLog.Meeting_Number == meeting_number,
             SessionType.Valid_for_Project == True
-        ).all()
+    ).all()
     return [name[0] for name in speaker_logs]
+
 
 def _create_or_update_session(item, meeting_number, seq):
     meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
     if not meeting:
         new_meeting = Meeting(Meeting_Number=meeting_number)
         db.session.add(new_meeting)
-        db.session.flush() # Flush to get meeting ID if needed, though not strictly required here
+        db.session.flush()  # Flush to get meeting ID if needed, though not strictly required here
         meeting = new_meeting
 
     type_id = item.get('type_id')
-    session_type = SessionType.query.get(type_id) if type_id else None # Get the SessionType object
+    session_type = SessionType.query.get(
+        type_id) if type_id else None  # Get the SessionType object
 
     # --- Owner ID Handling (no changes needed) ---
     owner_id_val = item.get('owner_id')
-    owner_id = int(owner_id_val) if owner_id_val and owner_id_val not in ['None', '0'] else None
+    owner_id = int(owner_id_val) if owner_id_val and owner_id_val not in [
+        'None', '0'] else None
     owner_contact = Contact.query.get(owner_id) if owner_id else None
 
     # --- Project ID and Status (no changes needed) ---
-    project_id = item.get('project_id') if item.get('project_id') else None
+    project_id = item.get('project_id')
+    if project_id in [None, "", "null"]:
+        project_id = None
     status = item.get('status') if item.get('status') else 'Booked'
     session_title = item.get('session_title')
 
     # --- Designation Logic (no changes needed) ---
     designation = item.get('designation')
-    if owner_id and (designation is None or designation == ''): # Check for None or empty string
+    # Check for None or empty string
+    if owner_id and (designation is None or designation == ''):
         owner = Contact.query.get(owner_id)
         if owner:
             if owner.DTM:
-                designation = None # Keep as None if DTM
+                designation = None  # Keep as None if DTM
             elif owner.Type == 'Guest':
                 designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
             elif owner.Type == 'Member':
-                designation = owner.Completed_Levels.replace(' ', '/') if owner.Completed_Levels else None
+                designation = owner.Completed_Levels.replace(
+                    ' ', '/') if owner.Completed_Levels else None
     # Ensure designation is an empty string if None before saving to avoid DB issues if nullable=False
     if designation is None:
         designation = ''
-
 
     # --- Automatic current_path_level Derivation ---
     temp_log_data = {
         'Project_ID': project_id,
         'Type_ID': type_id,
-        'session_type': session_type, # Pass fetched session_type
-        'project': Project.query.get(project_id) if project_id else None # Fetch project if needed
+        'session_type': session_type,  # Pass fetched session_type
+        # Fetch project if needed
+        'project': Project.query.get(project_id) if project_id else None
     }
     # Create a temporary object-like structure or fetch existing log if updating
-    log_for_derivation = SessionLog.query.get(item['id']) if item.get('id') != 'new' else type('obj', (object,), temp_log_data)()
-    if item.get('id') == 'new': # If new, update the temp obj with necessary fields
+    log_for_derivation = SessionLog.query.get(item['id']) if item.get(
+        'id') != 'new' else type('obj', (object,), temp_log_data)()
+    if item.get('id') == 'new':  # If new, update the temp obj with necessary fields
         log_for_derivation.Project_ID = project_id
         log_for_derivation.Type_ID = type_id
         log_for_derivation.session_type = session_type
         log_for_derivation.project = temp_log_data['project']
 
-    current_path_level = derive_current_path_level(log_for_derivation, owner_contact)
+    current_path_level = derive_current_path_level(
+        log_for_derivation, owner_contact)
 
     # --- Create or Update SessionLog ---
     if item['id'] == 'new':
@@ -106,12 +117,14 @@ def _create_or_update_session(item, meeting_number, seq):
             Type_ID=type_id,
             Owner_ID=owner_id,
             Designation=designation,
-            Duration_Min=item.get('duration_min') if item.get('duration_min') else None,
-            Duration_Max=item.get('duration_max') if item.get('duration_max') else None,
+            Duration_Min=item.get('duration_min') if item.get(
+                'duration_min') else None,
+            Duration_Max=item.get('duration_max') if item.get(
+                'duration_max') else None,
             Project_ID=project_id,
             Session_Title=session_title,
             Status=status,
-            current_path_level=current_path_level 
+            current_path_level=current_path_level
         )
         db.session.add(new_log)
     else:
@@ -122,13 +135,16 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Type_ID = type_id
             log.Owner_ID = owner_id
             log.Designation = designation
-            log.Duration_Min = item.get('duration_min') if item.get('duration_min') else None
-            log.Duration_Max = item.get('duration_max') if item.get('duration_max') else None
+            log.Duration_Min = item.get('duration_min') if item.get(
+                'duration_min') else None
+            log.Duration_Max = item.get('duration_max') if item.get(
+                'duration_max') else None
             log.Project_ID = project_id
             log.Status = status
             if session_title is not None:
                 log.Session_Title = session_title
-            log.current_path_level = current_path_level 
+            log.current_path_level = current_path_level
+
 
 def _recalculate_start_times(meetings_to_update):
     for meeting in meetings_to_update:
@@ -157,11 +173,14 @@ def _recalculate_start_times(meetings_to_update):
             # Individual Evaluation Type_ID is 31
             if log.Type_ID == 31 and meeting.GE_Style == 'immediate':
                 break_minutes += 1
-            dt_current_time = datetime.combine(meeting.Meeting_Date, current_time)
-            next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
+            dt_current_time = datetime.combine(
+                meeting.Meeting_Date, current_time)
+            next_dt = dt_current_time + \
+                timedelta(minutes=duration_to_add + break_minutes)
             current_time = next_dt.time()
 
 # --- Main Route ---
+
 
 @agenda_bp.route('/agenda', methods=['GET'])
 def agenda():
@@ -173,7 +192,8 @@ def agenda():
     }
 
     # --- Determine Selected Meeting ---
-    meeting_numbers_query = db.session.query(distinct(SessionLog.Meeting_Number)).order_by(SessionLog.Meeting_Number.desc()).all()
+    meeting_numbers_query = db.session.query(distinct(
+        SessionLog.Meeting_Number)).order_by(SessionLog.Meeting_Number.desc()).all()
     meeting_numbers = [num[0] for num in meeting_numbers_query]
 
     selected_meeting_str = request.args.get('meeting_number')
@@ -184,7 +204,7 @@ def agenda():
             selected_meeting_num = int(selected_meeting_str)
         except ValueError:
             # Handle invalid meeting number string if necessary
-            selected_meeting_num = None # Or redirect, flash error
+            selected_meeting_num = None  # Or redirect, flash error
     else:
         # Find the most recent upcoming meeting number
         upcoming_meeting = Meeting.query\
@@ -200,16 +220,20 @@ def agenda():
 
     selected_meeting = None
     if selected_meeting_num:
-        selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_num).first()
+        selected_meeting = Meeting.query.filter_by(
+            Meeting_Number=selected_meeting_num).first()
 
     # --- Fetch Raw Data ---
     raw_session_logs = _get_agenda_logs(selected_meeting_num)
     project_speakers = _get_project_speakers(selected_meeting_num)
 
-    all_presentations = Presentation.query.order_by(Presentation.level, Presentation.code).all()
-    presentation_series = sorted(list(set(p.series for p in all_presentations if p.series)))
+    all_presentations = Presentation.query.order_by(
+        Presentation.level, Presentation.code).all()
+    presentation_series = sorted(
+        list(set(p.series for p in all_presentations if p.series)))
     presentations_data = [
-        {"id": p.id, "title": p.title, "level": p.level, "series": p.series, "code": p.code} 
+        {"id": p.id, "title": p.title, "level": p.level,
+            "series": p.series, "code": p.code}
         for p in all_presentations
     ]
 
@@ -232,21 +256,24 @@ def agenda():
 
         if session_type and session_type.Title == 'Presentation' and log.Project_ID:
             # Find in the already-fetched list
-            presentation = next((p for p in all_presentations if p.id == log.Project_ID), None)
+            presentation = next(
+                (p for p in all_presentations if p.id == log.Project_ID), None)
             if presentation:
-                if not session_title_for_dict: 
-                    session_title_for_dict = presentation.title 
-                project_name_for_dict = presentation.series # For tooltip
+                if not session_title_for_dict:
+                    session_title_for_dict = presentation.title
+                project_name_for_dict = presentation.series  # For tooltip
                 project_purpose_for_dict = f"Level {presentation.level} - {presentation.title}"
-                
-                series_key = " ".join(presentation.series.split()) if presentation.series else ""
-                
+
+                series_key = " ".join(
+                    presentation.series.split()) if presentation.series else ""
+
                 series_initial = SERIES_INITIALS.get(series_key, "")
                 project_code_str = f"{series_initial}{presentation.code}"
-        elif project and owner and owner.Working_Path: # Else if pathway...
+        elif project and owner and owner.Working_Path:  # Else if pathway...
             pathway_suffix = pathway_mapping.get(owner.Working_Path)
             if pathway_suffix:
-                project_code_val = getattr(project, f"Code_{pathway_suffix}", None)
+                project_code_val = getattr(
+                    project, f"Code_{pathway_suffix}", None)
                 if project_code_val:
                     project_code_str = f"{pathway_suffix}{project_code_val}"
                     pathway_code_for_dict = pathway_suffix
@@ -323,11 +350,13 @@ def agenda():
             "Completed_Levels": c.Completed_Levels
         } for c in contacts
     ]
-    members = Contact.query.filter_by(Type='Member').order_by(Contact.Name.asc()).all()
+    members = Contact.query.filter_by(
+        Type='Member').order_by(Contact.Name.asc()).all()
 
     template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
     try:
-        meeting_templates = [f for f in os.listdir(template_dir) if f.endswith('.csv')]
+        meeting_templates = [f for f in os.listdir(
+            template_dir) if f.endswith('.csv')]
     except FileNotFoundError:
         meeting_templates = []
 
@@ -341,12 +370,12 @@ def agenda():
                            pathways=pathways,               # For modals
                            pathway_mapping=current_app.config['PATHWAY_MAPPING'],
                            meeting_numbers=meeting_numbers,
-                           selected_meeting=selected_meeting, # Pass the Meeting object
+                           selected_meeting=selected_meeting,  # Pass the Meeting object
                            members=members,                 # If needed elsewhere
-                           project_speakers=project_speakers, # For JS
+                           project_speakers=project_speakers,  # For JS
                            meeting_templates=meeting_templates,
                            series_initials=SERIES_INITIALS,
-                           presentations=presentations_data, 
+                           presentations=presentations_data,
                            presentation_series=presentation_series)
 
 
@@ -377,16 +406,18 @@ def export_agenda(meeting_number):
     for log, session_type, contact, project in logs:
         if session_type and session_type.Is_Section:
             writer.writerow([])
-            writer.writerow(['', log.Session_Title or session_type.Title, '', ''])
+            writer.writerow(
+                ['', log.Session_Title or session_type.Title, '', ''])
             continue
 
         start_time = log.Start_Time.strftime('%H:%M') if log.Start_Time else ''
 
         # --- FIX for Session and Speech Titles ---
-        session_title = log.Session_Title if log.Session_Title else (session_type.Title if session_type else '')
+        session_title = log.Session_Title if log.Session_Title else (
+            session_type.Title if session_type else '')
 
         # 1. Handle "Evaluation for <speaker>" format
-        if log.Type_ID == 31 and log.Session_Title: # Individual Evaluation
+        if log.Type_ID == 31 and log.Session_Title:  # Individual Evaluation
             session_title = f"Evaluation for {log.Session_Title}"
 
         # 2. Handle Pathway Speech format
@@ -411,7 +442,7 @@ def export_agenda(meeting_number):
                 meta_parts.append('DTM')
 
             if log.Designation:
-                 meta_parts.append(log.Designation)
+                meta_parts.append(log.Designation)
             elif contact.Type == 'Member' and contact.Completed_Levels:
                 meta_parts.append(contact.Completed_Levels.replace('/', ' '))
 
@@ -452,7 +483,8 @@ def export_agenda(meeting_number):
         if pathway_abbr:
             project_code = getattr(project, f"Code_{pathway_abbr}", None)
             if project_code:
-                projects_to_sort.append((project_code, project, working_path, pathway_abbr, speech_title))
+                projects_to_sort.append(
+                    (project_code, project, working_path, pathway_abbr, speech_title))
 
     sorted_projects = sorted(projects_to_sort, key=lambda x: x[0])
 
@@ -470,7 +502,6 @@ def export_agenda(meeting_number):
         writer.writerow([project.Purpose])
         writer.writerow([])
 
-
     output.seek(0)
     return send_file(
         io.BytesIO(output.getvalue().encode('utf-8-sig')),
@@ -478,6 +509,7 @@ def export_agenda(meeting_number):
         as_attachment=True,
         download_name=f'{meeting_number}_agenda.csv'
     )
+
 
 @agenda_bp.route('/agenda/create', methods=['POST'])
 @login_required
@@ -496,7 +528,8 @@ def create_from_template():
 
     meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
     if not meeting:
-        meeting = Meeting(Meeting_Number=meeting_number, Meeting_Date=meeting_date, Start_Time=start_time, GE_Style=ge_style)
+        meeting = Meeting(Meeting_Number=meeting_number,
+                          Meeting_Date=meeting_date, Start_Time=start_time, GE_Style=ge_style)
         db.session.add(meeting)
     else:
         meeting.Meeting_Date = meeting_date
@@ -504,9 +537,10 @@ def create_from_template():
         meeting.GE_Style = ge_style
 
     SessionLog.query.filter_by(Meeting_Number=meeting_number).delete()
-    db.session.commit() # Commit the meeting creation/update
+    db.session.commit()  # Commit the meeting creation/update
 
-    template_path = os.path.join(current_app.static_folder, 'mtg_templates', template_file)
+    template_path = os.path.join(
+        current_app.static_folder, 'mtg_templates', template_file)
     try:
         with open(template_path, 'r', encoding='utf-8') as f:
             stream = io.StringIO(f.read())
@@ -523,7 +557,8 @@ def create_from_template():
                 duration_min = row[2].strip() if len(row) > 2 else None
                 duration_max = row[3].strip() if len(row) > 3 else None
 
-                session_type = SessionType.query.filter_by(Title=session_title_from_csv).first()
+                session_type = SessionType.query.filter_by(
+                    Title=session_title_from_csv).first()
                 type_id = session_type.id if session_type else None
 
                 if not duration_max and not duration_min and session_type:
@@ -539,7 +574,7 @@ def create_from_template():
                         duration_max = 5
 
                 break_minutes = 1
-                if type_id == 31 and ge_style == 'immediate': # Individual Evaluation
+                if type_id == 31 and ge_style == 'immediate':  # Individual Evaluation
                     break_minutes += 1
                 # --- END OF FIX ---
 
@@ -557,7 +592,8 @@ def create_from_template():
                         elif owner.Type == 'Guest':
                             designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
                         elif owner.Type == 'Member':
-                            designation = owner.Completed_Levels.replace(' ', '/') if owner.Completed_Levels else None
+                            designation = owner.Completed_Levels.replace(
+                                ' ', '/') if owner.Completed_Levels else None
 
                 if designation is None:
                     designation = ''
@@ -576,9 +612,11 @@ def create_from_template():
                 if session_type and not session_type.Is_Section:
                     new_log.Start_Time = current_time
                     duration_to_add = int(duration_max or 0)
-                    dt_current_time = datetime.combine(meeting_date, current_time)
+                    dt_current_time = datetime.combine(
+                        meeting_date, current_time)
                     # Use the calculated break_minutes
-                    next_dt = dt_current_time + timedelta(minutes=duration_to_add + break_minutes)
+                    next_dt = dt_current_time + \
+                        timedelta(minutes=duration_to_add + break_minutes)
                     current_time = next_dt.time()
 
                 db.session.add(new_log)
@@ -588,7 +626,6 @@ def create_from_template():
         return redirect(url_for('agenda_bp.agenda', message=f'Template file not found: {template_file}', category='error'))
 
     return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
-
 
 
 @agenda_bp.route('/agenda/update', methods=['POST'])
@@ -606,9 +643,10 @@ def update_logs():
         if not meeting_number:
             return jsonify(success=False, message="Meeting number is missing"), 400
 
-        meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+        meeting = Meeting.query.filter_by(
+            Meeting_Number=meeting_number).first()
         if not meeting:
-             return jsonify(success=False, message="Meeting not found"), 404
+            return jsonify(success=False, message="Meeting not found"), 404
 
         # 1. Update and IMMEDIATELY commit the GE style change.
         if new_style and meeting.GE_Style != new_style:
@@ -638,6 +676,7 @@ def update_logs():
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
+
 
 @agenda_bp.route('/agenda/delete/<int:log_id>', methods=['POST'])
 @login_required

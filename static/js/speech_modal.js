@@ -294,7 +294,7 @@ function saveSpeechChanges(event) {
           // --- Agenda Page Update ---
           const agendaRow = document.querySelector(`tr[data-id="${logId}"]`);
           if (agendaRow) {
-            agendaRow.dataset.projectId = updateResult.project_id;
+            agendaRow.dataset.projectId = updateResult.project_id | "";
             agendaRow.dataset.sessionTitle = updateResult.session_title;
 
             const editTitleCell = agendaRow.querySelector(

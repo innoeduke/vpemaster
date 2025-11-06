@@ -120,7 +120,7 @@
               <span>Pathway Library</span>
             </a>
           </li>
-          {% if is_authorized(session.get('user_role'), 'SETTING_VIEW_ALL') %}
+          {% if is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL') %}
           <li
             class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}"
           >

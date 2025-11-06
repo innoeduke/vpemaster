@@ -11,6 +11,18 @@ import re
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
+ROLE_ICONS = {
+    "TME": "fa-microphone", "GE": "fa-search", "Topicmaster": "fa-comments",
+    "Grammarian": "fa-book", "Timer": "fa-stopwatch", "Ah-Counter": "fa-calculator",
+    "Topics Speaker": "fa-comment", "Prepared Speaker": "fa-user-tie",
+    "Individual Evaluator": "fa-pen-square", "Backup Speaker": "fa-user-secret",
+    "Welcome Officer": "fa-handshake", "Keynote Speaker": "fa-star",
+    "Sharing Master": "fa-share-alt", "Meeting Manager": "fa-clipboard-list",
+    "Photographer": "fa-camera", "Panelist": "fa-users", "Debater": "fa-balance-scale",
+    "Club Mentor": "fa-user-graduate", "Introductory Mentor": "fa-hands-helping",
+    "Default": "fa-question-circle"
+}
+
 
 def _get_project_code(log):
     """Helper function to get the project code for a given log."""
@@ -42,73 +54,119 @@ def show_speech_logs():
     selected_speaker = request.args.get('speaker_id')
     selected_status = request.args.get('status')
 
-    # If the user is a Member, force the filter to their own Contact ID
     if is_member_view:
         user = User.query.get(session.get('user_id'))
         if user and user.Contact_ID:
             selected_speaker = user.Contact_ID
         else:
-            # If member is not linked to a contact, show no logs by setting an invalid ID
-            selected_speaker = -1
+            selected_speaker = -1   # No logs for unlinked member
 
-    query = db.session.query(SessionLog)\
-        .options(joinedload(SessionLog.media))\
-        .join(SessionType).filter(
-            or_(SessionType.Valid_for_Project == True,
-                SessionType.Title == 'Presentation')
+    # Eager load all common relationships
+    base_query = db.session.query(SessionLog).options(
+        joinedload(SessionLog.media),
+        joinedload(SessionLog.session_type),
+        joinedload(SessionLog.meeting),
+        joinedload(SessionLog.owner),
+        joinedload(SessionLog.project)
+    ).join(SessionType).filter(
+        SessionType.Role.isnot(None),
+        SessionType.Role != '',
+        SessionType.Role != 'Backup Speaker'
+
     )
 
-    if selected_meeting:
-        query = query.filter(SessionLog.Meeting_Number == selected_meeting)
     if selected_speaker:
-        query = query.filter(SessionLog.Owner_ID == selected_speaker)
-    if selected_status:
-        query = query.filter(SessionLog.Status == selected_status)
+        base_query = base_query.filter(SessionLog.Owner_ID == selected_speaker)
+    if selected_meeting:
+        base_query = base_query.filter(
+            SessionLog.Meeting_Number == selected_meeting)
 
-    initial_logs = query.order_by(SessionLog.Meeting_Number.desc()).all()
+    all_logs = base_query.order_by(SessionLog.Meeting_Number.desc()).all()
 
     grouped_logs = {}
-    for log in initial_logs:
-        # --- Handle Presentations ---
-        if log.session_type and log.session_type.Title == 'Presentation':
+    processed_roles = set()
+
+    for log in all_logs:
+        display_level = "General"  # Default bucket for roles without a level
+        log_type = 'role'
+        if not log.session_type:
+            continue
+        role_name = log.session_type.Role
+
+        if log.session_type.Title == 'Presentation':
+            log_type = 'presentation'
             presentation = Presentation.query.get(log.Project_ID)
-            if not presentation:
-                continue
+            if presentation:
+                display_level = presentation.level
+        elif log.session_type.Valid_for_Project == True and log.session_type.Role != 'Individual Evaluator':
+            log_type = 'speech'
+            code = _get_project_code(log)
+            if code:
+                try:
+                    display_level = int(code.split('.')[0])
+                except (ValueError, IndexError):
+                    pass  # Stays in "General"
+        else:  # It's a role
+            # Check if we've already processed this role for this person/meeting
+            role_key = (log.Meeting_Number, log.Owner_ID, role_name)
+            if role_key in processed_roles:
+                continue  # Skip if already added
+            processed_roles.add(role_key)  # Add to set
 
-            level = presentation.level
-            if selected_level and level != int(selected_level):
-                continue
+            # Now, get its level
+            if log.current_path_level:
+                match = re.match(r"[A-Z]+(\d+)", log.current_path_level)
+                if match:
+                    display_level = int(match.group(1))
 
-            if level not in grouped_logs:
-                grouped_logs[level] = []
-            grouped_logs[level].append(log)
-            continue  # Skip to next log
+        log.log_type = log_type
 
-        # --- Handle Pathway Speeches ---
-        if selected_pathway and (not log.owner or log.owner.Working_Path != selected_pathway):
+        if selected_level and str(display_level) != selected_level:
             continue
 
-        code = _get_project_code(log)
-        if code:
-            try:
-                level = int(code.split('.')[0])
-                if selected_level and level != int(selected_level):
-                    continue
+        if log_type == 'speech' and selected_pathway and \
+           (not log.owner or log.owner.Working_Path != selected_pathway):
+            continue
 
-                if level not in grouped_logs:
-                    grouped_logs[level] = []
-                grouped_logs[level].append(log)
-            except (ValueError, IndexError):
-                continue
+        if selected_status:
+            if log_type in ['speech', 'presentation']:
+                if log.Status != selected_status:
+                    continue  # Filter speeches/presentations by status
+            else:
+                continue  # Hide all roles if a status is selected
 
-    # Sort logs within each level group
+        # --- Add to Group ---
+        if display_level not in grouped_logs:
+            grouped_logs[display_level] = []
+        grouped_logs[display_level].append(log)
+
+    def get_activity_sort_key(log):
+        # Failsafe, should not be needed as we assign log_type in step 3
+        if not hasattr(log, 'log_type'):
+            return (99, -log.Meeting_Number)
+
+        if log.log_type == 'speech':
+            priority = 1  # 1. Speeches
+        elif log.log_type == 'presentation':
+            priority = 2  # 2. Presentations
+        else:  # 'role'
+            priority = 3  # 3. Roles
+
+        # Sort by priority (1, 2, 3), then by descending meeting number
+        return (priority, -log.Meeting_Number)
+
+    # Sort logs within each group by meeting number
     for level in grouped_logs:
-        grouped_logs[level].sort(key=lambda log: (
-            _get_project_code(log) or ""  # Sort by pathway code
-            # Add a sort key for presentations if needed, e.g., by title
-        ))
+        grouped_logs[level].sort(key=get_activity_sort_key)
 
-    sorted_grouped_logs = dict(sorted(grouped_logs.items()))
+    # Sort the groups themselves (General last)
+    def get_group_sort_key(level_key):  # This part is unchanged
+        if isinstance(level_key, int):
+            return (0, level_key)  # Sort numbers first, by value
+        return (1, level_key)  # Sort "General" string last
+
+    sorted_grouped_logs = dict(
+        sorted(grouped_logs.items(), key=lambda item: get_group_sort_key(item[0])))
 
     meeting_numbers = sorted([m[0] for m in db.session.query(
         distinct(SessionLog.Meeting_Number)).join(Project).all()], reverse=True)
@@ -158,6 +216,7 @@ def show_speech_logs():
     return render_template(
         'speech_logs.html',
         grouped_logs=sorted_grouped_logs,
+        role_icons=ROLE_ICONS,
         get_project_code=_get_project_code,
         meeting_numbers=meeting_numbers,
         speakers=speakers,
@@ -223,7 +282,10 @@ def update_speech_log(log_id):
     """
     Updates a speech log with new data from the edit modal.
     """
-    log = SessionLog.query.get_or_404(log_id)
+    log = db.session.query(SessionLog).options(
+        joinedload(SessionLog.owner),
+        joinedload(SessionLog.session_type)
+    ).get_or_404(log_id)
 
     user_role = session.get('user_role')
     user = User.query.get(session.get('user_id'))
@@ -242,6 +304,16 @@ def update_speech_log(log_id):
     if 'session_title' in data:
         log.Session_Title = data['session_title']
 
+    if media_url:
+        # If URL is provided, update or create media record
+        if log.media:
+            log.media.url = media_url
+        else:
+            log.media = Media(url=media_url)
+    elif log.media:
+        # If URL is blank but a media record exists, delete it
+        db.session.delete(log.media)
+
     # If it's a presentation and the title is *still* blank, then default to the presentation's name
     if session_type_title == 'Presentation' and data.get('project_id') and not log.Session_Title:
         try:
@@ -259,7 +331,11 @@ def update_speech_log(log_id):
             db.session.add(owner)
 
     if 'project_id' in data:
-        log.Project_ID = data['project_id']
+        project_id = data.get('project_id')
+        if project_id in [None, "", "null"]:
+            log.Project_ID = None
+        else:
+            log.Project_ID = project_id
 
         if session_type_title == 'Presentation':
             log.Duration_Min = 10
@@ -273,16 +349,6 @@ def update_speech_log(log_id):
             # It's a generic speech, clear durations
             log.Duration_Min = None
             log.Duration_Max = None
-
-    if media_url:
-        # If URL is provided, update or create media record
-        if log.media:
-            log.media.url = media_url
-        else:
-            log.media = Media(url=media_url)
-    elif log.media:
-        # If URL is blank but a media record exists, delete it
-        db.session.delete(log.media)
 
     try:
         db.session.commit()
