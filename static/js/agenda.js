@@ -751,20 +751,22 @@ document.addEventListener("DOMContentLoaded", () => {
       const ownerId = row.querySelector('input[name="owner_id"]').value;
       const contact = contacts.find((c) => c.id == ownerId);
       const workingPath = contact ? contact.Working_Path : null;
+      const nextProject = contact ? contact.Next_Project : null;
       const typeId = row.querySelector('[data-field="Type_ID"] select').value;
       const sessionType = sessionTypes.find((st) => st.id == typeId);
       const sessionTypeTitle = sessionType ? sessionType.Title : null;
-      openSpeechEditModal(logId, workingPath, sessionTypeTitle);
+      openSpeechEditModal(logId, workingPath, sessionTypeTitle, nextProject);
       if (logId === "new") {
         saveChanges();
       } else {
         const ownerId = row.querySelector('input[name="owner_id"]').value;
         const contact = contacts.find((c) => c.id == ownerId);
         const workingPath = contact ? contact.Working_Path : null;
+        const nextProject = contact ? contact.Next_Project : null;
         const typeId = row.querySelector('[data-field="Type_ID"] select').value;
         const sessionType = sessionTypes.find((st) => st.id == typeId);
         const sessionTypeTitle = sessionType ? sessionType.Title : null;
-        openSpeechEditModal(logId, workingPath, sessionTypeTitle);
+        openSpeechEditModal(logId, workingPath, sessionTypeTitle, nextProject);
       }
     };
     projectBtn.style.display =

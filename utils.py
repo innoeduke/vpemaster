@@ -4,6 +4,36 @@ from flask import current_app
 from .models import Project  # Ensure Project model is imported if needed elsewhere
 import re
 
+
+# --- ADD THIS DICTIONARY ---
+ROLE_ICONS = {
+    # leader roles
+    "Toastmaster": "fa-microphone",
+    "General Evaluator": "fa-search",
+    "Topicmaster": "fa-comments",
+    # functional roles
+    "Grammarian": "fa-book",
+    "Timer": "fa-stopwatch",
+    "Ah-Counter": "fa-calculator",
+    "Topics Speaker": "fa-comment",
+    "Prepared Speaker": "fa-user-tie",
+    "Individual Evaluator": "fa-pen-square",
+    "Backup Speaker": "fa-user-secret",
+    # specialized roles
+    "Welcome Officer": "fa-handshake",
+    "Keynote Speaker": "fa-star",
+    "Presenter": "fa-share-alt",
+    "Meeting Manager": "fa-clipboard-list",
+    "Photographer": "fa-camera",
+    # event-based roles
+    "Panelist": "fa-users",
+    "Debater": "fa-balance-scale",
+    "Club Mentor": "fa-user-graduate",
+    "Introductory Mentor": "fa-hands-helping",
+    "Default": "fa-question-circle"
+}
+
+
 def derive_current_path_level(log, owner_contact):
     """
     Derives the 'current_path_level' based on the role, project, and owner's pathway.
@@ -21,26 +51,26 @@ def derive_current_path_level(log, owner_contact):
         str or None: The derived current_path_level string or None.
     """
     if not owner_contact or not owner_contact.Working_Path:
-        return None # Cannot derive without owner or their working path
+        return None  # Cannot derive without owner or their working path
 
     pathway_mapping = current_app.config.get('PATHWAY_MAPPING', {})
     pathway_suffix = pathway_mapping.get(owner_contact.Working_Path)
 
     if not pathway_suffix:
-        return None # Unknown pathway
+        return None  # Unknown pathway
 
     # Determine the role name from the log's session type
     role_name = None
     if hasattr(log, 'session_type') and log.session_type:
         role_name = log.session_type.Role
-    elif hasattr(log, 'Type_ID'): # Fallback if session_type isn't loaded/available
+    elif hasattr(log, 'Type_ID'):  # Fallback if session_type isn't loaded/available
         # This requires querying SessionType if not available on log,
         # adjust based on how log object is passed/constructed.
         # For simplicity, assuming session_type is usually available.
         # from .models import SessionType # Local import if needed
         # session_type = SessionType.query.get(log.Type_ID)
         # if session_type: role_name = session_type.Role
-        pass # Add fallback query if necessary
+        pass  # Add fallback query if necessary
 
     # --- Priority 1: Speaker/Evaluator with Project ID ---
     # Check if the role is typically associated with a specific project completion
@@ -51,8 +81,8 @@ def derive_current_path_level(log, owner_contact):
         if hasattr(log, 'project') and log.project:
             project = log.project
         else:
-             # Fetch the project if not readily available
-             project = Project.query.get(log.Project_ID)
+            # Fetch the project if not readily available
+            project = Project.query.get(log.Project_ID)
 
         if project:
             project_code_attr = f"Code_{pathway_suffix}"
@@ -77,4 +107,3 @@ def derive_current_path_level(log, owner_contact):
 
     # --- Fallback ---
     return None
-

@@ -8,7 +8,8 @@
 function openSpeechEditModal(
   logId,
   workingPath = null,
-  sessionTypeTitle = null
+  sessionTypeTitle = null,
+  nextProject = null
 ) {
   // Try to get session type directly if passed from agenda.js
   const passedSessionType =
@@ -100,14 +101,65 @@ function openSpeechEditModal(
             console.error("pathwayMap is not defined or invalid.");
           }
 
-          let pathway = data.log.pathway;
-          if (window.location.pathname.includes("/agenda") && workingPath) {
-            pathway = workingPath;
-          }
-          pathwaySeriesSelect.value = pathway || "";
-          levelSelect.value = data.log.level || "";
+          let pathwayToSelect = data.log.pathway;
+          let levelToSelect = data.log.level || "";
+          let projectToSelect = data.log.Project_ID;
+          let projectCodeToFind = null;
 
-          updateProjectOptions(data.log.Project_ID); // Populate projects
+          if (
+            window.location.pathname.includes("/agenda") &&
+            !data.log.Project_ID
+          ) {
+            if (nextProject) {
+              try {
+                const nextPathAbbr = nextProject.substring(0, 2); // "EH"
+                const nextLevel = nextProject.substring(2, 3); // "3"
+                projectCodeToFind = nextProject.substring(2); // "3.1"
+
+                const pathwayName = Object.keys(pathwayMap).find(
+                  (name) => pathwayMap[name] === nextPathAbbr
+                );
+
+                if (pathwayName) {
+                  pathwayToSelect = pathwayName;
+                  levelToSelect = nextLevel;
+                }
+              } catch (e) {
+                console.error(
+                  "Could not parse nextProject string:",
+                  nextProject
+                );
+                projectCodeToFind = null; // Clear on error
+              }
+            } else if (workingPath) {
+              // Fallback: use the contact's main working path (but no level/project)
+              pathwayToSelect = workingPath;
+            }
+          } else if (
+            window.location.pathname.includes("/agenda") &&
+            workingPath
+          ) {
+            // A project *is* saved, but still default pathway to contact's working path
+            pathwayToSelect = workingPath;
+          }
+
+          pathwaySeriesSelect.value = pathwayToSelect || "";
+          levelSelect.value = levelToSelect;
+
+          if (projectCodeToFind) {
+            const codeSuffix = pathwayMap[pathwayToSelect];
+            const codeAttr = `Code_${codeSuffix}`; // e.g., "Code_EH"
+
+            if (codeSuffix && Array.isArray(allProjects)) {
+              const foundProject = allProjects.find(
+                (p) => p[codeAttr] === projectCodeToFind
+              );
+              if (foundProject) {
+                projectToSelect = foundProject.ID; // Found it!
+              }
+            }
+          }
+          updateProjectOptions(projectToSelect);
         }
 
         document.getElementById("speechEditModal").style.display = "flex";

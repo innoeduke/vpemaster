@@ -8,36 +8,9 @@ from . import db
 from datetime import datetime
 import re
 from sqlalchemy import text, or_
-from .utils import derive_current_path_level
+from .utils import derive_current_path_level, ROLE_ICONS
 
 booking_bp = Blueprint('booking_bp', __name__)
-
-ROLE_ICONS = {
-    # leader roles
-    "TME": "fa-microphone",
-    "GE": "fa-search",
-    "Topicmaster": "fa-comments",
-    # functional roles
-    "Grammarian": "fa-book",
-    "Timer": "fa-stopwatch",
-    "Ah-Counter": "fa-calculator",
-    "Topics Speaker": "fa-comment",
-    "Prepared Speaker": "fa-user-tie",
-    "Individual Evaluator": "fa-pen-square",
-    "Backup Speaker": "fa-user-secret",
-    # specialized roles
-    "Welcome Officer": "fa-handshake",
-    "Keynote Speaker": "fa-star",
-    "Sharing Master": "fa-share-alt",
-    "Meeting Manager": "fa-clipboard-list",
-    "Photographer": "fa-camera",
-    # event-based roles
-    "Panelist": "fa-users",
-    "Debater": "fa-balance-scale",
-    "Club Mentor": "fa-user-graduate",
-    "Introductory Mentor": "fa-hands-helping",
-    "Default": "fa-question-circle"
-}
 
 
 def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_contact_id):

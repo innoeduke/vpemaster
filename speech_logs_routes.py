@@ -8,20 +8,9 @@ from sqlalchemy import distinct, or_, and_
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 import re
+from .utils import ROLE_ICONS
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
-
-ROLE_ICONS = {
-    "TME": "fa-microphone", "GE": "fa-search", "Topicmaster": "fa-comments",
-    "Grammarian": "fa-book", "Timer": "fa-stopwatch", "Ah-Counter": "fa-calculator",
-    "Topics Speaker": "fa-comment", "Prepared Speaker": "fa-user-tie",
-    "Individual Evaluator": "fa-pen-square", "Backup Speaker": "fa-user-secret",
-    "Welcome Officer": "fa-handshake", "Keynote Speaker": "fa-star",
-    "Sharing Master": "fa-share-alt", "Meeting Manager": "fa-clipboard-list",
-    "Photographer": "fa-camera", "Panelist": "fa-users", "Debater": "fa-balance-scale",
-    "Club Mentor": "fa-user-graduate", "Introductory Mentor": "fa-hands-helping",
-    "Default": "fa-question-circle"
-}
 
 
 def _get_project_code(log):
