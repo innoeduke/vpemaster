@@ -114,11 +114,6 @@
                     {% else %}
                         <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>
                         <td class="non-edit-mode-cell">
-                            {% if log_dict.media_url %}
-                                <a href="{{ log_dict.media_url }}" target="_blank" class="icon-btn media-play-btn" title="Watch Media">
-                                    <i class="fas fa-play-circle"></i>
-                                </a>
-                            {% endif %}
                             {# Check if it's a linkable pathway project (has ID and a valid path code) #}
                             {% if log_dict.Project_ID and log_dict.pathway_code %}
                                <a href="{{ url_for('pathways_bp.pathway_library') }}?path={{ log_dict.pathway_code }}&level={{ log_dict.level }}&project_id={{ log_dict.Project_ID }}" class="project-link" title="View in Pathway Library">
@@ -154,6 +149,11 @@
                                    <span class="tooltip-purpose">{{ log_dict.project_purpose }}</span>
                                </div>
                                {% endif %}
+                               {% if log_dict.media_url %}
+                                    <a href="{{ log_dict.media_url }}" target="_blank" class="icon-btn media-play-btn" title="Watch Media">
+                                        <i class="fas fa-play-circle"></i>
+                                    </a>
+                                {% endif %}
                             </div>
 
                             {% if log_dict.Project_ID and log_dict.pathway_code %}
