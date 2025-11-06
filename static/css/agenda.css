@@ -22,13 +22,26 @@
     /* This ensures it doesn't have a min-width and can shrink */
 }
 
+.session-cell-with-media {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.media-play-btn {
+    text-decoration: none;
+    color: #004165;
+    font-size: 1.1em;
+}
+
+
 .project-link {
     text-decoration: none;
     color: inherit;
     display: inline-block; /* Ensures the link wraps the content properly */
 }
+
 .project-link:hover {
-    text-decoration: underline;
     color: #004165; /* Theme blue */
     cursor: pointer;
 }

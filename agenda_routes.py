@@ -23,7 +23,8 @@ def _get_agenda_logs(meeting_number):
             orm.joinedload(SessionLog.session_type),  # Eager load SessionType
             orm.joinedload(SessionLog.meeting),      # Eager load Meeting
             orm.joinedload(SessionLog.project),      # Eager load Project
-            orm.joinedload(SessionLog.owner)         # Eager load Owner
+            orm.joinedload(SessionLog.owner),         # Eager load Owner
+            orm.joinedload(SessionLog.media)
     )
 
     if meeting_number:
@@ -245,6 +246,7 @@ def agenda():
         meeting = log.meeting
         project = log.project
         owner = log.owner
+        media = log.media
 
         # Determine project code if applicable
         project_code_str = None
@@ -319,6 +321,7 @@ def agenda():
             'owner_type': owner.Type if owner else '',
             'owner_club': owner.Club if owner else '',
             'owner_completed_levels': owner.Completed_Levels if owner else '',
+            'media_url': media.url if media and media.url else None,
         }
         logs_data.append(log_dict)
 
