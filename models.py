@@ -61,6 +61,7 @@ class Meeting(db.Model):
     ID = db.Column(db.Integer, primary_key=True)
     Meeting_Number = db.Column(db.SmallInteger, unique=True, nullable=False)
     Meeting_Date = db.Column(db.Date)
+    Meeting_Title = db.Column(db.String(255))
     Start_Time = db.Column(db.Time)
     Meeting_Template = db.Column(db.String(100))
     WOD = db.Column(db.String(100))
@@ -68,7 +69,16 @@ class Meeting(db.Model):
     Best_Evaluator_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     Best_Speaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     Best_Roletaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    media_id = db.Column(db.Integer, db.ForeignKey('Media.id'))
     GE_Style = db.Column(db.String(20), default='immediate')
+
+    best_tt_speaker = db.relationship('Contact', foreign_keys=[Best_TT_ID])
+    best_evaluator = db.relationship(
+        'Contact', foreign_keys=[Best_Evaluator_ID])
+    best_speaker = db.relationship('Contact', foreign_keys=[Best_Speaker_ID])
+    best_roletaker = db.relationship(
+        'Contact', foreign_keys=[Best_Roletaker_ID])
+    media = db.relationship('Media', foreign_keys=[media_id])
 
 
 class SessionType(db.Model):

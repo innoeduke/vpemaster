@@ -4,10 +4,36 @@
 
 {% block content %}
 <div id="agenda-content"> {# Wrapper for edit-mode class #}
-    <div style="text-align: center; margin-bottom: 15px;">
-        <img src="{{ url_for('static', filename='images/SHLTMC-logo.png') }}" alt="SHLTMC Logo" style="max-width: 200px; height: auto;">
+    <div class="agenda-header-container">
+        <div class="agenda-header-logo">
+            <img src="{{ url_for('static', filename='images/SHLTMC-logo.png') }}" alt="SHLTMC Logo">
+        </div>
+        
+        <div class="agenda-header-info">
+            <h1>Meeting Agenda</h1>
+            
+            {% if selected_meeting and selected_meeting.Meeting_Title %}
+                <h2 class="meeting-title">{{ selected_meeting.Meeting_Title }}</h2>
+            {% endif %}
+
+            {% if selected_meeting %}
+            <div class="meeting-awards">
+                {% if selected_meeting.best_speaker %}
+                    <span><i class="fas fa-trophy"></i> <strong>Best Speaker:</strong> {{ selected_meeting.best_speaker.Name }}</span>
+                {% endif %}
+                {% if selected_meeting.best_evaluator %}
+                    <span><i class="fas fa-trophy"></i> <strong>Best Evaluator:</strong> {{ selected_meeting.best_evaluator.Name }}</span>
+                {% endif %}
+                {% if selected_meeting.best_tt_speaker %}
+                    <span><i class="fas fa-trophy"></i> <strong>Best Topic Speaker:</strong> {{ selected_meeting.best_tt_speaker.Name }}</span>
+                {% endif %}
+                {% if selected_meeting.best_roletaker %}
+                    <span><i class="fas fa-trophy"></i> <strong>Best Role Taker:</strong> {{ selected_meeting.best_roletaker.Name }}</span>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
     </div>
-    <h1>Meeting Agenda</h1>
 
     {# This is the updated warning block for the full-screen overlay #}
     <div class="orientation-warning">
@@ -199,6 +225,20 @@
                         <td><label for="meeting_number">Meeting Number:</label></td>
                         <td><input type="number" id="meeting_number" name="meeting_number" required></td>
                     </tr>
+                    
+                    <tr>
+                        <td><label for="meeting_title">Meeting Title (Theme):</label></td>
+                        <td><input type="text" id="meeting_title" name="meeting_title" placeholder="e.g. Education Program"></td>
+                    </tr>
+                    <tr>
+                        <td><label for="wod">Word of the Day:</label></td>
+                        <td><input type="text" id="wod" name="wod" placeholder="e.g. Enhance"></td>
+                    </tr>
+                    <tr>
+                        <td><label for="media_url">Media URL (Video):</label></td>
+                        <td><input type="url" id="media_url" name="media_url" placeholder="https://... (optional)"></td>
+                    </tr>
+                    
                     <tr>
                         <td><label for="meeting_date">Meeting Date:</label></td>
                         <td><input type="date" id="meeting_date" name="meeting_date" required></td>
