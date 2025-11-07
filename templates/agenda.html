@@ -10,28 +10,59 @@
         </div>
         
         <div class="agenda-header-info">
-            <h1>Meeting Agenda</h1>
-            
-            {% if selected_meeting and selected_meeting.Meeting_Title %}
-                <h2 class="meeting-title">{{ selected_meeting.Meeting_Title }}</h2>
+            <p class="sub-title">Club No.868941 | Area K1 | Division K | Shanghai Leadership Toastmasters Club</p>
+
+            <h1 class="meeting-title view-mode">
+                {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
+                
+            </h1>
+            {% if selected_meeting and selected_meeting.media and selected_meeting.media.url %}
+                <a href="{{ selected_meeting.media.url }}" class="btn btn-info video-icon-btn" target="_blank" title="Watch Meeting Video">
+                    <i class="fas fa-video"></i>
+                </a>
             {% endif %}
 
-            {% if selected_meeting %}
-            <div class="meeting-awards">
+            <div class="meeting-edit-details">
+                <div class="meta-item">
+                    <span><strong>Meeting Title:</strong></span>
+                    <input type="text" 
+                           id="edit-meeting-title" 
+                           class="edit-mode-field" 
+                           value="{{ selected_meeting.Meeting_Title or '' }}" 
+                           placeholder="Enter Meeting Title (Theme)">
+                </div>
+                <div class="meta-item">
+                    <span><strong>Word of the Day:</strong></span>
+                    <input type="text" 
+                           id="edit-wod" 
+                           class="edit-mode-field" 
+                           value="{{ selected_meeting.WOD or '' }}" 
+                           placeholder="Enter Word of the Day">
+                </div>
+                <div class="meta-item">
+                    <span><strong>Media URL:</strong></span>
+                    <input type="url" 
+                           id="edit-media-url" 
+                           class="edit-mode-field" 
+                           value="{{ selected_meeting.media.url if selected_meeting and selected_meeting.media else '' }}" 
+                           placeholder="Enter Meeting Video URL (https://...)">
+                </div>
+            </div>
+
+            <div class="meeting-awards view-mode">
                 {% if selected_meeting.best_speaker %}
-                    <span><i class="fas fa-trophy"></i> <strong>Best Speaker:</strong> {{ selected_meeting.best_speaker.Name }}</span>
+                    <span class="award-item"><strong>Best Speaker:</strong> {{ selected_meeting.best_speaker.Name }}</span>
                 {% endif %}
                 {% if selected_meeting.best_evaluator %}
-                    <span><i class="fas fa-trophy"></i> <strong>Best Evaluator:</strong> {{ selected_meeting.best_evaluator.Name }}</span>
+                    <span class="award-item"><strong>Best Evaluator:</strong> {{ selected_meeting.best_evaluator.Name }}</span>
                 {% endif %}
                 {% if selected_meeting.best_tt_speaker %}
-                    <span><i class="fas fa-trophy"></i> <strong>Best Topic Speaker:</strong> {{ selected_meeting.best_tt_speaker.Name }}</span>
+                    <span class="award-item"><strong>Best Topic Speaker:</strong> {{ selected_meeting.best_tt_speaker.Name }}</span>
                 {% endif %}
                 {% if selected_meeting.best_roletaker %}
-                    <span><i class="fas fa-trophy"></i> <strong>Best Role Taker:</strong> {{ selected_meeting.best_roletaker.Name }}</span>
+                    <span class="award-item"><strong>Best Role Taker:</strong> {{ selected_meeting.best_roletaker.Name }}</span>
                 {% endif %}
             </div>
-            {% endif %}
         </div>
     </div>
 
@@ -57,6 +88,13 @@
                 <span id="meeting-date-display">{{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') }}</span>
                 {% endif %}
             </div>
+            {% if selected_meeting and selected_meeting.WOD %}
+            <div class="inline-filter-group wod-display">
+                <label>Word of the Day:</label>
+                <span>"{{ selected_meeting.WOD }}"</span>
+            </div>
+            {% endif %}
+            
             <div id="ge-style-toggle" class="inline-filter-group" style="display: none;">
                 <label for="ge-style-select">GE Style:</label>
                 <select id="ge-style-select">

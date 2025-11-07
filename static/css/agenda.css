@@ -1,61 +1,145 @@
-/* --- Agenda Page --- */
-
+/* --- New Agenda Header Styles (Redesigned) --- */
 .agenda-header-container {
     display: flex;
-    align-items: flex-start; /* Aligns items to the top */
+    align-items: flex-start;
     gap: 20px;
     margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #f0f0f0;
-}
-
-.agenda-header-logo {
-    flex-shrink: 0; /* Prevents logo from shrinking */
 }
 
 .agenda-header-logo img {
-    max-width: 150px; /* Smaller logo */
+    max-width: 150px;
     height: auto;
 }
 
 .agenda-header-info {
-    flex-grow: 1; /* Allows info section to take remaining space */
-    text-align: left; /* Aligns text to the left */
+    flex-grow: 1;
+    text-align: center;
 }
 
-.agenda-header-info h1 {
-    text-align: left; /* Override default center */
-    margin: 0 0 5px 0;
-    font-size: 2.2em;
+/* "Meeting Agenda" subtitle */
+.agenda-header-info .sub-title {
+    font-size: 0.9em;
+    color: #555;
+    margin: 0;
+    line-height: 1;
+    text-align: center;
 }
 
+/* --- VIEW MODE STYLES --- */
 .agenda-header-info .meeting-title {
-    font-size: 1.5em;
-    color: #4a4a4a;
-    margin: 0 0 10px 0;
-    font-weight: 500;
+    font-size: clamp(1.8em, 5vw, 2.6em);
+    font-weight: 700;
+    color: #333;
+    margin: 30px 40px;
+    line-height: 1.2;
+}
+
+.agenda-header-info hr.view-mode {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 15px 0;
+}
+
+.meeting-meta-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.95em;
+    margin-bottom: 10px;
+}
+.meeting-meta-details .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #333;
+}
+.meeting-meta-details .meta-item a {
+    text-decoration: none;
+    color: var(--primary-color);
+}
+.meeting-meta-details .meta-item a:hover {
+    text-decoration: underline;
+}
+
+/* --- WOD Display in Action Bar --- */
+
+.wod-display {
+    padding: 4px 40px;
+}  
+
+.wod-display label {
+    font-weight: bold;
+    color: #555;
+    margin: 0;
+}
+.wod-display span {
+    font-weight: bold;
+    font-size: 1.1em; 
+    color: #772432; 
 }
 
 .meeting-awards {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px 20px; /* Row and column gap */
-    font-size: 0.9em;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.95em;
     color: #333;
 }
-
-.meeting-awards span {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background-color: #f7f7f7;
-    padding: 4px 10px;
-    border-radius: 15px;
-    border: 1px solid #ddd;
+.meeting-awards .award-item {
+    font-weight: 500;
+}
+.meeting-awards .award-item strong {
+    font-weight: 700;
 }
 
-.meeting-awards .fa-trophy {
-    color: #f0ad4e; /* Gold color for trophy */
+
+/* --- EDIT MODE STYLES (to match screenshot) --- */
+
+/* Hide all edit-mode fields by default */
+.meeting-edit-details {
+    display: none;
+}
+.edit-mode-field {
+    display: block;
+    padding: 6px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+    width: 100%;
+    max-width: 500px;
+    box-sizing: border-box;
+}
+
+/* In non-edit mode, hide empty items */
+:not(.edit-mode-active) .meta-item.is-empty,
+:not(.edit-mode-active) hr.is-empty,
+:not(.edit-mode-active) .meeting-title.is-empty {
+    display: none;
+}
+
+/* When in edit mode... */
+.edit-mode-active .view-mode {
+    display: none; /* Hide ALL view-mode elements */
+}
+
+/* Show the edit-mode container */
+.edit-mode-active .meeting-edit-details {
+    display: block;
+    margin-top: 15px; /* Add space below "Meeting Agenda" title */
+}
+
+/* Style the editable items */
+.edit-mode-active .meeting-edit-details .meta-item {
+    display: flex;
+    flex-direction: column; /* Stack label and input */
+    align-items: flex-start; /* Align label to left */
+    gap: 4px; /* Space between label and input */
+    margin-bottom: 10px; /* Space between items */
+}
+.edit-mode-active .meeting-edit-details .meta-item span {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #333;
 }
 
 .action-bar {
@@ -70,6 +154,10 @@
     display: flex;
     align-items: center;
     gap: 15px;
+    font-weight: bold;
+    color: #555;
+    font-size: 0.9em;
+    margin: 0;
 }
 
 .action-bar-left #meeting-filter {
@@ -77,7 +165,10 @@
     max-width: 150px; /* Give it a reasonable max width */
     flex-grow: 0;
     flex-shrink: 1;
-    /* This ensures it doesn't have a min-width and can shrink */
+    font-weight: bold;
+    color: #555;
+    font-size: 0.9em;
+    margin: 0;
 }
 
 .session-cell-with-media {
@@ -125,17 +216,9 @@
     text-align: center;
 }
 
-/* Hidden Rows */
 .hidden-row {
     display: none;
 }
-.edit-mode-active .hidden-row {
-    display: table-row;
-}
-.edit-mode-active .hidden-row td {
-    background-color: #fffbe6; /* Light yellow */
-}
-
 
 /* --- Tooltip --- */
 .speech-tooltip-wrapper {
@@ -292,26 +375,28 @@
 /* --- Responsive adjustment for small screens --- */
 @media (max-width: 600px) {
     .agenda-header-container {
-        flex-direction: column; /* Stack logo and info */
-        align-items: center; /* Center them when stacked */
+        flex-direction: column;
+        align-items: center;
         gap: 15px;
     }
-
     .agenda-header-info {
-        text-align: center; /* Center text when stacked */
-    }
-
-    .agenda-header-info h1 {
         text-align: center;
-        font-size: 2em;
+        width: 100%;
     }
-
     .agenda-header-info .meeting-title {
-        font-size: 1.3em;
+        font-size: 1.8em;
     }
-
+    .meeting-meta-details,
     .meeting-awards {
-        justify-content: center; /* Center the award pills */
-        gap: 8px;
+        align-items: center;
+    }
+    
+    /* Center edit fields on mobile */
+    .edit-mode-active .meeting-edit-details .meta-item {
+        align-items: center;
+        width: 100%;
+    }
+    .edit-mode-active .meeting-edit-details .meta-item .edit-mode-field {
+         width: 90%;
     }
 }

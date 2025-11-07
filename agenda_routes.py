@@ -888,28 +888,46 @@ def create_from_template():
 @login_required
 def update_logs():
     data = request.get_json()
+
+    meeting_number = data.get('meeting_number')
     agenda_data = data.get('agenda_data', [])
     new_style = data.get('ge_style')
+    new_meeting_title = data.get('meeting_title')
+    new_wod = data.get('wod')
+    new_media_url = data.get('media_url')
 
-    if not agenda_data:
-        return jsonify(success=False, message="No data received"), 400
+    if not meeting_number:
+        return jsonify(success=False, message="Meeting number is missing"), 400
 
     try:
-        meeting_number = agenda_data[0].get('meeting_number')
-        if not meeting_number:
-            return jsonify(success=False, message="Meeting number is missing"), 400
-
         meeting = Meeting.query.filter_by(
             Meeting_Number=meeting_number).first()
         if not meeting:
             return jsonify(success=False, message="Meeting not found"), 404
 
-        # 1. Update and IMMEDIATELY commit the GE style change.
+        if new_meeting_title is not None:
+            meeting.Meeting_Title = new_meeting_title
+        if new_wod is not None:
+            meeting.WOD = new_wod
+
+        new_media_id = None
+        if new_media_url:
+            existing_media = Media.query.filter_by(url=new_media_url).first()
+            if existing_media:
+                new_media_id = existing_media.id
+            else:
+                new_media = Media(url=new_media_url)
+                db.session.add(new_media)
+                db.session.flush()
+                new_media_id = new_media.id
+
+        if new_media_id != meeting.media_id:
+            meeting.media_id = new_media_id
+
         if new_style and meeting.GE_Style != new_style:
             meeting.GE_Style = new_style
             db.session.commit()
 
-        # 2. Update the duration for the GE Report in the submitted data.
         for item in agenda_data:
             # CORRECTED ID: General Evaluation Report is 16
             if str(item.get('type_id')) == '16':
@@ -919,11 +937,9 @@ def update_logs():
                     item['duration_max'] = 5
                 break
 
-        # 3. Save all session data.
         for seq, item in enumerate(agenda_data, 1):
             _create_or_update_session(item, meeting_number, seq)
 
-        # 4. Recalculate start times using the now-committed GE style.
         _recalculate_start_times([meeting])
 
         # Commit the final session and time changes.
