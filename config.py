@@ -3,7 +3,11 @@ from datetime import timedelta
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+dotenv_path = os.path.join(BASE_DIR, '.env')
+
+# Load the .env file from that specific path
+load_dotenv(dotenv_path=dotenv_path)
 
 class Config:
     """Base configuration class."""
