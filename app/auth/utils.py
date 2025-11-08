@@ -74,6 +74,6 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'logged_in' not in session:
-            return redirect(url_for('main_bp.login'))
+            return redirect(url_for('auth_bp.login'))
         return f(*args, **kwargs)
     return decorated_function
