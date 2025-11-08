@@ -1,9 +1,8 @@
 # vpemaster/settings_routes.py
 
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
-from .main_routes import login_required
+from .auth.utils import login_required, is_authorized
 from .models import SessionType, User, LevelRole, Presentation
-from .auth import is_authorized
 from . import db
 
 settings_bp = Blueprint('settings_bp', __name__)

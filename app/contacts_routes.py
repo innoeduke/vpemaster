@@ -3,8 +3,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from . import db
 from .models import Contact, SessionLog
-from .main_routes import login_required
-from .auth import is_authorized
+from .auth.utils import login_required, is_authorized
 from datetime import date
 
 contacts_bp = Blueprint('contacts_bp', __name__)

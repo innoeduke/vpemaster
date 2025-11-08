@@ -2,9 +2,8 @@
 from flask import Blueprint, jsonify, render_template, request, session, current_app
 from . import db
 from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media
-from .main_routes import login_required
-from .auth import is_authorized
-from sqlalchemy import distinct, or_, and_
+from .auth.utils import login_required, is_authorized
+from sqlalchemy import distinct
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 import re

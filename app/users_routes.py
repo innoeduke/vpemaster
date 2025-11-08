@@ -1,9 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from . import db
 from .models import User, Contact
-from .auth import is_authorized
+from .auth.utils import is_authorized, login_required
 from werkzeug.security import generate_password_hash
-from .main_routes import login_required
 from datetime import date
 from sqlalchemy import or_
 import csv

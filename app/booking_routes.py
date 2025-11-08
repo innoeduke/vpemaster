@@ -1,9 +1,8 @@
 # vpemaster/booking_routes.py
 
-from .main_routes import login_required
+from .auth.utils import login_required, is_authorized
 from flask import Blueprint, render_template, request, session, jsonify, current_app
 from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole
-from .auth import is_authorized
 from . import db
 from datetime import datetime
 import re

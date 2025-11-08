@@ -5,7 +5,7 @@ content %}
 </h2>
 <form
   method="POST"
-  action="{{ url_for('main_bp.profile') }}"
+  action="{{ url_for('auth_bp.profile') }}"
   style="max-width: 700px; margin: 0 auto"
 >
   <input type="hidden" name="action" value="update_profile" />
@@ -95,7 +95,7 @@ content %}
 </h2>
 <form
   method="POST"
-  action="{{ url_for('main_bp.profile') }}"
+  action="{{ url_for('auth_bp.profile') }}"
   style="max-width: 700px; margin: 0 auto"
 >
   <input type="hidden" name="action" value="reset_password" />

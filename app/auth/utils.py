@@ -1,3 +1,6 @@
+from flask import redirect, url_for, session
+from functools import wraps
+
 # A single, centralized map of all permissions in the application.
 # We use sets for very fast "in" lookups.
 ROLE_PERMISSIONS = {
@@ -65,3 +68,12 @@ def is_authorized(user_role, feature):
 
     # Return True if the feature is in their permissions, False otherwise
     return feature in permissions
+
+# Decorator to check if user is logged in
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'logged_in' not in session:
+            return redirect(url_for('main_bp.login'))
+        return f(*args, **kwargs)
+    return decorated_function

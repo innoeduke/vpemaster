@@ -3,8 +3,7 @@
 from flask import Blueprint, render_template, request, jsonify, session
 from . import db
 from .models import Project
-from .main_routes import login_required
-from .auth import is_authorized
+from .auth.utils import login_required, is_authorized
 import markdown
 
 pathways_bp = Blueprint('pathways_bp', __name__)

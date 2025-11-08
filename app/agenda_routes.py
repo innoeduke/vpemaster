@@ -1,7 +1,7 @@
 # vpemaster/agenda_routes.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
-from .main_routes import login_required, session
+from .auth.utils import login_required 
 from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media
 from . import db
 from sqlalchemy import distinct, orm
@@ -17,7 +17,6 @@ from .utils import derive_current_path_level
 agenda_bp = Blueprint('agenda_bp', __name__)
 
 # --- Helper Functions for Data Fetching ---
-
 
 def _get_agenda_logs(meeting_number):
     """Fetches all agenda logs and related data for a specific meeting."""

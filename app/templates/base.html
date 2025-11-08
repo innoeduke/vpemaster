@@ -133,14 +133,14 @@
         </ul>
         {% if session.logged_in %}
         <div class="logout-container">
-          <a href="{{ url_for('main_bp.logout') }}" class="btn btn-primary">
+          <a href="{{ url_for('auth_bp.logout') }}" class="btn btn-primary">
             <i class="fas fa-sign-out-alt"></i>
             <span>Logout</span>
           </a>
         </div>
         {% else %}
         <div class="logout-container">
-          <a href="{{ url_for('main_bp.login') }}" class="btn btn-success">
+          <a href="{{ url_for('auth_bp.login') }}" class="btn btn-success">
             <i class="fas fa-sign-in-alt"></i>
             <span>Login</span>
           </a>
@@ -159,10 +159,10 @@
             <i class="fas fa-caret-down"></i>
           </div>
           <div class="profile-menu" id="profile-menu">
-            <a href="{{ url_for('main_bp.profile') }}"
+            <a href="{{ url_for('auth_bp.profile') }}"
               ><i class="fas fa-user-edit"></i> User Profile</a
             >
-            <a href="{{ url_for('main_bp.logout') }}"
+            <a href="{{ url_for('auth_bp.logout') }}"
               ><i class="fas fa-sign-out-alt"></i> Logout</a
             >
           </div>
