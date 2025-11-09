@@ -544,7 +544,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function createTypeSelect(selectedValue) {
     const select = document.createElement("select");
-    sessionTypes.forEach((type) => select.add(new Option(type.Title, type.id)));
+
+    const sections = sessionTypes.filter((type) => type.Is_Section);
+    const predefined = sessionTypes.filter(
+      (type) => !type.Is_Section && type.Predefined
+    );
+    const custom = sessionTypes.filter(
+      (type) => !type.Is_Section && !type.Predefined
+    );
+
+    const createOptGroup = (label, types) => {
+      const optgroup = document.createElement("optgroup");
+      optgroup.label = label;
+      // Sort types alphabetically within the group
+      types.sort((a, b) => a.id - b.id);
+      types.forEach((type) => {
+        optgroup.appendChild(new Option(type.Title, type.id));
+      });
+      return optgroup;
+    };
+
+    if (custom.length > 0) {
+      select.appendChild(createOptGroup("--- Custom Sessions ---", custom));
+    }
+    if (predefined.length > 0) {
+      select.appendChild(
+        createOptGroup("--- Predefined Roles ---", predefined)
+      );
+    }
+    if (sections.length > 0) {
+      select.appendChild(createOptGroup("--- Section Headers ---", sections));
+    }
+
     select.value = selectedValue;
     select.addEventListener("change", () => handleSectionChange(select));
     return select;

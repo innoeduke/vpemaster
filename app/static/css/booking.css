@@ -256,6 +256,11 @@ h1 {
     font-weight: bold;
 }
 
+.icon-btn.icon-btn-voted i {
+    color: #ffc107; /* A gold/trophy color */
+    transform: scale(1.1);
+}
+
 
 /* --- Responsive Design --- */
 @media screen and (max-width: 768px) {

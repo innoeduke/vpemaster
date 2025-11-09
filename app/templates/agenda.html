@@ -48,21 +48,6 @@
                            placeholder="Enter Meeting Video URL (https://...)">
                 </div>
             </div>
-
-            <div class="meeting-awards view-mode">
-                {% if selected_meeting.best_speaker %}
-                    <span class="award-item"><strong>Best Speaker:</strong> {{ selected_meeting.best_speaker.Name }}</span>
-                {% endif %}
-                {% if selected_meeting.best_evaluator %}
-                    <span class="award-item"><strong>Best Evaluator:</strong> {{ selected_meeting.best_evaluator.Name }}</span>
-                {% endif %}
-                {% if selected_meeting.best_tt_speaker %}
-                    <span class="award-item"><strong>Best Topic Speaker:</strong> {{ selected_meeting.best_tt_speaker.Name }}</span>
-                {% endif %}
-                {% if selected_meeting.best_roletaker %}
-                    <span class="award-item"><strong>Best Role Taker:</strong> {{ selected_meeting.best_roletaker.Name }}</span>
-                {% endif %}
-            </div>
         </div>
     </div>
 

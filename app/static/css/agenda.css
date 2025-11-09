@@ -317,6 +317,26 @@
     pointer-events: none;
 }
 
+.edit-mode-active .hidden-row {
+    display: table-row;
+}
+
+.edit-mode-active td select optgroup {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #000;
+    background-color: #f0f0f0;
+    font-style: italic;
+}
+
+.edit-mode-active td select option {
+    font-size: 1em;
+    font-weight: normal;
+    font-style: normal;
+    color: #333;
+    background-color: #fff;
+}
+
 .seq-no-readonly {
     background-color: #f2f2f2;
     text-align: center;

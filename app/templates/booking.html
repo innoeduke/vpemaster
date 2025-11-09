@@ -150,6 +150,27 @@
                                 <option value="{{ contact.id }}" {% if role.owner_id == contact.id %}selected{% endif %}>{{ contact.Name }}</option>
                                 {% endfor %}
                             </select>
+                            {% if role.owner_id and role.award_category %}
+                                {% if role.award_type %}
+                                    <button type="button" class="icon-btn icon-btn-voted" 
+                                            title="Cancel Vote ({{ role.award_type }})" 
+                                            onclick="handleVoteClick(this)"
+                                            data-meeting-number="{{ selected_meeting_number }}"
+                                            data-contact-id="{{ role.owner_id }}"
+                                            data-award-category="{{ role.award_category }}">
+                                        <i class="fas fa-trophy"></i>
+                                    </button>
+                                {% elif role.award_category_open %}
+                                    <button type="button" class="icon-btn" 
+                                            title="Vote"
+                                            onclick="handleVoteClick(this)"
+                                            data-meeting-number="{{ selected_meeting_number }}"
+                                            data-contact-id="{{ role.owner_id }}"
+                                            data-award-category="{{ role.award_category }}">
+                                        <i class="fas fa-vote-yea"></i>
+                                    </button>
+                                {% endif %}
+                            {% endif %}
                         </div>
                     {% else %}
                         {% if role.owner_id %}
@@ -256,6 +277,66 @@
                 window.location.reload();
             } else {
                 alert('Error: ' + data.message);
+            }
+        });
+    }
+    function handleVoteClick(buttonEl) {
+        const data = {
+            meeting_number: buttonEl.dataset.meetingNumber,
+            contact_id: parseInt(buttonEl.dataset.contactId, 10),
+            award_category: buttonEl.dataset.awardCategory
+        };
+
+        fetch('/booking/vote', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                // Update the UI dynamically without a full page reload
+                updateVoteButtonsUI(result.award_category, result.new_winner_id);
+            } else {
+                alert('Error: ' + result.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred.');
+        });
+    }
+
+    function updateVoteButtonsUI(category, newWinnerId) {
+        // Find all buttons in this award category
+        const allButtons = document.querySelectorAll(`button[data-award-category="${category}"]`);
+
+        allButtons.forEach(button => {
+            const buttonContactId = parseInt(button.dataset.contactId, 10);
+            const icon = button.querySelector('i');
+
+            if (newWinnerId === null) {
+                // A vote was CANCELED. Make all buttons in this category visible and votable.
+                button.style.display = 'inline-block';
+                button.classList.remove('icon-btn-voted');
+                button.title = 'Vote';
+                icon.classList.remove('fa-trophy');
+                icon.classList.add('fa-vote-yea');
+            
+            } else {
+                // A vote was CAST.
+                if (buttonContactId === newWinnerId) {
+                    // This is the new winner. Make it a trophy.
+                    button.style.display = 'inline-block';
+                    button.classList.add('icon-btn-voted');
+                    button.title = `Cancel Vote (${category})`;
+                    icon.classList.remove('fa-vote-yea');
+                    icon.classList.add('fa-trophy');
+                
+                } else {
+                    // This is another role in the same category. Hide it.
+                    button.style.display = 'none';
+                }
             }
         });
     }

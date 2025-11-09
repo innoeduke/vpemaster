@@ -12,8 +12,15 @@ from .utils import derive_current_path_level, ROLE_ICONS
 booking_bp = Blueprint('booking_bp', __name__)
 
 
-def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_contact_id):
+def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_contact_id, selected_meeting):
     """Helper function to get and process roles for the booking page."""
+
+    award_ids = {
+        'Best_Speaker': selected_meeting.Best_Speaker_ID if selected_meeting else None,
+        'Best_Evaluator': selected_meeting.Best_Evaluator_ID if selected_meeting else None,
+        'Best_TT': selected_meeting.Best_TT_ID if selected_meeting else None,
+        'Best_Roletaker': selected_meeting.Best_Roletaker_ID if selected_meeting else None,
+    }
 
     query = db.session.query(
         SessionLog.id.label('session_id'),
@@ -32,10 +39,9 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
 
     session_logs = query.all()
 
-    # Consolidate roles
     roles_dict = {}
     for log in session_logs:
-        role_key = log.role
+        role_key = log.role.strip() if log.role else ""
         speaker_name_for_display = None
         role_display = role_key
 
@@ -81,12 +87,40 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
                     roles_dict[role_key_unique]['owner_name'] = log.owner_name
                 roles_dict[role_key_unique]['speaker_name'] = None
 
-    # Convert dict to list and add icons
     roles_with_icons = []
     for key, role_data in roles_dict.items():
         role_data['icon'] = ROLE_ICONS.get(
             role_data['role_key'], ROLE_ICONS['Default'])
         role_data['session_id'] = role_data['session_ids'][0]
+
+        role_key = role_data['role_key']
+        owner_id = role_data['owner_id']
+        award_type = None  # Default
+        award_category_open = False
+        award_category = None
+
+        if owner_id and selected_meeting:
+            if role_key in ['Prepared Speaker', 'Keynote Speaker', 'Presenter']:
+                award_category = 'Best_Speaker'
+            elif role_key == 'Individual Evaluator':
+                award_category = 'Best_Evaluator'
+            elif role_key == 'Topics Speaker':
+                award_category = 'Best_TT'
+            elif role_key in ['Toastmaster', 'General Evaluator', 'Topicmaster', 'Grammarian', 'Timer', 'Ah-Counter']:
+                award_category = 'Best_Roletaker'
+
+            if award_category:
+                if owner_id == award_ids.get(award_category):  # Use .get() for safety
+                    award_type = award_category
+
+                # --- Step 3: Check if category is open (if category assigned and no winner) ---
+                if not award_type and award_ids.get(award_category) is None:
+                    award_category_open = True
+
+        role_data['award_type'] = award_type
+        role_data['award_category_open'] = award_category_open
+        role_data['award_category'] = award_category
+
         roles_with_icons.append(role_data)
 
     # Apply filtering and sorting
@@ -177,22 +211,65 @@ def booking(selected_meeting_number):
     # Get selected level
     selected_level = request.args.get('level', default=default_level, type=int)
 
-    # Get meeting info
-    upcoming_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
-        .filter(Meeting.Meeting_Date >= datetime.today().date())\
-        .order_by(Meeting.Meeting_Number.asc()).all()
+    today = datetime.today().date()
+    
+    soonest_upcoming_meeting = db.session.query(Meeting.Meeting_Number)\
+        .filter(Meeting.Meeting_Date >= today)\
+        .order_by(Meeting.Meeting_Number.asc())\
+        .first()
+    
+    default_meeting_num = soonest_upcoming_meeting[0] if soonest_upcoming_meeting else None
 
-    if not selected_meeting_number and upcoming_meetings:
-        selected_meeting_number = upcoming_meetings[0][0]
+    if is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
+        # Admin view: All meetings, sorted DESC (newest first)
+        future_meetings_query = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
+            .filter(Meeting.Meeting_Date >= today)\
+            .order_by(Meeting.Meeting_Number.desc()) # <-- CHANGED TO DESC
+
+        past_meetings_query = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
+            .filter(Meeting.Meeting_Date < today)\
+            .order_by(Meeting.Meeting_Number.desc())\
+            .limit(5)
+        
+        future_meetings_list = future_meetings_query.all()
+        past_meetings_list = past_meetings_query.all()
+        
+        # Newest future meetings, then newest past meetings
+        upcoming_meetings = future_meetings_list + past_meetings_list # <-- CHANGED ORDER
+    else:
+        # Member view: Only future meetings, sorted ASC (soonest first)
+        upcoming_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
+            .filter(Meeting.Meeting_Date >= today)\
+            .order_by(Meeting.Meeting_Number.asc()).all() # <-- KEPT AS ASC
+
+    if not selected_meeting_number:
+        if default_meeting_num:
+            selected_meeting_number = default_meeting_num
+        elif upcoming_meetings:
+            # Fallback to the first item in the list (for admins, this is newest past meeting)
+            selected_meeting_number = upcoming_meetings[0][0]
 
     if not selected_meeting_number:
         return render_template('booking.html', roles=[], upcoming_meetings=[],
                                selected_meeting_number=None, user_bookings_by_date=[],
-                               contacts=[], completed_roles=[], selected_level=selected_level)
+                               contacts=[], completed_roles=[], selected_level=selected_level, 
+                               selected_meeting=None)
+
+    selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_number).first()
+    best_award_ids = set()
+    if selected_meeting:
+        if selected_meeting.Best_TT_ID:
+           best_award_ids.add(selected_meeting.Best_TT_ID)
+        if selected_meeting.Best_Evaluator_ID:
+           best_award_ids.add(selected_meeting.Best_Evaluator_ID)
+        if selected_meeting.Best_Speaker_ID:
+           best_award_ids.add(selected_meeting.Best_Speaker_ID)
+        if selected_meeting.Best_Roletaker_ID:
+           best_award_ids.add(selected_meeting.Best_Roletaker_ID)
 
     # Get roles for the selected meeting
     roles_with_icons = _get_roles_for_meeting(
-        selected_meeting_number, user_role, current_user_contact_id)
+        selected_meeting_number, user_role, current_user_contact_id, selected_meeting)
 
     # Get user's upcoming roles for the timeline
     user_bookings_query = db.session.query(
@@ -297,7 +374,8 @@ def booking(selected_meeting_number):
                            user_bookings_by_date=user_bookings_timeline,
                            contacts=contacts,
                            completed_roles=completed_roles,
-                           selected_level=selected_level)
+                           selected_level=selected_level,
+                           best_award_ids=best_award_ids)
 
 
 @booking_bp.route('/booking/book', methods=['POST'])
@@ -374,3 +452,73 @@ def book_or_assign_role():
         # Consider logging the error e for debugging
         print(f"Error during booking/assignment: {e}")
         return jsonify(success=False, message="An internal error occurred. Please try again.")
+
+@booking_bp.route('/booking/vote', methods=['POST'])
+@login_required
+def vote_for_award():
+    if not is_authorized(session.get('user_role'), 'BOOKING_ASSIGN_ALL'):
+        return jsonify(success=False, message="Permission denied."), 403
+
+    data = request.get_json()
+    meeting_number = data.get('meeting_number')
+    contact_id = data.get('contact_id')
+    award_category = data.get('award_category') # e.g., 'Best_Speaker'
+
+    # --- START DEBUG LOGGING ---
+    # This will print to your Flask console
+    current_app.logger.debug("--- VOTE_FOR_AWARD DEBUG ---")
+    current_app.logger.debug(f"Raw JSON data received: {data}")
+    current_app.logger.debug(f"Extracted meeting_number: {meeting_number} (Type: {type(meeting_number)})")
+    current_app.logger.debug(f"Extracted contact_id: {contact_id} (Type: {type(contact_id)})")
+    current_app.logger.debug(f"Extracted award_category: {award_category} (Type: {type(award_category)})")
+    # --- END DEBUG LOGGING ---
+
+    if not all([meeting_number, contact_id, award_category]):
+        current_app.logger.warning(f"Validation failed: 'if not all(...)' was True.")
+        current_app.logger.warning(f"Boolean checks: meeting_number={bool(meeting_number)}, contact_id={bool(contact_id)}, award_category={bool(award_category)}")
+        return jsonify(success=False, message="Missing data."), 400
+
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found."), 404
+
+    new_winner_id = None
+    
+    try:
+        if award_category == 'Best_Speaker':
+            if meeting.Best_Speaker_ID == contact_id:
+                meeting.Best_Speaker_ID = None
+            else:
+                meeting.Best_Speaker_ID = contact_id
+            new_winner_id = meeting.Best_Speaker_ID
+        
+        elif award_category == 'Best_Evaluator':
+            if meeting.Best_Evaluator_ID == contact_id:
+                meeting.Best_Evaluator_ID = None
+            else:
+                meeting.Best_Evaluator_ID = contact_id
+            new_winner_id = meeting.Best_Evaluator_ID
+        
+        elif award_category == 'Best_TT':
+            if meeting.Best_TT_ID == contact_id:
+                meeting.Best_TT_ID = None
+            else:
+                meeting.Best_TT_ID = contact_id
+            new_winner_id = meeting.Best_TT_ID
+        
+        elif award_category == 'Best_Roletaker':
+            if meeting.Best_Roletaker_ID == contact_id:
+                meeting.Best_Roletaker_ID = None
+            else:
+                meeting.Best_Roletaker_ID = contact_id
+            new_winner_id = meeting.Best_Roletaker_ID
+        
+        else:
+            return jsonify(success=False, message="Invalid award category."), 400
+
+        db.session.commit()
+        return jsonify(success=True, new_winner_id=new_winner_id, award_category=award_category)
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
