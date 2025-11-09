@@ -39,6 +39,16 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
 
     session_logs = query.all()
 
+    is_admin_booker = is_authorized(user_role, 'BOOKING_ASSIGN_ALL')
+
+    # Define the list of roles that should always get a unique row
+    unique_entry_roles = ["Prepared Speaker", "Individual Evaluator", "Backup Speaker"]
+    
+    # If the user is an admin booker, add "Topics Speaker" to this list
+    # so they are not consolidated
+    if is_admin_booker:
+        unique_entry_roles.append("Topics Speaker")
+
     roles_dict = {}
     for log in session_logs:
         role_key = log.role.strip() if log.role else ""
@@ -46,7 +56,7 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
         role_display = role_key
 
         # Roles that must always have unique entries (one row per session log):
-        if role_key in ["Prepared Speaker", "Individual Evaluator", "Backup Speaker"]:
+        if role_key in unique_entry_roles:
 
             if role_key == "Individual Evaluator" and (log.Session_Title or ''):
                 speaker_name_for_display = log.Session_Title.strip()
@@ -368,8 +378,7 @@ def booking(selected_meeting_number):
                            roles=roles_with_icons,
                            upcoming_meetings=upcoming_meetings,
                            selected_meeting_number=selected_meeting_number,
-                           is_vpe_or_admin=(
-                               user_role in ['Admin', 'VPE', 'Meeting Manager']),
+                           is_admin_view=is_authorized(session.get('user_role'), 'BOOKING_ASSIGN_ALL'),
                            current_user_contact_id=current_user_contact_id,
                            user_bookings_by_date=user_bookings_timeline,
                            contacts=contacts,

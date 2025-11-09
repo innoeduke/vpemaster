@@ -1,3 +1,5 @@
+/* --- Base Styles --- */
+
 .booking-container {
     max-width: 900px;
     margin: 20px auto;
@@ -29,22 +31,22 @@ h1 {
 
 .booking-filter-container {
     display: flex;
-    justify-content: space-between; /* Pushes items apart */
+    justify-content: space-between;
     align-items: center;
     padding: 15px 0;
-    gap: 20px; /* Add space between filter and button */
-    flex-wrap: wrap; /* Allow wrapping on small screens */
+    gap: 20px;
+    flex-wrap: wrap;
 }
 
 .booking-filter-container .filter-left {
     display: flex;
     align-items: center;
     gap: 10px;
-    flex-shrink: 0; /* Don't let the filter shrink */
+    flex-shrink: 0;
 }
 
 .booking-filter-container .filter-right {
-    flex-grow: 1; /* Allow button to take space */
+    flex-grow: 1;
     text-align: right;
 }
 
@@ -63,7 +65,7 @@ h1 {
     align-items: center;
     gap: 10px;
     font-weight: bold;
-    padding: 8px 15px; /* A bit more padding for height */
+    padding: 8px 15px;
     height: auto;
     line-height: 1.5;
 }
@@ -72,11 +74,11 @@ h1 {
 /* --- Horizontal Timeline --- */
 .horizontal-timeline {
     display: flex;
-    justify-content: flex-start; /* Align items to the start */
+    justify-content: flex-start;
     position: relative;
     padding-top: 20px;
-    overflow-x: auto; /* Allow horizontal scrolling on small screens */
-    padding-bottom: 15px; /* Space for scrollbar */
+    overflow-x: auto;
+    padding-bottom: 15px;
 }
 
 .horizontal-timeline::before {
@@ -110,16 +112,12 @@ h1 {
 .timeline-marker {
     width: 0;
     height: 0;
-    background-color: transparent; /* No background */
-    border-radius: 0; /* Not a circle */
-    border: none; /* No white border */
-    
-    /* Create an upward-pointing triangle */
+    background-color: transparent;
+    border-radius: 0;
+    border: none;
     border-left: 8px solid transparent;
     border-right: 8px solid transparent;
-    border-bottom: 12px solid #772432; /* The triangle color */
-
-    /* Adjust margin to sit just on top of the line */
+    border-bottom: 12px solid #772432;
     margin: 2px 0 5px 0;
 }
 
@@ -149,22 +147,22 @@ h1 {
 }
 
 .timeline-event:hover {
-    background-color: #eef2f7; /* #f8e9eb; light theme marron*/
+    background-color: #eef2f7;
     border-color: #ccc;
 }
 
 .timeline-role {
-    cursor: default; /* Reset cursor for nested roles */
+    cursor: default;
     padding: 0;
     transition: none;
-    background-color: transparent; /* Ensure no residual background from previous logic */
+    background-color: transparent;
 }
 
 .timeline-role:hover {
-    background-color: transparent; /* Ensure no hover effect on the inner element */
+    background-color: transparent;
 }
 
-/* Booking Table */
+/* --- Base Booking Table (Desktop & Mobile) --- */
 .booking-table {
     width: 100%;
     border-collapse: collapse;
@@ -176,22 +174,20 @@ h1 {
 .booking-table th, .booking-table td {
     padding: 15px;
     text-align: left;
-    border: none; /* Removes all individual cell borders */
+    border: none; /* No cell borders */
 }
 
 .booking-table tr {
-   border-bottom: 1px solid #e0e0e0; /* Applies a clean line under each row */
+   border-bottom: 1px solid #e0e0e0; /* Row borders only */
 }
 
-.booking-table th
-{
+.booking-table th {
     background-color: #f8f9fa;
 }
 
 .booking-table tbody tr:last-child {
-    border-bottom: none; /* Removes the border from the very last row */
+    border-bottom: none;
 }
-
 
 /* Role Cell */
 .role-cell {
@@ -246,155 +242,34 @@ h1 {
 }
 
 .assign-controls select {
-    color: #333; /* Make text visible */
+    color: #333;
 }
 
-/* Style for unassigned role dropdowns for VPE/Admin */
 .admin-assign-select.unassigned-role {
-    border-color: #28a745; /* Green border */
-    background-color: #e9f7ef; /* Light green background */
+    border-color: #28a745;
+    background-color: #e9f7ef;
     font-weight: bold;
 }
 
 .icon-btn.icon-btn-voted i {
-    color: #ffc107; /* A gold/trophy color */
+    color: #ffc107;
     transform: scale(1.1);
 }
 
-
-/* --- Responsive Design --- */
-@media screen and (max-width: 768px) {
-    .booking-container {
-        margin: 10px 0;
-        padding: 0 15px;
-    }
-
-    .booking-header {
-        flex-direction: column;
-        align-items: stretch;
-        border: none;
-        background-color: transparent;
-        padding: 0;
-    }
-
-    .booking-filter-container {
-        flex-direction: column; /* Stack items vertically */
-        align-items: stretch; /* Make children full-width */
-        padding: 30px 0;
-    }
-
-    .booking-filter-container .filter-left,
-    .booking-filter-container .filter-right {
-        width: 100%;
-        text-align: center; /* Center content on mobile */
-    }
-    
-    .booking-filter-container .filter-left #meeting-filter {
-        flex-grow: 1; /* Allow filter to fill space */
-    }
-
-    .booking-filter-container .role-guide-link {
-        width: 100%;
-        box-sizing: border-box;
-        justify-content: center; /* Center button text/icon */
-    }
-
-    .booking-table thead {
-        display: none;
-    }
-
-    .booking-table, .booking-table tbody, .booking-table tr, .booking-table td {
-        display: block;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .booking-table tr {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 0.75rem;
-        gap: 10px;
-    }
-
-    .booking-table td {
-        border: none;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        min-height: 38px;
-    }
-
-    .booking-table td:nth-of-type(1) { /* Role */
-        flex: 3;
-        font-weight: bold;
-        justify-content: flex-start;
-        text-align: left;
-    }
-
-    .booking-table td:nth-of-type(2) { /* Owner */
-        flex: 1.5;
-        justify-content: flex-end;
-    }
-
-    .booking-table td:nth-of-type(3) { /* Action */
-        flex: 2.5;
-        justify-content: flex-end;
-    }
-
-    /* --- VPE/Admin Mobile View Overrides --- */
-    .booking-table.is-admin-view tr {
-        flex-wrap: wrap; /* Allow items to wrap to the next line */
-        padding: 0.5rem 0.75rem; /* Adjust padding slightly */
-    }
-
-    .booking-table.is-admin-view .role-cell {
-        flex-basis: 100%; /* Role takes the full top row */
-        margin-bottom: 8px; /* Add space between role and dropdown */
-        justify-content: flex-start; /* Align left */
-        min-height: auto;
-    }
-
-    .booking-table.is-admin-view .owner-name-cell {
-        display: none; /* Hide the redundant owner name cell */
-    }
-
-    .booking-table.is-admin-view .action-cell {
-        flex-basis: 100%; /* Dropdown takes the full bottom row */
-        justify-content: flex-start; /* Align left */
-    }
-
-    .booking-table.is-admin-view .assign-controls,
-    .booking-table.is-admin-view .admin-assign-select {
-        width: 100%; /* Make dropdown and its container full-width */
-        font-size: 0.9em;
-    }
-}
-
-/* Role Cell modifications */
-.booking-table .role-cell {
-    /* Align icon and text container to be side-by-side */
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: bold;
-}
-
+/* --- Role Cell Text Stacking --- */
 .booking-table .role-display-text {
-    /* Make the text content stack vertically */
     display: flex;
     flex-direction: column;
-    line-height: 1.2; /* Tighter line spacing for stacked text */
+    line-height: 1.2;
 }
 
 .booking-table .speaker-for {
-    font-size: 0.75em; /* Smaller font for the speaker's name */
-    font-weight: normal; /* Less bold for the speaker's name */
-    color: #555; /* A bit softer color */
+    font-size: 0.75em;
+    font-weight: normal;
+    color: #555;
 }
 
+/* --- Completed Roles --- */
 .completed-roles-section-header {
     display: flex;
     justify-content: space-between;
@@ -402,7 +277,7 @@ h1 {
 }
 
 .completed-roles-section-header .form-group {
-    margin-bottom: 15px; /* Aligns baseline with the header */
+    margin-bottom: 15px;
 }
 
 .completed-roles-section-header .form-group label {
@@ -412,7 +287,7 @@ h1 {
 }
 
 .completed-roles-container {
-    margin-top: 0; /* Was 30px, now handled by header */
+    margin-top: 0;
     padding: 15px;
     background-color: #f8f9fa;
     border-radius: 8px;
@@ -424,11 +299,12 @@ h1 {
     border: 1px solid #ccc;
 }
 
+/* Default state for completed-roles-list (mobile) */
 .completed-roles-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    max-height: 200px; /* Limit height and make scrollable */
+    max-height: 200px;
     overflow-y: auto;
 }
 
@@ -455,40 +331,183 @@ h1 {
     margin-left: 10px;
 }
 
+/* --- Role Guide (obsolete, filter-right) --- */
 .role-guide-container {
     text-align: center;
-    margin-bottom: 30px; /* Add space below the button */
+    margin-bottom: 30px;
 }
 
 .role-guide-container .btn-info {
-    /* Use the existing btn-info style but add an icon gap */
     display: inline-flex;
     align-items: center;
     gap: 10px;
     font-weight: bold;
-    padding: 8px 15px; /* A bit more padding for height */
+    padding: 8px 15px;
     height: auto;
     line-height: 1.5;
 }
 
+
+/* --- Mobile Responsive Design --- */
+@media screen and (max-width: 768px) {
+    .booking-container {
+        margin: 10px 0;
+        padding: 0 15px;
+    }
+
+    .booking-header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+    }
+
+    .booking-filter-container {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 30px 0;
+    }
+
+    .booking-filter-container .filter-left,
+    .booking-filter-container .filter-right {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .booking-filter-container .filter-left #meeting-filter {
+        flex-grow: 1;
+    }
+
+    .booking-filter-container .role-guide-link {
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: center;
+    }
+
+    /* --- Mobile Table Overrides --- */
+    .booking-table thead {
+        display: none;
+    }
+
+    /* Make table and tbody stack */
+    .booking-table, .booking-table tbody {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Make rows flex containers */
+    .booking-table tr {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 0.75rem;
+        gap: 10px;
+    }
+
+    /* Make cells flex items */
+    .booking-table td {
+        padding: 0;
+        display: flex;
+        align-items: center;
+        min-height: 38px;
+    }
+
+    .booking-table td:nth-of-type(1) { /* Role */
+        flex: 3;
+        font-weight: bold;
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+    .booking-table td:nth-of-type(2) { /* Owner */
+        flex: 1.5;
+        justify-content: flex-end;
+    }
+
+    .booking-table td:nth-of-type(3) { /* Action */
+        flex: 2.5;
+        justify-content: flex-end;
+    }
+
+    /* --- VPE/Admin Mobile View Overrides --- */
+    .booking-table.is-admin-view tr {
+        flex-wrap: wrap;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .booking-table.is-admin-view .role-cell {
+        flex-basis: 100%;
+        margin-bottom: 8px;
+        justify-content: flex-start;
+        min-height: auto;
+    }
+
+    .booking-table.is-admin-view .owner-name-cell {
+        display: none;
+    }
+
+    .booking-table.is-admin-view .action-cell {
+        flex-basis: 100%;
+        justify-content: flex-start;
+    }
+
+    .booking-table.is-admin-view .assign-controls,
+    .booking-table.is-admin-view .admin-assign-select {
+        width: 100%;
+        font-size: 0.9em;
+    }
+}
+
+
+/* --- Desktop Responsive Design --- */
 @media (min-width: 769px) {
+
+    /* --- Admin Desktop Table Layout Fix --- */
+    
+    .booking-table.is-admin-view {
+        table-layout: fixed;
+    }
+    
+    /* Define the column widths */
+    .booking-table.is-admin-view th:nth-of-type(1),
+    .booking-table.is-admin-view td:nth-of-type(1) { /* Role */
+        width: 35%; 
+    }
+    
+    .booking-table.is-admin-view th:nth-of-type(2),
+    .booking-table.is-admin-view td:nth-of-type(2) { /* Owner */
+        width: 30%;
+    }
+
+    /* Align the HEADER text to the right */
+    .booking-table.is-admin-view th:nth-of-type(3) { /* Action TH */
+        width: 35%;
+        text-align: right;
+    }
+
+    /* Make the CELL a flex container and align its content to the right */
+    .booking-table.is-admin-view td:nth-of-type(3) { /* Action TD */
+        width: 35%;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center; /* Good for vertical centering */
+    }
+
+    /* --- Desktop Completed Roles Grid --- */
     .completed-roles-list {
         display: grid;
-        /* This tells the grid to fill columns first, not rows */
         grid-auto-flow: column;
-        /* This defines 2 equal-width columns */
         grid-auto-columns: 1fr;
-        /* This is the key: it sets the "break point" at 3 items */
+        /* Set break point at 3 items per column */
         grid-template-rows: repeat(3, auto); 
-        /* Adds the 25px gap only between columns */
-        gap: 0 25px;
-
-        /* These overrides from before are still needed */
+        gap: 0 25px; /* Column gap only */
         max-height: none; 
         overflow-y: visible;
     }
 
-    /* This hides the border under the 3rd item (last in the first column) */
+    /* Hide border of last item in first column */
     .completed-roles-list li:nth-child(3) {
         border-bottom: none;
     }

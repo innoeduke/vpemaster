@@ -142,7 +142,7 @@
                     {% endif %}
                 </td>
                 <td class="action-cell">
-                    {% if is_vpe_or_admin %}
+                    {% if is_admin_view %}
                         <div class="assign-controls">
                             <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
                                 <option value="0">-- Assign / Unassign --</option>
@@ -192,153 +192,10 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const isVpeOrAdmin = {{ is_vpe_or_admin|tojson }};
-        // Define levelFilter *inside* DOMContentLoaded
-        const levelFilter = document.getElementById('level-filter');
-        // Define meetingFilter *inside* DOMContentLoaded as well for consistency
-        const meetingFilter = document.getElementById('meeting-filter');
-
-        if (isVpeOrAdmin) {
-            document.querySelectorAll('.admin-assign-select').forEach(select => {
-                select.addEventListener('change', function() {
-                    const sessionId = this.dataset.sessionId;
-                    const roleKey = this.dataset.roleKey;
-                    const contactId = this.value;
-                    assignRole(sessionId, roleKey, contactId);
-                });
-            });
-        }
-
-        // --- MOVE THIS BLOCK INSIDE ---
-        if (levelFilter) {
-            levelFilter.addEventListener('change', function() {
-                const selectedLevel = this.value;
-                // Get current meeting selection *inside* the event listener
-                const currentMeeting = meetingFilter ? meetingFilter.value : '{{ selected_meeting_number or "" }}'; // Fallback if meetingFilter not found
-                let url = `/booking/${currentMeeting || ''}`; // Use currentMeeting or fallback
-                if (selectedLevel) {
-                    url += `?level=${selectedLevel}`; // Add level parameter if selected
-                }
-                window.location.href = url; // Navigate to the new URL
-            });
-        }
-        // --- END MOVED BLOCK ---
-
-        // Update selected level display if a level is selected
-        const selectedLevelDisplay = document.getElementById('selected-level-display');
-        const initialSelectedLevel = {{ selected_level|tojson }};
-        if (selectedLevelDisplay && initialSelectedLevel) {
-            selectedLevelDisplay.textContent = initialSelectedLevel;
-        }
-
-        document.querySelectorAll('.timeline-event').forEach(item => {
-            item.addEventListener('click', function() {
-                const meetingNumber = this.dataset.meetingNumber;
-                // Get current level selection *inside* the event listener
-                const currentLevel = levelFilter ? levelFilter.value : ''; // Get current level selection or empty string
-                if (meetingNumber) {
-                        let url = '/booking/' + meetingNumber;
-                        if (currentLevel) {
-                            url += `?level=${currentLevel}`; // Preserve level filter
-                        }
-                    window.location.href = url;
-                }
-            });
-        });
-    }); // End of DOMContentLoaded listener
-
-    // Functions remain outside DOMContentLoaded as they are definitions
-    function bookOrCancelRole(sessionId, action, roleKey) {
-        fetch('/booking/book', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sessionId, action: action, role_key: roleKey })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.reload(true); // Force reload from server
-            } else {
-                alert('Error: ' + data.message);
-            }
-        });
-    }
-
-    function assignRole(sessionId, roleKey, contactId) {
-            fetch('/booking/book', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ session_id: sessionId, action: 'assign', role_key: roleKey, contact_id: contactId })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.reload();
-            } else {
-                alert('Error: ' + data.message);
-            }
-        });
-    }
-    function handleVoteClick(buttonEl) {
-        const data = {
-            meeting_number: buttonEl.dataset.meetingNumber,
-            contact_id: parseInt(buttonEl.dataset.contactId, 10),
-            award_category: buttonEl.dataset.awardCategory
-        };
-
-        fetch('/booking/vote', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(response => response.json())
-        .then(result => {
-            if (result.success) {
-                // Update the UI dynamically without a full page reload
-                updateVoteButtonsUI(result.award_category, result.new_winner_id);
-            } else {
-                alert('Error: ' + result.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred.');
-        });
-    }
-
-    function updateVoteButtonsUI(category, newWinnerId) {
-        // Find all buttons in this award category
-        const allButtons = document.querySelectorAll(`button[data-award-category="${category}"]`);
-
-        allButtons.forEach(button => {
-            const buttonContactId = parseInt(button.dataset.contactId, 10);
-            const icon = button.querySelector('i');
-
-            if (newWinnerId === null) {
-                // A vote was CANCELED. Make all buttons in this category visible and votable.
-                button.style.display = 'inline-block';
-                button.classList.remove('icon-btn-voted');
-                button.title = 'Vote';
-                icon.classList.remove('fa-trophy');
-                icon.classList.add('fa-vote-yea');
-            
-            } else {
-                // A vote was CAST.
-                if (buttonContactId === newWinnerId) {
-                    // This is the new winner. Make it a trophy.
-                    button.style.display = 'inline-block';
-                    button.classList.add('icon-btn-voted');
-                    button.title = `Cancel Vote (${category})`;
-                    icon.classList.remove('fa-vote-yea');
-                    icon.classList.add('fa-trophy');
-                
-                } else {
-                    // This is another role in the same category. Hide it.
-                    button.style.display = 'none';
-                }
-            }
-        });
-    }
+    // Pass Python data to global JS variables used by booking.js
+    var isAdminView = {{ is_admin_view|tojson }};
+    var selectedMeetingNumber = {{ selected_meeting_number|tojson }};
+    var selectedLevel = {{ selected_level|tojson }};
 </script>
+<script src="{{ url_for('static', filename='js/booking.js') }}"></script>
 {% endblock %}
