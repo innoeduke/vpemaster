@@ -32,6 +32,15 @@
                            placeholder="Enter Meeting Title (Theme)">
                 </div>
                 <div class="meta-item">
+                    <span><strong>Meeting Type:</strong></span>
+                    <select id="edit-meeting-type" class="edit-mode-field">
+                        <option value="" {% if not selected_meeting.type %}selected{% endif %}>-- Select Type --</option>
+                        {% for type in meeting_types.keys() %} 
+                        <option value="{{ type }}" {% if selected_meeting.type == type %}selected{% endif %}>{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="meta-item">
                     <span><strong>Word of the Day:</strong></span>
                     <input type="text" 
                            id="edit-wod" 
@@ -248,20 +257,6 @@
                         <td><label for="meeting_number">Meeting Number:</label></td>
                         <td><input type="number" id="meeting_number" name="meeting_number" required></td>
                     </tr>
-                    
-                    <tr>
-                        <td><label for="meeting_title">Meeting Title (Theme):</label></td>
-                        <td><input type="text" id="meeting_title" name="meeting_title" placeholder="e.g. Education Program"></td>
-                    </tr>
-                    <tr>
-                        <td><label for="wod">Word of the Day:</label></td>
-                        <td><input type="text" id="wod" name="wod" placeholder="e.g. Enhance"></td>
-                    </tr>
-                    <tr>
-                        <td><label for="media_url">Media URL (Video):</label></td>
-                        <td><input type="url" id="media_url" name="media_url" placeholder="https://... (optional)"></td>
-                    </tr>
-                    
                     <tr>
                         <td><label for="meeting_date">Meeting Date:</label></td>
                         <td><input type="date" id="meeting_date" name="meeting_date" required></td>

@@ -125,7 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const dataToSave = Array.from(tableBody.querySelectorAll("tr")).map(
       getRowData
     );
-    const newGeStyle = geStyleSelect.value;
     const meetingNumber = meetingFilter.value;
 
     if (!meetingNumber) {
@@ -139,20 +138,17 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const newMeetingTitle = document.getElementById("edit-meeting-title").value;
-    const newWod = document.getElementById("edit-wod").value;
-    const newMediaUrl = document.getElementById("edit-media-url").value;
-
     fetch("/agenda/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         meeting_number: meetingNumber,
         agenda_data: dataToSave,
-        ge_style: newGeStyle,
-        meeting_title: newMeetingTitle,
-        wod: newWod,
-        media_url: newMediaUrl,
+        ge_style: geStyleSelect.value,
+        meeting_title: document.getElementById("edit-meeting-title").value,
+        meeting_type: document.getElementById("edit-meeting-type").value,
+        wod: document.getElementById("edit-wod").value,
+        media_url: document.getElementById("edit-media-url").value,
       }),
     })
       .then((response) => response.json())

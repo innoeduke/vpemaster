@@ -59,6 +59,7 @@ class Project(db.Model):
 class Meeting(db.Model):
     __tablename__ = 'Meetings'
     ID = db.Column(db.Integer, primary_key=True)
+    type = db.Column(db.String(255), default='Keynote Speech')
     Meeting_Number = db.Column(db.SmallInteger, unique=True, nullable=False)
     Meeting_Date = db.Column(db.Date)
     Meeting_Title = db.Column(db.String(255))

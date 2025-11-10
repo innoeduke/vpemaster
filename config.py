@@ -33,3 +33,13 @@ class Config:
         "Visionary Communication": "VC",
         "Distinguished Toastmasters": "DTM"
     }
+
+    MEETING_TYPES = {
+        "Club Election": 45,
+        "Debate": 40,
+        "Keynote Speech": 20, # This is a guess, please verify
+        "Panel Discussion": 44,
+        "Presentation": 43, # This is a guess, please verify
+        "Speech Contest": 3, # In case of Speech Marathon, the host is default to Toastmaster
+        "Speech Marathon": 3 # In case of Speech Marathon, the host is default to Toastmaster
+    }

@@ -125,15 +125,17 @@
             {% for role in roles %}
             <tr data-session-id="{{ role.session_id }}">
                 <td class="role-cell">
-                    <i class="fas {{ role.icon }}"></i>
-                    <div class="role-display-text">
-                        <span>{{ role.role }}</span>
-                        {% if role.speaker_name %}
-                            <span class="speaker-for">for {{ role.speaker_name }}</span>
-                        {% endif %}
+                    <div class="role-cell-content">
+                        <i class="fas {{ role.icon }}"></i>
+                        <div class="role-display-text">
+                            <span>{{ role.role }}</span>
+                            {% if role.speaker_name %}
+                                <span class="speaker-for">for {{ role.speaker_name }}</span>
+                            {% endif %}
+                        </div>
                     </div>
-                    {% if is_admin_view %} 
-                        {% if role.owner_id and role.award_category %}
+                    <div class="role-cell-actions">
+                        {% if is_admin_view and role.owner_id and role.award_category %}
                             {% if role.award_type %}
                                 <button type="button" class="icon-btn icon-btn-voted" 
                                         title="Cancel Vote ({{ role.award_type }})" 
@@ -159,12 +161,12 @@
                                         data-meeting-number="{{ selected_meeting_number }}"
                                         data-contact-id="{{ role.owner_id }}"
                                         data-award-category="{{ role.award_category }}"
-                                        style="display: none;"> 
+                                        style="display: none;"> {# <-- THE FIX #}
                                     <i class="fas fa-vote-yea"></i>
                                 </button>
                             {% endif %}
                         {% endif %}
-                    {% endif %}    
+                    </div>
                 </td>
                 <td class="action-cell">
                     {% if is_admin_view %}

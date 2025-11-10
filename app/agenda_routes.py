@@ -386,7 +386,8 @@ def agenda():
                            meeting_templates=meeting_templates,
                            series_initials=SERIES_INITIALS,
                            presentations=presentations_data,
-                           presentation_series=presentation_series)
+                           presentation_series=presentation_series,
+                           meeting_types=current_app.config['MEETING_TYPES'])
 
 
 def _get_export_data(meeting_number):
@@ -577,13 +578,16 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
 
     master_data = [
         presi_contact.Name if presi_contact else "",  # Excomm
-        meeting.Meeting_Date.strftime('%Y/%m/%d'),  # Meeting Date
-        meeting.Meeting_Number,                     # Meeting Number
-        pres_log.Session_Title if pres_log else "",  # Meeting Title
+        meeting.Meeting_Date.strftime('%Y/%m/%d'),  
+        meeting.Meeting_Number,                     
+        meeting.Meeting_Title, 
         pres_contact.Name if pres_contact else "",  # Keynote Speaker
-        "",                                         # Meeting Video Url (N/A)
-        gram_log.Session_Title if gram_log else "",  # Word of the Day
-        "", "", "", ""                              # Awards (N/A)
+        meeting.media.url if meeting.media else "", # Meeting Video Url
+        meeting.WOD if meeting.WOD else "",
+        meeting.best_tt_speaker.Name if meeting.best_tt_speaker else "",
+        meeting.best_roletaker.Name if meeting.best_roletaker else "",
+        meeting.best_speaker.Name if meeting.best_speaker else "",
+        meeting.best_evaluator.Name if meeting.best_evaluator else ""                           # Awards (N/A)
     ]
     ws.append(master_data)
     ws.append([])
@@ -697,7 +701,13 @@ def export_agenda(meeting_number):
     Sheet 1: Timed, formatted agenda.
     Sheet 2: PowerBI-style raw data dump.
     """
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    meeting = Meeting.query.options(
+        orm.joinedload(Meeting.best_tt_speaker),
+        orm.joinedload(Meeting.best_evaluator),
+        orm.joinedload(Meeting.best_speaker),
+        orm.joinedload(Meeting.best_roletaker),
+        orm.joinedload(Meeting.media)
+    ).filter_by(Meeting_Number=meeting_number).first()
     if not meeting:
         return "Meeting not found", 404
 
@@ -774,9 +784,9 @@ def create_from_template():
             Meeting_Date=meeting_date,
             Start_Time=start_time,
             GE_Style=ge_style,
-            Meeting_Title=meeting_title,  # <-- ADDED
-            WOD=wod,                     # <-- ADDED
-            media_id=new_media_id        # <-- ADDED
+            Meeting_Title=meeting_title,  
+            WOD=wod,                     
+            media_id=new_media_id        
         )
         db.session.add(meeting)
     else:
@@ -892,6 +902,7 @@ def update_logs():
     agenda_data = data.get('agenda_data', [])
     new_style = data.get('ge_style')
     new_meeting_title = data.get('meeting_title')
+    new_meeting_type = data.get('meeting_type')
     new_wod = data.get('wod')
     new_media_url = data.get('media_url')
 
@@ -906,6 +917,10 @@ def update_logs():
 
         if new_meeting_title is not None:
             meeting.Meeting_Title = new_meeting_title
+        
+        if new_meeting_type is not None: 
+            meeting.type = new_meeting_type
+
         if new_wod is not None:
             meeting.WOD = new_wod
 
