@@ -14,6 +14,9 @@ speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
 def _get_project_code(log):
     """Helper function to get the project code for a given log."""
+    if log and log.Project_ID == 60:
+        return "TM1.0"
+
     if not log or not log.project or not log.owner or not log.owner.Working_Path:
         return None
 
@@ -248,7 +251,14 @@ def get_speech_log_details(log_id):
             return jsonify(success=False, message="Permission denied. You can only view details for your own speech logs."), 403
 
     project_code = _get_project_code(log)
-    level = int(project_code.split('.')[0]) if project_code else 1
+    level = 1  # Default level
+    if project_code and project_code != "TM1.0":
+        try:
+            # Try to get level from codes like "PM1.1"
+            level = int(project_code.split('.')[0])
+        except (ValueError, IndexError):
+            level = 1 # Fallback if split fails
+    # If project_code is "TM1.0" or None, level just stays 1
 
     pathway = log.owner.Working_Path if log.owner and log.owner.Working_Path else "Presentation Mastery"
 

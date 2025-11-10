@@ -278,6 +278,8 @@ def agenda():
 
                 series_initial = SERIES_INITIALS.get(series_key, "")
                 project_code_str = f"{series_initial}{presentation.code}"
+        elif log.Project_ID == 60:
+            project_code_str = "TM1.0"
         elif project and owner and owner.Working_Path:  # Else if pathway...
             pathway_suffix = pathway_mapping.get(owner.Working_Path)
             if pathway_suffix:
@@ -448,17 +450,48 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
 
     start_time = log.Start_Time.strftime('%H:%M') if log.Start_Time else ''
 
-    # Session and Speech Titles
-    session_title = log.Session_Title if log.Session_Title else (
-        session_type.Title if session_type else '')
-    if log.Type_ID == 31 and log.Session_Title:  # Individual Evaluation
-        session_title = f"Evaluation for {log.Session_Title}"
-    elif log.Project_ID and contact and contact.Working_Path:
+    SERIES_INITIALS = {
+        "Successful Club Series": "SC",
+        "Better Speaker Series": "BS",
+        "Leadership Excellence Series": "LE"
+    }
+
+    session_title_str = log.Session_Title or (session_type.Title if session_type else '')
+    project_code_str = None
+
+    if log.Project_ID == 60:
+        project_code_str = "TM1.0"
+        if not log.Session_Title and project:
+            session_title_str = project.Project_Name
+
+    # Check for Pathway Speech (Type 30)
+    if session_type and session_type.id == 30 and project:
         project_code = _get_project_code_str(project, contact, pathway_mapping)
         pathway_abbr = pathway_mapping.get(contact.Working_Path, "")
         if project_code:
-            title_part = f'"{log.Session_Title}" ' if log.Session_Title else ''
-            session_title = f"{title_part}({pathway_abbr}{project_code})"
+            project_code_str = f"{pathway_abbr}{project_code}"
+        if not log.Session_Title:  # If title is blank, use project name
+            session_title_str = project.Project_Name
+    
+    # Check for Presentation (Type 43)
+    elif session_type and session_type.id == 43 and log.Project_ID:
+        # We must query Presentation table here, as 'project' will be None
+        presentation = Presentation.query.get(log.Project_ID)
+        if presentation:
+            series_key = " ".join(presentation.series.split()) if presentation.series else ""
+            series_initial = SERIES_INITIALS.get(series_key, "")
+            project_code_str = f"{series_initial}{presentation.code}"
+            if not log.Session_Title: # If title is blank, use presentation title
+                session_title_str = presentation.title
+
+    # Format the final title
+    if project_code_str:
+        # Add quotes, removing any existing ones first
+        title_part = f'"{session_title_str.replace("`", "").replace("`", "")}"'
+        session_title = f"{project_code_str} {title_part}"
+    else:
+        session_title = session_title_str
+    
     if session_title:
         session_title = session_title.replace('""', '"')
 

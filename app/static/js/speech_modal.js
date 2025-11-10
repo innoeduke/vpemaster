@@ -1,9 +1,34 @@
 // static/js/speech_modal.js
 
-// Assume allProjects, pathwayMap, allPresentations, presentationSeries
-// are now globally available from the main HTML template script block.
+function toggleGeneric(isGeneric) {
+  const levelGroup = document.getElementById("level-select-group");
+  const projectGroup = document.getElementById("project-select-group");
+  const pathwaySelect = document.getElementById("edit-pathway");
+  const levelSelect = document.getElementById("edit-level");
+  const projectSelect = document.getElementById("edit-project");
 
-// Remove the initializePresentationData function as it's handled in the template now.
+  if (isGeneric) {
+    // HIDE pathway fields and clear them
+    levelGroup.style.display = "none";
+    projectGroup.style.display = "none";
+    pathwaySelect.disabled = true;
+    levelSelect.disabled = true;
+    projectSelect.disabled = true;
+
+    // Clear selections
+    pathwaySelect.value = "";
+    levelSelect.value = "";
+    projectSelect.value = "";
+    projectSelect.innerHTML = '<option value="">-- Select --</option>';
+  } else {
+    // SHOW pathway fields
+    levelGroup.style.display = "block";
+    projectGroup.style.display = "block";
+    pathwaySelect.disabled = false;
+    levelSelect.disabled = false;
+    projectSelect.disabled = false;
+  }
+}
 
 function openSpeechEditModal(
   logId,
@@ -20,6 +45,7 @@ function openSpeechEditModal(
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
+        // --- 1. Set simple values ---
         document.getElementById("edit-log-id").value = data.log.id;
         document.getElementById("edit-speech-title").value =
           data.log.Session_Title || "";
@@ -30,6 +56,7 @@ function openSpeechEditModal(
         document.getElementById("edit-session-type-title").value =
           currentSessionType;
 
+        // --- 2. Get all elements ---
         const pathwaySeriesSelect = document.getElementById("edit-pathway");
         const levelSelectGroup = document.getElementById("level-select-group");
         const levelSelect = document.getElementById("edit-level");
@@ -42,7 +69,9 @@ function openSpeechEditModal(
         const labelProjectPresentation = document.getElementById(
           "label-project-presentation"
         );
+        const genericCheckbox = document.getElementById("edit-is-generic"); // Get checkbox
 
+        // --- 3. Clear dynamic dropdowns ---
         pathwaySeriesSelect.innerHTML = "";
         projectPresentationSelect.innerHTML =
           '<option value="">-- Select --</option>';
@@ -51,11 +80,13 @@ function openSpeechEditModal(
         let presentationLevel = null;
 
         if (currentSessionType === "Presentation") {
-          // --- Presentation Mode ---
+          // --- 4. Presentation Mode ---
           labelPathwaySeries.textContent = "Education Series:";
-          // No Level Label needed, hide the group
           labelProjectPresentation.textContent = "Presentation Title:";
-          levelSelectGroup.style.display = "none";
+          levelSelectGroup.style.display = "none"; // Hide Level dropdown
+          genericCheckbox.checked = false; // Uncheck Generic
+          genericCheckbox.disabled = true; // Disable Generic
+          toggleGeneric(false); // Ensure pathway fields are visible (for pathway select)
 
           // Find the current presentation to determine its series and level
           const currentPresentation = Array.isArray(allPresentations)
@@ -70,7 +101,6 @@ function openSpeechEditModal(
 
           // Populate Series dropdown
           pathwaySeriesSelect.add(new Option("-- Select Series --", ""));
-          // Use the globally available presentationSeries
           if (Array.isArray(presentationSeries)) {
             presentationSeries.forEach((series) => {
               pathwaySeriesSelect.add(new Option(series, series));
@@ -82,14 +112,15 @@ function openSpeechEditModal(
           }
           pathwaySeriesSelect.value = currentSeries; // Select the correct series
 
-          // Populate Presentation options based on the determined series and level
-          updatePresentationOptions(data.log.Project_ID, presentationLevel); // Pass level
+          // Populate Presentation options
+          updatePresentationOptions(data.log.Project_ID, presentationLevel);
         } else {
-          // --- Pathway Speech Mode (Default) ---
+          // --- 5. Pathway Speech Mode (Default) ---
           labelPathwaySeries.textContent = "Pathway:";
           labelLevel.textContent = "Level:";
           labelProjectPresentation.textContent = "Project:";
-          levelSelectGroup.style.display = "block";
+          // Note: toggleGeneric() will manage levelSelectGroup display
+          genericCheckbox.disabled = false; // Enable Generic checkbox
 
           // Populate Pathway dropdown
           pathwaySeriesSelect.add(new Option("-- Select Pathway --", ""));
@@ -101,67 +132,80 @@ function openSpeechEditModal(
             console.error("pathwayMap is not defined or invalid.");
           }
 
+          // --- 6. NEW "Generic" LOGIC ---
           let pathwayToSelect = data.log.pathway;
           let levelToSelect = data.log.level || "";
           let projectToSelect = data.log.Project_ID;
           let projectCodeToFind = null;
 
-          if (
-            window.location.pathname.includes("/agenda") &&
-            !data.log.Project_ID
-          ) {
-            if (nextProject) {
-              try {
-                const nextPathAbbr = nextProject.substring(0, 2); // "EH"
-                const nextLevel = nextProject.substring(2, 3); // "3"
-                projectCodeToFind = nextProject.substring(2); // "3.1"
+          if (projectToSelect == "60") {
+            // It's a Generic speech
+            genericCheckbox.checked = true;
+            toggleGeneric(true);
+            // Pre-fill pathway for display even if disabled
+            pathwaySeriesSelect.value = pathwayToSelect || "";
+          } else {
+            // It's a Pathway speech
+            genericCheckbox.checked = false;
+            toggleGeneric(false);
 
-                const pathwayName = Object.keys(pathwayMap).find(
-                  (name) => pathwayMap[name] === nextPathAbbr
-                );
+            // --- 7. Existing logic for finding Pathway/Level/Project ---
+            if (
+              window.location.pathname.includes("/agenda") &&
+              !data.log.Project_ID
+            ) {
+              if (nextProject) {
+                try {
+                  const nextPathAbbr = nextProject.substring(0, 2); // "EH"
+                  const nextLevel = nextProject.substring(2, 3); // "3"
+                  projectCodeToFind = nextProject.substring(2); // "3.1"
 
-                if (pathwayName) {
-                  pathwayToSelect = pathwayName;
-                  levelToSelect = nextLevel;
+                  const pathwayName = Object.keys(pathwayMap).find(
+                    (name) => pathwayMap[name] === nextPathAbbr
+                  );
+
+                  if (pathwayName) {
+                    pathwayToSelect = pathwayName;
+                    levelToSelect = nextLevel;
+                  }
+                } catch (e) {
+                  console.error(
+                    "Could not parse nextProject string:",
+                    nextProject
+                  );
+                  projectCodeToFind = null; // Clear on error
                 }
-              } catch (e) {
-                console.error(
-                  "Could not parse nextProject string:",
-                  nextProject
-                );
-                projectCodeToFind = null; // Clear on error
+              } else if (workingPath) {
+                pathwayToSelect = workingPath;
               }
-            } else if (workingPath) {
-              // Fallback: use the contact's main working path (but no level/project)
+            } else if (
+              window.location.pathname.includes("/agenda") &&
+              workingPath
+            ) {
               pathwayToSelect = workingPath;
             }
-          } else if (
-            window.location.pathname.includes("/agenda") &&
-            workingPath
-          ) {
-            // A project *is* saved, but still default pathway to contact's working path
-            pathwayToSelect = workingPath;
-          }
 
-          pathwaySeriesSelect.value = pathwayToSelect || "";
-          levelSelect.value = levelToSelect;
+            pathwaySeriesSelect.value = pathwayToSelect || "";
+            levelSelect.value = levelToSelect;
 
-          if (projectCodeToFind) {
-            const codeSuffix = pathwayMap[pathwayToSelect];
-            const codeAttr = `Code_${codeSuffix}`; // e.g., "Code_EH"
+            if (projectCodeToFind) {
+              const codeSuffix = pathwayMap[pathwayToSelect];
+              const codeAttr = `Code_${codeSuffix}`; // e.g., "Code_EH"
 
-            if (codeSuffix && Array.isArray(allProjects)) {
-              const foundProject = allProjects.find(
-                (p) => p[codeAttr] === projectCodeToFind
-              );
-              if (foundProject) {
-                projectToSelect = foundProject.ID; // Found it!
+              if (codeSuffix && Array.isArray(allProjects)) {
+                const foundProject = allProjects.find(
+                  (p) => p[codeAttr] === projectCodeToFind
+                );
+                if (foundProject) {
+                  projectToSelect = foundProject.ID; // Found it!
+                }
               }
             }
+            updateProjectOptions(projectToSelect);
           }
-          updateProjectOptions(projectToSelect);
         }
 
+        // --- 8. Show modal ---
         document.getElementById("speechEditModal").style.display = "flex";
       } else {
         alert(
@@ -302,35 +346,43 @@ function saveSpeechChanges(event) {
   const form = document.getElementById("speechEditForm");
   const sessionType = document.getElementById("edit-session-type-title").value;
 
-  let data = {
-    session_title: form.querySelector("#edit-speech-title").value,
-    project_id: form.querySelector("#edit-project").value || null,
-    session_type_title: sessionType,
-    media_url: form.querySelector("#edit-media-url").value || null,
-  };
+  // Get the state of the new checkbox
+  const isGeneric = document.getElementById("edit-is-generic").checked;
+  let data; // Declare data object
 
-  if (sessionType !== "Presentation") {
-    data.pathway = form.querySelector("#edit-pathway").value;
-    if (
-      document.getElementById("level-select-group").style.display !== "none"
-    ) {
-      const levelVal = form.querySelector("#edit-level").value;
-      if (!levelVal && sessionType === "Pathway Speech") {
-        data.project_id = "60";
-      }
-    } else if (!data.project_id && sessionType === "Pathway Speech") {
+  // Build the 'data' object based on the context
+  if (sessionType === "Presentation") {
+    // --- 1. Presentation Mode ---
+    data = {
+      session_title: form.querySelector("#edit-speech-title").value,
+      project_id: form.querySelector("#edit-project").value || null,
+      session_type_title: sessionType,
+      media_url: form.querySelector("#edit-media-url").value || null,
+    };
+  } else if (isGeneric) {
+    // --- 2. Generic Speech Mode ---
+    data = {
+      session_title: form.querySelector("#edit-speech-title").value,
+      project_id: "60", // Hard-code the Generic Speech ID
+      session_type_title: sessionType,
+      media_url: form.querySelector("#edit-media-url").value || null,
+      // Still save the pathway, even if it was disabled, for reference
+      pathway: form.querySelector("#edit-pathway").value,
+    };
+  } else {
+    // --- 3. Pathway Speech Mode ---
+    data = {
+      session_title: form.querySelector("#edit-speech-title").value,
+      project_id: form.querySelector("#edit-project").value || null,
+      session_type_title: sessionType,
+      media_url: form.querySelector("#edit-media-url").value || null,
+      pathway: form.querySelector("#edit-pathway").value,
+    };
+
+    // If no project is selected in Pathway mode, default to Generic (60)
+    if (!data.project_id) {
       data.project_id = "60";
     }
-  } else {
-    // For Presentation, if a project (presentation) is selected,
-    // the backend will handle Request 1 (overwriting session_title).
-    if (!data.project_id) {
-      data.project_id = null;
-    }
-  }
-
-  if (!data.project_id && sessionType === "Pathway Speech") {
-    data.project_id = "60";
   }
 
   fetch(`/speech_log/update/${logId}`, {
@@ -346,23 +398,20 @@ function saveSpeechChanges(event) {
           // --- Agenda Page Update ---
           const agendaRow = document.querySelector(`tr[data-id="${logId}"]`);
           if (agendaRow) {
-            agendaRow.dataset.projectId = updateResult.project_id | "";
+            agendaRow.dataset.projectId = updateResult.project_id || "";
             agendaRow.dataset.sessionTitle = updateResult.session_title;
 
             const editTitleCell = agendaRow.querySelector(
               'td[data-field="Session_Title"]'
             );
             if (editTitleCell) {
-              // Find the input/select/span inside it
               const titleControl = editTitleCell.querySelector(
                 "input, select, span"
               );
               if (titleControl) {
-                // Update value for input/select, textContent for span
                 if (titleControl.tagName === "SPAN") {
                   titleControl.textContent = updateResult.session_title;
                 } else {
-                  // This will handle both <input> and <select>
                   titleControl.value = updateResult.session_title;
                 }
               }
@@ -374,7 +423,6 @@ function saveSpeechChanges(event) {
 
             if (sessionTitleCell) {
               let titleDisplay = updateResult.session_title;
-              // Add quotes for pathway speech, but not presentation title
               if (
                 sessionType === "Pathway Speech" &&
                 updateResult.project_id != "60"
@@ -388,11 +436,14 @@ function saveSpeechChanges(event) {
               let projectCodeDisplay = updateResult.project_code
                 ? `(${updateResult.project_code})`
                 : "";
+              if (updateResult.project_id == "60") {
+                projectCodeDisplay = "(TM1.0)"; // Set generic display
+              }
+
               let projectName = updateResult.project_name;
-              let projectPurpose = ""; // Purpose is only for pathway projects
+              let projectPurpose = "";
 
               if (sessionType === "Presentation") {
-                // Presentation tooltip
                 const presentation = Array.isArray(allPresentations)
                   ? allPresentations.find(
                       (p) => p.id == updateResult.project_id
@@ -401,9 +452,7 @@ function saveSpeechChanges(event) {
                 projectName = presentation
                   ? presentation.title
                   : updateResult.session_title;
-                // We don't have purpose for presentations
               } else {
-                // Pathway speech tooltip
                 const project = Array.isArray(allProjects)
                   ? allProjects.find((p) => p.ID == updateResult.project_id)
                   : null;
@@ -413,8 +462,14 @@ function saveSpeechChanges(event) {
               sessionTitleCell.innerHTML = "";
               const wrapper = document.createElement("div");
               wrapper.className = "speech-tooltip-wrapper";
-              wrapper.textContent =
-                `${titleDisplay} ${projectCodeDisplay}`.trim();
+
+              if (updateResult.project_id == "60") {
+                wrapper.textContent =
+                  `${titleDisplay} ${projectCodeDisplay}`.trim();
+              } else {
+                wrapper.textContent =
+                  `${titleDisplay} ${projectCodeDisplay}`.trim();
+              }
 
               if (updateResult.project_id && updateResult.project_id != "60") {
                 const tooltip = document.createElement("div");
@@ -450,18 +505,23 @@ function saveSpeechChanges(event) {
           // --- Speech Logs Page Update ---
           const card = document.getElementById(`log-card-${logId}`);
           if (card) {
-            // --- MODIFIED: Use new data from backend (Requests 1 & 2) ---
             card.querySelector(
               ".speech-title"
             ).innerText = `"${updateResult.session_title.replace(/"/g, "")}"`;
 
             card.querySelector(".project-name").innerText =
               updateResult.project_name || "N/A";
-            card.querySelector(".project-code").innerText =
-              updateResult.project_code ? `(${updateResult.project_code})` : "";
+
+            let projectCodeText = updateResult.project_code
+              ? `(${updateResult.project_code})`
+              : "";
+            if (updateResult.project_id == "60") {
+              projectCodeText = "(TM1.0)"; // Set generic display
+            }
+            card.querySelector(".project-code").innerText = projectCodeText;
+
             card.querySelector(".pathway-info").innerText =
               updateResult.pathway || "N/A";
-            // --- END MODIFICATION ---
           }
         }
         closeSpeechEditModal();

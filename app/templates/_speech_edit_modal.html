@@ -18,8 +18,9 @@
           required
         />
       </div>
+
       <div class="form-group-row">
-        <div class="form-group">
+        <div class="form-group" style="flex-grow: 3">
           <label for="edit-pathway" id="label-pathway-series">Pathway:</label>
           <select
             id="edit-pathway"
@@ -28,21 +29,36 @@
             required
           ></select>
         </div>
-        <div class="form-group" id="level-select-group">
-          <label for="edit-level" id="label-level">Level:</label>
-          <select
-            id="edit-level"
-            name="level"
-            onchange="updateDynamicOptions()"
+        <div
+          class="form-group"
+          style="flex-grow: 1; text-align: center; padding-top: 30px"
+        >
+          <label
+            for="edit-is-generic"
+            style="display: inline; margin-right: 5px"
+            >Generic:</label
           >
-            <option value="">-- Select Level --</option>
-            {% for i in range(1, 6) %}
-            <option value="{{ i }}">Level {{ i }}</option>
-            {% endfor %}
-          </select>
+          <input
+            type="checkbox"
+            id="edit-is-generic"
+            name="is_generic"
+            onchange="toggleGeneric(this.checked)"
+            style="transform: scale(1.3)"
+          />
         </div>
       </div>
-      <div class="form-group">
+
+      <div class="form-group" id="level-select-group">
+        <label for="edit-level" id="label-level">Level:</label>
+        <select id="edit-level" name="level" onchange="updateDynamicOptions()">
+          <option value="">-- Select Level --</option>
+          {% for i in range(1, 6) %}
+          <option value="{{ i }}">Level {{ i }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group" id="project-select-group">
         <label for="edit-project" id="label-project-presentation"
           >Project:</label
         >
@@ -50,6 +66,7 @@
           <option value="">-- Select a Project --</option>
         </select>
       </div>
+
       <div class="form-group">
         <label for="edit-media-url">Media URL:</label>
         <input
