@@ -10,7 +10,7 @@ import io
 import csv
 import os
 import openpyxl
-from openpyxl.styles import Font
+from openpyxl.styles import Font, Alignment
 from io import BytesIO
 from .utils import derive_current_path_level, load_setting
 
@@ -543,6 +543,10 @@ def _auto_fit_worksheet_columns(ws, min_width=5):
             except:
                 pass
         adjusted_width = (max_length + 2)
+                
+        if adjusted_width > 50: 
+            adjusted_width = 50 
+        
         if adjusted_width < min_width:
             adjusted_width = min_width
         ws.column_dimensions[column].width = adjusted_width
@@ -587,6 +591,8 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     """Populates Sheet 2 in the PowerBI data dump format."""
     ws.title = "PowerBI Data"
 
+    wrap_alignment = Alignment(wrap_text=True, vertical='top')
+
     # Helper to find specific logs
     def find_log(type_id):
         for log, st, contact, proj, med in logs_data:
@@ -628,9 +634,13 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
         meeting.best_tt_speaker.Name if meeting.best_tt_speaker else "",
         meeting.best_roletaker.Name if meeting.best_roletaker else "",
         meeting.best_speaker.Name if meeting.best_speaker else "",
-        meeting.best_evaluator.Name if meeting.best_evaluator else ""                           # Awards (N/A)
+        meeting.best_evaluator.Name if meeting.best_evaluator else ""                          
     ]
     ws.append(master_data)
+    for cell in ws[ws.max_row]:
+        if cell.value and isinstance(cell.value, str) and len(cell.value) > 50:
+            cell.alignment = wrap_alignment
+
     ws.append([])
     ws.append([])
 
@@ -661,75 +671,74 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
             if contact.Type == 'Guest':
                 owner_name += " (Guest)"
 
-        ws.append([
+        row_data = [
             log.Meeting_Number,
             log.Start_Time.strftime('%H:%M') if log.Start_Time else "",
             title,
             duration,
             owner_name
-        ])
+        ]
+        
+        ws.append(row_data)
+        for cell in ws[ws.max_row]:
+            if cell.value and isinstance(cell.value, str) and len(cell.value) > 50:
+                cell.alignment = wrap_alignment
+        
     ws.append([])
     ws.append([])
 
-    # --- 3. SPEECH DETAILS ---
-    ws.append(["3. SPEECH DETAILS"])
+
+    # --- 3. YOODLI LINKS (NEW SECTION) ---
+    ws.append(["3. YOODLI LINKS"])
     ws.append([])
-    ws.append(["Meeting Number", "Speaker", "Title", "Project", "Duration"])
-    for speech in speech_details_list:
-        ws.append([
+    # Add 3 blank columns (None) after "Speaker"
+    ws.append([
+        "Meeting Number", "Speaker", 
+        None, None, None, # <-- ADDED 3 BLANK COLUMNS
+        "Speaker Yoodli", "Evaluator", "Evaluator Yoodli"
+    ])
+
+    # Separate speakers and evaluators from the main data list
+    # Use Type 30 (Pathway Speech) and 43 (Presentation)
+    speakers = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data 
+                if st.id == 30 or st.id == 43]
+    
+    # Type 31 = Individual Evaluator (This ID seems correct based on prior context)
+    evaluators = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data 
+                  if st.id == 31]
+
+    # Create a lookup map for evaluators
+    # Key: Speaker Name (from evaluator's Session_Title), Value: (Evaluator Name, Evaluator Media URL)
+    evaluator_map = {}
+    for log, st, contact, proj, med in evaluators:
+        speaker_name_key = log.Session_Title
+        if speaker_name_key: # Only add if the evaluator is linked to a speaker
+            evaluator_map[speaker_name_key] = (contact.Name if contact else '', med.url if med else '')
+
+    # Iterate through speakers and find their matching evaluator
+    for log, st, contact, proj, med in speakers:
+        speaker_name = contact.Name if contact else ''
+        speaker_media_url = med.url if med else ''
+        
+        # Find the evaluator data from the map
+        eval_data = evaluator_map.get(speaker_name, ('', '')) # Default to empty tuple
+        evaluator_name = eval_data[0]
+        evaluator_media_url = eval_data[1]
+
+        # Add 3 blank columns (None) after speaker_name
+        row_data = [
             meeting.Meeting_Number,
-            speech["speaker_name"],
-            speech["speech_title"],
-            speech["project_code_str"],
-            speech["duration"]
-        ])
-    ws.append([])
-    ws.append([])
+            speaker_name,
+            None, None, None, # <-- ADDED 3 BLANK COLUMNS
+            speaker_media_url,
+            evaluator_name,
+            evaluator_media_url
+        ]
 
-    # --- 4. MEETING ROLES ---
-    ws.append(["4. MEETING ROLES"])
-    ws.append([])
-    ws.append(["Meeting Number", "Role", "Owner", "Note"])
-    for log, st, contact, proj, med in logs_data:
-        # Filter for non-timed, non-section roles
-        if log.Start_Time is None and not st.Is_Section:
-            owner_name = ""
-            if contact:
-                owner_name = contact.Name
-                if contact.Type == 'Guest':
-                    owner_name += " (Guest)"
-
-            # Note seems to be duration
-            note = ''
-            if log.Duration_Max is not None:
-                if log.Duration_Min is not None and log.Duration_Min > 0 and log.Duration_Min != log.Duration_Max:
-                    note = f"[{log.Duration_Min}'-{log.Duration_Max}']"
-                else:
-                    note = f"[{log.Duration_Max}']"
-
-            ws.append([
-                log.Meeting_Number,
-                st.Title,
-                owner_name,
-                note
-            ])
-    ws.append([])
-    ws.append([])
-
-    # --- 5. MEDIA LINKS ---
-    ws.append(["5. MEDIA LINKS"])
-    ws.append([])
-    ws.append(["Meeting Number", "Speaker", "Title",
-              "Project", "Duration", "Media Link"])
-    for speech in speech_details_list:
-        ws.append([
-            meeting.Meeting_Number,
-            speech["speaker_name"],
-            speech["speech_title"],
-            speech["project_code_str"],
-            speech["duration"],
-            speech["media_url"]
-        ])
+        ws.append(row_data)
+        for cell in ws[ws.max_row]:
+            if cell.value and isinstance(cell.value, str) and len(cell.value) > 50:
+                cell.alignment = wrap_alignment
 
     _auto_fit_worksheet_columns(ws, min_width=10)
 
