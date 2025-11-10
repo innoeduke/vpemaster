@@ -49,7 +49,7 @@ function openSpeechEditModal(
         document.getElementById("edit-log-id").value = data.log.id;
         document.getElementById("edit-speech-title").value =
           data.log.Session_Title || "";
-        document.getElementById("edit-media-url").value =
+        document.getElementById("edit-speech-media-url").value =
           data.log.Media_URL || "";
 
         const currentSessionType = passedSessionType || "Pathway Speech"; // Default if not passed
@@ -357,7 +357,7 @@ function saveSpeechChanges(event) {
       session_title: form.querySelector("#edit-speech-title").value,
       project_id: form.querySelector("#edit-project").value || null,
       session_type_title: sessionType,
-      media_url: form.querySelector("#edit-media-url").value || null,
+      media_url: form.querySelector("#edit-speech-media-url").value || null,
     };
   } else if (isGeneric) {
     // --- 2. Generic Speech Mode ---
@@ -365,7 +365,7 @@ function saveSpeechChanges(event) {
       session_title: form.querySelector("#edit-speech-title").value,
       project_id: "60", // Hard-code the Generic Speech ID
       session_type_title: sessionType,
-      media_url: form.querySelector("#edit-media-url").value || null,
+      media_url: form.querySelector("#edit-speech-media-url").value || null,
       // Still save the pathway, even if it was disabled, for reference
       pathway: form.querySelector("#edit-pathway").value,
     };
@@ -375,7 +375,7 @@ function saveSpeechChanges(event) {
       session_title: form.querySelector("#edit-speech-title").value,
       project_id: form.querySelector("#edit-project").value || null,
       session_type_title: sessionType,
-      media_url: form.querySelector("#edit-media-url").value || null,
+      media_url: form.querySelector("#edit-speech-media-url").value || null,
       pathway: form.querySelector("#edit-pathway").value,
     };
 

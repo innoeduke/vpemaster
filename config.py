@@ -37,9 +37,9 @@ class Config:
     MEETING_TYPES = {
         "Club Election": 45,
         "Debate": 40,
-        "Keynote Speech": 20, # This is a guess, please verify
+        "Keynote Speech": 20, 
         "Panel Discussion": 44,
-        "Presentation": 43, # This is a guess, please verify
-        "Speech Contest": 3, # In case of Speech Marathon, the host is default to Toastmaster
+        "Presentation": 43, 
+        "Speech Contest": 3, # In case of Speech Contest, the host is default to Toastmaster
         "Speech Marathon": 3 # In case of Speech Marathon, the host is default to Toastmaster
     }
