@@ -3,6 +3,8 @@
 from flask import current_app
 from .models import Project  # Ensure Project model is imported if needed elsewhere
 import re
+import configparser
+import os
 
 
 # --- ADD THIS DICTIONARY ---
@@ -107,3 +109,52 @@ def derive_current_path_level(log, owner_contact):
 
     # --- Fallback ---
     return None
+
+def load_setting(section, setting_key, default=None):
+    """
+    Loads a specific setting from a given section of settings.ini.
+    """
+    try:
+        config = configparser.ConfigParser()
+        # current_app.root_path points to the 'app' folder, so '../' goes to the project root
+        settings_path = os.path.join(current_app.root_path, '..', 'settings.ini')
+        
+        if not os.path.exists(settings_path):
+            print(f"Warning: settings.ini file not found at {settings_path}")
+            return default
+
+        config.read(settings_path)
+        
+        # .get() will return the value or None if not found, avoiding a crash
+        return config.get(section, setting_key, fallback=default)
+
+    except (configparser.NoSectionError, configparser.Error) as e:
+        print(f"Error reading settings.ini (Section: {section}, Key: {setting_key}): {e}")
+        return default
+
+def load_all_settings():
+    """
+    Loads all sections and settings from settings.ini and returns them as a nested dict.
+    """
+    all_settings = {}
+    try:
+        config = configparser.ConfigParser()
+        # current_app.root_path points to the 'app' folder, so '../' goes to the project root
+        settings_path = os.path.join(current_app.root_path, '..', 'settings.ini')
+        
+        if not os.path.exists(settings_path):
+            print(f"Warning: settings.ini file not found at {settings_path}")
+            return all_settings
+
+        config.read(settings_path)
+
+        for section in config.sections():
+            # configparser keys are auto-lowercased when read.
+            # Convert the section (which is a dict-like object) to a standard dict.
+            all_settings[section] = dict(config[section])
+
+        return all_settings
+
+    except configparser.Error as e:
+        print(f"Error reading settings.ini: {e}")
+        return all_settings # Return empty dict on error

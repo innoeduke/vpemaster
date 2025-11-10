@@ -12,7 +12,7 @@ import os
 import openpyxl
 from openpyxl.styles import Font
 from io import BytesIO
-from .utils import derive_current_path_level
+from .utils import derive_current_path_level, load_setting
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -571,17 +571,25 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     ])
 
     # Get data for this section
-    pres_log, pres_st, pres_contact, _, _ = find_log(14)  # 14 = Presentation
+    meeting_types_dict = current_app.config.get('MEETING_TYPES', {})
+    master_log, master_st, master_contact = None, None, None  # Default to None
+
+    if meeting.type and meeting.type in meeting_types_dict:
+        target_session_type_id = meeting_types_dict[meeting.type]
+        if target_session_type_id:
+            # Find the log matching the SessionType ID from the config dict
+            master_log, master_st, master_contact, _, _ = find_log(target_session_type_id)
     gram_log, gram_st, _, _, _ = find_log(7)  # 7 = Grammarian Intro
-    presi_log, presi_st, presi_contact, _, _ = find_log(
-        2)  # 2 = President's Address
+    term = load_setting('ClubSettings', 'Term', default='')
+    excomm_name = load_setting('ClubSettings', 'Excomm Name', default='')
+    excomm_string = f'{term} "{excomm_name}"'.strip()
 
     master_data = [
-        presi_contact.Name if presi_contact else "",  # Excomm
+        excomm_string,
         meeting.Meeting_Date.strftime('%Y/%m/%d'),  
         meeting.Meeting_Number,                     
         meeting.Meeting_Title, 
-        pres_contact.Name if pres_contact else "",  # Keynote Speaker
+        master_contact.Name if master_contact else "",  # Sharing Master 
         meeting.media.url if meeting.media else "", # Meeting Video Url
         meeting.WOD if meeting.WOD else "",
         meeting.best_tt_speaker.Name if meeting.best_tt_speaker else "",
@@ -599,7 +607,7 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     ws.append(["Meeting Number", "Start Time", "Title", "Duration", "Owner"])
 
     for log, st, contact, proj, med in logs_data:
-        if st.Is_Section:
+        if st.Is_Section or st.Is_Hidden:
             continue  # Skip section headers for this part
 
         # Get formatted title

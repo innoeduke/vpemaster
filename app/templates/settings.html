@@ -26,7 +26,29 @@ content %}
 
   <div id="general" class="tab-content" style="display: block">
     <h2>General Settings</h2>
-    <p>General application settings will be managed here.</p>
+
+    <table class="form-table" style="max-width: 700px; margin-top: 15px">
+      <thead>
+        <tr style="background-color: #f2f2f2">
+          <th style="width: 40%; padding: 8px">Setting</th>
+          <th style="padding: 8px">Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, value in general_settings.items() %}
+        <tr>
+          <td><strong>{{ key.replace('_', ' ')|title }}</strong></td>
+          <td>{{ value }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="2" style="text-align: center">
+            Could not load settings.ini or [ClubSettings] section is empty.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
   <div id="sessions" class="tab-content">

@@ -1,9 +1,10 @@
 # vpemaster/settings_routes.py
 
-from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify
+from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, current_app
 from .auth.utils import login_required, is_authorized
 from .models import SessionType, User, LevelRole, Presentation
 from . import db
+from .utils import load_all_settings
 
 settings_bp = Blueprint('settings_bp', __name__)
 
@@ -17,13 +18,24 @@ def settings():
     if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
+    all_settings = load_all_settings()
+    
+    club_settings_raw = all_settings.get('ClubSettings', {})
+
+    # Transform keys from .ini file (e.g., 'club name') 
+    # to what the template expects (e.g., 'club_name')
+    general_settings = {
+        key.replace(' ', '_'): value 
+        for key, value in club_settings_raw.items()
+    }
+
     session_types = SessionType.query.order_by(SessionType.id.asc()).all()
     level_roles = LevelRole.query.order_by(
         LevelRole.level.asc(), LevelRole.type.desc()).all()
     presentations = Presentation.query.order_by(
         Presentation.level.asc(), Presentation.code.asc()).all()
     all_users = User.query.order_by(User.Username.asc()).all()
-    return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, presentations=presentations)
+    return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, presentations=presentations, general_settings=general_settings)
 
 
 @settings_bp.route('/settings/sessions/add', methods=['POST'])
