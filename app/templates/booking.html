@@ -114,11 +114,10 @@
         </div>
     </div>
 
-    <table class="booking-table {% if is_vpe_or_admin %}is-admin-view{% endif %}">
+    <table class="booking-table {% if is_admin_view %}is-admin-view{% endif %}">
         <thead>
             <tr>
                 <th>Role</th>
-                <th>Owner</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -133,13 +132,39 @@
                             <span class="speaker-for">for {{ role.speaker_name }}</span>
                         {% endif %}
                     </div>
-                </td>
-                <td class="owner-name-cell">
-                    {% if role.owner_name %}
-                        {{ role.owner_name }}
-                    {% else %}
-                        {# This is now intentionally left empty #}
-                    {% endif %}
+                    {% if is_admin_view %} 
+                        {% if role.owner_id and role.award_category %}
+                            {% if role.award_type %}
+                                <button type="button" class="icon-btn icon-btn-voted" 
+                                        title="Cancel Vote ({{ role.award_type }})" 
+                                        onclick="handleVoteClick(this)"
+                                        data-meeting-number="{{ selected_meeting_number }}"
+                                        data-contact-id="{{ role.owner_id }}"
+                                        data-award-category="{{ role.award_category }}">
+                                    <i class="fas fa-trophy"></i>
+                                </button>
+                            {% elif role.award_category_open %}
+                                <button type="button" class="icon-btn" 
+                                        title="Vote"
+                                        onclick="handleVoteClick(this)"
+                                        data-meeting-number="{{ selected_meeting_number }}"
+                                        data-contact-id="{{ role.owner_id }}"
+                                        data-award-category="{{ role.award_category }}">
+                                    <i class="fas fa-vote-yea"></i>
+                                </button>
+                            {% else %}
+                                <button type="button" class="icon-btn" 
+                                        title="Vote"
+                                        onclick="handleVoteClick(this)"
+                                        data-meeting-number="{{ selected_meeting_number }}"
+                                        data-contact-id="{{ role.owner_id }}"
+                                        data-award-category="{{ role.award_category }}"
+                                        style="display: none;"> 
+                                    <i class="fas fa-vote-yea"></i>
+                                </button>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}    
                 </td>
                 <td class="action-cell">
                     {% if is_admin_view %}
@@ -150,27 +175,6 @@
                                 <option value="{{ contact.id }}" {% if role.owner_id == contact.id %}selected{% endif %}>{{ contact.Name }}</option>
                                 {% endfor %}
                             </select>
-                            {% if role.owner_id and role.award_category %}
-                                {% if role.award_type %}
-                                    <button type="button" class="icon-btn icon-btn-voted" 
-                                            title="Cancel Vote ({{ role.award_type }})" 
-                                            onclick="handleVoteClick(this)"
-                                            data-meeting-number="{{ selected_meeting_number }}"
-                                            data-contact-id="{{ role.owner_id }}"
-                                            data-award-category="{{ role.award_category }}">
-                                        <i class="fas fa-trophy"></i>
-                                    </button>
-                                {% elif role.award_category_open %}
-                                    <button type="button" class="icon-btn" 
-                                            title="Vote"
-                                            onclick="handleVoteClick(this)"
-                                            data-meeting-number="{{ selected_meeting_number }}"
-                                            data-contact-id="{{ role.owner_id }}"
-                                            data-award-category="{{ role.award_category }}">
-                                        <i class="fas fa-vote-yea"></i>
-                                    </button>
-                                {% endif %}
-                            {% endif %}
                         </div>
                     {% else %}
                         {% if role.owner_id %}

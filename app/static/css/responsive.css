@@ -186,6 +186,102 @@
         justify-content: center;
     }
 
+    /* --- Booking Page Responsive Fixes --- */
+
+    .booking-container {
+        margin: 10px 0;
+        padding: 0 15px;
+    }
+
+    .booking-header {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0;
+    }
+
+    .booking-filter-container {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 30px 0;
+    }
+
+    .booking-filter-container .filter-left,
+    .booking-filter-container .filter-right {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .booking-filter-container .filter-left #meeting-filter {
+        flex-grow: 1;
+    }
+
+    .booking-filter-container .role-guide-link {
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: center;
+    }
+
+    /* --- Mobile Table Overrides --- */
+    .booking-table thead {
+        display: none;
+    }
+
+    /* Make table and tbody stack */
+    .booking-table, .booking-table tbody {
+        display: block;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Make rows flex containers */
+    .booking-table tr {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        gap: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+    }
+
+    /* Make cells flex items */
+    .booking-table td {
+        display: flex;
+        align-items: center;
+    }
+
+    .booking-table td:nth-of-type(1) { /* Role */
+        flex: 3.5;
+        font-weight: bold;
+        justify-content: flex-start;
+        text-align: left;
+    }
+
+    .booking-table td:nth-of-type(2) { /* Action */
+        flex: 2.5;
+        justify-content: flex-start;
+    }
+
+    .booking-table.is-admin-view tr {
+        flex-wrap: wrap;
+    }
+
+    .booking-table.is-admin-view .role-cell {
+        flex-basis: 100%;
+        justify-content: flex-start;
+        min-height: auto;
+        font-size: 1.15em; 
+    }
+
+    .booking-table.is-admin-view .action-cell {
+        flex-basis: 100%;
+        justify-content: flex-start;
+    }
+
+    .booking-table.is-admin-view .icon-btn {
+        margin: 10px;
+    }
+
     /* --- Pathway Library Responsive Fixes --- */
     #pathway-library-container .filters-container {
         flex-direction: column; /* Stack the main filter container */

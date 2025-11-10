@@ -162,7 +162,7 @@ h1 {
     background-color: transparent;
 }
 
-/* --- Base Booking Table (Desktop & Mobile) --- */
+/* Booking table */
 .booking-table {
     width: 100%;
     border-collapse: collapse;
@@ -194,6 +194,7 @@ h1 {
     font-family: 'Montserrat', sans-serif;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 10px;
     font-weight: bold;
 }
@@ -202,15 +203,14 @@ h1 {
     color: #772432;
 }
 
-/* Owner Cell */
-.owner-available {
-    color: #155724;
-    font-weight: bold;
-    background-color: #d4edda;
-    padding: 3px 8px;
-    border-radius: 4px;
-    border: 1px solid #c3e6cb;
-    font-size: 0.9em;
+.role-cell-content {
+    display: flex;
+    align-items: left;
+    gap: 10px; /* Keeps the icon and text together */
+}
+
+.role-cell-actions {
+    flex-shrink: 0; /* Stops the button from shrinking */
 }
 
 /* Action Cell */
@@ -224,6 +224,7 @@ h1 {
     align-items: center;
     justify-content: center;
 }
+
 .btn-book { background-color: #28a745; }
 .btn-cancel { background-color: #772432; }
 .btn-booked {
@@ -231,6 +232,7 @@ h1 {
     color: #6c757d;
     cursor: not-allowed;
 }
+
 .btn-info {
     background-color: #004165;
 }
@@ -256,17 +258,42 @@ h1 {
     transform: scale(1.1);
 }
 
-/* --- Role Cell Text Stacking --- */
 .booking-table .role-display-text {
     display: flex;
     flex-direction: column;
     line-height: 1.2;
+    flex-grow: 1;
+    text-align: left;
 }
 
 .booking-table .speaker-for {
     font-size: 0.75em;
     font-weight: normal;
     color: #555;
+}
+
+.booking-table.is-admin-view .assign-controls {
+    display: flex;
+    width: 100%;
+    gap: 8px;
+    font-size: 1em;
+}
+
+.booking-table.is-admin-view .admin-assign-select {
+    flex-grow: 1;
+    font-size: 1em;
+
+    /* Appearance */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: #ffffff; /* White background */
+    
+    /* Box Model */
+    height: 38px; /* Consistent tap height */
+    padding: 5px 30px 5px 12px; /* Top, Right (for arrow), Bottom, Left */
+    border: 1px solid #ccc; /* Standard border */
+    border-radius: 4px; /* Rounded corners */
 }
 
 /* --- Completed Roles --- */
@@ -331,7 +358,6 @@ h1 {
     margin-left: 10px;
 }
 
-/* --- Role Guide (obsolete, filter-right) --- */
 .role-guide-container {
     text-align: center;
     margin-bottom: 30px;
@@ -348,119 +374,6 @@ h1 {
 }
 
 
-/* --- Mobile Responsive Design --- */
-@media screen and (max-width: 768px) {
-    .booking-container {
-        margin: 10px 0;
-        padding: 0 15px;
-    }
-
-    .booking-header {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 0;
-    }
-
-    .booking-filter-container {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 30px 0;
-    }
-
-    .booking-filter-container .filter-left,
-    .booking-filter-container .filter-right {
-        width: 100%;
-        text-align: center;
-    }
-    
-    .booking-filter-container .filter-left #meeting-filter {
-        flex-grow: 1;
-    }
-
-    .booking-filter-container .role-guide-link {
-        width: 100%;
-        box-sizing: border-box;
-        justify-content: center;
-    }
-
-    /* --- Mobile Table Overrides --- */
-    .booking-table thead {
-        display: none;
-    }
-
-    /* Make table and tbody stack */
-    .booking-table, .booking-table tbody {
-        display: block;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    /* Make rows flex containers */
-    .booking-table tr {
-        display: flex;
-        align-items: center;
-        margin-bottom: 10px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 0.75rem;
-        gap: 10px;
-    }
-
-    /* Make cells flex items */
-    .booking-table td {
-        padding: 0;
-        display: flex;
-        align-items: center;
-        min-height: 38px;
-    }
-
-    .booking-table td:nth-of-type(1) { /* Role */
-        flex: 3;
-        font-weight: bold;
-        justify-content: flex-start;
-        text-align: left;
-    }
-
-    .booking-table td:nth-of-type(2) { /* Owner */
-        flex: 1.5;
-        justify-content: flex-end;
-    }
-
-    .booking-table td:nth-of-type(3) { /* Action */
-        flex: 2.5;
-        justify-content: flex-end;
-    }
-
-    /* --- VPE/Admin Mobile View Overrides --- */
-    .booking-table.is-admin-view tr {
-        flex-wrap: wrap;
-        padding: 0.5rem 0.75rem;
-    }
-
-    .booking-table.is-admin-view .role-cell {
-        flex-basis: 100%;
-        margin-bottom: 8px;
-        justify-content: flex-start;
-        min-height: auto;
-    }
-
-    .booking-table.is-admin-view .owner-name-cell {
-        display: none;
-    }
-
-    .booking-table.is-admin-view .action-cell {
-        flex-basis: 100%;
-        justify-content: flex-start;
-    }
-
-    .booking-table.is-admin-view .assign-controls,
-    .booking-table.is-admin-view .admin-assign-select {
-        width: 100%;
-        font-size: 0.9em;
-    }
-}
-
-
 /* --- Desktop Responsive Design --- */
 @media (min-width: 769px) {
 
@@ -471,29 +384,12 @@ h1 {
     }
     
     /* Define the column widths */
-    .booking-table.is-admin-view th:nth-of-type(1),
-    .booking-table.is-admin-view td:nth-of-type(1) { /* Role */
-        width: 35%; 
+    .booking-table.is-admin-view th:nth-of-type(2),
+    .booking-table.is-admin-view td:nth-of-type(2) { /* Role */
+        width: 30%; 
     }
     
-    .booking-table.is-admin-view th:nth-of-type(2),
-    .booking-table.is-admin-view td:nth-of-type(2) { /* Owner */
-        width: 30%;
-    }
 
-    /* Align the HEADER text to the right */
-    .booking-table.is-admin-view th:nth-of-type(3) { /* Action TH */
-        width: 35%;
-        text-align: right;
-    }
-
-    /* Make the CELL a flex container and align its content to the right */
-    .booking-table.is-admin-view td:nth-of-type(3) { /* Action TD */
-        width: 35%;
-        display: flex;
-        justify-content: flex-end;
-        align-items: center; /* Good for vertical centering */
-    }
 
     /* --- Desktop Completed Roles Grid --- */
     .completed-roles-list {
