@@ -1,35 +1,68 @@
 // static/js/speech_modal.js
 
+// --- Globals (from HTML) ---
+// These are assumed to be defined in the HTML <script> tags:
+// - allProjects, pathwayMap, allPresentations, presentationSeries
+
+// --- DOM Elements Cache ---
+// Cache all modal DOM elements at once for performance and readability.
+const modalElements = {
+  modal: document.getElementById("speechEditModal"),
+  form: document.getElementById("speechEditForm"),
+  title: document.querySelector("#speechEditModal h1"),
+  logId: document.getElementById("edit-log-id"),
+  sessionType: document.getElementById("edit-session-type-title"),
+  speechTitle: document.getElementById("edit-speech-title"),
+  mediaUrl: document.getElementById("edit-speech-media-url"),
+  pathwayGenericRow: document.getElementById("pathway-generic-row"),
+  pathwaySelect: document.getElementById("edit-pathway"),
+  levelSelectGroup: document.getElementById("level-select-group"),
+  levelSelect: document.getElementById("edit-level"),
+  projectSelectGroup: document.getElementById("project-select-group"),
+  projectSelect: document.getElementById("edit-project"),
+  genericCheckbox: document.getElementById("edit-is-generic"),
+  labelPathway: document.getElementById("label-pathway-series"),
+  labelLevel: document.getElementById("label-level"),
+  labelProject: document.getElementById("label-project-presentation"),
+};
+
+// --- Main Public Functions ---
+
+/**
+ * Toggles the "Generic Speech" mode, hiding/showing pathway fields.
+ */
 function toggleGeneric(isGeneric) {
-  const levelGroup = document.getElementById("level-select-group");
-  const projectGroup = document.getElementById("project-select-group");
-  const pathwaySelect = document.getElementById("edit-pathway");
-  const levelSelect = document.getElementById("edit-level");
-  const projectSelect = document.getElementById("edit-project");
+  const {
+    levelSelectGroup,
+    projectSelectGroup,
+    pathwaySelect,
+    levelSelect,
+    projectSelect,
+  } = modalElements;
 
   if (isGeneric) {
-    // HIDE pathway fields and clear them
-    levelGroup.style.display = "none";
-    projectGroup.style.display = "none";
+    levelSelectGroup.style.display = "none";
+    projectSelectGroup.style.display = "none";
     pathwaySelect.disabled = true;
     levelSelect.disabled = true;
     projectSelect.disabled = true;
-
-    // Clear selections
     pathwaySelect.value = "";
     levelSelect.value = "";
     projectSelect.value = "";
     projectSelect.innerHTML = '<option value="">-- Select --</option>';
   } else {
-    // SHOW pathway fields
-    levelGroup.style.display = "block";
-    projectGroup.style.display = "block";
+    levelSelectGroup.style.display = "block";
+    projectSelectGroup.style.display = "block";
     pathwaySelect.disabled = false;
     levelSelect.disabled = false;
     projectSelect.disabled = false;
   }
 }
 
+/**
+ * Main entry point to open the speech edit modal.
+ * Fetches log details and delegates to a setup function based on session type.
+ */
 function openSpeechEditModal(
   logId,
   workingPath = null,
@@ -45,168 +78,26 @@ function openSpeechEditModal(
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        // --- 1. Set simple values ---
-        document.getElementById("edit-log-id").value = data.log.id;
-        document.getElementById("edit-speech-title").value =
-          data.log.Session_Title || "";
-        document.getElementById("edit-speech-media-url").value =
-          data.log.Media_URL || "";
+        const currentSessionType = passedSessionType || "Pathway Speech";
 
-        const currentSessionType = passedSessionType || "Pathway Speech"; // Default if not passed
-        document.getElementById("edit-session-type-title").value =
-          currentSessionType;
+        // 1. Set common values and reset all fields to a default state
+        setCommonModalValues(data.log, currentSessionType);
 
-        // --- 2. Get all elements ---
-        const pathwaySeriesSelect = document.getElementById("edit-pathway");
-        const levelSelectGroup = document.getElementById("level-select-group");
-        const levelSelect = document.getElementById("edit-level");
-        const projectPresentationSelect =
-          document.getElementById("edit-project");
-        const labelPathwaySeries = document.getElementById(
-          "label-pathway-series"
-        );
-        const labelLevel = document.getElementById("label-level");
-        const labelProjectPresentation = document.getElementById(
-          "label-project-presentation"
-        );
-        const genericCheckbox = document.getElementById("edit-is-generic"); // Get checkbox
-
-        // --- 3. Clear dynamic dropdowns ---
-        pathwaySeriesSelect.innerHTML = "";
-        projectPresentationSelect.innerHTML =
-          '<option value="">-- Select --</option>';
-
-        // Store the presentation level if applicable
-        let presentationLevel = null;
-
-        if (currentSessionType === "Presentation") {
-          // --- 4. Presentation Mode ---
-          labelPathwaySeries.textContent = "Education Series:";
-          labelProjectPresentation.textContent = "Presentation Title:";
-          levelSelectGroup.style.display = "none"; // Hide Level dropdown
-          genericCheckbox.checked = false; // Uncheck Generic
-          genericCheckbox.disabled = true; // Disable Generic
-          toggleGeneric(false); // Ensure pathway fields are visible (for pathway select)
-
-          // Find the current presentation to determine its series and level
-          const currentPresentation = Array.isArray(allPresentations)
-            ? allPresentations.find((p) => p.id == data.log.Project_ID)
-            : null;
-          const currentSeries = currentPresentation
-            ? currentPresentation.series
-            : "";
-          presentationLevel = currentPresentation
-            ? currentPresentation.level
-            : null; // Store the level
-
-          // Populate Series dropdown
-          pathwaySeriesSelect.add(new Option("-- Select Series --", ""));
-          if (Array.isArray(presentationSeries)) {
-            presentationSeries.forEach((series) => {
-              pathwaySeriesSelect.add(new Option(series, series));
-            });
-          } else {
-            console.error(
-              "presentationSeries is not an array or is undefined."
-            );
-          }
-          pathwaySeriesSelect.value = currentSeries; // Select the correct series
-
-          // Populate Presentation options
-          updatePresentationOptions(data.log.Project_ID, presentationLevel);
-        } else {
-          // --- 5. Pathway Speech Mode (Default) ---
-          labelPathwaySeries.textContent = "Pathway:";
-          labelLevel.textContent = "Level:";
-          labelProjectPresentation.textContent = "Project:";
-          // Note: toggleGeneric() will manage levelSelectGroup display
-          genericCheckbox.disabled = false; // Enable Generic checkbox
-
-          // Populate Pathway dropdown
-          pathwaySeriesSelect.add(new Option("-- Select Pathway --", ""));
-          if (pathwayMap && typeof pathwayMap === "object") {
-            Object.keys(pathwayMap).forEach((p_name) => {
-              pathwaySeriesSelect.add(new Option(p_name, p_name));
-            });
-          } else {
-            console.error("pathwayMap is not defined or invalid.");
-          }
-
-          // --- 6. NEW "Generic" LOGIC ---
-          let pathwayToSelect = data.log.pathway;
-          let levelToSelect = data.log.level || "";
-          let projectToSelect = data.log.Project_ID;
-          let projectCodeToFind = null;
-
-          if (projectToSelect == "60") {
-            // It's a Generic speech
-            genericCheckbox.checked = true;
-            toggleGeneric(true);
-            // Pre-fill pathway for display even if disabled
-            pathwaySeriesSelect.value = pathwayToSelect || "";
-          } else {
-            // It's a Pathway speech
-            genericCheckbox.checked = false;
-            toggleGeneric(false);
-
-            // --- 7. Existing logic for finding Pathway/Level/Project ---
-            if (
-              window.location.pathname.includes("/agenda") &&
-              !data.log.Project_ID
-            ) {
-              if (nextProject) {
-                try {
-                  const nextPathAbbr = nextProject.substring(0, 2); // "EH"
-                  const nextLevel = nextProject.substring(2, 3); // "3"
-                  projectCodeToFind = nextProject.substring(2); // "3.1"
-
-                  const pathwayName = Object.keys(pathwayMap).find(
-                    (name) => pathwayMap[name] === nextPathAbbr
-                  );
-
-                  if (pathwayName) {
-                    pathwayToSelect = pathwayName;
-                    levelToSelect = nextLevel;
-                  }
-                } catch (e) {
-                  console.error(
-                    "Could not parse nextProject string:",
-                    nextProject
-                  );
-                  projectCodeToFind = null; // Clear on error
-                }
-              } else if (workingPath) {
-                pathwayToSelect = workingPath;
-              }
-            } else if (
-              window.location.pathname.includes("/agenda") &&
-              workingPath
-            ) {
-              pathwayToSelect = workingPath;
-            }
-
-            pathwaySeriesSelect.value = pathwayToSelect || "";
-            levelSelect.value = levelToSelect;
-
-            if (projectCodeToFind) {
-              const codeSuffix = pathwayMap[pathwayToSelect];
-              const codeAttr = `Code_${codeSuffix}`; // e.g., "Code_EH"
-
-              if (codeSuffix && Array.isArray(allProjects)) {
-                const foundProject = allProjects.find(
-                  (p) => p[codeAttr] === projectCodeToFind
-                );
-                if (foundProject) {
-                  projectToSelect = foundProject.ID; // Found it!
-                }
-              }
-            }
-            updateProjectOptions(projectToSelect);
-          }
+        // 2. Specialize the modal based on its type
+        switch (currentSessionType) {
+          case "Evaluation":
+            setupEvaluatorModal();
+            break;
+          case "Presentation":
+            setupPresentationModal(data.log);
+            break;
+          default: // "Pathway Speech" or other custom types
+            setupPathwayModal(data.log, workingPath, nextProject);
+            break;
         }
 
-        // --- 8. Show modal ---
-        document.getElementById("speechEditModal").style.display = "flex";
+        // 3. Show the modal
+        modalElements.modal.style.display = "flex";
       } else {
         alert(
           "Error fetching speech log details: " +
@@ -220,311 +111,30 @@ function openSpeechEditModal(
     });
 }
 
+/**
+ * Closes the speech edit modal.
+ */
 function closeSpeechEditModal() {
-  document.getElementById("speechEditModal").style.display = "none";
+  modalElements.modal.style.display = "none";
 }
 
-// Combined update function called on change
-function updateDynamicOptions() {
-  const sessionType = document.getElementById("edit-session-type-title").value;
-  if (sessionType === "Presentation") {
-    // When changing series for Presentation, level is determined by the *new* selection
-    // We might not know the level until a presentation is chosen,
-    // OR we filter based *only* on series first. Let's filter only on series first.
-    updatePresentationOptions(null, null); // Pass null for level initially
-  } else {
-    updateProjectOptions();
-  }
-}
-
-function updateProjectOptions(selectedProjectId = null) {
-  const pathwaySelect = document.getElementById("edit-pathway");
-  const levelSelect = document.getElementById("edit-level");
-  const projectSelect = document.getElementById("edit-project");
-
-  const selectedPathway = pathwaySelect.value;
-  const selectedLevel = levelSelect.value;
-
-  projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
-
-  if (!pathwayMap || typeof pathwayMap !== "object") {
-    console.error("pathwayMap is not defined or invalid.");
-    return;
-  }
-
-  const codeSuffix = pathwayMap[selectedPathway];
-
-  if (!codeSuffix) {
-    return;
-  }
-
-  const codeAttr = `Code_${codeSuffix}`;
-
-  if (!Array.isArray(allProjects)) {
-    console.error("allProjects is not defined or not an array.");
-    return;
-  }
-
-  if (selectedPathway && selectedLevel) {
-    const filteredProjects = allProjects.filter(
-      (p) => p[codeAttr] && p[codeAttr].startsWith(selectedLevel + ".")
-    );
-
-    filteredProjects.sort((a, b) => {
-      const codeA = a[codeAttr];
-      const codeB = b[codeAttr];
-      if (!codeA) return 1;
-      if (!codeB) return -1;
-      if (codeA < codeB) return -1;
-      if (codeA > codeB) return 1;
-      return 0;
-    });
-
-    filteredProjects.forEach((p) => {
-      // Display format: "Code - Project Name"
-      const optionText = p[codeAttr]
-        ? `${p[codeAttr]} - ${p.Project_Name}`
-        : p.Project_Name;
-      const option = new Option(optionText, p.ID);
-      projectSelect.add(option);
-    });
-
-    if (selectedProjectId) {
-      projectSelect.value = selectedProjectId;
-    }
-  }
-}
-
-// --- MODIFIED Function for Presentations ---
-function updatePresentationOptions(
-  selectedPresentationId = null,
-  level = null
-) {
-  const seriesSelect = document.getElementById("edit-pathway"); // Used for series
-  const presentationSelect = document.getElementById("edit-project"); // Used for presentation titles
-
-  const selectedSeries = seriesSelect.value;
-
-  presentationSelect.innerHTML =
-    '<option value="">-- Select Presentation --</option>';
-
-  // Use global allPresentations
-  if (!Array.isArray(allPresentations)) {
-    console.error("allPresentations is not defined or not an array.");
-    return;
-  }
-
-  if (selectedSeries) {
-    // Filter by series AND level if level is provided
-    const filteredPresentations = allPresentations.filter(
-      (p) => p.series === selectedSeries && (level === null || p.level == level)
-    );
-
-    // Sort presentations by level first, then title
-    filteredPresentations.sort((a, b) => {
-      if (a.level !== b.level) {
-        return a.level - b.level;
-      }
-      return a.title.localeCompare(b.title);
-    });
-
-    filteredPresentations.forEach((p) => {
-      // Display format: "L# - Title"
-      const option = new Option(`L${p.level} - ${p.title}`, p.id);
-      presentationSelect.add(option);
-    });
-
-    if (selectedPresentationId) {
-      presentationSelect.value = selectedPresentationId;
-    }
-  }
-}
-
+/**
+ * Main save function. Builds a payload and sends it.
+ */
 function saveSpeechChanges(event) {
   event.preventDefault();
-  const logId = document.getElementById("edit-log-id").value;
-  const form = document.getElementById("speechEditForm");
-  const sessionType = document.getElementById("edit-session-type-title").value;
-
-  // Get the state of the new checkbox
-  const isGeneric = document.getElementById("edit-is-generic").checked;
-  let data; // Declare data object
-
-  // Build the 'data' object based on the context
-  if (sessionType === "Presentation") {
-    // --- 1. Presentation Mode ---
-    data = {
-      session_title: form.querySelector("#edit-speech-title").value,
-      project_id: form.querySelector("#edit-project").value || null,
-      session_type_title: sessionType,
-      media_url: form.querySelector("#edit-speech-media-url").value || null,
-    };
-  } else if (isGeneric) {
-    // --- 2. Generic Speech Mode ---
-    data = {
-      session_title: form.querySelector("#edit-speech-title").value,
-      project_id: "60", // Hard-code the Generic Speech ID
-      session_type_title: sessionType,
-      media_url: form.querySelector("#edit-speech-media-url").value || null,
-      // Still save the pathway, even if it was disabled, for reference
-      pathway: form.querySelector("#edit-pathway").value,
-    };
-  } else {
-    // --- 3. Pathway Speech Mode ---
-    data = {
-      session_title: form.querySelector("#edit-speech-title").value,
-      project_id: form.querySelector("#edit-project").value || null,
-      session_type_title: sessionType,
-      media_url: form.querySelector("#edit-speech-media-url").value || null,
-      pathway: form.querySelector("#edit-pathway").value,
-    };
-
-    // If no project is selected in Pathway mode, default to Generic (60)
-    if (!data.project_id) {
-      data.project_id = "60";
-    }
-  }
+  const logId = modalElements.logId.value;
+  const payload = buildSavePayload();
 
   fetch(`/speech_log/update/${logId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: JSON.stringify(payload),
   })
     .then((response) => response.json())
     .then((updateResult) => {
       if (updateResult.success) {
-        // --- Update UI (Agenda or Speech Logs page) ---
-        if (window.location.pathname.includes("/agenda")) {
-          // --- Agenda Page Update ---
-          const agendaRow = document.querySelector(`tr[data-id="${logId}"]`);
-          if (agendaRow) {
-            agendaRow.dataset.projectId = updateResult.project_id || "";
-            agendaRow.dataset.sessionTitle = updateResult.session_title;
-
-            const editTitleCell = agendaRow.querySelector(
-              'td[data-field="Session_Title"]'
-            );
-            if (editTitleCell) {
-              const titleControl = editTitleCell.querySelector(
-                "input, select, span"
-              );
-              if (titleControl) {
-                if (titleControl.tagName === "SPAN") {
-                  titleControl.textContent = updateResult.session_title;
-                } else {
-                  titleControl.value = updateResult.session_title;
-                }
-              }
-            }
-
-            const sessionTitleCell = agendaRow.querySelector(
-              ".non-edit-mode-cell:nth-child(2)"
-            );
-
-            if (sessionTitleCell) {
-              let titleDisplay = updateResult.session_title;
-              if (
-                sessionType === "Pathway Speech" &&
-                updateResult.project_id != "60"
-              ) {
-                titleDisplay = `"${updateResult.session_title.replace(
-                  /"/g,
-                  ""
-                )}"`;
-              }
-
-              let projectCodeDisplay = updateResult.project_code
-                ? `(${updateResult.project_code})`
-                : "";
-              if (updateResult.project_id == "60") {
-                projectCodeDisplay = "(TM1.0)"; // Set generic display
-              }
-
-              let projectName = updateResult.project_name;
-              let projectPurpose = "";
-
-              if (sessionType === "Presentation") {
-                const presentation = Array.isArray(allPresentations)
-                  ? allPresentations.find(
-                      (p) => p.id == updateResult.project_id
-                    )
-                  : null;
-                projectName = presentation
-                  ? presentation.title
-                  : updateResult.session_title;
-              } else {
-                const project = Array.isArray(allProjects)
-                  ? allProjects.find((p) => p.ID == updateResult.project_id)
-                  : null;
-                projectPurpose = project ? project.Purpose : "";
-              }
-
-              sessionTitleCell.innerHTML = "";
-              const wrapper = document.createElement("div");
-              wrapper.className = "speech-tooltip-wrapper";
-
-              if (updateResult.project_id == "60") {
-                wrapper.textContent =
-                  `${titleDisplay} ${projectCodeDisplay}`.trim();
-              } else {
-                wrapper.textContent =
-                  `${titleDisplay} ${projectCodeDisplay}`.trim();
-              }
-
-              if (updateResult.project_id && updateResult.project_id != "60") {
-                const tooltip = document.createElement("div");
-                tooltip.className = "speech-tooltip";
-                tooltip.innerHTML = `<span class="tooltip-title">${
-                  projectName || ""
-                }</span><span class="tooltip-purpose">${
-                  projectPurpose || ""
-                }</span>`;
-                wrapper.appendChild(tooltip);
-              }
-              sessionTitleCell.appendChild(wrapper);
-            }
-
-            agendaRow.dataset.durationMin = updateResult.duration_min || "";
-            agendaRow.dataset.durationMax = updateResult.duration_max || "";
-            const durationCell = agendaRow.querySelector(
-              ".non-edit-mode-cell:nth-child(4)"
-            );
-            if (durationCell) {
-              const min = updateResult.duration_min;
-              const max = updateResult.duration_max;
-              if (min && max && min != max) {
-                durationCell.textContent = `${min}'-${max}'`;
-              } else if (max) {
-                durationCell.textContent = `${max}'`;
-              } else {
-                durationCell.textContent = "";
-              }
-            }
-          }
-        } else {
-          // --- Speech Logs Page Update ---
-          const card = document.getElementById(`log-card-${logId}`);
-          if (card) {
-            card.querySelector(
-              ".speech-title"
-            ).innerText = `"${updateResult.session_title.replace(/"/g, "")}"`;
-
-            card.querySelector(".project-name").innerText =
-              updateResult.project_name || "N/A";
-
-            let projectCodeText = updateResult.project_code
-              ? `(${updateResult.project_code})`
-              : "";
-            if (updateResult.project_id == "60") {
-              projectCodeText = "(TM1.0)"; // Set generic display
-            }
-            card.querySelector(".project-code").innerText = projectCodeText;
-
-            card.querySelector(".pathway-info").innerText =
-              updateResult.pathway || "N/A";
-          }
-        }
-        closeSpeechEditModal();
+        handleSaveSuccess(updateResult, payload);
       } else {
         alert(
           "Error updating speech log: " +
@@ -536,4 +146,433 @@ function saveSpeechChanges(event) {
       console.error("Save error:", error);
       alert("An error occurred while saving changes.");
     });
+}
+
+// --- Setup Helpers (for opening) ---
+
+/**
+ * Resets all modal fields to a default state before specialization.
+ */
+function setCommonModalValues(logData, sessionType) {
+  modalElements.logId.value = logData.id;
+  modalElements.mediaUrl.value = logData.Media_URL || "";
+  modalElements.speechTitle.value = logData.Session_Title || "";
+  modalElements.sessionType.value = sessionType;
+
+  // Reset fields to default "Pathway Speech" state
+  modalElements.speechTitle.disabled = false;
+  modalElements.pathwayGenericRow.style.display = "flex";
+  modalElements.levelSelectGroup.style.display = "block";
+  modalElements.projectSelectGroup.style.display = "block";
+  modalElements.genericCheckbox.disabled = false;
+  modalElements.genericCheckbox.checked = false;
+  toggleGeneric(false); // Ensure fields are visible
+}
+
+/**
+ * Configures the modal for an "Individual Evaluator".
+ */
+function setupEvaluatorModal() {
+  modalElements.title.textContent = "Edit Evaluator Details";
+  modalElements.speechTitle.disabled = true;
+  modalElements.pathwayGenericRow.style.display = "none";
+  modalElements.levelSelectGroup.style.display = "none";
+  modalElements.projectSelectGroup.style.display = "none";
+}
+
+/**
+ * Configures the modal for a "Presentation".
+ */
+function setupPresentationModal(logData) {
+  modalElements.title.textContent = "Edit Speech Details";
+  modalElements.labelPathway.textContent = "Education Series:";
+  modalElements.labelProject.textContent = "Presentation Title:";
+  modalElements.levelSelectGroup.style.display = "none";
+  modalElements.genericCheckbox.disabled = true;
+
+  // Find current presentation
+  const currentPres = allPresentations.find((p) => p.id == logData.Project_ID);
+  const currentSeries = currentPres ? currentPres.series : "";
+
+  // Populate Series dropdown
+  modalElements.pathwaySelect.innerHTML = ""; // Clear
+  modalElements.pathwaySelect.add(new Option("-- Select Series --", ""));
+  presentationSeries.forEach((series) => {
+    modalElements.pathwaySelect.add(new Option(series, series));
+  });
+  modalElements.pathwaySelect.value = currentSeries;
+
+  // Populate Presentation options
+  updatePresentationOptions(
+    logData.Project_ID,
+    currentPres ? currentPres.level : null
+  );
+}
+
+/**
+ * Configures the modal for a "Pathway Speech".
+ */
+function setupPathwayModal(logData, workingPath, nextProject) {
+  modalElements.title.textContent = "Edit Speech Details";
+  modalElements.labelPathway.textContent = "Pathway:";
+  modalElements.labelLevel.textContent = "Level:";
+  modalElements.labelProject.textContent = "Project:";
+
+  // Populate Pathway dropdown
+  modalElements.pathwaySelect.innerHTML = ""; // Clear
+  modalElements.pathwaySelect.add(new Option("-- Select Pathway --", ""));
+  Object.keys(pathwayMap).forEach((p_name) => {
+    modalElements.pathwaySelect.add(new Option(p_name, p_name));
+  });
+
+  // --- Logic to pre-select dropdowns ---
+  let pathwayToSelect = logData.pathway;
+  let levelToSelect = logData.level || "";
+  let projectToSelect = logData.Project_ID;
+  let projectCodeToFind = null;
+
+  if (projectToSelect == "60") {
+    // "TM1.0" Generic Speech
+    modalElements.genericCheckbox.checked = true;
+    toggleGeneric(true);
+    modalElements.pathwaySelect.value = pathwayToSelect || "";
+  } else {
+    // Standard Pathway Speech
+    modalElements.genericCheckbox.checked = false;
+    toggleGeneric(false);
+
+    // Pre-fill logic if opening from agenda for a new/unassigned speech
+    if (window.location.pathname.includes("/agenda") && !logData.Project_ID) {
+      if (nextProject) {
+        try {
+          // Try to parse "EH3.1"
+          const nextPathAbbr = nextProject.substring(0, 2);
+          const nextLevel = nextProject.substring(2, 3);
+          projectCodeToFind = nextProject.substring(2);
+          const pathwayName = Object.keys(pathwayMap).find(
+            (name) => pathwayMap[name] === nextPathAbbr
+          );
+          if (pathwayName) {
+            pathwayToSelect = pathwayName;
+            levelToSelect = nextLevel;
+          }
+        } catch (e) {
+          projectCodeToFind = null; // Failed to parse
+        }
+      } else if (workingPath) {
+        pathwayToSelect = workingPath;
+      }
+    } else if (window.location.pathname.includes("/agenda") && workingPath) {
+      // Pre-fill user's current pathway
+      pathwayToSelect = workingPath;
+    }
+
+    modalElements.pathwaySelect.value = pathwayToSelect || "";
+    modalElements.levelSelect.value = levelToSelect;
+
+    // If we found a code (e.g., "3.1"), find the matching Project ID
+    if (projectCodeToFind) {
+      const codeSuffix = pathwayMap[pathwayToSelect];
+      const codeAttr = `Code_${codeSuffix}`;
+      if (codeSuffix && Array.isArray(allProjects)) {
+        const foundProject = allProjects.find(
+          (p) => p[codeAttr] === projectCodeToFind
+        );
+        if (foundProject) projectToSelect = foundProject.ID;
+      }
+    }
+    // Populate the project dropdown based on selections
+    updateProjectOptions(projectToSelect);
+  }
+}
+
+// --- Dynamic Dropdown Helpers ---
+
+/**
+ * Called on change. Routes to the correct dropdown populator.
+ */
+function updateDynamicOptions() {
+  const sessionType = modalElements.sessionType.value;
+  if (sessionType === "Presentation") {
+    updatePresentationOptions(null, null);
+  } else {
+    updateProjectOptions();
+  }
+}
+
+/**
+ * Populates the Project dropdown based on selected Pathway and Level.
+ */
+function updateProjectOptions(selectedProjectId = null) {
+  const { pathwaySelect, levelSelect, projectSelect } = modalElements;
+  const selectedPathway = pathwaySelect.value;
+  const selectedLevel = levelSelect.value;
+
+  projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
+
+  const codeSuffix = pathwayMap[selectedPathway];
+  if (!codeSuffix || !selectedLevel) return; // Need both to filter
+
+  const codeAttr = `Code_${codeSuffix}`;
+
+  const filteredProjects = allProjects
+    .filter((p) => p[codeAttr] && p[codeAttr].startsWith(selectedLevel + "."))
+    .sort((a, b) => (a[codeAttr] < b[codeAttr] ? -1 : 1));
+
+  filteredProjects.forEach((p) => {
+    const optionText = `${p[codeAttr]} - ${p.Project_Name}`;
+    projectSelect.add(new Option(optionText, p.ID));
+  });
+
+  if (selectedProjectId) {
+    projectSelect.value = selectedProjectId;
+  }
+}
+
+/**
+ * Populates the Presentation dropdown based on selected Series.
+ */
+function updatePresentationOptions(
+  selectedPresentationId = null,
+  level = null
+) {
+  const { pathwaySelect: seriesSelect, projectSelect: presentationSelect } =
+    modalElements;
+  const selectedSeries = seriesSelect.value;
+
+  presentationSelect.innerHTML =
+    '<option value="">-- Select Presentation --</option>';
+
+  if (!selectedSeries) return;
+
+  const filtered = allPresentations
+    .filter(
+      (p) => p.series === selectedSeries && (level === null || p.level == level)
+    )
+    .sort((a, b) => {
+      if (a.level !== b.level) return a.level - b.level;
+      return a.title.localeCompare(b.title);
+    });
+
+  filtered.forEach((p) => {
+    presentationSelect.add(new Option(`L${p.level} - ${p.title}`, p.id));
+  });
+
+  if (selectedPresentationId) {
+    presentationSelect.value = selectedPresentationId;
+  }
+}
+
+// --- Save Helpers ---
+
+/**
+ * Builds the JSON payload for the save request based on modal state.
+ */
+function buildSavePayload() {
+  const sessionType = modalElements.sessionType.value;
+  const isGeneric = modalElements.genericCheckbox.checked;
+
+  if (sessionType === "Individual Evaluator") {
+    return {
+      session_type_title: sessionType,
+      media_url: modalElements.mediaUrl.value || null,
+    };
+  }
+
+  if (sessionType === "Presentation") {
+    return {
+      session_title: modalElements.speechTitle.value,
+      project_id: modalElements.projectSelect.value || null,
+      session_type_title: sessionType,
+      media_url: modalElements.mediaUrl.value || null,
+    };
+  }
+
+  if (isGeneric) {
+    return {
+      session_title: modalElements.speechTitle.value,
+      project_id: "60", // Generic Speech ID
+      session_type_title: sessionType,
+      media_url: modalElements.mediaUrl.value || null,
+      pathway: modalElements.pathwaySelect.value,
+    };
+  }
+
+  // Default: Pathway Speech
+  return {
+    session_title: modalElements.speechTitle.value,
+    project_id: modalElements.projectSelect.value || "60", // Default to Generic if empty
+    session_type_title: sessionType,
+    media_url: modalElements.mediaUrl.value || null,
+    pathway: modalElements.pathwaySelect.value,
+  };
+}
+
+/**
+ * Handles the successful save response, delegating UI updates.
+ */
+function handleSaveSuccess(updateResult, payload) {
+  const logId = modalElements.logId.value;
+  if (window.location.pathname.includes("/agenda")) {
+    updateAgendaRow(logId, updateResult, payload);
+  } else {
+    updateSpeechLogCard(logId, updateResult, payload);
+  }
+  closeSpeechEditModal();
+}
+
+/**
+ * Updates the agenda row in `agenda.html` after a successful save.
+ */
+function updateAgendaRow(logId, updateResult, payload) {
+  const agendaRow = document.querySelector(`tr[data-id="${logId}"]`);
+  if (!agendaRow) return;
+
+  const sessionType = payload.session_type_title;
+
+  // Helper to update media link in a given cell
+  const updateMediaLink = (cell) => {
+    let mediaLink = cell.querySelector(".media-play-btn");
+    const newMediaUrl = payload.media_url;
+    const wrapper = cell.querySelector(".speech-tooltip-wrapper") || cell;
+
+    if (newMediaUrl && !mediaLink) {
+      // Add new link
+      mediaLink = document.createElement("a");
+      mediaLink.target = "_blank";
+      mediaLink.className = "icon-btn media-play-btn";
+      mediaLink.title = "Watch Media";
+      mediaLink.innerHTML = ' <i class="fas fa-play-circle"></i>';
+      wrapper.appendChild(mediaLink);
+    } else if (!newMediaUrl && mediaLink) {
+      // Remove old link
+      mediaLink.remove();
+    }
+    if (newMediaUrl && mediaLink) {
+      // Update existing link
+      mediaLink.href = newMediaUrl;
+    }
+  };
+
+  if (sessionType === "Individual Evaluator") {
+    // Evaluators only need their media link updated
+    const titleCell = agendaRow.querySelector(
+      ".non-edit-mode-cell:nth-child(2)"
+    );
+    if (titleCell) updateMediaLink(titleCell);
+  } else {
+    // Full update for Speeches/Presentations
+    agendaRow.dataset.projectId = updateResult.project_id || "";
+    agendaRow.dataset.sessionTitle = updateResult.session_title;
+
+    // Update edit mode title
+    const editTitleCell = agendaRow.querySelector(
+      'td[data-field="Session_Title"]'
+    );
+    if (editTitleCell) {
+      const ctl = editTitleCell.querySelector("input, select, span");
+      if (ctl)
+        ctl.tagName === "SPAN"
+          ? (ctl.textContent = updateResult.session_title)
+          : (ctl.value = updateResult.session_title);
+    }
+
+    // Update view mode title
+    const viewTitleCell = agendaRow.querySelector(
+      ".non-edit-mode-cell:nth-child(2)"
+    );
+    if (viewTitleCell) {
+      let title = updateResult.session_title;
+      if (sessionType === "Pathway Speech" && updateResult.project_id != "60") {
+        title = `"${title.replace(/"/g, "")}"`;
+      }
+
+      let code = updateResult.project_code
+        ? `(${updateResult.project_code})`
+        : "";
+      if (updateResult.project_id == "60") code = "(TM1.0)";
+
+      let projName = updateResult.project_name;
+      let projPurpose = "";
+
+      if (sessionType === "Presentation") {
+        const pres = allPresentations.find(
+          (p) => p.id == updateResult.project_id
+        );
+        projName = pres ? pres.title : updateResult.session_title;
+      } else {
+        const proj = allProjects.find((p) => p.ID == updateResult.project_id);
+        projPurpose = proj ? proj.Purpose : "";
+      }
+
+      viewTitleCell.innerHTML = ""; // Clear
+      const wrapper = document.createElement("div");
+      wrapper.className = "speech-tooltip-wrapper";
+      wrapper.textContent = `${title} ${code}`.trim();
+
+      if (updateResult.project_id && updateResult.project_id != "60") {
+        const tooltip = document.createElement("div");
+        tooltip.className = "speech-tooltip";
+        tooltip.innerHTML = `<span class="tooltip-title">${
+          projName || ""
+        }</span><span class="tooltip-purpose">${projPurpose || ""}</span>`;
+        wrapper.appendChild(tooltip);
+      }
+      viewTitleCell.appendChild(wrapper);
+      updateMediaLink(viewTitleCell); // Add media link *after* rebuild
+    }
+
+    // Update duration in dataset and view mode
+    agendaRow.dataset.durationMin = updateResult.duration_min || "";
+    agendaRow.dataset.durationMax = updateResult.duration_max || "";
+    const durationCell = agendaRow.querySelector(
+      ".non-edit-mode-cell:nth-child(4)"
+    );
+    if (durationCell) {
+      const { duration_min: min, duration_max: max } = updateResult;
+      durationCell.textContent =
+        min && max && min != max ? `${min}'-${max}'` : max ? `${max}'` : "";
+    }
+  }
+}
+
+/**
+ * Updates the log card in `speech_logs.html` after a successful save.
+ */
+function updateSpeechLogCard(logId, updateResult, payload) {
+  const card = document.getElementById(`log-card-${logId}`);
+  if (!card) return;
+
+  // Don't update title/project for evaluators
+  if (payload.session_type_title !== "Individual Evaluator") {
+    card.querySelector(
+      ".speech-title"
+    ).innerText = `"${updateResult.session_title.replace(/"/g, "")}"`;
+    card.querySelector(".project-name").innerText =
+      updateResult.project_name || "N/A";
+    let code = updateResult.project_code
+      ? `(${updateResult.project_code})`
+      : "";
+    if (updateResult.project_id == "60") code = "(TM1.0)";
+    card.querySelector(".project-code").innerText = code;
+    card.querySelector(".pathway-info").innerText =
+      updateResult.pathway || "N/A";
+  }
+
+  // Update media link for all types
+  let mediaLink = card.querySelector(".btn-play");
+  const newMediaUrl = payload.media_url;
+  if (newMediaUrl && !mediaLink) {
+    mediaLink = document.createElement("a");
+    mediaLink.href = newMediaUrl;
+    mediaLink.target = "_blank";
+    mediaLink.className = "icon-btn btn-play";
+    mediaLink.title = "Watch Media";
+    mediaLink.innerHTML = '<i class="fas fa-play-circle"></i>';
+    card.querySelector(".card-actions").prepend(mediaLink);
+  } else if (newMediaUrl && mediaLink) {
+    mediaLink.href = newMediaUrl;
+  } else if (!newMediaUrl && mediaLink) {
+    mediaLink.remove();
+  }
 }
