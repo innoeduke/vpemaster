@@ -1,4 +1,10 @@
 {
 	"codingcopilot.autoRun": true,
-	"codingcopilot.modelDocumentLanguage": "English"
+	"codingcopilot.modelDocumentLanguage": "English",
+	"files.associations": {
+		"*.html": "jinja-html"
+	},
+	"emmet.includeLanguages": {
+		"jinja-html": "html"
+	}
 }

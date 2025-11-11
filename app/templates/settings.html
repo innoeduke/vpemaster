@@ -3,6 +3,21 @@ content %}
 <h1>System Settings</h1>
 
 <div class="settings-container">
+  <div class="search-container global-search-bar">
+    <input
+      type="text"
+      id="global-settings-search"
+      placeholder="Search the active tab..."
+      class="search-box"
+    />
+    <button
+      id="clear-global-settings-search"
+      class="clear-search-btn"
+    >
+      &times;
+    </button>
+  </div>
+
   <div class="tab-nav">
     <button class="tab-btn active" onclick="openTab(event, 'general')">
       General
@@ -24,14 +39,14 @@ content %}
     </button>
   </div>
 
-  <div id="general" class="tab-content" style="display: block">
+  <div id="general" class="tab-content">
     <h2>General Settings</h2>
 
-    <table class="form-table" style="max-width: 700px; margin-top: 15px">
+    <table class="form-table general-settings-table">
       <thead>
-        <tr style="background-color: #f2f2f2">
-          <th style="width: 40%; padding: 8px">Setting</th>
-          <th style="padding: 8px">Value</th>
+        <tr>
+          <th>Setting</th>
+          <th>Value</th>
         </tr>
       </thead>
       <tbody>
@@ -42,7 +57,7 @@ content %}
         </tr>
         {% else %}
         <tr>
-          <td colspan="2" style="text-align: center">
+          <td colspan="2" class="no-settings-message">
             Could not load settings.ini or [ClubSettings] section is empty.
           </td>
         </tr>
@@ -60,7 +75,6 @@ content %}
         <button
           id="cancel-sessions-btn"
           class="btn btn-danger"
-          style="display: none"
         >
           Cancel
         </button>
@@ -69,17 +83,17 @@ content %}
     <table id="sessions-table">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Title</th>
-          <th>Default Owner</th>
-          <th>Role</th>
-          <th>Role Group</th>
-          <th>Min (mins)</th>
-          <th>Max (mins)</th>
-          <th>Section</th>
-          <th>Predefined</th>
-          <th>Project</th>
-          <th>Hidden</th>
+          <th class="sortable" data-column-index="0">ID</th>
+          <th class="sortable" data-column-index="1">Title</th>
+          <th class="sortable" data-column-index="2">Default Owner</th>
+          <th class="sortable" data-column-index="3">Role</th>
+          <th class="sortable" data-column-index="4">Role Group</th>
+          <th class="sortable" data-column-index="5">Min (mins)</th>
+          <th class="sortable" data-column-index="6">Max (mins)</th>
+          <th class="sortable" data-column-index="7">Section</th>
+          <th class="sortable" data-column-index="8">Predefined</th>
+          <th class="sortable" data-column-index="9">Project</th>
+          <th class="sortable" data-column-index="10">Hidden</th>
         </tr>
       </thead>
       <tbody>
@@ -175,37 +189,33 @@ content %}
           method="post"
           enctype="multipart/form-data"
           id="bulk-import-form"
-          style="display: inline"
         >
           <input
             type="file"
             name="file"
             id="bulk-import-file"
-            style="display: none"
-            onchange="document.getElementById('bulk-import-form').submit()"
           />
           <button
             type="button"
             class="btn btn-info"
-            onclick="document.getElementById('bulk-import-file').click()"
+            id="bulk-import-btn"
           >
             Bulk Import
           </button>
         </form>
       </div>
     </div>
-    <table>
+    <table id="user-settings-table">
       <thead>
         <tr>
-          <th>No.</th>
-          <th>Full Name (Username)</th>
-          <th>Role</th>
-          <th>Email</th>
-          <th>Phone</th>
-          <th>Mentor</th>
-          <th>Status</th>
-          <th>Date Created</th>
-          <th>Actions</th>
+          <th class="sortable" data-column-index="0">No.</th>
+          <th class="sortable" data-column-index="1">Full Name (Username)</th>
+          <th class="sortable" data-column-index="2">Role</th>
+          <th class="sortable" data-column-index="3">Email</th>
+          <th class="sortable" data-column-index="4">Phone</th>
+          <th class="sortable" data-column-index="5">Mentor</th>
+          <th class="sortable" data-column-index="6">Status</th>
+          <th data-column-index="7">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -214,9 +224,9 @@ content %}
           <td>{{ loop.index }}</td>
           <td>
             {% if user.contact %} {{ user.contact.Name }} ({{ user.Username }})
-            <i class="fas fa-link" style="color: green; margin-left: 5px"></i>
+            <i class="fas fa-link user-link-icon"></i>
             {% else %}
-            <em style="color: #888">Not Linked</em>
+            <em class="user-not-linked">Not Linked</em>
             {% endif %}
           </td>
           <td>{{ user.Role }}</td>
@@ -227,10 +237,6 @@ content %}
           </td>
           <td>{{ user.mentor.Name if user.mentor else '' }}</td>
           <td>{{ user.Status }}</td>
-          <td>
-            {{ user.Date_Created.strftime('%Y-%m-%d') if user.Date_Created else
-            '' }}
-          </td>
           <td>
             <div class="action-links">
               <a
@@ -262,7 +268,6 @@ content %}
         <button
           id="cancel-level-roles-btn"
           class="btn btn-danger"
-          style="display: none"
         >
           Cancel
         </button>
@@ -271,11 +276,11 @@ content %}
     <table id="level-roles-table">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Level</th>
-          <th>Role</th>
-          <th>Type</th>
-          <th>Count Required</th>
+          <th class="sortable" data-column-index="0">ID</th>
+          <th class="sortable" data-column-index="1">Level</th>
+          <th class="sortable" data-column-index="2">Role</th>
+          <th class="sortable" data-column-index="3">Type</th>
+          <th class="sortable" data-column-index="4">Count Required</th>
         </tr>
       </thead>
       <tbody>
@@ -305,7 +310,6 @@ content %}
         <button
           id="cancel-presentations-btn"
           class="btn btn-danger"
-          style="display: none"
         >
           Cancel
         </button>
@@ -314,11 +318,11 @@ content %}
     <table id="presentations-table">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>Level</th>
-          <th>Code</th>
-          <th>Title</th>
-          <th>Series</th>
+          <th class="sortable" data-column-index="0">ID</th>
+          <th class="sortable" data-column-index="1">Level</th>
+          <th class="sortable" data-column-index="2">Code</th>
+          <th class="sortable" data-column-index="3">Title</th>
+          <th class="sortable" data-column-index="4">Series</th>
         </tr>
       </thead>
       <tbody>
@@ -338,583 +342,5 @@ content %}
 
 {% include '_session_modal.html' %}
 
-<!-- Level Role Modal -->
-<div id="addLevelRoleModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal('addLevelRoleModal')">&times;</span>
-    <h1>Add New Level Role</h1>
-    <form action="{{ url_for('settings_bp.add_level_role') }}" method="POST">
-      <table class="form-table">
-        <tr>
-          <td><label for="level">Level:</label></td>
-          <td><input type="number" id="level" name="level" required /></td>
-        </tr>
-        <tr>
-          <td><label for="role">Role:</label></td>
-          <td><input type="text" id="role" name="role" required /></td>
-        </tr>
-        <tr>
-          <td><label for="type">Type:</label></td>
-          <td>
-            <select id="type" name="type" required>
-              <option value="">Select Type</option>
-              <option value="required">Required</option>
-              <option value="elective">Elective</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td><label for="count_required">Count Required:</label></td>
-          <td>
-            <input
-              type="number"
-              id="count_required"
-              name="count_required"
-              required
-            />
-          </td>
-        </tr>
-      </table>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save Level Role</button>
-        <button
-          type="button"
-          class="btn btn-danger"
-          onclick="closeModal('addLevelRoleModal')"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- Presentation Modal -->
-<div id="addPresentationModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal('addPresentationModal')"
-      >&times;</span
-    >
-    <h1>Add New Presentation</h1>
-    <form action="{{ url_for('settings_bp.add_presentation') }}" method="POST">
-      <table class="form-table">
-        <tr>
-          <td><label for="level">Level:</label></td>
-          <td><input type="number" id="level" name="level" required /></td>
-        </tr>
-        <tr>
-          <td><label for="code">Code:</label></td>
-          <td><input type="text" id="code" name="code" required /></td>
-        </tr>
-        <tr>
-          <td><label for="title">Title:</label></td>
-          <td><input type="text" id="title" name="title" required /></td>
-        </tr>
-        <tr>
-          <td><label for="series">Series:</label></td>
-          <td><input type="text" id="series" name="series" /></td>
-        </tr>
-      </table>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save Presentation</button>
-        <button
-          type="button"
-          class="btn btn-danger"
-          onclick="closeModal('addPresentationModal')"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<script>
-  function openTab(evt, tabName) {
-    const tabcontent = document.getElementsByClassName("tab-content");
-    for (let i = 0; i < tabcontent.length; i++) {
-      tabcontent[i].style.display = "none";
-    }
-
-    const tablinks = document.getElementsByClassName("tab-btn");
-    for (let i = 0; i < tablinks.length; i++) {
-      tablinks[i].className = tablinks[i].className.replace(" active", "");
-    }
-
-    document.getElementById(tabName).style.display = "block";
-
-    // Handle both click event (has evt) and programmatic call (uses tabName)
-    let targetElement = null;
-    if (evt && evt.currentTarget) {
-      targetElement = evt.currentTarget;
-    } else {
-      // Find the button associated with the tabName
-      for (let i = 0; i < tablinks.length; i++) {
-        if (tablinks[i].getAttribute("onclick").includes(`'${tabName}'`)) {
-          targetElement = tablinks[i];
-          break;
-        }
-      }
-    }
-
-    if (targetElement) {
-      targetElement.className += " active";
-    }
-  }
-
-  function closeModal(modalId) {
-    document.getElementById(modalId).style.display = "none";
-  }
-
-  function saveTableChanges(config) {
-    const { tableBody, url, toggleEditFn, getCellValue, updateCell } = config;
-    const dataToSave = [];
-
-    tableBody.querySelectorAll("tr").forEach((row) => {
-      const rowData = { id: row.dataset.id };
-      row.querySelectorAll("td[data-field]").forEach((cell) => {
-        const field = cell.dataset.field;
-        rowData[field] = getCellValue(cell, field);
-      });
-      dataToSave.push(rowData);
-    });
-
-    fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dataToSave),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          toggleEditFn(false);
-          tableBody.querySelectorAll("tr").forEach((row) => {
-            const id = row.dataset.id;
-            const updatedRow = dataToSave.find((item) => item.id == id);
-            row.querySelectorAll("td[data-field]").forEach((cell) => {
-              const field = cell.dataset.field;
-              updateCell(cell, field, updatedRow[field]);
-            });
-          });
-        } else {
-          alert("Error saving changes: " + data.message);
-        }
-      })
-      .catch((error) => {
-        console.error("Error:", error);
-        alert("An error occurred while saving.");
-      });
-  }
-
-  function toggleEditMode(config) {
-    const {
-      enable,
-      editBtn,
-      cancelBtn,
-      tableBody,
-      originalData,
-      createEditor,
-      restoreCell,
-    } = config;
-
-    // Update state
-    editBtn.textContent = enable ? "Save" : "Edit";
-    cancelBtn.style.display = enable ? "inline-block" : "none";
-
-    tableBody.querySelectorAll("tr").forEach((row) => {
-      const id = row.dataset.id;
-      if (enable) {
-        originalData[id] = {};
-      }
-      row.querySelectorAll("td[data-field]").forEach((cell) => {
-        const field = cell.dataset.field;
-        const currentValue = cell.textContent.trim();
-
-        if (enable) {
-          originalData[id][field] = currentValue;
-          createEditor(cell, field, currentValue);
-        } else {
-          restoreCell(cell, field);
-        }
-      });
-    });
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-    // Check URL for default_tab parameter
-    const urlParams = new URLSearchParams(window.location.search);
-    const defaultTab = urlParams.get("default_tab");
-    if (defaultTab) {
-      // Pass null for evt to indicate a programmatic call
-      openTab(null, defaultTab);
-    }
-
-    // --- Add Session Modal ---
-    const addSessionBtn = document.getElementById("add-session-btn");
-    const sessionModal = document.getElementById("addSessionModal");
-    const closeSessionModalBtn = sessionModal.querySelector(".close");
-
-    addSessionBtn.addEventListener("click", () => {
-      sessionModal.style.display = "flex";
-    });
-
-    closeSessionModalBtn.addEventListener("click", () => {
-      sessionModal.style.display = "none";
-    });
-
-    window.addEventListener("click", (event) => {
-      if (event.target == sessionModal) {
-        sessionModal.style.display = "none";
-      }
-    });
-
-    // --- Session Types Edit Logic ---
-    const editSessionsBtn = document.getElementById("edit-sessions-btn");
-    const cancelSessionsBtn = document.getElementById("cancel-sessions-btn");
-    const sessionsTableBody = document.querySelector("#sessions-table tbody");
-    let isEditingSessions = false;
-    let originalSessionsData = {};
-
-    editSessionsBtn.addEventListener("click", () => {
-      if (isEditingSessions) {
-        saveSessionChanges();
-      } else {
-        toggleSessionEditMode(true);
-      }
-    });
-
-    cancelSessionsBtn.addEventListener("click", () => {
-      toggleSessionEditMode(false);
-      sessionsTableBody.querySelectorAll("tr").forEach((row) => {
-        const id = row.dataset.id;
-        const originalRow = originalSessionsData[id];
-        row.querySelectorAll("td[data-field]").forEach((cell) => {
-          const field = cell.dataset.field;
-          if (
-            field.startsWith("Is_") ||
-            field === "Valid_for_Project" ||
-            field == "Predefined"
-          ) {
-            cell.innerHTML = `<input type="checkbox" ${
-              originalRow[field] ? "checked" : ""
-            } disabled>`;
-          } else {
-            cell.textContent = originalRow[field];
-          }
-        });
-      });
-    });
-
-    function toggleSessionEditMode(enable) {
-      const createEditor = (cell, field, currentValue) => {
-        if (
-          field.startsWith("Is_") ||
-          field === "Valid_for_Project" ||
-          field == "Predefined"
-        ) {
-          const checkbox = cell.querySelector('input[type="checkbox"]');
-          originalSessionsData[cell.closest("tr").dataset.id][field] =
-            checkbox.checked;
-          checkbox.disabled = false;
-        } else {
-          const input = document.createElement("input");
-          input.type = field.includes("Duration") ? "number" : "text";
-          input.value = currentValue;
-          input.className = "form-control-sm";
-          cell.textContent = "";
-          cell.appendChild(input);
-        }
-      };
-
-      const restoreCell = (cell, field) => {
-        if (
-          field.startsWith("Is_") ||
-          field === "Valid_for_Project" ||
-          field == "Predefined"
-        ) {
-          const checkbox = cell.querySelector('input[type="checkbox"]');
-          if (checkbox) {
-            checkbox.disabled = true;
-          }
-        } else {
-          const input = cell.querySelector("input");
-          if (input) {
-            cell.textContent = input.value;
-          }
-        }
-      };
-
-      isEditingSessions = enable;
-      toggleEditMode({
-        enable,
-        editBtn: editSessionsBtn,
-        cancelBtn: cancelSessionsBtn,
-        tableBody: sessionsTableBody,
-        originalData: originalSessionsData,
-        createEditor,
-        restoreCell,
-      });
-    }
-
-    function saveSessionChanges() {
-      const getCellValue = (cell, field) => {
-        if (
-          field.startsWith("Is_") ||
-          field === "Valid_for_Project" ||
-          field == "Predefined"
-        ) {
-          return cell.querySelector('input[type="checkbox"]').checked;
-        } else {
-          return cell.querySelector("input").value;
-        }
-      };
-
-      const updateCell = (cell, field, value) => {
-        if (
-          field.startsWith("Is_") ||
-          field === "Valid_for_Project" ||
-          field == "Predefined"
-        ) {
-          cell.innerHTML = `<input type="checkbox" ${
-            value ? "checked" : ""
-          } disabled>`;
-        } else {
-          cell.textContent = value;
-        }
-      };
-
-      saveTableChanges({
-        tableBody: sessionsTableBody,
-        url: "/settings/sessions/update",
-        toggleEditFn: toggleSessionEditMode,
-        getCellValue,
-        updateCell,
-      });
-    }
-
-    // --- Level Roles Modal ---
-    const addLevelRoleBtn = document.getElementById("add-level-role-btn");
-    const levelRoleModal = document.getElementById("addLevelRoleModal");
-    const closeLevelRoleModalBtn = levelRoleModal.querySelector(".close");
-
-    addLevelRoleBtn.addEventListener("click", () => {
-      levelRoleModal.style.display = "flex";
-    });
-
-    closeLevelRoleModalBtn.addEventListener("click", () => {
-      levelRoleModal.style.display = "none";
-    });
-
-    window.addEventListener("click", (event) => {
-      if (event.target == levelRoleModal) {
-        levelRoleModal.style.display = "none";
-      }
-    });
-
-    // --- Level Roles Edit Logic ---
-    const editLevelRolesBtn = document.getElementById("edit-level-roles-btn");
-    const cancelLevelRolesBtn = document.getElementById(
-      "cancel-level-roles-btn"
-    );
-    const levelRolesTableBody = document.querySelector(
-      "#level-roles-table tbody"
-    );
-    let isEditingLevelRoles = false;
-    let originalLevelRolesData = {};
-
-    editLevelRolesBtn.addEventListener("click", () => {
-      if (isEditingLevelRoles) {
-        saveLevelRoleChanges();
-      } else {
-        toggleLevelRoleEditMode(true);
-      }
-    });
-
-    cancelLevelRolesBtn.addEventListener("click", () => {
-      toggleLevelRoleEditMode(false);
-      levelRolesTableBody.querySelectorAll("tr").forEach((row) => {
-        const id = row.dataset.id;
-        const originalRow = originalLevelRolesData[id];
-        row.querySelectorAll("td[data-field]").forEach((cell) => {
-          const field = cell.dataset.field;
-          cell.textContent = originalRow[field];
-        });
-      });
-    });
-
-    function toggleLevelRoleEditMode(enable) {
-      const createEditor = (cell, field, currentValue) => {
-        if (field === "type") {
-          // Create dropdown for type field
-          const select = document.createElement("select");
-          select.className = "form-control-sm";
-          const options = ["required", "elective"];
-          options.forEach((opt) => {
-            const option = document.createElement("option");
-            option.value = opt;
-            option.textContent = opt;
-            if (opt === currentValue.toLowerCase()) {
-              option.selected = true;
-            }
-            select.appendChild(option);
-          });
-          cell.textContent = "";
-          cell.appendChild(select);
-        } else {
-          // Create input for other fields
-          const input = document.createElement("input");
-          input.type =
-            field.includes("level") || field.includes("count")
-              ? "number"
-              : "text";
-          input.value = currentValue;
-          input.className = "form-control-sm";
-          cell.textContent = "";
-          cell.appendChild(input);
-        }
-      };
-
-      const restoreCell = (cell, field) => {
-        const input = cell.querySelector("input");
-        const select = cell.querySelector("select");
-        if (input) {
-          cell.textContent = input.value;
-        } else if (select) {
-          cell.textContent = select.value;
-        }
-      };
-
-      isEditingLevelRoles = enable;
-      toggleEditMode({
-        enable,
-        editBtn: editLevelRolesBtn,
-        cancelBtn: cancelLevelRolesBtn,
-        tableBody: levelRolesTableBody,
-        originalData: originalLevelRolesData,
-        createEditor,
-        restoreCell,
-      });
-    }
-
-    function saveLevelRoleChanges() {
-      const getCellValue = (cell, field) => {
-        const input = cell.querySelector("input");
-        const select = cell.querySelector("select");
-        return input ? input.value : select ? select.value : cell.textContent;
-      };
-
-      const updateCell = (cell, field, value) => {
-        cell.textContent = value;
-      };
-
-      saveTableChanges({
-        tableBody: levelRolesTableBody,
-        url: "/settings/level-roles/update",
-        toggleEditFn: toggleLevelRoleEditMode,
-        getCellValue,
-        updateCell,
-      });
-    }
-
-    // --- Presentations Modal ---
-    const addPresentationBtn = document.getElementById("add-presentation-btn");
-    const presentationModal = document.getElementById("addPresentationModal");
-    const closePresentationModalBtn = presentationModal.querySelector(".close");
-
-    addPresentationBtn.addEventListener("click", () => {
-      presentationModal.style.display = "flex";
-    });
-
-    closePresentationModalBtn.addEventListener("click", () => {
-      presentationModal.style.display = "none";
-    });
-
-    window.addEventListener("click", (event) => {
-      if (event.target == presentationModal) {
-        presentationModal.style.display = "none";
-      }
-    });
-
-    // --- Presentations Edit Logic ---
-    const editPresentationsBtn = document.getElementById(
-      "edit-presentations-btn"
-    );
-    const cancelPresentationsBtn = document.getElementById(
-      "cancel-presentations-btn"
-    );
-    const presentationsTableBody = document.querySelector(
-      "#presentations-table tbody"
-    );
-    let isEditingPresentations = false;
-    let originalPresentationsData = {};
-
-    editPresentationsBtn.addEventListener("click", () => {
-      if (isEditingPresentations) {
-        savePresentationChanges();
-      } else {
-        togglePresentationEditMode(true);
-      }
-    });
-
-    cancelPresentationsBtn.addEventListener("click", () => {
-      togglePresentationEditMode(false);
-      presentationsTableBody.querySelectorAll("tr").forEach((row) => {
-        const id = row.dataset.id;
-        const originalRow = originalPresentationsData[id];
-        row.querySelectorAll("td[data-field]").forEach((cell) => {
-          const field = cell.dataset.field;
-          cell.textContent = originalRow[field];
-        });
-      });
-    });
-
-    function togglePresentationEditMode(enable) {
-      const createEditor = (cell, field, currentValue) => {
-        const input = document.createElement("input");
-        input.type = field === "level" ? "number" : "text";
-        input.value = currentValue;
-        input.className = "form-control-sm";
-        cell.textContent = "";
-        cell.appendChild(input);
-      };
-
-      const restoreCell = (cell, field) => {
-        const input = cell.querySelector("input");
-        if (input) {
-          cell.textContent = input.value;
-        }
-      };
-
-      isEditingPresentations = enable;
-      toggleEditMode({
-        enable,
-        editBtn: editPresentationsBtn,
-        cancelBtn: cancelPresentationsBtn,
-        tableBody: presentationsTableBody,
-        originalData: originalPresentationsData,
-        createEditor,
-        restoreCell,
-      });
-    }
-
-    function savePresentationChanges() {
-      const getCellValue = (cell, field) => {
-        const input = cell.querySelector("input");
-        return input ? input.value : cell.textContent;
-      };
-
-      const updateCell = (cell, field, value) => {
-        cell.textContent = value;
-      };
-
-      saveTableChanges({
-        tableBody: presentationsTableBody,
-        url: "/settings/presentations/update",
-        toggleEditFn: togglePresentationEditMode,
-        getCellValue,
-        updateCell,
-      });
-    }
-  });
-</script>
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 {% endblock %}

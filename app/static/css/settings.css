@@ -62,3 +62,61 @@
     box-sizing: border-box;
 }
 
+/* --- Global Settings Search Bar --- */
+.global-search-bar {
+  /* Desktop width (default) */
+  width: 33.33%;
+  min-width: 300px;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 20px; /* Space between search and tabs */
+}
+
+/* Make the search box inside fill its container */
+.global-search-bar .search-box {
+  width: 100%;
+}
+
+/* --- General Tab Table Styles --- */
+.general-settings-table {
+  max-width: 700px;
+  margin-top: 15px;
+}
+
+.general-settings-table th {
+  padding: 8px;
+  background-color: #f2f2f2;
+}
+.general-settings-table th:first-child {
+  width: 40%;
+}
+
+.general-settings-table .no-settings-message {
+  text-align: center;
+}
+
+/* --- User Settings Table --- */
+.user-link-icon {
+  color: green;
+  margin-left: 5px;
+}
+
+.user-not-linked {
+  color: #888;
+}
+
+/* --- Bulk Import --- */
+#bulk-import-form {
+  display: inline;
+}
+#bulk-import-file {
+  display: none;
+}
+
+/* --- Default state for cancel buttons --- */
+#cancel-sessions-btn,
+#cancel-level-roles-btn,
+#cancel-presentations-btn {
+  display: none;
+}

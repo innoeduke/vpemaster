@@ -318,4 +318,11 @@
         flex-direction: column;
         width: 100%;
     }
+   
+    /* --- Settings Pag Respoensive Fixes --- */
+    
+    .global-search-bar {
+    width: 100%; /* Full width on mobile */
+    min-width: unset;
+  }
 }

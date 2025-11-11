@@ -42,19 +42,51 @@ def settings():
 @login_required
 def add_session_type():
     if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
-        # This should ideally return a proper error page or flash a message
-        return redirect(url_for('agenda_bp.agenda'))
+        return jsonify(success=False, message="Permission denied"), 403
 
     try:
+        # 输入验证和清理
+        title = request.form.get('title', '').strip()
+        if not title:
+            return jsonify(success=False, message="Title is required"), 400
+        
+        # 检查标题是否已存在
+        existing_session = SessionType.query.filter_by(Title=title).first()
+        if existing_session:
+            return jsonify(success=False, message="Session type with this title already exists"), 400
+        
+        # 验证数值输入
+        duration_min_str = request.form.get('duration_min', '').strip()
+        duration_max_str = request.form.get('duration_max', '').strip()
+        
+        duration_min = None
+        duration_max = None
+        
+        if duration_min_str:
+            if not duration_min_str.isdigit():
+                return jsonify(success=False, message="Duration min must be a positive integer"), 400
+            duration_min = int(duration_min_str)
+            if duration_min < 1 or duration_min > 480:  # 8小时限制
+                return jsonify(success=False, message="Duration min must be between 1 and 480 minutes"), 400
+        
+        if duration_max_str:
+            if not duration_max_str.isdigit():
+                return jsonify(success=False, message="Duration max must be a positive integer"), 400
+            duration_max = int(duration_max_str)
+            if duration_max < 1 or duration_max > 480:
+                return jsonify(success=False, message="Duration max must be between 1 and 480 minutes"), 400
+        
+        # 验证时长逻辑
+        if duration_min and duration_max and duration_min > duration_max:
+            return jsonify(success=False, message="Duration min cannot be greater than duration max"), 400
+
         new_session = SessionType(
-            Title=request.form.get('title'),
-            Default_Owner=request.form.get('default_owner') or None,
-            Role=request.form.get('role') or None,
-            Role_Group=request.form.get('role_group') or None,
-            Duration_Min=int(request.form.get('duration_min')
-                             ) if request.form.get('duration_min') else None,
-            Duration_Max=int(request.form.get('duration_max')
-                             ) if request.form.get('duration_max') else None,
+            Title=title,
+            Default_Owner=request.form.get('default_owner', '').strip() or None,
+            Role=request.form.get('role', '').strip() or None,
+            Role_Group=request.form.get('role_group', '').strip() or None,
+            Duration_Min=duration_min,
+            Duration_Max=duration_max,
             Is_Section='is_section' in request.form,
             Predefined='predefined' in request.form,
             Valid_for_Project='valid_for_project' in request.form,
@@ -62,11 +94,17 @@ def add_session_type():
         )
         db.session.add(new_session)
         db.session.commit()
+        
+        return jsonify(success=True, message="Session type added successfully", id=new_session.id)
+        
+    except ValueError as e:
+        db.session.rollback()
+        current_app.logger.error(f"Value error adding session type: {str(e)}")
+        return jsonify(success=False, message="Invalid input data"), 400
     except Exception as e:
         db.session.rollback()
-        # In a real app, you'd flash a message: flash(f"Error: {e}", "error")
-
-    return redirect(url_for('settings_bp.settings', default_tab='sessions'))
+        current_app.logger.error(f"Error adding session type: {str(e)}")
+        return jsonify(success=False, message="Internal server error"), 500
 
 
 @settings_bp.route('/settings/sessions/update', methods=['POST'])
