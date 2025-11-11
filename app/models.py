@@ -115,6 +115,8 @@ class SessionLog(db.Model):
     Duration_Max = db.Column(db.Integer)
     Notes = db.Column(db.String(1000))
     Status = db.Column(db.String(50))
+    state = db.Column(db.String(50), nullable=False,
+                      default='active')  # Can be 'active', 'waiting', 'cancelled'
     current_path_level = db.Column(db.String(10))
 
     meeting = db.relationship('Meeting', backref='session_logs')
