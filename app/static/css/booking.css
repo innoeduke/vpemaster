@@ -414,7 +414,6 @@ h1 {
     font-size: 0.8em;
     color: #555;
     margin-top: 5px;
-    text-align: right;
 }
 
 .waitlist-info i {
@@ -425,12 +424,11 @@ h1 {
     list-style: none;
     padding: 0;
     margin: 0;
-    display: inline;
 }
 
 .waitlist-users li {
-    display: inline;
-    margin-right: 5px;
+    display: block; /* Each user on a new line */
+    margin-bottom: 2px; /* Optional: adds a little space between names */
 }
 
 .btn-join-waitlist, .btn-leave-waitlist {

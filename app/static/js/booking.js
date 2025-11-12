@@ -83,24 +83,29 @@ function bookOrCancelRole(sessionId, action, roleKey) {
 }
 
 function assignRole(sessionId, roleKey, contactId) {
-  fetch("/booking/book", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      session_id: sessionId,
-      action: "assign",
-      role_key: roleKey,
-      contact_id: contactId,
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        window.location.reload();
-      } else {
-        alert("Error: " + data.message);
-      }
-    });
+  if (contactId == "0") {
+    // If "un-assigning", call the 'cancel' function instead
+    bookOrCancelRole(sessionId, "cancel", roleKey);
+  } else {
+    fetch("/booking/book", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        session_id: sessionId,
+        action: "assign",
+        role_key: roleKey,
+        contact_id: contactId,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          window.location.reload();
+        } else {
+          alert("Error: " + data.message);
+        }
+      });
+  }
 }
 function handleVoteClick(buttonEl) {
   const data = {
@@ -184,21 +189,21 @@ function leaveWaitlist(sessionId, roleKey) {
 }
 
 function joinWaitlist(sessionId, roleKey) {
-    fetch("/booking/book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            session_id: sessionId,
-            action: "join_waitlist",
-            role_key: roleKey,
-        }),
-    })
-        .then((response) => response.json())
-        .then((data) => {
-            if (data.success) {
-                window.location.reload(true); // Force reload from server
-            } else {
-                alert("Error: " + data.message);
-            }
-        });
+  fetch("/booking/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      action: "join_waitlist",
+      role_key: roleKey,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        window.location.reload(true); // Force reload from server
+      } else {
+        alert("Error: " + data.message);
+      }
+    });
 }

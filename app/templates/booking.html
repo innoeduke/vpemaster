@@ -134,18 +134,17 @@
                             {% endif %}
                         </div>
                     </div>
-                    {% if role.waitlist %}
-                    <div class="waitlist-info">
-                        <i class="fas fa-users"></i>
-                        <span>Waitlist:</span>
-                        <ul class="waitlist-users">
-                            {% for user in role.waitlist %}
-                            <li>{{ user.name }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% endif %}
                     <div class="role-cell-actions">
+                        {% if role.waitlist %}
+                        <div class="waitlist-info">
+                            <span style="font-size:0.5em;">Waitlist:</span>
+                            <ul class="waitlist-users">
+                                {% for user in role.waitlist %}
+                                <li><i class="fas fa-user"></i> {{ user.name }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                         {% if is_admin_view and role.owner_id and role.award_category %}
                             {% if role.award_type %}
                                 <button type="button" class="icon-btn icon-btn-voted" 

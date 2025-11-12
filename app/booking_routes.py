@@ -113,7 +113,7 @@ def _consolidate_roles(session_logs, is_admin_booker):
                     roles_dict[role_key]['owner_name'] = log.owner_name
                 # Append waitlisted users, avoiding duplicates
                 existing_ids = {user['id']
-                              for user in roles_dict[role_key]['waitlist']}
+                                for user in roles_dict[role_key]['waitlist']}
                 for user_info in waitlisted_info:
                     if user_info['id'] not in existing_ids:
                         roles_dict[role_key]['waitlist'].append(user_info)
@@ -452,7 +452,7 @@ def book_or_assign_role():
                     timestamp=datetime.utcnow()
                 )
                 db.session.add(new_waitlist_entry)
-        
+
         db.session.commit()
         return jsonify(success=True, message="You have been added to the waitlist.")
     elif action == 'book':
@@ -464,8 +464,18 @@ def book_or_assign_role():
         waitlist_entry = Waitlist.query.filter_by(
             session_log_id=session_id).order_by(Waitlist.timestamp).first()
         if waitlist_entry:
+            # This user is being promoted.
             owner_id_to_set = waitlist_entry.contact_id
-            db.session.delete(waitlist_entry)
+
+            # Now, remove this user from the waitlist of ALL sessions for this role in this meeting.
+            sessions_to_leave = SessionLog.query.join(SessionType)\
+                .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+                .filter(SessionType.Role == logical_role_key).all()
+
+            for session_log in sessions_to_leave:
+                Waitlist.query.filter_by(
+                    session_log_id=session_log.id, contact_id=owner_id_to_set).delete(synchronize_session=False)
+
         else:
             owner_id_to_set = None
     elif action == 'leave_waitlist':
@@ -482,7 +492,7 @@ def book_or_assign_role():
                 session_log_id=session_log.id, contact_id=current_user_contact_id).first()
             if waitlist_entry:
                 db.session.delete(waitlist_entry)
-        
+
         db.session.commit()
         return jsonify(success=True, message="You have been removed from the waitlist.")
     elif action == 'assign' and is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):

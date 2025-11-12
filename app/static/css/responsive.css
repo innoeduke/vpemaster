@@ -327,8 +327,8 @@
   }
 
     .booking-table .waitlist-info {
-        flex-basis: 100%;
-        text-align: left;
+        flex-basis: auto;
+        text-align: right;
         margin-top: 5px;
         padding: 0 15px;
     }
