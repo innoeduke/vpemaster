@@ -193,12 +193,15 @@
         padding: 0 15px;
     }
 
-    .booking-header {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 0;
+    .booking-container h3 {
+        text-align: center;
     }
 
+    .booking-container .completed-roles-section-header {
+        display: flex;
+        flex-direction: column;
+    }
+    
     .booking-filter-container {
         flex-direction: column;
         align-items: stretch;
@@ -235,42 +238,43 @@
 
     /* Make rows flex containers */
     .booking-table tr {
-        display: flex;
-        align-items: center;
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Two equal columns */
+        grid-template-rows: auto auto; /* Two rows, height based on content */
+        grid-template-areas:
+            "role role"
+            "waitlist action";
         margin-bottom: 20px;
         border: 2px solid #ddd;
         border-radius: 8px;
-        gap: 10px;
+        padding: 10px;
         box-shadow: 0 2px 4px rgba(0,0,0,0.08);
     }
 
     /* Make cells flex items */
     .booking-table td {
         display: flex;
-        align-items: center;
+        padding: 5px; /* Add some internal padding */
     }
 
     .booking-table td:nth-of-type(1) { /* Role */
-        flex: 3.5;
+        grid-area: role;
         font-weight: bold;
-        justify-content: flex-start;
-        text-align: left;
+        border-bottom: 1px solid #eee; /* Separator line */
+        padding-bottom: 15px; /* Space below role info */
+        margin-bottom: 5px; /* Space for the line */
     }
 
-    .booking-table td:nth-of-type(2) { /* Action */
-        flex: 2.5;
-        justify-content: flex-start;
+    .booking-table td:nth-of-type(2) { /* Waitlist */
+        grid-area: waitlist;
+        justify-content: flex-start; /* Align content to the left */
+        align-items: flex-end;
     }
 
-    .booking-table.is-admin-view tr {
-        flex-wrap: wrap;
-    }
-
-    .booking-table.is-admin-view .role-cell {
-        flex-basis: 100%;
-        justify-content: flex-start;
-        min-height: auto;
-        font-size: 1.15em; 
+    .booking-table td:nth-of-type(3) { /* Action */
+        grid-area: action;
+        justify-content: flex-end; /* Align content to the right */
+        align-items: flex-end; /* Align content to the bottom */
     }
 
     .booking-table.is-admin-view .action-cell {
@@ -280,6 +284,11 @@
 
     .booking-table.is-admin-view .icon-btn {
         margin: 10px;
+    }
+     .booking-table .waitlist-info {
+        align-self: end; /* Align to the bottom */
+        padding: 5px;
+        margin: 0;
     }
 
     /* --- Pathway Library Responsive Fixes --- */
@@ -322,14 +331,9 @@
     /* --- Settings Pag Respoensive Fixes --- */
     
     .global-search-bar {
-    width: 100%; /* Full width on mobile */
-    min-width: unset;
-  }
-
-    .booking-table .waitlist-info {
-        flex-basis: auto;
-        text-align: right;
-        margin-top: 5px;
-        padding: 0 15px;
+        width: 100%; /* Full width on mobile */
+        min-width: unset;
     }
+
+   
 }
