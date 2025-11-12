@@ -133,18 +133,18 @@
                                 <span class="speaker-for">for {{ role.speaker_name }}</span>
                             {% endif %}
                         </div>
-                        {% if role.waitlist %}
-                        <div class="waitlist-info">
-                            <i class="fas fa-users"></i>
-                            <span>Waitlist:</span>
-                            <ul class="waitlist-users">
-                                {% for user in role.waitlist %}
-                                <li>{{ user }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        {% endif %}
                     </div>
+                    {% if role.waitlist %}
+                    <div class="waitlist-info">
+                        <i class="fas fa-users"></i>
+                        <span>Waitlist:</span>
+                        <ul class="waitlist-users">
+                            {% for user in role.waitlist %}
+                            <li>{{ user.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
                     <div class="role-cell-actions">
                         {% if is_admin_view and role.owner_id and role.award_category %}
                             {% if role.award_type %}
@@ -194,7 +194,14 @@
                             {% if role.owner_id == current_user_contact_id %}
                                 <button class="btn btn-cancel" onclick="bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role_key }}')">Cancel</button>
                             {% else %}
-                                <button class="btn btn-booked" disabled>Booked</button>
+                                <div class="booked-by-container">
+                                    {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
+                                    {% if current_user_contact_id in waitlist_ids %}
+                                        <button class="btn btn-leave-waitlist" onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
+                                    {% else %}
+                                        <button class="btn btn-join-waitlist" onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
+                                    {% endif %}
+                                </div>
                             {% endif %}
                         {% else %}
                             <button class="btn btn-book" onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role_key }}')">Book</button>

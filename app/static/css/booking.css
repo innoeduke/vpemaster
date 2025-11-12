@@ -414,6 +414,7 @@ h1 {
     font-size: 0.8em;
     color: #555;
     margin-top: 5px;
+    text-align: right;
 }
 
 .waitlist-info i {
@@ -430,4 +431,23 @@ h1 {
 .waitlist-users li {
     display: inline;
     margin-right: 5px;
+}
+
+.btn-join-waitlist, .btn-leave-waitlist {
+    padding: 5px 15px;
+    border-radius: 5px;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-join-waitlist {
+    background-color: #fcd22e; 
+}
+
+.btn-leave-waitlist {
+    background-color: #dc3545; /* A standard danger color */
 }
