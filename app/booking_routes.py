@@ -250,21 +250,16 @@ def _get_meetings(user_role):
 
     default_meeting_num = soonest_upcoming_meeting[0] if soonest_upcoming_meeting else None
 
-    if is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
-        future_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
-            .filter(Meeting.Meeting_Date >= today)\
-            .order_by(Meeting.Meeting_Number.desc()).all()
-
-        past_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
-            .filter(Meeting.Meeting_Date < today)\
-            .order_by(Meeting.Meeting_Number.desc())\
-            .limit(5).all()
-        meetings = future_meetings + past_meetings
-    else:
-        meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
-            .filter(Meeting.Meeting_Date >= today)\
-            .order_by(Meeting.Meeting_Number.asc()).all()
-
+    # Fetch all upcoming meetings, ordered with the soonest first.
+    future_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
+        .filter(Meeting.Meeting_Date >= today)\
+        .order_by(Meeting.Meeting_Number.asc()).all()
+    # Fetch the 5 most recent past meetings.
+    past_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
+        .filter(Meeting.Meeting_Date < today)\
+        .order_by(Meeting.Meeting_Number.desc())\
+        .limit(5).all()
+    meetings = future_meetings + past_meetings
     return meetings, default_meeting_num
 
 
