@@ -14,7 +14,7 @@
                         <select id="type" name="type" required>
                             <option value="Member">Member</option>
                             <option value="Past Member">Past Member</option>
-                            <option value="Guest">Guest</option>
+                            <option value="Guest" selected>Guest</option>
                             <option value="System">System</option>
                         </select>
                     </td>
@@ -31,6 +31,7 @@
                     <td><label for="working_path">Pathway:</label></td>
                     <td>
                         <select id="working_path" name="working_path">
+                            <option value="">(select a pathway if available)</option>
                             {% for pathway in pathways %}
                                 <option value="{{ pathway }}">{{ pathway }}</option>
                             {% endfor %}

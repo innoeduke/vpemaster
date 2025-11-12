@@ -257,7 +257,7 @@ def get_speech_log_details(log_id):
             # Try to get level from codes like "PM1.1"
             level = int(project_code.split('.')[0])
         except (ValueError, IndexError):
-            level = 1 # Fallback if split fails
+            level = 1  # Fallback if split fails
     # If project_code is "TM1.0" or None, level just stays 1
 
     pathway = log.owner.Working_Path if log.owner and log.owner.Working_Path else "Presentation Mastery"

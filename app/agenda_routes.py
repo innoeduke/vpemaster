@@ -437,30 +437,36 @@ def _get_all_speech_details(logs_data, pathway_mapping):
             project_code = _get_project_code_str(
                 project, contact, pathway_mapping)
             purpose = project.Purpose
+            project_name = project.Project_Name
+            pathway_name = contact.Working_Path if contact else ""
             title = log.Session_Title or project.Project_Name
             duration = f"[{project.Duration_Min}'-{project.Duration_Max}']"
+            project_code_str = f"{path_abbr}{project_code}" if project_code else "Generic"
+
+            details_to_add = {
+                "speech_title": title, "project_name": project_name, "pathway_name": pathway_name,
+                "project_purpose": purpose, "project_code_str": project_code_str, "duration": duration
+            }
 
         # Handle Presentation (Type ID 43)
         elif session_type.id == 43:
             presentation = Presentation.query.get(log.Project_ID)
             if not presentation:
                 continue
-            purpose = f"Level {presentation.level} - {presentation.title}"
-            title = log.Session_Title or presentation.title
-            project_code = None  # Presentations don't have a simple code like pathways
-            duration = "[10'-15']"  # Presentations have a fixed duration
-        else:
-            continue  # Not a speech or presentation we want to list here
+            details_to_add = {
+                "speech_title": log.Session_Title or presentation.title,
+                "project_name": presentation.title,
+                "pathway_name": presentation.series,
+                "project_purpose": f"Level {presentation.level} - {presentation.title}",
+                "project_code_str": "Generic",
+                "duration": "[10'-15']"
+            }
 
-        if project_code:
-            speeches.append({
-                "speaker_name": contact.Name if contact else "N/A",
-                "speech_title": title,
-                "project_purpose": purpose,
-                "project_code_str": f"{path_abbr}{project_code}" if project_code else "Generic",
-                "duration": duration,
-                "media_url": media.url if media else ""
-            })
+        if details_to_add:
+            details_to_add["speaker_name"] = contact.Name if contact else "N/A"
+            details_to_add["media_url"] = media.url if media else ""
+            speeches.append(details_to_add)
+
     return speeches
 
 
@@ -599,11 +605,11 @@ def _build_sheet1(ws, logs_data, speech_details_list, pathway_mapping):
 
     # Manually add speech projects from the speech_details_list
     for speech in speech_details_list:
-        title = f'"{speech["speech_title"]}" ({speech["project_code_str"]}) {speech["duration"]}'
+        title = f'{speech["pathway_name"]} ({speech["project_code_str"]}) {speech["project_name"]} {speech["duration"]}'
         ws.append([None, title])
         if speech.get("project_purpose"):
             purpose_row = ws.append(
-                [None, f'Purpose: {speech["project_purpose"]}'])
+                [None, f'{speech["project_purpose"]}'])
 
         ws.append([])
 
