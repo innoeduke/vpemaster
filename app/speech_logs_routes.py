@@ -89,7 +89,7 @@ def show_speech_logs():
             presentation = Presentation.query.get(log.Project_ID)
             if presentation:
                 display_level = presentation.level
-        elif log.session_type.Valid_for_Project == True and log.session_type.Predefined == False and log.session_type.Role != 'Individual Evaluator':
+        elif log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != 60:
             log_type = 'speech'
             code = _get_project_code(log)
             if code:
