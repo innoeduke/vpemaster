@@ -1,7 +1,7 @@
 # vpemaster/agenda_routes.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
-from .auth.utils import login_required 
+from .auth.utils import login_required
 from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media
 from . import db
 from sqlalchemy import distinct, orm
@@ -17,6 +17,7 @@ from .utils import derive_current_path_level, load_setting
 agenda_bp = Blueprint('agenda_bp', __name__)
 
 # --- Helper Functions for Data Fetching ---
+
 
 def _get_agenda_logs(meeting_number):
     """Fetches all agenda logs and related data for a specific meeting."""
@@ -426,18 +427,38 @@ def _get_all_speech_details(logs_data, pathway_mapping):
     """
     speeches = []
     for log, session_type, contact, project, media in logs_data:
-        # Check if it's a Pathway Speech (32) or Presentation (14)
-        if log.Project_ID and session_type and (session_type.id == 32 or session_type.id == 14):
+        if not log.Project_ID or not session_type:
+            continue
+
+        # Handle Pathway Speech (Type ID 30)
+        if session_type.id == 30 and project:
             path_abbr = pathway_mapping.get(
                 contact.Working_Path, "") if contact else ""
             project_code = _get_project_code_str(
                 project, contact, pathway_mapping)
+            purpose = project.Purpose
+            title = log.Session_Title or project.Project_Name
+            duration = f"[{project.Duration_Min}'-{project.Duration_Max}']"
 
+        # Handle Presentation (Type ID 43)
+        elif session_type.id == 43:
+            presentation = Presentation.query.get(log.Project_ID)
+            if not presentation:
+                continue
+            purpose = f"Level {presentation.level} - {presentation.title}"
+            title = log.Session_Title or presentation.title
+            project_code = None  # Presentations don't have a simple code like pathways
+            duration = "[10'-15']"  # Presentations have a fixed duration
+        else:
+            continue  # Not a speech or presentation we want to list here
+
+        if project_code:
             speeches.append({
                 "speaker_name": contact.Name if contact else "N/A",
-                "speech_title": log.Session_Title or project.Project_Name,
+                "speech_title": title,
+                "project_purpose": purpose,
                 "project_code_str": f"{path_abbr}{project_code}" if project_code else "Generic",
-                "duration": f"[{project.Duration_Min}'-{project.Duration_Max}']" if project else "",
+                "duration": duration,
                 "media_url": media.url if media else ""
             })
     return speeches
@@ -456,7 +477,8 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
         "Leadership Excellence Series": "LE"
     }
 
-    session_title_str = log.Session_Title or (session_type.Title if session_type else '')
+    session_title_str = log.Session_Title or (
+        session_type.Title if session_type else '')
     project_code_str = None
 
     if log.Project_ID == 60:
@@ -472,16 +494,17 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
             project_code_str = f"{pathway_abbr}{project_code}"
         if not log.Session_Title:  # If title is blank, use project name
             session_title_str = project.Project_Name
-    
+
     # Check for Presentation (Type 43)
     elif session_type and session_type.id == 43 and log.Project_ID:
         # We must query Presentation table here, as 'project' will be None
         presentation = Presentation.query.get(log.Project_ID)
         if presentation:
-            series_key = " ".join(presentation.series.split()) if presentation.series else ""
+            series_key = " ".join(
+                presentation.series.split()) if presentation.series else ""
             series_initial = SERIES_INITIALS.get(series_key, "")
             project_code_str = f"{series_initial}{presentation.code}"
-            if not log.Session_Title: # If title is blank, use presentation title
+            if not log.Session_Title:  # If title is blank, use presentation title
                 session_title_str = presentation.title
 
     # Format the final title
@@ -491,7 +514,7 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
         session_title = f"{project_code_str} {title_part}"
     else:
         session_title = session_title_str
-    
+
     if session_title:
         session_title = session_title.replace('""', '"')
 
@@ -543,10 +566,10 @@ def _auto_fit_worksheet_columns(ws, min_width=5):
             except:
                 pass
         adjusted_width = (max_length + 2)
-                
-        if adjusted_width > 50: 
-            adjusted_width = 50 
-        
+
+        if adjusted_width > 50:
+            adjusted_width = 50
+
         if adjusted_width < min_width:
             adjusted_width = min_width
         ws.column_dimensions[column].width = adjusted_width
@@ -576,12 +599,12 @@ def _build_sheet1(ws, logs_data, speech_details_list, pathway_mapping):
 
     # Manually add speech projects from the speech_details_list
     for speech in speech_details_list:
-        # This part is a simplification. The original _format_export_projects
-        # had more logic (like finding purpose). We'll add the basics here.
         title = f'"{speech["speech_title"]}" ({speech["project_code_str"]}) {speech["duration"]}'
         ws.append([None, title])
-        # We're missing the "Purpose" line, but it's okay for this refactor.
-        # To add it, _get_all_speech_details would need to return project.Purpose
+        if speech.get("project_purpose"):
+            purpose_row = ws.append(
+                [None, f'Purpose: {speech["project_purpose"]}'])
+
         ws.append([])
 
     _auto_fit_worksheet_columns(ws, min_width=5)
@@ -617,7 +640,8 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
         target_session_type_id = meeting_types_dict[meeting.type]
         if target_session_type_id:
             # Find the log matching the SessionType ID from the config dict
-            master_log, master_st, master_contact, _, _ = find_log(target_session_type_id)
+            master_log, master_st, master_contact, _, _ = find_log(
+                target_session_type_id)
     gram_log, gram_st, _, _, _ = find_log(7)  # 7 = Grammarian Intro
     term = load_setting('ClubSettings', 'Term', default='')
     excomm_name = load_setting('ClubSettings', 'Excomm Name', default='')
@@ -625,16 +649,16 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
 
     master_data = [
         excomm_string,
-        meeting.Meeting_Date.strftime('%Y/%m/%d'),  
-        meeting.Meeting_Number,                     
-        meeting.Meeting_Title, 
-        master_contact.Name if master_contact else "",  # Sharing Master 
-        meeting.media.url if meeting.media else "", # Meeting Video Url
+        meeting.Meeting_Date.strftime('%Y/%m/%d'),
+        meeting.Meeting_Number,
+        meeting.Meeting_Title,
+        master_contact.Name if master_contact else "",  # Sharing Master
+        meeting.media.url if meeting.media else "",  # Meeting Video Url
         meeting.WOD if meeting.WOD else "",
         meeting.best_tt_speaker.Name if meeting.best_tt_speaker else "",
         meeting.best_roletaker.Name if meeting.best_roletaker else "",
         meeting.best_speaker.Name if meeting.best_speaker else "",
-        meeting.best_evaluator.Name if meeting.best_evaluator else ""                          
+        meeting.best_evaluator.Name if meeting.best_evaluator else ""
     ]
     ws.append(master_data)
     for cell in ws[ws.max_row]:
@@ -678,33 +702,32 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
             duration,
             owner_name
         ]
-        
+
         ws.append(row_data)
         for cell in ws[ws.max_row]:
             if cell.value and isinstance(cell.value, str) and len(cell.value) > 50:
                 cell.alignment = wrap_alignment
-        
-    ws.append([])
-    ws.append([])
 
+    ws.append([])
+    ws.append([])
 
     # --- 3. YOODLI LINKS (NEW SECTION) ---
     ws.append(["3. YOODLI LINKS"])
     ws.append([])
     # Add 3 blank columns (None) after "Speaker"
     ws.append([
-        "Meeting Number", "Speaker", 
-        None, None, None, # <-- ADDED 3 BLANK COLUMNS
+        "Meeting Number", "Speaker",
+        None, None, None,  # <-- ADDED 3 BLANK COLUMNS
         "Speaker Yoodli", "Evaluator", "Evaluator Yoodli"
     ])
 
     # Separate speakers and evaluators from the main data list
     # Use Type 30 (Pathway Speech) and 43 (Presentation)
-    speakers = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data 
+    speakers = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
                 if st.id == 30 or st.id == 43]
-    
+
     # Type 31 = Individual Evaluator (This ID seems correct based on prior context)
-    evaluators = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data 
+    evaluators = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
                   if st.id == 31]
 
     # Create a lookup map for evaluators
@@ -712,16 +735,18 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     evaluator_map = {}
     for log, st, contact, proj, med in evaluators:
         speaker_name_key = log.Session_Title
-        if speaker_name_key: # Only add if the evaluator is linked to a speaker
-            evaluator_map[speaker_name_key] = (contact.Name if contact else '', med.url if med else '')
+        if speaker_name_key:  # Only add if the evaluator is linked to a speaker
+            evaluator_map[speaker_name_key] = (
+                contact.Name if contact else '', med.url if med else '')
 
     # Iterate through speakers and find their matching evaluator
     for log, st, contact, proj, med in speakers:
         speaker_name = contact.Name if contact else ''
         speaker_media_url = med.url if med else ''
-        
+
         # Find the evaluator data from the map
-        eval_data = evaluator_map.get(speaker_name, ('', '')) # Default to empty tuple
+        eval_data = evaluator_map.get(
+            speaker_name, ('', ''))  # Default to empty tuple
         evaluator_name = eval_data[0]
         evaluator_media_url = eval_data[1]
 
@@ -729,7 +754,7 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
         row_data = [
             meeting.Meeting_Number,
             speaker_name,
-            None, None, None, # <-- ADDED 3 BLANK COLUMNS
+            None, None, None,  # <-- ADDED 3 BLANK COLUMNS
             speaker_media_url,
             evaluator_name,
             evaluator_media_url
@@ -834,9 +859,9 @@ def create_from_template():
             Meeting_Date=meeting_date,
             Start_Time=start_time,
             GE_Style=ge_style,
-            Meeting_Title=meeting_title,  
-            WOD=wod,                     
-            media_id=new_media_id        
+            Meeting_Title=meeting_title,
+            WOD=wod,
+            media_id=new_media_id
         )
         db.session.add(meeting)
     else:
@@ -967,8 +992,8 @@ def update_logs():
 
         if new_meeting_title is not None:
             meeting.Meeting_Title = new_meeting_title
-        
-        if new_meeting_type is not None: 
+
+        if new_meeting_type is not None:
             meeting.type = new_meeting_type
 
         if new_wod is not None:
