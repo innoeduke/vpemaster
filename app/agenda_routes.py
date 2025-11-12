@@ -437,34 +437,6 @@ def _get_all_speech_details(logs_data, pathway_mapping):
             project_code = _get_project_code_str(
                 project, contact, pathway_mapping)
             purpose = project.Purpose
-
-
-<< << << < HEAD
-            title = log.Session_Title or project.Project_Name
-            duration = f"[{project.Duration_Min}'-{project.Duration_Max}']"
-
-        # Handle Presentation (Type ID 43)
-        elif session_type.id == 43:
-            presentation = Presentation.query.get(log.Project_ID)
-            if not presentation:
-                continue
-            purpose = f"Level {presentation.level} - {presentation.title}"
-            title = log.Session_Title or presentation.title
-            project_code = None  # Presentations don't have a simple code like pathways
-            duration = "[10'-15']"  # Presentations have a fixed duration
-        else:
-            continue  # Not a speech or presentation we want to list here
-
-        if project_code:
-            speeches.append({
-                "speaker_name": contact.Name if contact else "N/A",
-                "speech_title": title,
-                "project_purpose": purpose,
-                "project_code_str": f"{path_abbr}{project_code}" if project_code else "Generic",
-                "duration": duration,
-                "media_url": media.url if media else ""
-            })
-=======
             project_name = project.Project_Name
             pathway_name = contact.Working_Path if contact else ""
             title = log.Session_Title or project.Project_Name
@@ -475,6 +447,7 @@ def _get_all_speech_details(logs_data, pathway_mapping):
                 "speech_title": title, "project_name": project_name, "pathway_name": pathway_name,
                 "project_purpose": purpose, "project_code_str": project_code_str, "duration": duration
             }
+            speeches.append(details_to_add)
 
         # Handle Presentation (Type ID 43)
         elif session_type.id == 43:
@@ -489,13 +462,8 @@ def _get_all_speech_details(logs_data, pathway_mapping):
                 "project_code_str": "Generic",
                 "duration": "[10'-15']"
             }
-
-        if details_to_add:
-            details_to_add["speaker_name"] = contact.Name if contact else "N/A"
-            details_to_add["media_url"] = media.url if media else ""
             speeches.append(details_to_add)
 
->>>>>>> debug
     return speeches
 
 
@@ -523,8 +491,10 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
 
     # Check for Pathway Speech (Type 30)
     if session_type and session_type.id == 30 and project:
-        project_code = _get_project_code_str(project, contact, pathway_mapping)
-        pathway_abbr = pathway_mapping.get(contact.Working_Path, "")
+        project_code = _get_project_code_str(
+            project, contact, pathway_mapping) if contact else None
+        pathway_abbr = pathway_mapping.get(
+            contact.Working_Path, "") if contact else ""
         if project_code:
             project_code_str = f"{pathway_abbr}{project_code}"
         if not log.Session_Title:  # If title is blank, use project name
