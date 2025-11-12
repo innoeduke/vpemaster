@@ -2,7 +2,7 @@
 
 from .auth.utils import login_required, is_authorized
 from flask import Blueprint, render_template, request, session, jsonify, current_app
-from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole
+from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole, Waitlist
 from . import db
 from datetime import datetime
 import re
@@ -77,9 +77,14 @@ def _consolidate_roles(session_logs, is_admin_booker):
         if not role_key:
             continue
 
+        waitlisted_users = db.session.query(Contact.Name).join(Waitlist).filter(
+            Waitlist.session_log_id == log.session_id).order_by(Waitlist.timestamp).all()
+        waitlisted_names = [user[0] for user in waitlisted_users]
+
         if role_key in unique_roles:
             role_key_unique = f"{role_key}_{log.session_id}"
-            speaker_name = log.Session_Title.strip() if role_key == INDIVIDUAL_EVALUATOR and log.Session_Title else None
+            speaker_name = log.Session_Title.strip(
+            ) if role_key == INDIVIDUAL_EVALUATOR and log.Session_Title else None
             roles_dict[role_key_unique] = {
                 'role': role_key,
                 'role_key': role_key,
@@ -87,6 +92,7 @@ def _consolidate_roles(session_logs, is_admin_booker):
                 'owner_name': log.owner_name,
                 'session_ids': [log.session_id],
                 'speaker_name': speaker_name,
+                'waitlist': waitlisted_names,
             }
         else:
             if role_key not in roles_dict:
@@ -97,12 +103,17 @@ def _consolidate_roles(session_logs, is_admin_booker):
                     'owner_name': log.owner_name,
                     'session_ids': [log.session_id],
                     'speaker_name': None,
+                    'waitlist': waitlisted_names,
                 }
             else:
                 roles_dict[role_key]['session_ids'].append(log.session_id)
                 if log.Owner_ID:
                     roles_dict[role_key]['owner_id'] = log.Owner_ID
                     roles_dict[role_key]['owner_name'] = log.owner_name
+                # Append waitlisted users, avoiding duplicates
+                for name in waitlisted_names:
+                    if name not in roles_dict[role_key]['waitlist']:
+                        roles_dict[role_key]['waitlist'].append(name)
     return roles_dict
 
 
@@ -415,11 +426,32 @@ def book_or_assign_role():
     if not logical_role_key:
         return jsonify(success=False, message="Could not determine the role key."), 400
 
-    owner_id_to_set = None
     if action == 'book':
-        owner_id_to_set = current_user_contact_id
+        if log.Owner_ID is not None:
+            # Role is already booked, add to waitlist
+            existing_waitlist = Waitlist.query.filter_by(
+                session_log_id=session_id, contact_id=current_user_contact_id).first()
+            if not existing_waitlist:
+                new_waitlist_entry = Waitlist(
+                    session_log_id=session_id,
+                    contact_id=current_user_contact_id,
+                    timestamp=datetime.utcnow()
+                )
+                db.session.add(new_waitlist_entry)
+                db.session.commit()
+                return jsonify(success=True, message="You have been added to the waitlist.")
+            else:
+                return jsonify(success=False, message="You are already on the waitlist.")
+        else:
+            owner_id_to_set = current_user_contact_id
     elif action == 'cancel':
-        owner_id_to_set = None
+        waitlist_entry = Waitlist.query.filter_by(
+            session_log_id=session_id).order_by(Waitlist.timestamp).first()
+        if waitlist_entry:
+            owner_id_to_set = waitlist_entry.contact_id
+            db.session.delete(waitlist_entry)
+        else:
+            owner_id_to_set = None
     elif action == 'assign' and is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
         contact_id = data.get('contact_id', '0')
         owner_id_to_set = int(contact_id) if contact_id != '0' else None
@@ -427,10 +459,13 @@ def book_or_assign_role():
         return jsonify(success=False, message="Invalid action or permissions."), 403
 
     owner_contact = Contact.query.get(owner_id_to_set) if owner_id_to_set else None
-    new_path_level = derive_current_path_level(log, owner_contact) if owner_contact else None
+    new_path_level = derive_current_path_level(
+        log, owner_contact) if owner_contact else None
 
-    unique_roles = UNIQUE_ENTRY_ROLES + ([TOPICS_SPEAKER] if is_authorized(user_role, 'BOOKING_ASSIGN_ALL') else [])
-    
+    unique_roles = UNIQUE_ENTRY_ROLES + \
+        ([TOPICS_SPEAKER]
+         if is_authorized(user_role, 'BOOKING_ASSIGN_ALL') else [])
+
     if logical_role_key in unique_roles:
         sessions_to_update = [log]
     else:

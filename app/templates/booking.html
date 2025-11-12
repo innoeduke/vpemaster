@@ -133,6 +133,17 @@
                                 <span class="speaker-for">for {{ role.speaker_name }}</span>
                             {% endif %}
                         </div>
+                        {% if role.waitlist %}
+                        <div class="waitlist-info">
+                            <i class="fas fa-users"></i>
+                            <span>Waitlist:</span>
+                            <ul class="waitlist-users">
+                                {% for user in role.waitlist %}
+                                <li>{{ user }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="role-cell-actions">
                         {% if is_admin_view and role.owner_id and role.award_category %}

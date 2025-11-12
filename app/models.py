@@ -153,3 +153,16 @@ class Media(db.Model):
         'Session_Logs.id', ondelete='SET NULL'), nullable=True)
     url = db.Column(db.String(1024), nullable=True)
     notes = db.Column(db.Text, nullable=True)
+
+
+class Waitlist(db.Model):
+    __tablename__ = 'waitlists'
+    id = db.Column(db.Integer, primary_key=True)
+    session_log_id = db.Column(db.Integer, db.ForeignKey(
+        'Session_Logs.id'), nullable=False)
+    contact_id = db.Column(db.Integer, db.ForeignKey(
+        'Contacts.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=True)
+
+    session_log = db.relationship('SessionLog', backref='waitlists')
+    contact = db.relationship('Contact', backref='waitlists')
