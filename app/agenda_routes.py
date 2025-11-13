@@ -189,12 +189,6 @@ def _recalculate_start_times(meetings_to_update):
 @agenda_bp.route('/agenda', methods=['GET'])
 def agenda():
 
-    SERIES_INITIALS = {
-        "Successful Club Series": "SC",
-        "Better Speaker Series": "BS",
-        "Leadership Excellence Series": "LE"
-    }
-
     # --- Determine Selected Meeting ---
     meeting_numbers_query = db.session.query(distinct(
         SessionLog.Meeting_Number)).order_by(SessionLog.Meeting_Number.desc()).all()
@@ -277,7 +271,8 @@ def agenda():
                 series_key = " ".join(
                     presentation.series.split()) if presentation.series else ""
 
-                series_initial = SERIES_INITIALS.get(series_key, "")
+                series_initial = current_app.config['SERIES_INITIALS'].get(
+                    series_key, "")
                 project_code_str = f"{series_initial}{presentation.code}"
         elif log.Project_ID == 60:
             project_code_str = "TM1.0"
@@ -335,17 +330,41 @@ def agenda():
         }
         logs_data.append(log_dict)
 
-    # --- Prepare Data for Template and JavaScript ---
-    projects = Project.query.order_by(Project.Project_Name).all()
-    projects_data = [
-        {
-            "ID": p.ID, "Project_Name": p.Project_Name, "Code_DL": p.Code_DL,
-            "Code_EH": p.Code_EH, "Code_MS": p.Code_MS, "Code_PI": p.Code_PI,
-            "Code_PM": p.Code_PM, "Code_VC": p.Code_VC, "Code_DTM": p.Code_DTM,
-            "Purpose": p.Purpose, "Duration_Min": p.Duration_Min, "Duration_Max": p.Duration_Max
-        } for p in projects
-    ]
+    template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
+    try:
+        meeting_templates = [f for f in os.listdir(
+            template_dir) if f.endswith('.csv')]
+    except FileNotFoundError:
+        meeting_templates = []
+
+    # --- Minimal Data for Initial Page Load ---
     pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
+    members = Contact.query.filter_by(
+        Type='Member').order_by(Contact.Name.asc()).all()
+
+    # --- Render Template ---
+    return render_template('agenda.html',
+                           logs_data=logs_data,               # Use the processed list of dictionaries
+                           pathways=pathways,               # For modals
+                           pathway_mapping=current_app.config['PATHWAY_MAPPING'],
+                           meeting_numbers=meeting_numbers,
+                           selected_meeting=selected_meeting,  # Pass the Meeting object
+                           members=members,                 # If needed elsewhere
+                           project_speakers=project_speakers,  # For JS
+                           meeting_templates=meeting_templates,
+                           meeting_types=current_app.config['MEETING_TYPES'])
+
+
+# --- API Endpoints for Asynchronous Data Loading ---
+
+@agenda_bp.route('/api/data/all')
+@login_required
+def get_all_data_for_modals():
+    """
+    A single endpoint to fetch all data needed for the agenda modals.
+    This is called once by the frontend after the initial page load.
+    """
+    # Session Types
     session_types = SessionType.query.order_by(SessionType.Title.asc()).all()
     session_types_data = [
         {
@@ -355,6 +374,8 @@ def agenda():
             "Duration_Min": s.Duration_Min, "Duration_Max": s.Duration_Max
         } for s in session_types
     ]
+
+    # Contacts
     contacts = Contact.query.order_by(Contact.Name.asc()).all()
     contacts_data = [
         {
@@ -363,34 +384,38 @@ def agenda():
             "Completed_Levels": c.Completed_Levels
         } for c in contacts
     ]
-    members = Contact.query.filter_by(
-        Type='Member').order_by(Contact.Name.asc()).all()
 
-    template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
-    try:
-        meeting_templates = [f for f in os.listdir(
-            template_dir) if f.endswith('.csv')]
-    except FileNotFoundError:
-        meeting_templates = []
+    # Projects
+    projects = Project.query.order_by(Project.Project_Name).all()
+    projects_data = [
+        {
+            "ID": p.ID, "Project_Name": p.Project_Name, "Code_DL": p.Code_DL,
+            "Code_EH": p.Code_EH, "Code_MS": p.Code_MS, "Code_PI": p.Code_PI,
+            "Code_PM": p.Code_PM, "Code_VC": p.Code_VC, "Code_DTM": p.Code_DTM,
+            "Purpose": p.Purpose, "Duration_Min": p.Duration_Min, "Duration_Max": p.Duration_Max
+        } for p in projects
+    ]
 
-    # --- Render Template ---
-    return render_template('agenda.html',
-                           logs_data=logs_data,               # Use the processed list of dictionaries
-                           session_types=session_types_data,  # For JS dropdowns
-                           contacts=contacts,               # For display logic in template if needed
-                           contacts_data=contacts_data,     # For JS autocomplete/modals
-                           projects=projects_data,          # For JS modals/tooltips
-                           pathways=pathways,               # For modals
-                           pathway_mapping=current_app.config['PATHWAY_MAPPING'],
-                           meeting_numbers=meeting_numbers,
-                           selected_meeting=selected_meeting,  # Pass the Meeting object
-                           members=members,                 # If needed elsewhere
-                           project_speakers=project_speakers,  # For JS
-                           meeting_templates=meeting_templates,
-                           series_initials=SERIES_INITIALS,
-                           presentations=presentations_data,
-                           presentation_series=presentation_series,
-                           meeting_types=current_app.config['MEETING_TYPES'])
+    # Presentations
+    all_presentations = Presentation.query.order_by(
+        Presentation.level, Presentation.code).all()
+    presentations_data = [
+        {"id": p.id, "title": p.title, "level": p.level,
+            "series": p.series, "code": p.code}
+        for p in all_presentations
+    ]
+    presentation_series = sorted(
+        list(set(p.series for p in all_presentations if p.series)))
+
+    return jsonify({
+        'session_types': session_types_data,
+        'contacts': contacts_data,
+        'projects': projects_data,
+        'presentations': presentations_data,
+        'presentation_series': presentation_series,
+        'series_initials': current_app.config['SERIES_INITIALS'],
+        'meeting_types': current_app.config['MEETING_TYPES']
+    })
 
 
 def _get_export_data(meeting_number):
@@ -421,6 +446,36 @@ def _get_project_code_str(project, contact, pathway_mapping):
     return None
 
 
+def _get_project_type(project_code):
+    """Determines if a project is 'Required' or 'Elective' based on its level code."""
+    if not project_code:
+        return "Elective"  # Default if no code is provided
+
+    # Handle presentation projects (e.g., 'SC101', 'BS203') which are always elective.
+    if project_code.startswith(("SC", "BS", "LE")):
+        return "Elective"
+
+    # Define a set of all required project codes for higher levels for quick lookup
+    required_project_codes = {"3.1", "4.1", "5.1", "5.2"}
+
+    if project_code in required_project_codes:
+        return "Required"
+
+    try:
+        # Assumes code is in "L.P" format, e.g., "1.1", "3.2"
+        level = int(project_code.split('.')[0])
+        # Projects in Levels 1 and 2 are also required.
+        if level <= 2:
+            return "Required"
+    except (ValueError, IndexError):
+        # If the code is malformed, it won't match the level check,
+        # and it wouldn't have matched the specific codes either.
+        pass
+
+    # If none of the above conditions are met, it's an elective project.
+    return "Elective"
+
+
 def _get_all_speech_details(logs_data, pathway_mapping):
     """
     Processes logs_data to extract a structured list of speech details.
@@ -437,6 +492,11 @@ def _get_all_speech_details(logs_data, pathway_mapping):
             project_code = _get_project_code_str(
                 project, contact, pathway_mapping)
             purpose = project.Purpose
+            # For pathway speeches, the project code is just the level.number (e.g., "1.1")
+            pathway_project_code = getattr(
+                project, f"Code_{path_abbr}", None) if path_abbr else None
+            project_type = _get_project_type(pathway_project_code)
+
             project_name = project.Project_Name
             pathway_name = contact.Working_Path if contact else ""
             title = log.Session_Title or project.Project_Name
@@ -444,23 +504,26 @@ def _get_all_speech_details(logs_data, pathway_mapping):
             project_code_str = f"{path_abbr}{project_code}" if project_code else "Generic"
 
             details_to_add = {
-                "speech_title": title, "project_name": project_name, "pathway_name": pathway_name,
-                "project_purpose": purpose, "project_code_str": project_code_str, "duration": duration
+                "speech_title": title, "project_name": project_name, "pathway_name": pathway_name, "project_purpose": purpose,
+                "project_code_str": project_code_str, "duration": duration, "project_type": project_type
             }
             speeches.append(details_to_add)
 
         # Handle Presentation (Type ID 43)
         elif session_type.id == 43:
             presentation = Presentation.query.get(log.Project_ID)
+            SERIES_INITIALS = current_app.config['SERIES_INITIALS']
             if not presentation:
                 continue
+            series_initial = SERIES_INITIALS.get(presentation.series, "")
+            presentation_code = f"{series_initial}{presentation.code}"
             details_to_add = {
                 "speech_title": log.Session_Title or presentation.title,
                 "project_name": presentation.title,
                 "pathway_name": presentation.series,
                 "project_purpose": f"Level {presentation.level} - {presentation.title}",
-                "project_code_str": "Generic",
-                "duration": "[10'-15']"
+                "project_code_str": presentation_code,
+                "duration": "[10'-15']", "project_type": _get_project_type(presentation_code)
             }
             speeches.append(details_to_add)
 
@@ -474,12 +537,7 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
 
     start_time = log.Start_Time.strftime('%H:%M') if log.Start_Time else ''
 
-    SERIES_INITIALS = {
-        "Successful Club Series": "SC",
-        "Better Speaker Series": "BS",
-        "Leadership Excellence Series": "LE"
-    }
-
+    SERIES_INITIALS = current_app.config['SERIES_INITIALS']
     session_title_str = log.Session_Title or (
         session_type.Title if session_type else '')
     project_code_str = None
@@ -504,6 +562,12 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
     elif session_type and session_type.id == 43 and log.Project_ID:
         # We must query Presentation table here, as 'project' will be None
         presentation = Presentation.query.get(log.Project_ID)
+    presentation = None
+
+    # Check for Individual Evaluator (Type 31)
+    if session_type and session_type.id == 31 and log.Session_Title:
+        session_title_str = f"Evaluation for {log.Session_Title}"
+
         if presentation:
             series_key = " ".join(
                 presentation.series.split()) if presentation.series else ""
@@ -604,11 +668,18 @@ def _build_sheet1(ws, logs_data, speech_details_list, pathway_mapping):
 
     # Manually add speech projects from the speech_details_list
     for speech in speech_details_list:
-        title = f'{speech["pathway_name"]} ({speech["project_code_str"]}) {speech["project_name"]} {speech["duration"]}'
+        project_format_str = f'({speech["project_format"]}) ' if speech.get(
+            "project_format") else ''
+        title = f'{speech["pathway_name"]} ({speech["project_code_str"]}) {speech["project_name"]} {project_format_str}{speech["duration"]}'
+        project_type_str = f'({speech["project_type"]}) ' if speech.get(
+            "project_type") else ''
+        title = f'{speech["pathway_name"]} ({speech["project_code_str"]}) {speech["project_name"]} {project_type_str}{speech["duration"]}'
         ws.append([None, title])
         if speech.get("project_purpose"):
-            purpose_row = ws.append(
-                [None, f'{speech["project_purpose"]}'])
+            purpose_text = speech["project_purpose"]
+            # The project format is now part of the title line above,
+            # so we just append the purpose text as is.
+            ws.append([None, purpose_text])
 
         ws.append([])
 

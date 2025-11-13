@@ -67,6 +67,29 @@
         </select>
       </div>
 
+      <div class="form-group" id="eval-project-group" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+            <label for="eval-is-project-chk">Is this for a project?</label>
+            <input type="checkbox" id="eval-is-project-chk" name="eval_is_project" style="transform: scale(1.3)">
+        </div>
+        <select id="eval-project-select" name="eval_project_id" style="display: none;">
+            <option value="">-- Select Evaluation Project --</option>
+        </select>
+      </div>
+
+      <div class="form-group" id="tt-project-group" style="display: none;">
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
+            <label for="tt-is-project-chk">Is this for a project?</label>
+            <input type="checkbox" id="tt-is-project-chk" name="tt_is_project" style="transform: scale(1.3)">
+        </div>
+        <div id="tt-pathway-group" style="display: none;">
+            <label for="tt-pathway-select">Pathway:</label>
+            <select id="tt-pathway-select" name="tt_pathway">
+                <option value="">-- Select Pathway --</option>
+            </select>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="edit-speech-media-url">Media URL:</label>
         <input

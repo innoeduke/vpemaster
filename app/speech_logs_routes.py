@@ -196,12 +196,7 @@ def show_speech_logs():
     presentation_series = sorted(
         list(set(p.series for p in all_presentations if p.series)))
 
-    SERIES_INITIALS = {
-        "Successful Club Series": "SC",
-        "Better Speaker Series": "BS",
-        "Leadership Excellence Series": "LE"
-    }
-
+    SERIES_INITIALS = current_app.config['SERIES_INITIALS']
     today_date = datetime.today().date()
 
     return render_template(
@@ -358,9 +353,8 @@ def update_speech_log(log_id):
             presentation = Presentation.query.get(log.Project_ID)
             if presentation:
                 project_name = presentation.title
-                pathway = presentation.series  # Use series as "pathway" display
-                SERIES_INITIALS = {"Successful Club Series": "SC",
-                                   "Better Speaker Series": "BS", "Leadership Excellence Series": "LE"}
+                pathway = presentation.series
+                SERIES_INITIALS = current_app.config['SERIES_INITIALS']
                 series_initial = SERIES_INITIALS.get(presentation.series, "")
                 project_code = f"{series_initial}{presentation.code}"
         elif log.Project_ID:  # Pathway speech

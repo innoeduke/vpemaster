@@ -122,6 +122,11 @@
     display: none; /* Hide ALL view-mode elements */
 }
 
+.edit-mode-active .agenda-header-logo,
+.edit-mode-active .video-icon-btn {
+    display: none;
+}
+
 /* Show the edit-mode container */
 .edit-mode-active .meeting-edit-details {
     display: block;
@@ -394,6 +399,18 @@
 
 /* --- Responsive adjustment for small screens --- */
 @media (max-width: 600px) {
+    .action-bar {
+        flex-direction: column;
+        align-items: stretch; /* Make left and right take full width */
+        gap: 15px;
+    }
+
+    .action-bar-left {
+        flex-direction: column;
+        align-items: flex-start; /* Align items within this group to the start */
+        width: 100%; /* Take full width */
+    }
+
     .agenda-header-container {
         flex-direction: column;
         align-items: center;

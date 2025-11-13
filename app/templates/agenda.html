@@ -116,9 +116,7 @@
 
     <div class='table-container'
          id="table-container"
-         data-session-types='{{ session_types|tojson|safe }}'
-         data-contacts='{{ contacts_data|tojson|safe }}'
-         data-projects='{{ projects|tojson|safe }}'
+         {# Removed data-session-types, data-contacts, data-projects as they are now fetched via API #}
          data-project-speakers='{{ project_speakers|tojson|safe }}'>
 
         <table id="logs-table">
@@ -223,11 +221,10 @@
                              {# Use pre-fetched owner data from log_dict #}
                             {% if log_dict.owner_name %}
                                 {{ log_dict.owner_name }}
-                                {% if log_dict.owner_dtm %}
-                                    <sup class="dtm-superscript">DTM</sup>
-                                {% endif %}
                                 <span class="owner-meta">
-                                    {% if log_dict.owner_type == 'Guest' %}
+                                    {% if log_dict.owner_dtm %}
+                                        <br/>DTM
+                                    {% elif log_dict.owner_type == 'Guest' %}
                                         <br/>{{ log_dict.Designation }} {# Use designation directly #}
                                     {% elif log_dict.Designation %}
                                         <br/>{{ log_dict.Designation }}
@@ -299,10 +296,7 @@
 
     <script>
         // Pass Python data to global JS variables used by speech_modal.js
-        var allProjects = {{ projects|tojson|safe }};
         var pathwayMap = {{ pathway_mapping|tojson|safe }};
-        var allPresentations = {{ presentations|tojson|safe }};
-        var presentationSeries = {{ presentation_series|tojson|safe }};
     
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>

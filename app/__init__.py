@@ -12,25 +12,27 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
 
+
 def create_app(config_class='config.Config'):
     """
     Application Factory Function
     """
-    
+
     app = Flask(__name__, instance_relative_config=True)
-    
+
     # Load configuration from the config.py file
     app.config.from_object(config_class)
-    
+
     # (Optional) Load instance-specific config, e.g., /instance/config.py
     # app.config.from_pyfile('config.py', silent=True)
-    
+
     db.init_app(app)
     bcrypt.init_app(app)
     migrate.init_app(app, db)
 
     # Register context processors
     from .auth.utils import is_authorized
+
     @app.context_processor
     def inject_authorization():
         return dict(is_authorized=is_authorized)
@@ -47,9 +49,9 @@ def create_app(config_class='config.Config'):
         from .pathways_routes import pathways_bp
         from .settings_routes import settings_bp
         from .booking_routes import booking_bp
-        
+
         # Import models so SQLAlchemy knows about them
-        from . import models 
+        from . import models
 
         app.register_blueprint(agenda_bp)
         app.register_blueprint(auth_bp)
@@ -60,6 +62,6 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(pathways_bp)
         app.register_blueprint(settings_bp)
         app.register_blueprint(booking_bp)
-    
+
     # 7. Return the configured app instance
     return app

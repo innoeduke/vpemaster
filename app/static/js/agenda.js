@@ -18,10 +18,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewModeButtons = document.getElementById("view-mode-buttons");
   const editModeButtons = document.getElementById("edit-mode-buttons");
 
-  // --- Data from Template ---
-  const sessionTypes = JSON.parse(tableContainer.dataset.sessionTypes);
-  let contacts = JSON.parse(tableContainer.dataset.contacts);
+  // --- Data from Template (only projectSpeakers remains, others fetched via API) ---
   let projectSpeakers = JSON.parse(tableContainer.dataset.projectSpeakers);
+
+  // --- Data fetched asynchronously ---
+  let allSessionTypes = [];
+  let allContacts = [];
+  let allProjects = [];
+  let allPresentations = [];
+  let allPresentationSeries = [];
+  let allSeriesInitials = {};
+  let allMeetingTypes = {};
 
   // --- State ---
   let isEditing = false;
@@ -41,6 +48,35 @@ document.addEventListener("DOMContentLoaded", () => {
   for (const key in sessionPairs) {
     reverseSessionPairs[sessionPairs[key]] = key;
   }
+
+  // --- Main Initialization Function (called after data is fetched) ---
+  function initializeAgendaPage() {
+    initializeEventListeners(); // Attach listeners to buttons
+    toggleEditMode(false); // Set initial UI state
+    // Any other initial setup that depends on fetched data
+  }
+
+  // --- Fetch all necessary data asynchronously and then initialize the page ---
+  // This fetch is now inside the DOMContentLoaded listener.
+  fetch("/api/data/all")
+    .then((response) => response.json())
+    .then((data) => {
+      allSessionTypes = data.session_types;
+      allContacts = data.contacts;
+      allProjects = data.projects;
+      allPresentations = data.presentations;
+      allPresentationSeries = data.presentation_series;
+      allSeriesInitials = data.series_initials;
+      allMeetingTypes = data.meeting_types;
+
+      // Make data available globally for speech_modal.js, which expects them as globals
+      window.allProjects = allProjects;
+      window.allPresentations = allPresentations;
+      window.presentationSeries = allPresentationSeries;
+
+      initializeAgendaPage(); // Now that data is loaded, initialize the page
+    })
+    .catch((error) => console.error("Error fetching initial data:", error));
 
   // --- Constants ---
   const fieldsOrder = [
@@ -96,14 +132,6 @@ document.addEventListener("DOMContentLoaded", () => {
       tableBody.addEventListener("click", (event) => {
         if (event.target.closest(".delete-btn")) {
           deleteLogRow(event.target.closest("tr"));
-        } else if (event.target.closest(".role-edit-btn")) {
-          const row = event.target.closest("tr");
-          const currentLogId = row.dataset.id;
-          if (currentLogId === "new") {
-            saveChanges();
-          } else {
-            openRoleEditModal(currentLogId);
-          }
         }
       });
     }
@@ -178,7 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
       meetingNumber: meetingFilter.value,
       projectId: "",
       status: "Booked",
-      typeId: sessionTypes.find((st) => st.Title === "Opening")?.id || "",
+      typeId: allSessionTypes.find((st) => st.Title === "Opening")?.id || "",
       sessionTitle: "",
       ownerId: "",
       durationMin: "",
@@ -230,8 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
       .then((data) => {
         if (data.success) {
           // Add the new contact to our local JavaScript array
-          contacts.push(data.contact);
-          closeContactModal(); // Close the modal
+          allContacts.push(data.contact);
+          window.closeContactModal(); // Close the modal
           if (activeOwnerInput) {
             activeOwnerInput.value = data.contact.Name;
             const hiddenInput = activeOwnerInput.nextElementSibling;
@@ -270,10 +298,10 @@ document.addEventListener("DOMContentLoaded", () => {
       row.classList.toggle("draggable-row", isEditMode);
       if (isEditMode) {
         const ownerId = row.dataset.ownerId;
-        let designation = row.dataset.designation;
+        let designation = row.dataset.designation; // This might be pre-filled from DB
 
         if (ownerId && !designation) {
-          const contact = contacts.find((c) => c.id == ownerId);
+          const contact = allContacts.find((c) => c.id == ownerId);
           if (contact) {
             if (contact.DTM) {
               designation = "DTM";
@@ -282,7 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else if (contact.Type === "Member") {
               designation = contact.Completed_Levels
                 ? contact.Completed_Levels.replace(/ /g, "/")
-                : null;
+                : "";
             }
           }
         }
@@ -298,7 +326,7 @@ document.addEventListener("DOMContentLoaded", () => {
     row.innerHTML = "";
 
     const typeId = originalData.typeId; // Get typeId
-    const sessionType = sessionTypes.find((st) => st.id == typeId); // Find session type object
+    const sessionType = allSessionTypes.find((st) => st.id == typeId); // Find session type object
     const hasRole =
       sessionType && sessionType.Role && sessionType.Role.trim() !== ""; // Check if it has a role
 
@@ -449,7 +477,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const row = selectElement.closest("tr");
     const typeId = selectElement.value;
     row.dataset.typeId = typeId;
-    const sessionType = sessionTypes.find((st) => st.id == typeId);
+    const sessionType = allSessionTypes.find((st) => st.id == typeId);
     const titleCell = row.querySelector('[data-field="Session_Title"]');
 
     // Get current title from the control *before* clearing the cell
@@ -459,7 +487,7 @@ document.addEventListener("DOMContentLoaded", () => {
       : "";
 
     // If new type is predefined, use its title. Otherwise, keep the custom title.
-    let newTitle =
+    const newTitle =
       sessionType && sessionType.Predefined ? sessionType.Title : currentTitle;
 
     // Special case: If changing *to* Evaluation, keep the speaker name
@@ -539,14 +567,14 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function createTypeSelect(selectedValue) {
-    const select = document.createElement("select");
+    const select = document.createElement("select"); // Use allSessionTypes
 
-    const sections = sessionTypes.filter((type) => type.Is_Section);
-    const predefined = sessionTypes.filter(
+    const sections = allSessionTypes.filter((type) => type.Is_Section);
+    const predefined = allSessionTypes.filter(
       (type) => !type.Is_Section && type.Predefined
     );
-    const custom = sessionTypes.filter(
-      (type) => !type.Is_Section && !type.Predefined
+    const custom = allSessionTypes.filter(
+      (type) => !type.Is_Section && !type.Predefined // Use allSessionTypes
     );
 
     const createOptGroup = (label, types) => {
@@ -578,7 +606,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function createSessionTitleControl(typeId, originalValue) {
-    const sessionType = sessionTypes.find((st) => st.id == typeId);
+    const sessionType = allSessionTypes.find((st) => st.id == typeId);
     if (sessionType?.Title === "Evaluation") {
       updateProjectSpeakers();
       const select = document.createElement("select");
@@ -608,7 +636,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const searchInput = document.createElement("input");
     searchInput.type = "text";
     searchInput.placeholder = "Search...";
-    const contact = contacts.find((c) => c.id == ownerId);
+    const contact = allContacts.find((c) => c.id == ownerId);
     if (contact) searchInput.value = contact.Name;
 
     const hiddenInput = document.createElement("input");
@@ -622,7 +650,7 @@ document.addEventListener("DOMContentLoaded", () => {
     addBtn.className = "btn btn-primary btn-sm";
     addBtn.addEventListener("click", () => {
       activeOwnerInput = searchInput;
-      openContactModal();
+      window.openContactModal(); // Assuming this is a global function
     });
 
     setupAutocomplete(searchInput, hiddenInput);
@@ -638,7 +666,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     if (!typeSelect) return;
 
-    const currentSessionType = sessionTypes.find(
+    const currentSessionType = allSessionTypes.find(
       (st) => st.id == typeSelect.value
     );
     if (!currentSessionType) return;
@@ -653,7 +681,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const pairedRow = Array.from(allRows).find((row) => {
       const rowTypeSelect = row.querySelector('[data-field="Type_ID"] select');
       if (rowTypeSelect) {
-        const rowSessionType = sessionTypes.find(
+        // Use allSessionTypes
+        const rowSessionType = allSessionTypes.find(
           (st) => st.id == rowTypeSelect.value
         );
         return rowSessionType && rowSessionType.Title === pairedSessionTitle;
@@ -724,8 +753,8 @@ document.addEventListener("DOMContentLoaded", () => {
       container.setAttribute("class", "autocomplete-items");
       this.parentNode.appendChild(container);
 
-      contacts
-        .filter((c) => c.Name.toUpperCase().includes(val.toUpperCase()))
+      allContacts
+        .filter((c) => c.Name.toUpperCase().includes(val.toUpperCase())) // Use allContacts
         .forEach((contact) => {
           item = document.createElement("div");
           item.innerHTML = `<strong>${contact.Name.substr(
@@ -744,19 +773,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const designationInput = currentRow.querySelector(
               '[data-field="Designation"] input'
             );
-            const selectedContact = contacts.find(
+            const selectedContact = allContacts.find(
               (c) => c.id == selectedContactId
             );
 
             if (designationInput && selectedContact) {
-              designationInput.value = selectedContact.Completed_Levels || "";
+              const designation = selectedContact.DTM
+                ? "DTM"
+                : selectedContact.Completed_Levels || "";
+              designationInput.value = designation.replace(/ /g, "/");
             }
             currentRow.dataset.ownerId = selectedContactId;
             if (designationInput) {
               currentRow.dataset.designation = designationInput.value;
             }
 
-            const currentSessionType = sessionTypes.find(
+            const currentSessionType = allSessionTypes.find(
               (st) =>
                 st.id ==
                 currentRow.querySelector('[data-field="Type_ID"] select').value
@@ -783,48 +815,68 @@ document.addEventListener("DOMContentLoaded", () => {
     const cell = document.createElement("td");
     cell.className = "actions-column";
 
-    const sessionType = sessionTypes.find((st) => st.id == typeId);
-
-    const projectBtn = document.createElement("button");
-    projectBtn.innerHTML = '<i class="fas fa-project-diagram"></i>';
-    projectBtn.className = "icon-btn project-btn";
-    projectBtn.type = "button";
-    projectBtn.onclick = function () {
-      const row = this.closest("tr");
-      const logId = row.dataset.id;
-      const ownerId = row.querySelector('input[name="owner_id"]').value;
-      const contact = contacts.find((c) => c.id == ownerId);
-      const workingPath = contact ? contact.Working_Path : null;
-      const nextProject = contact ? contact.Next_Project : null;
-      const typeId = row.querySelector('[data-field="Type_ID"] select').value;
-      const sessionType = sessionTypes.find((st) => st.id == typeId);
-      const sessionTypeTitle = sessionType ? sessionType.Title : null;
-      if (logId === "new") {
-        saveChanges();
-      } else {
-        openSpeechEditModal(logId, workingPath, sessionTypeTitle, nextProject);
-      }
-    };
-    projectBtn.style.display =
-      sessionType && sessionType.Valid_for_Project ? "inline-block" : "none";
-
-    const roleEditBtn = document.createElement("button");
-    roleEditBtn.innerHTML = '<i class="fas fa-user-tag"></i>'; // Example icon
-    roleEditBtn.className = "icon-btn role-edit-btn";
-    roleEditBtn.type = "button";
-    roleEditBtn.title = "Edit Role Path/Level";
+    const sessionType = allSessionTypes.find((st) => st.id == typeId);
     const rolesToHideFor = ["Prepared Speaker", "Table Topics"];
-    roleEditBtn.style.display =
-      hasRole && sessionType && !rolesToHideFor.includes(sessionType.Role)
-        ? "inline-block"
-        : "none";
+
+    const shouldShowProjectButton =
+      sessionType &&
+      (sessionType.Valid_for_Project || sessionType.Title === "Table Topics");
+    const shouldShowRoleButton =
+      hasRole && sessionType && !rolesToHideFor.includes(sessionType.Role);
+
+    // The new consolidated button
+    const editDetailsBtn = document.createElement("button");
+    editDetailsBtn.innerHTML = '<i class="fas fa-edit"></i>'; // Generic edit icon
+    editDetailsBtn.className = "icon-btn edit-details-btn"; // New class
+    editDetailsBtn.type = "button";
+
+    if (shouldShowProjectButton) {
+      editDetailsBtn.title = "Edit Speech/Project Details";
+      editDetailsBtn.onclick = function () {
+        const row = this.closest("tr");
+        const logId = row.dataset.id;
+        const ownerId = row.querySelector('input[name="owner_id"]').value; // Use allContacts
+        const contact = allContacts.find((c) => c.id == ownerId);
+        const workingPath = contact ? contact.Working_Path : null;
+        const nextProject = contact ? contact.Next_Project : null;
+        const typeId = row.querySelector('[data-field="Type_ID"] select').value;
+        const sessionType = allSessionTypes.find((st) => st.id == typeId); // Use allSessionTypes
+        const sessionTypeTitle = sessionType ? sessionType.Title : null; // Use allSessionTypes
+        if (logId === "new") {
+          saveChanges();
+        } else {
+          openSpeechEditModal(
+            logId,
+            workingPath,
+            sessionTypeTitle,
+            nextProject
+          );
+        }
+      };
+    } else if (shouldShowRoleButton) {
+      editDetailsBtn.title = "Edit Role Path/Level";
+      editDetailsBtn.onclick = function () {
+        const row = this.closest("tr");
+        const logId = row.dataset.id;
+        if (logId === "new") {
+          saveChanges();
+        } else {
+          openRoleEditModal(logId);
+        }
+      };
+    }
 
     const deleteBtn = document.createElement("button");
     deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
     deleteBtn.className = "delete-btn icon-btn";
     deleteBtn.type = "button";
 
-    cell.append(projectBtn, roleEditBtn, deleteBtn);
+    // Only append the edit button if it's needed
+    if (shouldShowProjectButton || shouldShowRoleButton) {
+      cell.append(editDetailsBtn);
+    }
+
+    cell.append(deleteBtn);
     return cell;
   }
 
@@ -879,8 +931,7 @@ document.addEventListener("DOMContentLoaded", () => {
     closeRoleEditModal();
   };
   // --- Init ---
-  initializeEventListeners();
-});
+}); // End of DOMContentLoaded listener
 
 window.closeModal = function (modalId) {
   document.getElementById(modalId).style.display = "none";

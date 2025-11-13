@@ -24,6 +24,13 @@ const modalElements = {
   labelPathway: document.getElementById("label-pathway-series"),
   labelLevel: document.getElementById("label-level"),
   labelProject: document.getElementById("label-project-presentation"),
+  evalProjectGroup: document.getElementById("eval-project-group"),
+  evalIsProjectChk: document.getElementById("eval-is-project-chk"),
+  evalProjectSelect: document.getElementById("eval-project-select"),
+  ttProjectGroup: document.getElementById("tt-project-group"),
+  ttIsProjectChk: document.getElementById("tt-is-project-chk"),
+  ttPathwayGroup: document.getElementById("tt-pathway-group"),
+  ttPathwaySelect: document.getElementById("tt-pathway-select"),
 };
 
 // --- Main Public Functions ---
@@ -86,7 +93,10 @@ function openSpeechEditModal(
         // 2. Specialize the modal based on its type
         switch (currentSessionType) {
           case "Evaluation":
-            setupEvaluatorModal();
+            setupEvaluatorModal(data.log);
+            break;
+          case "Table Topics":
+            setupTableTopicsModal(data.log);
             break;
           case "Presentation":
             setupPresentationModal(data.log);
@@ -166,18 +176,111 @@ function setCommonModalValues(logData, sessionType) {
   modalElements.projectSelectGroup.style.display = "block";
   modalElements.genericCheckbox.disabled = false;
   modalElements.genericCheckbox.checked = false;
+
+  // Explicitly set required to false here. It will be re-enabled by pathway/presentation setups.
+  modalElements.pathwaySelect.required = false;
+
   toggleGeneric(false); // Ensure fields are visible
+
+  // Reset evaluator-specific fields
+  modalElements.evalProjectGroup.style.display = "none";
+  modalElements.evalProjectSelect.style.display = "none";
+  modalElements.evalIsProjectChk.checked = false;
+  modalElements.evalProjectSelect.value = "";
+
+  // Reset Table Topics specific fields
+  modalElements.ttProjectGroup.style.display = "none";
+  modalElements.ttPathwayGroup.style.display = "none";
+  modalElements.ttIsProjectChk.checked = false;
+  modalElements.ttPathwaySelect.value = "";
 }
 
 /**
  * Configures the modal for an "Individual Evaluator".
  */
-function setupEvaluatorModal() {
+function setupEvaluatorModal(logData) {
   modalElements.title.textContent = "Edit Evaluator Details";
   modalElements.speechTitle.disabled = true;
   modalElements.pathwayGenericRow.style.display = "none";
   modalElements.levelSelectGroup.style.display = "none";
   modalElements.projectSelectGroup.style.display = "none";
+  modalElements.pathwaySelect.required = false;
+
+  // New logic starts here
+  modalElements.evalProjectGroup.style.display = "block";
+
+  // Populate the dropdown with evaluation projects (IDs 4, 5, 6)
+  const evalProjects = allProjects
+    .filter((p) => [4, 5, 6].includes(p.ID))
+    .sort((a, b) => a.ID - b.ID);
+  modalElements.evalProjectSelect.innerHTML =
+    '<option value="">-- Select Evaluation Project --</option>';
+  evalProjects.forEach((p) => {
+    modalElements.evalProjectSelect.add(new Option(p.Project_Name, p.ID));
+  });
+
+  // Add event listener for the checkbox
+  modalElements.evalIsProjectChk.onchange = (e) => {
+    modalElements.evalProjectSelect.style.display = e.target.checked
+      ? "block"
+      : "none";
+    if (!e.target.checked) {
+      modalElements.evalProjectSelect.value = "";
+    }
+  };
+
+  // Set initial state based on logData
+  if (logData.Project_ID && ["4", "5", "6"].includes(String(logData.Project_ID))) {
+    modalElements.evalIsProjectChk.checked = true;
+    modalElements.evalProjectSelect.value = logData.Project_ID;
+    modalElements.evalProjectSelect.style.display = "block";
+  } else {
+    modalElements.evalIsProjectChk.checked = false;
+    modalElements.evalProjectSelect.style.display = "none";
+    modalElements.evalProjectSelect.value = "";
+  }
+}
+
+/**
+ * Configures the modal for a "Table Topics Master".
+ */
+function setupTableTopicsModal(logData) {
+  modalElements.title.textContent = "Edit Table Topics Details";
+  modalElements.speechTitle.disabled = true;
+  modalElements.pathwayGenericRow.style.display = "none";
+  modalElements.levelSelectGroup.style.display = "none";
+  modalElements.projectSelectGroup.style.display = "none";
+  modalElements.pathwaySelect.required = false;
+
+  modalElements.ttProjectGroup.style.display = "block";
+
+  // Populate Pathway dropdown
+  modalElements.ttPathwaySelect.innerHTML = ""; // Clear
+  modalElements.ttPathwaySelect.add(new Option("-- Select Pathway --", ""));
+  Object.keys(pathwayMap).forEach((p_name) => {
+    modalElements.ttPathwaySelect.add(new Option(p_name, p_name));
+  });
+
+  // Add event listener for the checkbox
+  modalElements.ttIsProjectChk.onchange = (e) => {
+    modalElements.ttPathwayGroup.style.display = e.target.checked
+      ? "block"
+      : "none";
+    if (!e.target.checked) {
+      modalElements.ttPathwaySelect.value = "";
+    }
+  };
+
+  // Set initial state based on logData
+  if (logData.Project_ID === 10) {
+    modalElements.ttIsProjectChk.checked = true;
+    modalElements.ttPathwaySelect.value = logData.pathway || "";
+    modalElements.ttPathwayGroup.style.display = "block";
+  } else {
+    modalElements.ttIsProjectChk.checked = false;
+    modalElements.ttPathwayGroup.style.display = "none";
+    modalElements.ttPathwaySelect.value = "";
+  }
 }
 
 /**
@@ -189,6 +292,7 @@ function setupPresentationModal(logData) {
   modalElements.labelProject.textContent = "Presentation Title:";
   modalElements.levelSelectGroup.style.display = "none";
   modalElements.genericCheckbox.disabled = true;
+  modalElements.pathwaySelect.required = true;
 
   // Find current presentation
   const currentPres = allPresentations.find((p) => p.id == logData.Project_ID);
@@ -217,6 +321,7 @@ function setupPathwayModal(logData, workingPath, nextProject) {
   modalElements.labelPathway.textContent = "Pathway:";
   modalElements.labelLevel.textContent = "Level:";
   modalElements.labelProject.textContent = "Project:";
+  modalElements.pathwaySelect.required = true;
 
   // Populate Pathway dropdown
   modalElements.pathwaySelect.innerHTML = ""; // Clear
@@ -372,10 +477,24 @@ function buildSavePayload() {
   const sessionType = modalElements.sessionType.value;
   const isGeneric = modalElements.genericCheckbox.checked;
 
-  if (sessionType === "Individual Evaluator") {
+  if (sessionType === "Evaluation") {
+    const isProject = modalElements.evalIsProjectChk.checked;
+    const projectId = modalElements.evalProjectSelect.value;
     return {
       session_type_title: sessionType,
       media_url: modalElements.mediaUrl.value || null,
+      project_id: isProject && projectId ? projectId : null,
+    };
+  }
+
+  if (sessionType === "Table Topics") {
+    const isProject = modalElements.ttIsProjectChk.checked;
+    const pathway = modalElements.ttPathwaySelect.value;
+    return {
+      session_type_title: sessionType,
+      media_url: modalElements.mediaUrl.value || null,
+      project_id: isProject && pathway ? 10 : null, // Project ID is 10 for TT project
+      pathway: isProject && pathway ? pathway : null,
     };
   }
 
@@ -460,7 +579,19 @@ function updateAgendaRow(logId, updateResult, payload) {
       ".non-edit-mode-cell:nth-child(2)"
     );
     if (titleCell) updateMediaLink(titleCell);
-  } else {
+  } else if (sessionType === "Table Topics") {
+    agendaRow.dataset.projectId = updateResult.project_id || "";
+    const viewTitleCell = agendaRow.querySelector(
+      ".non-edit-mode-cell:nth-child(2)"
+    );
+    if (viewTitleCell) {
+        let title = "Table Topics Master";
+        let code = updateResult.project_code ? `(${updateResult.project_code})` : "";
+        viewTitleCell.querySelector(".speech-tooltip-wrapper").textContent = `${title} ${code}`.trim();
+        updateMediaLink(viewTitleCell);
+    }
+  }
+  else {
     // Full update for Speeches/Presentations
     agendaRow.dataset.projectId = updateResult.project_id || "";
     agendaRow.dataset.sessionTitle = updateResult.session_title;
