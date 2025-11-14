@@ -250,8 +250,8 @@
         transition: transform 0.5s ease-in-out;
         order: 1;
         position: relative; /* for absolutely positioned children */
-        margin-top: -20px; /* Move it higher */
-        margin-bottom: 50px;
+        margin-top: -60px; /* Move it higher */
+        margin-bottom: 80px;
     }
 
     .action-bar-left .inline-filter-group {
