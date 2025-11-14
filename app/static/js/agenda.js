@@ -211,8 +211,8 @@ document.addEventListener("DOMContentLoaded", () => {
       meetingNumber: meetingFilter.value,
       projectId: "",
       status: "Booked",
-      typeId: allSessionTypes.find((st) => st.Title === "Opening")?.id || "",
-      sessionTitle: "",
+      typeId: 36, // Topics Speaker
+      sessionTitle: "Topics Speaker",
       ownerId: "",
       durationMin: "",
       durationMax: "",
