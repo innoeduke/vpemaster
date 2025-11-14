@@ -1,7 +1,7 @@
 /* --- New Agenda Header Styles (Redesigned) --- */
 .agenda-header-container {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 20px;
     margin-bottom: 20px;
 }
@@ -74,7 +74,8 @@
 /* --- WOD Display in Action Bar --- */
 
 .wod-display {
-    padding: 4px 40px;
+    padding: 4px 15px;
+    width: fit-content;
 }  
 
 .wod-display label {
@@ -188,6 +189,7 @@
 }
 
 .session-cell-with-media {
+    flex-direction: column;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -220,6 +222,7 @@
 #meeting-date-display {
     font-size: 1em;
     white-space: nowrap;
+    margin-left: 10px;
 }
 
 .section-row {
@@ -421,9 +424,3 @@
     color: #495057;
     line-height: 1.5;
 }
-
-/* The badge in the action bar might not need a left margin */
-.action-bar-left .meeting-type-badge {
-    margin-left: 0;
-}
-

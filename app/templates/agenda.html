@@ -83,21 +83,22 @@
     <br/>
     <div class="action-bar">
         <div class="action-bar-left">
-            
             <div class="inline-filter-group">
-                {% if selected_meeting %}
-                <span id="meeting-date-display">{{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') }}</span>
-                {% endif %}
+                
                 <label for="meeting-filter">Meeting#:</label>
                 <select id="meeting-filter" {% if is_editing %}disabled{% endif %}>
                     <option value="">All Meetings</option>
-                    {% for num in meeting_numbers %}
+                    {% for num in meeting_numbers|sort(reverse=True) %}
                     <option value="{{ num }}" {% if selected_meeting and num == selected_meeting.Meeting_Number %}selected{% endif %}>{{ num }}</option>
                     {% endfor %}
                 </select>
+                {% if selected_meeting %}
+                    <span id="meeting-date-display">{{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') }}</span>
+                {% endif %}
             </div>
+            
             {% if selected_meeting and selected_meeting.WOD %}
-            <div class="inline-filter-group wod-display">
+            <div class="inline-filter-group wod-display wod-card">
                 <label>Word of the Day:</label>
                 <span>"{{ selected_meeting.WOD }}"</span>
             </div>

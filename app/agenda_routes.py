@@ -190,9 +190,31 @@ def _recalculate_start_times(meetings_to_update):
 def agenda():
 
     # --- Determine Selected Meeting ---
-    meeting_numbers_query = db.session.query(distinct(
-        SessionLog.Meeting_Number)).order_by(SessionLog.Meeting_Number.desc()).all()
-    meeting_numbers = [num[0] for num in meeting_numbers_query]
+    today = datetime.today().date()
+
+    # Subquery to get meeting numbers that have at least one session log
+    subquery = db.session.query(distinct(SessionLog.Meeting_Number)).subquery()
+
+    # Query for future meetings that have an agenda
+    future_meetings_q = Meeting.query.filter(
+        Meeting.Meeting_Number.in_(subquery),
+        Meeting.Meeting_Date >= today
+    )
+
+    # Query for the 8 most recent past meetings that have an agenda
+    past_meetings_q = Meeting.query.filter(
+        Meeting.Meeting_Number.in_(subquery),
+        Meeting.Meeting_Date < today
+    ).order_by(Meeting.Meeting_Date.desc()).limit(8)
+
+    # Execute queries
+    future_meetings = future_meetings_q.all()
+    past_meetings = past_meetings_q.all()
+
+    # Combine, sort, and get meeting numbers
+    all_meetings = sorted(
+        future_meetings + past_meetings, key=lambda m: m.Meeting_Date, reverse=True)
+    meeting_numbers = [m.Meeting_Number for m in all_meetings]
 
     selected_meeting_str = request.args.get('meeting_number')
     selected_meeting_num = None
@@ -1141,7 +1163,7 @@ def update_logs():
 
         if new_style and meeting.GE_Style != new_style:
             meeting.GE_Style = new_style
-        
+
         # Commit changes to the meeting object before processing logs
         db.session.commit()
 

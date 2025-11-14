@@ -186,6 +186,49 @@
     }
 
     /* --- Agenda Page Responsive Fixes --- */
+    .agenda-header-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 10px;
+    }
+
+    .agenda-header-info {
+        display: contents;
+    }
+
+    .club-info {
+        grid-row: 1;
+        text-align: center;
+    }
+
+    .agenda-header-logo {
+        grid-row: 2;
+    }
+
+    .agenda-header-logo img {
+        max-width: 50%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .meeting-title {
+        grid-row: 3;
+        margin: 10px 0 0 0;
+        text-align: center;
+    }
+
+    .subtitle {
+        grid-row: 4;
+        margin: 0;
+        text-align: center;
+    }
+
+    .agenda-header-info .video-icon-btn {
+        display: none;
+    }
+
     .action-bar {
         flex-direction: column;
         align-items: stretch;
@@ -198,7 +241,53 @@
     }
     
     .action-bar-left .wod-display {
-        padding: 4px 0; /* Remove horizontal padding on mobile */
+        position: relative; /* Needed for the pin */
+        padding: 20px;
+        border: none;
+        border-radius: 8px;
+        background-color: #fff7d1; /* Light yellow sticky note color */
+        box-shadow: 5px 5px 15px rgba(0,0,0,0.2);
+        text-align: center;
+        width: auto;
+        margin: 25px auto; /* Increased margin for rotation */
+        transform: rotate(-2.5deg); /* Slight rotation */
+        transition: transform 0.2s ease;
+        flex-direction: column;
+    }
+
+    .action-bar-left .wod-display:hover {
+        transform: rotate(0deg) scale(1.05); /* Straighten and slightly enlarge on hover */
+        z-index: 10; /* Bring to front on hover */
+    }
+
+    /* Adding a "pin" element */
+    .action-bar-left .wod-display::before {
+        content: '';
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 20px;
+        height: 20px;
+        background-color: #ff4b4b; /* Red pin head */
+        border-radius: 50%;
+        box-shadow: 0 0 5px rgba(0,0,0,0.3);
+    }
+
+    .wod-display label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 8px;
+        font-size: 1em;
+        color: #555;
+        font-family: 'Georgia', serif;
+    }
+
+    .wod-display span {
+        font-size: 2em;
+        font-family: 'Indie Flower', cursive; /* A more handwritten font */
+        color: #333;
+        display: block; /* Ensure it takes its own line */
     }
 
     .action-bar .button-group {
