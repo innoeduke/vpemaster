@@ -111,7 +111,7 @@ class SessionLog(db.Model):
     Designation = db.Column(db.String(255), default='')
     Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.ID'))
     Start_Time = db.Column(db.Time)
-    Duration_Min = db.Column(db.Integer)
+    Duration_Min = db.Column(db.Integer, nullable=False, default=0)
     Duration_Max = db.Column(db.Integer)
     Notes = db.Column(db.String(1000))
     Status = db.Column(db.String(50))
