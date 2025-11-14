@@ -98,9 +98,12 @@
             </div>
             
             {% if selected_meeting and selected_meeting.WOD %}
-            <div class="inline-filter-group wod-display wod-card">
-                <label>Word of the Day:</label>
-                <span>"{{ selected_meeting.WOD }}"</span>
+            <div class="wod-display">
+                <div class="envelope-flap"></div>
+                <div class="letter">
+                    <label>Word of the Day:</label>
+                    <span>"{{ selected_meeting.WOD }}"</span>
+                </div>
             </div>
             {% endif %}
             

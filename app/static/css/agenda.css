@@ -74,19 +74,73 @@
 /* --- WOD Display in Action Bar --- */
 
 .wod-display {
-    padding: 4px 15px;
-    width: fit-content;
+    background: #f0e5d8; /* Envelope color */
+    width: 150px; /* Default width */
+    height: 100px; /* Default height */
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: transform 0.5s ease-in-out;
+    position: relative;
+    transform-style: preserve-3d;
 }  
 
 .wod-display label {
     font-weight: bold;
     color: #555;
     margin: 0;
+    font-size: 0.6em;
+    font-family: 'Georgia', serif;
 }
 .wod-display span {
     font-weight: bold;
-    font-size: 1.1em; 
+    font-size: 1.5em; 
     color: #772432; 
+    font-family: 'Indie Flower', cursive;
+}
+
+.wod-display .envelope-flap {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #e9d9c6; /* Flap color */
+    transform-origin: top;
+    transition: transform 0.5s ease-in-out;
+    clip-path: polygon(0 0, 100% 0, 50% 60%);
+}
+
+.wod-display .letter {
+    position: absolute;
+    top: 0;
+    width: 90%;
+    height: 90%;
+    background: white;
+    left: 5%;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    transition: all 0.5s 0.2s ease-in-out;
+    z-index: -1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    box-sizing: border-box;
+    opacity: 0;
+    transform: translateY(0);
+    visibility: hidden;
+}
+
+/* Open State */
+.wod-display.open .envelope-flap {
+    transform: rotateX(180deg);
+    z-index: -2;
+}
+
+.wod-display.open .letter {
+    z-index: 1;
+    opacity: 1;
+    transform: translateY(-100%);
+    visibility: visible;
 }
 
 .meeting-awards {

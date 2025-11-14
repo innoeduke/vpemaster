@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const geStyleToggle = document.getElementById("ge-style-toggle");
   const geStyleSelect = document.getElementById("ge-style-select");
   const viewModeButtons = document.getElementById("view-mode-buttons");
+  const wodDisplay = document.querySelector(".wod-display");
   const editModeButtons = document.getElementById("edit-mode-buttons");
 
   // --- Data from Template (only projectSpeakers remains, others fetched via API) ---
@@ -138,6 +139,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (event.target.closest(".delete-btn")) {
           deleteLogRow(event.target.closest("tr"));
         }
+      });
+    }
+    if (wodDisplay) {
+      wodDisplay.addEventListener("click", () => {
+        wodDisplay.classList.toggle("open");
       });
     }
   }
