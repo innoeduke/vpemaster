@@ -928,6 +928,7 @@ def create_from_template():
         return redirect(url_for('agenda_bp.agenda', message=f'Invalid meeting type: {meeting_type}', category='error'))
 
     meeting_title = request.form.get('meeting_title')
+    subtitle = request.form.get('subtitle')
     wod = request.form.get('wod')
     media_url = request.form.get('media_url')
 
@@ -963,6 +964,7 @@ def create_from_template():
             GE_Style=ge_style,
             type=meeting_type,
             Meeting_Title=meeting_title,
+            Subtitle=subtitle,
             WOD=wod,
             media_id=new_media_id
         )
@@ -972,9 +974,10 @@ def create_from_template():
         meeting.Start_Time = start_time
         meeting.GE_Style = ge_style
         meeting.type = meeting_type
-        meeting.Meeting_Title = meeting_title  # <-- ADDED
-        meeting.WOD = wod                     # <-- ADDED
-        meeting.media_id = new_media_id       # <-- ADDED
+        meeting.Meeting_Title = meeting_title
+        meeting.Subtitle = subtitle
+        meeting.WOD = wod
+        meeting.media_id = new_media_id
 
     # --- 4. Process Agenda Template ---
     SessionLog.query.filter_by(Meeting_Number=meeting_number).delete()
@@ -1097,6 +1100,7 @@ def update_logs():
     new_style = data.get('ge_style')
     new_meeting_title = data.get('meeting_title')
     new_meeting_type = data.get('meeting_type')
+    new_subtitle = data.get('subtitle')
     new_wod = data.get('wod')
     new_media_url = data.get('media_url')
 
@@ -1114,6 +1118,9 @@ def update_logs():
 
         if new_meeting_type is not None:
             meeting.type = new_meeting_type
+
+        if new_subtitle is not None:
+            meeting.Subtitle = new_subtitle
 
         if new_wod is not None:
             meeting.WOD = new_wod
@@ -1134,8 +1141,11 @@ def update_logs():
 
         if new_style and meeting.GE_Style != new_style:
             meeting.GE_Style = new_style
-            db.session.commit()
+        
+        # Commit changes to the meeting object before processing logs
+        db.session.commit()
 
+        if new_style:
             # Update the duration for the GE Report session if it exists
             for item in agenda_data:
                 # CORRECTED ID: General Evaluation Report is 16

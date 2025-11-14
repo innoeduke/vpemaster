@@ -10,18 +10,23 @@
         </div>
         
         <div class="agenda-header-info">
-            <p class="sub-title">Club No.868941 | Area K1 | Division K | Shanghai Leadership Toastmasters Club</p>
-
+            <p class="club-info">Club No.868941 | Area K1 | Division K | Shanghai Leadership Toastmasters Club</p>
             <h1 class="meeting-title view-mode">
+                {% if selected_meeting.type %}
+                    <span class="meeting-type-badge">{{ selected_meeting.type }}</span>
+                {% endif %}
                 {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
-                
             </h1>
+            <p class="subtitle view-mode">
+                {% if selected_meeting.Subtitle %}
+                    {{ selected_meeting.Subtitle }}
+                {% endif %}
+            </p>
             {% if selected_meeting and selected_meeting.media and selected_meeting.media.url %}
                 <a href="{{ selected_meeting.media.url }}" class="btn btn-info video-icon-btn" target="_blank" title="Watch Meeting Video">
                     <i class="fas fa-video"></i>
                 </a>
             {% endif %}
-
             <div class="meeting-edit-details">
                 <div class="meta-item">
                     <span><strong>Meeting Title:</strong></span>
@@ -31,6 +36,14 @@
                            value="{{ selected_meeting.Meeting_Title or '' }}" 
                            placeholder="Enter Meeting Title (Theme)">
                 </div>
+                <div class="meta-item">
+                    <span><strong>Sub-Title:</strong></span>
+                    <input type="text" 
+                           id="edit-subtitle" 
+                           class="edit-mode-field" 
+                           value="{{ selected_meeting.Subtitle or '' }}" 
+                           placeholder="Enter Meeting Sub-Title">
+                </div> 
                 <div class="meta-item">
                     <span><strong>Meeting Type:</strong></span>
                     <select id="edit-meeting-type" class="edit-mode-field">
@@ -70,7 +83,11 @@
     <br/>
     <div class="action-bar">
         <div class="action-bar-left">
+            
             <div class="inline-filter-group">
+                {% if selected_meeting %}
+                <span id="meeting-date-display">{{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') }}</span>
+                {% endif %}
                 <label for="meeting-filter">Meeting#:</label>
                 <select id="meeting-filter" {% if is_editing %}disabled{% endif %}>
                     <option value="">All Meetings</option>
@@ -78,9 +95,6 @@
                     <option value="{{ num }}" {% if selected_meeting and num == selected_meeting.Meeting_Number %}selected{% endif %}>{{ num }}</option>
                     {% endfor %}
                 </select>
-                {% if selected_meeting %}
-                <span id="meeting-date-display">{{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') }}</span>
-                {% endif %}
             </div>
             {% if selected_meeting and selected_meeting.WOD %}
             <div class="inline-filter-group wod-display">
@@ -91,9 +105,9 @@
             
             <div id="ge-style-toggle" class="inline-filter-group" style="display: none;">
                 <label for="ge-style-select">GE Style:</label>
-                <select id="ge-style-select">
-                    <option value="immediate" {% if selected_meeting and selected_meeting.GE_Style == 'immediate' %}selected{% endif %}>Immediate</option>
-                    <option value="deferred" {% if selected_meeting and selected_meeting.GE_Style == 'deferred' %}selected{% endif %}>Deferred</option>
+                <select id="ge-style-select" data-current-style="{{ selected_meeting.GE_Style if selected_meeting else '' }}">
+                    <option value="One shot" {% if selected_meeting and selected_meeting.GE_Style == 'One shot' %}selected{% endif %}>One shot</option>
+                    <option value="Multiple shots" {% if selected_meeting and selected_meeting.GE_Style == 'Multiple shots' %}selected{% endif %}>Multiple shots</option>
                 </select>
             </div>
         </div>
@@ -261,6 +275,14 @@
                         <td><input type="number" id="meeting_number" name="meeting_number" required></td>
                     </tr>
                     <tr>
+                        <td><label for="meeting_title">Meeting Title:</label></td>
+                        <td><input type="text" id="meeting_title" name="meeting_title"></td>
+                    </tr>
+                    
+                    <tr>
+                        <td><label for="meeting_title">Meeting Title:</label></td>
+                        <td><input type="text" id="meeting_title" name="meeting_title"></td>
+                    </tr>tr>
                         <td><label for="meeting_date">Meeting Date:</label></td>
                         <td><input type="date" id="meeting_date" name="meeting_date" required></td>
                     </tr>

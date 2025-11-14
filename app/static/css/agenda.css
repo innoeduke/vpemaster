@@ -9,6 +9,7 @@
 .agenda-header-logo img {
     max-width: 150px;
     height: auto;
+    vertical-align: middle;
 }
 
 .agenda-header-info {
@@ -16,8 +17,7 @@
     text-align: center;
 }
 
-/* "Meeting Agenda" subtitle */
-.agenda-header-info .sub-title {
+.agenda-header-info .club-info {
     font-size: 0.9em;
     color: #555;
     margin: 0;
@@ -32,6 +32,16 @@
     color: #333;
     margin: 30px 40px;
     line-height: 1.2;
+}
+
+/* Meeting subtitle (dynamic) */
+.agenda-header-info .subtitle {
+    font-size: clamp(1.1em, 3vw, 1.5em);
+    font-weight: 400;
+    font-style: italic;
+    color: #555;
+    margin: -20px 40px 20px; /* Adjust margin to sit below title */
+    line-height: 1.3;
 }
 
 .agenda-header-info hr.view-mode {
@@ -113,7 +123,8 @@
 /* In non-edit mode, hide empty items */
 :not(.edit-mode-active) .meta-item.is-empty,
 :not(.edit-mode-active) hr.is-empty,
-:not(.edit-mode-active) .meeting-title.is-empty {
+:not(.edit-mode-active) .meeting-title.is-empty,
+:not(.edit-mode-active) .meeting-subtitle.is-empty {
     display: none;
 }
 
@@ -208,7 +219,6 @@
 
 #meeting-date-display {
     font-size: 1em;
-    color: #333;
     white-space: nowrap;
 }
 
@@ -397,43 +407,23 @@
     background-color: #e9e9e9;
 }
 
-/* --- Responsive adjustment for small screens --- */
-@media (max-width: 600px) {
-    .action-bar {
-        flex-direction: column;
-        align-items: stretch; /* Make left and right take full width */
-        gap: 15px;
-    }
-
-    .action-bar-left {
-        flex-direction: column;
-        align-items: flex-start; /* Align items within this group to the start */
-        width: 100%; /* Take full width */
-    }
-
-    .agenda-header-container {
-        flex-direction: column;
-        align-items: center;
-        gap: 15px;
-    }
-    .agenda-header-info {
-        text-align: center;
-        width: 100%;
-    }
-    .agenda-header-info .meeting-title {
-        font-size: 1.8em;
-    }
-    .meeting-meta-details,
-    .meeting-awards {
-        align-items: center;
-    }
-    
-    /* Center edit fields on mobile */
-    .edit-mode-active .meeting-edit-details .meta-item {
-        align-items: center;
-        width: 100%;
-    }
-    .edit-mode-active .meeting-edit-details .meta-item .edit-mode-field {
-         width: 90%;
-    }
+.meeting-type-badge {
+    display: block; 
+    width: fit-content; 
+    margin: 0 auto 10px; 
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-weight: 600;
+    font-size: 0.2em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background-color: #e9ecef;
+    color: #495057;
+    line-height: 1.5;
 }
+
+/* The badge in the action bar might not need a left margin */
+.action-bar-left .meeting-type-badge {
+    margin-left: 0;
+}
+

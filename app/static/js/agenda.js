@@ -152,6 +152,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateActionButtonsVisibility(enable);
     meetingFilter.disabled = enable;
     initializeSortable(enable);
+    if (enable && geStyleSelect) {
+      geStyleSelect.value = geStyleSelect.dataset.currentStyle;
+    }
   }
 
   function saveChanges() {
@@ -179,6 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
         agenda_data: dataToSave,
         ge_style: geStyleSelect.value,
         meeting_title: document.getElementById("edit-meeting-title").value,
+        subtitle: document.getElementById("edit-subtitle").value, // <-- ADD THIS LINE
         meeting_type: document.getElementById("edit-meeting-type").value,
         wod: document.getElementById("edit-wod").value,
         media_url: document.getElementById("edit-media-url").value,
