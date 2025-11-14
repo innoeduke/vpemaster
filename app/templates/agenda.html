@@ -221,6 +221,12 @@
                              {# Use pre-fetched owner data from log_dict #}
                             {% if log_dict.owner_name %}
                                 {{ log_dict.owner_name }}
+                                {# Show trophy for award winners #}
+                                {% if log_dict.award_type %}
+                                    <span class="icon-btn icon-btn-voted" title="{{ log_dict.award_type }} Winner">
+                                        <i class="fas fa-award"></i>
+                                    </span>
+                                {% endif %}
                                 <span class="owner-meta">
                                     {% if log_dict.owner_dtm %}
                                         <br/>DTM
@@ -260,14 +266,14 @@
                     </tr>
                     <tr>
                         <td><label for="start_time">Start Time:</label></td>
-                        <td><input type="time" id="start_time" name="start_time" value="18:55" required></td>
+                        <td><input type="time" id="start_time" name="start_time" value="{{ default_start_time }}" required></td>
                     </tr>
                     <tr>
-                        <td><label for="template_file">Template:</label></td>
+                        <td><label for="meeting_type">Meeting Type:</label></td>
                         <td>
-                            <select id="template_file" name="template_file" required>
-                                {% for template in meeting_templates %}
-                                    <option value="{{ template }}" {% if template == 'default.csv' %}selected{% endif %}>{{ template }}</option>
+                            <select id="meeting_type" name="meeting_type" required>
+                                {% for type_name in meeting_types.keys() %}
+                                    <option value="{{ type_name }}" {% if type_name == 'Keynote Speech' %}selected{% endif %}>{{ type_name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
@@ -276,8 +282,8 @@
                         <td><label for="ge_style">GE Style:</label></td>
                         <td>
                             <select id="ge_style" name="ge_style" required>
-                                <option value="immediate" selected>Immediate</option>
-                                <option value="deferred">Deferred</option>
+                                <option value="Multiple shots">Multiple shots</option>
+                                <option value="One shot" selected>One shot</option>
                             </select>
                         </td>
                     </tr>

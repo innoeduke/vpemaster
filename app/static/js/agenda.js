@@ -58,25 +58,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Fetch all necessary data asynchronously and then initialize the page ---
   // This fetch is now inside the DOMContentLoaded listener.
-  fetch("/api/data/all")
-    .then((response) => response.json())
-    .then((data) => {
-      allSessionTypes = data.session_types;
-      allContacts = data.contacts;
-      allProjects = data.projects;
-      allPresentations = data.presentations;
-      allPresentationSeries = data.presentation_series;
-      allSeriesInitials = data.series_initials;
-      allMeetingTypes = data.meeting_types;
+  // Only fetch edit-related data if the edit button is present (i.e., user is authorized)
+  if (editBtn) {
+    fetch("/api/data/all")
+      .then((response) => response.json())
+      .then((data) => {
+        allSessionTypes = data.session_types;
+        allContacts = data.contacts;
+        allProjects = data.projects;
+        allPresentations = data.presentations;
+        allPresentationSeries = data.presentation_series;
+        allSeriesInitials = data.series_initials;
+        allMeetingTypes = data.meeting_types;
 
-      // Make data available globally for speech_modal.js, which expects them as globals
-      window.allProjects = allProjects;
-      window.allPresentations = allPresentations;
-      window.presentationSeries = allPresentationSeries;
+        // Make data available globally for speech_modal.js, which expects them as globals
+        window.allProjects = allProjects;
+        window.allPresentations = allPresentations;
+        window.presentationSeries = allPresentationSeries;
 
-      initializeAgendaPage(); // Now that data is loaded, initialize the page
-    })
-    .catch((error) => console.error("Error fetching initial data:", error));
+        initializeAgendaPage(); // Now that data is loaded, initialize the page
+      })
+      .catch((error) => console.error("Error fetching initial data:", error));
+  } else {
+    initializeAgendaPage(); // Initialize for guest view without fetching edit data
+  }
 
   // --- Constants ---
   const fieldsOrder = [
@@ -341,9 +346,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Dynamically set colspan based on screen size to fix mobile browser bug
       if (window.innerWidth <= 768) {
-        titleCell.colSpan = 5; // Spans the 5 visible columns on mobile
+        titleCell.colSpan = 5; // Spans the 4 visible middle columns on mobile
       } else {
-        titleCell.colSpan = 7; // Spans the 7 visible columns on desktop
+        titleCell.colSpan = 7; // Spans the 7 middle columns on desktop
       }
 
       titleCell.classList.add("section-row");

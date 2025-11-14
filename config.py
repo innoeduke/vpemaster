@@ -36,13 +36,24 @@ class Config:
     }
 
     MEETING_TYPES = {
-        "Club Election": 45,
-        "Debate": 40,
-        "Keynote Speech": 20,
-        "Panel Discussion": 44,
-        "Presentation": 43,
-        "Speech Contest": 3,  # In case of Speech Contest, the host is default to Toastmaster
-        "Speech Marathon": 3  # In case of Speech Marathon, the host is default to Toastmaster
+        "Club Election": {
+            "owner_role_id": 45, "template": "club_election.csv"
+        },
+        "Debate": {
+            "owner_role_id": 40, "template": "debate.csv"
+        },
+        "Keynote Speech": {
+            "owner_role_id": 20, "template": "default.csv"
+        },
+        "Panel Discussion": {
+            "owner_role_id": 44, "template": "panel_discussion.csv"
+        },
+        "Speech Contest": {
+            "owner_role_id": 3, "template": "speech_contest.csv"
+        },
+        "Speech Marathon": {
+            "owner_role_id": 3, "template": "speech_marathon.csv"
+        }
     }
 
     SERIES_INITIALS = {

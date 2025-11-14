@@ -185,6 +185,10 @@ h1 {
     background-color: #f8f9fa;
 }
 
+.booking-table .owner-header {
+    text-align: center;
+}
+
 .booking-table tbody tr:last-child {
     border-bottom: none;
 }
@@ -225,6 +229,33 @@ h1 {
     justify-content: center;
 }
 
+.owner-display {
+    font-weight: normal;
+    font-size: 1em; /* Match the role title font size */
+    color: #555;
+    text-align: center; /* Center the name */
+    width: 100%;
+    white-space: nowrap; /* Prevent name from wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ... if name is too long */
+}
+
+/* For past meetings, hide the waitlist cell */
+.is-past-meeting-row .waitlist-cell {
+    display: none;
+}
+/* And make the action cell (containing the owner name) span two columns */
+.is-past-meeting-row .action-cell {
+    grid-column: span 2;
+}
+
+.booking-table .action-cell .btn {
+    width: 130px; /* Set a fixed width for all action buttons */
+    white-space: nowrap; /* Prevent button text from wrapping */
+    box-sizing: border-box; /* Ensure padding is included in the width */
+    justify-content: center; /* Center the text inside the button */
+}
+
 .btn-book { background-color: #28a745; }
 .btn-cancel { background-color: #772432; }
 .btn-booked {
@@ -251,11 +282,6 @@ h1 {
     border-color: #28a745;
     background-color: #e9f7ef;
     font-weight: bold;
-}
-
-.icon-btn.icon-btn-voted i {
-    color: #ffc107;
-    transform: scale(1.1);
 }
 
 .booking-table .role-display-text {
@@ -443,7 +469,9 @@ h1 {
 }
 
 .btn-join-waitlist {
-    background-color: #fcd22e; 
+    background-color: #fcd22e;
+    color: #333; /* Dark text for better contrast on yellow */
+    font-weight: bold;
 }
 
 .btn-leave-waitlist {

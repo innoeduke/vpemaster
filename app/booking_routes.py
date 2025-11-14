@@ -54,6 +54,7 @@ def _fetch_session_logs(selected_meeting_number, user_role):
         SessionType.Role.label('role'),
         SessionType.Role_Group.label('role_group'),
         SessionLog.Session_Title,
+        SessionLog.Type_ID.label('type_id'),
         SessionLog.Owner_ID,
         Contact.Name.label('owner_name')
     ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
@@ -92,6 +93,7 @@ def _consolidate_roles(session_logs, is_admin_booker):
                 'owner_id': log.Owner_ID,
                 'owner_name': log.owner_name,
                 'session_ids': [log.session_id],
+                'type_id': log.type_id,
                 'speaker_name': speaker_name,
                 'waitlist': waitlisted_info,
             }
@@ -103,6 +105,7 @@ def _consolidate_roles(session_logs, is_admin_booker):
                     'owner_id': log.Owner_ID,
                     'owner_name': log.owner_name,
                     'session_ids': [log.session_id],
+                    'type_id': log.type_id,
                     'speaker_name': None,
                     'waitlist': waitlisted_info,
                 }
@@ -191,11 +194,14 @@ def _apply_user_filters_and_rules(roles, user_role, current_user_contact_id, sel
     return roles
 
 
-def _sort_roles(roles, user_role, current_user_contact_id):
+def _sort_roles(roles, user_role, current_user_contact_id, is_past_meeting):
     """Sorts roles based on user type."""
-    if is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
+    if is_past_meeting:
+        # For past meetings, sort by session type ID for a consistent agenda-like order.
+        roles.sort(key=lambda x: x['type_id'])
+    elif is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
         roles.sort(key=lambda x: x['session_id'])
-    else:
+    else:  # For current/future meetings for non-admins
         roles.sort(key=lambda x: (
             0 if x['owner_id'] == current_user_contact_id else 1 if not x['owner_id'] else 2,
             x['role']
@@ -203,7 +209,7 @@ def _sort_roles(roles, user_role, current_user_contact_id):
     return roles
 
 
-def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_contact_id, selected_meeting):
+def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_contact_id, selected_meeting, is_past_meeting):
     """Helper function to get and process roles for the booking page."""
     is_admin_booker = is_authorized(user_role, 'BOOKING_ASSIGN_ALL')
 
@@ -212,8 +218,9 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
     enriched_roles = _enrich_role_data(roles_dict, selected_meeting)
     filtered_roles = _apply_user_filters_and_rules(
         enriched_roles, user_role, current_user_contact_id, selected_meeting_number)
+
     sorted_roles = _sort_roles(
-        filtered_roles, user_role, current_user_contact_id)
+        filtered_roles, user_role, current_user_contact_id, is_past_meeting)
 
     return sorted_roles
 
@@ -382,8 +389,13 @@ def _get_booking_page_context(selected_meeting_number, user, user_role, current_
         Meeting_Number=selected_meeting_number).first()
     context['selected_meeting'] = selected_meeting
 
+    is_past_meeting = False
+    if selected_meeting and selected_meeting.Meeting_Date:
+        is_past_meeting = selected_meeting.Meeting_Date < datetime.today().date()
+    context['is_past_meeting'] = is_past_meeting
+
     context['roles'] = _get_roles_for_meeting(
-        selected_meeting_number, user_role, current_user_contact_id, selected_meeting)
+        selected_meeting_number, user_role, current_user_contact_id, selected_meeting, is_past_meeting)
 
     context['user_bookings_by_date'] = _get_user_bookings(
         current_user_contact_id)

@@ -71,7 +71,7 @@ class Meeting(db.Model):
     Best_Speaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     Best_Roletaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     media_id = db.Column(db.Integer, db.ForeignKey('Media.id', use_alter=True))
-    GE_Style = db.Column(db.String(20), default='immediate')
+    GE_Style = db.Column(db.String(20), default='One shot')
 
     best_tt_speaker = db.relationship('Contact', foreign_keys=[Best_TT_ID])
     best_evaluator = db.relationship(

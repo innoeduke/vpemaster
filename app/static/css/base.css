@@ -119,6 +119,18 @@ h1 {
     color: #333;
 }
 
+/*
+  This rule targets the icon (<i>) inside the voted button directly.
+  This increases its specificity to override other color definitions,
+  like the default .icon-btn color or any conflicting styles.
+*/
+.icon-btn.icon-btn-voted i {
+    color: #c0392b; /* A strong red color */
+}
+.icon-btn.icon-btn-voted {
+    cursor: default;
+}
+
 /* --- Closable Alert --- */
 .alert-closable {
     position: relative;

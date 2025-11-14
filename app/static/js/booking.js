@@ -149,7 +149,7 @@ function updateVoteButtonsUI(category, newWinnerId) {
       button.style.display = "inline-block";
       button.classList.remove("icon-btn-voted");
       button.title = "Vote";
-      icon.classList.remove("fa-trophy");
+      icon.classList.remove("fa-award");
       icon.classList.add("fa-vote-yea");
     } else {
       // A vote was CAST.
@@ -159,7 +159,7 @@ function updateVoteButtonsUI(category, newWinnerId) {
         button.classList.add("icon-btn-voted");
         button.title = `Cancel Vote (${category})`;
         icon.classList.remove("fa-vote-yea");
-        icon.classList.add("fa-trophy");
+        icon.classList.add("fa-award");
       } else {
         // This is another role in the same category. Hide it.
         button.style.display = "none";

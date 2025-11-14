@@ -69,11 +69,12 @@
       </div>
 
       <div class="nav-pane" id="nav-pane">
+        <div class="beta-badge">Beta</div>
         <div class="nav-header">
-          <a href="#" class="nav-toggle" id="pc-nav-toggle"
-            ><i class="fas fa-bars"></i
-          ></a>
-          <h2 class="nav-title">Meeting Manager<sup>BETA</sup></h2>
+          <a href="#" class="nav-toggle" id="pc-nav-toggle">
+            <i class="fas fa-bars"></i>
+          </a>
+          <h2 class="nav-title">Meeting Manager</h2>
         </div>
         <ul class="nav-links">
           <li
@@ -81,7 +82,7 @@
           >
             <a href="{{ url_for('agenda_bp.agenda') }}">
               <i class="fas fa-calendar-alt nav-icon"></i>
-              <span>Meeting Agenda</span>
+              <span>Agenda</span>
             </a>
           </li>
           {% if session.logged_in %}
@@ -99,7 +100,7 @@
           >
             <a href="{{ url_for('contacts_bp.show_contacts') }}">
               <i class="fas fa-book nav-icon"></i>
-              <span>Contact Book</span>
+              <span>Contacts</span>
             </a>
           </li>
           {% endif %}
@@ -108,7 +109,7 @@
           >
             <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
               <i class="fas fa-tasks nav-icon"></i>
-              <span>Activities</span>
+              <span>Journals</span>
             </a>
           </li>
           {% endif %}

@@ -174,8 +174,8 @@ def _recalculate_start_times(meetings_to_update):
             log.Start_Time = current_time
             duration_to_add = int(log.Duration_Max or 0)
             break_minutes = 1
-            # Individual Evaluation Type_ID is 31
-            if log.Type_ID == 31 and meeting.GE_Style == 'immediate':
+            # For "Multiple shots" style, add an extra minute break after each evaluation
+            if log.Type_ID == 31 and meeting.GE_Style == 'Multiple shots':
                 break_minutes += 1
             dt_current_time = datetime.combine(
                 meeting.Meeting_Date, current_time)
@@ -225,6 +225,18 @@ def agenda():
             orm.joinedload(Meeting.best_roletaker),
             orm.joinedload(Meeting.media)
         ).filter(Meeting.Meeting_Number == selected_meeting_num).first()
+
+    # Create a lookup map for award winners for the selected meeting
+    award_winners = {}
+    if selected_meeting:
+        if selected_meeting.Best_Speaker_ID:
+            award_winners[selected_meeting.Best_Speaker_ID] = 'Best Speaker'
+        if selected_meeting.Best_Evaluator_ID:
+            award_winners[selected_meeting.Best_Evaluator_ID] = 'Best Evaluator'
+        if selected_meeting.Best_TT_ID:
+            award_winners[selected_meeting.Best_TT_ID] = 'Best TT'
+        if selected_meeting.Best_Roletaker_ID:
+            award_winners[selected_meeting.Best_Roletaker_ID] = 'Best Roletaker'
 
     # --- Fetch Raw Data ---
     raw_session_logs = _get_agenda_logs(selected_meeting_num)
@@ -327,6 +339,8 @@ def agenda():
             'owner_club': owner.Club if owner else '',
             'owner_completed_levels': owner.Completed_Levels if owner else '',
             'media_url': media.url if media and media.url else None,
+            # Add award type if the owner is a winner
+            'award_type': award_winners.get(log.Owner_ID)
         }
         logs_data.append(log_dict)
 
@@ -342,6 +356,9 @@ def agenda():
     members = Contact.query.filter_by(
         Type='Member').order_by(Contact.Name.asc()).all()
 
+    default_start_time = load_setting(
+        'ClubSettings', 'Meeting Start Time', default='18:55')
+
     # --- Render Template ---
     return render_template('agenda.html',
                            logs_data=logs_data,               # Use the processed list of dictionaries
@@ -352,7 +369,8 @@ def agenda():
                            members=members,                 # If needed elsewhere
                            project_speakers=project_speakers,  # For JS
                            meeting_templates=meeting_templates,
-                           meeting_types=current_app.config['MEETING_TYPES'])
+                           meeting_types=current_app.config['MEETING_TYPES'],
+                           default_start_time=default_start_time)
 
 
 # --- API Endpoints for Asynchronous Data Loading ---
@@ -713,7 +731,8 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     master_log, master_st, master_contact = None, None, None  # Default to None
 
     if meeting.type and meeting.type in meeting_types_dict:
-        target_session_type_id = meeting_types_dict[meeting.type]
+        target_session_type_id = meeting_types_dict[meeting.type].get(
+            'owner_role_id')
         if target_session_type_id:
             # Find the log matching the SessionType ID from the config dict
             master_log, master_st, master_contact, _, _ = find_log(
@@ -897,10 +916,17 @@ def create_from_template():
     meeting_number = request.form.get('meeting_number')
     meeting_date_str = request.form.get('meeting_date')
     start_time_str = request.form.get('start_time')
-    template_file = request.form.get('template_file')
+    meeting_type = request.form.get('meeting_type')
     ge_style = request.form.get('ge_style')
 
     # --- Get NEW form data ---
+
+    # Look up the template file from the meeting type
+    meeting_types_dict = current_app.config.get('MEETING_TYPES', {})
+    template_file = meeting_types_dict.get(meeting_type, {}).get('template')
+    if not template_file:
+        return redirect(url_for('agenda_bp.agenda', message=f'Invalid meeting type: {meeting_type}', category='error'))
+
     meeting_title = request.form.get('meeting_title')
     wod = request.form.get('wod')
     media_url = request.form.get('media_url')
@@ -935,6 +961,7 @@ def create_from_template():
             Meeting_Date=meeting_date,
             Start_Time=start_time,
             GE_Style=ge_style,
+            type=meeting_type,
             Meeting_Title=meeting_title,
             WOD=wod,
             media_id=new_media_id
@@ -944,6 +971,7 @@ def create_from_template():
         meeting.Meeting_Date = meeting_date
         meeting.Start_Time = start_time
         meeting.GE_Style = ge_style
+        meeting.type = meeting_type
         meeting.Meeting_Title = meeting_title  # <-- ADDED
         meeting.WOD = wod                     # <-- ADDED
         meeting.media_id = new_media_id       # <-- ADDED
@@ -958,9 +986,16 @@ def create_from_template():
         current_app.static_folder, 'mtg_templates', template_file)
     try:
         with open(template_path, 'r', encoding='utf-8') as f:
-            stream = io.StringIO(f.read())
-            stream.readline()
-            csv_reader = csv.reader(stream)
+            csv_reader = csv.reader(f)
+            first_row = next(csv_reader, None)  # Read the first row
+
+            if first_row:
+                # Check if the first row looks like a header by seeing if a SessionType exists for its title
+                possible_title = first_row[0].strip()
+                if not SessionType.query.filter_by(Title=possible_title).first():
+                    # It's likely a header, so we've already consumed it. The loop will start on the next line.
+                    pass
+
             seq = 1
             current_time = start_time
             for row in csv_reader:
@@ -969,8 +1004,16 @@ def create_from_template():
 
                 session_title_from_csv = row[0].strip()
                 owner_name = row[1].strip() if len(row) > 1 else ''
-                duration_min = row[2].strip() if len(row) > 2 else None
-                duration_max = row[3].strip() if len(row) > 3 else None
+
+                # Handle flexible duration columns
+                duration_min = None
+                duration_max = None
+                # Both min and max are provided
+                if len(row) > 3 and row[3].strip():
+                    duration_min = row[2].strip() if row[2].strip() else None
+                    duration_max = row[3].strip()
+                elif len(row) > 2 and row[2].strip():  # Only max is provided
+                    duration_max = row[2].strip()
 
                 session_type = SessionType.query.filter_by(
                     Title=session_title_from_csv).first()
@@ -981,13 +1024,13 @@ def create_from_template():
                     duration_min = session_type.Duration_Min
 
                 if type_id == 16:  # General Evaluation Report
-                    if ge_style == 'immediate':
+                    if ge_style == 'Multiple shots':
                         duration_max = 3
-                    else:  # deferred
+                    else:  # 'One shot'
                         duration_max = 5
 
                 break_minutes = 1
-                if type_id == 31 and ge_style == 'immediate':  # Individual Evaluation
+                if type_id == 31 and ge_style == 'Multiple shots':  # Individual Evaluation
                     break_minutes += 1
 
                 session_title = session_type.Title if session_type and session_type.Predefined else session_title_from_csv
@@ -1093,14 +1136,15 @@ def update_logs():
             meeting.GE_Style = new_style
             db.session.commit()
 
-        for item in agenda_data:
-            # CORRECTED ID: General Evaluation Report is 16
-            if str(item.get('type_id')) == '16':
-                if new_style == 'immediate':
-                    item['duration_max'] = 3
-                else:  # 'deferred'
-                    item['duration_max'] = 5
-                break
+            # Update the duration for the GE Report session if it exists
+            for item in agenda_data:
+                # CORRECTED ID: General Evaluation Report is 16
+                if str(item.get('type_id')) == '16':
+                    if new_style == 'Multiple shots':
+                        item['duration_max'] = 3
+                    else:  # 'One shot'
+                        item['duration_max'] = 5
+                    break
 
         for seq, item in enumerate(agenda_data, 1):
             _create_or_update_session(item, meeting_number, seq)

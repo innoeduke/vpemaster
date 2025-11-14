@@ -98,7 +98,12 @@ content %}
       </thead>
       <tbody>
         {% for st in session_types %}
-        <tr data-id="{{ st.id }}">
+        <tr
+          data-id="{{ st.id }}"
+          class="
+            {% if st.Is_Section %}session-section{% endif %}
+            {% if st.Is_Hidden %}session-hidden{% endif %}"
+        >
           <td>{{ st.id }}</td>
           <td data-field="Title">{{ st.Title }}</td>
           <td data-field="Default_Owner">
