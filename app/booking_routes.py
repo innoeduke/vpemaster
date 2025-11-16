@@ -262,13 +262,14 @@ def _get_meetings(user_role):
     # Fetch all upcoming meetings, ordered with the soonest first.
     future_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
         .filter(Meeting.Meeting_Date >= today)\
-        .order_by(Meeting.Meeting_Number.asc()).all()
+        .order_by(Meeting.Meeting_Number.desc()).all()
     # Fetch the 5 most recent past meetings.
     past_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
         .filter(Meeting.Meeting_Date < today)\
         .order_by(Meeting.Meeting_Number.desc())\
         .limit(5).all()
-    meetings = future_meetings + past_meetings
+    meetings = sorted(future_meetings + past_meetings,
+                      key=lambda m: m[0], reverse=True)
     return meetings, default_meeting_num
 
 

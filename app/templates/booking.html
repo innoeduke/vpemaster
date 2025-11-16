@@ -100,7 +100,7 @@
         <div class="filter-left">
             <i class="fas fa-calendar-alt"></i>
             <select id="meeting-filter" onchange="window.location.href = '/booking/' + this.value;">
-                {% for meeting_num, meeting_date in upcoming_meetings %}
+                {% for meeting_num, meeting_date in upcoming_meetings | sort(attribute=0, reverse=True) %}
                     <option value="{{ meeting_num }}" {% if meeting_num == selected_meeting_number %}selected{% endif %}>
                         #{{ meeting_num }} - {{ meeting_date.strftime('%B %d, %Y') }}
                     </option>
