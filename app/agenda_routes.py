@@ -335,6 +335,12 @@ def agenda():
                     award_type = award_category.replace('_', ' ')
                     break  # Found the matching award for this role, no need to check further
 
+        speaker_is_dtm = False
+        if session_type and session_type.Title == 'Evaluation' and log.Session_Title:
+            speaker = Contact.query.filter_by(Name=log.Session_Title).first()
+            if speaker and speaker.DTM:
+                speaker_is_dtm = True
+
         log_dict = {
             # SessionLog fields
             'id': log.id,
@@ -374,7 +380,8 @@ def agenda():
             'owner_completed_levels': owner.Completed_Levels if owner else '',
             'media_url': media.url if media and media.url else None,
             # Add award type if this specific role won the award
-            'award_type': award_type
+            'award_type': award_type,
+            'speaker_is_dtm': speaker_is_dtm
         }
         logs_data.append(log_dict)
 
@@ -619,7 +626,11 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
 
     # Check for Individual Evaluator (Type 31)
     if session_type and session_type.id == 31 and log.Session_Title:
-        session_title_str = f"Evaluation for {log.Session_Title}"
+        speaker_name = log.Session_Title
+        speaker = Contact.query.filter_by(Name=speaker_name).first()
+        if speaker and speaker.DTM:
+            speaker_name += '\u1D30\u1D40\u1D39'
+        session_title_str = f"Evaluation for {speaker_name}"
 
         if presentation:
             series_key = " ".join(
@@ -644,13 +655,15 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
     owner_info = ''
     if contact:
         owner_info = contact.Name
-        meta_parts = []
         if contact.DTM:
-            meta_parts.append('DTM')
-        if log.Designation:
+            owner_info += '\u1D30\u1D40\u1D39' # Unicode for superscript D, T, M
+
+        meta_parts = []
+        if log.Designation and not contact.DTM:
             meta_parts.append(log.Designation)
-        elif contact.Type == 'Member' and contact.Completed_Levels:
+        elif contact.Type == 'Member' and contact.Completed_Levels and not contact.DTM:
             meta_parts.append(contact.Completed_Levels.replace('/', ' '))
+
         if meta_parts:
             owner_info += ' - ' + ' '.join(meta_parts)
 

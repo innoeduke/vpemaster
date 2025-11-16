@@ -205,6 +205,9 @@
                                    "{{ cleaned_title }}"
                                {% elif log_dict.session_type_title == 'Evaluation' %}
                                    Evaluation for {{ cleaned_title }}
+                                   {% if log_dict.speaker_is_dtm %}
+                                       <sup class="dtm-superscript">DTM</sup>
+                                   {% endif %}
                                {% elif log_dict.predefined %}
                                    {{ log_dict.session_type_title }}
                                {% else %}
@@ -239,6 +242,9 @@
                              {# Use pre-fetched owner data from log_dict #}
                             {% if log_dict.owner_name %}
                                 {{ log_dict.owner_name }}
+                                {% if log_dict.owner_dtm %}
+                                    <sup class="dtm-superscript">DTM</sup>
+                                {% endif %}
                                 {# Show trophy for award winners #}
                                 {% if log_dict.award_type %}
                                     <span class="icon-btn icon-btn-voted" title="{{ log_dict.award_type }} Winner">
@@ -246,11 +252,9 @@
                                     </span>
                                 {% endif %}
                                 <span class="owner-meta">
-                                    {% if log_dict.owner_dtm %}
-                                        <br/>DTM
-                                    {% elif log_dict.owner_type == 'Guest' %}
+                                    {% if log_dict.owner_type == 'Guest' %}
                                         <br/>{{ log_dict.Designation }} {# Use designation directly #}
-                                    {% elif log_dict.Designation %}
+                                    {% elif log_dict.Designation and not log_dict.owner_dtm %}
                                         <br/>{{ log_dict.Designation }}
                                     {% endif %}
                                 </span>
