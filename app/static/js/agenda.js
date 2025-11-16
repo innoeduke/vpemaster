@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let allPresentationSeries = [];
   let allSeriesInitials = {};
   let allMeetingTypes = {};
+  let allMeetingRoles = {};
 
   // --- State ---
   let isEditing = false;
@@ -71,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
         allPresentationSeries = data.presentation_series;
         allSeriesInitials = data.series_initials;
         allMeetingTypes = data.meeting_types;
+        allMeetingRoles = data.meeting_roles;
 
         // Make data available globally for speech_modal.js, which expects them as globals
         window.allProjects = allProjects;
@@ -831,7 +833,7 @@ document.addEventListener("DOMContentLoaded", () => {
     cell.className = "actions-column";
 
     const sessionType = allSessionTypes.find((st) => st.id == typeId);
-    const rolesToHideFor = ["Prepared Speaker", "Table Topics"];
+    const rolesToHideFor = [allMeetingRoles.PREPARED_SPEAKER, "Table Topics"];
 
     const shouldShowProjectButton =
       sessionType &&

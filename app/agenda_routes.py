@@ -80,18 +80,8 @@ def _create_or_update_session(item, meeting_number, seq):
     designation = item.get('designation')
     # Check for None or empty string
     if owner_id and (designation is None or designation == ''):
-        owner = Contact.query.get(owner_id)
-        if owner:
-            if owner.DTM:
-                designation = None  # Keep as None if DTM
-            elif owner.Type == 'Guest':
-                designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
-            elif owner.Type == 'Member':
-                designation = owner.Completed_Levels.replace(
-                    ' ', '/') if owner.Completed_Levels else None
-    # Ensure designation is an empty string if None before saving to avoid DB issues if nullable=False
-    if designation is None:
-        designation = ''
+        # Use the centralized utility function
+        designation = derive_designation(owner_contact)
 
     # --- Automatic current_path_level Derivation ---
     temp_log_data = {
@@ -248,21 +238,30 @@ def agenda():
             orm.joinedload(Meeting.media)
         ).filter(Meeting.Meeting_Number == selected_meeting_num).first()
 
-    # Create a lookup map for award winners for the selected meeting
-    award_winners = {}
+    # Create a lookup map for award winners. Key: Contact ID, Value: list of award categories.
+    award_winner_map = {}
     if selected_meeting:
-        if selected_meeting.Best_Speaker_ID:
-            award_winners[selected_meeting.Best_Speaker_ID] = 'Best Speaker'
-        if selected_meeting.Best_Evaluator_ID:
-            award_winners[selected_meeting.Best_Evaluator_ID] = 'Best Evaluator'
-        if selected_meeting.Best_TT_ID:
-            award_winners[selected_meeting.Best_TT_ID] = 'Best TT'
-        if selected_meeting.Best_Roletaker_ID:
-            award_winners[selected_meeting.Best_Roletaker_ID] = 'Best Roletaker'
+        def add_winner(contact_id, award_category):
+            if not contact_id:
+                return
+            if contact_id not in award_winner_map:
+                award_winner_map[contact_id] = []
+            award_winner_map[contact_id].append(award_category)
+        add_winner(selected_meeting.Best_Speaker_ID,
+                   current_app.config['BEST_SPEAKER'])
+        add_winner(selected_meeting.Best_Evaluator_ID,
+                   current_app.config['BEST_EVALUATOR'])
+        add_winner(selected_meeting.Best_TT_ID, current_app.config['BEST_TT'])
+        add_winner(selected_meeting.Best_Roletaker_ID,
+                   current_app.config['BEST_ROLETAKER'])
 
     # --- Fetch Raw Data ---
     raw_session_logs = _get_agenda_logs(selected_meeting_num)
     project_speakers = _get_project_speakers(selected_meeting_num)
+
+    # Pre-fetch award category roles from config for efficiency
+    award_categories_roles = current_app.config.get(
+        'AWARD_CATEGORIES_ROLES', {})
 
     all_presentations = Presentation.query.order_by(
         Presentation.level, Presentation.code).all()
@@ -323,6 +322,19 @@ def agenda():
                     except (ValueError, IndexError):
                         level_for_dict = None
 
+        # --- Award Logic ---
+        award_type = None
+        # Check if the log's owner is a winner
+        if log.Owner_ID and log.Owner_ID in award_winner_map and log.session_type:
+            # A person can win multiple awards, so we check each one.
+            awards_won = award_winner_map[log.Owner_ID]
+            for award_category in awards_won:
+                # Check if the role of the current log is eligible for this specific award
+                if log.session_type.Role in award_categories_roles.get(award_category, []):
+                    # Format for display (e.g., "Best Speaker")
+                    award_type = award_category.replace('_', ' ')
+                    break  # Found the matching award for this role, no need to check further
+
         log_dict = {
             # SessionLog fields
             'id': log.id,
@@ -361,8 +373,8 @@ def agenda():
             'owner_club': owner.Club if owner else '',
             'owner_completed_levels': owner.Completed_Levels if owner else '',
             'media_url': media.url if media and media.url else None,
-            # Add award type if the owner is a winner
-            'award_type': award_winners.get(log.Owner_ID)
+            # Add award type if this specific role won the award
+            'award_type': award_type
         }
         logs_data.append(log_dict)
 
@@ -454,7 +466,8 @@ def get_all_data_for_modals():
         'presentations': presentations_data,
         'presentation_series': presentation_series,
         'series_initials': current_app.config['SERIES_INITIALS'],
-        'meeting_types': current_app.config['MEETING_TYPES']
+        'meeting_types': current_app.config['MEETING_TYPES'],
+        'meeting_roles': current_app.config['ROLES']
     })
 
 
@@ -1061,21 +1074,12 @@ def create_from_template():
                 session_title = session_type.Title if session_type and session_type.Predefined else session_title_from_csv
 
                 owner_id = None
-                designation = None
+                designation = ''
                 if owner_name:
                     owner = Contact.query.filter_by(Name=owner_name).first()
                     if owner:
                         owner_id = owner.id
-                        if owner.DTM:
-                            designation = None
-                        elif owner.Type == 'Guest':
-                            designation = f"Guest@{owner.Club}" if owner.Club else "Guest"
-                        elif owner.Type == 'Member':
-                            designation = owner.Completed_Levels.replace(
-                                ' ', '/') if owner.Completed_Levels else None
-
-                if designation is None:
-                    designation = ''
+                        designation = derive_designation(owner)
 
                 new_log = SessionLog(
                     Meeting_Number=meeting_number,

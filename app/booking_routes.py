@@ -6,45 +6,9 @@ from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole, 
 from . import db
 from datetime import datetime
 import re
-from sqlalchemy import text, or_
-from .utils import derive_current_path_level, ROLE_ICONS
+from sqlalchemy import or_
+from .utils import derive_current_path_level, derive_designation
 
-# Constants
-# Role Names
-PREPARED_SPEAKER = "Prepared Speaker"
-KEYNOTE_SPEAKER = "Keynote Speaker"
-PRESENTER = "Presenter"
-PANELIST = "Panelist"
-INDIVIDUAL_EVALUATOR = "Individual Evaluator"
-BACKUP_SPEAKER = "Backup Speaker"
-TOPICS_SPEAKER = "Topics Speaker"
-TOASTMASTER = "Toastmaster"
-GENERAL_EVALUATOR = "General Evaluator"
-TOPICMASTER = "Topicmaster"
-GRAMMARIAN = "Grammarian"
-TIMER = "Timer"
-AH_COUNTER = "Ah-Counter"
-
-# Unique Entry Roles
-UNIQUE_ENTRY_ROLES = [PREPARED_SPEAKER,
-                      INDIVIDUAL_EVALUATOR, BACKUP_SPEAKER, PRESENTER]
-ADMIN_UNIQUE_ENTRY_ROLES = UNIQUE_ENTRY_ROLES + [TOPICS_SPEAKER, PANELIST]
-
-# Award Categories
-BEST_SPEAKER = 'Best_Speaker'
-BEST_EVALUATOR = 'Best_Evaluator'
-BEST_TT = 'Best_TT'
-BEST_ROLETAKER = 'Best_Roletaker'
-
-AWARD_CATEGORIES_ROLES = {
-    BEST_SPEAKER: [PREPARED_SPEAKER, KEYNOTE_SPEAKER, PRESENTER],
-    BEST_EVALUATOR: [INDIVIDUAL_EVALUATOR],
-    BEST_TT: [TOPICS_SPEAKER],
-    BEST_ROLETAKER: [TOASTMASTER, GENERAL_EVALUATOR, TOPICMASTER, GRAMMARIAN, TIMER, AH_COUNTER],
-}
-
-# Role Groups
-OFFICER_ROLE_GROUP = 'Officer'
 
 booking_bp = Blueprint('booking_bp', __name__)
 
@@ -65,7 +29,8 @@ def _fetch_session_logs(selected_meeting_number, user_role):
      .filter(SessionType.Role != '', SessionType.Role.isnot(None))
 
     if not is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
-        query = query.filter(SessionType.Role_Group != OFFICER_ROLE_GROUP)
+        query = query.filter(SessionType.Role_Group !=
+                             current_app.config['OFFICER_ROLE_GROUP'])
 
     return query.all()
 
@@ -73,7 +38,7 @@ def _fetch_session_logs(selected_meeting_number, user_role):
 def _consolidate_roles(session_logs, is_admin_booker):
     """Consolidates session logs into a dictionary of roles."""
     roles_dict = {}
-    unique_roles = ADMIN_UNIQUE_ENTRY_ROLES if is_admin_booker else UNIQUE_ENTRY_ROLES
+    unique_roles = current_app.config['ADMIN_UNIQUE_ENTRY_ROLES'] if is_admin_booker else current_app.config['UNIQUE_ENTRY_ROLES']
 
     for log in session_logs:
         role_key = log.role.strip() if log.role else ""
@@ -88,7 +53,7 @@ def _consolidate_roles(session_logs, is_admin_booker):
         if role_key in unique_roles:
             role_key_unique = f"{role_key}_{log.session_id}"
             speaker_name = log.Session_Title.strip(
-            ) if role_key == INDIVIDUAL_EVALUATOR and log.Session_Title else None
+            ) if role_key == current_app.config['ROLES']['INDIVIDUAL_EVALUATOR']['name'] and log.Session_Title else None
             roles_dict[role_key_unique] = {
                 'role': role_key,
                 'role_key': role_key,
@@ -131,20 +96,26 @@ def _enrich_role_data(roles_dict, selected_meeting):
         return []
 
     award_ids = {
-        BEST_SPEAKER: selected_meeting.Best_Speaker_ID,
-        BEST_EVALUATOR: selected_meeting.Best_Evaluator_ID,
-        BEST_TT: selected_meeting.Best_TT_ID,
-        BEST_ROLETAKER: selected_meeting.Best_Roletaker_ID,
+        current_app.config['BEST_SPEAKER']: selected_meeting.Best_Speaker_ID,
+        current_app.config['BEST_EVALUATOR']: selected_meeting.Best_Evaluator_ID,
+        current_app.config['BEST_TT']: selected_meeting.Best_TT_ID,
+        current_app.config['BEST_ROLETAKER']: selected_meeting.Best_Roletaker_ID,
     }
 
     enriched_roles = []
     for _, role_data in roles_dict.items():
-        role_data['icon'] = ROLE_ICONS.get(
-            role_data['role_key'], ROLE_ICONS['Default'])
+        # Find the role in MEETING_ROLES config by its name ('role_key')
+        role_config = next((
+            config for config in current_app.config['ROLES'].values()
+            if config['name'] == role_data['role_key']
+        ), None)
+        role_data['icon'] = role_config.get(
+            'icon', current_app.config['DEFAULT_ROLE_ICON']) if role_config else current_app.config['DEFAULT_ROLE_ICON']
+
         role_data['session_id'] = role_data['session_ids'][0]
 
         owner_id = role_data['owner_id']
-        award_category = next((cat for cat, roles in AWARD_CATEGORIES_ROLES.items(
+        award_category = next((cat for cat, roles in current_app.config['AWARD_CATEGORIES_ROLES'].items(
         ) if role_data['role_key'] in roles), None)
 
         role_data['award_category'] = award_category
@@ -168,13 +139,13 @@ def _apply_user_filters_and_rules(roles, user_role, current_user_contact_id, sel
             .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id)\
             .filter(SessionLog.Owner_ID == current_user_contact_id)\
-            .filter(SessionType.Role == BACKUP_SPEAKER)\
+            .filter(SessionType.Role == current_app.config['ROLES']['BACKUP_SPEAKER']['name'])\
             .filter(Meeting.Meeting_Date >= datetime.today().date())\
             .first()
         if has_upcoming_backup_speaker:
             roles = [
                 r for r in roles
-                if r['role_key'] != BACKUP_SPEAKER or (r['role_key'] == BACKUP_SPEAKER and r['owner_id'] == current_user_contact_id)
+                if r['role_key'] != current_app.config['ROLES']['BACKUP_SPEAKER']['name'] or (r['role_key'] == current_app.config['ROLES']['BACKUP_SPEAKER']['name'] and r['owner_id'] == current_user_contact_id)
             ]
 
     # 3-Week Policy speaker rule
@@ -184,13 +155,13 @@ def _apply_user_filters_and_rules(roles, user_role, current_user_contact_id, sel
         three_meetings_ago = selected_meeting_number - 2
         recent_speaker_log = db.session.query(SessionLog.id).join(SessionType)\
             .filter(SessionLog.Owner_ID == current_user_contact_id)\
-            .filter(SessionType.Role == PREPARED_SPEAKER)\
+            .filter(SessionType.Role == current_app.config['ROLES']['PREPARED_SPEAKER']['name'])\
             .filter(SessionLog.Meeting_Number.between(three_meetings_ago, selected_meeting_number)).first()
 
         if recent_speaker_log:
             roles = [
                 r for r in roles
-                if r['role_key'] != PREPARED_SPEAKER or (r['role_key'] == PREPARED_SPEAKER and r['owner_id'] == current_user_contact_id)
+                if r['role_key'] != current_app.config['ROLES']['PREPARED_SPEAKER']['name'] or (r['role_key'] == current_app.config['ROLES']['PREPARED_SPEAKER']['name'] and r['owner_id'] == current_user_contact_id)
             ]
 
     return roles
@@ -308,7 +279,10 @@ def _get_user_bookings(current_user_contact_id):
         user_bookings_by_date[date_str]['bookings'].append({
             'role': log.Role,
             'role_key': log.Role,
-            'icon': ROLE_ICONS.get(log.Role, ROLE_ICONS['Default']),
+            'icon': next((config.get('icon', current_app.config['DEFAULT_ROLE_ICON'])
+                          for config in current_app.config['ROLES'].values()
+                          if config['name'] == log.Role
+                          ), current_app.config['DEFAULT_ROLE_ICON']),
             'session_id': log.id
         })
 
@@ -332,7 +306,7 @@ def _get_completed_roles(current_user_contact_id, selected_level):
          .join(SessionType, SessionLog.Type_ID == SessionType.id)\
          .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
          .filter(SessionLog.Owner_ID == current_user_contact_id)\
-         .filter(SessionType.Role.isnot(None), SessionType.Role != '', SessionType.Role != PREPARED_SPEAKER)\
+         .filter(SessionType.Role.isnot(None), SessionType.Role != '', SessionType.Role != current_app.config['ROLES']['PREPARED_SPEAKER']['name'])\
          .filter(SessionLog.current_path_level.like(level_pattern))\
          .filter(Meeting.Meeting_Date < today)\
          .distinct()\
@@ -342,7 +316,10 @@ def _get_completed_roles(current_user_contact_id, selected_level):
             'role': role_name,
             'meeting_number': meeting_num,
             'date': meeting_date.strftime('%Y-%m-%d'),
-            'icon': ROLE_ICONS.get(role_name, ROLE_ICONS['Default'])
+            'icon': next((config.get('icon', current_app.config['DEFAULT_ROLE_ICON'])
+                for config in current_app.config['ROLES'].values()
+                if config['name'] == role_name
+                          ), current_app.config['DEFAULT_ROLE_ICON'])
         } for meeting_num, meeting_date, role_name in completed_logs]
 
     except Exception as e:
@@ -444,8 +421,8 @@ def book_or_assign_role():
 
     if action == 'join_waitlist':
         sessions_to_waitlist = []
-        if logical_role_key in UNIQUE_ENTRY_ROLES:
-            sessions_to_waitlist.append(log)
+        if logical_role_key in current_app.config['UNIQUE_ENTRY_ROLES']:
+            sessions_to_waitlist = [log]
         else:
             # For non-unique roles, find all session logs for this role in the meeting
             sessions_to_waitlist = SessionLog.query.join(SessionType)\
@@ -490,7 +467,7 @@ def book_or_assign_role():
             owner_id_to_set = None
     elif action == 'leave_waitlist':
         sessions_to_leave = []
-        if logical_role_key in UNIQUE_ENTRY_ROLES:
+        if logical_role_key in current_app.config['UNIQUE_ENTRY_ROLES']:
             sessions_to_leave.append(log)
         else:
             sessions_to_leave = SessionLog.query.join(SessionType)\
@@ -516,8 +493,10 @@ def book_or_assign_role():
     new_path_level = derive_current_path_level(
         log, owner_contact) if owner_contact else None
 
-    unique_roles = UNIQUE_ENTRY_ROLES + \
-        ([TOPICS_SPEAKER]
+    new_designation = derive_designation(owner_contact)
+
+    unique_roles = current_app.config['UNIQUE_ENTRY_ROLES'] + \
+        ([current_app.config['ROLES']['TOPICS_SPEAKER']['name']]
          if is_authorized(user_role, 'BOOKING_ASSIGN_ALL') else [])
 
     if logical_role_key in unique_roles:
@@ -530,6 +509,7 @@ def book_or_assign_role():
     for session_log in sessions_to_update:
         session_log.Owner_ID = owner_id_to_set
         session_log.current_path_level = new_path_level
+        session_log.Designation = new_designation
 
     try:
         db.session.commit()

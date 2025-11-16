@@ -7,35 +7,6 @@ import configparser
 import os
 
 
-# --- ADD THIS DICTIONARY ---
-ROLE_ICONS = {
-    # leader roles
-    "Toastmaster": "fa-microphone",
-    "General Evaluator": "fa-search",
-    "Topicmaster": "fa-comments",
-    # functional roles
-    "Grammarian": "fa-book",
-    "Timer": "fa-stopwatch",
-    "Ah-Counter": "fa-calculator",
-    "Topics Speaker": "fa-comment",
-    "Prepared Speaker": "fa-user-tie",
-    "Individual Evaluator": "fa-pen-square",
-    "Backup Speaker": "fa-user-secret",
-    # specialized roles
-    "Welcome Officer": "fa-handshake",
-    "Keynote Speaker": "fa-star",
-    "Presenter": "fa-share-alt",
-    "Meeting Manager": "fa-clipboard-list",
-    "Photographer": "fa-camera",
-    # event-based roles
-    "Panelist": "fa-users",
-    "Debater": "fa-balance-scale",
-    "Club Mentor": "fa-user-graduate",
-    "Introductory Mentor": "fa-hands-helping",
-    "Default": "fa-question-circle"
-}
-
-
 def derive_current_path_level(log, owner_contact):
     """
     Derives the 'current_path_level' based on the role, project, and owner's pathway.
@@ -110,6 +81,27 @@ def derive_current_path_level(log, owner_contact):
     # --- Fallback ---
     return None
 
+
+def derive_designation(contact):
+    """
+    Derives the designation string for a given contact.
+    - Returns an empty string for DTMs.
+    - Formats for Guests (e.g., "Guest@Club").
+    - Formats for Members based on completed levels (e.g., "PM1/DL2").
+    - Returns an empty string if the contact is None or has no specific designation.
+    """
+    if not contact:
+        return ''
+
+    if contact.DTM:
+        return ''  # DTMs don't show other levels
+    elif contact.Type == 'Guest':
+        return f"Guest@{contact.Club}" if contact.Club else "Guest"
+    elif contact.Type == 'Member' and contact.Completed_Levels:
+        return contact.Completed_Levels.replace(' ', '/')
+    return ''
+
+
 def load_setting(section, setting_key, default=None):
     """
     Loads a specific setting from a given section of settings.ini.
@@ -117,20 +109,23 @@ def load_setting(section, setting_key, default=None):
     try:
         config = configparser.ConfigParser()
         # current_app.root_path points to the 'app' folder, so '../' goes to the project root
-        settings_path = os.path.join(current_app.root_path, '..', 'settings.ini')
-        
+        settings_path = os.path.join(
+            current_app.root_path, '..', 'settings.ini')
+
         if not os.path.exists(settings_path):
             print(f"Warning: settings.ini file not found at {settings_path}")
             return default
 
         config.read(settings_path)
-        
+
         # .get() will return the value or None if not found, avoiding a crash
         return config.get(section, setting_key, fallback=default)
 
     except (configparser.NoSectionError, configparser.Error) as e:
-        print(f"Error reading settings.ini (Section: {section}, Key: {setting_key}): {e}")
+        print(
+            f"Error reading settings.ini (Section: {section}, Key: {setting_key}): {e}")
         return default
+
 
 def load_all_settings():
     """
@@ -140,8 +135,9 @@ def load_all_settings():
     try:
         config = configparser.ConfigParser()
         # current_app.root_path points to the 'app' folder, so '../' goes to the project root
-        settings_path = os.path.join(current_app.root_path, '..', 'settings.ini')
-        
+        settings_path = os.path.join(
+            current_app.root_path, '..', 'settings.ini')
+
         if not os.path.exists(settings_path):
             print(f"Warning: settings.ini file not found at {settings_path}")
             return all_settings
@@ -157,4 +153,4 @@ def load_all_settings():
 
     except configparser.Error as e:
         print(f"Error reading settings.ini: {e}")
-        return all_settings # Return empty dict on error
+        return all_settings  # Return empty dict on error

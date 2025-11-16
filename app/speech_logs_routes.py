@@ -7,7 +7,6 @@ from sqlalchemy import distinct
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 import re
-from .utils import ROLE_ICONS
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
@@ -202,7 +201,7 @@ def show_speech_logs():
     return render_template(
         'speech_logs.html',
         grouped_logs=sorted_grouped_logs,
-        role_icons=ROLE_ICONS,
+        roles_config=current_app.config['ROLES'],
         get_project_code=_get_project_code,
         meeting_numbers=meeting_numbers,
         speakers=speakers,
