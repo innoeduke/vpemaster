@@ -149,9 +149,8 @@ def _apply_user_filters_and_rules(roles, user_role, current_user_contact_id, sel
             ]
 
     # 3-Week Policy speaker rule
-    user_contact = Contact.query.get(
-        current_user_contact_id) if current_user_contact_id else None
-    if user_contact and user_contact.Working_Path:
+    user = User.query.filter_by(Contact_ID=current_user_contact_id).first()
+    if user and user.Current_Path:
         three_meetings_ago = selected_meeting_number - 2
         recent_speaker_log = db.session.query(SessionLog.id).join(SessionType)\
             .filter(SessionLog.Owner_ID == current_user_contact_id)\
@@ -209,8 +208,8 @@ def _get_user_info():
 
 def _get_default_level(user):
     """Determines the default project level for a user."""
-    if user and user.contact and user.contact.Next_Project:
-        match = re.match(r"([A-Z]+)(\d+)\.?(\d*)", user.contact.Next_Project)
+    if user and user.Next_Project:
+        match = re.match(r"([A-Z]+)(\d+)\.?(\d*)", user.Next_Project)
         if match:
             try:
                 return int(match.group(2))

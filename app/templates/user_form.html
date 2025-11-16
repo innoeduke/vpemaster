@@ -15,8 +15,48 @@
                 <td><input type="email" id="email" name="email" value="{{ user.Email if user and user.Email else '' }}"></td>
             </tr>
             <tr>
+                <td><label for="status">Status:</label></td>
+                <td>
+                    <select id="status" name="status" required>
+                        <option value="active" {% if (user and user.Status == 'active') or not user %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if user and user.Status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="role">Role:</label></td>
+                <td>
+                    <select id="role" name="role" required>
+                        <option value="Admin" {% if user and user.Role == 'Admin' %}selected{% endif %}>Admin</option>
+                        <option value="VPE" {% if user and user.Role == 'VPE' %}selected{% endif %}>VPE</option>
+                        <option value="Officer" {% if user and user.Role == 'Officer' %}selected{% endif %}>Officer</option>
+                        <option value="Meeting Manager" {% if user and user.Role == 'Meeting Manager' %}selected{% endif %}>Meeting Manager</option>
+                        <option value="Member" {% if (user and user.Role == 'Member') or not user %}selected{% endif %}>Member</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
                 <td><label for="member_id">Member ID:</label></td>
                 <td><input type="text" id="member_id" name="member_id" value="{{ user.Member_ID if user and user.Member_ID else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="current_path">Current Path:</label></td>
+                <td>
+                    <select id="current_path" name="current_path">
+                        <option value="">None</option>
+                        {% for path_name in pathways %}
+                            <option value="{{ path_name }}" {% if user and user.Current_Path == path_name %}selected{% endif %}>
+                                {{ path_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="next_project">Next Project:</label></td>
+                <td>
+                    <input type="text" id="next_project" name="next_project" value="{{ user.Next_Project if user and user.Next_Project else '' }}" placeholder="e.g., PM2.1, EH3.2">
+                </td>
             </tr>
             <tr>
                 <td><label for="mentor_id">Mentor:</label></td>
@@ -51,27 +91,6 @@
                     {% if user %}
                         <small class="note">Leave blank to keep current password.</small>
                     {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <td><label for="role">Role:</label></td>
-                <td>
-                    <select id="role" name="role" required>
-                        <option value="Admin" {% if user and user.Role == 'Admin' %}selected{% endif %}>Admin</option>
-                        <option value="VPE" {% if user and user.Role == 'VPE' %}selected{% endif %}>VPE</option>
-                        <option value="Officer" {% if user and user.Role == 'Officer' %}selected{% endif %}>Officer</option>
-                        <option value="Meeting Manager" {% if user and user.Role == 'Meeting Manager' %}selected{% endif %}>Meeting Manager</option>
-                        <option value="Member" {% if (user and user.Role == 'Member') or not user %}selected{% endif %}>Member</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="status">Status:</label></td>
-                <td>
-                    <select id="status" name="status" required>
-                        <option value="active" {% if (user and user.Status == 'active') or not user %}selected{% endif %}>Active</option>
-                        <option value="inactive" {% if user and user.Status == 'inactive' %}selected{% endif %}>Inactive</option>
-                    </select>
                 </td>
             </tr>
         </table>

@@ -116,7 +116,7 @@
                                             {% set presentation = get_presentation_by_id(log.Project_ID) %}
                                             {{ presentation.series if presentation else 'N/A' }}
                                         {% else %}
-                                            {{ log.owner.Working_Path if log.owner else 'N/A' }}
+                                            <td>{{ log.owner.user.Current_Path if log.owner and log.owner.user else 'N/A' }}</td>
                                         {% endif %}
                                     </div>
                                     <div class="status-info">

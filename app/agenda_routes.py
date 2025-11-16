@@ -12,7 +12,7 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from .utils import derive_current_path_level, load_setting
+from .utils import derive_current_path_level, load_setting, derive_designation
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -309,8 +309,8 @@ def agenda():
                 project_code_str = f"{series_initial}{presentation.code}"
         elif log.Project_ID == 60:
             project_code_str = "TM1.0"
-        elif project and owner and owner.Working_Path:  # Else if pathway...
-            pathway_suffix = pathway_mapping.get(owner.Working_Path)
+        elif project and owner and owner.user and owner.user.Current_Path:  # Else if pathway...
+            pathway_suffix = pathway_mapping.get(owner.user.Current_Path)
             if pathway_suffix:
                 project_code_val = getattr(
                     project, f"Code_{pathway_suffix}", None)
@@ -435,12 +435,14 @@ def get_all_data_for_modals():
     ]
 
     # Contacts
-    contacts = Contact.query.order_by(Contact.Name.asc()).all()
+    contacts = Contact.query.options(orm.joinedload(
+        Contact.user)).order_by(Contact.Name.asc()).all()
     contacts_data = [
         {
             "id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type,
-            "Club": c.Club, "Working_Path": c.Working_Path, "Next_Project": c.Next_Project,
-            "Completed_Levels": c.Completed_Levels
+            "Club": c.Club, "Completed_Levels": c.Completed_Levels,
+            "Current_Path": c.user.Current_Path if c.user else None,
+            "Next_Project": c.user.Next_Project if c.user else None
         } for c in contacts
     ]
 
@@ -499,8 +501,8 @@ def _get_export_data(meeting_number):
 
 def _get_project_code_str(project, contact, pathway_mapping):
     """Helper to get the project code string (e.g., PM2.1)."""
-    if project and contact and contact.Working_Path:
-        pathway_abbr = pathway_mapping.get(contact.Working_Path)
+    if project and contact and contact.user and contact.user.Current_Path:
+        pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
         if pathway_abbr:
             return getattr(project, f"Code_{pathway_abbr}", None)
     return None
@@ -547,8 +549,9 @@ def _get_all_speech_details(logs_data, pathway_mapping):
 
         # Handle Pathway Speech (Type ID 30)
         if session_type.id == 30 and project:
+            user = contact.user if contact else None
             path_abbr = pathway_mapping.get(
-                contact.Working_Path, "") if contact else ""
+                user.Current_Path, "") if user else ""
             project_code = _get_project_code_str(
                 project, contact, pathway_mapping)
             purpose = project.Purpose
@@ -558,7 +561,7 @@ def _get_all_speech_details(logs_data, pathway_mapping):
             project_type = _get_project_type(pathway_project_code)
 
             project_name = project.Project_Name
-            pathway_name = contact.Working_Path if contact else ""
+            pathway_name = user.Current_Path if user else ""
             title = log.Session_Title or project.Project_Name
             duration = f"[{project.Duration_Min}'-{project.Duration_Max}']"
             project_code_str = f"{path_abbr}{project_code}" if project_code else "Generic"
@@ -611,8 +614,9 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
     if session_type and session_type.id == 30 and project:
         project_code = _get_project_code_str(
             project, contact, pathway_mapping) if contact else None
+        user = contact.user if contact else None
         pathway_abbr = pathway_mapping.get(
-            contact.Working_Path, "") if contact else ""
+            user.Current_Path, "") if user and user.Current_Path else ""
         if project_code:
             project_code_str = f"{pathway_abbr}{project_code}"
         if not log.Session_Title:  # If title is blank, use project name
@@ -656,7 +660,7 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
     if contact:
         owner_info = contact.Name
         if contact.DTM:
-            owner_info += '\u1D30\u1D40\u1D39' # Unicode for superscript D, T, M
+            owner_info += '\u1D30\u1D40\u1D39'  # Unicode for superscript D, T, M
 
         meta_parts = []
         if log.Designation and not contact.DTM:

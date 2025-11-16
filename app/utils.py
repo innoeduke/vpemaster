@@ -23,11 +23,12 @@ def derive_current_path_level(log, owner_contact):
     Returns:
         str or None: The derived current_path_level string or None.
     """
-    if not owner_contact or not owner_contact.Working_Path:
+    user = owner_contact.user if owner_contact else None
+    if not user or not user.Current_Path:
         return None  # Cannot derive without owner or their working path
 
     pathway_mapping = current_app.config.get('PATHWAY_MAPPING', {})
-    pathway_suffix = pathway_mapping.get(owner_contact.Working_Path)
+    pathway_suffix = pathway_mapping.get(user.Current_Path)
 
     if not pathway_suffix:
         return None  # Unknown pathway
@@ -66,7 +67,7 @@ def derive_current_path_level(log, owner_contact):
 
     # --- Priority 2: Other roles - Use general level from Next_Project ---
     else:
-        next_project_str = owner_contact.Next_Project
+        next_project_str = user.Next_Project
         if next_project_str:
             # Use regex to extract only the Path + Level part (e.g., PM5 from PM5.2)
             match = re.match(r"([A-Z]+)(\d+)", next_project_str)

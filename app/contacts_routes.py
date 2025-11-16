@@ -53,8 +53,6 @@ def contact_form(contact_id=None):
             "Email": contact.Email or None,
             "Type": contact.Type,
             "Club": contact.Club,
-            "Working_Path": contact.Working_Path,
-            "Next_Project": contact.Next_Project,
             "Completed_Levels": contact.Completed_Levels,
             "DTM": contact.DTM,
             "Phone_Number": contact.Phone_Number,
@@ -71,10 +69,8 @@ def contact_form(contact_id=None):
             contact.Name = contact_name
             contact.Email = email
             contact.Club = request.form.get('club')
-            contact.Next_Project = request.form.get('next_project')
             contact.Completed_Levels = request.form.get('completed_levels')
             contact.Type = request.form.get('type')
-            contact.Working_Path = request.form.get('working_path')
             contact.DTM = 'dtm' in request.form
             contact.Phone_Number = request.form.get('phone_number')
             contact.Bio = request.form.get('bio')
@@ -106,10 +102,8 @@ def contact_form(contact_id=None):
                 Email=email,
                 Club=request.form.get('club'),
                 Date_Created=date.today(),
-                Next_Project=request.form.get('next_project'),
                 Completed_Levels=request.form.get('completed_levels'),
                 Type=request.form.get('type'),
-                Working_Path=request.form.get('working_path'),
                 DTM='dtm' in request.form,
                 Phone_Number=request.form.get('phone_number'),
                 Bio=request.form.get('bio')

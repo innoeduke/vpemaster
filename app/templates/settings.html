@@ -219,8 +219,10 @@ content %}
           <th class="sortable" data-column-index="3">Email</th>
           <th class="sortable" data-column-index="4">Phone</th>
           <th class="sortable" data-column-index="5">Mentor</th>
-          <th class="sortable" data-column-index="6">Status</th>
-          <th data-column-index="7">Actions</th>
+          <th class="sortable" data-column-index="6">Current Path</th>
+          <th class="sortable" data-column-index="7">Next Project</th>
+          <th class="sortable" data-column-index="8">Status</th>
+          <th data-column-index="9">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -241,6 +243,8 @@ content %}
             user.contact.Phone_Number else '' }}
           </td>
           <td>{{ user.mentor.Name if user.mentor else '' }}</td>
+          <td>{{ user.Current_Path if user.Current_Path else '' }}</td>
+          <td>{{ user.Next_Project if user.Next_Project else '' }}</td>
           <td>{{ user.Status }}</td>
           <td>
             <div class="action-links">

@@ -23,46 +23,16 @@
                     <td><label for="club">Club:</label></td>
                     <td><input type="text" id="club" name="club" placeholder="e.g., Club1/Club2"></td>
                 </tr>
-                <tr>
-                    <td><label for="dtm">DTM:</label></td>
-                    <td><input type="checkbox" id="dtm" name="dtm"></td>
-                </tr>
-                <tr>
-                    <td><label for="working_path">Pathway:</label></td>
-                    <td>
-                        <select id="working_path" name="working_path">
-                            <option value="">(select a pathway if available)</option>
-                            {% for pathway in pathways %}
-                                <option value="{{ pathway }}">{{ pathway }}</option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td><label for="next_project">Next Project:</label></td>
-                    <td><input type="text" id="next_project" name="next_project" placeholder="e.g., 2.1, 3.2 ..."></td>
-                </tr>
-                <tr>
-                    <td><label for="completed_levels">Completed Levels:</label></td>
-                    <td><input type="text" id="completed_levels" name="completed_levels" placeholder="e.g., EH5/PM3"></td>
-                </tr>
-                <tr>
-                    <td><label for="email">Email: </label></td>
-                    <td><input type="email" id="email" name="email"></td>
-                </tr>
-                <tr>
-                    <td><label for="phone_number">Phone Number:</label></td>
-                    <td><input type="text" id="phone_number" name="phone_number"></td>
-                </tr>
-                <tr>
-                    <td><label for="bio">Bio:</label></td>
-                    <td><textarea id="bio" name="bio" rows="4"></textarea></td>
-                </tr>
-            </table>
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Save</button>
-                <button type="button" class="btn btn-danger" onclick="closeContactModal()">Cancel</button>
-            </div>
-        </form>
+        <td><label for="completed_levels">Completed Levels:</label></td>
+        <td><input type="text" id="completed_levels" name="completed_levels" placeholder="e.g., PM1, DL2..."></td>
+      </tr>
+      <tr>
+        <td><label for="dtm">DTM:</label></td>
+        <td><input type="checkbox" id="dtm" name="dtm"></td>
+      </tr>
+    </table>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save</button>
     </div>
+  </form>
 </div>

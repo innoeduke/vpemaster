@@ -16,11 +16,12 @@ def _get_project_code(log):
     if log and log.Project_ID == 60:
         return "TM1.0"
 
-    if not log or not log.project or not log.owner or not log.owner.Working_Path:
+    user = log.owner.user if log.owner else None
+    if not log or not log.project or not user or not user.Current_Path:
         return None
 
     pathway_to_code_attr = current_app.config['PATHWAY_MAPPING']
-    code_prefix = pathway_to_code_attr.get(log.owner.Working_Path)
+    code_prefix = pathway_to_code_attr.get(user.Current_Path)
     if not code_prefix:
         return None
 
@@ -115,7 +116,7 @@ def show_speech_logs():
             continue
 
         if log_type == 'speech' and selected_pathway and \
-           (not log.owner or log.owner.Working_Path != selected_pathway):
+           (not log.owner or not log.owner.user or log.owner.user.Current_Path != selected_pathway):
             continue
 
         if selected_status:
@@ -198,10 +199,17 @@ def show_speech_logs():
     SERIES_INITIALS = current_app.config['SERIES_INITIALS']
     today_date = datetime.today().date()
 
+    role_icons = {
+        role_data['name']: role_data.get(
+            'icon', current_app.config['DEFAULT_ROLE_ICON'])
+        for role_data in current_app.config['ROLES'].values()
+    }
+
     return render_template(
         'speech_logs.html',
         grouped_logs=sorted_grouped_logs,
         roles_config=current_app.config['ROLES'],
+        role_icons=role_icons,
         get_project_code=_get_project_code,
         meeting_numbers=meeting_numbers,
         speakers=speakers,
@@ -254,7 +262,7 @@ def get_speech_log_details(log_id):
             level = 1  # Fallback if split fails
     # If project_code is "TM1.0" or None, level just stays 1
 
-    pathway = log.owner.Working_Path if log.owner and log.owner.Working_Path else "Presentation Mastery"
+    pathway = log.owner.user.Current_Path if log.owner and log.owner.user and log.owner.user.Current_Path else "Presentation Mastery"
 
     log_data = {
         "id": log.id,
@@ -316,11 +324,10 @@ def update_speech_log(log_id):
         except (ValueError, TypeError):
             pass  # Keep it blank if lookup fails
 
-    if 'pathway' in data and log.owner:
-        owner = Contact.query.get(log.Owner_ID)
-        if owner:
-            owner.Working_Path = data['pathway']
-            db.session.add(owner)
+    if 'pathway' in data and log.owner and log.owner.user:
+        user = log.owner.user
+        user.Current_Path = data['pathway']
+        db.session.add(user)
 
     if 'project_id' in data:
         project_id = data.get('project_id')
@@ -346,7 +353,7 @@ def update_speech_log(log_id):
         db.session.commit()
         project_name = "N/A"
         project_code = None
-        pathway = log.owner.Working_Path if log.owner else "N/A"
+        pathway = log.owner.user.Current_Path if log.owner and log.owner.user else "N/A"
 
         if session_type_title == 'Presentation' and log.Project_ID:
             presentation = Presentation.query.get(log.Project_ID)
@@ -394,11 +401,12 @@ def suspend_speech_log(log_id):
 
 
 def _get_next_project_for_contact(contact, completed_log):
-    if not contact or not contact.Working_Path or not completed_log or not completed_log.Project_ID:
+    user = contact.user if contact else None
+    if not user or not user.Current_Path or not completed_log or not completed_log.Project_ID:
         return
 
     pathway_to_code_attr = current_app.config['PATHWAY_MAPPING']
-    code_suffix = pathway_to_code_attr.get(contact.Working_Path)
+    code_suffix = pathway_to_code_attr.get(user.Current_Path)
     if not code_suffix:
         return
 
@@ -418,8 +426,8 @@ def _get_next_project_for_contact(contact, completed_log):
         # Get all completed project IDs for this user in this pathway
         completed_project_ids = [
             log.Project_ID for log in SessionLog.query
-            .join(Contact, SessionLog.Owner_ID == Contact.id)
-            .filter(Contact.id == contact.id, Contact.Working_Path == contact.Working_Path, SessionLog.Status == 'Completed')
+            .join(User, SessionLog.Owner_ID == User.Contact_ID)
+            .filter(User.id == user.id, User.Current_Path == user.Current_Path, SessionLog.Status == 'Completed')
             .all()
         ]
 
@@ -448,7 +456,7 @@ def _get_next_project_for_contact(contact, completed_log):
                 contact.Completed_Levels = "/".join(new_completed_levels)
 
             if level > 5:
-                contact.Next_Project = None
+                user.Next_Project = None
                 break
 
             next_project_code = f"{level}.{project_num}"
@@ -456,7 +464,7 @@ def _get_next_project_for_contact(contact, completed_log):
                 getattr(Project, f"Code_{code_suffix}") == next_project_code).first()
 
             if next_project and next_project.ID not in completed_project_ids:
-                contact.Next_Project = f"{code_suffix}{next_project_code}"
+                user.Next_Project = f"{code_suffix}{next_project_code}"
                 break
     except (ValueError, IndexError):
         return

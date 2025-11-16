@@ -854,7 +854,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const logId = row.dataset.id;
         const ownerId = row.querySelector('input[name="owner_id"]').value; // Use allContacts
         const contact = allContacts.find((c) => c.id == ownerId);
-        const workingPath = contact ? contact.Working_Path : null;
+        const currentPath = contact ? contact.Current_Path : null;
         const nextProject = contact ? contact.Next_Project : null;
         const typeId = row.querySelector('[data-field="Type_ID"] select').value;
         const sessionType = allSessionTypes.find((st) => st.id == typeId); // Use allSessionTypes
@@ -864,7 +864,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           openSpeechEditModal(
             logId,
-            workingPath,
+            currentPath,
             sessionTypeTitle,
             nextProject
           );

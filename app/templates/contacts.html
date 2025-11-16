@@ -55,8 +55,8 @@ content %}
       </td>
       <td>{{ contact.Type }}</td>
       <td>{{ contact.Club }}</td>
-      <td>{{ contact.Working_Path }}</td>
-      <td>{{ contact.Next_Project }}</td>
+      <td>{% if contact.user %}{{ contact.user.Current_Path }}{% endif %}</td>
+      <td>{% if contact.user %}{{ contact.user.Next_Project }}{% endif %}</td>
       <td>{{ contact.Completed_Levels }}</td>
       {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
       <td>

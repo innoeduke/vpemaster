@@ -9,8 +9,6 @@ class Contact(db.Model):
     Type = db.Column(db.String(50), nullable=False, default='Guest')
     Club = db.Column(db.String(100))
     Date_Created = db.Column(db.Date)
-    Working_Path = db.Column(db.String(50))
-    Next_Project = db.Column(db.String(100))
     Completed_Levels = db.Column(db.String(255))
     DTM = db.Column(db.Boolean, default=False)
     Phone_Number = db.Column(db.String(50), nullable=True)
@@ -26,14 +24,14 @@ class User(db.Model):
     Mentor_ID = db.Column(db.Integer, db.ForeignKey(
         'Contacts.id'), nullable=True)
     Contact_ID = db.Column(db.Integer, db.ForeignKey(
-        'Contacts.id'), nullable=True)
+        'Contacts.id'), nullable=True, unique=True)
     Pass_Hash = db.Column(db.String(255), nullable=False)
     Date_Created = db.Column(db.Date)
     Role = db.Column(db.String(50), nullable=False, default='Member')
     Status = db.Column(db.String(50), nullable=False, default='active')
     Current_Path = db.Column(db.String(50), nullable=True)
     Next_Project = db.Column(db.String(100), nullable=True)
-    contact = db.relationship('Contact', foreign_keys=[Contact_ID])
+    contact = db.relationship('Contact', foreign_keys=[Contact_ID], backref=db.backref('user', uselist=False))
     mentor = db.relationship('Contact', foreign_keys=[Mentor_ID])
 
 

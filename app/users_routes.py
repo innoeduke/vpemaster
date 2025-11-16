@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from . import db
 from .models import User, Contact
 from .auth.utils import is_authorized, login_required
@@ -32,6 +32,8 @@ def _create_or_update_user(user=None, **kwargs):
     user.Email = kwargs.get('email')
     user.Member_ID = kwargs.get('member_id')
     user.Role = kwargs.get('role')
+    user.Current_Path = kwargs.get('current_path') or None
+    user.Next_Project = kwargs.get('next_project') or None
 
     contact_id = kwargs.get('contact_id', 0)
     user.Contact_ID = contact_id if contact_id != 0 else None
@@ -66,6 +68,8 @@ def user_form(user_id):
         Contact.Type == 'Member', Contact.Type == 'Past Member')).order_by(Contact.Name.asc()).all()
     users = User.query.order_by(User.Username.asc()).all()
 
+    pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
+
     if request.method == 'POST':
         _create_or_update_user(
             user=user,
@@ -76,12 +80,14 @@ def user_form(user_id):
             status=request.form.get('status'),
             contact_id=request.form.get('contact_id', 0, type=int),
             mentor_id=request.form.get('mentor_id', 0, type=int),
+            current_path=request.form.get('current_path'),
+            next_project=request.form.get('next_project'),
             password=request.form.get('password')
         )
         db.session.commit()
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
-    return render_template('user_form.html', user=user, contacts=member_contacts, users=users, mentor_contacts=mentor_contacts)
+    return render_template('user_form.html', user=user, contacts=member_contacts, users=users, mentor_contacts=mentor_contacts, pathways=pathways)
 
 
 @users_bp.route('/user/delete/<int:user_id>', methods=['POST'])
