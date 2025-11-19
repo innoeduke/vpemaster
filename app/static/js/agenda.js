@@ -19,10 +19,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const wodDisplay = document.querySelector(".wod-display");
   const editModeButtons = document.getElementById("edit-mode-buttons");
 
-  // --- Data from Template (only projectSpeakers remains, others fetched via API) ---
   let projectSpeakers = JSON.parse(tableContainer.dataset.projectSpeakers);
 
-  // --- Data fetched asynchronously ---
   let allSessionTypes = [];
   let allContacts = [];
   let allProjects = [];
@@ -125,6 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (addRowButton) {
       addRowButton.addEventListener("click", addNewRow);
     }
+
     if (exportButton) {
       exportButton.addEventListener("click", exportAgenda);
     }
@@ -166,6 +165,33 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveChanges() {
+    let invalidRowFound = false;
+    const allRows = tableBody.querySelectorAll("tr");
+
+    allRows.forEach((row, index) => {
+      // Find the select element for this row
+      const selectEl = row.querySelector('[data-field="Type_ID"] select');
+      if (!selectEl) return; // Not an editable row, skip
+
+      // Check for empty value (our default option)
+      if (!selectEl.value || selectEl.value === "") {
+        invalidRowFound = true;
+        // Highlight the invalid dropdown
+        selectEl.style.border = "2px solid red";
+        selectEl.style.backgroundColor = "#fff0f0";
+      } else {
+        // Reset style if it was previously invalid
+        selectEl.style.border = "";
+        selectEl.style.backgroundColor = "";
+      }
+    });
+
+    if (invalidRowFound) {
+      alert(
+        "Save failed: One or more sessions has a missing 'Session Type'.\n\nPlease select a valid type for the highlighted row(s) before saving."
+      );
+      return; // Stop the save operation
+    }
     const dataToSave = Array.from(tableBody.querySelectorAll("tr")).map(
       getRowData
     );
@@ -190,7 +216,7 @@ document.addEventListener("DOMContentLoaded", () => {
         agenda_data: dataToSave,
         ge_style: geStyleSelect.value,
         meeting_title: document.getElementById("edit-meeting-title").value,
-        subtitle: document.getElementById("edit-subtitle").value, // <-- ADD THIS LINE
+        subtitle: document.getElementById("edit-subtitle").value,
         meeting_type: document.getElementById("edit-meeting-type").value,
         wod: document.getElementById("edit-wod").value,
         media_url: document.getElementById("edit-media-url").value,
@@ -223,8 +249,8 @@ document.addEventListener("DOMContentLoaded", () => {
       meetingNumber: meetingFilter.value,
       projectId: "",
       status: "Booked",
-      typeId: 36, // Topics Speaker
-      sessionTitle: "Topics Speaker",
+      typeId: "",
+      sessionTitle: "",
       ownerId: "",
       durationMin: "",
       durationMax: "",
@@ -477,13 +503,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateProjectSpeakers() {
     const currentSpeakers = new Set();
+
+    // Ensure allSessionTypes is loaded before running
+    if (!allSessionTypes || allSessionTypes.length === 0) {
+      console.error("Session types not loaded, cannot update speaker list.");
+      return;
+    }
+
     tableBody.querySelectorAll("tr").forEach((row) => {
-      if (parseInt(row.dataset.projectId, 10) > 0) {
-        const ownerInput = row.querySelector(
-          '.autocomplete-container input[type="text"]'
-        );
-        if (ownerInput && ownerInput.value) {
-          currentSpeakers.add(ownerInput.value);
+      const typeSelect = row.querySelector('[data-field="Type_ID"] select');
+      const ownerInput = row.querySelector(
+        '.autocomplete-container input[type="text"]'
+      );
+      // Get the project ID from the row's dataset
+      const projectId = row.dataset.projectId;
+
+      // Check if the required elements exist
+      if (typeSelect && ownerInput && ownerInput.value) {
+        const typeId = typeSelect.value;
+        const sessionType = allSessionTypes.find((st) => st.id == typeId);
+
+        // Skip if session type isn't found
+        if (!sessionType) return;
+
+        const speakerName = ownerInput.value;
+
+        // 1. EXCLUSION: Skip Individual Evaluators completely
+        if (sessionType.Title === "Evaluation") {
+          return;
+        }
+
+        // 2. INCLUSION: Add if it's a speech OR has a project ID
+        if (
+          sessionType.Title === "Pathway Speech" ||
+          sessionType.Title === "Presentation" ||
+          (projectId && projectId !== "")
+        ) {
+          currentSpeakers.add(speakerName);
         }
       }
     });
@@ -585,6 +641,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function createTypeSelect(selectedValue) {
     const select = document.createElement("select"); // Use allSessionTypes
+    select.add(new Option("-- Select Session Type --", ""));
 
     const sections = allSessionTypes.filter((type) => type.Is_Section);
     const predefined = allSessionTypes.filter(
@@ -628,8 +685,26 @@ document.addEventListener("DOMContentLoaded", () => {
       updateProjectSpeakers();
       const select = document.createElement("select");
       select.add(new Option("-- Select Speaker --", ""));
+
+      updateProjectSpeakers();
       projectSpeakers.forEach((name) => select.add(new Option(name, name)));
       select.value = originalValue;
+
+      select.addEventListener("mousedown", function () {
+        const currentValue = this.value;
+        updateProjectSpeakers();
+        while (this.options.length > 1) {
+          this.remove(1);
+        }
+        projectSpeakers.forEach((name) => this.add(new Option(name, name)));
+
+        const stillExists = projectSpeakers.some(
+          (name) => name === currentValue
+        );
+        if (stillExists) {
+          this.value = currentValue;
+        }
+      });
       return select;
     } else if (sessionType?.Title === "Pathway Speech") {
       const span = document.createElement("span");

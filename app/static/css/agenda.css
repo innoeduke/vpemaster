@@ -171,7 +171,7 @@
     border-radius: 4px;
     font-size: 1em;
     width: 100%;
-    max-width: 500px;
+    max-width: 800px;
     box-sizing: border-box;
 }
 
@@ -229,6 +229,18 @@
     color: #555;
     font-size: 0.9em;
     margin: 0;
+}
+
+#edit-mode-buttons {
+    position: fixed;
+    top: 75px; 
+    right: 25px; 
+    z-index: 1000;
+
+    background-color: #ffffff; /* Adds the white background */
+    padding: 10px;             /* Gives the buttons breathing room */
+    border-radius: 8px;        /* Softens the corners */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Adds a subtle shadow */
 }
 
 .action-bar-left #meeting-filter {

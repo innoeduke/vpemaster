@@ -72,10 +72,24 @@
         display: none;
     }
 
+    #edit-mode-buttons {
+        top: auto; /* Unset the top position */
+        bottom: 15px; /* Place it 15px from the bottom */
+        right: 15px; /* Place it 15px from the right */
+    }
+
     /* Make the Owner column wider on mobile */
     .edit-mode-active #logs-table .col-owner {
         width: 30% !important; /* Increase width for better visibility */
         min-width: 120px; /* Ensure it has enough space */
+    }
+
+    .edit-mode-field {
+        max-width: 100%;
+    }
+
+    .edit-mode-active .meeting-edit-details {
+        justify-self: stretch;
     }
 
     .container-wrapper {

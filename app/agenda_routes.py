@@ -153,12 +153,10 @@ def _recalculate_start_times(meetings_to_update):
             .order_by(SessionLog.Meeting_Seq.asc()).all()
 
         for log, is_section, is_hidden in logs_to_update:
-            # --- THIS IS THE FIX ---
             # If the session is a section header OR if it's hidden, set its time to None and continue.
             if is_section or is_hidden:
                 log.Start_Time = None
                 continue
-            # --- END OF FIX ---
 
             # The rest of the logic only runs for visible, non-section items.
             log.Start_Time = current_time

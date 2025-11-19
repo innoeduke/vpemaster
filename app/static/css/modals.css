@@ -78,3 +78,72 @@
     text-decoration: none;
     cursor: pointer;
 }
+
+
+/* */
+
+/* --- Modal Form Layout --- */
+
+/* A flexible row container for side-by-side fields */
+.modal-form-row {
+    display: flex;
+    gap: 20px; /* Space between the Pathway and Generic columns */
+    width: 100%;
+}
+
+/* The main column that expands (for Pathway) */
+.modal-form-col-main {
+    flex: 1; /* Takes up all remaining space */
+    display: flex;
+    flex-direction: column;
+}
+
+/* The side column that stays compact (for Generic) */
+.modal-form-col-side {
+    flex: 0 0 auto; /* Only takes as much width as needed */
+    display: flex;
+    flex-direction: column;
+    min-width: 60px;
+}
+
+/* --- Form Elements Styling --- */
+
+.modal-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+    font-size: 0.95em;
+}
+
+/* This inner container ensures flex layout persists even if the parent is set to display:block by JS */
+.modal-split-row {
+    display: flex;
+    gap: 20px; /* Space between Pathway and Generic */
+    width: 100%;
+}
+
+/* Left side (Pathway) expands */
+.modal-col-expand {
+    flex: 1;
+}
+
+/* Right side (Generic) stays compact */
+.modal-col-fixed {
+    flex: 0 0 auto;
+    min-width: 80px;
+}
+
+/* Aligns the checkbox vertically with the height of text inputs (approx 38px) */
+.checkbox-vertical-align {
+    display: flex;
+    align-items: center;
+    height: 38px; 
+    margin-top: 5px; /* Matches standard input margin */
+}
+
+.scaled-checkbox {
+    transform: scale(1.3);
+    cursor: pointer;
+    accent-color: #772432;
+}

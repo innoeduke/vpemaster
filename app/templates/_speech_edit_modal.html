@@ -2,96 +2,79 @@
   <div class="modal-content">
     <span class="close" onclick="closeSpeechEditModal()">&times;</span>
     <h1>Edit Speech Details</h1>
+    
     <form id="speechEditForm" onsubmit="saveSpeechChanges(event)">
       <input type="hidden" id="edit-log-id" name="log_id" />
-      <input
-        type="hidden"
-        id="edit-session-type-title"
-        name="session_type_title"
-      />
+      <input type="hidden" id="edit-session-type-title" name="session_type_title" />
+
       <div class="form-group">
-        <label for="edit-speech-title">Speech Title:</label>
-        <input
-          type="text"
-          id="edit-speech-title"
-          name="speech_title"
-          required
-        />
+        <label for="edit-speech-title" class="modal-label">Speech Title:</label>
+        <input type="text" id="edit-speech-title" name="speech_title" required />
       </div>
 
-      <div class="form-group-row" id="pathway-generic-row">
-        <div class="form-group" style="flex-grow: 3">
-          <label for="edit-pathway" id="label-pathway-series">Pathway:</label>
-          <select
-            id="edit-pathway"
-            name="pathway"
-            onchange="updateDynamicOptions()"
-            required
-          ></select>
-        </div>
-        <div
-          class="form-group"
-          style="flex-grow: 1; text-align: center; padding-top: 30px"
-        >
-          <label
-            for="edit-is-generic"
-            style="display: inline; margin-right: 5px"
-            >Generic:</label
-          >
-          <input
-            type="checkbox"
-            id="edit-is-generic"
-            name="is_generic"
-            onchange="toggleGeneric(this.checked)"
-            style="transform: scale(1.3)"
-          />
+      <div class="form-group" id="project-group" style="display: none;">
+        <div class="checkbox-input-wrapper">
+            <label for="is-project-chk" style="margin-right: 10px; cursor: pointer;">Is this for a project?</label>
+            <input type="checkbox" id="is-project-chk" name="is_project" class="scaled-checkbox">
         </div>
       </div>
 
-      <div class="form-group" id="level-select-group">
-        <label for="edit-level" id="label-level">Level:</label>
-        <select id="edit-level" name="level" onchange="updateDynamicOptions()">
-          <option value="">-- Select Level --</option>
-          {% for i in range(1, 6) %}
-          <option value="{{ i }}">Level {{ i }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group" id="project-select-group">
-        <label for="edit-project" id="label-project-presentation"
-          >Project:</label
-        >
-        <select id="edit-project" name="project_id">
-          <option value="">-- Select a Project --</option>
-        </select>
-      </div>
-
-      <div class="form-group" id="eval-project-group" style="display: none;">
-        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-            <label for="eval-is-project-chk">Is this for a project?</label>
-            <input type="checkbox" id="eval-is-project-chk" name="eval_is_project" style="transform: scale(1.3)">
-        </div>
-        <select id="eval-project-select" name="eval_project_id" style="display: none;">
-            <option value="">-- Select Evaluation Project --</option>
-        </select>
-      </div>
-
-      <div class="form-group" id="tt-project-group" style="display: none;">
-        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 10px;">
-            <label for="tt-is-project-chk">Is this for a project?</label>
-            <input type="checkbox" id="tt-is-project-chk" name="tt_is_project" style="transform: scale(1.3)">
-        </div>
-        <div id="tt-pathway-group" style="display: none;">
-            <label for="tt-pathway-select">Pathway:</label>
-            <select id="tt-pathway-select" name="tt_pathway">
+      <div id="project-mode-fields" style="display: none;">
+        <div class="form-group" id="pathway-group">
+            <label for="pathway-select-dropdown" class="modal-label">Pathway:</label>
+            <select id="pathway-select-dropdown" name="pathway_dropdown">
                 <option value="">-- Select Pathway --</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="project-select-dropdown" class="modal-label">Project:</label>
+            <select id="project-select-dropdown" name="project_dropdown">
+                <option value="">-- Select Project --</option>
             </select>
         </div>
       </div>
 
+      <div id="standard-selection" style="display: none;">
+        <div class="form-group modal-form-row" id="pathway-generic-row">
+            <div class="modal-split-row">
+                <div class="form-group modal-col-expand">
+                    <label for="edit-pathway" id="label-pathway-series" class="modal-label">Pathway:</label>
+                    <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
+                </div>
+                <div class="form-group modal-col-fixed">
+                    <label for="edit-is-generic" class="modal-label">Generic:</label>
+                    <div class="checkbox-vertical-align">
+                        <input
+                            type="checkbox"
+                            id="edit-is-generic"
+                            name="is_generic"
+                            onchange="toggleGeneric(this.checked)"
+                            class="scaled-checkbox"
+                        />
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="form-group" id="level-select-group">
+          <label for="edit-level" id="label-level" class="modal-label">Level:</label>
+          <select id="edit-level" name="level" onchange="updateDynamicOptions()">
+            <option value="">-- Select Level --</option>
+            {% for i in range(1, 6) %}
+            <option value="{{ i }}">Level {{ i }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group" id="project-select-group">
+          <label for="edit-project" id="label-project-presentation" class="modal-label">Project:</label>
+          <select id="edit-project" name="project_id">
+            <option value="">-- Select a Project --</option>
+          </select>
+        </div>
+      </div>
+
       <div class="form-group">
-        <label for="edit-speech-media-url">Media URL:</label>
+        <label for="edit-speech-media-url" class="modal-label">Media URL:</label>
         <input
           type="text"
           id="edit-speech-media-url"
@@ -99,15 +82,10 @@
           placeholder="e.g., https://youtu.be/..."
         />
       </div>
+
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Save Changes</button>
-        <button
-          type="button"
-          class="btn btn-danger"
-          onclick="closeSpeechEditModal()"
-        >
-          Cancel
-        </button>
+        <button type="button" class="btn btn-danger" onclick="closeSpeechEditModal()">Cancel</button>
       </div>
     </form>
   </div>

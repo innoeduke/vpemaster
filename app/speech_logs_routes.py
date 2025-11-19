@@ -16,7 +16,7 @@ def _get_project_code(log):
     if log and log.Project_ID == 60:
         return "TM1.0"
 
-    user = log.owner.user if log.owner else None
+    user = log.owner.user if log and log.owner else None
     if not log or not log.project or not user or not user.Current_Path:
         return None
 
@@ -25,7 +25,9 @@ def _get_project_code(log):
     if not code_prefix:
         return None
 
-    return getattr(log.project, f"Code_{code_prefix}", None)
+    attr_to_get = f"Code_{code_prefix}"
+    project_code = getattr(log.project, attr_to_get, None)
+    return project_code
 
 
 @speech_logs_bp.route('/speech_logs')
@@ -284,7 +286,8 @@ def update_speech_log(log_id):
     """
     log = db.session.query(SessionLog).options(
         joinedload(SessionLog.owner),
-        joinedload(SessionLog.session_type)
+        joinedload(SessionLog.session_type),
+        joinedload(SessionLog.project)
     ).get_or_404(log_id)
 
     user_role = session.get('user_role')
@@ -363,7 +366,7 @@ def update_speech_log(log_id):
                 SERIES_INITIALS = current_app.config['SERIES_INITIALS']
                 series_initial = SERIES_INITIALS.get(presentation.series, "")
                 project_code = f"{series_initial}{presentation.code}"
-        elif log.Project_ID:  # Pathway speech
+        elif log.Project_ID:  # Pathway speech or special project
             updated_project = Project.query.get(log.Project_ID)
             if updated_project:
                 project_name = updated_project.Project_Name
