@@ -201,38 +201,26 @@
 
                                {# Display Title #}
                                {% if log_dict.session_type_title == 'Evaluation' %}
-                                   Evaluation for {{ cleaned_title }}
-                                   {% if log_dict.speaker_is_dtm %}
-                                       <sup class="dtm-superscript">DTM</sup>
-                                   {% endif %}
-                               {% elif log_dict.session_type_title in ['Pathway Speech', 'Presentation'] %}
-                                   {% if log_dict.media_url %}
-                                       <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
-                                           "{{ cleaned_title }}"
-                                       </a>
-                                   {% else %}
-                                       "{{ cleaned_title }}"
-                                   {% endif %}
-                               {% elif log_dict.Project_ID %}
-                                   {% if log_dict.media_url %}
-                                       <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
-                                           "{{ cleaned_title }}"
-                                       </a>
-                                   {% else %}
-                                       "{{ cleaned_title }}"
-                                   {% endif %}
+                                   {% set display_title = 'Evaluation for ' ~ cleaned_title %}
+                               {% elif log_dict.session_type_title in ['Pathway Speech', 'Presentation'] or log_dict.Project_ID %}
+                                   {% set display_title = '"' ~ cleaned_title ~ '"' %}
                                {% elif log_dict.predefined %}
-                                   {{ log_dict.session_type_title }}
+                                   {% set display_title = log_dict.session_type_title %}
                                {% else %}
-                                   {% if log_dict.media_url %}
-                                       <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
-                                           {{ cleaned_title }}
-                                       </a>
-                                   {% else %}
-                                       {{ cleaned_title }}
-                                   {% endif %}
+                                   {% set display_title = cleaned_title %}
                                {% endif %}
-
+                               
+                               {% if log_dict.media_url %}
+                                   <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
+                                       {{ display_title }}
+                                   </a>
+                               {% else %}
+                                   {{ display_title }}
+                               {% endif %}
+                               
+                               {% if log_dict.session_type_title == 'Evaluation' and log_dict.speaker_is_dtm %}
+                                   <sup class="dtm-superscript">DTM</sup>
+                               {% endif %}
                                {# Append Project Code if it's a project #}
                                {% if log_dict.project_code_display %}
                                    {% if log_dict.Project_ID and log_dict.pathway_code %}
