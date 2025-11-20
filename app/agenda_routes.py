@@ -18,6 +18,9 @@ agenda_bp = Blueprint('agenda_bp', __name__)
 
 # --- Helper Functions for Data Fetching ---
 
+# Table Topics, Prepared Speaker, Pathway Speech, Panel Discussion
+speech_types_with_project = {7, 20, 30, 44}
+
 
 def _get_agenda_logs(meeting_number):
     """Fetches all agenda logs and related data for a specific meeting."""
@@ -532,20 +535,19 @@ def _get_all_speech_details(logs_data, pathway_mapping):
     Processes logs_data to extract a structured list of speech details.
     """
     speeches = []
+    # Define speech session types that require similar handling
+
     for log, session_type, contact, project, media in logs_data:
         if not log.Project_ID or not session_type:
             continue
 
-        # Handle Pathway Speech (Type ID 30)
-        if session_type.id == 30 and project:
+        # Handle Pathway Speech types (Type IDs 7, 20, 30, 44) which all use the same logic
+        if session_type.id in speech_types_with_project and project:
             user = contact.user if contact else None
             path_abbr = pathway_mapping.get(
                 user.Current_Path, "") if user else ""
-            # Use the helper function to get project code
-            if contact and contact.user and contact.user.Current_Path and log.Project_ID:
-                pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
-                if pathway_abbr:
-                    project_code = project_id_to_code(log.Project_ID, pathway_abbr)
+            project_code = project_id_to_code(
+                log.Project_ID, path_abbr) if path_abbr else None
             purpose = project.Purpose
             # For pathway speeches, the project code is just the level.number (e.g., "1.1")
             pathway_project_code = getattr(
@@ -556,28 +558,28 @@ def _get_all_speech_details(logs_data, pathway_mapping):
             pathway_name = user.Current_Path if user else ""
             title = log.Session_Title or project.Project_Name
             duration = f"[{project.Duration_Min}'-{project.Duration_Max}']"
-            project_code_str = f"{path_abbr}{project_code}" if project_code else "Generic"
 
             details_to_add = {
                 "speech_title": title, "project_name": project_name, "pathway_name": pathway_name, "project_purpose": purpose,
-                "project_code_str": project_code_str, "duration": duration, "project_type": project_type
+                "project_code": project_code, "duration": duration, "project_type": project_type
             }
             speeches.append(details_to_add)
 
-        # Handle Presentation (Type ID 43)
+        # Handle Presentation (Type ID 43) which has special handling
         elif session_type.id == 43:
             presentation = Presentation.query.get(log.Project_ID)
             SERIES_INITIALS = current_app.config['SERIES_INITIALS']
             if not presentation:
                 continue
             series_initial = SERIES_INITIALS.get(presentation.series, "")
-            presentation_code = f"{series_initial}{presentation.code}"
+            presentation_code = project_id_to_code(
+                log.Project_ID, series_initial)
             details_to_add = {
                 "speech_title": log.Session_Title or presentation.title,
                 "project_name": presentation.title,
                 "pathway_name": presentation.series,
                 "project_purpose": f"Level {presentation.level} - {presentation.title}",
-                "project_code_str": presentation_code,
+                "project_code": presentation_code,
                 "duration": "[10'-15']", "project_type": _get_project_type(presentation_code)
             }
             speeches.append(details_to_add)
@@ -608,12 +610,8 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
         if contact and contact.user and contact.user.Current_Path and log.Project_ID:
             pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
             if pathway_abbr:
-                project_code = project_id_to_code(log.Project_ID, pathway_abbr)
-        user = contact.user if contact else None
-        pathway_abbr = pathway_mapping.get(
-            user.Current_Path, "") if user and user.Current_Path else ""
-        if project_code:
-            project_code_str = f"{pathway_abbr}{project_code}"
+                project_code_str = project_id_to_code(
+                    log.Project_ID, pathway_abbr)
         if not log.Session_Title:  # If title is blank, use project name
             session_title_str = project.Project_Name
 
@@ -621,7 +619,13 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
     elif session_type and session_type.id == 43 and log.Project_ID:
         # We must query Presentation table here, as 'project' will be None
         presentation = Presentation.query.get(log.Project_ID)
-    presentation = None
+        if presentation:
+            series_key = " ".join(
+                presentation.series.split()) if presentation.series else ""
+            series_initial = SERIES_INITIALS.get(series_key, "")
+            project_code_str = f"{series_initial}{presentation.code}"
+            if not log.Session_Title:  # If title is blank, use presentation title
+                session_title_str = presentation.title
 
     # Check for Individual Evaluator (Type 31)
     if session_type and session_type.id == 31 and log.Session_Title:
@@ -630,14 +634,6 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
         if speaker and speaker.DTM:
             speaker_name += '\u1D30\u1D40\u1D39'
         session_title_str = f"Evaluation for {speaker_name}"
-
-        if presentation:
-            series_key = " ".join(
-                presentation.series.split()) if presentation.series else ""
-            series_initial = SERIES_INITIALS.get(series_key, "")
-            project_code_str = f"{series_initial}{presentation.code}"
-            if not log.Session_Title:  # If title is blank, use presentation title
-                session_title_str = presentation.title
 
     # Format the final title
     if project_code_str:
@@ -710,8 +706,8 @@ def _auto_fit_worksheet_columns(ws, min_width=5):
 
 
 def _build_sheet1(ws, logs_data, speech_details_list, pathway_mapping):
-    """Populates Sheet 1 (Formatted Agenda) of the workbook."""
-    ws.title = "Formatted Agenda"
+    """Populates Sheet 1 (Agenda) of the workbook."""
+    ws.title = "Agenda"
     ws.append(['Start Time', 'Session Title', 'Owner', 'Duration'])
     for cell in ws[1]:
         cell.font = Font(bold=True)
@@ -733,17 +729,12 @@ def _build_sheet1(ws, logs_data, speech_details_list, pathway_mapping):
 
     # Manually add speech projects from the speech_details_list
     for speech in speech_details_list:
-        project_format_str = f'({speech["project_format"]}) ' if speech.get(
-            "project_format") else ''
-        title = f'{speech["pathway_name"]} ({speech["project_code_str"]}) {speech["project_name"]} {project_format_str}{speech["duration"]}'
         project_type_str = f'({speech["project_type"]}) ' if speech.get(
             "project_type") else ''
-        title = f'{speech["pathway_name"]} ({speech["project_code_str"]}) {speech["project_name"]} {project_type_str}{speech["duration"]}'
+        title = f'{speech["pathway_name"]} ({speech["project_code"]}) {speech["project_name"]} {project_type_str}{speech["duration"]}'
         ws.append([None, title])
         if speech.get("project_purpose"):
             purpose_text = speech["project_purpose"]
-            # The project format is now part of the title line above,
-            # so we just append the purpose text as is.
             ws.append([None, purpose_text])
 
         ws.append([])
@@ -864,16 +855,17 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     ])
 
     # Separate speakers and evaluators from the main data list
-    # Include any session with a project code and session type id is not 31 (Evaluation)
+    # Include sessions of specific types that are not evaluations (id != 31)
+    # Table Topics, Prepared Speaker, Pathway Speech, Panel Discussion
+    SPEAKER_TYPE_IDS = speech_types_with_project | {43}
     speakers = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
-                if log.Project_ID is not None and st.id != 31]
-
+                if st.id in SPEAKER_TYPE_IDS and st.id != 31 and st.Valid_for_Project]
     # Type 31 = Individual Evaluator
     evaluators = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
                   if st.id == 31]
 
     # Create a lookup map for evaluators
-    # Key: The name of the speaker being evaluated (from evaluator's Session_Title), 
+    # Key: The name of the speaker being evaluated (from evaluator's Session_Title),
     # Value: (Evaluator Name with Guest tag, Evaluator Media URL)
     evaluator_map = {}
     for log, st, contact, proj, med in evaluators:
@@ -883,25 +875,28 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
             # Add (Guest) tag directly when building the map
             if contact and contact.Type == 'Guest':
                 evaluator_name = f"{evaluator_name} (Guest)"
-            evaluator_map[speaker_being_evaluated] = (evaluator_name, med.url if med else '')
-    
+            evaluator_map[speaker_being_evaluated] = (
+                evaluator_name, med.url if med else '')
+
     # Iterate through speakers and find their matching evaluator
     for log, st, contact, proj, med in speakers:
         speaker_name = contact.Name if contact else ''
         speaker_media_url = med.url if med else ''
-        
+
         # Get project code if available - using the helper function
         project_code_str = ""
         if contact and contact.user and contact.user.Current_Path and log.Project_ID:
             pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
             if pathway_abbr:
                 # Use the helper function to get project code with path prefix
-                project_code_str = project_id_to_code(log.Project_ID, pathway_abbr)
-        
+                project_code_str = project_id_to_code(
+                    log.Project_ID, pathway_abbr)
+
         # Find the evaluator data from the map using the speaker's name as the key
         # The evaluator name returned already includes the (Guest) tag if applicable
-        evaluator_name, evaluator_media_url = evaluator_map.get(speaker_name, ('', ''))
-        
+        evaluator_name, evaluator_media_url = evaluator_map.get(
+            speaker_name, ('', ''))
+
         # Add project code to speaker name for display if available
         display_speaker_name = speaker_name
         if project_code_str:

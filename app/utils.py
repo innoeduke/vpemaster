@@ -1,7 +1,7 @@
 # vpemaster/utils.py
 
 from flask import current_app
-from .models import Project  # Ensure Project model is imported if needed elsewhere
+from .models import Project, Presentation  # Ensure Project model is imported if needed elsewhere
 import re
 import configparser
 import os
@@ -19,6 +19,21 @@ def project_id_to_code(project_id, path_abbr):
         str: The project code with format <path_abbr><n.n(.n)> (e.g., "PM1.1", "EH3.2") or "" if not found
     """
     if not project_id or not path_abbr:
+        return ""
+        
+    # Special handling for presentations
+    presentation_series_initials = {
+        'Successful Club Series': 'SC',
+        'Leadership Excellence Series': 'LE', 
+        'Better Speaker Series': 'BS'
+    }
+    
+    if path_abbr in presentation_series_initials.values():
+        presentation = Presentation.query.get(project_id)
+        if presentation and presentation.series:
+            series_name = next((name for name, initial in presentation_series_initials.items() if initial == path_abbr), None)
+            if series_name and presentation.series == series_name:
+                return f"{path_abbr}{presentation.code}"
         return ""
         
     project = Project.query.get(project_id)
