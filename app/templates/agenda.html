@@ -15,18 +15,20 @@
                 {% if selected_meeting.type %}
                     <span class="meeting-type-badge">{{ selected_meeting.type }}</span>
                 {% endif %}
-                {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
+                {% if selected_meeting and selected_meeting.media and selected_meeting.media.url %}
+                    <a href="{{ selected_meeting.media.url }}" target="_blank">
+                        {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
+                    </a>
+                {% else %}
+                    {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
+                {% endif %}
             </h1>
             <p class="subtitle view-mode">
                 {% if selected_meeting.Subtitle %}
                     {{ selected_meeting.Subtitle }}
                 {% endif %}
             </p>
-            {% if selected_meeting and selected_meeting.media and selected_meeting.media.url %}
-                <a href="{{ selected_meeting.media.url }}" class="btn btn-info video-icon-btn" target="_blank" title="Watch Meeting Video">
-                    <i class="fas fa-video"></i>
-                </a>
-            {% endif %}
+            <!-- Removed video meeting button -->
             <div class="meeting-edit-details">
                 <div class="meta-item">
                     <span><strong>Meeting Title:</strong></span>
@@ -194,11 +196,6 @@
                     {% else %}
                         <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>
                         <td class="non-edit-mode-cell">
-                            {# Check if it's a linkable pathway project (has ID and a valid path code) #}
-                            {% if log_dict.Project_ID and log_dict.pathway_code %}
-                               <a href="{{ url_for('pathways_bp.pathway_library') }}?path={{ log_dict.pathway_code }}&level={{ log_dict.level }}&project_id={{ log_dict.Project_ID }}" class="project-link" title="View in Pathway Library">
-                            {% endif %}
-
                             <div class="speech-tooltip-wrapper">
                                {% set cleaned_title = log_dict.Session_Title|replace('"', '') if log_dict.Session_Title else '' %}
 
@@ -209,18 +206,42 @@
                                        <sup class="dtm-superscript">DTM</sup>
                                    {% endif %}
                                {% elif log_dict.session_type_title in ['Pathway Speech', 'Presentation'] %}
-                                   "{{ cleaned_title }}"
+                                   {% if log_dict.media_url %}
+                                       <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
+                                           "{{ cleaned_title }}"
+                                       </a>
+                                   {% else %}
+                                       "{{ cleaned_title }}"
+                                   {% endif %}
                                {% elif log_dict.Project_ID %}
-                                   "{{ cleaned_title }}"
+                                   {% if log_dict.media_url %}
+                                       <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
+                                           "{{ cleaned_title }}"
+                                       </a>
+                                   {% else %}
+                                       "{{ cleaned_title }}"
+                                   {% endif %}
                                {% elif log_dict.predefined %}
                                    {{ log_dict.session_type_title }}
                                {% else %}
-                                   {{ cleaned_title }}
+                                   {% if log_dict.media_url %}
+                                       <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
+                                           {{ cleaned_title }}
+                                       </a>
+                                   {% else %}
+                                       {{ cleaned_title }}
+                                   {% endif %}
                                {% endif %}
 
                                {# Append Project Code if it's a project #}
                                {% if log_dict.project_code_display %}
-                                   ({{ log_dict.project_code_display }})
+                                   {% if log_dict.Project_ID and log_dict.pathway_code %}
+                                       <a href="{{ url_for('pathways_bp.pathway_library') }}?path={{ log_dict.pathway_code }}&level={{ log_dict.level }}&project_id={{ log_dict.Project_ID }}" class="project-code-link" title="View in Pathway Library">
+                                           ({{ log_dict.project_code_display }})
+                                       </a>
+                                   {% else %}
+                                       ({{ log_dict.project_code_display }})
+                                   {% endif %}
                                {% endif %}
 
                                {# Tooltip for Projects #}
@@ -230,17 +251,7 @@
                                    <span class="tooltip-purpose">{{ log_dict.project_purpose }}</span>
                                </div>
                                {% endif %}
-                               {% if log_dict.media_url %}
-                                    <a href="{{ log_dict.media_url }}" target="_blank" class="icon-btn media-play-btn" title="Watch Media">
-                                        <i class="fas fa-play-circle"></i>
-                                    </a>
-                                {% endif %}
                             </div>
-
-                            {% if log_dict.Project_ID and log_dict.pathway_code %}
-                               </a>
-                            {% endif %}
-
                         </td>
                         <td class="non-edit-mode-cell">
                              {# Use pre-fetched owner data from log_dict #}

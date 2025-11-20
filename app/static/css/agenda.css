@@ -68,7 +68,8 @@
     color: var(--primary-color);
 }
 .meeting-meta-details .meta-item a:hover {
-    text-decoration: underline;
+    background-color: rgba(0, 0, 0, 0.05);
+    text-decoration: none;
 }
 
 /* --- WOD Display in Action Bar --- */
@@ -157,6 +158,49 @@
     font-weight: 700;
 }
 
+/* Elegant link style for meeting title */
+.meeting-title a {
+    color: #772432;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.meeting-title a:hover {
+    color: #333;
+    text-decoration: none; /* Ensure no underline on hover */
+}
+
+/* Project code link style */
+.project-code-link {
+    color: #004165;
+    text-decoration: none;
+    background-color: rgba(0, 65, 101, 0.1);
+    padding: 2px 6px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.project-code-link:hover {
+    color: #772432;
+    background-color: rgba(119, 36, 50, 0.2);
+    text-decoration: none;
+}
+
+/* Session title link style */
+.speech-tooltip-wrapper a {
+    color: #333;
+    text-decoration: none;
+    background-color: rgba(173, 216, 230, 0.3); /* 使用更明亮的天蓝色背景 */
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.speech-tooltip-wrapper a:hover {
+    color: #772432;
+    background-color: rgba(173, 216, 230, 0.6); /* 悬停时加深天蓝色 */
+    text-decoration: none;
+}
 
 /* --- EDIT MODE STYLES (to match screenshot) --- */
 
