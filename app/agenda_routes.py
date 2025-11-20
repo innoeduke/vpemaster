@@ -675,15 +675,6 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
     return ('row', [start_time, session_title, owner_info, duration])
 
 
-def _format_export_projects_for_sheet1(speech_details_list):
-    """Formats the speech project details for the bottom of Sheet 1."""
-    # This function is now simpler as it just reads the speech_details_list
-    # (We are not using this helper anymore, but leaving it as a concept)
-    # ... logic to format projects ...
-    # For now, we'll do this in the build_sheet1 function
-    pass
-
-
 def _auto_fit_worksheet_columns(ws, min_width=5):
     """Auto-fits the columns of a given openpyxl worksheet."""
     for col in ws.columns:
@@ -859,7 +850,7 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     # Table Topics, Prepared Speaker, Pathway Speech, Panel Discussion
     SPEAKER_TYPE_IDS = speech_types_with_project | {43}
     speakers = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
-                if st.id in SPEAKER_TYPE_IDS and st.id != 31 and st.Valid_for_Project]
+                if st.id in SPEAKER_TYPE_IDS and st.Valid_for_Project]
     # Type 31 = Individual Evaluator
     evaluators = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
                   if st.id == 31]

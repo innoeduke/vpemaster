@@ -560,7 +560,7 @@ document.addEventListener("DOMContentLoaded", () => {
       : "";
 
     // If new type is predefined, use its title. Otherwise, keep the custom title.
-    const newTitle =
+    let newTitle =
       sessionType && sessionType.Predefined ? sessionType.Title : currentTitle;
 
     // Special case: If changing *to* Evaluation, keep the speaker name
@@ -570,7 +570,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     titleCell.innerHTML = "";
     titleCell.appendChild(
-      createSessionTitleControl(typeId, sessionType ? sessionType.Title : "")
+      createSessionTitleControl(
+        typeId,
+        sessionType ? sessionType.Title : "",
+        newTitle
+      )
     );
 
     const projectBtn = row.querySelector(".project-btn");
@@ -625,7 +629,14 @@ document.addEventListener("DOMContentLoaded", () => {
         cell.appendChild(createTypeSelect(value));
         break;
       case "Session_Title":
-        cell.appendChild(createSessionTitleControl(typeId, value));
+        const sessionType = allSessionTypes.find((st) => st.id == typeId);
+        cell.appendChild(
+          createSessionTitleControl(
+            typeId,
+            sessionType ? sessionType.Title : "",
+            value
+          )
+        );
         break;
       case "Owner_ID":
         cell.appendChild(createOwnerInput(value));
@@ -640,15 +651,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function createTypeSelect(selectedValue) {
-    const select = document.createElement("select"); // Use allSessionTypes
+    const select = document.createElement("select");
     select.add(new Option("-- Select Session Type --", ""));
 
-    const sections = allSessionTypes.filter((type) => type.Is_Section);
+    // Get all type IDs that are already used in the current meeting
+    const usedTypeIds = new Set();
+    tableBody.querySelectorAll("tr").forEach((row) => {
+      const typeId = row.dataset.typeId;
+      if (typeId && typeId !== selectedValue) {
+        // Don't include the current row
+        usedTypeIds.add(parseInt(typeId));
+      }
+    });
+
+    // Filter out session types that are already in the agenda (but keep the currently selected one)
+    const sections = allSessionTypes.filter(
+      (type) => type.Is_Section && !usedTypeIds.has(type.id)
+    );
     const predefined = allSessionTypes.filter(
-      (type) => !type.Is_Section && type.Predefined
+      (type) => !type.Is_Section && type.Predefined && !usedTypeIds.has(type.id)
     );
     const custom = allSessionTypes.filter(
-      (type) => !type.Is_Section && !type.Predefined // Use allSessionTypes
+      (type) => !type.Is_Section && !type.Predefined
     );
 
     const createOptGroup = (label, types) => {
@@ -663,11 +687,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     if (custom.length > 0) {
-      select.appendChild(createOptGroup("--- Custom Sessions ---", custom));
+      select.appendChild(createOptGroup("--- Custom & Roles ---", custom));
     }
     if (predefined.length > 0) {
       select.appendChild(
-        createOptGroup("--- Predefined Roles ---", predefined)
+        createOptGroup("--- Predefined Sessions ---", predefined)
       );
     }
     if (sections.length > 0) {
@@ -679,25 +703,35 @@ document.addEventListener("DOMContentLoaded", () => {
     return select;
   }
 
-  function createSessionTitleControl(typeId, originalValue) {
-    const sessionType = allSessionTypes.find((st) => st.id == typeId);
-    if (sessionType?.Title === "Evaluation") {
+  function createSessionTitleControl(
+    typeId,
+    sessionTypeTitle,
+    originalValue = ""
+  ) {
+    // Check if session type is Evaluation (ID 31)
+    if (sessionTypeTitle === "Evaluation") {
       updateProjectSpeakers();
       const select = document.createElement("select");
       select.add(new Option("-- Select Speaker --", ""));
 
-      updateProjectSpeakers();
+      // Populate with current speakers
       projectSpeakers.forEach((name) => select.add(new Option(name, name)));
-      select.value = originalValue;
+      select.value = originalValue || "";
 
+      // Update speaker list on mouse down
       select.addEventListener("mousedown", function () {
         const currentValue = this.value;
         updateProjectSpeakers();
+
+        // Clear all options except the first one
         while (this.options.length > 1) {
           this.remove(1);
         }
+
+        // Repopulate with current speakers
         projectSpeakers.forEach((name) => this.add(new Option(name, name)));
 
+        // Keep current selection if it still exists
         const stillExists = projectSpeakers.some(
           (name) => name === currentValue
         );
@@ -705,13 +739,15 @@ document.addEventListener("DOMContentLoaded", () => {
           this.value = currentValue;
         }
       });
+
       return select;
-    } else if (sessionType?.Title === "Pathway Speech") {
+    } else if (sessionTypeTitle === "Pathway Speech") {
       const span = document.createElement("span");
       span.textContent = originalValue;
       span.title = "Edit speech title in the project modal";
       return span;
     }
+
     const input = document.createElement("input");
     input.type = "text";
     input.value = originalValue;
