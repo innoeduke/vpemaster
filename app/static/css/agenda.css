@@ -171,32 +171,39 @@
 }
 
 /* Project code link style */
-.project-code-link {
-    color: #004165;
-    text-decoration: none;
-    background-color: rgba(0, 65, 101, 0.1);
-    padding: 2px 6px;
-    border-radius: 3px;
-    transition: all 0.3s ease;
+.speech-tooltip-wrapper .project-code-link {
+    color: #333;
+    text-decoration: none !important;
+    padding: 2px 6px !important;
+    border-radius: 12px !important; /* 添加圆角 */
+    transition: all 0.3s ease !important;
+    border: 1px solid rgba(211, 211, 211, 0.2) !important;
+    font-family: 'Montserrat', sans-serif !important; /* 使用无衬线字体 */
+    font-weight: 700 !important; /* 使用粗体 */
+    font-size: 0.8em !important; /* 较小的字体 */
+    vertical-align: top !important; /* 顶部对齐 */
+    cursor: pointer !important; /* 确保显示为可点击 */
 }
 
-.project-code-link:hover {
-    color: #772432;
-    background-color: rgba(119, 36, 50, 0.2);
-    text-decoration: none;
+.speech-tooltip-wrapper .project-code-link:hover {
+    color: #772432 !important;
+    background-color: rgba(211, 211, 211, 0.6) !important; /* 悬停时加深灰色 */
+    text-decoration: none !important;
+    border: 1px solid rgba(211, 211, 211, 0.4) !important;
 }
 
 /* Session title link style */
-.speech-tooltip-wrapper a {
+.speech-tooltip-wrapper a:not(.project-code-link) {
     color: #333;
     text-decoration: none;
     background-color: rgba(173, 216, 230, 0.3); /* 使用更明亮的天蓝色背景 */
     padding: 2px 4px;
-    border-radius: 3px;
+    border-radius: 12px; /* 添加圆角 */
     transition: all 0.3s ease;
+    font-weight: 500; /* 中等字体粗细 */
 }
 
-.speech-tooltip-wrapper a:hover {
+.speech-tooltip-wrapper a:not(.project-code-link):hover {
     color: #772432;
     background-color: rgba(173, 216, 230, 0.6); /* 悬停时加深天蓝色 */
     text-decoration: none;

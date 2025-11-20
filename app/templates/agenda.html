@@ -240,7 +240,9 @@
                                            ({{ log_dict.project_code_display }})
                                        </a>
                                    {% else %}
-                                       ({{ log_dict.project_code_display }})
+                                       <span class="project-code-link" title="Project Code">
+                                           ({{ log_dict.project_code_display }})
+                                       </span>
                                    {% endif %}
                                {% endif %}
 
