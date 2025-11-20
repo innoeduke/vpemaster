@@ -3,31 +3,13 @@ from flask import Blueprint, jsonify, render_template, request, session, current
 from . import db
 from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media
 from .auth.utils import login_required, is_authorized
+from .utils import project_id_to_code
 from sqlalchemy import distinct
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 import re
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
-
-
-def _get_project_code(log):
-    """Helper function to get the project code for a given log."""
-    if log and log.Project_ID == 60:
-        return "TM1.0"
-
-    user = log.owner.user if log and log.owner else None
-    if not log or not log.project or not user or not user.Current_Path:
-        return None
-
-    pathway_to_code_attr = current_app.config['PATHWAY_MAPPING']
-    code_prefix = pathway_to_code_attr.get(user.Current_Path)
-    if not code_prefix:
-        return None
-
-    attr_to_get = f"Code_{code_prefix}"
-    project_code = getattr(log.project, attr_to_get, None)
-    return project_code
 
 
 @speech_logs_bp.route('/speech_logs')
@@ -254,7 +236,14 @@ def get_speech_log_details(log_id):
         if log.Owner_ID != current_user_contact_id:
             return jsonify(success=False, message="Permission denied. You can only view details for your own speech logs."), 403
 
-    project_code = _get_project_code(log)
+    # Use the helper function to get project code
+    project_code = ""
+    if log.Project_ID and log.owner and log.owner.user and log.owner.user.Current_Path:
+        pathway_mapping = current_app.config['PATHWAY_MAPPING']
+        pathway_abbr = pathway_mapping.get(log.owner.user.Current_Path)
+        if pathway_abbr:
+            project_code = project_id_to_code(log.Project_ID, pathway_abbr)
+
     level = 1  # Default level
     if project_code and project_code != "TM1.0":
         try:
@@ -370,7 +359,12 @@ def update_speech_log(log_id):
             updated_project = Project.query.get(log.Project_ID)
             if updated_project:
                 project_name = updated_project.Project_Name
-            project_code = _get_project_code(log)  # Get pathway code
+            # Use the helper function to get project code
+            if log.owner and log.owner.user and log.owner.user.Current_Path:
+                pathway_mapping = current_app.config['PATHWAY_MAPPING']
+                pathway_abbr = pathway_mapping.get(log.owner.user.Current_Path)
+                if pathway_abbr:
+                    project_code = project_id_to_code(log.Project_ID, pathway_abbr)
 
         return jsonify(success=True,
                        session_title=log.Session_Title,

@@ -12,7 +12,7 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from .utils import derive_current_path_level, load_setting, derive_designation
+from .utils import derive_current_path_level, load_setting, derive_designation, project_id_to_code
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -497,15 +497,6 @@ def _get_export_data(meeting_number):
      .order_by(SessionLog.Meeting_Seq.asc()).all()
 
 
-def _get_project_code_str(project, contact, pathway_mapping):
-    """Helper to get the project code string (e.g., PM2.1)."""
-    if project and contact and contact.user and contact.user.Current_Path:
-        pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
-        if pathway_abbr:
-            return getattr(project, f"Code_{pathway_abbr}", None)
-    return None
-
-
 def _get_project_type(project_code):
     """Determines if a project is 'Required' or 'Elective' based on its level code."""
     if not project_code:
@@ -550,8 +541,11 @@ def _get_all_speech_details(logs_data, pathway_mapping):
             user = contact.user if contact else None
             path_abbr = pathway_mapping.get(
                 user.Current_Path, "") if user else ""
-            project_code = _get_project_code_str(
-                project, contact, pathway_mapping)
+            # Use the helper function to get project code
+            if contact and contact.user and contact.user.Current_Path and log.Project_ID:
+                pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
+                if pathway_abbr:
+                    project_code = project_id_to_code(log.Project_ID, pathway_abbr)
             purpose = project.Purpose
             # For pathway speeches, the project code is just the level.number (e.g., "1.1")
             pathway_project_code = getattr(
@@ -610,8 +604,11 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
 
     # Check for Pathway Speech (Type 30)
     if session_type and session_type.id == 30 and project:
-        project_code = _get_project_code_str(
-            project, contact, pathway_mapping) if contact else None
+        # Use the helper function to get project code
+        if contact and contact.user and contact.user.Current_Path and log.Project_ID:
+            pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
+            if pathway_abbr:
+                project_code = project_id_to_code(log.Project_ID, pathway_abbr)
         user = contact.user if contact else None
         pathway_abbr = pathway_mapping.get(
             user.Current_Path, "") if user and user.Current_Path else ""
@@ -893,12 +890,13 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
         speaker_name = contact.Name if contact else ''
         speaker_media_url = med.url if med else ''
         
-        # Get project code if available - handle all project types consistently
+        # Get project code if available - using the helper function
         project_code_str = ""
-        if proj and contact and contact.user and contact.user.Current_Path:
+        if contact and contact.user and contact.user.Current_Path and log.Project_ID:
             pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
             if pathway_abbr:
-                project_code_str = getattr(proj, f"Code_{pathway_abbr}", None)
+                # Use the helper function to get project code with path prefix
+                project_code_str = project_id_to_code(log.Project_ID, pathway_abbr)
         
         # Find the evaluator data from the map using the speaker's name as the key
         # The evaluator name returned already includes the (Guest) tag if applicable

@@ -7,6 +7,36 @@ import configparser
 import os
 
 
+def project_id_to_code(project_id, path_abbr):
+    """
+    Returns project code based on project_id and the two-letter path abbreviation.
+    
+    Args:
+        project_id (int): The ID of the project
+        path_abbr (str): Two-letter path abbreviation (e.g., 'PM', 'EH', 'DL')
+        
+    Returns:
+        str: The project code with format <path_abbr><n.n(.n)> (e.g., "PM1.1", "EH3.2") or "" if not found
+    """
+    if not project_id or not path_abbr:
+        return ""
+        
+    project = Project.query.get(project_id)
+    if not project:
+        return ""
+        
+    # Special case for project ID 60 (TM1.0)
+    if project_id == 60:
+        return "TM1.0"
+        
+    code_attr = f"Code_{path_abbr}"
+    project_code = getattr(project, code_attr, None)
+    
+    if project_code:
+        return f"{path_abbr}{project_code}"
+    return ""
+
+
 def derive_current_path_level(log, owner_contact):
     """
     Derives the 'current_path_level' based on the role, project, and owner's pathway.
