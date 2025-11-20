@@ -867,38 +867,52 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     ])
 
     # Separate speakers and evaluators from the main data list
-    # Use Type 30 (Pathway Speech) and 43 (Presentation)
+    # Include any session with a project code and session type id is not 31 (Evaluation)
     speakers = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
-                if st.id == 30 or st.id == 43]
+                if log.Project_ID is not None and st.id != 31]
 
-    # Type 31 = Individual Evaluator (This ID seems correct based on prior context)
+    # Type 31 = Individual Evaluator
     evaluators = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
                   if st.id == 31]
 
     # Create a lookup map for evaluators
-    # Key: Speaker Name (from evaluator's Session_Title), Value: (Evaluator Name, Evaluator Media URL)
+    # Key: The name of the speaker being evaluated (from evaluator's Session_Title), 
+    # Value: (Evaluator Name with Guest tag, Evaluator Media URL)
     evaluator_map = {}
     for log, st, contact, proj, med in evaluators:
-        speaker_name_key = log.Session_Title
-        if speaker_name_key:  # Only add if the evaluator is linked to a speaker
-            evaluator_map[speaker_name_key] = (
-                contact.Name if contact else '', med.url if med else '')
-
+        speaker_being_evaluated = log.Session_Title
+        if speaker_being_evaluated:  # Only add if the evaluator is linked to a speaker
+            evaluator_name = contact.Name if contact else ''
+            # Add (Guest) tag directly when building the map
+            if contact and contact.Type == 'Guest':
+                evaluator_name = f"{evaluator_name} (Guest)"
+            evaluator_map[speaker_being_evaluated] = (evaluator_name, med.url if med else '')
+    
     # Iterate through speakers and find their matching evaluator
     for log, st, contact, proj, med in speakers:
         speaker_name = contact.Name if contact else ''
         speaker_media_url = med.url if med else ''
-
-        # Find the evaluator data from the map
-        eval_data = evaluator_map.get(
-            speaker_name, ('', ''))  # Default to empty tuple
-        evaluator_name = eval_data[0]
-        evaluator_media_url = eval_data[1]
+        
+        # Get project code if available - handle all project types consistently
+        project_code_str = ""
+        if proj and contact and contact.user and contact.user.Current_Path:
+            pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
+            if pathway_abbr:
+                project_code_str = getattr(proj, f"Code_{pathway_abbr}", None)
+        
+        # Find the evaluator data from the map using the speaker's name as the key
+        # The evaluator name returned already includes the (Guest) tag if applicable
+        evaluator_name, evaluator_media_url = evaluator_map.get(speaker_name, ('', ''))
+        
+        # Add project code to speaker name for display if available
+        display_speaker_name = speaker_name
+        if project_code_str:
+            display_speaker_name = f"{speaker_name} {project_code_str}"
 
         # Add 3 blank columns (None) after speaker_name
         row_data = [
             meeting.Meeting_Number,
-            speaker_name,
+            display_speaker_name,
             None, None, None,  # <-- ADDED 3 BLANK COLUMNS
             speaker_media_url,
             evaluator_name,
