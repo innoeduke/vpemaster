@@ -516,7 +516,7 @@ def _get_project_type(project_code):
         return "Elective"
 
     # Define a set of all required project codes for higher levels for quick lookup
-    required_project_codes = {"3.1", "4.1", "5.1", "5.2"}
+    required_project_codes = {"3.1", "4.1", "5.1", "5.3"}
 
     if project_code in required_project_codes:
         return "Required"

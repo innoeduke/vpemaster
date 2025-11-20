@@ -172,24 +172,24 @@
 
 /* Project code link style */
 .speech-tooltip-wrapper .project-code-link {
-    color: #333;
-    text-decoration: none !important;
-    padding: 2px 6px !important;
-    border-radius: 12px !important; /* 添加圆角 */
-    transition: all 0.3s ease !important;
-    border: 1px solid rgba(211, 211, 211, 0.2) !important;
-    font-family: 'Montserrat', sans-serif !important; /* 使用无衬线字体 */
-    font-weight: 700 !important; /* 使用粗体 */
-    font-size: 0.8em !important; /* 较小的字体 */
-    vertical-align: top !important; /* 顶部对齐 */
-    cursor: pointer !important; /* 确保显示为可点击 */
+    color: #555;
+    text-decoration: none;
+    padding: 2px 6px;
+    border-radius: 12px; /* 添加圆角 */
+    transition: all 0.3s ease;
+    border: 1px solid rgba(211, 211, 211, 0.2);
+    font-family: 'Montserrat', sans-serif; /* 使用无衬线字体 */
+    font-weight: 700; /* 使用粗体 */
+    font-size: 0.8em; /* 较小的字体 */
+    vertical-align: top; /* 顶部对齐 */
+    cursor: pointer; /* 确保显示为可点击 */
 }
 
 .speech-tooltip-wrapper .project-code-link:hover {
-    color: #772432 !important;
-    background-color: rgba(211, 211, 211, 0.6) !important; /* 悬停时加深灰色 */
-    text-decoration: none !important;
-    border: 1px solid rgba(211, 211, 211, 0.4) !important;
+    color: #772432;
+    background-color: rgba(211, 211, 211, 0.6); /* 悬停时加深灰色 */
+    text-decoration: none;
+    border: 1px solid rgba(211, 211, 211, 0.4);
 }
 
 /* Session title link style */
@@ -200,7 +200,7 @@
     padding: 2px 4px;
     border-radius: 12px; /* 添加圆角 */
     transition: all 0.3s ease;
-    font-weight: 500; /* 中等字体粗细 */
+    font-weight: 700; /* 中等字体粗细 */
 }
 
 .speech-tooltip-wrapper a:not(.project-code-link):hover {
