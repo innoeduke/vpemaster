@@ -32,7 +32,6 @@ content %}
 <table id="contactsTable">
   <thead>
     <tr>
-      <th class="sortable" data-column-index="0">No.</th>
       <th class="sortable" data-column-index="1">Name</th>
       <th class="sortable" data-column-index="2">Type</th>
       <th class="sortable" data-column-index="3">Club</th>
@@ -47,7 +46,6 @@ content %}
   <tbody>
     {% for contact in contacts %}
     <tr>
-      <td>{{ loop.index }}</td>
       <td>
         {{ contact.Name }} {% if contact.DTM %}
         <sup class="dtm-superscript">DTM</sup>

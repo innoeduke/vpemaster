@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Meeting Roster{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>Meeting Roster</h2>
+        </div>
+    </div>
+    
+    <!-- 会议选择器 -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <form method="GET" id="meeting-filter-form">
+                <div class="form-group">
+                    <label for="meeting_number">Select Meeting:</label>
+                    <select name="meeting_number" id="meeting_number" class="form-control" onchange="this.form.submit()">
+                        {% for meeting in all_meetings %}
+                        <option value="{{ meeting.Meeting_Number }}" {% if selected_meeting and meeting.Meeting_Number == selected_meeting.Meeting_Number %}selected{% endif %}>
+                            Meeting {{ meeting.Meeting_Number }} - {{ meeting.Meeting_Date.strftime('%Y-%m-%d') }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    {% if selected_meeting %}
+    <div class="row">
+        <!-- 左侧表格：显示花名册条目 -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Roster Entries</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Contact Name</th>
+                                <th>Ticket Status</th>
+                                <th>Class</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in roster_entries %}
+                            <tr data-entry-id="{{ entry.id }}">
+                                <td>{{ entry.order_number }}</td>
+                                <td>{{ entry.contact.Name if entry.contact else 'N/A' }}</td>
+                                <td>{{ entry.ticket }}</td>
+                                <td>{{ entry.contact.Type if entry.contact else 'N/A' }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary edit-entry" data-id="{{ entry.id }}">Edit</button>
+                                    <button class="btn btn-sm btn-danger delete-entry" data-id="{{ entry.id }}">Delete</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 右侧表单：添加/更新条目 -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 id="form-title">Add Entry</h5>
+                </div>
+                <div class="card-body">
+                    <form id="roster-form">
+                        <input type="hidden" id="entry-id" value="">
+                        
+                        <div class="form-group">
+                            <label for="order_number">Order Number:</label>
+                            <input type="number" class="form-control" id="order_number" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="contact_id">Contact:</label>
+                            <select class="form-control" id="contact_id" required>
+                                <option value="">Select Contact</option>
+                                {% for contact in contacts %}
+                                <option value="{{ contact.id }}">{{ contact.Name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="ticket">Ticket Status:</label>
+                            <select class="form-control" id="ticket" required>
+                                <option value="">Select Status</option>
+                                <option value="early">Early</option>
+                                <option value="walk-in">Walk-in</option>
+                                <option value="cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-success">Save Entry</button>
+                        <button type="button" class="btn btn-secondary" id="cancel-edit">Cancel</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <p>Please select a meeting to view or manage roster entries.</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 表单提交处理
+    document.getElementById('roster-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const entryId = document.getElementById('entry-id').value;
+        const url = entryId ? `/roster/api/roster/${entryId}` : '/roster/api/roster';
+        const method = entryId ? 'PUT' : 'POST';
+        
+        const formData = {
+            meeting_number: document.getElementById('meeting_number').value,
+            order_number: document.getElementById('order_number').value,
+            contact_id: document.getElementById('contact_id').value,
+            ticket: document.getElementById('ticket').value
+        };
+        
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(formData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+            } else {
+                location.reload(); // 重新加载页面以显示更新
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while saving the entry.');
+        });
+    });
+    
+    // 编辑按钮处理
+    document.querySelectorAll('.edit-entry').forEach(button => {
+        button.addEventListener('click', function() {
+            const entryId = this.getAttribute('data-id');
+            const row = document.querySelector(`tr[data-entry-id="${entryId}"]`);
+            
+            // 填充表单
+            document.getElementById('entry-id').value = entryId;
+            document.getElementById('order_number').value = row.cells[0].textContent;
+            document.getElementById('ticket').value = row.cells[2].textContent;
+            
+            // 设置联系人为 N/A 如果没有
+            const contactName = row.cells[1].textContent;
+            const contactSelect = document.getElementById('contact_id');
+            for (let i = 0; i < contactSelect.options.length; i++) {
+                if (contactSelect.options[i].text === contactName) {
+                    contactSelect.selectedIndex = i;
+                    break;
+                }
+            }
+            
+            // 更新表单标题
+            document.getElementById('form-title').textContent = 'Edit Entry';
+            
+            // 滚动到表单
+            document.querySelector('.card:last-child').scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+    
+    // 删除按钮处理
+    document.querySelectorAll('.delete-entry').forEach(button => {
+        button.addEventListener('click', function() {
+            const entryId = this.getAttribute('data-id');
+            
+            if (confirm('Are you sure you want to delete this entry?')) {
+                fetch(`/roster/api/roster/${entryId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                    } else {
+                        location.reload(); // 重新加载页面以显示更新
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while deleting the entry.');
+                });
+            }
+        });
+    });
+    
+    // 取消编辑按钮处理
+    document.getElementById('cancel-edit').addEventListener('click', function() {
+        document.getElementById('roster-form').reset();
+        document.getElementById('entry-id').value = '';
+        document.getElementById('form-title').textContent = 'Add Entry';
+    });
+});
+</script>
+{% endblock %}
