@@ -21,9 +21,14 @@
     background-color: #772432;
 }
 
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
 .btn-danger {
-    color: #333;
-    background-color: #E5E7EB;
+    background-color: #dc3545;
+    color: white;
 }
 
 .btn-info {

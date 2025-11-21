@@ -49,6 +49,7 @@ def create_app(config_class='config.Config'):
         from .pathways_routes import pathways_bp
         from .settings_routes import settings_bp
         from .booking_routes import booking_bp
+        from .roster_routes import roster_bp
 
         # Import models so SQLAlchemy knows about them
         from . import models
@@ -62,6 +63,7 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(pathways_bp)
         app.register_blueprint(settings_bp)
         app.register_blueprint(booking_bp)
+        app.register_blueprint(roster_bp, url_prefix='/roster')
 
     # 7. Return the configured app instance
     return app
