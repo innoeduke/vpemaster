@@ -28,6 +28,9 @@
     </div>
 
     {% if selected_meeting %}
+    <!-- 隐藏字段用于存储下一个可用序号（最后序号+1） -->
+    <input type="hidden" id="next-order-number" value="{{ first_unallocated_entry.order_number if first_unallocated_entry else '' }}">
+    
     <div class="roster-main-content">
         <!-- Left side: Roster table -->
         <div class="roster-table-container">
@@ -79,12 +82,12 @@
         <div class="roster-form-container">
             <div class="card">
                 <div class="card-body">
-                    <h3 class="card-title" id="form-title">Add Entry</h3>
                     <form id="roster-form" class="roster-form-grid">
+                        <h3 class="card-title" id="form-title">Add/Edit Entry</h3>
                         <input type="hidden" id="entry-id" value="">
                         
                         <label for="order_number">Order Number:</label>
-                        <input type="number" class="form-control" id="order_number" required>
+                        <input type="number" class="form-control" id="order_number" value="1" required>
                         
                         <label for="contact_id">Contact Name:</label>
                         <select class="form-control" id="contact_id" required>
@@ -104,7 +107,7 @@
 
                         <label for="ticket">Ticket Class:</label>
                         <select class="form-control" id="ticket" required>
-                            <option value="Early" selected>Early</option>
+                            <option value="Early-bird" selected>Early Bird</option>
                             <option value="Walk-in">Walk-in</option>
                             <option value="Officer">Officer</option>
                             <option value="Coupon">Coupon</option>

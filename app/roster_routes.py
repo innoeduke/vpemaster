@@ -68,6 +68,14 @@ def roster():
             .filter(Roster.meeting_number == selected_meeting_num)\
             .order_by(Roster.order_number.asc())\
             .all()
+                
+        # 查找下一个可用序号（最后一个序号+1）
+        next_unallocated_entry = None
+        if roster_entries:
+            max_order = max(entry.order_number for entry in roster_entries)
+            next_unallocated_entry = type('obj', (object,), {'order_number': max_order + 1})()
+        else:
+            next_unallocated_entry = type('obj', (object,), {'order_number': 1})()
 
         # 查找第一个未分配的条目（联系人名称为空）
         for entry in roster_entries:
@@ -86,7 +94,7 @@ def roster():
         roster_entries=roster_entries,
         contacts=contacts,
         meeting_numbers=meeting_numbers,
-        first_unallocated_entry=first_unallocated_entry
+        next_unallocated_entry=next_unallocated_entry
     )
 
 

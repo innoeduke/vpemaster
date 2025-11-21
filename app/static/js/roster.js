@@ -26,13 +26,12 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // 设置表单中的order_number为第一个未分配条目的序号，如果没有则默认为1
-  const firstUnallocatedOrder =
-    "{{ first_unallocated_entry.order_number if first_unallocated_entry else '' }}";
-  if (firstUnallocatedOrder) {
-    document.getElementById("order_number").value = firstUnallocatedOrder;
+  // 设置表单中的order_number为下一个可用序号（最后序号+1），如果没有条目则默认为1
+  const nextOrderNumber = document.getElementById('next-order-number')?.value || '';
+  if (nextOrderNumber) {
+    document.getElementById("order_number").value = nextOrderNumber;
   } else {
-    // 如果没有未分配的条目，则默认设置为1
+    // 如果没有条目，则默认设置为1
     document.getElementById("order_number").value = 1;
   }
 
@@ -73,10 +72,29 @@ document.addEventListener("DOMContentLoaded", function () {
           if (data.error) {
             alert("Error: " + data.error);
           } else {
-            // 保存成功后重定向到当前会议页面，确保显示所有条目
-            const meetingNumber =
-              document.getElementById("meeting-filter").value;
-            window.location.href = `/roster?meeting_number=${meetingNumber}`;
+            // 保存成功后刷新表单，准备下一次输入
+            const rosterForm = document.getElementById("roster-form");
+            if (rosterForm) {
+              rosterForm.reset();
+              
+              // 清空隐藏的entry-id字段
+              document.getElementById("entry-id").value = "";
+              
+              // 重置表单标题
+              document.getElementById("form-title").textContent = "Add Entry";
+              
+              // 重新设置order_number为下一个可用序号
+              const nextOrderNumber = document.getElementById('next-order-number')?.value || '';
+              if (nextOrderNumber) {
+                document.getElementById("order_number").value = nextOrderNumber;
+              } else {
+                // 如果没有条目，则默认设置为1
+                document.getElementById("order_number").value = 1;
+              }
+            }
+            
+            // 显示成功消息
+            alert("Entry saved successfully!");
           }
         })
         .catch((error) => {
