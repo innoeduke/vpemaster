@@ -15,9 +15,8 @@
                 <td>
                     <select id="type" name="type" required>
                         <option value="Member" {% if contact and contact.Type == 'Member' %}selected{% endif %}>Member</option>
-                        <option value="Past Member" {% if contact and contact.Type == 'Past Member' %}selected{% endif %}>Past Member</option>
                         <option value="Guest" {% if contact and contact.Type == 'Guest' %}selected{% endif %}>Guest</option>
-                        <option value="System" {% if contact and contact.Type == 'System' %}selected{% endif %}>System</option>
+                        <option value="Officer" {% if contact and contact.Type == 'Officer' %}selected{% endif %}>System</option>
                     </select>
                 </td>
             </tr>
