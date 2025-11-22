@@ -88,6 +88,10 @@
     margin-top: 1rem;
 }
 
+#meeting-filter-form label {
+    font-family: 'Montserrat', sans-serif; 
+}
+
 #roster-form {
     display: grid;
     grid-template-columns: auto 1fr;
@@ -99,6 +103,7 @@
     grid-column: 1 / 2;
     text-align: right;
     white-space: nowrap;
+    font-family: 'Montserrat', sans-serif;
 }
 
 #roster-form .form-buttons {
