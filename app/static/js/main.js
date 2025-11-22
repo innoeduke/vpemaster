@@ -237,7 +237,9 @@ function setupTableSorting(tableId) {
 
   table.querySelectorAll("th.sortable").forEach((headerCell) => {
     headerCell.addEventListener("click", () => {
-      const columnIndex = parseInt(headerCell.dataset.columnIndex, 10);
+      // Adjust column index to be 0-based for the sort function
+      // HTML data-column-index is 1-based, but sort function expects 0-based
+      const columnIndex = parseInt(headerCell.dataset.columnIndex, 10) - 1;
       const currentDir = headerCell.dataset.sortDir;
       const newDir = currentDir === "asc" ? "desc" : "asc";
 

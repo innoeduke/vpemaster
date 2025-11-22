@@ -2,20 +2,72 @@
     display: flex;
     flex-direction: row;
     gap: 20px; /* space between columns */
+    width: 100%;
 }
 
 .roster-table-container {
-    flex: 7; /* 70% width */
+    flex: 1 1 auto; /* 根据内容自动调整宽度 */
+    min-width: 0; /* 允许收缩以适应容器 */
+}
+
+.roster-table-container table {
+    table-layout: auto;
+    width: 100%;
+    min-width: 500px; /* 确保表格最小宽度 */
+}
+
+.roster-table-container table th,
+.roster-table-container table td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0.5rem;
+    box-sizing: border-box;
+}
+
+.roster-table-container table th:first-child,
+.roster-table-container table td:first-child {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.roster-table-container table th:nth-child(2),
+.roster-table-container table td:nth-child(2) {
+    width: auto;
+    min-width: 150px;
+}
+
+.roster-table-container table th:nth-child(3),
+.roster-table-container table td:nth-child(3) {
+    width: auto;
+    min-width: 120px;
+}
+
+.roster-table-container table th:nth-child(4),
+.roster-table-container table td:nth-child(4) {
+    width: auto;
+    min-width: 120px;
+}
+
+.roster-table-container table th:last-child,
+.roster-table-container table td:last-child {
+    width: 1%;
+    white-space: nowrap;
 }
 
 .roster-form-container {
-    flex: 3; /* 30% width */
+    flex: 0 0 auto; /* 根据内容自动调整，但不收缩 */
+    min-width: 300px; /* 表单最小宽度 */
+    max-width: 400px; /* 表单最大宽度 */
+    align-self: flex-start; /* 顶部对齐 */
 }
 
 .card {
     border: 1px solid #e0e0e0;
     border-radius: .25rem;
     box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+    height: fit-content; /* 根据内容调整高度 */
+    min-height: fit-content;
 }
 
 .card-body {
@@ -43,6 +95,7 @@
 #roster-form label {
     grid-column: 1 / 2;
     text-align: right;
+    white-space: nowrap;
 }
 
 #roster-form .form-buttons {
@@ -53,6 +106,7 @@
 #roster-form > select,
 #roster-form > .contact-input-container {
     grid-column: 2 / 3;
+    min-width: 150px;
 }
 
 .contact-input-container {
