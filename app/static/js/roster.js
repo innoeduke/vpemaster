@@ -99,6 +99,7 @@ document.addEventListener("DOMContentLoaded", function () {
     resetRosterForm();
 
     // Handle clicks on the table for edit and cancel actions
+    // Handle clicks on the table for edit and cancel actions
     tableBody.addEventListener("click", function (e) {
       const editButton = e.target.closest(".edit-entry");
       const cancelButton = e.target.closest(".cancel-entry");
@@ -203,6 +204,14 @@ document.addEventListener("DOMContentLoaded", function () {
     url.searchParams.delete("new_contact_type");
     window.history.replaceState({}, document.title, url.toString());
   }
+  
+  // Initialize sorting if the function exists
+  if (typeof setupTableSorting === "function") {
+    setupTableSorting("rosterTable");
+  }
+  
+  // Initialize lucky draw functionality
+  initializeLuckyDraw();
 });
 
 // Opens the contact modal and sets the referrer for redirection
@@ -215,5 +224,74 @@ function openContactModalWithReferer() {
     const actionUrl = new URL(contactForm.action);
     actionUrl.searchParams.set("referer", window.location.href);
     contactForm.action = actionUrl.toString();
+  }
+}
+
+// 抽奖功能
+function initializeLuckyDraw() {
+  const drawButton = document.getElementById('drawButton');
+  if (drawButton) {
+    drawButton.addEventListener('click', performLuckyDraw);
+  }
+}
+
+// 存储已抽中的获奖者
+let drawnWinners = [];
+
+// 抽奖功能实现
+function performLuckyDraw() {
+  // 获取所有有效的名册条目（排除已取消的条目和已抽中的获奖者）
+  const validEntries = [];
+  const rows = document.querySelectorAll("#rosterTable tbody tr");
+  
+  rows.forEach(row => {
+    // 检查行是否为空行（没有数据）
+    const orderCell = row.querySelector('td:first-child');
+    if (orderCell && orderCell.textContent.trim() !== '' && orderCell.textContent.trim() !== 'N/A') {
+      const ticketCell = row.querySelector('td:nth-child(4)');
+      if (ticketCell && ticketCell.textContent.trim() !== 'Cancelled') {
+        const order = orderCell.textContent.trim();
+        const name = row.querySelector('td:nth-child(2)').textContent.trim();
+        
+        // 检查是否已经被抽中
+        const isAlreadyDrawn = drawnWinners.some(winner => 
+          winner.order === order && winner.name === name
+        );
+        
+        if (!isAlreadyDrawn) {
+          validEntries.push({
+            order: order,
+            name: name
+          });
+        }
+      }
+    }
+  });
+  
+  // 如果没有有效条目，显示提示信息
+  if (validEntries.length === 0) {
+    document.getElementById('luckyDrawResult').innerHTML = 
+      '<div class="no-entries">No valid entries for drawing</div>';
+    return;
+  }
+  
+  // 随机选择一个条目
+  const randomIndex = Math.floor(Math.random() * validEntries.length);
+  const selectedEntry = validEntries[randomIndex];
+  
+  // 添加到已抽中的获奖者列表
+  drawnWinners.push(selectedEntry);
+  
+  // 显示结果
+  document.getElementById('luckyDrawResult').innerHTML = 
+    '<div class="winner-order">' + selectedEntry.order + '</div>' +
+    '<div class="winner-name">' + selectedEntry.name + '</div>';
+  
+  // 添加到获奖者列表
+  const winnersList = document.getElementById('winnersList');
+  if (winnersList) {
+    const winnerElement = document.createElement('div');
+    winnerElement.textContent = selectedEntry.order + '# ' + selectedEntry.name;
+    winnersList.appendChild(winnerElement);
   }
 }

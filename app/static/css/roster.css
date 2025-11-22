@@ -60,6 +60,9 @@
     min-width: 300px; /* 表单最小宽度 */
     max-width: 400px; /* 表单最大宽度 */
     align-self: flex-start; /* 顶部对齐 */
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* 卡片之间的间距 */
 }
 
 .card {
@@ -124,7 +127,93 @@
     flex-shrink: 0;
 }
 
-
 #contact_type {
     margin-bottom: 0.5rem;
+}
+
+/* 抽奖卡片样式 */
+.lucky-draw-card {
+    margin-top: 20px;
+}
+
+.lucky-draw-grid {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 15px;
+    height: 100%;
+}
+
+.lucky-draw-top {
+    grid-row: 1;
+}
+
+.lucky-draw-bottom {
+    grid-row: 2;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 15px;
+    align-items: flex-start; /* 改为顶部对齐 */
+}
+
+.lucky-draw-result {
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    border: 1px dashed #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    margin: 10px 0;
+}
+
+.placeholder-text {
+    color: #999;
+    font-style: italic;
+}
+
+.no-entries {
+    color: #999;
+    font-style: italic;
+    text-align: center;
+}
+
+.winner-order {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #007bff;
+    line-height: 1;
+}
+
+.winner-name {
+    font-size: 1.5rem;
+    margin-top: 10px;
+    color: #333;
+}
+
+.winners-list {
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #f8f9fa;
+}
+
+.winners-list div {
+    padding: 5px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 0.8em; 
+    font-family: 'Montserrat', sans-serif;
+}
+
+.winners-list div:last-child {
+    border-bottom: none;
+}
+
+.draw-button-container {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start; /* 改为顶部对齐 */
 }

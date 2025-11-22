@@ -124,6 +124,28 @@
                     </form>
                 </div>
             </div>
+            
+            <!-- Lucky Draw Card -->
+            <div class="card lucky-draw-card">
+                <div class="card-body">
+                    <div class="lucky-draw-grid">
+                        <div class="lucky-draw-top">
+                            <h3 class="card-title">Lucky Draw</h3>
+                            <div class="lucky-draw-result" id="luckyDrawResult">
+                                <div class="placeholder-text">Click "Draw" to select a winner</div>
+                            </div>
+                        </div>
+                        <div class="lucky-draw-bottom">
+                            <div class="winners-list" id="winnersList">
+                                <!-- Winners will be listed here -->
+                            </div>
+                            <div class="draw-button-container">
+                                <button id="drawButton" class="btn btn-success">Draw</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -133,13 +155,4 @@
     {% endif %}
 </div>
 <script src="{{ url_for('static', filename='js/roster.js') }}"></script>
-<script>
-    // 添加排序功能
-    document.addEventListener("DOMContentLoaded", function () {
-        // 检查setupTableSorting函数是否存在，如果存在则调用
-        if (typeof setupTableSorting === "function") {
-            setupTableSorting("rosterTable");
-        }
-    });
-</script>
 {% endblock %}
