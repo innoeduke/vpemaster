@@ -37,12 +37,12 @@ content %}
 <table id="contactsTable">
   <thead>
     <tr>
-      <th class="sortable" data-column-index="1">Name</th>
-      <th class="sortable" data-column-index="2">Type</th>
-      <th class="sortable" data-column-index="3">Club</th>
-      <th class="sortable" data-column-index="4">Working Path</th>
-      <th class="sortable" data-column-index="5">Next Project</th>
-      <th class="sortable" data-column-index="6">Completed Levels</th>
+      <th class="sortable" data-column-index="0">Name</th>
+      <th class="sortable" data-column-index="1">Type</th>
+      <th class="sortable" data-column-index="2">Club</th>
+      <th class="sortable" data-column-index="3">Working Path</th>
+      <th class="sortable" data-column-index="4">Next Project</th>
+      <th class="sortable" data-column-index="5">Completed Levels</th>
       {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
       <th data-column-index="7">Actions</th>
       {% endif %}
