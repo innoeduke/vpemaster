@@ -1,0 +1,76 @@
+.roster-main-content {
+    display: flex;
+    flex-direction: row;
+    gap: 20px; /* space between columns */
+}
+
+.roster-table-container {
+    flex: 7; /* 70% width */
+}
+
+.roster-form-container {
+    flex: 3; /* 30% width */
+}
+
+.card {
+    border: 1px solid #e0e0e0;
+    border-radius: .25rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,.075);
+}
+
+.card-body {
+    padding: 1.25rem;
+}
+
+.card-title {
+    margin-bottom: 0.75rem;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+#roster-form {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem;
+    align-items: center;
+}
+
+#roster-form label {
+    grid-column: 1 / 2;
+    text-align: right;
+}
+
+#roster-form .form-buttons {
+    grid-column: 1 / -1; /* Span all columns */
+}
+
+#roster-form > input,
+#roster-form > select,
+#roster-form > .contact-input-container {
+    grid-column: 2 / 3;
+}
+
+.contact-input-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.contact-input-container select {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.contact-input-container button {
+    flex-shrink: 0;
+}
+
+
+#contact_type {
+    margin-bottom: 0.5rem;
+}

@@ -5,43 +5,77 @@
     <form id="contactForm" method="POST">
       <table class="form-table">
         <tr>
-          <td><label for="name">Name: <span class="required-field">*</span></label></td>
-          <td><input type="text" id="name" name="name" required></td>
+          <td>
+            <label for="name"
+              >Name: <span class="required-field">*</span></label
+            >
+          </td>
+          <td><input type="text" id="name" name="name" required /></td>
         </tr>
         <tr>
-          <td><label for="type">Type: <span class="required-field">*</span></label></td>
           <td>
-              <select id="type" name="type" required>
-                  <option value="Member">Member</option>
-                  <option value="Past Member">Past Member</option>
-                  <option value="Guest" selected>Guest</option>
-                  <option value="System">System</option>
-              </select>
+            <label for="type"
+              >Type: <span class="required-field">*</span></label
+            >
+          </td>
+          <td>
+            <select id="type" name="type" required>
+              <option value="Member">Member</option>
+              <option value="Guest" selected>Guest</option>
+              <option value="Officer">Officer</option>
+            </select>
           </td>
         </tr>
         <tr>
           <td><label for="club">Club:</label></td>
-          <td><input type="text" id="club" name="club" placeholder="e.g., Club1/Club2"></td>
+          <td>
+            <input
+              type="text"
+              id="club"
+              name="club"
+              placeholder="e.g., Club1/Club2"
+            />
+          </td>
         </tr>
         <tr>
           <td><label for="email">Email:</label></td>
-          <td><input type="email" id="email" name="email"></td>
+          <td><input type="email" id="email" name="email" /></td>
         </tr>
         <tr>
           <td><label for="phone_number">Phone:</label></td>
-          <td><input type="text" id="phone_number" name="phone_number"></td>
+          <td><input type="text" id="phone_number" name="phone_number" /></td>
         </tr>
         <tr>
           <td><label for="bio">Bio:</label></td>
-          <td><textarea id="bio" name="bio" rows="3" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;"></textarea></td>
+          <td>
+            <textarea
+              id="bio"
+              name="bio"
+              rows="3"
+              style="
+                width: 100%;
+                padding: 8px;
+                box-sizing: border-box;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+              "
+            ></textarea>
+          </td>
         </tr>
         <tr>
           <td><label for="completed_levels">Completed Levels:</label></td>
-          <td><input type="text" id="completed_levels" name="completed_levels" placeholder="e.g., PM1, DL2..."></td>
+          <td>
+            <input
+              type="text"
+              id="completed_levels"
+              name="completed_levels"
+              placeholder="e.g., PM1, DL2..."
+            />
+          </td>
         </tr>
         <tr>
           <td><label for="dtm">DTM:</label></td>
-          <td><input type="checkbox" id="dtm" name="dtm"></td>
+          <td><input type="checkbox" id="dtm" name="dtm" /></td>
         </tr>
       </table>
       <div class="form-actions">

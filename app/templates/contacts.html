@@ -17,8 +17,7 @@ content %}
       &times;
     </button>
   </div>
-  {% if session.get('user_role') in ['Admin', 'VPE', 'Officer','Meeting
-  Manager'] %}
+  {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
   <button
     class="btn btn-primary"
     onclick="openContactModal()"
@@ -26,13 +25,18 @@ content %}
   >
     New Contact
   </button>
-  {% endif %}
+  <button
+    class="btn btn-info"
+    onclick="window.location.href='{{ url_for('roster_bp.roster') }}'"
+    style="margin-left: 10px"
+  >
+    Open Roster</button
+  >{% endif %}
 </div>
 
 <table id="contactsTable">
   <thead>
     <tr>
-      <th class="sortable" data-column-index="0">No.</th>
       <th class="sortable" data-column-index="1">Name</th>
       <th class="sortable" data-column-index="2">Type</th>
       <th class="sortable" data-column-index="3">Club</th>
@@ -47,7 +51,6 @@ content %}
   <tbody>
     {% for contact in contacts %}
     <tr>
-      <td>{{ loop.index }}</td>
       <td>
         {{ contact.Name }} {% if contact.DTM %}
         <sup class="dtm-superscript">DTM</sup>

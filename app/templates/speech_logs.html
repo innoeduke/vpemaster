@@ -91,7 +91,7 @@
                                     — {{ log.owner.Name if log.owner else 'N/A' }}
                                 </div>
                                 <div class="project-info">
-                                    {% set project_code = get_project_code(log) %}
+                                    {% set project_code = log.project_code or '' %}
                                     {# Handle Presentation display #}
                                     {% if log.session_type and log.session_type.Title == 'Presentation' %}
                                         {% set presentation = get_presentation_by_id(log.Project_ID) %} {# Assumes a helper function or direct access #}

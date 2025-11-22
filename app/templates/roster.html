@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Meeting Roster{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/roster.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="header-container">
+        <h1>Meeting Roster</h1>
+        
+        <!-- Meeting Selector -->
+        <form method="GET" id="meeting-filter-form" class="mb-3">
+            <div class="form-group">
+                <label for="meeting-filter">Select Meeting:</label>
+                <select name="meeting_number" id="meeting-filter" class="form-control">
+                    {% for meeting in all_meetings %}
+                    <option value="{{ meeting.Meeting_Number }}" {% if selected_meeting_num and meeting.Meeting_Number == selected_meeting_num %}selected{% endif %}>
+                        Meeting {{ meeting.Meeting_Number }} - {{ meeting.Meeting_Date.strftime('%Y-%m-%d') }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    {% if selected_meeting %}
+    <div class="roster-main-content">
+        <!-- Left side: Roster table -->
+        <div class="roster-table-container">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Contact Name</th>
+                        <th>Contact Type</th>
+                        <th>Ticket Class</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in roster_entries %}
+                    <tr data-entry-id="{{ entry.id }}" data-order="{{ entry.order_number }}" data-contact-id="{{ entry.contact_id or '' }}" data-ticket="{{ entry.ticket }}">
+                        <td>{{ entry.order_number }}</td>
+                        <td>{{ entry.contact.Name if entry.contact else 'N/A' }}</td>
+                        <td>{{ entry.contact.Type if entry.contact else 'N/A' }}</td>
+                        <td>{{ entry.ticket }}</td>
+                        <td>
+                            <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} edit-entry" data-id="{{ entry.id }}" title="Edit" {% if entry.ticket == 'Cancelled' %}disabled{% endif %}>
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} cancel-entry" data-id="{{ entry.id }}" title="Cancel" {% if entry.ticket == 'Cancelled' %}disabled{% endif %}>
+                                <i class="fas fa-ban"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    
+                    {# 如果没有条目，则显示15个空白行 #}
+                    {% if not roster_entries %}
+                        {% for i in range(1, 16) %}
+                        <tr>
+                            <td>{{ i }}</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Right side: Add/Update form -->
+        <div class="roster-form-container">
+            <div class="card">
+                <div class="card-body">
+                    <form id="roster-form" class="roster-form-grid">
+                        <h3 class="card-title" id="form-title">Add Entry</h3>
+                        <input type="hidden" id="entry-id" value="">
+                        
+                        <label for="order_number">Order Number:</label>
+                        <input type="number" class="form-control" id="order_number" value="1" required>
+                        
+                        <label for="contact_id">Contact Name:</label>
+                        <div class="contact-input-container">
+                            <select class="form-control" id="contact_id" required>
+                                <option value="">Select Contact</option>
+                                {% for contact in contacts %}
+                                <option value="{{ contact.id }}" data-type="{{ contact.Type }}">{{ contact.Name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-primary" type="button" id="add-contact-btn" title="Add New Contact" onclick="openContactModalWithReferer()">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+
+                        <label for="contact_type">Contact Type:</label>
+                        <select class="form-control" id="contact_type" required>
+                            <option value="">Select Type</option>
+                            <option value="Guest">Guest</option>
+                            <option value="Member">Member</option>
+                            <option value="Officer">Officer</option>
+                        </select>
+
+                        <label for="ticket">Ticket Class:</label>
+                        <select class="form-control" id="ticket" required>
+                            <option value="Early-bird" selected>Early Bird</option>
+                            <option value="Walk-in">Walk-in</option>
+                            <option value="Officer">Officer</option>
+                            <option value="Coupon">Coupon</option>
+                        </select>
+
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-success">Save</button>
+                            <button type="button" class="btn btn-secondary" id="cancel-edit">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% include '_contact_modal.html' %}
+    {% else %}
+    <p>Please select a meeting to view or manage roster entries.</p>
+    {% endif %}
+</div>
+<script src="{{ url_for('static', filename='js/roster.js') }}"></script>
+{% endblock %}

@@ -312,6 +312,12 @@ function setupSpeechModal(logData, { workingPath, nextProject }) {
     level: levelToSelect,
     Project_ID: projectToSelect,
   } = logData;
+  
+  // 确保级别值是字符串类型，以便与下拉选项匹配
+  if (levelToSelect !== undefined && levelToSelect !== null) {
+    levelToSelect = String(levelToSelect);
+  }
+  
   if (projectToSelect == "60") {
     modalElements.genericCheckbox.checked = true;
     toggleGeneric(true);

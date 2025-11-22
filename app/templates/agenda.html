@@ -89,7 +89,6 @@
                 
                 <label for="meeting-filter">Meeting#:</label>
                 <select id="meeting-filter" {% if is_editing %}disabled{% endif %}>
-                    <option value="">All Meetings</option>
                     {% for num in meeting_numbers|sort(reverse=True) %}
                     <option value="{{ num }}" {% if selected_meeting and num == selected_meeting.Meeting_Number %}selected{% endif %}>{{ num }}</option>
                     {% endfor %}

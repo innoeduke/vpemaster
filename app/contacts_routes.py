@@ -114,6 +114,13 @@ def contact_form(contact_id=None):
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify(success=True, contact={'id': new_contact.id, 'Name': new_contact.Name, 'Phone_Number': new_contact.Phone_Number, 'Bio': new_contact.Bio})
 
+        # 检查是否有来源页面参数，如果有则重定向回来源页面
+        referer = request.args.get('referer')
+        if referer and 'roster' in referer:
+            # 添加新联系人的信息到URL参数中
+            separator = '&' if '?' in referer else '?'
+            redirect_url = f"{referer}{separator}new_contact_id={new_contact.id}&new_contact_name={new_contact.Name}&new_contact_type={new_contact.Type}"
+            return redirect(redirect_url)
         return redirect(url_for('contacts_bp.show_contacts'))
 
     pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
@@ -132,3 +139,55 @@ def delete_contact(contact_id):
     db.session.delete(contact)
     db.session.commit()
     return redirect(url_for('contacts_bp.show_contacts'))
+
+
+@contacts_bp.route('/api/contact', methods=['POST'])
+@login_required
+def create_contact_api():
+    """通过 API 创建新联系人"""
+    if not is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT'):
+        return jsonify({'error': 'Permission denied'}), 403
+
+    try:
+        data = request.get_json()
+        
+        # 验证必需字段
+        if not data.get('name') or not data.get('type'):
+            return jsonify({'error': 'Name and Type are required'}), 400
+            
+        # 检查是否已存在同名联系人
+        existing_contact = Contact.query.filter_by(Name=data['name']).first()
+        if existing_contact:
+            return jsonify({'error': f"A contact with the name '{data['name']}' already exists."}), 400
+            
+        # 如果提供了邮箱，检查是否已存在
+        if data.get('email'):
+            existing_email = Contact.query.filter_by(Email=data['email']).first()
+            if existing_email:
+                return jsonify({'error': f"A contact with the email '{data['email']}' already exists."}), 400
+
+        # 创建新联系人
+        new_contact = Contact(
+            Name=data['name'],
+            Email=data.get('email') or None,
+            Type=data['type'],
+            Club=data.get('club') or 'Victoria Park Toastmasters',  # 默认俱乐部
+            Date_Created=date.today(),
+            Phone_Number=data.get('phone') or None
+        )
+        
+        db.session.add(new_contact)
+        db.session.commit()
+        
+        # 返回新创建的联系人信息
+        return jsonify({
+            'id': new_contact.id,
+            'name': new_contact.Name,
+            'type': new_contact.Type,
+            'email': new_contact.Email,
+            'phone': new_contact.Phone_Number
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

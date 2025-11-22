@@ -72,15 +72,36 @@ def show_speech_logs():
             log_type = 'presentation'
             presentation = Presentation.query.get(log.Project_ID)
             if presentation:
-                display_level = presentation.level
+                display_level = str(presentation.level)  # 确保类型一致性
         elif log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != 60:
             log_type = 'speech'
-            code = _get_project_code(log)
-            if code:
+            # 修复：使用正确的函数和参数获取项目代码
+            path = None
+            path_abbr = None
+            if log.owner and log.owner.user:
+                path = log.owner.user.Current_Path
+                # 使用路径映射获取路径缩写
+                if path:
+                    pathway_mapping = current_app.config['PATHWAY_MAPPING']
+                    path_abbr = pathway_mapping.get(path)
+            
+            code = project_id_to_code(log.Project_ID, path_abbr)
+            if code and len(code) > 2:  # 确保代码足够长以包含前缀和数字
                 try:
-                    display_level = int(code.split('.')[0])
+                    # 修复：正确提取级别数字
+                    # 从格式如"PM1.1"中提取级别数字"1"
+                    # 首先去掉前两个字符（路径缩写），然后提取点号前的数字
+                    code_without_prefix = code[2:]  # 移除路径缩写如"PM"
+                    if '.' in code_without_prefix:
+                        display_level = str(int(code_without_prefix.split('.')[0]))
+                    else:
+                        # 处理没有点号的情况
+                        display_level = str(int(code_without_prefix.split('.')[0]))
                 except (ValueError, IndexError):
                     pass  # Stays in "General"
+            
+            # 直接将项目代码附加到日志对象上
+            log.project_code = code
         else:  # It's a role
             # Check if we've already processed this role for this person/meeting
             role_key = (log.Meeting_Number, log.Owner_ID, role_name)
@@ -92,11 +113,11 @@ def show_speech_logs():
             if log.current_path_level:
                 match = re.match(r"[A-Z]+(\d+)", log.current_path_level)
                 if match:
-                    display_level = int(match.group(1))
+                    display_level = str(match.group(1))  # 确保类型一致性
 
         log.log_type = log_type
 
-        if selected_level and str(display_level) != selected_level:
+        if selected_level and display_level != selected_level:
             continue
 
         if log_type == 'speech' and selected_pathway and \
@@ -194,7 +215,6 @@ def show_speech_logs():
         grouped_logs=sorted_grouped_logs,
         roles_config=current_app.config['ROLES'],
         role_icons=role_icons,
-        get_project_code=_get_project_code,
         meeting_numbers=meeting_numbers,
         speakers=speakers,
         pathways=pathways,
@@ -248,9 +268,12 @@ def get_speech_log_details(log_id):
     if project_code and project_code != "TM1.0":
         try:
             # Try to get level from codes like "PM1.1"
-            level = int(project_code.split('.')[0])
+            # First remove the path abbreviation prefix (e.g., "PM")
+            code_without_prefix = project_code[2:]  # Remove first 2 characters
+            # Then extract the level number before the dot
+            level = int(code_without_prefix.split('.')[0])
         except (ValueError, IndexError):
-            level = 1  # Fallback if split fails
+            level = 1  # Fallback if parsing fails
     # If project_code is "TM1.0" or None, level just stays 1
 
     pathway = log.owner.user.Current_Path if log.owner and log.owner.user and log.owner.user.Current_Path else "Presentation Mastery"

@@ -167,3 +167,14 @@ class Waitlist(db.Model):
 
     session_log = db.relationship('SessionLog', backref='waitlists')
     contact = db.relationship('Contact', backref='waitlists')
+
+
+class Roster(db.Model):
+    __tablename__ = 'roster'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_number = db.Column(db.Integer, nullable=False)
+    order_number = db.Column(db.Integer, nullable=False)
+    ticket = db.Column(db.String(20), nullable=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
+
+    contact = db.relationship('Contact', backref='roster_entries')

@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
 from .auth.utils import login_required
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media, Roster
 from . import db
 from sqlalchemy import distinct, orm
 from datetime import datetime, timedelta
@@ -733,6 +733,25 @@ def _build_sheet1(ws, logs_data, speech_details_list, pathway_mapping):
     _auto_fit_worksheet_columns(ws, min_width=5)
 
 
+def _build_sheet3_roster(ws, meeting_number):
+    """Populates Sheet 3 (Roster) of the workbook."""
+    ws.title = "Roster"
+    ws.append(['Order', 'Name', 'Ticket Class'])
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    roster_entries = Roster.query.options(orm.joinedload(Roster.contact)).filter_by(meeting_number=meeting_number).order_by(Roster.order_number).all()
+
+    for entry in roster_entries:
+        ws.append([
+            entry.order_number,
+            entry.contact.Name if entry.contact else '',
+            entry.ticket
+        ])
+    
+    _auto_fit_worksheet_columns(ws, min_width=10)
+
+
 def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_mapping):
     """Populates Sheet 2 in the PowerBI data dump format."""
     ws.title = "PowerBI Data"
@@ -915,9 +934,10 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
 @login_required
 def export_agenda(meeting_number):
     """
-    Generates a two-sheet XLSX export of the agenda.
+    Generates a three-sheet XLSX export of the agenda.
     Sheet 1: Timed, formatted agenda.
     Sheet 2: PowerBI-style raw data dump.
+    Sheet 3: Roster for the meeting.
     """
     meeting = Meeting.query.options(
         orm.joinedload(Meeting.best_tt_speaker),
@@ -938,11 +958,13 @@ def export_agenda(meeting_number):
     wb = openpyxl.Workbook()
     ws1 = wb.active
     ws2 = wb.create_sheet(title="PowerBI Data")
+    ws3 = wb.create_sheet(title="Roster")
 
     # 3. Build Sheets
     _build_sheet1(ws1, logs_data, speech_details_list, pathway_mapping)
     _build_sheet2_powerbi(ws2, meeting, logs_data,
                           speech_details_list, pathway_mapping)
+    _build_sheet3_roster(ws3, meeting_number)
 
     # 4. Save and Send
     output_stream = io.BytesIO()
