@@ -96,6 +96,9 @@
                             <option value="{{ contact.id }}" data-type="{{ contact.Type }}">{{ contact.Name }}</option>
                             {% endfor %}
                         </select>
+                        <button class="btn btn-info" type="button" id="add-contact-btn" title="Add New Contact" onclick="openContactModalWithReferer()">
+                            <i class="fas fa-plus"></i>
+                        </button>
 
                         <label for="contact_type">Contact Type:</label>
                         <select class="form-control" id="contact_type" required>
@@ -122,10 +125,81 @@
             </div>
         </div>
     </div>
+    
+    {% include '_contact_modal.html' %}
     {% else %}
     <p>Please select a meeting to view or manage roster entries.</p>
     {% endif %}
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script src="{{ url_for('static', filename='js/roster.js') }}"></script>
+<script>
+  // 打开联系人模态框并添加来源参数
+  function openContactModalWithReferer() {
+    // 调用原始的 openContactModal 函数
+    openContactModal();
+    
+    // 修改表单的 action，添加来源参数
+    const contactForm = document.getElementById("contactForm");
+    if (contactForm) {
+      contactForm.action = contactForm.action + "?referer=" + encodeURIComponent(window.location.href);
+    }
+  }
+  
+  document.addEventListener("DOMContentLoaded", function () {
+    const contactForm = document.getElementById("contactForm");
+    if (contactForm) {
+      contactForm.addEventListener("submit", function (e) {
+        // 不阻止默认提交行为，让表单正常提交
+        // 提交后页面会自动跳转到联系人列表页，然后我们再跳转回来
+      });
+    }
+    
+    // 检查URL中是否有新添加的联系人ID参数
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('new_contact_id') && urlParams.has('new_contact_name') && urlParams.has('new_contact_type')) {
+      // 获取新联系人的信息
+      const contactId = urlParams.get('new_contact_id');
+      const contactName = decodeURIComponent(urlParams.get('new_contact_name'));
+      const contactType = decodeURIComponent(urlParams.get('new_contact_type'));
+      
+      // 将新联系人添加到联系人选择框中
+      const contactSelect = document.getElementById("contact_id");
+      let optionExists = false;
+      
+      // 检查选项是否已存在
+      for (let i = 0; i < contactSelect.options.length; i++) {
+        if (contactSelect.options[i].value === contactId) {
+          optionExists = true;
+          break;
+        }
+      }
+      
+      // 如果选项不存在，则添加
+      if (!optionExists) {
+        const newOption = document.createElement("option");
+        newOption.value = contactId;
+        newOption.textContent = contactName;
+        newOption.setAttribute("data-type", contactType);
+        contactSelect.appendChild(newOption);
+      }
+      
+      // 选中新添加的联系人
+      contactSelect.value = contactId;
+      
+      // 触发联系人选择框的change事件，以自动填充联系人类别
+      contactSelect.dispatchEvent(new Event('change'));
+      
+      // 从URL中移除参数
+      const url = new URL(window.location);
+      url.searchParams.delete('new_contact_id');
+      url.searchParams.delete('new_contact_name');
+      url.searchParams.delete('new_contact_type');
+      window.history.replaceState({}, document.title, url);
+    }
+  });
+</script>
 {% endblock %}
