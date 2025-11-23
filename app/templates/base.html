@@ -45,6 +45,7 @@
       rel="stylesheet"
       href="{{ url_for('static', filename='css/booking.css') }}"
     />
+    {% block head_extra %}{% endblock %}
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/responsive.css') }}"
@@ -61,7 +62,6 @@
     <link 
       href="{{ url_for('static', filename='vendor/css/indie-flower.css') }}" 
       rel="stylesheet">
-    {% block head_extra %}{% endblock %}
   </head>
   <body>
     <div class="container-wrapper">
