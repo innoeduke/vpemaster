@@ -378,7 +378,7 @@ def agenda():
             'owner_dtm': owner.DTM if owner else False,
             'owner_type': owner.Type if owner else '',
             'owner_club': owner.Club if owner else '',
-            'owner_completed_levels': owner.Completed_Levels if owner else '',
+            'owner_completed_levels': owner.Completed_Paths if owner else '',
             'media_url': media.url if media and media.url else None,
             # Add award type if this specific role won the award
             'award_type': award_type,
@@ -441,7 +441,7 @@ def get_all_data_for_modals():
     contacts_data = [
         {
             "id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type,
-            "Club": c.Club, "Completed_Levels": c.Completed_Levels,
+            "Club": c.Club, "Completed_Paths": c.Completed_Paths,
             "Current_Path": c.user.Current_Path if c.user else None,
             "Next_Project": c.user.Next_Project if c.user else None
         } for c in contacts
@@ -656,8 +656,8 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
         meta_parts = []
         if log.Designation and not contact.DTM:
             meta_parts.append(log.Designation)
-        elif contact.Type == 'Member' and contact.Completed_Levels and not contact.DTM:
-            meta_parts.append(contact.Completed_Levels.replace('/', ' '))
+        elif contact.Type == 'Member' and contact.Completed_Paths and not contact.DTM:
+            meta_parts.append(contact.Completed_Paths.replace('/', ' '))
 
         if meta_parts:
             owner_info += ' - ' + ' '.join(meta_parts)

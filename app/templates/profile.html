@@ -55,6 +55,10 @@ content %}
       <td>{{ user.Current_Path }}</td>
     </tr>
     <tr>
+      <td><label>Completed Paths:</label></td>
+      <td>{{ user.contact.Completed_Paths if user.contact else '' }}</td>
+    </tr>
+    <tr>
       <td><label>Completed Levels:</label></td>
       <td>{{ user.contact.Completed_Levels if user.contact else '' }}</td>
     </tr>

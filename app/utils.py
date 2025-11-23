@@ -143,8 +143,8 @@ def derive_designation(contact):
         return ''  # DTMs don't show other levels
     elif contact.Type == 'Guest':
         return f"Guest@{contact.Club}" if contact.Club else "Guest"
-    elif contact.Type == 'Member' and contact.Completed_Levels:
-        return contact.Completed_Levels.replace(' ', '/')
+    elif contact.Type == 'Member' and contact.Completed_Paths:
+        return contact.Completed_Paths.replace(' ', '/')
     return ''
 
 

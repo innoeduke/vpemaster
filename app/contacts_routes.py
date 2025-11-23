@@ -30,7 +30,7 @@ def show_contacts():
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
-    contacts = Contact.query.order_by(Contact.Name.asc()).all()
+    contacts = Contact.query.outerjoin(Contact.user).order_by(Contact.Name.asc()).all()
     pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
     return render_template('contacts.html', contacts=contacts, pathways=pathways)
 
@@ -53,10 +53,11 @@ def contact_form(contact_id=None):
             "Email": contact.Email or None,
             "Type": contact.Type,
             "Club": contact.Club,
-            "Completed_Levels": contact.Completed_Levels,
+            "Completed_Paths": contact.Completed_Paths,
             "DTM": contact.DTM,
             "Phone_Number": contact.Phone_Number,
-            "Bio": contact.Bio
+            "Bio": contact.Bio,
+            "Credential": contact.user.Credential if contact.user else None
         }
         return jsonify(contact=contact_data)
 
@@ -69,7 +70,7 @@ def contact_form(contact_id=None):
             contact.Name = contact_name
             contact.Email = email
             contact.Club = request.form.get('club')
-            contact.Completed_Levels = request.form.get('completed_levels')
+            contact.Completed_Paths = request.form.get('completed_paths')
             contact.Type = request.form.get('type')
             contact.DTM = 'dtm' in request.form
             contact.Phone_Number = request.form.get('phone_number')
@@ -102,7 +103,7 @@ def contact_form(contact_id=None):
                 Email=email,
                 Club=request.form.get('club'),
                 Date_Created=date.today(),
-                Completed_Levels=request.form.get('completed_levels'),
+                Completed_Paths=request.form.get('completed_paths'),
                 Type=request.form.get('type'),
                 DTM='dtm' in request.form,
                 Phone_Number=request.form.get('phone_number'),
@@ -150,19 +151,20 @@ def create_contact_api():
 
     try:
         data = request.get_json()
-        
+
         # 验证必需字段
         if not data.get('name') or not data.get('type'):
             return jsonify({'error': 'Name and Type are required'}), 400
-            
+
         # 检查是否已存在同名联系人
         existing_contact = Contact.query.filter_by(Name=data['name']).first()
         if existing_contact:
             return jsonify({'error': f"A contact with the name '{data['name']}' already exists."}), 400
-            
+
         # 如果提供了邮箱，检查是否已存在
         if data.get('email'):
-            existing_email = Contact.query.filter_by(Email=data['email']).first()
+            existing_email = Contact.query.filter_by(
+                Email=data['email']).first()
             if existing_email:
                 return jsonify({'error': f"A contact with the email '{data['email']}' already exists."}), 400
 
@@ -175,10 +177,10 @@ def create_contact_api():
             Date_Created=date.today(),
             Phone_Number=data.get('phone') or None
         )
-        
+
         db.session.add(new_contact)
         db.session.commit()
-        
+
         # 返回新创建的联系人信息
         return jsonify({
             'id': new_contact.id,
@@ -187,7 +189,7 @@ def create_contact_api():
             'email': new_contact.Email,
             'phone': new_contact.Phone_Number
         }), 201
-        
+
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

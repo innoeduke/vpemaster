@@ -9,7 +9,7 @@ class Contact(db.Model):
     Type = db.Column(db.String(50), nullable=False, default='Guest')
     Club = db.Column(db.String(100))
     Date_Created = db.Column(db.Date)
-    Completed_Levels = db.Column(db.String(255))
+    Completed_Paths = db.Column(db.String(255))
     DTM = db.Column(db.Boolean, default=False)
     Phone_Number = db.Column(db.String(50), nullable=True)
     Bio = db.Column(db.Text, nullable=True)

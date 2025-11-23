@@ -136,9 +136,13 @@ function openContactModal(contactId) {
         document.getElementById("phone_number").value =
           data.contact.Phone_Number || "";
         document.getElementById("bio").value = data.contact.Bio || "";
-        document.getElementById("completed_levels").value =
-          data.contact.Completed_Levels || "";
+        document.getElementById("completed_paths").value =
+          data.contact.Completed_Paths || "";
         document.getElementById("dtm").checked = data.contact.DTM;
+        // Handle credential if available
+        if (data.contact.Credential) {
+          // We'll add credential field handling in a future update
+        }
       });
   } else {
     contactModalTitle.textContent = "Add New Contact";

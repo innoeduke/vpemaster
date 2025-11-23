@@ -39,10 +39,10 @@ content %}
       <th class="sortable" data-column-index="1">Type</th>
       <th class="sortable" data-column-index="2">Club</th>
       <th class="sortable" data-column-index="3">Current Path</th>
-      <th class="sortable" data-column-index="4">Next Project</th>
-      <th class="sortable" data-column-index="5">Credential</th>
+      <th class="sortable" data-column-index="4">Credential</th>
+      <th class="sortable" data-column-index="5">Next Project</th>
       {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
-      <th data-column-index="6">Actions</th>
+      <th class="action-header" data-column-index="6">Actions</th>
       {% endif %}
     </tr>
   </thead>
@@ -57,8 +57,8 @@ content %}
       <td>{{ contact.Type }}</td>
       <td>{{ contact.Club }}</td>
       <td>{% if contact.user %}{{ contact.user.Current_Path }}{% endif %}</td>
+      <td>{% if contact.user %}{{ contact.user.Credential }}{% endif %}</td>
       <td>{% if contact.user %}{{ contact.user.Next_Project }}{% endif %}</td>
-      <td>{{ contact.Completed_Levels }}</td>
       {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
       <td>
         <div class="action-links">

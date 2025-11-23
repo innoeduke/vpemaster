@@ -459,10 +459,10 @@ def _get_next_project_for_contact(contact, completed_log):
                 level_completed = level
                 level += 1
 
-                # Smart update for Completed_Levels
+                # Smart update for Completed_Paths
                 completed_pathways = {}
-                if contact.Completed_Levels:
-                    parts = contact.Completed_Levels.split('/')
+                if contact.Completed_Paths:
+                    parts = contact.Completed_Paths.split('/')
                     for part in parts:
                         match = re.match(r"([A-Z]+)(\d+)", part)
                         if match:
@@ -473,7 +473,7 @@ def _get_next_project_for_contact(contact, completed_log):
 
                 new_completed_levels = [
                     f"{path}{lvl}" for path, lvl in sorted(completed_pathways.items())]
-                contact.Completed_Levels = "/".join(new_completed_levels)
+                contact.Completed_Paths = "/".join(new_completed_levels)
 
             if level > 5:
                 user.Next_Project = None
