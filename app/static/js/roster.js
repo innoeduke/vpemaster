@@ -6,33 +6,89 @@ document.addEventListener("DOMContentLoaded", function () {
   const formTitle = document.getElementById("form-title");
   const entryIdInput = document.getElementById("entry-id");
   const orderNumberInput = document.getElementById("order_number");
-  const contactIdSelect = document.getElementById("contact_id");
+  const contactNameInput = document.getElementById("contact_name");
+  const contactIdInput = document.getElementById("contact_id");
   const contactTypeSelect = document.getElementById("contact_type");
   const ticketSelect = document.getElementById("ticket");
 
-  // Handle meeting selection change
+  let contacts = [];
+  let suggestionsContainer = null;
+
+  async function fetchContacts() {
+    try {
+      const response = await fetch('/contacts/search');
+      if (!response.ok) throw new Error('Failed to fetch contacts.');
+      contacts = await response.json();
+    } catch (error) {
+      console.error("Error fetching contacts:", error);
+      alert('Could not fetch contacts for autocomplete.');
+    }
+  }
+
+  function showSuggestions(filteredContacts) {
+    if (!suggestionsContainer) {
+      suggestionsContainer = document.createElement('div');
+      suggestionsContainer.className = 'autocomplete-suggestions';
+      contactNameInput.parentNode.insertBefore(suggestionsContainer, contactNameInput.nextSibling);
+    }
+    suggestionsContainer.innerHTML = '';
+    if (filteredContacts.length === 0) {
+      suggestionsContainer.style.display = 'none';
+      return;
+    }
+    filteredContacts.forEach(contact => {
+      const div = document.createElement('div');
+      div.className = 'autocomplete-suggestion';
+      div.textContent = contact.Name;
+      div.dataset.contactId = contact.id;
+      div.dataset.contactType = contact.Type;
+      div.addEventListener('click', () => {
+        selectContact(contact);
+        hideSuggestions();
+      });
+      suggestionsContainer.appendChild(div);
+    });
+    suggestionsContainer.style.display = 'block';
+  }
+
+  function hideSuggestions() {
+    if (suggestionsContainer) {
+      suggestionsContainer.style.display = 'none';
+    }
+  }
+
+  function selectContact(contact) {
+    contactNameInput.value = contact.Name;
+    contactIdInput.value = contact.id;
+    if (contact.Type) {
+      contactTypeSelect.value = contact.Type;
+      contactTypeSelect.dispatchEvent(new Event('change'));
+    }
+  }
+  
+  contactNameInput.addEventListener('input', () => {
+    const query = contactNameInput.value.toLowerCase();
+    if (query.length < 1) {
+      hideSuggestions();
+      return;
+    }
+    const filteredContacts = contacts.filter(c => c.Name.toLowerCase().includes(query));
+    showSuggestions(filteredContacts);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.target !== contactNameInput) {
+      hideSuggestions();
+    }
+  });
+
+
   if (meetingFilter) {
     meetingFilter.addEventListener("change", () => {
       window.location.href = `/roster?meeting_number=${meetingFilter.value}`;
     });
   }
 
-  // Auto-fill contact type when a contact is selected.
-  if (contactIdSelect) {
-    contactIdSelect.addEventListener("change", function () {
-      const selectedOption = this.options[this.selectedIndex];
-      const contactType = selectedOption.getAttribute("data-type");
-      if (contactTypeSelect && contactType) {
-        contactTypeSelect.value = contactType;
-        // Manually trigger change event to cascade updates (e.g., ticket class).
-        contactTypeSelect.dispatchEvent(new Event("change"));
-      } else if (contactTypeSelect) {
-        contactTypeSelect.value = "";
-      }
-    });
-  }
-
-  // If contact type is changed to 'Officer', also set ticket class to 'Officer'.
   if (contactTypeSelect) {
     contactTypeSelect.addEventListener("change", function () {
       if (this.value === "Officer") {
@@ -43,16 +99,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Function to reset the form to its initial state for adding a new entry
   function resetRosterForm() {
     if (!rosterForm) return;
     rosterForm.reset();
     entryIdInput.value = "";
     formTitle.textContent = "Add Entry";
+    contactNameInput.value = "";
+    contactIdInput.value = "";
     contactTypeSelect.value = "";
 
-
-    // Calculate next order number from the table, based on actual entries
     const rows = tableBody.querySelectorAll("tr[data-entry-id]");
     let maxOrder = 0;
     rows.forEach((row) => {
@@ -79,11 +134,14 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(entry => {
             entryIdInput.value = entry.id;
             orderNumberInput.value = entry.order_number;
-            contactIdSelect.value = entry.contact_id;
+            contactIdInput.value = entry.contact_id;
+            contactNameInput.value = entry.contact_name;
             ticketSelect.value = entry.ticket;
-
-            // Trigger change to update contact type
-            contactIdSelect.dispatchEvent(new Event('change'));
+            
+            if(entry.contact_type) {
+                contactTypeSelect.value = entry.contact_type;
+                contactTypeSelect.dispatchEvent(new Event('change'));
+            }
 
             formTitle.textContent = 'Edit Entry';
             rosterForm.scrollIntoView({ behavior: 'smooth' });
@@ -94,49 +152,10 @@ document.addEventListener("DOMContentLoaded", function () {
         });
   }
 
-  if (tableBody) {
-    // Set initial order number
-    resetRosterForm();
-
-    // Handle clicks on the table for edit and cancel actions
-    // Handle clicks on the table for edit and cancel actions
-    tableBody.addEventListener("click", function (e) {
-      const editButton = e.target.closest(".edit-entry");
-      const cancelButton = e.target.closest(".cancel-entry");
-
-      if (editButton) {
-        e.preventDefault();
-        const entryId = editButton.dataset.id;
-        populateRosterEditForm(entryId);
-      }
-
-      if (cancelButton) {
-        e.preventDefault();
-        const entryId = cancelButton.dataset.id;
-        if (confirm("Are you sure you want to cancel this roster entry?")) {
-          fetch(`/roster/api/roster/${entryId}`, { method: "DELETE" })
-            .then((response) =>
-              response.json().then((data) => ({ ok: response.ok, data }))
-            )
-            .then(({ ok, data }) => {
-              if (!ok) throw new Error(data.error || "Failed to cancel entry.");
-              window.location.reload();
-            })
-            .catch((error) => {
-              console.error("Error cancelling entry:", error);
-              alert(`Error: ${error.message}`);
-            });
-        }
-      }
-    });
-  }
-
-  // Handle cancel edit button click
   if (cancelEditBtn) {
     cancelEditBtn.addEventListener("click", resetRosterForm);
   }
 
-  // Handle form submission for adding/updating entries
   if (rosterForm) {
     rosterForm.addEventListener("submit", function (e) {
       e.preventDefault();
@@ -150,7 +169,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const formData = {
         meeting_number: meetingFilter.value,
         order_number: orderNumberInput.value,
-        contact_id: contactIdSelect.value,
+        contact_id: contactIdInput.value,
         ticket: ticketSelect.value,
       };
 
@@ -173,7 +192,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // Handle adding a new contact and returning to the roster
   const urlParams = new URLSearchParams(window.location.search);
   if (urlParams.has("new_contact_id") && urlParams.has("new_contact_name")) {
     const contactId = urlParams.get("new_contact_id");
@@ -182,21 +200,9 @@ document.addEventListener("DOMContentLoaded", function () {
       urlParams.get("new_contact_type") || ""
     );
 
-    if (
-      contactIdSelect &&
-      !Array.from(contactIdSelect.options).some(
-        (opt) => opt.value === contactId
-      )
-    ) {
-      const newOption = new Option(contactName, contactId);
-      newOption.setAttribute("data-type", contactType);
-      contactIdSelect.add(newOption);
-    }
-
-    if (contactIdSelect) {
-      contactIdSelect.value = contactId;
-      contactIdSelect.dispatchEvent(new Event("change"));
-    }
+    const newContact = {id: contactId, Name: contactName, Type: contactType };
+    contacts.push(newContact);
+    selectContact(newContact);
 
     const url = new URL(window.location);
     url.searchParams.delete("new_contact_id");
@@ -205,16 +211,49 @@ document.addEventListener("DOMContentLoaded", function () {
     window.history.replaceState({}, document.title, url.toString());
   }
   
-  // Initialize sorting if the function exists
   if (typeof setupTableSorting === "function") {
     setupTableSorting("rosterTable");
   }
   
-  // Initialize lucky draw functionality
   initializeLuckyDraw();
+
+  fetchContacts().then(() => {
+    if (tableBody) {
+        resetRosterForm();
+
+        tableBody.addEventListener("click", function (e) {
+            const editButton = e.target.closest(".edit-entry");
+            const cancelButton = e.target.closest(".cancel-entry");
+
+            if (editButton) {
+                e.preventDefault();
+                const entryId = editButton.dataset.id;
+                populateRosterEditForm(entryId);
+            }
+
+            if (cancelButton) {
+                e.preventDefault();
+                const entryId = cancelButton.dataset.id;
+                if (confirm("Are you sure you want to cancel this roster entry?")) {
+                    fetch(`/roster/api/roster/${entryId}`, { method: "DELETE" })
+                        .then((response) =>
+                            response.json().then((data) => ({ ok: response.ok, data }))
+                        )
+                        .then(({ ok, data }) => {
+                            if (!ok) throw new Error(data.error || "Failed to cancel entry.");
+                            window.location.reload();
+                        })
+                        .catch((error) => {
+                            console.error("Error cancelling entry:", error);
+                            alert(`Error: ${error.message}`);
+                        });
+                }
+            }
+        });
+    }
+  });
 });
 
-// Opens the contact modal and sets the referrer for redirection
 function openContactModalWithReferer() {
   if (typeof openContactModal === "function") {
     openContactModal();
@@ -227,7 +266,6 @@ function openContactModalWithReferer() {
   }
 }
 
-// 抽奖功能
 function initializeLuckyDraw() {
   const drawButton = document.getElementById('drawButton');
   if (drawButton) {
@@ -235,17 +273,13 @@ function initializeLuckyDraw() {
   }
 }
 
-// 存储已抽中的获奖者
 let drawnWinners = [];
 
-// 抽奖功能实现
 function performLuckyDraw() {
-  // 获取所有有效的名册条目（排除已取消的条目和已抽中的获奖者）
   const validEntries = [];
   const rows = document.querySelectorAll("#rosterTable tbody tr");
   
   rows.forEach(row => {
-    // 检查行是否为空行（没有数据）
     const orderCell = row.querySelector('td:first-child');
     if (orderCell && orderCell.textContent.trim() !== '' && orderCell.textContent.trim() !== 'N/A') {
       const ticketCell = row.querySelector('td:nth-child(4)');
@@ -253,7 +287,6 @@ function performLuckyDraw() {
         const order = orderCell.textContent.trim();
         const name = row.querySelector('td:nth-child(2)').textContent.trim();
         
-        // 检查是否已经被抽中
         const isAlreadyDrawn = drawnWinners.some(winner => 
           winner.order === order && winner.name === name
         );
@@ -268,26 +301,21 @@ function performLuckyDraw() {
     }
   });
   
-  // 如果没有有效条目，显示提示信息
   if (validEntries.length === 0) {
     document.getElementById('luckyDrawResult').innerHTML = 
       '<div class="no-entries">No valid entries for drawing</div>';
     return;
   }
   
-  // 随机选择一个条目
   const randomIndex = Math.floor(Math.random() * validEntries.length);
   const selectedEntry = validEntries[randomIndex];
   
-  // 添加到已抽中的获奖者列表
   drawnWinners.push(selectedEntry);
   
-  // 显示结果
   document.getElementById('luckyDrawResult').innerHTML = 
     '<div class="winner-order">' + selectedEntry.order + '</div>' +
     '<div class="winner-name">' + selectedEntry.name + '</div>';
   
-  // 添加到获奖者列表
   const winnersList = document.getElementById('winnersList');
   if (winnersList) {
     const winnerElement = document.createElement('div');

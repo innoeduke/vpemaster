@@ -134,12 +134,20 @@ def get_roster_entry(entry_id):
     if not entry:
         return jsonify({'error': 'Entry not found'}), 404
     
+    contact_name = None
+    contact_type = None
+    if entry.contact:
+        contact_name = entry.contact.Name
+        contact_type = entry.contact.Type
+
     return jsonify({
         'id': entry.id,
         'meeting_number': entry.meeting_number,
         'order_number': entry.order_number,
         'ticket': entry.ticket,
-        'contact_id': entry.contact_id
+        'contact_id': entry.contact_id,
+        'contact_name': contact_name,
+        'contact_type': contact_type
     })
 
 

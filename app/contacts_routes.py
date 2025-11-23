@@ -19,7 +19,7 @@ def search_contacts_by_name():
     else:
         contacts = Contact.query.all()
 
-    contacts_data = [{"id": c.id, "Name": c.Name} for c in contacts]
+    contacts_data = [{"id": c.id, "Name": c.Name, "Type": c.Type} for c in contacts]
     return jsonify(contacts_data)
 
 

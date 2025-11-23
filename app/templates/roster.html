@@ -4,6 +4,7 @@
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/roster.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/autocomplete.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}">
 {% endblock %}
 
@@ -86,14 +87,10 @@
                         <label for="order_number">Order Number:</label>
                         <input type="number" class="form-control" id="order_number" value="1" required>
                         
-                        <label for="contact_id">Contact Name:</label>
+                        <label for="contact_name">Contact Name:</label>
                         <div class="contact-input-container">
-                            <select class="form-control" id="contact_id" required>
-                                <option value="">Select Contact</option>
-                                {% for contact in contacts %}
-                                <option value="{{ contact.id }}" data-type="{{ contact.Type }}">{{ contact.Name }}</option>
-                                {% endfor %}
-                            </select>
+                            <input type="text" class="form-control" id="contact_name" placeholder="Type to search..." autocomplete="off" required>
+                            <input type="hidden" id="contact_id">
                             <button class="btn btn-primary" type="button" id="add-contact-btn" title="Add New Contact" onclick="openContactModalWithReferer()">
                                 <i class="fas fa-plus"></i>
                             </button>
