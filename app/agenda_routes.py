@@ -872,7 +872,7 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     SPEAKER_TYPE_IDS = speech_types_with_project | {43}  # 43 = Presentation
     speakers = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
                 # Special handling for Table Topics
-                if (st.id in SPEAKER_TYPE_IDS and st.Valid_for_Project)]
+                if (st.id in SPEAKER_TYPE_IDS and log.Project_ID)]
     # Type 31 = Individual Evaluator
     evaluators = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
                   if st.id == 31]
