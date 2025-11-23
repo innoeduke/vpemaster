@@ -541,3 +541,33 @@
     color: #495057;
     line-height: 1.5;
 }
+
+/* Footnote styling */
+.footnote {
+    font-size: 0.8em;
+    color: #666;
+    margin-top: 20px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+    font-style: italic;
+}
+
+.footnote ul {
+    font-size: 0.9em;
+    padding-left: 20px;
+    margin: 5px 0;
+}
+
+.footnote li {
+    margin-bottom: 3px;
+}
+
+.footnote a {
+    color: #004165;
+    text-decoration: underline;
+}
+
+.footnote a:hover {
+    color: #772432;
+    text-decoration: none;
+}

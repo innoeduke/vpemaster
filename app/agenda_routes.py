@@ -740,7 +740,8 @@ def _build_sheet3_roster(ws, meeting_number):
     for cell in ws[1]:
         cell.font = Font(bold=True)
 
-    roster_entries = Roster.query.options(orm.joinedload(Roster.contact)).filter_by(meeting_number=meeting_number).order_by(Roster.order_number).all()
+    roster_entries = Roster.query.options(orm.joinedload(Roster.contact)).filter_by(
+        meeting_number=meeting_number).order_by(Roster.order_number).all()
 
     for entry in roster_entries:
         ws.append([
@@ -748,7 +749,7 @@ def _build_sheet3_roster(ws, meeting_number):
             entry.contact.Name if entry.contact else '',
             entry.ticket
         ])
-    
+
     _auto_fit_worksheet_columns(ws, min_width=10)
 
 
@@ -867,9 +868,11 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     # Separate speakers and evaluators from the main data list
     # Include sessions of specific types that are not evaluations (id != 31)
     # Table Topics, Prepared Speaker, Pathway Speech, Panel Discussion
-    SPEAKER_TYPE_IDS = speech_types_with_project | {43}
+    # But only include Table Topics if it's a valid project (has Valid_for_Project flag)
+    SPEAKER_TYPE_IDS = speech_types_with_project | {43}  # 43 = Presentation
     speakers = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
-                if st.id in SPEAKER_TYPE_IDS and st.Valid_for_Project]
+                # Special handling for Table Topics
+                if (st.id in SPEAKER_TYPE_IDS and st.Valid_for_Project)]
     # Type 31 = Individual Evaluator
     evaluators = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
                   if st.id == 31]
