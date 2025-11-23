@@ -487,6 +487,32 @@
         padding: 5px;
         margin: 0;
     }
+    
+    /* --- Contact Book Responsive Fixes --- */
+    .action-bar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .stats-container {
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+
+    .search-and-buttons {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .search-container {
+      flex: 1;
+      min-width: unset;
+    }
+    
+    .button-group {
+      width: 100%;
+      justify-content: center;
+    }
 
     /* --- Pathway Library Responsive Fixes --- */
     #pathway-library-container .filters-container {

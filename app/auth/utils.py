@@ -10,7 +10,7 @@ ROLE_PERMISSIONS = {
         "SPEECH_LOGS_EDIT_ALL",
         "PATHWAY_LIB_EDIT",
         "CONTACT_BOOK_EDIT",
-        "SETTINGS_VIEW_ALL",
+        "SETTINGS_EDIT_ALL",
     },
     "VPE": {
         "AGENDA_EDIT",
@@ -18,6 +18,7 @@ ROLE_PERMISSIONS = {
         "SPEECH_LOGS_EDIT_ALL",
         "PATHWAY_LIB_EDIT",
         "CONTACT_BOOK_EDIT",
+        "SETTINGS_VIEW_ALL",
     },
     "Meeting Manager": {
         "AGENDA_EDIT",
@@ -26,18 +27,21 @@ ROLE_PERMISSIONS = {
         "PATHWAY_LIB_VIEW",
         "CONTACT_BOOK_EDIT",
     },
-    "Club Officer": {
+    "Officer": {
+        "AGENDA_VIEW",
         "BOOKING_BOOK_OWN",
         "SPEECH_LOGS_VIEW_OWN",
+        "CONTACT_BOOK_VIEW",
         "PATHWAY_LIB_VIEW",
-        "CONTACT_BOOK_EDIT",
     },
     "Member": {
+        "AGENDA_VIEW",
         "BOOKING_BOOK_OWN",
         "SPEECH_LOGS_VIEW_OWN",
         "PATHWAY_LIB_VIEW",
     },
     "Guest": {
+        "AGENDA_VIEW",
         "PATHWAY_LIB_VIEW",
     }
 }
@@ -48,12 +52,14 @@ for role, perms in ROLE_PERMISSIONS.items():
         perms.add("AGENDA_VIEW")
     if "BOOKING_ASSIGN_ALL" in perms:
         perms.add("BOOKING_BOOK_OWN")
+    if "CONTACT_BOOK_EDIT" in perms:
+        perms.add("CONTACT_BOOK_VIEW")
     if "SPEECH_LOGS_EDIT_ALL" in perms:
         perms.add("SPEECH_LOGS_VIEW_ALL")
     if "PATHWAY_LIB_EDIT" in perms:
         perms.add("PATHWAY_LIB_VIEW")
-    if "CONTACT_BOOK_EDIT" in perms:
-        perms.add("CONTACT_BOOK_VIEW")
+    if "SETTINGS_EDIT_ALL" in perms:
+        perms.add("SETTINGS_VIEW_ALL")
 
 
 def is_authorized(user_role, feature):
@@ -70,6 +76,8 @@ def is_authorized(user_role, feature):
     return feature in permissions
 
 # Decorator to check if user is logged in
+
+
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):

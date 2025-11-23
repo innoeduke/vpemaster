@@ -1,119 +1,8 @@
-{% extends "base.html" %} {% block title %}Contacts{% endblock %} 
-
-{% block head_extra %}
-<style>
-  .action-bar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-    padding: 1rem 0;
-  }
-
-  .stats-container {
-    display: flex;
-    gap: 1rem;
-  }
-
-  .stat-item {
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 0.5rem;
-    text-align: center;
-    min-width: 100px;
-  }
-
-  .stat-value {
-    font-size: 1.2rem;
-    font-weight: bold;
-  }
-
-  .stat-label {
-    font-size: 0.8rem;
-    color: #666;
-  }
-
-  .search-and-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    align-items: center;
-  }
-
-  .search-container {
-    position: relative;
-    min-width: 200px;
-  }
-
-  .search-box {
-    width: 100%;
-    padding: 0.5rem;
-    padding-right: 2rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-  }
-
-  .clear-search-btn {
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: #999;
-  }
-
-  .button-group {
-    display: flex;
-    gap: 0.5rem;
-  }
-
-  .table-container {
-    display: flex;
-    justify-content: center;
-  }
-
-  #contactsTable {
-    margin: 0 auto;
-  }
-
-  @media (max-width: 768px) {
-    .action-bar {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .stats-container {
-      justify-content: center;
-      margin-bottom: 1rem;
-    }
-
-    .search-and-buttons {
-      flex-direction: column;
-      align-items: stretch;
-    }
-
-    .search-container {
-      flex: 1;
-      min-width: unset;
-    }
-    
-    .button-group {
-      width: 100%;
-      justify-content: center;
-    }
-  }
-</style>
-{% endblock %}
-
-{% block content %}
+{% extends "base.html" %} {% block title %}Contacts{% endblock %} {% block
+content %}
 <h1>Contacts</h1>
 
-<div class="action-bar">
+<div class="contact-action-bar">
   <div class="stats-container">
     <div class="stat-item">
       <div class="stat-value" style="color: #007bff">{{ total_contacts }}</div>
@@ -124,7 +13,7 @@
       <div class="stat-label">Total Members</div>
     </div>
   </div>
-  
+
   <div class="search-and-buttons">
     <div class="search-container">
       <input
@@ -157,7 +46,7 @@
   </div>
 </div>
 
-<div class="table-container">
+<div class="contact-table-container">
   <table id="contactsTable">
     <thead>
       <tr>
@@ -172,44 +61,44 @@
         <th class="action-header" data-column-index="7">Actions</th>
         {% endif %}
       </tr>
-      </thead>
-      <tbody>
-        {% for contact in contacts %}
-        <tr>
-          <td>
-            {{ contact.Name }} {% if contact.DTM %}
-            <sup class="dtm-superscript">DTM</sup>
-            {% endif %}
-          </td>
-          <td>{{ contact.Type }}</td>
-          <td>{{ contact.Club }}</td>
-          <td>{% if contact.user %}{{ contact.user.Current_Path }}{% endif %}</td>
-          <td>{% if contact.user %}{{ contact.user.Credential }}{% endif %}</td>
-          <td>{{ contact.Completed_Paths }}</td>
-          <td>{% if contact.user %}{{ contact.user.Next_Project }}{% endif %}</td>
-          {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
-          <td>
-            <div class="action-links">
-              <button
-                class="icon-btn"
-                onclick="openContactModal({{ contact.id }})"
-                title="Edit"
-              >
-                <i class="fas fa-edit"></i>
-              </button>
-              <button
-                class="delete-btn icon-btn"
-                onclick="openDeleteModal('{{ url_for('contacts_bp.delete_contact',contact_id=contact.id) }}', 'contact')"
-                title="Delete"
-              >
-                <i class="fas fa-trash-alt"></i>
-              </button>
-            </div>
-          </td>
+    </thead>
+    <tbody>
+      {% for contact in contacts %}
+      <tr>
+        <td>
+          {{ contact.Name }} {% if contact.DTM %}
+          <sup class="dtm-superscript">DTM</sup>
           {% endif %}
-        </tr>
-        {% endfor %}
-      </tbody>
+        </td>
+        <td>{{ contact.Type }}</td>
+        <td>{{ contact.Club }}</td>
+        <td>{% if contact.user %}{{ contact.user.Current_Path }}{% endif %}</td>
+        <td>{% if contact.user %}{{ contact.user.Credential }}{% endif %}</td>
+        <td>{{ contact.Completed_Paths }}</td>
+        <td>{% if contact.user %}{{ contact.user.Next_Project }}{% endif %}</td>
+        {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
+        <td>
+          <div class="action-links">
+            <button
+              class="icon-btn"
+              onclick="openContactModal({{ contact.id }})"
+              title="Edit"
+            >
+              <i class="fas fa-edit"></i>
+            </button>
+            <button
+              class="delete-btn icon-btn"
+              onclick="openDeleteModal('{{ url_for('contacts_bp.delete_contact',contact_id=contact.id) }}', 'contact')"
+              title="Delete"
+            >
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
 </div>
 
