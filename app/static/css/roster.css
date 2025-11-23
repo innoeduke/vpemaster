@@ -118,18 +118,23 @@
 }
 
 .contact-input-container {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
 
-.contact-input-container select {
+.contact-input-container #contact_name {
     flex-grow: 1;
     min-width: 0;
 }
 
-.contact-input-container button {
+#add-contact-btn {
     flex-shrink: 0;
+    padding: 0.25rem 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #contact_type {
