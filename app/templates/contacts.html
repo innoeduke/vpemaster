@@ -18,20 +18,18 @@ content %}
     </button>
   </div>
   {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
-  <button
-    class="btn btn-primary"
-    onclick="openContactModal()"
-    style="margin-left: 10px"
-  >
-    New Contact
-  </button>
-  <button
-    class="btn btn-info"
-    onclick="window.location.href='{{ url_for('roster_bp.roster') }}'"
-    style="margin-left: 10px"
-  >
-    Open Roster</button
-  >{% endif %}
+  <div class="button-group" style="margin-left: 10px">
+    <button class="btn btn-primary" onclick="openContactModal()">
+      New Contact
+    </button>
+    <button
+      class="btn btn-info"
+      onclick="window.location.href='{{ url_for('roster_bp.roster') }}'"
+    >
+      Open Roster
+    </button>
+  </div>
+  {% endif %}
 </div>
 
 <table id="contactsTable">
@@ -40,11 +38,11 @@ content %}
       <th class="sortable" data-column-index="0">Name</th>
       <th class="sortable" data-column-index="1">Type</th>
       <th class="sortable" data-column-index="2">Club</th>
-      <th class="sortable" data-column-index="3">Working Path</th>
+      <th class="sortable" data-column-index="3">Current Path</th>
       <th class="sortable" data-column-index="4">Next Project</th>
-      <th class="sortable" data-column-index="5">Completed Levels</th>
+      <th class="sortable" data-column-index="5">Credential</th>
       {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
-      <th data-column-index="7">Actions</th>
+      <th data-column-index="6">Actions</th>
       {% endif %}
     </tr>
   </thead>

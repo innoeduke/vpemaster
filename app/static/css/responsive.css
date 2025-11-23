@@ -245,7 +245,8 @@
 
     .action-bar {
         flex-direction: column;
-        align-items: stretch;
+        align-items: center;
+        gap: 15px;
     }
 
     .action-bar-left {
@@ -613,6 +614,41 @@
     .draw-button-container {
         grid-row: 2;
         justify-content: center;
+    }
+
+    /* --- Contacts Page Responsive Fixes --- */
+    #contactsTable {
+        display: block;
+        width: 100%;
+        overflow-x: auto; /* Allow horizontal scrolling if needed */
+        -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        font-size: 0.9em;
+    }
+
+    #contactsTable th:nth-child(1),
+    #contactsTable td:nth-child(1) {
+        min-width: 150px;
+    }
+
+    #contactsTable th:nth-child(3),
+    #contactsTable td:nth-child(3),
+    #contactsTable th:nth-child(4),
+    #contactsTable td:nth-child(4) {
+        display: none;
+    }
+
+    #contactsTable th:nth-child(6),
+    #contactsTable td:nth-child(6) {
+        width: 80px;
+    }
+
+    #contactsTable th:last-child,
+    #contactsTable td:last-child {
+        min-width: 80px;
+    }
+
+    #contactsTable .action-links {
+        white-space: nowrap;
     }
 
 }

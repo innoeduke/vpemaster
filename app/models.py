@@ -31,6 +31,7 @@ class User(db.Model):
     Status = db.Column(db.String(50), nullable=False, default='active')
     Current_Path = db.Column(db.String(50), nullable=True)
     Next_Project = db.Column(db.String(100), nullable=True)
+    Credential = db.Column(db.String(10), nullable=True)
     contact = db.relationship('Contact', foreign_keys=[Contact_ID], backref=db.backref('user', uselist=False))
     mentor = db.relationship('Contact', foreign_keys=[Mentor_ID])
 
