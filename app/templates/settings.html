@@ -10,10 +10,7 @@ content %}
       placeholder="Search the active tab..."
       class="search-box"
     />
-    <button
-      id="clear-global-settings-search"
-      class="clear-search-btn"
-    >
+    <button id="clear-global-settings-search" class="clear-search-btn">
       &times;
     </button>
   </div>
@@ -25,17 +22,16 @@ content %}
     <button class="tab-btn" onclick="openTab(event, 'sessions')">
       Sessions
     </button>
-    <button class="tab-btn" onclick="openTab(event, 'agenda-settings')">
-      Agenda
-    </button>
-    <button class="tab-btn" onclick="openTab(event, 'level-roles')">
+    <button class="tab-btn" onclick="openTab(event, 'user-settings')">
+      Users</button
+    ><button class="tab-btn" onclick="openTab(event, 'level-roles')">
       Level Roles
     </button>
     <button class="tab-btn" onclick="openTab(event, 'presentations')">
       Presentations
     </button>
-    <button class="tab-btn" onclick="openTab(event, 'user-settings')">
-      Users
+    <button class="tab-btn" onclick="openTab(event, 'agenda-settings')">
+      Agenda
     </button>
   </div>
 
@@ -72,12 +68,7 @@ content %}
       <div class="button-group">
         <button id="add-session-btn" class="btn btn-success">Add New</button>
         <button id="edit-sessions-btn" class="btn btn-primary">Edit</button>
-        <button
-          id="cancel-sessions-btn"
-          class="btn btn-danger"
-        >
-          Cancel
-        </button>
+        <button id="cancel-sessions-btn" class="btn btn-danger">Cancel</button>
       </div>
     </div>
     <table id="sessions-table">
@@ -100,9 +91,7 @@ content %}
         {% for st in session_types %}
         <tr
           data-id="{{ st.id }}"
-          class="
-            {% if st.Is_Section %}session-section{% endif %}
-            {% if st.Is_Hidden %}session-hidden{% endif %}"
+          class="{% if st.Is_Section %}session-section{% endif %} {% if st.Is_Hidden %}session-hidden{% endif %}"
         >
           <td>{{ st.id }}</td>
           <td data-field="Title">{{ st.Title }}</td>
@@ -195,16 +184,8 @@ content %}
           enctype="multipart/form-data"
           id="bulk-import-form"
         >
-          <input
-            type="file"
-            name="file"
-            id="bulk-import-file"
-          />
-          <button
-            type="button"
-            class="btn btn-info"
-            id="bulk-import-btn"
-          >
+          <input type="file" name="file" id="bulk-import-file" />
+          <button type="button" class="btn btn-info" id="bulk-import-btn">
             Bulk Import
           </button>
         </form>
@@ -274,10 +255,7 @@ content %}
       <div class="button-group">
         <button id="add-level-role-btn" class="btn btn-success">Add New</button>
         <button id="edit-level-roles-btn" class="btn btn-primary">Edit</button>
-        <button
-          id="cancel-level-roles-btn"
-          class="btn btn-danger"
-        >
+        <button id="cancel-level-roles-btn" class="btn btn-danger">
           Cancel
         </button>
       </div>
@@ -316,10 +294,7 @@ content %}
         <button id="edit-presentations-btn" class="btn btn-primary">
           Edit
         </button>
-        <button
-          id="cancel-presentations-btn"
-          class="btn btn-danger"
-        >
+        <button id="cancel-presentations-btn" class="btn btn-danger">
           Cancel
         </button>
       </div>

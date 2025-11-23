@@ -53,6 +53,12 @@
                 </td>
             </tr>
             <tr>
+                <td><label for="credential">Credential:</label></td>
+                <td>
+                    <input type="text" id="credential" name="credential" value="{{ user.Credential if user and user.Credential else '' }}" maxlength="10">
+                </td>
+            </tr>
+            <tr>
                 <td><label for="next_project">Next Project:</label></td>
                 <td>
                     <input type="text" id="next_project" name="next_project" value="{{ user.Next_Project if user and user.Next_Project else '' }}" placeholder="e.g., PM2.1, EH3.2">

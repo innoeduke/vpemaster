@@ -630,15 +630,19 @@
         min-width: 150px;
     }
 
-    #contactsTable th:nth-child(3),
+    #contactsTable th:nth-child(3), /* Club column */
     #contactsTable td:nth-child(3),
-    #contactsTable th:nth-child(4),
-    #contactsTable td:nth-child(4) {
+    #contactsTable th:nth-child(4), /* Current Path column */
+    #contactsTable td:nth-child(4),
+    #contactsTable th:nth-child(5), /* Completed Paths column */
+    #contactsTable td:nth-child(5),
+    #contactsTable th:nth-child(6), /* Next Project column */
+    #contactsTable td:nth-child(6) {
         display: none;
     }
 
-    #contactsTable th:nth-child(6),
-    #contactsTable td:nth-child(6) {
+    #contactsTable th:nth-child(7), /* Actions column */
+    #contactsTable td:nth-child(7) {
         width: 80px;
     }
 

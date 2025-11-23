@@ -34,6 +34,7 @@ def _create_or_update_user(user=None, **kwargs):
     user.Role = kwargs.get('role')
     user.Current_Path = kwargs.get('current_path') or None
     user.Next_Project = kwargs.get('next_project') or None
+    user.Credential = kwargs.get('credential') or None
 
     contact_id = kwargs.get('contact_id', 0)
     user.Contact_ID = contact_id if contact_id != 0 else None
@@ -82,6 +83,7 @@ def user_form(user_id):
             mentor_id=request.form.get('mentor_id', 0, type=int),
             current_path=request.form.get('current_path'),
             next_project=request.form.get('next_project'),
+            credential=request.form.get('credential'),
             password=request.form.get('password')
         )
         db.session.commit()
