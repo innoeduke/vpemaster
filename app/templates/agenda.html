@@ -120,11 +120,7 @@
             <div class="button-group" id="view-mode-buttons">
             {% if is_authorized(session.get('user_role'), 'AGENDA_EDIT') %}
             <button id="create-btn" class="btn btn-success">New</button>
-            {% endif %}
-            {% if session.logged_in %}
             <button id="export-btn" class="btn btn-info">Export</button>
-            {% endif %}
-            {% if is_authorized(session.get('user_role'), 'AGENDA_EDIT') %}
             <button id="edit-btn" class="btn btn-primary">Edit</button>
             {% endif %}
             </div>

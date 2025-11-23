@@ -63,8 +63,8 @@ def user_form(user_id):
     if user_id:
         user = User.query.get_or_404(user_id)
 
-    member_contacts = Contact.query.filter_by(
-        Type='Member').order_by(Contact.Name.asc()).all()
+    member_contacts = Contact.query.filter(
+        Contact.Type.in_(['Member', 'Officer'])).order_by(Contact.Name.asc()).all()
     mentor_contacts = Contact.query.filter(or_(
         Contact.Type == 'Member', Contact.Type == 'Past Member')).order_by(Contact.Name.asc()).all()
     users = User.query.order_by(User.Username.asc()).all()

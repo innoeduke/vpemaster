@@ -51,16 +51,16 @@ content %}
       </td>
     </tr>
     <tr>
-      <td><label>Current Path</label></td>
-      <td>{{ user.Current_Path }}</td>
-    </tr>
-    <tr>
       <td><label>Completed Paths:</label></td>
       <td>{{ user.contact.Completed_Paths if user.contact else '' }}</td>
     </tr>
     <tr>
-      <td><label>Completed Levels:</label></td>
-      <td>{{ user.contact.Completed_Levels if user.contact else '' }}</td>
+      <td><label>Current Path</label></td>
+      <td>{{ user.Current_Path }}</td>
+    </tr>
+    <tr>
+      <td><label>Credential:</label></td>
+      <td>{{ user.Credential if user else '' }}</td>
     </tr>
     <tr>
       <td><strong>Next Project:</strong></td>
@@ -80,7 +80,9 @@ content %}
             border: 1px solid #ccc;
             border-radius: 4px;
           "
-        >{{ user.contact.Bio if user.contact.Bio else '' }}</textarea>
+        >
+{{ user.contact.Bio if user.contact.Bio else '' }}</textarea
+        >
       </td>
     </tr>
     {% else %}

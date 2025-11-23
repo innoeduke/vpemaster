@@ -15,6 +15,7 @@
     display: flex;
     width: 100%;
     gap: 15px;
+    margin-bottom: 15px;
 }
 
 #speech-logs-filter-form .filter-row:first-child .form-group {
@@ -35,6 +36,14 @@
 
 #speech-logs-filter-form .search-group .form-group {
     flex: 1 1 0; /* Ensures both search bars are equal width */
+}
+
+/* Make all form controls in the filter form equally wide */
+#speech-logs-filter-form .form-group select,
+#speech-logs-filter-form .form-group input[type="text"],
+#speech-logs-filter-form .form-group a.btn {
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .level-heading {
