@@ -92,11 +92,12 @@ class SessionType(db.Model):
     Is_Section = db.Column(db.Boolean, default=False)
     Is_Hidden = db.Column(db.Boolean, default=False)
     Predefined = db.Column(db.Boolean, default=True)
-    Role = db.Column(db.String(255), default='')
-    Role_Group = db.Column(db.String(50))
     Valid_for_Project = db.Column(db.Boolean, default=False)
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=True)
+
+    role = db.relationship('Role', backref='session_types')
 
 
 class SessionLog(db.Model):

@@ -181,6 +181,7 @@
     <script src="{{ url_for('static', filename='vendor/js/Sortable.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+    {% block scripts %}{% endblock %}
 
     <script>
       // --- Navigation and Profile Menu Logic ---

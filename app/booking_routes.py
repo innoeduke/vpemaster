@@ -2,7 +2,7 @@
 
 from .auth.utils import login_required, is_authorized
 from flask import Blueprint, render_template, request, session, jsonify, current_app
-from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole, Waitlist
+from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole, Waitlist, Role
 from . import db
 from datetime import datetime
 import re
@@ -17,19 +17,20 @@ def _fetch_session_logs(selected_meeting_number, user_role):
     """Fetches session logs for a given meeting, filtering by user role."""
     query = db.session.query(
         SessionLog.id.label('session_id'),
-        SessionType.Role.label('role'),
-        SessionType.Role_Group.label('role_group'),
+        Role.name.label('role'),
+        Role.icon.label('icon'),
         SessionLog.Session_Title,
         SessionLog.Type_ID.label('type_id'),
         SessionLog.Owner_ID,
         Contact.Name.label('owner_name')
     ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
+     .join(Role, SessionType.role_id == Role.id)\
      .outerjoin(Contact, SessionLog.Owner_ID == Contact.id)\
      .filter(SessionLog.Meeting_Number == selected_meeting_number)\
-     .filter(SessionType.Role != '', SessionType.Role.isnot(None))
+     .filter(Role.name != '', Role.name.isnot(None))
 
     if not is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
-        query = query.filter(SessionType.Role_Group !=
+        query = query.filter(Role.type !=
                              current_app.config['OFFICER_ROLE_GROUP'])
 
     return query.all()
@@ -138,8 +139,9 @@ def _apply_user_filters_and_rules(roles, user_role, current_user_contact_id, sel
         has_upcoming_backup_speaker = db.session.query(SessionLog.id)\
             .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+            .join(Role, SessionType.role_id == Role.id)\
             .filter(SessionLog.Owner_ID == current_user_contact_id)\
-            .filter(SessionType.Role == current_app.config['ROLES']['BACKUP_SPEAKER']['name'])\
+            .filter(Role.name == current_app.config['ROLES']['BACKUP_SPEAKER']['name'])\
             .filter(Meeting.Meeting_Date >= datetime.today().date())\
             .first()
         if has_upcoming_backup_speaker:
@@ -152,9 +154,9 @@ def _apply_user_filters_and_rules(roles, user_role, current_user_contact_id, sel
     user = User.query.filter_by(Contact_ID=current_user_contact_id).first()
     if user and user.Current_Path:
         three_meetings_ago = selected_meeting_number - 2
-        recent_speaker_log = db.session.query(SessionLog.id).join(SessionType)\
+        recent_speaker_log = db.session.query(SessionLog.id).join(SessionType).join(Role, SessionType.role_id == Role.id)\
             .filter(SessionLog.Owner_ID == current_user_contact_id)\
-            .filter(SessionType.Role == current_app.config['ROLES']['PREPARED_SPEAKER']['name'])\
+            .filter(Role.name == current_app.config['ROLES']['PREPARED_SPEAKER']['name'])\
             .filter(SessionLog.Meeting_Number.between(three_meetings_ago, selected_meeting_number)).first()
 
         if recent_speaker_log:
@@ -251,16 +253,17 @@ def _get_user_bookings(current_user_contact_id):
     today = datetime.today().date()
     user_bookings_query = db.session.query(
         db.func.min(SessionLog.id).label('id'),
-        SessionType.Role,
+        Role.name,
         Meeting.Meeting_Number,
         Meeting.Meeting_Date
     ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
+     .join(Role, SessionType.role_id == Role.id)\
      .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
      .filter(SessionLog.Owner_ID == current_user_contact_id)\
      .filter(Meeting.Meeting_Date >= today)\
-     .filter(SessionType.Role != '', SessionType.Role.isnot(None))\
-     .group_by(Meeting.Meeting_Number, SessionType.Role, Meeting.Meeting_Date)\
-     .order_by(Meeting.Meeting_Number, Meeting.Meeting_Date, SessionType.Role)
+     .filter(Role.name != '', Role.name.isnot(None))\
+     .group_by(Meeting.Meeting_Number, Role.name, Meeting.Meeting_Date)\
+     .order_by(Meeting.Meeting_Number, Meeting.Meeting_Date, Role.name)
 
     user_bookings = user_bookings_query.all()
 
@@ -276,11 +279,11 @@ def _get_user_bookings(current_user_contact_id):
                 'bookings': []
             }
         user_bookings_by_date[date_str]['bookings'].append({
-            'role': log.Role,
-            'role_key': log.Role,
+            'role': log.name,
+            'role_key': log.name,
             'icon': next((config.get('icon', current_app.config['DEFAULT_ROLE_ICON'])
                           for config in current_app.config['ROLES'].values()
-                          if config['name'] == log.Role
+                          if config['name'] == log.name
                           ), current_app.config['DEFAULT_ROLE_ICON']),
             'session_id': log.id
         })
@@ -300,16 +303,17 @@ def _get_completed_roles(current_user_contact_id, selected_level):
         completed_logs = db.session.query(
             Meeting.Meeting_Number,
             Meeting.Meeting_Date,
-            SessionType.Role
+            Role.name
         ).select_from(SessionLog)\
          .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+         .join(Role, SessionType.role_id == Role.id)\
          .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
          .filter(SessionLog.Owner_ID == current_user_contact_id)\
-         .filter(SessionType.Role.isnot(None), SessionType.Role != '', SessionType.Role != current_app.config['ROLES']['PREPARED_SPEAKER']['name'])\
+         .filter(Role.name.isnot(None), Role.name != '', Role.name != current_app.config['ROLES']['PREPARED_SPEAKER']['name'])\
          .filter(SessionLog.current_path_level.like(level_pattern))\
          .filter(Meeting.Meeting_Date < today)\
          .distinct()\
-         .order_by(Meeting.Meeting_Number.desc(), SessionType.Role.asc()).all()
+         .order_by(Meeting.Meeting_Number.desc(), Role.name.asc()).all()
 
         return [{
             'role': role_name,
@@ -413,7 +417,7 @@ def book_or_assign_role():
         return jsonify(success=False, message="Session not found."), 404
 
     session_type = SessionType.query.get(log.Type_ID)
-    logical_role_key = session_type.Role if session_type else None
+    logical_role_key = session_type.role.name if session_type and session_type.role else None
 
     if not logical_role_key:
         return jsonify(success=False, message="Could not determine the role key."), 400
@@ -424,9 +428,9 @@ def book_or_assign_role():
             sessions_to_waitlist = [log]
         else:
             # For non-unique roles, find all session logs for this role in the meeting
-            sessions_to_waitlist = SessionLog.query.join(SessionType)\
+            sessions_to_waitlist = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
                 .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-                .filter(SessionType.Role == logical_role_key).all()
+                .filter(Role.name == logical_role_key).all()
 
         for session_log in sessions_to_waitlist:
             existing_waitlist = Waitlist.query.filter_by(
@@ -454,9 +458,9 @@ def book_or_assign_role():
             owner_id_to_set = waitlist_entry.contact_id
 
             # Now, remove this user from the waitlist of ALL sessions for this role in this meeting.
-            sessions_to_leave = SessionLog.query.join(SessionType)\
+            sessions_to_leave = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
                 .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-                .filter(SessionType.Role == logical_role_key).all()
+                .filter(Role.name == logical_role_key).all()
 
             for session_log in sessions_to_leave:
                 Waitlist.query.filter_by(
@@ -469,9 +473,9 @@ def book_or_assign_role():
         if logical_role_key in current_app.config['UNIQUE_ENTRY_ROLES']:
             sessions_to_leave.append(log)
         else:
-            sessions_to_leave = SessionLog.query.join(SessionType)\
+            sessions_to_leave = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
                 .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-                .filter(SessionType.Role == logical_role_key).all()
+                .filter(Role.name == logical_role_key).all()
 
         for session_log in sessions_to_leave:
             waitlist_entry = Waitlist.query.filter_by(
@@ -501,9 +505,9 @@ def book_or_assign_role():
     if logical_role_key in unique_roles:
         sessions_to_update = [log]
     else:
-        sessions_to_update = SessionLog.query.join(SessionType)\
+        sessions_to_update = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
             .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-            .filter(SessionType.Role == logical_role_key).all()
+            .filter(Role.name == logical_role_key).all()
 
     for session_log in sessions_to_update:
         session_log.Owner_ID = owner_id_to_set

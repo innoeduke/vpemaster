@@ -143,36 +143,7 @@ function toggleEditMode(config) {
   });
 }
 
-/**
- * REFACTORED HELPER: Sets up sorting for a table.
- */
-function setupSorting(tableId) {
-  const table = document.getElementById(tableId);
-  if (!table) return;
 
-  table.querySelectorAll("th.sortable").forEach((headerCell) => {
-    headerCell.addEventListener("click", () => {
-      const columnIndex = parseInt(headerCell.dataset.columnIndex, 10);
-      const currentDir = headerCell.dataset.sortDir;
-      const newDir = currentDir === "asc" ? "desc" : "asc";
-
-      if (typeof sortTableByColumn === "function") {
-        sortTableByColumn(table, columnIndex, newDir === "asc");
-      } else {
-        console.error(
-          "sortTableByColumn function not found. Was main.js loaded?"
-        );
-        return;
-      }
-
-      table
-        .querySelectorAll("th.sortable")
-        .forEach((th) => delete th.dataset.sortDir);
-
-      headerCell.dataset.sortDir = newDir;
-    });
-  });
-}
 
 /**
  * REFACTORED HELPER: Sets up a single, global filter for all tabs.
@@ -418,6 +389,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 3. Sortable & Filterable Table Setup ---
   // A. Setup Sorting for each table by calling the new main.js function
+  function setupTableSorting(tableId) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+
+    table.querySelectorAll("th.sortable").forEach((headerCell) => {
+      headerCell.addEventListener("click", () => {
+        const columnIndex = parseInt(headerCell.dataset.columnIndex, 10);
+        const currentDir = headerCell.dataset.sortDir;
+        const newDir = currentDir === "asc" ? "desc" : "asc";
+
+        if (typeof sortTableByColumn === "function") {
+          sortTableByColumn(table, columnIndex, newDir === "asc");
+        } else {
+          console.error(
+            "sortTableByColumn function not found. Was main.js loaded?"
+          );
+          return;
+        }
+
+        table
+          .querySelectorAll("th.sortable")
+          .forEach((th) => delete th.dataset.sortDir);
+
+        headerCell.dataset.sortDir = newDir;
+      });
+    });
+  }
   setupTableSorting("sessions-table");
   setupTableSorting("user-settings-table");
   setupTableSorting("level-roles-table");
@@ -445,6 +443,25 @@ document.addEventListener("DOMContentLoaded", () => {
         field == "Predefined"
       ) {
         cell.querySelector('input[type="checkbox"]').disabled = false;
+      } else if (field === "role_id") {
+        const select = document.createElement("select");
+        select.className = "form-control-sm";
+        
+        // Add a "None" option
+        const noneOption = new Option("None", "");
+        select.appendChild(noneOption);
+
+        // Populate with roles from global data
+        ROLES_DATA.forEach(role => {
+          const option = new Option(role.name, role.id);
+          if (role.name === currentValue) {
+            option.selected = true;
+          }
+          select.appendChild(option);
+        });
+        
+        cell.textContent = "";
+        cell.appendChild(select);
       } else {
         const input = document.createElement("input");
         input.type = field.includes("Duration") ? "number" : "text";
@@ -474,7 +491,11 @@ document.addEventListener("DOMContentLoaded", () => {
         field == "Predefined"
       ) {
         return cell.querySelector('input[type="checkbox"]').checked;
-      } else {
+      } else if (field === "role_id") {
+        const select = cell.querySelector("select");
+        return select.value;
+      } 
+      else {
         return cell.querySelector("input").value;
       }
     },
@@ -487,6 +508,9 @@ document.addEventListener("DOMContentLoaded", () => {
         cell.innerHTML = `<input type="checkbox" ${
           value ? "checked" : ""
         } disabled>`;
+      } else if (field === "role_id") {
+        const selectedRole = ROLES_DATA.find(role => role.id == value);
+        cell.textContent = selectedRole ? selectedRole.name : "";
       } else {
         cell.textContent = value;
       }

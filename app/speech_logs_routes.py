@@ -1,7 +1,7 @@
 # innoeduke/vpemaster/vpemaster-dev0.3/speech_logs_routes.py
 from flask import Blueprint, jsonify, render_template, request, session, current_app
 from . import db
-from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media
+from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media, Role
 from .auth.utils import login_required, is_authorized
 from .utils import project_id_to_code
 from sqlalchemy import distinct
@@ -39,14 +39,14 @@ def show_speech_logs():
     # Eager load all common relationships
     base_query = db.session.query(SessionLog).options(
         joinedload(SessionLog.media),
-        joinedload(SessionLog.session_type),
+        joinedload(SessionLog.session_type).joinedload(SessionType.role),
         joinedload(SessionLog.meeting),
         joinedload(SessionLog.owner),
         joinedload(SessionLog.project)
-    ).join(SessionType).filter(
-        SessionType.Role.isnot(None),
-        SessionType.Role != '',
-        SessionType.Role != 'Backup Speaker'
+    ).join(SessionType).join(Role, SessionType.role_id == Role.id).filter(
+        Role.name.isnot(None),
+        Role.name != '',
+        Role.name != 'Backup Speaker'
 
     )
 
@@ -64,9 +64,9 @@ def show_speech_logs():
     for log in all_logs:
         display_level = "General"  # Default bucket for roles without a level
         log_type = 'role'
-        if not log.session_type:
+        if not log.session_type or not log.session_type.role:
             continue
-        role_name = log.session_type.Role
+        role_name = log.session_type.role.name
 
         if log.session_type.Title == 'Presentation':
             log_type = 'presentation'
@@ -244,9 +244,7 @@ def get_speech_log_details(log_id):
     """
     Fetches details for a specific speech log to populate the edit modal.
     """
-    log = db.session.query(SessionLog)\
-        .options(joinedload(SessionLog.media))\
-        .get_or_404(log_id)
+    log = db.session.query(SessionLog).options(joinedload(SessionLog.media)).get_or_404(log_id)
 
     user_role = session.get('user_role')
     user = User.query.get(session.get('user_id'))

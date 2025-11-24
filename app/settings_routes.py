@@ -37,7 +37,10 @@ def settings():
     presentations = Presentation.query.order_by(
         Presentation.level.asc(), Presentation.code.asc()).all()
     all_users = User.query.order_by(User.Username.asc()).all()
-    return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, presentations=presentations, general_settings=general_settings)
+    roles_query = Role.query.order_by(Role.name.asc()).all()
+    roles = [{'id': role.id, 'name': role.name} for role in roles_query]
+    print(roles)
+    return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, presentations=presentations, general_settings=general_settings, roles=roles)
 
 
 @settings_bp.route('/settings/sessions/add', methods=['POST'])
@@ -82,11 +85,13 @@ def add_session_type():
         if duration_min and duration_max and duration_min > duration_max:
             return jsonify(success=False, message="Duration min cannot be greater than duration max"), 400
 
+        role_id_str = request.form.get('role_id', '').strip()
+        role_id = int(role_id_str) if role_id_str else None
+
         new_session = SessionType(
             Title=title,
             Default_Owner=request.form.get('default_owner', '').strip() or None,
-            Role=request.form.get('role', '').strip() or None,
-            Role_Group=request.form.get('role_group', '').strip() or None,
+            role_id=role_id,
             Duration_Min=duration_min,
             Duration_Max=duration_max,
             Is_Section='is_section' in request.form,
@@ -125,8 +130,8 @@ def update_session_types():
             if session_type:
                 session_type.Title = item.get('Title')
                 session_type.Default_Owner = item.get('Default_Owner')
-                session_type.Role = item.get('Role')
-                session_type.Role_Group = item.get('Role_Group')
+                role_id_str = item.get('role_id')
+                session_type.role_id = int(role_id_str) if role_id_str else None
                 session_type.Is_Section = item.get('Is_Section', False)
                 session_type.Predefined = item.get('Predefined', False)
                 session_type.Valid_for_Project = item.get(

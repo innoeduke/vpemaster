@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
 from .auth.utils import login_required
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media, Roster
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media, Roster, Role
 from . import db
 from sqlalchemy import distinct, orm
 from datetime import datetime, timedelta
@@ -26,7 +26,7 @@ def _get_agenda_logs(meeting_number):
     """Fetches all agenda logs and related data for a specific meeting."""
     query = db.session.query(SessionLog)\
         .options(
-            orm.joinedload(SessionLog.session_type),  # Eager load SessionType
+            orm.joinedload(SessionLog.session_type).joinedload(SessionType.role),  # Eager load SessionType and Role
             orm.joinedload(SessionLog.meeting),      # Eager load Meeting
             orm.joinedload(SessionLog.project),      # Eager load Project
             orm.joinedload(SessionLog.owner),         # Eager load Owner
@@ -326,12 +326,12 @@ def agenda():
         # --- Award Logic ---
         award_type = None
         # Check if the log's owner is a winner
-        if log.Owner_ID and log.Owner_ID in award_winner_map and log.session_type:
+        if log.Owner_ID and log.Owner_ID in award_winner_map and log.session_type and log.session_type.role:
             # A person can win multiple awards, so we check each one.
             awards_won = award_winner_map[log.Owner_ID]
             for award_category in awards_won:
                 # Check if the role of the current log is eligible for this specific award
-                if log.session_type.Role in award_categories_roles.get(award_category, []):
+                if log.session_type.role.name in award_categories_roles.get(award_category, []):
                     # Format for display (e.g., "Best Speaker")
                     award_type = award_category.replace('_', ' ')
                     break  # Found the matching award for this role, no need to check further
@@ -362,7 +362,7 @@ def agenda():
             'session_type_title': session_type.Title if session_type else 'Unknown Type',
             'predefined': session_type.Predefined if session_type else False,
             'is_hidden': session_type.Is_Hidden if session_type else False,
-            'role': session_type.Role if session_type else '',
+            'role': session_type.role.name if session_type and session_type.role else '',
             'valid_for_project': session_type.Valid_for_Project if session_type else False,
             # Meeting fields
             'meeting_date_str': meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting and meeting.Meeting_Date else '',
@@ -421,16 +421,16 @@ def agenda():
 @login_required
 def get_all_data_for_modals():
     """
-    A single endpoint to fetch all data needed for the agenda modals.
+A single endpoint to fetch all data needed for the agenda modals.
     This is called once by the frontend after the initial page load.
     """
     # Session Types
-    session_types = SessionType.query.order_by(SessionType.Title.asc()).all()
+    session_types = SessionType.query.options(orm.joinedload(SessionType.role)).order_by(SessionType.Title.asc()).all()
     session_types_data = [
         {
             "id": s.id, "Title": s.Title, "Is_Section": s.Is_Section,
             "Valid_for_Project": s.Valid_for_Project, "Predefined": s.Predefined,
-            "Role": s.Role or '', "Role_Group": s.Role_Group or '',
+            "Role": s.role.name if s.role else '', "Role_Group": s.role.type if s.role else '',
             "Duration_Min": s.Duration_Min, "Duration_Max": s.Duration_Max
         } for s in session_types
     ]

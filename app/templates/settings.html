@@ -78,7 +78,7 @@ content %}
           <th class="sortable" data-column-index="1">Title</th>
           <th class="sortable" data-column-index="2">Default Owner</th>
           <th class="sortable" data-column-index="3">Role</th>
-          <th class="sortable" data-column-index="4">Role Group</th>
+          <th class="sortable" data-column-index="4">Role Type</th>
           <th class="sortable" data-column-index="5">Min (mins)</th>
           <th class="sortable" data-column-index="6">Max (mins)</th>
           <th class="sortable" data-column-index="7">Section</th>
@@ -98,11 +98,11 @@ content %}
           <td data-field="Default_Owner">
             {{ st.Default_Owner if st.Default_Owner is not none else '' }}
           </td>
-          <td data-field="Role">
-            {{ st.Role if st.Role is not none else '' }}
+          <td data-field="role_id">
+            {{ st.role.name if st.role else '' }}
           </td>
-          <td data-field="Role_Group">
-            {{ st.Role_Group if st.Role_Group is not none else '' }}
+          <td data-field="Role_Type">
+            {{ st.role.type if st.role else '' }}
           </td>
           <td data-field="Duration_Min">
             {{ st.Duration_Min if st.Duration_Min is not none else '' }}
@@ -342,5 +342,10 @@ content %}
 
 {% include '_session_modal.html' %}
 
+<script>
+  var ROLES_DATA = {{ roles|tojson }};
+</script>
+{% endblock %} 
+{% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 {% endblock %}

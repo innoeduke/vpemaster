@@ -80,15 +80,15 @@ def derive_current_path_level(log, owner_contact):
 
     # Determine the role name from the log's session type
     role_name = None
-    if hasattr(log, 'session_type') and log.session_type:
-        role_name = log.session_type.Role
+    if hasattr(log, 'session_type') and log.session_type and log.session_type.role:
+        role_name = log.session_type.role.name
     elif hasattr(log, 'Type_ID'):  # Fallback if session_type isn't loaded/available
         # This requires querying SessionType if not available on log,
         # adjust based on how log object is passed/constructed.
         # For simplicity, assuming session_type is usually available.
         # from .models import SessionType # Local import if needed
         # session_type = SessionType.query.get(log.Type_ID)
-        # if session_type: role_name = session_type.Role
+        # if session_type: role_name = session_type.role.name
         pass  # Add fallback query if necessary
 
     # --- Priority 1: Speaker/Evaluator with Project ID ---
