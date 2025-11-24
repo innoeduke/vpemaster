@@ -74,6 +74,8 @@ class Meeting(db.Model):
     Best_Roletaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     media_id = db.Column(db.Integer, db.ForeignKey('Media.id', use_alter=True))
     GE_Style = db.Column(db.String(20), default='One shot')
+    status = db.Column(db.Enum('not started', 'running', 'finished', 'cancelled', name='meeting_status'), 
+                       default='not started', nullable=False)
 
     best_tt_speaker = db.relationship('Contact', foreign_keys=[Best_TT_ID])
     best_evaluator = db.relationship(
