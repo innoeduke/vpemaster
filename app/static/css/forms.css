@@ -52,11 +52,15 @@
 .button-group {
     display: flex;
     gap: 10px;
-    max-width: 300px;
+    flex-wrap: wrap;
+    max-width: 100%;
 }
 
 .button-group > .btn {
     flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Form page styles */

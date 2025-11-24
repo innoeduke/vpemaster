@@ -342,6 +342,8 @@
     .action-bar .button-group {
         margin-top: 15px;
         justify-content: center;
+        flex-wrap: wrap;
+        max-width: 100%;
     }
 
     /* Reduce font size in agenda table for mobile */

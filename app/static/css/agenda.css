@@ -283,6 +283,11 @@
     margin: 0;
 }
 
+.action-bar-right {
+    justify-content: flex-end;
+    flex-grow: 1;
+}
+
 #edit-mode-buttons {
     position: fixed;
     top: 75px; 

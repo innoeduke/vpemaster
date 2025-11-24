@@ -120,6 +120,19 @@
             <div class="button-group" id="view-mode-buttons">
             {% if is_authorized(session.get('user_role'), 'AGENDA_EDIT') %}
             <button id="create-btn" class="btn btn-success">New</button>
+            {% if selected_meeting %}
+                <button id="meeting-status-btn" class="btn btn-info">
+                    {% if selected_meeting.status == 'not started' %}
+                        Start
+                    {% elif selected_meeting.status == 'running' %}
+                        Stop
+                    {% elif selected_meeting.status == 'finished' %}
+                        Delete
+                    {% else %}
+                        {{ selected_meeting.status.replace('_', ' ').title() }}
+                    {% endif %}
+                </button>
+            {% endif %}
             <button id="export-btn" class="btn btn-info">Export</button>
             <button id="edit-btn" class="btn btn-primary">Edit</button>
             {% endif %}
