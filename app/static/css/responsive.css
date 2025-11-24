@@ -471,6 +471,12 @@
         justify-content: flex-start;
     }
 
+    /* Allow admin controls to wrap on mobile */
+    .booking-table.is-admin-view .assign-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
     .booking-table.is-admin-view .assign-controls {
         width: 100%; 
     }

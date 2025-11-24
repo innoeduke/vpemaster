@@ -175,6 +175,9 @@ h1 {
     padding: 15px;
     text-align: left;
     border: none; /* No cell borders */
+    white-space: nowrap; /* Prevent text from wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ... if content is too long */
 }
 
 .booking-table tr {
@@ -201,20 +204,28 @@ h1 {
     justify-content: space-between;
     gap: 10px;
     font-weight: bold;
+    white-space: nowrap; /* Prevent role cell content from wrapping */
+    overflow: hidden; /* Hide overflow */
+    min-width: 250px; /* Ensure minimum width for role cell */
 }
 
 .role-cell i {
     color: #772432;
+    flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
 .role-cell-content {
     display: flex;
     align-items: left;
     gap: 10px; /* Keeps the icon and text together */
+    white-space: nowrap; /* Prevent content from wrapping */
+    overflow: hidden; /* Hide overflow */
+    flex-grow: 1; /* Allow content to grow and take available space */
 }
 
 .role-cell-actions {
     flex-shrink: 0; /* Stops the button from shrinking */
+    margin-left: 10px; /* Add space between content and actions */
 }
 
 /* Action Cell */
@@ -272,6 +283,11 @@ h1 {
     display: flex;
     align-items: center;
     gap: 5px;
+}
+
+.assign-controls .icon-btn {
+    padding: 6px 10px;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
 }
 
 .assign-controls select {
@@ -405,17 +421,29 @@ h1 {
 
     /* --- Admin Desktop Table Layout Fix --- */
     
-    .booking-table.is-admin-view {
-        table-layout: fixed;
+    /* Define the column widths for the admin view */
+    .booking-table.is-admin-view .role-cell {
+        width: 40%; /* Fixed width for the role name column */
+        min-width: 250px; /* Ensure minimum width */
+    }
+    .booking-table.is-admin-view .waitlist-cell {
+        width: 20%;
+    }
+    .booking-table.is-admin-view .action-cell {
+        width: 40%; /* Give more space to the action column */
     }
     
-    /* Define the column widths */
-    .booking-table.is-admin-view th:nth-of-type(2),
-    .booking-table.is-admin-view td:nth-of-type(2) { /* Role */
-        width: 30%; 
+    /* Define column widths for the regular user view */
+    .booking-table:not(.is-admin-view) .role-cell {
+        width: 50%; /* Fixed width for the role name column */
+        min-width: 250px; /* Ensure minimum width */
     }
-    
-
+    .booking-table:not(.is-admin-view) .waitlist-cell {
+        width: 25%;
+    }
+    .booking-table:not(.is-admin-view) .action-cell {
+        width: 25%; /* Give space to the action column */
+    }
 
     /* --- Desktop Completed Roles Grid --- */
     .completed-roles-list {
@@ -455,6 +483,9 @@ h1 {
 .waitlist-users li {
     display: block; /* Each user on a new line */
     margin-bottom: 2px; /* Optional: adds a little space between names */
+    white-space: nowrap; /* Prevent waitlist user names from wrapping */
+    overflow: hidden; /* Hide overflow */
+    text-overflow: ellipsis; /* Add ... if name is too long */
 }
 
 .btn-join-waitlist, .btn-leave-waitlist {
@@ -466,6 +497,7 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
+    white-space: nowrap; /* Prevent button text from wrapping */
 }
 
 .btn-join-waitlist {

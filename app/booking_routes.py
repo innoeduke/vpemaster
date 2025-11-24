@@ -108,13 +108,13 @@ def _enrich_role_data(roles_dict, selected_meeting):
         # Get role from database to fetch icon
         role_obj = Role.query.filter_by(name=role_data['role_key']).first()
         role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else current_app.config['DEFAULT_ROLE_ICON']
-        
+
         # Find the role in MEETING_ROLES config by its name ('role_key')
         role_config = next((
             config for config in current_app.config['ROLES'].values()
             if config['name'] == role_data['role_key']
         ), None)
-        
+
         # Keep the old logic as fallback, but prefer the icon from Role model
         if not (role_obj and role_obj.icon):
             role_data['icon'] = role_config.get(
@@ -451,30 +451,65 @@ def book_or_assign_role():
                 db.session.add(new_waitlist_entry)
 
         db.session.commit()
-        return jsonify(success=True, message="You have been added to the waitlist.")
+        return jsonify(success=True)
     elif action == 'book':
-        if log.Owner_ID is not None:
+        # Check if the role needs approval
+        role_needs_approval = session_type.role.needs_approval if session_type and session_type.role else False
+
+        if role_needs_approval:
+            # For roles that need approval, always put user on waitlist
+            sessions_to_waitlist = []
+            if logical_role_key in current_app.config['UNIQUE_ENTRY_ROLES']:
+                sessions_to_waitlist = [log]
+            else:
+                # For non-unique roles, find all session logs for this role in the meeting
+                sessions_to_waitlist = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
+                    .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+                    .filter(Role.name == logical_role_key).all()
+
+            for session_log in sessions_to_waitlist:
+                existing_waitlist = Waitlist.query.filter_by(
+                    session_log_id=session_log.id, contact_id=current_user_contact_id).first()
+                if not existing_waitlist:
+                    new_waitlist_entry = Waitlist(
+                        session_log_id=session_log.id,
+                        contact_id=current_user_contact_id,
+                        timestamp=datetime.utcnow()
+                    )
+                    db.session.add(new_waitlist_entry)
+
+            db.session.commit()
+            return jsonify(success=True, message="You have been added to the waitlist for this role. The booking requires approval.")
+        elif log.Owner_ID is not None:
             return jsonify(success=False, message="This role is already booked.")
         else:
             owner_id_to_set = current_user_contact_id
     elif action == 'cancel':
-        waitlist_entry = Waitlist.query.filter_by(
-            session_log_id=session_id).order_by(Waitlist.timestamp).first()
-        if waitlist_entry:
-            # This user is being promoted.
-            owner_id_to_set = waitlist_entry.contact_id
+        # Check if the role needs approval
+        role_needs_approval = session_type.role.needs_approval if session_type and session_type.role else False
 
-            # Now, remove this user from the waitlist of ALL sessions for this role in this meeting.
-            sessions_to_leave = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
-                .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-                .filter(Role.name == logical_role_key).all()
-
-            for session_log in sessions_to_leave:
-                Waitlist.query.filter_by(
-                    session_log_id=session_log.id, contact_id=owner_id_to_set).delete(synchronize_session=False)
-
-        else:
+        if role_needs_approval:
+            # For roles that need approval, do not automatically promote from waitlist
             owner_id_to_set = None
+        else:
+            # Original logic for roles that don't need approval
+            waitlist_entry = Waitlist.query.filter_by(
+                session_log_id=session_id).order_by(Waitlist.timestamp).first()
+            if waitlist_entry:
+                # This user is being promoted.
+                owner_id_to_set = waitlist_entry.contact_id
+
+                # Now, remove this user from the waitlist of ALL sessions for this role in this meeting.
+                sessions_to_leave = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
+                    .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+                    .filter(Role.name == logical_role_key).all()
+
+                for session_log in sessions_to_leave:
+                    Waitlist.query.filter_by(
+                        session_log_id=session_log.id, contact_id=owner_id_to_set).delete(synchronize_session=False)
+
+            else:
+                owner_id_to_set = None
     elif action == 'leave_waitlist':
         sessions_to_leave = []
         if logical_role_key in current_app.config['UNIQUE_ENTRY_ROLES']:
@@ -495,6 +530,37 @@ def book_or_assign_role():
     elif action == 'assign' and is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
         contact_id = data.get('contact_id', '0')
         owner_id_to_set = int(contact_id) if contact_id != '0' else None
+
+        # If assigning a specific user (not unassigning), remove that user from the waitlist
+        if owner_id_to_set:
+            # Remove this user from the waitlist of ALL sessions for this role in this meeting.
+            sessions_to_leave = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
+                .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+                .filter(Role.name == logical_role_key).all()
+
+            for session_log in sessions_to_leave:
+                Waitlist.query.filter_by(
+                    session_log_id=session_log.id, contact_id=owner_id_to_set).delete(synchronize_session=False)
+
+    elif action == 'approve_waitlist' and is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
+        # Get the top person from the waitlist for this specific session_id
+        waitlist_entry = Waitlist.query.filter_by(
+            session_log_id=session_id).order_by(Waitlist.timestamp).first()
+
+        if not waitlist_entry:
+            return jsonify(success=False, message="No one is on the waitlist to approve."), 404
+
+        owner_id_to_set = waitlist_entry.contact_id
+
+        # Remove the approved user from the waitlist of ALL sessions for this role in this meeting.
+        sessions_to_leave = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
+            .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+            .filter(Role.name == logical_role_key).all()
+
+        for session_log in sessions_to_leave:
+            Waitlist.query.filter_by(
+                session_log_id=session_log.id, contact_id=owner_id_to_set).delete(synchronize_session=False)
+
     else:
         return jsonify(success=False, message="Invalid action or permissions."), 403
 
@@ -517,6 +583,14 @@ def book_or_assign_role():
             .filter(Role.name == logical_role_key).all()
 
     for session_log in sessions_to_update:
+        # Re-fetch owner_contact and derive path/designation inside the loop if needed,
+        # but for simplicity, we can do it once if the owner is the same for all.
+        owner_contact = Contact.query.get(
+            owner_id_to_set) if owner_id_to_set else None
+        new_path_level = derive_current_path_level(
+            session_log, owner_contact) if owner_contact else None
+        new_designation = derive_designation(owner_contact)
+
         session_log.Owner_ID = owner_id_to_set
         session_log.current_path_level = new_path_level
         session_log.Designation = new_designation

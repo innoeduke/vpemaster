@@ -80,7 +80,8 @@
     </div>
     <br/>
     <h3 class="booking-section-header">Available Roles</h3>
-    <div class="alert-closable alert-danger">
+    
+{#     <div class="alert-closable alert-danger">
         <div class="alert-icon">
             <i class="fas fa-exclamation-triangle"></i>
         </div>
@@ -95,7 +96,8 @@
             </ol>
         </div>
         <span class="close-alert" onclick="this.parentElement.style.display='none';">&times;</span>
-    </div>
+    </div> #}
+    
     <div class="booking-filter-container">
         <div class="filter-left">
             <i class="fas fa-calendar-alt"></i>
@@ -133,7 +135,7 @@
         </thead>
         <tbody>
             {% for role in roles %}
-            <tr data-session-id="{{ role.session_id }}" {% if is_past_meeting and not is_admin_view %}class="is-past-meeting-row"{% endif %}>
+            <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}" {% if is_past_meeting and not is_admin_view %}class="is-past-meeting-row"{% endif %}>
                 <td class="role-cell">
                     <div class="role-cell-content">
                         <i class="fas {{ role.icon }}"></i>
@@ -197,23 +199,37 @@
                                     <option value="{{ contact.id }}" {% if role.owner_id == contact.id %}selected{% endif %}>{{ contact.Name }}</option>
                                     {% endfor %}
                                 </select>
+                                <div class="button-group">
+                                    <button class="icon-btn" title="Unassign Role" onclick="assignRole('{{ role.session_id }}', '{{ role.role_key }}', '0')">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                    {% if role.waitlist %}
+                                    <button class="icon-btn btn-approve-waitlist" title="Approve top of waitlist" onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">
+                                        <i class="fas fa-user-check"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
                             </div>
                         {% else %}
                             {% if role.owner_id %}
                                 {% if role.owner_id == current_user_contact_id %}
                                     <button class="btn btn-cancel" onclick="bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role_key }}')">Cancel</button>
                                 {% else %}
-                                    <div class="booked-by-container">
-                                        {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
-                                        {% if current_user_contact_id in waitlist_ids %}
-                                            <button class="btn btn-leave-waitlist" onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
-                                        {% else %}
-                                            <button class="btn btn-join-waitlist" onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
-                                        {% endif %}
-                                    </div>
+                                    {# This is a role booked by someone else. Check if current user is on waitlist. #}
+                                    {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
+                                    {% if current_user_contact_id in waitlist_ids %}
+                                        <button class="btn btn-leave-waitlist" onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
+                                    {% else %}
+                                        <button class="btn btn-join-waitlist" onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
+                                    {% endif %}
                                 {% endif %}
                             {% else %}
-                                <button class="btn btn-book" onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role_key }}')">Book</button>
+                                {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
+                                {% if current_user_contact_id in waitlist_ids %}
+                                    <button class="btn btn-leave-waitlist" onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
+                                {% else %}
+                                    <button class="btn btn-book" onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role_key }}')">Book</button>
+                                {% endif %}
                             {% endif %}
                         {% endif %}
                     {% endif %}
@@ -231,6 +247,7 @@
     var isAdminView = {{ is_admin_view|tojson }};
     var selectedMeetingNumber = {{ selected_meeting_number|tojson }};
     var selectedLevel = {{ selected_level|tojson }};
+    var currentUserName = "{{ session.display_name|e }}";
 </script>
 <script src="{{ url_for('static', filename='js/booking.js') }}"></script>
 {% endblock %}

@@ -75,7 +75,52 @@ function bookOrCancelRole(sessionId, action, roleKey) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        window.location.reload(true); // Force reload from server
+        // Check if this is a booking action that results in waitlist for approval-required roles
+        if (
+          action === "book" &&
+          data.message &&
+          data.message.includes("approval")
+        ) {
+          // Instead of reloading the page, update the button dynamically
+          const row = document.querySelector(
+            `tr[data-session-id="${sessionId}"]`
+          );
+          if (row) {
+            // Update the button to Leave Waitlist
+            const actionCell = row.querySelector(".action-cell");
+            if (actionCell) {
+              actionCell.innerHTML = `<button class="btn btn-leave-waitlist" onclick="leaveWaitlist('${sessionId}', '${roleKey}')">Leave Waitlist</button>`;
+            }
+
+            // Update the waitlist display
+            const waitlistCell = row.querySelector(".waitlist-cell");
+            if (waitlistCell) {
+              // Get user's name from session
+              const currentUser = currentUserName || "Unknown User";
+
+              // Check if waitlist info div exists, if not create it
+              let waitlistInfo = waitlistCell.querySelector(".waitlist-info");
+              if (!waitlistInfo) {
+                waitlistInfo = document.createElement("div");
+                waitlistInfo.className = "waitlist-info";
+                waitlistInfo.innerHTML =
+                  '<span style="font-size:0.5em;">Waitlist:</span>' +
+                  '<ul class="waitlist-users"></ul>';
+                waitlistCell.appendChild(waitlistInfo);
+              }
+
+              // Add current user to the waitlist
+              const waitlistUsers =
+                waitlistInfo.querySelector(".waitlist-users");
+              const newUserItem = document.createElement("li");
+              newUserItem.innerHTML =
+                '<i class="fas fa-user"></i> ' + currentUser;
+              waitlistUsers.appendChild(newUserItem);
+            }
+          }
+        } else {
+          window.location.reload(true); // Force reload from server for other cases
+        }
       } else {
         alert("Error: " + data.message);
       }
@@ -83,29 +128,52 @@ function bookOrCancelRole(sessionId, action, roleKey) {
 }
 
 function assignRole(sessionId, roleKey, contactId) {
-  if (contactId == "0") {
-    // If "un-assigning", call the 'cancel' function instead
-    bookOrCancelRole(sessionId, "cancel", roleKey);
-  } else {
-    fetch("/booking/book", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        session_id: sessionId,
-        action: "assign",
-        role_key: roleKey,
-        contact_id: contactId,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          window.location.reload();
+  fetch("/booking/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      action: "assign",
+      role_key: roleKey,
+      contact_id: contactId,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        if (contactId === "0") {
+          // If un-assigning, update the UI dynamically without a full page reload.
+          const row = document.querySelector(
+            `tr[data-session-id="${sessionId}"]`
+          );
+          if (row) {
+            // 1. Reset the dropdown menu
+            const selectElement = row.querySelector(".admin-assign-select");
+            if (selectElement) {
+              selectElement.value = "0";
+              const previouslySelected =
+                selectElement.querySelector("option[selected]");
+              if (previouslySelected) {
+                previouslySelected.removeAttribute("selected");
+              }
+            }
+
+            // 2. Remove any award or voting icons from the role cell actions
+            const roleActions = row.querySelector(".role-cell-actions");
+            if (roleActions) {
+              roleActions.innerHTML = ""; // Clear out the buttons
+            }
+            if (previouslySelected) {
+              previouslySelected.removeAttribute("selected");
+            }
+          }
         } else {
-          alert("Error: " + data.message);
+          window.location.reload();
         }
-      });
-  }
+      } else {
+        alert("Error: " + data.message);
+      }
+    });
 }
 function handleVoteClick(buttonEl) {
   const data = {
@@ -181,7 +249,29 @@ function leaveWaitlist(sessionId, roleKey) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        window.location.reload(true); // Force reload from server
+        // Reload the page to ensure all role statuses and buttons are correctly updated from the server.
+        // This is more robust than trying to manage complex state on the client side.
+        window.location.reload(true);
+      } else {
+        alert("Error: " + data.message);
+      }
+    });
+}
+
+function approveWaitlist(sessionId, roleKey) {
+  fetch("/booking/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      action: "approve_waitlist",
+      role_key: roleKey,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        window.location.reload(true);
       } else {
         alert("Error: " + data.message);
       }
@@ -201,7 +291,28 @@ function joinWaitlist(sessionId, roleKey) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        window.location.reload(true); // Force reload from server
+        // Reload the page to ensure all role statuses and buttons are correctly updated from the server.
+        window.location.reload(true);
+      } else {
+        alert("Error: " + data.message);
+      }
+    });
+}
+
+function joinWaitlist(sessionId, roleKey) {
+  fetch("/booking/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      action: "join_waitlist",
+      role_key: roleKey,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        window.location.reload(true);
       } else {
         alert("Error: " + data.message);
       }
