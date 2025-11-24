@@ -1,52 +1,55 @@
 # vpemaster/utils.py
 
 from flask import current_app
-from .models import Project, Presentation  # Ensure Project model is imported if needed elsewhere
+# Ensure Project model is imported if needed elsewhere
+from .models import Project, Presentation
 import re
 import configparser
 import os
+import hashlib
 
 
 def project_id_to_code(project_id, path_abbr):
     """
     Returns project code based on project_id and the two-letter path abbreviation.
-    
+
     Args:
         project_id (int): The ID of the project
         path_abbr (str): Two-letter path abbreviation (e.g., 'PM', 'EH', 'DL')
-        
+
     Returns:
         str: The project code with format <path_abbr><n.n(.n)> (e.g., "PM1.1", "EH3.2") or "" if not found
     """
     if not project_id or not path_abbr:
         return ""
-        
+
     # Special handling for presentations
     presentation_series_initials = {
         'Successful Club Series': 'SC',
-        'Leadership Excellence Series': 'LE', 
+        'Leadership Excellence Series': 'LE',
         'Better Speaker Series': 'BS'
     }
-    
+
     if path_abbr in presentation_series_initials.values():
         presentation = Presentation.query.get(project_id)
         if presentation and presentation.series:
-            series_name = next((name for name, initial in presentation_series_initials.items() if initial == path_abbr), None)
+            series_name = next((name for name, initial in presentation_series_initials.items(
+            ) if initial == path_abbr), None)
             if series_name and presentation.series == series_name:
                 return f"{path_abbr}{presentation.code}"
         return ""
-        
+
     project = Project.query.get(project_id)
     if not project:
         return ""
-        
+
     # Special case for project ID 60 (TM1.0)
     if project_id == 60:
         return "TM1.0"
-        
+
     code_attr = f"Code_{path_abbr}"
     project_code = getattr(project, code_attr, None)
-    
+
     if project_code:
         return f"{path_abbr}{project_code}"
     return ""
@@ -146,6 +149,71 @@ def derive_designation(contact):
     elif contact.Type == 'Member' and contact.Completed_Paths:
         return contact.Completed_Paths.replace(' ', '/')
     return ''
+
+
+def is_valid_for_vote(request, meeting_number, voter_identifier):
+    """
+    Validates if a user can vote for a specific meeting.
+
+    This function ensures that:
+    1. Each user can only vote once per meeting
+    2. Users can vote for different meetings
+    3. Voting is tracked anonymously without storing personal information
+
+    Args:
+        request (Request): Flask request object
+        meeting_number (int): The meeting number to vote for
+        voter_identifier (str): A unique identifier for the voter (e.g. hashed IP + User Agent)
+
+    Returns:
+        tuple: (is_valid, message) where is_valid is a boolean and message explains the result
+    """
+    from flask import session
+    import hashlib
+
+    # Create a unique key for this meeting and voter combination
+    vote_key = f"vote_{meeting_number}_{voter_identifier}"
+
+    # Check if this voter has already voted for this meeting
+    if session.get(vote_key):
+        return False, "You have already voted for this meeting."
+
+    # Mark that this user has voted for this meeting
+    session[vote_key] = True
+
+    return True, "Vote recorded successfully."
+
+
+def get_unique_identifier(request):
+    """
+    Generates a unique identifier for a voter based on their IP address and user agent.
+
+    This function creates a SHA-256 hash of the user's IP address and user agent string,
+    which can be used to identify unique voters without storing personal information.
+
+    Args:
+        request (Request): Flask request object
+
+    Returns:
+        str: A SHA-256 hash representing the unique voter identifier
+    """
+    # Get the user's IP address
+    if request.headers.get('X-Forwarded-For'):
+        ip_address = request.headers.get(
+            'X-Forwarded-For').split(',')[0].strip()
+    elif request.headers.get('X-Real-IP'):
+        ip_address = request.headers.get('X-Real-IP')
+    else:
+        ip_address = request.remote_addr
+
+    # Get the user agent string
+    user_agent = request.headers.get('User-Agent', '')
+
+    # Combine IP and user agent
+    combined_string = f"{ip_address}{user_agent}"
+
+    # Generate and return SHA-256 hash
+    return hashlib.sha256(combined_string.encode('utf-8')).hexdigest()
 
 
 def load_setting(section, setting_key, default=None):

@@ -116,6 +116,7 @@
         </div>
     </div>
 
+    {% if is_admin_view or (selected_meeting and selected_meeting.status == 'not started') %}
     <table class="booking-table {% if is_admin_view %}is-admin-view{% endif %}">
         <thead>
             <tr>
@@ -239,6 +240,47 @@
         </tbody>
 
     </table>
+    {% elif selected_meeting and selected_meeting.status in ['running','finished'] and not is_admin_view %}
+    <!-- 显示类似管理员视图的表格，供普通用户在会议进行中查看 -->
+    <table class="booking-table mimic-admin-view">
+        <thead>
+            <tr>
+                <th class="role-header">Role</th>
+                <th class="owner-header">Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for role in roles %}
+            <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
+                <td class="role-cell">
+                    <div class="role-cell-content">
+                        <i class="fas {{ role.icon }}"></i>
+                        <div class="role-display-text">
+                            <span>{{ role.role }}</span>
+                            {% if role.speaker_name %}
+                                <span class="speaker-for">for {{ role.speaker_name }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="role-cell-actions">
+                        {# Show trophy for everyone if an award is given #}
+                        {% if role.award_type %}
+                            <span class="icon-btn icon-btn-voted" title="{{ role.award_type }} Winner">
+                                <i class="fas fa-award"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="action-cell">
+                    <div class="owner-display">
+                        {{ role.owner_name or 'Unassigned' }}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
     
 </div>
 

@@ -32,7 +32,8 @@ class User(db.Model):
     Current_Path = db.Column(db.String(50), nullable=True)
     Next_Project = db.Column(db.String(100), nullable=True)
     Credential = db.Column(db.String(10), nullable=True)
-    contact = db.relationship('Contact', foreign_keys=[Contact_ID], backref=db.backref('user', uselist=False))
+    contact = db.relationship('Contact', foreign_keys=[
+                              Contact_ID], backref=db.backref('user', uselist=False))
     mentor = db.relationship('Contact', foreign_keys=[Mentor_ID])
 
 
@@ -74,7 +75,7 @@ class Meeting(db.Model):
     Best_Roletaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     media_id = db.Column(db.Integer, db.ForeignKey('Media.id', use_alter=True))
     GE_Style = db.Column(db.String(20), default='One shot')
-    status = db.Column(db.Enum('not started', 'running', 'finished', 'cancelled', name='meeting_status'), 
+    status = db.Column(db.Enum('not started', 'running', 'finished', 'cancelled', name='meeting_status'),
                        default='not started', nullable=False)
 
     best_tt_speaker = db.relationship('Contact', foreign_keys=[Best_TT_ID])
@@ -179,7 +180,8 @@ class Roster(db.Model):
     meeting_number = db.Column(db.Integer, nullable=False)
     order_number = db.Column(db.Integer, nullable=False)
     ticket = db.Column(db.String(20), nullable=True)
-    contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey(
+        'Contacts.id'), nullable=True)
 
     contact = db.relationship('Contact', backref='roster_entries')
 
@@ -193,3 +195,22 @@ class Role(db.Model):
     award_category = db.Column(db.String(30))
     needs_approval = db.Column(db.Boolean, nullable=False)
     is_distinct = db.Column(db.Boolean, nullable=False)
+
+
+class Vote(db.Model):
+    __tablename__ = 'votes'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_number = db.Column(db.Integer, nullable=False)
+    voter_identifier = db.Column(db.String(64), nullable=False)
+    award_category = db.Column(db.Enum('speaker', 'evaluator', 'role-taker',
+                               'table-topic', name='award_category_enum'), nullable=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey(
+        'Contacts.id'), nullable=True)
+
+    # 添加与Contact表的关系
+    contact = db.relationship('Contact', backref='votes')
+
+    # 添加索引以提高查询性能
+    __table_args__ = (
+        db.Index('idx_meeting_voter', 'meeting_number', 'voter_identifier'),
+    )
