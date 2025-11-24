@@ -1,10 +1,12 @@
 # vpemaster/settings_routes.py
 
-from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, current_app
+from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, current_app, flash
 from .auth.utils import login_required, is_authorized
-from .models import SessionType, User, LevelRole, Presentation
+from .models import SessionType, User, LevelRole, Presentation, Role
 from . import db
 from .utils import load_all_settings
+import csv
+import os
 
 settings_bp = Blueprint('settings_bp', __name__)
 
@@ -242,3 +244,52 @@ def update_presentations():
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
+
+
+import io
+
+@settings_bp.route('/settings/roles/import', methods=['POST'])
+@login_required
+def import_roles():
+    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+        return redirect(url_for('agenda_bp.agenda'))
+
+    if 'file' not in request.files:
+        flash('No file part', 'danger')
+        return redirect(url_for('settings_bp.settings', _anchor='agenda-settings'))
+
+    file = request.files['file']
+
+    if file.filename == '':
+        flash('No selected file', 'danger')
+        return redirect(url_for('settings_bp.settings', _anchor='agenda-settings'))
+
+    if file and file.filename.endswith('.csv'):
+        try:
+            # Read the file in-memory
+            stream = io.StringIO(file.stream.read().decode("utf-8-sig"), newline=None)
+            reader = csv.DictReader(stream)
+            
+            for row in reader:
+                role_name = row.get('name')
+                if role_name and not Role.query.filter_by(name=role_name).first():
+                    new_role = Role(
+                        name=role_name,
+                        icon=row.get('icon'),
+                        type=row.get('type'),
+                        award_category=row.get('award_category'),
+                        needs_approval=row.get('needs_approval', '0').strip() == '1',
+                        is_distinct=row.get('is_distinct', '0').strip() == '1'
+                    )
+                    db.session.add(new_role)
+            
+            db.session.commit()
+            flash('Roles have been successfully imported.', 'success')
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'An error occurred: {e}', 'danger')
+    else:
+        flash('Invalid file format. Please upload a .csv file.', 'danger')
+
+    return redirect(url_for('settings_bp.settings', _anchor='agenda-settings'))

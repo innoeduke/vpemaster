@@ -179,3 +179,14 @@ class Roster(db.Model):
     contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
 
     contact = db.relationship('Contact', backref='roster_entries')
+
+
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False)
+    icon = db.Column(db.String(50))
+    type = db.Column(db.String(20), nullable=False)
+    award_category = db.Column(db.String(30))
+    needs_approval = db.Column(db.Boolean, nullable=False)
+    is_distinct = db.Column(db.Boolean, nullable=False)

@@ -1,0 +1,26 @@
+name,icon,type,award_category,needs_approval,is_distinct
+Toastmaster,fa-microphone,standard,role-taker,1,1
+General Evaluator,fa-search,standard,role-taker,1,1
+Individual Evaluator,fa-pen-square,standard,evaluator,0,0
+Topicmaster,fa-comments,standard,role-taker,1,1
+Grammarian,fa-book,standard,role-taker,0,1
+Timer,fa-stopwatch,standard,role-taker,0,1
+Ah-Counter,fa-calculator,standard,role-taker,0,1
+Prepared Speaker,fa-user-tie,standard,speaker,1,0
+Topics Speaker,fa-comment,standard,table-topic,0,0
+Keynote Speaker,fa-star,club-specific,speaker,1,1
+Welcome Officer,fa-smile,club-specific,role-taker,0,1
+Photographer,fa-camera,club-specific,role-taker,0,1
+Presenter,fa-share-alt,standard,speaker,1,0
+Meeting Manager,fa-clipboard-list,club-specific,role-taker,1,1
+Election Chair,fa-vote-yea,club-specific,role-taker,1,1
+Chief Contest Judge,fa-gavel,club-specific,role-taker,1,1
+Moderator,fa-gavel,club-specific,role-taker,1,1
+Panelist,fa-users,club-specific,none,1,0
+Debate Host,fa-comments,club-specific,role-taker,1,1
+Debater,fa-balance-scale,club-specific,none,1,0
+Club Mentor,fa-graduation-cap,club-specific,none,1,0
+Introductory Mentor,fa-seedling,club-specific,none,1,0
+SAA,fa-door-open,officer,none,0,1
+President,fa-gavel,officer,none,0,1
+VPM,fa-handshake,officer,none,0,1

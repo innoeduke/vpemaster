@@ -164,7 +164,23 @@ content %}
   </div>
 
   <div id="agenda-settings" class="tab-content">
-    <h2>Agenda Settings</h2>
+    <div class="settings-header">
+      <h2>Meeting Roles</h2>
+      <form
+        action="{{ url_for('settings_bp.import_roles') }}"
+        method="post"
+        enctype="multipart/form-data"
+        id="import-roles-form"
+      >
+        <div>
+            <label for="file">Import roles from a CSV file:</label>
+            <input type="file" name="file" accept=".csv" />
+        </div>
+        <button type="submit" class="btn btn-primary">
+          Import Roles
+        </button>
+      </form>
+    </div>
     <p>
       Settings related to the meeting agenda, templates, and session types will
       be configured here.
