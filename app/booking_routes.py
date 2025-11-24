@@ -105,13 +105,20 @@ def _enrich_role_data(roles_dict, selected_meeting):
 
     enriched_roles = []
     for _, role_data in roles_dict.items():
+        # Get role from database to fetch icon
+        role_obj = Role.query.filter_by(name=role_data['role_key']).first()
+        role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else current_app.config['DEFAULT_ROLE_ICON']
+        
         # Find the role in MEETING_ROLES config by its name ('role_key')
         role_config = next((
             config for config in current_app.config['ROLES'].values()
             if config['name'] == role_data['role_key']
         ), None)
-        role_data['icon'] = role_config.get(
-            'icon', current_app.config['DEFAULT_ROLE_ICON']) if role_config else current_app.config['DEFAULT_ROLE_ICON']
+        
+        # Keep the old logic as fallback, but prefer the icon from Role model
+        if not (role_obj and role_obj.icon):
+            role_data['icon'] = role_config.get(
+                'icon', current_app.config['DEFAULT_ROLE_ICON']) if role_config else current_app.config['DEFAULT_ROLE_ICON']
 
         role_data['session_id'] = role_data['session_ids'][0]
 

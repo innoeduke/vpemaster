@@ -1,0 +1,67 @@
+<div id="addRoleModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('addRoleModal')">&times;</span>
+    <h1>Add New Role</h1>
+    <form action="{{ url_for('settings_bp.add_role') }}" method="POST">
+      <table class="form-table">
+        <tr>
+          <td><label for="name">Name:</label></td>
+          <td><input type="text" id="name" name="name" required /></td>
+        </tr>
+        <tr>
+          <td><label for="icon">Icon:</label></td>
+          <td><input type="text" id="icon" name="icon" /></td>
+        </tr>
+        <tr>
+          <td><label for="type">Type:</label></td>
+          <td><input type="text" id="type" name="type" required /></td>
+        </tr>
+        <tr>
+          <td><label for="award_category">Award Category:</label></td>
+          <td><input type="text" id="award_category" name="award_category" /></td>
+        </tr>
+        <tr>
+          <td colspan="2" style="text-align: center; padding-top: 15px">
+            <label
+              for="needs_approval"
+              style="display: inline-block; margin-right: 15px"
+              >Needs Approval:</label
+            >
+            <input
+              type="checkbox"
+              id="needs_approval"
+              name="needs_approval"
+              style="transform: scale(1.2)"
+            />
+
+            <label
+              for="is_distinct"
+              style="
+                display: inline-block;
+                margin-left: 30px;
+                margin-right: 15px;
+              "
+              >Is Distinct:</label
+            >
+            <input
+              type="checkbox"
+              id="is_distinct"
+              name="is_distinct"
+              style="transform: scale(1.2)"
+            />
+          </td>
+        </tr>
+      </table>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Role</button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          onclick="closeModal('addRoleModal')"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

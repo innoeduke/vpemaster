@@ -124,15 +124,19 @@ function toggleEditMode(config) {
     }
     row.querySelectorAll("td[data-field]").forEach((cell) => {
       const field = cell.dataset.field;
-      let currentValue = cell.textContent.trim();
+      let currentValue;
 
       if (enable) {
         if (
           field.startsWith("Is_") ||
           field === "Valid_for_Project" ||
-          field == "Predefined"
+          field == "Predefined" ||
+          field == "needs_approval" ||
+          field == "is_distinct"
         ) {
           currentValue = cell.querySelector('input[type="checkbox"]').checked;
+        } else {
+          currentValue = cell.textContent.trim();
         }
         originalData[id][field] = currentValue;
         createEditor(cell, field, currentValue);
@@ -331,6 +335,55 @@ function showNotification(message, type = "info") {
   }
 }
 
+function sortTableByColumn(table, column, asc = true) {
+  const dirModifier = asc ? 1 : -1;
+  const tBody = table.tBodies[0];
+  const rows = Array.from(tBody.querySelectorAll("tr"));
+
+  // Sort each row
+  const sortedRows = rows.sort((a, b) => {
+    const aCell = a.querySelector(`td:nth-child(${column + 1})`);
+    const bCell = b.querySelector(`td:nth-child(${column + 1})`);
+
+    const aCheckbox = aCell.querySelector('input[type="checkbox"]');
+    const bCheckbox = bCell.querySelector('input[type="checkbox"]');
+
+    if (aCheckbox && bCheckbox) {
+      const aVal = aCheckbox.checked;
+      const bVal = bCheckbox.checked;
+      return (aVal === bVal) ? 0 : (aVal < bVal ? -1 : 1) * dirModifier;
+    }
+
+    const aColText = aCell.textContent.trim();
+    const bColText = bCell.textContent.trim();
+
+    // Check if the values are numbers and compare them as such
+    if (!isNaN(aColText) && !isNaN(bColText) && aColText !== '' && bColText !== '') {
+      return (parseFloat(aColText) - parseFloat(bColText)) * dirModifier;
+    } else {
+      return aColText.localeCompare(bColText, undefined, {
+        numeric: true,
+      }) * dirModifier;
+    }
+  });
+
+  // Remove all existing TRs from the table
+  while (tBody.firstChild) {
+    tBody.removeChild(tBody.firstChild);
+  }
+
+  // Re-add the newly sorted rows
+  tBody.append(...sortedRows);
+
+  // Update the sort direction attribute on the header
+  table
+    .querySelectorAll("th")
+    .forEach((th) => th.removeAttribute("data-sort-dir"));
+  table
+    .querySelector(`th:nth-child(${column + 1})`)
+    .setAttribute("data-sort-dir", asc ? "asc" : "desc");
+}
+
 /**
  * All setup logic for the settings page.
  */
@@ -359,6 +412,15 @@ document.addEventListener("DOMContentLoaded", () => {
   if (addSessionBtn && sessionModal) {
     addSessionBtn.addEventListener("click", () => {
       sessionModal.style.display = "flex";
+    });
+  }
+
+  // "Add Role" modal
+  const addRoleBtn = document.getElementById("add-role-btn");
+  const roleModal = document.getElementById("addRoleModal");
+  if (addRoleBtn && roleModal) {
+    addRoleBtn.addEventListener("click", () => {
+      roleModal.style.display = "flex";
     });
   }
 
@@ -399,14 +461,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const currentDir = headerCell.dataset.sortDir;
         const newDir = currentDir === "asc" ? "desc" : "asc";
 
-        if (typeof sortTableByColumn === "function") {
-          sortTableByColumn(table, columnIndex, newDir === "asc");
-        } else {
-          console.error(
-            "sortTableByColumn function not found. Was main.js loaded?"
-          );
-          return;
-        }
+        sortTableByColumn(table, columnIndex, newDir === "asc");
 
         table
           .querySelectorAll("th.sortable")
@@ -420,6 +475,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupTableSorting("user-settings-table");
   setupTableSorting("level-roles-table");
   setupTableSorting("presentations-table");
+  setupTableSorting("roles-table");
 
   // B. Setup the ONE Global Filter
   setupGlobalFilter(
@@ -584,6 +640,51 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   });
 
+  // 4d. Roles
+  setupInlineEdit({
+    editBtnId: "edit-roles-btn",
+    cancelBtnId: "cancel-roles-btn",
+    tableId: "roles-table",
+    saveUrl: "/settings/roles/update",
+    createEditor: (cell, field, currentValue) => {
+      if (field === "needs_approval" || field === "is_distinct") {
+        cell.querySelector('input[type="checkbox"]').disabled = false;
+      } else {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = currentValue;
+        input.className = "form-control-sm";
+        cell.textContent = "";
+        cell.appendChild(input);
+      }
+    },
+    restoreCell: (cell, field, originalValue) => {
+      if (field === "needs_approval" || field === "is_distinct") {
+        cell.innerHTML = `<input type="checkbox" ${
+          originalValue ? "checked" : ""
+        } disabled>`;
+      } else {
+        cell.textContent = originalValue;
+      }
+    },
+    getCellValue: (cell, field) => {
+      if (field === "needs_approval" || field === "is_distinct") {
+        return cell.querySelector('input[type="checkbox"]').checked;
+      } else {
+        return cell.querySelector("input").value;
+      }
+    },
+    updateCell: (cell, field, value) => {
+      if (field === "needs_approval" || field === "is_distinct") {
+        cell.innerHTML = `<input type="checkbox" ${
+          value ? "checked" : ""
+        } disabled>`;
+      } else {
+        cell.textContent = value;
+      }
+    },
+  });
+
   // --- 5. Bulk Import Logic ---
   const bulkImportForm = document.getElementById("bulk-import-form");
   const bulkImportFile = document.getElementById("bulk-import-file");
@@ -596,6 +697,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     bulkImportFile.addEventListener("change", () => {
       bulkImportForm.submit(); // Submit form when file is selected
+    });
+  }
+
+  const importRolesForm = document.getElementById("import-roles-form");
+  const importRolesFile = document.getElementById("import-roles-file");
+  const importRolesBtn = document.getElementById("import-roles-btn");
+
+  if (importRolesForm && importRolesFile && importRolesBtn) {
+    importRolesBtn.addEventListener("click", () => {
+      importRolesFile.click();
+    });
+
+    importRolesFile.addEventListener("change", () => {
+      importRolesForm.submit();
     });
   }
 });

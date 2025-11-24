@@ -68,7 +68,7 @@ content %}
       <div class="button-group">
         <button id="add-session-btn" class="btn btn-success">Add New</button>
         <button id="edit-sessions-btn" class="btn btn-primary">Edit</button>
-        <button id="cancel-sessions-btn" class="btn btn-danger">Cancel</button>
+        <button id="cancel-sessions-btn" class="btn btn-danger" style="display: none;">Cancel</button>
       </div>
     </div>
     <table id="sessions-table">
@@ -166,25 +166,54 @@ content %}
   <div id="agenda-settings" class="tab-content">
     <div class="settings-header">
       <h2>Meeting Roles</h2>
-      <form
-        action="{{ url_for('settings_bp.import_roles') }}"
-        method="post"
-        enctype="multipart/form-data"
-        id="import-roles-form"
-      >
-        <div>
-            <label for="file">Import roles from a CSV file:</label>
-            <input type="file" name="file" accept=".csv" />
-        </div>
-        <button type="submit" class="btn btn-primary">
+      <div class="button-group" style="min-width: 400px;">
+        <button id="add-role-btn" class="btn btn-success">Add New</button>
+        <button id="edit-roles-btn" class="btn btn-primary">Edit</button>
+        <button id="cancel-roles-btn" class="btn btn-danger" style="display: none;">Cancel</button>
+        <button type="button" class="btn btn-info" id="import-roles-btn">
           Import Roles
         </button>
-      </form>
+        <form
+          action="{{ url_for('settings_bp.import_roles') }}"
+          method="post"
+          enctype="multipart/form-data"
+          id="import-roles-form"
+          style="display: none;"
+        >
+          <input type="file" name="file" id="import-roles-file" />
+        </form>
+      </div>
     </div>
-    <p>
-      Settings related to the meeting agenda, templates, and session types will
-      be configured here.
-    </p>
+    <table id="roles-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-column-index="0">ID</th>
+          <th class="sortable" data-column-index="1">Name</th>
+          <th class="sortable" data-column-index="2">Icon</th>
+          <th class="sortable" data-column-index="3">Type</th>
+          <th class="sortable" data-column-index="4">Award Category</th>
+          <th class="sortable" data-column-index="5">Needs Approval</th>
+          <th class="sortable" data-column-index="6">Is Distinct</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for role in roles_query %}
+        <tr data-id="{{ role.id }}">
+          <td>{{ role.id }}</td>
+          <td data-field="name">{{ role.name }}</td>
+          <td data-field="icon">{{ role.icon }}</td>
+          <td data-field="type">{{ role.type }}</td>
+          <td data-field="award_category">{{ role.award_category }}</td>
+          <td data-field="needs_approval">
+            <input type="checkbox" {% if role.needs_approval %}checked{% endif %} disabled />
+          </td>
+          <td data-field="is_distinct">
+            <input type="checkbox" {% if role.is_distinct %}checked{% endif %} disabled />
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 
   <div id="user-settings" class="tab-content">
@@ -271,7 +300,7 @@ content %}
       <div class="button-group">
         <button id="add-level-role-btn" class="btn btn-success">Add New</button>
         <button id="edit-level-roles-btn" class="btn btn-primary">Edit</button>
-        <button id="cancel-level-roles-btn" class="btn btn-danger">
+        <button id="cancel-level-roles-btn" class="btn btn-danger" style="display: none;">
           Cancel
         </button>
       </div>
@@ -310,7 +339,7 @@ content %}
         <button id="edit-presentations-btn" class="btn btn-primary">
           Edit
         </button>
-        <button id="cancel-presentations-btn" class="btn btn-danger">
+        <button id="cancel-presentations-btn" class="btn btn-danger" style="display: none;">
           Cancel
         </button>
       </div>
@@ -341,6 +370,7 @@ content %}
 </div>
 
 {% include '_session_modal.html' %}
+{% include '_role_modal.html' %}
 
 <script>
   var ROLES_DATA = {{ roles|tojson }};
