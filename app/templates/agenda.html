@@ -126,7 +126,7 @@
                 </span>
             {% endif %}
             <button id="meeting-status-btn" 
-                    class="btn {% if selected_meeting.status == 'cancelled' %}btn-secondary{% else %}btn-primary{% endif %}"
+                    class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% else %}btn-primary{% endif %}"
                     data-meeting-number="{{ selected_meeting.Meeting_Number }}"
                     data-current-status="{{ selected_meeting.status }}"
                     {% if selected_meeting.status == 'cancelled' %}disabled{% endif %}>
