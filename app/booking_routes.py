@@ -178,10 +178,11 @@ def _apply_user_filters_and_rules(roles, user_role, current_user_contact_id, sel
 def _sort_roles(roles, user_role, current_user_contact_id, is_past_meeting):
     """Sorts roles based on user type."""
     if is_past_meeting:
-        # For past meetings, sort by session type ID for a consistent agenda-like order.
-        roles.sort(key=lambda x: x['type_id'])
+        # For past meetings, sort by award category first, then role name
+        roles.sort(key=lambda x: (x.get('award_category', '') or '', x['role']))
     elif is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
-        roles.sort(key=lambda x: x['session_id'])
+        # For admin view of current/future meetings, sort by award category first, then role name
+        roles.sort(key=lambda x: (x.get('award_category', '') or '', x['role']))
     else:  # For current/future meetings for non-admins
         roles.sort(key=lambda x: (
             0 if x['owner_id'] == current_user_contact_id else 1 if not x['owner_id'] else 2,
