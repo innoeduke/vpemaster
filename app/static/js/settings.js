@@ -663,6 +663,8 @@ document.addEventListener("DOMContentLoaded", () => {
         cell.innerHTML = `<input type="checkbox" ${
           originalValue ? "checked" : ""
         } disabled>`;
+      } else if (field === "icon") {
+        cell.innerHTML = `<i class="${originalValue}"></i> ${originalValue}`;
       } else {
         cell.textContent = originalValue;
       }
@@ -679,6 +681,8 @@ document.addEventListener("DOMContentLoaded", () => {
         cell.innerHTML = `<input type="checkbox" ${
           value ? "checked" : ""
         } disabled>`;
+      } else if (field === "icon") {
+        cell.innerHTML = `<i class="${value}"></i> ${value}`;
       } else {
         cell.textContent = value;
       }

@@ -161,8 +161,8 @@
                                 </div>
                             </div>
                             <div class="role-title">
-                                <i class="fas {{ role_icons.get(log.session_type.Role, 'fa-question-circle') }}"></i>
-                                {{ log.session_type.Role }}
+                                <i class="fas {{ role_icons.get(log.session_type.role.name if log.session_type.role else '', 'fa-question-circle') }}"></i>
+                                {{ log.session_type.role.name if log.session_type.role else log.session_type.Title }}
                             </div>
                             <div class="speaker-info">
                                 {{ log.owner.Name if log.owner else 'N/A' }}

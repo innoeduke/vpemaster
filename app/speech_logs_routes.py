@@ -46,7 +46,8 @@ def show_speech_logs():
     ).join(SessionType).join(Role, SessionType.role_id == Role.id).filter(
         Role.name.isnot(None),
         Role.name != '',
-        Role.name != 'Backup Speaker'
+        Role.name != 'Backup Speaker',
+        Role.type.in_(['standard', 'club-specific'])  # 只允许standard或club-specific类型的role
 
     )
 

@@ -1,4 +1,8 @@
-{% extends "base.html" %} {% block title %}Settings{% endblock %} {% block
+{% extends "base.html" %} {% block head %}
+{{ super() }}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+{% endblock %}
+{% block title %}Settings{% endblock %} {% block
 content %}
 <h1>System Settings</h1>
 
@@ -201,7 +205,7 @@ content %}
         <tr data-id="{{ role.id }}">
           <td>{{ role.id }}</td>
           <td data-field="name">{{ role.name }}</td>
-          <td data-field="icon">{{ role.icon }}</td>
+          <td data-field="icon"><i class="fas {{ role.icon }}"></i> {{ role.icon }}</td>
           <td data-field="type">{{ role.type }}</td>
           <td data-field="award_category">{{ role.award_category }}</td>
           <td data-field="needs_approval">
