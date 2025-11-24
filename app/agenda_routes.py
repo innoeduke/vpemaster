@@ -26,7 +26,8 @@ def _get_agenda_logs(meeting_number):
     """Fetches all agenda logs and related data for a specific meeting."""
     query = db.session.query(SessionLog)\
         .options(
-            orm.joinedload(SessionLog.session_type).joinedload(SessionType.role),  # Eager load SessionType and Role
+            orm.joinedload(SessionLog.session_type).joinedload(
+                SessionType.role),  # Eager load SessionType and Role
             orm.joinedload(SessionLog.meeting),      # Eager load Meeting
             orm.joinedload(SessionLog.project),      # Eager load Project
             orm.joinedload(SessionLog.owner),         # Eager load Owner
@@ -425,7 +426,8 @@ A single endpoint to fetch all data needed for the agenda modals.
     This is called once by the frontend after the initial page load.
     """
     # Session Types
-    session_types = SessionType.query.options(orm.joinedload(SessionType.role)).order_by(SessionType.Title.asc()).all()
+    session_types = SessionType.query.options(orm.joinedload(
+        SessionType.role)).order_by(SessionType.Title.asc()).all()
     session_types_data = [
         {
             "id": s.id, "Title": s.Title, "Is_Section": s.Is_Section,
@@ -1245,6 +1247,34 @@ def delete_log(log_id):
         db.session.delete(log)
         db.session.commit()
         return jsonify(success=True)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@agenda_bp.route('/agenda/status/<int:meeting_number>', methods=['POST'])
+@login_required
+def update_meeting_status(meeting_number):
+    """Toggles the status of a meeting."""
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found"), 404
+
+    current_status = meeting.status
+    new_status = current_status
+
+    if current_status == 'not started':
+        new_status = 'running'
+    elif current_status == 'running':
+        new_status = 'finished'
+    elif current_status == 'finished':
+        new_status = 'cancelled'
+
+    meeting.status = new_status
+
+    try:
+        db.session.commit()
+        return jsonify(success=True, new_status=new_status)
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500

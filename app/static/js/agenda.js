@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const meetingFilter = document.getElementById("meeting-filter");
   const exportButton = document.getElementById("export-btn");
   const tableContainer = document.getElementById("table-container");
+  const meetingStatusBtn = document.getElementById("meeting-status-btn");
   const tableBody = document.querySelector("#logs-table tbody");
   const contactForm = document.getElementById("contactForm");
   const geStyleToggle = document.getElementById("ge-style-toggle");
@@ -145,6 +146,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (wodDisplay) {
       wodDisplay.addEventListener("click", () => {
         wodDisplay.classList.toggle("open");
+      });
+    }
+    if (meetingStatusBtn) {
+      meetingStatusBtn.addEventListener("click", () => {
+        handleMeetingStatusChange(meetingStatusBtn);
       });
     }
   }
@@ -284,6 +290,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Helper Functions ---
 
+  function handleMeetingStatusChange(button) {
+    const meetingNumber = button.dataset.meetingNumber;
+    let currentStatus = button.dataset.currentStatus;
+
+    if (!meetingNumber) {
+      alert("No meeting selected.");
+      return;
+    }
+
+    if (currentStatus === "finished") {
+      if (
+        !confirm(
+          "Are you sure you want to cancel this meeting? This action cannot be undone."
+        )
+      ) {
+        return;
+      }
+    }
+
+    fetch(`/agenda/status/${meetingNumber}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const newStatus = data.new_status;
+          button.dataset.currentStatus = newStatus; // Update status
+
+          if (newStatus === "running") {
+            button.textContent = "Stop";
+          } else if (newStatus === "finished") {
+            button.textContent = "Delete";
+          } else if (newStatus === "cancelled") {
+            button.textContent = "Cancelled";
+            button.disabled = true;
+            button.classList.remove("btn-info");
+            button.classList.add("btn-secondary"); // Gray color
+          } else {
+            button.textContent = "Start";
+          }
+        } else {
+          alert("Error updating status: " + data.message);
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("An error occurred while updating the meeting status.");
+      });
+  }
   function handleContactFormSubmit(event) {
     event.preventDefault(); // Stop the default redirect
     const form = event.target;

@@ -119,20 +119,30 @@
         <div class="action-bar-right">
             <div class="button-group" id="view-mode-buttons">
             {% if is_authorized(session.get('user_role'), 'AGENDA_EDIT') %}
-            <button id="create-btn" class="btn btn-success">New</button>
-            {% if selected_meeting %}
-                <button id="meeting-status-btn" class="btn btn-info">
-                    {% if selected_meeting.status == 'not started' %}
-                        Start
-                    {% elif selected_meeting.status == 'running' %}
-                        Stop
-                    {% elif selected_meeting.status == 'finished' %}
-                        Delete
-                    {% else %}
-                        {{ selected_meeting.status.replace('_', ' ').title() }}
-                    {% endif %}
-                </button>
+            {% if selected_meeting and selected_meeting.status %}
+                <span class="meeting-status-display status-{{ selected_meeting.status }}" title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
+                    <i class="fas fa-fw {% if selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>
+                    {{ selected_meeting.status.replace('_', ' ').title() }}
+                </span>
             {% endif %}
+            <button id="meeting-status-btn" 
+                    class="btn {% if selected_meeting.status == 'cancelled' %}btn-secondary{% else %}btn-primary{% endif %}"
+                    data-meeting-number="{{ selected_meeting.Meeting_Number }}"
+                    data-current-status="{{ selected_meeting.status }}"
+                    {% if selected_meeting.status == 'cancelled' %}disabled{% endif %}>
+                {% if selected_meeting.status == 'not started' %}
+                    Start
+                {% elif selected_meeting.status == 'running' %}
+                    Stop
+                {% elif selected_meeting.status == 'finished' %}
+                    Delete
+                {% elif selected_meeting.status == 'cancelled' %}
+                    Cancelled
+                {% else %}
+                    {{ selected_meeting.status.replace('_', ' ').title() }}
+                {% endif %}
+            </button>
+            <button id="create-btn" class="btn btn-success">New</button>
             <button id="export-btn" class="btn btn-info">Export</button>
             <button id="edit-btn" class="btn btn-primary">Edit</button>
             {% endif %}
