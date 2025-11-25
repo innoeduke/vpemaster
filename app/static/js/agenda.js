@@ -19,6 +19,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const viewModeButtons = document.getElementById("view-mode-buttons");
   const wodDisplay = document.querySelector(".wod-display");
   const editModeButtons = document.getElementById("edit-mode-buttons");
+  const statusDisplayElement = document.querySelector(
+    ".meeting-status-display"
+  );
 
   let projectSpeakers = JSON.parse(tableContainer.dataset.projectSpeakers);
 
@@ -321,18 +324,39 @@ document.addEventListener("DOMContentLoaded", () => {
           const newStatus = data.new_status;
           button.dataset.currentStatus = newStatus; // Update status
 
+          statusDisplayElement.className =
+            statusDisplayElement.className.replace(
+              /status-\w+/g,
+              `status-${newStatus}`
+            );
+
+          // Update the icon and text
+          let iconClass = "";
+          let statusText = newStatus
+            .replace("_", " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase());
+
           if (newStatus === "running") {
             button.textContent = "Stop";
+            iconClass = "fa-broadcast-tower";
           } else if (newStatus === "finished") {
             button.textContent = "Delete";
+            iconClass = "fa-check-circle";
           } else if (newStatus === "cancelled") {
             button.textContent = "Cancelled";
             button.disabled = true;
             button.classList.remove("btn-info");
             button.classList.add("btn-secondary"); // Gray color
+            iconClass = "fa-ban";
           } else {
             button.textContent = "Start";
+            iconClass = "fa-play-circle";
           }
+
+          statusDisplayElement.innerHTML = `
+              <i class="fas fa-fw ${iconClass}"></i>
+              ${statusText}
+            `;
         } else {
           alert("Error updating status: " + data.message);
         }
