@@ -69,21 +69,21 @@ class Meeting(db.Model):
     Start_Time = db.Column(db.Time)
     Meeting_Template = db.Column(db.String(100))
     WOD = db.Column(db.String(100))
-    Best_TT_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
-    Best_Evaluator_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
-    Best_Speaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
-    Best_Roletaker_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    best_table_topic_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    best_evaluator_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    best_speaker_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    best_role_taker_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     media_id = db.Column(db.Integer, db.ForeignKey('Media.id', use_alter=True))
     GE_Style = db.Column(db.String(20), default='One shot')
     status = db.Column(db.Enum('not started', 'running', 'finished', 'cancelled', name='meeting_status'),
                        default='not started', nullable=False)
 
-    best_tt_speaker = db.relationship('Contact', foreign_keys=[Best_TT_ID])
+    best_tt_speaker = db.relationship('Contact', foreign_keys=[best_table_topic_id])
     best_evaluator = db.relationship(
-        'Contact', foreign_keys=[Best_Evaluator_ID])
-    best_speaker = db.relationship('Contact', foreign_keys=[Best_Speaker_ID])
+        'Contact', foreign_keys=[best_evaluator_id])
+    best_speaker = db.relationship('Contact', foreign_keys=[best_speaker_id])
     best_roletaker = db.relationship(
-        'Contact', foreign_keys=[Best_Roletaker_ID])
+        'Contact', foreign_keys=[best_role_taker_id])
     media = db.relationship('Media', foreign_keys=[media_id])
 
 

@@ -59,6 +59,11 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+  
+  // For finished meetings in admin view, hide vote buttons for roles in categories that already have a winner
+  if (isAdminView) {
+    hideVotedCategoryButtons();
+  }
 }); // End of DOMContentLoaded listener
 
 // Functions remain global (or could be wrapped in an IIFE)
@@ -175,6 +180,7 @@ function assignRole(sessionId, roleKey, contactId) {
       }
     });
 }
+
 function handleVoteClick(buttonEl) {
   const data = {
     meeting_number: buttonEl.dataset.meetingNumber,
@@ -217,8 +223,6 @@ function updateVoteButtonsUI(category, newWinnerId) {
       button.style.display = "inline-block";
       button.classList.remove("icon-btn-voted");
       button.title = "Vote";
-      icon.classList.remove("fa-award");
-      icon.classList.add("fa-vote-yea");
     } else {
       // A vote was CAST.
       if (buttonContactId === newWinnerId) {
@@ -226,13 +230,36 @@ function updateVoteButtonsUI(category, newWinnerId) {
         button.style.display = "inline-block";
         button.classList.add("icon-btn-voted");
         button.title = `Cancel Vote (${category})`;
-        icon.classList.remove("fa-vote-yea");
-        icon.classList.add("fa-award");
       } else {
         // This is another role in the same category. Hide it.
         button.style.display = "none";
       }
     }
+  });
+}
+
+// New function to hide vote buttons for roles in categories that already have a winner
+function hideVotedCategoryButtons() {
+  // Find all voted buttons (with the icon-btn-voted class)
+  const votedButtons = document.querySelectorAll('button.icon-btn-voted[data-award-category]');
+  
+  // For each voted button, hide all other buttons in the same award category
+  votedButtons.forEach(votedButton => {
+    const category = votedButton.dataset.awardCategory;
+    const winnerId = parseInt(votedButton.dataset.contactId, 10);
+    
+    // Find all buttons in this award category
+    const allButtonsInCategory = document.querySelectorAll(
+      `button[data-award-category="${category}"]`
+    );
+    
+    // Hide all buttons except the winner
+    allButtonsInCategory.forEach(button => {
+      const buttonContactId = parseInt(button.dataset.contactId, 10);
+      if (buttonContactId !== winnerId) {
+        button.style.display = "none";
+      }
+    });
   });
 }
 

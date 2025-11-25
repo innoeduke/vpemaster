@@ -249,12 +249,12 @@ def agenda():
             if contact_id not in award_winner_map:
                 award_winner_map[contact_id] = []
             award_winner_map[contact_id].append(award_category)
-        add_winner(selected_meeting.Best_Speaker_ID,
+        add_winner(selected_meeting.best_speaker_id,
                    current_app.config['BEST_SPEAKER'])
-        add_winner(selected_meeting.Best_Evaluator_ID,
+        add_winner(selected_meeting.best_evaluator_id,
                    current_app.config['BEST_EVALUATOR'])
-        add_winner(selected_meeting.Best_TT_ID, current_app.config['BEST_TT'])
-        add_winner(selected_meeting.Best_Roletaker_ID,
+        add_winner(selected_meeting.best_table_topic_id, current_app.config['BEST_TT'])
+        add_winner(selected_meeting.best_role_taker_id,
                    current_app.config['BEST_ROLETAKER'])
 
     # --- Fetch Raw Data ---

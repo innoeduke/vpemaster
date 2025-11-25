@@ -30,8 +30,7 @@ def _fetch_session_logs(selected_meeting_number, user_role):
      .filter(Role.name != '', Role.name.isnot(None))
 
     if not is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
-        query = query.filter(Role.type !=
-                             current_app.config['OFFICER_ROLE_GROUP'])
+        query = query.filter(Role.type != 'officer')
 
     return query.all()
 
@@ -39,7 +38,10 @@ def _fetch_session_logs(selected_meeting_number, user_role):
 def _consolidate_roles(session_logs, is_admin_booker):
     """Consolidates session logs into a dictionary of roles."""
     roles_dict = {}
-    unique_roles = current_app.config['ADMIN_UNIQUE_ENTRY_ROLES'] if is_admin_booker else current_app.config['UNIQUE_ENTRY_ROLES']
+    # unique role means only one person can take this role of a specific meeting
+    non_distinct_role_records = Role.query.filter_by(is_distinct=False).all()
+    non_distinct_roles = [role.name for role in non_distinct_role_records]
+    non_distinct_roles = list(set(non_distinct_roles))
 
     for log in session_logs:
         role_key = log.role.strip() if log.role else ""
@@ -51,11 +53,11 @@ def _consolidate_roles(session_logs, is_admin_booker):
         waitlisted_info = [{'name': user[0], 'id': user[1]}
                            for user in waitlisted_users]
 
-        if role_key in unique_roles:
-            role_key_unique = f"{role_key}_{log.session_id}"
+        if role_key in non_distinct_roles:
+            role_key_distinct = f"{role_key}_{log.session_id}"
             speaker_name = log.Session_Title.strip(
-            ) if role_key == current_app.config['ROLES']['INDIVIDUAL_EVALUATOR']['name'] and log.Session_Title else None
-            roles_dict[role_key_unique] = {
+            ) if role_key == "Individual Evaluator" and log.Session_Title else None
+            roles_dict[role_key_distinct] = {
                 'role': role_key,
                 'role_key': role_key,
                 'owner_id': log.Owner_ID,
@@ -97,37 +99,24 @@ def _enrich_role_data(roles_dict, selected_meeting):
         return []
 
     award_ids = {
-        current_app.config['BEST_SPEAKER']: selected_meeting.Best_Speaker_ID,
-        current_app.config['BEST_EVALUATOR']: selected_meeting.Best_Evaluator_ID,
-        current_app.config['BEST_TT']: selected_meeting.Best_TT_ID,
-        current_app.config['BEST_ROLETAKER']: selected_meeting.Best_Roletaker_ID,
+        'speaker': selected_meeting.best_speaker_id,
+        'evaluator': selected_meeting.best_evaluator_id,
+        'table-topic': selected_meeting.best_table_topic_id,
+        'role-taker': selected_meeting.best_role_taker_id,
     }
 
     enriched_roles = []
     for _, role_data in roles_dict.items():
-        # Get role from database to fetch icon
         role_obj = Role.query.filter_by(name=role_data['role_key']).first()
-        role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else current_app.config['DEFAULT_ROLE_ICON']
 
-        # Find the role in MEETING_ROLES config by its name ('role_key')
-        role_config = next((
-            config for config in current_app.config['ROLES'].values()
-            if config['name'] == role_data['role_key']
-        ), None)
-
-        # Keep the old logic as fallback, but prefer the icon from Role model
-        if not (role_obj and role_obj.icon):
-            role_data['icon'] = role_config.get(
-                'icon', current_app.config['DEFAULT_ROLE_ICON']) if role_config else current_app.config['DEFAULT_ROLE_ICON']
-
+        role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else "fa-question-circle"
         role_data['session_id'] = role_data['session_ids'][0]
 
         owner_id = role_data['owner_id']
-        award_category = next((cat for cat, roles in current_app.config['AWARD_CATEGORIES_ROLES'].items(
-        ) if role_data['role_key'] in roles), None)
+        award_category = role_obj.award_category if role_obj else None
 
         role_data['award_category'] = award_category
-        role_data['award_type'] = award_category if owner_id and owner_id == award_ids.get(
+        role_data['award_type'] = award_category if owner_id and award_category and owner_id == award_ids.get(
             award_category) else None
         role_data['award_category_open'] = bool(
             award_category and not award_ids.get(award_category))
@@ -205,6 +194,10 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
 
     sorted_roles = _sort_roles(
         filtered_roles, user_role, current_user_contact_id, is_past_meeting)
+
+    if selected_meeting.status in ['running', 'finished']:
+        sorted_roles = [role for role in sorted_roles if role.get(
+            'award_category') and role.get('award_category') != 'none']
 
     return sorted_roles
 
@@ -319,7 +312,7 @@ def _get_completed_roles(current_user_contact_id, selected_level):
          .join(Role, SessionType.role_id == Role.id)\
          .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
          .filter(SessionLog.Owner_ID == current_user_contact_id)\
-         .filter(Role.name.isnot(None), Role.name != '', Role.name != current_app.config['ROLES']['PREPARED_SPEAKER']['name'])\
+         .filter(Role.name.isnot(None), Role.name != '', Role.name != 'Prepared Speaker')\
          .filter(SessionLog.current_path_level.like(level_pattern))\
          .filter(Meeting.Meeting_Date < today)\
          .distinct()\
@@ -346,10 +339,10 @@ def _get_best_award_ids(selected_meeting):
         return set()
     return {
         award_id for award_id in [
-            selected_meeting.Best_TT_ID,
-            selected_meeting.Best_Evaluator_ID,
-            selected_meeting.Best_Speaker_ID,
-            selected_meeting.Best_Roletaker_ID
+            selected_meeting.best_table_topic_id,
+            selected_meeting.best_evaluator_id,
+            selected_meeting.best_speaker_id,
+            selected_meeting.best_role_taker_id
         ] if award_id
     }
 
@@ -574,11 +567,11 @@ def book_or_assign_role():
 
     new_designation = derive_designation(owner_contact)
 
-    unique_roles = current_app.config['UNIQUE_ENTRY_ROLES'] + \
+    non_distinct_roles = current_app.config['UNIQUE_ENTRY_ROLES'] + \
         ([current_app.config['ROLES']['TOPICS_SPEAKER']['name']]
          if is_authorized(user_role, 'BOOKING_ASSIGN_ALL') else [])
 
-    if logical_role_key in unique_roles:
+    if logical_role_key in non_distinct_roles:
         sessions_to_update = [log]
     else:
         sessions_to_update = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
@@ -625,8 +618,11 @@ def vote_for_award():
     if not meeting:
         return jsonify(success=False, message="Meeting not found."), 404
 
-    award_attr = f"{award_category}_ID"
+    award_attr = f"best_{award_category.replace('-', '_')}_id"
+
     if not hasattr(meeting, award_attr):
+        current_app.logger.error(
+            f"Meeting object does not have attribute: {award_attr}")
         return jsonify(success=False, message="Invalid award category."), 400
 
     try:

@@ -63,20 +63,20 @@ CREATE TABLE `Meetings` (
   `Meeting_Date` date DEFAULT NULL,
   `Meeting_Template` varchar(100) DEFAULT NULL,
   `WOD` varchar(100) DEFAULT NULL,
-  `Best_TT_ID` int DEFAULT NULL,
-  `Best_Evaluator_ID` int DEFAULT NULL,
-  `Best_Speaker_ID` int DEFAULT NULL,
-  `Best_Roletaker_ID` int DEFAULT NULL,
+  `best_table_topic_id` int DEFAULT NULL,
+  `best_evaluator_id` int DEFAULT NULL,
+  `best_speaker_id` int DEFAULT NULL,
+  `best_role_taker_id` int DEFAULT NULL,
   PRIMARY KEY (`ID`),
-  KEY `fk_best_tt` (`Best_TT_ID`),
-  KEY `fk_best_evaluator` (`Best_Evaluator_ID`),
-  KEY `fk_best_speaker` (`Best_Speaker_ID`),
-  KEY `fk_best_roletaker` (`Best_Roletaker_ID`),
+  KEY `fk_best_tt` (`best_table_topic_id`),
+  KEY `fk_best_evaluator` (`best_evaluator_id`),
+  KEY `fk_best_speaker` (`best_speaker_id`),
+  KEY `fk_best_roletaker` (`best_role_taker_id`),
   KEY `idx_meeting_number` (`Meeting_Number`),
-  CONSTRAINT `fk_best_evaluator` FOREIGN KEY (`Best_Evaluator_ID`) REFERENCES `Contacts` (`id`),
-  CONSTRAINT `fk_best_roletaker` FOREIGN KEY (`Best_Roletaker_ID`) REFERENCES `Contacts` (`id`),
-  CONSTRAINT `fk_best_speaker` FOREIGN KEY (`Best_Speaker_ID`) REFERENCES `Contacts` (`id`),
-  CONSTRAINT `fk_best_tt` FOREIGN KEY (`Best_TT_ID`) REFERENCES `Contacts` (`id`)
+  CONSTRAINT `fk_best_evaluator` FOREIGN KEY (`best_evaluator_id`) REFERENCES `Contacts` (`id`),
+  CONSTRAINT `fk_best_roletaker` FOREIGN KEY (`best_role_taker_id`) REFERENCES `Contacts` (`id`),
+  CONSTRAINT `fk_best_speaker` FOREIGN KEY (`best_speaker_id`) REFERENCES `Contacts` (`id`),
+  CONSTRAINT `fk_best_tt` FOREIGN KEY (`best_table_topic_id`) REFERENCES `Contacts` (`id`)
 )
 
 

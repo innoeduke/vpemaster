@@ -200,7 +200,7 @@
                     <tr>
                         <th class="role-header">Role</th>
                         <th class="owner-header">Name</th>
-                        {% if is_admin_view %}<th class="action-header">Vote</th>{% endif %}
+                        <th class="action-header">Vote</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -218,16 +218,14 @@
                         <td class="action-cell">
                             <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
                         </td>
-                        {% if is_admin_view %}
                         <td class="vote-cell">
-                             {# VPE VIEW - RUNNING (Voting) #}
                             {% if role.owner_id and role.award_category %}
                                 <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
                                     <i class="fas fa-vote-yea"></i>
                                 </button>
                             {% endif %}
                         </td>
-                        {% endif %}
+                        
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -242,6 +240,7 @@
                     <tr>
                         <th class="role-header">Role</th>
                         <th class="owner-header">Name</th>
+                        <th class="action-header">Vote</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -255,6 +254,18 @@
                                     {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
                                 </div>
                             </div>
+                        </td>
+                        <td class="action-cell">
+                            <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
+                        </td>
+                        <td class="vote-cell">
+                        {% if is_admin_view  %}
+                            {% if role.owner_id and role.award_category %}
+                                <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
+                                    <i class="fas fa-vote-yea"></i>
+                                </button>
+                            {% endif %}
+                        {% else %}
                             <div class="role-cell-actions">
                                 {% if role.award_type %}
                                 <span class="icon-btn icon-btn-voted" title="{{ role.award_type }} Winner">
@@ -262,10 +273,9 @@
                                 </span>
                                 {% endif %}
                             </div>
+                        {% endif %}
                         </td>
-                        <td class="action-cell">
-                            <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
-                        </td>
+                        
                     </tr>
                     {% endfor %}
                 </tbody>
