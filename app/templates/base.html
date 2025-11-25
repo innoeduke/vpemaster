@@ -2,9 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
     <title>Meeting Manager - {% block title %}{% endblock %}</title>
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{{ url_for('static', filename='icons/favicon.ico') }}"
+    />
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/base.css') }}"
@@ -59,9 +66,10 @@
       href="{{ url_for('static', filename='vendor/css/fonts.css') }}"
       rel="stylesheet"
     />
-    <link 
-      href="{{ url_for('static', filename='vendor/css/indie-flower.css') }}" 
-      rel="stylesheet">
+    <link
+      href="{{ url_for('static', filename='vendor/css/indie-flower.css') }}"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div class="container-wrapper">
@@ -88,13 +96,15 @@
               <span>Agenda</span>
             </a>
           </li>
-          {% if session.logged_in %}
           <li
             class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}"
           >
             <a href="{{ url_for('booking_bp.booking') }}">
               <i class="fas fa-tag nav-icon"></i>
-              <span>Booking</span>
+              <span
+                >{% if session.logged_in %}Booking{% else %}Voting{% endif
+                %}</span
+              >
             </a>
           </li>
           {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_VIEW') %}
@@ -106,7 +116,7 @@
               <span>Contacts</span>
             </a>
           </li>
-          {% endif %}
+          {% endif %} {% if session.logged_in %}
           <li
             class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}"
           >

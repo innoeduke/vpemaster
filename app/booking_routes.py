@@ -179,10 +179,12 @@ def _sort_roles(roles, user_role, current_user_contact_id, is_past_meeting):
     """Sorts roles based on user type."""
     if is_past_meeting:
         # For past meetings, sort by award category first, then role name
-        roles.sort(key=lambda x: (x.get('award_category', '') or '', x['role']))
+        roles.sort(key=lambda x: (
+            x.get('award_category', '') or '', x['role']))
     elif is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
         # For admin view of current/future meetings, sort by award category first, then role name
-        roles.sort(key=lambda x: (x.get('award_category', '') or '', x['role']))
+        roles.sort(key=lambda x: (
+            x.get('award_category', '') or '', x['role']))
     else:  # For current/future meetings for non-admins
         roles.sort(key=lambda x: (
             0 if x['owner_id'] == current_user_contact_id else 1 if not x['owner_id'] else 2,
@@ -370,6 +372,7 @@ def _get_booking_page_context(selected_meeting_number, user, user_role, current_
         'selected_level': selected_level, 'selected_meeting': None,
         'is_admin_view': is_authorized(user_role, 'BOOKING_ASSIGN_ALL'),
         'current_user_contact_id': current_user_contact_id,
+        'user_role': user_role,
         'best_award_ids': set()
     }
 
@@ -403,7 +406,6 @@ def _get_booking_page_context(selected_meeting_number, user, user_role, current_
 
 @booking_bp.route('/booking', defaults={'selected_meeting_number': None}, methods=['GET'])
 @booking_bp.route('/booking/<int:selected_meeting_number>', methods=['GET'])
-@login_required
 def booking(selected_meeting_number):
     user, user_role, current_user_contact_id = _get_user_info()
     context = _get_booking_page_context(

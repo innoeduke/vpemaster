@@ -298,23 +298,3 @@ function joinWaitlist(sessionId, roleKey) {
       }
     });
 }
-
-function joinWaitlist(sessionId, roleKey) {
-  fetch("/booking/book", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      session_id: sessionId,
-      action: "join_waitlist",
-      role_key: roleKey,
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        window.location.reload(true);
-      } else {
-        alert("Error: " + data.message);
-      }
-    });
-}
