@@ -66,7 +66,7 @@ def contact_form(contact_id=None):
             "DTM": contact.DTM,
             "Phone_Number": contact.Phone_Number,
             "Bio": contact.Bio,
-            "Credential": contact.user.Credential if contact.user else None
+            "credentials": contact.user.credentials if contact.user else None
         }
         return jsonify(contact=contact_data)
 

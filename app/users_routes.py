@@ -34,7 +34,7 @@ def _create_or_update_user(user=None, **kwargs):
     user.Role = kwargs.get('role')
     user.Current_Path = kwargs.get('current_path') or None
     user.Next_Project = kwargs.get('next_project') or None
-    user.Credential = kwargs.get('credential') or None
+    user.credentials = kwargs.get('credential') or None
 
     contact_id = kwargs.get('contact_id', 0)
     user.Contact_ID = contact_id if contact_id != 0 else None

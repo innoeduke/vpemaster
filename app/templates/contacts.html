@@ -54,7 +54,7 @@ content %}
         <th class="sortable" data-column-index="1">Type</th>
         <th class="sortable" data-column-index="2">Club</th>
         <th class="sortable" data-column-index="3">Current Path</th>
-        <th class="sortable" data-column-index="4">Credential</th>
+        <th class="sortable" data-column-index="4">Credentials</th>
         <th class="sortable" data-column-index="5">Completed Paths</th>
         <th class="sortable" data-column-index="6">Next Project</th>
         {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
@@ -73,7 +73,7 @@ content %}
         <td>{{ contact.Type }}</td>
         <td>{{ contact.Club }}</td>
         <td>{% if contact.user %}{{ contact.user.Current_Path }}{% endif %}</td>
-        <td>{% if contact.user %}{{ contact.user.Credential }}{% endif %}</td>
+        <td>{% if contact.user %}{{ contact.user.credentials }}{% endif %}</td>
         <td>{{ contact.Completed_Paths }}</td>
         <td>{% if contact.user %}{{ contact.user.Next_Project }}{% endif %}</td>
         {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}

@@ -589,7 +589,7 @@ def book_or_assign_role():
 
         session_log.Owner_ID = owner_id_to_set
         session_log.current_path_level = new_path_level
-        session_log.Designation = new_designation
+        session_log.credentials = new_designation
 
     try:
         db.session.commit()

@@ -140,7 +140,7 @@ function openContactModal(contactId) {
           data.contact.Completed_Paths || "";
         document.getElementById("dtm").checked = data.contact.DTM;
         // Handle credential if available
-        if (data.contact.Credential) {
+        if (data.contact.credentials) {
           // We'll add credential field handling in a future update
         }
       });

@@ -132,7 +132,7 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Meeting_Seq = seq
             log.Type_ID = type_id
             log.Owner_ID = owner_id
-            log.Designation = designation
+            log.credentials = designation
             log.Duration_Min = item.get('duration_min') if item.get(
                 'duration_min') else None
             log.Duration_Max = item.get('duration_max') if item.get(
@@ -142,6 +142,14 @@ def _create_or_update_session(item, meeting_number, seq):
             if session_title is not None:
                 log.Session_Title = session_title
             log.current_path_level = current_path_level
+
+            # Update the designation
+            if hasattr(owner_contact, 'credentials') and owner_contact.credentials:
+                designation = owner_contact.credentials
+            else:
+                designation = derive_designation(log.Project_ID, log.current_path_level)
+            
+            log.credentials = designation
 
 
 def _recalculate_start_times(meetings_to_update):
@@ -353,7 +361,7 @@ def agenda():
             'Session_Title': session_title_for_dict,
             'Type_ID': log.Type_ID,
             'Owner_ID': log.Owner_ID,
-            'Designation': log.Designation,
+            'Designation': log.credentials,
             'Duration_Min': log.Duration_Min,
             'Duration_Max': log.Duration_Max,
             'Status': log.Status,
@@ -656,8 +664,8 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
             owner_info += '\u1D30\u1D40\u1D39'  # Unicode for superscript D, T, M
 
         meta_parts = []
-        if log.Designation and not contact.DTM:
-            meta_parts.append(log.Designation)
+        if log.credentials and not contact.DTM:
+            meta_parts.append(log.credentials)
         elif contact.Type == 'Member' and contact.Completed_Paths and not contact.DTM:
             meta_parts.append(contact.Completed_Paths.replace('/', ' '))
 

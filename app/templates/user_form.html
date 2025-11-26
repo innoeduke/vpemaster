@@ -68,7 +68,7 @@
             <tr>
                 <td><label for="credential">Credential:</label></td>
                 <td>
-                    <input type="text" id="credential" name="credential" value="{{ user.Credential if user and user.Credential else '' }}" maxlength="10">
+                    <input type="text" id="credential" name="credential" value="{{ user.credentials if user and user.credentials else '' }}" maxlength="10">
                 </td>
             </tr>
             <tr>
