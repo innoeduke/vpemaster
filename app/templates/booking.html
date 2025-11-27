@@ -166,7 +166,7 @@
                         <td class="button-cell">
                             {% if is_admin_view %}
                                 <div class="button-group">
-                                    <button class="icon-btn" title="Unassign Role" onclick="assignRole('{{ role.session_id }}', '{{ role.role_key }}', '0')"><i class="fas fa-undo"></i></button>
+                                    <button class="icon-btn" title="Unassign Role" onclick="assignRole('{{ role.session_id }}', '0')"><i class="fas fa-undo"></i></button>
                                     {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="Approve top of waitlist" onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')"><i class="fas fa-user-check"></i></button>{% endif %}
                                 </div>
                             {% elif user_role != 'Guest' %}
@@ -177,8 +177,11 @@
                                         {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
                                         {% if current_user_contact_id in waitlist_ids %}
                                             <button class="btn btn-leave-waitlist" onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
-                                        {% else %}
+                                        {% elif role.needs_approval %}
                                             <button class="btn btn-join-waitlist" onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
+                                        {% else %}
+                                            {# Role is taken, but doesn't need approval (e.g., Photographer) #}
+                                            <button class="btn btn-book" onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role_key }}')">Book</button>
                                         {% endif %}
                                     {% endif %}
                                 {% else %}

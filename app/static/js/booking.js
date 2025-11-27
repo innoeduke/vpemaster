@@ -14,9 +14,8 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".admin-assign-select").forEach((select) => {
       select.addEventListener("change", function () {
         const sessionId = this.dataset.sessionId;
-        const roleKey = this.dataset.roleKey;
         const contactId = this.value;
-        assignRole(sessionId, roleKey, contactId);
+        assignRole(sessionId, contactId);
       });
     });
   }
@@ -59,7 +58,7 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
-  
+
   // For finished meetings in admin view, hide vote buttons for roles in categories that already have a winner
   if (isAdminView) {
     hideVotedCategoryButtons();
@@ -67,79 +66,32 @@ document.addEventListener("DOMContentLoaded", function () {
 }); // End of DOMContentLoaded listener
 
 // Functions remain global (or could be wrapped in an IIFE)
-function bookOrCancelRole(sessionId, action, roleKey) {
+function bookOrCancelRole(sessionId, action) {
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: sessionId,
       action: action,
-      role_key: roleKey,
     }),
   })
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        // Check if this is a booking action that results in waitlist for approval-required roles
-        if (
-          action === "book" &&
-          data.message &&
-          data.message.includes("approval")
-        ) {
-          // Instead of reloading the page, update the button dynamically
-          const row = document.querySelector(
-            `tr[data-session-id="${sessionId}"]`
-          );
-          if (row) {
-            // Update the button to Leave Waitlist
-            const actionCell = row.querySelector(".action-cell");
-            if (actionCell) {
-              actionCell.innerHTML = `<button class="btn btn-leave-waitlist" onclick="leaveWaitlist('${sessionId}', '${roleKey}')">Leave Waitlist</button>`;
-            }
-
-            // Update the waitlist display
-            const waitlistCell = row.querySelector(".waitlist-cell");
-            if (waitlistCell) {
-              // Get user's name from session
-              const currentUser = currentUserName || "Unknown User";
-
-              // Check if waitlist info div exists, if not create it
-              let waitlistInfo = waitlistCell.querySelector(".waitlist-info");
-              if (!waitlistInfo) {
-                waitlistInfo = document.createElement("div");
-                waitlistInfo.className = "waitlist-info";
-                waitlistInfo.innerHTML =
-                  '<span style="font-size:0.5em;">Waitlist:</span>' +
-                  '<ul class="waitlist-users"></ul>';
-                waitlistCell.appendChild(waitlistInfo);
-              }
-
-              // Add current user to the waitlist
-              const waitlistUsers =
-                waitlistInfo.querySelector(".waitlist-users");
-              const newUserItem = document.createElement("li");
-              newUserItem.innerHTML =
-                '<i class="fas fa-user"></i> ' + currentUser;
-              waitlistUsers.appendChild(newUserItem);
-            }
-          }
-        } else {
-          window.location.reload(true); // Force reload from server for other cases
-        }
+        window.location.reload(true);
       } else {
         alert("Error: " + data.message);
       }
     });
 }
 
-function assignRole(sessionId, roleKey, contactId) {
+function assignRole(sessionId, contactId) {
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: sessionId,
       action: "assign",
-      role_key: roleKey,
       contact_id: contactId,
     }),
   })
@@ -167,9 +119,6 @@ function assignRole(sessionId, roleKey, contactId) {
             const roleActions = row.querySelector(".role-cell-actions");
             if (roleActions) {
               roleActions.innerHTML = ""; // Clear out the buttons
-            }
-            if (previouslySelected) {
-              previouslySelected.removeAttribute("selected");
             }
           }
         } else {
@@ -241,20 +190,22 @@ function updateVoteButtonsUI(category, newWinnerId) {
 // New function to hide vote buttons for roles in categories that already have a winner
 function hideVotedCategoryButtons() {
   // Find all voted buttons (with the icon-btn-voted class)
-  const votedButtons = document.querySelectorAll('button.icon-btn-voted[data-award-category]');
-  
+  const votedButtons = document.querySelectorAll(
+    "button.icon-btn-voted[data-award-category]"
+  );
+
   // For each voted button, hide all other buttons in the same award category
-  votedButtons.forEach(votedButton => {
+  votedButtons.forEach((votedButton) => {
     const category = votedButton.dataset.awardCategory;
     const winnerId = parseInt(votedButton.dataset.contactId, 10);
-    
+
     // Find all buttons in this award category
     const allButtonsInCategory = document.querySelectorAll(
       `button[data-award-category="${category}"]`
     );
-    
+
     // Hide all buttons except the winner
-    allButtonsInCategory.forEach(button => {
+    allButtonsInCategory.forEach((button) => {
       const buttonContactId = parseInt(button.dataset.contactId, 10);
       if (buttonContactId !== winnerId) {
         button.style.display = "none";
@@ -263,14 +214,13 @@ function hideVotedCategoryButtons() {
   });
 }
 
-function leaveWaitlist(sessionId, roleKey) {
+function leaveWaitlist(sessionId) {
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: sessionId,
       action: "leave_waitlist",
-      role_key: roleKey,
     }),
   })
     .then((response) => response.json())
@@ -285,14 +235,13 @@ function leaveWaitlist(sessionId, roleKey) {
     });
 }
 
-function approveWaitlist(sessionId, roleKey) {
+function approveWaitlist(sessionId) {
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: sessionId,
       action: "approve_waitlist",
-      role_key: roleKey,
     }),
   })
     .then((response) => response.json())
@@ -305,14 +254,13 @@ function approveWaitlist(sessionId, roleKey) {
     });
 }
 
-function joinWaitlist(sessionId, roleKey) {
+function joinWaitlist(sessionId) {
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: sessionId,
       action: "join_waitlist",
-      role_key: roleKey,
     }),
   })
     .then((response) => response.json())
