@@ -197,7 +197,7 @@
                     data-session-title="{{ log_dict.Session_Title if log_dict.Session_Title is not none else '' }}"
                     data-type-id="{{ log_dict.Type_ID }}"
                     data-owner-id="{{ log_dict.Owner_ID }}"
-                    data-credentials="{{ log_dict.credentials if log_dict.credentials is not none else '' }}"
+                    data-credentials="{{ log_dict.Credentials if log_dict.Credentials is not none else '' }}"
                     data-duration-min="{{ log_dict.Duration_Min if log_dict.Duration_Min is not none else '' }}"
                     data-duration-max="{{ log_dict.Duration_Max if log_dict.Duration_Max is not none else '' }}"
                     data-status="{{ log_dict.Status if log_dict.Status else '' }}"
@@ -275,8 +275,8 @@
                                     </span>
                                 {% endif %}
                                 <span class="owner-meta">
-                                    {% if log_dict.credentials %}
-                                        <br/>{{ log_dict.credentials }}
+                                    {% if log_dict.Credentials %}
+                                        <br/>{{ log_dict.Credentials }}
                                     {% endif %}
                                 </span>
                             {% endif %}

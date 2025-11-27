@@ -427,17 +427,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (ownerId && !credentials) {
           const contact = allContacts.find((c) => c.id == ownerId);
-          if (contact) {
-            if (contact.DTM) {
-              credentials = "DTM";
-            } else if (contact.Type === "Guest") {
-              credentials = contact.Club ? `Guest@${contact.Club}` : "Guest";
-            } else if (contact.Type === "Member") {
-              credentials = contact.Completed_Levels
-                ? contact.Completed_Levels.replace(/ /g, "/")
-                : "";
-            }
-          }
+          if (contact) credentials = contact.Credentials;
         }
         // Fallback for null/undefined to empty string
         row.dataset.credentials = credentials || "";
@@ -679,7 +669,7 @@ document.addEventListener("DOMContentLoaded", () => {
       Type_ID: "col-session-type",
       Session_Title: "col-session-title",
       Owner_ID: "col-owner",
-      Credentitals: "col-credentials",
+      Credentials: "col-credentials",
       Duration_Min: "col-duration-min",
       Duration_Max: "col-duration-max",
     };

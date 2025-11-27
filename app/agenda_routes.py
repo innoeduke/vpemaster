@@ -30,7 +30,8 @@ def _get_agenda_logs(meeting_number):
                 SessionType.role),  # Eager load SessionType and Role
             orm.joinedload(SessionLog.meeting),      # Eager load Meeting
             orm.joinedload(SessionLog.project),      # Eager load Project
-            orm.joinedload(SessionLog.owner).joinedload(Contact.user),         # Eager load Owner and associated User
+            # Eager load Owner and associated User
+            orm.joinedload(SessionLog.owner).joinedload(Contact.user),
             orm.joinedload(SessionLog.media)
     )
 
@@ -180,7 +181,6 @@ def _recalculate_start_times(meetings_to_update):
 
 @agenda_bp.route('/agenda', methods=['GET'])
 def agenda():
-    current_app.logger.debug("--- Starting agenda() view ---")
     # --- Determine Selected Meeting ---
     today = datetime.today().date()
 
@@ -229,8 +229,6 @@ def agenda():
         elif meeting_numbers:
             # Fallback to the most recent existing meeting (highest meeting number)
             selected_meeting_num = meeting_numbers[0]
-    
-    current_app.logger.debug(f"Selected meeting number: {selected_meeting_num}")
 
     selected_meeting = None
     if selected_meeting_num:
@@ -262,7 +260,6 @@ def agenda():
 
     # --- Fetch Raw Data ---
     raw_session_logs = _get_agenda_logs(selected_meeting_num)
-    current_app.logger.debug(f"Raw session logs count: {len(raw_session_logs)}")
     project_speakers = _get_project_speakers(selected_meeting_num)
 
     # Pre-fetch award category roles from config for efficiency
@@ -389,7 +386,6 @@ def agenda():
             'award_type': award_type,
             'speaker_is_dtm': speaker_is_dtm
         }
-        current_app.logger.debug(f"Processing log: {log.id}, owner: {owner.Name if owner else 'None'}, credentials: {log_dict['Credentials']}")
         logs_data.append(log_dict)
 
     template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
@@ -408,7 +404,6 @@ def agenda():
         'ClubSettings', 'Meeting Start Time', default='18:55')
 
     # --- Render Template ---
-    current_app.logger.debug("--- Finished agenda() view ---")
     return render_template('agenda.html',
                            logs_data=logs_data,               # Use the processed list of dictionaries
                            pathways=pathways,               # For modals
@@ -450,6 +445,7 @@ A single endpoint to fetch all data needed for the agenda modals.
         {
             "id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type,
             "Club": c.Club, "Completed_Paths": c.Completed_Paths,
+            "Credentials": derive_credentials(c),
             "Current_Path": c.user.Current_Path if c.user else None,
             "Next_Project": c.user.Next_Project if c.user else None
         } for c in contacts
