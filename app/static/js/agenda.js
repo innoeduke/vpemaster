@@ -95,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
     "Type_ID",
     "Session_Title",
     "Owner_ID",
-    "Designation",
+    "Credentials",
     "Duration_Min",
     "Duration_Max",
   ];
@@ -423,24 +423,24 @@ document.addEventListener("DOMContentLoaded", () => {
       row.classList.toggle("draggable-row", isEditMode);
       if (isEditMode) {
         const ownerId = row.dataset.ownerId;
-        let designation = row.dataset.designation; // This might be pre-filled from DB
+        let credentials = row.dataset.credentials; // This might be pre-filled from DB
 
-        if (ownerId && !designation) {
+        if (ownerId && !credentials) {
           const contact = allContacts.find((c) => c.id == ownerId);
           if (contact) {
             if (contact.DTM) {
-              designation = "DTM";
+              credentials = "DTM";
             } else if (contact.Type === "Guest") {
-              designation = contact.Club ? `Guest@${contact.Club}` : "Guest";
+              credentials = contact.Club ? `Guest@${contact.Club}` : "Guest";
             } else if (contact.Type === "Member") {
-              designation = contact.Completed_Levels
+              credentials = contact.Completed_Levels
                 ? contact.Completed_Levels.replace(/ /g, "/")
                 : "";
             }
           }
         }
         // Fallback for null/undefined to empty string
-        row.dataset.designation = designation || "";
+        row.dataset.credentials = credentials || "";
         buildEditableRow(row, index + 1);
       }
     });
@@ -551,8 +551,8 @@ document.addEventListener("DOMContentLoaded", () => {
       type_id: row.querySelector('[data-field="Type_ID"] select').value,
       session_title: sessionTitleValue,
       owner_id: row.querySelector('input[name="owner_id"]').value,
-      designation:
-        row.querySelector('[data-field="Designation"] input')?.value || null,
+      credentials:
+        row.querySelector('[data-field="Credentials"] input')?.value || null,
       duration_min:
         row.querySelector('[data-field="Duration_Min"] input')?.value || null,
       duration_max:
@@ -679,7 +679,7 @@ document.addEventListener("DOMContentLoaded", () => {
       Type_ID: "col-session-type",
       Session_Title: "col-session-title",
       Owner_ID: "col-owner",
-      Designation: "col-designation",
+      Credentitals: "col-credentials",
       Duration_Min: "col-duration-min",
       Duration_Max: "col-duration-max",
     };
@@ -907,19 +907,19 @@ document.addEventListener("DOMContentLoaded", () => {
       const pairedSearchInput = pairedRow.querySelector(
         '.autocomplete-container input[type="text"]'
       );
-      const pairedDesignationInput = pairedRow.querySelector(
-        '[data-field="Designation"] input'
+      const pairedCredentialsInput = pairedRow.querySelector(
+        '[data-field="Credentials"] input'
       );
 
       if (newContact) {
         // Setting a new owner
         pairedHiddenInput.value = newContact.id;
         pairedSearchInput.value = newContact.Name;
-        if (pairedDesignationInput) {
-          const designation = newContact.DTM
+        if (pairedCredentialsInput) {
+          const credentials = newContact.DTM
             ? "DTM"
             : newContact.Completed_Levels || "";
-          pairedDesignationInput.value = designation.replace(/ /g, "/");
+          pairedCredentialsInput.value = credentials.replace(/ /g, "/");
         }
         pairedSearchInput.readOnly = true;
         pairedSearchInput.style.pointerEvents = "none";
@@ -927,8 +927,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // Clearing the owner
         pairedHiddenInput.value = "";
         pairedSearchInput.value = "";
-        if (pairedDesignationInput) {
-          pairedDesignationInput.value = "";
+        if (pairedCredentialsInput) {
+          pairedCredentialsInput.value = "";
         }
         pairedSearchInput.readOnly = false;
         pairedSearchInput.style.pointerEvents = "auto";
@@ -944,12 +944,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (this.value === "") {
         hiddenInput.value = "";
         const currentRow = searchInput.closest("tr");
-        const designationInput = currentRow.querySelector(
-          '[data-field="Designation"] input'
+        const credentialsInput = currentRow.querySelector(
+          '[data-field="Credentials"] input'
         );
         currentRow.dataset.ownerId = "";
-        designationInput.value = "";
-        currentRow.dataset.designation = "";
+        credentialsInput.value = "";
+        currentRow.dataset.credentials = "";
         updatePairedSession(currentRow, null);
       }
 
@@ -980,22 +980,22 @@ document.addEventListener("DOMContentLoaded", () => {
             const selectedContactId =
               this.getElementsByTagName("input")[0].dataset.id;
             const currentRow = searchInput.closest("tr");
-            const designationInput = currentRow.querySelector(
-              '[data-field="Designation"] input'
+            const credentialsInput = currentRow.querySelector(
+              '[data-field="Credentials"] input'
             );
             const selectedContact = allContacts.find(
               (c) => c.id == selectedContactId
             );
 
-            if (designationInput && selectedContact) {
-              const designation = selectedContact.DTM
+            if (credentialsInput && selectedContact) {
+              const credentials = selectedContact.DTM
                 ? "DTM"
                 : selectedContact.Completed_Levels || "";
-              designationInput.value = designation.replace(/ /g, "/");
+              credentialsInput.value = credentials.replace(/ /g, "/");
             }
             currentRow.dataset.ownerId = selectedContactId;
-            if (designationInput) {
-              currentRow.dataset.designation = designationInput.value;
+            if (credentialsInput) {
+              currentRow.dataset.credentials = credentialsInput.value;
             }
 
             const currentSessionType = allSessionTypes.find(

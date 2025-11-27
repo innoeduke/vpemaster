@@ -12,7 +12,7 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from .utils import derive_current_path_level, load_setting, derive_designation, project_id_to_code
+from .utils import derive_current_path_level, load_setting, derive_credentials, project_id_to_code
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -30,7 +30,7 @@ def _get_agenda_logs(meeting_number):
                 SessionType.role),  # Eager load SessionType and Role
             orm.joinedload(SessionLog.meeting),      # Eager load Meeting
             orm.joinedload(SessionLog.project),      # Eager load Project
-            orm.joinedload(SessionLog.owner),         # Eager load Owner
+            orm.joinedload(SessionLog.owner).joinedload(Contact.user),         # Eager load Owner and associated User
             orm.joinedload(SessionLog.media)
     )
 
@@ -80,12 +80,12 @@ def _create_or_update_session(item, meeting_number, seq):
     status = item.get('status') if item.get('status') else 'Booked'
     session_title = item.get('session_title')
 
-    # --- Designation Logic (no changes needed) ---
-    designation = item.get('designation')
+    # --- Credentials Logic (no changes needed) ---
+    credentials = item.get('credentials')
     # Check for None or empty string
-    if owner_id and (designation is None or designation == ''):
+    if owner_id and (credentials is None or credentials == ''):
         # Use the centralized utility function
-        designation = derive_designation(owner_contact)
+        credentials = derive_credentials(owner_contact)
 
     # --- Automatic current_path_level Derivation ---
     temp_log_data = {
@@ -114,7 +114,7 @@ def _create_or_update_session(item, meeting_number, seq):
             Meeting_Seq=seq,
             Type_ID=type_id,
             Owner_ID=owner_id,
-            Designation=designation,
+            Credentials=credentials,
             Duration_Min=item.get('duration_min') if item.get(
                 'duration_min') else None,
             Duration_Max=item.get('duration_max') if item.get(
@@ -132,7 +132,7 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Meeting_Seq = seq
             log.Type_ID = type_id
             log.Owner_ID = owner_id
-            log.credentials = designation
+            log.credentials = credentials
             log.Duration_Min = item.get('duration_min') if item.get(
                 'duration_min') else None
             log.Duration_Max = item.get('duration_max') if item.get(
@@ -143,13 +143,7 @@ def _create_or_update_session(item, meeting_number, seq):
                 log.Session_Title = session_title
             log.current_path_level = current_path_level
 
-            # Update the designation
-            if hasattr(owner_contact, 'credentials') and owner_contact.credentials:
-                designation = owner_contact.credentials
-            else:
-                designation = derive_designation(log.Project_ID, log.current_path_level)
-            
-            log.credentials = designation
+
 
 
 def _recalculate_start_times(meetings_to_update):
@@ -261,7 +255,8 @@ def agenda():
                    current_app.config['BEST_SPEAKER'])
         add_winner(selected_meeting.best_evaluator_id,
                    current_app.config['BEST_EVALUATOR'])
-        add_winner(selected_meeting.best_table_topic_id, current_app.config['BEST_TT'])
+        add_winner(selected_meeting.best_table_topic_id,
+                   current_app.config['BEST_TT'])
         add_winner(selected_meeting.best_role_taker_id,
                    current_app.config['BEST_ROLETAKER'])
 
@@ -361,7 +356,7 @@ def agenda():
             'Session_Title': session_title_for_dict,
             'Type_ID': log.Type_ID,
             'Owner_ID': log.Owner_ID,
-            'Designation': log.credentials,
+            'Credentials': log.credentials,
             'Duration_Min': log.Duration_Min,
             'Duration_Max': log.Duration_Max,
             'Status': log.Status,
@@ -757,7 +752,7 @@ def _build_sheet3_roster(ws, meeting_number):
         ws.append([
             entry.order_number,
             entry.contact.Name if entry.contact else '',
-            entry.ticket
+            f"{entry.ticket} ({entry.contact.Type})"
         ])
 
     _auto_fit_worksheet_columns(ws, min_width=10)
@@ -1126,12 +1121,12 @@ def create_from_template():
                 session_title = session_type.Title if session_type and session_type.Predefined else session_title_from_csv
 
                 owner_id = None
-                designation = ''
+                credentials = ''
                 if owner_name:
                     owner = Contact.query.filter_by(Name=owner_name).first()
                     if owner:
                         owner_id = owner.id
-                        designation = derive_designation(owner)
+                        credentials = derive_credentials(owner)
 
                 new_log = SessionLog(
                     Meeting_Number=meeting_number,
@@ -1139,7 +1134,7 @@ def create_from_template():
                     Type_ID=type_id,
                     Owner_ID=owner_id,
                     Session_Title=session_title,
-                    Designation=designation,
+                    Credentials=credentials,
                     Duration_Min=duration_min,
                     Duration_Max=duration_max
                 )

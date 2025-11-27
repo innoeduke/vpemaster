@@ -7,7 +7,7 @@ from . import db
 from datetime import datetime
 import re
 from sqlalchemy import or_
-from .utils import derive_current_path_level, derive_designation
+from .utils import derive_current_path_level, derive_credentials
 
 
 booking_bp = Blueprint('booking_bp', __name__)
@@ -565,7 +565,7 @@ def book_or_assign_role():
     new_path_level = derive_current_path_level(
         log, owner_contact) if owner_contact else None
 
-    new_designation = derive_designation(owner_contact)
+    new_credentials = derive_credentials(owner_contact)
 
     non_distinct_roles = current_app.config['UNIQUE_ENTRY_ROLES'] + \
         ([current_app.config['ROLES']['TOPICS_SPEAKER']['name']]
@@ -579,17 +579,17 @@ def book_or_assign_role():
             .filter(Role.name == logical_role_key).all()
 
     for session_log in sessions_to_update:
-        # Re-fetch owner_contact and derive path/designation inside the loop if needed,
+        # Re-fetch owner_contact and derive path/credentials inside the loop if needed,
         # but for simplicity, we can do it once if the owner is the same for all.
         owner_contact = Contact.query.get(
             owner_id_to_set) if owner_id_to_set else None
         new_path_level = derive_current_path_level(
             session_log, owner_contact) if owner_contact else None
-        new_designation = derive_designation(owner_contact)
+        new_credentials = derive_credentials(owner_contact)
 
         session_log.Owner_ID = owner_id_to_set
         session_log.current_path_level = new_path_level
-        session_log.credentials = new_designation
+        session_log.credentials = new_credentials
 
     try:
         db.session.commit()

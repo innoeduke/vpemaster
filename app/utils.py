@@ -131,13 +131,13 @@ def derive_current_path_level(log, owner_contact):
     return None
 
 
-def derive_designation(contact):
+def derive_credentials(contact):
     """
-    Derives the designation string for a given contact.
+    Derives the credentials string for a given contact.
     - Returns an empty string for DTMs.
     - Formats for Guests (e.g., "Guest@Club").
     - Formats for Members based on completed levels (e.g., "PM1/DL2").
-    - Returns an empty string if the contact is None or has no specific designation.
+    - Returns an empty string if the contact is None or has no specific credentials.
     """
     if not contact:
         return ''
