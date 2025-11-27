@@ -1,9 +1,9 @@
-{% extends "base.html" %} {% block head %}
-{{ super() }}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-{% endblock %}
-{% block title %}Settings{% endblock %} {% block
-content %}
+{% extends "base.html" %} {% block head %} {{ super() }}
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+/>
+{% endblock %} {% block title %}Settings{% endblock %} {% block content %}
 <h1>System Settings</h1>
 
 <div class="settings-container">
@@ -23,6 +23,9 @@ content %}
     <button class="tab-btn active" onclick="openTab(event, 'general')">
       General
     </button>
+    <button class="tab-btn" onclick="openTab(event, 'agenda-settings')">
+      Agenda
+    </button>
     <button class="tab-btn" onclick="openTab(event, 'sessions')">
       Sessions
     </button>
@@ -33,9 +36,6 @@ content %}
     </button>
     <button class="tab-btn" onclick="openTab(event, 'presentations')">
       Presentations
-    </button>
-    <button class="tab-btn" onclick="openTab(event, 'agenda-settings')">
-      Agenda
     </button>
   </div>
 
@@ -72,7 +72,13 @@ content %}
       <div class="button-group">
         <button id="add-session-btn" class="btn btn-success">Add New</button>
         <button id="edit-sessions-btn" class="btn btn-primary">Edit</button>
-        <button id="cancel-sessions-btn" class="btn btn-danger" style="display: none;">Cancel</button>
+        <button
+          id="cancel-sessions-btn"
+          class="btn btn-danger"
+          style="display: none"
+        >
+          Cancel
+        </button>
       </div>
     </div>
     <table id="sessions-table">
@@ -102,12 +108,8 @@ content %}
           <td data-field="Default_Owner">
             {{ st.Default_Owner if st.Default_Owner is not none else '' }}
           </td>
-          <td data-field="role_id">
-            {{ st.role.name if st.role else '' }}
-          </td>
-          <td data-field="Role_Type">
-            {{ st.role.type if st.role else '' }}
-          </td>
+          <td data-field="role_id">{{ st.role.name if st.role else '' }}</td>
+          <td data-field="Role_Type">{{ st.role.type if st.role else '' }}</td>
           <td data-field="Duration_Min">
             {{ st.Duration_Min if st.Duration_Min is not none else '' }}
           </td>
@@ -170,10 +172,16 @@ content %}
   <div id="agenda-settings" class="tab-content">
     <div class="settings-header">
       <h2>Meeting Roles</h2>
-      <div class="button-group" style="min-width: 400px;">
+      <div class="button-group" style="min-width: 400px">
         <button id="add-role-btn" class="btn btn-success">Add New</button>
         <button id="edit-roles-btn" class="btn btn-primary">Edit</button>
-        <button id="cancel-roles-btn" class="btn btn-danger" style="display: none;">Cancel</button>
+        <button
+          id="cancel-roles-btn"
+          class="btn btn-danger"
+          style="display: none"
+        >
+          Cancel
+        </button>
         <button type="button" class="btn btn-info" id="import-roles-btn">
           Import Roles
         </button>
@@ -182,7 +190,7 @@ content %}
           method="post"
           enctype="multipart/form-data"
           id="import-roles-form"
-          style="display: none;"
+          style="display: none"
         >
           <input type="file" name="file" id="import-roles-file" />
         </form>
@@ -205,14 +213,34 @@ content %}
         <tr data-id="{{ role.id }}">
           <td>{{ role.id }}</td>
           <td data-field="name">{{ role.name }}</td>
-          <td data-field="icon"><i class="fas {{ role.icon }}"></i> {{ role.icon }}</td>
+          <td data-field="icon">
+            <i class="fas {{ role.icon }}"></i> {{ role.icon }}
+          </td>
           <td data-field="type">{{ role.type }}</td>
           <td data-field="award_category">{{ role.award_category }}</td>
           <td data-field="needs_approval">
-            <input type="checkbox" {% if role.needs_approval %}checked{% endif %} disabled />
+            <input
+              type="checkbox"
+              {%
+              if
+              role.needs_approval
+              %}checked{%
+              endif
+              %}
+              disabled
+            />
           </td>
           <td data-field="is_distinct">
-            <input type="checkbox" {% if role.is_distinct %}checked{% endif %} disabled />
+            <input
+              type="checkbox"
+              {%
+              if
+              role.is_distinct
+              %}checked{%
+              endif
+              %}
+              disabled
+            />
           </td>
         </tr>
         {% endfor %}
@@ -304,7 +332,11 @@ content %}
       <div class="button-group">
         <button id="add-level-role-btn" class="btn btn-success">Add New</button>
         <button id="edit-level-roles-btn" class="btn btn-primary">Edit</button>
-        <button id="cancel-level-roles-btn" class="btn btn-danger" style="display: none;">
+        <button
+          id="cancel-level-roles-btn"
+          class="btn btn-danger"
+          style="display: none"
+        >
           Cancel
         </button>
       </div>
@@ -343,7 +375,11 @@ content %}
         <button id="edit-presentations-btn" class="btn btn-primary">
           Edit
         </button>
-        <button id="cancel-presentations-btn" class="btn btn-danger" style="display: none;">
+        <button
+          id="cancel-presentations-btn"
+          class="btn btn-danger"
+          style="display: none"
+        >
           Cancel
         </button>
       </div>
@@ -373,13 +409,11 @@ content %}
   </div>
 </div>
 
-{% include '_session_modal.html' %}
-{% include '_role_modal.html' %}
+{% include '_session_modal.html' %} {% include '_role_modal.html' %}
 
 <script>
   var ROLES_DATA = {{ roles|tojson }};
 </script>
-{% endblock %} 
-{% block scripts %}
+{% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 {% endblock %}

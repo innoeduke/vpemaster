@@ -22,13 +22,13 @@ def settings():
         return redirect(url_for('agenda_bp.agenda'))
 
     all_settings = load_all_settings()
-    
+
     club_settings_raw = all_settings.get('ClubSettings', {})
 
-    # Transform keys from .ini file (e.g., 'club name') 
+    # Transform keys from .ini file (e.g., 'club name')
     # to what the template expects (e.g., 'club_name')
     general_settings = {
-        key.replace(' ', '_'): value 
+        key.replace(' ', '_'): value
         for key, value in club_settings_raw.items()
     }
 
@@ -54,33 +54,33 @@ def add_session_type():
         title = request.form.get('title', '').strip()
         if not title:
             return jsonify(success=False, message="Title is required"), 400
-        
+
         # 检查标题是否已存在
         existing_session = SessionType.query.filter_by(Title=title).first()
         if existing_session:
             return jsonify(success=False, message="Session type with this title already exists"), 400
-        
+
         # 验证数值输入
         duration_min_str = request.form.get('duration_min', '').strip()
         duration_max_str = request.form.get('duration_max', '').strip()
-        
+
         duration_min = None
         duration_max = None
-        
+
         if duration_min_str:
             if not duration_min_str.isdigit():
                 return jsonify(success=False, message="Duration min must be a positive integer"), 400
             duration_min = int(duration_min_str)
             if duration_min < 1 or duration_min > 480:  # 8小时限制
                 return jsonify(success=False, message="Duration min must be between 1 and 480 minutes"), 400
-        
+
         if duration_max_str:
             if not duration_max_str.isdigit():
                 return jsonify(success=False, message="Duration max must be a positive integer"), 400
             duration_max = int(duration_max_str)
             if duration_max < 1 or duration_max > 480:
                 return jsonify(success=False, message="Duration max must be between 1 and 480 minutes"), 400
-        
+
         # 验证时长逻辑
         if duration_min and duration_max and duration_min > duration_max:
             return jsonify(success=False, message="Duration min cannot be greater than duration max"), 400
@@ -90,7 +90,8 @@ def add_session_type():
 
         new_session = SessionType(
             Title=title,
-            Default_Owner=request.form.get('default_owner', '').strip() or None,
+            Default_Owner=request.form.get(
+                'default_owner', '').strip() or None,
             role_id=role_id,
             Duration_Min=duration_min,
             Duration_Max=duration_max,
@@ -101,9 +102,22 @@ def add_session_type():
         )
         db.session.add(new_session)
         db.session.commit()
-        
-        return jsonify(success=True, message="Session type added successfully", id=new_session.id)
-        
+
+        # Return the new session object so the frontend can add it to the table
+        new_session_data = {
+            'id': new_session.id,
+            'Title': new_session.Title,
+            'Default_Owner': new_session.Default_Owner,
+            'role_id': new_session.role_id,
+            'Duration_Min': new_session.Duration_Min,
+            'Duration_Max': new_session.Duration_Max,
+            'Is_Section': new_session.Is_Section,
+            'Predefined': new_session.Predefined,
+            'Valid_for_Project': new_session.Valid_for_Project,
+            'Is_Hidden': new_session.Is_Hidden
+        }
+        return jsonify(success=True, message="Session type added successfully", new_session=new_session_data)
+
     except ValueError as e:
         db.session.rollback()
         current_app.logger.error(f"Value error adding session type: {str(e)}")
@@ -131,7 +145,8 @@ def update_session_types():
                 session_type.Title = item.get('Title')
                 session_type.Default_Owner = item.get('Default_Owner')
                 role_id_str = item.get('role_id')
-                session_type.role_id = int(role_id_str) if role_id_str else None
+                session_type.role_id = int(
+                    role_id_str) if role_id_str else None
                 session_type.Is_Section = item.get('Is_Section', False)
                 session_type.Predefined = item.get('Predefined', False)
                 session_type.Valid_for_Project = item.get(
@@ -225,9 +240,10 @@ def import_roles():
     if file and file.filename.endswith('.csv'):
         try:
             # Read the file in-memory
-            stream = io.StringIO(file.stream.read().decode("utf-8-sig"), newline=None)
+            stream = io.StringIO(
+                file.stream.read().decode("utf-8-sig"), newline=None)
             reader = csv.DictReader(stream)
-            
+
             for row in reader:
                 role_name = row.get('name')
                 if role_name and not Role.query.filter_by(name=role_name).first():
@@ -236,11 +252,12 @@ def import_roles():
                         icon=row.get('icon'),
                         type=row.get('type'),
                         award_category=row.get('award_category'),
-                        needs_approval=row.get('needs_approval', '0').strip() == '1',
+                        needs_approval=row.get(
+                            'needs_approval', '0').strip() == '1',
                         is_distinct=row.get('is_distinct', '0').strip() == '1'
                     )
                     db.session.add(new_role)
-            
+
             db.session.commit()
             flash('Roles have been successfully imported.', 'success')
 

@@ -105,9 +105,14 @@
         <thead>
             <tr>
                 <th class="role-header">Role</th>
-                <th class="status-header">Status</th>
-                <th class="assign-header">Assign</th>
-                <th class="action-header">Action</th>
+                <th class="status-header"></th>
+                {% if is_admin_view %}
+                    <th class="assign-header">Assign</th>
+                    <th class="action-header">Action</th>
+                {% else %}
+                    <th class="assign-header">Name</th>
+                    <th class="action-header"></th>
+                {% endif %}
             </tr>
         </thead>
         {% endset %}
@@ -151,7 +156,7 @@
                         <td class="assign-cell">
                             {% if is_admin_view %}
                             <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
-                                <option value="0">-- Assign / Unassign --</option>
+                                <option value="0">--- Select ---</option>
                                 {% for contact in contacts %}
                                 <option value="{{ contact.id }}" {% if role.owner_id == contact.id %}selected{% endif %}>{{ contact.Name }}</option>
                                 {% endfor %}
@@ -211,10 +216,10 @@
                             </div>
                         </td>
                         <td class="status-cell">
-                            <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
+                            {# Empty #} 
                         </td>
                         <td class="assign-cell">
-                            {# Empty #}
+                            <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
                         </td>
                         <td class="button-cell">
                             {% if role.owner_id and role.award_category %}
@@ -247,10 +252,10 @@
                             </div>
                         </td>
                         <td class="status-cell">
-                            <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
+                            {# Empty #} 
                         </td>
                         <td class="assign-cell">
-                            {# Empty #}
+                            <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
                         </td>
                         <td class="button-cell">
                         {% if is_admin_view  %}

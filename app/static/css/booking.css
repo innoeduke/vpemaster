@@ -56,7 +56,7 @@ h1 {
     min-width: 250px;
     background-color: transparent;
     border: 1px solid;
-    border-radius: 16px;
+    border-radius: 8px;
     padding: 5px;
 }
 
@@ -241,14 +241,15 @@ h1 {
 }
 
 .owner-display {
+    font-family: 'Montserrat', sans-serif;
     font-weight: normal;
     font-size: 1em; /* Match the role title font size */
-    color: #555;
-    text-align: center; /* Center the name */
+    color: #333;
+    text-align: left; 
     width: 100%;
     white-space: nowrap; /* Prevent name from wrapping */
     overflow: hidden; /* Hide overflow */
-    text-overflow: ellipsis; /* Add ... if name is too long */
+    /* text-overflow: ellipsis; Add ... if name is too long */
 }
 
 .booking-table .button-cell .btn {
@@ -259,7 +260,6 @@ h1 {
 }
 
 .btn-book { background-color: #28a745; }
-.btn-cancel { background-color: #772432; }
 .btn-booked {
     background-color: #e9ecef;
     color: #6c757d;
@@ -299,9 +299,12 @@ h1 {
     color: #555;
 }
 
-.booking-table.is-admin-view .admin-assign-select {
+.booking-table .admin-assign-select {
+    font-family: 'Montserrat', sans-serif;
+    display: flex;
+    text-align: center;
     flex-grow: 1;
-    font-size: 1em !important;
+    font-size: 1em;
     width: 100%;
 
     /* Appearance */
@@ -312,9 +315,10 @@ h1 {
     
     /* Box Model */
     height: 38px; /* Consistent tap height */
-    padding: 5px 30px 5px 12px; /* Top, Right (for arrow), Bottom, Left */
+    padding: 5px 12px 5px 12px; /* Top, Right (for arrow), Bottom, Left */
+    margin: 0 10px;
     border: 1px solid #ccc; /* Standard border */
-    border-radius: 4px; /* Rounded corners */
+    border-radius: 8px; /* Rounded corners */
 }
 
 /* --- Completed Roles --- */
@@ -451,7 +455,7 @@ h1 {
 .btn-join-waitlist, .btn-leave-waitlist {
     padding: 5px 15px;
     border-radius: 5px;
-    color: #fff;
+    color: #333;
     border: none;
     cursor: pointer;
     display: flex;
@@ -461,11 +465,10 @@ h1 {
 }
 
 .btn-join-waitlist {
-    background-color: #fcd22e;
-    color: #333; /* Dark text for better contrast on yellow */
-    font-weight: bold;
+    background-color: #0eac0b;
+    font-weight: normal;
 }
 
 .btn-leave-waitlist {
-    background-color: #dc3545; /* A standard danger color */
+    background-color: #ffc700; /* A standard danger color */
 }

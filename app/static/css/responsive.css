@@ -459,6 +459,13 @@
         font-size: 0.9em;
     }
 
+    .booking-table .owner-display {
+        margin: 1em 10px;
+        font-size: 1.5em;
+        white-space: wrap;
+        text-align: right;
+    }
+
     .booking-table .assign-cell {
         grid-area: action;
         justify-content: flex-end;

@@ -69,7 +69,7 @@ function saveTableChanges(config) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(dataToSave),
   })
-    .then(response => {
+    .then((response) => {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -146,8 +146,6 @@ function toggleEditMode(config) {
     });
   });
 }
-
-
 
 /**
  * REFACTORED HELPER: Sets up a single, global filter for all tabs.
@@ -285,15 +283,14 @@ function setupInlineEdit(config) {
  * Enhanced fetch with retry logic
  */
 function fetchWithRetry(url, options = {}, retries = 3, retryDelay = 1000) {
-  return fetch(url, options)
-    .catch(error => {
-      if (retries <= 0) throw error;
-      return new Promise(resolve => {
-        setTimeout(() => {
-          resolve(fetchWithRetry(url, options, retries - 1, retryDelay));
-        }, retryDelay);
-      });
+  return fetch(url, options).catch((error) => {
+    if (retries <= 0) throw error;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(fetchWithRetry(url, options, retries - 1, retryDelay));
+      }, retryDelay);
     });
+  });
 }
 
 /**
@@ -301,13 +298,13 @@ function fetchWithRetry(url, options = {}, retries = 3, retryDelay = 1000) {
  */
 function showNotification(message, type = "info") {
   // Remove existing notification
-  const existingNotification = document.getElementById('settings-notification');
+  const existingNotification = document.getElementById("settings-notification");
   if (existingNotification) {
     existingNotification.remove();
   }
 
-  const notification = document.createElement('div');
-  notification.id = 'settings-notification';
+  const notification = document.createElement("div");
+  notification.id = "settings-notification";
   notification.className = `alert alert-${type} alert-dismissible fade show`;
   notification.style.cssText = `
     position: fixed;
@@ -317,16 +314,16 @@ function showNotification(message, type = "info") {
     min-width: 300px;
     max-width: 500px;
   `;
-  
+
   notification.innerHTML = `
     ${message}
     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
   `;
-  
+
   document.body.appendChild(notification);
-  
+
   // Auto-remove after 5 seconds for success messages
-  if (type === 'success') {
+  if (type === "success") {
     setTimeout(() => {
       if (notification.parentNode) {
         notification.remove();
@@ -351,19 +348,26 @@ function sortTableByColumn(table, column, asc = true) {
     if (aCheckbox && bCheckbox) {
       const aVal = aCheckbox.checked;
       const bVal = bCheckbox.checked;
-      return (aVal === bVal) ? 0 : (aVal < bVal ? -1 : 1) * dirModifier;
+      return aVal === bVal ? 0 : (aVal < bVal ? -1 : 1) * dirModifier;
     }
 
     const aColText = aCell.textContent.trim();
     const bColText = bCell.textContent.trim();
 
     // Check if the values are numbers and compare them as such
-    if (!isNaN(aColText) && !isNaN(bColText) && aColText !== '' && bColText !== '') {
+    if (
+      !isNaN(aColText) &&
+      !isNaN(bColText) &&
+      aColText !== "" &&
+      bColText !== ""
+    ) {
       return (parseFloat(aColText) - parseFloat(bColText)) * dirModifier;
     } else {
-      return aColText.localeCompare(bColText, undefined, {
-        numeric: true,
-      }) * dirModifier;
+      return (
+        aColText.localeCompare(bColText, undefined, {
+          numeric: true,
+        }) * dirModifier
+      );
     }
   });
 
@@ -502,20 +506,20 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (field === "role_id") {
         const select = document.createElement("select");
         select.className = "form-control-sm";
-        
+
         // Add a "None" option
         const noneOption = new Option("None", "");
         select.appendChild(noneOption);
 
         // Populate with roles from global data
-        ROLES_DATA.forEach(role => {
+        ROLES_DATA.forEach((role) => {
           const option = new Option(role.name, role.id);
           if (role.name === currentValue) {
             option.selected = true;
           }
           select.appendChild(option);
         });
-        
+
         cell.textContent = "";
         cell.appendChild(select);
       } else {
@@ -550,8 +554,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (field === "role_id") {
         const select = cell.querySelector("select");
         return select.value;
-      } 
-      else {
+      } else {
         return cell.querySelector("input").value;
       }
     },
@@ -565,7 +568,7 @@ document.addEventListener("DOMContentLoaded", () => {
           value ? "checked" : ""
         } disabled>`;
       } else if (field === "role_id") {
-        const selectedRole = ROLES_DATA.find(role => role.id == value);
+        const selectedRole = ROLES_DATA.find((role) => role.id == value);
         cell.textContent = selectedRole ? selectedRole.name : "";
       } else {
         cell.textContent = value;
@@ -716,5 +719,115 @@ document.addEventListener("DOMContentLoaded", () => {
     importRolesFile.addEventListener("change", () => {
       importRolesForm.submit();
     });
+  }
+
+  // --- 6. AJAX Form Submission for "Add Session Type" ---
+  const addSessionForm = document.getElementById("addSessionForm");
+  if (addSessionForm) {
+    addSessionForm.addEventListener("submit", function (event) {
+      event.preventDefault(); // Prevent the default form submission
+
+      const formData = new FormData(this);
+      const url = this.action;
+
+      fetch(url, {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => {
+          if (!response.ok) {
+            // Try to get error message from JSON response
+            return response.json().then((err) => {
+              throw new Error(
+                err.message || `HTTP error! status: ${response.status}`
+              );
+            });
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            // Add the new row to the table
+            addSessionRowToTable(data.new_session);
+
+            // Close modal and reset form
+            closeModal("addSessionModal");
+            this.reset();
+
+            // Show success notification
+            showNotification("Session type added successfully!", "success");
+          } else {
+            // Show error from server
+            showNotification(data.message, "error");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          showNotification(`An error occurred: ${error.message}`, "error");
+        });
+    });
+  }
+
+  /**
+   * Dynamically adds a new session type row to the sessions table.
+   * @param {object} sessionData - The data for the new session from the server.
+   */
+  function addSessionRowToTable(sessionData) {
+    const tableBody = document.querySelector("#sessions-table tbody");
+    if (!tableBody) return;
+
+    const newRow = tableBody.insertRow();
+    newRow.dataset.id = sessionData.id;
+
+    const roleName = sessionData.role_id
+      ? ROLES_DATA.find((r) => r.id == sessionData.role_id)?.name || ""
+      : "";
+
+    newRow.innerHTML = `
+      <td data-field="Title">${sessionData.Title || ""}</td>
+      <td data-field="Default_Owner">${sessionData.Default_Owner || ""}</td>
+      <td data-field="role_id">${roleName}</td>
+      <td data-field="Duration_Min">${sessionData.Duration_Min || ""}</td>
+      <td data-field="Duration_Max">${sessionData.Duration_Max || ""}</td>
+      <td data-field="Is_Section">
+        <input type="checkbox" ${
+          sessionData.Is_Section ? "checked" : ""
+        } disabled>
+      </td>
+      <td data-field="Predefined">
+        <input type="checkbox" ${
+          sessionData.Predefined ? "checked" : ""
+        } disabled>
+      </td>
+      <td data-field="Valid_for_Project">
+        <input type="checkbox" ${
+          sessionData.Valid_for_Project ? "checked" : ""
+        } disabled>
+      </td>
+      <td data-field="Is_Hidden">
+        <input type="checkbox" ${
+          sessionData.Is_Hidden ? "checked" : ""
+        } disabled>
+      </td>
+    `;
+
+    // Re-apply sorting if a sort order is active
+    const activeSortHeader = document.querySelector(
+      "#sessions-table th[data-sort-dir]"
+    );
+    if (activeSortHeader) {
+      const table = document.getElementById("sessions-table");
+      const columnIndex = parseInt(activeSortHeader.dataset.columnIndex, 10);
+      const sortDir = activeSortHeader.dataset.sortDir;
+      sortTableByColumn(table, columnIndex, sortDir === "asc");
+    }
+
+    // Re-apply filter if a filter is active
+    const searchInput = document.getElementById("global-settings-search");
+    if (searchInput && searchInput.value) {
+      const filter = searchInput.value.toUpperCase().trim();
+      const rowText = newRow.textContent.toUpperCase();
+      newRow.style.display = rowText.includes(filter) ? "" : "none";
+    }
   }
 });
