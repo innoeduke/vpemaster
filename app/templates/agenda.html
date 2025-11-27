@@ -275,9 +275,7 @@
                                     </span>
                                 {% endif %}
                                 <span class="owner-meta">
-                                    {% if log_dict.owner_type == 'Guest' %}
-                                        <br/>{{ log_dict.credentials }} {# Use credentials directly #}
-                                    {% elif log_dict.credentials and not log_dict.owner_dtm %}
+                                    {% if log_dict.credentials %}
                                         <br/>{{ log_dict.credentials }}
                                     {% endif %}
                                 </span>

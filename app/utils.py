@@ -7,7 +7,6 @@ import re
 import configparser
 import os
 import hashlib
-import logging
 
 
 def project_id_to_code(project_id, path_abbr):
@@ -140,28 +139,28 @@ def derive_credentials(contact):
     - Formats for Members based on completed levels (e.g., "PM1/DL2").
     - Returns an empty string if the contact is None or has no specific credentials.
     """
-    logging.debug(f"Deriving credentials for contact: {contact}")
+    current_app.logger.debug(f"Deriving credentials for contact: {contact}")
     if not contact:
-        logging.debug("Contact is None, returning empty string.")
+        current_app.logger.debug("Contact is None, returning empty string.")
         return ''
 
-    logging.debug(f"Contact type: {contact.Type}, DTM: {contact.DTM}")
+    current_app.logger.debug(f"Contact type: {contact.Type}, DTM: {contact.DTM}")
     if contact.DTM:
-        logging.debug("Contact is DTM, returning 'DTM'.")
+        current_app.logger.debug("Contact is DTM, returning 'DTM'.")
         return 'DTM'
     elif contact.Type == 'Guest':
         credentials = f"Guest@{contact.Club}" if contact.Club else "Guest"
-        logging.debug(f"Contact is Guest, returning '{credentials}'.")
+        current_app.logger.debug(f"Contact is Guest, returning '{credentials}'.")
         return credentials
     elif contact.Type in ['Member', 'Officer']:
         if contact.user and contact.user.credentials:
-            logging.debug(f"Contact is Member/Officer with credentials: {contact.user.credentials}")
+            current_app.logger.debug(f"Contact is Member/Officer with credentials: {contact.user.credentials}")
             return contact.user.credentials
         else:
-            logging.debug("Contact is Member/Officer but has no credentials, returning empty string.")
+            current_app.logger.debug("Contact is Member/Officer but has no credentials, returning empty string.")
             return ''
     
-    logging.debug("No conditions met, returning empty string.")
+    current_app.logger.debug("No conditions met, returning empty string.")
     return ''
 
 
