@@ -13,6 +13,7 @@ import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
 from .utils import derive_current_path_level, load_setting, derive_credentials, project_id_to_code
+import logging
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -142,7 +143,6 @@ def _create_or_update_session(item, meeting_number, seq):
             if session_title is not None:
                 log.Session_Title = session_title
             log.current_path_level = current_path_level
-
 
 
 
@@ -388,6 +388,7 @@ def agenda():
             'award_type': award_type,
             'speaker_is_dtm': speaker_is_dtm
         }
+        logging.debug(f"Processing log: {log.id}, log_dict: {log_dict}")
         logs_data.append(log_dict)
 
     template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
