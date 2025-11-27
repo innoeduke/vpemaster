@@ -356,7 +356,7 @@ def agenda():
             'Session_Title': session_title_for_dict,
             'Type_ID': log.Type_ID,
             'Owner_ID': log.Owner_ID,
-            'Credentials': log.credentials,
+            'Credentials': derive_credentials(owner),
             'Duration_Min': log.Duration_Min,
             'Duration_Max': log.Duration_Max,
             'Status': log.Status,
