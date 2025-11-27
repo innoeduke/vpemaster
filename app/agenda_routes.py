@@ -645,7 +645,7 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
         speaker = Contact.query.filter_by(Name=speaker_name).first()
         if speaker and speaker.DTM:
             speaker_name += '\u1D30\u1D40\u1D39'
-        session_title_str = f"Evaluation for {speaker_name}"
+        session_title_str = f"Evaluator for {speaker_name}"
 
     # Format the final title
     if project_code_str:
@@ -811,8 +811,8 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
         master_contact.Name if master_contact else "",  # Sharing Master
         meeting.media.url if meeting.media else "",  # Meeting Video Url
         meeting.WOD if meeting.WOD else "",
-        meeting.best_tt_speaker.Name if meeting.best_tt_speaker else "",
-        meeting.best_roletaker.Name if meeting.best_roletaker else "",
+        meeting.best_table_topic_speaker.Name if meeting.best_table_topic_speaker else "",
+        meeting.best_role_taker.Name if meeting.best_role_taker else "",
         meeting.best_speaker.Name if meeting.best_speaker else "",
         meeting.best_evaluator.Name if meeting.best_evaluator else ""
     ]
@@ -955,10 +955,10 @@ def export_agenda(meeting_number):
     Sheet 3: Roster for the meeting.
     """
     meeting = Meeting.query.options(
-        orm.joinedload(Meeting.best_tt_speaker),
+        orm.joinedload(Meeting.best_table_topic_speaker),
         orm.joinedload(Meeting.best_evaluator),
         orm.joinedload(Meeting.best_speaker),
-        orm.joinedload(Meeting.best_roletaker),
+        orm.joinedload(Meeting.best_role_taker),
         orm.joinedload(Meeting.media)
     ).filter_by(Meeting_Number=meeting_number).first()
     if not meeting:

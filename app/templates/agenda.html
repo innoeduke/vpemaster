@@ -222,7 +222,7 @@
 
                                {# Display Title #}
                                {% if log_dict.session_type_title == 'Evaluation' %}
-                                   {% set display_title = 'Evaluation for ' ~ cleaned_title %}
+                                   {% set display_title = 'Evaluator for ' ~ cleaned_title %}
                                {% elif log_dict.session_type_title in ['Pathway Speech', 'Presentation'] or log_dict.Project_ID %}
                                    {% set display_title = '"' ~ cleaned_title ~ '"' %}
                                {% elif log_dict.predefined %}

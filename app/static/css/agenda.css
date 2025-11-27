@@ -577,3 +577,32 @@
     color: #772432;
     text-decoration: none;
 }
+
+.meeting-status-display {
+    display: inline-flex;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    align-items: center;
+    color: #333;
+    gap: 8px;
+}
+
+/* Restore the status-specific background colors */
+.meeting-status-display.status-not_started { background-color: #28a745; } /* Green */
+.meeting-status-display.status-running { background-color: #007bff; } /* Blue */
+.meeting-status-display.status-finished { background-color: #6c757d; } /* Gray */
+.meeting-status-display.status-cancelled { background-color: #dc3545; } /* Red */
+
+/* Style the status action button to be transparent with dark, bold text */
+#meeting-status-btn {
+    background-color: transparent;
+    color: #333;
+    font-weight: bold;
+    border: 2px solid #ccc; /* Add a border for definition */
+    box-shadow: none; /* Remove any default button shadow */
+    /* Use flexbox for perfect centering */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}

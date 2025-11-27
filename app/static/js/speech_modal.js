@@ -193,7 +193,7 @@ function resetModal(logData, sessionType) {
 
 function setupEvaluatorModal(logData) {
   modalElements.projectGroup.style.display = "block";
-  modalElements.speechTitleLabel.textContent = "Evaluation for:";
+  modalElements.speechTitleLabel.textContent = "Evaluator for:";
 
   const evalProjects = allProjects
     .filter((p) => [4, 5, 6].includes(p.ID))
@@ -214,7 +214,6 @@ function setupEvaluatorModal(logData) {
     } else {
       // When switching to project mode, keep the existing speech title
       // Do not override with the project name
-
     }
   };
 
@@ -312,12 +311,12 @@ function setupSpeechModal(logData, { workingPath, nextProject }) {
     level: levelToSelect,
     Project_ID: projectToSelect,
   } = logData;
-  
+
   // 确保级别值是字符串类型，以便与下拉选项匹配
   if (levelToSelect !== undefined && levelToSelect !== null) {
     levelToSelect = String(levelToSelect);
   }
-  
+
   if (projectToSelect == "60") {
     modalElements.genericCheckbox.checked = true;
     toggleGeneric(true);
