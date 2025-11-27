@@ -191,6 +191,7 @@
                     data-meeting-date="{{ log_dict.meeting_date_str }}"
                     data-is-section="{{ log_dict.is_section|lower }}"
                     data-is-hidden="{{ log_dict.is_hidden|lower }}"
+                    data-is-readonly="{{ log_dict.is_readonly|default(false)|lower }}"
                     data-meeting-seq="{{ log_dict.Meeting_Seq }}"
                     data-start-time="{{ log_dict.Start_Time_str }}"
                     {# Use predefined title if available, otherwise fallback to log title #}
@@ -203,7 +204,7 @@
                     data-status="{{ log_dict.Status if log_dict.Status else '' }}"
                     data-role="{{ log_dict.role or '' }}"
                     data-current-path-level="{{ log_dict.current_path_level or '' }}"
-                    class="{{ 'section-row' if log_dict.is_section else '' }} {{ 'hidden-row' if log_dict.is_hidden else '' }}">
+                    class="{{ 'section-row' if log_dict.is_section else '' }} {{ 'hidden-row' if log_dict.is_hidden else '' }} {{ 'readonly-row' if log_dict.is_readonly|default(false) else '' }}">
 
                     {# --- Row Content using log_dict --- #}
                     {% if log_dict.is_section %}

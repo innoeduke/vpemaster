@@ -378,6 +378,42 @@ def agenda():
         }
         logs_data.append(log_dict)
 
+    # --- Group all "Topics Speaker" sessions after the main "Table Topic Session" ---
+    if selected_meeting and selected_meeting.status == 'finished':
+        # Find all "Topics Speaker" sessions (Type_ID = 36) and the main TT session (Type_ID = 7)
+        topics_speaker_sessions = []
+        topics_speaker_indices = []
+        tt_session_index = -1
+
+        for i, log in enumerate(logs_data):
+            if log['Type_ID'] == 36:  # Topics Speaker
+                topics_speaker_sessions.append(log)
+                topics_speaker_indices.append(i)
+            if log['Type_ID'] == 7:
+                tt_session_index = i
+
+        if topics_speaker_sessions and tt_session_index != -1:
+            # Identify the winner among the topics speakers
+            winner_id = selected_meeting.best_table_topic_id
+            if winner_id:
+                for session in topics_speaker_sessions:
+                    if session['Owner_ID'] == winner_id:
+                        # Make the winner's session visible and assign the award
+                        session['is_hidden'] = False
+                        session['Session_Title'] = 'Best Table Topics Speaker'
+                        session['award_type'] = 'table-topic'
+                        break  # Found the winner, no need to check further
+
+            # Remove the speaker sessions from their original positions (in reverse to avoid index shifting)
+            for i in sorted(topics_speaker_indices, reverse=True):
+                logs_data.pop(i)
+
+            # Re-insert the speaker sessions right after the main Table Topic session
+            # The insertion index needs to be adjusted based on how many items were removed before it
+            final_insert_index = tt_session_index - \
+                sum(1 for i in topics_speaker_indices if i < tt_session_index) + 1
+            logs_data[final_insert_index:final_insert_index] = topics_speaker_sessions
+
     template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
     try:
         meeting_templates = [f for f in os.listdir(
