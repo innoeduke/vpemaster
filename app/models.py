@@ -78,11 +78,12 @@ class Meeting(db.Model):
     status = db.Column(db.Enum('not started', 'running', 'finished', 'cancelled', name='meeting_status'),
                        default='not started', nullable=False)
 
-    best_tt_speaker = db.relationship('Contact', foreign_keys=[best_table_topic_id])
+    best_table_topic_speaker = db.relationship(
+        'Contact', foreign_keys=[best_table_topic_id])
     best_evaluator = db.relationship(
         'Contact', foreign_keys=[best_evaluator_id])
     best_speaker = db.relationship('Contact', foreign_keys=[best_speaker_id])
-    best_roletaker = db.relationship(
+    best_role_taker = db.relationship(
         'Contact', foreign_keys=[best_role_taker_id])
     media = db.relationship('Media', foreign_keys=[media_id])
 

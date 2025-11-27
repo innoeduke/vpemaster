@@ -233,38 +233,31 @@ def agenda():
     selected_meeting = None
     if selected_meeting_num:
         selected_meeting = Meeting.query.options(
-            orm.joinedload(Meeting.best_tt_speaker),
+            orm.joinedload(Meeting.best_table_topic_speaker),
             orm.joinedload(Meeting.best_evaluator),
             orm.joinedload(Meeting.best_speaker),
-            orm.joinedload(Meeting.best_roletaker),
+            orm.joinedload(Meeting.best_role_taker),
             orm.joinedload(Meeting.media)
         ).filter(Meeting.Meeting_Number == selected_meeting_num).first()
 
-    # Create a lookup map for award winners. Key: Contact ID, Value: list of award categories.
-    award_winner_map = {}
+    # Create a simple set of (award_category, contact_id) tuples for quick lookups.
+    award_winners = set()
     if selected_meeting:
-        def add_winner(contact_id, award_category):
-            if not contact_id:
-                return
-            if contact_id not in award_winner_map:
-                award_winner_map[contact_id] = []
-            award_winner_map[contact_id].append(award_category)
-        add_winner(selected_meeting.best_speaker_id,
-                   current_app.config['BEST_SPEAKER'])
-        add_winner(selected_meeting.best_evaluator_id,
-                   current_app.config['BEST_EVALUATOR'])
-        add_winner(selected_meeting.best_table_topic_id,
-                   current_app.config['BEST_TT'])
-        add_winner(selected_meeting.best_role_taker_id,
-                   current_app.config['BEST_ROLETAKER'])
+        if selected_meeting.best_speaker_id:
+            award_winners.add(('speaker', selected_meeting.best_speaker_id))
+        if selected_meeting.best_evaluator_id:
+            award_winners.add(
+                ('evaluator', selected_meeting.best_evaluator_id))
+        if selected_meeting.best_role_taker_id:
+            award_winners.add(
+                ('role-taker', selected_meeting.best_role_taker_id))
+        if selected_meeting.best_table_topic_id:
+            award_winners.add(
+                ('table-topic', selected_meeting.best_table_topic_id))
 
     # --- Fetch Raw Data ---
     raw_session_logs = _get_agenda_logs(selected_meeting_num)
     project_speakers = _get_project_speakers(selected_meeting_num)
-
-    # Pre-fetch award category roles from config for efficiency
-    award_categories_roles = current_app.config.get(
-        'AWARD_CATEGORIES_ROLES', {})
 
     all_presentations = Presentation.query.order_by(
         Presentation.level, Presentation.code).all()
@@ -327,16 +320,13 @@ def agenda():
 
         # --- Award Logic ---
         award_type = None
-        # Check if the log's owner is a winner
-        if log.Owner_ID and log.Owner_ID in award_winner_map and log.session_type and log.session_type.role:
-            # A person can win multiple awards, so we check each one.
-            awards_won = award_winner_map[log.Owner_ID]
-            for award_category in awards_won:
-                # Check if the role of the current log is eligible for this specific award
-                if log.session_type.role.name in award_categories_roles.get(award_category, []):
-                    # Format for display (e.g., "Best Speaker")
-                    award_type = award_category.replace('_', ' ')
-                    break  # Found the matching award for this role, no need to check further
+        # Simplified award check
+        if log.Owner_ID and session_type and session_type.role:
+            role_award_category = session_type.role.award_category
+            # Check if this role's award category and owner ID exist in the winners set
+            if role_award_category and (role_award_category, log.Owner_ID) in award_winners:
+                # Format for display (e.g., "Best Speaker")
+                award_type = role_award_category.replace('-', ' ').title()
 
         speaker_is_dtm = False
         if session_type and session_type.Title == 'Evaluation' and log.Session_Title:
