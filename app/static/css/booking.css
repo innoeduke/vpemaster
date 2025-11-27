@@ -251,16 +251,7 @@ h1 {
     text-overflow: ellipsis; /* Add ... if name is too long */
 }
 
-/* For past meetings, hide the waitlist cell */
-.is-past-meeting-row .waitlist-cell {
-    display: none;
-}
-/* And make the action cell (containing the owner name) span two columns */
-.is-past-meeting-row .action-cell {
-    grid-column: span 2;
-}
-
-.booking-table .action-cell .btn {
+.booking-table .button-cell .btn {
     width: 130px; /* Set a fixed width for all action buttons */
     white-space: nowrap; /* Prevent button text from wrapping */
     box-sizing: border-box; /* Ensure padding is included in the width */
@@ -279,18 +270,12 @@ h1 {
     background-color: #004165;
 }
 
-.assign-controls {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.assign-controls .icon-btn {
+.button-cell .icon-btn {
     padding: 6px 10px;
     flex-shrink: 0; /* Prevent buttons from shrinking */
 }
 
-.assign-controls select {
+.assign-cell select {
     color: #333;
 }
 
@@ -314,16 +299,10 @@ h1 {
     color: #555;
 }
 
-.booking-table.is-admin-view .assign-controls {
-    display: flex;
-    width: 100%;
-    gap: 8px;
-    font-size: 1em;
-}
-
 .booking-table.is-admin-view .admin-assign-select {
     flex-grow: 1;
-    font-size: 1em;
+    font-size: 1em !important;
+    width: 100%;
 
     /* Appearance */
     appearance: none;
@@ -419,31 +398,12 @@ h1 {
 /* --- Desktop Responsive Design --- */
 @media (min-width: 769px) {
 
-    /* --- Admin Desktop Table Layout Fix --- */
-    
-    /* Define the column widths for the admin view */
-    .booking-table.is-admin-view .role-cell {
-        width: 40%; /* Fixed width for the role name column */
-        min-width: 250px; /* Ensure minimum width */
-    }
-    .booking-table.is-admin-view .waitlist-cell {
-        width: 20%;
-    }
-    .booking-table.is-admin-view .action-cell {
-        width: 40%; /* Give more space to the action column */
-    }
-    
-    /* Define column widths for the regular user view */
-    .booking-table:not(.is-admin-view) .role-cell {
-        width: 50%; /* Fixed width for the role name column */
-        min-width: 250px; /* Ensure minimum width */
-    }
-    .booking-table:not(.is-admin-view) .waitlist-cell {
-        width: 25%;
-    }
-    .booking-table:not(.is-admin-view) .action-cell {
-        width: 25%; /* Give space to the action column */
-    }
+    /* --- Desktop Table Layout --- */
+    .booking-table .role-cell { width: 35%; min-width: 250px; }
+    .booking-table .status-cell { width: 20%; }
+    .booking-table .assign-cell { width: 25%; }
+    .booking-table .button-cell { width: 20%; }
+
 
     /* --- Desktop Completed Roles Grid --- */
     .completed-roles-list {

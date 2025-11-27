@@ -100,6 +100,18 @@
     </div>
 
     {% if selected_meeting %}
+        {# Define a reusable header for all tables #}
+        {% set table_header %}
+        <thead>
+            <tr>
+                <th class="role-header">Role</th>
+                <th class="status-header">Status</th>
+                <th class="assign-header">Assign</th>
+                <th class="action-header">Action</th>
+            </tr>
+        </thead>
+        {% endset %}
+
         {% if selected_meeting.status == 'not started' %}
             {# ============================================= #}
             {# ======== 1. MEETING NOT STARTED VIEW ======== #}
@@ -110,14 +122,8 @@
                     <img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon" style="max-width: 100%; height: auto;">
                 </div>
             {% else %}
-            <table class="booking-table">
-                <thead>
-                    <tr>
-                        <th class="role-header">Role</th>
-                        <th class="waitlist-header"></th>
-                        <th class="action-header">Action</th>
-                    </tr>
-                </thead>
+            <table class="booking-table is-not-started-meeting">
+                {{ table_header|safe }}
                 <tbody>
                     {% for role in roles %}
                     <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
@@ -130,7 +136,7 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="waitlist-cell">
+                        <td class="status-cell">
                             {% if role.waitlist %}
                             <div class="waitlist-info">
                                 <span style="font-size:0.5em;">Waitlist:</span>
@@ -142,23 +148,23 @@
                             </div>
                             {% endif %}
                         </td>
-                        <td class="action-cell">
+                        <td class="assign-cell">
                             {% if is_admin_view %}
-                                {# VPE VIEW - NOT STARTED #}
-                                <div class="assign-controls">
-                                    <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
-                                        <option value="0">-- Assign / Unassign --</option>
-                                        {% for contact in contacts %}
-                                        <option value="{{ contact.id }}" {% if role.owner_id == contact.id %}selected{% endif %}>{{ contact.Name }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <div class="button-group">
-                                        <button class="icon-btn" title="Unassign Role" onclick="assignRole('{{ role.session_id }}', '{{ role.role_key }}', '0')"><i class="fas fa-undo"></i></button>
-                                        {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="Approve top of waitlist" onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')"><i class="fas fa-user-check"></i></button>{% endif %}
-                                    </div>
+                            <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
+                                <option value="0">-- Assign / Unassign --</option>
+                                {% for contact in contacts %}
+                                <option value="{{ contact.id }}" {% if role.owner_id == contact.id %}selected{% endif %}>{{ contact.Name }}</option>
+                                {% endfor %}
+                            </select>
+                            {% endif %}
+                        </td>
+                        <td class="button-cell">
+                            {% if is_admin_view %}
+                                <div class="button-group">
+                                    <button class="icon-btn" title="Unassign Role" onclick="assignRole('{{ role.session_id }}', '{{ role.role_key }}', '0')"><i class="fas fa-undo"></i></button>
+                                    {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="Approve top of waitlist" onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')"><i class="fas fa-user-check"></i></button>{% endif %}
                                 </div>
                             {% elif user_role != 'Guest' %}
-                                {# MEMBER VIEW - NOT STARTED #}
                                 {% if role.owner_id %}
                                     {% if role.owner_id == current_user_contact_id %}
                                         <button class="btn btn-cancel" onclick="bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role_key }}')">Cancel</button>
@@ -178,11 +184,6 @@
                                         <button class="btn btn-book" onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role_key }}')">Book</button>
                                     {% endif %}
                                 {% endif %}
-                            {% else %}
-                                {# GUEST VIEW - NOT STARTED #}
-                                <div class="owner-display">
-                                    {{ role.owner_name or 'Available' }}
-                                </div>
                             {% endif %}
                         </td>
                     </tr>
@@ -195,14 +196,8 @@
             {# ======================================== #}
             {# ======== 2. MEETING RUNNING VIEW ======== #}
             {# ======================================== #}
-            <table class="booking-table">
-                <thead>
-                    <tr>
-                        <th class="role-header">Role</th>
-                        <th class="owner-header">Name</th>
-                        <th class="action-header">Vote</th>
-                    </tr>
-                </thead>
+            <table class="booking-table is-running-meeting">
+                {{ table_header|safe }}
                 <tbody>
                     {% for role in roles %}
                     <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
@@ -215,17 +210,19 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="action-cell">
+                        <td class="status-cell">
                             <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
                         </td>
-                        <td class="vote-cell">
+                        <td class="assign-cell">
+                            {# Empty #}
+                        </td>
+                        <td class="button-cell">
                             {% if role.owner_id and role.award_category %}
                                 <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
                                     <i class="fas fa-vote-yea"></i>
                                 </button>
                             {% endif %}
                         </td>
-                        
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -235,14 +232,8 @@
             {# ========================================= #}
             {# ======== 3. MEETING FINISHED VIEW ======== #}
             {# ========================================= #}
-            <table class="booking-table">
-                <thead>
-                    <tr>
-                        <th class="role-header">Role</th>
-                        <th class="owner-header">Name</th>
-                        <th class="action-header">Vote</th>
-                    </tr>
-                </thead>
+            <table class="booking-table is-finished-meeting">
+                {{ table_header|safe }}
                 <tbody>
                     {% for role in roles %}
                     <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
@@ -255,10 +246,13 @@
                                 </div>
                             </div>
                         </td>
-                        <td class="action-cell">
+                        <td class="status-cell">
                             <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
                         </td>
-                        <td class="vote-cell">
+                        <td class="assign-cell">
+                            {# Empty #}
+                        </td>
+                        <td class="button-cell">
                         {% if is_admin_view  %}
                             {% if role.owner_id and role.award_category %}
                                 <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
@@ -275,7 +269,6 @@
                             </div>
                         {% endif %}
                         </td>
-                        
                     </tr>
                     {% endfor %}
                 </tbody>
