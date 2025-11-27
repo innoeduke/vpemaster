@@ -1086,24 +1086,51 @@ def create_from_template():
                 if not any(cell.strip() for cell in row):
                     continue
 
-                session_title_from_csv = row[0].strip()
-                owner_name = row[1].strip() if len(row) > 1 else ''
+                # --- Flexible Column Parsing ---
+                # Check if the first column is a recognized session type.
+                first_col_val = row[0].strip()
+                session_type = SessionType.query.filter_by(
+                    Title=first_col_val).first()
 
-                # Handle flexible duration columns
+                owner_name = ''
+                session_title_from_csv = ''
+                duration_cols = []
+
+                if session_type:
+                    # Format: [Session Type, Session Title, Owner, Durations...]
+                    type_id = session_type.id
+                    session_title_from_csv = row[1].strip() if len(
+                        row) > 1 else ''
+                    owner_name = row[2].strip() if len(row) > 2 else ''
+                    duration_cols = [c.strip()
+                                     for c in row[3:] if c.strip().isdigit()]
+                else:
+                    # Format: [Session Title, Owner, Durations...]
+                    type_id = 8  # Fallback to 'Custom Session'
+                    session_title_from_csv = first_col_val  # The first column is the title
+                    owner_name = row[1].strip() if len(row) > 1 else ''
+                    duration_cols = [c.strip()
+                                     for c in row[2:] if c.strip().isdigit()]
+
+                # --- Duration Logic ---
                 duration_min = None
                 duration_max = None
-                # Both min and max are provided
-                if len(row) > 3 and row[3].strip():
-                    duration_min = row[2].strip() if row[2].strip() else None
-                    duration_max = row[3].strip()
-                elif len(row) > 2 and row[2].strip():  # Only max is provided
-                    duration_max = row[2].strip()
+                if len(duration_cols) == 1:
+                    duration_max = duration_cols[0]
+                elif len(duration_cols) >= 2:
+                    duration_min = duration_cols[0]
+                    duration_max = duration_cols[1]
 
-                session_type = SessionType.query.filter_by(
-                    Title=session_title_from_csv).first()
-                type_id = session_type.id if session_type else None
+                # If it's a predefined type, use its title unless a custom one is provided.
+                # For custom sessions, always use the title from the CSV.
+                if type_id == 8:  # Custom Session
+                    session_title_for_log = session_title_from_csv
+                elif session_type and session_type.Predefined and not session_title_from_csv:
+                    session_title_for_log = session_type.Title
+                else:
+                    session_title_for_log = session_title_from_csv
 
-                if not duration_max and not duration_min and session_type:
+                if not duration_max and not duration_min and session_type:  # Only use default duration if type is known
                     duration_max = session_type.Duration_Max
                     duration_min = session_type.Duration_Min
 
@@ -1116,8 +1143,6 @@ def create_from_template():
                 break_minutes = 1
                 if type_id == 31 and ge_style == 'Multiple shots':  # Individual Evaluation
                     break_minutes += 1
-
-                session_title = session_type.Title if session_type and session_type.Predefined else session_title_from_csv
 
                 owner_id = None
                 credentials = ''
@@ -1132,13 +1157,17 @@ def create_from_template():
                     Meeting_Seq=seq,
                     Type_ID=type_id,
                     Owner_ID=owner_id,
-                    Session_Title=session_title,
+                    Session_Title=session_title_for_log,
                     credentials=credentials,
                     Duration_Min=duration_min,
                     Duration_Max=duration_max
                 )
 
-                if session_type and not session_type.Is_Section:
+                # Fetch the session type object to check its properties
+                final_session_type = SessionType.query.get(type_id)
+
+                # Only calculate start time for sessions that are NOT sections and NOT hidden.
+                if final_session_type and not final_session_type.Is_Section and not final_session_type.Is_Hidden:
                     new_log.Start_Time = current_time
                     duration_to_add = int(duration_max or 0)
                     dt_current_time = datetime.combine(
