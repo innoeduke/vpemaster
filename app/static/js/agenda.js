@@ -422,6 +422,9 @@ document.addEventListener("DOMContentLoaded", () => {
     rows.forEach((row, index) => {
       row.classList.toggle("draggable-row", isEditMode);
       if (isEditMode) {
+        // This is where the row's editable cells are first built.
+        buildEditableRow(row, index + 1);
+
         const ownerId = row.dataset.ownerId;
         let credentials = row.dataset.credentials; // This might be pre-filled from DB
 
@@ -431,7 +434,9 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         // Fallback for null/undefined to empty string
         row.dataset.credentials = credentials || "";
-        buildEditableRow(row, index + 1);
+
+        // After building, apply the duration rule.
+        updateDurationForTopicsSpeaker(row, row.dataset.typeId);
       }
     });
   }
@@ -654,10 +659,27 @@ document.addEventListener("DOMContentLoaded", () => {
       projectBtn.style.display =
         sessionType && sessionType.Valid_for_Project ? "inline-block" : "none";
     }
+
+    // Use the helper to apply duration rules when the type changes.
+    updateDurationForTopicsSpeaker(row, typeId);
   }
 
   // --- DOM Creation ---
 
+  /**
+   * A helper function to enable/disable the Duration_Max input for a given row
+   * based on whether the session type is "Topics Speaker" (ID 36).
+   * @param {HTMLTableRowElement} row The table row element.
+   * @param {string|number} typeId The session type ID.
+   */
+  function updateDurationForTopicsSpeaker(row, typeId) {
+    const durationMaxInput = row.querySelector(
+      '[data-field="Duration_Max"] input'
+    );
+    if (durationMaxInput) {
+      durationMaxInput.disabled = String(typeId) === "36";
+    }
+  }
   function createEditableCell(field, value, isSection, typeId) {
     const cell = document.createElement("td");
     cell.dataset.field = field;
@@ -717,6 +739,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const defaultInput = document.createElement("input");
         defaultInput.type = "text";
         defaultInput.value = value || "";
+
+        // For Topics Speaker (ID 36), always clear the Max Duration field on creation.
+        if (field === "Duration_Max" && String(typeId) === "36") {
+          defaultInput.value = "";
+        }
         cell.appendChild(defaultInput);
     }
     return cell;
