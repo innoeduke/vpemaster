@@ -8,7 +8,7 @@ from datetime import datetime
 import re
 from sqlalchemy import or_
 from .utils import derive_current_path_level, derive_credentials
-
+from .utils import get_meetings_by_status
 
 booking_bp = Blueprint('booking_bp', __name__)
 
@@ -225,27 +225,16 @@ def _get_default_level(user):
 
 def _get_meetings(user_role):
     """Fetches meetings based on user role."""
-    today = datetime.today().date()
+    all_meetings_tuples = get_meetings_by_status(
+        limit_past=5, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
 
     soonest_upcoming_meeting = db.session.query(Meeting.Meeting_Number)\
-        .filter(Meeting.Meeting_Date >= today)\
+        .filter(Meeting.status == 'not started')\
         .order_by(Meeting.Meeting_Number.asc())\
         .first()
-
     default_meeting_num = soonest_upcoming_meeting[0] if soonest_upcoming_meeting else None
 
-    # Fetch all upcoming meetings, ordered with the soonest first.
-    future_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
-        .filter(Meeting.Meeting_Date >= today)\
-        .order_by(Meeting.Meeting_Number.desc()).all()
-    # Fetch the 5 most recent past meetings.
-    past_meetings = db.session.query(Meeting.Meeting_Number, Meeting.Meeting_Date)\
-        .filter(Meeting.Meeting_Date < today)\
-        .order_by(Meeting.Meeting_Number.desc())\
-        .limit(5).all()
-    meetings = sorted(future_meetings + past_meetings,
-                      key=lambda m: m[0], reverse=True)
-    return meetings, default_meeting_num
+    return all_meetings_tuples, default_meeting_num
 
 
 def _get_user_bookings(current_user_contact_id):
@@ -376,10 +365,7 @@ def _get_booking_page_context(selected_meeting_number, user, user_role, current_
         Meeting_Number=selected_meeting_number).first()
     context['selected_meeting'] = selected_meeting
 
-    is_past_meeting = False
-    if selected_meeting and selected_meeting.Meeting_Date:
-        is_past_meeting = selected_meeting.Meeting_Date < datetime.today().date()
-    context['is_past_meeting'] = is_past_meeting
+    is_past_meeting = selected_meeting.status == 'finished' if selected_meeting else False
 
     context['roles'] = _get_roles_for_meeting(
         selected_meeting_number, user_role, current_user_contact_id, selected_meeting, is_past_meeting)

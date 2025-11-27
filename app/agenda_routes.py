@@ -12,7 +12,7 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from .utils import derive_current_path_level, load_setting, derive_credentials, project_id_to_code
+from .utils import derive_current_path_level, load_setting, derive_credentials, project_id_to_code, get_meetings_by_status
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -182,30 +182,8 @@ def _recalculate_start_times(meetings_to_update):
 @agenda_bp.route('/agenda', methods=['GET'])
 def agenda():
     # --- Determine Selected Meeting ---
-    today = datetime.today().date()
+    all_meetings = get_meetings_by_status(limit_past=8)
 
-    # Subquery to get meeting numbers that have at least one session log
-    subquery = db.session.query(distinct(SessionLog.Meeting_Number)).subquery()
-
-    # Query for future meetings that have an agenda
-    future_meetings_q = Meeting.query.filter(
-        Meeting.Meeting_Number.in_(subquery),
-        Meeting.Meeting_Date >= today
-    )
-
-    # Query for the 8 most recent past meetings that have an agenda
-    past_meetings_q = Meeting.query.filter(
-        Meeting.Meeting_Number.in_(subquery),
-        Meeting.Meeting_Date < today
-    ).order_by(Meeting.Meeting_Date.desc()).limit(8)
-
-    # Execute queries
-    future_meetings = future_meetings_q.all()
-    past_meetings = past_meetings_q.all()
-
-    # Combine, sort, and get meeting numbers
-    all_meetings = sorted(
-        future_meetings + past_meetings, key=lambda m: m.Meeting_Date, reverse=True)
     meeting_numbers = [m.Meeting_Number for m in all_meetings]
 
     selected_meeting_str = request.args.get('meeting_number')
@@ -219,8 +197,8 @@ def agenda():
             selected_meeting_num = None  # Or redirect, flash error
     else:
         # Find the most recent upcoming meeting number
-        upcoming_meeting = Meeting.query\
-            .filter(Meeting.Meeting_Date >= datetime.today().date())\
+        upcoming_meeting = Meeting.query \
+            .filter(Meeting.status == 'not started') \
             .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc())\
             .first()
 
@@ -239,6 +217,10 @@ def agenda():
             orm.joinedload(Meeting.best_role_taker),
             orm.joinedload(Meeting.media)
         ).filter(Meeting.Meeting_Number == selected_meeting_num).first()
+
+        # If the meeting number from URL is invalid, redirect to the default agenda page
+        if not selected_meeting:
+            return redirect(url_for('agenda_bp.agenda'))
 
     # Create a simple set of (award_category, contact_id) tuples for quick lookups.
     award_winners = set()
@@ -1096,20 +1078,12 @@ def create_from_template():
         current_app.static_folder, 'mtg_templates', template_file)
     try:
         with open(template_path, 'r', encoding='utf-8') as f:
-            csv_reader = csv.reader(f)
-            first_row = next(csv_reader, None)  # Read the first row
-
-            if first_row:
-                # Check if the first row looks like a header by seeing if a SessionType exists for its title
-                possible_title = first_row[0].strip()
-                if not SessionType.query.filter_by(Title=possible_title).first():
-                    # It's likely a header, so we've already consumed it. The loop will start on the next line.
-                    pass
-
+            reader = csv.reader(f)
             seq = 1
             current_time = start_time
-            for row in csv_reader:
-                if not row or not row[0].strip():
+            for row in reader:
+                # Skip any row that is completely empty or just contains empty strings/commas
+                if not any(cell.strip() for cell in row):
                     continue
 
                 session_title_from_csv = row[0].strip()
@@ -1159,7 +1133,7 @@ def create_from_template():
                     Type_ID=type_id,
                     Owner_ID=owner_id,
                     Session_Title=session_title,
-                    Credentials=credentials,
+                    credentials=credentials,
                     Duration_Min=duration_min,
                     Duration_Max=duration_max
                 )

@@ -2,11 +2,13 @@
 
 from flask import current_app
 # Ensure Project model is imported if needed elsewhere
-from .models import Project, Presentation
+from .models import Project, Presentation, Meeting, SessionLog
+from . import db
 import re
 import configparser
 import os
 import hashlib
+from sqlalchemy import distinct
 
 
 def project_id_to_code(project_id, path_abbr):
@@ -268,3 +270,42 @@ def load_all_settings():
     except configparser.Error as e:
         print(f"Error reading settings.ini: {e}")
         return all_settings  # Return empty dict on error
+
+
+def get_meetings_by_status(limit_past=8, columns=None):
+    """
+    Fetches meetings, categorizing them as 'active' or 'past' based on status.
+
+    Args:
+        limit_past (int): The maximum number of past meetings to retrieve.
+        columns (list): A list of specific Meeting columns to query. 
+                        If None, queries the full Meeting object.
+
+    Returns:
+        tuple: (all_meetings, default_meeting_num)
+               - all_meetings: A sorted list of meeting objects or tuples.
+               - default_meeting_num: The number of the soonest 'not started' meeting.
+    """
+    query_cols = [Meeting] if columns is None else columns
+
+    # Fetch active meetings ('not started' or 'running')
+    active_meetings = db.session.query(*query_cols)\
+        .filter(Meeting.status.in_(['not started', 'running']))\
+        .order_by(Meeting.Meeting_Number.desc()).all()
+
+    # Fetch recent inactive meetings ('finished' or 'cancelled')
+    past_meetings = db.session.query(*query_cols)\
+        .filter(Meeting.status.in_(['finished', 'cancelled']))\
+        .order_by(Meeting.Meeting_Number.desc()).limit(limit_past).all()
+
+    # Combine and sort all meetings by meeting number
+    all_meetings = sorted(active_meetings + past_meetings,
+                          key=lambda m: m.Meeting_Number, reverse=True)
+
+    # Filter meetings to only those that have session logs
+    meetings_with_logs_subquery = db.session.query(
+        distinct(SessionLog.Meeting_Number)).subquery()
+    all_meetings = [m for m in all_meetings if m.Meeting_Number in [
+        row[0] for row in db.session.query(meetings_with_logs_subquery).all()]]
+
+    return all_meetings
