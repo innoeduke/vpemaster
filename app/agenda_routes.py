@@ -182,7 +182,7 @@ def _recalculate_start_times(meetings_to_update):
 
 @agenda_bp.route('/agenda', methods=['GET'])
 def agenda():
-
+    logging.debug("--- Starting agenda() view ---")
     # --- Determine Selected Meeting ---
     today = datetime.today().date()
 
@@ -231,6 +231,8 @@ def agenda():
         elif meeting_numbers:
             # Fallback to the most recent existing meeting (highest meeting number)
             selected_meeting_num = meeting_numbers[0]
+    
+    logging.debug(f"Selected meeting number: {selected_meeting_num}")
 
     selected_meeting = None
     if selected_meeting_num:
@@ -262,6 +264,7 @@ def agenda():
 
     # --- Fetch Raw Data ---
     raw_session_logs = _get_agenda_logs(selected_meeting_num)
+    logging.debug(f"Raw session logs count: {len(raw_session_logs)}")
     project_speakers = _get_project_speakers(selected_meeting_num)
 
     # Pre-fetch award category roles from config for efficiency
@@ -388,7 +391,7 @@ def agenda():
             'award_type': award_type,
             'speaker_is_dtm': speaker_is_dtm
         }
-        logging.debug(f"Processing log: {log.id}, log_dict: {log_dict}")
+        logging.debug(f"Processing log: {log.id}, owner: {owner.Name if owner else 'None'}, credentials: {log_dict['Credentials']}")
         logs_data.append(log_dict)
 
     template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
@@ -407,6 +410,7 @@ def agenda():
         'ClubSettings', 'Meeting Start Time', default='18:55')
 
     # --- Render Template ---
+    logging.debug("--- Finished agenda() view ---")
     return render_template('agenda.html',
                            logs_data=logs_data,               # Use the processed list of dictionaries
                            pathways=pathways,               # For modals
