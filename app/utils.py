@@ -139,28 +139,15 @@ def derive_credentials(contact):
     - Formats for Members based on completed levels (e.g., "PM1/DL2").
     - Returns an empty string if the contact is None or has no specific credentials.
     """
-    current_app.logger.debug(f"Deriving credentials for contact: {contact}")
     if not contact:
-        current_app.logger.debug("Contact is None, returning empty string.")
         return ''
 
-    current_app.logger.debug(f"Contact type: {contact.Type}, DTM: {contact.DTM}")
     if contact.DTM:
-        current_app.logger.debug("Contact is DTM, returning 'DTM'.")
         return 'DTM'
     elif contact.Type == 'Guest':
-        credentials = f"Guest@{contact.Club}" if contact.Club else "Guest"
-        current_app.logger.debug(f"Contact is Guest, returning '{credentials}'.")
-        return credentials
-    elif contact.Type in ['Member', 'Officer']:
-        if contact.user and contact.user.credentials:
-            current_app.logger.debug(f"Contact is Member/Officer with credentials: {contact.user.credentials}")
-            return contact.user.credentials
-        else:
-            current_app.logger.debug("Contact is Member/Officer but has no credentials, returning empty string.")
-            return ''
-    
-    current_app.logger.debug("No conditions met, returning empty string.")
+        return f"Guest@{contact.Club}" if contact.Club else "Guest"
+    elif contact.Type in ['Member', 'Officer'] and contact.user and contact.user.credentials:
+        return contact.user.credentials
     return ''
 
 
