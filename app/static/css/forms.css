@@ -40,6 +40,11 @@
     background-color: #4CAF50;
 }
 
+.btn-cancel{
+    color: #333;
+    background-color: #6c757d;
+}
+
 .btn-sm {
     height: 24px;
     line-height: 24px;

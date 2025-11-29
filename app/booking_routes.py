@@ -15,19 +15,12 @@ booking_bp = Blueprint('booking_bp', __name__)
 
 def _fetch_session_logs(selected_meeting_number, user_role):
     """Fetches session logs for a given meeting, filtering by user role."""
-    query = db.session.query(
-        SessionLog.id.label('session_id'),
-        Role.name.label('role'),
-        Role.icon.label('icon'),
-        SessionLog.Session_Title,
-        SessionLog.Type_ID.label('type_id'),
-        SessionLog.Owner_ID,
-        Contact.Name.label('owner_name')
-    ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
-     .join(Role, SessionType.role_id == Role.id)\
-     .outerjoin(Contact, SessionLog.Owner_ID == Contact.id)\
-     .filter(SessionLog.Meeting_Number == selected_meeting_number)\
-     .filter(Role.name != '', Role.name.isnot(None))
+    # Fetch the full SessionLog objects to ensure all data is available for consolidation.
+    query = db.session.query(SessionLog)\
+        .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+        .join(Role, SessionType.role_id == Role.id)\
+        .filter(SessionLog.Meeting_Number == selected_meeting_number)\
+        .filter(Role.name != '', Role.name.isnot(None))
 
     if not is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
         query = query.filter(Role.type != 'officer')
@@ -38,58 +31,62 @@ def _fetch_session_logs(selected_meeting_number, user_role):
 def _consolidate_roles(session_logs, is_admin_booker):
     """Consolidates session logs into a dictionary of roles."""
     roles_dict = {}
-    # unique role means only one person can take this role of a specific meeting
-    non_distinct_role_records = Role.query.filter_by(is_distinct=False).all()
-    non_distinct_roles = [role.name for role in non_distinct_role_records]
-    non_distinct_roles = list(set(non_distinct_roles))
 
+    # Per user's definition: is_distinct=True means the role is a single logical entity for the meeting.
+    # These are the roles that need to be grouped by name.
+    distinct_role_records = Role.query.filter_by(is_distinct=True).all()
+    roles_to_group = {role.name for role in distinct_role_records}
+
+    # First pass: Group session logs by their logical key
     for log in session_logs:
-        role_key = log.role.strip() if log.role else ""
+        # The log is now a full SessionLog object, so we access relations directly.
+        role_key = log.session_type.role.name.strip(
+        ) if log.session_type and log.session_type.role else ""
         if not role_key:
             continue
 
-        waitlisted_users = db.session.query(Contact.Name, Contact.id).join(Waitlist).filter(
-            Waitlist.session_log_id == log.session_id).order_by(Waitlist.timestamp).all()
-        waitlisted_info = [{'name': user[0], 'id': user[1]}
-                           for user in waitlisted_users]
+        if role_key in roles_to_group:
+            dict_key = role_key
+        else:
+            dict_key = f"{role_key}_{log.id}"
 
-        if role_key in non_distinct_roles:
-            role_key_distinct = f"{role_key}_{log.session_id}"
-            speaker_name = log.Session_Title.strip(
-            ) if role_key == "Individual Evaluator" and log.Session_Title else None
-            roles_dict[role_key_distinct] = {
+        if dict_key not in roles_dict:
+            # Initialize the entry for this role group
+            roles_dict[dict_key] = {
                 'role': role_key,
                 'role_key': role_key,
-                'owner_id': log.Owner_ID,
-                'owner_name': log.owner_name,
-                'session_ids': [log.session_id],
-                'type_id': log.type_id,
-                'speaker_name': speaker_name,
-                'waitlist': waitlisted_info,
+                'owner_id': None,
+                'owner_name': None,
+                'session_ids': [],
+                'type_id': log.Type_ID,
+                'speaker_name': log.Session_Title.strip() if role_key == "Individual Evaluator" and log.Session_Title else None,
+                'waitlist': [],
+                'logs': []  # Store the full log objects
             }
-        else:
-            if role_key not in roles_dict:
-                roles_dict[role_key] = {
-                    'role': role_key,
-                    'role_key': role_key,
-                    'owner_id': log.Owner_ID,
-                    'owner_name': log.owner_name,
-                    'session_ids': [log.session_id],
-                    'type_id': log.type_id,
-                    'speaker_name': None,
-                    'waitlist': waitlisted_info,
-                }
-            else:
-                roles_dict[role_key]['session_ids'].append(log.session_id)
-                if log.Owner_ID:
-                    roles_dict[role_key]['owner_id'] = log.Owner_ID
-                    roles_dict[role_key]['owner_name'] = log.owner_name
-                # Append waitlisted users, avoiding duplicates
-                existing_ids = {user['id']
-                                for user in roles_dict[role_key]['waitlist']}
-                for user_info in waitlisted_info:
-                    if user_info['id'] not in existing_ids:
-                        roles_dict[role_key]['waitlist'].append(user_info)
+
+        roles_dict[dict_key]['session_ids'].append(log.id)
+        roles_dict[dict_key]['logs'].append(log)
+
+    # Second pass: Determine the owner and consolidate waitlists for each group
+    for dict_key, role_data in roles_dict.items():
+        # Find the first log in the group that has an owner.
+        owner_log = next(
+            (log for log in role_data['logs'] if log.Owner_ID), None)
+
+        if owner_log:
+            role_data['owner_id'] = owner_log.Owner_ID
+            # Access owner name via relationship
+            role_data['owner_name'] = owner_log.owner.Name if owner_log.owner else None
+
+        # Consolidate waitlists from all logs in the group, avoiding duplicates.
+        seen_waitlist_ids = set()
+        for log in role_data['logs']:
+            for waitlist_entry in log.waitlists:
+                if waitlist_entry.contact_id not in seen_waitlist_ids:
+                    role_data['waitlist'].append(
+                        {'name': waitlist_entry.contact.Name, 'id': waitlist_entry.contact_id})
+                    seen_waitlist_ids.add(waitlist_entry.contact_id)
+        del role_data['logs']  # Clean up the temporary logs list
     return roles_dict
 
 
@@ -413,39 +410,43 @@ def book_or_assign_role():
         return jsonify(success=False, message="Could not determine the role key."), 400
 
     if action == 'join_waitlist':
-        # Always add to the waitlist for the specific session log requested
-        existing_waitlist = Waitlist.query.filter_by(
-            session_log_id=session_id, contact_id=current_user_contact_id).first()
-        if not existing_waitlist:
-            new_waitlist_entry = Waitlist(
-                session_log_id=session_id,
-                contact_id=current_user_contact_id,
-                timestamp=datetime.utcnow()
-            )
-            db.session.add(new_waitlist_entry)
+        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+        session_ids_to_waitlist = _get_all_session_ids_for_role(
+            log, logical_role_key) if role_is_distinct else [session_id]
+
+        for s_id in session_ids_to_waitlist:
+            existing_waitlist = Waitlist.query.filter_by(
+                session_log_id=s_id, contact_id=current_user_contact_id).first()
+            if not existing_waitlist:
+                new_waitlist_entry = Waitlist(
+                    session_log_id=s_id,
+                    contact_id=current_user_contact_id,
+                    timestamp=datetime.utcnow()
+                )
+                db.session.add(new_waitlist_entry)
 
         db.session.commit()
         return jsonify(success=True)
+
     elif action == 'book':
         # Check if the role needs approval
         role_needs_approval = session_type.role.needs_approval if session_type and session_type.role else False
 
         if role_needs_approval:
-            # For roles that need approval, always put user on waitlist
-            # Since we are booking a specific session, we only need to add to the waitlist for that one session.
-            # The previous logic incorrectly applied this to all sessions of the same role name.
-            session_log = log
-            if session_log:
+            role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+            session_ids_to_waitlist = _get_all_session_ids_for_role(
+                log, logical_role_key) if role_is_distinct else [session_id]
+
+            for s_id in session_ids_to_waitlist:
                 existing_waitlist = Waitlist.query.filter_by(
-                    session_log_id=session_log.id, contact_id=current_user_contact_id).first()
+                    session_log_id=s_id, contact_id=current_user_contact_id).first()
                 if not existing_waitlist:
                     new_waitlist_entry = Waitlist(
-                        session_log_id=session_log.id,
+                        session_log_id=s_id,
                         contact_id=current_user_contact_id,
                         timestamp=datetime.utcnow()
                     )
                     db.session.add(new_waitlist_entry)
-
             db.session.commit()
             return jsonify(success=True, message="You have been added to the waitlist for this role. The booking requires approval.")
         elif log.Owner_ID is not None:
@@ -484,9 +485,16 @@ def book_or_assign_role():
 
         # If assigning a specific user (not unassigning), remove that user from the waitlist
         if owner_id_to_set:
-            # If assigning a user, remove them from the waitlist of this specific session.
-            Waitlist.query.filter_by(
-                session_log_id=session_id, contact_id=owner_id_to_set).delete(synchronize_session=False)
+            # If assigning a user, remove them from the waitlist of all related sessions for a distinct role.
+            role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+            if role_is_distinct:
+                sessions_to_clear_waitlist = _get_all_session_ids_for_role(
+                    log, logical_role_key)
+                Waitlist.query.filter(Waitlist.session_log_id.in_(
+                    sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
+            else:
+                Waitlist.query.filter_by(session_log_id=session_id, contact_id=owner_id_to_set).delete(
+                    synchronize_session=False)
 
     elif action == 'approve_waitlist' and is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
         # Get the top person from the waitlist for this specific session_id
@@ -531,6 +539,14 @@ def book_or_assign_role():
         db.session.rollback()
         current_app.logger.error(f"Error during booking/assignment: {e}")
         return jsonify(success=False, message="An internal error occurred."), 500
+
+
+def _get_all_session_ids_for_role(log, logical_role_key):
+    """Helper to get all session_log IDs for a given logical role in a meeting."""
+    all_logs_for_role = SessionLog.query.join(SessionType).join(Role)\
+        .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+        .filter(Role.name == logical_role_key).all()
+    return [l.id for l in all_logs_for_role]
 
 
 @booking_bp.route('/booking/vote', methods=['POST'])

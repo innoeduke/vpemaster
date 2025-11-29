@@ -472,8 +472,13 @@
     }
 
     .booking-table .button-cell {
-        grid-area: buttons;
+        grid-area: action;
         justify-content: flex-end;
+    }
+
+    .booking-table .button-cell .btn {
+        padding-left: 20px;
+        padding-right: 20px;
     }
     
     /* --- Contact Book Responsive Fixes --- */
@@ -494,7 +499,7 @@
 
     .search-container {
       flex: 1;
-      min-width: unset;
+      min-width: unset ;
     }
     
     .button-group {

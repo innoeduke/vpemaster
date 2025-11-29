@@ -177,11 +177,8 @@
                                         {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
                                         {% if current_user_contact_id in waitlist_ids %}
                                             <button class="btn btn-leave-waitlist" onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
-                                        {% elif role.needs_approval %}
-                                            <button class="btn btn-join-waitlist" onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
                                         {% else %}
-                                            {# Role is taken, but doesn't need approval (e.g., Photographer) #}
-                                            <button class="btn btn-book" onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role_key }}')">Book</button>
+                                            <button class="btn btn-join-waitlist" onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
                                         {% endif %}
                                     {% endif %}
                                 {% else %}
