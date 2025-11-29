@@ -240,6 +240,7 @@
             <table class="booking-table is-finished-meeting">
                 {{ table_header|safe }}
                 <tbody>
+                    {% set ns = namespace(displayed_awards=[]) %}
                     {% for role in roles %}
                     <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
                         <td class="role-cell">
@@ -266,10 +267,11 @@
                             {% endif %}
                         {% else %}
                             <div class="role-cell-actions">
-                                {% if role.award_type %}
+                                {% if role.award_type and role.role_key not in ns.displayed_awards %}
                                 <span class="icon-btn icon-btn-voted" title="{{ role.award_type }} Winner">
                                     <i class="fas fa-award"></i>
                                 </span>
+                                {% set ns.displayed_awards = ns.displayed_awards + [role.role_key] %}
                                 {% endif %}
                             </div>
                         {% endif %}

@@ -349,12 +349,6 @@
         gap: 8px;
     }
     
-    .meeting-status-display.status-not_started { background-color: #28a745; } /* Green */
-    .meeting-status-display.status-running { background-color: #007bff; } /* Blue */
-    .meeting-status-display.status-finished { background-color: #6c757d; } /* Gray */
-    .meeting-status-display.status-cancelled { background-color: #dc3545; } /* Red */
-    /* Improve contrast for 'Not Started' status on mobile by making text dark */
-
     .action-bar .button-group {
         margin-top: 15px;
         justify-content: center;

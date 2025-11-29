@@ -185,6 +185,7 @@
                     <th class="actions-column">Actions</th>
                 </tr>
             </thead>
+            {% set ns = namespace(displayed_awards=[]) %}
             <tbody>
                 {% for log_dict in logs_data %}
                 <tr data-id="{{ log_dict.id }}"
@@ -272,10 +273,11 @@
                                     <sup class="dtm-superscript">DTM</sup>
                                 {% endif %}
                                 {# Show trophy for award winners #}
-                                {% if log_dict.award_type %}
+                                {% if log_dict.award_type and log_dict.role not in ns.displayed_awards %}
                                     <span class="icon-btn icon-btn-voted" title="{{ log_dict.award_type }} Winner">
                                         <i class="fas fa-award"></i>
                                     </span>
+                                    {% set ns.displayed_awards = ns.displayed_awards + [log_dict.role] %}
                                 {% endif %}
                                 <span class="owner-meta">
                                     {% if log_dict.Credentials %}
