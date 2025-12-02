@@ -96,12 +96,30 @@ def _enrich_role_data(roles_dict, selected_meeting):
     if not selected_meeting:
         return []
 
-    award_ids = {
-        'speaker': selected_meeting.best_speaker_id,
-        'evaluator': selected_meeting.best_evaluator_id,
-        'table-topic': selected_meeting.best_table_topic_id,
-        'role-taker': selected_meeting.best_role_taker_id,
-    }
+    winner_ids = {}
+    if selected_meeting.status == 'running':
+        # For a running meeting, the "winner" is who the current user voted for.
+        voter_identifier = None
+        if 'user_id' in session:
+            voter_identifier = f"user_{session['user_id']}"
+        elif 'voter_token' in session:
+            voter_identifier = session['voter_token']
+        
+        if voter_identifier:
+            user_votes = Vote.query.filter_by(
+                meeting_number=selected_meeting.Meeting_Number,
+                voter_identifier=voter_identifier
+            ).all()
+            winner_ids = {vote.award_category: vote.contact_id for vote in user_votes}
+
+    elif selected_meeting.status == 'finished':
+        # For a finished meeting, the final winners are stored in the meeting object.
+        winner_ids = {
+            'speaker': selected_meeting.best_speaker_id,
+            'evaluator': selected_meeting.best_evaluator_id,
+            'table-topic': selected_meeting.best_table_topic_id,
+            'role-taker': selected_meeting.best_role_taker_id,
+        }
 
     enriched_roles = []
     for _, role_data in roles_dict.items():
@@ -114,10 +132,13 @@ def _enrich_role_data(roles_dict, selected_meeting):
         award_category = role_obj.award_category if role_obj else None
 
         role_data['award_category'] = award_category
-        role_data['award_type'] = award_category if owner_id and award_category and owner_id == award_ids.get(
-            award_category) else None
-        role_data['award_category_open'] = bool(
-            award_category and not award_ids.get(award_category))
+        # The 'award_type' determines if the trophy icon is shown.
+        # It's set if the owner of this role is the person who won the award (or was voted for by the user).
+        role_data['award_type'] = award_category if owner_id and award_category and owner_id == winner_ids.get(award_category) else None
+        
+        # This seems to be for showing the vote button at all if the category is open for voting
+        role_data['award_category_open'] = bool(award_category and not winner_ids.get(award_category))
+        
         role_data['needs_approval'] = role_obj.needs_approval if role_obj else False
 
         enriched_roles.append(role_data)

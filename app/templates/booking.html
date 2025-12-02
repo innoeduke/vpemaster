@@ -222,7 +222,7 @@
                             <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
                         </td>
                         <td class="button-cell">
-                            {% if role.owner_id and role.award_category %}
+                            {% if role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
                                 <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
                                     <i class="fas fa-vote-yea"></i>
                                 </button>
