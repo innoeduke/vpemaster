@@ -165,17 +165,16 @@ function updateVoteButtonsUI(category, newWinnerId) {
 
   allButtons.forEach((button) => {
     const buttonContactId = parseInt(button.dataset.contactId, 10);
-    const icon = button.querySelector("i");
 
     if (newWinnerId === null) {
       // A vote was CANCELED. Make all buttons in this category visible and votable.
-      button.style.display = "inline-block";
+      button.style.setProperty("display", "inline-block", "important");
       button.classList.remove("icon-btn-voted");
       button.title = "Vote";
     } else {
       // A vote was CAST.
       if (buttonContactId === newWinnerId) {
-        // This is the new winner. Make it a trophy.
+        // This is the new winner. Make it visible and styled as voted.
         button.style.display = "inline-block";
         button.classList.add("icon-btn-voted");
         button.title = `Cancel Vote (${category})`;
