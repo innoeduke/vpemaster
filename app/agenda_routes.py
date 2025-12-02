@@ -115,7 +115,7 @@ def _create_or_update_session(item, meeting_number, seq):
             Meeting_Seq=seq,
             Type_ID=type_id,
             Owner_ID=owner_id,
-            Credentials=credentials,
+            credentials=credentials,
             Duration_Min=item.get('duration_min') if item.get(
                 'duration_min') else None,
             Duration_Max=item.get('duration_max') if item.get(
