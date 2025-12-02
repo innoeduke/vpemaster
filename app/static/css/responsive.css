@@ -419,7 +419,7 @@
         grid-template-columns: 1fr 1fr 1fr;
         grid-template-rows: auto auto;
         grid-template-areas:
-            "role role buttons"
+            "role role icons"
             "waitlist action action";
         margin-bottom: 20px;
         border: 2px solid #ddd;
@@ -465,12 +465,12 @@
         justify-content: flex-end;
     }
 
-    .booking-table .button-cell {
-        grid-area: action;
+    .booking-table .icon-cell {
+        grid-area: icons;
         justify-content: flex-end;
     }
 
-    .booking-table .button-cell .btn {
+    .booking-table .icon-cell .btn {
         padding-left: 20px;
         padding-right: 20px;
     }

@@ -252,7 +252,7 @@ h1 {
     /* text-overflow: ellipsis; Add ... if name is too long */
 }
 
-.booking-table .button-cell .btn {
+.booking-table .icon-cell .btn {
     width: 130px; /* Set a fixed width for all action buttons */
     white-space: nowrap; /* Prevent button text from wrapping */
     box-sizing: border-box; /* Ensure padding is included in the width */
@@ -270,7 +270,7 @@ h1 {
     background-color: #004165;
 }
 
-.button-cell .icon-btn {
+.icon-cell .icon-btn {
     padding: 6px 10px;
     flex-shrink: 0; /* Prevent buttons from shrinking */
 }
@@ -406,7 +406,7 @@ h1 {
     .booking-table .role-cell { width: 35%; min-width: 250px; }
     .booking-table .status-cell { width: 20%; }
     .booking-table .assign-cell { width: 25%; }
-    .booking-table .button-cell { width: 20%; }
+    .booking-table .icon-cell { width: 20%; }
 
 
     /* --- Desktop Completed Roles Grid --- */
