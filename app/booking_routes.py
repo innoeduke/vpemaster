@@ -2,10 +2,11 @@
 
 from .auth.utils import login_required, is_authorized
 from flask import Blueprint, render_template, request, session, jsonify, current_app
-from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole, Waitlist, Role
+from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole, Waitlist, Role, Vote
 from . import db
 from datetime import datetime
 import re
+import secrets
 from sqlalchemy import or_
 from .utils import derive_current_path_level, derive_credentials
 from .utils import get_meetings_by_status
@@ -550,11 +551,7 @@ def _get_all_session_ids_for_role(log, logical_role_key):
 
 
 @booking_bp.route('/booking/vote', methods=['POST'])
-@login_required
 def vote_for_award():
-    if not is_authorized(session.get('user_role'), 'BOOKING_ASSIGN_ALL'):
-        return jsonify(success=False, message="Permission denied."), 403
-
     data = request.get_json()
     meeting_number = data.get('meeting_number')
     contact_id = data.get('contact_id')
@@ -567,25 +564,51 @@ def vote_for_award():
     if not meeting:
         return jsonify(success=False, message="Meeting not found."), 404
 
-    award_attr = f"best_{award_category.replace('-', '_')}_id"
+    if meeting.status != 'running':
+        return jsonify(success=False, message="Voting is not active for this meeting."), 403
 
-    if not hasattr(meeting, award_attr):
-        current_app.logger.error(
-            f"Meeting object does not have attribute: {award_attr}")
-        return jsonify(success=False, message="Invalid award category."), 400
+    # 1. Determine voter identity
+    if 'user_id' in session:
+        voter_identifier = f"user_{session['user_id']}"
+    else:
+        if 'voter_token' not in session:
+            session['voter_token'] = secrets.token_hex(16)
+        voter_identifier = session['voter_token']
+    
+    # 2. Check for an existing vote from this identifier for this category
+    existing_vote = Vote.query.filter_by(
+        meeting_number=meeting_number,
+        voter_identifier=voter_identifier,
+        award_category=award_category
+    ).first()
+
+    your_vote_id = None
 
     try:
-        current_winner = getattr(meeting, award_attr)
-        new_winner_id = None
-        if current_winner == contact_id:
-            setattr(meeting, award_attr, None)
+        if existing_vote:
+            if existing_vote.contact_id == contact_id:
+                # User clicked the same person again, so cancel the vote
+                db.session.delete(existing_vote)
+                your_vote_id = None
+            else:
+                # User is changing their vote to a new person
+                existing_vote.contact_id = contact_id
+                your_vote_id = contact_id
         else:
-            setattr(meeting, award_attr, contact_id)
-            new_winner_id = contact_id
+            # New vote
+            new_vote = Vote(
+                meeting_number=meeting_number,
+                voter_identifier=voter_identifier,
+                award_category=award_category,
+                contact_id=contact_id
+            )
+            db.session.add(new_vote)
+            your_vote_id = contact_id
 
         db.session.commit()
-        return jsonify(success=True, new_winner_id=new_winner_id, award_category=award_category)
+        return jsonify(success=True, your_vote_id=your_vote_id, award_category=award_category)
+
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error voting for award: {e}")
+        current_app.logger.error(f"Error processing vote: {e}")
         return jsonify(success=False, message="An internal error occurred."), 500

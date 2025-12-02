@@ -146,7 +146,7 @@ function handleVoteClick(buttonEl) {
     .then((result) => {
       if (result.success) {
         // Update the UI dynamically without a full page reload
-        updateVoteButtonsUI(result.award_category, result.new_winner_id);
+        updateVoteButtonsUI(result.award_category, result.your_vote_id);
       } else {
         alert("Error: " + result.message);
       }

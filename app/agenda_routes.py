@@ -2,9 +2,9 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
 from .auth.utils import login_required
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media, Roster, Role
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media, Roster, Role, Vote
 from . import db
-from sqlalchemy import distinct, orm
+from sqlalchemy import distinct, orm, func
 from datetime import datetime, timedelta
 import io
 import csv
@@ -1283,6 +1283,35 @@ def delete_log(log_id):
         return jsonify(success=False, message=str(e)), 500
 
 
+def _tally_votes_and_set_winners(meeting):
+    """
+    Tallies votes for a given meeting and sets the best award winners.
+    """
+    if not meeting:
+        return
+
+    # Query to get all vote counts grouped by category and contact
+    vote_counts = db.session.query(
+        Vote.award_category,
+        Vote.contact_id,
+        func.count(Vote.id).label('vote_count')
+    ).filter(Vote.meeting_number == meeting.Meeting_Number)\
+     .group_by(Vote.award_category, Vote.contact_id)\
+     .all()
+
+    # Process votes for each category
+    winners = {} # {'speaker': (contact_id, vote_count), ...}
+    for category, contact_id, count in vote_counts:
+        if category not in winners or count > winners[category][1]:
+            winners[category] = (contact_id, count)
+        # Simple tie-breaking: first one with max votes wins.
+
+    # Update meeting object with winners
+    for category, (winner_id, _) in winners.items():
+        award_attr = f"best_{category.replace('-', '_')}_id"
+        if hasattr(meeting, award_attr):
+            setattr(meeting, award_attr, winner_id)
+
 @agenda_bp.route('/agenda/status/<int:meeting_number>', methods=['POST'])
 @login_required
 def update_meeting_status(meeting_number):
@@ -1298,6 +1327,7 @@ def update_meeting_status(meeting_number):
         new_status = 'running'
     elif current_status == 'running':
         new_status = 'finished'
+        _tally_votes_and_set_winners(meeting) # Tally votes when meeting finishes
     elif current_status == 'finished':
         new_status = 'cancelled'
 
