@@ -153,6 +153,23 @@ class Presentation(db.Model):
     series = db.Column(db.String(100))
 
 
+class Pathway(db.Model):
+    __tablename__ = 'pathways'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50))
+    abbr = db.Column(db.String(5))
+    type = db.Column(db.String(20))
+
+
+class PathwayProject(db.Model):
+    __tablename__ = 'pathway_projects'
+    id = db.Column(db.Integer, primary_key=True)
+    path_id = db.Column(db.Integer, db.ForeignKey('pathways.id'))
+    project_id = db.Column(db.Integer, db.ForeignKey('Projects.ID'))
+    code = db.Column(db.String(10))
+    type = db.Column(db.Enum('elective', 'required', 'other', name='pathway_project_type_enum'), nullable=False)
+
+
 class Media(db.Model):
     __tablename__ = 'Media'
     id = db.Column(db.Integer, primary_key=True)
