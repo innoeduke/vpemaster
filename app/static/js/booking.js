@@ -85,6 +85,20 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // For mobile devices, allow clicking anywhere on the row to vote
+  if (window.innerWidth <= 768) {
+    document.querySelectorAll('.is-running-meeting tbody tr').forEach(row => {
+      row.addEventListener('click', function() {
+        // Find the vote button within the row
+        const voteButton = this.querySelector('button.icon-btn[onclick^="handleVoteClick"]');
+        if (voteButton) {
+          // Trigger the vote
+          voteButton.click();
+        }
+      });
+    });
+  }
+
 }); // End of DOMContentLoaded listener
 
 // Functions remain global (or could be wrapped in an IIFE)
@@ -187,12 +201,14 @@ function updateVoteButtonsUI(category, newWinnerId) {
 
   allButtons.forEach((button) => {
     const buttonContactId = parseInt(button.dataset.contactId, 10);
+    const row = button.closest('tr'); // Get the parent row
 
     if (newWinnerId === null) {
       // A vote was CANCELED. Make all buttons in this category visible and votable.
       button.style.setProperty("display", "inline-block", "important");
       button.classList.remove("icon-btn-voted");
       button.title = "Vote";
+      if (row) row.classList.remove('voted'); // Remove voted class from row
     } else {
       // A vote was CAST.
       if (buttonContactId === newWinnerId) {
@@ -200,9 +216,11 @@ function updateVoteButtonsUI(category, newWinnerId) {
         button.style.display = "inline-block";
         button.classList.add("icon-btn-voted");
         button.title = `Cancel Vote (${category})`;
+        if (row) row.classList.add('voted'); // Add voted class to row
       } else {
         // This is another role in the same category. Hide it.
         button.style.display = "none";
+        if (row) row.classList.remove('voted'); // Ensure other rows are not styled as voted
       }
     }
   });
