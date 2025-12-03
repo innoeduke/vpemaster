@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
 from .auth.utils import login_required
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media, Roster, Role, Vote
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media, Roster, Role, Vote, Pathway, PathwayProject
 from . import db
 from sqlalchemy import distinct, orm, func
 from datetime import datetime, timedelta
@@ -253,7 +253,9 @@ def agenda():
 
     # --- Process Raw Logs into Dictionaries ---
     logs_data = []
-    pathway_mapping = current_app.config['PATHWAY_MAPPING']
+    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    pathway_mapping = {p.name: p.abbr for p in all_pathways}
+    pathways = [p.name for p in all_pathways]
     for log in raw_session_logs:
         session_type = log.session_type
         meeting = log.meeting
@@ -290,15 +292,19 @@ def agenda():
         elif project and owner and owner.user and owner.user.Current_Path:  # Else if pathway...
             pathway_suffix = pathway_mapping.get(owner.user.Current_Path)
             if pathway_suffix:
-                project_code_val = getattr(
-                    project, f"Code_{pathway_suffix}", None)
-                if project_code_val:
-                    project_code_str = f"{pathway_suffix}{project_code_val}"
-                    pathway_code_for_dict = pathway_suffix
-                    try:
-                        level_for_dict = int(project_code_val.split('.')[0])
-                    except (ValueError, IndexError):
-                        level_for_dict = None
+                pathway = db.session.query(Pathway).filter_by(
+                    abbr=pathway_suffix).first()
+                if pathway:
+                    pathway_project = db.session.query(PathwayProject).filter_by(
+                        path_id=pathway.id, project_id=project.id).first()
+                    if pathway_project:
+                        project_code_str = f"{pathway_suffix}{pathway_project.code}"
+                        pathway_code_for_dict = pathway_suffix
+                        try:
+                            level_for_dict = int(
+                                pathway_project.code.split('.')[0])
+                        except (ValueError, IndexError):
+                            level_for_dict = None
 
         # --- Award Logic ---
         award_type = None
@@ -404,7 +410,6 @@ def agenda():
         meeting_templates = []
 
     # --- Minimal Data for Initial Page Load ---
-    pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
     members = Contact.query.filter_by(
         Type='Member').order_by(Contact.Name.asc()).all()
 
@@ -415,7 +420,7 @@ def agenda():
     return render_template('agenda.html',
                            logs_data=logs_data,               # Use the processed list of dictionaries
                            pathways=pathways,               # For modals
-                           pathway_mapping=current_app.config['PATHWAY_MAPPING'],
+                           pathway_mapping=pathway_mapping,
                            meeting_numbers=meeting_numbers,
                            selected_meeting=selected_meeting,  # Pass the Meeting object
                            members=members,                 # If needed elsewhere
@@ -461,11 +466,18 @@ A single endpoint to fetch all data needed for the agenda modals.
 
     # Projects
     projects = Project.query.order_by(Project.Project_Name).all()
+
+    all_pp = db.session.query(PathwayProject, Pathway.abbr).join(Pathway).all()
+    project_codes_lookup = {}  # {project_id: {path_abbr: code, ...}}
+    for pp, path_abbr in all_pp:
+        if pp.project_id not in project_codes_lookup:
+            project_codes_lookup[pp.project_id] = {}
+        project_codes_lookup[pp.project_id][path_abbr] = pp.code
+
     projects_data = [
         {
-            "ID": p.ID, "Project_Name": p.Project_Name, "Code_DL": p.Code_DL,
-            "Code_EH": p.Code_EH, "Code_MS": p.Code_MS, "Code_PI": p.Code_PI,
-            "Code_PM": p.Code_PM, "Code_VC": p.Code_VC, "Code_DTM": p.Code_DTM,
+            "ID": p.id, "Project_Name": p.Project_Name,
+            "path_codes": project_codes_lookup.get(p.id, {}),
             "Purpose": p.Purpose, "Duration_Min": p.Duration_Min, "Duration_Max": p.Duration_Max
         } for p in projects
     ]
@@ -506,7 +518,7 @@ def _get_export_data(meeting_number):
         Media
     ).outerjoin(Contact, SessionLog.Owner_ID == Contact.id)\
      .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
-     .outerjoin(Project, SessionLog.Project_ID == Project.ID)\
+     .outerjoin(Project, SessionLog.Project_ID == Project.id)\
      .outerjoin(Media, SessionLog.id == Media.log_id)\
      .filter(SessionLog.Meeting_Number == meeting_number)\
      .order_by(SessionLog.Meeting_Seq.asc()).all()
@@ -562,8 +574,11 @@ def _get_all_speech_details(logs_data, pathway_mapping):
                 log.Project_ID, path_abbr) if path_abbr else None
             purpose = project.Purpose
             # For pathway speeches, the project code is just the level.number (e.g., "1.1")
-            pathway_project_code = getattr(
-                project, f"Code_{path_abbr}", None) if path_abbr else None
+            pathway = db.session.query(Pathway).filter_by(
+                abbr=path_abbr).first() if path_abbr else None
+            pathway_project = db.session.query(PathwayProject).filter_by(
+                path_id=pathway.id, project_id=project.id).first() if pathway else None
+            pathway_project_code = pathway_project.code if pathway_project else None
             project_type = _get_project_type(pathway_project_code)
 
             project_name = project.Project_Name
@@ -965,7 +980,8 @@ def export_agenda(meeting_number):
         return "Meeting not found", 404
 
     # 1. Fetch and Prepare Data
-    pathway_mapping = current_app.config['PATHWAY_MAPPING']
+    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    pathway_mapping = {p.name: p.abbr for p in all_pathways}
     logs_data = _get_export_data(meeting_number)
     speech_details_list = _get_all_speech_details(logs_data, pathway_mapping)
 
@@ -1300,7 +1316,7 @@ def _tally_votes_and_set_winners(meeting):
      .all()
 
     # Process votes for each category
-    winners = {} # {'speaker': (contact_id, vote_count), ...}
+    winners = {}  # {'speaker': (contact_id, vote_count), ...}
     for category, contact_id, count in vote_counts:
         if category not in winners or count > winners[category][1]:
             winners[category] = (contact_id, count)
@@ -1311,6 +1327,7 @@ def _tally_votes_and_set_winners(meeting):
         award_attr = f"best_{category.replace('-', '_')}_id"
         if hasattr(meeting, award_attr):
             setattr(meeting, award_attr, winner_id)
+
 
 @agenda_bp.route('/agenda/status/<int:meeting_number>', methods=['POST'])
 @login_required
@@ -1327,7 +1344,8 @@ def update_meeting_status(meeting_number):
         new_status = 'running'
     elif current_status == 'running':
         new_status = 'finished'
-        _tally_votes_and_set_winners(meeting) # Tally votes when meeting finishes
+        # Tally votes when meeting finishes
+        _tally_votes_and_set_winners(meeting)
     elif current_status == 'finished':
         new_status = 'cancelled'
 

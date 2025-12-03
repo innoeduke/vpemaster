@@ -39,7 +39,7 @@ class User(db.Model):
 
 class Project(db.Model):
     __tablename__ = 'Projects'
-    ID = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     Project_Name = db.Column(db.String(255), nullable=False)
     Format = db.Column(db.String(50))
     Duration_Min = db.Column(db.Integer)
@@ -53,7 +53,7 @@ class Project(db.Model):
 
 class Meeting(db.Model):
     __tablename__ = 'Meetings'
-    ID = db.Column(db.Integer, primary_key=True)
+    id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(255), default='Keynote Speech')
     Meeting_Number = db.Column(db.SmallInteger, unique=True, nullable=False)
     Meeting_Date = db.Column(db.Date)
@@ -109,7 +109,7 @@ class SessionLog(db.Model):
         'Session_Types.id'), nullable=False)
     Owner_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     credentials = db.Column(db.String(255), default='')
-    Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.ID'))
+    Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.id'))
     Start_Time = db.Column(db.Time)
     Duration_Min = db.Column(db.Integer, default=0)
     Duration_Max = db.Column(db.Integer)
@@ -158,7 +158,7 @@ class PathwayProject(db.Model):
     __tablename__ = 'pathway_projects'
     id = db.Column(db.Integer, primary_key=True)
     path_id = db.Column(db.Integer, db.ForeignKey('pathways.id'))
-    project_id = db.Column(db.Integer, db.ForeignKey('Projects.ID'))
+    project_id = db.Column(db.Integer, db.ForeignKey('Projects.id'))
     code = db.Column(db.String(10))
     type = db.Column(db.Enum('elective', 'required', 'other', name='pathway_project_type_enum'), nullable=False)
 

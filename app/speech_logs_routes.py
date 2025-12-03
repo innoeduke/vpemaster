@@ -36,6 +36,10 @@ def show_speech_logs():
         else:
             selected_speaker = -1   # No logs for unlinked member
 
+    all_pathways_from_db = Pathway.query.order_by(Pathway.name).all()
+    pathway_mapping = {p.name: p.abbr for p in all_pathways_from_db}
+    pathways = [p.name for p in all_pathways_from_db]
+
     # Eager load all common relationships
     base_query = db.session.query(SessionLog).options(
         joinedload(SessionLog.media),
@@ -82,7 +86,6 @@ def show_speech_logs():
             if log.owner and log.owner.user:
                 path = log.owner.user.Current_Path
                 if path:
-                    pathway_mapping = current_app.config['PATHWAY_MAPPING']
                     path_abbr = pathway_mapping.get(path)
 
             code = project_id_to_code(log.Project_ID, path_abbr)
@@ -166,10 +169,6 @@ def show_speech_logs():
     speakers = db.session.query(Contact).join(
         SessionLog, Contact.id == SessionLog.Owner_ID).distinct().order_by(Contact.Name).all()
 
-    # Updated logic to get pathways from the app config
-    pathways = [p.name for p in db.session.query(
-        Pathway).order_by(Pathway.name).all()]
-
     # Convert project objects to a list of dictionaries
     projects = Project.query.order_by(Project.Project_Name).all()
 
@@ -182,9 +181,9 @@ def show_speech_logs():
 
     projects_data = [
         {
-            "ID": p.ID,
+            "id": p.id,
             "Project_Name": p.Project_Name,
-            "path_codes": project_codes_lookup.get(p.ID, {}),
+            "path_codes": project_codes_lookup.get(p.id, {}),
             "Duration_Min": p.Duration_Min,
             "Duration_Max": p.Duration_Max
         }
@@ -234,7 +233,7 @@ def show_speech_logs():
             'status': selected_status
         },
         is_member_view=is_member_view,
-        pathway_mapping=current_app.config['PATHWAY_MAPPING']
+        pathway_mapping=pathway_mapping
     )
 
 
@@ -258,9 +257,9 @@ def get_speech_log_details(log_id):
     # Use the helper function to get project code
     project_code = ""
     if log.Project_ID and log.owner and log.owner.user and log.owner.user.Current_Path:
-        pathway_mapping = current_app.config['PATHWAY_MAPPING']
-        pathway_abbr = pathway_mapping.get(log.owner.user.Current_Path)
-        if pathway_abbr:
+        pathway = db.session.query(Pathway).filter_by(name=log.owner.user.Current_Path).first()
+        if pathway:
+            pathway_abbr = pathway.abbr
             project_code = project_id_to_code(log.Project_ID, pathway_abbr)
 
     level = 1  # Default level
@@ -383,9 +382,9 @@ def update_speech_log(log_id):
                 project_name = updated_project.Project_Name
             # Use the helper function to get project code
             if log.owner and log.owner.user and log.owner.user.Current_Path:
-                pathway_mapping = current_app.config['PATHWAY_MAPPING']
-                pathway_abbr = pathway_mapping.get(log.owner.user.Current_Path)
-                if pathway_abbr:
+                pathway = db.session.query(Pathway).filter_by(name=log.owner.user.Current_Path).first()
+                if pathway:
+                    pathway_abbr = pathway.abbr
                     project_code = project_id_to_code(
                         log.Project_ID, pathway_abbr)
 
@@ -425,10 +424,11 @@ def _get_next_project_for_contact(contact, completed_log):
     if not user or not user.Current_Path or not completed_log or not completed_log.Project_ID:
         return
 
-    pathway_to_code_attr = current_app.config['PATHWAY_MAPPING']
-    code_suffix = pathway_to_code_attr.get(user.Current_Path)
-    if not code_suffix:
+    pathway = db.session.query(Pathway).filter_by(name=user.Current_Path).first()
+    if not pathway:
         return
+    code_suffix = pathway.abbr
+
 
     pathway = db.session.query(Pathway).filter_by(abbr=code_suffix).first()
     if not pathway:
@@ -497,7 +497,7 @@ def _get_next_project_for_contact(contact, completed_log):
             else:
                 next_project = None
 
-            if next_project and next_project.ID not in completed_project_ids:
+            if next_project and next_project.id not in completed_project_ids:
                 user.Next_Project = f"{code_suffix}{next_project_code}"
                 break
     except (ValueError, IndexError):

@@ -196,11 +196,11 @@ function setupEvaluatorModal(logData) {
   modalElements.speechTitleLabel.textContent = "Evaluator for:";
 
   const evalProjects = allProjects
-    .filter((p) => [4, 5, 6].includes(p.ID))
-    .sort((a, b) => a.ID - b.ID);
+    .filter((p) => [4, 5, 6].includes(p.id))
+    .sort((a, b) => a.id - b.id);
   populateDropdown(modalElements.projectSelectDropdown, evalProjects, {
     defaultOption: "-- Select Evaluation Project --",
-    valueField: "ID",
+    valueField: "id",
     textField: "Project_Name",
   });
 
@@ -338,7 +338,7 @@ function setupSpeechModal(logData, { workingPath, nextProject }) {
             const codeSuffix = pathwayMap[pathwayToSelect];
             const projectCode = nextProject.substring(2);
             const foundProject = allProjects.find(p => p.path_codes[codeSuffix] === projectCode);
-            if (foundProject) projectToSelect = foundProject.ID;
+            if (foundProject) projectToSelect = foundProject.id;
           }
         } catch (e) {
           /* Parsing failed */
@@ -387,7 +387,7 @@ function updateProjectOptions(selectedProjectId = null) {
 
   filteredProjects.forEach((p) => {
     const code = p.path_codes[codeSuffix];
-    projectSelect.add(new Option(`${code} - ${p.Project_Name}`, p.ID));
+    projectSelect.add(new Option(`${code} - ${p.Project_Name}`, p.id));
   });
 
   if (selectedProjectId) projectSelect.value = selectedProjectId;
@@ -526,7 +526,7 @@ function updateAgendaRow(logId, updateResult, payload) {
         : "";
 
       let projName = updateResult.project_name;
-      const proj = allProjects.find((p) => p.ID == updateResult.project_id);
+      const proj = allProjects.find((p) => p.id == updateResult.project_id);
       let projPurpose = proj ? proj.Purpose : "";
 
       viewTitleCell.innerHTML = ""; // Clear
@@ -585,7 +585,7 @@ function updateAgendaRow(logId, updateResult, payload) {
       );
       projName = pres ? pres.title : updateResult.session_title;
     } else {
-      const proj = allProjects.find((p) => p.ID == updateResult.project_id);
+      const proj = allProjects.find((p) => p.id == updateResult.project_id);
       projPurpose = proj ? proj.Purpose : "";
     }
 

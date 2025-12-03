@@ -78,11 +78,12 @@ def derive_current_path_level(log, owner_contact):
     if not user or not user.Current_Path:
         return None  # Cannot derive without owner or their working path
 
-    pathway_mapping = current_app.config.get('PATHWAY_MAPPING', {})
-    pathway_suffix = pathway_mapping.get(user.Current_Path)
+    pathway = db.session.query(Pathway).filter_by(name=user.Current_Path).first()
 
-    if not pathway_suffix:
+    if not pathway:
         return None  # Unknown pathway
+
+    pathway_suffix = pathway.abbr
 
     # Determine the role name from the log's session type
     role_name = None

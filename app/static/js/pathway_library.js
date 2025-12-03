@@ -40,7 +40,7 @@ function toggleEditView() {
   const selectedPathway = pathways.find((p) => p.abbr === pathSelect.value);
   const projectId = parseInt(projectSelect.value, 10);
   const currentProject = selectedPathway
-    ? selectedPathway.projects.find((p) => p.ID === projectId)
+    ? selectedPathway.projects.find((p) => p.id === projectId)
     : null;
 
   isEditing = !isEditing;
@@ -77,7 +77,7 @@ function displayProjectDetails() {
   const selectedPathway = pathways.find((p) => p.abbr === pathSelect.value);
   const projectId = parseInt(projectSelect.value, 10);
   const project = selectedPathway
-    ? selectedPathway.projects.find((p) => p.ID === projectId)
+    ? selectedPathway.projects.find((p) => p.id === projectId)
     : null;
 
   if (project) {
@@ -133,7 +133,7 @@ function filterProjects() {
 
     filteredProjects.forEach((p) => {
       const option = document.createElement("option");
-      option.value = p.ID;
+      option.value = p.id;
       option.textContent = `${p.Project_Name}`;
       projectSelect.appendChild(option);
     });
@@ -167,7 +167,7 @@ function saveProjectChanges() {
         );
         if (selectedPathway) {
           const projectIndex = selectedPathway.projects.findIndex(
-            (p) => p.ID === projectId
+            (p) => p.id === projectId
           );
           if (projectIndex > -1) {
             const project = selectedPathway.projects[projectIndex];

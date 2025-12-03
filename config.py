@@ -25,15 +25,6 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
 
     # Your application-specific config
-    PATHWAY_MAPPING = {
-        "Dynamic Leadership": "DL",
-        "Engaging Humor": "EH",
-        "Motivational Strategies": "MS",
-        "Persuasive Influence": "PI",
-        "Presentation Mastery": "PM",
-        "Visionary Communication": "VC",
-        "Distinguished Toastmasters": "DTM"
-    }
 
     MEETING_TYPES = {
         "Club Election": {

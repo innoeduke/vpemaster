@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from . import db
-from .models import Contact, SessionLog
+from .models import Contact, SessionLog, Pathway
 from .auth.utils import login_required, is_authorized
 from datetime import date
 
@@ -34,12 +34,10 @@ def show_contacts():
     contacts = Contact.query.outerjoin(
         Contact.user).order_by(Contact.Name.asc()).all()
 
-    # 计算联系人总数和成员数（包括官员）
     total_contacts = Contact.query.count()
     total_members = Contact.query.filter(
         Contact.Type.in_(['Member', 'Officer'])).count()
-
-    pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
+    pathways = [p.name for p in Pathway.query.order_by(Pathway.name).all()]
     return render_template('contacts.html', contacts=contacts, pathways=pathways,
                            total_contacts=total_contacts, total_members=total_members)
 
@@ -131,7 +129,7 @@ def contact_form(contact_id=None):
             return redirect(redirect_url)
         return redirect(url_for('contacts_bp.show_contacts'))
 
-    pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
+    pathways = [p.name for p in Pathway.query.order_by(Pathway.name).all()]
     return render_template('contact_form.html', contact=contact, pathways=pathways)
 
 

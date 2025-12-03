@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
 from . import db
-from .models import User, Contact
+from .models import User, Contact, Pathway
 from .auth.utils import is_authorized, login_required
 from werkzeug.security import generate_password_hash
 from datetime import date
@@ -69,7 +69,7 @@ def user_form(user_id):
         Contact.Type == 'Member', Contact.Type == 'Past Member')).order_by(Contact.Name.asc()).all()
     users = User.query.order_by(User.Username.asc()).all()
 
-    pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
+    pathways = [p.name for p in Pathway.query.order_by(Pathway.name).all()]
 
     if request.method == 'POST':
         _create_or_update_user(

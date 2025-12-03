@@ -31,11 +31,11 @@ def pathway_library():
         }
         
         # Get all project associations for this pathway
-        pathway_projects = db.session.query(PathwayProject, Project).join(Project, PathwayProject.project_id == Project.ID).filter(PathwayProject.path_id == pathway.id).all()
+        pathway_projects = db.session.query(PathwayProject, Project).join(Project, PathwayProject.project_id == Project.id).filter(PathwayProject.path_id == pathway.id).all()
 
         for pathway_project, project in pathway_projects:
             project_dict = {
-                "ID": project.ID,
+                "id": project.id,
                 "Project_Name": project.Project_Name,
                 "code": pathway_project.code,
                 "type": pathway_project.type,
@@ -44,7 +44,7 @@ def pathway_library():
                 "Purpose": project.Purpose or '',
                 "Requirements": project.Requirements or '',
                 "Resources": project.Resources or '',
-                "path_codes": project_codes_lookup.get(project.ID, {})
+                "path_codes": project_codes_lookup.get(project.id, {})
             }
             pathway_dict['projects'].append(project_dict)
             
