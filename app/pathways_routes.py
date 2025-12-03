@@ -2,56 +2,55 @@
 
 from flask import Blueprint, render_template, request, jsonify, session
 from . import db
-from .models import Project
+from .models import Project, Pathway, PathwayProject
 from .auth.utils import login_required, is_authorized
-import markdown
 
 pathways_bp = Blueprint('pathways_bp', __name__)
 
 
-def _render_markdown(text):
-    """Renders raw Markdown text to HTML."""
-    return markdown.markdown(text or '', extensions=['fenced_code'])
-
-
 @pathways_bp.route('/pathway_library')
 def pathway_library():
-    projects = Project.query.all()
-    # Convert projects to a list of dictionaries to be easily used in JavaScript
-    projects_data = []
-    for p in projects:
-        raw_intro = p.Introduction or ''
-        raw_overview = p.Overview or ''
-        raw_purpose = p.Purpose or ''
-        raw_requirements = p.Requirements or ''
-        raw_resources = p.Resources or ''
+    pathways = Pathway.query.order_by(Pathway.name).all()
+    
+    # pre-fetch all pathway projects to create a lookup
+    all_pp = db.session.query(PathwayProject, Pathway.abbr).join(Pathway).all()
+    project_codes_lookup = {} # {project_id: {path_abbr: code, ...}}
+    for pp, path_abbr in all_pp:
+        if pp.project_id not in project_codes_lookup:
+            project_codes_lookup[pp.project_id] = {}
+        project_codes_lookup[pp.project_id][path_abbr] = pp.code
 
-        project_dict = {
-            "ID": p.ID,
-            "Project_Name": p.Project_Name,
-            # Rendered HTML fields for display
-            "Introduction": _render_markdown(raw_intro),
-            "Overview": _render_markdown(raw_overview),
-            "Purpose": _render_markdown(raw_purpose),
-            "Requirements": _render_markdown(raw_requirements),
-            "Resources": _render_markdown(raw_resources),
-            # Raw Markdown fields for editing
-            "Introduction_raw": raw_intro,
-            "Overview_raw": raw_overview,
-            "Purpose_raw": raw_purpose,
-            "Requirements_raw": raw_requirements,
-            "Resources_raw": raw_resources,
-            "Code_DL": p.Code_DL,
-            "Code_EH": p.Code_EH,
-            "Code_MS": p.Code_MS,
-            "Code_PI": p.Code_PI,
-            "Code_PM": p.Code_PM,
-            "Code_VC": p.Code_VC,
-            "Code_DTM": p.Code_DTM
+    pathways_data = []
+    for pathway in pathways:
+        pathway_dict = {
+            'id': pathway.id,
+            'name': pathway.name,
+            'abbr': pathway.abbr,
+            'type': pathway.type,
+            'projects': []
         }
-        projects_data.append(project_dict)
+        
+        # Get all project associations for this pathway
+        pathway_projects = db.session.query(PathwayProject, Project).join(Project, PathwayProject.project_id == Project.ID).filter(PathwayProject.path_id == pathway.id).all()
 
-    return render_template('pathway_library.html', projects=projects_data)
+        for pathway_project, project in pathway_projects:
+            project_dict = {
+                "ID": project.ID,
+                "Project_Name": project.Project_Name,
+                "code": pathway_project.code,
+                "type": pathway_project.type,
+                "Introduction": project.Introduction or '',
+                "Overview": project.Overview or '',
+                "Purpose": project.Purpose or '',
+                "Requirements": project.Requirements or '',
+                "Resources": project.Resources or '',
+                "path_codes": project_codes_lookup.get(project.ID, {})
+            }
+            pathway_dict['projects'].append(project_dict)
+            
+        pathways_data.append(pathway_dict)
+
+    return render_template('pathway_library.html', pathways=pathways_data)
 
 
 @pathways_bp.route('/pathway_library/update_project/<int:project_id>', methods=['POST'])
@@ -63,34 +62,21 @@ def update_project(project_id):
     project = Project.query.get_or_404(project_id)
     data = request.get_json()
 
-    # Get and save raw markdown from the client
-    raw_intro = data.get('Introduction')
-    raw_overview = data.get('Overview')
-    raw_purpose = data.get('Purpose')
-    raw_requirements = data.get('Requirements')
-    raw_resources = data.get('Resources')
-
-    project.Introduction = raw_intro
-    project.Overview = raw_overview
-    project.Purpose = raw_purpose
-    project.Requirements = raw_requirements
-    project.Resources = raw_resources
+    # Get and save raw text from the client
+    project.Introduction = data.get('Introduction')
+    project.Overview = data.get('Overview')
+    project.Purpose = data.get('Purpose')
+    project.Requirements = data.get('Requirements')
+    project.Resources = data.get('Resources')
 
     db.session.commit()
 
-    # Return rendered HTML for display and raw Markdown for re-editing
+    # Return raw text for display and re-editing
     return jsonify(
         success=True,
-        # Rendered HTML
-        Introduction=_render_markdown(raw_intro),
-        Overview=_render_markdown(raw_overview),
-        Purpose=_render_markdown(raw_purpose),
-        Requirements=_render_markdown(raw_requirements),
-        Resources=_render_markdown(raw_resources),
-        # Raw Markdown
-        Introduction_raw=raw_intro,
-        Overview_raw=raw_overview,
-        Purpose_raw=raw_purpose,
-        Requirements_raw=raw_requirements,
-        Resources_raw=raw_resources,
+        Introduction=project.Introduction,
+        Overview=project.Overview,
+        Purpose=project.Purpose,
+        Requirements=project.Requirements,
+        Resources=project.Resources
     )

@@ -2,7 +2,7 @@
 
 from flask import current_app
 # Ensure Project model is imported if needed elsewhere
-from .models import Project, Presentation, Meeting, SessionLog
+from .models import Project, Presentation, Meeting, SessionLog, Pathway, PathwayProject
 from . import db
 import re
 import configparser
@@ -45,15 +45,16 @@ def project_id_to_code(project_id, path_abbr):
     if not project:
         return ""
 
-    # Special case for project ID 60 (TM1.0)
-    if project_id == 60:
-        return "TM1.0"
+    pathway = db.session.query(Pathway).filter_by(abbr=path_abbr).first()
+    if not pathway:
+        return ""
 
-    code_attr = f"Code_{path_abbr}"
-    project_code = getattr(project, code_attr, None)
+    pathway_project = db.session.query(PathwayProject).filter_by(
+        path_id=pathway.id, project_id=project_id).first()
 
-    if project_code:
-        return f"{path_abbr}{project_code}"
+    if pathway_project:
+        return f"{path_abbr}{pathway_project.code}"
+
     return ""
 
 
@@ -108,12 +109,17 @@ def derive_current_path_level(log, owner_contact):
             # Fetch the project if not readily available
             project = Project.query.get(log.Project_ID)
 
-        if project:
-            project_code_attr = f"Code_{pathway_suffix}"
-            project_code_val = getattr(project, project_code_attr, None)
-            if project_code_val:
-                # Return the full specific project code (e.g., "PM1.1")
-                return f"{pathway_suffix}{project_code_val}"
+        pathway = db.session.query(Pathway).filter_by(
+            abbr=pathway_suffix).first()
+        if not pathway:
+            return None
+
+        pathway_project = db.session.query(PathwayProject).filter_by(
+            path_id=pathway.id, project_id=project.id).first()
+
+        if pathway_project:
+            # Return the full specific project code (e.g., "PM1.1")
+            return f"{pathway_suffix}{pathway_project.code}"
 
     # --- Priority 2: Other roles - Use general level from Next_Project ---
     else:

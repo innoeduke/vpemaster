@@ -1,7 +1,7 @@
 # innoeduke/vpemaster/vpemaster-dev0.3/speech_logs_routes.py
 from flask import Blueprint, jsonify, render_template, request, session, current_app
 from . import db
-from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media, Role
+from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media, Role, Pathway, PathwayProject
 from .auth.utils import login_required, is_authorized
 from .utils import project_id_to_code
 from sqlalchemy import distinct
@@ -47,7 +47,8 @@ def show_speech_logs():
         Role.name.isnot(None),
         Role.name != '',
         Role.name != 'Backup Speaker',
-        Role.type.in_(['standard', 'club-specific'])  # 只允许standard或club-specific类型的role
+        # 只允许standard或club-specific类型的role
+        Role.type.in_(['standard', 'club-specific'])
 
     )
 
@@ -73,35 +74,30 @@ def show_speech_logs():
             log_type = 'presentation'
             presentation = Presentation.query.get(log.Project_ID)
             if presentation:
-                display_level = str(presentation.level)  # 确保类型一致性
+                display_level = str(presentation.level)
         elif log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != 60:
             log_type = 'speech'
-            # 修复：使用正确的函数和参数获取项目代码
             path = None
             path_abbr = None
             if log.owner and log.owner.user:
                 path = log.owner.user.Current_Path
-                # 使用路径映射获取路径缩写
                 if path:
                     pathway_mapping = current_app.config['PATHWAY_MAPPING']
                     path_abbr = pathway_mapping.get(path)
-            
+
             code = project_id_to_code(log.Project_ID, path_abbr)
-            if code and len(code) > 2:  # 确保代码足够长以包含前缀和数字
+            if code and len(code) > 2:
                 try:
-                    # 修复：正确提取级别数字
-                    # 从格式如"PM1.1"中提取级别数字"1"
-                    # 首先去掉前两个字符（路径缩写），然后提取点号前的数字
-                    code_without_prefix = code[2:]  # 移除路径缩写如"PM"
+                    code_without_prefix = code[2:]
                     if '.' in code_without_prefix:
-                        display_level = str(int(code_without_prefix.split('.')[0]))
+                        display_level = str(
+                            int(code_without_prefix.split('.')[0]))
                     else:
-                        # 处理没有点号的情况
-                        display_level = str(int(code_without_prefix.split('.')[0]))
+                        display_level = str(
+                            int(code_without_prefix.split('.')[0]))
                 except (ValueError, IndexError):
-                    pass  # Stays in "General"
-            
-            # 直接将项目代码附加到日志对象上
+                    pass
+
             log.project_code = code
         else:  # It's a role
             # Check if we've already processed this role for this person/meeting
@@ -171,21 +167,24 @@ def show_speech_logs():
         SessionLog, Contact.id == SessionLog.Owner_ID).distinct().order_by(Contact.Name).all()
 
     # Updated logic to get pathways from the app config
-    pathways = list(current_app.config['PATHWAY_MAPPING'].keys())
+    pathways = [p.name for p in db.session.query(
+        Pathway).order_by(Pathway.name).all()]
 
     # Convert project objects to a list of dictionaries
     projects = Project.query.order_by(Project.Project_Name).all()
+
+    all_pp = db.session.query(PathwayProject, Pathway.abbr).join(Pathway).all()
+    project_codes_lookup = {}  # {project_id: {path_abbr: code, ...}}
+    for pp, path_abbr in all_pp:
+        if pp.project_id not in project_codes_lookup:
+            project_codes_lookup[pp.project_id] = {}
+        project_codes_lookup[pp.project_id][path_abbr] = pp.code
+
     projects_data = [
         {
             "ID": p.ID,
             "Project_Name": p.Project_Name,
-            "Code_DL": p.Code_DL,
-            "Code_EH": p.Code_EH,
-            "Code_MS": p.Code_MS,
-            "Code_PI": p.Code_PI,
-            "Code_PM": p.Code_PM,
-            "Code_VC": p.Code_VC,
-            "Code_DTM": p.Code_DTM,
+            "path_codes": project_codes_lookup.get(p.ID, {}),
             "Duration_Min": p.Duration_Min,
             "Duration_Max": p.Duration_Max
         }
@@ -245,7 +244,8 @@ def get_speech_log_details(log_id):
     """
     Fetches details for a specific speech log to populate the edit modal.
     """
-    log = db.session.query(SessionLog).options(joinedload(SessionLog.media)).get_or_404(log_id)
+    log = db.session.query(SessionLog).options(
+        joinedload(SessionLog.media)).get_or_404(log_id)
 
     user_role = session.get('user_role')
     user = User.query.get(session.get('user_id'))
@@ -386,7 +386,8 @@ def update_speech_log(log_id):
                 pathway_mapping = current_app.config['PATHWAY_MAPPING']
                 pathway_abbr = pathway_mapping.get(log.owner.user.Current_Path)
                 if pathway_abbr:
-                    project_code = project_id_to_code(log.Project_ID, pathway_abbr)
+                    project_code = project_id_to_code(
+                        log.Project_ID, pathway_abbr)
 
         return jsonify(success=True,
                        session_title=log.Session_Title,
@@ -429,10 +430,17 @@ def _get_next_project_for_contact(contact, completed_log):
     if not code_suffix:
         return
 
-    completed_project = Project.query.get(completed_log.Project_ID)
-    if not completed_project:
+    pathway = db.session.query(Pathway).filter_by(abbr=code_suffix).first()
+    if not pathway:
         return
-    current_code = getattr(completed_project, f"Code_{code_suffix}")
+
+    pathway_project = db.session.query(PathwayProject).filter_by(
+        path_id=pathway.id, project_id=completed_log.Project_ID).first()
+
+    if not pathway_project:
+        return
+
+    current_code = pathway_project.code
 
     if not current_code:
         return
@@ -479,8 +487,15 @@ def _get_next_project_for_contact(contact, completed_log):
                 break
 
             next_project_code = f"{level}.{project_num}"
-            next_project = Project.query.filter(
-                getattr(Project, f"Code_{code_suffix}") == next_project_code).first()
+
+            next_pathway_project = db.session.query(PathwayProject).filter_by(
+                path_id=pathway.id, code=next_project_code).first()
+
+            if next_pathway_project:
+                next_project = Project.query.get(
+                    next_pathway_project.project_id)
+            else:
+                next_project = None
 
             if next_project and next_project.ID not in completed_project_ids:
                 user.Next_Project = f"{code_suffix}{next_project_code}"

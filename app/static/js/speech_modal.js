@@ -336,10 +336,8 @@ function setupSpeechModal(logData, { workingPath, nextProject }) {
             pathwayToSelect = pathwayName;
             levelToSelect = nextLevel;
             const codeSuffix = pathwayMap[pathwayToSelect];
-            const codeAttr = `Code_${codeSuffix}`;
-            const foundProject = allProjects.find(
-              (p) => p[codeAttr] === nextProject.substring(2)
-            );
+            const projectCode = nextProject.substring(2);
+            const foundProject = allProjects.find(p => p.path_codes[codeSuffix] === projectCode);
             if (foundProject) projectToSelect = foundProject.ID;
           }
         } catch (e) {
@@ -367,20 +365,31 @@ function updateDynamicOptions() {
 
 function updateProjectOptions(selectedProjectId = null) {
   const { pathwaySelect, levelSelect, projectSelect } = modalElements;
-  const codeSuffix = pathwayMap[pathwaySelect.value];
-  projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
-  if (!codeSuffix || !levelSelect.value) return;
+  const pathwayName = pathwaySelect.value;
+  const level = levelSelect.value;
+  const codeSuffix = pathwayMap[pathwayName];
 
-  const codeAttr = `Code_${codeSuffix}`;
+  projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
+  if (!codeSuffix || !level) return;
+
   const filteredProjects = allProjects
-    .filter(
-      (p) => p[codeAttr] && p[codeAttr].startsWith(levelSelect.value + ".")
-    )
-    .sort((a, b) => (a[codeAttr] < b[codeAttr] ? -1 : 1));
+    .filter(p => {
+        const pathCode = p.path_codes[codeSuffix];
+        return pathCode && pathCode.startsWith(level + '.');
+    })
+    .sort((a, b) => {
+        const codeA = a.path_codes[codeSuffix];
+        const codeB = b.path_codes[codeSuffix];
+        if (codeA < codeB) return -1;
+        if (codeA > codeB) return 1;
+        return 0;
+    });
 
   filteredProjects.forEach((p) => {
-    projectSelect.add(new Option(`${p[codeAttr]} - ${p.Project_Name}`, p.ID));
+    const code = p.path_codes[codeSuffix];
+    projectSelect.add(new Option(`${code} - ${p.Project_Name}`, p.ID));
   });
+
   if (selectedProjectId) projectSelect.value = selectedProjectId;
 }
 
