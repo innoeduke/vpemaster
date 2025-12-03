@@ -203,6 +203,13 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
         sorted_roles = [role for role in sorted_roles if role.get(
             'award_category') and role.get('award_category') != 'none']
 
+    # For 'not started' meetings, only show Topics Speaker to admins
+    if selected_meeting.status == 'not started' and not is_admin_booker:
+        sorted_roles = [
+            role for role in sorted_roles
+            if role['role_key'] != current_app.config['ROLES']['TOPICS_SPEAKER']['name']
+        ]
+
     return sorted_roles
 
 
