@@ -63,6 +63,26 @@ document.addEventListener("DOMContentLoaded", function () {
   if (isAdminView) {
     hideVotedCategoryButtons();
   }
+
+  // Accordion functionality
+  const accordionHeaders = document.querySelectorAll(".accordion-header");
+  accordionHeaders.forEach(header => {
+    header.addEventListener("click", () => {
+      const accordionItem = header.parentElement;
+      const accordionContent = header.nextElementSibling;
+
+      // Toggle active class for styling
+      header.classList.toggle("active");
+
+      // Toggle content display
+      if (accordionContent.style.maxHeight) {
+        accordionContent.style.maxHeight = null;
+      } else {
+        accordionContent.style.maxHeight = accordionContent.scrollHeight + "px";
+      }
+    });
+  });
+
 }); // End of DOMContentLoaded listener
 
 // Functions remain global (or could be wrapped in an IIFE)

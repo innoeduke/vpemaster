@@ -202,37 +202,51 @@
             {# ======================================== #}
             {# ======== 2. MEETING RUNNING VIEW ======== #}
             {# ======================================== #}
-            <table class="booking-table is-running-meeting">
-                {{ table_header|safe }}
-                <tbody>
-                    {% for role in roles %}
-                    <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
-                        <td class="role-cell">
-                            <div class="role-cell-content">
-                                <i class="fas {{ role.icon }}"></i>
-                                <div class="role-display-text">
-                                    <span>{{ role.role }}</span>
-                                    {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
-                                </div>
-                            </div>
-                        </td>
-                        <td class="status-cell">
-                            {# Empty #} 
-                        </td>
-                        <td class="assign-cell">
-                            <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
-                        </td>
-                        <td class="icon-cell">
-                            {% if role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
-                                <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
-                                    <i class="fas fa-vote-yea"></i>
-                                </button>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="award-accordion">
+            {% for category, items in roles|groupby('award_category') %}
+                {% if category and category != 'none' %}
+                    <div class="accordion-item">
+                        <button class="accordion-header">
+                            <span>{{ category|replace('-', ' ')|title }} Award</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="accordion-content">
+                            <table class="booking-table is-running-meeting">
+                                {{ table_header|safe }}
+                                <tbody>
+                                {% for role in items %}
+                                    <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
+                                        <td class="role-cell">
+                                            <div class="role-cell-content">
+                                                <i class="fas {{ role.icon }}"></i>
+                                                <div class="role-display-text">
+                                                    <span>{{ role.role }}</span>
+                                                    {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="status-cell">
+                                            {# Empty #}
+                                        </td>
+                                        <td class="assign-cell">
+                                            <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
+                                        </td>
+                                        <td class="icon-cell">
+                                            {% if role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
+                                                <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
+                                                    <i class="fas fa-vote-yea"></i>
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+            </div>
 
         {% elif selected_meeting.status == 'finished' %}
             {# ========================================= #}
