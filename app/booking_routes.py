@@ -585,7 +585,10 @@ def vote_for_award():
     if not meeting:
         return jsonify(success=False, message="Meeting not found."), 404
 
-    if meeting.status != 'running':
+    user_role = session.get('user_role', 'Guest')
+    is_admin = is_authorized(user_role, 'BOOKING_ASSIGN_ALL')
+
+    if not (meeting.status == 'running' or (meeting.status == 'finished' and is_admin)):
         return jsonify(success=False, message="Voting is not active for this meeting."), 403
 
     # 1. Determine voter identity
@@ -627,6 +630,18 @@ def vote_for_award():
             your_vote_id = contact_id
 
         db.session.commit()
+
+        if meeting.status == 'finished' and is_admin:
+            if award_category == 'speaker':
+                meeting.best_speaker_id = your_vote_id
+            elif award_category == 'evaluator':
+                meeting.best_evaluator_id = your_vote_id
+            elif award_category == 'table-topic':
+                meeting.best_table_topic_id = your_vote_id
+            elif award_category == 'role-taker':
+                meeting.best_role_taker_id = your_vote_id
+            db.session.commit()
+
         return jsonify(success=True, your_vote_id=your_vote_id, award_category=award_category)
 
     except Exception as e:

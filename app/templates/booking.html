@@ -255,44 +255,65 @@
             <table class="booking-table is-finished-meeting">
                 {{ table_header|safe }}
                 <tbody>
-                    {% set ns = namespace(displayed_awards=[]) %}
-                    {% for role in roles %}
-                    <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
-                        <td class="role-cell">
-                            <div class="role-cell-content">
-                                <i class="fas {{ role.icon }}"></i>
-                                <div class="role-display-text">
-                                    <span>{{ role.role }}</span>
-                                    {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
+                    {% if is_admin_view %}
+                        {% for role in roles %}
+                        <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
+                            <td class="role-cell">
+                                <div class="role-cell-content">
+                                    <i class="fas {{ role.icon }}"></i>
+                                    <div class="role-display-text">
+                                        <span>{{ role.role }}</span>
+                                        {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
+                                    </div>
                                 </div>
-                            </div>
-                        </td>
-                        <td class="status-cell">
-                            {# Empty #} 
-                        </td>
-                        <td class="assign-cell">
-                            <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
-                        </td>
-                        <td class="icon-cell">
-                        {% if is_admin_view  %}
-                            {% if role.owner_id and role.award_category %}
-                                <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
-                                    <i class="fas fa-vote-yea"></i>
-                                </button>
-                            {% endif %}
-                        {% else %}
-                            <div class="role-cell-actions">
-                                {% if role.award_type and role.role_key not in ns.displayed_awards %}
-                                <span class="icon-btn icon-btn-voted" title="{{ role.award_type }} Winner">
-                                    <i class="fas fa-award"></i>
-                                </span>
-                                {% set ns.displayed_awards = ns.displayed_awards + [role.role_key] %}
+                            </td>
+                            <td class="status-cell">
+                                {# Empty #} 
+                            </td>
+                            <td class="assign-cell">
+                                <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
+                            </td>
+                            <td class="icon-cell">
+                                {% if role.owner_id and role.award_category %}
+                                    <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
+                                        <i class="fas fa-vote-yea"></i>
+                                    </button>
                                 {% endif %}
-                            </div>
-                        {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        {% set ns = namespace(displayed_awards=[]) %}
+                        {% for role in roles %}
+                            {% if role.award_type and role.award_type not in ns.displayed_awards %}
+                            <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
+                                <td class="role-cell">
+                                    <div class="role-cell-content">
+                                        <i class="fas {{ role.icon }}"></i>
+                                        <div class="role-display-text">
+                                            <span>{{ role.role }}</span>
+                                            {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="status-cell">
+                                    <span class="winner-label">{{ role.award_type|replace('-', ' ')|title }} Winner</span>
+                                </td>
+                                <td class="assign-cell">
+                                    <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
+                                </td>
+                                <td class="icon-cell">
+                                    <div class="role-cell-actions">
+                                        <span class="icon-btn icon-btn-voted" title="{{ role.award_type }} Winner">
+                                            <i class="fas fa-award"></i>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% set ns.displayed_awards = ns.displayed_awards + [role.award_type] %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endif %}
                 </tbody>
             </table>
         {% endif %}

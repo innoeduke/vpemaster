@@ -59,8 +59,10 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  const isFinishedMeeting = document.querySelector('.is-finished-meeting') !== null;
+
   // For finished meetings in admin view, hide vote buttons for roles in categories that already have a winner
-  if (isAdminView) {
+  if (isAdminView && !isFinishedMeeting) {
     hideVotedCategoryButtons();
   }
 

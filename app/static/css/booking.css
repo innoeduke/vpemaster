@@ -530,3 +530,8 @@ h1 {
     box-shadow: none;
     border-radius: 0;
 }
+
+.winner-label {
+    font-weight: bold;
+    color: #28a745;
+}

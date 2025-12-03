@@ -474,6 +474,10 @@
         padding-left: 20px;
         padding-right: 20px;
     }
+
+    .booking-table .status-cell .winner-label {
+        display: none;
+    }
     
     /* --- Contact Book Responsive Fixes --- */
     .action-bar {
