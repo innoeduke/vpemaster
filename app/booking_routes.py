@@ -150,22 +150,6 @@ def _apply_user_filters_and_rules(roles, user_role, current_user_contact_id, sel
     if is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
         return roles
 
-    # Backup Speaker Rule
-    if current_user_contact_id:
-        has_upcoming_backup_speaker = db.session.query(SessionLog.id)\
-            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
-            .join(SessionType, SessionLog.Type_ID == SessionType.id)\
-            .join(Role, SessionType.role_id == Role.id)\
-            .filter(SessionLog.Owner_ID == current_user_contact_id)\
-            .filter(Role.name == current_app.config['ROLES']['BACKUP_SPEAKER']['name'])\
-            .filter(Meeting.Meeting_Date >= datetime.today().date())\
-            .first()
-        if has_upcoming_backup_speaker:
-            roles = [
-                r for r in roles
-                if r['role_key'] != current_app.config['ROLES']['BACKUP_SPEAKER']['name'] or (r['role_key'] == current_app.config['ROLES']['BACKUP_SPEAKER']['name'] and r['owner_id'] == current_user_contact_id)
-            ]
-
     # 3-Week Policy speaker rule
     user = User.query.filter_by(Contact_ID=current_user_contact_id).first()
     if user and user.Current_Path:

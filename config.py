@@ -83,7 +83,6 @@ class Config:
         "PRESENTER":              {"name": "Presenter",              "unique": True,    "award": BEST_SPEAKER,   "icon": "fa-share-alt"},
         "PANELIST":               {"name": "Panelist",               "unique": "admin", "award": None,           "icon": "fa-users"},
         "INDIVIDUAL_EVALUATOR":   {"name": "Individual Evaluator",   "unique": True,    "award": BEST_EVALUATOR, "icon": "fa-pen-square"},
-        "BACKUP_SPEAKER":         {"name": "Backup Speaker",         "unique": True,    "award": None,           "icon": "fa-user-secret"},
         "TOPICS_SPEAKER":         {"name": "Topics Speaker",         "unique": "admin", "award": BEST_TT,        "icon": "fa-comment"},
         "TOASTMASTER":            {"name": "Toastmaster",            "unique": False,   "award": BEST_ROLETAKER, "icon": "fa-microphone"},
         "GENERAL_EVALUATOR":      {"name": "General Evaluator",      "unique": False,   "award": BEST_ROLETAKER, "icon": "fa-search"},
