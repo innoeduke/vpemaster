@@ -380,13 +380,14 @@ def update_speech_log(log_id):
             updated_project = Project.query.get(log.Project_ID)
             if updated_project:
                 project_name = updated_project.Project_Name
-            # Use the helper function to get project code
+        # Use the helper function to get project code
             if log.owner and log.owner.user and log.owner.user.Current_Path:
-                pathway = db.session.query(Pathway).filter_by(name=log.owner.user.Current_Path).first()
-                if pathway:
-                    pathway_abbr = pathway.abbr
+                pathway_obj = db.session.query(Pathway).filter_by(name=log.owner.user.Current_Path).first()
+                if pathway_obj:
+                    pathway_abbr = pathway_obj.abbr
                     project_code = project_id_to_code(
                         log.Project_ID, pathway_abbr)
+                    pathway = pathway_obj.name
 
         return jsonify(success=True,
                        session_title=log.Session_Title,
