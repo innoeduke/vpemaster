@@ -292,19 +292,18 @@ def agenda():
         elif project and owner and owner.user and owner.user.Current_Path:  # Else if pathway...
             pathway_suffix = pathway_mapping.get(owner.user.Current_Path)
             if pathway_suffix:
-                pathway = db.session.query(Pathway).filter_by(
-                    abbr=pathway_suffix).first()
                 if pathway:
-                    pathway_project = db.session.query(PathwayProject).filter_by(
-                        path_id=pathway.id, project_id=project.id).first()
-                    if pathway_project:
-                        project_code_str = f"{pathway_suffix}{pathway_project.code}"
-                        pathway_code_for_dict = pathway_suffix
-                        try:
-                            level_for_dict = int(
-                                pathway_project.code.split('.')[0])
-                        except (ValueError, IndexError):
-                            level_for_dict = None
+                    if pathway and project:
+                        pathway_project = db.session.query(PathwayProject).filter_by(
+                            path_id=pathway.id, project_id=project.id).first()
+                        if pathway_project:
+                            project_code_str = f"{pathway_suffix}{pathway_project.code}"
+                            pathway_code_for_dict = pathway_suffix
+                            try:
+                                level_for_dict = int(
+                                    pathway_project.code.split('.')[0])
+                            except (ValueError, IndexError):
+                                level_for_dict = None
 
         # --- Award Logic ---
         award_type = None
@@ -476,7 +475,7 @@ A single endpoint to fetch all data needed for the agenda modals.
 
     projects_data = [
         {
-            "ID": p.id, "Project_Name": p.Project_Name,
+            "id": p.id, "Project_Name": p.Project_Name,
             "path_codes": project_codes_lookup.get(p.id, {}),
             "Purpose": p.Purpose, "Duration_Min": p.Duration_Min, "Duration_Max": p.Duration_Max
         } for p in projects

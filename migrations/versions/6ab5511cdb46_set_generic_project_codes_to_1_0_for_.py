@@ -29,7 +29,7 @@ def upgrade():
     # Update each column for project ID 60
     for column_name in code_columns:
         connection.execute(
-            sa.text(f"UPDATE Projects SET {column_name} = '1.0' WHERE ID = 60")
+            sa.text(f"UPDATE Projects SET {column_name} = '1.0' WHERE id = 60")
         )
 
 
@@ -47,5 +47,5 @@ def downgrade():
     # Set each column back to NULL for project ID 60
     for column_name in code_columns:
         connection.execute(
-            sa.text(f"UPDATE Projects SET {column_name} = NULL WHERE ID = 60")
+            sa.text(f"UPDATE Projects SET {column_name} = NULL WHERE id = 60")
         )

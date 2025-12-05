@@ -64,6 +64,10 @@ def show_speech_logs():
 
     all_logs = base_query.order_by(SessionLog.Meeting_Number.desc()).all()
 
+    all_presentations = Presentation.query.order_by(
+        Presentation.level, Presentation.code).all()
+    all_presentations_dict = {p.id: p for p in all_presentations}
+
     grouped_logs = {}
     processed_roles = set()
 
@@ -74,12 +78,14 @@ def show_speech_logs():
             continue
         role_name = log.session_type.role.name
 
+        is_prepared_speech = log.project and log.project.Format == 'Prepared Speech'
+
         if log.session_type.Title == 'Presentation':
             log_type = 'presentation'
-            presentation = Presentation.query.get(log.Project_ID)
+            presentation = all_presentations_dict.get(log.Project_ID)
             if presentation:
                 display_level = str(presentation.level)
-        elif log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != 60:
+        elif (log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != 60) or is_prepared_speech:
             log_type = 'speech'
             path = None
             path_abbr = None
@@ -190,8 +196,6 @@ def show_speech_logs():
         for p in projects
     ]
 
-    all_presentations = Presentation.query.order_by(
-        Presentation.level, Presentation.code).all()
     presentations_data = [
         {"id": p.id, "title": p.title, "level": p.level,
             "code": p.code, "series": p.series}
@@ -222,8 +226,7 @@ def show_speech_logs():
         presentations=presentations_data,  # Pass presentation data for JS
         presentation_series=presentation_series,  # Pass series data for JS
         series_initials=SERIES_INITIALS,  # Pass initials map for template
-        get_presentation_by_id=lambda pid: next(
-            (p for p in all_presentations if p.id == pid), None),
+        get_presentation_by_id=lambda pid: all_presentations_dict.get(pid),
         today_date=today_date,
         selected_filters={
             'meeting_number': selected_meeting,
@@ -314,6 +317,22 @@ def update_speech_log(log_id):
     session_type_title = data.get('session_type_title')
     media_url = data.get('media_url') or None
 
+    # Pre-fetch records to avoid autoflush-related deadlocks.
+    # We query for project and presentation *before* modifying the log session.
+    project_id = data.get('project_id')
+    updated_project = None
+    presentation = None
+
+    if project_id and project_id not in [None, "", "null"]:
+        if session_type_title == 'Presentation':
+            try:
+                presentation = Presentation.query.get(int(project_id))
+            except (ValueError, TypeError):
+                pass # Gracefully handle non-integer IDs
+        else:
+            updated_project = Project.query.get(project_id)
+
+
     if 'session_title' in data:
         log.Session_Title = data['session_title']
 
@@ -328,14 +347,8 @@ def update_speech_log(log_id):
         db.session.delete(log.media)
 
     # If it's a presentation and the title is *still* blank, then default to the presentation's name
-    if session_type_title == 'Presentation' and data.get('project_id') and not log.Session_Title:
-        try:
-            presentation_id = int(data['project_id'])
-            presentation = Presentation.query.get(presentation_id)
-            if presentation:
-                log.Session_Title = presentation.title  # Default to presentation title
-        except (ValueError, TypeError):
-            pass  # Keep it blank if lookup fails
+    if presentation and not log.Session_Title:
+        log.Session_Title = presentation.title  # Default to presentation title
 
     if 'pathway' in data and log.owner and log.owner.user:
         user = log.owner.user
@@ -343,7 +356,6 @@ def update_speech_log(log_id):
         db.session.add(user)
 
     if 'project_id' in data:
-        project_id = data.get('project_id')
         if project_id in [None, "", "null"]:
             log.Project_ID = None
         else:
@@ -353,7 +365,6 @@ def update_speech_log(log_id):
             log.Duration_Min = 10
             log.Duration_Max = 15
         elif log.Project_ID:
-            updated_project = Project.query.get(log.Project_ID)
             if updated_project:
                 log.Duration_Min = updated_project.Duration_Min
                 log.Duration_Max = updated_project.Duration_Max

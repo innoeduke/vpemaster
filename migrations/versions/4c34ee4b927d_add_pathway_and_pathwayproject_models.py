@@ -31,7 +31,7 @@ def upgrade():
     sa.Column('project_id', sa.Integer(), nullable=True),
     sa.Column('code', sa.String(length=10), nullable=True),
     sa.ForeignKeyConstraint(['path_id'], ['pathways.id'], ),
-    sa.ForeignKeyConstraint(['project_id'], ['Projects.ID'], ),
+    sa.ForeignKeyConstraint(['project_id'], ['Projects.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###

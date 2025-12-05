@@ -110,6 +110,9 @@ def derive_current_path_level(log, owner_contact):
             # Fetch the project if not readily available
             project = Project.query.get(log.Project_ID)
 
+        if not project:
+            return None
+
         pathway = db.session.query(Pathway).filter_by(
             abbr=pathway_suffix).first()
         if not pathway:
