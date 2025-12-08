@@ -59,41 +59,70 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  const isFinishedMeeting = document.querySelector('.is-finished-meeting') !== null;
-
-  // For finished meetings in admin view, hide vote buttons for roles in categories that already have a winner
-  if (isAdminView && !isFinishedMeeting) {
-    hideVotedCategoryButtons();
-  }
-
   // Accordion functionality
+  const accordionState = JSON.parse(sessionStorage.getItem('accordionState')) || {};
   const accordionHeaders = document.querySelectorAll(".accordion-header");
+
   accordionHeaders.forEach(header => {
+    const accordionItem = header.parentElement;
+    const category = accordionItem.dataset.category;
+    const accordionContent = header.nextElementSibling;
+
+    // Restore state on page load
+    if (category && accordionState[category]) {
+      header.classList.add("active");
+      accordionContent.style.maxHeight = accordionContent.scrollHeight + "px";
+    }
+
     header.addEventListener("click", () => {
-      const accordionItem = header.parentElement;
-      const accordionContent = header.nextElementSibling;
+      const isActive = header.classList.toggle("active");
 
-      // Toggle active class for styling
-      header.classList.toggle("active");
-
-      // Toggle content display
       if (accordionContent.style.maxHeight) {
         accordionContent.style.maxHeight = null;
+        if (category) {
+            delete accordionState[category];
+        }
       } else {
         accordionContent.style.maxHeight = accordionContent.scrollHeight + "px";
+        if (category) {
+            accordionState[category] = true;
+        }
       }
+      sessionStorage.setItem('accordionState', JSON.stringify(accordionState));
     });
   });
 
+  // Set the initial UI state for all voting buttons on page load.
+  const categories = new Set();
+  const allVoteButtons = document.querySelectorAll('button.icon-btn[data-award-category]');
+  
+  allVoteButtons.forEach(btn => {
+      categories.add(btn.dataset.awardCategory);
+  });
+
+  categories.forEach(category => {
+      const votedButton = document.querySelector(`button.icon-btn-voted[data-award-category="${category}"]`);
+      const winnerId = votedButton ? parseInt(votedButton.dataset.contactId, 10) : null;
+      updateVoteButtonsUI(category, winnerId);
+  });
+
+
   // For mobile devices, allow clicking anywhere on the row to vote
   if (window.innerWidth <= 768) {
-    document.querySelectorAll('.is-running-meeting tbody tr').forEach(row => {
-      row.addEventListener('click', function() {
-        // Find the vote button within the row
-        const voteButton = this.querySelector('button.icon-btn[onclick^="handleVoteClick"]');
-        if (voteButton) {
-          // Trigger the vote
-          voteButton.click();
+    document.querySelectorAll('.is-running-meeting').forEach(table => {
+      table.addEventListener('click', function(event) {
+        // Find the clicked row by traversing up from the event target
+        const row = event.target.closest('tr');
+        if (!row) return; // Exit if the click was not inside a row
+
+        // Find the vote button within that row
+        const voteButton = row.querySelector('button.icon-btn[onclick^="handleVoteClick"]');
+        
+        // If there's a vote button and the click didn't originate from the button itself, trigger the action.
+        if (voteButton && !voteButton.contains(event.target)) {
+          // Instead of voteButton.click(), call the handler function directly
+          // to avoid issues with clicking a hidden element.
+          handleVoteClick(voteButton);
         }
       });
     });
@@ -201,55 +230,21 @@ function updateVoteButtonsUI(category, newWinnerId) {
 
   allButtons.forEach((button) => {
     const buttonContactId = parseInt(button.dataset.contactId, 10);
-    const row = button.closest('tr'); // Get the parent row
+    const row = button.closest('tr');
 
-    if (newWinnerId === null) {
-      // A vote was CANCELED. Make all buttons in this category visible and votable.
-      button.style.setProperty("display", "inline-block", "important");
-      button.classList.remove("icon-btn-voted");
-      button.title = "Vote";
-      if (row) row.classList.remove('voted'); // Remove voted class from row
-    } else {
-      // A vote was CAST.
-      if (buttonContactId === newWinnerId) {
-        // This is the new winner. Make it visible and styled as voted.
-        button.style.display = "inline-block";
-        button.classList.add("icon-btn-voted");
-        button.title = `Cancel Vote (${category})`;
-        if (row) row.classList.add('voted'); // Add voted class to row
-      } else {
-        // This is another role in the same category. Hide it.
-        button.style.display = "none";
-        if (row) row.classList.remove('voted'); // Ensure other rows are not styled as voted
-      }
+    // Default state: hide button, remove classes, and reset title
+    button.style.display = 'none';
+    button.classList.remove('icon-btn-voted');
+    if (row) row.classList.remove('voted');
+    button.title = "Vote";
+
+    // If this button belongs to the winner, show it and apply voted styles
+    if (newWinnerId !== null && buttonContactId === newWinnerId) {
+      button.style.display = 'inline-block';
+      button.classList.add('icon-btn-voted');
+      if (row) row.classList.add('voted');
+      button.title = `Cancel Vote (${category})`;
     }
-  });
-}
-
-// New function to hide vote buttons for roles in categories that already have a winner
-function hideVotedCategoryButtons() {
-  // Find all voted buttons (with the icon-btn-voted class)
-  const votedButtons = document.querySelectorAll(
-    "button.icon-btn-voted[data-award-category]"
-  );
-
-  // For each voted button, hide all other buttons in the same award category
-  votedButtons.forEach((votedButton) => {
-    const category = votedButton.dataset.awardCategory;
-    const winnerId = parseInt(votedButton.dataset.contactId, 10);
-
-    // Find all buttons in this award category
-    const allButtonsInCategory = document.querySelectorAll(
-      `button[data-award-category="${category}"]`
-    );
-
-    // Hide all buttons except the winner
-    allButtonsInCategory.forEach((button) => {
-      const buttonContactId = parseInt(button.dataset.contactId, 10);
-      if (buttonContactId !== winnerId) {
-        button.style.display = "none";
-      }
-    });
   });
 }
 

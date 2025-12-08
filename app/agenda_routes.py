@@ -560,56 +560,65 @@ def _get_all_speech_details(logs_data, pathway_mapping):
     Processes logs_data to extract a structured list of speech details.
     """
     speeches = []
-    # Define speech session types that require similar handling
+    speech_session_type_ids = {7, 20, 30, 44}
+    presentation_session_type_id = 43
 
     for log, session_type, contact, project, media in logs_data:
         if not log.Project_ID or not session_type:
             continue
 
-        # Handle Pathway Speech types (Type IDs 7, 20, 30, 44) which all use the same logic
-        if session_type.id in speech_types_with_project and project:
-            user = contact.user if contact else None
-            path_abbr = pathway_mapping.get(
-                user.Current_Path, "") if user else ""
-            project_code = project_id_to_code(
-                log.Project_ID, path_abbr) if path_abbr else None
-            purpose = project.Purpose
-            # For pathway speeches, the project code is just the level.number (e.g., "1.1")
-            pathway = db.session.query(Pathway).filter_by(
-                abbr=path_abbr).first() if path_abbr else None
-            pathway_project = db.session.query(PathwayProject).filter_by(
-                path_id=pathway.id, project_id=project.id).first() if pathway else None
-            pathway_project_code = pathway_project.code if pathway_project else None
-            project_type = _get_project_type(pathway_project_code)
+        details_to_add = None
 
-            project_name = project.Project_Name
-            pathway_name = user.Current_Path if user else ""
-            title = log.Session_Title or project.Project_Name
-            duration = f"[{project.Duration_Min}'-{project.Duration_Max}']"
+        # Handle Pathway Speech types
+        if session_type.id in speech_session_type_ids and project:
+            user = contact.user if contact else None
+
+            if project.id == 60:  # Generic Project
+                pathway_name = "Generic"
+                path_abbr = ""
+                pathway_project_code = "1.0"
+            else:  # Regular Pathway Project
+                pathway_name = user.Current_Path if user else ""
+                path_abbr = pathway_mapping.get(
+                    pathway_name, "") if pathway_name else ""
+                pathway = db.session.query(Pathway).filter_by(
+                    abbr=path_abbr).first() if path_abbr else None
+                pathway_project = db.session.query(PathwayProject).filter_by(
+                    path_id=pathway.id, project_id=project.id).first() if pathway else None
+                pathway_project_code = pathway_project.code if pathway_project else None
 
             details_to_add = {
-                "speech_title": title, "project_name": project_name, "pathway_name": pathway_name, "project_purpose": purpose,
-                "project_code": project_code, "duration": duration, "project_type": project_type
+                "speech_title": log.Session_Title or project.Project_Name,
+                "project_name": project.Project_Name,
+                "pathway_name": pathway_name,
+                "project_purpose": project.Purpose,
+                "project_code": project_id_to_code(project.id, path_abbr),
+                "duration": f"[{project.Duration_Min}'-{project.Duration_Max}']",
+                "project_type": _get_project_type(pathway_project_code)
             }
-            speeches.append(details_to_add)
 
-        # Handle Presentation (Type ID 43) which has special handling
-        elif session_type.id == 43:
+        # Handle Presentation type
+        elif session_type.id == presentation_session_type_id:
             presentation = Presentation.query.get(log.Project_ID)
-            SERIES_INITIALS = current_app.config['SERIES_INITIALS']
             if not presentation:
                 continue
+
+            SERIES_INITIALS = current_app.config['SERIES_INITIALS']
             series_initial = SERIES_INITIALS.get(presentation.series, "")
             presentation_code = project_id_to_code(
                 log.Project_ID, series_initial)
+
             details_to_add = {
                 "speech_title": log.Session_Title or presentation.title,
                 "project_name": presentation.title,
                 "pathway_name": presentation.series,
                 "project_purpose": f"Level {presentation.level} - {presentation.title}",
                 "project_code": presentation_code,
-                "duration": "[10'-15']", "project_type": _get_project_type(presentation_code)
+                "duration": "[10'-15']",
+                "project_type": _get_project_type(presentation_code)
             }
+
+        if details_to_add:
             speeches.append(details_to_add)
 
     return speeches

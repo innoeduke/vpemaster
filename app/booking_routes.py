@@ -518,7 +518,16 @@ def book_or_assign_role():
             return jsonify(success=False, message="No one is on the waitlist to approve."), 404
 
         owner_id_to_set = waitlist_entry.contact_id
-        db.session.delete(waitlist_entry)
+
+        # When approving from waitlist, remove user from all waitlists for this logical role
+        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+        if role_is_distinct:
+            sessions_to_clear_waitlist = _get_all_session_ids_for_role(
+                log, logical_role_key)
+            Waitlist.query.filter(Waitlist.session_log_id.in_(
+                sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
+        else:
+            db.session.delete(waitlist_entry)
 
     else:
         return jsonify(success=False, message="Invalid action or permissions."), 403

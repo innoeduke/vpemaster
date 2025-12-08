@@ -100,223 +100,197 @@
     </div>
 
     {% if selected_meeting %}
-        {# Define a reusable header for all tables #}
-        {% set table_header %}
-        <thead>
-            <tr>
-                <th class="role-header">Role</th>
-                <th class="status-header"></th>
-                {% if is_admin_view %}
-                    <th class="assign-header">Assign</th>
-                    <th class="action-header">Action</th>
-                {% else %}
-                    <th class="assign-header">Name</th>
-                    <th class="action-header"></th>
-                {% endif %}
-            </tr>
-        </thead>
-        {% endset %}
+        {# ============================================= #}
+        {# ================ MACRO DEFINITIONS ================ #}
+        {# ============================================= #}
 
-        {% if selected_meeting.status == 'not started' %}
-            {# ============================================= #}
-            {# ======== 1. MEETING NOT STARTED VIEW ======== #}
-            {# ============================================= #}
-            {% if user_role == 'Guest' %}
-                <p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Voting for Meeting #{{ selected_meeting_number }} will open soon.</p>
-                <div style="text-align: center; margin-top: 20px;">
-                    <img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon" style="max-width: 100%; height: auto;">
+        {# Macro to render a single role row in the table #}
+        {% macro render_role_row(role, status, is_admin_view, contacts, current_user_contact_id, selected_meeting_number) %}
+        <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}" class="{% if role.award_type %}voted{% endif %}">
+            <td class="role-cell">
+                <div class="role-cell-content">
+                    <i class="fas {{ role.icon }}"></i>
+                    <div class="role-display-text">
+                        <span>{{ role.role }}</span>
+                        {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
+                    </div>
                 </div>
-            {% else %}
-            <table class="booking-table is-not-started-meeting">
-                {{ table_header|safe }}
-                <tbody>
-                    {% for role in roles %}
-                    <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
-                        <td class="role-cell">
-                            <div class="role-cell-content">
-                                <i class="fas {{ role.icon }}"></i>
-                                <div class="role-display-text">
-                                    <span>{{ role.role }}</span>
-                                    {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
-                                </div>
-                            </div>
-                        </td>
-                        <td class="status-cell">
-                            {% if role.waitlist %}
-                            <div class="waitlist-info">
-                                <span style="font-size:0.5em;">Waitlist:</span>
-                                <ul class="waitlist-users">
-                                    {% for user in role.waitlist %}
-                                    <li><i class="fas fa-user"></i> {{ user.name }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            {% endif %}
-                        </td>
-                        <td class="assign-cell">
-                            {% if is_admin_view %}
-                            <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
-                                <option value="0">--- Select ---</option>
-                                {% for contact in contacts %}
+            </td>
+
+            {# Status cell: waitlist for 'not started', winner label for 'finished' #}
+            <td class="status-cell">
+                {% if status == 'not started' and role.waitlist %}
+                    <div class="waitlist-info">
+                        <span style="font-size:0.5em;">Waitlist:</span>
+                        <ul class="waitlist-users">
+                            {% for user in role.waitlist %}
+                                <li><i class="fas fa-user"></i> {{ user.name }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% elif status == 'finished' and not is_admin_view and role.award_type %}
+                    <span class="winner-label">{{ role.award_type|replace('-', ' ')|title }} Winner</span>
+                {% endif %}
+            </td>
+
+            {# Assign/Action cell: content varies by status and view #}
+            <td class="assign-cell">
+                {% if status == 'not started' %}
+                    {% if is_admin_view %}
+                        <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
+                            <option value="0">--- Select ---</option>
+                            {% for contact in contacts %}
                                 <option value="{{ contact.id }}" {% if role.owner_id == contact.id %}selected{% endif %}>{{ contact.Name }}</option>
-                                {% endfor %}
-                            </select>
-                            {% elif user_role != 'Guest' %}
-                                {% if role.owner_id %}
-                                    {% if role.owner_id == current_user_contact_id %}
-                                        <button class="btn btn-cancel" onclick="bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role_key }}')">Cancel</button>
-                                    {% else %}
-                                        {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
-                                        {% if current_user_contact_id in waitlist_ids %}
-                                            <button class="btn btn-leave-waitlist" onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
-                                        {% else %}
-                                            <button class="btn btn-join-waitlist" onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
-                                        {% endif %}
-                                    {% endif %}
+                            {% endfor %}
+                        </select>
+                    {% else %}
+                        {% if role.owner_id %}
+                            {% if role.owner_id == current_user_contact_id %}
+                                <button class="btn btn-cancel" onclick="bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role_key }}')">Cancel</button>
+                            {% else %}
+                                {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
+                                {% if current_user_contact_id in waitlist_ids %}
+                                    <button class="btn btn-leave-waitlist" onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
                                 {% else %}
-                                    {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
-                                    {% if current_user_contact_id in waitlist_ids %}
-                                        <button class="btn btn-leave-waitlist" onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
-                                    {% else %}
-                                        <button class="btn btn-book" onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role_key }}')">Book</button>
-                                    {% endif %}
+                                    <button class="btn btn-join-waitlist" onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
                                 {% endif %}
                             {% endif %}
-                        </td>
-                        {% if is_admin_view %}
-                        <td class="icon-cell">
-                            
-                                <div class="button-group">
-                                    <button class="icon-btn" title="Unassign Role" onclick="assignRole('{{ role.session_id }}', '0')"><i class="fas fa-undo"></i></button>
-                                    {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="Approve top of waitlist" onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')"><i class="fas fa-user-check"></i></button>{% endif %}
-                                </div>
-                        </td>
+                        {% else %}
+                            {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
+                            {% if current_user_contact_id in waitlist_ids %}
+                                <button class="btn btn-leave-waitlist" onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
+                            {% else %}
+                                <button class="btn btn-book" onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role_key }}')">Book</button>
+                            {% endif %}
                         {% endif %}
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% endif %}
+                    {% endif %}
+                {% else %} {# 'running' or 'finished' status #}
+                    <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
+                {% endif %}
+            </td>
 
-        {% elif selected_meeting.status == 'running' %}
-            {# ======================================== #}
-            {# ======== 2. MEETING RUNNING VIEW ======== #}
-            {# ======================================== #}
-            <div class="award-accordion">
-            {% for category, items in roles|groupby('award_category') %}
-                {% if category and category != 'none' %}
-                    <div class="accordion-item">
+            {# Action Icons cell: content varies by status and view #}
+            {% if not (status == 'not started' and not is_admin_view) %}
+            <td class="icon-cell">
+                {% if status == 'not started' and is_admin_view %}
+                    <div class="button-group">
+                        <button class="icon-btn" title="Unassign Role" onclick="assignRole('{{ role.session_id }}', '0')"><i class="fas fa-undo"></i></button>
+                        {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="Approve top of waitlist" onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')"><i class="fas fa-user-check"></i></button>{% endif %}
+                    </div>
+                {% elif status == 'running' %}
+                    {% if role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
+                        <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
+                            <i class="fas fa-vote-yea"></i>
+                        </button>
+                    {% endif %}
+                {% elif status == 'finished' %}
+                    {% if is_admin_view %}
+                        {% if role.owner_id and role.award_category %}
+                            <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
+                                <i class="fas fa-vote-yea"></i>
+                            </button>
+                        {% endif %}
+                    {% elif role.award_type %}
+                         <span class="icon-btn icon-btn-voted" title="{{ role.award_type }} Winner">
+                            <i class="fas fa-award"></i>
+                        </span>
+                    {% endif %}
+                {% endif %}
+            </td>
+            {% endif %}
+        </tr>
+        {% endmacro %}
+
+        {# Macro to render role tables, with or without accordion #}
+        {% macro render_role_tables(roles, status, is_admin_view, contacts, current_user_contact_id, selected_meeting_number) %}
+            {% set table_header %}
+            <thead>
+                <tr>
+                    <th class="role-header">Role</th>
+                    <th class="status-header"></th>
+                    <th class="assign-header">{% if is_admin_view and status == 'not started' %}Assign{% else %}Name{% endif %}</th>
+                    {% if not (status == 'not started' and not is_admin_view) %}<th class="action-header">Action</th>{% endif %}
+                </tr>
+            </thead>
+            {% endset %}
+
+            {% set use_accordion = (status == 'running') or (status == 'finished' and is_admin_view) or (status == 'not started') %}
+
+            {% if use_accordion %}
+                <div class="award-accordion">
+                {% for category, items in roles|groupby('award_category') %}
+                    {% if category and category != 'none' %}
+                    <div class="accordion-item" data-category="{{ category }}">
                         <button class="accordion-header">
-                            <span>{{ category|replace('-', ' ')|title }} Award</span>
+                            <span>{{ category|replace('-', ' ')|title }} Roles</span>
                             <i class="fas fa-chevron-down"></i>
                         </button>
                         <div class="accordion-content">
-                            <table class="booking-table is-running-meeting">
+                            <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
                                 {{ table_header|safe }}
                                 <tbody>
                                 {% for role in items %}
-                                    <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
-                                        <td class="role-cell">
-                                            <div class="role-cell-content">
-                                                <i class="fas {{ role.icon }}"></i>
-                                                <div class="role-display-text">
-                                                    <span>{{ role.role }}</span>
-                                                    {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="status-cell">
-                                            {# Empty #}
-                                        </td>
-                                        <td class="assign-cell">
-                                            <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
-                                        </td>
-                                        <td class="icon-cell">
-                                            {% if role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
-                                                <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
-                                                    <i class="fas fa-vote-yea"></i>
-                                                </button>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
+                                    {{ render_role_row(role, status, is_admin_view, contacts, current_user_contact_id, selected_meeting_number) }}
                                 {% endfor %}
                                 </tbody>
                             </table>
                         </div>
                     </div>
-                {% endif %}
-            {% endfor %}
-            </div>
-
-        {% elif selected_meeting.status == 'finished' %}
-            {# ========================================= #}
-            {# ======== 3. MEETING FINISHED VIEW ======== #}
-            {# ========================================= #}
-            <table class="booking-table is-finished-meeting">
-                {{ table_header|safe }}
-                <tbody>
-                    {% if is_admin_view %}
-                        {% for role in roles %}
-                        <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
-                            <td class="role-cell">
-                                <div class="role-cell-content">
-                                    <i class="fas {{ role.icon }}"></i>
-                                    <div class="role-display-text">
-                                        <span>{{ role.role }}</span>
-                                        {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="status-cell">
-                                {# Empty #} 
-                            </td>
-                            <td class="assign-cell">
-                                <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
-                            </td>
-                            <td class="icon-cell">
-                                {% if role.owner_id and role.award_category %}
-                                    <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
-                                        <i class="fas fa-vote-yea"></i>
-                                    </button>
-                                {% endif %}
-                            </td>
+                    {% endif %}
+                {% endfor %}
+                </div>
+        
+                <h4 class="booking-section-header" style="margin-top: 20px;">General Roles</h4>
+                <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
+                    {{ table_header|safe }}
+                    <tbody>
+                    {% for role in roles %}
+                        {% if not role.award_category or role.award_category == 'none' %}
+                            {{ render_role_row(role, status, is_admin_view, contacts, current_user_contact_id, selected_meeting_number) }}
+                        {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %} {# e.g., finished member view #}
+                <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
+                    {% set finished_header %}
+                    <thead>
+                        <tr>
+                            <th class="role-header">Role</th>
+                            <th class="status-header">Status</th>
+                            <th class="assign-header">Name</th>
+                            <th class="action-header"></th>
                         </tr>
-                        {% endfor %}
-                    {% else %}
+                    </thead>
+                    {% endset %}
+                    {{ finished_header|safe }}
+                    <tbody>
                         {% set ns = namespace(displayed_awards=[]) %}
                         {% for role in roles %}
                             {% if role.award_type and role.award_type not in ns.displayed_awards %}
-                            <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
-                                <td class="role-cell">
-                                    <div class="role-cell-content">
-                                        <i class="fas {{ role.icon }}"></i>
-                                        <div class="role-display-text">
-                                            <span>{{ role.role }}</span>
-                                            {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="status-cell">
-                                    <span class="winner-label">{{ role.award_type|replace('-', ' ')|title }} Winner</span>
-                                </td>
-                                <td class="assign-cell">
-                                    <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
-                                </td>
-                                <td class="icon-cell">
-                                    <div class="role-cell-actions">
-                                        <span class="icon-btn icon-btn-voted" title="{{ role.award_type }} Winner">
-                                            <i class="fas fa-award"></i>
-                                        </span>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% set ns.displayed_awards = ns.displayed_awards + [role.award_type] %}
+                                {{ render_role_row(role, status, is_admin_view, contacts, current_user_contact_id, selected_meeting_number) }}
+                                {% set ns.displayed_awards = ns.displayed_awards + [role.award_type] %}
                             {% endif %}
                         {% endfor %}
-                    {% endif %}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            {% endif %}
+        {% endmacro %}
+
+
+        {# ============================================= #}
+        {# =============== MAIN VIEW LOGIC =============== #}
+        {# ============================================= #}
+
+        {% if selected_meeting.status == 'not started' and user_role == 'Guest' %}
+            <p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Voting for Meeting #{{ selected_meeting_number }} will open soon.</p>
+            <div style="text-align: center; margin-top: 20px;">
+                <img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon" style="max-width: 100%; height: auto;">
+            </div>
+        {% else %}
+            {{ render_role_tables(roles, selected_meeting.status, is_admin_view, contacts, current_user_contact_id, selected_meeting_number) }}
         {% endif %}
+
     {% else %}
         <p>Please select a meeting to view the booking table.</p>
     {% endif %}

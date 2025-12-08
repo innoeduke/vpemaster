@@ -22,7 +22,15 @@ def project_id_to_code(project_id, path_abbr):
     Returns:
         str: The project code with format <path_abbr><n.n(.n)> (e.g., "PM1.1", "EH3.2") or "" if not found
     """
-    if not project_id or not path_abbr:
+    if not project_id:
+        return ""
+
+    # Handle generic project
+    if project_id == 60:
+        return "TM1.0"
+
+    # For other projects, path_abbr is required
+    if not path_abbr:
         return ""
 
     # Special handling for presentations
