@@ -292,6 +292,8 @@ def agenda():
         elif project and owner and owner.user and owner.user.Current_Path:  # Else if pathway...
             pathway_suffix = pathway_mapping.get(owner.user.Current_Path)
             if pathway_suffix:
+                pathway = db.session.query(Pathway).filter_by(
+                    abbr=pathway_suffix).first()
                 if pathway:
                     if pathway and project:
                         pathway_project = db.session.query(PathwayProject).filter_by(
