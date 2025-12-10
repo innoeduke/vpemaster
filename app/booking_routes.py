@@ -239,11 +239,8 @@ def _get_meetings(user_role):
     all_meetings_tuples = get_meetings_by_status(
         limit_past=5, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
 
-    soonest_upcoming_meeting = db.session.query(Meeting.Meeting_Number)\
-        .filter(Meeting.status == 'not started')\
-        .order_by(Meeting.Meeting_Number.asc())\
-        .first()
-    default_meeting_num = soonest_upcoming_meeting[0] if soonest_upcoming_meeting else None
+    from .utils import get_default_meeting_number
+    default_meeting_num = get_default_meeting_number()
 
     return all_meetings_tuples, default_meeting_num
 

@@ -327,3 +327,27 @@ def get_meetings_by_status(limit_past=8, columns=None):
         row[0] for row in db.session.query(meetings_with_logs_subquery).all()]]
 
     return all_meetings
+
+
+def get_default_meeting_number():
+    """
+    Determines the default meeting number based on priority:
+    1. 'running' meeting
+    2. Soonest 'not started' meeting
+    Returns None if neither is found.
+    """
+    # 1. Check for running meeting
+    running_meeting = Meeting.query.filter_by(status='running').first()
+    if running_meeting:
+        return running_meeting.Meeting_Number
+
+    # 2. Check for next not-started meeting
+    upcoming_meeting = Meeting.query \
+        .filter(Meeting.status == 'not started') \
+        .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc()) \
+        .first()
+    
+    if upcoming_meeting:
+        return upcoming_meeting.Meeting_Number
+    
+    return None

@@ -196,14 +196,12 @@ def agenda():
             # Handle invalid meeting number string if necessary
             selected_meeting_num = None  # Or redirect, flash error
     else:
-        # Find the most recent upcoming meeting number
-        upcoming_meeting = Meeting.query \
-            .filter(Meeting.status == 'not started') \
-            .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc())\
-            .first()
+        # Priority: Running -> Not Started
+        from .utils import get_default_meeting_number
+        selected_meeting_num = get_default_meeting_number()
 
-        if upcoming_meeting:
-            selected_meeting_num = upcoming_meeting.Meeting_Number
+        if selected_meeting_num:
+             pass # Found a default
         elif meeting_numbers:
             # Fallback to the most recent existing meeting (highest meeting number)
             selected_meeting_num = meeting_numbers[0]
