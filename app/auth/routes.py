@@ -103,7 +103,7 @@ def profile():
                 elif not any(c.isdigit() for c in new_password):
                     flash('Password must contain at least one number.', 'error')
                 elif new_password == confirm_password:
-                    user.Pass_Hash = generate_password_hash(new_password)
+                    user.Pass_Hash = generate_password_hash(new_password, method='pbkdf2:sha256')
                     db.session.commit()
                     flash('Your password has been updated successfully!', 'success')
                     return redirect(url_for('auth_bp.profile'))

@@ -18,14 +18,14 @@ def _create_or_update_user(user=None, **kwargs):
         # Creating a new user
         user = User(Date_Created=date.today())
         password = kwargs.get('password') or 'leadership'
-        user.Pass_Hash = generate_password_hash(password)
+        user.Pass_Hash = generate_password_hash(password, method='pbkdf2:sha256')
         user.Status = 'active'
         db.session.add(user)
     else:
         # Updating an existing user
         password = kwargs.get('password')
         if password:
-            user.Pass_Hash = generate_password_hash(password)
+            user.Pass_Hash = generate_password_hash(password, method='pbkdf2:sha256')
         user.Status = kwargs.get('status')
 
     user.Username = kwargs.get('username')

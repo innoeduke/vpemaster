@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - FLASK_APP=run.py
+      - FLASK_ENV=production
+      - DATABASE_URL=mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db/${MYSQL_DATABASE}
+      # It's recommended to generate a strong, random secret key
+      - SECRET_KEY=${SECRET_KEY}
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.0
+    cap_add:
+      - SYS_NICE # Recommended for performance
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql
+    ports:
+      # Use a different host port if you have MySQL running locally
+      - "3306:3306"
+
+volumes:
+  db_data:

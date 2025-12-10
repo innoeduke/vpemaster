@@ -192,24 +192,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  const urlParams = new URLSearchParams(window.location.search);
-  if (urlParams.has("new_contact_id") && urlParams.has("new_contact_name")) {
-    const contactId = urlParams.get("new_contact_id");
-    const contactName = decodeURIComponent(urlParams.get("new_contact_name"));
-    const contactType = decodeURIComponent(
-      urlParams.get("new_contact_type") || ""
-    );
 
-    const newContact = {id: contactId, Name: contactName, Type: contactType };
-    contacts.push(newContact);
-    selectContact(newContact);
-
-    const url = new URL(window.location);
-    url.searchParams.delete("new_contact_id");
-    url.searchParams.delete("new_contact_name");
-    url.searchParams.delete("new_contact_type");
-    window.history.replaceState({}, document.title, url.toString());
-  }
   
   if (typeof setupTableSorting === "function") {
     setupTableSorting("rosterTable");
@@ -220,6 +203,25 @@ document.addEventListener("DOMContentLoaded", function () {
   fetchContacts().then(() => {
     if (tableBody) {
         resetRosterForm();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has("new_contact_id") && urlParams.has("new_contact_name")) {
+            const contactId = urlParams.get("new_contact_id");
+            const contactName = decodeURIComponent(urlParams.get("new_contact_name"));
+            const contactType = decodeURIComponent(
+            urlParams.get("new_contact_type") || ""
+            );
+
+            const newContact = {id: contactId, Name: contactName, Type: contactType };
+            contacts.push(newContact);
+            selectContact(newContact);
+
+            const url = new URL(window.location);
+            url.searchParams.delete("new_contact_id");
+            url.searchParams.delete("new_contact_name");
+            url.searchParams.delete("new_contact_type");
+            window.history.replaceState({}, document.title, url.toString());
+        }
 
         tableBody.addEventListener("click", function (e) {
             const editButton = e.target.closest(".edit-entry");
