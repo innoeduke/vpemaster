@@ -13,6 +13,7 @@ import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
 from .utils import derive_current_path_level, load_setting, derive_credentials, project_id_to_code, get_meetings_by_status
+from .tally_sync import sync_participants_to_tally
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -1037,13 +1038,11 @@ def export_agenda(meeting_number):
     )
 
 
-def _build_sheet4_participants(ws, logs_data):
-    """Populates Sheet 4 (Participants) of the workbook."""
-    ws.title = "Participants"
-    ws.append(['Group', 'Name'])
-    for cell in ws[1]:
-        cell.font = Font(bold=True)
-
+def _get_participants_dict(logs_data):
+    """
+    Extracts participant data for Sheet 4 and Tally Sync.
+    Returns a dictionary of group_name -> list of strings (names or "Role: Name").
+    """
     # sets to track unique participants per group
     prepared_speakers = set()
     evaluators = set()
@@ -1053,67 +1052,108 @@ def _build_sheet4_participants(ws, logs_data):
 
     # IDs for classification
     # Prepared Speakers: 20 (Panelist), 30 (Pathway Speech), 43 (Presentation), 44 (Social Speech)
-    speaker_ids = {20, 30, 43, 44}
-    # Evaluators: 31 (Individual Evaluator)
-    evaluator_ids = {31}
-    # TT Speakers: 36 (Topics Speaker)
-    tt_speaker_ids = {36}
+    # AND Project must be valid (not None) for it to be a speaker role usually,
+    # but the sheet 4 logic specifically checks for these types.
+    # Note: Logic copied from original _build_sheet4_participants
+    speaker_types = {20, 30, 43, 44}
     
-    # Exclude certain types from Role Takers (Section Headers, etc.)
-    # We rely on checking if it has an owner and isn't in above groups
-    # Also exclude generic placeholders if necessary, but Owner_ID check handles most.
+    # Individual Evaluators: 31
+    evaluator_type = 31
+
+    # Table Topics: 7 (Table Topics Speaker) - typically handled specifically if needed
+    tt_type = 36 # Changed from 7 to 36 to match original logic (Topics Speaker)
 
     for log, session_type, contact, project, media in logs_data:
-        if not contact:
+        # Check if we have a valid contact (the person performing the role)
+        if not contact or not contact.Name:
             continue
             
-        name = contact.Name
-        if contact.Type == 'Guest':
-            name += " (Guest)"
+        name = contact.Name.strip()
+        if not name:
+            continue
             
-        tid = session_type.id if session_type else 0
+        if not session_type:
+            continue
+
+        # Add (Guest) tag if applicable
+        display_name = name
+        if contact.Type == 'Guest':
+            display_name = f"{name} (Guest)"
+
+        st_id = session_type.id
         
-        if tid in speaker_ids:
-            prepared_speakers.add(name)
-        elif tid in evaluator_ids:
-            evaluators.add(name)
-        elif tid in tt_speaker_ids:
-            tt_speakers.add(name)
-        elif session_type and not session_type.Is_Section and not session_type.Is_Hidden:
+        # 1. Prepared Speakers
+        if st_id in speaker_types:
+             prepared_speakers.add(display_name)
+             
+        # 2. Individual Evaluators
+        elif st_id == evaluator_type:
+             evaluators.add(display_name)
+             
+        # 3. Table Topics
+        elif st_id == tt_type:
+             tt_speakers.add(display_name)
+             
+        # 4. Role Takers (Everything else that is a role)
+        # Excluding Section headers (Is_Section is True) or Hidden items if desired?
+        # The original code logic:
+        # if st_id not in speaker_types and st_id != evaluator_type and st_id != tt_type:
+        #    ...
+        elif not session_type.Is_Section and not session_type.Is_Hidden:
             # Assume it's a role taker if it's not one of the above special categories
-            # and is a visible role. Use the actual role title from Role model if available to support deduplication.
+            # and is a visible role.
+            # Original code also excluded officer roles: if session_type.role and session_type.role.type == 'officer': continue
+            # Re-adding that logic here.
             if session_type.role and session_type.role.type == 'officer':
                 continue
 
+            # Use Session Title or Session Type Title as the Role Name?
+            # Original code used: role_name = session_type.Title or session_type.role.name
             role_name = session_type.Title
             if session_type.role:
                 role_name = session_type.role.name
             
-            role_takers.add((role_name, name))
+            if role_name:
+                role_takers.add((role_name.strip(), display_name))
 
-    # Helper to write a group
-    def write_group(group_name, names_set):
-        if not names_set:
-            return
-        sorted_names = sorted(list(names_set))
-        for name in sorted_names:
-            ws.append([group_name, name])
+    return {
+        "Prepared Speakers": sorted(list(prepared_speakers)),
+        "Individual Evaluators": sorted(list(evaluators)),
+        "Table Topics Speakers": sorted(list(tt_speakers)),
+        "Role Takers": sorted(list(role_takers), key=lambda x: (x[0], x[1]))
+    }
 
-    write_group("Prepared Speakers", prepared_speakers)
-    if prepared_speakers: ws.append([])
+
+def write_group(group_name, names_list, ws):
+    if not names_list:
+        return
+    for name in names_list:
+        ws.append([group_name, name])
+
+
+def _build_sheet4_participants(ws, logs_data):
+    """Populates Sheet 4 (Participants) of the workbook."""
+    ws.title = "Participants"
+    ws.append(['Group', 'Name'])
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    data = _get_participants_dict(logs_data)
     
-    write_group("Individual Evaluators", evaluators)
-    if evaluators: ws.append([])
+    write_group("Prepared Speakers", data["Prepared Speakers"], ws)
+    if data["Prepared Speakers"]: ws.append([])
     
-    # Write Role Takers with their specific role names
-    # Sort by Role Name then Person Name
+    write_group("Individual Evaluators", data["Individual Evaluators"], ws)
+    if data["Individual Evaluators"]: ws.append([])
+    
+    # Write Role Takers
+    role_takers = data["Role Takers"]
     if role_takers:
-        sorted_roles = sorted(list(role_takers), key=lambda x: (x[0], x[1]))
-        for role, name in sorted_roles:
+        for role, name in role_takers:
             ws.append([role, name])
         ws.append([])
         
-    write_group("Table Topics Speakers", tt_speakers)
+    write_group("Table Topics Speakers", data["Table Topics Speakers"], ws)
 
     _auto_fit_worksheet_columns(ws, min_width=15)
 
@@ -1469,4 +1509,16 @@ def update_meeting_status(meeting_number):
         return jsonify(success=True, new_status=new_status)
     except Exception as e:
         db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@agenda_bp.route('/agenda/sync_tally/<int:meeting_number>', methods=['POST'])
+@login_required
+def sync_tally(meeting_number):
+    try:
+        logs_data = _get_export_data(meeting_number)
+        participants_dict = _get_participants_dict(logs_data)
+        sync_participants_to_tally(participants_dict)
+        return jsonify(success=True)
+    except Exception as e:
         return jsonify(success=False, message=str(e)), 500

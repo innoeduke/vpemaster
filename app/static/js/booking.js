@@ -347,3 +347,32 @@ function joinWaitlist(sessionId) {
       }
     });
 }
+
+function syncTally() {
+  if (!confirm("Are you sure you want to sync the roles for this meeting to Tally?")) {
+    return;
+  }
+
+  // Use global selectedMeetingNumber
+  if (!selectedMeetingNumber) {
+    alert("No meeting selected.");
+    return;
+  }
+
+  fetch(`/agenda/sync_tally/${selectedMeetingNumber}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        alert("Synced successfully!");
+      } else {
+        alert("Error: " + data.message);
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("An error occurred.");
+    });
+}
