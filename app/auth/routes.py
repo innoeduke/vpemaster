@@ -105,8 +105,8 @@ def profile():
                 elif new_password == confirm_password:
                     user.Pass_Hash = generate_password_hash(new_password, method='pbkdf2:sha256')
                     db.session.commit()
-                    flash('Your password has been updated successfully!', 'success')
-                    return redirect(url_for('auth_bp.profile'))
+                    flash('Your password has been updated successfully! Please log in with your new password.', 'success')
+                    return redirect(url_for('auth_bp.logout'))
                 else:
                     flash('The new passwords do not match.', 'error')
 
