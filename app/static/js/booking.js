@@ -107,26 +107,24 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 
 
-  // For mobile devices, allow clicking anywhere on the row to vote
-  if (window.innerWidth <= 768) {
-    document.querySelectorAll('.is-running-meeting').forEach(table => {
-      table.addEventListener('click', function (event) {
-        // Find the clicked row by traversing up from the event target
-        const row = event.target.closest('tr');
-        if (!row) return; // Exit if the click was not inside a row
+  // Allow clicking anywhere on the row to vote (for all devices)
+  document.querySelectorAll('.is-running-meeting').forEach(table => {
+    table.addEventListener('click', function (event) {
+      // Find the clicked row by traversing up from the event target
+      const row = event.target.closest('tr');
+      if (!row) return; // Exit if the click was not inside a row
 
-        // Find the vote button within that row
-        const voteButton = row.querySelector('button.icon-btn[onclick^="handleVoteClick"]');
+      // Find the vote button within that row
+      const voteButton = row.querySelector('button.icon-btn[onclick^="handleVoteClick"]');
 
-        // If there's a vote button and the click didn't originate from the button itself, trigger the action.
-        if (voteButton && !voteButton.contains(event.target)) {
-          // Instead of voteButton.click(), call the handler function directly
-          // to avoid issues with clicking a hidden element.
-          handleVoteClick(voteButton);
-        }
-      });
+      // If there's a vote button and the click didn't originate from the button itself, trigger the action.
+      if (voteButton && !voteButton.contains(event.target)) {
+        // Instead of voteButton.click(), call the handler function directly
+        // to avoid issues with clicking a hidden element.
+        handleVoteClick(voteButton);
+      }
     });
-  }
+  });
 
 }); // End of DOMContentLoaded listener
 

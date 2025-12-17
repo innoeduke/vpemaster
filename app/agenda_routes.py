@@ -1082,6 +1082,9 @@ def _build_sheet4_participants(ws, logs_data):
         elif session_type and not session_type.Is_Section and not session_type.Is_Hidden:
             # Assume it's a role taker if it's not one of the above special categories
             # and is a visible role. Use the actual role title from Role model if available to support deduplication.
+            if session_type.role and session_type.role.type == 'officer':
+                continue
+
             role_name = session_type.Title
             if session_type.role:
                 role_name = session_type.role.name
