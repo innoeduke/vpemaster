@@ -998,24 +998,106 @@ def export_agenda(meeting_number):
     ws1 = wb.active
     ws2 = wb.create_sheet(title="PowerBI Data")
     ws3 = wb.create_sheet(title="Roster")
+    ws4 = wb.create_sheet(title="Participants")
 
     # 3. Build Sheets
     _build_sheet1(ws1, logs_data, speech_details_list, pathway_mapping)
     _build_sheet2_powerbi(ws2, meeting, logs_data,
                           speech_details_list, pathway_mapping)
     _build_sheet3_roster(ws3, meeting_number)
+    _build_sheet4_participants(ws4, logs_data)
 
     # 4. Save and Send
-    output_stream = io.BytesIO()
-    wb.save(output_stream)
-    output_stream.seek(0)
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    filename = f"Agenda_{meeting.Meeting_Date.strftime('%Y-%m-%d')}.xlsx"
 
     return send_file(
-        output_stream,
-        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        output,
         as_attachment=True,
-        download_name=f'{meeting_number}_agenda_full.xlsx'
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
+
+def _build_sheet4_participants(ws, logs_data):
+    """Populates Sheet 4 (Participants) of the workbook."""
+    ws.title = "Participants"
+    ws.append(['Group', 'Name'])
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    # sets to track unique participants per group
+    prepared_speakers = set()
+    evaluators = set()
+    tt_speakers = set()
+    # For role takers, we store (Role Name, Participant Name) tuples to sort/deduplicate
+    role_takers = set()
+
+    # IDs for classification
+    # Prepared Speakers: 20 (Panelist), 30 (Pathway Speech), 43 (Presentation), 44 (Social Speech)
+    speaker_ids = {20, 30, 43, 44}
+    # Evaluators: 31 (Individual Evaluator)
+    evaluator_ids = {31}
+    # TT Speakers: 36 (Topics Speaker)
+    tt_speaker_ids = {36}
+    
+    # Exclude certain types from Role Takers (Section Headers, etc.)
+    # We rely on checking if it has an owner and isn't in above groups
+    # Also exclude generic placeholders if necessary, but Owner_ID check handles most.
+
+    for log, session_type, contact, project, media in logs_data:
+        if not contact:
+            continue
+            
+        name = contact.Name
+        if contact.Type == 'Guest':
+            name += " (Guest)"
+            
+        tid = session_type.id if session_type else 0
+        
+        if tid in speaker_ids:
+            prepared_speakers.add(name)
+        elif tid in evaluator_ids:
+            evaluators.add(name)
+        elif tid in tt_speaker_ids:
+            tt_speakers.add(name)
+        elif session_type and not session_type.Is_Section and not session_type.Is_Hidden:
+            # Assume it's a role taker if it's not one of the above special categories
+            # and is a visible role. Use the actual role title from Role model if available to support deduplication.
+            role_name = session_type.Title
+            if session_type.role:
+                role_name = session_type.role.name
+            
+            role_takers.add((role_name, name))
+
+    # Helper to write a group
+    def write_group(group_name, names_set):
+        if not names_set:
+            return
+        sorted_names = sorted(list(names_set))
+        for name in sorted_names:
+            ws.append([group_name, name])
+
+    write_group("Prepared Speakers", prepared_speakers)
+    if prepared_speakers: ws.append([])
+    
+    write_group("Individual Evaluators", evaluators)
+    if evaluators: ws.append([])
+    
+    # Write Role Takers with their specific role names
+    # Sort by Role Name then Person Name
+    if role_takers:
+        sorted_roles = sorted(list(role_takers), key=lambda x: (x[0], x[1]))
+        for role, name in sorted_roles:
+            ws.append([role, name])
+        ws.append([])
+        
+    write_group("Table Topics Speakers", tt_speakers)
+
+    _auto_fit_worksheet_columns(ws, min_width=15)
 
 
 @agenda_bp.route('/agenda/create', methods=['POST'])
