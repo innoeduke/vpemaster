@@ -36,8 +36,17 @@ block content %}
   >
     <div class="project-header">
       <h2 id="project-name"></h2>
-      {% if is_authorized(session.get('user_role'), 'PATHWAY_LIB_EDIT') %}
       <div class="button-group">
+        <a
+          id="download-project-btn"
+          class="icon-btn"
+          title="Download Evaluation"
+          style="display: none"
+          target="_blank"
+        >
+          <i class="fas fa-download"></i>
+        </a>
+        {% if is_authorized(session.get('user_role'), 'PATHWAY_LIB_EDIT') %}
         <button
           id="cancel-project-btn"
           class="icon-btn"
@@ -49,8 +58,8 @@ block content %}
         <button id="edit-project-btn" class="icon-btn" title="Edit">
           <i class="fas fa-edit"></i>
         </button>
+        {% endif %}
       </div>
-      {% endif %}
     </div>
     <div class="path-codes">
       <div class="path-code-box path-dl" id="dl-code" data-path="DL">

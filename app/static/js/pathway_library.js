@@ -102,6 +102,14 @@ function displayProjectDetails() {
     );
 
     updatePathCodes(project);
+
+    const downloadBtn = document.getElementById("download-project-btn");
+    if (downloadBtn) {
+      const filename = (project.Project_Name || "").replace(/ /g, "_") + ".pdf";
+      downloadBtn.href = `/static/eval_forms/${filename}`;
+      downloadBtn.style.display = "inline-block";
+    }
+
     projectDetails.style.display = "block";
   } else {
     projectDetails.style.display = "none";
