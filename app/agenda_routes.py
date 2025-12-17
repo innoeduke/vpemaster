@@ -176,36 +176,11 @@ def _recalculate_start_times(meetings_to_update):
                 timedelta(minutes=duration_to_add + break_minutes)
             current_time = next_dt.time()
 
-# --- Main Route ---
-
-
-@agenda_bp.route('/agenda', methods=['GET'])
-def agenda():
-    # --- Determine Selected Meeting ---
-    all_meetings = get_meetings_by_status(limit_past=8)
-
-    meeting_numbers = [m.Meeting_Number for m in all_meetings]
-
-    selected_meeting_str = request.args.get('meeting_number')
-    selected_meeting_num = None
-
-    if selected_meeting_str:
-        try:
-            selected_meeting_num = int(selected_meeting_str)
-        except ValueError:
-            # Handle invalid meeting number string if necessary
-            selected_meeting_num = None  # Or redirect, flash error
-    else:
-        # Priority: Running -> Not Started
-        from .utils import get_default_meeting_number
-        selected_meeting_num = get_default_meeting_number()
-
-        if selected_meeting_num:
-             pass # Found a default
-        elif meeting_numbers:
-            # Fallback to the most recent existing meeting (highest meeting number)
-            selected_meeting_num = meeting_numbers[0]
-
+def _get_processed_logs_data(selected_meeting_num):
+    """
+    Fetches and processes session logs for a given meeting number.
+    Returns the list of log dictionaries ready for the frontend.
+    """
     selected_meeting = None
     if selected_meeting_num:
         selected_meeting = Meeting.query.options(
@@ -215,10 +190,6 @@ def agenda():
             orm.joinedload(Meeting.best_role_taker),
             orm.joinedload(Meeting.media)
         ).filter(Meeting.Meeting_Number == selected_meeting_num).first()
-
-        # If the meeting number from URL is invalid, redirect to the default agenda page
-        if not selected_meeting:
-            return redirect(url_for('agenda_bp.agenda'))
 
     # Create a simple set of (award_category, contact_id) tuples for quick lookups.
     award_winners = set()
@@ -237,23 +208,21 @@ def agenda():
 
     # --- Fetch Raw Data ---
     raw_session_logs = _get_agenda_logs(selected_meeting_num)
-    project_speakers = _get_project_speakers(selected_meeting_num)
+    
+    # We also need project speakers for the frontend usually, but this function only returns logs_data.
+    # The caller can handle project_speakers separately if needed, or we can return it too.
+    # For now, let's keep it focused on logs_data.
 
     all_presentations = Presentation.query.order_by(
         Presentation.level, Presentation.code).all()
-    presentation_series = sorted(
-        list(set(p.series for p in all_presentations if p.series)))
-    presentations_data = [
-        {"id": p.id, "title": p.title, "level": p.level,
-            "series": p.series, "code": p.code}
-        for p in all_presentations
-    ]
+    # (presentation_series and presentations_data are not strictly needed for the logs loop, 
+    # but presentation lookup is)
 
     # --- Process Raw Logs into Dictionaries ---
     logs_data = []
     all_pathways = Pathway.query.order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways}
-    pathways = [p.name for p in all_pathways]
+    
     for log in raw_session_logs:
         session_type = log.session_type
         meeting = log.meeting
@@ -400,6 +369,52 @@ def agenda():
             final_insert_index = tt_session_index - \
                 sum(1 for i in topics_speaker_indices if i < tt_session_index) + 1
             logs_data[final_insert_index:final_insert_index] = topics_speaker_sessions
+    
+    return logs_data, selected_meeting
+
+
+# --- Main Route ---
+
+
+@agenda_bp.route('/agenda', methods=['GET'])
+def agenda():
+    # --- Determine Selected Meeting ---
+    all_meetings = get_meetings_by_status(limit_past=8)
+
+    meeting_numbers = [m.Meeting_Number for m in all_meetings]
+
+    selected_meeting_str = request.args.get('meeting_number')
+    selected_meeting_num = None
+
+    if selected_meeting_str:
+        try:
+            selected_meeting_num = int(selected_meeting_str)
+        except ValueError:
+            # Handle invalid meeting number string if necessary
+            selected_meeting_num = None  # Or redirect, flash error
+    else:
+        # Priority: Running -> Not Started
+        from .utils import get_default_meeting_number
+        selected_meeting_num = get_default_meeting_number()
+
+        if selected_meeting_num:
+             pass # Found a default
+        elif meeting_numbers:
+            # Fallback to the most recent existing meeting (highest meeting number)
+            selected_meeting_num = meeting_numbers[0]
+
+    # --- Use Helper to Get Processed Data ---
+    logs_data = []
+    selected_meeting = None
+    if selected_meeting_num:
+        logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_num)
+
+    # --- Other Data for Template ---
+    project_speakers = _get_project_speakers(selected_meeting_num)
+    
+    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    pathway_mapping = {p.name: p.abbr for p in all_pathways}
+    pathways = [p.name for p in all_pathways]
 
     template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
     try:
@@ -1370,7 +1385,12 @@ def update_logs():
 
         # Commit the final session and time changes.
         db.session.commit()
-        return jsonify(success=True)
+
+        # Fetch fresh data for client-side update
+        logs_data, _ = _get_processed_logs_data(meeting_number)
+        project_speakers = _get_project_speakers(meeting_number)
+
+        return jsonify(success=True, logs_data=logs_data, project_speakers=project_speakers)
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500

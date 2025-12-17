@@ -80,12 +80,12 @@ document.addEventListener("DOMContentLoaded", function () {
       if (accordionContent.style.maxHeight) {
         accordionContent.style.maxHeight = null;
         if (category) {
-            delete accordionState[category];
+          delete accordionState[category];
         }
       } else {
         accordionContent.style.maxHeight = accordionContent.scrollHeight + "px";
         if (category) {
-            accordionState[category] = true;
+          accordionState[category] = true;
         }
       }
       sessionStorage.setItem('accordionState', JSON.stringify(accordionState));
@@ -95,29 +95,29 @@ document.addEventListener("DOMContentLoaded", function () {
   // Set the initial UI state for all voting buttons on page load.
   const categories = new Set();
   const allVoteButtons = document.querySelectorAll('button.icon-btn[data-award-category]');
-  
+
   allVoteButtons.forEach(btn => {
-      categories.add(btn.dataset.awardCategory);
+    categories.add(btn.dataset.awardCategory);
   });
 
   categories.forEach(category => {
-      const votedButton = document.querySelector(`button.icon-btn-voted[data-award-category="${category}"]`);
-      const winnerId = votedButton ? parseInt(votedButton.dataset.contactId, 10) : null;
-      updateVoteButtonsUI(category, winnerId);
+    const votedButton = document.querySelector(`button.icon-btn-voted[data-award-category="${category}"]`);
+    const winnerId = votedButton ? parseInt(votedButton.dataset.contactId, 10) : null;
+    updateVoteButtonsUI(category, winnerId);
   });
 
 
   // For mobile devices, allow clicking anywhere on the row to vote
   if (window.innerWidth <= 768) {
     document.querySelectorAll('.is-running-meeting').forEach(table => {
-      table.addEventListener('click', function(event) {
+      table.addEventListener('click', function (event) {
         // Find the clicked row by traversing up from the event target
         const row = event.target.closest('tr');
         if (!row) return; // Exit if the click was not inside a row
 
         // Find the vote button within that row
         const voteButton = row.querySelector('button.icon-btn[onclick^="handleVoteClick"]');
-        
+
         // If there's a vote button and the click didn't originate from the button itself, trigger the action.
         if (voteButton && !voteButton.contains(event.target)) {
           // Instead of voteButton.click(), call the handler function directly
@@ -163,36 +163,78 @@ function assignRole(sessionId, contactId) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        if (contactId === "0") {
-          // If un-assigning, update the UI dynamically without a full page reload.
-          const row = document.querySelector(
-            `tr[data-session-id="${sessionId}"]`
-          );
-          if (row) {
-            // 1. Reset the dropdown menu
-            const selectElement = row.querySelector(".admin-assign-select");
-            if (selectElement) {
-              selectElement.value = "0";
-              const previouslySelected =
-                selectElement.querySelector("option[selected]");
-              if (previouslySelected) {
-                previouslySelected.removeAttribute("selected");
+        if (data.updated_sessions) {
+          data.updated_sessions.forEach(session => {
+            updateSessionRow(session);
+          });
+        } else {
+          // Fallback: If un-assigning without updated_sessions (old behavior?) 
+          // or just safe fallback.
+          if (contactId === "0") {
+            // If un-assigning, update the UI dynamically without a full page reload.
+            const row = document.querySelector(
+              `tr[data-session-id="${sessionId}"]`
+            );
+            if (row) {
+              // 1. Reset the dropdown menu
+              const selectElement = row.querySelector(".admin-assign-select");
+              if (selectElement) {
+                selectElement.value = "0";
+                const previouslySelected =
+                  selectElement.querySelector("option[selected]");
+                if (previouslySelected) {
+                  previouslySelected.removeAttribute("selected");
+                }
+              }
+
+              // 2. Remove any award or voting icons from the role cell actions
+              // (Note: 'role-cell-actions' might strictly be 'icon-cell' children depending on template version, keeping generic safety)
+              const roleActions = row.querySelector(".role-cell-actions");
+              if (roleActions) {
+                roleActions.innerHTML = ""; // Clear out the buttons
               }
             }
-
-            // 2. Remove any award or voting icons from the role cell actions
-            const roleActions = row.querySelector(".role-cell-actions");
-            if (roleActions) {
-              roleActions.innerHTML = ""; // Clear out the buttons
-            }
+          } else {
+            window.location.reload();
           }
-        } else {
-          window.location.reload();
         }
       } else {
         alert("Error: " + data.message);
       }
     });
+}
+
+function updateSessionRow(sessionData) {
+  const row = document.querySelector(`tr[data-session-id="${sessionData.session_id}"]`);
+  if (!row) return;
+
+  // 1. Update Dropdown (if present - usually Admin Book / Assign View)
+  const selectElement = row.querySelector(".admin-assign-select");
+  if (selectElement) {
+    selectElement.value = sessionData.owner_id !== null ? sessionData.owner_id : "0";
+    // Update selected attribute for consistency
+    Array.from(selectElement.options).forEach(option => {
+      if (option.value == selectElement.value) {
+        option.setAttribute('selected', 'selected');
+      } else {
+        option.removeAttribute('selected');
+      }
+    });
+  }
+
+  // 2. Update Text Display (if present - usually Running/Finished/User View)
+  const ownerDisplay = row.querySelector('.owner-display');
+  if (ownerDisplay) {
+    ownerDisplay.textContent = sessionData.owner_name || 'Unassigned';
+  }
+
+  // 3. Clear icons if unassigned
+  if (!sessionData.owner_id || sessionData.owner_id == 0) {
+    const roleActions = row.querySelector(".role-cell-actions");
+    if (roleActions) {
+      roleActions.innerHTML = "";
+    }
+  }
 }
 
 function handleVoteClick(buttonEl) {

@@ -544,6 +544,7 @@ def book_or_assign_role():
         else:  # For non-distinct roles, only update the specific session that was clicked
             sessions_to_update = [log]
 
+        updated_sessions = []
         for session_log in sessions_to_update:
             new_path_level = derive_current_path_level(
                 session_log, owner_contact) if owner_contact else None
@@ -551,9 +552,16 @@ def book_or_assign_role():
             session_log.Owner_ID = owner_id_to_set
             session_log.current_path_level = new_path_level
             session_log.credentials = new_credentials
+            
+            updated_sessions.append({
+                'session_id': session_log.id,
+                'owner_id': owner_id_to_set,
+                'owner_name': owner_contact.Name if owner_contact else None,
+                'credentials': new_credentials
+            })
 
         db.session.commit()
-        return jsonify(success=True)
+        return jsonify(success=True, updated_sessions=updated_sessions)
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error during booking/assignment: {e}")

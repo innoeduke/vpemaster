@@ -234,7 +234,23 @@ document.addEventListener("DOMContentLoaded", () => {
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
-          window.location.reload();
+           // Update global data
+           if (data.project_speakers) {
+             projectSpeakers = data.project_speakers;
+             // Update the dataset as well for consistency
+             tableContainer.dataset.projectSpeakers = JSON.stringify(projectSpeakers);
+           }
+
+           // Re-render the table with the new data
+           if (data.logs_data) {
+             renderTableRows(data.logs_data);
+           }
+           
+           // Exit edit mode and update UI
+           toggleEditMode(false);
+           
+           // Show success feedback (optional, since the UI update is the feedback)
+           // alert("Changes saved successfully!"); 
         } else {
           alert("Error saving changes: " + data.message);
         }
@@ -242,6 +258,182 @@ document.addEventListener("DOMContentLoaded", () => {
       .catch((error) => {
         console.error("Error:", error);
         alert("An error occurred while saving.");
+      });
+  }
+
+  function renderTableRows(logsData) {
+      tableBody.innerHTML = '';
+      const displayedAwards = new Set();
+
+      logsData.forEach(log => {
+          const row = document.createElement('tr');
+          
+          // --- Set Data Attributes ---
+          row.dataset.id = log.id;
+          row.dataset.projectId = log.Project_ID !== null ? log.Project_ID : '';
+          row.dataset.meetingNumber = log.Meeting_Number;
+          row.dataset.meetingDate = log.meeting_date_str;
+          row.dataset.isSection = String(log.is_section).toLowerCase();
+          row.dataset.isHidden = String(log.is_hidden).toLowerCase();
+          row.dataset.isReadonly = String(log.is_readonly || false).toLowerCase();
+          row.dataset.meetingSeq = log.Meeting_Seq;
+          row.dataset.startTime = log.Start_Time_str;
+          row.dataset.sessionTitle = log.Session_Title !== null ? log.Session_Title : '';
+          row.dataset.typeId = log.Type_ID;
+          row.dataset.ownerId = log.Owner_ID;
+          row.dataset.credentials = log.Credentials !== null ? log.Credentials : '';
+          row.dataset.durationMin = log.Duration_Min !== null ? log.Duration_Min : '';
+          row.dataset.durationMax = log.Duration_Max !== null ? log.Duration_Max : '';
+          row.dataset.status = log.Status || '';
+          row.dataset.role = log.role || '';
+          row.dataset.currentPathLevel = log.current_path_level || '';
+          
+          // --- Set Classes ---
+          if (log.is_section) row.classList.add('section-row');
+          if (log.is_hidden) row.classList.add('hidden-row');
+          if (log.is_readonly) row.classList.add('readonly-row');
+
+          // --- Create Cells ---
+          if (log.is_section) {
+              const td = document.createElement('td');
+              td.colSpan = 4;
+              td.className = 'non-edit-mode-cell';
+              td.textContent = log.Session_Title || log.session_type_title;
+              row.appendChild(td);
+          } else {
+              // 1. Start Time
+              const tdTime = document.createElement('td');
+              tdTime.className = 'non-edit-mode-cell';
+              tdTime.textContent = log.Start_Time_str;
+              row.appendChild(tdTime);
+
+              // 2. Session Title (Complex Logic)
+              const tdSession = document.createElement('td');
+              tdSession.className = 'non-edit-mode-cell';
+              const tooltipWrapper = document.createElement('div');
+              tooltipWrapper.className = 'speech-tooltip-wrapper';
+
+              let cleanedTitle = log.Session_Title ? log.Session_Title.replace(/"/g, '') : '';
+              let displayTitle = '';
+
+              if (log.session_type_title === 'Evaluation') {
+                  displayTitle = 'Evaluator for ' + cleanedTitle;
+              } else if (['Pathway Speech', 'Presentation'].includes(log.session_type_title) || log.Project_ID) {
+                  displayTitle = '"' + cleanedTitle + '"';
+              } else if (log.predefined) {
+                  displayTitle = log.session_type_title;
+              } else {
+                  displayTitle = cleanedTitle;
+              }
+
+              // Media URL Link
+              let titleContent;
+              if (log.media_url) {
+                  const a = document.createElement('a');
+                  a.href = log.media_url;
+                  a.target = '_blank';
+                  a.title = 'Watch Media';
+                  a.textContent = displayTitle;
+                  titleContent = a;
+              } else {
+                  titleContent = document.createTextNode(displayTitle);
+              }
+              tooltipWrapper.appendChild(titleContent);
+
+              // DTM Superscript (for Evaluators)
+              if (log.session_type_title === 'Evaluation' && log.speaker_is_dtm) {
+                   const sup = document.createElement('sup');
+                   sup.className = 'dtm-superscript';
+                   sup.textContent = 'DTM';
+                   tooltipWrapper.appendChild(sup);
+              }
+              
+              // Project Code
+               if (log.project_code_display) {
+                  tooltipWrapper.appendChild(document.createTextNode(' ')); // Space
+                   if (log.Project_ID && log.pathway_code) {
+                       const aCode = document.createElement('a');
+                       aCode.href = `/pathway_library?path=${log.pathway_code}&level=${log.level}&project_id=${log.Project_ID}`;
+                       aCode.className = 'project-code-link';
+                       aCode.title = 'View in Pathway Library';
+                       aCode.textContent = `(${log.project_code_display})`;
+                       tooltipWrapper.appendChild(aCode);
+                   } else {
+                       const spanCode = document.createElement('span');
+                       spanCode.className = 'project-code-link';
+                       spanCode.title = 'Project Code';
+                       spanCode.textContent = `(${log.project_code_display})`;
+                       tooltipWrapper.appendChild(spanCode);
+                   }
+               }
+               
+               // Tooltip
+               if (log.Project_ID) {
+                   const tooltip = document.createElement('div');
+                   tooltip.className = 'speech-tooltip';
+                   
+                   const tTitle = document.createElement('span');
+                   tTitle.className = 'tooltip-title';
+                   tTitle.textContent = log.project_name;
+                   
+                   const tPurpose = document.createElement('span');
+                   tPurpose.className = 'tooltip-purpose';
+                   tPurpose.textContent = log.project_purpose;
+
+                   tooltip.appendChild(tTitle);
+                   tooltip.appendChild(tPurpose);
+                   tooltipWrapper.appendChild(tooltip);
+               }
+
+              tdSession.appendChild(tooltipWrapper);
+              row.appendChild(tdSession);
+
+              // 3. Owner
+              const tdOwner = document.createElement('td');
+              tdOwner.className = 'non-edit-mode-cell';
+              if (log.owner_name) {
+                  tdOwner.appendChild(document.createTextNode(log.owner_name + ' '));
+                  
+                  if (log.owner_dtm) {
+                      const sup = document.createElement('sup');
+                      sup.className = 'dtm-superscript';
+                      sup.textContent = 'DTM';
+                      tdOwner.appendChild(sup);
+                  }
+
+                  // Award Trophy
+                  if (log.award_type && !displayedAwards.has(log.role)) {
+                      const spanAward = document.createElement('span');
+                      spanAward.className = 'icon-btn icon-btn-voted';
+                      spanAward.title = log.award_type + ' Winner';
+                      spanAward.innerHTML = '<i class="fas fa-award"></i>';
+                      tdOwner.appendChild(spanAward);
+                      
+                      displayedAwards.add(log.role);
+                  }
+
+                  // Credentials
+                  if (log.Credentials) {
+                      const spanMeta = document.createElement('span');
+                      spanMeta.className = 'owner-meta';
+                      spanMeta.innerHTML = '<br/>' + log.Credentials;
+                      tdOwner.appendChild(spanMeta);
+                  }
+              }
+              row.appendChild(tdOwner);
+
+              // 4. Duration
+              const tdDur = document.createElement('td');
+              tdDur.className = 'non-edit-mode-cell';
+              if (log.Duration_Min && log.Duration_Max) {
+                  tdDur.textContent = `${log.Duration_Min}'-${log.Duration_Max}'`;
+              } else if (log.Duration_Max) {
+                  tdDur.textContent = `${log.Duration_Max}'`;
+              }
+              row.appendChild(tdDur);
+          }
+
+          tableBody.appendChild(row);
       });
   }
 
