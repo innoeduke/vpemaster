@@ -3,6 +3,11 @@ import os
 import uuid
 import requests
 import copy
+from dotenv import load_dotenv
+
+# Explicitly load .env file from the project root (one level up from app/)
+basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+load_dotenv(os.path.join(basedir, '.env'))
 
 BASE_URL = "https://api.tally.so"
 
