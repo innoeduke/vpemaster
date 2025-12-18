@@ -178,3 +178,94 @@ def bulk_import_users():
         flash('Invalid file type. Please upload a .csv file.', 'error')
 
     return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+
+
+@users_bp.route('/user/quick_add/<int:contact_id>', methods=['POST'])
+@login_required
+def quick_add_user(contact_id):
+    if not is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT'):
+        flash("You don't have permission to perform this action.", 'error')
+        return redirect(url_for('contacts_bp.show_contacts'))
+
+    contact = Contact.query.get_or_404(contact_id)
+
+    if contact.user:
+        flash(f'Contact {contact.Name} already has a user account.', 'error')
+        return redirect(url_for('contacts_bp.show_contacts'))
+
+    # Derive username logic:
+    # 1. Split name into First and Last (last token)
+    # 2. Max length 8.
+    # 3. Strategy: 
+    #    - If First+Last <= 8 chars: Use combined.
+    #    - Else: Prioritize Last Name (up to 7 chars). Fill remainder with First Name.
+    #    - Ex: "Christopher Lee" -> "chrislee" (Last=3, First=5)
+    #    - Ex: "John Longlastname" -> "jlongname" (Last=7, First=1)
+    
+    parts = contact.Name.strip().split()
+    if not parts:
+        # Fallback for empty name? Should not happen for valid contact.
+        base_username = f"user{contact.id}"
+    elif len(parts) == 1:
+        base_username = parts[0].lower()[:8]
+    else:
+        first_name = parts[0].lower()
+        last_name = parts[-1].lower()
+        
+        # Remove non-alphanumeric characters if needed? 
+        # Requirement simple: just letters. Let's assume input is clean or just slice.
+        # Ideally, we should filter for alphanumeric to avoid "O'Reilly" issues in username.
+        first_name = "".join(filter(str.isalnum, first_name))
+        last_name = "".join(filter(str.isalnum, last_name))
+        
+        combined = first_name + last_name
+        if len(combined) <= 8:
+            base_username = combined
+        else:
+            # We need to cut.
+            # Max possible chars from last name is 7 (leaving 1 for first name at minimum implicit in "first letter...")
+            # Actually user said: "use more letters from the first name to backfill [if last is short]"
+            # This implies:
+            # Target total = 8.
+            # Len Last used = min(len(last_name), 7)
+            # Len First used = 8 - Len Last used
+            
+            len_last_used = min(len(last_name), 7)
+            len_first_used = 8 - len_last_used
+            
+            # Ensure we have enough first name chars (usually yes if len > 8 total)
+            # But edge case: "A Verylongname" (First=1, Last=12).
+            # Last used = 7 ("Verylon"). First used = 1 ("A"). Total 8. Matches.
+            
+            base_username = first_name[:len_first_used] + last_name[:len_last_used]
+            
+    # Simple uniqueness check
+    username = base_username
+    counter = 1
+    while User.query.filter_by(Username=username).first():
+        # If duplicated, append number? User said "avoid duplication".
+        # Appending number increases length > 8 potentially.
+        # But uniqueness is hard constraint.
+        username = f"{base_username}{counter}"
+        counter += 1
+
+    try:
+        _create_or_update_user(
+            username=username,
+            contact_id=contact.id,
+            email=contact.Email,
+            role='Member',
+            status='active',
+            password='leadership'
+        )
+        
+        # Update contact type to Member
+        contact.Type = 'Member'
+        
+        db.session.commit()
+        flash(f'User created for {contact.Name} with username: {username}', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error creating user: {str(e)}', 'error')
+
+    return redirect(url_for('contacts_bp.show_contacts'))
