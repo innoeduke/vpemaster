@@ -2,7 +2,6 @@ import os
 import uuid
 import requests
 import copy
-import sys
 from dotenv import dotenv_values
 
 # Explicitly load .env file from the project root (one level up from app/)
@@ -11,13 +10,8 @@ env_path = os.path.join(basedir, '.env')
 
 # Load config from .env file directly
 config = {}
-print(f"DEBUG: Looking for .env at {env_path}", file=sys.stderr)
 if os.path.exists(env_path):
-    print("DEBUG: .env file found.", file=sys.stderr)
     config = dotenv_values(env_path)
-    print(f"DEBUG: Loaded keys: {list(config.keys())}", file=sys.stderr)
-else:
-    print("DEBUG: .env file NOT found.", file=sys.stderr)
 
 BASE_URL = "https://api.tally.so"
 
