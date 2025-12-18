@@ -50,6 +50,10 @@ class Config:
         "Speech Marathon": {
             "owner_role_id": 3, "template": "speech_marathon.csv",
             "background_color": "#FFC0CB", "foreground_color": "#000000"
+        },
+        "Pecha Kucha": {
+            "owner_role_id": 44, "template": "pecha_kucha.csv",
+            "background_color": "#FFD700", "foreground_color": "#000000"
         }
     }
 
