@@ -1,0 +1,329 @@
+/* static/css/christmas_theme.css */
+
+/* --- Base Overrides --- */
+body {
+    background-color: #1a472a;
+    /* Deep evergreen */
+    color: #f0f0f0;
+    /* Snow white text */
+    background-image: repeating-linear-gradient(45deg,
+            #1a472a,
+            #1a472a 10px,
+            #143d23 10px,
+            #143d23 20px);
+    /* Subtle evergreen stripe texture */
+}
+
+/* Common container background and styling */
+.main-content>div:not(.profile-container):not(.orientation-warning),
+.main-content>h1,
+.main-content>form,
+.filters-container,
+.project-details-container,
+.settings-container,
+.login-form,
+.modal-content {
+    background-color: #c41e3a;
+    /* Christmas Red */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    border: 2px solid #d4af37;
+    /* Gold border */
+}
+
+/* Headings and shiny text */
+.main-content h1,
+.main-content h2,
+.main-content h3,
+.modal-content h1,
+.nav-title {
+    color: #fff;
+    text-shadow: 1px 1px 2px #333;
+    font-family: 'Mountains of Christmas', cursive, sans-serif;
+    /* Fallback if font not loaded, but generic cursive helps */
+}
+
+/* Inputs and labels */
+label,
+.nav-pane,
+.profile-trigger,
+.profile-trigger i,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea,
+.autocomplete-items div,
+.booking-filter-container i,
+#meeting-date-display,
+.action-bar-left .inline-filter-group label,
+.assign-controls select,
+.tab-btn {
+    color: #fff;
+}
+
+/* Table overrides */
+td,
+th,
+.timeline-header,
+.timeline-header .meeting-date,
+.timeline-role,
+.completed-roles-container,
+.completed-roles-list li {
+    color: #ffe;
+}
+
+/* --- Navigation --- */
+.nav-pane {
+    background-color: #0f2e1b;
+    /* Darker green */
+    border-right: 2px solid #d4af37;
+    /* Gold separator */
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.5);
+}
+
+.nav-pane ul li.active a,
+.nav-pane ul li a:hover {
+    background-color: #c41e3a;
+    /* Red highlight */
+    color: #ffd700;
+    /* Gold text */
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.nav-links li a {
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    /* Subtle gold separators */
+}
+
+/* --- Profile Dropdown --- */
+.profile-trigger {
+    background-color: #c41e3a;
+    /* Red */
+    border: 2px solid #d4af37;
+    /* Gold */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.profile-trigger:hover {
+    background-color: #a01830;
+    /* Darker red */
+}
+
+/* --- Buttons --- */
+.btn-primary {
+    background-color: #d4af37;
+    /* Gold */
+    color: #1a472a;
+    /* Green text */
+    border: 1px solid #b4941f;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background-color: #ffd700;
+    /* Bright Gold */
+    color: #0f2e1b;
+}
+
+.btn-danger {
+    background-color: #8b0000;
+    /* Dark Red */
+    border: 1px solid #fff;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #a00000;
+}
+
+.btn-info {
+    background-color: #2e8b57;
+    /* Sea Green */
+    color: white;
+    border: 1px solid #d4af37;
+}
+
+.btn-info:hover {
+    background-color: #3cb371;
+}
+
+.btn-success {
+    background-color: #d4af37;
+    color: #0f2e1b;
+    font-weight: bold;
+}
+
+.btn-success:hover {
+    background-color: #ffd700;
+}
+
+.btn-secondary {
+    background-color: #0f2e1b;
+    color: #d4af37;
+    border: 1px solid #d4af37;
+}
+
+.btn-secondary:hover {
+    background-color: #1a472a;
+}
+
+.btn-book {
+    background-color: #d4af37;
+    color: #1a472a;
+    font-weight: bold;
+}
+
+.btn-book:hover {
+    background-color: #ffd700;
+    /* Bright Gold */
+    box-shadow: 0 0 10px #ffd700;
+}
+
+.btn-booked {
+    background-color: #1a472a;
+    color: #d4af37;
+    cursor: not-allowed;
+    border: 1px dashed #d4af37;
+}
+
+/* --- Tables --- */
+th,
+.booking-table th {
+    background-color: #0f2e1b;
+    /* Dark Green */
+    border: 1px solid #d4af37;
+    /* Gold */
+    color: #d4af37;
+}
+
+td {
+    border: 1px solid #d4af37;
+    /* Gold */
+}
+
+tbody tr:nth-child(even) {
+    background-color: #1a472a;
+}
+
+/* Green */
+tbody tr:nth-child(odd) {
+    background-color: #235c36;
+}
+
+/* Lighter Green */
+tbody tr:hover {
+    background-color: #c41e3a;
+    color: #fff;
+}
+
+/* Red hover */
+
+/* --- Form Inputs --- */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="date"],
+input[type="time"],
+select,
+textarea {
+    border: 2px solid #d4af37;
+    /* Gold */
+    border-radius: 4px;
+    background-color: #0f2e1b;
+    /* Dark Green */
+    color: #fff;
+    margin-bottom: 10px;
+    padding: 5px 8px;
+}
+
+select {
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23ffd700%22%20d%3D%22M287%2C114.7L157.4%2C244.3c-2.4%2C2.4-5.9%2C2.4-8.3%2C0L5.3%2C114.7c-2.4-2.4-2.4-5.9%2C0-8.3l12.5-12.5c2.4-2.4%2C5.9-2.4%2C8.3%2C0l12.5%2C12.5C289.4%2C108.8%2C289.4%2C112.3%2C287%2C114.7z%22%2F%3E%3C%2Fsvg%3E');
+}
+
+/* Autocomplete */
+.autocomplete-items div {
+    background-color: #0f2e1b;
+    border-bottom: 1px solid #d4af37;
+    color: #fff;
+}
+
+.autocomplete-items div:hover {
+    background-color: #c41e3a;
+}
+
+/* --- Decorations --- */
+/* Remove text-based snowflakes as they break layout */
+.container-wrapper::before {
+    content: none;
+    display: none;
+}
+
+/* --- Mobile Header --- */
+/* Ensure mobile header is hidden on PC */
+@media (min-width: 993px) {
+    .mobile-header {
+        display: none !important;
+    }
+}
+
+.mobile-header {
+    background-color: #c41e3a;
+    border-bottom: 2px solid #d4af37;
+}
+
+/* --- Timeline --- */
+.timeline-marker {
+    border-bottom-color: #d4af37;
+    /* Gold marker */
+}
+
+.timeline-role i,
+.booking-table .role-cell i {
+    color: #ffca28;
+}
+
+/* --- Generic Modal --- */
+.modal-content {
+    border: 3px solid #d4af37;
+    background-image: none;
+    background-color: #c41e3a;
+}
+
+/* --- Agenda Specific Contrast Fixes --- */
+.agenda-header-info .club-info,
+.agenda-header-info .meeting-title,
+.agenda-header-info .subtitle {
+    color: #f0f0f0 !important;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.meeting-title a {
+    color: #fff !important;
+    text-decoration: none;
+}
+
+.meeting-title a:hover {
+    color: #ffd700 !important;
+}
+
+/* Footnote (Footer) visibility */
+.footnote {
+    color: #f0f0f0 !important;
+}
+
+.footnote ul,
+.footnote li {
+    color: #f0f0f0 !important;
+}
+
+.footnote a {
+    color: #ffd700 !important;
+    text-decoration: underline;
+}
