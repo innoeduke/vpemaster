@@ -262,7 +262,19 @@ select {
 /* Remove text-based snowflakes as they break layout */
 .container-wrapper::before {
     content: none;
+    content: none;
     display: none;
+}
+
+/* --- Responsive Fixes --- */
+@media (max-width: 992px) {
+    .table-container {
+        overflow-x: auto;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+        display: block;
+        /* Ensure block display for scrolling */
+    }
 }
 
 /* --- Mobile Header --- */
