@@ -30,7 +30,10 @@ def _create_or_update_user(user=None, **kwargs):
 
     user.Username = kwargs.get('username')
     user.Email = kwargs.get('email')
-    user.Member_ID = kwargs.get('member_id')
+    
+    member_id = kwargs.get('member_id')
+    user.Member_ID = member_id if member_id else None
+    
     user.Role = kwargs.get('role')
     user.Current_Path = kwargs.get('current_path') or None
     user.Next_Project = kwargs.get('next_project') or None

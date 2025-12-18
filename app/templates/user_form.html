@@ -93,9 +93,11 @@
             <tr>
                 <td><label for="password">Password:</label></td>
                 <td>
-                    <input type="password" id="password" name="password" {% if not user %}required{% endif %}>
+                    <input type="password" id="password" name="password">
                     {% if user %}
                         <small class="note">Leave blank to keep current password.</small>
+                    {% else %}
+                        <small class="note">Leave blank to use default password 'leadership'.</small>
                     {% endif %}
                 </td>
             </tr>
