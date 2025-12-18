@@ -1,17 +1,27 @@
-
 import os
 import uuid
 import requests
 import copy
-from dotenv import load_dotenv
+import sys
+from dotenv import dotenv_values
 
 # Explicitly load .env file from the project root (one level up from app/)
 basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-load_dotenv(os.path.join(basedir, '.env'))
+env_path = os.path.join(basedir, '.env')
+
+# Load config from .env file directly
+config = {}
+print(f"DEBUG: Looking for .env at {env_path}", file=sys.stderr)
+if os.path.exists(env_path):
+    print("DEBUG: .env file found.", file=sys.stderr)
+    config = dotenv_values(env_path)
+    print(f"DEBUG: Loaded keys: {list(config.keys())}", file=sys.stderr)
+else:
+    print("DEBUG: .env file NOT found.", file=sys.stderr)
 
 BASE_URL = "https://api.tally.so"
 
-# Mapping from our data keys to Tally Form 'TITLE' block text
+# Mapping from Excel 'Group' to Form 'TITLE' block text (partial match)
 CATEGORY_MAPPING = {
     "Prepared Speakers": "Best Prepared Speaker",
     "Individual Evaluators": "Best Evaluator",
@@ -20,10 +30,11 @@ CATEGORY_MAPPING = {
 }
 
 def get_api_key():
-    return os.environ.get("TALLY_API_KEY")
+    # Try getting from .env file first, then os.environ
+    return config.get("TALLY_API_KEY") or os.environ.get("TALLY_API_KEY")
 
 def get_form_id():
-    return os.environ.get("TALLY_FORM_ID")
+    return config.get("TALLY_FORM_ID") or os.environ.get("TALLY_FORM_ID")
 
 def get_form_schema(api_key, form_id):
     url = f"{BASE_URL}/forms/{form_id}"
@@ -76,7 +87,7 @@ def sync_participants_to_tally(participants_data):
     form_id = get_form_id()
     
     if not api_key or not form_id:
-        raise ValueError("Missing TALLY_API_KEY or TALLY_FORM_ID environment variables.")
+        raise ValueError(f"Missing TALLY_API_KEY or TALLY_FORM_ID. Checked .env at: {env_path}")
 
     # Pre-process Role Takers to be strings "Role: Name"
     flat_participants = {}
