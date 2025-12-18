@@ -355,23 +355,59 @@ def update_speech_log(log_id):
         user.Current_Path = data['pathway']
         db.session.add(user)
 
-    if 'project_id' in data:
-        if project_id in [None, "", "null"]:
-            log.Project_ID = None
-        else:
-            log.Project_ID = project_id
+    # --- Duration Update Logic Start ---
+    # Goal: Update duration only if structurally changed (Project or SessionType), otherwise preserve manual edits.
+    
+    # 1. Identify Changes
+    project_changed = False
+    session_type_changed = False
+    
+    # Check Project Change
+    new_project_id = data.get('project_id')
+    if new_project_id in [None, "", "null"]:
+        new_project_id = None
+    else:
+        try:
+            new_project_id = int(new_project_id)
+        except (ValueError, TypeError):
+             new_project_id = None
 
+    if log.Project_ID != new_project_id:
+        project_changed = True
+    
+    # Check Session Type Change
+    if session_type_title and log.session_type.Title != session_type_title:
+        session_type_changed = True
+
+    # 2. Update Basic Fields (Project ID)
+    if 'project_id' in data: # check if key exists in payload
+         log.Project_ID = new_project_id
+
+    # 3. Apply Duration Updates based on Priority
+    # Priority 1: Project Changed (and we have a project)
+    if project_changed and log.Project_ID:
         if session_type_title == 'Presentation':
-            log.Duration_Min = 10
-            log.Duration_Max = 15
-        elif log.Project_ID:
-            if updated_project:
-                log.Duration_Min = updated_project.Duration_Min
-                log.Duration_Max = updated_project.Duration_Max
+             log.Duration_Min = 10
+             log.Duration_Max = 15
+        elif updated_project: 
+             log.Duration_Min = updated_project.Duration_Min
+             log.Duration_Max = updated_project.Duration_Max
+    
+    # Priority 2: Session Type Changed (and Project didn't handle it)
+    elif session_type_changed:
+        if session_type_title == 'Presentation':
+             log.Duration_Min = 10
+             log.Duration_Max = 15
         else:
-            # It's a generic speech, clear durations
-            log.Duration_Min = None
-            log.Duration_Max = None
+             # Fetch the NEW session type to get defaults
+             new_st = SessionType.query.filter_by(Title=session_type_title).first()
+             if new_st:
+                 log.Duration_Min = new_st.Duration_Min
+                 log.Duration_Max = new_st.Duration_Max
+    
+    # Priority 3: No Structural Change -> Do NOT update duration (Preserve manual edits)
+
+    # --- Duration Update Logic End ---
 
     try:
         db.session.commit()

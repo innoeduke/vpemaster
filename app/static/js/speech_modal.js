@@ -374,15 +374,15 @@ function updateProjectOptions(selectedProjectId = null) {
 
   const filteredProjects = allProjects
     .filter(p => {
-        const pathCode = p.path_codes[codeSuffix];
-        return pathCode && pathCode.startsWith(level + '.');
+      const pathCode = p.path_codes[codeSuffix];
+      return pathCode && pathCode.startsWith(level + '.');
     })
     .sort((a, b) => {
-        const codeA = a.path_codes[codeSuffix];
-        const codeB = b.path_codes[codeSuffix];
-        if (codeA < codeB) return -1;
-        if (codeA > codeB) return 1;
-        return 0;
+      const codeA = a.path_codes[codeSuffix];
+      const codeB = b.path_codes[codeSuffix];
+      if (codeA < codeB) return -1;
+      if (codeA > codeB) return 1;
+      return 0;
     });
 
   filteredProjects.forEach((p) => {
@@ -537,9 +537,8 @@ function updateAgendaRow(logId, updateResult, payload) {
       if (updateResult.project_id && updateResult.project_id != "60") {
         const tooltip = document.createElement("div");
         tooltip.className = "speech-tooltip";
-        tooltip.innerHTML = `<span class="tooltip-title">${
-          projName || ""
-        }</span><span class="tooltip-purpose">${projPurpose || ""}</span>`;
+        tooltip.innerHTML = `<span class="tooltip-title">${projName || ""
+          }</span><span class="tooltip-purpose">${projPurpose || ""}</span>`;
         wrapper.appendChild(tooltip);
       }
       viewTitleCell.appendChild(wrapper);
@@ -553,6 +552,7 @@ function updateAgendaRow(logId, updateResult, payload) {
   agendaRow.dataset.durationMin = updateResult.duration_min || "";
   agendaRow.dataset.durationMax = updateResult.duration_max || "";
 
+  // Update Session Title Input/Span
   const editTitleCell = agendaRow.querySelector(
     'td[data-field="Session_Title"]'
   );
@@ -564,6 +564,22 @@ function updateAgendaRow(logId, updateResult, payload) {
         : (ctl.value = updateResult.session_title);
   }
 
+  // Update Duration Inputs (Fixes overwrite issue)
+  const durationMinInput = agendaRow.querySelector(
+    '[data-field="Duration_Min"] input'
+  );
+  if (durationMinInput) {
+    durationMinInput.value = updateResult.duration_min || "";
+  }
+
+  const durationMaxInput = agendaRow.querySelector(
+    '[data-field="Duration_Max"] input'
+  );
+  if (durationMaxInput) {
+    durationMaxInput.value = updateResult.duration_max || "";
+  }
+
+  // Update View Mode Title
   const viewTitleCell = agendaRow.querySelector(
     ".non-edit-mode-cell:nth-child(2)"
   );
@@ -596,15 +612,15 @@ function updateAgendaRow(logId, updateResult, payload) {
     if (updateResult.project_id && updateResult.project_id != "60") {
       const tooltip = document.createElement("div");
       tooltip.className = "speech-tooltip";
-      tooltip.innerHTML = `<span class="tooltip-title">${
-        projName || ""
-      }</span><span class="tooltip-purpose">${projPurpose || ""}</span>`;
+      tooltip.innerHTML = `<span class="tooltip-title">${projName || ""
+        }</span><span class="tooltip-purpose">${projPurpose || ""}</span>`;
       wrapper.appendChild(tooltip);
     }
     viewTitleCell.appendChild(wrapper);
     updateMediaLink(viewTitleCell);
   }
 
+  // Update View Mode Duration Cell
   const durationCell = agendaRow.querySelector(
     ".non-edit-mode-cell:nth-child(4)"
   );

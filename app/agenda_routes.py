@@ -57,6 +57,15 @@ def _get_project_speakers(meeting_number):
     return [name[0] for name in speaker_logs]
 
 
+def safe_int(val):
+    """Safely converts a value to int, handling None, 'null', '', and invalid strings."""
+    if val in [None, "", "null", "None"]:
+        return None
+    try:
+        return int(float(val)) # Handle "5.0" strings just in case
+    except (ValueError, TypeError):
+        return None
+
 def _create_or_update_session(item, meeting_number, seq):
     meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
     if not meeting:
@@ -65,20 +74,21 @@ def _create_or_update_session(item, meeting_number, seq):
         db.session.flush()  # Flush to get meeting ID if needed, though not strictly required here
         meeting = new_meeting
 
-    type_id = item.get('type_id')
+    type_id = safe_int(item.get('type_id'))
     session_type = SessionType.query.get(
         type_id) if type_id else None  # Get the SessionType object
 
-    # --- Owner ID Handling (no changes needed) ---
-    owner_id_val = item.get('owner_id')
-    owner_id = int(owner_id_val) if owner_id_val and owner_id_val not in [
-        'None', '0'] else None
+    # --- Owner ID Handling ---
+    owner_id = safe_int(item.get('owner_id'))
+    # Filter out '0' if that was used as a placeholder for None
+    if owner_id == 0: 
+        owner_id = None
+        
     owner_contact = Contact.query.get(owner_id) if owner_id else None
 
-    # --- Project ID and Status (no changes needed) ---
-    project_id = item.get('project_id')
-    if project_id in [None, "", "null"]:
-        project_id = None
+    # --- Project ID and Status ---
+    project_id = safe_int(item.get('project_id'))
+    
     status = item.get('status') if item.get('status') else 'Booked'
     session_title = item.get('session_title')
 
@@ -108,6 +118,10 @@ def _create_or_update_session(item, meeting_number, seq):
 
     current_path_level = derive_current_path_level(
         log_for_derivation, owner_contact)
+        
+    # --- Duration Handling ---
+    duration_min = safe_int(item.get('duration_min'))
+    duration_max = safe_int(item.get('duration_max'))
 
     # --- Create or Update SessionLog ---
     if item['id'] == 'new':
@@ -117,10 +131,8 @@ def _create_or_update_session(item, meeting_number, seq):
             Type_ID=type_id,
             Owner_ID=owner_id,
             credentials=credentials,
-            Duration_Min=item.get('duration_min') if item.get(
-                'duration_min') else None,
-            Duration_Max=item.get('duration_max') if item.get(
-                'duration_max') else None,
+            Duration_Min=duration_min,
+            Duration_Max=duration_max,
             Project_ID=project_id,
             Session_Title=session_title,
             Status=status,
@@ -135,10 +147,8 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Type_ID = type_id
             log.Owner_ID = owner_id
             log.credentials = credentials
-            log.Duration_Min = item.get('duration_min') if item.get(
-                'duration_min') else None
-            log.Duration_Max = item.get('duration_max') if item.get(
-                'duration_max') else None
+            log.Duration_Min = duration_min
+            log.Duration_Max = duration_max
             log.Project_ID = project_id
             log.Status = status
             if session_title is not None:
