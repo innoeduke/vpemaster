@@ -123,6 +123,24 @@ def _create_or_update_session(item, meeting_number, seq):
     duration_min = safe_int(item.get('duration_min'))
     duration_max = safe_int(item.get('duration_max'))
 
+    # If duration is missing, try to set defaults (Priority: Project > SessionType)
+    if duration_min is None and duration_max is None:
+        # 1. Project Defaults
+        if project_id:
+            project_obj = Project.query.get(project_id)
+            if project_obj:
+                duration_min = project_obj.Duration_Min
+                duration_max = project_obj.Duration_Max
+        
+        # 2. Session Type Defaults (if still None)
+        if (duration_min is None and duration_max is None) and session_type:
+            if session_type.Title == 'Presentation':
+                duration_min = 10
+                duration_max = 15
+            else:
+                duration_min = session_type.Duration_Min
+                duration_max = session_type.Duration_Max
+
     # --- Create or Update SessionLog ---
     if item['id'] == 'new':
         new_log = SessionLog(
