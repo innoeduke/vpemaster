@@ -382,6 +382,30 @@ select {
 }
 
 /* --- Snowfall Animation --- */
+.section-row {
+    background-color: #c41e3a !important;
+    /* Christmas Red */
+    color: #ffd700 !important;
+    /* Gold text */
+    border: 1px solid #d4af37 !important;
+}
+
+.speech-tooltip-wrapper .project-code-link {
+    color: #fff !important;
+    /* White text for better readability */
+    font-weight: bold;
+    background-color: rgba(0, 0, 0, 0.2);
+    /* Slight dark background for contrast */
+    border: 1px solid #d4af37;
+    /* Gold border */
+}
+
+.speech-tooltip-wrapper .project-code-link:hover {
+    color: #ffd700 !important;
+    /* Gold on hover */
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
 .snow-container {
     position: fixed;
     top: 0;
