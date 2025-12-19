@@ -537,9 +537,8 @@ document.addEventListener("DOMContentLoaded", () => {
         field === "Valid_for_Project" ||
         field == "Predefined"
       ) {
-        cell.innerHTML = `<input type="checkbox" ${
-          originalValue ? "checked" : ""
-        } disabled>`;
+        cell.innerHTML = `<input type="checkbox" ${originalValue ? "checked" : ""
+          } disabled>`;
       } else {
         cell.textContent = originalValue;
       }
@@ -564,9 +563,8 @@ document.addEventListener("DOMContentLoaded", () => {
         field === "Valid_for_Project" ||
         field == "Predefined"
       ) {
-        cell.innerHTML = `<input type="checkbox" ${
-          value ? "checked" : ""
-        } disabled>`;
+        cell.innerHTML = `<input type="checkbox" ${value ? "checked" : ""
+          } disabled>`;
       } else if (field === "role_id") {
         const selectedRole = ROLES_DATA.find((role) => role.id == value);
         cell.textContent = selectedRole ? selectedRole.name : "";
@@ -652,6 +650,28 @@ document.addEventListener("DOMContentLoaded", () => {
     createEditor: (cell, field, currentValue) => {
       if (field === "needs_approval" || field === "is_distinct") {
         cell.querySelector('input[type="checkbox"]').disabled = false;
+      } else if (field === "type") {
+        const select = document.createElement("select");
+        select.className = "form-control-sm";
+        ["standard", "club-specific", "officer"].forEach((opt) => {
+          const option = new Option(opt, opt);
+          if (opt === currentValue) option.selected = true;
+          select.appendChild(option);
+        });
+        cell.textContent = "";
+        cell.appendChild(select);
+      } else if (field === "award_category") {
+        const select = document.createElement("select");
+        select.className = "form-control-sm";
+        // Empty option for 'none'
+        select.appendChild(new Option("none", ""));
+        ["speaker", "evaluator", "role-taker", "table-topic"].forEach((opt) => {
+          const option = new Option(opt, opt);
+          if (opt === currentValue) option.selected = true;
+          select.appendChild(option);
+        });
+        cell.textContent = "";
+        cell.appendChild(select);
       } else {
         const input = document.createElement("input");
         input.type = "text";
@@ -663,9 +683,8 @@ document.addEventListener("DOMContentLoaded", () => {
     },
     restoreCell: (cell, field, originalValue) => {
       if (field === "needs_approval" || field === "is_distinct") {
-        cell.innerHTML = `<input type="checkbox" ${
-          originalValue ? "checked" : ""
-        } disabled>`;
+        cell.innerHTML = `<input type="checkbox" ${originalValue ? "checked" : ""
+          } disabled>`;
       } else if (field === "icon") {
         cell.innerHTML = `<i class="${originalValue}"></i> ${originalValue}`;
       } else {
@@ -676,14 +695,14 @@ document.addEventListener("DOMContentLoaded", () => {
       if (field === "needs_approval" || field === "is_distinct") {
         return cell.querySelector('input[type="checkbox"]').checked;
       } else {
-        return cell.querySelector("input").value;
+        const input = cell.querySelector("input, select");
+        return input ? input.value : "";
       }
     },
     updateCell: (cell, field, value) => {
       if (field === "needs_approval" || field === "is_distinct") {
-        cell.innerHTML = `<input type="checkbox" ${
-          value ? "checked" : ""
-        } disabled>`;
+        cell.innerHTML = `<input type="checkbox" ${value ? "checked" : ""
+          } disabled>`;
       } else if (field === "icon") {
         cell.innerHTML = `<i class="${value}"></i> ${value}`;
       } else {
@@ -790,24 +809,20 @@ document.addEventListener("DOMContentLoaded", () => {
       <td data-field="Duration_Min">${sessionData.Duration_Min || ""}</td>
       <td data-field="Duration_Max">${sessionData.Duration_Max || ""}</td>
       <td data-field="Is_Section">
-        <input type="checkbox" ${
-          sessionData.Is_Section ? "checked" : ""
-        } disabled>
+        <input type="checkbox" ${sessionData.Is_Section ? "checked" : ""
+      } disabled>
       </td>
       <td data-field="Predefined">
-        <input type="checkbox" ${
-          sessionData.Predefined ? "checked" : ""
-        } disabled>
+        <input type="checkbox" ${sessionData.Predefined ? "checked" : ""
+      } disabled>
       </td>
       <td data-field="Valid_for_Project">
-        <input type="checkbox" ${
-          sessionData.Valid_for_Project ? "checked" : ""
-        } disabled>
+        <input type="checkbox" ${sessionData.Valid_for_Project ? "checked" : ""
+      } disabled>
       </td>
       <td data-field="Is_Hidden">
-        <input type="checkbox" ${
-          sessionData.Is_Hidden ? "checked" : ""
-        } disabled>
+        <input type="checkbox" ${sessionData.Is_Hidden ? "checked" : ""
+      } disabled>
       </td>
     `;
 
