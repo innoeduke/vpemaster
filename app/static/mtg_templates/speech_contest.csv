@@ -1,24 +1,21 @@
-OPENING,
-SAA Introduction,,Fei Ding
-President's Address,,Siqi Shao
-Introduction to Contest Team,,3
-,
-SECTION,International Speech Contest
-Contest Chair Address,,5
-International Speech Contest,,50
-Ballot Counting,,2
-New Guest Greetings,,5
-Networking,,10
-,
-SECTION,Table Topics Contest
-Contest Chair Address,,5
-Table Topics Speech Contest,,35
-Ballot Counting,,2
-,
-EVALUATION REPORTS,
-Chief Judge Report,,10
-Voting and Announcements,,2
-Awards / Meeting Closing,,Siqi Shao,2
-,
-ADDITIONAL ROLES,
-Photographer,,0
+Type,Title,Role,Owner,Duration_Min,Duration_Max
+Section,OPENING,,,0,
+SAA Introduction,SAA Introduction,SAA,Fei Ding,0,1
+President's Address,President's Address,President,Siqi Shao,0,2
+Generic,Introduction to Contest Team,Toastmaster,,0,3
+Section,International Speech Contest,,,0,
+Contest Chair Address,Contest Chair Address,Contest Chair,,0,5
+Speech Contest,International Speech Contest,,,0,50
+Ballot Counting,Ballot Counting,Ballot Counter,,0,2
+New Guest Greetings,New Guest Greetings,Welcome Officer,,0,5
+Generic,Networking & Break,,,0,10
+Section,Table Topics Contest,,,0,
+Contest Chair Address,Contest Chair Address,Contest Chair,,0,5
+Speech Contest,Table Topics Speech Contest,,,0,35
+Ballot Counting,Ballot Counting,Ballot Counter,,0,2
+Section,EVALUATION REPORTS,,,0,
+Chief Judge Report,Chief Judge Report,Chief Judge,,0,10
+Voting and Announcements,Voting and Announcements,Toastmaster,,0,2
+Awards / Meeting Closing,Awards / Meeting Closing,President,Siqi Shao,0,2
+Hidden Section,ADDITIONAL ROLES,,,0,
+Photography,Photography,Photographer,,0,

@@ -653,15 +653,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Dynamically set colspan based on screen size to fix mobile browser bug
       if (window.innerWidth <= 768) {
-        titleCell.colSpan = 5; // Spans the 4 visible middle columns on mobile
+        titleCell.colSpan = 6; // Spans the visible middle columns on mobile (updated)
       } else {
-        titleCell.colSpan = 7; // Spans the 7 middle columns on desktop
+        titleCell.colSpan = 8; // Spans the middle columns on desktop (updated)
       }
 
       titleCell.classList.add("section-row");
+      titleCell.classList.add("drag-handle"); // Enable dragging from title
+      seqCell.classList.add("drag-handle");   // Enable dragging from sequence no
 
       row.append(
-        createEditableCell("Meeting_Seq", seq, true, typeId), // Pass typeId
+        seqCell,
         titleCell,
         createActionsCell(originalData.id, typeId, hasRole)
       );

@@ -1,42 +1,38 @@
-OPENING,,
-SAA Introduction,,Fei Ding,
-President's Address,,Siqi Shao,
-Toastmaster of the Evening's Address,,
-Ah-Counter Introduction,,
-Grammarian Introduction,,
-Timer Introduction,,
-,,
-FEATURED SESSION,,
-Pecha Kucha,,,25
-Table Topics,,,20
-New Guest Greetings,,
-Networking,,Members & Guests,
-,,
-PREPARED SPEECHES,,
-Pathway Speech,,
-Pathway Speech,,
-Pathway Speech,,
-,,
-EVALUATION REPORTS,,
-General Evaluator's Address,,
-Evaluation,,
-Evaluation,,
-Evaluation,,
-Ah-Counter Report,,
-Grammarian Report,,
-Timer Report,,
-General Evaluation Report,,
-,,
-AWARDS & CLOSING,,
-Voting and Announcements,,
-Awards / Meeting Closing,,Siqi Shao,
-,,
-ADDITIONAL ROLES,,
-Photographer,,
-Topics Speaker,,
-Topics Speaker,,
-Topics Speaker,,
-Topics Speaker,,
-Topics Speaker,,
-Topics Speaker,,
-Topics Speaker,,
+Type,Title,Role,Owner,Duration_Min,Duration_Max
+Section,OPENING,,,0,
+SAA Introduction,,SAA,Fei Ding,0,1
+President's Address,,President,Siqi Shao,0,2
+Toastmaster of the Evening's Address,,Toastmaster,,0,2
+Ah-Counter Introduction,,Ah-Counter,,0,1
+Grammarian Introduction,,Grammarian,,0,2
+Timer Introduction,,Timer,,0,1
+Section,FEATURED SESSION,,,0,
+Pecha Kucha,Pecha Kucha,Presenter,,0,25
+Table Topics,Table Topics,Topicmaster,,0,20
+New Guest Greetings,New Guest Greetings,Welcome Officer,,0,5
+Generic,Networking & Break,,,0,10
+Section,PREPARED SPEECHES,,,0,
+Pathway Speech,Pathway Speech,Prepared Speaker,,,
+Pathway Speech,Pathway Speech,Prepared Speaker,,,
+Pathway Speech,Pathway Speech,Prepared Speaker,,,
+Section,EVALUATION REPORTS,,,0,
+General Evaluator's Address,,General Evaluator,,0,1
+Evaluation,,Individual Evaluator,,2,3
+Evaluation,,Individual Evaluator,,2,3
+Evaluation,,Individual Evaluator,,2,3
+Ah-Counter Report,,Ah-Counter,,0,1
+Grammarian Report,,Grammarian,,0,2
+Timer Report,,Timer,,0,1
+General Evaluation Report,,General Evaluator,,0,5
+Section,AWARDS & CLOSING,,,0,
+Voting and Announcements,,Toastmaster,,0,3
+Awards / Meeting Closing,,President,Siqi Shao,0,2
+Hidden Section,ADDITIONAL ROLES,,,0,
+Photography,,Photographer,,0,
+Topics Speech,Topics Speaker,Topics Speaker,,1,2
+Topics Speech,Topics Speaker,Topics Speaker,,1,2
+Topics Speech,Topics Speaker,Topics Speaker,,1,2
+Topics Speech,Topics Speaker,Topics Speaker,,1,2
+Topics Speech,Topics Speaker,Topics Speaker,,1,2
+Topics Speech,Topics Speaker,Topics Speaker,,1,2
+Topics Speech,Topics Speaker,Topics Speaker,,1,2

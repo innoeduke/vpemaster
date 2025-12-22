@@ -1271,114 +1271,126 @@ def create_from_template():
     try:
         with open(template_path, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
+            
+            # 1. Skip Header Row
+            next(reader, None) 
+            
             seq = 1
             current_time = start_time
+
+            # Helper to safely convert to int
+            def safe_int(value):
+                try:
+                    return int(value) if value is not None else None
+                except ValueError:
+                    return None
+
             for row in reader:
-                # Skip any row that is completely empty or just contains empty strings/commas
+                # Skip perfectly empty rows
                 if not any(cell.strip() for cell in row):
                     continue
 
-                # --- Flexible Column Parsing ---
-                # Check if the first column is a recognized session type.
-                first_col_val = row[0].strip()
-                session_type = SessionType.query.filter_by(
-                    Title=first_col_val).first()
+                # Ensure row has enough columns (pad if necessary, though strict format implies fixed len)
+                # Helper to safely get index or None
+                def get_col(idx):
+                    return row[idx].strip() if idx < len(row) and row[idx].strip() else None
 
-                owner_name = ''
-                session_title_from_csv = ''
-                duration_cols = []
+                # 2. Parse Fixed 6 Columns
+                # [Session Type, Session Title, Role, Owner, Duration Min, Duration Max]
+                type_val = get_col(0)
+                title_val = get_col(1)
+                role_val = get_col(2)
+                owner_val = get_col(3)
+                min_val = get_col(4)
+                max_val = get_col(5)
 
-                if session_type:
-                    # Format: [Session Type, Session Title, Owner, Durations...]
-                    type_id = session_type.id
-                    session_title_from_csv = row[1].strip() if len(
-                        row) > 1 else ''
-                    owner_name = row[2].strip() if len(row) > 2 else ''
-                    duration_cols = [c.strip()
-                                     for c in row[3:] if c.strip().isdigit()]
-                else:
-                    # Format: [Session Title, Owner, Durations...]
-                    type_id = 8  # Fallback to 'Custom Session'
-                    session_title_from_csv = first_col_val  # The first column is the title
-                    owner_name = row[1].strip() if len(row) > 1 else ''
-                    duration_cols = [c.strip()
-                                     for c in row[2:] if c.strip().isdigit()]
+                # --- Resolve Session Type ---
+                session_type = None
+                type_id = 8  # Default to 'Custom Session' (ID 8) if not found
 
-                # --- Duration Logic ---
-                duration_min = None
-                duration_max = None
-                if len(duration_cols) == 1:
-                    duration_max = duration_cols[0]
-                elif len(duration_cols) >= 2:
-                    duration_min = duration_cols[0]
-                    duration_max = duration_cols[1]
+                if type_val:
+                    session_type = SessionType.query.filter_by(Title=type_val).first()
+                    if session_type:
+                        type_id = session_type.id
+                
+                # --- Resolve Session Title ---
+                # Logic: If CSV has title, use it. 
+                # If CSV title is blank BUT it is a predefined type, use Type Title.
+                # If it's "Section" type, use the CSV title (which acts as header text).
+                session_title_for_log = title_val
+                
+                if not session_title_for_log and session_type and session_type.Predefined:
+                     session_title_for_log = session_type.Title
 
-                # If it's a predefined type, use its title unless a custom one is provided.
-                # For custom sessions, always use the title from the CSV.
-                if type_id == 8:  # Custom Session
-                    session_title_for_log = session_title_from_csv
-                elif session_type and session_type.Predefined and not session_title_from_csv:
-                    session_title_for_log = session_type.Title
-                else:
-                    session_title_for_log = session_title_from_csv
+                # --- Resolve Durations ---
+                duration_min = safe_int(min_val)
+                duration_max = safe_int(max_val)
 
-                if not duration_max and not duration_min and session_type:  # Only use default duration if type is known
-                    duration_max = session_type.Duration_Max
+                # Fallback to SessionType defaults if CSV is blank
+                if duration_min is None and duration_max is None and session_type:
                     duration_min = session_type.Duration_Min
+                    duration_max = session_type.Duration_Max
 
+                # Special Logic for GE styles (override defaults if needed)
                 if type_id == 16:  # General Evaluation Report
                     if ge_style == 'Multiple shots':
                         duration_max = 3
                     else:  # 'One shot'
                         duration_max = 5
-
+                
                 break_minutes = 1
                 if type_id == 31 and ge_style == 'Multiple shots':  # Individual Evaluation
                     break_minutes += 1
 
+                # --- Resolve Owner ---
                 owner_id = None
                 credentials = ''
-                if owner_name:
-                    owner = Contact.query.filter_by(Name=owner_name).first()
+                if owner_val:
+                    owner = Contact.query.filter_by(Name=owner_val).first()
                     if owner:
                         owner_id = owner.id
                         credentials = derive_credentials(owner)
-
+                
+                # --- Create Log ---
                 new_log = SessionLog(
                     Meeting_Number=meeting_number,
                     Meeting_Seq=seq,
                     Type_ID=type_id,
                     Owner_ID=owner_id,
-                    Session_Title=session_title_for_log,
                     credentials=credentials,
                     Duration_Min=duration_min,
-                    Duration_Max=duration_max
+                    Duration_Max=duration_max,
+                    Session_Title=session_title_for_log,
+                    Status='Booked'  # Default status
                 )
 
-                # Fetch the session type object to check its properties
-                final_session_type = SessionType.query.get(type_id)
-
-                # Only calculate start time for sessions that are NOT sections and NOT hidden.
-                if final_session_type and not final_session_type.Is_Section and not final_session_type.Is_Hidden:
-                    new_log.Start_Time = current_time
-                    duration_to_add = int(duration_max or 0)
-                    dt_current_time = datetime.combine(
-                        meeting_date, current_time)
-                    next_dt = dt_current_time + \
-                        timedelta(minutes=duration_to_add + break_minutes)
-                    current_time = next_dt.time()
+                # Calculate Start Time (Skip for Sections)
+                is_section = False
+                if session_type and session_type.Is_Section:
+                    is_section = True
+                
+                if not is_section:
+                   new_log.Start_Time = current_time
+                   # Calculate next start time
+                   dur_to_add = int(duration_max or 0)
+                   dt_current = datetime.combine(meeting_date, current_time)
+                   next_dt = dt_current + timedelta(minutes=dur_to_add + break_minutes)
+                   current_time = next_dt.time()
+                else:
+                   new_log.Start_Time = None
 
                 db.session.add(new_log)
                 seq += 1
 
-            # --- 5. Final Commit ---
-            db.session.commit()
+        db.session.commit()
+        return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number, message='Meeting created successfully from template!', category='success'))
+
     except FileNotFoundError:
-        db.session.rollback()  # Rollback changes if template file fails
-        return redirect(url_for('agenda_bp.agenda', message=f'Template file not found: {template_file}', category='error'))
+        return redirect(url_for('agenda_bp.agenda', message='Template file not found.', category='error'))
     except Exception as e:
-        db.session.rollback()  # Rollback on any other error
-        return redirect(url_for('agenda_bp.agenda', message=f'Error processing template: {e}', category='error'))
+        db.session.rollback()
+        current_app.logger.error(f"Error creating meeting: {e}")
+        return redirect(url_for('agenda_bp.agenda', message=f'Error processing template: {str(e)}', category='error'))
 
     return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
 
