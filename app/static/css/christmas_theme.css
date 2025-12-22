@@ -91,8 +91,8 @@ th,
 .nav-pane ul li a:hover {
     background-color: #c41e3a;
     /* Red highlight */
-    color: #ffd700;
-    /* Gold text */
+    color: #fff;
+    /* White text */
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 }
 
@@ -256,6 +256,7 @@ select {
 
 .autocomplete-items div:hover {
     background-color: #c41e3a;
+    color: #fff !important;
 }
 
 /* --- Decorations --- */
@@ -385,8 +386,8 @@ select {
 .section-row {
     background-color: #c41e3a !important;
     /* Christmas Red */
-    color: #ffd700 !important;
-    /* Gold text */
+    color: #fff !important;
+    /* White text */
     border: 1px solid #d4af37 !important;
 }
 
@@ -730,4 +731,68 @@ select {
 /* Animation refinement */
 .wod-display.open .envelope-flap {
     transform: rotateX(180deg);
+}
+
+/* --- Roster Page Specific Overrides --- */
+
+/* The card itself has a white background (from bootstrap default or roster.css), so we need dark text */
+.roster-main-content .card {
+    color: #fff !important;
+    /* White text for visibility on red */
+    background-color: transparent !important;
+    /* Ensure it inherits the red or stays clear */
+}
+
+/* Headers inside the card */
+.roster-main-content .card h3,
+.roster-main-content .card .card-title {
+    color: #fff !important;
+    /* White */
+    text-shadow: none !important;
+    font-size: 2.2rem !important;
+    /* Make titles bigger */
+}
+
+/* Labels */
+.roster-main-content .card label {
+    color: #fff !important;
+}
+
+.roster-main-content .lucky-draw-result,
+.roster-main-content .winners-list {
+    color: #1a472a !important;
+    /* Keep Green if this area is white/light */
+}
+
+.roster-main-content .placeholder-text,
+.roster-main-content .no-entries {
+    color: #ddd !important;
+    /* Light grey for visibility if on red, need to double check layout */
+}
+
+/* Form Inputs and Selects on Roster Page */
+/* Revert to light background so they look "normal" on the white card, avoiding dropdown visibility issues */
+.roster-main-content input.form-control,
+.roster-main-content select.form-control {
+    background-color: #fff !important;
+    color: #1a472a !important;
+    border: 1px solid #d4af37 !important;
+}
+
+/* Ensure focus state doesn't ruin it */
+.roster-main-content input.form-control:focus,
+.roster-main-content select.form-control:focus {
+    background-color: #fff !important;
+    color: #1a472a !important;
+    box-shadow: 0 0 0 0.2rem rgba(212, 175, 55, 0.25) !important;
+    /* Gold glow */
+}
+
+/* --- Speech Logs Visibility Fixes --- */
+.speech-log-entry .project-name,
+.speech-log-entry .project-code,
+.speech-log-entry .project-info {
+    color: #1a472a !important;
+    /* Dark Green */
+    font-weight: bold;
 }
