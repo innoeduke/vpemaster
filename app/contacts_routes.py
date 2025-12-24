@@ -33,6 +33,50 @@ def show_contacts():
 
     contacts = Contact.query.outerjoin(
         Contact.user).order_by(Contact.Name.asc()).all()
+    
+    # 1. Attendance (Roster)
+    # Count how many times each contact appears in Roster
+    from .models import Roster, SessionType, Role
+    from sqlalchemy import func
+    
+    attendance_counts = db.session.query(
+        Roster.contact_id, func.count(Roster.id)
+    ).filter(Roster.contact_id.isnot(None)).group_by(Roster.contact_id).all()
+    attendance_map = {c_id: count for c_id, count in attendance_counts}
+
+    # 2. Roles (SessionLog where SessionType is a Role)
+    # Filter for session types that have an associated role (and are likely standard/club-specific)
+    # We can assume if it has a role_id it's a role.
+    role_counts = db.session.query(
+        SessionLog.Owner_ID, func.count(SessionLog.id)
+    ).join(SessionType).filter(
+        SessionLog.Owner_ID.isnot(None),
+        SessionType.role_id.isnot(None) 
+    ).group_by(SessionLog.Owner_ID).all()
+    role_map = {c_id: count for c_id, count in role_counts}
+
+    # 3. Awards (Meeting Best X)
+    # We need to sum up best_speaker, best_evaluator, best_table_topic, best_role_taker
+    # This is a bit manual
+    from .models import Meeting
+    
+    # helper to get counts for a specific field
+    def get_award_counts(field):
+        return db.session.query(
+            getattr(Meeting, field), func.count(Meeting.id)
+        ).filter(getattr(Meeting, field).isnot(None)).group_by(getattr(Meeting, field)).all()
+
+    award_map = {}
+    for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
+        counts = get_award_counts(field)
+        for c_id, count in counts:
+            award_map[c_id] = award_map.get(c_id, 0) + count
+
+    # Attach to contacts
+    for c in contacts:
+        c.attendance_count = attendance_map.get(c.id, 0)
+        c.role_count = role_map.get(c.id, 0)
+        c.award_count = award_map.get(c.id, 0)
 
     total_contacts = Contact.query.count()
     total_members = Contact.query.filter(
