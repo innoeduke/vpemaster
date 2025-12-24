@@ -72,8 +72,11 @@
 
         {% if grouped_logs %}
             {% for level, logs in grouped_logs.items() %}
-                <h2 class="level-heading">Level {{ level }}</h2>
-                <div class="logs-container">
+                <h2 class="level-heading" onclick="toggleLevel('{{ level }}')">
+                    Level {{ level }}
+                    <i class="fas fa-chevron-down caret-icon" id="caret-{{ level }}"></i>
+                </h2>
+                <div class="logs-container" id="logs-{{ level }}">
                     
                     {% for log in logs %}
                         {% if log.log_type == 'speech' or log.log_type == 'presentation' %}
@@ -215,5 +218,21 @@
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/search.js') }}"></script> {# Include search if needed #}
     <script src="{{ url_for('static', filename='js/speech_logs.js') }}"></script>
+    <script>
+        function toggleLevel(level) {
+            const logsContainer = document.getElementById('logs-' + level);
+            const caret = document.getElementById('caret-' + level);
+            
+            if (logsContainer.style.display === 'none') {
+                logsContainer.style.display = 'grid';
+                caret.classList.remove('fa-chevron-right');
+                caret.classList.add('fa-chevron-down');
+            } else {
+                logsContainer.style.display = 'none';
+                caret.classList.remove('fa-chevron-down');
+                caret.classList.add('fa-chevron-right');
+            }
+        }
+    </script>
 
 {% endblock %}

@@ -53,6 +53,15 @@
     padding-bottom: 5px;
     border-bottom: 3px solid #772432;
     color: #004165;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.caret-icon {
+    font-size: 0.8em;
+    transition: transform 0.3s ease;
 }
 
 .logs-container {
