@@ -77,9 +77,11 @@ content %}
                 <span title="Attendance" style="background-color: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">
                     <i class="fas fa-calendar-check" style="color: #4a5568;"></i> {{ contact.attendance_count }}
                 </span>
-                <span title="Roles Taken" style="background-color: #bee3f8; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">
-                     <i class="fas fa-user-tag" style="color: #2b6cb0;"></i> {{ contact.role_count }}
-                </span>
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}?speaker_search={{ contact.Name }}" style="text-decoration: none;">
+                    <span title="Roles Taken" style="background-color: #bee3f8; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">
+                         <i class="fas fa-user-tag" style="color: #2b6cb0;"></i> {{ contact.role_count }}
+                    </span>
+                </a>
                 <span title="Awards Won" style="background-color: #feebc8; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">
                     <i class="fas fa-trophy" style="color: #c05621;"></i> {{ contact.award_count }}
                 </span>

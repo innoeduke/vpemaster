@@ -12,6 +12,19 @@ document.addEventListener("DOMContentLoaded", function () {
       ".speech-log-entry",
       ".speaker-info"
     );
+
+    // Auto-fill speaker search if query param is present
+    const urlParams = new URLSearchParams(window.location.search);
+    const speakerSearch = urlParams.get('speaker_search');
+    if (speakerSearch) {
+      const input = document.getElementById("speaker-search");
+      input.value = speakerSearch;
+      // Trigger keyup to apply filter
+      input.dispatchEvent(new Event('keyup'));
+      // If clear button exists, show it
+      const clearBtn = document.getElementById("clear-speaker-search");
+      if (clearBtn) clearBtn.style.display = "block";
+    }
   }
 });
 

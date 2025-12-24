@@ -45,15 +45,18 @@ def show_contacts():
     attendance_map = {c_id: count for c_id, count in attendance_counts}
 
     # 2. Roles (SessionLog where SessionType is a Role)
-    # Filter for session types that have an associated role (and are likely standard/club-specific)
-    # We can assume if it has a role_id it's a role.
-    role_counts = db.session.query(
-        SessionLog.Owner_ID, func.count(SessionLog.id)
+    # We want to count distinct (Meeting, Role) pairs per user.
+    # If a user has multiple slots for the same role in the same meeting, it counts as 1.
+    distinct_roles = db.session.query(
+        SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id
     ).join(SessionType).filter(
         SessionLog.Owner_ID.isnot(None),
         SessionType.role_id.isnot(None) 
-    ).group_by(SessionLog.Owner_ID).all()
-    role_map = {c_id: count for c_id, count in role_counts}
+    ).distinct().all()
+
+    role_map = {}
+    for owner_id, _, _ in distinct_roles:
+        role_map[owner_id] = role_map.get(owner_id, 0) + 1
 
     # 3. Awards (Meeting Best X)
     # We need to sum up best_speaker, best_evaluator, best_table_topic, best_role_taker
