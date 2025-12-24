@@ -12,8 +12,12 @@
                 <div class="form-group">
                     <select name="pathway" onchange="this.form.submit()">
                         <option value="">All Pathways</option>
-                        {% for pathway in pathways %}
-                            <option value="{{ pathway }}" {% if selected_filters.pathway == pathway %}selected{% endif %}>{{ pathway }}</option>
+                        {% for type, p_list in pathways.items() %}
+                            <optgroup label="{{ type }}">
+                                {% for pathway in p_list %}
+                                    <option value="{{ pathway }}" {% if selected_filters.pathway == pathway %}selected{% endif %}>{{ pathway }}</option>
+                                {% endfor %}
+                            </optgroup>
                         {% endfor %}
                     </select>
                 </div>
@@ -30,6 +34,18 @@
                         <option value="">All Statuses (Speeches)</option> <option value="Booked" {% if selected_filters.status == 'Booked' %}selected{% endif %}>Booked</option>
                         <option value="Delivered" {% if selected_filters.status == 'Delivered' %}selected{% endif %}>Delivered</option>
                         <option value="Completed" {% if selected_filters.status == 'Completed' %}selected{% endif %}>Completed</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <select name="role" onchange="this.form.submit()">
+                        <option value="">All Roles</option>
+                        {% for type, roles in roles.items() %}
+                            <optgroup label="{{ type }}">
+                                {% for role in roles %}
+                                    <option value="{{ role }}" {% if selected_filters.role == role %}selected{% endif %}>{{ role }}</option>
+                                {% endfor %}
+                            </optgroup>
+                        {% endfor %}
                     </select>
                 </div>
             </div>

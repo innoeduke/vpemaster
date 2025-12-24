@@ -28,6 +28,7 @@ def show_speech_logs():
     selected_level = request.args.get('level')
     selected_speaker = request.args.get('speaker_id')
     selected_status = request.args.get('status')
+    selected_role = request.args.get('role')
 
     if is_member_view:
         user = User.query.get(session.get('user_id'))
@@ -38,7 +39,27 @@ def show_speech_logs():
 
     all_pathways_from_db = Pathway.query.order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways_from_db}
-    pathways = [p.name for p in all_pathways_from_db]
+
+    grouped_pathways = {}
+    for p in all_pathways_from_db:
+        ptype = p.type or "Other"
+        if ptype not in grouped_pathways:
+            grouped_pathways[ptype] = []
+        grouped_pathways[ptype].append(p.name)
+
+    # Fetch available roles for the filter
+    available_roles = Role.query.filter(
+        Role.type.in_(['standard', 'club-specific'])
+    ).order_by(Role.name).all()
+    
+    grouped_roles = {}
+    for r in available_roles:
+        # Capitalize type for display (e.g., "Standard", "Club-specific")
+        rtype = r.type.replace('-', ' ').title() 
+        if rtype not in grouped_roles:
+            grouped_roles[rtype] = []
+        grouped_roles[rtype].append(r.name)
+
 
     # Eager load all common relationships
     base_query = db.session.query(SessionLog).options(
@@ -61,6 +82,8 @@ def show_speech_logs():
     if selected_meeting:
         base_query = base_query.filter(
             SessionLog.Meeting_Number == selected_meeting)
+    if selected_role:
+        base_query = base_query.filter(Role.name == selected_role)
 
     all_logs = base_query.order_by(SessionLog.Meeting_Number.desc()).all()
 
@@ -217,10 +240,11 @@ def show_speech_logs():
         'speech_logs.html',
         grouped_logs=sorted_grouped_logs,
         roles_config=current_app.config['ROLES'],
+        roles=grouped_roles,
         role_icons=role_icons,
         meeting_numbers=meeting_numbers,
         speakers=speakers,
-        pathways=pathways,
+        pathways=grouped_pathways,
         levels=range(1, 6),
         projects=projects_data,  # This is used for allProjects in JS
         presentations=presentations_data,  # Pass presentation data for JS
@@ -233,7 +257,8 @@ def show_speech_logs():
             'pathway': selected_pathway,
             'level': selected_level,
             'speaker_id': selected_speaker,
-            'status': selected_status
+            'status': selected_status,
+            'role': selected_role
         },
         is_member_view=is_member_view,
         pathway_mapping=pathway_mapping
