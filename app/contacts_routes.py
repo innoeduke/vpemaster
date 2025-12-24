@@ -64,7 +64,10 @@ def contact_form(contact_id=None):
             "DTM": contact.DTM,
             "Phone_Number": contact.Phone_Number,
             "Bio": contact.Bio,
-            "credentials": contact.user.credentials if contact.user else None
+            "credentials": contact.user.credentials if contact.user else None,
+            "current_path": contact.user.Current_Path if contact.user else None,
+            "next_project": contact.user.Next_Project if contact.user else None,
+            "has_user": True if contact.user else False
         }
         return jsonify(contact=contact_data)
 
@@ -82,6 +85,12 @@ def contact_form(contact_id=None):
             contact.DTM = 'dtm' in request.form
             contact.Phone_Number = request.form.get('phone_number')
             contact.Bio = request.form.get('bio')
+            
+            if contact.user:
+                contact.user.Current_Path = request.form.get('current_path')
+                contact.user.Next_Project = request.form.get('next_project')
+                contact.user.credentials = request.form.get('credentials')
+
             db.session.commit()
         else:
             # Logic for creating a new contact

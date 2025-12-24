@@ -139,14 +139,22 @@ function openContactModal(contactId) {
         document.getElementById("completed_paths").value =
           data.contact.Completed_Paths || "";
         document.getElementById("dtm").checked = data.contact.DTM;
-        // Handle credential if available
-        if (data.contact.credentials) {
-          // We'll add credential field handling in a future update
+
+        // Handle User Fields
+        const userFieldsSection = document.getElementById("userFieldsSection");
+        if (data.contact.has_user) {
+          userFieldsSection.style.display = "block";
+          document.getElementById("current_path").value = data.contact.current_path || "";
+          document.getElementById("next_project").value = data.contact.next_project || "";
+          document.getElementById("credentials").value = data.contact.credentials || "";
+        } else {
+          userFieldsSection.style.display = "none";
         }
       });
   } else {
     contactModalTitle.textContent = "Add New Contact";
     contactForm.action = "/contact/form";
+    document.getElementById("userFieldsSection").style.display = "none";
   }
   contactModal.style.display = "flex";
 }

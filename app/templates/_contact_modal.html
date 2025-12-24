@@ -78,6 +78,32 @@
           <td><input type="checkbox" id="dtm" name="dtm" /></td>
         </tr>
       </table>
+      
+      <div id="userFieldsSection" style="display: none; border-top: 1px solid #eee; margin-top: 15px; padding-top: 10px;">
+        <h3>User Settings</h3>
+        <table class="form-table">
+          <tr>
+            <td><label for="current_path">Current Path:</label></td>
+            <td>
+               <select id="current_path" name="current_path">
+                 <option value="">-- Select Path --</option>
+                 {% for pathway in pathways %}
+                   <option value="{{ pathway }}">{{ pathway }}</option>
+                 {% endfor %}
+               </select>
+            </td>
+          </tr>
+          <tr>
+            <td><label for="next_project">Next Project:</label></td>
+            <td><input type="text" id="next_project" name="next_project" placeholder="e.g., PM1.1" /></td>
+          </tr>
+          <tr>
+            <td><label for="credentials">Credentials:</label></td>
+            <td><input type="text" id="credentials" name="credentials" placeholder="e.g., EC5" /></td>
+          </tr>
+        </table>
+      </div>
+
       <div class="form-actions">
         <button type="submit" class="btn btn-primary">Save</button>
       </div>
