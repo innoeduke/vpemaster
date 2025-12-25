@@ -22,6 +22,7 @@
         
         {% if not is_member_view %}
         <form id="speech-logs-filter-form" method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="filters-container">
+            <input type="hidden" name="view_mode" value="{{ view_mode }}">
             <div class="filter-row">
                 <div class="form-group">
                     <select name="pathway" onchange="this.form.submit()">
@@ -78,7 +79,7 @@
                 </div>
                 {% if not is_member_view %}
                 <div class="form-group">
-                    <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="btn btn-danger">Clear All</a>
+                    <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode=view_mode) }}" class="btn btn-danger">Clear All</a>
                 </div>
                 {% endif %}
             </div>
