@@ -184,11 +184,13 @@ def show_speech_logs():
     for level in grouped_logs:
         grouped_logs[level].sort(key=get_activity_sort_key)
 
-    # Sort the groups themselves (General last)
-    def get_group_sort_key(level_key):  # This part is unchanged
-        if isinstance(level_key, int):
-            return (0, level_key)  # Sort numbers first, by value
-        return (1, level_key)  # Sort "General" string last
+    # Sort the groups themselves (5, 4, 3, 2, 1, then General)
+    def get_group_sort_key(level_key):
+        try:
+            val = int(level_key)
+            return (0, -val)  # Sort numbers first, descending
+        except (ValueError, TypeError):
+            return (1, level_key)  # Sort non-numbers (e.g., "General") last
 
     sorted_grouped_logs = dict(
         sorted(grouped_logs.items(), key=lambda item: get_group_sort_key(item[0])))
