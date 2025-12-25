@@ -164,7 +164,11 @@ def show_speech_logs():
                 if log.Status != selected_status:
                     continue  # Filter speeches/presentations by status
             else:
-                continue  # Hide all roles if a status is selected
+                # For roles, only show if they are linked to a project (e.g. Active Listening) AND match status
+                if log.Project_ID and log.Status == selected_status:
+                    pass # Keep it
+                else:
+                    continue  # Hide generic roles or non-matching status
 
         # --- Add to Group ---
         if display_level not in grouped_logs:

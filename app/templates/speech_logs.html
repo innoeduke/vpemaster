@@ -46,7 +46,7 @@
                 </div>
                 <div class="form-group">
                     <select name="status" onchange="this.form.submit()">
-                        <option value="">All Statuses (Speeches)</option> <option value="Booked" {% if selected_filters.status == 'Booked' %}selected{% endif %}>Booked</option>
+                        <option value="">All Statuses</option> <option value="Booked" {% if selected_filters.status == 'Booked' %}selected{% endif %}>Booked</option>
                         <option value="Delivered" {% if selected_filters.status == 'Delivered' %}selected{% endif %}>Delivered</option>
                         <option value="Completed" {% if selected_filters.status == 'Completed' %}selected{% endif %}>Completed</option>
                     </select>
