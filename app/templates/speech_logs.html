@@ -5,13 +5,12 @@
 {% block content %}
     <h1>Activity Logs</h1>
     
-    {% if is_member_view and impersonated_user_name %}
-        <div class="alert alert-info text-center">
+    <div class="speech-logs-content">
+        {% if is_member_view and impersonated_user_name %}
+        <div class="alert alert-info text-left" style="margin-bottom: 20px;">
             <strong>Viewing logs for: {{ impersonated_user_name }}</strong>
         </div>
-    {% endif %}
-
-    <div class="speech-logs-content">
+        {% endif %}
         {% if can_view_all %}
         <div class="view-mode-toggle">
             {% if view_mode == 'admin' %}
