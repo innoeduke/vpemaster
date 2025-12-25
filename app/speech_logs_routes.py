@@ -155,8 +155,15 @@ def show_speech_logs():
         if selected_level and display_level != selected_level:
             continue
 
+        if selected_pathway and not log.Project_ID:
+            continue
+
         if log_type == 'speech' and selected_pathway and \
            (not log.owner or not log.owner.user or log.owner.user.Current_Path != selected_pathway):
+            continue
+
+        if log_type == 'presentation' and selected_pathway and \
+           getattr(log, 'presentation_series', None) != selected_pathway:
             continue
 
         if selected_status:
