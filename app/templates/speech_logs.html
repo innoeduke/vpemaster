@@ -19,7 +19,7 @@
             </a>
             {% else %}
             <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-user-shield"></i> Switch back to Admin View
+                <i class="fas fa-user-shield"></i> Switch to Admin View
             </a>
             {% endif %}
         </div>
@@ -299,7 +299,25 @@
                      document.getElementById('clear-speaker-search').style.display = 'block';
                 }
 
+                // Function to toggle datalist
+                function toggleDatalist(input) {
+                    if (input.value.length >= 1) {
+                         input.setAttribute('list', 'contacts-list');
+                    } else {
+                         input.removeAttribute('list');
+                    }
+                }
+                
+                // Initialize state
+                toggleDatalist(impersonateInput);
+
+                impersonateInput.addEventListener('focus', function() {
+                    toggleDatalist(this);
+                });
+
                 impersonateInput.addEventListener('input', function() {
+                     toggleDatalist(this);
+                     
                      const val = this.value;
                      const options = contactsList.options;
                      let foundId = null;
