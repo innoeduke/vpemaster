@@ -4,6 +4,12 @@
     margin: 0 auto;
 }
 
+.view-mode-toggle {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
 .section-heading {
     text-align: left;
     margin-top: 30px;

@@ -15,13 +15,16 @@ speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 @speech_logs_bp.route('/speech_logs')
 @login_required
 def show_speech_logs():
-    """
-    Renders the page that displays pathway project speeches.
-    - Admins/Officers can filter by any speaker.
-    - Members can only see their own speeches.
-    """
-    is_member_view = is_authorized(
-        session.get('user_role'), 'SPEECH_LOGS_VIEW_OWN')
+    # VPE/Admin can switch between 'member' and 'admin' view.
+    # Default to 'member' view for everyone.
+    can_view_all = is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL')
+    view_mode = request.args.get('view_mode', 'member')
+    
+    # Even if they can view all, we default to member view unless they explicitly ask for admin
+    if can_view_all and view_mode == 'admin':
+        is_member_view = False
+    else:
+        is_member_view = True
 
     selected_meeting = request.args.get('meeting_number')
     selected_pathway = request.args.get('pathway')
@@ -374,6 +377,8 @@ def show_speech_logs():
             'role': selected_role
         },
         is_member_view=is_member_view,
+        can_view_all=can_view_all,
+        view_mode=view_mode,
         pathway_mapping=pathway_mapping
     )
 
