@@ -4,6 +4,12 @@
 
 {% block content %}
     <h1>Activity Logs</h1>
+    
+    {% if is_member_view and impersonated_user_name %}
+        <div class="alert alert-info text-center">
+            <strong>Viewing logs for: {{ impersonated_user_name }}</strong>
+        </div>
+    {% endif %}
 
     <div class="speech-logs-content">
         {% if can_view_all %}
@@ -14,7 +20,7 @@
             </a>
             {% else %}
             <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-user-shield"></i> Switch to Admin View
+                <i class="fas fa-user-shield"></i> Switch back to Admin View
             </a>
             {% endif %}
         </div>
@@ -72,7 +78,13 @@
                     </div>
                     {% if not is_member_view %}
                     <div class="form-group search-container">
-                        <input type="text" id="speaker-search" class="search-box" placeholder="Search by Speaker">
+                        <input list="contacts-list" id="impersonate-input" class="search-box" placeholder="Impersonate User...">
+                        <datalist id="contacts-list">
+                            {% for c in all_contacts %}
+                                <option data-value="{{ c.id }}" value="{{ c.Name }}"></option>
+                            {% endfor %}
+                        </datalist>
+                        <input type="hidden" name="speaker_id" id="hidden-speaker-id" value="{{ selected_filters.speaker_id or '' }}">
                         <button type="button" id="clear-speaker-search" class="clear-search-btn" style="display: none;">&times;</button>
                     </div>
                     {% endif %}
@@ -265,6 +277,60 @@
     </div>
 
     {% include '_speech_edit_modal.html' %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const impersonateInput = document.getElementById('impersonate-input');
+            const hiddenSpeakerId = document.getElementById('hidden-speaker-id');
+            const contactsList = document.getElementById('contacts-list');
+            const form = document.getElementById('speech-logs-filter-form');
+            const viewModeInput = document.querySelector('input[name="view_mode"]');
+
+            if (impersonateInput && contactsList) {
+                 // Pre-fill input if speaker_id is set
+                const currentSpeakerId = hiddenSpeakerId.value;
+                if (currentSpeakerId) {
+                    const options = contactsList.options;
+                    for (let i = 0; i < options.length; i++) {
+                         if (options[i].getAttribute('data-value') == currentSpeakerId) {
+                             impersonateInput.value = options[i].value;
+                             break;
+                         }
+                    }
+                     document.getElementById('clear-speaker-search').style.display = 'block';
+                }
+
+                impersonateInput.addEventListener('input', function() {
+                     const val = this.value;
+                     const options = contactsList.options;
+                     let foundId = null;
+
+                     for (let i = 0; i < options.length; i++) {
+                         if (options[i].value === val) {
+                             foundId = options[i].getAttribute('data-value');
+                             break;
+                         }
+                     }
+
+                     if (foundId) {
+                         hiddenSpeakerId.value = foundId;
+                         // Switch view mode to member
+                         viewModeInput.value = 'member';
+                         form.submit();
+                     }
+                });
+
+                document.getElementById('clear-speaker-search').addEventListener('click', function() {
+                    impersonateInput.value = '';
+                    hiddenSpeakerId.value = '';
+                    this.form.submit(); // Clear filter, stay in current view? Or reset to admin? 
+                    // If we clear speaker, we probably just want to clear the filter but stay in admin view 
+                    // OR if we were in member view, maybe we want to go back?
+                    // For now, let's just submit the form. If view_mode was 'admin', it stays admin (and no speaker selected).
+                });
+            }
+        });
+    </script>
 
     <script>
         // Pass Python data to global JS variables

@@ -34,11 +34,24 @@ def show_speech_logs():
     selected_role = request.args.get('role')
 
     if is_member_view:
-        user = User.query.get(session.get('user_id'))
-        if user and user.Contact_ID:
-            selected_speaker = user.Contact_ID
+        if can_view_all and request.args.get('speaker_id'):
+            # Admin impersonating a user in member view
+            selected_speaker = request.args.get('speaker_id')
         else:
-            selected_speaker = -1   # No logs for unlinked member
+            user = User.query.get(session.get('user_id'))
+            if user and user.Contact_ID:
+                selected_speaker = user.Contact_ID
+            else:
+                selected_speaker = -1   # No logs for unlinked member
+
+    impersonated_user_name = None
+    if selected_speaker and selected_speaker != -1:
+         try:
+             c = Contact.query.get(int(selected_speaker))
+             if c:
+                 impersonated_user_name = c.Name
+         except (ValueError, TypeError):
+             pass
 
     all_pathways_from_db = Pathway.query.order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways_from_db}
@@ -330,6 +343,9 @@ def show_speech_logs():
         distinct(SessionLog.Meeting_Number)).join(Project).all()], reverse=True)
     speakers = db.session.query(Contact).join(
         SessionLog, Contact.id == SessionLog.Owner_ID).distinct().order_by(Contact.Name).all()
+    
+    # Fetch all contacts for the impersonation dropdown
+    all_contacts = Contact.query.order_by(Contact.Name).all()
 
     # Convert project objects to a list of dictionaries
     projects = Project.query.order_by(Project.Project_Name).all()
@@ -398,7 +414,9 @@ def show_speech_logs():
         is_member_view=is_member_view,
         can_view_all=can_view_all,
         view_mode=view_mode,
-        pathway_mapping=pathway_mapping
+        pathway_mapping=pathway_mapping,
+        all_contacts=all_contacts,
+        impersonated_user_name=impersonated_user_name
     )
 
 
