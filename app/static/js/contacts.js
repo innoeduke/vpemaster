@@ -22,8 +22,11 @@ document.addEventListener("DOMContentLoaded", function () {
   setupTableSorting("contactsTable");
 
   const filterTable = () => {
+    const activeTabItem = document.querySelector(".tab-item.active");
+    if (!activeTabItem) return;
+
+    const activeTab = activeTabItem.dataset.type;
     const searchTerm = searchInput.value.toUpperCase().trim();
-    const activeTab = document.querySelector(".tab-item.active").dataset.type;
     const rows = table.querySelectorAll("tbody tr");
 
     clearBtn.style.display = searchTerm.length > 0 ? "block" : "none";
@@ -44,6 +47,9 @@ document.addEventListener("DOMContentLoaded", function () {
         row.style.display = "none";
       }
     });
+
+    // Save state
+    localStorage.setItem("contacts_active_tab", activeTab);
   };
 
   // Tab click logic
@@ -61,6 +67,16 @@ document.addEventListener("DOMContentLoaded", function () {
     searchInput.value = "";
     filterTable();
   });
+
+  // Restore saved tab
+  const savedTab = localStorage.getItem("contacts_active_tab");
+  if (savedTab) {
+    const tabToActivate = Array.from(tabs).find(t => t.dataset.type === savedTab);
+    if (tabToActivate) {
+      tabs.forEach(t => t.classList.remove("active"));
+      tabToActivate.classList.add("active");
+    }
+  }
 
   // Initial filter
   filterTable();

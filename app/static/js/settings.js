@@ -36,6 +36,9 @@ function openTab(evt, tabName) {
   if (targetElement) {
     targetElement.className += " active";
   }
+
+  // Save active tab
+  localStorage.setItem("settings_active_tab", tabName);
 }
 
 /**
@@ -392,16 +395,17 @@ function sortTableByColumn(table, column, asc = true) {
  * All setup logic for the settings page.
  */
 document.addEventListener("DOMContentLoaded", () => {
-  // --- 1. Tab Logic ---
-  const generalTab = document.getElementById("general");
-  if (generalTab) {
-    generalTab.style.display = "block";
-  }
-
   const urlParams = new URLSearchParams(window.location.search);
   const defaultTab = urlParams.get("default_tab");
+  const savedTab = localStorage.getItem("settings_active_tab");
+
   if (defaultTab) {
     openTab(null, defaultTab);
+  } else if (savedTab) {
+    openTab(null, savedTab);
+  } else {
+    // Default to general if nothing is set
+    openTab(null, "general");
   }
   // Attach openTab to window for inline onclick attributes
   window.openTab = openTab;
