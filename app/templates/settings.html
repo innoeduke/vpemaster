@@ -50,19 +50,41 @@
         </tr>
       </thead>
       <tbody>
+      <tbody>
         {% for key, value in general_settings.items() %}
+          {% if key.lower() not in ['term', 'excomm_name'] %}
         <tr>
           <td><strong>{{ key.replace('_', ' ')|title }}</strong></td>
           <td>{{ value }}</td>
         </tr>
+          {% endif %}
         {% else %}
         <tr>
           <td colspan="2" class="no-settings-message">
-            Could not load settings.ini or [ClubSettings] section is empty.
+            Could not load settings.ini or [Club Settings] section is empty.
           </td>
         </tr>
         {% endfor %}
       </tbody>
+    </table>
+
+    <h2>Excomm Team</h2>
+    <table class="form-table general-settings-table">
+        <thead>
+            <tr>
+                <th colspan="2">
+                    {{ excomm_team.name }} ({{ excomm_team.term }})
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for role, name in excomm_team.members.items() %}
+            <tr>
+                <td><strong>{{ role }}</strong></td>
+                <td>{{ name }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
   </div>
 

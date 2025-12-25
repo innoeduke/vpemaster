@@ -653,7 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (field === "type") {
         const select = document.createElement("select");
         select.className = "form-control-sm";
-        ["standard", "club-specific", "officer"].forEach((opt) => {
+        ["standard", "club-specific", "officer", "not-role"].forEach((opt) => {
           const option = new Option(opt, opt);
           if (opt === currentValue) option.selected = true;
           select.appendChild(option);

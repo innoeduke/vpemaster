@@ -268,6 +268,7 @@ def load_all_settings():
     all_settings = {}
     try:
         config = configparser.ConfigParser()
+        config.optionxform = str  # Preserve case
         # current_app.root_path points to the 'app' folder, so '../' goes to the project root
         settings_path = os.path.join(
             current_app.root_path, '..', 'settings.ini')

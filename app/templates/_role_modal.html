@@ -14,7 +14,14 @@
         </tr>
         <tr>
           <td><label for="type">Type:</label></td>
-          <td><input type="text" id="type" name="type" required /></td>
+          <td>
+            <select id="type" name="type" required>
+              <option value="standard">standard</option>
+              <option value="club-specific">club-specific</option>
+              <option value="officer">officer</option>
+              <option value="not-role">not-role</option>
+            </select>
+          </td>
         </tr>
         <tr>
           <td><label for="award_category">Award Category:</label></td>

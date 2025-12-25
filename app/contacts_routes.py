@@ -49,9 +49,10 @@ def show_contacts():
     # If a user has multiple slots for the same role in the same meeting, it counts as 1.
     distinct_roles = db.session.query(
         SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id
-    ).join(SessionType).filter(
+    ).join(SessionType).join(Role).filter(
         SessionLog.Owner_ID.isnot(None),
-        SessionType.role_id.isnot(None) 
+        SessionType.role_id.isnot(None),
+        Role.type.in_(['standard', 'club-specific'])
     ).distinct().all()
 
     role_map = {}

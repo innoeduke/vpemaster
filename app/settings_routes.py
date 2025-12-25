@@ -23,7 +23,7 @@ def settings():
 
     all_settings = load_all_settings()
 
-    club_settings_raw = all_settings.get('ClubSettings', {})
+    club_settings_raw = all_settings.get('Club Settings', {})
 
     # Transform keys from .ini file (e.g., 'club name')
     # to what the template expects (e.g., 'club_name')
@@ -31,6 +31,8 @@ def settings():
         key.replace(' ', '_'): value
         for key, value in club_settings_raw.items()
     }
+    
+    excomm_team = get_excomm_team(all_settings)
 
     session_types = SessionType.query.order_by(SessionType.id.asc()).all()
     level_roles = LevelRole.query.order_by(
@@ -40,7 +42,38 @@ def settings():
     all_users = User.query.order_by(User.Username.asc()).all()
     roles_query = Role.query.order_by(Role.name.asc()).all()
     roles = [{'id': role.id, 'name': role.name} for role in roles_query]
-    return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, presentations=presentations, general_settings=general_settings, roles=roles, roles_query=roles_query)
+    return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, presentations=presentations, general_settings=general_settings, roles=roles, roles_query=roles_query, excomm_team=excomm_team)
+
+
+def get_excomm_team(all_settings):
+    """
+    Parses the [Excomm Team] section from settings.
+    Returns a dictionary with 'name', 'term', and 'members' list.
+    """
+    raw_data = all_settings.get('Excomm Team', {})
+    
+    # Case-insensitive lookup for specific keys
+    team_name = 'Unknown'
+    term = 'Unknown'
+    
+    for k, v in raw_data.items():
+        if k.lower() == 'excomm name':
+            team_name = v
+        elif k.lower() == 'term':
+            term = v
+
+    # Filter out the non-member keys (case-insensitive check)
+    members = {
+        k: v 
+        for k, v in raw_data.items() 
+        if k.lower() not in ['excomm name', 'term']
+    }
+    
+    return {
+        'name': team_name,
+        'term': term,
+        'members': members
+    }
 
 
 @settings_bp.route('/settings/sessions/add', methods=['POST'])
