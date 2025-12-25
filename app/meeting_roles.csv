@@ -2,7 +2,7 @@ name,icon,type,award_category,needs_approval,is_distinct
 Toastmaster,fa-microphone,standard,role-taker,1,1
 General Evaluator,fa-search,standard,role-taker,1,1
 Individual Evaluator,fa-pen-square,standard,evaluator,0,0
-Topicmaster,fa-comments,standard,role-taker,1,1
+Topicsmaster,fa-comments,standard,role-taker,1,1
 Grammarian,fa-book,standard,role-taker,0,1
 Timer,fa-stopwatch,standard,role-taker,0,1
 Ah-Counter,fa-calculator,standard,role-taker,0,1

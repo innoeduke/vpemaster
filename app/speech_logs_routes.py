@@ -1,7 +1,7 @@
 # innoeduke/vpemaster/vpemaster-dev0.3/speech_logs_routes.py
 from flask import Blueprint, jsonify, render_template, request, session, current_app
 from . import db
-from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media, Role, Pathway, PathwayProject
+from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media, Role, Pathway, PathwayProject, LevelRole
 from .auth.utils import login_required, is_authorized
 from .utils import project_id_to_code
 from sqlalchemy import distinct
@@ -193,6 +193,115 @@ def show_speech_logs():
     sorted_grouped_logs = dict(
         sorted(grouped_logs.items(), key=lambda item: get_group_sort_key(item[0])))
 
+    # Get speaker path info to identify elective projects correctly
+    speaker_id = selected_speaker
+    speaker_user = None
+    if speaker_id and speaker_id != -1:
+        try:
+            speaker_contact = Contact.query.get(int(speaker_id))
+            speaker_user = speaker_contact.user if speaker_contact else None
+        except (ValueError, TypeError):
+            pass
+    elif is_member_view:
+        speaker_user = User.query.get(session.get('user_id'))
+    
+    current_path_name = speaker_user.Current_Path if speaker_user else None
+    pathway_obj = Pathway.query.filter_by(name=current_path_name).first() if current_path_name else None
+    
+    pp_mapping = {} # { project_id: type ('required', 'elective') }
+    if pathway_obj:
+        pathway_projects = PathwayProject.query.filter_by(path_id=pathway_obj.id).all()
+        pp_mapping = {pp.project_id: pp.type for pp in pathway_projects}
+
+    # Calculate completion summary
+    level_requirements = LevelRole.query.order_by(LevelRole.level, LevelRole.type.desc()).all()
+    completion_summary = {} # { level: { 'required': [], 'elective': [] } }
+
+    used_log_ids = set() # Avoid double counting logs for the same requirement type
+
+    for lr in level_requirements:
+        level_str = str(lr.level)
+        if level_str not in completion_summary:
+            completion_summary[level_str] = {'required': [], 'elective': []}
+        
+        count = 0
+        details = [] # List of satisfying items
+        logs_for_level = grouped_logs.get(level_str, [])
+        
+        for log in logs_for_level:
+            if log.id in used_log_ids:
+                continue
+
+            satisfied = False
+            item_name = log.Session_Title or (log.project.Project_Name if log.project else None) or (log.session_type.Title if log.session_type else "Activity")
+            
+            if hasattr(log, 'project_code') and log.project_code:
+                item_name = f"{log.project_code} {item_name}"
+
+            # Normalize role names for comparison
+            actual_role_name = (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "")).strip().lower()
+            target_role_name = lr.role.strip().lower()
+
+            def normalize(s):
+                return s.replace(' ', '').replace('-', '').lower()
+
+            norm_actual = normalize(actual_role_name)
+            norm_target = normalize(target_role_name)
+
+            # 1. Match by literal role name or common variations
+            is_role_match = (norm_actual == norm_target)
+            
+            # Handle specific aliases
+            if not is_role_match:
+                aliases = {
+                    'topicmaster': 'topicsmaster',
+                    'topicsmaster': 'topicmaster',
+                    'tme': 'toastmaster',
+                    'toastmaster': 'tme',
+                    'ge': 'generalevaluator',
+                    'generalevaluator': 'ge'
+                }
+                if aliases.get(norm_actual) == norm_target:
+                    is_role_match = True
+
+            if is_role_match:
+                satisfied = True
+            
+            # 2. Match by category (if lr.role is a general category)
+            elif lr.role.lower() == 'speech' and log.log_type == 'speech':
+                if pp_mapping.get(log.Project_ID) == 'required' or not pp_mapping:
+                    satisfied = True
+            elif lr.role.lower() == 'elective project' and log.log_type == 'speech':
+                if pp_mapping.get(log.Project_ID) == 'elective':
+                    satisfied = True
+            elif lr.role.lower() == 'presentation' and log.log_type == 'presentation':
+                satisfied = True
+            
+            # 3. Special case for "Individual Evaluator" logged as a project or role
+            elif target_role_name == 'individual evaluator' and 'evaluat' in actual_role_name:
+                satisfied = True
+            
+            if satisfied:
+                if log.Status == 'Completed' or log.log_type == 'role':
+                    count += 1
+                    details.append({'name': item_name, 'status': 'completed'})
+                    used_log_ids.add(log.id)
+                    if count >= lr.count_required:
+                        break # Satisfied this requirement
+        
+        # Add placeholders for pending items
+        pending_count = max(0, lr.count_required - count)
+        for i in range(pending_count):
+            details.append({'name': f"Pending {lr.role}", 'status': 'pending'})
+
+        target_group = 'elective' if lr.type == 'elective' else 'required'
+        completion_summary[level_str][target_group].append({
+            'role': lr.role,
+            'count': count,
+            'required': lr.count_required,
+            'requirement_items': details
+        })
+
     meeting_numbers = sorted([m[0] for m in db.session.query(
         distinct(SessionLog.Meeting_Number)).join(Project).all()], reverse=True)
     speakers = db.session.query(Contact).join(
@@ -252,6 +361,8 @@ def show_speech_logs():
         series_initials=SERIES_INITIALS,  # Pass initials map for template
         get_presentation_by_id=lambda pid: all_presentations_dict.get(pid),
         today_date=today_date,
+        level_roles=LevelRole.query.order_by(LevelRole.level, LevelRole.type).all(),
+        completion_summary=completion_summary,
         selected_filters={
             'meeting_number': selected_meeting,
             'pathway': selected_pathway,
