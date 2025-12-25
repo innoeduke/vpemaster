@@ -111,6 +111,9 @@ def show_speech_logs():
             presentation = all_presentations_dict.get(log.Project_ID)
             if presentation:
                 display_level = str(presentation.level)
+                log.presentation_series = presentation.series
+            else:
+                log.presentation_series = None
         elif (log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != 60) or is_prepared_speech:
             log_type = 'speech'
             path = None
@@ -248,7 +251,8 @@ def show_speech_logs():
             target_role_name = lr.role.strip().lower()
 
             def normalize(s):
-                return s.replace(' ', '').replace('-', '').lower()
+                if not s: return ""
+                return s.strip().replace(' ', '').replace('-', '').lower()
 
             norm_actual = normalize(actual_role_name)
             norm_target = normalize(target_role_name)
@@ -279,8 +283,12 @@ def show_speech_logs():
             elif lr.role.lower() == 'elective project' and log.log_type == 'speech':
                 if pp_mapping.get(log.Project_ID) == 'elective':
                     satisfied = True
-            elif lr.role.lower() == 'presentation' and log.log_type == 'presentation':
-                satisfied = True
+            elif log.log_type == 'presentation':
+                pres_series = getattr(log, 'presentation_series', None)
+                if lr.role.lower() == 'presentation':
+                    satisfied = True
+                elif pres_series and normalize(pres_series) == norm_target:
+                    satisfied = True
             
             # 3. Special case for "Individual Evaluator" logged as a project or role
             elif target_role_name == 'individual evaluator' and 'evaluat' in actual_role_name:
