@@ -7,8 +7,61 @@ const contactModalTitle = document.getElementById("contactModalTitle");
 /**
  * Sets up the search and sort functionality for the contacts table.
  */
+/**
+ * Sets up the search, sort, and tab functionality for the contacts table.
+ */
 document.addEventListener("DOMContentLoaded", function () {
-  // Call the reusable functions from main.js
+  const table = document.getElementById("contactsTable");
+  const searchInput = document.getElementById("searchInput");
+  const clearBtn = document.getElementById("clear-searchInput");
+  const tabs = document.querySelectorAll(".tab-item");
+
+  if (!table || !searchInput || !clearBtn) return;
+
+  // Initialize sorting
   setupTableSorting("contactsTable");
-  setupTableFilter("contactsTable", "searchInput", "clear-searchInput");
+
+  const filterTable = () => {
+    const searchTerm = searchInput.value.toUpperCase().trim();
+    const activeTab = document.querySelector(".tab-item.active").dataset.type;
+    const rows = table.querySelectorAll("tbody tr");
+
+    clearBtn.style.display = searchTerm.length > 0 ? "block" : "none";
+
+    rows.forEach((row) => {
+      const rowType = row.dataset.type;
+      const typeMatch = activeTab === "All" || rowType === activeTab;
+
+      let rowText = "";
+      row.querySelectorAll("td:not(:last-child)").forEach((cell) => {
+        rowText += cell.textContent.toUpperCase() + " ";
+      });
+      const searchMatch = rowText.includes(searchTerm);
+
+      if (typeMatch && searchMatch) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+  };
+
+  // Tab click logic
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", () => {
+      tabs.forEach((t) => t.classList.remove("active"));
+      tab.classList.add("active");
+      filterTable();
+    });
+  });
+
+  // Search input logic
+  searchInput.addEventListener("keyup", filterTable);
+  clearBtn.addEventListener("click", () => {
+    searchInput.value = "";
+    filterTable();
+  });
+
+  // Initial filter
+  filterTable();
 });

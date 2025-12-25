@@ -1,0 +1,85 @@
+/* app/static/css/contacts.css */
+
+.contacts-tabs {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0;
+}
+
+.tab-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #4a5568;
+  position: relative;
+  transition: all 0.2s;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+}
+
+.tab-item:hover {
+  color: #2d3748;
+}
+
+.tab-item.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+}
+
+.tab-count {
+  font-size: 0.8em;
+  background: #edf2f7;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 5px;
+}
+
+.tab-item.active .tab-count {
+  background: #ebf8ff;
+  color: #2b6cb0;
+}
+
+/* Participation Badges - Restoring original look using classes instead of inline */
+.participation-container {
+  display: flex;
+  gap: 5px;
+}
+
+.participation-badge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none !important;
+}
+
+.badge-attendance {
+  background-color: #e2e8f0;
+  color: #000;
+}
+
+.badge-attendance i {
+  color: #4a5568;
+}
+
+.badge-roles {
+  background-color: #bee3f8;
+  color: #000;
+}
+
+.badge-roles i {
+  color: #2b6cb0;
+}
+
+.badge-awards {
+  background-color: #feebc8;
+  color: #000;
+}
+
+.badge-awards i {
+  color: #c05621;
+}

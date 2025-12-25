@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, reques
 from .auth.utils import login_required, is_authorized
 from .models import SessionType, User, LevelRole, Presentation, Role
 from . import db
-from .utils import load_all_settings
+from .utils import load_all_settings, get_excomm_team
 import os
 import csv
 import io
@@ -44,36 +44,6 @@ def settings():
     roles = [{'id': role.id, 'name': role.name} for role in roles_query]
     return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, presentations=presentations, general_settings=general_settings, roles=roles, roles_query=roles_query, excomm_team=excomm_team)
 
-
-def get_excomm_team(all_settings):
-    """
-    Parses the [Excomm Team] section from settings.
-    Returns a dictionary with 'name', 'term', and 'members' list.
-    """
-    raw_data = all_settings.get('Excomm Team', {})
-    
-    # Case-insensitive lookup for specific keys
-    team_name = 'Unknown'
-    term = 'Unknown'
-    
-    for k, v in raw_data.items():
-        if k.lower() == 'excomm name':
-            team_name = v
-        elif k.lower() == 'term':
-            term = v
-
-    # Filter out the non-member keys (case-insensitive check)
-    members = {
-        k: v 
-        for k, v in raw_data.items() 
-        if k.lower() not in ['excomm name', 'term']
-    }
-    
-    return {
-        'name': team_name,
-        'term': term,
-        'members': members
-    }
 
 
 @settings_bp.route('/settings/sessions/add', methods=['POST'])

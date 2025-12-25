@@ -1,5 +1,11 @@
-{% extends "base.html" %} {% block title %}Contacts{% endblock %} {% block
-content %}
+{% extends "base.html" %} 
+{% block title %}Contacts{% endblock %} 
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/contacts.css') }}" />
+{% endblock %}
+
+{% block content %}
 <h1>Contacts</h1>
 
 <div class="contact-action-bar">
@@ -9,7 +15,7 @@ content %}
       <div class="stat-label">Total Contacts</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value" style="color: #28a745">{{ total_members }}</div>
+      <div class="stat-value" style="color: #28a745">{{ type_counts.get('Member', 0) + type_counts.get('Officer', 0) }}</div>
       <div class="stat-label">Total Members</div>
     </div>
   </div>
@@ -46,6 +52,18 @@ content %}
   </div>
 </div>
 
+<!-- Contact Tabs -->
+<div class="contacts-tabs" id="contactsTabs">
+  <div class="tab-item active" data-type="All">
+    All <span class="tab-count">{{ total_contacts }}</span>
+  </div>
+  {% for contact_type in contact_types %}
+  <div class="tab-item" data-type="{{ contact_type }}">
+    {{ contact_type }} <span class="tab-count">{{ type_counts[contact_type] }}</span>
+  </div>
+  {% endfor %}
+</div>
+
 <div class="contact-table-container">
   <table id="contactsTable">
     <thead>
@@ -64,7 +82,7 @@ content %}
     </thead>
     <tbody>
       {% for contact in contacts %}
-      <tr>
+      <tr data-type="{{ contact.Type }}">
         <td>
           {{ contact.Name }} {% if contact.DTM %}
           <sup class="dtm-superscript">DTM</sup>
@@ -73,17 +91,16 @@ content %}
         <td>{{ contact.Type }}</td>
         <td>{{ contact.Club }}</td>
         <td>
-            <div style="display: flex; gap: 5px;">
-                <span title="Attendance" style="background-color: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">
-                    <i class="fas fa-calendar-check" style="color: #4a5568;"></i> {{ contact.attendance_count }}
+            <div class="participation-container">
+                <span title="Attendance" class="participation-badge badge-attendance">
+                    <i class="fas fa-calendar-check"></i> {{ contact.attendance_count }}
                 </span>
-                <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}?speaker_search={{ contact.Name }}" style="text-decoration: none;">
-                    <span title="Roles Taken" style="background-color: #bee3f8; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">
-                         <i class="fas fa-user-tag" style="color: #2b6cb0;"></i> {{ contact.role_count }}
-                    </span>
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}?speaker_search={{ contact.Name }}" 
+                   title="Roles Taken" class="participation-badge badge-roles">
+                     <i class="fas fa-user-tag"></i> {{ contact.role_count }}
                 </a>
-                <span title="Awards Won" style="background-color: #feebc8; padding: 2px 6px; border-radius: 4px; font-size: 0.85em;">
-                    <i class="fas fa-trophy" style="color: #c05621;"></i> {{ contact.award_count }}
+                <span title="Awards Won" class="participation-badge badge-awards">
+                    <i class="fas fa-trophy"></i> {{ contact.award_count }}
                 </span>
             </div>
         </td>
@@ -112,7 +129,7 @@ content %}
                 </button>
             </form>
             {% endif %}
-
+ 
             <button
               class="delete-btn icon-btn"
               onclick="openDeleteModal('{{ url_for('contacts_bp.delete_contact',contact_id=contact.id) }}', 'contact')"

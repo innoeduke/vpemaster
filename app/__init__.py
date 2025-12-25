@@ -53,6 +53,12 @@ def create_app(config_class='config.Config'):
 
         # Import models so SQLAlchemy knows about them
         from . import models
+        from .utils import load_all_settings, get_meeting_types
+
+        all_settings = load_all_settings()
+        meeting_types = get_meeting_types(all_settings)
+        if meeting_types:
+            app.config['MEETING_TYPES'] = meeting_types
 
         app.register_blueprint(agenda_bp)
         app.register_blueprint(auth_bp)

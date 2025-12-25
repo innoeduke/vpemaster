@@ -26,36 +26,7 @@ class Config:
 
     # Your application-specific config
 
-    MEETING_TYPES = {
-        "Club Election": {
-            "owner_role_id": 45, "template": "club_election.csv",
-            "background_color": "#FFDDC1", "foreground_color": "#000000"
-        },
-        "Debate": {
-            "owner_role_id": 40, "template": "debate.csv",
-            "background_color": "#D4F1F4", "foreground_color": "#000000"
-        },
-        "Keynote Speech": {
-            "owner_role_id": 20, "template": "default.csv",
-            "background_color": "#C1E1C1", "foreground_color": "#000000"
-        },
-        "Panel Discussion": {
-            "owner_role_id": 44, "template": "panel_discussion.csv",
-            "background_color": "#F0E68C", "foreground_color": "#000000"
-        },
-        "Speech Contest": {
-            "owner_role_id": 3, "template": "speech_contest.csv",
-            "background_color": "#E6E6FA", "foreground_color": "#000000"
-        },
-        "Speech Marathon": {
-            "owner_role_id": 3, "template": "speech_marathon.csv",
-            "background_color": "#FFC0CB", "foreground_color": "#000000"
-        },
-        "Pecha Kucha": {
-            "owner_role_id": 44, "template": "pecha_kucha.csv",
-            "background_color": "#FFD700", "foreground_color": "#000000"
-        }
-    }
+    MEETING_TYPES = {}
 
     SERIES_INITIALS = {
         "Successful Club Series": "SC",

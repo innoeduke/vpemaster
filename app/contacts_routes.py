@@ -82,12 +82,21 @@ def show_contacts():
         c.role_count = role_map.get(c.id, 0)
         c.award_count = award_map.get(c.id, 0)
 
-    total_contacts = Contact.query.count()
-    total_members = Contact.query.filter(
-        Contact.Type.in_(['Member', 'Officer'])).count()
+    total_contacts = len(contacts)
+    type_counts = {}
+    for c in contacts:
+        type_counts[c.Type] = type_counts.get(c.Type, 0) + 1
+    
+    # Sort types: Member/Officer first, then others
+    sorted_types = sorted(type_counts.keys(), key=lambda x: (x not in ['Member', 'Officer'], x))
+    
     pathways = [p.name for p in Pathway.query.order_by(Pathway.name).all()]
-    return render_template('contacts.html', contacts=contacts, pathways=pathways,
-                           total_contacts=total_contacts, total_members=total_members)
+    return render_template('contacts.html', 
+                           contacts=contacts, 
+                           pathways=pathways,
+                           total_contacts=total_contacts, 
+                           type_counts=type_counts,
+                           contact_types=sorted_types)
 
 
 @contacts_bp.route('/contact/form', methods=['GET', 'POST'])

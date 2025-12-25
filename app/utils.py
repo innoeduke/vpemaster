@@ -352,3 +352,54 @@ def get_default_meeting_number():
         return upcoming_meeting.Meeting_Number
     
     return None
+
+
+def get_excomm_team(all_settings):
+    """
+    Parses the [Excomm Team] section from settings.
+    Returns a dictionary with 'name', 'term', and 'members' list.
+    """
+    raw_data = all_settings.get('Excomm Team', {})
+    
+    # Case-insensitive lookup for specific keys
+    team_name = 'Unknown'
+    term = 'Unknown'
+    
+    for k, v in raw_data.items():
+        if k.lower() == 'excomm name':
+            team_name = v
+        elif k.lower() == 'term':
+            term = v
+
+    # Filter out the non-member keys (case-insensitive check)
+    members = {
+        k: v 
+        for k, v in raw_data.items() 
+        if k.lower() not in ['excomm name', 'term']
+    }
+    
+    return {
+        'name': team_name,
+        'term': term,
+        'members': members
+    }
+
+def get_meeting_types(all_settings):
+    """
+    Parses the [Meeting Types] section from settings.
+    Example line in INI: Debate = 40, debate.csv, #D4F1F4, #000000
+    Returns a dictionary compatible with Config.MEETING_TYPES.
+    """
+    raw_data = all_settings.get('Meeting Types', {})
+    meeting_types = {}
+    
+    for title, value_str in raw_data.items():
+        parts = [p.strip() for p in value_str.split(',')]
+        if len(parts) >= 3:
+            meeting_types[title] = {
+                "template": parts[0],
+                "background_color": parts[1],
+                "foreground_color": parts[2]
+            }
+                
+    return meeting_types

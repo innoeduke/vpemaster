@@ -12,7 +12,7 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from .utils import derive_current_path_level, load_setting, derive_credentials, project_id_to_code, get_meetings_by_status
+from .utils import derive_current_path_level, load_setting, derive_credentials, project_id_to_code, get_meetings_by_status, load_all_settings, get_excomm_team
 from .tally_sync import sync_participants_to_tally
 
 agenda_bp = Blueprint('agenda_bp', __name__)
@@ -857,14 +857,8 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     # Get data for this section
     meeting_types_dict = current_app.config.get('MEETING_TYPES', {})
     master_log, master_st, master_contact = None, None, None  # Default to None
+    # (Keynote/Master contact determination based on owner_role_id was removed)
 
-    if meeting.type and meeting.type in meeting_types_dict:
-        target_session_type_id = meeting_types_dict[meeting.type].get(
-            'owner_role_id')
-        if target_session_type_id:
-            # Find the log matching the SessionType ID from the config dict
-            master_log, master_st, master_contact, _, _ = find_log(
-                target_session_type_id)
     gram_log, gram_st, _, _, _ = find_log(7)  # 7 = Grammarian Intro
     term = load_setting('ClubSettings', 'Term', default='')
     excomm_name = load_setting('ClubSettings', 'Excomm Name', default='')
@@ -1350,6 +1344,26 @@ def create_from_template():
                     if owner:
                         owner_id = owner.id
                         credentials = derive_credentials(owner)
+                
+                # Auto-populate form Excomm Team settings if owner is missing
+                if not owner_id:
+                     # Get Excomm Team data
+                    all_settings = load_all_settings()
+                    excomm_team = get_excomm_team(all_settings)
+                    
+                    # Determine the role name to check
+                    role_to_check = role_val
+                    if not role_to_check and session_type and session_type.role:
+                         role_to_check = session_type.role.name
+                    
+                    if role_to_check:
+                         # Check if this role is in the excomm team
+                         officer_name = excomm_team['members'].get(role_to_check)
+                         if officer_name:
+                              owner = Contact.query.filter_by(Name=officer_name).first()
+                              if owner:
+                                   owner_id = owner.id
+                                   credentials = derive_credentials(owner)
                 
                 # --- Create Log ---
                 new_log = SessionLog(
