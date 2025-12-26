@@ -2,7 +2,7 @@
 
 from flask import current_app
 # Ensure Project model is imported if needed elsewhere
-from .models import Project, Presentation, Meeting, SessionLog, Pathway, PathwayProject
+from .models import Project, Presentation, Meeting, SessionLog, Pathway, PathwayProject, Achievement
 from . import db
 import re
 import configparser
@@ -70,7 +70,7 @@ def derive_current_path_level(log, owner_contact):
     """
     Derives the 'current_path_level' based on the role, project, and owner's pathway.
     - For Speakers/Evaluators with a linked project, returns the specific project code (e.g., PM1.1).
-    - For other roles, returns the general level code from the owner's Next_Project (e.g., PM5).
+    - For other roles, returns the general level code by checking the highest achievement (e.g., PM2 if L1 is done).
     - Returns None if insufficient information is available.
 
     Args:
@@ -120,11 +120,6 @@ def derive_current_path_level(log, owner_contact):
         if not project:
             return None
 
-        pathway = db.session.query(Pathway).filter_by(
-            abbr=pathway_suffix).first()
-        if not pathway:
-            return None
-
         pathway_project = db.session.query(PathwayProject).filter_by(
             path_id=pathway.id, project_id=project.id).first()
 
@@ -132,19 +127,21 @@ def derive_current_path_level(log, owner_contact):
             # Return the full specific project code (e.g., "PM1.1")
             return f"{pathway_suffix}{pathway_project.code}"
 
-    # --- Priority 2: Other roles - Use general level from Next_Project ---
+    # --- Priority 2: Other roles - Use highest level achievement + 1 ---
     else:
-        next_project_str = owner_contact.Next_Project
-        if next_project_str:
-            # Use regex to extract only the Path + Level part (e.g., PM5 from PM5.2)
-            match = re.match(r"([A-Z]+)(\d+)", next_project_str)
-            if match:
-                path_abbr = match.group(1)
-                level_num = match.group(2)
-                # Ensure the extracted path matches the user's working path for consistency
-                if path_abbr == pathway_suffix:
-                    # Return just the path and level (e.g., "PM5")
-                    return f"{path_abbr}{level_num}"
+        # Query for the highest level completion achievement in the current path
+        highest_achievement = Achievement.query.filter_by(
+            contact_id=owner_contact.id,
+            path_name=owner_contact.Current_Path,
+            achievement_type='level-completion'
+        ).order_by(Achievement.level.desc()).first()
+        
+        current_level = 1
+        if highest_achievement:
+            # If level L is completed, the current work is for level L+1 (capped at 5)
+            current_level = min(highest_achievement.level + 1, 5)
+            
+        return f"{pathway_suffix}{current_level}"
 
     # --- Fallback ---
     return None
@@ -153,10 +150,9 @@ def derive_current_path_level(log, owner_contact):
 def derive_credentials(contact):
     """
     Derives the credentials string for a given contact.
-    - Returns an empty string for DTMs.
+    - Returns 'DTM' for DTMs.
     - Formats for Guests (e.g., "Guest@Club").
-    - Formats for Members based on completed levels (e.g., "PM1/DL2").
-    - Returns an empty string if the contact is None or has no specific credentials.
+    - Returns the synced credentials field for Members/Officers.
     """
     if not contact:
         return ''
@@ -165,8 +161,8 @@ def derive_credentials(contact):
         return 'DTM'
     elif contact.Type == 'Guest':
         return f"Guest@{contact.Club}" if contact.Club else "Guest"
-    elif contact.Type in ['Member', 'Officer'] and contact.credentials:
-        return contact.credentials
+    elif contact.Type in ['Member', 'Officer']:
+        return contact.credentials or ''
     return ''
 
 

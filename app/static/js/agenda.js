@@ -1216,10 +1216,7 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             if (credentialsInput && selectedContact) {
-              const credentials = selectedContact.DTM
-                ? "DTM"
-                : selectedContact.Completed_Levels || "";
-              credentialsInput.value = credentials.replace(/ /g, "/");
+              credentialsInput.value = selectedContact.Credentials || "";
             }
             currentRow.dataset.ownerId = selectedContactId;
             if (credentialsInput) {
