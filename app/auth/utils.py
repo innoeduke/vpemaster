@@ -12,6 +12,7 @@ ROLE_PERMISSIONS = {
         "PATHWAY_LIB_EDIT",
         "CONTACT_BOOK_EDIT",
         "SETTINGS_EDIT_ALL",
+        "ACHIEVEMENTS_EDIT",
     },
     "VPE": {
         "AGENDA_EDIT",
@@ -20,6 +21,7 @@ ROLE_PERMISSIONS = {
         "PATHWAY_LIB_EDIT",
         "CONTACT_BOOK_EDIT",
         "SETTINGS_VIEW_ALL",
+        "ACHIEVEMENTS_EDIT",
     },
     "Meeting Manager": {
         "AGENDA_EDIT",
@@ -61,6 +63,8 @@ for role, perms in ROLE_PERMISSIONS.items():
         perms.add("PATHWAY_LIB_VIEW")
     if "SETTINGS_EDIT_ALL" in perms:
         perms.add("SETTINGS_VIEW_ALL")
+    if "ACHIEVEMENTS_EDIT" in perms:
+        perms.add("ACHIEVEMENTS_VIEW")
 
 
 def is_authorized(user_role_or_permission, permission=None):

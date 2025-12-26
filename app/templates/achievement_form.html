@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if achievement else 'Add' }} Achievement{% endblock %}
+
+{% block content %}
+<h1>{{ 'Edit' if achievement else 'Add' }} Achievement</h1>
+
+<div class="form-container" style="max-width: 600px; margin: 0 auto;">
+    <form method="POST">
+        <div class="form-group">
+            <label for="contact_id">Member</label>
+            <select name="contact_id" id="contact_id" class="form-control" required>
+                <option value="">Select Member...</option>
+                {% for contact in contacts %}
+                <option value="{{ contact.id }}" {% if achievement and achievement.contact_id == contact.id %}selected{% endif %}>
+                    {{ contact.Name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="member_id">Member ID</label>
+            <input type="text" name="member_id" id="member_id" class="form-control" value="{{ achievement.member_id if achievement else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="issue_date">Issue Date</label>
+            <input type="date" name="issue_date" id="issue_date" class="form-control" required value="{{ achievement.issue_date.strftime('%Y-%m-%d') if achievement else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="achievement_type">Achievement Type</label>
+            <select name="achievement_type" id="achievement_type" class="form-control" required>
+                {% for type in project_types %}
+                <option value="{{ type }}" {% if achievement and achievement.achievement_type == type %}selected{% endif %}>{{ type }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="path_name">Path Name</label>
+            <select name="path_name" id="path_name" class="form-control">
+                <option value="">Select Path...</option>
+                {% for path in pathways %}
+                <option value="{{ path }}" {% if achievement and achievement.path_name == path %}selected{% endif %}>{{ path }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="level">Level</label>
+            <input type="number" name="level" id="level" class="form-control" min="1" max="5" value="{{ achievement.level if achievement else '' }}">
+        </div>
+
+        <div class="form-group">
+            <label for="notes">Notes</label>
+            <textarea name="notes" id="notes" class="form-control" rows="3">{{ achievement.notes if achievement else '' }}</textarea>
+        </div>
+
+        <div class="form-actions" style="margin-top: 20px;">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <a href="{{ url_for('achievements_bp.show_achievements') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
