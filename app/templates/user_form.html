@@ -48,46 +48,14 @@
                     </select>
                 </td>
             </tr>
+            <!-- Profile fields (Member ID, Path, Mentor, etc.) are managed on the Contact page -->
             <tr>
-                <td><label for="member_id">Member ID:</label></td>
-                <td><input type="text" id="member_id" name="member_id" value="{{ user.Member_ID if user and user.Member_ID else '' }}"></td>
-            </tr>
-            <tr>
-                <td><label for="current_path">Current Path:</label></td>
-                <td>
-                    <select id="current_path" name="current_path">
-                        <option value="">None</option>
-                        {% for path_name in pathways %}
-                            <option value="{{ path_name }}" {% if user and user.Current_Path == path_name %}selected{% endif %}>
-                                {{ path_name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="credential">Credential:</label></td>
-                <td>
-                    <input type="text" id="credential" name="credential" value="{{ user.credentials if user and user.credentials else '' }}" maxlength="10">
-                </td>
-            </tr>
-            <tr>
-                <td><label for="next_project">Next Project:</label></td>
-                <td>
-                    <input type="text" id="next_project" name="next_project" value="{{ user.Next_Project if user and user.Next_Project else '' }}" placeholder="e.g., PM2.1, EH3.2">
-                </td>
-            </tr>
-            <tr>
-                <td><label for="mentor_id">Mentor:</label></td>
-                <td>
-                    <select id="mentor_id" name="mentor_id">
-                         <option value="0">None</option>
-                        {% for contact in mentor_contacts %}
-                            <option value="{{ contact.id }}" {% if user and user.Mentor_ID == contact.id %}selected{% endif %}>
-                                {{ contact.Name }}
-                             </option>
-                         {% endfor %}
-                     </select>
+                <td colspan="2">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Member Profile details (Current Path, Mentor, Credentials, etc.) are managed in the 
+                        <a href="{{ url_for('contacts_bp.show_contacts') }}">Contact Book</a>.
+                    </div>
                 </td>
             </tr>
             <tr>

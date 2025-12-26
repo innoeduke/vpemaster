@@ -1,5 +1,6 @@
-from flask import redirect, url_for, session
+from flask_login import login_required, current_user
 from functools import wraps
+from flask import redirect, url_for, session
 
 # A single, centralized map of all permissions in the application.
 # We use sets for very fast "in" lookups.
@@ -62,26 +63,27 @@ for role, perms in ROLE_PERMISSIONS.items():
         perms.add("SETTINGS_VIEW_ALL")
 
 
-def is_authorized(user_role, feature):
+def is_authorized(user_role_or_permission, permission=None):
     """
-    Central function to check if a user role is authorized for a feature.
+    Checks if a user/role is authorized for a feature.
+    
+    Usage 1 (Legacy/Role-based): is_authorized('Admin', 'AGENDA_EDIT')
+    Usage 2 (Current User): is_authorized('AGENDA_EDIT') -> checks current_user
     """
+    # Usage 2: Check current user logic
+    if permission is None:
+        # Argument is the permission name
+        perm_name = user_role_or_permission
+        if current_user.is_authenticated:
+            return current_user.can(perm_name)
+        else:
+            # Guest check
+            return perm_name in ROLE_PERMISSIONS.get("Guest", set())
+
+    # Usage 1: Explicit role check (Legacy support)
+    user_role = user_role_or_permission
     if user_role is None:
         user_role = "Guest"
 
-    # Get the set of permissions for the given role, or an empty set if role doesn't exist
     permissions = ROLE_PERMISSIONS.get(user_role, set())
-
-    # Return True if the feature is in their permissions, False otherwise
-    return feature in permissions
-
-# Decorator to check if user is logged in
-
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'logged_in' not in session:
-            return redirect(url_for('auth_bp.login'))
-        return f(*args, **kwargs)
-    return decorated_function
+    return permission in permissions

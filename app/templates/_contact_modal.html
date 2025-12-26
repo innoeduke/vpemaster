@@ -3,105 +3,96 @@
     <span class="close" onclick="closeContactModal()">&times;</span>
     <h1 id="contactModalTitle"></h1>
     <form id="contactForm" method="POST">
-      <table class="form-table">
-        <tr>
-          <td>
-            <label for="name"
-              >Name: <span class="required-field">*</span></label
-            >
-          </td>
-          <td><input type="text" id="name" name="name" required /></td>
-        </tr>
-        <tr>
-          <td>
-            <label for="type"
-              >Type: <span class="required-field">*</span></label
-            >
-          </td>
-          <td>
-            <select id="type" name="type" required>
-              <option value="Member">Member</option>
-              <option value="Guest" selected>Guest</option>
-              <option value="Officer">Officer</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td><label for="club">Club:</label></td>
-          <td>
-            <input
-              type="text"
-              id="club"
-              name="club"
-              placeholder="e.g., Club1/Club2"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td><label for="email">Email:</label></td>
-          <td><input type="email" id="email" name="email" /></td>
-        </tr>
-        <tr>
-          <td><label for="phone_number">Phone:</label></td>
-          <td><input type="text" id="phone_number" name="phone_number" /></td>
-        </tr>
-        <tr>
-          <td><label for="bio">Bio:</label></td>
-          <td>
-            <textarea
-              id="bio"
-              name="bio"
-              rows="3"
-              style="
-                width: 100%;
-                padding: 8px;
-                box-sizing: border-box;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-              "
-            ></textarea>
-          </td>
-        </tr>
-        <tr>
-          <td><label for="completed_paths">Completed Paths:</label></td>
-          <td>
-            <input
-              type="text"
-              id="completed_paths"
-              name="completed_paths"
-              placeholder="e.g., PM1, DL2..."
-            />
-          </td>
-        </tr>
-        <tr>
-          <td><label for="dtm">DTM:</label></td>
-          <td><input type="checkbox" id="dtm" name="dtm" /></td>
-        </tr>
-      </table>
-      
-      <div id="userFieldsSection" style="display: none; border-top: 1px solid #eee; margin-top: 15px; padding-top: 10px;">
-        <h3>User Settings</h3>
+      <!-- Accordion 1: Basic Information -->
+      <button type="button" class="accordion active">Basic Information</button>
+      <div class="panel" style="display: block;">
         <table class="form-table">
-          <tr>
-            <td><label for="current_path">Current Path:</label></td>
+            <tr>
             <td>
-               <select id="current_path" name="current_path">
-                 <option value="">-- Select Path --</option>
-                 {% for pathway in pathways %}
-                   <option value="{{ pathway }}">{{ pathway }}</option>
-                 {% endfor %}
-               </select>
+                <label for="name">Name: <span class="required-field">*</span></label>
             </td>
-          </tr>
-          <tr>
-            <td><label for="next_project">Next Project:</label></td>
-            <td><input type="text" id="next_project" name="next_project" placeholder="e.g., PM1.1" /></td>
-          </tr>
-          <tr>
-            <td><label for="credentials">Credentials:</label></td>
-            <td><input type="text" id="credentials" name="credentials" placeholder="e.g., EC5" /></td>
-          </tr>
+            <td><input type="text" id="name" name="name" required /></td>
+            </tr>
+            <tr>
+            <td>
+                <label for="type">Type: <span class="required-field">*</span></label>
+            </td>
+            <td>
+                <select id="type" name="type" required>
+                <option value="Member">Member</option>
+                <option value="Guest" selected>Guest</option>
+                <option value="Officer">Officer</option>
+                </select>
+            </td>
+            </tr>
+            <tr>
+            <td><label for="club">Club:</label></td>
+            <td>
+                <input type="text" id="club" name="club" placeholder="e.g., Club1/Club2" />
+            </td>
+            </tr>
+            <tr>
+            <td><label for="email">Email:</label></td>
+            <td><input type="email" id="email" name="email" /></td>
+            </tr>
+            <tr>
+            <td><label for="phone_number">Phone:</label></td>
+            <td><input type="text" id="phone_number" name="phone_number" /></td>
+            </tr>
+            <tr>
+            <td><label for="bio">Bio:</label></td>
+            <td>
+                <textarea id="bio" name="bio" rows="3" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;"></textarea>
+            </td>
+            </tr>
         </table>
+      </div>
+
+      <!-- Accordion 2: Education & Awards -->
+      <div id="educationFieldsWrapper" style="display:none;">
+          <button type="button" class="accordion">Education & Awards</button>
+          <div class="panel">
+            <table class="form-table">
+            <tr>
+                <td><label for="completed_paths">Completed Paths:</label></td>
+                <td>
+                <input type="text" id="completed_paths" name="completed_paths" placeholder="e.g., PM1, DL2..." />
+                </td>
+            </tr>
+            <tr>
+                <td><label for="dtm">DTM:</label></td>
+                <td><input type="checkbox" id="dtm" name="dtm" /></td>
+            </tr>
+            <tr>
+                <td><label for="current_path">Current Path:</label></td>
+                <td>
+                <select id="current_path" name="current_path">
+                    <option value="">-- Select Path --</option>
+                    {% for pathway in pathways %}
+                    <option value="{{ pathway }}">{{ pathway }}</option>
+                    {% endfor %}
+                </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="next_project">Next Project:</label></td>
+                <td><input type="text" id="next_project" name="next_project" placeholder="e.g., PM1.1" /></td>
+            </tr>
+            <tr>
+                <td><label for="credentials">Credentials:</label></td>
+                <td><input type="text" id="credentials" name="credentials" placeholder="e.g., EC5" /></td>
+            </tr>
+            <tr>
+                <td><label for="mentor_id">Mentor:</label></td>
+                <td>
+                <select id="mentor_id" name="mentor_id">
+                    <option value="0">None</option>
+                    <!-- Populated by JS -->
+                </select>
+                </td>
+            </tr>
+            </table>
+          </div>
       </div>
 
       <div class="form-actions">

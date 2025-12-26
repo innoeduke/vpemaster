@@ -3,6 +3,8 @@ from flask import Blueprint, jsonify, render_template, request, session, current
 from . import db
 from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media, Role, Pathway, PathwayProject, LevelRole
 from .auth.utils import login_required, is_authorized
+from flask_login import current_user
+
 from .utils import project_id_to_code
 from sqlalchemy import distinct
 from sqlalchemy.orm import joinedload
@@ -17,7 +19,7 @@ speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 def show_speech_logs():
     # VPE/Admin can switch between 'member' and 'admin' view.
     # Default to 'member' view for everyone.
-    can_view_all = is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL')
+    can_view_all = is_authorized('SPEECH_LOGS_EDIT_ALL')
     view_mode = request.args.get('view_mode', 'member')
     
     # Even if they can view all, we default to member view unless they explicitly ask for admin
@@ -38,7 +40,7 @@ def show_speech_logs():
             # Admin impersonating a user in member view
             selected_speaker = request.args.get('speaker_id')
         else:
-            user = User.query.get(session.get('user_id'))
+            user = current_user
             if user and user.Contact_ID:
                 selected_speaker = user.Contact_ID
             else:
@@ -132,7 +134,7 @@ def show_speech_logs():
             path = None
             path_abbr = None
             if log.owner and log.owner.user:
-                path = log.owner.user.Current_Path
+                path = log.owner.Current_Path
                 if path:
                     path_abbr = pathway_mapping.get(path)
 
@@ -172,7 +174,7 @@ def show_speech_logs():
             continue
 
         if log_type == 'speech' and selected_pathway and \
-           (not log.owner or not log.owner.user or log.owner.user.Current_Path != selected_pathway):
+           (not log.owner or log.owner.Current_Path != selected_pathway):
             continue
 
         if log_type == 'presentation' and selected_pathway and \
@@ -235,9 +237,9 @@ def show_speech_logs():
         except (ValueError, TypeError):
             pass
     elif is_member_view:
-        speaker_user = User.query.get(session.get('user_id'))
+        speaker_user = current_user
     
-    current_path_name = speaker_user.Current_Path if speaker_user else None
+    current_path_name = speaker_user.contact.Current_Path if speaker_user and speaker_user.contact else None
     pathway_obj = Pathway.query.filter_by(name=current_path_name).first() if current_path_name else None
     
     pp_mapping = {} # { project_id: type ('required', 'elective') }
@@ -429,18 +431,17 @@ def get_speech_log_details(log_id):
     log = db.session.query(SessionLog).options(
         joinedload(SessionLog.media)).get_or_404(log_id)
 
-    user_role = session.get('user_role')
-    user = User.query.get(session.get('user_id'))
-    current_user_contact_id = user.Contact_ID if user else None
+    current_user_contact_id = current_user.Contact_ID if current_user.is_authenticated else None
 
-    if not is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL'):
+    if not is_authorized('SPEECH_LOGS_EDIT_ALL'):
         if log.Owner_ID != current_user_contact_id:
             return jsonify(success=False, message="Permission denied. You can only view details for your own speech logs."), 403
 
+
     # Use the helper function to get project code
     project_code = ""
-    if log.Project_ID and log.owner and log.owner.user and log.owner.user.Current_Path:
-        pathway = db.session.query(Pathway).filter_by(name=log.owner.user.Current_Path).first()
+    if log.Project_ID and log.owner and log.owner.Current_Path:
+        pathway = db.session.query(Pathway).filter_by(name=log.owner.Current_Path).first()
         if pathway:
             pathway_abbr = pathway.abbr
             project_code = project_id_to_code(log.Project_ID, pathway_abbr)
@@ -457,7 +458,7 @@ def get_speech_log_details(log_id):
             level = 1  # Fallback if parsing fails
     # If project_code is "TM1.0" or None, level just stays 1
 
-    pathway = log.owner.user.Current_Path if log.owner and log.owner.user and log.owner.user.Current_Path else "Presentation Mastery"
+    pathway = log.owner.Current_Path if log.owner and log.owner.Current_Path else "Presentation Mastery"
 
     log_data = {
         "id": log.id,
@@ -483,14 +484,13 @@ def update_speech_log(log_id):
         joinedload(SessionLog.project)
     ).get_or_404(log_id)
 
-    user_role = session.get('user_role')
-    user = User.query.get(session.get('user_id'))
-    current_user_contact_id = user.Contact_ID if user else None
+    current_user_contact_id = current_user.Contact_ID if current_user.is_authenticated else None
 
-    if not is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL'):
-        is_owner = (user.Contact_ID == log.Owner_ID)
-        if not (is_authorized(user_role, 'SPEECH_LOGS_VIEW_OWN') and is_owner):
+    if not is_authorized('SPEECH_LOGS_EDIT_ALL'):
+        is_owner = (current_user_contact_id == log.Owner_ID)
+        if not (is_authorized('SPEECH_LOGS_VIEW_OWN') and is_owner):
             return jsonify(success=False, message="Permission denied. You can only edit your own speech logs."), 403
+
 
     data = request.get_json()
 
@@ -593,7 +593,7 @@ def update_speech_log(log_id):
         db.session.commit()
         project_name = "N/A"
         project_code = None
-        pathway = log.owner.user.Current_Path if log.owner and log.owner.user else "N/A"
+        pathway = log.owner.Current_Path if log.owner else "N/A"
 
         if session_type_title == 'Presentation' and log.Project_ID:
             presentation = Presentation.query.get(log.Project_ID)
@@ -608,8 +608,8 @@ def update_speech_log(log_id):
             if updated_project:
                 project_name = updated_project.Project_Name
         # Use the helper function to get project code
-            if log.owner and log.owner.user and log.owner.user.Current_Path:
-                pathway_obj = db.session.query(Pathway).filter_by(name=log.owner.user.Current_Path).first()
+            if log.owner and log.owner.Current_Path:
+                pathway_obj = db.session.query(Pathway).filter_by(name=log.owner.Current_Path).first()
                 if pathway_obj:
                     pathway_abbr = pathway_obj.abbr
                     project_code = project_id_to_code(
@@ -634,7 +634,7 @@ def update_speech_log(log_id):
 @speech_logs_bp.route('/speech_log/suspend/<int:log_id>', methods=['POST'])
 @login_required
 def suspend_speech_log(log_id):
-    if not is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL'):
+    if not is_authorized('SPEECH_LOGS_EDIT_ALL'):
         return jsonify(success=False, message="Permission denied"), 403
 
     log = SessionLog.query.get_or_404(log_id)
@@ -737,16 +737,15 @@ def _get_next_project_for_contact(contact, completed_log):
 def complete_speech_log(log_id):
     log = SessionLog.query.get_or_404(log_id)
 
-    user_role = session.get('user_role')
-    user = User.query.get(session.get('user_id'))
-    current_user_contact_id = user.Contact_ID if user else None
+    current_user_contact_id = current_user.Contact_ID if current_user.is_authenticated else None
 
-    if not is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL'):
+    if not is_authorized('SPEECH_LOGS_EDIT_ALL'):
         if log.Owner_ID != current_user_contact_id:
             return jsonify(success=False, message="Permission denied."), 403
         # Also check if meeting is in the past for non-admins
         if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date >= datetime.today().date():
             return jsonify(success=False, message="You can only complete logs for past meetings."), 403
+
 
     log.Status = 'Completed'
 

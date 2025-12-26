@@ -14,7 +14,7 @@ from .utils import get_meetings_by_status
 booking_bp = Blueprint('booking_bp', __name__)
 
 
-def _fetch_session_logs(selected_meeting_number, user_role):
+def _fetch_session_logs(selected_meeting_number):
     """Fetches session logs for a given meeting, filtering by user role."""
     # Fetch the full SessionLog objects to ensure all data is available for consolidation.
     query = db.session.query(SessionLog)\
@@ -23,7 +23,7 @@ def _fetch_session_logs(selected_meeting_number, user_role):
         .filter(SessionLog.Meeting_Number == selected_meeting_number)\
         .filter(Role.name != '', Role.name.isnot(None))
 
-    if not is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
+    if not is_authorized('BOOKING_ASSIGN_ALL'):
         query = query.filter(Role.type != 'officer')
 
     return query.all()
@@ -100,8 +100,8 @@ def _enrich_role_data(roles_dict, selected_meeting):
     if selected_meeting.status == 'running':
         # For a running meeting, the "winner" is who the current user voted for.
         voter_identifier = None
-        if 'user_id' in session:
-            voter_identifier = f"user_{session['user_id']}"
+        if current_user.is_authenticated:
+            voter_identifier = f"user_{current_user.id}"
         elif 'voter_token' in session:
             voter_identifier = session['voter_token']
         
@@ -145,14 +145,15 @@ def _enrich_role_data(roles_dict, selected_meeting):
     return enriched_roles
 
 
-def _apply_user_filters_and_rules(roles, user_role, current_user_contact_id, selected_meeting_number):
+def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeting_number):
     """Applies filtering and business rules based on user permissions."""
-    if is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
+    if is_authorized('BOOKING_ASSIGN_ALL'):
         return roles
 
     # 3-Week Policy speaker rule
-    user = User.query.filter_by(Contact_ID=current_user_contact_id).first()
-    if user and user.Current_Path:
+    # 3-Week Policy speaker rule
+    # New logic:
+    if current_user.is_authenticated and current_user.contact and current_user.contact.Current_Path:
         three_meetings_ago = selected_meeting_number - 2
         recent_speaker_log = db.session.query(SessionLog.id).join(SessionType).join(Role, SessionType.role_id == Role.id)\
             .filter(SessionLog.Owner_ID == current_user_contact_id)\
@@ -168,13 +169,13 @@ def _apply_user_filters_and_rules(roles, user_role, current_user_contact_id, sel
     return roles
 
 
-def _sort_roles(roles, user_role, current_user_contact_id, is_past_meeting):
+def _sort_roles(roles, current_user_contact_id, is_past_meeting):
     """Sorts roles based on user type."""
     if is_past_meeting:
         # For past meetings, sort by award category first, then role name
         roles.sort(key=lambda x: (
             x.get('award_category', '') or '', x['role']))
-    elif is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
+    elif is_authorized('BOOKING_ASSIGN_ALL'):
         # For admin view of current/future meetings, sort by award category first, then role name
         roles.sort(key=lambda x: (
             x.get('award_category', '') or '', x['role']))
@@ -186,18 +187,18 @@ def _sort_roles(roles, user_role, current_user_contact_id, is_past_meeting):
     return roles
 
 
-def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_contact_id, selected_meeting, is_past_meeting):
+def _get_roles_for_meeting(selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting):
     """Helper function to get and process roles for the booking page."""
-    is_admin_booker = is_authorized(user_role, 'BOOKING_ASSIGN_ALL')
+    is_admin_booker = is_authorized('BOOKING_ASSIGN_ALL')
 
-    session_logs = _fetch_session_logs(selected_meeting_number, user_role)
+    session_logs = _fetch_session_logs(selected_meeting_number)
     roles_dict = _consolidate_roles(session_logs, is_admin_booker)
     enriched_roles = _enrich_role_data(roles_dict, selected_meeting)
     filtered_roles = _apply_user_filters_and_rules(
-        enriched_roles, user_role, current_user_contact_id, selected_meeting_number)
+        enriched_roles, current_user_contact_id, selected_meeting_number)
 
     sorted_roles = _sort_roles(
-        filtered_roles, user_role, current_user_contact_id, is_past_meeting)
+        filtered_roles, current_user_contact_id, is_past_meeting)
 
     if selected_meeting.status in ['running', 'finished']:
         sorted_roles = [role for role in sorted_roles if role.get(
@@ -214,18 +215,21 @@ def _get_roles_for_meeting(selected_meeting_number, user_role, current_user_cont
 
 
 def _get_user_info():
-    """Gets user information from the session."""
-    user_id = session.get('user_id')
-    user = User.query.get(user_id) if user_id else None
-    user_role = session.get('user_role', 'Guest')
-    current_user_contact_id = user.Contact_ID if user else None
-    return user, user_role, current_user_contact_id
+    """Gets user information from current_user."""
+    if current_user.is_authenticated:
+        user = current_user
+        current_user_contact_id = user.Contact_ID
+        # Role is accessible via user.Role or current_user.Role
+    else:
+        user = None
+        current_user_contact_id = None
+    return user, current_user_contact_id
 
 
 def _get_default_level(user):
     """Determines the default project level for a user."""
-    if user and user.Next_Project:
-        match = re.match(r"([A-Z]+)(\d+)\.?(\d*)", user.Next_Project)
+    if user and user.contact and user.contact.Next_Project:
+        match = re.match(r"([A-Z]+)(\d+)\.?(\d*)", user.contact.Next_Project)
         if match:
             try:
                 return int(match.group(2))
@@ -234,8 +238,17 @@ def _get_default_level(user):
     return 1
 
 
-def _get_meetings(user_role):
+from flask_login import current_user
+
+def _get_meetings():
     """Fetches meetings based on user role."""
+    # Logic for Past meetings visibility usually depends on role?
+    # Original code: get_meetings_by_status(limit_past=5 ...).
+    # It didn't seem to use user_role in _get_meetings body in original code shown in grep?
+    # Wait, let's check original code.
+    # Original: def _get_meetings(user_role): ... return get_meetings_by_status(...)
+    # It accepted user_role but didn't use it in the body shown. 
+    # Whatever, let's remove the unused argument.
     all_meetings_tuples = get_meetings_by_status(
         limit_past=5, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
 
@@ -243,6 +256,317 @@ def _get_meetings(user_role):
     default_meeting_num = get_default_meeting_number()
 
     return all_meetings_tuples, default_meeting_num
+
+
+def _get_booking_page_context(selected_meeting_number, user, current_user_contact_id):
+    """Gathers all context needed for the booking page template."""
+    default_level = _get_default_level(user)
+    selected_level = request.args.get('level', default=default_level, type=int)
+
+    upcoming_meetings, default_meeting_num = _get_meetings()
+
+    if not selected_meeting_number:
+        selected_meeting_number = default_meeting_num or (
+            upcoming_meetings[0][0] if upcoming_meetings else None)
+
+    context = {
+        'roles': [], 'upcoming_meetings': upcoming_meetings,
+        'selected_meeting_number': selected_meeting_number,
+        'user_bookings_by_date': [], 'contacts': [], 'completed_roles': [],
+        'selected_level': selected_level, 'selected_meeting': None,
+        'is_admin_view': is_authorized('BOOKING_ASSIGN_ALL'),
+        'current_user_contact_id': current_user_contact_id,
+        'user_role': current_user.Role if current_user.is_authenticated else 'Guest', # Passed to template if needed
+        'best_award_ids': set()
+    }
+
+    if not selected_meeting_number:
+        return context
+
+    selected_meeting = Meeting.query.filter_by(
+        Meeting_Number=selected_meeting_number).first()
+    context['selected_meeting'] = selected_meeting
+
+    is_past_meeting = selected_meeting.status == 'finished' if selected_meeting else False
+
+    context['roles'] = _get_roles_for_meeting(
+        selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting)
+
+    context['user_bookings_by_date'] = _get_user_bookings(
+        current_user_contact_id)
+    context['completed_roles'] = _get_completed_roles(
+        current_user_contact_id, selected_level)
+
+    if context['is_admin_view']:
+        context['contacts'] = Contact.query.order_by(Contact.Name).all()
+
+    context['best_award_ids'] = _get_best_award_ids(selected_meeting)
+
+    return context
+
+
+@booking_bp.route('/booking', defaults={'selected_meeting_number': None}, methods=['GET'])
+@booking_bp.route('/booking/<int:selected_meeting_number>', methods=['GET'])
+def booking(selected_meeting_number):
+    user, current_user_contact_id = _get_user_info()
+    context = _get_booking_page_context(
+        selected_meeting_number, user, current_user_contact_id)
+    return render_template('booking.html', **context)
+
+
+@booking_bp.route('/booking/book', methods=['POST'])
+@login_required
+def book_or_assign_role():
+    data = request.get_json()
+    session_id = data.get('session_id')
+    action = data.get('action')
+
+    user, current_user_contact_id = _get_user_info()
+
+    log = SessionLog.query.get(session_id)
+    if not log:
+        return jsonify(success=False, message="Session not found."), 404
+
+    session_type = SessionType.query.get(log.Type_ID)
+    logical_role_key = session_type.role.name if session_type and session_type.role else None
+
+    if not logical_role_key:
+        return jsonify(success=False, message="Could not determine the role key."), 400
+
+    if action == 'join_waitlist':
+        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+        session_ids_to_waitlist = _get_all_session_ids_for_role(
+            log, logical_role_key) if role_is_distinct else [session_id]
+
+        for s_id in session_ids_to_waitlist:
+            existing_waitlist = Waitlist.query.filter_by(
+                session_log_id=s_id, contact_id=current_user_contact_id).first()
+            if not existing_waitlist:
+                new_waitlist_entry = Waitlist(
+                    session_log_id=s_id,
+                    contact_id=current_user_contact_id,
+                    timestamp=datetime.utcnow()
+                )
+                db.session.add(new_waitlist_entry)
+
+        db.session.commit()
+        return jsonify(success=True)
+
+    elif action == 'book':
+        # Check if the role needs approval
+        role_needs_approval = session_type.role.needs_approval if session_type and session_type.role else False
+
+        if role_needs_approval:
+            role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+            session_ids_to_waitlist = _get_all_session_ids_for_role(
+                log, logical_role_key) if role_is_distinct else [session_id]
+
+            for s_id in session_ids_to_waitlist:
+                existing_waitlist = Waitlist.query.filter_by(
+                    session_log_id=s_id, contact_id=current_user_contact_id).first()
+                if not existing_waitlist:
+                    new_waitlist_entry = Waitlist(
+                        session_log_id=s_id,
+                        contact_id=current_user_contact_id,
+                        timestamp=datetime.utcnow()
+                    )
+                    db.session.add(new_waitlist_entry)
+            db.session.commit()
+            return jsonify(success=True, message="You have been added to the waitlist for this role. The booking requires approval.")
+        elif log.Owner_ID is not None:
+            return jsonify(success=False, message="This role is already booked.")
+        else:
+            owner_id_to_set = current_user_contact_id
+    elif action == 'cancel':
+        # Check if the role needs approval
+        role_needs_approval = session_type.role.needs_approval if session_type and session_type.role else False
+
+        if role_needs_approval:
+            # For roles that need approval, do not automatically promote from waitlist
+            owner_id_to_set = None
+        else:
+            # Original logic for roles that don't need approval
+            waitlist_entry = Waitlist.query.filter_by(
+                session_log_id=session_id).order_by(Waitlist.timestamp).first()
+            if waitlist_entry:
+                # This user is being promoted.
+                owner_id_to_set = waitlist_entry.contact_id
+                db.session.delete(waitlist_entry)
+
+            else:
+                owner_id_to_set = None
+    elif action == 'leave_waitlist':
+        waitlist_entry = Waitlist.query.filter_by(
+            session_log_id=session_id, contact_id=current_user_contact_id).first()
+        if waitlist_entry:
+            db.session.delete(waitlist_entry)
+
+        db.session.commit()
+        return jsonify(success=True, message="You have been removed from the waitlist.")
+    elif action == 'assign' and is_authorized('BOOKING_ASSIGN_ALL'):
+        contact_id = data.get('contact_id', '0')
+        owner_id_to_set = int(contact_id) if contact_id != '0' else None
+
+        # If assigning a specific user (not unassigning), remove that user from the waitlist
+        if owner_id_to_set:
+            # If assigning a user, remove them from the waitlist of all related sessions for a distinct role.
+            role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+            if role_is_distinct:
+                sessions_to_clear_waitlist = _get_all_session_ids_for_role(
+                    log, logical_role_key)
+                Waitlist.query.filter(Waitlist.session_log_id.in_(
+                    sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
+            else:
+                Waitlist.query.filter_by(session_log_id=session_id, contact_id=owner_id_to_set).delete(
+                    synchronize_session=False)
+
+    elif action == 'approve_waitlist' and is_authorized('BOOKING_ASSIGN_ALL'):
+        # Get the top person from the waitlist for this specific session_id
+        waitlist_entry = Waitlist.query.filter_by(
+            session_log_id=session_id).order_by(Waitlist.timestamp).first()
+
+        if not waitlist_entry:
+            return jsonify(success=False, message="No one is on the waitlist to approve."), 404
+
+        owner_id_to_set = waitlist_entry.contact_id
+
+        # When approving from waitlist, remove user from all waitlists for this logical role
+        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+        if role_is_distinct:
+            sessions_to_clear_waitlist = _get_all_session_ids_for_role(
+                log, logical_role_key)
+            Waitlist.query.filter(Waitlist.session_log_id.in_(
+                sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
+        else:
+            db.session.delete(waitlist_entry)
+
+    else:
+        return jsonify(success=False, message="Invalid action or permissions."), 403
+
+    try:
+        owner_contact = Contact.query.get(
+            owner_id_to_set) if owner_id_to_set else None
+        new_credentials = derive_credentials(owner_contact)
+
+        # Check if the role is distinct (should only have one entry per meeting)
+        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+
+        if role_is_distinct:
+            sessions_to_update = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
+                .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+                .filter(Role.name == logical_role_key).all()
+        else:  # For non-distinct roles, only update the specific session that was clicked
+            sessions_to_update = [log]
+
+        updated_sessions = []
+        for session_log in sessions_to_update:
+            new_path_level = derive_current_path_level(
+                session_log, owner_contact) if owner_contact else None
+
+            session_log.Owner_ID = owner_id_to_set
+            session_log.current_path_level = new_path_level
+            session_log.credentials = new_credentials
+            
+            updated_sessions.append({
+                'session_id': session_log.id,
+                'owner_id': owner_id_to_set,
+                'owner_name': owner_contact.Name if owner_contact else None,
+                'credentials': new_credentials
+            })
+
+        db.session.commit()
+        return jsonify(success=True, updated_sessions=updated_sessions)
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error during booking/assignment: {e}")
+        return jsonify(success=False, message="An internal error occurred."), 500
+
+
+def _get_all_session_ids_for_role(log, logical_role_key):
+    """Helper to get all session_log IDs for a given logical role in a meeting."""
+    all_logs_for_role = SessionLog.query.join(SessionType).join(Role)\
+        .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+        .filter(Role.name == logical_role_key).all()
+    return [l.id for l in all_logs_for_role]
+
+
+@booking_bp.route('/booking/vote', methods=['POST'])
+def vote_for_award():
+    data = request.get_json()
+    meeting_number = data.get('meeting_number')
+    contact_id = data.get('contact_id')
+    award_category = data.get('award_category')
+
+    if not all([meeting_number, contact_id, award_category]):
+        return jsonify(success=False, message="Missing data."), 400
+
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found."), 404
+
+    is_admin = is_authorized('BOOKING_ASSIGN_ALL')
+
+    if not (meeting.status == 'running' or (meeting.status == 'finished' and is_admin)):
+        return jsonify(success=False, message="Voting is not active for this meeting."), 403
+
+    # 1. Determine voter identity
+    if current_user.is_authenticated:
+        voter_identifier = f"user_{current_user.id}"
+    else:
+        if 'voter_token' not in session:
+            session['voter_token'] = secrets.token_hex(16)
+        voter_identifier = session['voter_token']
+    
+    # 2. Check for an existing vote from this identifier for this category
+    existing_vote = Vote.query.filter_by(
+        meeting_number=meeting_number,
+        voter_identifier=voter_identifier,
+        award_category=award_category
+    ).first()
+
+    your_vote_id = None
+
+    try:
+        if existing_vote:
+            if existing_vote.contact_id == contact_id:
+                # User clicked the same person again, so cancel the vote
+                db.session.delete(existing_vote)
+                your_vote_id = None
+            else:
+                # User is changing their vote to a new person
+                existing_vote.contact_id = contact_id
+                your_vote_id = contact_id
+        else:
+            # New vote
+            new_vote = Vote(
+                meeting_number=meeting_number,
+                voter_identifier=voter_identifier,
+                award_category=award_category,
+                contact_id=contact_id
+            )
+            db.session.add(new_vote)
+            your_vote_id = contact_id
+
+        db.session.commit()
+
+        if meeting.status == 'finished' and is_admin:
+            if award_category == 'speaker':
+                meeting.best_speaker_id = your_vote_id
+            elif award_category == 'evaluator':
+                meeting.best_evaluator_id = your_vote_id
+            elif award_category == 'table-topic':
+                meeting.best_table_topic_id = your_vote_id
+            elif award_category == 'role-taker':
+                meeting.best_role_taker_id = your_vote_id
+            db.session.commit()
+
+        return jsonify(success=True, your_vote_id=your_vote_id, award_category=award_category)
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error processing vote: {e}")
+        return jsonify(success=False, message="An internal error occurred."), 500
+
 
 
 def _get_user_bookings(current_user_contact_id):
@@ -344,312 +668,4 @@ def _get_best_award_ids(selected_meeting):
     }
 
 
-def _get_booking_page_context(selected_meeting_number, user, user_role, current_user_contact_id):
-    """Gathers all context needed for the booking page template."""
-    default_level = _get_default_level(user)
-    selected_level = request.args.get('level', default=default_level, type=int)
 
-    upcoming_meetings, default_meeting_num = _get_meetings(user_role)
-
-    if not selected_meeting_number:
-        selected_meeting_number = default_meeting_num or (
-            upcoming_meetings[0][0] if upcoming_meetings else None)
-
-    context = {
-        'roles': [], 'upcoming_meetings': upcoming_meetings,
-        'selected_meeting_number': selected_meeting_number,
-        'user_bookings_by_date': [], 'contacts': [], 'completed_roles': [],
-        'selected_level': selected_level, 'selected_meeting': None,
-        'is_admin_view': is_authorized(user_role, 'BOOKING_ASSIGN_ALL'),
-        'current_user_contact_id': current_user_contact_id,
-        'user_role': user_role,
-        'best_award_ids': set()
-    }
-
-    if not selected_meeting_number:
-        return context
-
-    selected_meeting = Meeting.query.filter_by(
-        Meeting_Number=selected_meeting_number).first()
-    context['selected_meeting'] = selected_meeting
-
-    is_past_meeting = selected_meeting.status == 'finished' if selected_meeting else False
-
-    context['roles'] = _get_roles_for_meeting(
-        selected_meeting_number, user_role, current_user_contact_id, selected_meeting, is_past_meeting)
-
-    context['user_bookings_by_date'] = _get_user_bookings(
-        current_user_contact_id)
-    context['completed_roles'] = _get_completed_roles(
-        current_user_contact_id, selected_level)
-
-    if context['is_admin_view']:
-        context['contacts'] = Contact.query.order_by(Contact.Name).all()
-
-    context['best_award_ids'] = _get_best_award_ids(selected_meeting)
-
-    return context
-
-
-@booking_bp.route('/booking', defaults={'selected_meeting_number': None}, methods=['GET'])
-@booking_bp.route('/booking/<int:selected_meeting_number>', methods=['GET'])
-def booking(selected_meeting_number):
-    user, user_role, current_user_contact_id = _get_user_info()
-    context = _get_booking_page_context(
-        selected_meeting_number, user, user_role, current_user_contact_id)
-    return render_template('booking.html', **context)
-
-
-@booking_bp.route('/booking/book', methods=['POST'])
-@login_required
-def book_or_assign_role():
-    data = request.get_json()
-    session_id = data.get('session_id')
-    action = data.get('action')
-
-    user, user_role, current_user_contact_id = _get_user_info()
-
-    log = SessionLog.query.get(session_id)
-    if not log:
-        return jsonify(success=False, message="Session not found."), 404
-
-    session_type = SessionType.query.get(log.Type_ID)
-    logical_role_key = session_type.role.name if session_type and session_type.role else None
-
-    if not logical_role_key:
-        return jsonify(success=False, message="Could not determine the role key."), 400
-
-    if action == 'join_waitlist':
-        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
-        session_ids_to_waitlist = _get_all_session_ids_for_role(
-            log, logical_role_key) if role_is_distinct else [session_id]
-
-        for s_id in session_ids_to_waitlist:
-            existing_waitlist = Waitlist.query.filter_by(
-                session_log_id=s_id, contact_id=current_user_contact_id).first()
-            if not existing_waitlist:
-                new_waitlist_entry = Waitlist(
-                    session_log_id=s_id,
-                    contact_id=current_user_contact_id,
-                    timestamp=datetime.utcnow()
-                )
-                db.session.add(new_waitlist_entry)
-
-        db.session.commit()
-        return jsonify(success=True)
-
-    elif action == 'book':
-        # Check if the role needs approval
-        role_needs_approval = session_type.role.needs_approval if session_type and session_type.role else False
-
-        if role_needs_approval:
-            role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
-            session_ids_to_waitlist = _get_all_session_ids_for_role(
-                log, logical_role_key) if role_is_distinct else [session_id]
-
-            for s_id in session_ids_to_waitlist:
-                existing_waitlist = Waitlist.query.filter_by(
-                    session_log_id=s_id, contact_id=current_user_contact_id).first()
-                if not existing_waitlist:
-                    new_waitlist_entry = Waitlist(
-                        session_log_id=s_id,
-                        contact_id=current_user_contact_id,
-                        timestamp=datetime.utcnow()
-                    )
-                    db.session.add(new_waitlist_entry)
-            db.session.commit()
-            return jsonify(success=True, message="You have been added to the waitlist for this role. The booking requires approval.")
-        elif log.Owner_ID is not None:
-            return jsonify(success=False, message="This role is already booked.")
-        else:
-            owner_id_to_set = current_user_contact_id
-    elif action == 'cancel':
-        # Check if the role needs approval
-        role_needs_approval = session_type.role.needs_approval if session_type and session_type.role else False
-
-        if role_needs_approval:
-            # For roles that need approval, do not automatically promote from waitlist
-            owner_id_to_set = None
-        else:
-            # Original logic for roles that don't need approval
-            waitlist_entry = Waitlist.query.filter_by(
-                session_log_id=session_id).order_by(Waitlist.timestamp).first()
-            if waitlist_entry:
-                # This user is being promoted.
-                owner_id_to_set = waitlist_entry.contact_id
-                db.session.delete(waitlist_entry)
-
-            else:
-                owner_id_to_set = None
-    elif action == 'leave_waitlist':
-        waitlist_entry = Waitlist.query.filter_by(
-            session_log_id=session_id, contact_id=current_user_contact_id).first()
-        if waitlist_entry:
-            db.session.delete(waitlist_entry)
-
-        db.session.commit()
-        return jsonify(success=True, message="You have been removed from the waitlist.")
-    elif action == 'assign' and is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
-        contact_id = data.get('contact_id', '0')
-        owner_id_to_set = int(contact_id) if contact_id != '0' else None
-
-        # If assigning a specific user (not unassigning), remove that user from the waitlist
-        if owner_id_to_set:
-            # If assigning a user, remove them from the waitlist of all related sessions for a distinct role.
-            role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
-            if role_is_distinct:
-                sessions_to_clear_waitlist = _get_all_session_ids_for_role(
-                    log, logical_role_key)
-                Waitlist.query.filter(Waitlist.session_log_id.in_(
-                    sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
-            else:
-                Waitlist.query.filter_by(session_log_id=session_id, contact_id=owner_id_to_set).delete(
-                    synchronize_session=False)
-
-    elif action == 'approve_waitlist' and is_authorized(user_role, 'BOOKING_ASSIGN_ALL'):
-        # Get the top person from the waitlist for this specific session_id
-        waitlist_entry = Waitlist.query.filter_by(
-            session_log_id=session_id).order_by(Waitlist.timestamp).first()
-
-        if not waitlist_entry:
-            return jsonify(success=False, message="No one is on the waitlist to approve."), 404
-
-        owner_id_to_set = waitlist_entry.contact_id
-
-        # When approving from waitlist, remove user from all waitlists for this logical role
-        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
-        if role_is_distinct:
-            sessions_to_clear_waitlist = _get_all_session_ids_for_role(
-                log, logical_role_key)
-            Waitlist.query.filter(Waitlist.session_log_id.in_(
-                sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
-        else:
-            db.session.delete(waitlist_entry)
-
-    else:
-        return jsonify(success=False, message="Invalid action or permissions."), 403
-
-    try:
-        owner_contact = Contact.query.get(
-            owner_id_to_set) if owner_id_to_set else None
-        new_credentials = derive_credentials(owner_contact)
-
-        # Check if the role is distinct (should only have one entry per meeting)
-        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
-
-        if role_is_distinct:
-            sessions_to_update = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
-                .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-                .filter(Role.name == logical_role_key).all()
-        else:  # For non-distinct roles, only update the specific session that was clicked
-            sessions_to_update = [log]
-
-        updated_sessions = []
-        for session_log in sessions_to_update:
-            new_path_level = derive_current_path_level(
-                session_log, owner_contact) if owner_contact else None
-
-            session_log.Owner_ID = owner_id_to_set
-            session_log.current_path_level = new_path_level
-            session_log.credentials = new_credentials
-            
-            updated_sessions.append({
-                'session_id': session_log.id,
-                'owner_id': owner_id_to_set,
-                'owner_name': owner_contact.Name if owner_contact else None,
-                'credentials': new_credentials
-            })
-
-        db.session.commit()
-        return jsonify(success=True, updated_sessions=updated_sessions)
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error during booking/assignment: {e}")
-        return jsonify(success=False, message="An internal error occurred."), 500
-
-
-def _get_all_session_ids_for_role(log, logical_role_key):
-    """Helper to get all session_log IDs for a given logical role in a meeting."""
-    all_logs_for_role = SessionLog.query.join(SessionType).join(Role)\
-        .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-        .filter(Role.name == logical_role_key).all()
-    return [l.id for l in all_logs_for_role]
-
-
-@booking_bp.route('/booking/vote', methods=['POST'])
-def vote_for_award():
-    data = request.get_json()
-    meeting_number = data.get('meeting_number')
-    contact_id = data.get('contact_id')
-    award_category = data.get('award_category')
-
-    if not all([meeting_number, contact_id, award_category]):
-        return jsonify(success=False, message="Missing data."), 400
-
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
-    if not meeting:
-        return jsonify(success=False, message="Meeting not found."), 404
-
-    user_role = session.get('user_role', 'Guest')
-    is_admin = is_authorized(user_role, 'BOOKING_ASSIGN_ALL')
-
-    if not (meeting.status == 'running' or (meeting.status == 'finished' and is_admin)):
-        return jsonify(success=False, message="Voting is not active for this meeting."), 403
-
-    # 1. Determine voter identity
-    if 'user_id' in session:
-        voter_identifier = f"user_{session['user_id']}"
-    else:
-        if 'voter_token' not in session:
-            session['voter_token'] = secrets.token_hex(16)
-        voter_identifier = session['voter_token']
-    
-    # 2. Check for an existing vote from this identifier for this category
-    existing_vote = Vote.query.filter_by(
-        meeting_number=meeting_number,
-        voter_identifier=voter_identifier,
-        award_category=award_category
-    ).first()
-
-    your_vote_id = None
-
-    try:
-        if existing_vote:
-            if existing_vote.contact_id == contact_id:
-                # User clicked the same person again, so cancel the vote
-                db.session.delete(existing_vote)
-                your_vote_id = None
-            else:
-                # User is changing their vote to a new person
-                existing_vote.contact_id = contact_id
-                your_vote_id = contact_id
-        else:
-            # New vote
-            new_vote = Vote(
-                meeting_number=meeting_number,
-                voter_identifier=voter_identifier,
-                award_category=award_category,
-                contact_id=contact_id
-            )
-            db.session.add(new_vote)
-            your_vote_id = contact_id
-
-        db.session.commit()
-
-        if meeting.status == 'finished' and is_admin:
-            if award_category == 'speaker':
-                meeting.best_speaker_id = your_vote_id
-            elif award_category == 'evaluator':
-                meeting.best_evaluator_id = your_vote_id
-            elif award_category == 'table-topic':
-                meeting.best_table_topic_id = your_vote_id
-            elif award_category == 'role-taker':
-                meeting.best_role_taker_id = your_vote_id
-            db.session.commit()
-
-        return jsonify(success=True, your_vote_id=your_vote_id, award_category=award_category)
-
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error processing vote: {e}")
-        return jsonify(success=False, message="An internal error occurred."), 500

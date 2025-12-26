@@ -119,7 +119,7 @@
         <div class="action-bar-right">
             <div class="button-group" id="view-mode-buttons">
             {% if selected_meeting %}
-                {% if is_authorized(session.get('user_role'), 'AGENDA_EDIT') %}
+                {% if is_authorized('AGENDA_EDIT') %}
                 {% if selected_meeting.status %}
                     <span class="meeting-status-display status-{{ selected_meeting.status }}" title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
                         <i class="fas fa-fw {% if selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>
@@ -152,7 +152,7 @@
         </div>
     </div>
     
-    {% if is_authorized(session.get('user_role'), 'AGENDA_EDIT') %}
+    {% if is_authorized('AGENDA_EDIT') %}
     <div class="button-group" id="edit-mode-buttons" style="display: none;">
         <button id="cancel-edit-btn" class="btn btn-danger">Cancel</button>
         <button id="add-row-btn" class="btn btn-info">Add</button>

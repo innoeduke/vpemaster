@@ -168,7 +168,7 @@
                                             <i class="fas fa-play-circle"></i>
                                         </a>
                                         {% endif %}
-                                        {% if is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
+                                        {% if is_authorized('SPEECH_LOGS_EDIT_ALL') %}
                                         <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)" title="Edit"><i class="fas fa-edit"></i></button>
                                         {% endif %}
                                     </div>
@@ -205,14 +205,14 @@
                                             {% set presentation = get_presentation_by_id(log.Project_ID) %}
                                             {{ presentation.series if presentation else 'N/A' }}
                                         {% else %}
-                                            <td>{{ log.owner.user.Current_Path if log.owner and log.owner.user else 'N/A' }}</td>
+                                            <td>{{ log.owner.Current_Path if log.owner else 'N/A' }}</td>
                                         {% endif %}
                                     </div>
                                     <div class="status-info">
                                         {% if log.Status == 'Completed' %}
                                             <i class="fas fa-check-circle" title="Completed"></i>
                                         {% elif log.Status == 'Delivered' %}
-                                            {% if is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
+                                            {% if is_authorized('SPEECH_LOGS_EDIT_ALL') %}
                                                 <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
                                             {% else %}
                                                 <span class="status-delivered">Delivered</span>
@@ -220,7 +220,7 @@
                                         {% else %} {# Booked or Null #}
                                             {# Only show complete/suspend if the meeting date is in the past #}
                                             {% if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date < today_date %}
-                                                {% if is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
+                                                {% if is_authorized('SPEECH_LOGS_EDIT_ALL') %}
                                                     <button onclick="suspendSpeechLog(this, {{ log.id }})" class="icon-btn btn-suspend" title="Suspend"><i class="fas fa-pause-circle"></i></button>
                                                 {% endif %}
                                                 {# All users can mark their own past speeches as complete #}
@@ -244,7 +244,7 @@
                                         <i class="fas fa-play-circle"></i>
                                     </a>
                                     {% endif %}
-                                    {% if log.session_type.Valid_for_Project and is_authorized(session.get('user_role'), 'SPEECH_LOGS_EDIT_ALL') %}
+                                    {% if log.session_type.Valid_for_Project and is_authorized(current_user.id == log.Owner_ID, 'SPEECH_LOGS_EDIT_ALL') %}
                                         <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)" title="Edit"><i class="fas fa-edit"></i></button>
                                     {% endif %}
                                 </div>

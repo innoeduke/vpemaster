@@ -46,7 +46,7 @@ block content %}
         >
           <i class="fas fa-download"></i>
         </a>
-        {% if is_authorized(session.get('user_role'), 'PATHWAY_LIB_EDIT') %}
+        {% if is_authorized('PATHWAY_LIB_EDIT') %}
         <button
           id="cancel-project-btn"
           class="icon-btn"

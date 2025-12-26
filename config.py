@@ -23,6 +23,11 @@ class Config:
 
     # Session settings
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
+    
+    # Flask-Login settings
+    REMEMBER_COOKIE_DURATION = timedelta(days=30)
+    REMEMBER_COOKIE_HTTPONLY = True
+    SESSION_PROTECTION = 'strong'
 
     # Your application-specific config
 

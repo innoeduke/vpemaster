@@ -2,6 +2,8 @@
 
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, current_app, flash
 from .auth.utils import login_required, is_authorized
+from flask_login import current_user
+
 from .models import SessionType, User, LevelRole, Presentation, Role
 from . import db
 from .utils import load_all_settings, get_excomm_team
@@ -18,7 +20,7 @@ def settings():
     """
     Renders the settings page, visible only to administrators.
     """
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     all_settings = load_all_settings()
@@ -49,7 +51,7 @@ def settings():
 @settings_bp.route('/settings/sessions/add', methods=['POST'])
 @login_required
 def add_session_type():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return jsonify(success=False, message="Permission denied"), 403
 
     try:
@@ -134,7 +136,7 @@ def add_session_type():
 @settings_bp.route('/settings/sessions/update', methods=['POST'])
 @login_required
 def update_session_types():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return jsonify(success=False, message="Permission denied"), 403
 
     data = request.get_json()
@@ -174,7 +176,7 @@ def update_session_types():
 @settings_bp.route('/settings/roles/add', methods=['POST'])
 @login_required
 def add_role():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     try:
@@ -199,7 +201,7 @@ def add_role():
 @settings_bp.route('/settings/roles/update', methods=['POST'])
 @login_required
 def update_roles():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return jsonify(success=False, message="Permission denied"), 403
 
     data = request.get_json()
@@ -227,7 +229,7 @@ def update_roles():
 @settings_bp.route('/settings/roles/import', methods=['POST'])
 @login_required
 def import_roles():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     if 'file' not in request.files:
@@ -276,7 +278,7 @@ def import_roles():
 @settings_bp.route('/settings/level-roles/add', methods=['POST'])
 @login_required
 def add_level_role():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     try:
@@ -298,7 +300,7 @@ def add_level_role():
 @settings_bp.route('/settings/level-roles/update', methods=['POST'])
 @login_required
 def update_level_roles():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return jsonify(success=False, message="Permission denied"), 403
 
     data = request.get_json()
@@ -326,7 +328,7 @@ def update_level_roles():
 @settings_bp.route('/settings/presentations/add', methods=['POST'])
 @login_required
 def add_presentation():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     try:
@@ -347,7 +349,7 @@ def add_presentation():
 @settings_bp.route('/settings/presentations/update', methods=['POST'])
 @login_required
 def update_presentations():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return jsonify(success=False, message="Permission denied"), 403
 
     data = request.get_json()

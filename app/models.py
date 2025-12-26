@@ -13,28 +13,60 @@ class Contact(db.Model):
     DTM = db.Column(db.Boolean, default=False)
     Phone_Number = db.Column(db.String(50), nullable=True)
     Bio = db.Column(db.Text, nullable=True)
+    
+    # Migrated from User model
+    Member_ID = db.Column(db.String(50), unique=True, nullable=True)
+    Mentor_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
+    Current_Path = db.Column(db.String(50), nullable=True)
+    Next_Project = db.Column(db.String(100), nullable=True)
+    credentials = db.Column(db.String(10), nullable=True)
+
+    mentor = db.relationship('Contact', remote_side=[id], foreign_keys=[Mentor_ID], backref='mentees')
 
 
-class User(db.Model):
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from .auth.utils import ROLE_PERMISSIONS # Import permissions
+
+from . import login_manager
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+class User(UserMixin, db.Model):
     __tablename__ = 'Users'
     id = db.Column(db.Integer, primary_key=True)
     Username = db.Column(db.String(50), nullable=False, unique=True)
     Email = db.Column(db.String(120), unique=True, nullable=True)
-    Member_ID = db.Column(db.String(50), unique=True, nullable=True)
-    Mentor_ID = db.Column(db.Integer, db.ForeignKey(
-        'Contacts.id'), nullable=True)
+    # Migrated to Contact: Member_ID, Mentor_ID, Current_Path, Next_Project, credentials
     Contact_ID = db.Column(db.Integer, db.ForeignKey(
         'Contacts.id'), nullable=True, unique=True)
     Pass_Hash = db.Column(db.String(255), nullable=False)
     Date_Created = db.Column(db.Date)
     Role = db.Column(db.String(50), nullable=False, default='Member')
     Status = db.Column(db.String(50), nullable=False, default='active')
-    Current_Path = db.Column(db.String(50), nullable=True)
-    Next_Project = db.Column(db.String(100), nullable=True)
-    credentials = db.Column(db.String(10), nullable=True)
-    contact = db.relationship('Contact', foreign_keys=[
-                              Contact_ID], backref=db.backref('user', uselist=False))
-    mentor = db.relationship('Contact', foreign_keys=[Mentor_ID])
+    
+    contact = db.relationship('Contact', foreign_keys=[Contact_ID], backref=db.backref('user', uselist=False))
+
+    def set_password(self, password):
+        self.Pass_Hash = generate_password_hash(password, method='pbkdf2:sha256')
+
+    def check_password(self, password):
+        return check_password_hash(self.Pass_Hash, password)
+
+    def can(self, permission):
+        # Local import to avoid circular dependency if utils imports User
+        # Actually utils imports models at top, but ROLE_PERMISSIONS is pure data?
+        # Let's check utils.py again. utils.py defines ROLE_PERMISSIONS.
+        
+        # If user role is None, treat as Guest
+        role = self.Role if self.Role else "Guest"
+        return permission in ROLE_PERMISSIONS.get(role, set())
+
+    @property
+    def is_admin(self):
+        return self.Role == 'Admin'
 
 
 class Project(db.Model):

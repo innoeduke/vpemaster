@@ -140,21 +140,64 @@ function openContactModal(contactId) {
           data.contact.Completed_Paths || "";
         document.getElementById("dtm").checked = data.contact.DTM;
 
-        // Handle User Fields
-        const userFieldsSection = document.getElementById("userFieldsSection");
-        if (data.contact.has_user) {
-          userFieldsSection.style.display = "block";
+        // Populate Mentor Dropdown
+        const mentorSelect = document.getElementById("mentor_id");
+        if (mentorSelect && typeof MENTOR_CANDIDATES !== 'undefined') {
+          mentorSelect.innerHTML = '<option value="0">None</option>';
+          MENTOR_CANDIDATES.forEach(m => {
+            // Don't list self as mentor
+            if (m.id !== data.contact.id) {
+              const option = document.createElement("option");
+              option.value = m.id;
+              option.textContent = m.name;
+              mentorSelect.appendChild(option);
+            }
+          });
+          mentorSelect.value = data.contact.mentor_id || 0;
+        }
+
+        // Handle Education Accordion Visibility
+        const educationWrapper = document.getElementById("educationFieldsWrapper");
+        const type = data.contact.Type;
+        if (type === 'Member' || type === 'Officer') {
+          educationWrapper.style.display = "block";
           document.getElementById("current_path").value = data.contact.current_path || "";
           document.getElementById("next_project").value = data.contact.next_project || "";
           document.getElementById("credentials").value = data.contact.credentials || "";
         } else {
-          userFieldsSection.style.display = "none";
+          educationWrapper.style.display = "none";
         }
+
+        // Reset Accordions: Open Basic Info, Close Education
+        const acc = document.querySelectorAll(".accordion");
+        acc.forEach((btn, index) => {
+          const panel = btn.nextElementSibling;
+          if (index === 0) { // Basic Info
+            btn.classList.add("active");
+            panel.style.maxHeight = panel.scrollHeight + "px";
+          } else { // Education
+            btn.classList.remove("active");
+            panel.style.maxHeight = null;
+          }
+        });
       });
   } else {
     contactModalTitle.textContent = "Add New Contact";
     contactForm.action = "/contact/form";
-    document.getElementById("userFieldsSection").style.display = "none";
+    document.getElementById("educationFieldsWrapper").style.display = "none";
+
+    // Reset Accordions for New Entry
+    const acc = document.querySelectorAll(".accordion");
+    acc.forEach((btn, index) => {
+      const panel = btn.nextElementSibling;
+      if (index === 0) {
+        btn.classList.add("active");
+        panel.style.maxHeight = panel.scrollHeight + "px";
+      } else {
+        btn.classList.remove("active");
+        panel.style.maxHeight = null;
+      }
+    });
   }
   contactModal.style.display = "flex";
 }
@@ -176,9 +219,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Add click listener to the overlay
   if (navOverlay) {
     navOverlay.addEventListener("click", closeNav);
+  }
+
+  // Contact Modal Type Change Listener
+  const typeSelect = document.getElementById("type");
+  const educationWrapper = document.getElementById("educationFieldsWrapper");
+  if (typeSelect && educationWrapper) {
+    typeSelect.addEventListener("change", function () {
+      if (this.value === 'Member' || this.value === 'Officer') {
+        educationWrapper.style.display = 'block';
+      } else {
+        educationWrapper.style.display = 'none';
+      }
+    });
   }
 });
 
@@ -317,3 +372,37 @@ function setupTableFilter(tableId, inputId, clearId) {
   // Initial setup
   filterTable();
 }
+
+/**
+ * REUSABLE HELPER: Sets up accordion functionality
+ */
+function setupAccordions(container = document) {
+  // Clone and replace to remove old listeners (simple way to avoid duplicates)
+  // Or just check class? No, straightforward approach:
+
+  // Actually, calling this on page load is fine.
+  // If called again (e.g. after dynamic content), we want to make sure we don't double bind.
+  // The contacts modal is static HTML included in the page, so once is enough.
+
+  const acc = container.querySelectorAll(".accordion");
+  acc.forEach(btn => {
+    // Remove old listener if any? Hard to do anon function.
+    // Use a property flag.
+    if (btn.dataset.accInit) return;
+    btn.dataset.accInit = "true";
+
+    btn.addEventListener("click", function () {
+      this.classList.toggle("active");
+      var panel = this.nextElementSibling;
+      if (panel.style.maxHeight && panel.style.maxHeight !== "0px") {
+        panel.style.maxHeight = null;
+      } else {
+        panel.style.maxHeight = panel.scrollHeight + "px";
+      }
+    });
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  setupAccordions();
+});

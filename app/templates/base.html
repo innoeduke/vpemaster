@@ -102,12 +102,12 @@
             <a href="{{ url_for('booking_bp.booking') }}">
               <i class="fas fa-tag nav-icon"></i>
               <span
-                >{% if session.logged_in %}Booking{% else %}Voting{% endif
+                >{% if current_user.is_authenticated %}Booking{% else %}Voting{% endif
                 %}</span
               >
             </a>
           </li>
-          {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_VIEW') %}
+          {% if is_authorized('CONTACT_BOOK_VIEW') %}
           <li
             class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}"
           >
@@ -116,7 +116,7 @@
               <span>Contacts</span>
             </a>
           </li>
-          {% endif %} {% if session.logged_in %}
+          {% endif %} {% if current_user.is_authenticated %}
           <li
             class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}"
           >
@@ -134,7 +134,7 @@
               <span>Pathway Library</span>
             </a>
           </li>
-          {% if is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL') %}
+          {% if is_authorized('SETTINGS_VIEW_ALL') %}
           <li
             class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}"
           >
@@ -145,7 +145,7 @@
           </li>
           {% endif %}
         </ul>
-        {% if session.logged_in %}
+        {% if current_user.is_authenticated %}
         <div class="logout-container">
           <a href="{{ url_for('auth_bp.logout') }}" class="btn btn-primary">
             <i class="fas fa-sign-out-alt"></i>
@@ -165,11 +165,11 @@
       <div id="nav-overlay"></div>
 
       <div class="main-content" id="main-content">
-        {% if session.logged_in and session.display_name %}
+        {% if current_user.is_authenticated and current_user.contact %}
         <div class="profile-container">
           <div class="profile-trigger" id="profile-trigger">
             <i class="fas fa-user-circle"></i>
-            <span>{{ session.display_name }}</span>
+            <span>{{ current_user.contact.Name }}</span>
             <i class="fas fa-caret-down"></i>
           </div>
           <div class="profile-menu" id="profile-menu">

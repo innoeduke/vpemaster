@@ -2,6 +2,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from . import db
 from .models import User, Contact, Pathway
 from .auth.utils import is_authorized, login_required
+from flask_login import current_user
+
 from werkzeug.security import generate_password_hash
 from datetime import date
 from sqlalchemy import or_
@@ -31,25 +33,19 @@ def _create_or_update_user(user=None, **kwargs):
     user.Username = kwargs.get('username')
     user.Email = kwargs.get('email')
     
-    member_id = kwargs.get('member_id')
-    user.Member_ID = member_id if member_id else None
-    
     user.Role = kwargs.get('role')
-    user.Current_Path = kwargs.get('current_path') or None
-    user.Next_Project = kwargs.get('next_project') or None
-    user.credentials = kwargs.get('credential') or None
+    
+    # Profile fields (Member_ID, Current_Path, etc.) are now on Contact model.
+    # We do not set them here.
 
     contact_id = kwargs.get('contact_id', 0)
     user.Contact_ID = contact_id if contact_id != 0 else None
-
-    mentor_id = kwargs.get('mentor_id', 0)
-    user.Mentor_ID = mentor_id if mentor_id != 0 else None
 
 
 @users_bp.route('/users')
 @login_required
 def show_users():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
@@ -59,7 +55,7 @@ def show_users():
 @users_bp.route('/user/form/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def user_form(user_id):
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     user = None
@@ -79,14 +75,9 @@ def user_form(user_id):
             user=user,
             username=request.form.get('username'),
             email=request.form.get('email'),
-            member_id=request.form.get('member_id'),
             role=request.form.get('role'),
             status=request.form.get('status'),
             contact_id=request.form.get('contact_id', 0, type=int),
-            mentor_id=request.form.get('mentor_id', 0, type=int),
-            current_path=request.form.get('current_path'),
-            next_project=request.form.get('next_project'),
-            credential=request.form.get('credential'),
             password=request.form.get('password')
         )
         db.session.commit()
@@ -98,7 +89,7 @@ def user_form(user_id):
 @users_bp.route('/user/delete/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         return redirect(url_for('agenda_bp.agenda'))
 
     user = User.query.get_or_404(user_id)
@@ -110,7 +101,7 @@ def delete_user(user_id):
 @users_bp.route('/user/bulk_import', methods=['POST'])
 @login_required
 def bulk_import_users():
-    if not is_authorized(session.get('user_role'), 'SETTINGS_VIEW_ALL'):
+    if not is_authorized('SETTINGS_VIEW_ALL'):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
@@ -183,7 +174,7 @@ def bulk_import_users():
 @users_bp.route('/user/quick_add/<int:contact_id>', methods=['POST'])
 @login_required
 def quick_add_user(contact_id):
-    if not is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT'):
+    if not is_authorized('CONTACT_BOOK_EDIT'):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('contacts_bp.show_contacts'))
 

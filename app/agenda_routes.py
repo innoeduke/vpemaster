@@ -285,8 +285,8 @@ def _get_processed_logs_data(selected_meeting_num):
                 project_code_str = f"{series_initial}{presentation.code}"
         elif log.Project_ID == 60:
             project_code_str = "TM1.0"
-        elif project and owner and owner.user and owner.user.Current_Path:  # Else if pathway...
-            pathway_suffix = pathway_mapping.get(owner.user.Current_Path)
+        elif project and owner and owner.Current_Path:  # Else if pathway...
+            pathway_suffix = pathway_mapping.get(owner.Current_Path)
             if pathway_suffix:
                 pathway = db.session.query(Pathway).filter_by(
                     abbr=pathway_suffix).first()
@@ -502,8 +502,8 @@ A single endpoint to fetch all data needed for the agenda modals.
             "id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type,
             "Club": c.Club, "Completed_Paths": c.Completed_Paths,
             "Credentials": derive_credentials(c),
-            "Current_Path": c.user.Current_Path if c.user else None,
-            "Next_Project": c.user.Next_Project if c.user else None
+            "Current_Path": c.Current_Path,
+            "Next_Project": c.Next_Project
         } for c in contacts
     ]
 
@@ -620,7 +620,7 @@ def _get_all_speech_details(logs_data, pathway_mapping):
                 path_abbr = ""
                 pathway_project_code = "1.0"
             else:  # Regular Pathway Project
-                pathway_name = user.Current_Path if user else ""
+                pathway_name = contact.Current_Path if contact else ""
                 path_abbr = pathway_mapping.get(
                     pathway_name, "") if pathway_name else ""
                 pathway = db.session.query(Pathway).filter_by(
@@ -686,8 +686,8 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
     # Check for Pathway Speech (Type 30)
     if session_type and session_type.id == 30 and project:
         # Use the helper function to get project code
-        if contact and contact.user and contact.user.Current_Path and log.Project_ID:
-            pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
+        if contact and contact.Current_Path and log.Project_ID:
+            pathway_abbr = pathway_mapping.get(contact.Current_Path)
             if pathway_abbr:
                 project_code_str = project_id_to_code(
                     log.Project_ID, pathway_abbr)
@@ -971,8 +971,8 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
 
         # Get project code if available - using the helper function
         project_code_str = ""
-        if contact and contact.user and contact.user.Current_Path and log.Project_ID:
-            pathway_abbr = pathway_mapping.get(contact.user.Current_Path)
+        if contact and contact.Current_Path and log.Project_ID:
+            pathway_abbr = pathway_mapping.get(contact.Current_Path)
             if pathway_abbr:
                 # Use the helper function to get project code with path prefix
                 project_code_str = project_id_to_code(

@@ -4,6 +4,8 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from . import db
 from .models import Contact, SessionLog, Pathway
 from .auth.utils import login_required, is_authorized
+from flask_login import current_user
+
 from datetime import date
 
 contacts_bp = Blueprint('contacts_bp', __name__)
@@ -27,7 +29,7 @@ def search_contacts_by_name():
 @contacts_bp.route('/contacts')
 @login_required
 def show_contacts():
-    if not is_authorized(session.get('user_role'), 'CONTACT_BOOK_VIEW'):
+    if not is_authorized('CONTACT_BOOK_VIEW'):
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -91,19 +93,24 @@ def show_contacts():
     sorted_types = sorted(type_counts.keys(), key=lambda x: (x not in ['Member', 'Officer'], x))
     
     pathways = [p.name for p in Pathway.query.order_by(Pathway.name).all()]
+    mentor_candidates = Contact.query.filter(
+        Contact.Type.in_(['Member', 'Officer', 'Past Member'])
+    ).order_by(Contact.Name.asc()).all()
+
     return render_template('contacts.html', 
                            contacts=contacts, 
                            pathways=pathways,
                            total_contacts=total_contacts, 
                            type_counts=type_counts,
-                           contact_types=sorted_types)
+                           contact_types=sorted_types,
+                           mentor_candidates=mentor_candidates)
 
 
 @contacts_bp.route('/contact/form', methods=['GET', 'POST'])
 @contacts_bp.route('/contact/form/<int:contact_id>', methods=['GET', 'POST'])
 @login_required
 def contact_form(contact_id=None):
-    if not is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT'):
+    if not is_authorized('CONTACT_BOOK_EDIT'):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -121,9 +128,11 @@ def contact_form(contact_id=None):
             "DTM": contact.DTM,
             "Phone_Number": contact.Phone_Number,
             "Bio": contact.Bio,
-            "credentials": contact.user.credentials if contact.user else None,
-            "current_path": contact.user.Current_Path if contact.user else None,
-            "next_project": contact.user.Next_Project if contact.user else None,
+            "credentials": contact.credentials,
+            "current_path": contact.Current_Path,
+            "current_path": contact.Current_Path,
+            "next_project": contact.Next_Project,
+            "mentor_id": contact.Mentor_ID,
             "has_user": True if contact.user else False
         }
         return jsonify(contact=contact_data)
@@ -143,10 +152,18 @@ def contact_form(contact_id=None):
             contact.Phone_Number = request.form.get('phone_number')
             contact.Bio = request.form.get('bio')
             
-            if contact.user:
-                contact.user.Current_Path = request.form.get('current_path')
-                contact.user.Next_Project = request.form.get('next_project')
-                contact.user.credentials = request.form.get('credentials')
+            # Update profile fields (Member/Officer specific)
+            if request.form.get('type') in ['Member', 'Officer']:
+                contact.Current_Path = request.form.get('current_path')
+                contact.Next_Project = request.form.get('next_project')
+                contact.credentials = request.form.get('credentials')
+                
+                mentor_id = request.form.get('mentor_id', 0, type=int)
+                contact.Mentor_ID = mentor_id if mentor_id and mentor_id != 0 else None
+            else:
+                # Clear fields if type changes to Guest (optional, but good practice)
+                # Or keep them? Let's just update if present.
+                pass
 
             db.session.commit()
         else:
@@ -180,7 +197,11 @@ def contact_form(contact_id=None):
                 Type=request.form.get('type'),
                 DTM='dtm' in request.form,
                 Phone_Number=request.form.get('phone_number'),
-                Bio=request.form.get('bio')
+                Bio=request.form.get('bio'),
+                Current_Path=request.form.get('current_path'),
+                Next_Project=request.form.get('next_project'),
+                credentials=request.form.get('credentials'),
+                Mentor_ID=request.form.get('mentor_id', None, type=int) or None
             )
             db.session.add(new_contact)
             db.session.commit()
@@ -202,7 +223,7 @@ def contact_form(contact_id=None):
 @contacts_bp.route('/contact/delete/<int:contact_id>', methods=['POST'])
 @login_required
 def delete_contact(contact_id):
-    if not is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT'):
+    if not is_authorized('CONTACT_BOOK_EDIT'):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -216,7 +237,7 @@ def delete_contact(contact_id):
 @contacts_bp.route('/api/contact', methods=['POST'])
 @login_required
 def create_contact_api():
-    if not is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT'):
+    if not is_authorized('CONTACT_BOOK_EDIT'):
         return jsonify({'error': 'Permission denied'}), 403
 
     try:

@@ -36,7 +36,7 @@
         &times;
       </button>
     </div>
-    {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
+    {% if is_authorized('CONTACT_BOOK_EDIT') %}
     <div class="button-group">
       <button class="btn btn-primary" onclick="openContactModal()">
         New Contact
@@ -75,7 +75,7 @@
         <th class="sortable" data-column-index="4">Credentials</th>
         <th class="sortable" data-column-index="5">Completed Paths</th>
         <th class="sortable" data-column-index="6">Next Project</th>
-        {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
+        {% if is_authorized('CONTACT_BOOK_EDIT') %}
         <th class="action-header" data-column-index="7">Actions</th>
         {% endif %}
       </tr>
@@ -104,10 +104,10 @@
                 </span>
             </div>
         </td>
-        <td>{% if contact.user %}{{ contact.user.credentials }}{% endif %}</td>
+        <td>{{ contact.credentials if contact.credentials else '' }}</td>
         <td>{{ contact.Completed_Paths }}</td>
-        <td>{% if contact.user %}{{ contact.user.Next_Project }}{% endif %}</td>
-        {% if is_authorized(session.get('user_role'), 'CONTACT_BOOK_EDIT') %}
+        <td>{{ contact.Next_Project if contact.Next_Project else '' }}</td>
+        {% if is_authorized('CONTACT_BOOK_EDIT') %}
         <td>
           <div class="action-links">
             <button
@@ -147,6 +147,13 @@
 </div>
 
 {% include '_contact_modal.html' %}
+<script>
+  var MENTOR_CANDIDATES = [
+    {% for m in mentor_candidates %}
+      { id: {{ m.id }}, name: "{{ m.Name }}" },
+    {% endfor %}
+  ];
+</script>
 <script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
 
 {% endblock %}

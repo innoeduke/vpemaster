@@ -322,9 +322,9 @@
             {{ user.contact.Phone_Number if user.contact and
             user.contact.Phone_Number else '' }}
           </td>
-          <td>{{ user.mentor.Name if user.mentor else '' }}</td>
-          <td>{{ user.Current_Path if user.Current_Path else '' }}</td>
-          <td>{{ user.Next_Project if user.Next_Project else '' }}</td>
+          <td>{{ user.contact.mentor.Name if user.contact and user.contact.mentor else '' }}</td>
+          <td>{{ user.contact.Current_Path if user.contact and user.contact.Current_Path else '' }}</td>
+          <td>{{ user.contact.Next_Project if user.contact and user.contact.Next_Project else '' }}</td>
           <td>{{ user.Status }}</td>
           <td>
             <div class="action-links">

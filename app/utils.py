@@ -82,11 +82,10 @@ def derive_current_path_level(log, owner_contact):
     Returns:
         str or None: The derived current_path_level string or None.
     """
-    user = owner_contact.user if owner_contact else None
-    if not user or not user.Current_Path:
+    if not owner_contact or not owner_contact.Current_Path:
         return None  # Cannot derive without owner or their working path
 
-    pathway = db.session.query(Pathway).filter_by(name=user.Current_Path).first()
+    pathway = db.session.query(Pathway).filter_by(name=owner_contact.Current_Path).first()
 
     if not pathway:
         return None  # Unknown pathway
@@ -135,7 +134,7 @@ def derive_current_path_level(log, owner_contact):
 
     # --- Priority 2: Other roles - Use general level from Next_Project ---
     else:
-        next_project_str = user.Next_Project
+        next_project_str = owner_contact.Next_Project
         if next_project_str:
             # Use regex to extract only the Path + Level part (e.g., PM5 from PM5.2)
             match = re.match(r"([A-Z]+)(\d+)", next_project_str)
@@ -166,8 +165,8 @@ def derive_credentials(contact):
         return 'DTM'
     elif contact.Type == 'Guest':
         return f"Guest@{contact.Club}" if contact.Club else "Guest"
-    elif contact.Type in ['Member', 'Officer'] and contact.user and contact.user.credentials:
-        return contact.user.credentials
+    elif contact.Type in ['Member', 'Officer'] and contact.credentials:
+        return contact.credentials
     return ''
 
 
