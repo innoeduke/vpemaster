@@ -23,7 +23,7 @@ def upgrade():
     sa.Column('contact_id', sa.Integer(), nullable=False),
     sa.Column('member_id', sa.String(length=50), nullable=True),
     sa.Column('issue_date', sa.Date(), nullable=False),
-    sa.Column('achievement_type', sa.Enum('level-completion', 'path-completion', 'program-completion', 'dtm', name='achievement_type_enum'), nullable=False),
+    sa.Column('achievement_type', sa.Enum('level-completion', 'path-completion', 'program-completion', name='achievement_type_enum'), nullable=False),
     sa.Column('path_name', sa.String(length=100), nullable=True),
     sa.Column('level', sa.Integer(), nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),

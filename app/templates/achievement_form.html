@@ -75,6 +75,8 @@
             const contactIdInput = document.getElementById('contact_id');
             const memberIdInput = document.getElementById('member_id');
             const pathNameInput = document.getElementById('path_name'); // Get Path Name Select
+            const achievementTypeSelect = document.getElementById('achievement_type');
+            const levelInput = document.getElementById('level');
             const dataList = document.getElementById('contacts-list');
 
             // Map name -> id, member_id, current_path for quick lookup
@@ -165,12 +167,6 @@
                     targetList = pathways;
                 } else if (type === 'program-completion') {
                     targetList = programs;
-                } else if (type === 'dtm') {
-                    // DTM can show all or just pathways? Usually DTM is a path completion + extras.
-                    // User said "path name should list only the pathway type for level & path completions. and it lists program type for program completion"
-                    // It didn't explicitly mention DTM, but DTM usually has its own path name.
-                    // Let's combine or just show pathways for DTM.
-                    targetList = pathways;
                 }
 
                 // Keep existing selection if it's in the new list, or if we are initializing
@@ -185,17 +181,6 @@
                     if (name === savedValue) opt.selected = true;
                     pathNameInput.appendChild(opt);
                 });
-
-                // Run DTM auto-select AFTER rebuild if needed
-                if (type === 'dtm') {
-                    for (let i = 0; i < pathNameInput.options.length; i++) {
-                        const optText = pathNameInput.options[i].text;
-                        if (optText.includes('Distinguished Toastmaster')) {
-                            pathNameInput.selectedIndex = i;
-                            break;
-                        }
-                    }
-                }
             }
 
             function handleTypeChange() {

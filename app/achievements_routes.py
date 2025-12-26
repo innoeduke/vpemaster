@@ -115,8 +115,8 @@ def achievement_form(id):
                     contact.Completed_Paths = "/".join(new_completed_levels)
                     db.session.add(contact)
         
-        # Update Contact.DTM if it is a DTM achievement
-        if achievement_type == 'dtm':
+        # Update Contact.DTM if it is a Distinguished Toastmasters program completion
+        if achievement_type == 'program-completion' and path_name == 'Distinguished Toastmasters':
             contact = Contact.query.get(contact_id)
             if contact:
                 contact.DTM = True
@@ -178,10 +178,10 @@ def achievement_form(id):
     contacts = Contact.query.filter(Contact.Type.in_(['Member', 'Officer'])).order_by(Contact.Name.asc()).all()
     
     # Categorize pathways for dynamic frontend filtering
-    pathways = [p.name for p in Pathway.query.filter_by(type='Pathway').order_by(Pathway.name).all()]
-    programs = [p.name for p in Pathway.query.filter_by(type='Program').order_by(Pathway.name).all()]
+    pathways = [p.name for p in Pathway.query.filter_by(type='pathway').order_by(Pathway.name).all()]
+    programs = [p.name for p in Pathway.query.filter_by(type='program').order_by(Pathway.name).all()]
     
-    project_types = ['level-completion', 'path-completion', 'program-completion', 'dtm']
+    project_types = ['level-completion', 'path-completion', 'program-completion']
 
     return render_template('achievement_form.html', 
                            achievement=achievement, 
