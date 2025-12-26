@@ -118,8 +118,9 @@ def contact_form(contact_id=None):
     if contact_id:
         contact = Contact.query.get_or_404(contact_id)
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest' and request.method == 'GET' and contact:
+    if request.method == 'GET' and contact:
         contact_data = {
+            "id": contact.id,
             "Name": contact.Name,
             "Email": contact.Email or None,
             "Type": contact.Type,
@@ -129,7 +130,6 @@ def contact_form(contact_id=None):
             "Phone_Number": contact.Phone_Number,
             "Bio": contact.Bio,
             "credentials": contact.credentials,
-            "current_path": contact.Current_Path,
             "current_path": contact.Current_Path,
             "next_project": contact.Next_Project,
             "mentor_id": contact.Mentor_ID,

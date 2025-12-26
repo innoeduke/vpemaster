@@ -653,9 +653,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       // Dynamically set colspan based on screen size to fix mobile browser bug
       if (window.innerWidth <= 768) {
-        titleCell.colSpan = 6; // Spans the visible middle columns on mobile (updated)
+        titleCell.colSpan = 5; // Spans the visible middle columns on mobile (updated)
       } else {
-        titleCell.colSpan = 8; // Spans the middle columns on desktop (updated)
+        titleCell.colSpan = 7; // Spans the middle columns on desktop (updated)
       }
 
       titleCell.classList.add("section-row");

@@ -171,16 +171,30 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeti
 
 def _sort_roles(roles, current_user_contact_id, is_past_meeting):
     """Sorts roles based on user type."""
-    if is_past_meeting:
-        # For past meetings, sort by award category first, then role name
+    # Define category priority
+    CATEGORY_ORDER = {
+        'speaker': 1,
+        'evaluator': 2,
+        'role-taker': 3,
+        'table-topic': 4
+    }
+    
+    # Helper to get sort key for category
+    def get_category_priority(role):
+        cat = role.get('award_category', '') or ''
+        # Default to 99 for unknown/none so they appear last
+        return CATEGORY_ORDER.get(cat, 99)
+
+    if is_past_meeting or is_authorized('BOOKING_ASSIGN_ALL'):
+        # For past meetings or admin view, sort by custom award category order, then role name
         roles.sort(key=lambda x: (
-            x.get('award_category', '') or '', x['role']))
-    elif is_authorized('BOOKING_ASSIGN_ALL'):
-        # For admin view of current/future meetings, sort by award category first, then role name
-        roles.sort(key=lambda x: (
-            x.get('award_category', '') or '', x['role']))
+            get_category_priority(x),
+            x.get('award_category', '') or '', 
+            x['role']
+        ))
     else:  # For current/future meetings for non-admins
         roles.sort(key=lambda x: (
+            get_category_priority(x),
             0 if x['owner_id'] == current_user_contact_id else 1 if not x['owner_id'] else 2,
             x['role']
         ))
@@ -289,8 +303,10 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
 
     is_past_meeting = selected_meeting.status == 'finished' if selected_meeting else False
 
-    context['roles'] = _get_roles_for_meeting(
+    roles = _get_roles_for_meeting(
         selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting)
+    context['roles'] = roles
+    context['sorted_role_groups'] = _group_roles_by_category(roles)
 
     context['user_bookings_by_date'] = _get_user_bookings(
         current_user_contact_id)
@@ -303,6 +319,49 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     context['best_award_ids'] = _get_best_award_ids(selected_meeting)
 
     return context
+
+
+def _group_roles_by_category(roles):
+    """
+    Groups roles by award_category and sorts groups by priority.
+    Returns a list of tuples: [(category_name, [list_of_roles]), ...]
+    """
+    from itertools import groupby
+    
+    # Priority for category ordering
+    CATEGORY_PRIORITY = {
+        'speaker': 1,
+        'evaluator': 2,
+        'role-taker': 3,
+        'table-topic': 4
+    }
+    
+    def get_priority(cat):
+        return CATEGORY_PRIORITY.get(cat, 99)
+
+    # 1. Filter out roles without a category if necessary, or keep them?
+    # The template checks `if category and category != 'none'`.
+    # We should probably include everything and let template filter, OR filter here.
+    # Let's include everything but grouped.
+    
+    # 2. Sort roles by category priority first so groupby works, 
+    #    and then by whatever internal order they should have (already sorted by _sort_roles?)
+    #    _sort_roles already sorted them by category priority! 
+    #    So we just need to group them.
+    #    Wait, itertools.groupby requires contiguous keys. 
+    #    Since _sort_roles sorts by get_category_priority(x), the categories are contiguous.
+    #    So we can just use groupby directly.
+    
+    grouped = []
+    for key, group in groupby(roles, key=lambda x: x.get('award_category')):
+        grouped.append((key, list(group)))
+        
+    # Double check sorting of the groups themselves?
+    # Since roles were sorted by category priority, the groups should emerge in that order.
+    # Speaker (1) -> Evaluator (2) -> Role-Taker (3) -> Table-Topics (4).
+    # Yes.
+    
+    return grouped
 
 
 @booking_bp.route('/booking', defaults={'selected_meeting_number': None}, methods=['GET'])

@@ -10,18 +10,10 @@ h1 {
     margin-bottom: 30px;
 }
 
-.booking-header {
+.booking-section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-}
-
-.my-bookings-container {
-    flex: 1;
-}
-
-.booking-section-header {
     text-align: left;
     margin: 15px 0;
     font-size: 1.2em;
@@ -47,7 +39,9 @@ h1 {
 
 .booking-filter-container .filter-right {
     flex-grow: 1;
-    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
 .booking-filter-container #meeting-filter {
@@ -60,14 +54,24 @@ h1 {
     padding: 5px;
 }
 
+/* Shared styles for buttons in filter container to ensure equal height */
+.booking-filter-container .btn,
 .booking-filter-container .role-guide-link {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     font-weight: bold;
     padding: 8px 15px;
+    /* Unified padding */
     height: auto;
+    min-height: 42px;
+    /* Enforce minimum height */
     line-height: 1.5;
+    box-sizing: border-box;
+    /* Include padding in height calculation */
+    font-size: 1rem;
+    /* Ensure consistent font size */
 }
 
 
@@ -141,7 +145,7 @@ h1 {
     text-align: center;
     min-width: 120px;
     margin: 0 15px;
-    border: 1px solid transparent; 
+    border: 1px solid transparent;
     border-radius: 4px;
     padding: 0 10px;
 }
@@ -168,20 +172,26 @@ h1 {
     border-collapse: collapse;
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.booking-table th, .booking-table td {
+.booking-table th,
+.booking-table td {
     padding: 15px;
     text-align: left;
-    border: none; /* No cell borders */
-    white-space: nowrap; /* Prevent text from wrapping */
-    overflow: hidden; /* Hide overflow */
-    text-overflow: ellipsis; /* Add ... if content is too long */
+    border: none;
+    /* No cell borders */
+    white-space: nowrap;
+    /* Prevent text from wrapping */
+    overflow: hidden;
+    /* Hide overflow */
+    text-overflow: ellipsis;
+    /* Add ... if content is too long */
 }
 
 .booking-table tr {
-   border-bottom: 1px solid #e0e0e0; /* Row borders only */
+    border-bottom: 1px solid #e0e0e0;
+    /* Row borders only */
 }
 
 .booking-table th {
@@ -204,28 +214,38 @@ h1 {
     justify-content: space-between;
     gap: 10px;
     font-weight: bold;
-    white-space: nowrap; /* Prevent role cell content from wrapping */
-    overflow: hidden; /* Hide overflow */
-    min-width: 250px; /* Ensure minimum width for role cell */
+    white-space: nowrap;
+    /* Prevent role cell content from wrapping */
+    overflow: hidden;
+    /* Hide overflow */
+    min-width: 250px;
+    /* Ensure minimum width for role cell */
 }
 
 .role-cell i {
     color: #772432;
-    flex-shrink: 0; /* Prevent icon from shrinking */
+    flex-shrink: 0;
+    /* Prevent icon from shrinking */
 }
 
 .role-cell-content {
     display: flex;
     align-items: left;
-    gap: 10px; /* Keeps the icon and text together */
-    white-space: nowrap; /* Prevent content from wrapping */
-    overflow: hidden; /* Hide overflow */
-    flex-grow: 1; /* Allow content to grow and take available space */
+    gap: 10px;
+    /* Keeps the icon and text together */
+    white-space: nowrap;
+    /* Prevent content from wrapping */
+    overflow: hidden;
+    /* Hide overflow */
+    flex-grow: 1;
+    /* Allow content to grow and take available space */
 }
 
 .role-cell-actions {
-    flex-shrink: 0; /* Stops the button from shrinking */
-    margin-left: 10px; /* Add space between content and actions */
+    flex-shrink: 0;
+    /* Stops the button from shrinking */
+    margin-left: 10px;
+    /* Add space between content and actions */
 }
 
 /* Action Cell */
@@ -243,23 +263,33 @@ h1 {
 .owner-display {
     font-family: 'Montserrat', sans-serif;
     font-weight: normal;
-    font-size: 1em; /* Match the role title font size */
+    font-size: 1em;
+    /* Match the role title font size */
     color: #333;
-    text-align: left; 
+    text-align: left;
     width: 100%;
-    white-space: nowrap; /* Prevent name from wrapping */
-    overflow: hidden; /* Hide overflow */
+    white-space: nowrap;
+    /* Prevent name from wrapping */
+    overflow: hidden;
+    /* Hide overflow */
     /* text-overflow: ellipsis; Add ... if name is too long */
 }
 
 .booking-table .icon-cell .btn {
-    width: 130px; /* Set a fixed width for all action buttons */
-    white-space: nowrap; /* Prevent button text from wrapping */
-    box-sizing: border-box; /* Ensure padding is included in the width */
-    justify-content: center; /* Center the text inside the button */
+    width: 130px;
+    /* Set a fixed width for all action buttons */
+    white-space: nowrap;
+    /* Prevent button text from wrapping */
+    box-sizing: border-box;
+    /* Ensure padding is included in the width */
+    justify-content: center;
+    /* Center the text inside the button */
 }
 
-.btn-book { background-color: #28a745; }
+.btn-book {
+    background-color: #28a745;
+}
+
 .btn-booked {
     background-color: #e9ecef;
     color: #6c757d;
@@ -272,7 +302,8 @@ h1 {
 
 .icon-cell .icon-btn {
     padding: 6px 10px;
-    flex-shrink: 0; /* Prevent buttons from shrinking */
+    flex-shrink: 0;
+    /* Prevent buttons from shrinking */
 }
 
 .assign-cell select {
@@ -311,14 +342,19 @@ h1 {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    background-color: #ffffff; /* White background */
-    
+    background-color: #ffffff;
+    /* White background */
+
     /* Box Model */
-    height: 38px; /* Consistent tap height */
-    padding: 5px 12px 5px 12px; /* Top, Right (for arrow), Bottom, Left */
+    height: 38px;
+    /* Consistent tap height */
+    padding: 5px 12px 5px 12px;
+    /* Top, Right (for arrow), Bottom, Left */
     margin: 0 10px;
-    border: 1px solid #ccc; /* Standard border */
-    border-radius: 8px; /* Rounded corners */
+    border: 1px solid #ccc;
+    /* Standard border */
+    border-radius: 8px;
+    /* Rounded corners */
 }
 
 /* --- Completed Roles --- */
@@ -365,17 +401,17 @@ h1 {
     border-bottom: 1px solid #e0e0e0;
     font-size: 0.9em;
     color: #555;
-    break-inside: avoid-column; 
+    break-inside: avoid-column;
 }
 
 .completed-roles-list li:last-child {
     border-bottom: none;
 }
 
- .completed-roles-list i {
-     margin-right: 8px;
-     color: #772432; 
- }
+.completed-roles-list i {
+    margin-right: 8px;
+    color: #772432;
+}
 
 .completed-roles-list .meeting-ref {
     font-size: 0.8em;
@@ -403,10 +439,22 @@ h1 {
 @media (min-width: 769px) {
 
     /* --- Desktop Table Layout --- */
-    .booking-table .role-cell { width: 35%; min-width: 250px; }
-    .booking-table .status-cell { width: 20%; }
-    .booking-table .assign-cell { width: 25%; }
-    .booking-table .icon-cell { width: 20%; }
+    .booking-table .role-cell {
+        width: 35%;
+        min-width: 250px;
+    }
+
+    .booking-table .status-cell {
+        width: 20%;
+    }
+
+    .booking-table .assign-cell {
+        width: 25%;
+    }
+
+    .booking-table .icon-cell {
+        width: 20%;
+    }
 
 
     /* --- Desktop Completed Roles Grid --- */
@@ -415,9 +463,10 @@ h1 {
         grid-auto-flow: column;
         grid-auto-columns: 1fr;
         /* Set break point at 3 items per column */
-        grid-template-rows: repeat(3, auto); 
-        gap: 0 25px; /* Column gap only */
-        max-height: none; 
+        grid-template-rows: repeat(3, auto);
+        gap: 0 25px;
+        /* Column gap only */
+        max-height: none;
         overflow-y: visible;
     }
 
@@ -445,14 +494,20 @@ h1 {
 }
 
 .waitlist-users li {
-    display: block; /* Each user on a new line */
-    margin-bottom: 2px; /* Optional: adds a little space between names */
-    white-space: nowrap; /* Prevent waitlist user names from wrapping */
-    overflow: hidden; /* Hide overflow */
-    text-overflow: ellipsis; /* Add ... if name is too long */
+    display: block;
+    /* Each user on a new line */
+    margin-bottom: 2px;
+    /* Optional: adds a little space between names */
+    white-space: nowrap;
+    /* Prevent waitlist user names from wrapping */
+    overflow: hidden;
+    /* Hide overflow */
+    text-overflow: ellipsis;
+    /* Add ... if name is too long */
 }
 
-.btn-join-waitlist, .btn-leave-waitlist {
+.btn-join-waitlist,
+.btn-leave-waitlist {
     padding: 5px 15px;
     border-radius: 5px;
     color: #333;
@@ -461,7 +516,8 @@ h1 {
     display: flex;
     align-items: center;
     justify-content: center;
-    white-space: nowrap; /* Prevent button text from wrapping */
+    white-space: nowrap;
+    /* Prevent button text from wrapping */
 }
 
 .btn-join-waitlist {
@@ -470,7 +526,8 @@ h1 {
 }
 
 .btn-leave-waitlist {
-    background-color: #ffc700; /* A standard danger color */
+    background-color: #ffc700;
+    /* A standard danger color */
 }
 
 /* --- Accordion Styles --- */
@@ -544,8 +601,10 @@ h1 {
 
 /* Style for a row that has been voted for */
 .booking-table tr.voted {
-    background-color: #e9f7ef; /* A pleasant light green */
-    border-left: 5px solid #28a745; /* A darker green accent on the left */
+    background-color: #e9f7ef;
+    /* A pleasant light green */
+    border-left: 5px solid #28a745;
+    /* A darker green accent on the left */
 }
 
 /* --- Mobile view overrides --- */
@@ -555,9 +614,12 @@ h1 {
     }
 
     .booking-table {
-        border-collapse: separate; /* Allow spacing between rows */
-        border-spacing: 0 8px; /* Create 8px vertical space for "card" effect */
-        box-shadow: none; /* Remove shadow that acts as a border */
+        border-collapse: separate;
+        /* Allow spacing between rows */
+        border-spacing: 0 8px;
+        /* Create 8px vertical space for "card" effect */
+        box-shadow: none;
+        /* Remove shadow that acts as a border */
         border: none;
     }
 
@@ -570,10 +632,14 @@ h1 {
     }
 
     .booking-table tr {
-       border-bottom: none; /* Remove original separator */
-       background-color: white; /* Card background */
-       border-radius: 8px; /* Card rounded corners */
-       box-shadow: 0 1px 2px rgba(0,0,0,0.04); /* Subtle shadow for depth */
+        border-bottom: none;
+        /* Remove original separator */
+        background-color: white;
+        /* Card background */
+        border-radius: 8px;
+        /* Card rounded corners */
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        /* Subtle shadow for depth */
     }
 
     /* Since <tr> border-radius is not well supported, apply to first and last cells */
@@ -581,6 +647,7 @@ h1 {
         border-top-left-radius: 8px;
         border-bottom-left-radius: 8px;
     }
+
     .booking-table tr td:last-child {
         border-top-right-radius: 8px;
         border-bottom-right-radius: 8px;
@@ -591,4 +658,3 @@ h1 {
         border: none;
     }
 }
-

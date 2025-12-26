@@ -92,16 +92,18 @@
         <td>{{ contact.Club }}</td>
         <td>
             <div class="participation-container">
-                <span title="Attendance" class="participation-badge badge-attendance">
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
+                   title="Attendance" class="participation-badge badge-attendance">
                     <i class="fas fa-calendar-check"></i> {{ contact.attendance_count }}
-                </span>
-                <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}?speaker_search={{ contact.Name }}" 
+                </a>
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
                    title="Roles Taken" class="participation-badge badge-roles">
                      <i class="fas fa-user-tag"></i> {{ contact.role_count }}
                 </a>
-                <span title="Awards Won" class="participation-badge badge-awards">
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
+                   title="Awards Won" class="participation-badge badge-awards">
                     <i class="fas fa-trophy"></i> {{ contact.award_count }}
-                </span>
+                </a>
             </div>
         </td>
         <td>{{ contact.credentials if contact.credentials else '' }}</td>

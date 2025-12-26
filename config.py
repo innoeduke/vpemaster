@@ -14,7 +14,7 @@ class Config:
     """Base configuration class."""
 
     # Get secret key and database URL from environment variables
-    SECRET_KEY = os.getenv('SECRET_KEY')
+    SECRET_KEY = os.getenv('SECRET_KEY') or 'dev-fallback-secret-key-change-in-prod'
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
 
     # Flask-SQLAlchemy settings
@@ -27,7 +27,7 @@ class Config:
     # Flask-Login settings
     REMEMBER_COOKIE_DURATION = timedelta(days=30)
     REMEMBER_COOKIE_HTTPONLY = True
-    SESSION_PROTECTION = 'strong'
+    SESSION_PROTECTION = 'basic'
 
     # Your application-specific config
 

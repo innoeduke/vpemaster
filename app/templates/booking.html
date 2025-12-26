@@ -11,7 +11,7 @@
 <div class="booking-container">
     <h1>{% if user_role == 'Guest' %}Voting {% else %}Booking {% endif %}Assistant</h1>
     {% if user_role != 'Guest' %}
-    <div class="booking-header">
+    <div class="booking-section-header">
         <div class="my-bookings-container">
             <h3>My Upcoming Roles</h3>
             {% if user_bookings_by_date %}
@@ -94,7 +94,7 @@
         </div>
         <div class="filter-right">
             {% if is_admin_view %}
-            <button class="btn btn-primary" onclick="syncTally()" style="margin-right: 10px;">
+            <button class="btn btn-primary" onclick="syncTally()">
                 <i class="fas fa-sync"></i> Sync to Tally
             </button>
             {% endif %}
@@ -223,7 +223,7 @@
 
             {% if use_accordion %}
                 <div class="award-accordion">
-                {% for category, items in roles|groupby('award_category') %}
+                {% for category, items in sorted_role_groups %}
                     {% if category and category != 'none' %}
                     <div class="accordion-item" data-category="{{ category }}">
                         <button class="accordion-header">
@@ -245,17 +245,7 @@
                 {% endfor %}
                 </div>
         
-                <h4 class="booking-section-header" style="margin-top: 20px;">General Roles</h4>
-                <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
-                    {{ table_header|safe }}
-                    <tbody>
-                    {% for role in roles %}
-                        {% if not role.award_category or role.award_category == 'none' %}
-                            {{ render_role_row(role, status, is_admin_view, contacts, current_user_contact_id, selected_meeting_number) }}
-                        {% endif %}
-                    {% endfor %}
-                    </tbody>
-                </table>
+
             {% else %} {# e.g., finished member view #}
                 <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
                     {% set finished_header %}
@@ -287,13 +277,16 @@
         {# =============== MAIN VIEW LOGIC =============== #}
         {# ============================================= #}
 
-        {% if selected_meeting.status == 'not started' and user_role == 'Guest' %}
+        {% if selected_meeting.status == 'not started' and not current_user.is_authenticated %}
             <p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Voting for Meeting #{{ selected_meeting_number }} will open soon.</p>
             <div style="text-align: center; margin-top: 20px;">
                 <img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon" style="max-width: 100%; height: auto;">
             </div>
         {% else %}
+            {# Pass context to macro to access sorted_role_groups #}
+            {% with %}
             {{ render_role_tables(roles, selected_meeting.status, is_admin_view, contacts, current_user_contact_id, selected_meeting_number) }}
+            {% endwith %}
         {% endif %}
 
     {% else %}
