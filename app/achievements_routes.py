@@ -85,91 +85,9 @@ def achievement_form(id):
         achievement.notes = notes
         achievement.member_id = member_id
         
-        # Update Contact.Completed_Paths if it is a path completion
-        if achievement_type == 'path-completion' and path_name:
-            contact = Contact.query.get(contact_id)
-            if contact:
-                pathway = Pathway.query.filter_by(name=path_name).first()
-                if pathway and pathway.abbr:
-                    abbr = pathway.abbr
-                    completed_pathways = {}
-                    if contact.Completed_Paths:
-                        parts = contact.Completed_Paths.split('/')
-                        for part in parts:
-                            # Parse existing like PM5 or DL3. Assumes Abbr + Level
-                            # We need to handle potential varying lengths of Abbr.
-                            # Usually Abbr is 2 chars, but technically can be more.
-                            # Regex is safest.
-                            import re
-                            match = re.match(r"([A-Z]+)(\d+)", part)
-                            if match:
-                                p_abbr, l_val = match.groups()
-                                completed_pathways[p_abbr] = int(l_val)
-                    
-                    # Set level to 5 for path completion
-                    completed_pathways[abbr] = 5
-                    
-                    new_completed_levels = [
-                        f"{p}{l}" for p, l in sorted(completed_pathways.items())
-                    ]
-                    contact.Completed_Paths = "/".join(new_completed_levels)
-                    db.session.add(contact)
-        
-        # Update Contact.DTM if it is a Distinguished Toastmasters program completion
-        if achievement_type == 'program-completion' and path_name == 'Distinguished Toastmasters':
-            contact = Contact.query.get(contact_id)
-            if contact:
-                contact.DTM = True
-                db.session.add(contact)
-
-        # Update Contact.credentials if it is a level completion and path is available
-        if achievement_type == 'level-completion' and path_name and level:
-            contact = Contact.query.get(contact_id)
-            if contact:
-                pathway = Pathway.query.filter_by(name=path_name).first()
-                if pathway and pathway.abbr:
-                    abbr = pathway.abbr
-                    # Construct the new credential string, e.g. "PM1"
-                    new_credential = f"{abbr}{level}"
-                    
-                    # Update credentials logic:
-                    # If existing credentials match this path (e.g. "PM1"), update if new level is higher.
-                    # If existing credentials are for a different path, just overwrite? 
-                    # The requirement says "update the credentials field ... to the highest level completed for the current path".
-                    # This implies we should set it to this new value. 
-                    # However, purely overwriting "DL5" with "PM1" might be annoying if they want to keep the highest.
-                    # But given the specific request "for the current path", it sounds like it tracks the current active path status.
-                    # So let's update it. But let's check if the current credential is indeed for this path to avoid downgrading accidentally?
-                    # Actually, if I just finished PM2, I want it to say PM2.
-                    # If it was PM1, it becomes PM2.
-                    # If it was DL5 (different path), and now I am working on PM, maybe it SHOULD become PM2?
-                    # Let's assume yes, it updates to the latest achieved level for the submitted path.
-                    
-                    # But typically "credentials" might imply the highest *ever*. 
-                    # But the user said "highest level completed *for the current path*".
-                    # Let's perform a check: if the contact's Current_Path matches the path_name, we definitely update.
-                    # If not, maybe we still update?
-                    
-                    # Actually, let's implement a safe update:
-                    # 1. If credentials is empty, set it.
-                    # 2. If credentials contains the same path abbr, only update if level is higher.
-                    # 3. If credentials contains different path, overwrite it (assuming focus switch).
-                    
-                    current_cred = contact.credentials
-                    should_update = True
-                    
-                    if current_cred:
-                        import re
-                        match = re.match(r"^([A-Z]+)(\d+)$", current_cred)
-                        if match:
-                            curr_abbr, curr_level = match.groups()
-                            if curr_abbr == abbr:
-                                if int(level) <= int(curr_level):
-                                    should_update = False
-                    
-                    if should_update:
-                        contact.credentials = new_credential
-                        db.session.add(contact)
+        db.session.commit()
+        from .achievements_utils import sync_contact_metadata
+        sync_contact_metadata(contact_id)
 
         db.session.commit()
         flash('Achievement saved successfully.', 'success')
@@ -198,7 +116,11 @@ def delete_achievement(id):
         return redirect(url_for('achievements_bp.show_achievements'))
 
     achievement = Achievement.query.get_or_404(id)
+    contact_id = achievement.contact_id
     db.session.delete(achievement)
     db.session.commit()
+    
+    from .achievements_utils import sync_contact_metadata
+    sync_contact_metadata(contact_id)
     flash('Achievement deleted successfully.', 'success')
     return redirect(url_for('achievements_bp.show_achievements'))

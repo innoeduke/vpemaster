@@ -146,9 +146,7 @@ def contact_form(contact_id=None):
             contact.Name = contact_name
             contact.Email = email
             contact.Club = request.form.get('club')
-            contact.Completed_Paths = request.form.get('completed_paths')
             contact.Type = request.form.get('type')
-            contact.DTM = 'dtm' in request.form
             contact.Phone_Number = request.form.get('phone_number')
             contact.Bio = request.form.get('bio')
             
@@ -156,16 +154,15 @@ def contact_form(contact_id=None):
             if request.form.get('type') in ['Member', 'Officer']:
                 contact.Current_Path = request.form.get('current_path')
                 contact.Next_Project = request.form.get('next_project')
-                contact.credentials = request.form.get('credentials')
                 
                 mentor_id = request.form.get('mentor_id', 0, type=int)
                 contact.Mentor_ID = mentor_id if mentor_id and mentor_id != 0 else None
-            else:
-                # Clear fields if type changes to Guest (optional, but good practice)
-                # Or keep them? Let's just update if present.
-                pass
 
             db.session.commit()
+            
+            # Sync metadata based on achievements
+            from .achievements_utils import sync_contact_metadata
+            sync_contact_metadata(contact.id)
         else:
             # Logic for creating a new contact
             existing_contact = Contact.query.filter_by(
@@ -193,18 +190,18 @@ def contact_form(contact_id=None):
                 Email=email,
                 Club=request.form.get('club'),
                 Date_Created=date.today(),
-                Completed_Paths=request.form.get('completed_paths'),
-                Type=request.form.get('type'),
-                DTM='dtm' in request.form,
                 Phone_Number=request.form.get('phone_number'),
                 Bio=request.form.get('bio'),
                 Current_Path=request.form.get('current_path'),
                 Next_Project=request.form.get('next_project'),
-                credentials=request.form.get('credentials'),
                 Mentor_ID=request.form.get('mentor_id', None, type=int) or None
             )
             db.session.add(new_contact)
             db.session.commit()
+
+            # Sync metadata based on achievements
+            from .achievements_utils import sync_contact_metadata
+            sync_contact_metadata(new_contact.id)
 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return jsonify(success=True, contact={'id': new_contact.id, 'Name': new_contact.Name, 'Phone_Number': new_contact.Phone_Number, 'Bio': new_contact.Bio})
