@@ -60,8 +60,8 @@ def achievement_form(id):
         flash('Achievement saved successfully.', 'success')
         return redirect(url_for('achievements_bp.show_achievements'))
 
-    contacts = Contact.query.order_by(Contact.Name.asc()).all()
-    pathways = [p.name for p in Pathway.query.order_by(Pathway.name).all()]
+    contacts = Contact.query.filter(Contact.Type.in_(['Member', 'Officer'])).order_by(Contact.Name.asc()).all()
+    pathways = [p.name for p in Pathway.query.filter(Pathway.type.in_(['Pathway', 'Program'])).order_by(Pathway.type, Pathway.name).all()]
     project_types = ['level-completion', 'path-completion', 'program-completion', 'dtm']
 
     return render_template('achievement_form.html', 

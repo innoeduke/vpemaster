@@ -2,65 +2,139 @@
 {% block title %}{{ 'Edit' if achievement else 'Add' }} Achievement{% endblock %}
 
 {% block content %}
-<h1>{{ 'Edit' if achievement else 'Add' }} Achievement</h1>
-
-<div class="form-container" style="max-width: 600px; margin: 0 auto;">
-    <form method="POST">
-        <div class="form-group">
-            <label for="contact_id">Member</label>
-            <select name="contact_id" id="contact_id" class="form-control" required>
-                <option value="">Select Member...</option>
-                {% for contact in contacts %}
-                <option value="{{ contact.id }}" {% if achievement and achievement.contact_id == contact.id %}selected{% endif %}>
-                    {{ contact.Name }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="member_id">Member ID</label>
-            <input type="text" name="member_id" id="member_id" class="form-control" value="{{ achievement.member_id if achievement else '' }}">
-        </div>
-
-        <div class="form-group">
-            <label for="issue_date">Issue Date</label>
-            <input type="date" name="issue_date" id="issue_date" class="form-control" required value="{{ achievement.issue_date.strftime('%Y-%m-%d') if achievement else '' }}">
-        </div>
-
-        <div class="form-group">
-            <label for="achievement_type">Achievement Type</label>
-            <select name="achievement_type" id="achievement_type" class="form-control" required>
-                {% for type in project_types %}
-                <option value="{{ type }}" {% if achievement and achievement.achievement_type == type %}selected{% endif %}>{{ type }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="path_name">Path Name</label>
-            <select name="path_name" id="path_name" class="form-control">
-                <option value="">Select Path...</option>
-                {% for path in pathways %}
-                <option value="{{ path }}" {% if achievement and achievement.path_name == path %}selected{% endif %}>{{ path }}</option>
-                {% endfor %}
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="level">Level</label>
-            <input type="number" name="level" id="level" class="form-control" min="1" max="5" value="{{ achievement.level if achievement else '' }}">
-        </div>
-
-        <div class="form-group">
-            <label for="notes">Notes</label>
-            <textarea name="notes" id="notes" class="form-control" rows="3">{{ achievement.notes if achievement else '' }}</textarea>
-        </div>
-
-        <div class="form-actions" style="margin-top: 20px;">
+    <h1>{{ 'Edit' if achievement else 'Add' }} Achievement</h1>
+    <form method="POST" id="achievementForm">
+        <table class="form-table">
+            <tr>
+                <td><label for="contact_search">Member: <span class="required-field">*</span></label></td>
+                <td>
+                    <input type="text" id="contact_search" 
+                           class="form-control interaction-field" 
+                           placeholder="Search Member..." 
+                           value="{{ achievement.contact.Name if achievement and achievement.contact else '' }}"
+                           required autocomplete="off">
+                    <datalist id="contacts-list">
+                        {% for contact in contacts %}
+                        <option data-id="{{ contact.id }}" data-member-id="{{ contact.Member_ID or '' }}" data-current-path="{{ contact.Current_Path or '' }}" value="{{ contact.Name }}"></option>
+                        {% endfor %}
+                    </datalist>
+                    <input type="hidden" name="contact_id" id="contact_id" value="{{ achievement.contact_id if achievement else '' }}">
+                </td>
+            </tr>
+            <tr>
+                <td><label for="member_id">Member ID:</label></td>
+                <td><input type="text" name="member_id" id="member_id" class="form-control" value="{{ achievement.member_id if achievement else '' }}" readonly></td>
+            </tr>
+            <tr>
+                <td><label for="issue_date">Issue Date: <span class="required-field">*</span></label></td>
+                <td><input type="date" name="issue_date" id="issue_date" class="form-control" required value="{{ achievement.issue_date.strftime('%Y-%m-%d') if achievement else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="achievement_type">Type: <span class="required-field">*</span></label></td>
+                <td>
+                    <select name="achievement_type" id="achievement_type" class="form-control" required>
+                        {% for type in project_types %}
+                        <option value="{{ type }}" {% if achievement and achievement.achievement_type == type %}selected{% endif %}>
+                            {# Capitalize and replace hyphens with spaces #}
+                            {{ 'DTM' if type == 'dtm' else type.replace('-', ' ').title() }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="path_name">Path Name:</label></td>
+                <td>
+                    <select name="path_name" id="path_name" class="form-control">
+                        <option value="">Select Path...</option>
+                        {% for path in pathways %}
+                        <option value="{{ path }}" {% if achievement and achievement.path_name == path %}selected{% endif %}>{{ path }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td><label for="level">Level:</label></td>
+                <td><input type="number" name="level" id="level" class="form-control" min="1" max="5" value="{{ achievement.level if achievement else '' }}"></td>
+            </tr>
+            <tr>
+                <td><label for="notes">Notes:</label></td>
+                <td><textarea name="notes" id="notes" class="form-control" rows="3">{{ achievement.notes if achievement else '' }}</textarea></td>
+            </tr>
+        </table>
+        
+        <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save</button>
-            <a href="{{ url_for('achievements_bp.show_achievements') }}" class="btn btn-secondary">Cancel</a>
+            <a href="{{ url_for('achievements_bp.show_achievements') }}" class="btn btn-danger">Cancel</a>
         </div>
     </form>
-</div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('contact_search');
+            const contactIdInput = document.getElementById('contact_id');
+            const memberIdInput = document.getElementById('member_id');
+            const pathNameInput = document.getElementById('path_name'); // Get Path Name Select
+            const dataList = document.getElementById('contacts-list');
+
+            // Map name -> id, member_id, current_path for quick lookup
+            const contactMap = {};
+            const options = dataList.options;
+            for (let i = 0; i < options.length; i++) {
+                contactMap[options[i].value] = {
+                    id: options[i].getAttribute('data-id'),
+                    memberId: options[i].getAttribute('data-member-id'),
+                    currentPath: options[i].getAttribute('data-current-path')
+                };
+            }
+
+            // Function to toggle datalist logic
+            function toggleDatalist(input) {
+                if (input.value.length >= 1) {
+                    input.setAttribute('list', 'contacts-list');
+                } else {
+                    input.removeAttribute('list');
+                }
+            }
+            
+            // Initialize
+            toggleDatalist(searchInput);
+
+            searchInput.addEventListener('focus', function() {
+                toggleDatalist(this);
+            });
+
+            searchInput.addEventListener('input', function() {
+                toggleDatalist(this);
+                
+                const val = this.value;
+                const contact = contactMap[val];
+
+                if (contact) {
+                    contactIdInput.value = contact.id;
+                    memberIdInput.value = contact.memberId;
+                    
+                    // Auto-populate path if available and valid
+                    if (contact.currentPath && pathNameInput) {
+                        pathNameInput.value = contact.currentPath;
+                        // If the value wasn't found in the select options (e.g. slight mismatch), it sets to empty string.
+                        // Ideally we check if it exists or fallback. But standard HTML select behavior: if value matches option, select it.
+                    }
+                    
+                } else {
+                    contactIdInput.value = '';
+                    memberIdInput.value = '';
+                    // Do we clear path? Maybe not, user might have manual entry.
+                }
+            });
+
+            // Prevent form submission if contact is not selected properly
+            document.getElementById('achievementForm').addEventListener('submit', function(e) {
+                if (!contactIdInput.value) {
+                    e.preventDefault();
+                    alert('Please select a valid member from the list.');
+                }
+            });
+        });
+    </script>
 {% endblock %}
