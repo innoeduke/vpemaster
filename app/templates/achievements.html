@@ -4,12 +4,20 @@
 {% block content %}
 <h1>Achievement Tracking</h1>
 
-<div class="action-bar" style="margin-bottom: 20px;">
+<div class="action-bar" style="margin-bottom: 20px; display: flex; align-items: center; gap: 15px;">
     {% if is_authorized('ACHIEVEMENTS_EDIT') %}
     <a href="{{ url_for('achievements_bp.achievement_form') }}" class="btn btn-primary">
         <i class="fas fa-plus"></i> Add Achievement
     </a>
     {% endif %}
+    
+    {% with messages = get_flashed_messages(category_filter=['duplicate_warning']) %}
+    {% if messages %}
+        {% for message in messages %}
+        <span style="color: red; font-weight: bold;">{{ message }}</span>
+        {% endfor %}
+    {% endif %}
+    {% endwith %}
 </div>
 
 <div class="table-container">

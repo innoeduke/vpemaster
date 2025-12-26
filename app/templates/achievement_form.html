@@ -23,7 +23,7 @@
             </tr>
             <tr>
                 <td><label for="member_id">Member ID:</label></td>
-                <td><input type="text" name="member_id" id="member_id" class="form-control" value="{{ achievement.member_id if achievement else '' }}" readonly></td>
+                <td><input type="text" name="member_id" id="member_id" class="form-control" value="{{ achievement.member_id if achievement else '' }}" disabled></td>
             </tr>
             <tr>
                 <td><label for="issue_date">Issue Date: <span class="required-field">*</span></label></td>
@@ -79,14 +79,19 @@
 
             // Map name -> id, member_id, current_path for quick lookup
             const contactMap = {};
-            const options = dataList.options;
-            for (let i = 0; i < options.length; i++) {
-                contactMap[options[i].value] = {
-                    id: options[i].getAttribute('data-id'),
-                    memberId: options[i].getAttribute('data-member-id'),
-                    currentPath: options[i].getAttribute('data-current-path')
+            const allContacts = [];
+            const originalOptions = Array.from(dataList.options);
+            
+            originalOptions.forEach(opt => {
+                const contactData = {
+                    name: opt.value,
+                    id: opt.getAttribute('data-id'),
+                    memberId: opt.getAttribute('data-member-id'),
+                    currentPath: opt.getAttribute('data-current-path')
                 };
-            }
+                contactMap[opt.value] = contactData;
+                allContacts.push(contactData);
+            });
 
             // Function to toggle datalist logic
             function toggleDatalist(input) {
@@ -105,11 +110,26 @@
             });
 
             searchInput.addEventListener('input', function() {
+                const val = this.value;
                 toggleDatalist(this);
                 
-                const val = this.value;
-                const contact = contactMap[val];
+                // Limit results in datalist to 8
+                const searchTerm = val.toLowerCase();
+                const matches = allContacts
+                    .filter(c => c.name.toLowerCase().includes(searchTerm))
+                    .slice(0, 8);
+                
+                dataList.innerHTML = '';
+                matches.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.name;
+                    opt.setAttribute('data-id', c.id);
+                    opt.setAttribute('data-member-id', c.memberId);
+                    opt.setAttribute('data-current-path', c.currentPath);
+                    dataList.appendChild(opt);
+                });
 
+                const contact = contactMap[val];
                 if (contact) {
                     contactIdInput.value = contact.id;
                     memberIdInput.value = contact.memberId;
@@ -117,14 +137,10 @@
                     // Auto-populate path if available and valid
                     if (contact.currentPath && pathNameInput) {
                         pathNameInput.value = contact.currentPath;
-                        // If the value wasn't found in the select options (e.g. slight mismatch), it sets to empty string.
-                        // Ideally we check if it exists or fallback. But standard HTML select behavior: if value matches option, select it.
                     }
-                    
                 } else {
                     contactIdInput.value = '';
                     memberIdInput.value = '';
-                    // Do we clear path? Maybe not, user might have manual entry.
                 }
             });
 
@@ -135,6 +151,73 @@
                     alert('Please select a valid member from the list.');
                 }
             });
+
+            // Dynamic Path Names based on Achievement Type
+            const pathways = {{ pathways|tojson }};
+            const programs = {{ programs|tojson }};
+            const currentPathName = "{{ achievement.path_name if achievement else '' }}";
+
+            function updatePathDropdown() {
+                const type = achievementTypeSelect.value;
+                let targetList = [];
+                
+                if (type === 'level-completion' || type === 'path-completion') {
+                    targetList = pathways;
+                } else if (type === 'program-completion') {
+                    targetList = programs;
+                } else if (type === 'dtm') {
+                    // DTM can show all or just pathways? Usually DTM is a path completion + extras.
+                    // User said "path name should list only the pathway type for level & path completions. and it lists program type for program completion"
+                    // It didn't explicitly mention DTM, but DTM usually has its own path name.
+                    // Let's combine or just show pathways for DTM.
+                    targetList = pathways;
+                }
+
+                // Keep existing selection if it's in the new list, or if we are initializing
+                const savedValue = pathNameInput.value || currentPathName;
+
+                // Clear and rebuild
+                pathNameInput.innerHTML = '<option value="">Select Path...</option>';
+                targetList.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.text = name;
+                    if (name === savedValue) opt.selected = true;
+                    pathNameInput.appendChild(opt);
+                });
+
+                // Run DTM auto-select AFTER rebuild if needed
+                if (type === 'dtm') {
+                    for (let i = 0; i < pathNameInput.options.length; i++) {
+                        const optText = pathNameInput.options[i].text;
+                        if (optText.includes('Distinguished Toastmaster')) {
+                            pathNameInput.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            function handleTypeChange() {
+                const type = achievementTypeSelect.value;
+                
+                // Toggle Level field
+                if (type === 'level-completion') {
+                    levelInput.disabled = false;
+                } else {
+                    levelInput.disabled = true;
+                    levelInput.value = '';
+                }
+
+                // Switch Path list
+                updatePathDropdown();
+            }
+
+            if (achievementTypeSelect && levelInput && pathNameInput) {
+                // Initialize
+                handleTypeChange();
+                achievementTypeSelect.addEventListener('change', handleTypeChange);
+            }
         });
     </script>
 {% endblock %}
