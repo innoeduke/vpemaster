@@ -29,7 +29,8 @@ def clean_completed_paths(raw_value):
         match = pattern.match(part)
         if match:
             abbr, level = match.groups()
-            valid_parts.append(f"{abbr}5")
+            if level == '5':
+                valid_parts.append(part)
             
     if not valid_parts:
         return None
