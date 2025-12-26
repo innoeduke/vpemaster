@@ -153,7 +153,6 @@ def contact_form(contact_id=None):
             # Update profile fields (Member/Officer specific)
             if request.form.get('type') in ['Member', 'Officer']:
                 contact.Current_Path = request.form.get('current_path')
-                contact.Next_Project = request.form.get('next_project')
                 
                 mentor_id = request.form.get('mentor_id', 0, type=int)
                 contact.Mentor_ID = mentor_id if mentor_id and mentor_id != 0 else None

@@ -647,76 +647,6 @@ def suspend_speech_log(log_id):
         return jsonify(success=False, message=str(e)), 500
 
 
-def _get_next_project_for_contact(contact, completed_log):
-    user = contact.user if contact else None
-    if not user or not user.Current_Path or not completed_log or not completed_log.Project_ID:
-        return
-
-    pathway = db.session.query(Pathway).filter_by(name=user.Current_Path).first()
-    if not pathway:
-        return
-    code_suffix = pathway.abbr
-
-
-    pathway = db.session.query(Pathway).filter_by(abbr=code_suffix).first()
-    if not pathway:
-        return
-
-    pathway_project = db.session.query(PathwayProject).filter_by(
-        path_id=pathway.id, project_id=completed_log.Project_ID).first()
-
-    if not pathway_project:
-        return
-
-    current_code = pathway_project.code
-
-    if not current_code:
-        return
-
-    projects_per_level = {1: 3, 2: 3, 3: 3, 4: 2, 5: 3}
-
-    try:
-        level, project_num = map(int, current_code.split('.'))
-
-        # Get all completed project IDs for this user in this pathway
-        completed_project_ids = [
-            log.Project_ID for log in SessionLog.query
-            .join(User, SessionLog.Owner_ID == User.Contact_ID)
-            .filter(User.id == user.id, User.Current_Path == user.Current_Path, SessionLog.Status == 'Completed')
-            .all()
-        ]
-
-        while True:
-            if project_num < projects_per_level.get(level, 0):
-                project_num += 1
-            else:
-                project_num = 1
-                level_completed = level
-                level += 1
-
-                # Legacy Completed_Paths update removed. Strictly achievement-based now.
-                pass
-
-            if level > 5:
-                user.Next_Project = None
-                break
-
-            next_project_code = f"{level}.{project_num}"
-
-            next_pathway_project = db.session.query(PathwayProject).filter_by(
-                path_id=pathway.id, code=next_project_code).first()
-
-            if next_pathway_project:
-                next_project = Project.query.get(
-                    next_pathway_project.project_id)
-            else:
-                next_project = None
-
-            if next_project and next_project.id not in completed_project_ids:
-                user.Next_Project = f"{code_suffix}{next_project_code}"
-                break
-    except (ValueError, IndexError):
-        return
 
 
 @speech_logs_bp.route('/speech_log/complete/<int:log_id>', methods=['POST'])
@@ -736,12 +666,14 @@ def complete_speech_log(log_id):
 
     log.Status = 'Completed'
 
-    if log.Owner_ID:
-        contact = Contact.query.get(log.Owner_ID)
-        _get_next_project_for_contact(contact, log)
-
     try:
         db.session.commit()
+        
+        # Trigger metadata sync (including Next_Project calculation) after commit
+        if log.Owner_ID:
+            from .achievements_utils import sync_contact_metadata
+            sync_contact_metadata(log.Owner_ID)
+            
         return jsonify(success=True)
     except Exception as e:
         db.session.rollback()
