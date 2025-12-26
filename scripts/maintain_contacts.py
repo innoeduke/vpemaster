@@ -54,6 +54,7 @@ def run_cleanup(apply=False):
     with app.app_context():
         from app import db
         from app.models import Contact
+        from app.achievements_utils import update_next_project
         
         contacts = Contact.query.all()
         print(f"Reviewing {len(contacts)} contacts...")
@@ -63,15 +64,21 @@ def run_cleanup(apply=False):
             # Get values. Note that SQLAlchemy returns None for NULL.
             orig_paths = contact.Completed_Paths
             orig_creds = contact.credentials
+            orig_next_project = contact.Next_Project
             
             new_paths = clean_completed_paths(orig_paths)
             new_creds = clean_credentials(orig_creds)
             
+            # Recalculate Next_Project using the official logic
+            update_next_project(contact)
+            new_next_project = contact.Next_Project
+            
             # Comparison: ensure we don't update if both represent "empty"
             paths_changed = new_paths != orig_paths
             creds_changed = new_creds != orig_creds
+            next_project_changed = new_next_project != orig_next_project
             
-            if paths_changed or creds_changed:
+            if paths_changed or creds_changed or next_project_changed:
                 print(f"Contact {contact.id} ({contact.Name}):")
                 if paths_changed:
                     print(f"  Paths: '{orig_paths}' -> '{new_paths}'")
@@ -79,6 +86,9 @@ def run_cleanup(apply=False):
                 if creds_changed:
                     print(f"  Creds: '{orig_creds}' -> '{new_creds}'")
                     contact.credentials = new_creds
+                if next_project_changed:
+                    print(f"  NextProject: '{orig_next_project}' -> '{new_next_project}'")
+                    # contact.Next_Project is already set by update_next_project(contact)
                 
                 changes_count += 1
                 if apply:
