@@ -19,7 +19,7 @@ speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 def show_speech_logs():
     # VPE/Admin can switch between 'member' and 'admin' view.
     # Default to 'member' view for everyone.
-    can_view_all = is_authorized('SPEECH_LOGS_EDIT_ALL')
+    can_view_all = is_authorized('SPEECH_LOGS_VIEW_ALL')
     view_mode = request.args.get('view_mode', 'member')
     
     # Even if they can view all, we default to member view unless they explicitly ask for admin

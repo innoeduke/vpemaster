@@ -21,8 +21,12 @@ def search_contacts_by_name():
     else:
         contacts = Contact.query.all()
 
-    contacts_data = [{"id": c.id, "Name": c.Name, "Type": c.Type}
-                     for c in contacts]
+    contacts_data = [{
+        "id": c.id,
+        "Name": c.Name,
+        "Type": c.Type,
+        "UserRole": c.user.Role if c.user else None
+    } for c in contacts]
     return jsonify(contacts_data)
 
 
@@ -89,12 +93,12 @@ def show_contacts():
     for c in contacts:
         type_counts[c.Type] = type_counts.get(c.Type, 0) + 1
     
-    # Sort types: Member/Officer first, then others
-    sorted_types = sorted(type_counts.keys(), key=lambda x: (x not in ['Member', 'Officer'], x))
+    # Sort types: Member first, then others
+    sorted_types = sorted(type_counts.keys(), key=lambda x: (x not in ['Member'], x))
     
     pathways = [p.name for p in Pathway.query.order_by(Pathway.name).all()]
     mentor_candidates = Contact.query.filter(
-        Contact.Type.in_(['Member', 'Officer', 'Past Member'])
+        Contact.Type.in_(['Member', 'Past Member'])
     ).order_by(Contact.Name.asc()).all()
 
     return render_template('contacts.html', 

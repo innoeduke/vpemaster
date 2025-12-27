@@ -42,6 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
       div.textContent = contact.Name;
       div.dataset.contactId = contact.id;
       div.dataset.contactType = contact.Type;
+      div.dataset.userRole = contact.UserRole;
       div.addEventListener('click', () => {
         selectContact(contact);
         hideSuggestions();
@@ -60,12 +61,20 @@ document.addEventListener("DOMContentLoaded", function () {
   function selectContact(contact) {
     contactNameInput.value = contact.Name;
     contactIdInput.value = contact.id;
-    if (contact.Type) {
+
+    // Prioritize Officer if UserRole indicates they are an officer
+    const isOfficer = contact.UserRole && ['Officer', 'VPE', 'Admin', 'Meeting Manager'].includes(contact.UserRole);
+    if (isOfficer) {
+      contactTypeSelect.value = "Officer";
+    } else if (contact.Type) {
       contactTypeSelect.value = contact.Type;
+    }
+
+    if (contactTypeSelect.value) {
       contactTypeSelect.dispatchEvent(new Event('change'));
     }
   }
-  
+
   contactNameInput.addEventListener('input', () => {
     const query = contactNameInput.value.toLowerCase();
     if (query.length < 1) {
@@ -122,34 +131,34 @@ document.addEventListener("DOMContentLoaded", function () {
     const nextOrder = maxOrder > 0 ? maxOrder + 1 : 1;
     orderNumberInput.value = nextOrder;
   }
-  
+
   function populateRosterEditForm(rosterId) {
     fetch(`/roster/api/roster/${rosterId}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch entry details.');
-            }
-            return response.json();
-        })
-        .then(entry => {
-            entryIdInput.value = entry.id;
-            orderNumberInput.value = entry.order_number;
-            contactIdInput.value = entry.contact_id;
-            contactNameInput.value = entry.contact_name;
-            ticketSelect.value = entry.ticket;
-            
-            if(entry.contact_type) {
-                contactTypeSelect.value = entry.contact_type;
-                contactTypeSelect.dispatchEvent(new Event('change'));
-            }
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch entry details.');
+        }
+        return response.json();
+      })
+      .then(entry => {
+        entryIdInput.value = entry.id;
+        orderNumberInput.value = entry.order_number;
+        contactIdInput.value = entry.contact_id;
+        contactNameInput.value = entry.contact_name;
+        ticketSelect.value = entry.ticket;
 
-            formTitle.textContent = 'Edit Entry';
-            rosterForm.scrollIntoView({ behavior: 'smooth' });
-        })
-        .catch(error => {
-            console.error('Error fetching entry for edit:', error);
-            alert('Error fetching entry for edit: ' + error.message);
-        });
+        if (entry.contact_type) {
+          contactTypeSelect.value = entry.contact_type;
+          contactTypeSelect.dispatchEvent(new Event('change'));
+        }
+
+        formTitle.textContent = 'Edit Entry';
+        rosterForm.scrollIntoView({ behavior: 'smooth' });
+      })
+      .catch(error => {
+        console.error('Error fetching entry for edit:', error);
+        alert('Error fetching entry for edit: ' + error.message);
+      });
   }
 
   if (cancelEditBtn) {
@@ -193,65 +202,65 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
 
-  
+
   if (typeof setupTableSorting === "function") {
     setupTableSorting("rosterTable");
   }
-  
+
   initializeLuckyDraw();
 
   fetchContacts().then(() => {
     if (tableBody) {
-        resetRosterForm();
+      resetRosterForm();
 
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has("new_contact_id") && urlParams.has("new_contact_name")) {
-            const contactId = urlParams.get("new_contact_id");
-            const contactName = decodeURIComponent(urlParams.get("new_contact_name"));
-            const contactType = decodeURIComponent(
-            urlParams.get("new_contact_type") || ""
-            );
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has("new_contact_id") && urlParams.has("new_contact_name")) {
+        const contactId = urlParams.get("new_contact_id");
+        const contactName = decodeURIComponent(urlParams.get("new_contact_name"));
+        const contactType = decodeURIComponent(
+          urlParams.get("new_contact_type") || ""
+        );
 
-            const newContact = {id: contactId, Name: contactName, Type: contactType };
-            contacts.push(newContact);
-            selectContact(newContact);
+        const newContact = { id: contactId, Name: contactName, Type: contactType };
+        contacts.push(newContact);
+        selectContact(newContact);
 
-            const url = new URL(window.location);
-            url.searchParams.delete("new_contact_id");
-            url.searchParams.delete("new_contact_name");
-            url.searchParams.delete("new_contact_type");
-            window.history.replaceState({}, document.title, url.toString());
+        const url = new URL(window.location);
+        url.searchParams.delete("new_contact_id");
+        url.searchParams.delete("new_contact_name");
+        url.searchParams.delete("new_contact_type");
+        window.history.replaceState({}, document.title, url.toString());
+      }
+
+      tableBody.addEventListener("click", function (e) {
+        const editButton = e.target.closest(".edit-entry");
+        const cancelButton = e.target.closest(".cancel-entry");
+
+        if (editButton) {
+          e.preventDefault();
+          const entryId = editButton.dataset.id;
+          populateRosterEditForm(entryId);
         }
 
-        tableBody.addEventListener("click", function (e) {
-            const editButton = e.target.closest(".edit-entry");
-            const cancelButton = e.target.closest(".cancel-entry");
-
-            if (editButton) {
-                e.preventDefault();
-                const entryId = editButton.dataset.id;
-                populateRosterEditForm(entryId);
-            }
-
-            if (cancelButton) {
-                e.preventDefault();
-                const entryId = cancelButton.dataset.id;
-                if (confirm("Are you sure you want to cancel this roster entry?")) {
-                    fetch(`/roster/api/roster/${entryId}`, { method: "DELETE" })
-                        .then((response) =>
-                            response.json().then((data) => ({ ok: response.ok, data }))
-                        )
-                        .then(({ ok, data }) => {
-                            if (!ok) throw new Error(data.error || "Failed to cancel entry.");
-                            window.location.reload();
-                        })
-                        .catch((error) => {
-                            console.error("Error cancelling entry:", error);
-                            alert(`Error: ${error.message}`);
-                        });
-                }
-            }
-        });
+        if (cancelButton) {
+          e.preventDefault();
+          const entryId = cancelButton.dataset.id;
+          if (confirm("Are you sure you want to cancel this roster entry?")) {
+            fetch(`/roster/api/roster/${entryId}`, { method: "DELETE" })
+              .then((response) =>
+                response.json().then((data) => ({ ok: response.ok, data }))
+              )
+              .then(({ ok, data }) => {
+                if (!ok) throw new Error(data.error || "Failed to cancel entry.");
+                window.location.reload();
+              })
+              .catch((error) => {
+                console.error("Error cancelling entry:", error);
+                alert(`Error: ${error.message}`);
+              });
+          }
+        }
+      });
     }
   });
 });
@@ -280,7 +289,7 @@ let drawnWinners = [];
 function performLuckyDraw() {
   const validEntries = [];
   const rows = document.querySelectorAll("#rosterTable tbody tr");
-  
+
   rows.forEach(row => {
     const orderCell = row.querySelector('td:first-child');
     if (orderCell && orderCell.textContent.trim() !== '' && orderCell.textContent.trim() !== 'N/A') {
@@ -288,11 +297,11 @@ function performLuckyDraw() {
       if (ticketCell && ticketCell.textContent.trim() !== 'Cancelled') {
         const order = orderCell.textContent.trim();
         const name = row.querySelector('td:nth-child(2)').textContent.trim();
-        
-        const isAlreadyDrawn = drawnWinners.some(winner => 
+
+        const isAlreadyDrawn = drawnWinners.some(winner =>
           winner.order === order && winner.name === name
         );
-        
+
         if (!isAlreadyDrawn) {
           validEntries.push({
             order: order,
@@ -302,22 +311,22 @@ function performLuckyDraw() {
       }
     }
   });
-  
+
   if (validEntries.length === 0) {
-    document.getElementById('luckyDrawResult').innerHTML = 
+    document.getElementById('luckyDrawResult').innerHTML =
       '<div class="no-entries">No valid entries for drawing</div>';
     return;
   }
-  
+
   const randomIndex = Math.floor(Math.random() * validEntries.length);
   const selectedEntry = validEntries[randomIndex];
-  
+
   drawnWinners.push(selectedEntry);
-  
-  document.getElementById('luckyDrawResult').innerHTML = 
+
+  document.getElementById('luckyDrawResult').innerHTML =
     '<div class="winner-order">' + selectedEntry.order + '</div>' +
     '<div class="winner-name">' + selectedEntry.name + '</div>';
-  
+
   const winnersList = document.getElementById('winnersList');
   if (winnersList) {
     const winnerElement = document.createElement('div');

@@ -33,9 +33,10 @@ ROLE_PERMISSIONS = {
     "Officer": {
         "AGENDA_VIEW",
         "BOOKING_BOOK_OWN",
-        "SPEECH_LOGS_VIEW_OWN",
+        "SPEECH_LOGS_VIEW_ALL",
         "CONTACT_BOOK_VIEW",
         "PATHWAY_LIB_VIEW",
+        "ACHIEVEMENTS_VIEW",
     },
     "Member": {
         "AGENDA_VIEW",

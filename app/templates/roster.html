@@ -47,7 +47,17 @@
                     <tr data-entry-id="{{ entry.id }}" data-order="{{ entry.order_number }}" data-contact-id="{{ entry.contact_id or '' }}" data-ticket="{{ entry.ticket }}">
                         <td>{{ entry.order_number }}</td>
                         <td>{{ entry.contact.Name if entry.contact else 'N/A' }}</td>
-                        <td>{{ entry.contact.Type if entry.contact else 'N/A' }}</td>
+                        <td>
+                            {% if entry.contact %}
+                                {% if entry.contact.user and entry.contact.user.Role in ['Officer', 'VPE', 'Admin', 'Meeting Manager'] %}
+                                    Officer
+                                {% else %}
+                                    {{ entry.contact.Type }}
+                                {% endif %}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
                         <td>{{ entry.ticket }}</td>
                         <td>
                             <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} edit-entry" data-id="{{ entry.id }}" title="Edit" {% if entry.ticket == 'Cancelled' %}disabled{% endif %}>

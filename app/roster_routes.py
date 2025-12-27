@@ -138,7 +138,11 @@ def get_roster_entry(entry_id):
     contact_type = None
     if entry.contact:
         contact_name = entry.contact.Name
-        contact_type = entry.contact.Type
+        # Identify as Officer if linked user has an officer role
+        if entry.contact.user and entry.contact.user.Role in ['Officer', 'VPE', 'Admin', 'Meeting Manager']:
+            contact_type = 'Officer'
+        else:
+            contact_type = entry.contact.Type
 
     return jsonify({
         'id': entry.id,
