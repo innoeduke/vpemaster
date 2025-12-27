@@ -111,7 +111,10 @@ def sync_contact_metadata(contact_id):
                 if pathway and pathway.abbr:
                     new_credentials = f"{pathway.abbr}5"
     
-    contact.credentials = new_credentials
+    if contact.DTM:
+        contact.credentials = 'DTM'
+    else:
+        contact.credentials = new_credentials
 
     # 4. Next Project
     update_next_project(contact)

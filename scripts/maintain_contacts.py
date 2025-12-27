@@ -68,7 +68,17 @@ def run_cleanup(apply=False):
             orig_next_project = contact.Next_Project
             
             new_paths = clean_completed_paths(orig_paths)
-            new_creds = clean_credentials(orig_creds)
+            if contact.DTM:
+                new_creds = "DTM"
+            else:
+                new_creds = clean_credentials(orig_creds)
+            
+            # Sync email from linked user if contact email is blank
+            orig_email = contact.Email
+            new_email = orig_email
+            if not orig_email or not str(orig_email).strip():
+                if contact.user and contact.user.Email:
+                    new_email = contact.user.Email
             
             # Recalculate Next_Project using the official logic
             update_next_project(contact)
@@ -77,9 +87,10 @@ def run_cleanup(apply=False):
             # Comparison: ensure we don't update if both represent "empty"
             paths_changed = new_paths != orig_paths
             creds_changed = new_creds != orig_creds
+            email_changed = new_email != orig_email
             next_project_changed = new_next_project != orig_next_project
             
-            if paths_changed or creds_changed or next_project_changed:
+            if paths_changed or creds_changed or next_project_changed or email_changed:
                 print(f"Contact {contact.id} ({contact.Name}):")
                 if paths_changed:
                     print(f"  Paths: '{orig_paths}' -> '{new_paths}'")
@@ -87,6 +98,9 @@ def run_cleanup(apply=False):
                 if creds_changed:
                     print(f"  Creds: '{orig_creds}' -> '{new_creds}'")
                     contact.credentials = new_creds
+                if email_changed:
+                    print(f"  Email: '{orig_email}' -> '{new_email}'")
+                    contact.Email = new_email
                 if next_project_changed:
                     print(f"  NextProject: '{orig_next_project}' -> '{new_next_project}'")
                     # contact.Next_Project is already set by update_next_project(contact)
