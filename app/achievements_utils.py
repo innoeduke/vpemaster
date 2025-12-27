@@ -1,14 +1,20 @@
+import re
 from . import db
 from .models import Contact, Achievement, Pathway, SessionLog, PathwayProject
 
 def update_next_project(contact):
     """
     Recalculates the Next_Project for a contact based on their Current_Path,
-    recorded Level achievements, and completed speech logs.
+    their current Credentials (which reflect highest Level achievements),
+    and completed speech logs.
     """
     if not contact or not contact.Current_Path:
         if contact:
             contact.Next_Project = None
+        return
+
+    if contact.Current_Path == "Distinguished Toastmasters":
+        contact.Next_Project = None
         return
 
     pathway = Pathway.query.filter_by(name=contact.Current_Path).first()
@@ -17,21 +23,18 @@ def update_next_project(contact):
 
     code_suffix = pathway.abbr
     
-    # 1. Start from the level immediately after the highest recorded level achievement
-    achievements = Achievement.query.filter_by(
-        contact_id=contact.id, 
-        path_name=contact.Current_Path,
-        achievement_type='level-completion'
-    ).all()
-    
+    # 1. Determine start_level based on credentials
+    # Credentials are expected to be in format "AbbrN" e.g. "PM2"
     start_level = 1
-    if achievements:
-        start_level = max(a.level for a in achievements) + 1
+    if contact.credentials:
+        match = re.match(rf"^{code_suffix}(\d+)$", contact.credentials.strip().upper())
+        if match:
+            level_achieved = int(match.group(1))
+            if level_achieved >= 5:
+                contact.Next_Project = None
+                return
+            start_level = level_achieved + 1
     
-    if start_level > 5:
-        contact.Next_Project = None
-        return
-
     # 2. Find the first incomplete project from start_level onwards
     # Get all completed project IDs for this contact
     completed_project_ids = {

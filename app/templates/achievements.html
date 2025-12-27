@@ -41,11 +41,11 @@
             <tr>
                 <td>{{ achievement.issue_date.strftime('%Y-%m-%d') }}</td>
                 <td>{{ achievement.contact.Name }}</td>
-                <td>{{ achievement.member_id or '' }}</td>
+                <td>{{ achievement.member_id or '-' }}</td>
                 <td>{{ 'DTM' if achievement.achievement_type == 'dtm' else achievement.achievement_type.replace('-', ' ').title() }}</td>
                 <td>{{ achievement.path_name or '-' }}</td>
                 <td>{{ achievement.level if achievement.level else '-' }}</td>
-                <td>{{ achievement.notes or '' }}</td>
+                <td>{{ achievement.notes or '-' }}</td>
                 {% if is_authorized('ACHIEVEMENTS_EDIT') %}
                 <td>
                     <a href="{{ url_for('achievements_bp.achievement_form', id=achievement.id) }}" class="btn btn-sm btn-info" title="Edit">

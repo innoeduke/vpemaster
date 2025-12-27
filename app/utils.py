@@ -129,19 +129,17 @@ def derive_current_path_level(log, owner_contact):
 
     # --- Priority 2: Other roles - Use highest level achievement + 1 ---
     else:
-        # Query for the highest level completion achievement in the current path
-        highest_achievement = Achievement.query.filter_by(
-            contact_id=owner_contact.id,
-            path_name=owner_contact.Current_Path,
-            achievement_type='level-completion'
-        ).order_by(Achievement.level.desc()).first()
-        
-        current_level = 1
-        if highest_achievement:
-            # If level L is completed, the current work is for level L+1 (capped at 5)
-            current_level = min(highest_achievement.level + 1, 5)
+        # Determine base level from contact.credentials for consistency
+        start_level = 1
+        if owner_contact.credentials:
+            # Match the current path abbreviation followed by a level number
+            match = re.match(rf"^{pathway_suffix}(\d+)$", owner_contact.credentials.strip().upper())
+            if match:
+                level_achieved = int(match.group(1))
+                # If level L is completed, the current work is for level L+1 (capped at 5)
+                start_level = min(level_achieved + 1, 5)
             
-        return f"{pathway_suffix}{current_level}"
+        return f"{pathway_suffix}{start_level}"
 
     # --- Fallback ---
     return None
