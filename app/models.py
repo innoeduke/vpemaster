@@ -68,6 +68,11 @@ class User(UserMixin, db.Model):
     def is_admin(self):
         return self.Role == 'Admin'
 
+    @property
+    def is_officer(self):
+        return self.Role in ['Officer', 'Admin', 'VPE']
+
+
 
 class Project(db.Model):
     __tablename__ = 'Projects'

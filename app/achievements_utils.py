@@ -60,16 +60,16 @@ def update_next_project(contact):
     contact.Next_Project = None
 
 
-def sync_contact_metadata(contact_id):
+def recalculate_contact_metadata(contact):
     """
     Update Contact metadata (DTM, Completed_Paths, credentials, Next_Project) 
     strictly based on the Achievements table and SessionLogs.
+    Does NOT commit to DB.
     """
-    contact = Contact.query.get(contact_id)
     if not contact:
-        return None
+        return
 
-    achievements = Achievement.query.filter_by(contact_id=contact_id).all()
+    achievements = Achievement.query.filter_by(contact_id=contact.id).all()
     
     # 1. DTM
     is_dtm = False
@@ -77,10 +77,22 @@ def sync_contact_metadata(contact_id):
         if a.achievement_type == 'program-completion' and a.path_name == 'Distinguished Toastmasters':
             is_dtm = True
             break
-    contact.DTM = is_dtm
+    
+    # Preserve existing DTM=True if not found above
+    if contact.DTM:
+        contact.DTM = True
+    else:
+        contact.DTM = is_dtm
 
     # 2. Completed_Paths
     completed_set = set()
+    
+    # Start with existing paths to ensure we don't lose manual/historical entries
+    if contact.Completed_Paths:
+        existing_parts = [p.strip() for p in str(contact.Completed_Paths).split('/') if p.strip()]
+        completed_set.update(existing_parts)
+
+    # Add paths found in achievements
     for a in achievements:
         if a.achievement_type == 'path-completion':
             pathway = Pathway.query.filter_by(name=a.path_name).first()
@@ -90,6 +102,7 @@ def sync_contact_metadata(contact_id):
     if completed_set:
         contact.Completed_Paths = "/".join(sorted(list(completed_set)))
     else:
+        # Only set to None if it was already None/empty and no new paths found
         contact.Completed_Paths = None
 
     # 3. Credentials
@@ -113,12 +126,26 @@ def sync_contact_metadata(contact_id):
     
     if contact.DTM:
         contact.credentials = 'DTM'
-    else:
+    elif new_credentials:
         contact.credentials = new_credentials
+    # Else: If new_credentials is None, do not overwrite if existing credentials exist.
+    # Logic: "if credentials is not blank and no achievement records ... keep the existing value"
 
     # 4. Next Project
     update_next_project(contact)
 
+
+def sync_contact_metadata(contact_id):
+    """
+    Update Contact metadata and commit to DB.
+    """
+    contact = Contact.query.get(contact_id)
+    if not contact:
+        return None
+
+    recalculate_contact_metadata(contact)
+
     db.session.add(contact)
     db.session.commit()
     return contact
+

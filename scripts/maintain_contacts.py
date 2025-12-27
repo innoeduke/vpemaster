@@ -17,45 +17,12 @@ def get_app():
         print(f"Details: {e}")
         sys.exit(1)
 
-def clean_completed_paths(raw_value):
-    if not raw_value or str(raw_value).strip().upper() == "NULL" or not str(raw_value).strip():
-        return None
-    
-    parts = [p.strip().upper() for p in str(raw_value).split('/') if p.strip()]
-    pattern = re.compile(r'^([A-Z]+)(\d+)$')
-    
-    valid_parts = []
-    for part in parts:
-        match = pattern.match(part)
-        if match:
-            abbr, level = match.groups()
-            if level == '5':
-                valid_parts.append(part)
-            
-    if not valid_parts:
-        return None
-    
-    return "/".join(sorted(list(set(valid_parts))))
-
-def clean_credentials(raw_value):
-    if not raw_value or str(raw_value).strip().upper() == "NULL" or not str(raw_value).strip():
-        return None
-    
-    val = str(raw_value).strip().upper()
-    if val == "DTM":
-        return "DTM"
-        
-    if re.match(r'^[A-Z]+\d$', val):
-        return val
-    
-    return None
-
 def run_cleanup(apply=False):
     app = get_app()
     with app.app_context():
         from app import db
         from app.models import Contact
-        from app.achievements_utils import update_next_project
+        from app.achievements_utils import recalculate_contact_metadata
         
         contacts = Contact.query.all()
         print(f"Reviewing {len(contacts)} contacts...")
@@ -66,12 +33,16 @@ def run_cleanup(apply=False):
             orig_paths = contact.Completed_Paths
             orig_creds = contact.credentials
             orig_next_project = contact.Next_Project
+            orig_dtm = contact.DTM
             
-            new_paths = clean_completed_paths(orig_paths)
-            if contact.DTM:
-                new_creds = "DTM"
-            else:
-                new_creds = clean_credentials(orig_creds)
+            # Recalculate based on achievements (modifies contact in-place)
+            # This handles DTM, Paths, Credentials, and Next_Project
+            recalculate_contact_metadata(contact)
+            
+            new_paths = contact.Completed_Paths
+            new_creds = contact.credentials
+            new_next_project = contact.Next_Project
+            new_dtm = contact.DTM
             
             # Sync email from linked user if contact email is blank
             orig_email = contact.Email
@@ -79,31 +50,27 @@ def run_cleanup(apply=False):
             if not orig_email or not str(orig_email).strip():
                 if contact.user and contact.user.Email:
                     new_email = contact.user.Email
+                    contact.Email = new_email
             
-            # Recalculate Next_Project using the official logic
-            update_next_project(contact)
-            new_next_project = contact.Next_Project
-            
-            # Comparison: ensure we don't update if both represent "empty"
+            # Comparison
             paths_changed = new_paths != orig_paths
             creds_changed = new_creds != orig_creds
             email_changed = new_email != orig_email
             next_project_changed = new_next_project != orig_next_project
+            dtm_changed = new_dtm != orig_dtm
             
-            if paths_changed or creds_changed or next_project_changed or email_changed:
+            if paths_changed or creds_changed or next_project_changed or email_changed or dtm_changed:
                 print(f"Contact {contact.id} ({contact.Name}):")
                 if paths_changed:
                     print(f"  Paths: '{orig_paths}' -> '{new_paths}'")
-                    contact.Completed_Paths = new_paths
                 if creds_changed:
                     print(f"  Creds: '{orig_creds}' -> '{new_creds}'")
-                    contact.credentials = new_creds
+                if dtm_changed:
+                    print(f"  DTM: {orig_dtm} -> {new_dtm}")
                 if email_changed:
                     print(f"  Email: '{orig_email}' -> '{new_email}'")
-                    contact.Email = new_email
                 if next_project_changed:
                     print(f"  NextProject: '{orig_next_project}' -> '{new_next_project}'")
-                    # contact.Next_Project is already set by update_next_project(contact)
                 
                 changes_count += 1
                 if apply:

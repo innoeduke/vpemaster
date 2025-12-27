@@ -25,7 +25,8 @@ def search_contacts_by_name():
         "id": c.id,
         "Name": c.Name,
         "Type": c.Type,
-        "UserRole": c.user.Role if c.user else None
+        "UserRole": c.user.Role if c.user else None,
+        "is_officer": c.user.is_officer if c.user else False
     } for c in contacts]
     return jsonify(contacts_data)
 

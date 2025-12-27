@@ -39,21 +39,6 @@ class Config:
         "Leadership Excellence Series": "LE"
     }
 
-    # Award Categories
-    BEST_SPEAKER = 'Best_Speaker'
-    BEST_EVALUATOR = 'Best_Evaluator'
-    BEST_TT = 'Best_TT'
-    BEST_ROLETAKER = 'Best_Roletaker'
 
     DEFAULT_ROLE_ICON = "fa-question-circle"
 
-    # Award Categories
-    BEST_SPEAKER = 'Best_Speaker'
-    BEST_EVALUATOR = 'Best_Evaluator'
-    BEST_TT = 'Best_TT'
-    BEST_ROLETAKER = 'Best_Roletaker'
-
-    DEFAULT_ROLE_ICON = "fa-question-circle"
-
-    # Role Groups
-    OFFICER_ROLE_GROUP = 'Officer'

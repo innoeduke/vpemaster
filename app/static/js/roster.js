@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", function () {
     contactIdInput.value = contact.id;
 
     // Prioritize Officer if UserRole indicates they are an officer
-    const isOfficer = contact.UserRole && ['Officer', 'VPE', 'Admin', 'Meeting Manager'].includes(contact.UserRole);
+    const isOfficer = contact.is_officer;
     if (isOfficer) {
       contactTypeSelect.value = "Officer";
     } else if (contact.Type) {

@@ -139,7 +139,7 @@ def get_roster_entry(entry_id):
     if entry.contact:
         contact_name = entry.contact.Name
         # Identify as Officer if linked user has an officer role
-        if entry.contact.user and entry.contact.user.Role in ['Officer', 'VPE', 'Admin', 'Meeting Manager']:
+        if entry.contact.user and entry.contact.user.is_officer:
             contact_type = 'Officer'
         else:
             contact_type = entry.contact.Type
