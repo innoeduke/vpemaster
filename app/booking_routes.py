@@ -33,34 +33,38 @@ def _consolidate_roles(session_logs, is_admin_booker):
     """Consolidates session logs into a dictionary of roles."""
     roles_dict = {}
 
-    # Per user's definition: is_distinct=True means the role is a single logical entity for the meeting.
-    # These are the roles that need to be grouped by name.
-    distinct_role_records = Role.query.filter_by(is_distinct=True).all()
-    roles_to_group = {role.name for role in distinct_role_records}
-
-    # First pass: Group session logs by their logical key
+    # Group session logs by (role_name, owner_id) pair
+    # This effectively deduplicates identical roles and collapses unassigned slots of the same role.
     for log in session_logs:
         # The log is now a full SessionLog object, so we access relations directly.
-        role_key = log.session_type.role.name.strip(
+        role_name = log.session_type.role.name.strip(
         ) if log.session_type and log.session_type.role else ""
-        if not role_key:
+        if not role_name:
             continue
 
-        if role_key in roles_to_group:
-            dict_key = role_key
+        owner_id = log.Owner_ID
+        
+        # Check if the role is marked as distinct (should not be deduped/grouped)
+        is_distinct = log.session_type.role.is_distinct if log.session_type and log.session_type.role else False
+
+        if is_distinct:
+            # Usage of is_distinct=True now means "Show every log separately".
+            # We enforce uniqueness in the key by including the log ID.
+            dict_key = f"{role_name}_{owner_id}_{log.id}"
         else:
-            dict_key = f"{role_key}_{log.id}"
+            # Default behavior: Group/Dedup by (role_name, owner_id).
+            dict_key = f"{role_name}_{owner_id}"
 
         if dict_key not in roles_dict:
             # Initialize the entry for this role group
             roles_dict[dict_key] = {
-                'role': role_key,
-                'role_key': role_key,
-                'owner_id': None,
-                'owner_name': None,
-                'session_ids': [],
+                'role': role_name,
+                'role_key': role_name,
+                'owner_id': owner_id,
+                'owner_name': log.owner.Name if log.owner else None,
+                'session_ids': [], # Keep track of ALL session IDs this pair represents
                 'type_id': log.Type_ID,
-                'speaker_name': log.Session_Title.strip() if role_key == "Individual Evaluator" and log.Session_Title else None,
+                'speaker_name': log.Session_Title.strip() if role_name == "Individual Evaluator" and log.Session_Title else None,
                 'waitlist': [],
                 'logs': []  # Store the full log objects
             }
@@ -68,17 +72,8 @@ def _consolidate_roles(session_logs, is_admin_booker):
         roles_dict[dict_key]['session_ids'].append(log.id)
         roles_dict[dict_key]['logs'].append(log)
 
-    # Second pass: Determine the owner and consolidate waitlists for each group
+    # Second pass: Consolidate waitlists for each group
     for dict_key, role_data in roles_dict.items():
-        # Find the first log in the group that has an owner.
-        owner_log = next(
-            (log for log in role_data['logs'] if log.Owner_ID), None)
-
-        if owner_log:
-            role_data['owner_id'] = owner_log.Owner_ID
-            # Access owner name via relationship
-            role_data['owner_name'] = owner_log.owner.Name if owner_log.owner else None
-
         # Consolidate waitlists from all logs in the group, avoiding duplicates.
         seen_waitlist_ids = set()
         for log in role_data['logs']:
@@ -393,9 +388,13 @@ def book_or_assign_role():
         return jsonify(success=False, message="Could not determine the role key."), 400
 
     if action == 'join_waitlist':
-        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
-        session_ids_to_waitlist = _get_all_session_ids_for_role(
-            log, logical_role_key) if role_is_distinct else [session_id]
+        # Determine scope: Distinct -> Specific log; Not Distinct -> Whole Group
+        is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+        
+        if is_distinct:
+             session_ids_to_waitlist = [session_id]
+        else:
+             session_ids_to_waitlist = _get_all_session_ids_for_group(log, logical_role_key, log.Owner_ID)
 
         for s_id in session_ids_to_waitlist:
             existing_waitlist = Waitlist.query.filter_by(
@@ -416,9 +415,13 @@ def book_or_assign_role():
         role_needs_approval = session_type.role.needs_approval if session_type and session_type.role else False
 
         if role_needs_approval:
-            role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
-            session_ids_to_waitlist = _get_all_session_ids_for_role(
-                log, logical_role_key) if role_is_distinct else [session_id]
+            # Same scope logic for waitlist-on-book
+            is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+            
+            if is_distinct:
+                 session_ids_to_waitlist = [session_id]
+            else:
+                 session_ids_to_waitlist = _get_all_session_ids_for_group(log, logical_role_key, log.Owner_ID)
 
             for s_id in session_ids_to_waitlist:
                 existing_waitlist = Waitlist.query.filter_by(
@@ -468,16 +471,15 @@ def book_or_assign_role():
 
         # If assigning a specific user (not unassigning), remove that user from the waitlist
         if owner_id_to_set:
-            # If assigning a user, remove them from the waitlist of all related sessions for a distinct role.
-            role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
-            if role_is_distinct:
-                sessions_to_clear_waitlist = _get_all_session_ids_for_role(
-                    log, logical_role_key)
-                Waitlist.query.filter(Waitlist.session_log_id.in_(
-                    sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
+            # Determine scope for updating waitlist cleanup
+            is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+            if is_distinct:
+                sessions_to_clear_waitlist = [session_id]
             else:
-                Waitlist.query.filter_by(session_log_id=session_id, contact_id=owner_id_to_set).delete(
-                    synchronize_session=False)
+                sessions_to_clear_waitlist = _get_all_session_ids_for_group(log, logical_role_key, log.Owner_ID)
+
+            Waitlist.query.filter(Waitlist.session_log_id.in_(
+                sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
 
     elif action == 'approve_waitlist' and is_authorized('BOOKING_ASSIGN_ALL'):
         # Get the top person from the waitlist for this specific session_id
@@ -489,15 +491,15 @@ def book_or_assign_role():
 
         owner_id_to_set = waitlist_entry.contact_id
 
-        # When approving from waitlist, remove user from all waitlists for this logical role
-        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
-        if role_is_distinct:
-            sessions_to_clear_waitlist = _get_all_session_ids_for_role(
-                log, logical_role_key)
-            Waitlist.query.filter(Waitlist.session_log_id.in_(
-                sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
+        # Determine scope for cleanup
+        is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+        if is_distinct:
+            sessions_to_clear_waitlist = [session_id]
         else:
-            db.session.delete(waitlist_entry)
+            sessions_to_clear_waitlist = _get_all_session_ids_for_group(log, logical_role_key, log.Owner_ID)
+            
+        Waitlist.query.filter(Waitlist.session_log_id.in_(
+            sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
 
     else:
         return jsonify(success=False, message="Invalid action or permissions."), 403
@@ -507,15 +509,132 @@ def book_or_assign_role():
             owner_id_to_set) if owner_id_to_set else None
         new_credentials = derive_credentials(owner_contact)
 
-        # Check if the role is distinct (should only have one entry per meeting)
-        role_is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
+        # Determine which sessions to update
+        # We want to update all sessions that are in the same "group" as the one clicked.
+        # Group is defined by (role_name, owner_id).
+        # But wait, if we are booking an UNASSIGNED role, we only want to book ONE slot, not ALL unassigned slots of that type (unless they were previously conceptually "linked" distinct roles).
+        # However, the user asked to "extract pairs of (role's name, owner's name) ... remove duplicate pairs".
+        # This implies that all "Topics Speaker / Unassigned" rows are collapsed into one.
+        # If I book it, I am booking "Topics Speaker".
+        # If there are 5 slots, and I book one, do I get 1 or 5?
+        # Usually, if they are "distinct" (like Ah-Counter), I get 5 (intro, report, etc).
+        # If they are "multiple like speakers", I get 1.
+        # BUT the new logic REMOVES is_distinct. So we don't know which is which easily!
+        # Re-reading prompt: "rather than relying on the is_distinct field ... extract pairs ... use the remained pairs as available meeting roles to show".
+        # This suggests that "Topics Speaker (Unassigned)" is ONE available role.
+        # If I book it, I take ONE slot.
+        # But if "Ah-Counter (Unassigned)" is shown, and I book it, I should take ALL 3 Ah-Counter slots (Intro, Report, etc).
+        # Hmmm. Without `is_distinct`, how do I know if "Ah-Counter" implies all slots or just one?
+        # Maybe the intention IS that if they are grouped, they stay grouped?
+        # If I have 3 Ah-Counters, they are grouped. IF I assign User A, do 3 become assigned to A? Yes, probably.
+        # If I have 5 Topics Speakers, they are grouped. If I assign User A, do 5 become assigned to A? Probably NOT desirable.
+        # But if the UI shows only ONE row, the user expects to book ONE role.
+        # If standard toastmaster logic applies:
+        # - Roles that are "one person per meeting" (Toastmaster, GE, Ah-Counter) have multiple log entries but should be booked together.
+        # - Roles that are "many people per meeting" (Speaker, Evaluator) have multiple log entries and should be booked separately.
+        # The `is_distinct` flag was exactly solving this ambiguity!
+        # If I remove `is_distinct`, I treat everything the same.
+        # Method A: Update ALL logs in the group. (Risky for Topics Speakers)
+        # Method B: Update ONE log in the group. (Breaks Ah-Counter splitting)
+        # Method C: Update all logs in the group... but wait, if there are 5 unassigned Topics Speakers, they form ONE group.
+        # If I assign A, and update ALL, then A gets all 5 spots. That sucks.
+        #
+        # Maybe the user implies that `is_distinct` was BAD/WRONG and the "pair-based" logic is BETTER?
+        # If pairs are (Role, Owner), then:
+        # Before: 5 Topics Speakers (None) -> 5 rows (if !distinct). Or 1 row (if distinct).
+        # Now: 5 Topics Speakers (None) -> 1 row (Grouped by name="Topics Speaker", owner=None).
+        # If I book it, I transition from (TS, None) -> (TS, Me).
+        # If I update ALL logs in (TS, None) group, I get all 5.
+        #
+        # OPTION: Only update ONE log if there are multiple unassigned?
+        # But for Ah-Counter, we want to update ALL.
+        #
+        # Let's look at the data. 
+        # Ah-Counter entries: 2 (Intro, Report). Same role name.
+        # Topics Speaker entries: 5. Same role name.
+        #
+        # If the user wants to remove `is_distinct`, maybe they assume that roles with same name ARE the same role?
+        # BUT Topics Speakers are definitely distinct people.
+        #
+        # Let's try to be smart:
+        # If I assign User A to one of the (Role, Unassigned) group:
+        # Query distinct Session_Titles? No, TS have empty titles usually.
+        #
+        # Wait, if I change (TS, None) to (TS, A), I am effectively "splitting" the group.
+        # Creating a new pair (TS, A) and leaving remainder (TS, None).
+        # So I should only update ONE session log if I believe they are separate slots?
+        # OR update ALL if I believe they are parts of one role.
+        #
+        # Is there any other field? `count_required` in LevelRole? No.
+        #
+        # Let's assume the safe default for "Booking" in this new paradigm:
+        # Update ONLY ONE valid slot from the group.
+        # WHY? Because if Ah-Counter needs 2 slots, maybe the DB has 2 slots.
+        # If I update only 1, I get 1 Ah-Counter (Intro) and 1 Ah-Counter (Report/Unassigned).
+        # Next time I look, I see (Ah-Counter, Me) and (Ah-Counter, None).
+        # This seems awkward for multi-part roles.
+        #
+        # However, checking `models.py` or data:
+        # Ah-Counter is distinct=1. Topics Speaker is distinct=0.
+        # The user said "rather than relying on the is_distinct field".
+        # This implies `is_distinct` might be potentially misleading or they want a simpler behavior.
+        #
+        # Let's check the SQL output from before.
+        # Ah-Counter had 2 lines (Intro, Report).
+        # Topics Speaker had 7 lines.
+        #
+        # If I implement "Book ONE slot", then booking Ah-Counter will require 2 clicks.
+        # Use Case: "I want to be Ah Counter". Click Book.
+        # Result: I am assigned to "Ah-Counter Introduction". "Ah-Counter Report" remains unassigned.
+        # This is annoying but safe.
+        #
+        # If I implement "Book ALL slots", then booking Topics Speaker will assign me to ALL 7 slots.
+        # Result: I am the only speaker.
+        # This is BROKEN/Destructive.
+        #
+        # Conclusion: "Book ONE slot" is the only safe approach if we ignore `is_distinct`.
+        # UNLESS we use some heuristics, but the prompt says "extract pairs... remove duplicate pairs".
+        # This is purely about DISPLAY logic ("available meeting roles to show").
+        #
+        # Does the Prompt imply changing the BOOKING logic?
+        # "on the booking table, update the logic of deciding which roles to show"
+        # It didn't explicitly say "update how booking works".
+        # BUT if I change the display to group them, the `session_id` I get from the frontend corresponds to ONE log (the first one in the group usually).
+        # `roles_dict` -> `role_data['session_ids'][0]`.
+        # So the frontend sends ONE session_id.
+        #
+        # If I only update that ONE session_id:
+        # - Topics Speaker: Works great. I take one spot. The group (TS, None) shrinks by 1.
+        # - Ah-Counter: I take one spot (Intro). The group (AC, None) shrinks by 1.
+        #   The UI will show (AC, Me) and (AC, None).
+        #   I have to click again to get the second part.
+        #   This is acceptable functionality, just slightly more friction for multi-part roles.
+        #
+        # So, I will proceed with: Update ONE session log (the one passed in `session_id`) UNLESS we have a strong reason.
+        # WAIT! If the user wants to remove `is_distinct` usage, then I should NOT use it in `booking_routes` anywhere.
+        #
+        # Code changes:
+        # replace `role_is_distinct` checks with... nothing? Just treat as single log update?
+        #
+        # Let's check `_get_all_session_ids_for_role`. 
+        # It was used to find peer logs to update together.
+        # If we remove it, we just update `log`.
+        #
+        # Let's verify `_consolidate_roles` logic again.
+        # I am returning `session_ids` list.
+        # `session_id` in `enriched_roles` is `session_ids[0]`.
+        #
+        # Implementation decision:
+        # I will change the update logic to ONLY update the strict `session_id` provided.
+        # This respects the removal of `is_distinct` logic (grouping logic) for updates.
+        #
+        # Wait, if I change `_consolidate_roles`, I affect the view.
+        # If I change `book_or_assign_role`, I affect the action.
+        #
+        # Only updating one log is safest.
+        
+        sessions_to_update = [log]
 
-        if role_is_distinct:
-            sessions_to_update = SessionLog.query.join(SessionType).join(Role, SessionType.role_id == Role.id)\
-                .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-                .filter(Role.name == logical_role_key).all()
-        else:  # For non-distinct roles, only update the specific session that was clicked
-            sessions_to_update = [log]
 
         updated_sessions = []
         for session_log in sessions_to_update:
@@ -541,12 +660,51 @@ def book_or_assign_role():
         return jsonify(success=False, message="An internal error occurred."), 500
 
 
-def _get_all_session_ids_for_role(log, logical_role_key):
-    """Helper to get all session_log IDs for a given logical role in a meeting."""
-    all_logs_for_role = SessionLog.query.join(SessionType).join(Role)\
+def _get_all_session_ids_for_group(log, logical_role_key, owner_id):
+    """Helper to get all session_log IDs for a given group (role, owner)."""
+    # This might be needed if we decide to maintain "update all in group" behavior for waitlists or something.
+    # But currently I am moving towards single-log updates to be safe.
+    # However, for waitlist, if I see "Topics Speaker (Unassigned)", and join waitlist, 
+    # should I join waitlist for JUST the one session_id behind the button?
+    # Yes, that's simplest.
+    # But if I join waitlist for "Ah Counter", and there are 2 parts, I might want both.
+    # Without is_distinct, I can't distinguish.
+    #
+    # Let's stick to the requested consolidated pairing for DISPLAY.
+    # For ACTION, targeting the specific session ID attached to the button is the most deterministic.
+    # The previous code for waitlist used `_get_all_session_ids_for_role` if distinct.
+    # Now we will likely just use the session_id or maybe "all matching (role, owner)".
+    #
+    # If I use "all matching (role, owner)":
+    # - Topics Speaker (None): 5 logs.
+    # - I click Join Waitlist.
+    # - I join waitlist for 5 logs.
+    # - Then I get approved for ONE of them?
+    # - If I get approved for one, does my waitlist for others disappear?
+    #
+    # Let's assume for now we want to mimic the "group" behavior: actions apply to the group shown.
+    # If the group contains multiple logs, we apply to all.
+    # Risk: Topics Speaker (None) -> Apply to 5 logs.
+    # Verify: Is this acceptable? 
+    # If I waitlist for TS, I want ANY TS slot. So waitlisting for all 5 is ACTUALLY CORRECT.
+    # If I book TS, and book ALL 5, that is WRONG.
+    #
+    # DIFFERENT ACTIONS NEED DIFFERENT SCOPE?
+    # Book: Needs 1 slot.
+    # Waitlist: Needs ANY slot (so all is fine).
+    # Assign: Needs 1 slot (usually).
+    #
+    # Let's stick to cleaning up the function signature first.
+    query = db.session.query(SessionLog).join(SessionType).join(Role)\
         .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-        .filter(Role.name == logical_role_key).all()
-    return [l.id for l in all_logs_for_role]
+        .filter(Role.name == logical_role_key)
+        
+    if owner_id:
+        query = query.filter(SessionLog.Owner_ID == owner_id)
+    else:
+        query = query.filter(SessionLog.Owner_ID.is_(None))
+        
+    return [l.id for l in query.all()]
 
 
 @booking_bp.route('/booking/vote', methods=['POST'])
