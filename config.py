@@ -47,38 +47,13 @@ class Config:
 
     DEFAULT_ROLE_ICON = "fa-question-circle"
 
-    # ROLES Dictionary
-    ROLES = {
-        "PREPARED_SPEAKER":       {"name": "Prepared Speaker",       "unique": True,    "award": BEST_SPEAKER,   "icon": "fa-user-tie"},
-        "KEYNOTE_SPEAKER":        {"name": "Keynote Speaker",        "unique": False,   "award": BEST_SPEAKER,   "icon": "fa-star"},
-        "PRESENTER":              {"name": "Presenter",              "unique": True,    "award": BEST_SPEAKER,   "icon": "fa-share-alt"},
-        "PANELIST":               {"name": "Panelist",               "unique": "admin", "award": None,           "icon": "fa-users"},
-        "INDIVIDUAL_EVALUATOR":   {"name": "Individual Evaluator",   "unique": True,    "award": BEST_EVALUATOR, "icon": "fa-pen-square"},
-        "TOPICS_SPEAKER":         {"name": "Topics Speaker",         "unique": "admin", "award": BEST_TT,        "icon": "fa-comment"},
-        "TOASTMASTER":            {"name": "Toastmaster",            "unique": False,   "award": BEST_ROLETAKER, "icon": "fa-microphone"},
-        "GENERAL_EVALUATOR":      {"name": "General Evaluator",      "unique": False,   "award": BEST_ROLETAKER, "icon": "fa-search"},
-        "TOPICMASTER":            {"name": "Topicmaster",            "unique": False,   "award": BEST_ROLETAKER, "icon": "fa-comments"},
-        "GRAMMARIAN":             {"name": "Grammarian",             "unique": False,   "award": BEST_ROLETAKER, "icon": "fa-book"},
-        "TIMER":                  {"name": "Timer",                  "unique": False,   "award": BEST_ROLETAKER, "icon": "fa-stopwatch"},
-        "AH_COUNTER":             {"name": "Ah-Counter",             "unique": False,   "award": BEST_ROLETAKER, "icon": "fa-calculator"},
-        "DEBATER":                {"name": "Debater",                "unique": "admin", "award": None,           "icon": "fa-balance-scale"},
-        "PHOTOGRAPHER":           {"name": "Photographer",           "unique": False,   "award": None,           "icon": "fa-camera"},
-    }
+    # Award Categories
+    BEST_SPEAKER = 'Best_Speaker'
+    BEST_EVALUATOR = 'Best_Evaluator'
+    BEST_TT = 'Best_TT'
+    BEST_ROLETAKER = 'Best_Roletaker'
 
-    # Derived role configurations
-    UNIQUE_ENTRY_ROLES = [
-        role['name'] for role in ROLES.values() if role['unique'] is True
-    ]
-    ADMIN_UNIQUE_ENTRY_ROLES = [
-        role['name'] for role in ROLES.values() if role['unique'] is True or role['unique'] == 'admin'
-    ]
-    AWARD_CATEGORIES_ROLES = {}
-    for role_data in ROLES.values():
-        if role_data['award']:
-            if role_data['award'] not in AWARD_CATEGORIES_ROLES:
-                AWARD_CATEGORIES_ROLES[role_data['award']] = []
-            AWARD_CATEGORIES_ROLES[role_data['award']].append(
-                role_data['name'])
+    DEFAULT_ROLE_ICON = "fa-question-circle"
 
     # Role Groups
     OFFICER_ROLE_GROUP = 'Officer'

@@ -381,16 +381,26 @@ def show_speech_logs():
     SERIES_INITIALS = current_app.config['SERIES_INITIALS']
     today_date = datetime.today().date()
 
+    all_roles_db = Role.query.all()
     role_icons = {
-        role_data['name']: role_data.get(
-            'icon', current_app.config['DEFAULT_ROLE_ICON'])
-        for role_data in current_app.config['ROLES'].values()
+        r.name: r.icon or current_app.config['DEFAULT_ROLE_ICON']
+        for r in all_roles_db
+    }
+
+    # Construct a legacy-style roles_config for the template if needed
+    roles_config = {
+        r.name.upper().replace(' ', '_').replace('-', '_'): {
+            'name': r.name,
+            'icon': r.icon,
+            'award': r.award_category,
+            'unique': r.is_distinct
+        } for r in all_roles_db
     }
 
     return render_template(
         'speech_logs.html',
         grouped_logs=sorted_grouped_logs,
-        roles_config=current_app.config['ROLES'],
+        roles_config=roles_config,
         roles=grouped_roles,
         role_icons=role_icons,
         meeting_numbers=meeting_numbers,

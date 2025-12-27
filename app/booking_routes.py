@@ -157,13 +157,13 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeti
         three_meetings_ago = selected_meeting_number - 2
         recent_speaker_log = db.session.query(SessionLog.id).join(SessionType).join(Role, SessionType.role_id == Role.id)\
             .filter(SessionLog.Owner_ID == current_user_contact_id)\
-            .filter(Role.name == current_app.config['ROLES']['PREPARED_SPEAKER']['name'])\
+            .filter(Role.name == "Prepared Speaker")\
             .filter(SessionLog.Meeting_Number.between(three_meetings_ago, selected_meeting_number)).first()
 
         if recent_speaker_log:
             roles = [
                 r for r in roles
-                if r['role_key'] != current_app.config['ROLES']['PREPARED_SPEAKER']['name'] or (r['role_key'] == current_app.config['ROLES']['PREPARED_SPEAKER']['name'] and r['owner_id'] == current_user_contact_id)
+                if r['role_key'] != "Prepared Speaker" or (r['role_key'] == "Prepared Speaker" and r['owner_id'] == current_user_contact_id)
             ]
 
     return roles
@@ -222,7 +222,7 @@ def _get_roles_for_meeting(selected_meeting_number, current_user_contact_id, sel
     if selected_meeting.status == 'not started' and not is_admin_booker:
         sorted_roles = [
             role for role in sorted_roles
-            if role['role_key'] != current_app.config['ROLES']['TOPICS_SPEAKER']['name']
+            if role['role_key'] != "Topics Speaker"
         ]
 
     return sorted_roles
@@ -638,14 +638,15 @@ def _get_user_bookings(current_user_contact_id):
         db.func.min(SessionLog.id).label('id'),
         Role.name,
         Meeting.Meeting_Number,
-        Meeting.Meeting_Date
+        Meeting.Meeting_Date,
+        Role.icon
     ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
      .join(Role, SessionType.role_id == Role.id)\
      .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
      .filter(SessionLog.Owner_ID == current_user_contact_id)\
      .filter(Meeting.Meeting_Date >= today)\
      .filter(Role.name != '', Role.name.isnot(None))\
-     .group_by(Meeting.Meeting_Number, Role.name, Meeting.Meeting_Date)\
+     .group_by(Meeting.Meeting_Number, Role.name, Meeting.Meeting_Date, Role.icon)\
      .order_by(Meeting.Meeting_Number, Meeting.Meeting_Date, Role.name)
 
     user_bookings = user_bookings_query.all()
@@ -664,10 +665,7 @@ def _get_user_bookings(current_user_contact_id):
         user_bookings_by_date[date_str]['bookings'].append({
             'role': log.name,
             'role_key': log.name,
-            'icon': next((config.get('icon', current_app.config['DEFAULT_ROLE_ICON'])
-                          for config in current_app.config['ROLES'].values()
-                          if config['name'] == log.name
-                          ), current_app.config['DEFAULT_ROLE_ICON']),
+            'icon': log.icon or current_app.config['DEFAULT_ROLE_ICON'],
             'session_id': log.id
         })
 
@@ -686,7 +684,8 @@ def _get_completed_roles(current_user_contact_id, selected_level):
         completed_logs = db.session.query(
             Meeting.Meeting_Number,
             Meeting.Meeting_Date,
-            Role.name
+            Role.name,
+            Role.icon
         ).select_from(SessionLog)\
          .join(SessionType, SessionLog.Type_ID == SessionType.id)\
          .join(Role, SessionType.role_id == Role.id)\
@@ -702,11 +701,8 @@ def _get_completed_roles(current_user_contact_id, selected_level):
             'role': role_name,
             'meeting_number': meeting_num,
             'date': meeting_date.strftime('%Y-%m-%d'),
-            'icon': next((config.get('icon', current_app.config['DEFAULT_ROLE_ICON'])
-                for config in current_app.config['ROLES'].values()
-                if config['name'] == role_name
-                          ), current_app.config['DEFAULT_ROLE_ICON'])
-        } for meeting_num, meeting_date, role_name in completed_logs]
+            'icon': role_icon or current_app.config['DEFAULT_ROLE_ICON']
+        } for meeting_num, meeting_date, role_name, role_icon in completed_logs]
 
     except Exception as e:
         current_app.logger.error(f"Error fetching completed roles: {e}")

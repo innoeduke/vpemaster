@@ -536,6 +536,21 @@ A single endpoint to fetch all data needed for the agenda modals.
     presentation_series = sorted(
         list(set(p.series for p in all_presentations if p.series)))
 
+    # Meeting Roles (Constructed from DB for backward compatibility with frontend keys)
+    # We use name.upper().replace(' ', '_') to match the legacy Config.ROLES keys where possible.
+    # Note: For roles with special characters, we might need more robust slugification if they are used as keys.
+    roles_from_db = Role.query.all()
+    meeting_roles_data = {}
+    for r in roles_from_db:
+        role_key = r.name.upper().replace(' ', '_').replace('-', '_')
+        meeting_roles_data[role_key] = {
+            "name": r.name,
+            "icon": r.icon,
+            "type": r.type,
+            "award": r.award_category,
+            "unique": r.is_distinct # Map database is_distinct to legacy 'unique' property
+        }
+
     return jsonify({
         'session_types': session_types_data,
         'contacts': contacts_data,
@@ -544,7 +559,7 @@ A single endpoint to fetch all data needed for the agenda modals.
         'presentation_series': presentation_series,
         'series_initials': current_app.config['SERIES_INITIALS'],
         'meeting_types': current_app.config['MEETING_TYPES'],
-        'meeting_roles': current_app.config['ROLES']
+        'meeting_roles': meeting_roles_data
     })
 
 

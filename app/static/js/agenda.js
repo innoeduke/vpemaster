@@ -1251,7 +1251,10 @@ document.addEventListener("DOMContentLoaded", () => {
     cell.className = "actions-column";
 
     const sessionType = allSessionTypes.find((st) => st.id == typeId);
-    const rolesToHideFor = [allMeetingRoles.PREPARED_SPEAKER, "Table Topics"];
+    const rolesToHideFor = [
+      allMeetingRoles.PREPARED_SPEAKER ? allMeetingRoles.PREPARED_SPEAKER.name : "Prepared Speaker",
+      "Table Topics"
+    ];
 
     const shouldShowProjectButton =
       sessionType &&
