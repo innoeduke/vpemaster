@@ -98,12 +98,42 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function calculateNextOrder(isOfficer) {
+    if (!tableBody) return 1;
+    const rows = tableBody.querySelectorAll("tr[data-entry-id]");
+    let maxRegular = 0;
+    let maxOverall = 0;
+
+    rows.forEach((row) => {
+      const orderCell = row.querySelector("td:first-child");
+      if (orderCell && orderCell.textContent) {
+        const order = parseInt(orderCell.textContent.trim(), 10);
+        if (!isNaN(order)) {
+          if (order > maxOverall) maxOverall = order;
+          if (order < 1000 && order > maxRegular) maxRegular = order;
+        }
+      }
+    });
+
+    if (isOfficer) {
+      return maxOverall < 1000 ? 1000 : maxOverall + 1;
+    } else {
+      return maxRegular > 0 ? maxRegular + 1 : 1;
+    }
+  }
+
   if (contactTypeSelect) {
     contactTypeSelect.addEventListener("change", function () {
-      if (this.value === "Officer") {
+      const isOfficer = this.value === "Officer";
+      if (isOfficer) {
         ticketSelect.value = "Officer";
       } else {
         ticketSelect.value = "Early-bird";
+      }
+
+      // Only update order number if adding a new entry (no entry ID)
+      if (!entryIdInput.value) {
+        orderNumberInput.value = calculateNextOrder(isOfficer);
       }
     });
   }
@@ -117,19 +147,8 @@ document.addEventListener("DOMContentLoaded", function () {
     contactIdInput.value = "";
     contactTypeSelect.value = "";
 
-    const rows = tableBody.querySelectorAll("tr[data-entry-id]");
-    let maxOrder = 0;
-    rows.forEach((row) => {
-      const orderCell = row.querySelector("td:first-child");
-      if (orderCell && orderCell.textContent) {
-        const order = parseInt(orderCell.textContent.trim(), 10);
-        if (!isNaN(order) && order > maxOrder) {
-          maxOrder = order;
-        }
-      }
-    });
-    const nextOrder = maxOrder > 0 ? maxOrder + 1 : 1;
-    orderNumberInput.value = nextOrder;
+    // Default to regular order
+    orderNumberInput.value = calculateNextOrder(false);
   }
 
   function populateRosterEditForm(rosterId) {

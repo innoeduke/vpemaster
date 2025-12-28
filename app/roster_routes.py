@@ -72,7 +72,8 @@ def roster():
         # 查找下一个可用序号（最后一个序号+1）
         next_unallocated_entry = None
         if roster_entries:
-            max_order = max(entry.order_number for entry in roster_entries)
+            valid_orders = [entry.order_number for entry in roster_entries if entry.order_number < 1000]
+            max_order = max(valid_orders) if valid_orders else 0
             next_unallocated_entry = type('obj', (object,), {'order_number': max_order + 1})()
         else:
             next_unallocated_entry = type('obj', (object,), {'order_number': 1})()
