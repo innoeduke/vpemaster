@@ -37,8 +37,7 @@
                     <tr>
                         <th class="sortable" data-column-index="0">Order</th>
                         <th class="sortable" data-column-index="1">Contact Name</th>
-                        <th class="sortable" data-column-index="2">Contact Type</th>
-                        <th class="sortable" data-column-index="3">Ticket Class</th>
+                        <th class="sortable" data-column-index="2">Ticket Class</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -46,21 +45,27 @@
                     {% for entry in roster_entries %}
                     <tr data-entry-id="{{ entry.id }}" data-order="{{ entry.order_number }}" data-contact-id="{{ entry.contact_id or '' }}" data-ticket="{{ entry.ticket }}">
                         <td>{{ entry.order_number }}</td>
-                        <td>{{ entry.contact.Name if entry.contact else 'N/A' }}</td>
                         <td>
+                            {{ entry.contact.Name if entry.contact else 'N/A' }}
                             {% if entry.contact_type %}
-                                {{ entry.contact_type }}
+                                {% set c_type = entry.contact_type %}
                             {% elif entry.contact %}
                                 {% if entry.contact.user and entry.contact.user.is_officer %}
-                                    Officer
+                                    {% set c_type = 'Officer' %}
                                 {% else %}
-                                    {{ entry.contact.Type }}
+                                    {% set c_type = entry.contact.Type %}
                                 {% endif %}
                             {% else %}
-                                N/A
+                                {% set c_type = 'Guest' %}
                             {% endif %}
                         </td>
-                        <td>{{ entry.ticket }}</td>
+                        <td>
+                            {% if c_type == 'Officer' %}
+                                Officer
+                            {% else %}
+                                {{ c_type }} / {{ entry.ticket }}
+                            {% endif %}
+                        </td>
                         <td>
                             <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} edit-entry" data-id="{{ entry.id }}" title="Edit" {% if entry.ticket == 'Cancelled' %}disabled{% endif %}>
                                 <i class="fas fa-edit"></i>
@@ -77,7 +82,6 @@
                         {% for i in range(1, 16) %}
                         <tr>
                             <td>{{ i }}</td>
-                            <td></td>
                             <td></td>
                             <td></td>
                             <td></td>

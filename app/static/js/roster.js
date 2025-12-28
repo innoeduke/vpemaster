@@ -313,7 +313,7 @@ function performLuckyDraw() {
   rows.forEach(row => {
     const orderCell = row.querySelector('td:first-child');
     if (orderCell && orderCell.textContent.trim() !== '' && orderCell.textContent.trim() !== 'N/A') {
-      const ticketCell = row.querySelector('td:nth-child(4)');
+      const ticketCell = row.querySelector('td:nth-child(3)');
       if (ticketCell && ticketCell.textContent.trim() !== 'Cancelled') {
         const order = orderCell.textContent.trim();
         const name = row.querySelector('td:nth-child(2)').textContent.trim();
