@@ -1,5 +1,12 @@
-{% extends "base.html" %} {% block title %}Pathway Library{% endblock %} {%
-block content %}
+{% extends "base.html" %}
+
+{% block title %}Pathway Library{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/pathway_library.css') }}">
+{% endblock %}
+
+{% block content %}
 <div id="pathway-library-container">
   <h1>Pathway Library</h1>
 
