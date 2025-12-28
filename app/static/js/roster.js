@@ -179,6 +179,7 @@ document.addEventListener("DOMContentLoaded", function () {
         meeting_number: meetingFilter.value,
         order_number: orderNumberInput.value,
         contact_id: contactIdInput.value,
+        contact_type: contactTypeSelect.value,
         ticket: ticketSelect.value,
       };
 

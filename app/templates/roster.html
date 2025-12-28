@@ -48,7 +48,9 @@
                         <td>{{ entry.order_number }}</td>
                         <td>{{ entry.contact.Name if entry.contact else 'N/A' }}</td>
                         <td>
-                            {% if entry.contact %}
+                            {% if entry.contact_type %}
+                                {{ entry.contact_type }}
+                            {% elif entry.contact %}
                                 {% if entry.contact.user and entry.contact.user.is_officer %}
                                     Officer
                                 {% else %}

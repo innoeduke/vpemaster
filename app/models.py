@@ -26,7 +26,6 @@ class Contact(db.Model):
 
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from .auth.utils import ROLE_PERMISSIONS # Import permissions
 
 from . import login_manager
 
@@ -56,9 +55,8 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.Pass_Hash, password)
 
     def can(self, permission):
-        # Local import to avoid circular dependency if utils imports User
-        # Actually utils imports models at top, but ROLE_PERMISSIONS is pure data?
-        # Let's check utils.py again. utils.py defines ROLE_PERMISSIONS.
+        # Local import to avoid circular dependency
+        from .auth.utils import ROLE_PERMISSIONS 
         
         # If user role is None, treat as Guest
         role = self.Role if self.Role else "Guest"
@@ -230,6 +228,7 @@ class Roster(db.Model):
     ticket = db.Column(db.String(20), nullable=True)
     contact_id = db.Column(db.Integer, db.ForeignKey(
         'Contacts.id'), nullable=True)
+    contact_type = db.Column(db.String(50), nullable=True)
 
     contact = db.relationship('Contact', backref='roster_entries')
 

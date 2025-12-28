@@ -118,6 +118,9 @@ def create_roster_entry():
     if 'contact_id' in data and data['contact_id']:
         new_entry.contact_id = data['contact_id']
 
+    if 'contact_type' in data:
+        new_entry.contact_type = data['contact_type']
+
     try:
         db.session.add(new_entry)
         db.session.commit()
@@ -135,14 +138,16 @@ def get_roster_entry(entry_id):
         return jsonify({'error': 'Entry not found'}), 404
     
     contact_name = None
-    contact_type = None
+    contact_type = entry.contact_type
+
     if entry.contact:
         contact_name = entry.contact.Name
-        # Identify as Officer if linked user has an officer role
-        if entry.contact.user and entry.contact.user.is_officer:
-            contact_type = 'Officer'
-        else:
-            contact_type = entry.contact.Type
+        if not contact_type:
+            # Identify as Officer if linked user has an officer role
+            if entry.contact.user and entry.contact.user.is_officer:
+                contact_type = 'Officer'
+            else:
+                contact_type = entry.contact.Type
 
     return jsonify({
         'id': entry.id,
@@ -170,10 +175,13 @@ def update_roster_entry(entry_id):
         entry.ticket = data['ticket']
 
     if 'contact_id' in data:
-        if data['contact_id']:  # 如果contact_id不为空
+        if data['contact_id']:  # If contact_id is not empty
             entry.contact_id = data['contact_id']
-        else:  # 如果contact_id为空，设置为None
+        else:  # If contact_id is empty, set to None
             entry.contact_id = None
+            
+    if 'contact_type' in data:
+        entry.contact_type = data['contact_type']
 
     try:
         db.session.commit()
