@@ -195,6 +195,7 @@ class PathwayProject(db.Model):
     path_id = db.Column(db.Integer, db.ForeignKey('pathways.id'))
     project_id = db.Column(db.Integer, db.ForeignKey('Projects.id'))
     code = db.Column(db.String(10))
+    level = db.Column(db.Integer, nullable=True)
     type = db.Column(db.Enum('elective', 'required', 'other', name='pathway_project_type_enum'), nullable=False)
 
 
