@@ -67,8 +67,12 @@
                 <td>
                 <select id="current_path" name="current_path">
                     <option value="">-- Select Path --</option>
-                    {% for pathway in pathways %}
-                    <option value="{{ pathway }}">{{ pathway }}</option>
+                    {% for type, p_list in pathways.items() %}
+                    <optgroup label="{{ type }}">
+                        {% for pathway in p_list %}
+                        <option value="{{ pathway }}">{{ pathway }}</option>
+                        {% endfor %}
+                    </optgroup>
                     {% endfor %}
                 </select>
                 </td>

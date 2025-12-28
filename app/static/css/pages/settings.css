@@ -1,65 +1,39 @@
-/* Tab navigation buttons */
-.tab-nav {
-    border-bottom: 1px solid #ccc;
-    display: flex;
-}
-
-.tab-btn {
-    background-color: inherit;
-    border: none;
-    outline: none;
-    cursor: pointer;
-    padding: 14px 16px;
-    transition: 0.3s;
-    font-size: 17px;
-    border-bottom: 3px solid transparent;
-}
-
-.tab-btn:hover {
-    background-color: #f1f1f1;
-}
-
-.tab-btn.active {
-    border-bottom: 3px solid #772432;
-    color: #772432;
-    font-weight: bold;
-}
-
-/* Tab content */
+/* Tabs now use shared component */
+/* Tab content container */
 .tab-content {
-    padding: 20px 12px;
-    display: none;
-    border-top: none;
+  padding: 20px 12px;
+  display: none;
+  border-top: none;
 }
 
 .settings-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
 .settings-header h2 {
-    margin: 0;
+  margin: 0;
 }
 
 #sessions-table input[type="checkbox"] {
-    transform: scale(1.2);
-    cursor: pointer;
+  transform: scale(1.2);
+  cursor: pointer;
 }
 
 #sessions-table input[type="checkbox"]:disabled {
-    cursor: not-allowed;
+  cursor: not-allowed;
 }
 
 .form-control-sm {
-    width: 100%;
-    padding: 4px 8px;
-    font-size: 14px;
-    line-height: 1.5;
-    border-radius: .2rem;
-    border: 1px solid #ced4da;
-    box-sizing: border-box;
+  width: 100%;
+  padding: 4px 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  border-radius: .2rem;
+  border: 1px solid #ced4da;
+  box-sizing: border-box;
 }
 
 /* --- Global Settings Search Bar --- */
@@ -70,7 +44,8 @@
   display: block;
   margin-left: auto;
   margin-right: auto;
-  margin-bottom: 20px; /* Space between search and tabs */
+  margin-bottom: 20px;
+  /* Space between search and tabs */
 }
 
 /* Make the search box inside fill its container */
@@ -88,6 +63,7 @@
   padding: 8px;
   background-color: #f2f2f2;
 }
+
 .general-settings-table th:first-child {
   width: 40%;
 }
@@ -110,6 +86,7 @@
 #bulk-import-form {
   display: inline;
 }
+
 #bulk-import-file {
   display: none;
 }
@@ -123,20 +100,23 @@
 
 /* --- Session Types Table --- */
 #sessions-table .session-section {
-  background-color: #e6f2ff; /* Light blue for section rows */
+  background-color: #e6f2ff;
+  /* Light blue for section rows */
 }
 
 #sessions-table .session-hidden td {
-  color: #999; /* Muted text for hidden rows */
+  color: #999;
+  /* Muted text for hidden rows */
 }
 
 
 /* --- Mobile / Tablet Responsive Styles --- */
 @media (max-width: 992px) {
-    /* --- Settings Pag Respoensive Fixes --- */
-    .global-search-bar {
-        width: 100%;
-        /* Full width on mobile */
-        min-width: unset;
-    }
+
+  /* --- Settings Pag Respoensive Fixes --- */
+  .global-search-bar {
+    width: 100%;
+    /* Full width on mobile */
+    min-width: unset;
+  }
 }

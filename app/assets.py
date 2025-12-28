@@ -9,6 +9,7 @@ css_all = Bundle(
     'css/components/tables.css',
     'css/components/modals.css',
     'css/components/autocomplete.css',
+    'css/components/tabs.css',
     'css/pages/agenda.css',
     'css/pages/booking.css',
     'css/pages/contacts.css',

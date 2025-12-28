@@ -443,7 +443,13 @@ def agenda():
     
     all_pathways = Pathway.query.order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways}
-    pathways = [p.name for p in all_pathways]
+    
+    pathways = {}
+    for p in all_pathways:
+        ptype = p.type or "Other"
+        if ptype not in pathways:
+            pathways[ptype] = []
+        pathways[ptype].append(p.name)
 
     template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
     try:

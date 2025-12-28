@@ -97,7 +97,14 @@ def show_contacts():
     # Sort types: Member first, then others
     sorted_types = sorted(type_counts.keys(), key=lambda x: (x not in ['Member'], x))
     
-    pathways = [p.name for p in Pathway.query.order_by(Pathway.name).all()]
+    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    pathways = {}
+    for p in all_pathways:
+        ptype = p.type or "Other"
+        if ptype not in pathways:
+            pathways[ptype] = []
+        pathways[ptype].append(p.name)
+
     mentor_candidates = Contact.query.filter(
         Contact.Type.in_(['Member', 'Past Member'])
     ).order_by(Contact.Name.asc()).all()
@@ -217,7 +224,13 @@ def contact_form(contact_id=None):
             return redirect(redirect_url)
         return redirect(url_for('contacts_bp.show_contacts'))
 
-    pathways = [p.name for p in Pathway.query.order_by(Pathway.name).all()]
+    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    pathways = {}
+    for p in all_pathways:
+        ptype = p.type or "Other"
+        if ptype not in pathways:
+            pathways[ptype] = []
+        pathways[ptype].append(p.name)
     return render_template('contact_form.html', contact=contact, pathways=pathways)
 
 

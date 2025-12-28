@@ -22,7 +22,10 @@ def pathway_library():
             project_codes_lookup[pp.project_id] = {}
         project_codes_lookup[pp.project_id][path_abbr] = pp.code
 
+    # Group pathways by type
+    grouped_pathways = {}
     pathways_data = []
+
     for pathway in pathways:
         pathway_dict = {
             'id': pathway.id,
@@ -50,9 +53,13 @@ def pathway_library():
             }
             pathway_dict['projects'].append(project_dict)
             
+        ptype = pathway.type or "Other"
+        if ptype not in grouped_pathways:
+            grouped_pathways[ptype] = []
+        grouped_pathways[ptype].append(pathway_dict)
         pathways_data.append(pathway_dict)
 
-    return render_template('pathway_library.html', pathways=pathways_data)
+    return render_template('pathway_library.html', grouped_pathways=grouped_pathways, pathways=pathways_data) 
 
 
 @pathways_bp.route('/pathway_library/update_project/<int:project_id>', methods=['POST'])

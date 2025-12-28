@@ -11,8 +11,12 @@
     <div class="form-group">
       <label for="path">Path:</label>
       <select id="path" name="path">
-        {% for pathway in pathways %}
-        <option value="{{ pathway.abbr }}">{{ pathway.name }}</option>
+        {% for type, items in grouped_pathways.items() %}
+        <optgroup label="{{ type }}">
+          {% for item in items %}
+          <option value="{{ item.abbr }}">{{ item.name }}</option>
+          {% endfor %}
+        </optgroup>
         {% endfor %}
       </select>
     </div>

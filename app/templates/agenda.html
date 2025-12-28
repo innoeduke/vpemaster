@@ -364,6 +364,7 @@
     <script>
         // Pass Python data to global JS variables used by speech_modal.js
         var pathwayMap = {{ pathway_mapping|tojson|safe }};
+        var groupedPathways = {{ pathways|tojson|safe }};
     
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>

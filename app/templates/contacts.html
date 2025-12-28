@@ -50,13 +50,13 @@
 </div>
 
 <!-- Contact Tabs -->
-<div class="contacts-tabs" id="contactsTabs">
-  <div class="tab-item active" data-type="All">
-    All <span class="tab-count">{{ total_contacts }}</span>
+<div class="nav-tabs" id="contactsTabs">
+  <div class="nav-item active" data-type="All">
+    All <span class="tab-badge">{{ total_contacts }}</span>
   </div>
   {% for contact_type in contact_types %}
-  <div class="tab-item" data-type="{{ contact_type }}">
-    {{ contact_type }} <span class="tab-count">{{ type_counts[contact_type] }}</span>
+  <div class="nav-item" data-type="{{ contact_type }}">
+    {{ contact_type }} <span class="tab-badge">{{ type_counts[contact_type] }}</span>
   </div>
   {% endfor %}
 </div>

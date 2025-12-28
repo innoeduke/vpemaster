@@ -53,6 +53,26 @@ function populateDropdown(
 }
 
 /**
+ * Populates a <select> with <optgroup>s.
+ * @param {HTMLSelectElement} dropdown
+ * @param {Object} groupedData - { "Type": ["Item1", "Item2"] }
+ */
+function populateGroupedDropdown(dropdown, groupedData, { defaultOption }) {
+  dropdown.innerHTML = `<option value="">${defaultOption}</option>`;
+  for (const [groupLabel, items] of Object.entries(groupedData)) {
+    const optgroup = document.createElement("optgroup");
+    optgroup.label = groupLabel;
+    items.forEach((item) => {
+      // Handle both simple string lists and object lists (if needed in future)
+      const value = typeof item === 'object' ? item.name : item;
+      const text = typeof item === 'object' ? item.name : item;
+      optgroup.appendChild(new Option(text, value));
+    });
+    dropdown.appendChild(optgroup);
+  }
+}
+
+/**
  * Toggles the "Generic Speech" mode, hiding/showing pathway fields.
  */
 function toggleGeneric(isGeneric) {
@@ -241,12 +261,18 @@ function setupSpecialProjectModal(logData, { sessionType, workingPath }) {
   const isProject = logData.Project_ID == PROJECT_IDS[sessionType];
   modalElements.isProjectChk.checked = isProject;
 
-  const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
-  populateDropdown(modalElements.pathwaySelectDropdown, pathways, {
-    defaultOption: "-- Select Pathway --",
-    valueField: "name",
-    textField: "name",
-  });
+  if (typeof groupedPathways !== 'undefined' && groupedPathways) {
+    populateGroupedDropdown(modalElements.pathwaySelectDropdown, groupedPathways, {
+      defaultOption: "-- Select Pathway --"
+    });
+  } else {
+    const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
+    populateDropdown(modalElements.pathwaySelectDropdown, pathways, {
+      defaultOption: "-- Select Pathway --",
+      valueField: "name",
+      textField: "name",
+    });
+  }
   modalElements.pathwaySelectDropdown.value =
     logData.pathway || workingPath || "";
 
@@ -299,12 +325,18 @@ function setupSpeechModal(logData, { workingPath, nextProject }) {
   modalElements.projectSelectGroup.style.display = "block";
   modalElements.genericCheckbox.style.display = "block";
 
-  const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
-  populateDropdown(modalElements.pathwaySelect, pathways, {
-    defaultOption: "-- Select Pathway --",
-    valueField: "name",
-    textField: "name",
-  });
+  if (typeof groupedPathways !== 'undefined' && groupedPathways) {
+    populateGroupedDropdown(modalElements.pathwaySelect, groupedPathways, {
+      defaultOption: "-- Select Pathway --"
+    });
+  } else {
+    const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
+    populateDropdown(modalElements.pathwaySelect, pathways, {
+      defaultOption: "-- Select Pathway --",
+      valueField: "name",
+      textField: "name",
+    });
+  }
 
   let {
     pathway: pathwayToSelect,

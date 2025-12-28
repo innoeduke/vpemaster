@@ -1,45 +1,64 @@
 /* app/static/css/contacts.css */
 
-.contacts-tabs {
+/* --- Contact Page Specific Styles --- */
+
+.contact-action-bar {
   display: flex;
-  gap: 20px;
-  margin-bottom: 20px;
-  border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 0;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 1rem 0;
 }
 
-.tab-item {
-  padding: 10px 15px;
-  cursor: pointer;
-  font-weight: 500;
-  color: #4a5568;
-  position: relative;
-  transition: all 0.2s;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -2px;
+.stats-container {
+  display: flex;
+  gap: 1rem;
 }
 
-.tab-item:hover {
-  color: #2d3748;
+.stat-item {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 0.5rem;
+  text-align: center;
+  min-width: 100px;
 }
 
-.tab-item.active {
-  color: #007bff;
-  border-bottom-color: #007bff;
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
-.tab-count {
-  font-size: 0.8em;
-  background: #edf2f7;
-  padding: 2px 6px;
-  border-radius: 10px;
-  margin-left: 5px;
+.stat-label {
+  font-size: 0.8rem;
+  color: #666;
 }
 
-.tab-item.active .tab-count {
-  background: #ebf8ff;
-  color: #2b6cb0;
+.search-and-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
 }
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.contact-table-container {
+  display: flex;
+  justify-content: center;
+}
+
+#contactsTable {
+  margin: 0 auto;
+}
+
+/* Tabs: Use shared tabs structure with specific override for this page if needed */
+/* Since we are switching to shared .nav-tabs, we remove the old .contacts-tabs styles here */
+/* But we need to make sure the HTML uses the new classes */
 
 /* Participation Badges - Restoring original look using classes instead of inline */
 .participation-container {
@@ -79,78 +98,80 @@
   background-color: #feebc8;
   color: #000;
 }
+
 /* --- Mobile / Tablet Responsive Styles --- */
 @media (max-width: 992px) {
-    /* --- Contact Book Responsive Fixes --- */
-    .contact-action-bar,
-    .action-bar {
-        flex-direction: column;
-        align-items: stretch;
-    }
 
-    .stats-container {
-        justify-content: center;
-        margin-bottom: 1rem;
-    }
+  /* --- Contact Book Responsive Fixes --- */
+  .contact-action-bar,
+  .action-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-    .search-and-buttons {
-        flex-direction: column;
-        align-items: stretch;
-    }
+  .stats-container {
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
 
-    .search-container {
-        flex: 1;
-        min-width: unset;
-    }
+  .search-and-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-    .button-group {
-        width: 100%;
-        justify-content: center;
-    }
+  .search-container {
+    flex: 1;
+    min-width: unset;
+  }
 
-    /* --- Contacts Page Responsive Fixes --- */
-    #contactsTable {
-        display: block;
-        width: 100%;
-        overflow-x: auto;
-        /* Allow horizontal scrolling if needed */
-        -webkit-overflow-scrolling: touch;
-        /* Smooth scrolling on iOS */
-        font-size: 0.9em;
-    }
+  .button-group {
+    width: 100%;
+    justify-content: center;
+  }
 
-    #contactsTable th:nth-child(1),
-    #contactsTable td:nth-child(1) {
-        min-width: 150px;
-    }
+  /* --- Contacts Page Responsive Fixes --- */
+  #contactsTable {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    /* Allow horizontal scrolling if needed */
+    -webkit-overflow-scrolling: touch;
+    /* Smooth scrolling on iOS */
+    font-size: 0.9em;
+  }
 
-    #contactsTable th:nth-child(3),
-    /* Club column */
-    #contactsTable td:nth-child(3),
-    #contactsTable th:nth-child(4),
-    /* Current Path column */
-    #contactsTable td:nth-child(4),
-    #contactsTable th:nth-child(5),
-    /* Completed Paths column */
-    #contactsTable td:nth-child(5),
-    #contactsTable th:nth-child(6),
-    /* Next Project column */
-    #contactsTable td:nth-child(6) {
-        display: none;
-    }
+  #contactsTable th:nth-child(1),
+  #contactsTable td:nth-child(1) {
+    min-width: 150px;
+  }
 
-    #contactsTable th:nth-child(7),
-    /* Actions column */
-    #contactsTable td:nth-child(7) {
-        width: 80px;
-    }
+  #contactsTable th:nth-child(3),
+  /* Club column */
+  #contactsTable td:nth-child(3),
+  #contactsTable th:nth-child(4),
+  /* Current Path column */
+  #contactsTable td:nth-child(4),
+  #contactsTable th:nth-child(5),
+  /* Completed Paths column */
+  #contactsTable td:nth-child(5),
+  #contactsTable th:nth-child(6),
+  /* Next Project column */
+  #contactsTable td:nth-child(6) {
+    display: none;
+  }
 
-    #contactsTable th:last-child,
-    #contactsTable td:last-child {
-        min-width: 80px;
-    }
+  #contactsTable th:nth-child(7),
+  /* Actions column */
+  #contactsTable td:nth-child(7) {
+    width: 80px;
+  }
 
-    #contactsTable .action-links {
-        white-space: nowrap;
-    }
+  #contactsTable th:last-child,
+  #contactsTable td:last-child {
+    min-width: 80px;
+  }
+
+  #contactsTable .action-links {
+    white-space: nowrap;
+  }
 }

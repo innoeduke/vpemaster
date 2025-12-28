@@ -85,7 +85,17 @@ def roster():
                 break
 
     # 获取所有联系人用于表单下拉列表
+    # 获取所有联系人用于表单下拉列表
     contacts = Contact.query.order_by(Contact.Name).all()
+
+    from .models import Pathway
+    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    pathways = {}
+    for p in all_pathways:
+        ptype = p.type or "Other"
+        if ptype not in pathways:
+            pathways[ptype] = []
+        pathways[ptype].append(p.name)
 
     return render_template(
         'roster.html',
@@ -95,7 +105,8 @@ def roster():
         roster_entries=roster_entries,
         contacts=contacts,
         meeting_numbers=meeting_numbers,
-        next_unallocated_entry=next_unallocated_entry
+        next_unallocated_entry=next_unallocated_entry,
+        pathways=pathways
     )
 
 

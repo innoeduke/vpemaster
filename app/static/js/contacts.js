@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
   const table = document.getElementById("contactsTable");
   const searchInput = document.getElementById("searchInput");
   const clearBtn = document.getElementById("clear-searchInput");
-  const tabs = document.querySelectorAll(".tab-item");
+  const tabs = document.querySelectorAll(".nav-item");
 
   if (!table || !searchInput || !clearBtn) return;
 
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
   setupTableSorting("contactsTable");
 
   const filterTable = () => {
-    const activeTabItem = document.querySelector(".tab-item.active");
+    const activeTabItem = document.querySelector(".nav-item.active");
     if (!activeTabItem) return;
 
     const activeTab = activeTabItem.dataset.type;

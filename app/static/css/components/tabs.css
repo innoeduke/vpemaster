@@ -1,0 +1,58 @@
+/* --- Shared Tabs Component --- */
+.nav-tabs {
+	display: flex;
+	border-bottom: 2px solid #e2e8f0;
+	margin-bottom: 20px;
+	padding-bottom: 0;
+	gap: 10px;
+}
+
+.nav-item {
+	padding: 10px 15px;
+	cursor: pointer;
+	font-weight: 500;
+	color: #4a5568;
+	position: relative;
+	transition: all 0.2s;
+	border-bottom: 3px solid transparent;
+	border-top: none;
+	border-left: none;
+	border-right: none;
+	background: transparent;
+	font-size: 16px;
+	margin-bottom: -2px;
+	/* Overlap border */
+	font-family: 'Montserrat', sans-serif;
+}
+
+.nav-item:hover {
+	background-color: #f7fafc;
+	color: #2d3748;
+}
+
+.nav-item.active {
+	color: #772432;
+	border-bottom-color: #772432;
+	font-weight: bold;
+}
+
+.nav-item:focus {
+	outline: none;
+}
+
+/* Badge style for counts within tabs */
+.tab-badge {
+	font-size: 0.75em;
+	background: #edf2f7;
+	padding: 2px 8px;
+	border-radius: 12px;
+	margin-left: 6px;
+	color: #4a5568;
+	font-weight: normal;
+}
+
+.nav-item.active .tab-badge {
+	background: #fed7d7;
+	/* Light red/pink to match theme */
+	color: #742a2a;
+}

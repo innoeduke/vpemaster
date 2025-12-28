@@ -9,7 +9,7 @@ function openTab(evt, tabName) {
     tabcontent[i].style.display = "none";
   }
 
-  const tablinks = document.getElementsByClassName("tab-btn");
+  const tablinks = document.getElementsByClassName("nav-item");
   for (let i = 0; i < tablinks.length; i++) {
     tablinks[i].className = tablinks[i].className.replace(" active", "");
   }
@@ -206,7 +206,7 @@ function setupGlobalFilter(searchInputId, searchClearId, tabNavSelector) {
   searchClear.addEventListener("click", clearSearch);
 
   // Add listeners to all tab buttons to clear search on tab switch
-  tabNav.querySelectorAll(".tab-btn").forEach((btn) => {
+  tabNav.querySelectorAll(".nav-item").forEach((btn) => {
     btn.addEventListener("click", () => {
       // Use a short delay to allow the tab to switch *before* filtering
       setTimeout(() => {
@@ -489,7 +489,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupGlobalFilter(
     "global-settings-search",
     "clear-global-settings-search",
-    ".tab-nav"
+    ".nav-tabs"
   );
 
   // --- 4. Inline-Editable Table Setup ---

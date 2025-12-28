@@ -354,6 +354,7 @@
         // Pass Python data to global JS variables
         var allProjects = {{ projects|tojson|safe }};
         var pathwayMap = {{ pathway_mapping|tojson|safe }};
+        var groupedPathways = {{ pathways|tojson|safe }};
         var allPresentations = {{ presentations|tojson|safe }}; // Ensure presentations is passed from backend
         var presentationSeries = {{ presentation_series|tojson|safe }}; // Ensure presentation_series is passed
     </script>
