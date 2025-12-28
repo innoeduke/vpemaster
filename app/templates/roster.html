@@ -36,8 +36,8 @@
                 <thead>
                     <tr>
                         <th class="sortable" data-column-index="0">Order</th>
-                        <th class="sortable" data-column-index="1">Contact Name</th>
-                        <th class="sortable" data-column-index="2">Ticket Class</th>
+                        <th class="sortable" data-column-index="1">Name</th>
+                        <th class="sortable" data-column-index="2">Ticket</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -61,10 +61,41 @@
                         </td>
                         <td>
                             {% if c_type == 'Officer' %}
-                                Officer
+                                {% set icon_color_class = 'roster-color-officer' %}
+                            {% elif c_type == 'Member' %}
+                                {% set icon_color_class = 'roster-color-member' %}
+                            {% elif c_type == 'Guest' %}
+                                {% set icon_color_class = 'roster-color-guest' %}
                             {% else %}
-                                {{ c_type }} / {{ entry.ticket }}
+                                {% set icon_color_class = '' %}
                             {% endif %}
+
+                            {% if entry.ticket == 'Unpaid' %}
+                                {% set icon_color_class = 'roster-color-unpaid' %}
+                            {% endif %}
+
+                            {# Ticket Class Icon with Dynamic Color #}
+                            {% if entry.ticket == 'Early-bird' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-dove" title="Early-bird"></i></span>
+                            {% elif entry.ticket == 'Walk-in' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-walking" title="Walk-in"></i></span>
+                            {% elif entry.ticket == 'Role-taker' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-microphone" title="Role-taker"></i></span>
+                            {% elif entry.ticket == 'Coupon' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-tag" title="Coupon"></i></span>
+                            {% elif entry.ticket == 'Unpaid' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-exclamation-circle" title="Unpaid"></i></span>
+                            {% elif c_type == 'Officer' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-user-shield" title="Officer"></i></span>
+                            {% endif %}
+                            
+                            <span class="roster-text">
+                                {% if c_type == 'Officer' %}
+                                    Officer
+                                {% else %}
+                                    {{ entry.ticket }}
+                                {% endif %}
+                            </span>
                         </td>
                         <td>
                             <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} edit-entry" data-id="{{ entry.id }}" title="Edit" {% if entry.ticket == 'Cancelled' %}disabled{% endif %}>
