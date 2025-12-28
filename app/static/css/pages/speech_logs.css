@@ -416,3 +416,16 @@ speech-log-entry.card-type-speech {
     background-color: #f7fafc;
     border: 1px dashed #cbd5e0;
 }
+/* --- Mobile / Tablet Responsive Styles --- */
+@media (max-width: 992px) {
+    /* --- Speech Logs Filter Responsive Fixes --- */
+    .filters-container {
+        flex-direction: column;
+    }
+
+    #speech-logs-filter-form .filter-row,
+    #speech-logs-filter-form .search-group {
+        flex-direction: column;
+        width: 100%;
+    }
+}

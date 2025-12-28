@@ -600,3 +600,217 @@
     align-items: center;
     justify-content: center;
 }
+/* --- Mobile / Tablet Responsive Styles --- */
+@media (max-width: 992px) {
+
+    /* Hides the specified columns in edit mode on mobile */
+    .edit-mode-active #logs-table th.col-no,
+    .edit-mode-active #logs-table td.col-no,
+    .edit-mode-active #logs-table th.col-designation,
+    .edit-mode-active #logs-table td.col-designation,
+    .edit-mode-active #logs-table th.col-duration-min,
+    .edit-mode-active #logs-table td.col-duration-min {
+        display: none;
+    }
+
+    #edit-mode-buttons {
+        top: auto;
+        /* Unset the top position */
+        bottom: 15px;
+        /* Place it 15px from the bottom */
+        right: 15px;
+        /* Place it 15px from the right */
+    }
+
+    /* Make the Owner column wider on mobile */
+    .edit-mode-active #logs-table .col-owner {
+        width: 30% !important;
+        /* Increase width for better visibility */
+        min-width: 120px;
+        /* Ensure it has enough space */
+    }
+
+    .edit-mode-field {
+        max-width: 100%;
+    }
+
+    .edit-mode-active .meeting-edit-details {
+        justify-self: stretch;
+    }
+
+    /* --- Agenda Page Responsive Fixes --- */
+    .agenda-header-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        gap: 10px;
+    }
+
+    .agenda-header-info {
+        display: contents;
+    }
+
+    .club-info {
+        grid-row: 1;
+        text-align: center;
+    }
+
+    .agenda-header-logo {
+        grid-row: 2;
+    }
+
+    .agenda-header-logo img {
+        max-width: 50%;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    .meeting-title {
+        grid-row: 3;
+        margin: 10px 0 0 0;
+        text-align: center;
+    }
+
+    .subtitle {
+        grid-row: 4;
+        margin: 0;
+        text-align: center;
+    }
+
+    .agenda-header-info .video-icon-btn {
+        display: none;
+    }
+
+    .action-bar {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .action-bar-left {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    /* --- WOD Envelope Styling (replaces sticky note) --- */
+    .action-bar-left .wod-display {
+        background: #f0e5d8;
+        /* Envelope color */
+        width: 157px;
+        height: 90px;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.5s ease-in-out;
+        order: 1;
+        position: relative;
+        /* for absolutely positioned children */
+        margin-top: -60px;
+        /* Move it higher */
+        margin-bottom: 80px;
+    }
+
+    .action-bar-left .inline-filter-group {
+        order: 2;
+    }
+
+    .wod-display .envelope-flap {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        background: #e9d9c6;
+        /* Flap color */
+        transform-origin: top;
+        transition: transform 0.5s ease-in-out;
+        clip-path: polygon(0 0, 100% 0, 50% 60%);
+    }
+
+    .wod-display .letter {
+        position: absolute;
+        top: 0;
+        width: 90%;
+        height: 90%;
+        background: white;
+        left: 5%;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.5s 0.2s ease-in-out;
+        z-index: -1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 15px;
+        box-sizing: border-box;
+        opacity: 0;
+        transform: translateY(0);
+        visibility: hidden;
+    }
+
+    /* Open State */
+    .wod-display.open {
+        transform: translateY(80px);
+        /* Move down to make space for letter */
+    }
+
+    .wod-display.open .envelope-flap {
+        transform: rotateX(180deg);
+        z-index: -2;
+    }
+
+    .wod-display.open .letter {
+        z-index: 1;
+        opacity: 1;
+        transform: translateY(-100%);
+        visibility: visible;
+    }
+
+    .wod-display label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.88em;
+        color: #555;
+        font-family: 'Georgia', serif;
+    }
+
+    .wod-display span {
+        font-size: 1.76em;
+        font-family: 'Indie Flower', cursive;
+        /* A more handwritten font */
+        color: #333;
+        display: block;
+        /* Ensure it takes its own line */
+        text-align: center;
+    }
+
+    .meeting-status-display {
+        display: inline-flex;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.9em;
+        align-items: center;
+        color: #333;
+        gap: 8px;
+    }
+
+    .action-bar .button-group {
+        margin-top: 15px;
+        justify-content: center;
+        flex-wrap: wrap;
+        max-width: 100%;
+    }
+
+    /* Reduce font size in agenda table for mobile */
+    .edit-mode-active #logs-table th,
+    .edit-mode-active #logs-table td {
+        font-size: 0.8em;
+        /* Make font smaller in edit mode */
+    }
+
+    #logs-table th,
+    #logs-table td {
+        font-size: 0.9em;
+    }
+}

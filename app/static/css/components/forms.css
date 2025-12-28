@@ -252,3 +252,23 @@
   #contactsTable {
     margin: 0 auto;
   }
+
+/* --- Mobile / Tablet Responsive Styles --- */
+@media (max-width: 992px) {
+    /* Adjust form tables for mobile */
+    .form-table {
+        margin-top: 0;
+    }
+
+    .form-table tr {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-table input[type="text"],
+    .form-table input[type="password"],
+    .form-table input[type="number"],
+    .form-table select {
+        width: 100%;
+    }
+}

@@ -130,3 +130,13 @@
   color: #999; /* Muted text for hidden rows */
 }
 
+
+/* --- Mobile / Tablet Responsive Styles --- */
+@media (max-width: 992px) {
+    /* --- Settings Pag Respoensive Fixes --- */
+    .global-search-bar {
+        width: 100%;
+        /* Full width on mobile */
+        min-width: unset;
+    }
+}

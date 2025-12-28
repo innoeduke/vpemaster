@@ -72,3 +72,36 @@
 .path-pi { background-color: #50E3C2; } /* Teal */
 .path-pm { background-color: #E55353; } /* Muted Red/Coral */
 .path-vc { background-color: #9013FE; } /* Soft Purple */
+/* --- Mobile / Tablet Responsive Styles --- */
+@media (max-width: 992px) {
+    /* --- Pathway Library Responsive Fixes --- */
+    #pathway-library-container .filters-container {
+        flex-direction: column;
+        /* Stack the main filter container */
+    }
+
+    .filters-container .form-group {
+        flex-basis: auto;
+        /* Reset the base size of filter groups */
+        width: 100%;
+        /* Make each filter group take up the full width */
+    }
+
+    .path-codes {
+        flex-wrap: wrap;
+        /* Allow wrapping */
+        justify-content: flex-start;
+        /* Align items to the start */
+    }
+
+    .path-code-box {
+        /*
+          - flex-grow: 1 allows items to grow if there's extra space.
+          - flex-shrink: 0 prevents items from shrinking.
+          - flex-basis: calc(33.333% - 10px) is the key. It sets the base width
+            of each box to one-third of the container, minus a bit for the gap,
+            forcing exactly three items per row.
+        */
+        flex: 1 0 calc(33.333% - 10px);
+    }
+}

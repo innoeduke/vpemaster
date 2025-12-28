@@ -79,3 +79,78 @@
   background-color: #feebc8;
   color: #000;
 }
+/* --- Mobile / Tablet Responsive Styles --- */
+@media (max-width: 992px) {
+    /* --- Contact Book Responsive Fixes --- */
+    .contact-action-bar,
+    .action-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .stats-container {
+        justify-content: center;
+        margin-bottom: 1rem;
+    }
+
+    .search-and-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .search-container {
+        flex: 1;
+        min-width: unset;
+    }
+
+    .button-group {
+        width: 100%;
+        justify-content: center;
+    }
+
+    /* --- Contacts Page Responsive Fixes --- */
+    #contactsTable {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        /* Allow horizontal scrolling if needed */
+        -webkit-overflow-scrolling: touch;
+        /* Smooth scrolling on iOS */
+        font-size: 0.9em;
+    }
+
+    #contactsTable th:nth-child(1),
+    #contactsTable td:nth-child(1) {
+        min-width: 150px;
+    }
+
+    #contactsTable th:nth-child(3),
+    /* Club column */
+    #contactsTable td:nth-child(3),
+    #contactsTable th:nth-child(4),
+    /* Current Path column */
+    #contactsTable td:nth-child(4),
+    #contactsTable th:nth-child(5),
+    /* Completed Paths column */
+    #contactsTable td:nth-child(5),
+    #contactsTable th:nth-child(6),
+    /* Next Project column */
+    #contactsTable td:nth-child(6) {
+        display: none;
+    }
+
+    #contactsTable th:nth-child(7),
+    /* Actions column */
+    #contactsTable td:nth-child(7) {
+        width: 80px;
+    }
+
+    #contactsTable th:last-child,
+    #contactsTable td:last-child {
+        min-width: 80px;
+    }
+
+    #contactsTable .action-links {
+        white-space: nowrap;
+    }
+}
