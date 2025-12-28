@@ -5,7 +5,7 @@
     margin: 20px auto;
 }
 
-h1 {
+.booking-container h1 {
     text-align: center;
     margin-bottom: 30px;
 }
@@ -658,6 +658,7 @@ h1 {
         border: none;
     }
 }
+
 /* --- Mobile / Tablet Responsive Styles --- */
 @media (max-width: 992px) {
 
