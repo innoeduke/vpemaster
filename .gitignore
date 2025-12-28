@@ -5,3 +5,5 @@ instance/
 venv/
 __pycache__/
 .py[cod]
+app/static/css/packed.css
+.webassets-cache/
