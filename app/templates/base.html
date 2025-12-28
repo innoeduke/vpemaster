@@ -12,33 +12,12 @@
       type="image/x-icon"
       href="{{ url_for('static', filename='icons/favicon.ico') }}"
     />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/core/base.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/core/navigation.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/components/forms.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/components/tables.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/components/modals.css') }}"
-    />
+    {% assets "css_all" %}
+    <link rel="stylesheet" href="{{ ASSET_URL }}">
+    {% endassets %}
     
     {% block head_extra %}{% endblock %}
     
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/core/responsive.css') }}"
-    />
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}"
