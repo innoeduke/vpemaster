@@ -100,8 +100,15 @@
 
         {% if grouped_logs %}
             {% for level, logs in grouped_logs.items() %}
-                <h2 class="level-heading" onclick="toggleLevel('{{ level }}')">
-                    Level {{ level }}
+                <h2 class="level-heading {% if level|int in completed_levels %}completed{% endif %}" onclick="toggleLevel('{{ level }}')">
+                    <div style="display: flex; align-items: center;">
+                        Level {{ level }}
+                        {% if level|int in completed_levels %}
+                            <div class="level-completed-badge">
+                                <i class="fas fa-trophy"></i> Completed
+                            </div>
+                        {% endif %}
+                    </div>
                     <i class="fas fa-chevron-down caret-icon" id="caret-{{ level }}"></i>
                 </h2>
                 

@@ -1,5 +1,7 @@
 function setupSearch(inputId, containerSelector, itemSelector, textSelector) {
     const searchInput = document.getElementById(inputId);
+    if (!searchInput) return; // Exit if input element doesn't exist
+
     const clearButton = document.getElementById(`clear-${inputId}`);
     const containers = document.querySelectorAll(containerSelector);
 

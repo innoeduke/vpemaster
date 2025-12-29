@@ -1,7 +1,7 @@
 # innoeduke/vpemaster/vpemaster-dev0.3/speech_logs_routes.py
 from flask import Blueprint, jsonify, render_template, request, session, current_app
 from . import db
-from .models import SessionLog, Contact, Project, User, SessionType, Media, Role, Pathway, PathwayProject, LevelRole
+from .models import SessionLog, Contact, Project, User, SessionType, Media, Role, Pathway, PathwayProject, LevelRole, Achievement
 from .auth.utils import login_required, is_authorized
 from flask_login import current_user
 
@@ -378,6 +378,21 @@ def show_speech_logs():
         } for r in all_roles_db
     }
 
+    # Fetch completed levels for the speaker and current pathway (or selected pathway)
+    completed_levels = set()
+    target_path_name = selected_pathway
+    
+    if not target_path_name and speaker_user and speaker_user.contact and speaker_user.contact.Current_Path:
+        target_path_name = speaker_user.contact.Current_Path
+        
+    if speaker_id and speaker_id != -1 and target_path_name:
+        achievements = Achievement.query.filter_by(
+            contact_id=int(speaker_id),
+            path_name=target_path_name,
+            achievement_type='level-completion'
+        ).all()
+        completed_levels = {a.level for a in achievements}
+
     return render_template(
         'speech_logs.html',
         grouped_logs=sorted_grouped_logs,
@@ -388,6 +403,7 @@ def show_speech_logs():
         speakers=speakers,
         pathways=grouped_pathways,
         levels=range(1, 6),
+        completed_levels=completed_levels, # Pass to template
         projects=projects_data,  # This is used for allProjects in JS
         series_initials=SERIES_INITIALS,  # Pass initials map for template
         today_date=today_date,

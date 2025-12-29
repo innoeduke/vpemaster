@@ -68,6 +68,34 @@
     align-items: center;
 }
 
+.level-heading.completed {
+    border-bottom-color: #28a745;
+    background: linear-gradient(to right, #f0fff4, #fff);
+    padding: 10px 15px;
+    border-radius: 6px;
+    border-left: 5px solid #28a745;
+}
+
+.level-completed-badge {
+    background-color: #28a745;
+    color: white;
+    font-size: 0.7em;
+    padding: 6px 15px;
+    border-radius: 50px;
+    font-weight: 600;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 3px 6px rgba(40, 167, 69, 0.2);
+    letter-spacing: 0.5px;
+    margin-left: 15px;
+}
+
+.level-completed-badge i {
+    font-size: 1.1em;
+}
+
 .caret-icon {
     font-size: 0.8em;
     transition: transform 0.3s ease;
@@ -416,8 +444,10 @@ speech-log-entry.card-type-speech {
     background-color: #f7fafc;
     border: 1px dashed #cbd5e0;
 }
+
 /* --- Mobile / Tablet Responsive Styles --- */
 @media (max-width: 992px) {
+
     /* --- Speech Logs Filter Responsive Fixes --- */
     .filters-container {
         flex-direction: column;
