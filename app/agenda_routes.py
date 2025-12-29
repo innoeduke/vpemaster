@@ -1233,7 +1233,7 @@ def create_from_template():
             Subtitle=subtitle,
             WOD=wod,
             media_id=new_media_id,
-            status='not started'  # 添加status字段的默认值
+            status='unpublished'  # Set default status to unpublished
         )
         db.session.add(meeting)
     else:
@@ -1245,9 +1245,8 @@ def create_from_template():
         meeting.Subtitle = subtitle
         meeting.WOD = wod
         meeting.media_id = new_media_id
-        # 如果status字段为None，则设置默认值
         if meeting.status is None:
-            meeting.status = 'not started'
+            meeting.status = 'unpublished'
 
     # --- 4. Process Agenda Template ---
     SessionLog.query.filter_by(Meeting_Number=meeting_number).delete()
