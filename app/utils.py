@@ -405,7 +405,7 @@ def get_meetings_by_status(limit_past=8, columns=None):
     active_statuses = ['not started', 'running']
     try:
         from flask_login import current_user
-        if current_user.is_authenticated and current_user.Role == 'Admin':
+        if current_user.is_authenticated and current_user.is_officer:
             active_statuses.append('unpublished')
     except Exception:
         # Not in a request context or other issue
@@ -449,7 +449,7 @@ def get_default_meeting_number():
     upcoming_priority_statuses = ['not started']
     try:
         from flask_login import current_user
-        if current_user.is_authenticated and current_user.Role == 'Admin':
+        if current_user.is_authenticated and current_user.is_officer:
             upcoming_priority_statuses.append('unpublished')
     except Exception:
         pass

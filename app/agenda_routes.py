@@ -433,10 +433,10 @@ def agenda():
     if selected_meeting_num:
         logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_num)
         
-        # Security check: Only admins can see unpublished meetings
+        # Security check: Only admins/officers can see unpublished meetings
         if selected_meeting and selected_meeting.status == 'unpublished':
             from flask_login import current_user
-            if not (current_user.is_authenticated and current_user.Role == 'Admin'):
+            if not (current_user.is_authenticated and current_user.is_officer):
                 from flask import abort
                 abort(403) # Forbidden
 
