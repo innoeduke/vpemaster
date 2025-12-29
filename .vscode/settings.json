@@ -2,7 +2,7 @@
 	"codingcopilot.autoRun": true,
 	"codingcopilot.modelDocumentLanguage": "English",
 	"files.associations": {
-		"*.html": "jinja-html"
+		"*.html": "html"
 	},
 	"emmet.includeLanguages": {
 		"jinja-html": "html"

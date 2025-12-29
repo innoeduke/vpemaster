@@ -471,9 +471,40 @@
 
 {% include '_session_modal.html' %} {% include '_role_modal.html' %}
 
+<!-- Mobile Warning Modal -->
+<div id="mobile-settings-warning-modal" class="modal" style="display: none; background-color: rgba(0,0,0,0.9);">
+    <div class="modal-content" style="width: 90%; max-width: 400px; text-align: center;">
+        <!-- No close button -->
+        <h1 style="color: #004165; margin-bottom: 25px;">Desktop Required</h1>
+        <div style="font-size: 48px; color: #d9534f; margin-bottom: 20px;">
+            <i class="fas fa-desktop"></i>
+        </div>
+        <p style="margin-bottom: 25px; font-size: 1.1em; line-height: 1.5;">
+            System Settings are not available on mobile devices. <br>
+            <br>
+            Please access this page from a PC to configure settings.
+        </p>
+        <a href="{{ url_for('agenda_bp.agenda') }}" class="btn btn-primary" style="width: 90%; display: block; text-decoration: none; height: 40px; line-height: 40px;">
+            Return to Agenda
+        </a>
+    </div>
+</div>
+
 <script>
   var ROLES_DATA = {{ roles|tojson }};
 </script>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if mobile (width < 768px matches typical tablet/mobile breakpoint)
+        if (window.innerWidth < 768) {
+            const modal = document.getElementById('mobile-settings-warning-modal');
+            modal.style.display = 'flex';
+            
+            // Prevent scrolling on body
+            document.body.style.overflow = 'hidden';
+        }
+    });
+</script>
 {% endblock %}
