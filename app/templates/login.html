@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
     {% assets "css_all" %}
     <link rel="stylesheet" href="{{ ASSET_URL }}">
     {% endassets %}
@@ -17,9 +20,9 @@
       <img
         src="{{ url_for('static', filename='images/SHLTMC-logo.png') }}"
         alt="SHLTMC Logo"
-        style="width: 150px; margin-bottom: 20px"
+        style="width: 300px; margin-bottom: 20px"
       />
-      <h1>Meeting Manager Login</h1>
+      <h1>Meeting Manager</h1>
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
       messages %}
       <div class="alert-container">
