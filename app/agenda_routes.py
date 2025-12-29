@@ -1551,7 +1551,36 @@ def update_meeting_status(meeting_number):
         # Tally votes when meeting finishes
         _tally_votes_and_set_winners(meeting)
     elif current_status == 'finished':
-        new_status = 'cancelled'
+        # Full deletion flow as requested
+        try:
+            # 1. Delete Waitlist entries associated with this meeting's session logs
+            session_log_ids = [log.id for log in meeting.session_logs]
+            if session_log_ids:
+                from .models import Waitlist
+                Waitlist.query.filter(Waitlist.session_log_id.in_(session_log_ids)).delete(synchronize_session=False)
+
+            # 2. Delete SessionLog entries (cascades to Media via models.py definition)
+            for log in meeting.session_logs:
+                db.session.delete(log)
+
+            # 3. Delete Vote entries
+            from .models import Vote
+            Vote.query.filter_by(meeting_number=meeting_number).first()
+            Vote.query.filter_by(meeting_number=meeting_number).delete(synchronize_session=False)
+
+            # 4. Handle Meeting's Media
+            if meeting.media_id:
+                media_to_delete = meeting.media
+                meeting.media_id = None # Break the link first
+                db.session.delete(media_to_delete)
+
+            # 5. Delete the Meeting itself
+            db.session.delete(meeting)
+            db.session.commit()
+            return jsonify(success=True, deleted=True)
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(success=False, message=f"Deletion failed: {str(e)}"), 500
 
     meeting.status = new_status
 

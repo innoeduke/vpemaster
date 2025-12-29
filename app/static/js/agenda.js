@@ -491,7 +491,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (currentStatus === "finished") {
       if (
         !confirm(
-          "Are you sure you want to cancel this meeting? This action cannot be undone."
+          "Are you sure you want to PERMANENTLY DELETE this meeting and all its records (logs, votes, media)? This action cannot be undone."
         )
       ) {
         return;
@@ -507,6 +507,11 @@ document.addEventListener("DOMContentLoaded", () => {
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
+          if (data.deleted) {
+            // alert("Meeting successfully deleted.");
+            window.location.href = "/agenda"; // Redirect to refresh the list
+            return;
+          }
           const newStatus = data.new_status;
           button.dataset.currentStatus = newStatus; // Update status
 
