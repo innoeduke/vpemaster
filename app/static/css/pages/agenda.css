@@ -312,6 +312,7 @@
     color: #555;
     font-size: 0.9em;
     margin: 0;
+    font-family: 'Montserrat', sans-serif;
 }
 
 .action-bar-right {
@@ -338,7 +339,7 @@
 .action-bar-left #meeting-filter {
     width: auto;
     /* Allow it to be its natural size */
-    max-width: 150px;
+    max-width: 300px;
     /* Give it a reasonable max width */
     flex-grow: 0;
     flex-shrink: 1;
@@ -796,28 +797,51 @@
     .action-bar-left {
         flex-direction: column;
         align-items: center;
-        gap: 10px;
+        gap: 15px;
+        width: 100%;
+        /* Ensure full width for centering */
     }
 
-    /* --- WOD Envelope Styling (replaces sticky note) --- */
-    .action-bar-left .wod-display {
-        background: #f0e5d8;
-        /* Envelope color */
-        width: 157px;
-        height: 90px;
-        cursor: pointer;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        transition: transform 0.5s ease-in-out;
-        order: 1;
+    .action-bar-left #meeting-filter {
+        max-width: 100% !important;
+        /* Prevent it from exceeding screen width */
+        width: auto !important;
+        /* Let it size to content, not screen width */
+        min-width: 200px;
+        /* Ensure readability but not forced breadth */
+    }
+
+    .wod-display {
+        margin-top: 10px;
+        /* Add space between manager/filter and envelope */
+        /* Ensure it doesn't overlap */
         position: relative;
-        /* for absolutely positioned children */
-        margin-top: -60px;
-        /* Move it higher */
-        margin-bottom: 80px;
+        z-index: 1;
+    }
+
+    .action-bar-left-content {
+        align-items: center;
+        width: 100%;
+        /* Full width for content */
+    }
+
+    /* Override any specific positioning/margins on the WOD display for mobile */
+    .action-bar-left .wod-display {
+        margin: 15px 0 0 0 !important;
+        /* Space above */
+        order: unset !important;
+        /* Reset order */
+        /* Reset positioning */
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        transform: none !important;
     }
 
     .action-bar-left .inline-filter-group {
-        order: 2;
+        order: unset !important;
+        width: 100%;
+        justify-content: center;
     }
 
     .wod-display .envelope-flap {

@@ -217,7 +217,8 @@ def _get_processed_logs_data(selected_meeting_num):
             orm.joinedload(Meeting.best_evaluator),
             orm.joinedload(Meeting.best_speaker),
             orm.joinedload(Meeting.best_role_taker),
-            orm.joinedload(Meeting.media)
+            orm.joinedload(Meeting.media),
+            orm.joinedload(Meeting.manager)
         ).filter(Meeting.Meeting_Number == selected_meeting_num).first()
 
     # Create a simple set of (award_category, contact_id) tuples for quick lookups.
@@ -405,7 +406,7 @@ def agenda():
     # --- Determine Selected Meeting ---
     all_meetings = get_meetings_by_status(limit_past=8)
 
-    meeting_numbers = [m.Meeting_Number for m in all_meetings]
+    meeting_numbers = [(m.Meeting_Number, m.Meeting_Date) for m in all_meetings]
 
     selected_meeting_str = request.args.get('meeting_number')
     selected_meeting_num = None
@@ -425,7 +426,7 @@ def agenda():
              pass # Found a default
         elif meeting_numbers:
             # Fallback to the most recent existing meeting (highest meeting number)
-            selected_meeting_num = meeting_numbers[0]
+            selected_meeting_num = meeting_numbers[0][0]
 
     # --- Use Helper to Get Processed Data ---
     logs_data = []
