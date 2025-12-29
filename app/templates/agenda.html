@@ -72,6 +72,14 @@
                            value="{{ selected_meeting.media.url if selected_meeting and selected_meeting.media else '' }}" 
                            placeholder="Enter Meeting Video URL (https://...)">
                 </div>
+                <!-- GE Mode Select (Moved from Action Bar) -->
+                <div class="meta-item" id="ge-style-toggle" style="display: none;">
+                    <span><strong>GE Mode:</strong></span>
+                    <select id="ge-style-select" class="edit-mode-field" data-current-style="{{ selected_meeting.GE_Style if selected_meeting else '' }}">
+                        <option value="One shot" {% if selected_meeting and selected_meeting.GE_Style == 'One shot' %}selected{% endif %}>Traditional (5m)</option>
+                        <option value="Multiple shots" {% if selected_meeting and selected_meeting.GE_Style == 'Multiple shots' %}selected{% endif %}>Distributed (1m+3m)</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>
@@ -109,13 +117,7 @@
             </div>
             {% endif %}
             
-            <div id="ge-style-toggle" class="inline-filter-group" style="display: none;">
-                <label for="ge-style-select">GE Style:</label>
-                <select id="ge-style-select" data-current-style="{{ selected_meeting.GE_Style if selected_meeting else '' }}">
-                    <option value="One shot" {% if selected_meeting and selected_meeting.GE_Style == 'One shot' %}selected{% endif %}>One shot</option>
-                    <option value="Multiple shots" {% if selected_meeting and selected_meeting.GE_Style == 'Multiple shots' %}selected{% endif %}>Multiple shots</option>
-                </select>
-            </div>
+            <!-- Moved GE Style Toggle to meeting-edit-details -->
         </div>
         <div class="action-bar-right">
             <div class="button-group" id="view-mode-buttons">
@@ -343,8 +345,8 @@
                         <td><label for="ge_style">GE Style:</label></td>
                         <td>
                             <select id="ge_style" name="ge_style" required>
-                                <option value="Multiple shots">Multiple shots</option>
-                                <option value="One shot" selected>One shot</option>
+                                <option value="Multiple shots">Distributed (1m+3m)</option>
+                                <option value="One shot" selected>Traditional (5m)</option>
                             </select>
                         </td>
                     </tr>

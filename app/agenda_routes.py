@@ -639,10 +639,13 @@ def _get_all_speech_details(logs_data, pathway_mapping):
                     proj_code = ""
 
             # Determine project purpose string
-            if pp and pp.level:
+            # Prioritize the Purpose field from the DB if available
+            if project.Purpose:
+                project_purpose = project.Purpose
+            elif pp and pp.level:
                  project_purpose = f"Level {pp.level} - {project.Project_Name}"
             else:
-                 project_purpose = project.Purpose
+                 project_purpose = ""
 
             # Use project duration from DB
             duration_str = f"[{project.Duration_Min}'-{project.Duration_Max}']"
@@ -671,7 +674,6 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
 
     start_time = log.Start_Time.strftime('%H:%M') if log.Start_Time else ''
 
-    SERIES_INITIALS = current_app.config['SERIES_INITIALS']
     session_title_str = log.Session_Title or (
         session_type.Title if session_type else '')
     project_code_str = None
@@ -956,13 +958,13 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
         speaker_media_url = med.url if med else ''
 
         # Get project code if available - using the helper function
+        # Get project code if available - using the helper function
         project_code_str = ""
-        if contact and contact.Current_Path and log.Project_ID:
-            pathway_abbr = pathway_mapping.get(contact.Current_Path)
-            if pathway_abbr:
-                # Use the helper function to get project code with path prefix
-                project_code_str = project_id_to_code(
-                    log.Project_ID, pathway_abbr)
+        context_path = contact.Current_Path if contact else None
+        if proj:
+             code = proj.get_code(context_path)
+             if code:
+                 project_code_str = code
 
         # Find the evaluator data from the map using the speaker's name as the key
         # The evaluator name returned already includes the (Guest) tag if applicable
