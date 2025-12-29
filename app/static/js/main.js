@@ -242,8 +242,9 @@ document.addEventListener("DOMContentLoaded", function () {
  * @param {HTMLTableElement} table The table to sort
  * @param {number} columnIndex The index of the column to sort
  * @param {boolean} asc Whether to sort in ascending order
+ * @param {string|null} sortType Optional explicit sort type ('numeric', 'text', 'checkbox')
  */
-function sortTableByColumn(table, columnIndex, asc = true) {
+function sortTableByColumn(table, columnIndex, asc = true, sortType = null) {
   const tbody = table.querySelector("tbody");
   const rows = Array.from(tbody.querySelectorAll("tr"));
   const direction = asc ? 1 : -1;
@@ -251,8 +252,9 @@ function sortTableByColumn(table, columnIndex, asc = true) {
   // Check column type based on the first data cell
   const firstCell =
     rows[0] && rows[0].querySelector(`td:nth-child(${columnIndex + 1})`);
-  let colType = "text"; // Default
-  if (firstCell) {
+  let colType = sortType || "text"; // Use provided type or default to text
+
+  if (!sortType && firstCell) {
     const firstCellCheckbox = firstCell.querySelector('input[type="checkbox"]');
     const firstCellText = firstCell.textContent.trim();
 
@@ -267,6 +269,11 @@ function sortTableByColumn(table, columnIndex, asc = true) {
     const aCell = a.querySelector(`td:nth-child(${columnIndex + 1})`);
     const bCell = b.querySelector(`td:nth-child(${columnIndex + 1})`);
     if (!aCell || !bCell) return 0;
+
+    // Check for custom sort value
+    if (aCell.dataset.sort !== undefined && bCell.dataset.sort !== undefined) {
+      return aCell.dataset.sort.localeCompare(bCell.dataset.sort) * direction;
+    }
 
     switch (colType) {
       case "checkbox":
@@ -309,9 +316,10 @@ function setupTableSorting(tableId) {
       const columnIndex = parseInt(headerCell.dataset.columnIndex, 10);
       const currentDir = headerCell.dataset.sortDir;
       const newDir = currentDir === "asc" ? "desc" : "asc";
+      const sortType = headerCell.dataset.sortType || null;
 
       if (typeof sortTableByColumn === "function") {
-        sortTableByColumn(table, columnIndex, newDir === "asc");
+        sortTableByColumn(table, columnIndex, newDir === "asc", sortType);
       } else {
         console.error(
           "sortTableByColumn function not found. Was main.js loaded?"

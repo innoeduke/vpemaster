@@ -116,6 +116,7 @@ def show_contacts():
         best_tt = best_tt_map.get(c.id, 0)
         other_roles = contact_other_role_count.get(c.id, 0)
         
+        c.tt_count = tt  # Expose for frontend display
         c.is_qualified = check_membership_qualification(tt, best_tt, other_roles)
 
     total_contacts = len(contacts)

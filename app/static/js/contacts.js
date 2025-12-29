@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     rows.forEach((row) => {
       const rowType = row.dataset.type;
-      const typeMatch = activeTab === "All" || rowType === activeTab;
+      const typeMatch = rowType === activeTab;
 
       let rowText = "";
       row.querySelectorAll("td:not(:last-child)").forEach((cell) => {

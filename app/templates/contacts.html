@@ -51,11 +51,8 @@
 
 <!-- Contact Tabs -->
 <div class="nav-tabs" id="contactsTabs">
-  <div class="nav-item active" data-type="All">
-    All <span class="tab-badge">{{ total_contacts }}</span>
-  </div>
   {% for contact_type in contact_types %}
-  <div class="nav-item" data-type="{{ contact_type }}">
+  <div class="nav-item {% if loop.first %}active{% endif %}" data-type="{{ contact_type }}">
     {{ contact_type }} <span class="tab-badge">{{ type_counts[contact_type] }}</span>
   </div>
   {% endfor %}
@@ -65,15 +62,14 @@
   <table id="contactsTable">
     <thead>
       <tr>
-        <th class="sortable" data-column-index="0">Name</th>
-        <th class="sortable" data-column-index="1">Type</th>
-        <th class="sortable" data-column-index="2">Club</th>
-        <th class="sortable" data-column-index="3">Participation</th>
-        <th class="sortable" data-column-index="4">Credentials</th>
-        <th class="sortable" data-column-index="5">Completed Paths</th>
-        <th class="sortable" data-column-index="6">Next Project</th>
+        <th class="sortable" data-column-index="0" data-sort-type="string">Name</th>
+        <th class="sortable" data-column-index="1" data-sort-type="string">Club</th>
+        <th class="sortable" data-column-index="2" data-sort-type="string">Participation</th>
+        <th class="sortable" data-column-index="3" data-sort-type="string">Credentials</th>
+        <th class="sortable" data-column-index="4" data-sort-type="string">Completed Paths</th>
+        <th class="sortable" data-column-index="5" data-sort-type="string">Next Project</th>
         {% if is_authorized('CONTACT_BOOK_EDIT') %}
-        <th class="action-header" data-column-index="7">Actions</th>
+        <th class="action-header" data-column-index="6">Actions</th>
         {% endif %}
       </tr>
     </thead>
@@ -86,13 +82,16 @@
           <sup class="dtm-superscript">DTM</sup>
           {% endif %}
         </td>
-        <td>{{ contact.Type if contact.Type else '-' }}</td>
         <td>{{ contact.Club if contact.Club else '-' }}</td>
-        <td data-sort="{{ '1' if contact.is_qualified else '0' }}_{{ '%03d'|format(contact.role_count) }}_{{ '%03d'|format(contact.attendance_count) }}_{{ '%03d'|format(contact.award_count) }}">
+        <td data-sort="{{ '1' if contact.is_qualified else '0' }}_{{ '%03d'|format(contact.tt_count) }}_{{ '%03d'|format(contact.role_count) }}_{{ '%03d'|format(contact.attendance_count) }}_{{ '%03d'|format(contact.award_count) }}">
             <div class="participation-container">
                 {% if contact.is_qualified %}
                 <i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>
                 {% endif %}
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
+                   title="Topic Speeches" class="participation-badge badge-roles">
+                     <i class="fas fa-comment"></i> {{ contact.tt_count }}
+                </a>
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
                    title="Roles Taken" class="participation-badge badge-roles">
                      <i class="fas fa-user-tag"></i> {{ contact.role_count }}
