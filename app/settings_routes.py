@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, reques
 from .auth.utils import login_required, is_authorized
 from flask_login import current_user
 
-from .models import SessionType, User, LevelRole, Role
+from .models import SessionType, User, LevelRole, Role, Achievement, Contact
 from . import db
 from .utils import load_all_settings, get_excomm_team
 import os
@@ -42,7 +42,11 @@ def settings():
     all_users = User.query.order_by(User.Username.asc()).all()
     roles_query = Role.query.order_by(Role.name.asc()).all()
     roles = [{'id': role.id, 'name': role.name} for role in roles_query]
-    return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, general_settings=general_settings, roles=roles, roles_query=roles_query, excomm_team=excomm_team)
+    
+    # Achievements data
+    achievements = Achievement.query.join(Contact).order_by(Achievement.issue_date.desc()).all()
+
+    return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, general_settings=general_settings, roles=roles, roles_query=roles_query, excomm_team=excomm_team, achievements=achievements)
 
 
 

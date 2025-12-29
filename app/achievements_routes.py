@@ -15,7 +15,8 @@ def show_achievements():
 
     achievements = Achievement.query.join(Contact).order_by(Achievement.issue_date.desc()).all()
     
-    return render_template('achievements.html', achievements=achievements)
+    # Redirect to settings page with achievements tab
+    return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 
 @achievements_bp.route('/achievement/form', defaults={'id': None}, methods=['GET', 'POST'])
 @achievements_bp.route('/achievement/form/<int:id>', methods=['GET', 'POST'])
@@ -23,7 +24,7 @@ def show_achievements():
 def achievement_form(id):
     if not is_authorized('ACHIEVEMENTS_EDIT'):
         flash("You don't have permission to perform this action.", 'error')
-        return redirect(url_for('achievements_bp.show_achievements'))
+        return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 
     achievement = None
     if id:
@@ -71,7 +72,7 @@ def achievement_form(id):
             # But standard pattern here seems to be redirecting which resets form logic or just re-rendering.
             # Adjusting to re-render might be better to keep data, but simpler to redirect for "cancellation" as requested.
             # User said "cancelled the submission".
-            return redirect(url_for('achievements_bp.show_achievements'))
+            return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 
         if not achievement:
             achievement = Achievement()
@@ -91,7 +92,7 @@ def achievement_form(id):
 
         db.session.commit()
         flash('Achievement saved successfully.', 'success')
-        return redirect(url_for('achievements_bp.show_achievements'))
+        return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 
     contacts = Contact.query.filter(Contact.Type.in_(['Member', 'Officer'])).order_by(Contact.Name.asc()).all()
     
@@ -113,7 +114,7 @@ def achievement_form(id):
 def delete_achievement(id):
     if not is_authorized('ACHIEVEMENTS_EDIT'):
         flash("You don't have permission to perform this action.", 'error')
-        return redirect(url_for('achievements_bp.show_achievements'))
+        return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 
     achievement = Achievement.query.get_or_404(id)
     contact_id = achievement.contact_id
@@ -123,4 +124,4 @@ def delete_achievement(id):
     from .utils import sync_contact_metadata
     sync_contact_metadata(contact_id)
     flash('Achievement deleted successfully.', 'success')
-    return redirect(url_for('achievements_bp.show_achievements'))
+    return redirect(url_for('settings_bp.settings', default_tab='achievements'))

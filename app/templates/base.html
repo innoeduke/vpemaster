@@ -78,16 +78,6 @@
             </a>
           </li>
           {% endif %} {% if current_user.is_authenticated %}
-          {% if is_authorized('ACHIEVEMENTS_VIEW') %}
-          <li
-            class="{% if request.endpoint and request.endpoint.startswith('achievements_bp') %}active{% endif %}"
-          >
-            <a href="{{ url_for('achievements_bp.show_achievements') }}">
-              <i class="fas fa-trophy nav-icon"></i>
-              <span>Achievements</span>
-            </a>
-          </li>
-          {% endif %}
           <li
             class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}"
           >
