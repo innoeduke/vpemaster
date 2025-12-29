@@ -68,13 +68,27 @@ for role, perms in ROLE_PERMISSIONS.items():
         perms.add("ACHIEVEMENTS_VIEW")
 
 
-def is_authorized(user_role_or_permission, permission=None):
+def is_authorized(user_role_or_permission, permission=None, **kwargs):
     """
     Checks if a user/role is authorized for a feature.
     
     Usage 1 (Legacy/Role-based): is_authorized('Admin', 'AGENDA_EDIT')
     Usage 2 (Current User): is_authorized('AGENDA_EDIT') -> checks current_user
+    Usage 3 (Context-aware): is_authorized('AGENDA_EDIT', meeting=selected_meeting)
     """
+    
+    # Check for Meeting Manager override
+    meeting = kwargs.get('meeting')
+    target_perm = permission if permission else user_role_or_permission
+    
+    if meeting and current_user.is_authenticated:
+        # If user is the manager of this specific meeting
+        if hasattr(current_user, 'Contact_ID') and current_user.Contact_ID == meeting.manager_id:
+            # Grant VPE-level permissions relevant to meeting management
+            # Specifically Agenda Edit and Booking management
+            if target_perm in {'AGENDA_EDIT', 'BOOKING_ASSIGN_ALL', 'BOOKING_BOOK_OWN'}:
+                return True
+
     # Usage 2: Check current user logic
     if permission is None:
         # Argument is the permission name

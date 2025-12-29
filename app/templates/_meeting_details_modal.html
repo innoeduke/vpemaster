@@ -1,0 +1,106 @@
+<div id="meetingDetailsModal" class="modal">
+  <div class="modal-content" style="max-width: 800px;">
+    <span class="close" onclick="closeMeetingDetailsModal()">&times;</span>
+    <h1>Edit Meeting Details</h1>
+    
+    <style>
+        .meeting-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .meeting-details-grid .meta-item {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0; /* Override default */
+        }
+        .meeting-details-grid .meta-item span {
+            margin-bottom: 5px;
+            color: #555;
+        }
+        .meeting-details-grid .edit-mode-field {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        /* Make full width for URL */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+
+    <div class="meeting-details-grid">
+        <div class="meta-item">
+            <span><strong>Meeting Title:</strong></span>
+            <input type="text" 
+                   id="edit-meeting-title" 
+                   class="edit-mode-field" 
+                   value="{{ selected_meeting.Meeting_Title or '' }}" 
+                   placeholder="Enter Meeting Title (Theme)">
+        </div>
+        <div class="meta-item">
+            <span><strong>Sub-Title:</strong></span>
+            <input type="text" 
+                   id="edit-subtitle" 
+                   class="edit-mode-field" 
+                   value="{{ selected_meeting.Subtitle or '' }}" 
+                   placeholder="Enter Meeting Sub-Title">
+        </div> 
+        <div class="meta-item">
+            <span><strong>Meeting Type:</strong></span>
+            <select id="edit-meeting-type" class="edit-mode-field">
+                <option value="" {% if not selected_meeting.type %}selected{% endif %}>-- Select Type --</option>
+                {% for type in meeting_types.keys() %} 
+                <option value="{{ type }}" {% if selected_meeting.type == type %}selected{% endif %}>{{ type }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="meta-item">
+            <span><strong>Meeting Manager:</strong></span>
+            <select id="edit-manager" class="edit-mode-field">
+                <option value="">-- Select Manager --</option>
+                {% for member in members %}
+                <option value="{{ member.id }}" {% if selected_meeting and selected_meeting.manager_id == member.id %}selected{% endif %}>{{ member.Name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="meta-item" id="ge-style-toggle" style="display: none;">
+            <span><strong>GE Mode:</strong></span>
+            <select id="ge-style-select" class="edit-mode-field" data-current-style="{{ selected_meeting.GE_Style if selected_meeting else '' }}">
+                <option value="One shot" {% if selected_meeting and selected_meeting.GE_Style == 'One shot' %}selected{% endif %}>Traditional (5m)</option>
+                <option value="Multiple shots" {% if selected_meeting and selected_meeting.GE_Style == 'Multiple shots' %}selected{% endif %}>Distributed (1m+3m)</option>
+            </select>
+        </div>
+        <div class="meta-item">
+            <span><strong>Word of the Day:</strong></span>
+            <input type="text" 
+                   id="edit-wod" 
+                   class="edit-mode-field" 
+                   value="{{ selected_meeting.WOD or '' }}" 
+                   placeholder="Enter Word of the Day">
+        </div>
+        <div class="meta-item full-width">
+            <span><strong>Media URL:</strong></span>
+            <input type="url" 
+                   id="edit-media-url" 
+                   class="edit-mode-field" 
+                   value="{{ selected_meeting.media.url if selected_meeting and selected_meeting.media else '' }}" 
+                   placeholder="Enter Meeting Video URL (https://...)">
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeMeetingDetailsModal()">Cancel</button>
+        <button id="save-meeting-details-btn" class="btn btn-primary">Save Changes</button>
+    </div>
+  </div>
+</div>

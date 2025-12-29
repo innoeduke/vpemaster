@@ -150,9 +150,27 @@ document.addEventListener("DOMContentLoaded", () => {
         handleMeetingStatusChange(meetingStatusBtn);
       });
     }
+
+    const viewDetailsBtn = document.getElementById("view-details-btn");
+    if (viewDetailsBtn) {
+      viewDetailsBtn.addEventListener("click", () => {
+        document.getElementById("meetingDetailsModal").style.display = "flex";
+      });
+    }
+
+    const saveDetailsBtn = document.getElementById("save-meeting-details-btn");
+    if (saveDetailsBtn) {
+      saveDetailsBtn.addEventListener("click", saveChanges);
+    }
   }
 
   // --- Core Functions ---
+
+  function closeMeetingDetailsModal() {
+    document.getElementById("meetingDetailsModal").style.display = "none";
+  }
+  // Ensure the function is global so the close button onclick works
+  window.closeMeetingDetailsModal = closeMeetingDetailsModal;
 
   function toggleEditMode(enable) {
     isEditing = enable;

@@ -14,7 +14,7 @@ from .utils import get_meetings_by_status
 booking_bp = Blueprint('booking_bp', __name__)
 
 
-def _fetch_session_logs(selected_meeting_number):
+def _fetch_session_logs(selected_meeting_number, meeting_obj=None):
     """Fetches session logs for a given meeting, filtering by user role."""
     # Fetch the full SessionLog objects to ensure all data is available for consolidation.
     query = db.session.query(SessionLog)\
@@ -23,7 +23,7 @@ def _fetch_session_logs(selected_meeting_number):
         .filter(SessionLog.Meeting_Number == selected_meeting_number)\
         .filter(Role.name != '', Role.name.isnot(None))
 
-    if not is_authorized('BOOKING_ASSIGN_ALL'):
+    if not is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting_obj):
         query = query.filter(Role.type != 'officer')
 
     return query.all()
@@ -197,11 +197,11 @@ def _sort_roles(roles, current_user_contact_id, is_past_meeting):
     return roles
 
 
-def _get_roles_for_meeting(selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting):
+def _get_roles_for_meeting(selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting, meeting_obj=None):
     """Helper function to get and process roles for the booking page."""
-    is_admin_booker = is_authorized('BOOKING_ASSIGN_ALL')
+    is_admin_booker = is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting_obj)
 
-    session_logs = _fetch_session_logs(selected_meeting_number)
+    session_logs = _fetch_session_logs(selected_meeting_number, meeting_obj=meeting_obj)
     roles_dict = _consolidate_roles(session_logs, is_admin_booker)
     enriched_roles = _enrich_role_data(roles_dict, selected_meeting)
     filtered_roles = _apply_user_filters_and_rules(
@@ -303,10 +303,12 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
 
     context['selected_meeting'] = selected_meeting
 
+    context['is_admin_view'] = is_authorized('BOOKING_ASSIGN_ALL', meeting=selected_meeting)
+
     is_past_meeting = selected_meeting.status == 'finished' if selected_meeting else False
 
     roles = _get_roles_for_meeting(
-        selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting)
+        selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting, meeting_obj=selected_meeting)
     context['roles'] = roles
     context['sorted_role_groups'] = _group_roles_by_category(roles)
 

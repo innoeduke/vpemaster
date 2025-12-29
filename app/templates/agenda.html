@@ -30,66 +30,8 @@
                 {% endif %}
             </p>
             <!-- Removed video meeting button -->
-            <div class="meeting-edit-details">
-                <div class="meta-item">
-                    <span><strong>Meeting Title:</strong></span>
-                    <input type="text" 
-                           id="edit-meeting-title" 
-                           class="edit-mode-field" 
-                           value="{{ selected_meeting.Meeting_Title or '' }}" 
-                           placeholder="Enter Meeting Title (Theme)">
-                </div>
-                <div class="meta-item">
-                    <span><strong>Sub-Title:</strong></span>
-                    <input type="text" 
-                           id="edit-subtitle" 
-                           class="edit-mode-field" 
-                           value="{{ selected_meeting.Subtitle or '' }}" 
-                           placeholder="Enter Meeting Sub-Title">
-                </div> 
-                <div class="meta-item">
-                    <span><strong>Meeting Type:</strong></span>
-                    <select id="edit-meeting-type" class="edit-mode-field">
-                        <option value="" {% if not selected_meeting.type %}selected{% endif %}>-- Select Type --</option>
-                        {% for type in meeting_types.keys() %} 
-                        <option value="{{ type }}" {% if selected_meeting.type == type %}selected{% endif %}>{{ type }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="meta-item">
-                    <span><strong>Meeting Manager:</strong></span>
-                    <select id="edit-manager" class="edit-mode-field">
-                        <option value="">-- Select Manager --</option>
-                        {% for member in members %}
-                        <option value="{{ member.id }}" {% if selected_meeting and selected_meeting.manager_id == member.id %}selected{% endif %}>{{ member.Name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-               <div class="meta-item" id="ge-style-toggle" style="display: none;">
-                    <span><strong>GE Mode:</strong></span>
-                    <select id="ge-style-select" class="edit-mode-field" data-current-style="{{ selected_meeting.GE_Style if selected_meeting else '' }}">
-                        <option value="One shot" {% if selected_meeting and selected_meeting.GE_Style == 'One shot' %}selected{% endif %}>Traditional (5m)</option>
-                        <option value="Multiple shots" {% if selected_meeting and selected_meeting.GE_Style == 'Multiple shots' %}selected{% endif %}>Distributed (1m+3m)</option>
-                    </select>
-                </div>
-                <div class="meta-item">
-                    <span><strong>Word of the Day:</strong></span>
-                    <input type="text" 
-                           id="edit-wod" 
-                           class="edit-mode-field" 
-                           value="{{ selected_meeting.WOD or '' }}" 
-                           placeholder="Enter Word of the Day">
-                </div>
-                <div class="meta-item">
-                    <span><strong>Media URL:</strong></span>
-                    <input type="url" 
-                           id="edit-media-url" 
-                           class="edit-mode-field" 
-                           value="{{ selected_meeting.media.url if selected_meeting and selected_meeting.media else '' }}" 
-                           placeholder="Enter Meeting Video URL (https://...)">
-                </div>
- 
-            </div>
+            <!-- Removed video meeting button -->
+            <!-- Details now in modal -->
         </div>
     </div>
 
@@ -131,7 +73,7 @@
         <div class="action-bar-right">
             <div class="button-group" id="view-mode-buttons">
             {% if selected_meeting %}
-                {% if is_authorized('AGENDA_EDIT') %}
+                {% if is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
                 {% if selected_meeting.status %}
                     <span class="meeting-status-display status-{{ selected_meeting.status }}" title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
                         <i class="fas fa-fw {% if selected_meeting.status == 'unpublished' %}fa-eye-slash{% elif selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>
@@ -166,9 +108,11 @@
         </div>
     </div>
     
-    {% if is_authorized('AGENDA_EDIT') %}
+    {# Edit Mode Buttons (Only visible if authorized) #}
+    {% if is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
     <div class="button-group" id="edit-mode-buttons" style="display: none;">
         <button id="cancel-edit-btn" class="btn btn-danger">Cancel</button>
+        <button id="view-details-btn" class="btn btn-success">View Details</button>
         <button id="add-row-btn" class="btn btn-info">Add Section</button>
         <button id="edit-logs-btn" class="btn btn-primary">Save</button>
     </div>
@@ -373,6 +317,7 @@
     {% include '_speech_edit_modal.html' %}
     {% include '_contact_modal.html' %}
     {% include 'role_modal.html' %}
+    {% include '_meeting_details_modal.html' %}
 
     <script>
         // Pass Python data to global JS variables used by speech_modal.js
