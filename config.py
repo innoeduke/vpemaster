@@ -33,11 +33,7 @@ class Config:
 
     MEETING_TYPES = {}
 
-    SERIES_INITIALS = {
-        "Successful Club Series": "SC",
-        "Better Speaker Series": "BS",
-        "Leadership Excellence Series": "LE"
-    }
+
 
 
     DEFAULT_ROLE_ICON = "fa-question-circle"

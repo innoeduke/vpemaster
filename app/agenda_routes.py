@@ -510,11 +510,11 @@ A single endpoint to fetch all data needed for the agenda modals.
     projects = Project.query.order_by(Project.Project_Name).all()
 
     all_pp = db.session.query(PathwayProject, Pathway.abbr).join(Pathway).all()
-    project_codes_lookup = {}  # {project_id: {path_abbr: code, ...}}
+    project_codes_lookup = {}  # {project_id: {path_abbr: {'code': code, 'level': level}, ...}}
     for pp, path_abbr in all_pp:
         if pp.project_id not in project_codes_lookup:
             project_codes_lookup[pp.project_id] = {}
-        project_codes_lookup[pp.project_id][path_abbr] = pp.code
+        project_codes_lookup[pp.project_id][path_abbr] = {'code': pp.code, 'level': pp.level}
 
     projects_data = [
         {
@@ -538,11 +538,15 @@ A single endpoint to fetch all data needed for the agenda modals.
             "unique": r.is_distinct # Map database is_distinct to legacy 'unique' property
         }
 
+    # Fetch Series Initials from DB
+    pathways_db = Pathway.query.all()
+    series_initials_db = {p.name: p.abbr for p in pathways_db if p.abbr}
+
     return jsonify({
         'session_types': session_types_data,
         'contacts': contacts_data,
         'projects': projects_data,
-        'series_initials': current_app.config['SERIES_INITIALS'],
+        'series_initials': series_initials_db,
         'meeting_types': current_app.config['MEETING_TYPES'],
         'meeting_roles': meeting_roles_data
     })

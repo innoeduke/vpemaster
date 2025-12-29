@@ -33,32 +33,12 @@ def project_id_to_code(project_id, path_abbr):
     if not path_abbr:
         return ""
 
-    # Special handling for presentations
-    presentation_series_initials = {
-        'Successful Club Series': 'SC',
-        'Leadership Excellence Series': 'LE',
-        'Better Speaker Series': 'BS'
-    }
-
-    if path_abbr in presentation_series_initials.values():
-        project = Project.query.get(project_id)
-        if project and project.Format == 'Presentation':
-            # Check if linked to the correct series pathway
-            # Find the series name from abbr
-            series_name = next((name for name, initial in presentation_series_initials.items() if initial == path_abbr), None)
-            
-            if series_name:
-                pathway = Pathway.query.filter_by(name=series_name).first()
-                if pathway:
-                    pp = PathwayProject.query.filter_by(path_id=pathway.id, project_id=project.id).first()
-                    if pp:
-                         return f"{path_abbr}{pp.code}"
-        return ""
-
-    project = Project.query.get(project_id)
+    # Legacy: Project.query.get is deprecated in 2.0, use db.session.get(Project, project_id)
+    project = db.session.get(Project, project_id)
     if not project:
         return ""
 
+    # Unified Lookup: Works for both "Pathways" and "Series" (which are now just Pathways in DB)
     pathway = db.session.query(Pathway).filter_by(abbr=path_abbr).first()
     if not pathway:
         return ""
@@ -67,6 +47,7 @@ def project_id_to_code(project_id, path_abbr):
         path_id=pathway.id, project_id=project_id).first()
 
     if pathway_project:
+        # Return format: "PM1.1" or "SC205"
         return f"{path_abbr}{pathway_project.code}"
 
     return ""

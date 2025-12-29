@@ -358,11 +358,11 @@ def show_speech_logs():
     projects = Project.query.order_by(Project.Project_Name).all()
 
     all_pp = db.session.query(PathwayProject, Pathway.abbr).join(Pathway).all()
-    project_codes_lookup = {}  # {project_id: {path_abbr: code, ...}}
+    project_codes_lookup = {}  # {project_id: {path_abbr: {'code': code, 'level': level}, ...}}
     for pp, path_abbr in all_pp:
         if pp.project_id not in project_codes_lookup:
             project_codes_lookup[pp.project_id] = {}
-        project_codes_lookup[pp.project_id][path_abbr] = pp.code
+        project_codes_lookup[pp.project_id][path_abbr] = {'code': pp.code, 'level': pp.level}
 
     projects_data = [
         {
@@ -377,7 +377,9 @@ def show_speech_logs():
 
 
 
-    SERIES_INITIALS = current_app.config['SERIES_INITIALS']
+    # Fetch series initials from Pathway table (where abbr is not null/empty)
+    pathways_db = Pathway.query.all()
+    SERIES_INITIALS = {p.name: p.abbr for p in pathways_db if p.abbr}
     today_date = datetime.today().date()
 
     all_roles_db = Role.query.all()

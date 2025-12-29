@@ -359,7 +359,7 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
               levelToSelect = nextLevel;
               const codeSuffix = pathwayMap[pathwayToSelect];
               const projectCode = nextProject.substring(2);
-              const foundProject = allProjects.find(p => p.path_codes[codeSuffix] === projectCode);
+              const foundProject = allProjects.find(p => p.path_codes[codeSuffix] && p.path_codes[codeSuffix].code === projectCode);
               if (foundProject) projectToSelect = foundProject.id;
             }
           } catch (e) {
@@ -371,7 +371,12 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
       }
     }
     modalElements.pathwaySelect.value = pathwayToSelect || "";
+    // Update levels based on selected pathway BEFORE trying to set the level value
+    updateLevelOptions();
+
+    // Now set the level if valid
     modalElements.levelSelect.value = levelToSelect || "";
+
     updateProjectOptions(projectToSelect);
   }
 }
@@ -379,7 +384,53 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
 // --- Dynamic Dropdown Helpers ---
 
 function updateDynamicOptions() {
+  updateLevelOptions();
   updateProjectOptions();
+}
+
+function updateLevelOptions() {
+  const { pathwaySelect, levelSelect } = modalElements;
+  const pathwayName = pathwaySelect.value;
+  const currentLevel = levelSelect.value;
+
+  if (!pathwayName) return;
+
+  const codeSuffix = (typeof pathwayMap !== 'undefined' ? pathwayMap[pathwayName] : null) ||
+    (typeof allSeriesInitials !== 'undefined' ? allSeriesInitials[pathwayName] : null);
+
+  if (!codeSuffix) return;
+
+  // Find all unique levels for this pathway
+  const availableLevels = new Set();
+
+  allProjects.forEach(p => {
+    const info = p.path_codes[codeSuffix];
+    if (info && info.level) {
+      availableLevels.add(info.level);
+    }
+  });
+
+  // Sort levels
+  const sortedLevels = Array.from(availableLevels).sort((a, b) => a - b);
+
+  // Rebuild Level Options
+  // Keep "All Levels" or empty option if that's desired? 
+  // Usually for editing a speech, we want to force valid selection.
+  // But let's keep a default prompt.
+  levelSelect.innerHTML = '<option value="">-- Select Level --</option>';
+
+  sortedLevels.forEach(lvl => {
+    levelSelect.add(new Option(`Level ${lvl}`, lvl));
+  });
+
+  // Restore selection if valid, otherwise clear
+  if (availableLevels.has(parseInt(currentLevel))) {
+    levelSelect.value = currentLevel;
+  } else if (availableLevels.has(currentLevel)) { // Check string match
+    levelSelect.value = currentLevel;
+  } else {
+    levelSelect.value = "";
+  }
 }
 
 function updateProjectOptions(selectedProjectId = null) {
@@ -408,60 +459,52 @@ function updateProjectOptions(selectedProjectId = null) {
   const codeSuffix = (typeof pathwayMap !== 'undefined' ? pathwayMap[pathwayName] : null) ||
     (typeof allSeriesInitials !== 'undefined' ? allSeriesInitials[pathwayName] : null);
 
+  /* console.log("Debug updateProjectOptions:", { pathwayName, codeSuffix, level }); */
+
   projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
-  if (!codeSuffix) return; // Cannot match without code suffix logic
+  if (!codeSuffix) {
+    // console.warn("No code suffix found for pathway:", pathwayName);
+    return;
+  }
 
   const filteredProjects = allProjects
     .filter(p => {
-      // Logic for standard projects: code starts with level number.
-      // Logic for presentation series: code is just a number usually? Or "SCS1"?
-      // Backend: `project_id_to_code` uses `abbr + code`. 
-      // `p.path_codes[codeSuffix]` is e.g. "1" or "1.1".
-      // If we filtered by level, we need to ensure presentation projects have "levels".
-      // Yes, DB has levels for them.
+      // Backend now sends path_codes as objects: { code: '...', level: 5 }
+      const pathInfo = p.path_codes[codeSuffix];
+      if (!pathInfo) return false;
 
-      const pathCode = p.path_codes[codeSuffix];
-      // For standard speeches: '1.2' starts with '1.'
-      // For presentations: '1' starts with '1.'? No.
-      if (!pathCode) return false;
+      const { code, level: projectLevel } = pathInfo;
 
       if (level) {
-        // Robust level check
-        if (pathCode.includes('.')) {
-          return pathCode.startsWith(level + '.');
-        } else {
-          // Might be exact match for level? e.g. presentation module '1' is level 1?
-          // Or simple integer check if code is integer-like
-          // Actually, looking at `project_id_to_code`, presentation codes are just numbers?
-          // Let's check `p.path_codes` construction in backend.
-          // It comes from `PathwayProject.code`.
-          // If `level` is selected, we want projects at that level.
-          // We don't rely on code string parsing if we can help it, but here we only have code strings in `p.path_codes`.
-          // WAIT. `allProjects` in `speech_logs.html` only has `id`, `Project_Name`, `path_codes`.
-          // It implies we MUST rely on `path_codes`.
-
-          // If code is "1", and level is "1", does it match?
-          // Maybe we should allow exact start or exact match?
-          return pathCode.startsWith(level + '.') || pathCode == level;
-        }
+        // Strict, explicit level check from DB (as requested)
+        // Ensure string comparison to handle any type mismatches
+        return String(projectLevel) === String(level);
       }
       return true;
     })
     .sort((a, b) => {
-      const codeA = a.path_codes[codeSuffix];
-      const codeB = b.path_codes[codeSuffix];
-      // Numeric sort preferably if possible
-      const fA = parseFloat(codeA);
-      const fB = parseFloat(codeB);
+      const infoA = a.path_codes[codeSuffix];
+      const infoB = b.path_codes[codeSuffix];
+
+      // Sort by Level first
+      if (infoA.level !== infoB.level) {
+        return infoA.level - infoB.level;
+      }
+
+      // Then Numeric Code if possible
+      const fA = parseFloat(infoA.code);
+      const fB = parseFloat(infoB.code);
       if (!isNaN(fA) && !isNaN(fB)) {
         return fA - fB;
       }
-      return codeA.localeCompare(codeB);
+      // Fallback to string sort
+      return infoA.code.localeCompare(infoB.code);
     });
 
   filteredProjects.forEach((p) => {
-    const code = p.path_codes[codeSuffix];
-    projectSelect.add(new Option(`${code} - ${p.Project_Name}`, p.id));
+    const info = p.path_codes[codeSuffix];
+    // Display: "Code - Name"
+    projectSelect.add(new Option(`${info.code} - ${p.Project_Name}`, p.id));
   });
 
   if (selectedProjectId) projectSelect.value = selectedProjectId;
