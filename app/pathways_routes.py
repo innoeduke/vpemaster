@@ -49,7 +49,8 @@ def pathway_library():
                 "Purpose": project.Purpose or '',
                 "Requirements": project.Requirements or '',
                 "Resources": project.Resources or '',
-                "path_codes": project_codes_lookup.get(project.id, {})
+                "path_codes": project_codes_lookup.get(project.id, {}),
+                "level": pathway_project.level
             }
             pathway_dict['projects'].append(project_dict)
             
