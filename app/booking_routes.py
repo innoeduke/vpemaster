@@ -296,7 +296,8 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     selected_meeting = Meeting.query.filter_by(
         Meeting_Number=selected_meeting_number).first()
     
-    if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (current_user.is_authenticated and current_user.is_officer)):
+    is_manager = current_user.is_authenticated and current_user.Contact_ID == selected_meeting.manager_id if selected_meeting else False
+    if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (current_user.is_authenticated and current_user.is_officer) or is_manager):
         from flask import abort
         abort(403)
 

@@ -223,6 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
         meeting_type: document.getElementById("edit-meeting-type").value,
         wod: document.getElementById("edit-wod").value,
         media_url: document.getElementById("edit-media-url").value,
+        manager_id: document.getElementById("edit-manager").value,
       }),
     })
       .then((response) => response.json())

@@ -415,6 +415,24 @@ def get_meetings_by_status(limit_past=8, columns=None):
         .filter(Meeting.status.in_(active_statuses))\
         .order_by(Meeting.Meeting_Number.desc()).all()
 
+    # Also include unpublished meetings if current user is the manager
+    try:
+        from flask_login import current_user
+        if current_user.is_authenticated and current_user.Contact_ID:
+            manager_meetings = db.session.query(*query_cols)\
+                .filter(Meeting.status == 'unpublished')\
+                .filter(Meeting.manager_id == current_user.Contact_ID)\
+                .all()
+            # deduplicate
+            existing_nums = {m.Meeting_Number for m in active_meetings}
+            for m in manager_meetings:
+                if m.Meeting_Number not in existing_nums:
+                    active_meetings.append(m)
+    except Exception:
+        pass
+
+    active_meetings.sort(key=lambda m: m.Meeting_Number, reverse=True)
+
     # Fetch recent inactive meetings ('finished' or 'cancelled')
     past_meetings = db.session.query(*query_cols)\
         .filter(Meeting.status.in_(['finished', 'cancelled']))\
@@ -453,7 +471,6 @@ def get_default_meeting_number():
             upcoming_priority_statuses.append('unpublished')
     except Exception:
         pass
-
     from .models import SessionLog
     upcoming_meeting = Meeting.query \
         .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number) \
@@ -461,6 +478,20 @@ def get_default_meeting_number():
         .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc()) \
         .first()
     
+    # If no meeting found, check if user is a manager of an unpublished meeting
+    if not upcoming_meeting:
+        try:
+            from flask_login import current_user
+            if current_user.is_authenticated and current_user.Contact_ID:
+                upcoming_meeting = Meeting.query \
+                    .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number) \
+                    .filter(Meeting.status == 'unpublished') \
+                    .filter(Meeting.manager_id == current_user.Contact_ID) \
+                    .order_by(Meeting.Meeting_Date.asc()) \
+                    .first()
+        except Exception:
+            pass
+
     if upcoming_meeting:
         return upcoming_meeting.Meeting_Number
     

@@ -436,7 +436,8 @@ def agenda():
         # Security check: Only admins/officers can see unpublished meetings
         if selected_meeting and selected_meeting.status == 'unpublished':
             from flask_login import current_user
-            if not (current_user.is_authenticated and current_user.is_officer):
+            is_manager = current_user.is_authenticated and current_user.Contact_ID == selected_meeting.manager_id
+            if not (current_user.is_authenticated and (current_user.is_officer or is_manager)):
                 from flask import abort
                 abort(403) # Forbidden
 
@@ -1437,6 +1438,16 @@ def update_logs():
 
         if new_wod is not None:
             meeting.WOD = new_wod
+
+        # Update Manager
+        new_manager_id = data.get('manager_id')
+        if new_manager_id == "":
+            meeting.manager_id = None
+        elif new_manager_id:
+             try:
+                 meeting.manager_id = int(new_manager_id)
+             except ValueError:
+                 pass # Ignore invalid ID
 
         new_media_id = None
         if new_media_url:

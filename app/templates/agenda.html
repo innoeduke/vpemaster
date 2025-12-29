@@ -56,6 +56,15 @@
                         {% endfor %}
                     </select>
                 </div>
+                <div class="meta-item">
+                    <span><strong>Meeting Manager:</strong></span>
+                    <select id="edit-manager" class="edit-mode-field">
+                        <option value="">-- Select Manager --</option>
+                        {% for member in members %}
+                        <option value="{{ member.id }}" {% if selected_meeting and selected_meeting.manager_id == member.id %}selected{% endif %}>{{ member.Name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
                <div class="meta-item" id="ge-style-toggle" style="display: none;">
                     <span><strong>GE Mode:</strong></span>
                     <select id="ge-style-select" class="edit-mode-field" data-current-style="{{ selected_meeting.GE_Style if selected_meeting else '' }}">
