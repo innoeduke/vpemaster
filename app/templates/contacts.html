@@ -89,7 +89,7 @@
                 <i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>
                 {% endif %}
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
-                   title="Topic Speeches" class="participation-badge badge-roles">
+                   title="Topic Speeches" class="participation-badge badge-tt">
                      <i class="fas fa-comment"></i> {{ contact.tt_count }}
                 </a>
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 

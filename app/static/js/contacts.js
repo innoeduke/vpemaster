@@ -21,6 +21,11 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize sorting
   setupTableSorting("contactsTable");
 
+  // Default sort by Participation (Index 2) - Descending
+  if (typeof sortTableByColumn === "function") {
+    sortTableByColumn(table, 2, false, "string");
+  }
+
   const filterTable = () => {
     const activeTabItem = document.querySelector(".nav-item.active");
     if (!activeTabItem) return;

@@ -99,6 +99,17 @@
   color: #000;
 }
 
+.badge-tt {
+  background-color: #c6f6d5;
+  /* Light green */
+  color: #000;
+}
+
+.badge-tt i {
+  color: #2f855a;
+  /* Darker green for icon */
+}
+
 /* --- Mobile / Tablet Responsive Styles --- */
 @media (max-width: 992px) {
 
@@ -177,11 +188,12 @@
 }
 
 /* --- Guest View Styles --- */
+/* --- Guest View Styles --- */
+.guest-view th:nth-child(4),
+.guest-view td:nth-child(4),
 .guest-view th:nth-child(5),
 .guest-view td:nth-child(5),
 .guest-view th:nth-child(6),
-.guest-view td:nth-child(6),
-.guest-view th:nth-child(7),
-.guest-view td:nth-child(7) {
+.guest-view td:nth-child(6) {
   display: none;
 }
