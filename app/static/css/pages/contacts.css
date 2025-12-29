@@ -133,6 +133,11 @@
   .search-container {
     flex: 1;
     min-width: unset;
+    width: 100%;
+  }
+
+  .search-container input {
+    width: 100%;
   }
 
   .button-group {
@@ -156,11 +161,11 @@
     min-width: 150px;
   }
 
-  #contactsTable th:nth-child(3),
+  #contactsTable th:nth-child(2),
   /* Club column */
-  #contactsTable td:nth-child(3),
+  #contactsTable td:nth-child(2),
   #contactsTable th:nth-child(4),
-  /* Current Path column */
+  /* Credentials column */
   #contactsTable td:nth-child(4),
   #contactsTable th:nth-child(5),
   /* Completed Paths column */
