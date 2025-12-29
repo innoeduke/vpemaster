@@ -135,6 +135,7 @@ def _enrich_role_data(roles_dict, selected_meeting):
         role_data['award_category_open'] = bool(award_category and not winner_ids.get(award_category))
         
         role_data['needs_approval'] = role_obj.needs_approval if role_obj else False
+        role_data['is_member_only'] = role_obj.is_member_only if role_obj else False
 
         enriched_roles.append(role_data)
     return enriched_roles

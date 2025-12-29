@@ -142,7 +142,9 @@
                         <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
                             <option value="0">--- Select ---</option>
                             {% for contact in contacts %}
+                                {% if not role.is_member_only or (role.is_member_only and contact.Type == 'Member') %}
                                 <option value="{{ contact.id }}" {% if role.owner_id == contact.id %}selected{% endif %}>{{ contact.Name }}</option>
+                                {% endif %}
                             {% endfor %}
                         </select>
                     {% else %}

@@ -275,26 +275,28 @@ def _get_processed_logs_data(selected_meeting_num):
                          project_name_for_dict = pathway_obj.name # Series Name
                          project_purpose_for_dict = f"Level {pp.level} - {project.Project_Name}"
                          project_code_str = f"{pathway_obj.abbr}{pp.code}"
+                         pathway_code_for_dict = pathway_obj.abbr
+                         level_for_dict = pp.level
         
         elif log.Project_ID == 60:
             project_code_str = "TM1.0"
-        elif project and owner and owner.Current_Path:  # Else if pathway...
-            pathway_suffix = pathway_mapping.get(owner.Current_Path)
-            if pathway_suffix:
-                pathway = db.session.query(Pathway).filter_by(
-                    abbr=pathway_suffix).first()
-                if pathway:
-                    if pathway and project:
-                        pathway_project = db.session.query(PathwayProject).filter_by(
-                            path_id=pathway.id, project_id=project.id).first()
-                        if pathway_project:
-                            project_code_str = f"{pathway_suffix}{pathway_project.code}"
-                            pathway_code_for_dict = pathway_suffix
-                            try:
-                                level_for_dict = int(
-                                    pathway_project.code.split('.')[0])
-                            except (ValueError, IndexError):
-                                level_for_dict = None
+        elif project:  # Calculate code for any project, even if no owner
+            # Use model's resolution logic which includes fallback
+            context_path = owner.Current_Path if (owner and owner.Current_Path) else None
+            pp, path_obj = project.resolve_context(context_path)
+            
+            if pp and path_obj and path_obj.abbr:
+                project_code_str = f"{path_obj.abbr}{pp.code}"
+                pathway_code_for_dict = path_obj.abbr
+                
+                # Determine level
+                if pp.level:
+                    level_for_dict = pp.level
+                else:
+                    try:
+                        level_for_dict = int(pp.code.split('.')[0])
+                    except (ValueError, IndexError):
+                        level_for_dict = None
 
         # --- Award Logic ---
         award_type = None
@@ -615,58 +617,45 @@ def _get_all_speech_details(logs_data, pathway_mapping):
 
         details_to_add = None
 
-        # Handle Pathway Speech types
-        if session_type.id in speech_session_type_ids and project:
-            user = contact.user if contact else None
-
+        # Handle Pathway Speech types and Presentation
+        if session_type.id in speech_session_type_ids.union({presentation_session_type_id}) and project:
             if project.id == 60:  # Generic Project
                 pathway_name = "Generic"
-                path_abbr = ""
                 pathway_project_code = "1.0"
-            else:  # Regular Pathway Project
-                pathway_name = contact.Current_Path if contact else ""
-                path_abbr = pathway_mapping.get(
-                    pathway_name, "") if pathway_name else ""
-                pathway = db.session.query(Pathway).filter_by(
-                    abbr=path_abbr).first() if path_abbr else None
-                pathway_project = db.session.query(PathwayProject).filter_by(
-                    path_id=pathway.id, project_id=project.id).first() if pathway else None
-                pathway_project_code = pathway_project.code if pathway_project else None
+                pathway_obj = None
+                pp = None
+                proj_code = "TM1.0"
+            else:
+                context_path = contact.Current_Path if contact else None
+                pp, pathway_obj = project.resolve_context(context_path)
+                
+                if pathway_obj:
+                    pathway_name = pathway_obj.name
+                    pathway_project_code = pp.code if pp else None
+                    proj_code = f"{pathway_obj.abbr}{pp.code}" if pp else ""
+                else:
+                    pathway_name = context_path or ""
+                    pathway_project_code = None
+                    proj_code = ""
+
+            # Determine project purpose string
+            if pp and pp.level:
+                 project_purpose = f"Level {pp.level} - {project.Project_Name}"
+            else:
+                 project_purpose = project.Purpose
+
+            # Use project duration from DB
+            duration_str = f"[{project.Duration_Min}'-{project.Duration_Max}']"
+            # Legacy presentation logic hardcoded [10'-15'], but DB should be source of truth.
 
             details_to_add = {
                 "speech_title": log.Session_Title or project.Project_Name,
                 "project_name": project.Project_Name,
                 "pathway_name": pathway_name,
-                "project_purpose": project.Purpose,
-                "project_code": project_id_to_code(project.id, path_abbr),
-                "duration": f"[{project.Duration_Min}'-{project.Duration_Max}']",
+                "project_purpose": project_purpose,
+                "project_code": proj_code,
+                "duration": duration_str,
                 "project_type": _get_project_type(pathway_project_code)
-            }
-
-        # Handle Presentation type
-        elif session_type.id == presentation_session_type_id:
-            project = Project.query.get(log.Project_ID)
-            if not project:
-                continue
-                
-            pp = PathwayProject.query.filter_by(project_id=project.id).first()
-            if not pp:
-                continue
-            
-            pathway_obj = Pathway.query.get(pp.path_id)
-            if not pathway_obj:
-               continue
-
-            presentation_code = f"{pathway_obj.abbr}{pp.code}"
-
-            details_to_add = {
-                "speech_title": log.Session_Title or project.Project_Name,
-                "project_name": project.Project_Name,
-                "pathway_name": pathway_obj.name,
-                "project_purpose": f"Level {pp.level} - {project.Project_Name}",
-                "project_code": presentation_code,
-                "duration": "[10'-15']",
-                "project_type": _get_project_type(presentation_code)
             }
 
         if details_to_add:
@@ -692,30 +681,16 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
         if not log.Session_Title and project:
             session_title_str = project.Project_Name
 
-    # Check for Pathway Speech (Type 30)
-    if session_type and session_type.id == 30 and project:
-        # Use the helper function to get project code
-        if contact and contact.Current_Path and log.Project_ID:
-            pathway_abbr = pathway_mapping.get(contact.Current_Path)
-            if pathway_abbr:
-                project_code_str = project_id_to_code(
-                    log.Project_ID, pathway_abbr)
+    # Check for Pathway Speech (Type 30) or Presentation (Type 43)
+    if session_type and session_type.id in [30, 43] and project:
+        # Use simple get_code which includes fallback logic
+        path_name = contact.Current_Path if contact else None
+        code = project.get_code(path_name)
+        if code:
+            project_code_str = code
+        
         if not log.Session_Title:  # If title is blank, use project name
             session_title_str = project.Project_Name
-
-    # Check for Presentation (Type 43)
-    elif session_type and session_type.id == 43 and log.Project_ID:
-        # Query Project instead of Presentation
-        project = Project.query.get(log.Project_ID)
-        if project:
-            pp = PathwayProject.query.filter_by(project_id=project.id).first()
-            if pp:
-                 pathway_obj = Pathway.query.get(pp.path_id)
-                 if pathway_obj:
-                     project_code_str = f"{pathway_obj.abbr}{pp.code}"
-                     
-            if not log.Session_Title:  # If title is blank, use project name
-                session_title_str = project.Project_Name
 
     # Check for Individual Evaluator (Type 31)
     if session_type and session_type.id == 31 and log.Session_Title:
