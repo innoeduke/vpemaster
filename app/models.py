@@ -94,7 +94,11 @@ class Project(db.Model):
         path_obj = None
         
         if context_path_name:
-            path_obj = db.session.query(Pathway).filter_by(name=context_path_name).first()
+        # Try finding by name first, then by abbreviation
+            path_obj = db.session.query(Pathway).filter(
+                (Pathway.name == context_path_name) | (Pathway.abbr == context_path_name)
+            ).first()
+        
             if path_obj:
                 pp = db.session.query(PathwayProject).filter_by(
                     path_id=path_obj.id, project_id=self.id).first()
