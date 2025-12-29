@@ -810,6 +810,7 @@ def _get_user_bookings(current_user_contact_id):
      .filter(SessionLog.Owner_ID == current_user_contact_id)\
      .filter(Meeting.Meeting_Date >= today)\
      .filter(Role.name != '', Role.name.isnot(None))\
+     .filter(Role.type != 'officer')\
      .group_by(Meeting.Meeting_Number, Role.name, Meeting.Meeting_Date, Role.icon)\
      .order_by(Meeting.Meeting_Number, Meeting.Meeting_Date, Role.name)
 
