@@ -80,9 +80,7 @@
                     <div class="form-group search-container">
                         <input list="contacts-list" id="impersonate-input" class="search-box" placeholder="Impersonate User...">
                         <datalist id="contacts-list">
-                            {% for c in all_contacts %}
-                                <option data-value="{{ c.id }}" value="{{ c.Name }}"></option>
-                            {% endfor %}
+                            <!-- Populated dynamically via JS -->
                         </datalist>
                         <input type="hidden" name="speaker_id" id="hidden-speaker-id" value="{{ selected_filters.speaker_id or '' }}">
                         <button type="button" id="clear-speaker-search" class="clear-search-btn" style="display: none;">&times;</button>
@@ -307,38 +305,55 @@
                      document.getElementById('clear-speaker-search').style.display = 'block';
                 }
 
-                // Function to toggle datalist
-                function toggleDatalist(input) {
-                    if (input.value.length >= 1) {
-                         input.setAttribute('list', 'contacts-list');
-                    } else {
-                         input.removeAttribute('list');
-                    }
+                // Serialize contacts data
+                const allContactsData = [
+                    {% for c in all_contacts %}
+                        { id: "{{ c.id }}", name: "{{ c.Name }}" },
+                    {% endfor %}
+                ];
+
+                function updateDatalist(filterText) {
+                    contactsList.innerHTML = ''; // Clear current options
+                    
+                    if (!filterText) return; 
+
+                    const lowerFilter = filterText.toLowerCase();
+                    const filtered = allContactsData.filter(c => c.name.toLowerCase().includes(lowerFilter));
+                    
+                    // Limit to top 6
+                    const limited = filtered.slice(0, 6);
+                    
+                    limited.forEach(c => {
+                        const option = document.createElement('option');
+                        option.value = c.name;
+                        option.setAttribute('data-value', c.id);
+                        contactsList.appendChild(option);
+                    });
                 }
-                
+
                 // Initialize state
-                toggleDatalist(impersonateInput);
+                // toggleDatalist(impersonateInput); // No longer needed as we dynamic pop
 
                 impersonateInput.addEventListener('focus', function() {
-                    toggleDatalist(this);
+                    // Show top 6 matches based on current value or all if empty? 
+                    // Usually empty, show top 6? Or nothing?
+                    // Let's show filtered matches for current value
+                   updateDatalist(this.value);
                 });
 
                 impersonateInput.addEventListener('input', function() {
-                     toggleDatalist(this);
+                     // toggleDatalist(this); // dynamic pop handles it
+                     updateDatalist(this.value);
                      
                      const val = this.value;
-                     const options = contactsList.options;
-                     let foundId = null;
+                     // Check if valid selection
+                     // We need to look in the FULL data, not just the datalist (though datalist has the filtered subset)
+                     // Actually, if selected, it must act.
+                     
+                     const match = allContactsData.find(c => c.name === val);
 
-                     for (let i = 0; i < options.length; i++) {
-                         if (options[i].value === val) {
-                             foundId = options[i].getAttribute('data-value');
-                             break;
-                         }
-                     }
-
-                     if (foundId) {
-                         hiddenSpeakerId.value = foundId;
+                     if (match) {
+                         hiddenSpeakerId.value = match.id;
                          // Switch view mode to member
                          viewModeInput.value = 'member';
                          form.submit();
