@@ -214,8 +214,8 @@ def _get_roles_for_meeting(selected_meeting_number, current_user_contact_id, sel
         sorted_roles = [role for role in sorted_roles if role.get(
             'award_category') and role.get('award_category') != 'none']
 
-    # For 'not started' meetings, only show Topics Speaker to admins
-    if selected_meeting.status == 'not started' and not is_admin_booker:
+    # For 'not started' or 'unpublished' meetings, only show Topics Speaker to admins
+    if selected_meeting.status in ['not started', 'unpublished'] and not is_admin_booker:
         sorted_roles = [
             role for role in sorted_roles
             if role['role_key'] != "Topics Speaker"
@@ -295,6 +295,11 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
 
     selected_meeting = Meeting.query.filter_by(
         Meeting_Number=selected_meeting_number).first()
+    
+    if selected_meeting and selected_meeting.status == 'unpublished' and not context['is_admin_view']:
+        from flask import abort
+        abort(403)
+
     context['selected_meeting'] = selected_meeting
 
     is_past_meeting = selected_meeting.status == 'finished' if selected_meeting else False

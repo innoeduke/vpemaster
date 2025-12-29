@@ -103,7 +103,7 @@
                     {% endfor %}
                 </select>
                 {% if selected_meeting %}
-                    <span id="meeting-date-display">{{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') }}</span>
+                    <span id="meeting-date-display">{{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') if selected_meeting.Meeting_Date else 'No Date' }}</span>
                 {% endif %}
             </div>
             

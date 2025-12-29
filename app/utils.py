@@ -403,9 +403,13 @@ def get_meetings_by_status(limit_past=8, columns=None):
 
     # Fetch active meetings ('unpublished', 'not started', or 'running')
     active_statuses = ['not started', 'running']
-    from flask_login import current_user
-    if current_user.is_authenticated and current_user.Role == 'Admin':
-        active_statuses.append('unpublished')
+    try:
+        from flask_login import current_user
+        if current_user.is_authenticated and current_user.Role == 'Admin':
+            active_statuses.append('unpublished')
+    except Exception:
+        # Not in a request context or other issue
+        pass
         
     active_meetings = db.session.query(*query_cols)\
         .filter(Meeting.status.in_(active_statuses))\
@@ -442,8 +446,18 @@ def get_default_meeting_number():
         return running_meeting.Meeting_Number
 
     # 2. Check for next not-started meeting
+    upcoming_priority_statuses = ['not started']
+    try:
+        from flask_login import current_user
+        if current_user.is_authenticated and current_user.Role == 'Admin':
+            upcoming_priority_statuses.append('unpublished')
+    except Exception:
+        pass
+
+    from .models import SessionLog
     upcoming_meeting = Meeting.query \
-        .filter(Meeting.status == 'not started') \
+        .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number) \
+        .filter(Meeting.status.in_(upcoming_priority_statuses)) \
         .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc()) \
         .first()
     

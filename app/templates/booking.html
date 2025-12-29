@@ -84,7 +84,7 @@
             <select id="meeting-filter" onchange="window.location.href = '/booking/' + this.value;">
                 {% for meeting_num, meeting_date in upcoming_meetings | sort(attribute=0, reverse=True) %}
                     <option value="{{ meeting_num }}" {% if meeting_num == selected_meeting_number %}selected{% endif %}>
-                        #{{ meeting_num }} - {{ meeting_date.strftime('%B %d, %Y') }}
+                        #{{ meeting_num }} - {{ meeting_date.strftime('%B %d, %Y') if meeting_date else 'No Date' }}
                     </option>
                 {% endfor %}
             </select>
@@ -121,7 +121,7 @@
 
             {# Status cell: waitlist for 'not started', winner label for 'finished' #}
             <td class="status-cell">
-                {% if status == 'not started' and role.waitlist %}
+                {% if status in ['not started', 'unpublished'] and role.waitlist %}
                     <div class="waitlist-info">
                         <span style="font-size:0.5em;">Waitlist:</span>
                         <ul class="waitlist-users">
@@ -137,7 +137,7 @@
 
             {# Assign/Action cell: content varies by status and view #}
             <td class="assign-cell">
-                {% if status == 'not started' %}
+                {% if status in ['not started', 'unpublished'] %}
                     {% if is_admin_view %}
                         <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
                             <option value="0">--- Select ---</option>
@@ -174,9 +174,9 @@
             </td>
 
             {# Action Icons cell: content varies by status and view #}
-            {% if not (status == 'not started' and not is_admin_view) %}
+            {% if not (status in ['not started', 'unpublished'] and not is_admin_view) %}
             <td class="icon-cell">
-                {% if status == 'not started' and is_admin_view %}
+                {% if status in ['not started', 'unpublished'] and is_admin_view %}
                     <div class="button-group">
                         <button class="icon-btn" title="Unassign Role" onclick="assignRole('{{ role.session_id }}', '0')"><i class="fas fa-undo"></i></button>
                         {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="Approve top of waitlist" onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')"><i class="fas fa-user-check"></i></button>{% endif %}
@@ -218,7 +218,7 @@
             </thead>
             {% endset %}
 
-            {% set use_accordion = (status == 'running') or (status == 'finished' and is_admin_view) or (status == 'not started') %}
+            {% set use_accordion = (status == 'running') or (status == 'finished' and is_admin_view) or (status == 'not started') or (status == 'unpublished') %}
 
             {% if use_accordion %}
                 <div class="award-accordion">
