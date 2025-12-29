@@ -175,3 +175,13 @@
     white-space: nowrap;
   }
 }
+
+/* --- Guest View Styles --- */
+.guest-view th:nth-child(5),
+.guest-view td:nth-child(5),
+.guest-view th:nth-child(6),
+.guest-view td:nth-child(6),
+.guest-view th:nth-child(7),
+.guest-view td:nth-child(7) {
+  display: none;
+}

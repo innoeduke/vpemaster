@@ -81,21 +81,25 @@
       {% for contact in contacts %}
       <tr data-type="{{ contact.Type }}">
         <td>
-          {{ contact.Name }} {% if contact.DTM %}
+          {{ contact.Name }} 
+          {% if contact.DTM %}
           <sup class="dtm-superscript">DTM</sup>
           {% endif %}
         </td>
         <td>{{ contact.Type if contact.Type else '-' }}</td>
         <td>{{ contact.Club if contact.Club else '-' }}</td>
-        <td>
+        <td data-sort="{{ '1' if contact.is_qualified else '0' }}_{{ '%03d'|format(contact.role_count) }}_{{ '%03d'|format(contact.attendance_count) }}_{{ '%03d'|format(contact.award_count) }}">
             <div class="participation-container">
-                <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
-                   title="Attendance" class="participation-badge badge-attendance">
-                    <i class="fas fa-calendar-check"></i> {{ contact.attendance_count }}
-                </a>
+                {% if contact.is_qualified %}
+                <i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>
+                {% endif %}
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
                    title="Roles Taken" class="participation-badge badge-roles">
                      <i class="fas fa-user-tag"></i> {{ contact.role_count }}
+                </a>
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
+                   title="Attendance" class="participation-badge badge-attendance">
+                    <i class="fas fa-calendar-check"></i> {{ contact.attendance_count }}
                 </a>
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
                    title="Awards Won" class="participation-badge badge-awards">

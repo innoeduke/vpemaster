@@ -26,6 +26,14 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!activeTabItem) return;
 
     const activeTab = activeTabItem.dataset.type;
+
+    // Toggle guest-view class for column hiding
+    if (activeTab === 'Guest') {
+      table.classList.add('guest-view');
+    } else {
+      table.classList.remove('guest-view');
+    }
+
     const searchTerm = searchInput.value.toUpperCase().trim();
     const rows = table.querySelectorAll("tbody tr");
 

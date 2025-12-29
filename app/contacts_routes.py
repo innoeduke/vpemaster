@@ -53,22 +53,31 @@ def show_contacts():
 
     # 2. Roles (SessionLog where SessionType is a Role)
     # We want to count distinct (Meeting, Role) pairs per user.
-    # If a user has multiple slots for the same role in the same meeting, it counts as 1.
     distinct_roles = db.session.query(
-        SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id
-    ).join(SessionType).join(Role).filter(
+        SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id, Role.name
+    ).select_from(SessionLog).join(SessionType).join(Role).filter(
         SessionLog.Owner_ID.isnot(None),
         SessionType.role_id.isnot(None),
         Role.type.in_(['standard', 'club-specific'])
     ).distinct().all()
 
     role_map = {}
-    for owner_id, _, _ in distinct_roles:
+    
+    # Track granular counts for "Star Guest" logic
+    # Criteria: 4+ Topics Speaker, 1+ Best Table Topic, 2+ Other Roles
+    contact_tt_count = {}
+    contact_other_role_count = {}
+
+    for owner_id, _, _, role_name in distinct_roles:
         role_map[owner_id] = role_map.get(owner_id, 0) + 1
+        
+        r_name = role_name.strip() if role_name else ""
+        if r_name == "Topics Speaker":
+            contact_tt_count[owner_id] = contact_tt_count.get(owner_id, 0) + 1
+        else:
+            contact_other_role_count[owner_id] = contact_other_role_count.get(owner_id, 0) + 1
 
     # 3. Awards (Meeting Best X)
-    # We need to sum up best_speaker, best_evaluator, best_table_topic, best_role_taker
-    # This is a bit manual
     from .models import Meeting
     
     # helper to get counts for a specific field
@@ -78,16 +87,36 @@ def show_contacts():
         ).filter(getattr(Meeting, field).isnot(None)).group_by(getattr(Meeting, field)).all()
 
     award_map = {}
+    best_tt_map = {} # Track Best Table Topic separately
+
     for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
         counts = get_award_counts(field)
         for c_id, count in counts:
             award_map[c_id] = award_map.get(c_id, 0) + count
+            if field == 'best_table_topic_id':
+                best_tt_map[c_id] = count
+
+    def check_membership_qualification(tt_count, best_tt_count, other_role_count):
+        """
+        Determines if a guest meets the membership criteria:
+        - 4+ Table Topic Speaker roles
+        - 1+ Best Table Topic award
+        - 2+ Other roles
+        """
+        return (tt_count >= 4 and best_tt_count >= 1 and other_role_count >= 2)
 
     # Attach to contacts
     for c in contacts:
         c.attendance_count = attendance_map.get(c.id, 0)
         c.role_count = role_map.get(c.id, 0)
         c.award_count = award_map.get(c.id, 0)
+        
+        # Calculate Qualification Status
+        tt = contact_tt_count.get(c.id, 0)
+        best_tt = best_tt_map.get(c.id, 0)
+        other_roles = contact_other_role_count.get(c.id, 0)
+        
+        c.is_qualified = check_membership_qualification(tt, best_tt, other_roles)
 
     total_contacts = len(contacts)
     type_counts = {}
