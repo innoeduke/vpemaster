@@ -184,7 +184,8 @@ def add_role():
             type=request.form.get('type'),
             award_category=request.form.get('award_category'),
             needs_approval='needs_approval' in request.form,
-            is_distinct='is_distinct' in request.form
+            is_distinct='is_distinct' in request.form,
+            is_member_only='is_member_only' in request.form
         )
         db.session.add(new_role)
         db.session.commit()
@@ -216,6 +217,7 @@ def update_roles():
                 role.award_category = item.get('award_category')
                 role.needs_approval = item.get('needs_approval', False)
                 role.is_distinct = item.get('is_distinct', False)
+                role.is_member_only = item.get('is_member_only', False)
 
         db.session.commit()
         return jsonify(success=True, message="Roles updated successfully.")
@@ -257,7 +259,8 @@ def import_roles():
                         award_category=row.get('award_category'),
                         needs_approval=row.get(
                             'needs_approval', '0').strip() == '1',
-                        is_distinct=row.get('is_distinct', '0').strip() == '1'
+                        is_distinct=row.get('is_distinct', '0').strip() == '1',
+                        is_member_only=row.get('is_member_only', '0').strip() == '1'
                     )
                     db.session.add(new_role)
 

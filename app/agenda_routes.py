@@ -12,7 +12,7 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from .utils import derive_current_path_level, load_setting, derive_credentials, project_id_to_code, get_meetings_by_status, load_all_settings, get_excomm_team
+from .utils import derive_current_path_level, load_setting, derive_credentials, get_project_code, get_meetings_by_status, load_all_settings, get_excomm_team
 from .tally_sync import sync_participants_to_tally
 
 agenda_bp = Blueprint('agenda_bp', __name__)

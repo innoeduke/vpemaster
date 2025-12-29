@@ -135,7 +135,8 @@ function toggleEditMode(config) {
           field === "Valid_for_Project" ||
           field == "Predefined" ||
           field == "needs_approval" ||
-          field == "is_distinct"
+          field == "is_distinct" ||
+          field == "is_member_only"
         ) {
           currentValue = cell.querySelector('input[type="checkbox"]').checked;
         } else {
@@ -621,7 +622,11 @@ document.addEventListener("DOMContentLoaded", () => {
     tableId: "roles-table",
     saveUrl: "/settings/roles/update",
     createEditor: (cell, field, currentValue) => {
-      if (field === "needs_approval" || field === "is_distinct") {
+      if (
+        field === "needs_approval" ||
+        field === "is_distinct" ||
+        field === "is_member_only"
+      ) {
         cell.querySelector('input[type="checkbox"]').disabled = false;
       } else if (field === "type") {
         const select = document.createElement("select");
@@ -655,17 +660,25 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     },
     restoreCell: (cell, field, originalValue) => {
-      if (field === "needs_approval" || field === "is_distinct") {
+      if (
+        field === "needs_approval" ||
+        field === "is_distinct" ||
+        field === "is_member_only"
+      ) {
         cell.innerHTML = `<input type="checkbox" ${originalValue ? "checked" : ""
           } disabled>`;
       } else if (field === "icon") {
-        cell.innerHTML = `<i class="${originalValue}"></i> ${originalValue}`;
+        cell.innerHTML = `<i class="fas ${originalValue}"></i> ${originalValue}`;
       } else {
         cell.textContent = originalValue;
       }
     },
     getCellValue: (cell, field) => {
-      if (field === "needs_approval" || field === "is_distinct") {
+      if (
+        field === "needs_approval" ||
+        field === "is_distinct" ||
+        field === "is_member_only"
+      ) {
         return cell.querySelector('input[type="checkbox"]').checked;
       } else {
         const input = cell.querySelector("input, select");
@@ -673,11 +686,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     },
     updateCell: (cell, field, value) => {
-      if (field === "needs_approval" || field === "is_distinct") {
+      if (
+        field === "needs_approval" ||
+        field === "is_distinct" ||
+        field === "is_member_only"
+      ) {
         cell.innerHTML = `<input type="checkbox" ${value ? "checked" : ""
           } disabled>`;
       } else if (field === "icon") {
-        cell.innerHTML = `<i class="${value}"></i> ${value}`;
+        cell.innerHTML = `<i class="fas ${value}"></i> ${value}`;
       } else {
         cell.textContent = value;
       }

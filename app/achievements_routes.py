@@ -86,7 +86,7 @@ def achievement_form(id):
         achievement.member_id = member_id
         
         db.session.commit()
-        from .achievements_utils import sync_contact_metadata
+        from .utils import sync_contact_metadata
         sync_contact_metadata(contact_id)
 
         db.session.commit()
@@ -120,7 +120,7 @@ def delete_achievement(id):
     db.session.delete(achievement)
     db.session.commit()
     
-    from .achievements_utils import sync_contact_metadata
+    from .utils import sync_contact_metadata
     sync_contact_metadata(contact_id)
     flash('Achievement deleted successfully.', 'success')
     return redirect(url_for('achievements_bp.show_achievements'))

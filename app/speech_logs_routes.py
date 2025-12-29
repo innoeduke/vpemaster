@@ -5,7 +5,7 @@ from .models import SessionLog, Contact, Project, User, SessionType, Media, Role
 from .auth.utils import login_required, is_authorized
 from flask_login import current_user
 
-from .utils import project_id_to_code
+from .utils import get_project_code
 from sqlalchemy import distinct
 from sqlalchemy.orm import joinedload
 from datetime import datetime
@@ -138,14 +138,10 @@ def show_speech_logs():
                     if path_obj:
                         pathway_abbr = path_obj.abbr
 
-            if pp:
-                display_level = str(pp.level)
-                if pathway_abbr:
-                     log.project_code = f"{pathway_abbr}{pp.code}"
-                else:
-                     log.project_code = pp.code # Should rarely happen
+            if log.project:
+                log.project_code = log.project.get_code(log.pathway)
             else:
-                 log.project_code = ""
+                log.project_code = ""
 
             # Legacy code derivation (if needed, but pp logic covers it)
             # code = project_id_to_code(log.Project_ID, path_abbr) ...
@@ -433,43 +429,26 @@ def get_speech_log_details(log_id):
     
     # Better logic: if there is a Project linked, try to find the pathway it belongs to
     # especially for Presentations or if the user is not linked to a path
-    if log.Project_ID:
-        # Check if project is linked to the user's current path first
-        pp = None
-        if log.owner and log.owner.Current_Path:
-            user_path_obj = db.session.query(Pathway).filter_by(name=log.owner.Current_Path).first()
-            if user_path_obj:
-               pp = db.session.query(PathwayProject).filter_by(path_id=user_path_obj.id, project_id=log.Project_ID).first()
-               if pp:
-                   pathway_name_to_return = log.owner.Current_Path
-
-        # If not found in user's path (or no user path), check if it belongs to ANY pathway (e.g. Series)
-        if not pp:
-             pp_any = db.session.query(PathwayProject).filter_by(project_id=log.Project_ID).first()
-             if pp_any:
-                 path_obj = Pathway.query.get(pp_any.path_id)
-                 if path_obj:
-                     pathway_name_to_return = path_obj.name # e.g. "Successful Club Series"
-                     pp = pp_any
-
-        # Calculate project code if pp exists
+    level = 1
+    if log.Project_ID and log.project:
+        pp, path_obj = log.project.resolve_context(log.owner.Current_Path if log.owner else None)
+        
+        if path_obj:
+            pathway_name_to_return = path_obj.name
+        
         if pp:
-            path_obj = Pathway.query.get(pp.path_id)
-            if path_obj:
-                project_code = f"{path_obj.abbr}{pp.code}"
+             if path_obj and path_obj.abbr:
+                 log.project_code = f"{path_obj.abbr}{pp.code}"
+             else:
+                 log.project_code = pp.code
+             
+             if pp.level:
+                level = pp.level
+        else:
+             log.project_code = ""
+             if log.Project_ID == 60: # Generic
+                 log.project_code = "TM1.0"
 
-    level = 1  # Default level
-    if pp and pp.level:
-        level = pp.level
-    elif project_code and project_code != "TM1.0":
-        # Fallback for legacy parsing if absolutely needed (should strictly use pp.level now)
-         try:
-            code_without_prefix = project_code[2:]
-            if '.' in code_without_prefix:
-                 level = int(code_without_prefix.split('.')[0])
-         except (ValueError, IndexError):
-            level = 1
-    
     log_data = {
         "id": log.id,
         "Session_Title": log.Session_Title,
@@ -661,7 +640,7 @@ def complete_speech_log(log_id):
         
         # Trigger metadata sync (including Next_Project calculation) after commit
         if log.Owner_ID:
-            from .achievements_utils import sync_contact_metadata
+            from .utils import sync_contact_metadata
             sync_contact_metadata(log.Owner_ID)
             
         return jsonify(success=True)

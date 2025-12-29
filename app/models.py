@@ -85,6 +85,61 @@ class Project(db.Model):
     Requirements = db.Column(db.String(500))
     Resources = db.Column(db.String(500))
 
+    def resolve_context(self, context_path_name=None):
+        """
+        Helper to find the best matching PathwayProject entry and its Pathway.
+        Returns tuple (PathwayProject, Pathway).
+        """
+        pp = None
+        path_obj = None
+        
+        if context_path_name:
+            path_obj = db.session.query(Pathway).filter_by(name=context_path_name).first()
+            if path_obj:
+                pp = db.session.query(PathwayProject).filter_by(
+                    path_id=path_obj.id, project_id=self.id).first()
+                if not pp:
+                    path_obj = None # Reset if project not found in this path
+
+        # Fallback: Check if it belongs to ANY pathway
+        if not pp:
+            pp = db.session.query(PathwayProject).filter_by(project_id=self.id).first()
+            if pp:
+                path_obj = db.session.query(Pathway).get(pp.path_id)
+        
+        return pp, path_obj
+
+    def get_code(self, context_path_name=None):
+        """
+        Returns the project code based on a pathway context.
+        """
+        # Handle generic project
+        if self.id == 60:
+            return "TM1.0"
+
+        pp, path_obj = self.resolve_context(context_path_name)
+
+        if pp:
+            if path_obj and path_obj.abbr:
+                return f"{path_obj.abbr}{pp.code}"
+            else:
+                return pp.code
+
+        return ""
+
+    def get_level(self, context_path_name=None):
+        """
+        Returns the level based on a pathway context.
+        """
+        if self.id == 60:
+            return 1
+            
+        pp, _ = self.resolve_context(context_path_name)
+        if pp and pp.level:
+            return pp.level
+            
+        return 1
+
 
 class Meeting(db.Model):
     __tablename__ = 'Meetings'
@@ -237,6 +292,7 @@ class Role(db.Model):
     award_category = db.Column(db.String(30))
     needs_approval = db.Column(db.Boolean, nullable=False)
     is_distinct = db.Column(db.Boolean, nullable=False)
+    is_member_only = db.Column(db.Boolean, default=False)
 
 
 class Vote(db.Model):

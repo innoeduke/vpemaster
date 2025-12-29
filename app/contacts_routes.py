@@ -172,7 +172,7 @@ def contact_form(contact_id=None):
             db.session.commit()
             
             # Sync metadata based on achievements
-            from .achievements_utils import sync_contact_metadata
+            from .utils import sync_contact_metadata
             sync_contact_metadata(contact.id)
         else:
             # Logic for creating a new contact
@@ -211,7 +211,7 @@ def contact_form(contact_id=None):
             db.session.commit()
 
             # Sync metadata based on achievements
-            from .achievements_utils import sync_contact_metadata
+            from .utils import sync_contact_metadata
             sync_contact_metadata(new_contact.id)
 
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

@@ -228,6 +228,7 @@
           <th class="sortable" data-column-index="4">Award Category</th>
           <th class="sortable" data-column-index="5">Needs Approval</th>
           <th class="sortable" data-column-index="6">Is Distinct</th>
+          <th class="sortable" data-column-index="7">Is Member Only</th>
         </tr>
       </thead>
       <tbody>
@@ -258,6 +259,18 @@
               {%
               if
               role.is_distinct
+              %}checked{%
+              endif
+              %}
+              disabled
+            />
+          </td>
+          <td data-field="is_member_only">
+            <input
+              type="checkbox"
+              {%
+              if
+              role.is_member_only
               %}checked{%
               endif
               %}
