@@ -401,9 +401,14 @@ def get_meetings_by_status(limit_past=8, columns=None):
     """
     query_cols = [Meeting] if columns is None else columns
 
-    # Fetch active meetings ('not started' or 'running')
+    # Fetch active meetings ('unpublished', 'not started', or 'running')
+    active_statuses = ['not started', 'running']
+    from flask_login import current_user
+    if current_user.is_authenticated and current_user.Role == 'Admin':
+        active_statuses.append('unpublished')
+        
     active_meetings = db.session.query(*query_cols)\
-        .filter(Meeting.status.in_(['not started', 'running']))\
+        .filter(Meeting.status.in_(active_statuses))\
         .order_by(Meeting.Meeting_Number.desc()).all()
 
     # Fetch recent inactive meetings ('finished' or 'cancelled')

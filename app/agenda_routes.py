@@ -432,6 +432,13 @@ def agenda():
     selected_meeting = None
     if selected_meeting_num:
         logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_num)
+        
+        # Security check: Only admins can see unpublished meetings
+        if selected_meeting and selected_meeting.status == 'unpublished':
+            from flask_login import current_user
+            if not (current_user.is_authenticated and current_user.Role == 'Admin'):
+                from flask import abort
+                abort(403) # Forbidden
 
     # --- Other Data for Template ---
     project_speakers = _get_project_speakers(selected_meeting_num)
@@ -1535,7 +1542,9 @@ def update_meeting_status(meeting_number):
     current_status = meeting.status
     new_status = current_status
 
-    if current_status == 'not started':
+    if current_status == 'unpublished':
+        new_status = 'not started'
+    elif current_status == 'not started':
         new_status = 'running'
     elif current_status == 'running':
         new_status = 'finished'

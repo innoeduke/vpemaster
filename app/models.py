@@ -74,7 +74,7 @@ class User(UserMixin, db.Model):
 
 class Project(db.Model):
     __tablename__ = 'Projects'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column('ID', db.Integer, primary_key=True)
     Project_Name = db.Column(db.String(255), nullable=False)
     Format = db.Column(db.String(50))
     Duration_Min = db.Column(db.Integer)
@@ -143,7 +143,7 @@ class Project(db.Model):
 
 class Meeting(db.Model):
     __tablename__ = 'Meetings'
-    id = db.Column(db.Integer, primary_key=True)
+    id = db.Column('ID', db.Integer, primary_key=True)
     type = db.Column(db.String(255), default='Keynote Speech')
     Meeting_Number = db.Column(db.SmallInteger, unique=True, nullable=False)
     Meeting_Date = db.Column(db.Date)
@@ -158,8 +158,8 @@ class Meeting(db.Model):
     best_role_taker_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     media_id = db.Column(db.Integer, db.ForeignKey('Media.id', use_alter=True))
     GE_Style = db.Column(db.String(20), default='One shot')
-    status = db.Column(db.Enum('not started', 'running', 'finished', 'cancelled', name='meeting_status'),
-                       default='not started', nullable=False)
+    status = db.Column(db.Enum('unpublished', 'not started', 'running', 'finished', 'cancelled', name='meeting_status'),
+                       default='unpublished', nullable=False)
 
     best_table_topic_speaker = db.relationship(
         'Contact', foreign_keys=[best_table_topic_id])
@@ -199,7 +199,7 @@ class SessionLog(db.Model):
         'Session_Types.id'), nullable=False)
     Owner_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     credentials = db.Column(db.String(255), default='')
-    Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.id'))
+    Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.ID'))
     Start_Time = db.Column(db.Time)
     Duration_Min = db.Column(db.Integer, default=0)
     Duration_Max = db.Column(db.Integer)
@@ -243,7 +243,7 @@ class PathwayProject(db.Model):
     __tablename__ = 'pathway_projects'
     id = db.Column(db.Integer, primary_key=True)
     path_id = db.Column(db.Integer, db.ForeignKey('pathways.id'))
-    project_id = db.Column(db.Integer, db.ForeignKey('Projects.id'))
+    project_id = db.Column(db.Integer, db.ForeignKey('Projects.ID'))
     code = db.Column(db.String(10))
     level = db.Column(db.Integer, nullable=True)
     type = db.Column(db.Enum('elective', 'required', 'other', name='pathway_project_type_enum'), nullable=False)

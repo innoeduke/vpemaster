@@ -522,7 +522,12 @@ document.addEventListener("DOMContentLoaded", () => {
             .replace("_", " ")
             .replace(/\b\w/g, (l) => l.toUpperCase());
 
-          if (newStatus === "running") {
+          if (newStatus === "not started") {
+            button.textContent = "Start";
+            button.classList.remove("btn-success");
+            button.classList.add("btn-primary");
+            iconClass = "fa-play-circle";
+          } else if (newStatus === "running") {
             button.textContent = "Stop";
             iconClass = "fa-broadcast-tower";
           } else if (newStatus === "finished") {
@@ -531,9 +536,13 @@ document.addEventListener("DOMContentLoaded", () => {
           } else if (newStatus === "cancelled") {
             button.textContent = "Cancelled";
             button.disabled = true;
-            button.classList.remove("btn-info");
+            button.classList.remove("btn-info", "btn-primary", "btn-success");
             button.classList.add("btn-secondary"); // Gray color
             iconClass = "fa-ban";
+          } else if (newStatus === "unpublished") {
+            button.textContent = "Publish";
+            button.classList.add("btn-success");
+            iconClass = "fa-eye-slash";
           } else {
             button.textContent = "Start";
             iconClass = "fa-play-circle";
