@@ -129,6 +129,7 @@ def show_speech_logs():
                      pp = PathwayProject.query.filter_by(project_id=log.Project_ID, path_id=user_path.id).first()
                      if pp:
                          pathway_abbr = user_path.abbr
+                         display_level = str(pp.level)
 
             # Fallback: specific series or other path if not found in user's current path
             if not pp and log.Project_ID:
@@ -137,6 +138,7 @@ def show_speech_logs():
                     path_obj = Pathway.query.get(pp.path_id)
                     if path_obj:
                         pathway_abbr = path_obj.abbr
+                        display_level = str(pp.level)
 
             if log.project:
                 # Use the calculated pathway_abbr (which is from owner path or fallback)
