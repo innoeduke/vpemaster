@@ -119,27 +119,36 @@ def show_speech_logs():
 
         if (log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != 60) or is_prepared_speech:
             log_type = 'speech'
-            path = None
-            path_abbr = None
-            if log.owner and log.owner.user:
-                path = log.owner.Current_Path
-                if path:
-                    path_abbr = pathway_mapping.get(path)
+            # Try to find the project in the user's current path first
+            pp = None
+            pathway_abbr = None
+            
+            if log.owner and log.owner.Current_Path:
+                user_path = Pathway.query.filter_by(name=log.owner.Current_Path).first()
+                if user_path:
+                     pp = PathwayProject.query.filter_by(project_id=log.Project_ID, path_id=user_path.id).first()
+                     if pp:
+                         pathway_abbr = user_path.abbr
 
-            code = project_id_to_code(log.Project_ID, path_abbr)
-            if code and len(code) > 2:
-                try:
-                    code_without_prefix = code[2:]
-                    if '.' in code_without_prefix:
-                        display_level = str(
-                            int(code_without_prefix.split('.')[0]))
-                    else:
-                        display_level = str(
-                            int(code_without_prefix.split('.')[0]))
-                except (ValueError, IndexError):
-                    pass
+            # Fallback: specific series or other path if not found in user's current path
+            if not pp and log.Project_ID:
+                pp = PathwayProject.query.filter_by(project_id=log.Project_ID).first()
+                if pp:
+                    path_obj = Pathway.query.get(pp.path_id)
+                    if path_obj:
+                        pathway_abbr = path_obj.abbr
 
-            log.project_code = code
+            if pp:
+                display_level = str(pp.level)
+                if pathway_abbr:
+                     log.project_code = f"{pathway_abbr}{pp.code}"
+                else:
+                     log.project_code = pp.code # Should rarely happen
+            else:
+                 log.project_code = ""
+
+            # Legacy code derivation (if needed, but pp logic covers it)
+            # code = project_id_to_code(log.Project_ID, path_abbr) ...
         else:  # It's a role
             # Check if we've already processed this role for this person/meeting
             role_key = (log.Meeting_Number, log.Owner_ID, role_name)
@@ -450,16 +459,16 @@ def get_speech_log_details(log_id):
                 project_code = f"{path_obj.abbr}{pp.code}"
 
     level = 1  # Default level
-    if project_code and project_code != "TM1.0":
-        try:
-            # Try to get level from codes like "PM1.1"
-            # First remove the path abbreviation prefix (e.g., "PM")
-            code_without_prefix = project_code[2:]  # Remove first 2 characters
-            # Then extract the level number before the dot
-            level = int(code_without_prefix.split('.')[0])
-        except (ValueError, IndexError):
-            level = 1  # Fallback if parsing fails
-    # If project_code is "TM1.0" or None, level just stays 1
+    if pp and pp.level:
+        level = pp.level
+    elif project_code and project_code != "TM1.0":
+        # Fallback for legacy parsing if absolutely needed (should strictly use pp.level now)
+         try:
+            code_without_prefix = project_code[2:]
+            if '.' in code_without_prefix:
+                 level = int(code_without_prefix.split('.')[0])
+         except (ValueError, IndexError):
+            level = 1
     
     log_data = {
         "id": log.id,
