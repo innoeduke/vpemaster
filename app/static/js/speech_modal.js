@@ -126,7 +126,6 @@ async function openSpeechEditModal(
       Evaluation: setupEvaluatorModal,
       "Panel Discussion": setupSpecialProjectModal,
       "Table Topics": setupSpecialProjectModal,
-      Presentation: setupPresentationModal,
       default: setupSpeechModal,
     };
     const setupFunction =
@@ -287,13 +286,9 @@ function setupSpecialProjectModal(logData, { sessionType, workingPath }) {
   };
 }
 
-function setupPresentationModal(logData) {
-  // Now redirected to use setupSpeechModal logic, but ensuring labels are correct
-  setupSpeechModal(logData, { sessionType: 'Presentation' });
-}
 
 function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
-  modalElements.title.textContent = sessionType === 'Presentation' ? "Edit Presentation Details" : "Edit Speech Details";
+  modalElements.title.textContent = "Edit Speech Details";
 
   modalElements.standardSelection.style.display = "block";
   modalElements.pathwaySelect.required = true;
@@ -302,25 +297,19 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
   modalElements.projectSelectGroup.style.display = "block";
   modalElements.genericCheckbox.style.display = "block";
 
-  if (sessionType === 'Presentation') {
-    modalElements.labelPathway.textContent = "Education Series:";
-    modalElements.labelProject.textContent = "Presentation Title:";
-    modalElements.genericCheckbox.style.display = "none"; // Presentations are specific
-  } else {
-    modalElements.labelPathway.textContent = "Pathway:";
-    modalElements.labelProject.textContent = "Project:";
-    modalElements.labelLevel.textContent = "Level:";
-  }
+  modalElements.labelPathway.textContent = "Pathway:";
+  modalElements.labelProject.textContent = "Project:";
+  modalElements.labelLevel.textContent = "Level:";
 
 
   if (typeof groupedPathways !== 'undefined' && groupedPathways) {
     populateGroupedDropdown(modalElements.pathwaySelect, groupedPathways, {
-      defaultOption: sessionType === 'Presentation' ? "-- Select Series --" : "-- Select Pathway --"
+      defaultOption: "-- Select Pathway --"
     });
   } else {
     const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
     populateDropdown(modalElements.pathwaySelect, pathways, {
-      defaultOption: sessionType === 'Presentation' ? "-- Select Series --" : "-- Select Pathway --",
+      defaultOption: "-- Select Pathway --",
       valueField: "name",
       textField: "name",
     });
@@ -344,7 +333,7 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
   } else {
     modalElements.genericCheckbox.checked = false;
     toggleGeneric(false);
-    if (!projectToSelect && sessionType !== 'Presentation') {
+    if (!projectToSelect) {
       // Logic for auto-selecting next project for standard speeches
       if (window.location.pathname.includes("/agenda")) {
         if (nextProject) {

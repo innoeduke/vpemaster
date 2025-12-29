@@ -434,7 +434,7 @@ def agenda():
     # --- Other Data for Template ---
     project_speakers = _get_project_speakers(selected_meeting_num)
     
-    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    all_pathways = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways}
     
     pathways = {}

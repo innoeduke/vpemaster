@@ -55,7 +55,7 @@ def show_speech_logs():
          except (ValueError, TypeError):
              pass
 
-    all_pathways_from_db = Pathway.query.order_by(Pathway.name).all()
+    all_pathways_from_db = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways_from_db}
 
     grouped_pathways = {}
@@ -117,24 +117,7 @@ def show_speech_logs():
 
         is_prepared_speech = log.project and log.project.Format == 'Prepared Speech'
 
-        if log.session_type.Title == 'Presentation':
-            log_type = 'presentation'
-            if log.project:
-                # Use the helper to find associated pathway (Series) info
-                pp = PathwayProject.query.filter_by(project_id=log.project.id).first()
-                if pp:
-                   display_level = str(pp.level)
-                   pathway_obj = Pathway.query.get(pp.path_id)
-                   if pathway_obj:
-                       log.presentation_series = pathway_obj.name
-                       log.presentation_code = pp.code
-                else:
-                    log.presentation_series = None
-                    log.presentation_code = None
-            else:
-                log.presentation_series = None
-                log.presentation_code = None
-        elif (log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != 60) or is_prepared_speech:
+        if (log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != 60) or is_prepared_speech:
             log_type = 'speech'
             path = None
             path_abbr = None
@@ -182,14 +165,11 @@ def show_speech_logs():
            (not log.owner or log.owner.Current_Path != selected_pathway):
             continue
 
-        if log_type == 'presentation' and selected_pathway and \
-           getattr(log, 'presentation_series', None) != selected_pathway:
-            continue
 
         if selected_status:
-            if log_type in ['speech', 'presentation']:
+            if log_type == 'speech':
                 if log.Status != selected_status:
-                    continue  # Filter speeches/presentations by status
+                    continue  # Filter speeches by status
             else:
                 # For roles, only show if they are linked to a project (e.g. Active Listening) AND match status
                 if log.Project_ID and log.Status == selected_status:
@@ -209,8 +189,6 @@ def show_speech_logs():
 
         if log.log_type == 'speech':
             priority = 1  # 1. Speeches
-        elif log.log_type == 'presentation':
-            priority = 2  # 2. Presentations
         else:  # 'role'
             priority = 3  # 3. Roles
 
@@ -313,12 +291,6 @@ def show_speech_logs():
                     satisfied = True
             elif lr.role.lower() == 'elective project' and log.log_type == 'speech':
                 if pp_mapping.get(log.Project_ID) == 'elective':
-                    satisfied = True
-            elif log.log_type == 'presentation':
-                pres_series = getattr(log, 'presentation_series', None)
-                if lr.role.lower() == 'presentation':
-                    satisfied = True
-                elif pres_series and normalize(pres_series) == norm_target:
                     satisfied = True
             
             # 3. Special case for "Individual Evaluator" logged as a project or role
@@ -597,16 +569,11 @@ def update_speech_log(log_id):
     
     # Priority 2: Session Type Changed (and Project didn't handle it)
     elif session_type_changed:
-        if session_type_title == 'Presentation':
-             # Fallback if no project selected
-             log.Duration_Min = 10
-             log.Duration_Max = 15
-        else:
-             # Fetch the NEW session type to get defaults
-             new_st = SessionType.query.filter_by(Title=session_type_title).first()
-             if new_st:
-                 log.Duration_Min = new_st.Duration_Min
-                 log.Duration_Max = new_st.Duration_Max
+        # Fetch the NEW session type to get defaults
+        new_st = SessionType.query.filter_by(Title=session_type_title).first()
+        if new_st:
+            log.Duration_Min = new_st.Duration_Min
+            log.Duration_Max = new_st.Duration_Max
     
     # Priority 3: No Structural Change -> Do NOT update duration (Preserve manual edits)
 
