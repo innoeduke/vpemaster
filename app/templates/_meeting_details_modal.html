@@ -73,7 +73,7 @@
                 {% endfor %}
             </select>
         </div>
-        <div class="meta-item" id="ge-style-toggle" style="display: none;">
+        <div class="meta-item">
             <span><strong>GE Mode:</strong></span>
             <select id="ge-style-select" class="edit-mode-field" data-current-style="{{ selected_meeting.GE_Style if selected_meeting else '' }}">
                 <option value="One shot" {% if selected_meeting and selected_meeting.GE_Style == 'One shot' %}selected{% endif %}>Traditional (5m)</option>

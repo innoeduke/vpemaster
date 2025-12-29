@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const meetingStatusBtn = document.getElementById("meeting-status-btn");
   const tableBody = document.querySelector("#logs-table tbody");
   const contactForm = document.getElementById("contactForm");
-  const geStyleToggle = document.getElementById("ge-style-toggle");
+  // const geStyleToggle = document.getElementById("ge-style-toggle"); // Removed as it's always visible in modal
   const geStyleSelect = document.getElementById("ge-style-select");
   const viewModeButtons = document.getElementById("view-mode-buttons");
   const wodDisplay = document.querySelector(".wod-display");
@@ -254,6 +254,10 @@ document.addEventListener("DOMContentLoaded", () => {
             tableContainer.dataset.projectSpeakers = JSON.stringify(projectSpeakers);
           }
 
+          if (geStyleSelect) {
+            geStyleSelect.dataset.currentStyle = geStyleSelect.value;
+          }
+
           // Re-render the table with the new data
           if (data.logs_data) {
             renderTableRows(data.logs_data);
@@ -261,6 +265,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           // Exit edit mode and update UI
           toggleEditMode(false);
+          closeMeetingDetailsModal(); // Close the modal if open
 
           // Show success feedback (optional, since the UI update is the feedback)
           // alert("Changes saved successfully!"); 
@@ -756,9 +761,7 @@ document.addEventListener("DOMContentLoaded", () => {
       viewModeButtons.style.display = isEditMode ? "none" : "flex";
     if (editModeButtons)
       editModeButtons.style.display = isEditMode ? "flex" : "none";
-    if (geStyleToggle) {
-      geStyleToggle.style.display = isEditMode ? "flex" : "none";
-    }
+    // geStyleToggle logic removed - always visible in modal
   }
 
   function initializeSortable(enable) {
@@ -780,6 +783,35 @@ document.addEventListener("DOMContentLoaded", () => {
   function getRowData(row) {
     const isSection = row.dataset.isSection === "true";
     const titleCell = row.querySelector('[data-field="Session_Title"]');
+
+    // Fallback for Read-Only mode (when elements haven't been built by buildEditableRow)
+    if (!titleCell) {
+      if (isSection) {
+        return {
+          id: row.dataset.id,
+          meeting_number: row.dataset.meetingNumber,
+          meeting_seq: row.dataset.meetingSeq,
+          type_id: row.dataset.typeId,
+          session_title: row.dataset.sessionTitle,
+        };
+      }
+      return {
+        id: row.dataset.id,
+        meeting_number: row.dataset.meetingNumber,
+        meeting_seq: row.dataset.meetingSeq,
+        start_time: row.dataset.startTime,
+        type_id: row.dataset.typeId,
+        session_title: row.dataset.sessionTitle,
+        owner_id: row.dataset.ownerId,
+        credentials: row.dataset.credentials,
+        duration_min: row.dataset.durationMin,
+        duration_max: row.dataset.durationMax,
+        project_id: row.dataset.projectId,
+        status: row.dataset.status,
+        current_path_level: row.dataset.currentPathLevel || "",
+      };
+    }
+
     const titleControl = titleCell.querySelector("input, select");
     const sessionTitleValue = titleControl
       ? titleControl.value
