@@ -265,7 +265,8 @@
 }
 
 .edit-mode-active .agenda-header-logo,
-.edit-mode-active .video-icon-btn {
+.edit-mode-active .video-icon-btn,
+.edit-mode-active .wod-display {
     display: none;
 }
 
@@ -724,8 +725,15 @@
         /* Unset the top position */
         bottom: 15px;
         /* Place it 15px from the bottom */
-        right: 15px;
-        /* Place it 15px from the right */
+        width: 90%;
+        /* Scale width to 90% as requested */
+        left: 50%;
+        transform: translateX(-50%);
+        /* Center horizontally */
+        right: auto;
+        /* Reset right positioning */
+        justify-content: center;
+        /* Center buttons inside */
     }
 
     /* Make the Owner column wider on mobile */

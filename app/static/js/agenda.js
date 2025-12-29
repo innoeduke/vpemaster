@@ -719,11 +719,14 @@ document.addEventListener("DOMContentLoaded", () => {
         null
       );
 
-      // Dynamically set colspan based on screen size to fix mobile browser bug
-      if (window.innerWidth <= 768) {
-        titleCell.colSpan = 5; // Spans the visible middle columns on mobile (updated)
+      // Dynamically set colspan based on whether the 'No' column is hidden (mobile view)
+      const colNoHeader = document.querySelector('#logs-table th.col-no');
+      const isMobileView = colNoHeader && window.getComputedStyle(colNoHeader).display === 'none';
+
+      if (isMobileView) {
+        titleCell.colSpan = 6; // Spans the visible middle columns on mobile (9 total - gap of 2 hidden columns + 1 action column? No, 7 visible total: Title needs to fill 6)
       } else {
-        titleCell.colSpan = 7; // Spans the middle columns on desktop (updated)
+        titleCell.colSpan = 7; // Spans the middle columns on desktop
       }
 
       titleCell.classList.add("section-row");
