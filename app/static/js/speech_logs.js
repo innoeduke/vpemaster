@@ -28,12 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 });
 
-function get_presentation_by_id(presentationId) {
-  if (!Array.isArray(allPresentations) || !presentationId) {
-    return null;
-  }
-  return allPresentations.find((p) => p.id == presentationId);
-}
+
 
 function completeSpeechLog(button, logId) {
   fetch(`/speech_log/complete/${logId}`, {

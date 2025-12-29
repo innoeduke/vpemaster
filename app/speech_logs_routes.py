@@ -105,44 +105,6 @@ def show_speech_logs():
 
     all_logs = base_query.order_by(SessionLog.Meeting_Number.desc()).all()
 
-    # Fetch presentation projects and their pathway info
-    presentation_projects = db.session.query(Project, PathwayProject, Pathway).join(
-        PathwayProject, Project.id == PathwayProject.project_id
-    ).join(
-        Pathway, PathwayProject.path_id == Pathway.id
-    ).filter(
-        Project.Format == 'Presentation'
-    ).order_by(
-        PathwayProject.level, PathwayProject.code
-    ).all()
-    
-    # helper for fast lookup by project_id
-    # structure: {project_id: {'level': level, 'series': series_name, 'code': code}}
-    all_presentations_dict = {}
-    
-    for proj, pp, pathway in presentation_projects:
-        all_presentations_dict[proj.id] = {
-            'level': pp.level,
-            'series': pathway.name,
-            'title': proj.Project_Name,
-            'code': pp.code,
-            'id': proj.id
-        }
-        # Also map by ID directly to object if needed, but dict is safer for properties
-        # We need to mimic the object structure if the template expects attributes
-        # Or change the template/logic below. Logic below uses attributes.
-        
-    # Temporary adapter class to avoiding rewriting all logic below immediately
-    class PresentationAdapter:
-        def __init__(self, data):
-            self.id = data['id']
-            self.level = data['level']
-            self.series = data['series']
-            self.title = data['title']
-            self.code = data['code']
-            
-    all_presentations_dict_objs = {pid: PresentationAdapter(data) for pid, data in all_presentations_dict.items()}
-
     grouped_logs = {}
     processed_roles = set()
 
@@ -157,12 +119,21 @@ def show_speech_logs():
 
         if log.session_type.Title == 'Presentation':
             log_type = 'presentation'
-            presentation = all_presentations_dict_objs.get(log.Project_ID)
-            if presentation:
-                display_level = str(presentation.level)
-                log.presentation_series = presentation.series
+            if log.project:
+                # Use the helper to find associated pathway (Series) info
+                pp = PathwayProject.query.filter_by(project_id=log.project.id).first()
+                if pp:
+                   display_level = str(pp.level)
+                   pathway_obj = Pathway.query.get(pp.path_id)
+                   if pathway_obj:
+                       log.presentation_series = pathway_obj.name
+                       log.presentation_code = pp.code
+                else:
+                    log.presentation_series = None
+                    log.presentation_code = None
             else:
                 log.presentation_series = None
+                log.presentation_code = None
         elif (log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != 60) or is_prepared_speech:
             log_type = 'speech'
             path = None
@@ -404,13 +375,7 @@ def show_speech_logs():
         for p in projects
     ]
 
-    presentations_data = [
-        {"id": p.id, "title": p.title, "level": p.level,
-            "code": p.code, "series": p.series}
-        for p in all_presentations_dict_objs.values()
-    ]
-    presentation_series = sorted(
-        list(set(p.series for p in all_presentations_dict_objs.values() if p.series)))
+
 
     SERIES_INITIALS = current_app.config['SERIES_INITIALS']
     today_date = datetime.today().date()
@@ -442,10 +407,7 @@ def show_speech_logs():
         pathways=grouped_pathways,
         levels=range(1, 6),
         projects=projects_data,  # This is used for allProjects in JS
-        presentations=presentations_data,  # Pass presentation data for JS
-        presentation_series=presentation_series,  # Pass series data for JS
         series_initials=SERIES_INITIALS,  # Pass initials map for template
-        get_presentation_by_id=lambda pid: all_presentations_dict_objs.get(pid),
         today_date=today_date,
         level_roles=LevelRole.query.order_by(LevelRole.level, LevelRole.type).all(),
         completion_summary=completion_summary,
@@ -484,11 +446,34 @@ def get_speech_log_details(log_id):
 
     # Use the helper function to get project code
     project_code = ""
-    if log.Project_ID and log.owner and log.owner.Current_Path:
-        pathway = db.session.query(Pathway).filter_by(name=log.owner.Current_Path).first()
-        if pathway:
-            pathway_abbr = pathway.abbr
-            project_code = project_id_to_code(log.Project_ID, pathway_abbr)
+    pathway_name_to_return = log.owner.Current_Path if log.owner and log.owner.Current_Path else "Presentation Mastery"
+    
+    # Better logic: if there is a Project linked, try to find the pathway it belongs to
+    # especially for Presentations or if the user is not linked to a path
+    if log.Project_ID:
+        # Check if project is linked to the user's current path first
+        pp = None
+        if log.owner and log.owner.Current_Path:
+            user_path_obj = db.session.query(Pathway).filter_by(name=log.owner.Current_Path).first()
+            if user_path_obj:
+               pp = db.session.query(PathwayProject).filter_by(path_id=user_path_obj.id, project_id=log.Project_ID).first()
+               if pp:
+                   pathway_name_to_return = log.owner.Current_Path
+
+        # If not found in user's path (or no user path), check if it belongs to ANY pathway (e.g. Series)
+        if not pp:
+             pp_any = db.session.query(PathwayProject).filter_by(project_id=log.Project_ID).first()
+             if pp_any:
+                 path_obj = Pathway.query.get(pp_any.path_id)
+                 if path_obj:
+                     pathway_name_to_return = path_obj.name # e.g. "Successful Club Series"
+                     pp = pp_any
+
+        # Calculate project code if pp exists
+        if pp:
+            path_obj = Pathway.query.get(pp.path_id)
+            if path_obj:
+                project_code = f"{path_obj.abbr}{pp.code}"
 
     level = 1  # Default level
     if project_code and project_code != "TM1.0":
@@ -501,14 +486,12 @@ def get_speech_log_details(log_id):
         except (ValueError, IndexError):
             level = 1  # Fallback if parsing fails
     # If project_code is "TM1.0" or None, level just stays 1
-
-    pathway = log.owner.Current_Path if log.owner and log.owner.Current_Path else "Presentation Mastery"
-
+    
     log_data = {
         "id": log.id,
         "Session_Title": log.Session_Title,
         "Project_ID": log.Project_ID,
-        "pathway": pathway,
+        "pathway": pathway_name_to_return,
         "level": level,
         "Media_URL": log.media.url if log.media else ""
     }
@@ -542,22 +525,11 @@ def update_speech_log(log_id):
     media_url = data.get('media_url') or None
 
     # Pre-fetch records to avoid autoflush-related deadlocks.
-    # We query for project and presentation *before* modifying the log session.
     project_id = data.get('project_id')
     updated_project = None
-    presentation = None
 
     if project_id and project_id not in [None, "", "null"]:
-        # Unified handling: It's always a project now (Format='Presentation' or others)
         updated_project = Project.query.get(project_id)
-        if updated_project and updated_project.Format == 'Presentation':
-             presentation_project = updated_project 
-             # We might need 'presentation' variable for later logic if it expects an object with .title .series
-             # We can just use the project object but need to know series from PathwayProject if needed?
-             # Let's see how 'presentation' variable is used below.
-             pass
-        else:
-             pass
 
 
     if 'session_title' in data:
@@ -574,13 +546,17 @@ def update_speech_log(log_id):
         db.session.delete(log.media)
 
     # If it's a presentation and the title is *still* blank, then default to the presentation's name
-    if presentation and not log.Session_Title:
-        log.Session_Title = presentation.title  # Default to presentation title
+    if updated_project and not log.Session_Title:
+        log.Session_Title = updated_project.Project_Name
 
     if 'pathway' in data and log.owner and log.owner.user:
-        user = log.owner.user
-        user.Current_Path = data['pathway']
-        db.session.add(user)
+        # Only update user's current path if it's a standard pathway, not a series
+        # We can heuristic check if "Series" is in the name, or check DB. 
+        # For now, simplistic approach: if it has "Series" in name, assume it's presentation series and don't change user's main path.
+        if "Series" not in data['pathway']:
+             user = log.owner.user
+             user.Current_Path = data['pathway']
+             db.session.add(user)
 
     # --- Duration Update Logic Start ---
     # Goal: Update duration only if structurally changed (Project or SessionType), otherwise preserve manual edits.
@@ -613,16 +589,14 @@ def update_speech_log(log_id):
     # 3. Apply Duration Updates based on Priority
     # Priority 1: Project Changed (and we have a project)
     if project_changed and log.Project_ID:
-        if session_type_title == 'Presentation':
-             log.Duration_Min = 10
-             log.Duration_Max = 15
-        elif updated_project: 
+        if updated_project: 
              log.Duration_Min = updated_project.Duration_Min
              log.Duration_Max = updated_project.Duration_Max
     
     # Priority 2: Session Type Changed (and Project didn't handle it)
     elif session_type_changed:
         if session_type_title == 'Presentation':
+             # Fallback if no project selected
              log.Duration_Min = 10
              log.Duration_Max = 15
         else:
@@ -642,7 +616,7 @@ def update_speech_log(log_id):
         project_code = None
         pathway = log.owner.Current_Path if log.owner else "N/A"
 
-        if session_type_title == 'Presentation' and log.Project_ID:
+        if log.Project_ID:
             project = Project.query.get(log.Project_ID)
             if project:
                 project_name = project.Project_Name
@@ -653,19 +627,6 @@ def update_speech_log(log_id):
                     if pathway_obj:
                         pathway = pathway_obj.name
                         project_code = f"{pathway_obj.abbr}{pp.code}"
-
-        elif log.Project_ID:  # Pathway speech or special project
-            updated_project = Project.query.get(log.Project_ID)
-            if updated_project:
-                project_name = updated_project.Project_Name
-        # Use the helper function to get project code
-            if log.owner and log.owner.Current_Path:
-                pathway_obj = db.session.query(Pathway).filter_by(name=log.owner.Current_Path).first()
-                if pathway_obj:
-                    pathway_abbr = pathway_obj.abbr
-                    project_code = project_id_to_code(
-                        log.Project_ID, pathway_abbr)
-                    pathway = pathway_obj.name
 
         return jsonify(success=True,
                        session_title=log.Session_Title,

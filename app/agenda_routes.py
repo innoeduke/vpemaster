@@ -242,25 +242,6 @@ def _get_processed_logs_data(selected_meeting_num):
     # The caller can handle project_speakers separately if needed, or we can return it too.
     # For now, let's keep it focused on logs_data.
 
-    all_presentations_projects = db.session.query(Project, PathwayProject, Pathway).join(
-        PathwayProject, Project.id == PathwayProject.project_id
-    ).join(
-        Pathway, PathwayProject.path_id == Pathway.id
-    ).filter(
-        Project.Format == 'Presentation'
-    ).all()
-    
-    # Map for easy lookup
-    presentations_map = {}
-    for proj, pp, path in all_presentations_projects:
-        presentations_map[proj.id] = {
-            'title': proj.Project_Name,
-            'series': path.name,
-            'level': pp.level,
-            'code': pp.code,
-            'abbr': path.abbr
-        }
-
     # --- Process Raw Logs into Dictionaries ---
     logs_data = []
     all_pathways = Pathway.query.order_by(Pathway.name).all()
@@ -282,15 +263,19 @@ def _get_processed_logs_data(selected_meeting_num):
         level_for_dict = None
 
         if session_type and session_type.Title == 'Presentation' and log.Project_ID:
-            # Find in the map
-            pres_data = presentations_map.get(log.Project_ID)
-            if pres_data:
-                if not session_title_for_dict:
-                    session_title_for_dict = pres_data['title']
-                project_name_for_dict = pres_data['series']  # For tooltip
-                project_purpose_for_dict = f"Level {pres_data['level']} - {pres_data['title']}"
-
-                project_code_str = f"{pres_data['abbr']}{pres_data['code']}"
+            project = log.project
+            if project:
+                # Need to find Pathway info (Series)
+                pp = PathwayProject.query.filter_by(project_id=project.id).first()
+                if pp:
+                    pathway_obj = Pathway.query.get(pp.path_id)
+                    if pathway_obj:
+                         if not session_title_for_dict:
+                             session_title_for_dict = project.Project_Name
+                         project_name_for_dict = pathway_obj.name # Series Name
+                         project_purpose_for_dict = f"Level {pp.level} - {project.Project_Name}"
+                         project_code_str = f"{pathway_obj.abbr}{pp.code}"
+        
         elif log.Project_ID == 60:
             project_code_str = "TM1.0"
         elif project and owner and owner.Current_Path:  # Else if pathway...
@@ -539,28 +524,8 @@ A single endpoint to fetch all data needed for the agenda modals.
         } for p in projects
     ]
 
-    # Presentations (Now derived from Projects)
-    presentation_projects = db.session.query(Project, PathwayProject, Pathway).join(
-        PathwayProject, Project.id == PathwayProject.project_id
-    ).join(
-        Pathway, PathwayProject.path_id == Pathway.id
-    ).filter(
-        Project.Format == 'Presentation'
-    ).order_by(
-        PathwayProject.level, PathwayProject.code
-    ).all()
-    
-    presentations_data = [
-        {"id": proj.id, "title": proj.Project_Name, "level": pp.level,
-            "series": path.name, "code": pp.code}
-        for proj, pp, path in presentation_projects
-    ]
-    presentation_series = sorted(
-        list(set(path.name for _, _, path in presentation_projects if path.name)))
-
     # Meeting Roles (Constructed from DB for backward compatibility with frontend keys)
     # We use name.upper().replace(' ', '_') to match the legacy Config.ROLES keys where possible.
-    # Note: For roles with special characters, we might need more robust slugification if they are used as keys.
     roles_from_db = Role.query.all()
     meeting_roles_data = {}
     for r in roles_from_db:
@@ -577,8 +542,6 @@ A single endpoint to fetch all data needed for the agenda modals.
         'session_types': session_types_data,
         'contacts': contacts_data,
         'projects': projects_data,
-        'presentations': presentations_data,
-        'presentation_series': presentation_series,
         'series_initials': current_app.config['SERIES_INITIALS'],
         'meeting_types': current_app.config['MEETING_TYPES'],
         'meeting_roles': meeting_roles_data

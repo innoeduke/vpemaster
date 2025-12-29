@@ -28,8 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let allSessionTypes = [];
   let allContacts = [];
   let allProjects = [];
-  let allPresentations = [];
-  let allPresentationSeries = [];
   let allSeriesInitials = {};
   let allMeetingTypes = {};
   let allMeetingRoles = {};
@@ -70,16 +68,12 @@ document.addEventListener("DOMContentLoaded", () => {
         allSessionTypes = data.session_types;
         allContacts = data.contacts;
         allProjects = data.projects;
-        allPresentations = data.presentations;
-        allPresentationSeries = data.presentation_series;
         allSeriesInitials = data.series_initials;
         allMeetingTypes = data.meeting_types;
         allMeetingRoles = data.meeting_roles;
 
         // Make data available globally for speech_modal.js, which expects them as globals
         window.allProjects = allProjects;
-        window.allPresentations = allPresentations;
-        window.presentationSeries = allPresentationSeries;
 
         initializeAgendaPage(); // Now that data is loaded, initialize the page
       })

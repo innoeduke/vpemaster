@@ -288,35 +288,12 @@ function setupSpecialProjectModal(logData, { sessionType, workingPath }) {
 }
 
 function setupPresentationModal(logData) {
-  modalElements.title.textContent = "Edit Presentation Details";
-  modalElements.labelPathway.textContent = "Education Series:";
-  modalElements.labelProject.textContent = "Presentation Title:";
-  modalElements.pathwaySelect.required = true;
-  modalElements.standardSelection.style.display = "block";
-  modalElements.pathwayGenericRow.style.display = "block";
-  modalElements.projectSelectGroup.style.display = "block";
-
-  const currentPres = allPresentations.find((p) => p.id == logData.Project_ID);
-  const currentSeries = currentPres ? currentPres.series : "";
-
-  populateDropdown(
-    modalElements.pathwaySelect,
-    presentationSeries.map((s) => ({ series: s })),
-    {
-      defaultOption: "-- Select Series --",
-      valueField: "series",
-      textField: "series",
-    }
-  );
-  modalElements.pathwaySelect.value = currentSeries;
-  updatePresentationOptions(
-    logData.Project_ID,
-    currentPres ? currentPres.level : null
-  );
+  // Now redirected to use setupSpeechModal logic, but ensuring labels are correct
+  setupSpeechModal(logData, { sessionType: 'Presentation' });
 }
 
-function setupSpeechModal(logData, { workingPath, nextProject }) {
-  modalElements.title.textContent = "Edit Speech Details";
+function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
+  modalElements.title.textContent = sessionType === 'Presentation' ? "Edit Presentation Details" : "Edit Speech Details";
 
   modalElements.standardSelection.style.display = "block";
   modalElements.pathwaySelect.required = true;
@@ -325,14 +302,25 @@ function setupSpeechModal(logData, { workingPath, nextProject }) {
   modalElements.projectSelectGroup.style.display = "block";
   modalElements.genericCheckbox.style.display = "block";
 
+  if (sessionType === 'Presentation') {
+    modalElements.labelPathway.textContent = "Education Series:";
+    modalElements.labelProject.textContent = "Presentation Title:";
+    modalElements.genericCheckbox.style.display = "none"; // Presentations are specific
+  } else {
+    modalElements.labelPathway.textContent = "Pathway:";
+    modalElements.labelProject.textContent = "Project:";
+    modalElements.labelLevel.textContent = "Level:";
+  }
+
+
   if (typeof groupedPathways !== 'undefined' && groupedPathways) {
     populateGroupedDropdown(modalElements.pathwaySelect, groupedPathways, {
-      defaultOption: "-- Select Pathway --"
+      defaultOption: sessionType === 'Presentation' ? "-- Select Series --" : "-- Select Pathway --"
     });
   } else {
     const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
     populateDropdown(modalElements.pathwaySelect, pathways, {
-      defaultOption: "-- Select Pathway --",
+      defaultOption: sessionType === 'Presentation' ? "-- Select Series --" : "-- Select Pathway --",
       valueField: "name",
       textField: "name",
     });
@@ -356,27 +344,30 @@ function setupSpeechModal(logData, { workingPath, nextProject }) {
   } else {
     modalElements.genericCheckbox.checked = false;
     toggleGeneric(false);
-    if (window.location.pathname.includes("/agenda")) {
-      if (!logData.Project_ID && nextProject) {
-        try {
-          const [, nextPathAbbr, nextLevel] =
-            nextProject.match(/([A-Z]{2})(\d)/);
-          const pathwayName = Object.keys(pathwayMap).find(
-            (name) => pathwayMap[name] === nextPathAbbr
-          );
-          if (pathwayName) {
-            pathwayToSelect = pathwayName;
-            levelToSelect = nextLevel;
-            const codeSuffix = pathwayMap[pathwayToSelect];
-            const projectCode = nextProject.substring(2);
-            const foundProject = allProjects.find(p => p.path_codes[codeSuffix] === projectCode);
-            if (foundProject) projectToSelect = foundProject.id;
+    if (!projectToSelect && sessionType !== 'Presentation') {
+      // Logic for auto-selecting next project for standard speeches
+      if (window.location.pathname.includes("/agenda")) {
+        if (nextProject) {
+          try {
+            const [, nextPathAbbr, nextLevel] =
+              nextProject.match(/([A-Z]{2})(\d)/);
+            const pathwayName = Object.keys(pathwayMap).find(
+              (name) => pathwayMap[name] === nextPathAbbr
+            );
+            if (pathwayName) {
+              pathwayToSelect = pathwayName;
+              levelToSelect = nextLevel;
+              const codeSuffix = pathwayMap[pathwayToSelect];
+              const projectCode = nextProject.substring(2);
+              const foundProject = allProjects.find(p => p.path_codes[codeSuffix] === projectCode);
+              if (foundProject) projectToSelect = foundProject.id;
+            }
+          } catch (e) {
+            /* Parsing failed */
           }
-        } catch (e) {
-          /* Parsing failed */
+        } else if (workingPath) {
+          pathwayToSelect = workingPath;
         }
-      } else if (workingPath) {
-        pathwayToSelect = workingPath;
       }
     }
     modalElements.pathwaySelect.value = pathwayToSelect || "";
@@ -388,33 +379,84 @@ function setupSpeechModal(logData, { workingPath, nextProject }) {
 // --- Dynamic Dropdown Helpers ---
 
 function updateDynamicOptions() {
-  if (modalElements.sessionType.value === "Presentation") {
-    updatePresentationOptions();
-  } else {
-    updateProjectOptions();
-  }
+  updateProjectOptions();
 }
 
 function updateProjectOptions(selectedProjectId = null) {
   const { pathwaySelect, levelSelect, projectSelect } = modalElements;
   const pathwayName = pathwaySelect.value;
   const level = levelSelect.value;
-  const codeSuffix = pathwayMap[pathwayName];
+  // If we know it's a presentation (e.g. from session type context, or checking value), behavior is same
+  // except maybe validation. But `pathwayMap` handles translation of name to 'code'.
+  // For presentations, we might need to handle series names if they aren't in pathwayMap or handle them generically.
+  // Actually, 'pathwayMap' is critical here. It maps "Presentation Mastery" -> "PM".
+  // For series like "Successful Club Series", do we have a mapping?
+  // If not, we need a way to look it up or rely on logic that presentation series are treated as pathways.
+  // Backend passes "Successful Club Series" as pathway name. 
+  // We need to ensure `pathwayMap` or similar logical structure supports it.
+
+  // Assuming the `groupedPathways` or `pathwayMap` on page load contains Series now?
+  // The backend `pathway_library` route includes series if they are in `Pathway` table.
+
+  // Let's assume standard logic works if `pathwayMap` or equivalent is updated or valid.
+  // If `codeSuffix` is undefined, we might fail to find keys.
+
+  // FIX: Access `allSeriesInitials` if `allSeriesInitials` is available globally, or rely on `pathwayMap`.
+  // In `speech_logs_routes`, we pass `series_initials`.
+  // We should try `pathwayMap[pathwayName]` OR `allSeriesInitials[pathwayName]`.
+
+  const codeSuffix = (typeof pathwayMap !== 'undefined' ? pathwayMap[pathwayName] : null) ||
+    (typeof allSeriesInitials !== 'undefined' ? allSeriesInitials[pathwayName] : null);
 
   projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
-  if (!codeSuffix || !level) return;
+  if (!codeSuffix) return; // Cannot match without code suffix logic
 
   const filteredProjects = allProjects
     .filter(p => {
+      // Logic for standard projects: code starts with level number.
+      // Logic for presentation series: code is just a number usually? Or "SCS1"?
+      // Backend: `project_id_to_code` uses `abbr + code`. 
+      // `p.path_codes[codeSuffix]` is e.g. "1" or "1.1".
+      // If we filtered by level, we need to ensure presentation projects have "levels".
+      // Yes, DB has levels for them.
+
       const pathCode = p.path_codes[codeSuffix];
-      return pathCode && pathCode.startsWith(level + '.');
+      // For standard speeches: '1.2' starts with '1.'
+      // For presentations: '1' starts with '1.'? No.
+      if (!pathCode) return false;
+
+      if (level) {
+        // Robust level check
+        if (pathCode.includes('.')) {
+          return pathCode.startsWith(level + '.');
+        } else {
+          // Might be exact match for level? e.g. presentation module '1' is level 1?
+          // Or simple integer check if code is integer-like
+          // Actually, looking at `project_id_to_code`, presentation codes are just numbers?
+          // Let's check `p.path_codes` construction in backend.
+          // It comes from `PathwayProject.code`.
+          // If `level` is selected, we want projects at that level.
+          // We don't rely on code string parsing if we can help it, but here we only have code strings in `p.path_codes`.
+          // WAIT. `allProjects` in `speech_logs.html` only has `id`, `Project_Name`, `path_codes`.
+          // It implies we MUST rely on `path_codes`.
+
+          // If code is "1", and level is "1", does it match?
+          // Maybe we should allow exact start or exact match?
+          return pathCode.startsWith(level + '.') || pathCode == level;
+        }
+      }
+      return true;
     })
     .sort((a, b) => {
       const codeA = a.path_codes[codeSuffix];
       const codeB = b.path_codes[codeSuffix];
-      if (codeA < codeB) return -1;
-      if (codeA > codeB) return 1;
-      return 0;
+      // Numeric sort preferably if possible
+      const fA = parseFloat(codeA);
+      const fB = parseFloat(codeB);
+      if (!isNaN(fA) && !isNaN(fB)) {
+        return fA - fB;
+      }
+      return codeA.localeCompare(codeB);
     });
 
   filteredProjects.forEach((p) => {
@@ -423,31 +465,6 @@ function updateProjectOptions(selectedProjectId = null) {
   });
 
   if (selectedProjectId) projectSelect.value = selectedProjectId;
-}
-
-function updatePresentationOptions(
-  selectedPresentationId = null,
-  level = null
-) {
-  const { pathwaySelect: seriesSelect, projectSelect: presentationSelect } =
-    modalElements;
-  presentationSelect.innerHTML =
-    '<option value="">-- Select Presentation --</option>';
-  if (!seriesSelect.value) return;
-
-  const filtered = allPresentations
-    .filter(
-      (p) =>
-        p.series === seriesSelect.value && (level === null || p.level == level)
-    )
-    .sort((a, b) =>
-      a.level !== b.level ? a.level - b.level : a.title.localeCompare(b.title)
-    );
-
-  filtered.forEach((p) => {
-    presentationSelect.add(new Option(`L${p.level} - ${p.title}`, p.id));
-  });
-  if (selectedPresentationId) presentationSelect.value = selectedPresentationId;
 }
 
 // --- Save Helpers ---
@@ -486,8 +503,11 @@ function buildSavePayload() {
           : null;
       break;
     case "Presentation":
+      // Updated to use standardized fields but explicit session type title handling
       payload.session_title = speechTitle.value;
       payload.project_id = projectSelect.value || null;
+      // Also include pathway if set
+      payload.pathway = pathwaySelect.value;
       break;
     default: // Pathway Speech
       const isGeneric = genericCheckbox.checked;
@@ -627,11 +647,11 @@ function updateAgendaRow(logId, updateResult, payload) {
 
     let projName = updateResult.project_name;
     let projPurpose = "";
-    if (sessionType === "Presentation") {
-      const pres = allPresentations.find(
-        (p) => p.id == updateResult.project_id
-      );
-      projName = pres ? pres.title : updateResult.session_title;
+    if (sessionType === "Presentation" && updateResult.project_id) {
+      // Try finding in allProjects (unified now)
+      const proj = allProjects.find((p) => p.id == updateResult.project_id);
+      projName = proj ? proj.Project_Name : updateResult.session_title;
+      projPurpose = proj ? proj.Purpose : "";
     } else {
       const proj = allProjects.find((p) => p.id == updateResult.project_id);
       projPurpose = proj ? proj.Purpose : "";
