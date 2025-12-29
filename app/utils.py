@@ -515,4 +515,7 @@ def get_meeting_types(all_settings):
                 "foreground_color": parts[2]
             }
                 
-    return meeting_types
+    # Sort meeting types alphabetically by title
+    sorted_meeting_types = {k: meeting_types[k] for k in sorted(meeting_types.keys())}
+    
+    return sorted_meeting_types
