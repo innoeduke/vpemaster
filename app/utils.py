@@ -2,7 +2,7 @@
 
 from flask import current_app
 # Ensure Project model is imported if needed elsewhere
-from .models import Project, Presentation, Meeting, SessionLog, Pathway, PathwayProject, Achievement
+from .models import Project, Meeting, SessionLog, Pathway, PathwayProject, Achievement
 from . import db
 import re
 import configparser
@@ -41,12 +41,18 @@ def project_id_to_code(project_id, path_abbr):
     }
 
     if path_abbr in presentation_series_initials.values():
-        presentation = Presentation.query.get(project_id)
-        if presentation and presentation.series:
-            series_name = next((name for name, initial in presentation_series_initials.items(
-            ) if initial == path_abbr), None)
-            if series_name and presentation.series == series_name:
-                return f"{path_abbr}{presentation.code}"
+        project = Project.query.get(project_id)
+        if project and project.Format == 'Presentation':
+            # Check if linked to the correct series pathway
+            # Find the series name from abbr
+            series_name = next((name for name, initial in presentation_series_initials.items() if initial == path_abbr), None)
+            
+            if series_name:
+                pathway = Pathway.query.filter_by(name=series_name).first()
+                if pathway:
+                    pp = PathwayProject.query.filter_by(path_id=pathway.id, project_id=project.id).first()
+                    if pp:
+                         return f"{path_abbr}{pp.code}"
         return ""
 
     project = Project.query.get(project_id)

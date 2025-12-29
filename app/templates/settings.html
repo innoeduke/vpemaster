@@ -33,12 +33,9 @@
       Sessions
     </button>
     <button class="nav-item" onclick="openTab(event, 'user-settings')">
-      Users</button
-    ><button class="nav-item" onclick="openTab(event, 'level-roles')">
+      Users</button>
+    <button class="nav-item" onclick="openTab(event, 'level-roles')">
       Level Roles
-    </button>
-    <button class="nav-item" onclick="openTab(event, 'presentations')">
-      Presentations
     </button>
   </div>
 
@@ -390,49 +387,7 @@
     </table>
   </div>
 
-  <div id="presentations" class="tab-content">
-    <div class="settings-header">
-      <h2>Presentations</h2>
-      <div class="button-group">
-        <button id="add-presentation-btn" class="btn btn-success">
-          Add New
-        </button>
-        <button id="edit-presentations-btn" class="btn btn-primary">
-          Edit
-        </button>
-        <button
-          id="cancel-presentations-btn"
-          class="btn btn-danger"
-          style="display: none"
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-    <table id="presentations-table">
-      <thead>
-        <tr>
-          <th class="sortable" data-column-index="0">ID</th>
-          <th class="sortable" data-column-index="1">Level</th>
-          <th class="sortable" data-column-index="2">Code</th>
-          <th class="sortable" data-column-index="3">Title</th>
-          <th class="sortable" data-column-index="4">Series</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in presentations %}
-        <tr data-id="{{ p.id }}">
-          <td>{{ p.id }}</td>
-          <td data-field="level">{{ p.level }}</td>
-          <td data-field="code">{{ p.code }}</td>
-          <td data-field="title">{{ p.title }}</td>
-          <td data-field="series">{{ p.series if p.series else '' }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
-</div>
+
 
 {% include '_session_modal.html' %} {% include '_role_modal.html' %}
 

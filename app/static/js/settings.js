@@ -441,14 +441,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // "Add Presentation" modal
-  const addPresentationBtn = document.getElementById("add-presentation-btn");
-  const presentationModal = document.getElementById("addPresentationModal");
-  if (addPresentationBtn && presentationModal) {
-    addPresentationBtn.addEventListener("click", () => {
-      presentationModal.style.display = "flex";
-    });
-  }
+
 
   // Generic modal close-on-click-outside logic
   window.addEventListener("click", (event) => {
@@ -482,7 +475,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupTableSorting("sessions-table");
   setupTableSorting("user-settings-table");
   setupTableSorting("level-roles-table");
-  setupTableSorting("presentations-table");
+
   setupTableSorting("roles-table");
 
   // B. Setup the ONE Global Filter
@@ -619,31 +612,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // 4c. Presentations
-  setupInlineEdit({
-    editBtnId: "edit-presentations-btn",
-    cancelBtnId: "cancel-presentations-btn",
-    tableId: "presentations-table",
-    saveUrl: "/settings/presentations/update",
-    createEditor: (cell, field, currentValue) => {
-      const input = document.createElement("input");
-      input.type = field === "level" ? "number" : "text";
-      input.value = currentValue;
-      input.className = "form-control-sm";
-      cell.textContent = "";
-      cell.appendChild(input);
-    },
-    restoreCell: (cell, field, originalValue) => {
-      cell.textContent = originalValue;
-    },
-    getCellValue: (cell, field) => {
-      const input = cell.querySelector("input");
-      return input ? input.value : cell.textContent;
-    },
-    updateCell: (cell, field, value) => {
-      cell.textContent = value;
-    },
-  });
+
 
   // 4d. Roles
   setupInlineEdit({

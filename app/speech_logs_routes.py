@@ -1,7 +1,7 @@
 # innoeduke/vpemaster/vpemaster-dev0.3/speech_logs_routes.py
 from flask import Blueprint, jsonify, render_template, request, session, current_app
 from . import db
-from .models import SessionLog, Contact, Project, User, Presentation, SessionType, Media, Role, Pathway, PathwayProject, LevelRole
+from .models import SessionLog, Contact, Project, User, SessionType, Media, Role, Pathway, PathwayProject, LevelRole
 from .auth.utils import login_required, is_authorized
 from flask_login import current_user
 
@@ -105,9 +105,43 @@ def show_speech_logs():
 
     all_logs = base_query.order_by(SessionLog.Meeting_Number.desc()).all()
 
-    all_presentations = Presentation.query.order_by(
-        Presentation.level, Presentation.code).all()
-    all_presentations_dict = {p.id: p for p in all_presentations}
+    # Fetch presentation projects and their pathway info
+    presentation_projects = db.session.query(Project, PathwayProject, Pathway).join(
+        PathwayProject, Project.id == PathwayProject.project_id
+    ).join(
+        Pathway, PathwayProject.path_id == Pathway.id
+    ).filter(
+        Project.Format == 'Presentation'
+    ).order_by(
+        PathwayProject.level, PathwayProject.code
+    ).all()
+    
+    # helper for fast lookup by project_id
+    # structure: {project_id: {'level': level, 'series': series_name, 'code': code}}
+    all_presentations_dict = {}
+    
+    for proj, pp, pathway in presentation_projects:
+        all_presentations_dict[proj.id] = {
+            'level': pp.level,
+            'series': pathway.name,
+            'title': proj.Project_Name,
+            'code': pp.code,
+            'id': proj.id
+        }
+        # Also map by ID directly to object if needed, but dict is safer for properties
+        # We need to mimic the object structure if the template expects attributes
+        # Or change the template/logic below. Logic below uses attributes.
+        
+    # Temporary adapter class to avoiding rewriting all logic below immediately
+    class PresentationAdapter:
+        def __init__(self, data):
+            self.id = data['id']
+            self.level = data['level']
+            self.series = data['series']
+            self.title = data['title']
+            self.code = data['code']
+            
+    all_presentations_dict_objs = {pid: PresentationAdapter(data) for pid, data in all_presentations_dict.items()}
 
     grouped_logs = {}
     processed_roles = set()
@@ -123,7 +157,7 @@ def show_speech_logs():
 
         if log.session_type.Title == 'Presentation':
             log_type = 'presentation'
-            presentation = all_presentations_dict.get(log.Project_ID)
+            presentation = all_presentations_dict_objs.get(log.Project_ID)
             if presentation:
                 display_level = str(presentation.level)
                 log.presentation_series = presentation.series
@@ -373,10 +407,10 @@ def show_speech_logs():
     presentations_data = [
         {"id": p.id, "title": p.title, "level": p.level,
             "code": p.code, "series": p.series}
-        for p in all_presentations
+        for p in all_presentations_dict_objs.values()
     ]
     presentation_series = sorted(
-        list(set(p.series for p in all_presentations if p.series)))
+        list(set(p.series for p in all_presentations_dict_objs.values() if p.series)))
 
     SERIES_INITIALS = current_app.config['SERIES_INITIALS']
     today_date = datetime.today().date()
@@ -411,7 +445,7 @@ def show_speech_logs():
         presentations=presentations_data,  # Pass presentation data for JS
         presentation_series=presentation_series,  # Pass series data for JS
         series_initials=SERIES_INITIALS,  # Pass initials map for template
-        get_presentation_by_id=lambda pid: all_presentations_dict.get(pid),
+        get_presentation_by_id=lambda pid: all_presentations_dict_objs.get(pid),
         today_date=today_date,
         level_roles=LevelRole.query.order_by(LevelRole.level, LevelRole.type).all(),
         completion_summary=completion_summary,
@@ -514,13 +548,16 @@ def update_speech_log(log_id):
     presentation = None
 
     if project_id and project_id not in [None, "", "null"]:
-        if session_type_title == 'Presentation':
-            try:
-                presentation = Presentation.query.get(int(project_id))
-            except (ValueError, TypeError):
-                pass # Gracefully handle non-integer IDs
+        # Unified handling: It's always a project now (Format='Presentation' or others)
+        updated_project = Project.query.get(project_id)
+        if updated_project and updated_project.Format == 'Presentation':
+             presentation_project = updated_project 
+             # We might need 'presentation' variable for later logic if it expects an object with .title .series
+             # We can just use the project object but need to know series from PathwayProject if needed?
+             # Let's see how 'presentation' variable is used below.
+             pass
         else:
-            updated_project = Project.query.get(project_id)
+             pass
 
 
     if 'session_title' in data:
@@ -606,13 +643,17 @@ def update_speech_log(log_id):
         pathway = log.owner.Current_Path if log.owner else "N/A"
 
         if session_type_title == 'Presentation' and log.Project_ID:
-            presentation = Presentation.query.get(log.Project_ID)
-            if presentation:
-                project_name = presentation.title
-                pathway = presentation.series
-                SERIES_INITIALS = current_app.config['SERIES_INITIALS']
-                series_initial = SERIES_INITIALS.get(presentation.series, "")
-                project_code = f"{series_initial}{presentation.code}"
+            project = Project.query.get(log.Project_ID)
+            if project:
+                project_name = project.Project_Name
+                # Find series info
+                pp = PathwayProject.query.filter_by(project_id=project.id).first()
+                if pp:
+                    pathway_obj = Pathway.query.get(pp.path_id)
+                    if pathway_obj:
+                        pathway = pathway_obj.name
+                        project_code = f"{pathway_obj.abbr}{pp.code}"
+
         elif log.Project_ID:  # Pathway speech or special project
             updated_project = Project.query.get(log.Project_ID)
             if updated_project:

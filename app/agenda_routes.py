@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
 from .auth.utils import login_required
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Presentation, Media, Roster, Role, Vote, Pathway, PathwayProject
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, Role, Vote, Pathway, PathwayProject
 from . import db
 from sqlalchemy import distinct, orm, func
 from datetime import datetime, timedelta
@@ -242,10 +242,24 @@ def _get_processed_logs_data(selected_meeting_num):
     # The caller can handle project_speakers separately if needed, or we can return it too.
     # For now, let's keep it focused on logs_data.
 
-    all_presentations = Presentation.query.order_by(
-        Presentation.level, Presentation.code).all()
-    # (presentation_series and presentations_data are not strictly needed for the logs loop, 
-    # but presentation lookup is)
+    all_presentations_projects = db.session.query(Project, PathwayProject, Pathway).join(
+        PathwayProject, Project.id == PathwayProject.project_id
+    ).join(
+        Pathway, PathwayProject.path_id == Pathway.id
+    ).filter(
+        Project.Format == 'Presentation'
+    ).all()
+    
+    # Map for easy lookup
+    presentations_map = {}
+    for proj, pp, path in all_presentations_projects:
+        presentations_map[proj.id] = {
+            'title': proj.Project_Name,
+            'series': path.name,
+            'level': pp.level,
+            'code': pp.code,
+            'abbr': path.abbr
+        }
 
     # --- Process Raw Logs into Dictionaries ---
     logs_data = []
@@ -268,21 +282,15 @@ def _get_processed_logs_data(selected_meeting_num):
         level_for_dict = None
 
         if session_type and session_type.Title == 'Presentation' and log.Project_ID:
-            # Find in the already-fetched list
-            presentation = next(
-                (p for p in all_presentations if p.id == log.Project_ID), None)
-            if presentation:
+            # Find in the map
+            pres_data = presentations_map.get(log.Project_ID)
+            if pres_data:
                 if not session_title_for_dict:
-                    session_title_for_dict = presentation.title
-                project_name_for_dict = presentation.series  # For tooltip
-                project_purpose_for_dict = f"Level {presentation.level} - {presentation.title}"
+                    session_title_for_dict = pres_data['title']
+                project_name_for_dict = pres_data['series']  # For tooltip
+                project_purpose_for_dict = f"Level {pres_data['level']} - {pres_data['title']}"
 
-                series_key = " ".join(
-                    presentation.series.split()) if presentation.series else ""
-
-                series_initial = current_app.config['SERIES_INITIALS'].get(
-                    series_key, "")
-                project_code_str = f"{series_initial}{presentation.code}"
+                project_code_str = f"{pres_data['abbr']}{pres_data['code']}"
         elif log.Project_ID == 60:
             project_code_str = "TM1.0"
         elif project and owner and owner.Current_Path:  # Else if pathway...
@@ -531,16 +539,24 @@ A single endpoint to fetch all data needed for the agenda modals.
         } for p in projects
     ]
 
-    # Presentations
-    all_presentations = Presentation.query.order_by(
-        Presentation.level, Presentation.code).all()
+    # Presentations (Now derived from Projects)
+    presentation_projects = db.session.query(Project, PathwayProject, Pathway).join(
+        PathwayProject, Project.id == PathwayProject.project_id
+    ).join(
+        Pathway, PathwayProject.path_id == Pathway.id
+    ).filter(
+        Project.Format == 'Presentation'
+    ).order_by(
+        PathwayProject.level, PathwayProject.code
+    ).all()
+    
     presentations_data = [
-        {"id": p.id, "title": p.title, "level": p.level,
-            "series": p.series, "code": p.code}
-        for p in all_presentations
+        {"id": proj.id, "title": proj.Project_Name, "level": pp.level,
+            "series": path.name, "code": pp.code}
+        for proj, pp, path in presentation_projects
     ]
     presentation_series = sorted(
-        list(set(p.series for p in all_presentations if p.series)))
+        list(set(path.name for _, _, path in presentation_projects if path.name)))
 
     # Meeting Roles (Constructed from DB for backward compatibility with frontend keys)
     # We use name.upper().replace(' ', '_') to match the legacy Config.ROLES keys where possible.
@@ -662,20 +678,25 @@ def _get_all_speech_details(logs_data, pathway_mapping):
 
         # Handle Presentation type
         elif session_type.id == presentation_session_type_id:
-            presentation = Presentation.query.get(log.Project_ID)
-            if not presentation:
+            project = Project.query.get(log.Project_ID)
+            if not project:
                 continue
+                
+            pp = PathwayProject.query.filter_by(project_id=project.id).first()
+            if not pp:
+                continue
+            
+            pathway_obj = Pathway.query.get(pp.path_id)
+            if not pathway_obj:
+               continue
 
-            SERIES_INITIALS = current_app.config['SERIES_INITIALS']
-            series_initial = SERIES_INITIALS.get(presentation.series, "")
-            presentation_code = project_id_to_code(
-                log.Project_ID, series_initial)
+            presentation_code = f"{pathway_obj.abbr}{pp.code}"
 
             details_to_add = {
-                "speech_title": log.Session_Title or presentation.title,
-                "project_name": presentation.title,
-                "pathway_name": presentation.series,
-                "project_purpose": f"Level {presentation.level} - {presentation.title}",
+                "speech_title": log.Session_Title or project.Project_Name,
+                "project_name": project.Project_Name,
+                "pathway_name": pathway_obj.name,
+                "project_purpose": f"Level {pp.level} - {project.Project_Name}",
                 "project_code": presentation_code,
                 "duration": "[10'-15']",
                 "project_type": _get_project_type(presentation_code)
@@ -717,15 +738,17 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
 
     # Check for Presentation (Type 43)
     elif session_type and session_type.id == 43 and log.Project_ID:
-        # We must query Presentation table here, as 'project' will be None
-        presentation = Presentation.query.get(log.Project_ID)
-        if presentation:
-            series_key = " ".join(
-                presentation.series.split()) if presentation.series else ""
-            series_initial = SERIES_INITIALS.get(series_key, "")
-            project_code_str = f"{series_initial}{presentation.code}"
-            if not log.Session_Title:  # If title is blank, use presentation title
-                session_title_str = presentation.title
+        # Query Project instead of Presentation
+        project = Project.query.get(log.Project_ID)
+        if project:
+            pp = PathwayProject.query.filter_by(project_id=project.id).first()
+            if pp:
+                 pathway_obj = Pathway.query.get(pp.path_id)
+                 if pathway_obj:
+                     project_code_str = f"{pathway_obj.abbr}{pp.code}"
+                     
+            if not log.Session_Title:  # If title is blank, use project name
+                session_title_str = project.Project_Name
 
     # Check for Individual Evaluator (Type 31)
     if session_type and session_type.id == 31 and log.Session_Title:

@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, reques
 from .auth.utils import login_required, is_authorized
 from flask_login import current_user
 
-from .models import SessionType, User, LevelRole, Presentation, Role
+from .models import SessionType, User, LevelRole, Role
 from . import db
 from .utils import load_all_settings, get_excomm_team
 import os
@@ -39,12 +39,10 @@ def settings():
     session_types = SessionType.query.order_by(SessionType.id.asc()).all()
     level_roles = LevelRole.query.order_by(
         LevelRole.level.asc(), LevelRole.type.desc()).all()
-    presentations = Presentation.query.order_by(
-        Presentation.level.asc(), Presentation.code.asc()).all()
     all_users = User.query.order_by(User.Username.asc()).all()
     roles_query = Role.query.order_by(Role.name.asc()).all()
     roles = [{'id': role.id, 'name': role.name} for role in roles_query]
-    return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, presentations=presentations, general_settings=general_settings, roles=roles, roles_query=roles_query, excomm_team=excomm_team)
+    return render_template('settings.html', session_types=session_types, all_users=all_users, level_roles=level_roles, general_settings=general_settings, roles=roles, roles_query=roles_query, excomm_team=excomm_team)
 
 
 
@@ -325,49 +323,4 @@ def update_level_roles():
         return jsonify(success=False, message=str(e)), 500
 
 
-@settings_bp.route('/settings/presentations/add', methods=['POST'])
-@login_required
-def add_presentation():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
-        return redirect(url_for('agenda_bp.agenda'))
 
-    try:
-        new_presentation = Presentation(
-            level=int(request.form.get('level')),
-            code=request.form.get('code'),
-            title=request.form.get('title'),
-            series=request.form.get('series') or None
-        )
-        db.session.add(new_presentation)
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-
-    return redirect(url_for('settings_bp.settings', default_tab='presentations'))
-
-
-@settings_bp.route('/settings/presentations/update', methods=['POST'])
-@login_required
-def update_presentations():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
-        return jsonify(success=False, message="Permission denied"), 403
-
-    data = request.get_json()
-    if not data:
-        return jsonify(success=False, message="No data received"), 400
-
-    try:
-        for item in data:
-            presentation = Presentation.query.get(item['id'])
-            if presentation:
-                presentation.level = int(
-                    item.get('level')) if item.get('level') else None
-                presentation.code = item.get('code')
-                presentation.title = item.get('title')
-                presentation.series = item.get('series') or None
-
-        db.session.commit()
-        return jsonify(success=True, message="Presentations updated successfully.")
-    except Exception as e:
-        db.session.rollback()
-        return jsonify(success=False, message=str(e)), 500

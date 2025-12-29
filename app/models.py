@@ -172,13 +172,7 @@ class LevelRole(db.Model):
     count_required = db.Column(db.Integer, nullable=False, default=0)
 
 
-class Presentation(db.Model):
-    __tablename__ = 'presentations'
-    id = db.Column(db.Integer, primary_key=True)
-    level = db.Column(db.SmallInteger, nullable=False)
-    code = db.Column(db.String(50), nullable=False)
-    title = db.Column(db.String(255), nullable=False)
-    series = db.Column(db.String(100))
+
 
 
 class Pathway(db.Model):
