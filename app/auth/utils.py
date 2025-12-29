@@ -23,13 +23,6 @@ ROLE_PERMISSIONS = {
         "SETTINGS_VIEW_ALL",
         "ACHIEVEMENTS_EDIT",
     },
-    "Meeting Manager": {
-        "AGENDA_EDIT",
-        "BOOKING_ASSIGN_ALL",
-        "SPEECH_LOGS_VIEW_OWN",
-        "PATHWAY_LIB_VIEW",
-        "CONTACT_BOOK_EDIT",
-    },
     "Officer": {
         "AGENDA_VIEW",
         "BOOKING_BOOK_OWN",
