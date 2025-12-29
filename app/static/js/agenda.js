@@ -433,11 +433,41 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function addNewRow() {
     if (!meetingFilter.value) {
-      alert("Please select a meeting to add a session to.");
+      alert("Please select a meeting to add a section to.");
       return;
     }
 
     const newRow = tableBody.insertRow();
+    Object.assign(newRow.dataset, {
+      id: "new",
+      isSection: "true",
+      meetingNumber: meetingFilter.value,
+      projectId: "",
+      status: "Booked",
+      typeId: "",
+      sessionTitle: "",
+      ownerId: "",
+      durationMin: "",
+      durationMax: "",
+    });
+
+    buildEditableRow(newRow, tableBody.children.length);
+    renumberRows();
+  }
+
+  function addSessionToSection(sectionRow) {
+    if (!meetingFilter.value) {
+      alert("Please select a meeting.");
+      return;
+    }
+
+    // Find the insertion point: the end of the current section
+    let nextRow = sectionRow.nextElementSibling;
+    while (nextRow && nextRow.dataset.isSection !== "true") {
+      nextRow = nextRow.nextElementSibling;
+    }
+
+    const newRow = document.createElement("tr");
     Object.assign(newRow.dataset, {
       id: "new",
       isSection: "false",
@@ -451,7 +481,13 @@ document.addEventListener("DOMContentLoaded", () => {
       durationMax: "",
     });
 
-    buildEditableRow(newRow, tableBody.children.length);
+    if (nextRow) {
+      tableBody.insertBefore(newRow, nextRow);
+    } else {
+      tableBody.appendChild(newRow);
+    }
+
+    buildEditableRow(newRow, Array.from(tableBody.children).indexOf(newRow) + 1);
     renumberRows();
   }
 
@@ -1260,8 +1296,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const sessionType = allSessionTypes.find((st) => st.id == typeId);
     const rolesToHideFor = [
-      allMeetingRoles.PREPARED_SPEAKER ? allMeetingRoles.PREPARED_SPEAKER.name : "Prepared Speaker",
-      "Table Topics"
+      allMeetingRoles.PREPARED_SPEAKER
+        ? allMeetingRoles.PREPARED_SPEAKER.name
+        : "Prepared Speaker",
+      "Table Topics",
     ];
 
     const shouldShowProjectButton =
@@ -1270,57 +1308,73 @@ document.addEventListener("DOMContentLoaded", () => {
     const shouldShowRoleButton =
       hasRole && sessionType && !rolesToHideFor.includes(sessionType.Role);
 
-    // The new consolidated button
-    const editDetailsBtn = document.createElement("button");
-    editDetailsBtn.innerHTML = '<i class="fas fa-edit"></i>'; // Generic edit icon
-    editDetailsBtn.className = "icon-btn edit-details-btn"; // New class
-    editDetailsBtn.type = "button";
+    const isSection = sessionType && sessionType.Is_Section;
 
-    if (shouldShowProjectButton) {
-      editDetailsBtn.title = "Edit Speech/Project Details";
-      editDetailsBtn.onclick = function () {
-        const row = this.closest("tr");
-        const logId = row.dataset.id;
-        const ownerId = row.querySelector('input[name="owner_id"]').value; // Use allContacts
-        const contact = allContacts.find((c) => c.id == ownerId);
-        const currentPath = contact ? contact.Current_Path : null;
-        const nextProject = contact ? contact.Next_Project : null;
-        const typeId = row.querySelector('[data-field="Type_ID"] select').value;
-        const sessionType = allSessionTypes.find((st) => st.id == typeId); // Use allSessionTypes
-        const sessionTypeTitle = sessionType ? sessionType.Title : null; // Use allSessionTypes
-        if (logId === "new") {
-          saveChanges();
-        } else {
-          openSpeechEditModal(
-            logId,
-            currentPath,
-            sessionTypeTitle,
-            nextProject
-          );
-        }
+    if (isSection) {
+      const addSessionBtn = document.createElement("button");
+      addSessionBtn.innerHTML = '<i class="fas fa-plus-circle"></i>';
+      addSessionBtn.className = "icon-btn add-session-btn";
+      addSessionBtn.type = "button";
+      addSessionBtn.title = "Add Session to Section";
+      addSessionBtn.onclick = function () {
+        addSessionToSection(this.closest("tr"));
       };
-    } else if (shouldShowRoleButton) {
-      editDetailsBtn.title = "Edit Role Path/Level";
-      editDetailsBtn.onclick = function () {
-        const row = this.closest("tr");
-        const logId = row.dataset.id;
-        if (logId === "new") {
-          saveChanges();
-        } else {
-          openRoleEditModal(logId);
-        }
-      };
+      cell.append(addSessionBtn);
+    } else {
+      // The consolidated edit button for non-section rows
+      const editDetailsBtn = document.createElement("button");
+      editDetailsBtn.innerHTML = '<i class="fas fa-edit"></i>'; // Generic edit icon
+      editDetailsBtn.className = "icon-btn edit-details-btn"; // New class
+      editDetailsBtn.type = "button";
+
+      if (shouldShowProjectButton) {
+        editDetailsBtn.title = "Edit Speech/Project Details";
+        editDetailsBtn.onclick = function () {
+          const row = this.closest("tr");
+          const logId = row.dataset.id;
+          const ownerId = row.querySelector('input[name="owner_id"]').value; // Use allContacts
+          const contact = allContacts.find((c) => c.id == ownerId);
+          const currentPath = contact ? contact.Current_Path : null;
+          const nextProject = contact ? contact.Next_Project : null;
+          const typeId = row.querySelector(
+            '[data-field="Type_ID"] select'
+          ).value;
+          const sessionType = allSessionTypes.find((st) => st.id == typeId); // Use allSessionTypes
+          const sessionTypeTitle = sessionType ? sessionType.Title : null; // Use allSessionTypes
+          if (logId === "new") {
+            saveChanges();
+          } else {
+            openSpeechEditModal(
+              logId,
+              currentPath,
+              sessionTypeTitle,
+              nextProject
+            );
+          }
+        };
+      } else if (shouldShowRoleButton) {
+        editDetailsBtn.title = "Edit Role Path/Level";
+        editDetailsBtn.onclick = function () {
+          const row = this.closest("tr");
+          const logId = row.dataset.id;
+          if (logId === "new") {
+            saveChanges();
+          } else {
+            openRoleEditModal(logId);
+          }
+        };
+      }
+
+      // Only append the edit button if it's needed
+      if (shouldShowProjectButton || shouldShowRoleButton) {
+        cell.append(editDetailsBtn);
+      }
     }
 
     const deleteBtn = document.createElement("button");
     deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
     deleteBtn.className = "delete-btn icon-btn";
     deleteBtn.type = "button";
-
-    // Only append the edit button if it's needed
-    if (shouldShowProjectButton || shouldShowRoleButton) {
-      cell.append(editDetailsBtn);
-    }
 
     cell.append(deleteBtn);
     return cell;

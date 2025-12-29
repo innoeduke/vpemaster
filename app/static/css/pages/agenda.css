@@ -40,7 +40,8 @@
     font-weight: 400;
     font-style: italic;
     color: #555;
-    margin: -20px 40px 20px; /* Adjust margin to sit below title */
+    margin: -20px 40px 20px;
+    /* Adjust margin to sit below title */
     line-height: 1.3;
 }
 
@@ -57,16 +58,19 @@
     font-size: 0.95em;
     margin-bottom: 10px;
 }
+
 .meeting-meta-details .meta-item {
     display: flex;
     align-items: center;
     gap: 8px;
     color: #333;
 }
+
 .meeting-meta-details .meta-item a {
     text-decoration: none;
     color: var(--primary-color);
 }
+
 .meeting-meta-details .meta-item a:hover {
     background-color: rgba(0, 0, 0, 0.05);
     text-decoration: none;
@@ -75,15 +79,18 @@
 /* --- WOD Display in Action Bar --- */
 
 .wod-display {
-    background: #f0e5d8; /* Envelope color */
-    width: 150px; /* Default width */
-    height: 100px; /* Default height */
+    background: #f0e5d8;
+    /* Envelope color */
+    width: 150px;
+    /* Default width */
+    height: 100px;
+    /* Default height */
     cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
     transition: transform 0.5s ease-in-out;
     position: relative;
     transform-style: preserve-3d;
-}  
+}
 
 .wod-display label {
     font-weight: bold;
@@ -95,8 +102,8 @@
 
 .wod-display span {
     font-weight: bold;
-    font-size: 1.5em; 
-    color: #772432; 
+    font-size: 1.5em;
+    color: #772432;
     font-family: 'Indie Flower', cursive;
 }
 
@@ -104,7 +111,8 @@
     position: absolute;
     width: 100%;
     height: 100%;
-    background: #e9d9c6; /* Flap color */
+    background: #e9d9c6;
+    /* Flap color */
     transform-origin: top;
     transition: transform 0.5s ease-in-out;
     clip-path: polygon(0 0, 100% 0, 50% 60%);
@@ -118,7 +126,7 @@
     background: white;
     left: 5%;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: all 0.5s 0.2s ease-in-out;
     z-index: -1;
     display: flex;
@@ -152,9 +160,11 @@
     font-size: 0.95em;
     color: #333;
 }
+
 .meeting-awards .award-item {
     font-weight: 500;
 }
+
 .meeting-awards .award-item strong {
     font-weight: 700;
 }
@@ -168,7 +178,8 @@
 
 .meeting-title a:hover {
     color: #333;
-    text-decoration: none; /* Ensure no underline on hover */
+    text-decoration: none;
+    /* Ensure no underline on hover */
 }
 
 /* Project code link style */
@@ -176,19 +187,26 @@
     color: #555;
     text-decoration: none;
     padding: 2px 6px;
-    border-radius: 12px; /* 添加圆角 */
+    border-radius: 12px;
+    /* 添加圆角 */
     transition: all 0.3s ease;
     border: 1px solid rgba(211, 211, 211, 0.2);
-    font-family: 'Montserrat', sans-serif; /* 使用无衬线字体 */
-    font-weight: 700; /* 使用粗体 */
-    font-size: 0.8em; /* 较小的字体 */
-    vertical-align: top; /* 顶部对齐 */
-    cursor: pointer; /* 确保显示为可点击 */
+    font-family: 'Montserrat', sans-serif;
+    /* 使用无衬线字体 */
+    font-weight: 700;
+    /* 使用粗体 */
+    font-size: 0.8em;
+    /* 较小的字体 */
+    vertical-align: top;
+    /* 顶部对齐 */
+    cursor: pointer;
+    /* 确保显示为可点击 */
 }
 
 .speech-tooltip-wrapper .project-code-link:hover {
     color: #772432;
-    background-color: rgba(211, 211, 211, 0.6); /* 悬停时加深灰色 */
+    background-color: rgba(211, 211, 211, 0.6);
+    /* 悬停时加深灰色 */
     text-decoration: none;
     border: 1px solid rgba(211, 211, 211, 0.4);
 }
@@ -197,16 +215,20 @@
 .speech-tooltip-wrapper a:not(.project-code-link) {
     color: #333;
     text-decoration: none;
-    background-color: rgba(173, 216, 230, 0.3); /* 使用更明亮的天蓝色背景 */
+    background-color: rgba(173, 216, 230, 0.3);
+    /* 使用更明亮的天蓝色背景 */
     padding: 2px 4px;
-    border-radius: 12px; /* 添加圆角 */
+    border-radius: 12px;
+    /* 添加圆角 */
     transition: all 0.3s ease;
-    font-weight: 700; /* 中等字体粗细 */
+    font-weight: 700;
+    /* 中等字体粗细 */
 }
 
 .speech-tooltip-wrapper a:not(.project-code-link):hover {
     color: #772432;
-    background-color: rgba(173, 216, 230, 0.6); /* 悬停时加深天蓝色 */
+    background-color: rgba(173, 216, 230, 0.6);
+    /* 悬停时加深天蓝色 */
     text-decoration: none;
 }
 
@@ -216,6 +238,7 @@
 .meeting-edit-details {
     display: none;
 }
+
 .edit-mode-field {
     display: block;
     padding: 6px 10px;
@@ -237,7 +260,8 @@
 
 /* When in edit mode... */
 .edit-mode-active .view-mode {
-    display: none; /* Hide ALL view-mode elements */
+    display: none;
+    /* Hide ALL view-mode elements */
 }
 
 .edit-mode-active .agenda-header-logo,
@@ -248,17 +272,23 @@
 /* Show the edit-mode container */
 .edit-mode-active .meeting-edit-details {
     display: block;
-    margin-top: 15px; /* Add space below "Meeting Agenda" title */
+    margin-top: 15px;
+    /* Add space below "Meeting Agenda" title */
 }
 
 /* Style the editable items */
 .edit-mode-active .meeting-edit-details .meta-item {
     display: flex;
-    flex-direction: column; /* Stack label and input */
-    align-items: flex-start; /* Align label to left */
-    gap: 4px; /* Space between label and input */
-    margin-bottom: 10px; /* Space between items */
+    flex-direction: column;
+    /* Stack label and input */
+    align-items: flex-start;
+    /* Align label to left */
+    gap: 4px;
+    /* Space between label and input */
+    margin-bottom: 10px;
+    /* Space between items */
 }
+
 .edit-mode-active .meeting-edit-details .meta-item span {
     font-weight: bold;
     font-size: 0.9em;
@@ -273,7 +303,8 @@
     max-width: 100%;
 }
 
-.action-bar-left, .action-bar-right {
+.action-bar-left,
+.action-bar-right {
     display: flex;
     align-items: center;
     gap: 15px;
@@ -290,19 +321,25 @@
 
 #edit-mode-buttons {
     position: fixed;
-    top: 75px; 
-    right: 25px; 
+    top: 75px;
+    right: 25px;
     z-index: 1000;
 
-    background-color: #ffffff; /* Adds the white background */
-    padding: 10px;             /* Gives the buttons breathing room */
-    border-radius: 8px;        /* Softens the corners */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Adds a subtle shadow */
+    background-color: #ffffff;
+    /* Adds the white background */
+    padding: 10px;
+    /* Gives the buttons breathing room */
+    border-radius: 8px;
+    /* Softens the corners */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    /* Adds a subtle shadow */
 }
 
 .action-bar-left #meeting-filter {
-    width: auto; /* Allow it to be its natural size */
-    max-width: 150px; /* Give it a reasonable max width */
+    width: auto;
+    /* Allow it to be its natural size */
+    max-width: 150px;
+    /* Give it a reasonable max width */
     flex-grow: 0;
     flex-shrink: 1;
     font-weight: bold;
@@ -328,11 +365,13 @@
 .project-link {
     text-decoration: none;
     color: inherit;
-    display: inline-block; /* Ensures the link wraps the content properly */
+    display: inline-block;
+    /* Ensures the link wraps the content properly */
 }
 
 .project-link:hover {
-    color: #004165; /* Theme blue */
+    color: #004165;
+    /* Theme blue */
     cursor: pointer;
 }
 
@@ -355,6 +394,33 @@
     color: white;
     font-size: 20px;
     text-align: center;
+}
+
+.section-row .actions-column {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    /* Space between icons */
+}
+
+.add-session-btn {
+    color: white !important;
+    font-size: 1.1em !important;
+    /* Match standard icon size roughly */
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    padding: 5px;
+    /* Match .icon-btn padding */
+}
+
+.section-row .delete-btn {
+    color: white !important;
+    /* Ensure delete button on red background is white */
+}
+
+.add-session-btn:hover,
+.section-row .delete-btn:hover {
+    transform: scale(1.2);
+    opacity: 0.8;
 }
 
 .hidden-row {
@@ -395,11 +461,13 @@
 .speech-tooltip .tooltip-title {
     font-weight: bold;
     display: block;
-    margin-bottom: 8px; /* Creates space between title and purpose */
+    margin-bottom: 8px;
+    /* Creates space between title and purpose */
 }
 
 .speech-tooltip .tooltip-purpose {
-    font-size: 0.85em; /* Smaller font size relative to the tooltip's base */
+    font-size: 0.85em;
+    /* Smaller font size relative to the tooltip's base */
     font-style: italic;
     line-height: 1.4;
 }
@@ -413,18 +481,51 @@
     width: 100%;
     box-sizing: border-box;
     cursor: default;
-    padding: 8px; /* Match table cell padding */
+    padding: 8px;
+    /* Match table cell padding */
 }
 
 /* Finetuned Column Widths for Edit Mode */
-#logs-table .edit-mode-header th:nth-child(1) { width: 4%; }  /* No */
-#logs-table .edit-mode-header th:nth-child(2) { width: 8%; } /* Start Time */
-#logs-table .edit-mode-header th:nth-child(3) { width: 18%; } /* Session Type */
-#logs-table .edit-mode-header th:nth-child(4) { width: 35%; } /* Session Title */
-#logs-table .edit-mode-header th:nth-child(5) { width: 20%; } /* Owner */
-#logs-table .edit-mode-header th:nth-child(6) { width: 5%; }  /* Min */
-#logs-table .edit-mode-header th:nth-child(7) { width: 5%; }  /* Max */
-#logs-table .edit-mode-header th:nth-child(8) { width: 5%; } /* Actions */
+#logs-table .edit-mode-header th:nth-child(1) {
+    width: 4%;
+}
+
+/* No */
+#logs-table .edit-mode-header th:nth-child(2) {
+    width: 8%;
+}
+
+/* Start Time */
+#logs-table .edit-mode-header th:nth-child(3) {
+    width: 18%;
+}
+
+/* Session Type */
+#logs-table .edit-mode-header th:nth-child(4) {
+    width: 35%;
+}
+
+/* Session Title */
+#logs-table .edit-mode-header th:nth-child(5) {
+    width: 20%;
+}
+
+/* Owner */
+#logs-table .edit-mode-header th:nth-child(6) {
+    width: 5%;
+}
+
+/* Min */
+#logs-table .edit-mode-header th:nth-child(7) {
+    width: 5%;
+}
+
+/* Max */
+#logs-table .edit-mode-header th:nth-child(8) {
+    width: 5%;
+}
+
+/* Actions */
 
 .table-container {
     max-width: 100%;
@@ -441,7 +542,8 @@
 .edit-mode-active td input[type="number"] {
     width: 100%;
     box-sizing: border-box;
-    height: 30px; /* Consistent height */
+    height: 30px;
+    /* Consistent height */
     padding: 5px;
 }
 
@@ -534,9 +636,9 @@
 }
 
 .meeting-type-badge {
-    display: block; 
-    width: fit-content; 
-    margin: 0 auto 10px; 
+    display: block;
+    width: fit-content;
+    margin: 0 auto 10px;
     padding: 4px 12px;
     border-radius: 15px;
     font-weight: 600;
@@ -593,13 +695,16 @@
     background-color: transparent;
     color: #333;
     font-weight: bold;
-    border: 2px solid #ccc; /* Add a border for definition */
-    box-shadow: none; /* Remove any default button shadow */
+    border: 2px solid #ccc;
+    /* Add a border for definition */
+    box-shadow: none;
+    /* Remove any default button shadow */
     /* Use flexbox for perfect centering */
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
+
 /* --- Mobile / Tablet Responsive Styles --- */
 @media (max-width: 992px) {
 
