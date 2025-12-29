@@ -244,7 +244,7 @@ def _get_processed_logs_data(selected_meeting_num):
 
     # --- Process Raw Logs into Dictionaries ---
     logs_data = []
-    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    all_pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways}
     
     for log in raw_session_logs:
@@ -436,7 +436,7 @@ def agenda():
     # --- Other Data for Template ---
     project_speakers = _get_project_speakers(selected_meeting_num)
     
-    all_pathways = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
+    all_pathways = Pathway.query.filter(Pathway.type != 'dummy', Pathway.status == 'active').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways}
     
     pathways = {}
@@ -541,7 +541,7 @@ A single endpoint to fetch all data needed for the agenda modals.
         }
 
     # Fetch Series Initials from DB
-    pathways_db = Pathway.query.all()
+    pathways_db = Pathway.query.filter_by(status='active').all()
     series_initials_db = {p.name: p.abbr for p in pathways_db if p.abbr}
 
     return jsonify({
@@ -1014,7 +1014,7 @@ def export_agenda(meeting_number):
         return "Meeting not found", 404
 
     # 1. Fetch and Prepare Data
-    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    all_pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways}
     logs_data = _get_export_data(meeting_number)
     speech_details_list = _get_all_speech_details(logs_data, pathway_mapping)

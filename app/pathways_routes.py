@@ -12,7 +12,7 @@ pathways_bp = Blueprint('pathways_bp', __name__)
 
 @pathways_bp.route('/pathway_library')
 def pathway_library():
-    pathways = Pathway.query.order_by(Pathway.name).all()
+    pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
     
     # pre-fetch all pathway projects to create a lookup
     all_pp = db.session.query(PathwayProject, Pathway.abbr).join(Pathway).all()

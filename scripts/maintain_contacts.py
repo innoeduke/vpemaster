@@ -22,7 +22,7 @@ def run_cleanup(apply=False):
     with app.app_context():
         from app import db
         from app.models import Contact
-        from app.achievements_utils import recalculate_contact_metadata
+        from app.utils import recalculate_contact_metadata
         
         contacts = Contact.query.all()
         print(f"Reviewing {len(contacts)} contacts...")

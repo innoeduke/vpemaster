@@ -236,6 +236,7 @@ class Pathway(db.Model):
     name = db.Column(db.String(50))
     abbr = db.Column(db.String(5))
     type = db.Column(db.String(20))
+    status = db.Column(db.Enum('active', 'inactive', 'obsolete', name='pathway_status_enum'), default='active', nullable=False)
 
 
 class PathwayProject(db.Model):

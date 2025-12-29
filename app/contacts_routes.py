@@ -97,7 +97,7 @@ def show_contacts():
     # Sort types: Member first, then others
     sorted_types = sorted(type_counts.keys(), key=lambda x: (x not in ['Member'], x))
     
-    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    all_pathways = Pathway.query.filter_by(type='pathway', status='active').order_by(Pathway.name).all()
     pathways = {}
     for p in all_pathways:
         ptype = p.type or "Other"
@@ -224,7 +224,7 @@ def contact_form(contact_id=None):
             return redirect(redirect_url)
         return redirect(url_for('contacts_bp.show_contacts'))
 
-    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    all_pathways = Pathway.query.filter_by(type='pathway', status='active').order_by(Pathway.name).all()
     pathways = {}
     for p in all_pathways:
         ptype = p.type or "Other"

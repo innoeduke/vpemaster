@@ -68,7 +68,7 @@ def user_form(user_id):
         Contact.Type == 'Member', Contact.Type == 'Past Member')).order_by(Contact.Name.asc()).all()
     users = User.query.order_by(User.Username.asc()).all()
 
-    all_pathways = Pathway.query.order_by(Pathway.name).all()
+    all_pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
     pathways = {}
     for p in all_pathways:
         ptype = p.type or "Other"

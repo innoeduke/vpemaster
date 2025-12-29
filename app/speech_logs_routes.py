@@ -55,7 +55,7 @@ def show_speech_logs():
          except (ValueError, TypeError):
              pass
 
-    all_pathways_from_db = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
+    all_pathways_from_db = Pathway.query.filter(Pathway.type != 'dummy', Pathway.status == 'active').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways_from_db}
 
     grouped_pathways = {}
@@ -139,7 +139,8 @@ def show_speech_logs():
                         pathway_abbr = path_obj.abbr
 
             if log.project:
-                log.project_code = log.project.get_code(log.pathway)
+                # Use the calculated pathway_abbr (which is from owner path or fallback)
+                log.project_code = log.project.get_code(pathway_abbr)
             else:
                 log.project_code = ""
 
@@ -355,7 +356,7 @@ def show_speech_logs():
 
 
     # Fetch series initials from Pathway table (where abbr is not null/empty)
-    pathways_db = Pathway.query.all()
+    pathways_db = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
     SERIES_INITIALS = {p.name: p.abbr for p in pathways_db if p.abbr}
     today_date = datetime.today().date()
 
