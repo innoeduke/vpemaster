@@ -3,11 +3,9 @@
 // Note: This script assumes the following global variables are defined in the HTML:
 // - isAdminView (Boolean)
 // - selectedMeetingNumber (String or Number)
-// - selectedLevel (String or Number)
 
 document.addEventListener("DOMContentLoaded", function () {
   // Find elements inside DOMContentLoaded
-  const levelFilter = document.getElementById("level-filter");
   const meetingFilter = document.getElementById("meeting-filter");
 
   if (isAdminView) {
@@ -20,41 +18,15 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  if (levelFilter) {
-    levelFilter.addEventListener("change", function () {
-      const newSelectedLevel = this.value;
-      // Use the global 'selectedMeetingNumber' as a fallback if the dropdown isn't present
-      const currentMeeting = meetingFilter
-        ? meetingFilter.value
-        : selectedMeetingNumber;
-      let url = `/booking/${currentMeeting || ""}`;
-      if (newSelectedLevel) {
-        url += `?level=${newSelectedLevel}`; // Add level parameter if selected
-      }
-      window.location.href = url; // Navigate to the new URL
-    });
-  }
 
-  // Update selected level display if a level is selected
-  const selectedLevelDisplay = document.getElementById(
-    "selected-level-display"
-  );
-  // Use the global 'selectedLevel'
-  if (selectedLevelDisplay && selectedLevel) {
-    selectedLevelDisplay.textContent = selectedLevel;
-  }
+
+
 
   document.querySelectorAll(".timeline-event").forEach((item) => {
     item.addEventListener("click", function () {
       const meetingNumber = this.dataset.meetingNumber;
-      // Get current level selection *inside* the event listener
-      const currentLevel = levelFilter ? levelFilter.value : ""; // Get current level selection or empty string
       if (meetingNumber) {
-        let url = "/booking/" + meetingNumber;
-        if (currentLevel) {
-          url += `?level=${currentLevel}`; // Preserve level filter
-        }
-        window.location.href = url;
+        window.location.href = "/booking/" + meetingNumber;
       }
     });
   });
