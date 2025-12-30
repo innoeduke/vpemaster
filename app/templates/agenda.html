@@ -80,9 +80,8 @@
             {% if selected_meeting %}
                 {% if is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
                 {% if selected_meeting.status %}
-                    <span class="meeting-status-display status-{{ selected_meeting.status }}" title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
-                        <i class="fas fa-fw {% if selected_meeting.status == 'unpublished' %}fa-eye-slash{% elif selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>
-                        {{ selected_meeting.status.replace('_', ' ').title() }}
+                    <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}" title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
+                        <i class="fas fa-fw {% if selected_meeting.status == 'unpublished' %}fa-eye-slash{% elif selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>{{ selected_meeting.status.replace('_', ' ').title() }}
                     </span>
                 {% endif %}
                 <button id="meeting-status-btn" 

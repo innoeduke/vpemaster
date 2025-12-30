@@ -695,6 +695,17 @@
     justify-content: center;
 }
 
+/* Unified status styles based on unpublished look */
+.status-unpublished,
+.status-not-started,
+.status-running,
+.status-finished,
+.status-cancelled {
+    background-color: #e9ecef;
+    color: #495057;
+    font-weight: 600;
+}
+
 /* Style the status action button to be transparent with dark, bold text */
 #meeting-status-btn {
     background-color: transparent;
@@ -708,6 +719,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-width: 100px;
+    /* Prevent layout shift on text change */
 }
 
 /* --- Mobile / Tablet Responsive Styles --- */

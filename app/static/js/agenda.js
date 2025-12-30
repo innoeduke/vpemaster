@@ -575,16 +575,23 @@ document.addEventListener("DOMContentLoaded", () => {
           const newStatus = data.new_status;
           button.dataset.currentStatus = newStatus; // Update status
 
-          statusDisplayElement.className =
-            statusDisplayElement.className.replace(
-              /status-\w+/g,
-              `status-${newStatus}`
-            );
+          // Safely update the status class without affecting other classes
+          statusDisplayElement.classList.remove(
+            "status-unpublished",
+            "status-not-started",
+            "status-running",
+            "status-finished",
+            "status-cancelled"
+          );
+          statusDisplayElement.classList.add(
+            `status-${newStatus.replace(/ /g, "-")}`
+          );
 
+          // Update the icon and text
           // Update the icon and text
           let iconClass = "";
           let statusText = newStatus
-            .replace("_", " ")
+            .replace(/_/g, " ") // Global replace
             .replace(/\b\w/g, (l) => l.toUpperCase());
 
           if (newStatus === "not started") {
@@ -613,10 +620,7 @@ document.addEventListener("DOMContentLoaded", () => {
             iconClass = "fa-play-circle";
           }
 
-          statusDisplayElement.innerHTML = `
-              <i class="fas fa-fw ${iconClass}"></i>
-              ${statusText}
-            `;
+          statusDisplayElement.innerHTML = `<i class="fas fa-fw ${iconClass}"></i>${statusText}`;
         } else {
           alert("Error updating status: " + data.message);
         }
