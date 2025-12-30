@@ -122,7 +122,7 @@
             {# Status cell: waitlist for 'not started', winner label for 'finished' #}
             <td class="status-cell">
                 <div class="status-cell-content">
-                    <div class="role-avatar">
+                    <div class="role-avatar" {% if role.owner_name %}title="{{ role.owner_name }}"{% endif %}>
                         {% if role.owner_avatar_url %}
                             <img src="{{ url_for('static', filename=role.owner_avatar_url) }}" alt="User Avatar">
                         {% else %}
