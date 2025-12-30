@@ -239,16 +239,7 @@ def _get_user_info():
     return user, current_user_contact_id
 
 
-def _get_default_level(user):
-    """Determines the default project level for a user."""
-    if user and user.contact and user.contact.Next_Project:
-        match = re.match(r"([A-Z]+)(\d+)\.?(\d*)", user.contact.Next_Project)
-        if match:
-            try:
-                return int(match.group(2))
-            except (ValueError, IndexError):
-                pass
-    return 1
+
 
 
 from flask_login import current_user
@@ -273,9 +264,6 @@ def _get_meetings():
 
 def _get_booking_page_context(selected_meeting_number, user, current_user_contact_id):
     """Gathers all context needed for the booking page template."""
-    default_level = _get_default_level(user)
-    selected_level = request.args.get('level', default=default_level, type=int)
-
     upcoming_meetings, default_meeting_num = _get_meetings()
 
     if not selected_meeting_number:
@@ -285,8 +273,8 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     context = {
         'roles': [], 'upcoming_meetings': upcoming_meetings,
         'selected_meeting_number': selected_meeting_number,
-        'user_bookings_by_date': [], 'contacts': [], 'completed_roles': [],
-        'selected_level': selected_level, 'selected_meeting': None,
+        'user_bookings_by_date': [], 'contacts': [],
+        'selected_meeting': None,
         'is_admin_view': is_authorized('BOOKING_ASSIGN_ALL'),
         'current_user_contact_id': current_user_contact_id,
         'user_role': current_user.Role if current_user.is_authenticated else 'Guest', # Passed to template if needed
@@ -317,8 +305,6 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
 
     context['user_bookings_by_date'] = _get_user_bookings(
         current_user_contact_id)
-    context['completed_roles'] = _get_completed_roles(
-        current_user_contact_id, selected_level)
 
     if context['is_admin_view']:
         context['contacts'] = Contact.query.order_by(Contact.Name).all()
@@ -870,41 +856,7 @@ def _get_user_bookings(current_user_contact_id):
     return sorted(user_bookings_by_date.values(), key=lambda x: x['date_info']['meeting_number'])
 
 
-def _get_completed_roles(current_user_contact_id, selected_level):
-    """Fetches a user's completed roles for a given level."""
-    if not current_user_contact_id or not selected_level:
-        return []
 
-    level_pattern = f"%{selected_level}%"
-    today = datetime.today().date()
-
-    try:
-        completed_logs = db.session.query(
-            Meeting.Meeting_Number,
-            Meeting.Meeting_Date,
-            Role.name,
-            Role.icon
-        ).select_from(SessionLog)\
-         .join(SessionType, SessionLog.Type_ID == SessionType.id)\
-         .join(Role, SessionType.role_id == Role.id)\
-         .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
-         .filter(SessionLog.Owner_ID == current_user_contact_id)\
-         .filter(Role.name.isnot(None), Role.name != '', Role.name != 'Prepared Speaker')\
-         .filter(SessionLog.current_path_level.like(level_pattern))\
-         .filter(Meeting.Meeting_Date < today)\
-         .distinct()\
-         .order_by(Meeting.Meeting_Number.desc(), Role.name.asc()).all()
-
-        return [{
-            'role': role_name,
-            'meeting_number': meeting_num,
-            'date': meeting_date.strftime('%Y-%m-%d'),
-            'icon': role_icon or current_app.config['DEFAULT_ROLE_ICON']
-        } for meeting_num, meeting_date, role_name, role_icon in completed_logs]
-
-    except Exception as e:
-        current_app.logger.error(f"Error fetching completed roles: {e}")
-        return []
 
 
 def _get_best_award_ids(selected_meeting):

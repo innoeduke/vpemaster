@@ -35,47 +35,6 @@
             {% endif %}
         </div>
     </div>
-    <div class="completed-roles-section-header">
-        <h3 class="booking-section-header">My Completed Roles (Level <span id="selected-level-display">{{ selected_level if selected_level else 'N/A' }}</span>)</h3>
-        
-        <div class="form-group">
-            <label for="level-filter">Filter by Level:</label>
-            <select id="level-filter">
-                <option value="">-- Select Level --</option>
-                {% for i in range(1, 6) %}
-                <option value="{{ i }}" {% if i == selected_level %}selected{% endif %}>Level {{ i }}</option>
-                {% endfor %}
-            </select>
-        </div>
-    </div>
-    <div class="completed-roles-container">
-        {% if selected_level %}
-            {% if completed_roles %}
-                <ul class="completed-roles-list">
-                    {% for role in completed_roles %}
-                    <li>
-                        <i class="fas {{ role.icon }}"></i>
-                        {{ role.role }}
-                        <span class="meeting-ref">(Meeting #{{ role.meeting_number }} on {{ role.date }})</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-            {% else %}
-                <p>No completed roles found for Level {{ selected_level }}.</p>
-            {% endif %}
-        {% else %}
-            <p>Please select a level to view completed roles.</p>
-        {% endif %}
-    </div>
-    <div class="alert-info-static">
-        <div class="alert-icon">
-            <i class="fas fa-info-circle"></i>
-        </div>
-        <div class="alert-content">
-            Role completions are tracked at your current working level—the lowest incomplete level in your path.
-        </div>
-    </div>
-    <br/>
     <h3 class="booking-section-header">Available Roles</h3>
     {% endif %}
     <div class="booking-filter-container">
@@ -279,7 +238,7 @@
         {% if selected_meeting.status == 'not started' and not current_user.is_authenticated %}
             <p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Voting for Meeting #{{ selected_meeting_number }} will open soon.</p>
             <div style="text-align: center; margin-top: 20px;">
-                <img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon" style="max-width: 100%; height: auto; border: 5px solid #004165; border-radius: 15px;">
+                <img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon" style="max-width: 100%; height: auto; border: 5px solid #c5c5c5; border-radius: 15px;">
             </div>
         {% else %}
             {# Pass context to macro to access sorted_role_groups #}
@@ -298,7 +257,6 @@
     // Pass Python data to global JS variables used by booking.js
     var isAdminView = {{ is_admin_view|tojson }};
     var selectedMeetingNumber = {{ selected_meeting_number|tojson }};
-    var selectedLevel = {{ selected_level|tojson }};
     var currentUserName = "{{ session.display_name|e }}";
 </script>
 <script src="{{ url_for('static', filename='js/booking.js') }}"></script>
