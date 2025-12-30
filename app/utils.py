@@ -548,6 +548,7 @@ def get_meeting_types(all_settings):
                 
     # Sort meeting types alphabetically by title
     sorted_meeting_types = {k: meeting_types[k] for k in sorted(meeting_types.keys())}
+    return sorted_meeting_types
     
 
 def process_avatar(file, contact_id):
