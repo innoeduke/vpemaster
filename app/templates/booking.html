@@ -121,6 +121,13 @@
 
             {# Status cell: waitlist for 'not started', winner label for 'finished' #}
             <td class="status-cell">
+                <div class="role-avatar">
+                    {% if role.owner_avatar_url %}
+                        <img src="{{ url_for('static', filename=role.owner_avatar_url) }}" alt="User Avatar">
+                    {% else %}
+                            <i class="fas fa-user-circle"></i>
+                    {% endif %}
+                </div>
                 {% if status in ['not started', 'unpublished'] and role.waitlist %}
                     <div class="waitlist-info">
                         <span style="font-size:0.5em;">Waitlist:</span>

@@ -207,6 +207,31 @@
 }
 
 /* Role Cell */
+.role-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+}
+
+.role-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.role-avatar i.fa-user-circle {
+    font-size: 1.8em;
+    color: #ccc;
+    line-height: 1;
+}
+
 .role-cell {
     font-family: 'Montserrat', sans-serif;
     display: flex;
@@ -246,6 +271,12 @@
     /* Stops the button from shrinking */
     margin-left: 10px;
     /* Add space between content and actions */
+}
+
+.booking-table .status-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 /* Action Cell */

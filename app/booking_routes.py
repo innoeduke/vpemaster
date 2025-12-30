@@ -64,6 +64,7 @@ def _consolidate_roles(session_logs, is_admin_booker):
                 'role_key': role_name,
                 'owner_id': owner_id,
                 'owner_name': log.owner.Name if log.owner else None,
+                'owner_avatar_url': log.owner.Avatar_URL if log.owner else None,
                 'session_ids': [], # Keep track of ALL session IDs this pair represents
                 'type_id': log.Type_ID,
                 'speaker_name': log.Session_Title.strip() if role_name == "Individual Evaluator" and log.Session_Title else None,
