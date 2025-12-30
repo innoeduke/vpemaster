@@ -117,11 +117,12 @@
                             </div>
                         {% endif %}
                     </div>
-                    <i class="fas fa-chevron-down caret-icon" id="caret-{{ level }}"></i>
+                    {% set is_active = (level|int == active_level) %}
+                    <i class="fas {% if is_active %}fa-chevron-down{% else %}fa-chevron-right{% endif %} caret-icon" id="caret-{{ level }}"></i>
                 </h2>
                 
                 {% if is_member_view %}
-                <div class="level-progress-summary" id="progress-{{ level }}">
+                <div class="level-progress-summary" id="progress-{{ level }}" style="display: {% if is_active %}flex{% else %}none{% endif %};">
                     {% set summary = completion_summary.get(level|string) %}
                     {% if summary %}
                         {% if summary.required %}
@@ -162,7 +163,7 @@
                 </div>
                 {% endif %}
 
-                <div class="logs-container" id="logs-{{ level }}">
+                <div class="logs-container" id="logs-{{ level }}" style="display: {% if is_active %}grid{% else %}none{% endif %};">
                     
                     {% for log in logs %}
                         {% if log.log_type == 'grouped_role' %}

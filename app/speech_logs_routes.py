@@ -442,6 +442,20 @@ def show_speech_logs():
         ).all()
         completed_levels = {a.level for a in achievements}
 
+    # Determine "Active Level" - the first uncompleted level
+    active_level = 1
+    for l in range(1, 6):
+        if l not in completed_levels:
+            active_level = l
+            break
+    # If all 1-5 completed, active_level remains 5 (or user preference? Lets stick to last level or 5)
+    def calculate_all_completed(levels_set):
+         return all(i in levels_set for i in range(1, 6))
+
+    # If all 1-5 completed, active_level remains 5 (or user preference? Lets stick to last level or 5)
+    if calculate_all_completed(completed_levels):
+         active_level = 5 # Or None to collapse all? Let's default to 5 for now.
+
     return render_template(
         'speech_logs.html',
         grouped_logs=sorted_grouped_logs,
@@ -472,7 +486,8 @@ def show_speech_logs():
         pathway_mapping=pathway_mapping,
         all_contacts=all_contacts,
         impersonated_user_name=impersonated_user_name,
-        viewed_contact=viewed_contact
+        viewed_contact=viewed_contact,
+        active_level=active_level
     )
 
 
