@@ -87,7 +87,9 @@
                   <i class="fas fa-user"></i>
                 </div>
               {% endif %}
-              <div class="contact-name-info">
+              <div class="contact-name-info {% if can_view_all_logs %}clickable-name{% endif %}" 
+                   {% if can_view_all_logs %}onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id, view_mode='member') }}'" 
+                   title="View {{ contact.Name }}'s speech logs"{% endif %}>
                 {{ contact.Name }} 
                 {% if contact.DTM %}
                 <sup class="dtm-superscript">DTM</sup>

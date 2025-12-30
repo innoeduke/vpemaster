@@ -140,13 +140,16 @@ def show_contacts():
         Contact.Type.in_(['Member', 'Past Member'])
     ).order_by(Contact.Name.asc()).all()
 
+    can_view_all_logs = is_authorized('SPEECH_LOGS_VIEW_ALL')
+    
     return render_template('contacts.html', 
                            contacts=contacts, 
                            pathways=pathways,
                            total_contacts=total_contacts, 
                            type_counts=type_counts,
                            contact_types=sorted_types,
-                           mentor_candidates=mentor_candidates)
+                           mentor_candidates=mentor_candidates,
+                           can_view_all_logs=can_view_all_logs)
 
 
 @contacts_bp.route('/contact/form', methods=['GET', 'POST'])
