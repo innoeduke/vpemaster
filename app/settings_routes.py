@@ -57,17 +57,17 @@ def add_session_type():
         return jsonify(success=False, message="Permission denied"), 403
 
     try:
-        # 输入验证和清理
+        # Input validation and cleaning
         title = request.form.get('title', '').strip()
         if not title:
             return jsonify(success=False, message="Title is required"), 400
 
-        # 检查标题是否已存在
+        # Check if title already exists
         existing_session = SessionType.query.filter_by(Title=title).first()
         if existing_session:
             return jsonify(success=False, message="Session type with this title already exists"), 400
 
-        # 验证数值输入
+        # Validate numeric input
         duration_min_str = request.form.get('duration_min', '').strip()
         duration_max_str = request.form.get('duration_max', '').strip()
 
@@ -78,7 +78,7 @@ def add_session_type():
             if not duration_min_str.isdigit():
                 return jsonify(success=False, message="Duration min must be a positive integer"), 400
             duration_min = int(duration_min_str)
-            if duration_min < 1 or duration_min > 480:  # 8小时限制
+            if duration_min < 1 or duration_min > 480:  # 8-hour limit
                 return jsonify(success=False, message="Duration min must be between 1 and 480 minutes"), 400
 
         if duration_max_str:
@@ -88,7 +88,7 @@ def add_session_type():
             if duration_max < 1 or duration_max > 480:
                 return jsonify(success=False, message="Duration max must be between 1 and 480 minutes"), 400
 
-        # 验证时长逻辑
+        # Validate duration logic
         if duration_min and duration_max and duration_min > duration_max:
             return jsonify(success=False, message="Duration min cannot be greater than duration max"), 400
 
@@ -248,7 +248,7 @@ def import_roles():
 
     if file and file.filename.endswith('.csv'):
         try:
-            # Read the file in-memory
+            # Read the file in-memory using utf-8-sig to handle BOM
             stream = io.StringIO(
                 file.stream.read().decode("utf-8-sig"), newline=None)
             reader = csv.DictReader(stream)

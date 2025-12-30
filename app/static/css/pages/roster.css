@@ -8,16 +8,16 @@
 
 .roster-table-container {
     flex: 1 1 auto;
-    /* 根据内容自动调整宽度 */
+    /* Adjust width automatically based on content */
     min-width: 0;
-    /* 允许收缩以适应容器 */
+    /* Allow shrinking to fit container */
 }
 
 .roster-table-container table {
     table-layout: auto;
     width: 100%;
     min-width: 500px;
-    /* 确保表格最小宽度 */
+    /* Ensure minimum table width */
 }
 
 .roster-table-container table th,
@@ -61,17 +61,17 @@
 
 .roster-form-container {
     flex: 0 0 auto;
-    /* 根据内容自动调整，但不收缩 */
+    /* Adjust based on content, but do not shrink */
     min-width: 300px;
-    /* 表单最小宽度 */
+    /* Form minimum width */
     max-width: 400px;
-    /* 表单最大宽度 */
+    /* Form maximum width */
     align-self: flex-start;
-    /* 顶部对齐 */
+    /* Align to top */
     display: flex;
     flex-direction: column;
     gap: 20px;
-    /* 卡片之间的间距 */
+    /* Space between cards */
 }
 
 .card {
@@ -79,7 +79,7 @@
     border-radius: .25rem;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075);
     height: fit-content;
-    /* 根据内容调整高度 */
+    /* Adjust height based on content */
     min-height: fit-content;
 }
 
@@ -152,7 +152,7 @@
     margin-bottom: 0.5rem;
 }
 
-/* 抽奖卡片样式 */
+/* Lucky draw card styles */
 .lucky-draw-card {
     margin-top: 20px;
 }
@@ -174,7 +174,7 @@
     grid-template-columns: 1fr auto;
     gap: 15px;
     align-items: flex-start;
-    /* 改为顶部对齐 */
+    /* Changed to top alignment */
 }
 
 .lucky-draw-result {
@@ -238,7 +238,7 @@
     display: flex;
     justify-content: flex-end;
     align-items: flex-start;
-    /* 改为顶部对齐 */
+    /* Changed to top alignment */
 }
 
 @media (max-width: 768px) {

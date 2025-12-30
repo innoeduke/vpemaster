@@ -90,7 +90,7 @@ def show_speech_logs():
         Role.name.isnot(None),
         Role.name != '',
         Role.name != 'Backup Speaker',
-        # 只允许standard或club-specific类型的role
+        # Only allow standard or club-specific roles
         Role.type.in_(['standard', 'club-specific'])
 
     )
@@ -159,7 +159,7 @@ def show_speech_logs():
             if log.current_path_level:
                 match = re.match(r"[A-Z]+(\d+)", log.current_path_level)
                 if match:
-                    display_level = str(match.group(1))  # 确保类型一致性
+                    display_level = str(match.group(1))  # Ensure type consistency
 
         log.log_type = log_type
 

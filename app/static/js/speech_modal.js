@@ -321,7 +321,7 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
     Project_ID: projectToSelect,
   } = logData;
 
-  // 确保级别值是字符串类型，以便与下拉选项匹配
+  // Ensure level value is string type to match dropdown options
   if (levelToSelect !== undefined && levelToSelect !== null) {
     levelToSelect = String(levelToSelect);
   }
@@ -332,6 +332,7 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
     modalElements.pathwaySelect.value = pathwayToSelect || "";
   } else {
     modalElements.genericCheckbox.checked = false;
+
     toggleGeneric(false);
     if (!projectToSelect) {
       // Logic for auto-selecting next project for standard speeches

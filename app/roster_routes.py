@@ -10,24 +10,24 @@ roster_bp = Blueprint('roster_bp', __name__)
 @roster_bp.route('/', methods=['GET'])
 @login_required
 def roster():
-    # 获取当前会议逻辑，与议程页面相同
+    # Get current meeting logic, same as agenda page
     today = db.func.current_date()
 
-    # 查询未来的会议
+    # Query future meetings
     future_meetings_q = Meeting.query.filter(
         Meeting.Meeting_Date >= today
     )
 
-    # 查询最近的过去会议
+    # Query recent past meetings
     past_meetings_q = Meeting.query.filter(
         Meeting.Meeting_Date < today
     ).order_by(Meeting.Meeting_Date.desc()).limit(8)
 
-    # 执行查询
+    # Execute queries
     future_meetings = future_meetings_q.all()
     past_meetings = past_meetings_q.all()
 
-    # 合并、排序并获取会议编号
+    # Merge, sort and get meeting numbers
     all_meetings = sorted(
         future_meetings + past_meetings, key=lambda m: m.Meeting_Date, reverse=True)
     meeting_numbers = [m.Meeting_Number for m in all_meetings]
@@ -41,7 +41,7 @@ def roster():
         except ValueError:
             selected_meeting_num = None
     else:
-        # 查找最近的即将到来的会议
+        # Find the next upcoming meeting
         upcoming_meeting = Meeting.query\
             .filter(Meeting.Meeting_Date >= today)\
             .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc())\
@@ -50,10 +50,10 @@ def roster():
         if upcoming_meeting:
             selected_meeting_num = upcoming_meeting.Meeting_Number
         elif meeting_numbers:
-            # 回退到最近的现有会议
+            # Fallback to the most recent existing meeting
             selected_meeting_num = meeting_numbers[0]
 
-    # 获取选定的会议
+    # Get the selected meeting
     selected_meeting = None
     roster_entries = []
     first_unallocated_entry = None
@@ -62,14 +62,14 @@ def roster():
             Meeting.Meeting_Number == selected_meeting_num
         ).first()
 
-        # 获取该会议的花名册条目（包括未分配联系人的条目）
+        # Get roster entries for this meeting (including unallocated entries)
         roster_entries = Roster.query\
             .outerjoin(Contact, Roster.contact_id == Contact.id)\
             .filter(Roster.meeting_number == selected_meeting_num)\
             .order_by(Roster.order_number.asc())\
             .all()
                 
-        # 查找下一个可用序号（最后一个序号+1）
+        # Find next available order number (last order number + 1)
         next_unallocated_entry = None
         if roster_entries:
             valid_orders = [entry.order_number for entry in roster_entries if entry.order_number < 1000]
@@ -78,14 +78,13 @@ def roster():
         else:
             next_unallocated_entry = type('obj', (object,), {'order_number': 1})()
 
-        # 查找第一个未分配的条目（联系人名称为空）
+        # Find the first unallocated entry (where contact is empty)
         for entry in roster_entries:
             if not entry.contact_id:
                 first_unallocated_entry = entry
                 break
 
-    # 获取所有联系人用于表单下拉列表
-    # 获取所有联系人用于表单下拉列表
+    # Get all contacts for the dropdown menu
     contacts = Contact.query.order_by(Contact.Name).all()
 
     from .models import Pathway
@@ -113,7 +112,7 @@ def roster():
 @roster_bp.route('/api/roster', methods=['POST'])
 @login_required
 def create_roster_entry():
-    """创建新的花名册条目"""
+    """Create a new roster entry"""
     data = request.get_json()
 
     required_fields = ['meeting_number', 'order_number', 'ticket']

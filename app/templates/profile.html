@@ -19,7 +19,8 @@ content %}
       style="max-width: 700px; margin: 0 auto"
     >
       <div class="profile-avatar-container">
-        <div id="avatar-placeholder" class="avatar-placeholder" style="display: {% if user.contact and user.contact.Avatar_URL %}none{% else %}flex{% endif %};">
+        <div id="avatar-placeholder" class="avatar-placeholder" 
+             style="display: {% if user.contact and user.contact.Avatar_URL %}none{% else %}flex{% endif %};">
             <i class="fas fa-user"></i>
         </div>
         {% if user.contact and user.contact.Avatar_URL %}

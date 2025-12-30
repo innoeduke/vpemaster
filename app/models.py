@@ -329,10 +329,10 @@ class Vote(db.Model):
     contact_id = db.Column(db.Integer, db.ForeignKey(
         'Contacts.id'), nullable=True)
 
-    # 添加与Contact表的关系
+    # Relationship with Contact table
     contact = db.relationship('Contact', backref='votes')
 
-    # 添加索引以提高查询性能
+    # Add index for performance
     __table_args__ = (
         db.Index('idx_meeting_voter', 'meeting_number', 'voter_identifier'),
     )
