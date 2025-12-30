@@ -1,19 +1,27 @@
+import sys
+import os
+import argparse
+
+# Add the project root to the python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
 from app.models import Achievement
 
 app = create_app()
 
-def backfill_achievements():
+def backfill_achievements(apply=False):
     """
     Iterates through all existing level-completion achievements and 
     auto-adds missing lower-level achievements.
     """
     with app.app_context():
-        print("Starting backfill of missing lower-level achievements...")
+        if apply:
+            print("Starting backfill of missing lower-level achievements (APPLY MODE)...")
+        else:
+            print("Starting backfill of missing lower-level achievements (DRY RUN)...")
         
         # Get all level completion achievements that are level 2 or higher
-        # optimization: filter directly in query
         all_achievements = Achievement.query.filter(
             Achievement.achievement_type == 'level-completion',
             Achievement.level > 1
@@ -39,7 +47,7 @@ def backfill_achievements():
                 ).first()
                 
                 if not exists:
-                    print(f"Adding missing Level {i} for contact {contact_id} (Path: {path_name}) based on Level {current_level}...")
+                    print(f"[{'WILL ADD' if not apply else 'ADDING'}] Missing Level {i} for contact {contact_id} (Path: {path_name}) based on Level {current_level}...")
                     new_ach = Achievement(
                         contact_id=contact_id,
                         member_id=ach.member_id,
@@ -53,10 +61,17 @@ def backfill_achievements():
                     added_count += 1
         
         if added_count > 0:
-            db.session.commit()
-            print(f"Successfully added {added_count} missing achievements.")
+            if apply:
+                db.session.commit()
+                print(f"Successfully added {added_count} missing achievements.")
+            else:
+                print(f"DRY RUN COMPLETE: Would have added {added_count} missing achievements. Run with --apply to commit changes.")
         else:
             print("No missing lower-level achievements found.")
 
 if __name__ == "__main__":
-    backfill_achievements()
+    parser = argparse.ArgumentParser(description="Backfill missing lower-level achievements.")
+    parser.add_argument("--apply", action="store_true", help="Apply changes to the database.")
+    args = parser.parse_args()
+    
+    backfill_achievements(apply=args.apply)
