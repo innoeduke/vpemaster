@@ -459,3 +459,49 @@ speech-log-entry.card-type-speech {
         width: 100%;
     }
 }
+
+/* Speech Log Header with Avatar */
+.speech-log-header {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 25px;
+    border-left: 5px solid #004165;
+    /* Toastmasters Blue */
+}
+
+.header-avatar {
+    margin-right: 20px;
+}
+
+.avatar-img {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #004165;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 35px;
+    color: #999;
+    border: 3px solid #004165;
+}
+
+.header-info h2 {
+    margin: 0;
+    font-size: 1.8em;
+    color: #333;
+    font-family: 'Montserrat', sans-serif;
+}

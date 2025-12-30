@@ -46,14 +46,14 @@ def show_speech_logs():
             else:
                 selected_speaker = -1   # No logs for unlinked member
 
-    impersonated_user_name = None
+    viewed_contact = None
     if selected_speaker and selected_speaker != -1:
          try:
-             c = Contact.query.get(int(selected_speaker))
-             if c:
-                 impersonated_user_name = c.Name
+             viewed_contact = Contact.query.get(int(selected_speaker))
          except (ValueError, TypeError):
              pass
+    
+    impersonated_user_name = viewed_contact.Name if viewed_contact else None
 
     all_pathways_from_db = Pathway.query.filter(Pathway.type != 'dummy', Pathway.status == 'active').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways_from_db}
@@ -471,7 +471,8 @@ def show_speech_logs():
         view_mode=view_mode,
         pathway_mapping=pathway_mapping,
         all_contacts=all_contacts,
-        impersonated_user_name=impersonated_user_name
+        impersonated_user_name=impersonated_user_name,
+        viewed_contact=viewed_contact
     )
 
 

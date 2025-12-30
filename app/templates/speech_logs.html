@@ -4,12 +4,22 @@
 
 
 {% block content %}
-    <h1>Activity Logs</h1>
-    
     <div class="speech-logs-content">
-        {% if is_member_view and impersonated_user_name %}
-        <div class="alert alert-info text-left" style="margin-bottom: 20px;">
-            <strong>Viewing logs for: {{ impersonated_user_name }}</strong>
+        {% if is_member_view and viewed_contact %}
+        <div class="speech-log-header">
+             <div class="header-avatar">
+                {% if viewed_contact.Avatar_URL %}
+                    <img src="{{ url_for('static', filename=viewed_contact.Avatar_URL) }}" alt="{{ viewed_contact.Name }}" class="avatar-img">
+                {% else %}
+                    <div class="avatar-placeholder"><i class="fas fa-user"></i></div>
+                {% endif %}
+             </div>
+             <div class="header-info">
+                 <h2>{{ viewed_contact.Name }}'s Activity Logs</h2>
+                 {% if request.args.get('speaker_id') %}
+                    <span class="badge badge-info" style="font-size: 0.8em; margin-top: 5px; display: inline-block;">Impersonating View</span>
+                 {% endif %}
+             </div>
         </div>
         {% endif %}
         {% if can_view_all %}
