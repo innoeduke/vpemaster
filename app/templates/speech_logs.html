@@ -155,7 +155,53 @@
                 <div class="logs-container" id="logs-{{ level }}">
                     
                     {% for log in logs %}
-                        {% if log.log_type == 'speech' or log.log_type == 'presentation' %}
+                        {% if log.log_type == 'grouped_role' %}
+                            <div class="speech-log-entry role-log-entry grouped-role-entry" 
+                                 data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
+                                <div class="card-header">
+                                    <div class="meeting-info">
+                                        Multiple Entries ({{ log.logs|length }})
+                                    </div>
+                                    <div class="card-actions">
+                                        {# Actions for the group? Maybe not needed for now, or per-line #}
+                                    </div>
+                                </div>
+                                <div class="role-title">
+                                    <i class="fas {{ role_icons.get(log.session_type.role.name if log.session_type.role else '', 'fa-question-circle') }}"></i>
+                                    {{ log.role_name }}
+                                </div>
+                                <div class="speaker-info">
+                                    {{ log.owner.Name if log.owner else 'N/A' }}
+                                </div>
+                                
+                                <div class="grouped-role-list" style="margin-top: 10px; max-height: 200px; overflow-y: auto;">
+                                    <table class="table table-sm table-borderless" style="font-size: 0.9em; width: 100%; font-family: 'Quicksand', sans-serif;">
+                                        <tbody>
+                                            {% for item in log.logs %} 
+                                            <tr>
+                                                <td class="meeting-info" style="border: none; padding: 4px 0; text-align: center; position: relative;">
+                                                    Meeting #{{ item.Meeting_Number }} | {{ item.meeting.Meeting_Date.strftime('%Y-%m-%d') if item.meeting and item.meeting.Meeting_Date else 'N/A' }}
+                                                    {% if log.session_type.Valid_for_Project and is_authorized(current_user.id == log.owner.id, 'SPEECH_LOGS_EDIT_ALL') %}
+                                                        <button class="icon-btn edit-log-btn" onclick="openSpeechEditModal({{ item.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)" title="Edit" style="font-size: 0.8em; margin-left: 8px;"><i class="fas fa-edit"></i></button>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+    
+                                <div class="card-footer">
+                                    <div class="pathway-info">
+                                        {{ log.current_path_level if log.current_path_level else 'N/A' }}
+                                    </div>
+                                    <div class="status-info">
+                                        <i class="fas fa-check-circle" title="Completed"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                        {% elif log.log_type == 'speech' or log.log_type == 'presentation' %}
                             {% set card_type_class = 'card-type-speech' %}
                             {% if log.log_type == 'presentation' %}
                                 {% set card_type_class = 'card-type-presentation' %}

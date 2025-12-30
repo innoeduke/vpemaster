@@ -207,6 +207,48 @@ def show_speech_logs():
     for level in grouped_logs:
         grouped_logs[level].sort(key=get_activity_sort_key)
 
+        # Consolidate 'role' logs for the same user, role, and level
+        consolidated_group = []
+        role_group_map = {} # Key: (Owner_ID, role_name), Value: grouped_role_entry
+
+        for item in grouped_logs[level]:
+            # Only consolidate pure role logs (not speeches, not project-linked roles)
+            if item.log_type == 'role' and not item.Project_ID:
+                role_name = item.session_type.role.name if item.session_type and item.session_type.role else item.session_type.Title
+                owner_id = item.Owner_ID
+                key = (owner_id, role_name)
+
+                if key in role_group_map:
+                    # Append to existing group
+                    role_group_map[key]['logs'].append(item)
+                else:
+                    # Create new group
+                    new_group = {
+                        'log_type': 'grouped_role',
+                        'role_name': role_name,
+                        'session_type': item.session_type, # Use first one as rep
+                        'owner': item.owner,
+                        'current_path_level': item.current_path_level,
+                        'logs': [item]
+                    }
+                    role_group_map[key] = new_group
+                    consolidated_group.append(new_group)
+            else:
+                 # Speeches or project-linked roles stay as is
+                 consolidated_group.append(item)
+        
+        # Post-process: Unwrap groups with only 1 item to use standard card display
+        final_list = []
+        for item in consolidated_group:
+            if isinstance(item, dict) and item.get('log_type') == 'grouped_role' and len(item['logs']) == 1:
+                # Revert to the original single log object
+                final_list.append(item['logs'][0])
+            else:
+                final_list.append(item)
+        
+        grouped_logs[level] = final_list
+
+
     # Sort the groups themselves (5, 4, 3, 2, 1, then General)
     def get_group_sort_key(level_key):
         try:
@@ -253,65 +295,72 @@ def show_speech_logs():
         details = [] # List of satisfying items
         logs_for_level = grouped_logs.get(level_str, [])
         
-        for log in logs_for_level:
-            if log.id in used_log_ids:
-                continue
+        for entry in logs_for_level:
+            # Flatten if grouped
+            if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role':
+                items_to_process = entry['logs']
+            else:
+                items_to_process = [entry]
 
-            satisfied = False
-            item_name = log.Session_Title or (log.project.Project_Name if log.project else None) or (log.session_type.Title if log.session_type else "Activity")
-            
-            if hasattr(log, 'project_code') and log.project_code:
-                item_name = f"{log.project_code} {item_name}"
+            for log in items_to_process:
+                if log.id in used_log_ids:
+                    continue
 
-            # Normalize role names for comparison
-            actual_role_name = (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "")).strip().lower()
-            target_role_name = lr.role.strip().lower()
+                satisfied = False
+                item_name = log.Session_Title or (log.project.Project_Name if log.project else None) or (log.session_type.Title if log.session_type else "Activity")
+                
+                if hasattr(log, 'project_code') and log.project_code:
+                    item_name = f"{log.project_code} {item_name}"
 
-            def normalize(s):
-                if not s: return ""
-                return s.strip().replace(' ', '').replace('-', '').lower()
+                # Normalize role names for comparison
+                actual_role_name = (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "")).strip().lower()
+                target_role_name = lr.role.strip().lower()
 
-            norm_actual = normalize(actual_role_name)
-            norm_target = normalize(target_role_name)
+                def normalize(s):
+                    if not s: return ""
+                    return s.strip().replace(' ', '').replace('-', '').lower()
 
-            # 1. Match by literal role name or common variations
-            is_role_match = (norm_actual == norm_target)
-            
-            # Handle specific aliases
-            if not is_role_match:
-                aliases = {
-                    'topicmaster': 'topicsmaster',
-                    'topicsmaster': 'topicmaster',
-                    'tme': 'toastmaster',
-                    'toastmaster': 'tme',
-                    'ge': 'generalevaluator',
-                    'generalevaluator': 'ge'
-                }
-                if aliases.get(norm_actual) == norm_target:
-                    is_role_match = True
+                norm_actual = normalize(actual_role_name)
+                norm_target = normalize(target_role_name)
 
-            if is_role_match:
-                satisfied = True
-            
-            # 2. Match by category (if lr.role is a general category)
-            elif lr.role.lower() == 'speech' and log.log_type == 'speech':
-                if pp_mapping.get(log.Project_ID) == 'required' or not pp_mapping:
+                # 1. Match by literal role name or common variations
+                is_role_match = (norm_actual == norm_target)
+                
+                # Handle specific aliases
+                if not is_role_match:
+                    aliases = {
+                        'topicmaster': 'topicsmaster',
+                        'topicsmaster': 'topicmaster',
+                        'tme': 'toastmaster',
+                        'toastmaster': 'tme',
+                        'ge': 'generalevaluator',
+                        'generalevaluator': 'ge'
+                    }
+                    if aliases.get(norm_actual) == norm_target:
+                        is_role_match = True
+
+                if is_role_match:
                     satisfied = True
-            elif lr.role.lower() == 'elective project' and log.log_type == 'speech':
-                if pp_mapping.get(log.Project_ID) == 'elective':
+                
+                # 2. Match by category (if lr.role is a general category)
+                elif lr.role.lower() == 'speech' and log.log_type == 'speech':
+                    if pp_mapping.get(log.Project_ID) == 'required' or not pp_mapping:
+                        satisfied = True
+                elif lr.role.lower() == 'elective project' and log.log_type == 'speech':
+                    if pp_mapping.get(log.Project_ID) == 'elective':
+                        satisfied = True
+                
+                # 3. Special case for "Individual Evaluator" logged as a project or role
+                elif target_role_name == 'individual evaluator' and 'evaluat' in actual_role_name:
                     satisfied = True
-            
-            # 3. Special case for "Individual Evaluator" logged as a project or role
-            elif target_role_name == 'individual evaluator' and 'evaluat' in actual_role_name:
-                satisfied = True
-            
-            if satisfied:
-                if log.Status == 'Completed' or log.log_type == 'role':
-                    count += 1
-                    details.append({'name': item_name, 'status': 'completed'})
-                    used_log_ids.add(log.id)
-                    if count >= lr.count_required:
-                        break # Satisfied this requirement
+                
+                if satisfied:
+                    if log.Status == 'Completed' or log.log_type == 'role':
+                        count += 1
+                        details.append({'name': item_name, 'status': 'completed'})
+                        used_log_ids.add(log.id)
+                        if count >= lr.count_required:
+                            break # Satisfied this requirement
         
         # Add placeholders for pending items
         pending_count = max(0, lr.count_required - count)
