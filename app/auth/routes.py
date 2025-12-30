@@ -1,7 +1,5 @@
 from flask import render_template, request, redirect, url_for, session, flash, current_app
 import os
-from PIL import Image
-from werkzeug.utils import secure_filename
 from sqlalchemy import or_
 from flask_login import login_user, logout_user, login_required, current_user
 
@@ -106,43 +104,12 @@ def profile():
                     if not file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.webp')):
                         flash('Invalid image format. Supported formats: PNG, JPG, JPEG, GIF, WEBP', 'error')
                     else:
-                        try:
-                            # Process image with Pillow
-                            img = Image.open(file)
-                            
-                            # For WebP, we can keep transparency (RGBA)
-                            # If it's not RGBA or RGB, convert to RGBA to be safe
-                            if img.mode not in ("RGB", "RGBA"):
-                                img = img.convert("RGBA")
-                            
-                            # Square crop
-                            width, height = img.size
-                            if width > height:
-                                left = (width - height) / 2
-                                top = 0
-                                right = (width + height) / 2
-                                bottom = height
-                            else:
-                                left = 0
-                                top = (height - width) / 2
-                                right = width
-                                bottom = (height + width) / 2
-                            
-                            img = img.crop((left, top, right, bottom))
-                            img = img.resize((300, 300), Image.Resampling.LANCZOS)
-                            
-                            # Save file as WebP for best compression and transparency support
-                            filename = secure_filename(f"avatar_{user.contact.id}.webp")
-                            upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'profile_photos')
-                            os.makedirs(upload_folder, exist_ok=True)
-                            file_path = os.path.join(upload_folder, filename)
-                            img.save(file_path, "WEBP", quality=80)
-                            
-                            # Update DB
-                            user.contact.Avatar_URL = f"uploads/profile_photos/{filename}"
-                            
-                        except Exception as e:
-                            flash(f'Error processing image: {str(e)}', 'error')
+                        from ..utils import process_avatar
+                        avatar_url = process_avatar(file, user.contact.id)
+                        if avatar_url:
+                            user.contact.Avatar_URL = avatar_url
+                        else:
+                            flash('Error processing image.', 'error')
 
             db.session.commit()
             flash('Profile updated successfully!', 'success')

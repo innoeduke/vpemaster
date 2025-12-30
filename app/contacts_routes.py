@@ -177,28 +177,30 @@ def contact_form(contact_id=None):
                 'current_path': contact.Current_Path,
                 'next_project': contact.Next_Project,
                 'credentials': contact.credentials,
+                'Avatar_URL': contact.Avatar_URL,
                 'mentor_id': contact.Mentor_ID
             }
         })
 
     if request.method == 'POST':
-        name = request.form.get('name')
+        name = request.form.get('name', '').strip()
         if not name:
             flash('Name is required.', 'error')
             return redirect(url_for('contacts_bp.show_contacts'))
 
-        email = request.form.get('email')
+        email = request.form.get('email', '').strip() or None
         contact_type = request.form.get('type', 'Guest')
-        club = request.form.get('club')
-        phone = request.form.get('phone_number')
-        bio = request.form.get('bio')
-        member_id = request.form.get('member_id')
+        club = request.form.get('club', '').strip() or 'SHLTMC'
+        phone = request.form.get('phone_number', '').strip() or None
+        bio = request.form.get('bio', '').strip() or None
+        member_id = request.form.get('member_id', '').strip() or None
         
         # Mentor Logic
         mentor_id_val = request.form.get('mentor_id')
         mentor_id = int(mentor_id_val) if mentor_id_val and int(mentor_id_val) != 0 else None
 
         if contact_id:
+            # Update Existing Contact
             contact = Contact.query.get_or_404(contact_id)
             contact.Name = name
             contact.Email = email
@@ -212,50 +214,73 @@ def contact_form(contact_id=None):
             # Update profile fields (Member/Officer specific)
             if contact_type in ['Member', 'Officer']:
                 contact.Current_Path = request.form.get('current_path')
-            if existing_contact:
-                message = f"A contact with the name '{contact_name}' already exists."
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify(success=False, message=message)
-                else:
-                    flash(message, 'error')
-                    return redirect(url_for('contacts_bp.show_contacts'))
-
+            
+            # Handle Avatar Upload
+            file = request.files.get('avatar')
+            if file and file.filename != '':
+                from .utils import process_avatar
+                avatar_url = process_avatar(file, contact.id)
+                if avatar_url:
+                    contact.Avatar_URL = avatar_url
+            
+            db.session.commit()
+            flash('Contact updated successfully!', 'success')
+            target_contact = contact
+        else:
+            # Create New Contact
+            # Check for existing name
+            existing_name = Contact.query.filter_by(Name=name).first()
+            if existing_name:
+                flash(f"A contact with the name '{name}' already exists.", 'error')
+                return redirect(url_for('contacts_bp.show_contacts'))
+                
+            # Check for existing email if provided
             if email:
                 existing_email = Contact.query.filter_by(Email=email).first()
                 if existing_email:
-                    message = f"A contact with the email '{email}' already exists."
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return jsonify(success=False, message=message)
-                    else:
-                        flash(message, 'error')
-                        return redirect(url_for('contacts_bp.show_contacts'))
+                    flash(f"A contact with the email '{email}' already exists.", 'error')
+                    return redirect(url_for('contacts_bp.show_contacts'))
 
             new_contact = Contact(
-                Name=contact_name,
+                Name=name,
                 Email=email,
-                Club=request.form.get('club'),
+                Type=contact_type,
+                Club=club or 'SHLTMC',
                 Date_Created=date.today(),
-                Phone_Number=request.form.get('phone_number'),
-                Bio=request.form.get('bio'),
-                Current_Path=request.form.get('current_path'),
-                Next_Project=request.form.get('next_project'),
-                Mentor_ID=request.form.get('mentor_id', None, type=int) or None
+                Phone_Number=phone,
+                Bio=bio,
+                Member_ID=member_id,
+                Mentor_ID=mentor_id,
+                Current_Path=request.form.get('current_path') if contact_type in ['Member', 'Officer'] else None
             )
             db.session.add(new_contact)
-            db.session.commit()
+            db.session.commit() # Commit to get ID for avatar naming
+            
+            # Handle Avatar Upload for new contact
+            file = request.files.get('avatar')
+            if file and file.filename != '':
+                from .utils import process_avatar
+                avatar_url = process_avatar(file, new_contact.id)
+                if avatar_url:
+                    new_contact.Avatar_URL = avatar_url
+                    db.session.commit()
 
-            # Sync metadata based on achievements
+            # Sync metadata 
             from .utils import sync_contact_metadata
             sync_contact_metadata(new_contact.id)
+            
+            flash('Contact added successfully!', 'success')
+            target_contact = new_contact
 
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return jsonify(success=True, contact={'id': new_contact.id, 'Name': new_contact.Name, 'Phone_Number': new_contact.Phone_Number, 'Bio': new_contact.Bio})
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify(success=True, contact={'id': target_contact.id, 'Name': target_contact.Name})
 
         referer = request.args.get('referer')
         if referer and 'roster' in referer:
             separator = '&' if '?' in referer else '?'
-            redirect_url = f"{referer}{separator}new_contact_id={new_contact.id}&new_contact_name={new_contact.Name}&new_contact_type={new_contact.Type}"
+            redirect_url = f"{referer}{separator}new_contact_id={target_contact.id}&new_contact_name={target_contact.Name}&new_contact_type={target_contact.Type}"
             return redirect(redirect_url)
+            
         return redirect(url_for('contacts_bp.show_contacts'))
 
     all_pathways = Pathway.query.filter_by(type='pathway', status='active').order_by(Pathway.name).all()

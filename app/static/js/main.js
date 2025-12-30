@@ -141,6 +141,18 @@ function openContactModal(contactId) {
           data.contact.Completed_Paths || "";
         document.getElementById("dtm").checked = data.contact.DTM;
 
+        // Handle Avatar Preview
+        const avatarImg = document.getElementById("modal-avatar-img");
+        const placeholder = document.getElementById("modal-avatar-placeholder");
+        if (data.contact.Avatar_URL) {
+          avatarImg.src = `/static/${data.contact.Avatar_URL}`;
+          avatarImg.style.display = 'block';
+          placeholder.style.display = 'none';
+        } else {
+          avatarImg.style.display = 'none';
+          placeholder.style.display = 'flex';
+        }
+
         // Populate Mentor Dropdown
         const mentorSelect = document.getElementById("mentor_id");
         if (mentorSelect && typeof MENTOR_CANDIDATES !== 'undefined') {
@@ -187,6 +199,10 @@ function openContactModal(contactId) {
     contactForm.action = "/contact/form";
     document.getElementById("educationFieldsWrapper").style.display = "none";
 
+    // Reset Avatar for New Entry
+    document.getElementById("modal-avatar-img").style.display = 'none';
+    document.getElementById("modal-avatar-placeholder").style.display = 'flex';
+
     // Reset Accordions for New Entry
     const acc = document.querySelectorAll(".accordion");
     acc.forEach((btn, index) => {
@@ -206,6 +222,20 @@ function openContactModal(contactId) {
 function closeContactModal() {
   const contactModal = document.getElementById("contactModal");
   contactModal.style.display = "none";
+}
+
+function previewAvatar(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const avatarImg = document.getElementById("modal-avatar-img");
+      const placeholder = document.getElementById("modal-avatar-placeholder");
+      avatarImg.src = e.target.result;
+      avatarImg.style.display = 'block';
+      placeholder.style.display = 'none';
+    }
+    reader.readAsDataURL(input.files[0]);
+  }
 }
 
 document.addEventListener("DOMContentLoaded", function () {

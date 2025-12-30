@@ -2,7 +2,19 @@
   <div class="modal-content">
     <span class="close" onclick="closeContactModal()">&times;</span>
     <h1 id="contactModalTitle"></h1>
-    <form id="contactForm" method="POST">
+     <form id="contactForm" method="POST" enctype="multipart/form-data">
+       <div class="profile-avatar-container" style="margin-top: 10px;">
+        <div id="modal-avatar-placeholder" class="avatar-placeholder">
+            <i class="fas fa-user"></i>
+        </div>
+        <img id="modal-avatar-img" src="" alt="Avatar" class="profile-avatar" style="display: none;"
+             onerror="this.style.display='none'; document.getElementById('modal-avatar-placeholder').style.display='flex';">
+        
+        <div class="upload-btn-wrapper">
+          <button type="button" class="btn-upload">Change Photo</button>
+          <input type="file" name="avatar" accept="image/*" onchange="previewAvatar(this)" />
+        </div>
+      </div>
       <!-- Accordion 1: Basic Information -->
       <button type="button" class="accordion active">Basic Information</button>
       <div class="panel" style="display: block;">

@@ -549,4 +549,47 @@ def get_meeting_types(all_settings):
     # Sort meeting types alphabetically by title
     sorted_meeting_types = {k: meeting_types[k] for k in sorted(meeting_types.keys())}
     
-    return sorted_meeting_types
+
+def process_avatar(file, contact_id):
+    """
+    Processes an uploaded image: crops to square, resizes to 300x300, 
+    and saves as WebP. Returns the relative path to be stored in DB.
+    """
+    from PIL import Image
+    from werkzeug.utils import secure_filename
+    import os
+
+    try:
+        img = Image.open(file)
+        
+        # Preservation of transparency (RGBA)
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGBA")
+        
+        # Square crop
+        width, height = img.size
+        if width > height:
+            left = (width - height) / 2
+            top = 0
+            right = (width + height) / 2
+            bottom = height
+        else:
+            left = 0
+            top = (height - width) / 2
+            right = width
+            bottom = (height + width) / 2
+        
+        img = img.crop((left, top, right, bottom))
+        img = img.resize((300, 300), Image.Resampling.LANCZOS)
+        
+        # Save file as WebP
+        filename = secure_filename(f"avatar_{contact_id}.webp")
+        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'profile_photos')
+        os.makedirs(upload_folder, exist_ok=True)
+        file_path = os.path.join(upload_folder, filename)
+        img.save(file_path, "WEBP", quality=80)
+        
+        return f"uploads/profile_photos/{filename}"
+    except Exception as e:
+        print(f"Error processing avatar for contact {contact_id}: {e}")
+        return None
