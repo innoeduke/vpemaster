@@ -50,10 +50,13 @@
           </button>
         </div>
       </form>
+      <div style="text-align: center; margin-top: 15px;">
+          <a href="{{ url_for('auth_bp.reset_password_request') }}" class="login-link">Forgot Password?</a>
+      </div>
       <div class="guest-login" style="text-align: center; margin-top: 15px">
         <a
           href="{{ url_for('agenda_bp.agenda') }}"
-          style="text-decoration: none"
+          class="login-link"
           >Continue as Guest</a
         >
       </div>

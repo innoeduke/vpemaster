@@ -11,6 +11,8 @@ import os
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
+from flask_mail import Mail
+mail = Mail()
 from .assets import assets
 
 from flask_login import LoginManager
@@ -36,6 +38,7 @@ def create_app(config_class='config.Config'):
     bcrypt.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    mail.init_app(app)
     assets.init_app(app)
 
     # Register context processors

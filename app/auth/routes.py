@@ -5,6 +5,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from . import auth_bp  # Import the blueprint
 from .. import db       # Import db from the parent package
 from ..models import User
+from .email import send_reset_email
 
 # Login route
 @auth_bp.route('/login', methods=['GET', 'POST'])
@@ -125,7 +126,60 @@ def profile():
                     flash('Your password has been updated successfully! Please log in with your new password.', 'success')
                     logout_user() # Logout ensuring clean state
                     return redirect(url_for('auth_bp.login'))
-                else:
-                    flash('The new passwords do not match.', 'error')
-
     return render_template('profile.html', user=user)
+
+
+@auth_bp.route('/reset_password', methods=['GET', 'POST'])
+def reset_password_request():
+    if current_user.is_authenticated:
+        return redirect(url_for('main_bp.index'))
+    
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(Email=email).first()
+        if user:
+            try:
+                send_reset_email(user)
+                flash('An email has been sent with instructions to reset your password.', 'info')
+            except Exception as e:
+                flash(f'Error sending email: {str(e)}', 'error')
+            return redirect(url_for('auth_bp.login'))
+        else:
+            # For security, we might want to say "If that email exists...", 
+            # but for this internal app, let's guide the user.
+            flash('There is no account with that email. You must register first.', 'warning')
+            
+    return render_template('auth/reset_request.html')
+
+
+@auth_bp.route('/reset_password/<token>', methods=['GET', 'POST'])
+def reset_token(token):
+    if current_user.is_authenticated:
+        return redirect(url_for('main_bp.index'))
+    
+    user = User.verify_reset_token(token)
+    if user is None:
+        flash('That is an invalid or expired token', 'warning')
+        return redirect(url_for('auth_bp.reset_password_request'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not password or len(password) < 8:
+             flash('Password must be at least 8 characters long.', 'error')
+        elif password != confirm_password:
+             flash('Passwords do not match.', 'error')
+        else:
+             # Basic strength check matching profile logic
+             if not any(c.isupper() for c in password) or \
+                not any(c.islower() for c in password) or \
+                not any(c.isdigit() for c in password):
+                  flash('Password must contain uppercase, lowercase and number.', 'error')
+             else:
+                  user.set_password(password)
+                  db.session.commit()
+                  flash('Your password has been updated! You are now able to log in', 'success')
+                  return redirect(url_for('auth_bp.login'))
+                  
+    return render_template('auth/reset_token.html')

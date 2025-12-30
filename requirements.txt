@@ -25,3 +25,4 @@ urllib3<2.0.0
 Flask-Login
 Flask-Assets==2.1.0
 cssmin==0.2.0
+Flask-Mail
