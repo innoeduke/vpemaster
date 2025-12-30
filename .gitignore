@@ -8,4 +8,5 @@ __pycache__/
 .py[cod]
 app/static/css/packed.css
 app/static/.webassets-cache/
+app/static/uploads/
 
