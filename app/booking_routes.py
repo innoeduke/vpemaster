@@ -33,27 +33,29 @@ def _consolidate_roles(session_logs, is_admin_booker):
     """Consolidates session logs into a dictionary of roles."""
     roles_dict = {}
 
-    # Group session logs by (role_name, owner_id) pair
+    # Group session logs by (role_id, owner_id) pair
     # This effectively deduplicates identical roles and collapses unassigned slots of the same role.
     for log in session_logs:
-        # The log is now a full SessionLog object, so we access relations directly.
-        role_name = log.session_type.role.name.strip(
-        ) if log.session_type and log.session_type.role else ""
-        if not role_name:
+        # The log is now a full SessionLog object
+        if not log.session_type or not log.session_type.role:
             continue
 
+        role_obj = log.session_type.role
+        role_name = role_obj.name.strip()
+        role_id = role_obj.id
         owner_id = log.Owner_ID
         
         # Check if the role is marked as distinct (should not be deduped/grouped)
-        is_distinct = log.session_type.role.is_distinct if log.session_type and log.session_type.role else False
+        is_distinct = role_obj.is_distinct
 
         if is_distinct:
-            # Usage of is_distinct=True now means "Show every log separately".
+            # Usage of is_distinct=True means "Show every log separately".
             # We enforce uniqueness in the key by including the log ID.
-            dict_key = f"{role_name}_{owner_id}_{log.id}"
+            dict_key = f"{role_id}_{owner_id}_{log.id}"
         else:
-            # Default behavior: Group/Dedup by (role_name, owner_id).
-            dict_key = f"{role_name}_{owner_id}"
+            # Default behavior: Group/Dedup by (role_id, owner_id).
+            # The 3rd component is None (conceptually) or implicit.
+            dict_key = f"{role_id}_{owner_id}"
 
         if dict_key not in roles_dict:
             # Initialize the entry for this role group
@@ -642,7 +644,34 @@ def book_or_assign_role():
         #
         # Only updating one log is safest.
         
-        sessions_to_update = [log]
+        # Determine which sessions to update
+        # If the role is distinct, we only update the specific session.
+        # If the role is NOT distinct (e.g. Ah-Counter), we update ALL sessions of that role/owner in the meeting.
+        
+        # Re-fetch session_type just to be sure (it's loaded via log, but let's be safe with naming)
+        session_type = log.session_type
+        role_obj = session_type.role
+        is_distinct = role_obj.is_distinct
+
+        if is_distinct:
+            sessions_to_update = [log]
+        else:
+            # Find all logs in this meeting with the same Role ID and Owner ID
+            target_role_id = role_obj.id
+            target_owner_id = log.Owner_ID
+            
+            sessions_query = db.session.query(SessionLog)\
+                .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+                .join(Role, SessionType.role_id == Role.id)\
+                .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+                .filter(Role.id == target_role_id)
+            
+            if target_owner_id is None:
+                sessions_query = sessions_query.filter(SessionLog.Owner_ID.is_(None))
+            else:
+                sessions_query = sessions_query.filter(SessionLog.Owner_ID == target_owner_id)
+            
+            sessions_to_update = sessions_query.all()
 
 
         updated_sessions = []
