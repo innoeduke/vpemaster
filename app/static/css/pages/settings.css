@@ -54,6 +54,14 @@
 }
 
 /* --- General Tab Table Styles --- */
+.tab-content table {
+  font-size: 0.9em;
+}
+
+.tab-content table th {
+  font-size: 1em;
+}
+
 .general-settings-table {
   max-width: 700px;
   margin-top: 15px;

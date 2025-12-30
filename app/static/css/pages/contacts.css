@@ -54,6 +54,11 @@
 
 #contactsTable {
   margin: 0 auto;
+  font-size: 0.9em;
+}
+
+#contactsTable th {
+  font-size: 1em;
 }
 
 /* Tabs: Use shared tabs structure with specific override for this page if needed */
