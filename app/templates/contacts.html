@@ -78,15 +78,26 @@
     <tbody>
       {% for contact in contacts %}
       <tr data-type="{{ contact.Type }}">
-         <td>
-           {{ contact.Name }} 
-           {% if contact.DTM %}
-           <sup class="dtm-superscript">DTM</sup>
-           {% endif %}
-           {% if contact.Member_ID %}
-           <span class="badge-member-id" style="margin-left: 5px; font-size: 0.8em; vertical-align: text-top; background-color: rgb(231, 231, 228); border-radius: 5px; padding: 2px 5px;">{{ contact.Member_ID }}</span>
-           {% endif %}
-         </td>
+          <td>
+            <div class="contact-name-cell">
+              {% if contact.Avatar_URL %}
+                <img src="{{ url_for('static', filename=contact.Avatar_URL) }}" alt="Avatar" class="contact-avatar-small">
+              {% else %}
+                <div class="contact-avatar-placeholder-small">
+                  <i class="fas fa-user"></i>
+                </div>
+              {% endif %}
+              <div class="contact-name-info">
+                {{ contact.Name }} 
+                {% if contact.DTM %}
+                <sup class="dtm-superscript">DTM</sup>
+                {% endif %}
+                {% if contact.Member_ID %}
+                <span class="badge-member-id" style="margin-left: 5px; font-size: 0.8em; vertical-align: text-top; background-color: rgb(231, 231, 228); border-radius: 5px; padding: 2px 5px;">{{ contact.Member_ID }}</span>
+                {% endif %}
+              </div>
+            </div>
+          </td>
          <td data-sort="{{ '1' if contact.is_qualified else '0' }}_{{ '%03d'|format(contact.tt_count) }}_{{ '%03d'|format(contact.role_count) }}_{{ '%03d'|format(contact.attendance_count) }}_{{ '%03d'|format(contact.award_count) }}">
              <div class="participation-container">
                  {% if contact.is_qualified %}

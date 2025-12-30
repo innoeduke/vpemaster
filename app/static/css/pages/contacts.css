@@ -61,6 +61,41 @@
   font-size: 1em;
 }
 
+/* Contact Name Cell with Small Avatar */
+.contact-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contact-avatar-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #772432;
+  /* Toastmasters Red */
+}
+
+.contact-avatar-placeholder-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a0aec0;
+  font-size: 0.8em;
+  border: 1px solid #772432;
+}
+
+.contact-name-info {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 /* Tabs: Use shared tabs structure with specific override for this page if needed */
 /* Since we are switching to shared .nav-tabs, we remove the old .contacts-tabs styles here */
 /* But we need to make sure the HTML uses the new classes */
