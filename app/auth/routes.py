@@ -44,6 +44,12 @@ def login():
 
             login_user(user, remember=True)
             
+            # Check for default password
+            if password == 'leadership':
+                session['force_password_reset'] = True
+                flash('Please change your default password immediately.', 'warning')
+                return redirect(url_for('auth_bp.profile'))
+            
             # Helper to redirect to 'next' page if present
             next_page = request.args.get('next')
             if not next_page or not next_page.startswith('/'):
@@ -59,8 +65,19 @@ def login():
 @auth_bp.route('/logout')
 @login_required
 def logout():
+    session.pop('force_password_reset', None)
     logout_user()
     return redirect(url_for('auth_bp.login'))
+
+@auth_bp.before_app_request
+def check_password_reset():
+    if current_user.is_authenticated and session.get('force_password_reset'):
+        # Allow static files and the profile page (where they can change password) and logout
+        if request.endpoint not in ['auth_bp.profile', 'auth_bp.logout'] and \
+           not request.endpoint.startswith('static') and \
+           not request.endpoint.endswith('.static'):
+            flash('You must change your password before continuing.', 'warning')
+            return redirect(url_for('auth_bp.profile'))
 
 @auth_bp.route('/profile', methods=['GET', 'POST'])
 @login_required 
@@ -101,6 +118,10 @@ def profile():
                 elif new_password == confirm_password:
                     user.set_password(new_password) # Use the method
                     db.session.commit()
+                    
+                    # Clear session flag
+                    session.pop('force_password_reset', None)
+                    
                     flash('Your password has been updated successfully! Please log in with your new password.', 'success')
                     logout_user() # Logout ensuring clean state
                     return redirect(url_for('auth_bp.login'))
