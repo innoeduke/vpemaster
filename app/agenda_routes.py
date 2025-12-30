@@ -3,6 +3,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
 from .auth.utils import login_required
 from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, Role, Vote, Pathway, PathwayProject
+from .constants import SessionTypeID
 from . import db
 from sqlalchemy import distinct, orm, func
 from datetime import datetime, timedelta
@@ -20,7 +21,13 @@ agenda_bp = Blueprint('agenda_bp', __name__)
 # --- Helper Functions for Data Fetching ---
 
 # Table Topics, Prepared Speaker, Pathway Speech, Panel Discussion
-speech_types_with_project = {7, 20, 30, 44}
+# Table Topics, Prepared Speaker, Pathway Speech, Panel Discussion
+speech_types_with_project = {
+    SessionTypeID.TABLE_TOPICS,
+    SessionTypeID.KEYNOTE_SPEECH,
+    SessionTypeID.PREPARED_SPEECH,
+    SessionTypeID.PANEL_DISCUSSION
+}
 
 
 def _get_agenda_logs(meeting_number):
@@ -197,7 +204,7 @@ def _recalculate_start_times(meetings_to_update):
             duration_to_add = int(log.Duration_Max or 0)
             break_minutes = 1
             # For "Multiple shots" style, add an extra minute break after each evaluation
-            if log.Type_ID == 31 and meeting.GE_Style == 'Multiple shots':
+            if log.Type_ID == SessionTypeID.EVALUATION and meeting.GE_Style == 'Multiple shots':
                 break_minutes += 1
             dt_current_time = datetime.combine(
                 meeting.Meeting_Date, current_time)
@@ -367,10 +374,10 @@ def _get_processed_logs_data(selected_meeting_num):
         tt_session_index = -1
 
         for i, log in enumerate(logs_data):
-            if log['Type_ID'] == 36:  # Topics Speaker
+            if log['Type_ID'] == SessionTypeID.TOPICS_SPEECH:  # Topics Speaker
                 topics_speaker_sessions.append(log)
                 topics_speaker_indices.append(i)
-            if log['Type_ID'] == 7:
+            if log['Type_ID'] == SessionTypeID.TABLE_TOPICS:
                 tt_session_index = i
 
         if topics_speaker_sessions and tt_session_index != -1:
@@ -617,8 +624,13 @@ def _get_all_speech_details(logs_data, pathway_mapping):
     Processes logs_data to extract a structured list of speech details.
     """
     speeches = []
-    speech_session_type_ids = {7, 20, 30, 44}
-    presentation_session_type_id = 43
+    speech_session_type_ids = {
+        SessionTypeID.TABLE_TOPICS,
+        SessionTypeID.KEYNOTE_SPEECH,
+        SessionTypeID.PREPARED_SPEECH,
+        SessionTypeID.PANEL_DISCUSSION
+    }
+    presentation_session_type_id = SessionTypeID.PRESENTATION
 
     for log, session_type, contact, project, media in logs_data:
         if not log.Project_ID or not session_type:
@@ -693,7 +705,7 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
             session_title_str = project.Project_Name
 
     # Check for Pathway Speech (Type 30) or Presentation (Type 43)
-    if session_type and session_type.id in [30, 43] and project:
+    if session_type and session_type.id in [SessionTypeID.PREPARED_SPEECH, SessionTypeID.PRESENTATION] and project:
         # Use simple get_code which includes fallback logic
         path_name = contact.Current_Path if contact else None
         code = project.get_code(path_name)
@@ -704,7 +716,7 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
             session_title_str = project.Project_Name
 
     # Check for Individual Evaluator (Type 31)
-    if session_type and session_type.id == 31 and log.Session_Title:
+    if session_type and session_type.id == SessionTypeID.EVALUATION and log.Session_Title:
         speaker_name = log.Session_Title
         speaker = Contact.query.filter_by(Name=speaker_name).first()
         if speaker and speaker.DTM:
