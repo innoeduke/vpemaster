@@ -1,9 +1,11 @@
 .DS_Store
 .env
+*.swp
 .env_pythonanywhere
 instance/
 venv/
 __pycache__/
 .py[cod]
 app/static/css/packed.css
-.webassets-cache/
+app/static/.webassets-cache/
+
