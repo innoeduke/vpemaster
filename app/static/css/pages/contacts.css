@@ -145,6 +145,11 @@
     justify-content: center;
   }
 
+  /* Hide Member ID Badge on Mobile */
+  .badge-member-id {
+    display: none;
+  }
+
   /* --- Contacts Page Responsive Fixes --- */
   #contactsTable {
     display: block;
@@ -162,23 +167,20 @@
   }
 
   #contactsTable th:nth-child(2),
-  /* Club column */
   #contactsTable td:nth-child(2),
   #contactsTable th:nth-child(4),
-  /* Credentials column */
   #contactsTable td:nth-child(4),
   #contactsTable th:nth-child(5),
-  /* Completed Paths column */
   #contactsTable td:nth-child(5),
   #contactsTable th:nth-child(6),
-  /* Next Project column */
-  #contactsTable td:nth-child(6) {
+  #contactsTable td:nth-child(6),
+  #contactsTable th:nth-child(7),
+  #contactsTable td:nth-child(7) {
     display: none;
   }
 
-  #contactsTable th:nth-child(7),
-  /* Actions column */
-  #contactsTable td:nth-child(7) {
+  #contactsTable th:nth-child(8),
+  #contactsTable td:nth-child(8) {
     width: 80px;
   }
 
@@ -194,11 +196,38 @@
 
 /* --- Guest View Styles --- */
 /* --- Guest View Styles --- */
+/* --- Specific View Styles --- */
 .guest-view th:nth-child(4),
 .guest-view td:nth-child(4),
 .guest-view th:nth-child(5),
 .guest-view td:nth-child(5),
 .guest-view th:nth-child(6),
-.guest-view td:nth-child(6) {
+.guest-view td:nth-child(6),
+.guest-view th:nth-child(7),
+.guest-view td:nth-child(7) {
   display: none;
+}
+
+.member-view th:nth-child(2),
+.member-view td:nth-child(2) {
+  /* Hide Club column in Member view */
+  display: none;
+}
+
+/* Desktop Only Element */
+@media (max-width: 992px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  /* Mobile View Specifics */
+  /* Mobile: Show Name(1), Participation(3), Actions(8). Hide others. */
+  /* Club(2) is hidden by default in mobile via line 161 (nth-child(2)) */
+
+  /* We need to ensure new columns (Mentor-7) are hidden if not covered by general hiding */
+  /* Currently mobile hides 2, 4, 5, 6. Need to hide 7 too. */
+  #contactsTable th:nth-child(7),
+  #contactsTable td:nth-child(7) {
+    display: none;
+  }
 }

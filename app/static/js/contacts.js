@@ -33,10 +33,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const activeTab = activeTabItem.dataset.type;
 
     // Toggle guest-view class for column hiding
-    if (activeTab === 'Guest') {
-      table.classList.add('guest-view');
+    if (activeTab === "Guest") {
+      table.classList.add("guest-view");
+      table.classList.remove("member-view");
+    } else if (activeTab === "Member") {
+      table.classList.remove("guest-view");
+      table.classList.add("member-view");
     } else {
-      table.classList.remove('guest-view');
+      table.classList.remove("guest-view", "member-view");
     }
 
     const searchTerm = searchInput.value.toUpperCase().trim();

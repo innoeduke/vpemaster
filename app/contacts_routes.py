@@ -38,7 +38,8 @@ def show_contacts():
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
-    contacts = Contact.query.outerjoin(
+    from sqlalchemy.orm import joinedload
+    contacts = Contact.query.options(joinedload(Contact.mentor)).outerjoin(
         Contact.user).order_by(Contact.Name.asc()).all()
     
     # 1. Attendance (Roster)
@@ -161,53 +162,56 @@ def contact_form(contact_id=None):
         contact = Contact.query.get_or_404(contact_id)
 
     if request.method == 'GET' and contact:
-        contact_data = {
-            "id": contact.id,
-            "Name": contact.Name,
-            "Email": contact.Email or None,
-            "Type": contact.Type,
-            "Club": contact.Club,
-            "Completed_Paths": contact.Completed_Paths,
-            "DTM": contact.DTM,
-            "Phone_Number": contact.Phone_Number,
-            "Bio": contact.Bio,
-            "credentials": contact.credentials,
-            "current_path": contact.Current_Path,
-            "next_project": contact.Next_Project,
-            "mentor_id": contact.Mentor_ID,
-            "has_user": True if contact.user else False
-        }
-        return jsonify(contact=contact_data)
+        return jsonify({
+            'contact': {
+                'id': contact.id,
+                'Name': contact.Name,
+                'Email': contact.Email,
+                'Type': contact.Type,
+                'Club': contact.Club,
+                'Phone_Number': contact.Phone_Number,
+                'Bio': contact.Bio,
+                'Member_ID': contact.Member_ID,
+                'Completed_Paths': contact.Completed_Paths,
+                'DTM': contact.DTM,
+                'current_path': contact.Current_Path,
+                'next_project': contact.Next_Project,
+                'credentials': contact.credentials,
+                'mentor_id': contact.Mentor_ID
+            }
+        })
 
     if request.method == 'POST':
-        contact_name = request.form.get('name')
-        email = request.form.get('email') or None
+        name = request.form.get('name')
+        if not name:
+            flash('Name is required.', 'error')
+            return redirect(url_for('contacts_bp.show_contacts'))
 
-        if contact:
-            # Logic for updating an existing contact
-            contact.Name = contact_name
+        email = request.form.get('email')
+        contact_type = request.form.get('type', 'Guest')
+        club = request.form.get('club')
+        phone = request.form.get('phone_number')
+        bio = request.form.get('bio')
+        member_id = request.form.get('member_id')
+        
+        # Mentor Logic
+        mentor_id_val = request.form.get('mentor_id')
+        mentor_id = int(mentor_id_val) if mentor_id_val and int(mentor_id_val) != 0 else None
+
+        if contact_id:
+            contact = Contact.query.get_or_404(contact_id)
+            contact.Name = name
             contact.Email = email
-            contact.Club = request.form.get('club')
-            contact.Type = request.form.get('type')
-            contact.Phone_Number = request.form.get('phone_number')
-            contact.Bio = request.form.get('bio')
+            contact.Type = contact_type
+            contact.Club = club
+            contact.Phone_Number = phone
+            contact.Bio = bio
+            contact.Member_ID = member_id
+            contact.Mentor_ID = mentor_id
             
             # Update profile fields (Member/Officer specific)
-            if request.form.get('type') in ['Member', 'Officer']:
+            if contact_type in ['Member', 'Officer']:
                 contact.Current_Path = request.form.get('current_path')
-                
-                mentor_id = request.form.get('mentor_id', 0, type=int)
-                contact.Mentor_ID = mentor_id if mentor_id and mentor_id != 0 else None
-
-            db.session.commit()
-            
-            # Sync metadata based on achievements
-            from .utils import sync_contact_metadata
-            sync_contact_metadata(contact.id)
-        else:
-            # Logic for creating a new contact
-            existing_contact = Contact.query.filter_by(
-                Name=contact_name).first()
             if existing_contact:
                 message = f"A contact with the name '{contact_name}' already exists."
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
