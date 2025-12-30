@@ -163,12 +163,18 @@
     border: none;
     text-align: left;
     outline: none;
-    font-size: 15px;
+    font-size: 1.1em;
+    /* Header-like size */
+    font-weight: bold;
+    /* Header-like weight */
     transition: 0.4s;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid #ddd;
+    border-radius: 8px;
+    /* Rounded corners */
+    margin-bottom: 5px;
+    /* Separation */
 }
 
 .accordion.active,
@@ -191,10 +197,8 @@
 }
 
 .panel {
-    padding: 0 18px;
     background-color: white;
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.2s ease-out;
-    border-bottom: 1px solid #ddd;
 }
