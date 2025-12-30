@@ -690,6 +690,9 @@
     align-items: center;
     color: #333;
     gap: 8px;
+    min-width: 140px;
+    /* Prevent layout shift */
+    justify-content: center;
 }
 
 /* Style the status action button to be transparent with dark, bold text */
