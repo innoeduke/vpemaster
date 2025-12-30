@@ -83,7 +83,7 @@ def _consolidate_roles(session_logs, is_admin_booker):
             for waitlist_entry in log.waitlists:
                 if waitlist_entry.contact_id not in seen_waitlist_ids:
                     role_data['waitlist'].append(
-                        {'name': waitlist_entry.contact.Name, 'id': waitlist_entry.contact_id})
+                        {'name': waitlist_entry.contact.Name, 'id': waitlist_entry.contact_id, 'avatar_url': waitlist_entry.contact.Avatar_URL})
                     seen_waitlist_ids.add(waitlist_entry.contact_id)
         del role_data['logs']  # Clean up the temporary logs list
     return roles_dict

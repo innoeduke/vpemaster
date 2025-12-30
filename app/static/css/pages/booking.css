@@ -187,6 +187,7 @@
     /* Hide overflow */
     text-overflow: ellipsis;
     /* Add ... if content is too long */
+    vertical-align: middle;
 }
 
 .booking-table tr {
@@ -232,17 +233,16 @@
     line-height: 1;
 }
 
+.role-avatar.waitlist-avatar {
+    border: 2px solid #ffc700;
+    width: 28px;
+    height: 28px;
+    opacity: 0.8;
+}
+
 .role-cell {
     font-family: 'Montserrat', sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
     font-weight: bold;
-    white-space: nowrap;
-    /* Prevent role cell content from wrapping */
-    overflow: hidden;
-    /* Hide overflow */
     min-width: 250px;
     /* Ensure minimum width for role cell */
 }
@@ -255,15 +255,14 @@
 
 .role-cell-content {
     display: flex;
-    align-items: left;
+    align-items: center;
     gap: 10px;
     /* Keeps the icon and text together */
     white-space: nowrap;
     /* Prevent content from wrapping */
     overflow: hidden;
     /* Hide overflow */
-    flex-grow: 1;
-    /* Allow content to grow and take available space */
+    width: 100%;
 }
 
 .role-cell-actions {
@@ -273,10 +272,10 @@
     /* Add space between content and actions */
 }
 
-.booking-table .status-cell {
+.status-cell-content {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 5px;
 }
 
 /* Action Cell */
@@ -470,21 +469,28 @@
 @media (min-width: 769px) {
 
     /* --- Desktop Table Layout --- */
-    .booking-table .role-cell {
+    /* --- Desktop Table Layout --- */
+    .booking-table .role-cell,
+    .booking-table .role-header {
         width: 35%;
         min-width: 250px;
     }
 
-    .booking-table .status-cell {
+    .booking-table .status-cell,
+    .booking-table .status-header {
         width: 20%;
     }
 
-    .booking-table .assign-cell {
+    .booking-table .assign-cell,
+    .booking-table .assign-header {
         width: 25%;
     }
 
-    .booking-table .icon-cell {
+    .booking-table .icon-cell,
+    .booking-table .action-header {
         width: 20%;
+        text-align: center;
+        /* Center the action column header and content if desired, or just header? */
     }
 
 

@@ -121,25 +121,29 @@
 
             {# Status cell: waitlist for 'not started', winner label for 'finished' #}
             <td class="status-cell">
-                <div class="role-avatar">
-                    {% if role.owner_avatar_url %}
-                        <img src="{{ url_for('static', filename=role.owner_avatar_url) }}" alt="User Avatar">
-                    {% else %}
-                            <i class="fas fa-user-circle"></i>
+                <div class="status-cell-content">
+                    <div class="role-avatar">
+                        {% if role.owner_avatar_url %}
+                            <img src="{{ url_for('static', filename=role.owner_avatar_url) }}" alt="User Avatar">
+                        {% else %}
+                                <i class="fas fa-user-circle"></i>
+                        {% endif %}
+                    </div>
+                    {% if status in ['not started', 'unpublished'] and role.waitlist %}
+                        {% for user in role.waitlist %}
+                            <div class="role-avatar waitlist-avatar" title="{{ user.name }} (Waitlist)">
+                                {% if user.avatar_url %}
+                                    <img src="{{ url_for('static', filename=user.avatar_url) }}" alt="{{ user.name }}">
+                                {% else %}
+                                    <i class="fas fa-user-circle"></i>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                    {% if status == 'finished' and not is_admin_view and role.award_type %}
+                        <span class="winner-label">{{ role.award_type|replace('-', ' ')|title }} Winner</span>
                     {% endif %}
                 </div>
-                {% if status in ['not started', 'unpublished'] and role.waitlist %}
-                    <div class="waitlist-info">
-                        <span style="font-size:0.5em;">Waitlist:</span>
-                        <ul class="waitlist-users">
-                            {% for user in role.waitlist %}
-                                <li><i class="fas fa-user"></i> {{ user.name }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% elif status == 'finished' and not is_admin_view and role.award_type %}
-                    <span class="winner-label">{{ role.award_type|replace('-', ' ')|title }} Winner</span>
-                {% endif %}
             </td>
 
             {# Assign/Action cell: content varies by status and view #}
@@ -238,7 +242,6 @@
                         </button>
                         <div class="accordion-content">
                             <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
-                                {{ table_header|safe }}
                                 <tbody>
                                 {% for role in items %}
                                     {{ render_role_row(role, status, is_admin_view, contacts, current_user_contact_id, selected_meeting_number) }}
