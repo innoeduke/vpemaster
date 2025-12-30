@@ -166,18 +166,7 @@
     min-width: 150px;
   }
 
-  #contactsTable th:nth-child(2),
-  #contactsTable td:nth-child(2),
-  #contactsTable th:nth-child(4),
-  #contactsTable td:nth-child(4),
-  #contactsTable th:nth-child(5),
-  #contactsTable td:nth-child(5),
-  #contactsTable th:nth-child(6),
-  #contactsTable td:nth-child(6),
-  #contactsTable th:nth-child(7),
-  #contactsTable td:nth-child(7) {
-    display: none;
-  }
+  /* Removed conflicting legacy rules. See below for correct visibility */
 
   #contactsTable th:nth-child(8),
   #contactsTable td:nth-child(8) {
@@ -193,35 +182,49 @@
     white-space: nowrap;
   }
 }
+
 /* --- Specific View Styles --- */
 /* GUEST VIEW: Hide Paths(5), Creds(6), Next(7), Mentor(8) */
-.guest-view th:nth-child(5), .guest-view td:nth-child(5),
-.guest-view th:nth-child(6), .guest-view td:nth-child(6),
-.guest-view th:nth-child(7), .guest-view td:nth-child(7),
-.guest-view th:nth-child(8), .guest-view td:nth-child(8) {
+.guest-view th:nth-child(5),
+.guest-view td:nth-child(5),
+.guest-view th:nth-child(6),
+.guest-view td:nth-child(6),
+.guest-view th:nth-child(7),
+.guest-view td:nth-child(7),
+.guest-view th:nth-child(8),
+.guest-view td:nth-child(8) {
   display: none;
 }
 
 /* MEMBER VIEW: Hide Phone(3), Club(4) */
-.member-view th:nth-child(3), .member-view td:nth-child(3),
-.member-view th:nth-child(4), .member-view td:nth-child(4) {
-    display: none;
+.member-view th:nth-child(3),
+.member-view td:nth-child(3),
+.member-view th:nth-child(4),
+.member-view td:nth-child(4) {
+  display: none;
 }
 
 /* Mobile View Specifics */
 @media (max-width: 992px) {
+
   /* Hide Member ID Badge on Mobile */
   .badge-member-id {
-      display: none;
+    display: none;
   }
 
   /* Mobile: Show Name(1), Participation(2), Actions(9). Hide others (3,4,5,6,7,8). */
-  #contactsTable th:nth-child(3), #contactsTable td:nth-child(3),
-  #contactsTable th:nth-child(4), #contactsTable td:nth-child(4),
-  #contactsTable th:nth-child(5), #contactsTable td:nth-child(5),
-  #contactsTable th:nth-child(6), #contactsTable td:nth-child(6),
-  #contactsTable th:nth-child(7), #contactsTable td:nth-child(7),
-  #contactsTable th:nth-child(8), #contactsTable td:nth-child(8) {
+  #contactsTable th:nth-child(3),
+  #contactsTable td:nth-child(3),
+  #contactsTable th:nth-child(4),
+  #contactsTable td:nth-child(4),
+  #contactsTable th:nth-child(5),
+  #contactsTable td:nth-child(5),
+  #contactsTable th:nth-child(6),
+  #contactsTable td:nth-child(6),
+  #contactsTable th:nth-child(7),
+  #contactsTable td:nth-child(7),
+  #contactsTable th:nth-child(8),
+  #contactsTable td:nth-child(8) {
     display: none;
   }
 
