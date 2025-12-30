@@ -149,7 +149,10 @@
             <div class="flash-messages">
               {% for category, message in messages %}
                 {% if category != 'duplicate_warning' %}
-                <div class="flash {{ category }}">{{ message }}</div>
+                <div class="flash {{ category }}">
+                  {{ message }}
+                  <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
+                </div>
                 {% endif %}
               {% endfor %}
             </div>

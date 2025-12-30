@@ -3,13 +3,22 @@ body {
     font-family: 'Inter', serif;
     margin: 0;
     background-color: #f4f4f9;
-    overflow-x: hidden; /* Prevent horizontal scrolling */
+    overflow-x: hidden;
+    /* Prevent horizontal scrolling */
 }
 
-h1, h2, h3, h4, h5, h6,
-.nav-title, /* Example: Target specific elements needing the heading font */
-.level-heading /* Example from speech_logs.css */
- {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.nav-title,
+/* Example: Target specific elements needing the heading font */
+.level-heading
+
+/* Example from speech_logs.css */
+    {
     font-family: 'Montserrat', sans-serif;
 }
 
@@ -23,17 +32,19 @@ h1, h2, h3, h4, h5, h6,
     margin-left: 60px;
     padding: 20px;
     width: calc(100% - 60px);
-    box-sizing: border-box; /* Ensure padding is included in the width calculation */
-    position: relative; /* Add this to create a positioning context */
+    box-sizing: border-box;
+    /* Ensure padding is included in the width calculation */
+    position: relative;
+    /* Add this to create a positioning context */
 }
 
 .alert-content {
-    font-family: 'Montserrat', sans-serif; 
+    font-family: 'Montserrat', sans-serif;
 }
 
 /* Apply push effect only on screens wider than 768px (PC/Desktop) */
 @media (min-width: 769px) {
-    .nav-pane.expanded ~ .main-content {
+    .nav-pane.expanded~.main-content {
         margin-left: 250px;
         width: calc(100% - 250px);
     }
@@ -73,7 +84,7 @@ h1 {
     background-color: #fff;
     padding: 15px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
 }
 
@@ -125,8 +136,10 @@ h1 {
   like the default .icon-btn color or any conflicting styles.
 */
 .icon-btn.icon-btn-voted i {
-    color: #c0392b; /* A strong red color */
+    color: #c0392b;
+    /* A strong red color */
 }
+
 .icon-btn.icon-btn-voted {
     cursor: default;
 }
@@ -134,9 +147,12 @@ h1 {
 /* --- Closable Alert --- */
 .alert-closable {
     position: relative;
-    display: flex; /* Use flexbox for layout */
-    align-items: flex-start; /* Align items to the top */
-    gap: 15px; /* Space between icon and content */
+    display: flex;
+    /* Use flexbox for layout */
+    align-items: flex-start;
+    /* Align items to the top */
+    gap: 15px;
+    /* Space between icon and content */
     padding: 15px;
     margin-bottom: 20px;
     border: 1px solid transparent;
@@ -145,61 +161,79 @@ h1 {
 }
 
 .alert-closable.alert-danger {
-    color: #721c24; /* Dark red text */
-    background-color: #f8d7da; /* Light red background */
-    border-color: #f5c6cb; /* Red border */
+    color: #721c24;
+    /* Dark red text */
+    background-color: #f8d7da;
+    /* Light red background */
+    border-color: #f5c6cb;
+    /* Red border */
 }
 
 .alert-icon {
-    font-size: 1.2em; /* Make icon slightly larger */
-    padding-top: 2px; /* Align icon nicely with text */
-    flex-shrink: 0; /* Prevent icon from shrinking */
+    font-size: 1.2em;
+    /* Make icon slightly larger */
+    padding-top: 2px;
+    /* Align icon nicely with text */
+    flex-shrink: 0;
+    /* Prevent icon from shrinking */
 }
 
 .alert-content {
-    flex-grow: 1; /* Allow content to take remaining space */
+    flex-grow: 1;
+    /* Allow content to take remaining space */
 }
 
 .alert-content strong {
-    font-size: 1.1em; /* Make the "IMPORTANT" text stand out */
+    font-size: 1.1em;
+    /* Make the "IMPORTANT" text stand out */
 }
 
 .alert-content ol {
-    margin-top: 8px; /* Adjust spacing */
-    margin-bottom: 0; /* Remove bottom margin */
-    padding-left: 20px; /* Adjust list indentation */
-    line-height: 1.5; /* Improve readability */
+    margin-top: 8px;
+    /* Adjust spacing */
+    margin-bottom: 0;
+    /* Remove bottom margin */
+    padding-left: 20px;
+    /* Adjust list indentation */
+    line-height: 1.5;
+    /* Improve readability */
 }
 
 .close-alert {
     position: absolute;
     top: 10px;
     right: 15px;
-    color: inherit; 
+    color: inherit;
     font-size: 22px;
     font-weight: bold;
     cursor: pointer;
     line-height: 1;
-    opacity: 0.4; /* Make it more subtle */
+    opacity: 0.4;
+    /* Make it more subtle */
     transition: opacity 0.2s;
 }
 
 .close-alert:hover {
-    opacity: 0.8; /* Don't go to full 1.0 opacity */
+    opacity: 0.8;
+    /* Don't go to full 1.0 opacity */
 }
 
 /* --- Static Info Alert --- */
 .alert-info-static {
-    display: flex; 
+    display: flex;
     align-items: flex-start;
     gap: 15px;
     padding: 15px;
     margin-bottom: 20px;
-    border: 1px solid #b8c2cc; /* Light blue/grey border */
+    border: 1px solid #b8c2cc;
+    /* Light blue/grey border */
     border-radius: 8px;
-    font-size: 0.8em; /* Slightly smaller than base */
-    color: #333; /* Dark text */
-    background-color: #eef2f7; /* Very light blue/grey background */
+    font-size: 0.8em;
+    /* Slightly smaller than base */
+    color: #333;
+    /* Dark text */
+    background-color: #eef2f7;
+    /* Very light blue/grey background */
     line-height: 1.5;
 }
 
@@ -207,7 +241,8 @@ h1 {
     font-size: 1.2em;
     padding-top: 2px;
     flex-shrink: 0;
-    color: #004165; /* Theme blue color */
+    color: #004165;
+    /* Theme blue color */
 }
 
 .alert-info-static .alert-content {
@@ -233,6 +268,24 @@ h1 {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     font-weight: 600;
     animation: fadeIn 0.5s ease-out;
+    position: relative;
+    /* Ensure close button is positioned relative to this */
+}
+
+.close-flash {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+    font-weight: bold;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.7;
+}
+
+.close-flash:hover {
+    opacity: 1;
 }
 
 .flash.success {
@@ -258,11 +311,14 @@ h1 {
         opacity: 0;
         transform: translateY(-20px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
     }
-}/* Ensure icons have appropriate size and color */
+}
+
+/* Ensure icons have appropriate size and color */
 .fa {
     font-size: 16px;
     color: #333;

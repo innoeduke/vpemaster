@@ -47,8 +47,8 @@ def login():
             # Check for default password
             if password == 'leadership':
                 session['force_password_reset'] = True
-                flash('Please change your default password immediately.', 'warning')
-                return redirect(url_for('auth_bp.profile'))
+                flash('Please change your default password immediately.', 'error')
+                return redirect(url_for('auth_bp.profile', tab='password'))
             
             # Helper to redirect to 'next' page if present
             next_page = request.args.get('next')
@@ -76,8 +76,8 @@ def check_password_reset():
         if request.endpoint not in ['auth_bp.profile', 'auth_bp.logout'] and \
            not request.endpoint.startswith('static') and \
            not request.endpoint.endswith('.static'):
-            flash('You must change your password before continuing.', 'warning')
-            return redirect(url_for('auth_bp.profile'))
+            flash('You must change your password before continuing.', 'error')
+            return redirect(url_for('auth_bp.profile', tab='password'))
 
 @auth_bp.route('/profile', methods=['GET', 'POST'])
 @login_required 
