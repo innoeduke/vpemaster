@@ -181,12 +181,17 @@ function openContactModal(contactId) {
           educationWrapper.style.display = "none";
         }
 
-        // Reset Accordions: Close all
+        // Reset Accordions: Basic Info open, Education closed
         const acc = document.querySelectorAll(".accordion");
-        acc.forEach((btn) => {
+        acc.forEach((btn, index) => {
           const panel = btn.nextElementSibling;
-          btn.classList.remove("active");
-          panel.style.maxHeight = null;
+          if (index === 0) {
+            btn.classList.add("active");
+            panel.style.maxHeight = panel.scrollHeight + "px";
+          } else {
+            btn.classList.remove("active");
+            panel.style.maxHeight = null;
+          }
         });
       });
   } else {
@@ -198,12 +203,17 @@ function openContactModal(contactId) {
     document.getElementById("modal-avatar-img").style.display = 'none';
     document.getElementById("modal-avatar-placeholder").style.display = 'flex';
 
-    // Reset Accordions for New Entry: Close all
+    // Reset Accordions for New Entry: Basic Info open, Education closed
     const acc = document.querySelectorAll(".accordion");
-    acc.forEach((btn) => {
+    acc.forEach((btn, index) => {
       const panel = btn.nextElementSibling;
-      btn.classList.remove("active");
-      panel.style.maxHeight = null;
+      if (index === 0) {
+        btn.classList.add("active");
+        panel.style.maxHeight = panel.scrollHeight + "px";
+      } else {
+        btn.classList.remove("active");
+        panel.style.maxHeight = null;
+      }
     });
   }
   contactModal.style.display = "flex";
@@ -421,10 +431,34 @@ function setupAccordions(container = document) {
     btn.dataset.accInit = "true";
 
     btn.addEventListener("click", function () {
+      // Mutual exclusion logic for contact modal accordions
+      const isContactModalAccordion = this.closest("#contactForm");
+
+      if (isContactModalAccordion) {
+        const allAccs = isContactModalAccordion.querySelectorAll(".accordion");
+        allAccs.forEach(otherBtn => {
+          if (otherBtn !== this) {
+            otherBtn.classList.remove("active");
+            const otherPanel = otherBtn.nextElementSibling;
+            otherPanel.style.maxHeight = null;
+          }
+        });
+      }
+
       this.classList.toggle("active");
       var panel = this.nextElementSibling;
       if (panel.style.maxHeight && panel.style.maxHeight !== "0px") {
         panel.style.maxHeight = null;
+
+        // "Opposite action" logic: if we just collapsed one, expand the other
+        if (isContactModalAccordion) {
+          const otherBtn = Array.from(isContactModalAccordion.querySelectorAll(".accordion")).find(b => b !== this);
+          if (otherBtn) {
+            otherBtn.classList.add("active");
+            const otherPanel = otherBtn.nextElementSibling;
+            otherPanel.style.maxHeight = otherPanel.scrollHeight + "px";
+          }
+        }
       } else {
         panel.style.maxHeight = panel.scrollHeight + "px";
       }
