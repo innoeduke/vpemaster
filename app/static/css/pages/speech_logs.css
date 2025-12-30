@@ -469,7 +469,7 @@ speech-log-entry.card-type-speech {
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     margin-bottom: 25px;
-    border-left: 5px solid #004165;
+    border-left: 5px solid #772432;
     /* Toastmasters Blue */
 }
 
@@ -504,4 +504,97 @@ speech-log-entry.card-type-speech {
     font-size: 1.8em;
     color: #333;
     font-family: 'Montserrat', sans-serif;
+}
+
+/* Toolbar Styles */
+.speech-logs-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 10px;
+    /* Reduced gap slightly */
+    flex-wrap: wrap;
+    /* Allow wrapping if needed */
+}
+
+.toolbar-form {
+    margin: 0;
+    flex: 1 1 200px;
+    /* Grow, shrink, min-width 200px */
+    max-width: 400px;
+    /* Default max-width on desktop */
+}
+
+.toolbar-form select {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.pathway-selector-group {
+    margin: 0;
+    width: 100%;
+}
+
+.toolbar-spacer {
+    flex-grow: 1;
+    display: none;
+    /* Hide spacer when wrapping might happen, relying on space-between/flex-grow */
+}
+
+/* Spacer only relevant on large screens if we want to push the button right */
+@media (min-width: 769px) {
+    .toolbar-spacer {
+        display: block;
+    }
+}
+
+.view-mode-toggle {
+    margin: 0;
+    white-space: nowrap;
+    flex: 0 1 auto;
+    /* Default: autosized */
+}
+
+/* Mobile/Tablet Responsive Adjustments */
+@media (max-width: 768px) {
+    .speech-logs-toolbar {
+        /* No forced flex-direction: column; let flex-wrap handle it */
+        align-items: stretch;
+        /* Stretch items to full width */
+    }
+
+    .toolbar-form {
+        max-width: 100%;
+        /* Remove desktop constraint */
+        flex: 1 1 180px;
+        /* Allow shrinking a bit more, grow to fill */
+    }
+
+    .view-mode-toggle {
+        flex: 1 1 auto;
+        /* Allow growing to fill width if wrapped */
+        text-align: center;
+        /* margin-top managed by gap on container */
+    }
+
+    .view-mode-toggle .btn {
+        width: 100%;
+        /* Make switch button full width for easier tapping */
+        display: block;
+    }
+
+    /* Ensure inner elements take full width of the growing form container */
+    .toolbar-form .form-group,
+    .toolbar-form select {
+        width: 100%;
+    }
+
+    /* Center text for mobile accessibility */
+    .toolbar-form select {
+        text-align: center;
+        text-align-last: center;
+        /* For Chrome/modern browsers */
+        padding-left: 0.5rem;
+        /* Balance padding */
+    }
 }

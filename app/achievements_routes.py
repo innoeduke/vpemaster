@@ -83,6 +83,30 @@ def achievement_form(id):
         achievement.achievement_type = achievement_type
         achievement.path_name = path_name
         achievement.level = int(level) if level else None
+        
+        # Auto-add lower levels if this is a level completion
+        if achievement_type == 'level-completion' and achievement.level and achievement.level > 1:
+            for i in range(1, achievement.level):
+                # Check if lower level achievement exists
+                lower_exists = Achievement.query.filter_by(
+                    contact_id=contact_id,
+                    achievement_type='level-completion',
+                    path_name=path_name,
+                    level=i
+                ).first()
+                
+                if not lower_exists:
+                    new_lower = Achievement(
+                        contact_id=contact_id,
+                        member_id=member_id,
+                        issue_date=issue_date,
+                        achievement_type='level-completion',
+                        path_name=path_name,
+                        level=i,
+                        notes=f"Auto-added based on Level {achievement.level} completion"
+                    )
+                    db.session.add(new_lower)
+
         achievement.notes = notes
         achievement.member_id = member_id
         

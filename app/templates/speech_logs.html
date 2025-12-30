@@ -22,16 +22,16 @@
              </div>
         </div>
         {% endif %}
-        <div class="speech-logs-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div class="speech-logs-toolbar">
             {% if is_member_view %}
-                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" style="margin: 0;">
+                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="toolbar-form">
                     <input type="hidden" name="view_mode" value="{{ view_mode }}">
                     {% if request.args.get('speaker_id') %}
                     <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
                     {% endif %}
                     
-                    <div class="form-group" style="margin: 0; min-width: 250px;">
-                        <select name="pathway" onchange="this.form.submit()" class="form-control" style="width: 100%;">
+                    <div class="form-group pathway-selector-group">
+                        <select name="pathway" onchange="this.form.submit()" class="form-control">
                             <option value="all">All My Pathways</option>
                             {% for p_name in member_pathways %}
                                 <option value="{{ p_name }}" {% if selected_filters.pathway == p_name %}selected{% endif %}>{{ p_name }}</option>
@@ -40,11 +40,11 @@
                     </div>
                 </form>
             {% else %}
-                <div style="flex-grow: 1;"></div> <!-- Spacer for Admin View if no filter on left here -->
+                <div class="toolbar-spacer"></div> <!-- Spacer for Admin View if no filter on left here -->
             {% endif %}
 
             {% if can_view_all %}
-                <div class="view-mode-toggle" style="margin: 0;">
+                <div class="view-mode-toggle">
                     {% if view_mode == 'admin' %}
                     <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn btn-secondary btn-sm">
                         <i class="fas fa-user"></i> Switch to Member View
@@ -139,12 +139,13 @@
                             </div>
                         {% endif %}
                     </div>
-                    {% set is_active = (level|int == active_level) %}
-                    <i class="fas {% if is_active %}fa-chevron-down{% else %}fa-chevron-right{% endif %} caret-icon" id="caret-{{ level }}"></i>
+                    {% set is_completed = (level|int in completed_levels) %}
+                    {% set is_expanded = not is_completed %}
+                    <i class="fas {% if is_expanded %}fa-chevron-down{% else %}fa-chevron-right{% endif %} caret-icon" id="caret-{{ level }}"></i>
                 </h2>
                 
                 {% if is_member_view %}
-                <div class="level-progress-summary" id="progress-{{ level }}" style="display: {% if is_active %}flex{% else %}none{% endif %};">
+                <div class="level-progress-summary" id="progress-{{ level }}" style="display: {% if is_expanded %}flex{% else %}none{% endif %};">
                     {% set summary = completion_summary.get(level|string) %}
                     {% if summary %}
                         {% if summary.required %}
@@ -185,7 +186,7 @@
                 </div>
                 {% endif %}
 
-                <div class="logs-container" id="logs-{{ level }}" style="display: {% if is_active %}grid{% else %}none{% endif %};">
+                <div class="logs-container" id="logs-{{ level }}" style="display: {% if is_expanded %}grid{% else %}none{% endif %};">
                     
                     {% for log in logs %}
                         {% if log.log_type == 'grouped_role' %}
