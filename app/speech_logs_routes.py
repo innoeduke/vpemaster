@@ -55,8 +55,20 @@ def show_speech_logs():
     
     impersonated_user_name = viewed_contact.Name if viewed_contact else None
 
-    all_pathways_from_db = Pathway.query.filter(Pathway.type != 'dummy', Pathway.status == 'active').order_by(Pathway.name).all()
+    # Fetch distinct historical pathways for the viewed contact
+    member_pathways = []
+    if viewed_contact:
+        query = db.session.query(Pathway.name).join(PathwayProject).join(Project).join(
+            SessionLog, SessionLog.Project_ID == Project.id
+        ).filter(
+            SessionLog.Owner_ID == viewed_contact.id,
+            Pathway.type.in_(['Education Info', 'Targeted Curriculum']) # Standard pathways
+        ).distinct().order_by(Pathway.name)
+        member_pathways = [r[0] for r in query.all()]
+
+    all_pathways_from_db = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways_from_db}
+    abbr_to_name = {p.abbr: p.name for p in all_pathways_from_db if p.abbr}
 
     grouped_pathways = {}
     for p in all_pathways_from_db:
@@ -123,28 +135,44 @@ def show_speech_logs():
             pp = None
             pathway_abbr = None
             
-            if log.owner and log.owner.Current_Path:
-                user_path = Pathway.query.filter_by(name=log.owner.Current_Path).first()
-                if user_path:
-                     pp = PathwayProject.query.filter_by(project_id=log.Project_ID, path_id=user_path.id).first()
-                     if pp:
-                         pathway_abbr = user_path.abbr
-                         display_level = str(pp.level)
+            # --- NEW: Prioritize current_path_level ---
+            if log.current_path_level:
+                # Regex to match: [A-Z]+ followed by digits (e.g., SR5.3, EH1.2)
+                match = re.match(r"([A-Z]+)(\d+)", log.current_path_level)
+                if match:
+                    pathway_abbr = match.group(1)
+                    display_level = str(match.group(2))
+                    log.project_code = log.current_path_level # Keep full code for display
+                    log.display_pathway = abbr_to_name.get(pathway_abbr, pathway_abbr)
+            
+            # Fallback only if current_path_level parsing failed or was absent
+            if not pathway_abbr:
+                if log.owner:
+                    log.display_pathway = log.owner.Current_Path
+                    if log.owner.Current_Path:
+                        user_path = Pathway.query.filter_by(name=log.owner.Current_Path).first()
+                        if user_path:
+                            pp = PathwayProject.query.filter_by(project_id=log.Project_ID, path_id=user_path.id).first()
+                            if pp:
+                                pathway_abbr = user_path.abbr
+                                display_level = str(pp.level)
+                else:
+                    log.display_pathway = "N/A"
 
-            # Fallback: specific series or other path if not found in user's current path
-            if not pp and log.Project_ID:
-                pp = PathwayProject.query.filter_by(project_id=log.Project_ID).first()
-                if pp:
-                    path_obj = Pathway.query.get(pp.path_id)
-                    if path_obj:
-                        pathway_abbr = path_obj.abbr
-                        display_level = str(pp.level)
+                # Fallback: specific series or other path if not found in user's current path
+                if not pp and log.Project_ID:
+                    pp = PathwayProject.query.filter_by(project_id=log.Project_ID).first()
+                    if pp:
+                        path_obj = Pathway.query.get(pp.path_id)
+                        if path_obj:
+                            pathway_abbr = path_obj.abbr
+                            display_level = str(pp.level)
 
-            if log.project:
-                # Use the calculated pathway_abbr (which is from owner path or fallback)
-                log.project_code = log.project.get_code(pathway_abbr)
-            else:
-                log.project_code = ""
+            if not getattr(log, 'project_code', None):
+                if log.project:
+                    log.project_code = log.project.get_code(pathway_abbr)
+                else:
+                    log.project_code = ""
 
             # Legacy code derivation (if needed, but pp logic covers it)
             # code = project_id_to_code(log.Project_ID, path_abbr) ...
@@ -157,9 +185,14 @@ def show_speech_logs():
 
             # Now, get its level
             if log.current_path_level:
-                match = re.match(r"[A-Z]+(\d+)", log.current_path_level)
+                match = re.match(r"([A-Z]+)(\d+)", log.current_path_level)
                 if match:
-                    display_level = str(match.group(1))  # Ensure type consistency
+                    pathway_abbr = match.group(1)
+                    display_level = str(match.group(2))  # Ensure type consistency
+                    log.display_pathway = abbr_to_name.get(pathway_abbr, pathway_abbr)
+            
+            if not getattr(log, 'display_pathway', None):
+                log.display_pathway = log.owner.Current_Path if log.owner else "N/A"
 
         log.log_type = log_type
 
@@ -169,9 +202,22 @@ def show_speech_logs():
         if selected_pathway and not log.Project_ID:
             continue
 
-        if log_type == 'speech' and selected_pathway and \
-           (not log.owner or log.owner.Current_Path != selected_pathway):
-            continue
+        if log_type == 'speech' and selected_pathway:
+            # Check if this speech belongs to the selected pathway
+            # If we calculated pathway_abbr (and distinct pathway) earlier (lines 126-141), we can deduce the path name
+            # Or simpler: check if the project_id exists in the selected pathway
+            belongs_to_selected = False
+            
+            # 1. Simple check: Is this project part of the selected pathway?
+            # We can use our pathway_projects logic or helper.
+            target_path_obj = Pathway.query.filter_by(name=selected_pathway).first()
+            if target_path_obj and log.Project_ID:
+                 exists = PathwayProject.query.filter_by(project_id=log.Project_ID, path_id=target_path_obj.id).first()
+                 if exists:
+                     belongs_to_selected = True
+            
+            if not belongs_to_selected:
+                 continue
 
 
         if selected_status:
@@ -229,6 +275,7 @@ def show_speech_logs():
                         'session_type': item.session_type, # Use first one as rep
                         'owner': item.owner,
                         'current_path_level': item.current_path_level,
+                        'display_pathway': getattr(item, 'display_pathway', None),
                         'logs': [item]
                     }
                     role_group_map[key] = new_group
@@ -487,6 +534,7 @@ def show_speech_logs():
         all_contacts=all_contacts,
         impersonated_user_name=impersonated_user_name,
         viewed_contact=viewed_contact,
+        member_pathways=member_pathways,
         active_level=active_level
     )
 
@@ -515,23 +563,36 @@ def get_speech_log_details(log_id):
     # especially for Presentations or if the user is not linked to a path
     level = 1
     if log.Project_ID and log.project:
-        pp, path_obj = log.project.resolve_context(log.owner.Current_Path if log.owner else None)
-        
-        if path_obj:
-            pathway_name_to_return = path_obj.name
-        
-        if pp:
-             if path_obj and path_obj.abbr:
-                 log.project_code = f"{path_obj.abbr}{pp.code}"
-             else:
-                 log.project_code = pp.code
-             
-             if pp.level:
-                level = pp.level
-        else:
-             log.project_code = ""
-             if log.Project_ID == 60: # Generic
-                 log.project_code = "TM1.0"
+        # Check current_path_level first
+        if log.current_path_level:
+            match = re.match(r"([A-Z]+)(\d+)", log.current_path_level)
+            if match:
+                abbr = match.group(1)
+                level = int(match.group(2))
+                log.project_code = log.current_path_level
+                
+                pathway_db = Pathway.query.filter_by(abbr=abbr).first()
+                if pathway_db:
+                    pathway_name_to_return = pathway_db.name
+
+        if not getattr(log, 'project_code', None):
+            pp, path_obj = log.project.resolve_context(log.owner.Current_Path if log.owner else None)
+            
+            if path_obj:
+                pathway_name_to_return = path_obj.name
+            
+            if pp:
+                if path_obj and path_obj.abbr:
+                    log.project_code = f"{path_obj.abbr}{pp.code}"
+                else:
+                    log.project_code = pp.code
+                
+                if pp.level:
+                    level = pp.level
+            else:
+                log.project_code = ""
+                if log.Project_ID == 60: # Generic
+                    log.project_code = "TM1.0"
 
     log_data = {
         "id": log.id,
@@ -595,14 +656,18 @@ def update_speech_log(log_id):
     if updated_project and not log.Session_Title:
         log.Session_Title = updated_project.Project_Name
 
-    if 'pathway' in data and log.owner and log.owner.user:
-        # Only update user's current path if it's a standard pathway, not a series
-        # We can heuristic check if "Series" is in the name, or check DB. 
-        # For now, simplistic approach: if it has "Series" in name, assume it's presentation series and don't change user's main path.
-        if "Series" not in data['pathway']:
-             user = log.owner.user
-             user.Current_Path = data['pathway']
-             db.session.add(user)
+    if 'pathway' in data:
+        # Save the selected pathway to the session log
+        log.pathway = data['pathway']
+        
+        # Original logic: Update user's current path if relevant (and if owner exists)
+        if log.owner and log.owner.user:
+            # We can heuristic check if "Series" is in the name, or check DB. 
+            # For now, simplistic approach: if it has "Series" in name, assume it's presentation series and don't change user's main path.
+            if "Series" not in data['pathway']:
+                 user = log.owner.user
+                 user.Current_Path = data['pathway']
+                 db.session.add(user)
 
     # --- Duration Update Logic Start ---
     # Goal: Update duration only if structurally changed (Project or SessionType), otherwise preserve manual edits.

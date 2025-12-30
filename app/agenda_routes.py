@@ -148,6 +148,11 @@ def _create_or_update_session(item, meeting_number, seq):
                 duration_min = session_type.Duration_Min
                 duration_max = session_type.Duration_Max
 
+    # --- Pathway Logic ---
+    pathway_val = item.get('pathway')
+    if not pathway_val and owner_contact and owner_contact.Current_Path:
+        pathway_val = owner_contact.Current_Path
+        
     # --- Create or Update SessionLog ---
     if item['id'] == 'new':
         new_log = SessionLog(
@@ -161,7 +166,8 @@ def _create_or_update_session(item, meeting_number, seq):
             Project_ID=project_id,
             Session_Title=session_title,
             Status=status,
-            current_path_level=current_path_level
+            current_path_level=current_path_level,
+            pathway=pathway_val
         )
         db.session.add(new_log)
     else:
@@ -179,6 +185,19 @@ def _create_or_update_session(item, meeting_number, seq):
             if session_title is not None:
                 log.Session_Title = session_title
             log.current_path_level = current_path_level
+            # Update pathway only if explicitly in item (from UI if supported) or if we are assigning a new owner and log doesn't have one set?
+            # User request: "while creating or updating... if log is a role, store owner's current path". 
+            # If project, modal handles it. But here we might assign owner to a project slot.
+            # Strategy: If owner changed or we are setting it, default to owner's path. 
+            # But we don't track owner change easily here without fetching prev state (which we have in 'log').
+            # Let's simple check: if owner_id matches existing log.Owner_ID, don't overwrite unless pathway_val is explicit?
+            # Actually, simpler: if owner_contact exists, update pathway to their current path. 
+            # The modal (speech_logs) will override specifically for projects if user edits details.
+            if pathway_val:
+                log.pathway = pathway_val
+            elif owner_contact and owner_contact.Current_Path:
+                # If it's a role or project, valid to sync to owner's path initially/on-update of agenda
+                log.pathway = owner_contact.Current_Path
 
 
 def _recalculate_start_times(meetings_to_update):

@@ -22,21 +22,43 @@
              </div>
         </div>
         {% endif %}
-        {% if can_view_all %}
-        <div class="view-mode-toggle">
-            {% if view_mode == 'admin' %}
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn btn-secondary btn-sm">
-                <i class="fas fa-user"></i> Switch to Member View
-            </a>
+        <div class="speech-logs-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            {% if is_member_view %}
+                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" style="margin: 0;">
+                    <input type="hidden" name="view_mode" value="{{ view_mode }}">
+                    {% if request.args.get('speaker_id') %}
+                    <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
+                    {% endif %}
+                    
+                    <div class="form-group" style="margin: 0; min-width: 250px;">
+                        <select name="pathway" onchange="this.form.submit()" class="form-control" style="width: 100%;">
+                            <option value="">All My Pathways</option>
+                            {% for p_name in member_pathways %}
+                                <option value="{{ p_name }}" {% if selected_filters.pathway == p_name %}selected{% endif %}>{{ p_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
             {% else %}
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-user-shield"></i> Switch to Admin View
-            </a>
+                <div style="flex-grow: 1;"></div> <!-- Spacer for Admin View if no filter on left here -->
+            {% endif %}
+
+            {% if can_view_all %}
+                <div class="view-mode-toggle" style="margin: 0;">
+                    {% if view_mode == 'admin' %}
+                    <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-user"></i> Switch to Member View
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-user-shield"></i> Switch to Admin View
+                    </a>
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
-        {% endif %}
-        
         {% if not is_member_view %}
+
         <form id="speech-logs-filter-form" method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="filters-container">
             <input type="hidden" name="view_mode" value="{{ view_mode }}">
             <div class="filter-row">
@@ -204,7 +226,7 @@
     
                                 <div class="card-footer">
                                     <div class="pathway-info">
-                                        {{ log.current_path_level if log.current_path_level else 'N/A' }}
+                                        {{ log.display_pathway if log.display_pathway else 'N/A' }}
                                     </div>
                                     <div class="status-info">
                                         <i class="fas fa-check-circle" title="Completed"></i>
@@ -268,7 +290,7 @@
                                         {% if log.session_type and log.session_type.Title == 'Presentation' %}
                                             {{ log.presentation_series if log.presentation_series else 'N/A' }}
                                         {% else %}
-                                            {{ log.owner.Current_Path if log.owner else 'N/A' }}
+                                            {{ log.display_pathway if log.display_pathway else 'N/A' }}
                                         {% endif %}
                                     </div>
                                     <div class="status-info">
@@ -321,7 +343,7 @@
                             </div>
                             <div class="card-footer">
                                 <div class="pathway-info">
-                                    {{ log.current_path_level if log.current_path_level else 'N/A' }}
+                                    {{ log.display_pathway if log.display_pathway else 'N/A' }}
                                 </div>
                                 <div class="status-info">
                                     <i class="fas fa-check-circle" title="Completed"></i>
