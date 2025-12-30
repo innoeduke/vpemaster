@@ -16,8 +16,8 @@
         </div>
       </div>
       <!-- Accordion 1: Basic Information -->
-      <button type="button" class="accordion active">Basic Information</button>
-      <div class="panel" style="display: block;">
+      <button type="button" class="accordion">Basic Information</button>
+      <div class="panel">
         <table class="form-table">
             <tr>
             <td>
@@ -60,6 +60,15 @@
                 <textarea id="bio" name="bio" rows="3" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;"></textarea>
             </td>
             </tr>
+            <tr>
+                <td><label for="mentor_id">Mentor:</label></td>
+                <td>
+                <select id="mentor_id" name="mentor_id">
+                    <option value="0">None</option>
+                    <!-- Populated by JS -->
+                </select>
+                </td>
+            </tr>
         </table>
       </div>
 
@@ -101,15 +110,7 @@
                 <td><label for="credentials">Credentials:</label></td>
                 <td><input type="text" id="credentials" name="credentials" readonly placeholder="Derived from Achievements" /></td>
             </tr>
-            <tr>
-                <td><label for="mentor_id">Mentor:</label></td>
-                <td>
-                <select id="mentor_id" name="mentor_id">
-                    <option value="0">None</option>
-                    <!-- Populated by JS -->
-                </select>
-                </td>
-            </tr>
+
             </table>
           </div>
       </div>

@@ -181,17 +181,12 @@ function openContactModal(contactId) {
           educationWrapper.style.display = "none";
         }
 
-        // Reset Accordions: Open Basic Info, Close Education
+        // Reset Accordions: Close all
         const acc = document.querySelectorAll(".accordion");
-        acc.forEach((btn, index) => {
+        acc.forEach((btn) => {
           const panel = btn.nextElementSibling;
-          if (index === 0) { // Basic Info
-            btn.classList.add("active");
-            panel.style.maxHeight = panel.scrollHeight + "px";
-          } else { // Education
-            btn.classList.remove("active");
-            panel.style.maxHeight = null;
-          }
+          btn.classList.remove("active");
+          panel.style.maxHeight = null;
         });
       });
   } else {
@@ -203,17 +198,12 @@ function openContactModal(contactId) {
     document.getElementById("modal-avatar-img").style.display = 'none';
     document.getElementById("modal-avatar-placeholder").style.display = 'flex';
 
-    // Reset Accordions for New Entry
+    // Reset Accordions for New Entry: Close all
     const acc = document.querySelectorAll(".accordion");
-    acc.forEach((btn, index) => {
+    acc.forEach((btn) => {
       const panel = btn.nextElementSibling;
-      if (index === 0) {
-        btn.classList.add("active");
-        panel.style.maxHeight = panel.scrollHeight + "px";
-      } else {
-        btn.classList.remove("active");
-        panel.style.maxHeight = null;
-      }
+      btn.classList.remove("active");
+      panel.style.maxHeight = null;
     });
   }
   contactModal.style.display = "flex";
