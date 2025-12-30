@@ -53,6 +53,18 @@ def show_speech_logs():
          except (ValueError, TypeError):
              pass
     
+    # --- Default Pathway Selection ---
+    # We distinguish between "User selected All" (value='all') and "Unspecified/Default" (value='' or None).
+    # If handling 'all', we keep selected_pathway as 'all' so the UI selects it, but we suppress filtering later.
+    
+    raw_pathway = request.args.get('pathway')
+    
+    if raw_pathway == 'all':
+        selected_pathway = 'all'
+    elif (not raw_pathway) and viewed_contact and viewed_contact.Current_Path:
+        # Default to Current Path if unspecified or empty string
+        selected_pathway = viewed_contact.Current_Path
+    
     impersonated_user_name = viewed_contact.Name if viewed_contact else None
 
     # Fetch distinct historical pathways for the viewed contact
@@ -65,6 +77,12 @@ def show_speech_logs():
             SessionLog.pathway != ''
         ).distinct().order_by(SessionLog.pathway)
         member_pathways = [r[0] for r in query.all()]
+        
+        # Ensure the selected pathway (e.g. Current Path) is in the list so it can be shown/selected
+        # But don't append 'all' as that is handled by the static option
+        if selected_pathway and selected_pathway != 'all' and selected_pathway not in member_pathways:
+             member_pathways.append(selected_pathway)
+             member_pathways.sort() # Keep it tidy
 
     all_pathways_from_db = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways_from_db}
@@ -199,7 +217,7 @@ def show_speech_logs():
         if selected_pathway and log_type == 'speech' and not log.Project_ID:
             continue
 
-        if selected_pathway:
+        if selected_pathway and selected_pathway != 'all':
             # Strictly filter by the pathway field
             current_log_path = getattr(log, 'pathway', None)
             

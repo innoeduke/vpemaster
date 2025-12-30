@@ -32,7 +32,7 @@
                     
                     <div class="form-group" style="margin: 0; min-width: 250px;">
                         <select name="pathway" onchange="this.form.submit()" class="form-control" style="width: 100%;">
-                            <option value="">All My Pathways</option>
+                            <option value="all">All My Pathways</option>
                             {% for p_name in member_pathways %}
                                 <option value="{{ p_name }}" {% if selected_filters.pathway == p_name %}selected{% endif %}>{{ p_name }}</option>
                             {% endfor %}
