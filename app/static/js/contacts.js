@@ -21,9 +21,9 @@ document.addEventListener("DOMContentLoaded", function () {
   // Initialize sorting
   setupTableSorting("contactsTable");
 
-  // Default sort by Participation (Index 2) - Descending
+  // Default sort by Participation (Index 1) - Descending
   if (typeof sortTableByColumn === "function") {
-    sortTableByColumn(table, 2, false, "string");
+    sortTableByColumn(table, 1, false, "string");
   }
 
   const filterTable = () => {

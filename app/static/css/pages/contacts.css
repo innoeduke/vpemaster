@@ -193,41 +193,40 @@
     white-space: nowrap;
   }
 }
-
-/* --- Guest View Styles --- */
-/* --- Guest View Styles --- */
 /* --- Specific View Styles --- */
-.guest-view th:nth-child(4),
-.guest-view td:nth-child(4),
-.guest-view th:nth-child(5),
-.guest-view td:nth-child(5),
-.guest-view th:nth-child(6),
-.guest-view td:nth-child(6),
-.guest-view th:nth-child(7),
-.guest-view td:nth-child(7) {
+/* GUEST VIEW: Hide Paths(5), Creds(6), Next(7), Mentor(8) */
+.guest-view th:nth-child(5), .guest-view td:nth-child(5),
+.guest-view th:nth-child(6), .guest-view td:nth-child(6),
+.guest-view th:nth-child(7), .guest-view td:nth-child(7),
+.guest-view th:nth-child(8), .guest-view td:nth-child(8) {
   display: none;
 }
 
-.member-view th:nth-child(2),
-.member-view td:nth-child(2) {
-  /* Hide Club column in Member view */
-  display: none;
+/* MEMBER VIEW: Hide Phone(3), Club(4) */
+.member-view th:nth-child(3), .member-view td:nth-child(3),
+.member-view th:nth-child(4), .member-view td:nth-child(4) {
+    display: none;
 }
 
-/* Desktop Only Element */
+/* Mobile View Specifics */
 @media (max-width: 992px) {
-  .desktop-only {
-    display: none !important;
+  /* Hide Member ID Badge on Mobile */
+  .badge-member-id {
+      display: none;
   }
 
-  /* Mobile View Specifics */
-  /* Mobile: Show Name(1), Participation(3), Actions(8). Hide others. */
-  /* Club(2) is hidden by default in mobile via line 161 (nth-child(2)) */
-
-  /* We need to ensure new columns (Mentor-7) are hidden if not covered by general hiding */
-  /* Currently mobile hides 2, 4, 5, 6. Need to hide 7 too. */
-  #contactsTable th:nth-child(7),
-  #contactsTable td:nth-child(7) {
+  /* Mobile: Show Name(1), Participation(2), Actions(9). Hide others (3,4,5,6,7,8). */
+  #contactsTable th:nth-child(3), #contactsTable td:nth-child(3),
+  #contactsTable th:nth-child(4), #contactsTable td:nth-child(4),
+  #contactsTable th:nth-child(5), #contactsTable td:nth-child(5),
+  #contactsTable th:nth-child(6), #contactsTable td:nth-child(6),
+  #contactsTable th:nth-child(7), #contactsTable td:nth-child(7),
+  #contactsTable th:nth-child(8), #contactsTable td:nth-child(8) {
     display: none;
+  }
+
+  #contactsTable th:nth-child(9),
+  #contactsTable td:nth-child(9) {
+    width: 80px;
   }
 }
