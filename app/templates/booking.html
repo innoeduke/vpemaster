@@ -141,7 +141,7 @@
                         {% endfor %}
                     {% endif %}
                     {% if status == 'finished' and not is_admin_view and role.award_type %}
-                        <span class="winner-label">{{ role.award_type|replace('-', ' ')|title }} Winner</span>
+                        
                     {% endif %}
                 </div>
             </td>
@@ -208,6 +208,7 @@
                     {% elif role.award_type %}
                          <span class="icon-btn icon-btn-voted" title="{{ role.award_type }} Winner">
                             <i class="fas fa-award"></i>
+                         <span class="winner-label">{{ role.award_type|replace('-', ' ')|title }}</span>
                         </span>
                     {% endif %}
                 {% endif %}
@@ -257,17 +258,6 @@
 
             {% else %} {# e.g., finished member view #}
                 <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
-                    {% set finished_header %}
-                    <thead>
-                        <tr>
-                            <th class="role-header">Role</th>
-                            <th class="status-header">Status</th>
-                            <th class="assign-header">Name</th>
-                            <th class="action-header"></th>
-                        </tr>
-                    </thead>
-                    {% endset %}
-                    {{ finished_header|safe }}
                     <tbody>
                         {% set ns = namespace(displayed_awards=[]) %}
                         {% for role in roles %}

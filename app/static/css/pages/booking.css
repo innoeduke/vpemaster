@@ -240,6 +240,15 @@
     opacity: 0.8;
 }
 
+.is-finished-meeting .role-avatar {
+    width: 60px;
+    height: 60px;
+}
+
+.is-finished-meeting .role-avatar i.fa-user-circle {
+    font-size: 2.8em;
+}
+
 .role-cell {
     font-family: 'Montserrat', sans-serif;
     font-weight: bold;
@@ -641,8 +650,8 @@
 }
 
 .winner-label {
-    font-weight: bold;
-    color: #28a745;
+    font-family: 'Montserrat', sans-serif;
+    color: #555;
 }
 
 /* Style for a row that has been voted for */
@@ -850,7 +859,7 @@
         padding-right: 20px;
     }
 
-    .booking-table .status-cell .winner-label {
+    .booking-table .winner-label {
         display: none;
     }
 }
