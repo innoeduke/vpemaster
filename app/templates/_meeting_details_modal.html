@@ -75,9 +75,9 @@
         </div>
         <div class="meta-item">
             <span><strong>GE Mode:</strong></span>
-            <select id="ge-style-select" class="edit-mode-field" data-current-style="{{ selected_meeting.GE_Style if selected_meeting else '' }}">
-                <option value="One shot" {% if selected_meeting and selected_meeting.GE_Style == 'One shot' %}selected{% endif %}>Traditional (5m)</option>
-                <option value="Multiple shots" {% if selected_meeting and selected_meeting.GE_Style == 'Multiple shots' %}selected{% endif %}>Distributed (1m+3m)</option>
+            <select id="ge-style-select" class="edit-mode-field" data-current-style="{{ selected_meeting.ge_mode if selected_meeting else 0 }}">
+                <option value="0" {% if selected_meeting and selected_meeting.ge_mode == 0 %}selected{% endif %}>Traditional (5m)</option>
+                <option value="1" {% if selected_meeting and selected_meeting.ge_mode == 1 %}selected{% endif %}>Distributed (1ms+3m)</option>
             </select>
         </div>
         <div class="meta-item">

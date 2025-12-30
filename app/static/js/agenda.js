@@ -235,7 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
       body: JSON.stringify({
         meeting_number: meetingNumber,
         agenda_data: dataToSave,
-        ge_style: geStyleSelect.value,
+        ge_mode: parseInt(geStyleSelect.value),
         meeting_title: document.getElementById("edit-meeting-title").value,
         subtitle: document.getElementById("edit-subtitle").value,
         meeting_type: document.getElementById("edit-meeting-type").value,

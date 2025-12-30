@@ -176,7 +176,7 @@ class Meeting(db.Model):
     best_speaker_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     best_role_taker_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     media_id = db.Column(db.Integer, db.ForeignKey('Media.id', use_alter=True))
-    GE_Style = db.Column(db.String(20), default='One shot')
+    ge_mode = db.Column(db.Integer, default=0)
     status = db.Column(db.Enum('unpublished', 'not started', 'running', 'finished', 'cancelled', name='meeting_status'),
                        default='unpublished', nullable=False)
     manager_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))

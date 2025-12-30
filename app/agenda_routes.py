@@ -203,8 +203,8 @@ def _recalculate_start_times(meetings_to_update):
             log.Start_Time = current_time
             duration_to_add = int(log.Duration_Max or 0)
             break_minutes = 1
-            # For "Multiple shots" style, add an extra minute break after each evaluation
-            if log.Type_ID == SessionTypeID.EVALUATION and meeting.GE_Style == 'Multiple shots':
+            # For "Multiple shots" style (ge_mode=1), add an extra minute break after each evaluation
+            if log.Type_ID == SessionTypeID.EVALUATION and meeting.ge_mode == 1:
                 break_minutes += 1
             dt_current_time = datetime.combine(
                 meeting.Meeting_Date, current_time)
@@ -1197,7 +1197,7 @@ def create_from_template():
     meeting_date_str = request.form.get('meeting_date')
     start_time_str = request.form.get('start_time')
     meeting_type = request.form.get('meeting_type')
-    ge_style = request.form.get('ge_style')
+    ge_mode = int(request.form.get('ge_mode', 0))
 
     # --- Get NEW form data ---
 
@@ -1241,7 +1241,7 @@ def create_from_template():
             Meeting_Number=meeting_number,
             Meeting_Date=meeting_date,
             Start_Time=start_time,
-            GE_Style=ge_style,
+            ge_mode=ge_mode,
             type=meeting_type,
             Meeting_Title=meeting_title,
             Subtitle=subtitle,
@@ -1253,7 +1253,7 @@ def create_from_template():
     else:
         meeting.Meeting_Date = meeting_date
         meeting.Start_Time = start_time
-        meeting.GE_Style = ge_style
+        meeting.ge_mode = ge_mode
         meeting.type = meeting_type
         meeting.Meeting_Title = meeting_title
         meeting.Subtitle = subtitle
@@ -1335,13 +1335,13 @@ def create_from_template():
 
                 # Special Logic for GE styles (override defaults if needed)
                 if type_id == 16:  # General Evaluation Report
-                    if ge_style == 'Multiple shots':
+                    if ge_mode == 1: # Distributed
                         duration_max = 3
-                    else:  # 'One shot'
+                    else:  # 0: Traditional
                         duration_max = 5
                 
                 break_minutes = 1
-                if type_id == 31 and ge_style == 'Multiple shots':  # Individual Evaluation
+                if type_id == 31 and ge_mode == 1:  # Individual Evaluation
                     break_minutes += 1
 
                 # --- Resolve Owner ---
@@ -1424,7 +1424,7 @@ def update_logs():
 
     meeting_number = data.get('meeting_number')
     agenda_data = data.get('agenda_data', [])
-    new_style = data.get('ge_style')
+    new_mode = int(data.get('ge_mode', 0)) if data.get('ge_mode') is not None else None
     new_meeting_title = data.get('meeting_title')
     new_meeting_type = data.get('meeting_type')
     new_subtitle = data.get('subtitle')
@@ -1476,20 +1476,20 @@ def update_logs():
         if new_media_id != meeting.media_id:
             meeting.media_id = new_media_id
 
-        if new_style and meeting.GE_Style != new_style:
-            meeting.GE_Style = new_style
+        if new_mode is not None and meeting.ge_mode != new_mode:
+            meeting.ge_mode = new_mode
 
         # Commit changes to the meeting object before processing logs
         db.session.commit()
 
-        if new_style:
+        if new_mode is not None:
             # Update the duration for the GE Report session if it exists
             for item in agenda_data:
                 # CORRECTED ID: General Evaluation Report is 16
                 if str(item.get('type_id')) == '16':
-                    if new_style == 'Multiple shots':
+                    if new_mode == 1:
                         item['duration_max'] = 3
-                    else:  # 'One shot'
+                    else:  # 0
                         item['duration_max'] = 5
                     break
 
