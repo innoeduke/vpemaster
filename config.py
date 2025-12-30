@@ -33,9 +33,6 @@ class Config:
 
     MEETING_TYPES = {}
 
-
-
-
     DEFAULT_ROLE_ICON = "fa-question-circle"
 
     # Email configuration

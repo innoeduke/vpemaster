@@ -18,6 +18,7 @@ css_all = Bundle(
     'css/pages/roster.css',
     'css/pages/settings.css',
     'css/pages/speech_logs.css',
+    'css/pages/profile.css',
     'css/core/responsive.css',
     filters='cssmin',
     output='css/packed.css'

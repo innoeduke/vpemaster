@@ -1,0 +1,71 @@
+/* Profile Avatar Styling */
+.profile-avatar-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-bottom: 30px;
+}
+
+.profile-avatar {
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 3px solid #772432;
+	/* Toastmasters Red */
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+	background-color: #eee;
+	transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-avatar:hover {
+	transform: scale(1.05);
+	box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.avatar-placeholder {
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+	background-color: #ddd;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 60px;
+	color: #999;
+	border: 3px solid #772432;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.upload-btn-wrapper {
+	position: relative;
+	overflow: hidden;
+	display: inline-block;
+	margin-top: 15px;
+}
+
+.upload-btn-wrapper input[type=file] {
+	font-size: 100px;
+	position: absolute;
+	left: 0;
+	top: 0;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.btn-upload {
+	border: 2px solid #772432;
+	color: #772432;
+	background-color: white;
+	padding: 8px 20px;
+	border-radius: 20px;
+	font-size: 14px;
+	font-weight: bold;
+	cursor: pointer;
+	transition: all 0.3s ease;
+}
+
+.btn-upload:hover {
+	background-color: #772432;
+	color: white;
+}

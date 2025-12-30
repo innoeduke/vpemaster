@@ -15,8 +15,25 @@ content %}
     <form
       method="POST"
       action="{{ url_for('auth_bp.profile') }}"
+      enctype="multipart/form-data"
       style="max-width: 700px; margin: 0 auto"
     >
+      <div class="profile-avatar-container">
+        <div id="avatar-placeholder" class="avatar-placeholder" style="display: {% if user.contact and user.contact.Avatar_URL %}none{% else %}flex{% endif %};">
+            <i class="fas fa-user"></i>
+        </div>
+        {% if user.contact and user.contact.Avatar_URL %}
+            <img src="{{ url_for('static', filename=user.contact.Avatar_URL) }}" 
+                 alt="Avatar" class="profile-avatar"
+                 onerror="this.style.display='none'; document.getElementById('avatar-placeholder').style.display='flex';">
+        {% endif %}
+        
+        <div class="upload-btn-wrapper">
+          <button class="btn-upload">Change Photo</button>
+          <input type="file" name="profile_photo" accept="image/*" onchange="this.form.submit()" />
+        </div>
+      </div>
+
       <input type="hidden" name="action" value="update_profile" />
       <table class="form-table">
         <tr>
