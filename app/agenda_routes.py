@@ -173,6 +173,9 @@ def _create_or_update_session(item, meeting_number, seq):
     else:
         log = SessionLog.query.get(item['id'])
         if log:
+            # Capture old owner ID to detect changes
+            old_owner_id = log.Owner_ID
+            
             log.Meeting_Number = meeting_number
             log.Meeting_Seq = seq
             log.Type_ID = type_id
@@ -185,18 +188,15 @@ def _create_or_update_session(item, meeting_number, seq):
             if session_title is not None:
                 log.Session_Title = session_title
             log.current_path_level = current_path_level
-            # Update pathway only if explicitly in item (from UI if supported) or if we are assigning a new owner and log doesn't have one set?
-            # User request: "while creating or updating... if log is a role, store owner's current path". 
-            # If project, modal handles it. But here we might assign owner to a project slot.
-            # Strategy: If owner changed or we are setting it, default to owner's path. 
-            # But we don't track owner change easily here without fetching prev state (which we have in 'log').
-            # Let's simple check: if owner_id matches existing log.Owner_ID, don't overwrite unless pathway_val is explicit?
-            # Actually, simpler: if owner_contact exists, update pathway to their current path. 
-            # The modal (speech_logs) will override specifically for projects if user edits details.
+            
+            # Use captured old_owner_id for logic
             if pathway_val:
                 log.pathway = pathway_val
-            elif owner_contact and owner_contact.Current_Path:
-                # If it's a role or project, valid to sync to owner's path initially/on-update of agenda
+            elif owner_id != old_owner_id:
+                # If owner changed (or is being set for the first time), sync to new owner's path.
+                # This clears the pathway (sets to None) if the new owner has no path.
+                log.pathway = owner_contact.Current_Path if owner_contact else None
+            elif owner_contact and owner_contact.Current_Path and not log.pathway:
                 log.pathway = owner_contact.Current_Path
 
 

@@ -58,12 +58,12 @@ def show_speech_logs():
     # Fetch distinct historical pathways for the viewed contact
     member_pathways = []
     if viewed_contact:
-        query = db.session.query(Pathway.name).join(PathwayProject).join(Project).join(
-            SessionLog, SessionLog.Project_ID == Project.id
-        ).filter(
+        # Use simple distinct query on SessionLog.pathway
+        query = db.session.query(SessionLog.pathway).filter(
             SessionLog.Owner_ID == viewed_contact.id,
-            Pathway.type.in_(['Education Info', 'Targeted Curriculum']) # Standard pathways
-        ).distinct().order_by(Pathway.name)
+            SessionLog.pathway.isnot(None),
+            SessionLog.pathway != ''
+        ).distinct().order_by(SessionLog.pathway)
         member_pathways = [r[0] for r in query.all()]
 
     all_pathways_from_db = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
@@ -143,12 +143,10 @@ def show_speech_logs():
                     pathway_abbr = match.group(1)
                     display_level = str(match.group(2))
                     log.project_code = log.current_path_level # Keep full code for display
-                    log.display_pathway = abbr_to_name.get(pathway_abbr, pathway_abbr)
             
             # Fallback only if current_path_level parsing failed or was absent
             if not pathway_abbr:
                 if log.owner:
-                    log.display_pathway = log.owner.Current_Path
                     if log.owner.Current_Path:
                         user_path = Pathway.query.filter_by(name=log.owner.Current_Path).first()
                         if user_path:
@@ -157,7 +155,7 @@ def show_speech_logs():
                                 pathway_abbr = user_path.abbr
                                 display_level = str(pp.level)
                 else:
-                    log.display_pathway = "N/A"
+                    pass
 
                 # Fallback: specific series or other path if not found in user's current path
                 if not pp and log.Project_ID:
@@ -189,35 +187,31 @@ def show_speech_logs():
                 if match:
                     pathway_abbr = match.group(1)
                     display_level = str(match.group(2))  # Ensure type consistency
-                    log.display_pathway = abbr_to_name.get(pathway_abbr, pathway_abbr)
-            
-            if not getattr(log, 'display_pathway', None):
-                log.display_pathway = log.owner.Current_Path if log.owner else "N/A"
+        
+        # Override display_pathway strictly with DB value
+        log.display_pathway = log.pathway
 
         log.log_type = log_type
 
         if selected_level and display_level != selected_level:
             continue
 
-        if selected_pathway and not log.Project_ID:
+        if selected_pathway and log_type == 'speech' and not log.Project_ID:
             continue
 
-        if log_type == 'speech' and selected_pathway:
-            # Check if this speech belongs to the selected pathway
-            # If we calculated pathway_abbr (and distinct pathway) earlier (lines 126-141), we can deduce the path name
-            # Or simpler: check if the project_id exists in the selected pathway
-            belongs_to_selected = False
+        if selected_pathway:
+            # Strictly filter by the pathway field
+            current_log_path = getattr(log, 'pathway', None)
             
-            # 1. Simple check: Is this project part of the selected pathway?
-            # We can use our pathway_projects logic or helper.
-            target_path_obj = Pathway.query.filter_by(name=selected_pathway).first()
-            if target_path_obj and log.Project_ID:
-                 exists = PathwayProject.query.filter_by(project_id=log.Project_ID, path_id=target_path_obj.id).first()
-                 if exists:
-                     belongs_to_selected = True
+            # If the log has a pathway and it doesn't match -> HIDE (applies to both speeches and roles)
+            if current_log_path and current_log_path != selected_pathway:
+                continue
             
-            if not belongs_to_selected:
-                 continue
+            # If the log has NO pathway:
+            # - If it's a speech -> HIDE (Speeches must belong to the selected pathway)
+            # - If it's a role   -> SHOW (Roles are generic if they have no pathway)
+            if not current_log_path and log_type == 'speech':
+               continue
 
 
         if selected_status:
