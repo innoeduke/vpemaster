@@ -238,7 +238,7 @@
         {% if selected_meeting.status == 'not started' and not current_user.is_authenticated %}
             <p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Voting for Meeting #{{ selected_meeting_number }} will open soon.</p>
             <div style="text-align: center; margin-top: 20px;">
-                <img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon" style="max-width: 100%; height: auto; border: 5px solid #004165; border-radius: 15px;">
+                <img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon" style="max-width: 100%; height: auto; border: 5px solid #c5c5c5; border-radius: 15px;">
             </div>
         {% else %}
             {# Pass context to macro to access sorted_role_groups #}

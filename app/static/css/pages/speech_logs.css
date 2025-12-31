@@ -477,26 +477,27 @@ speech-log-entry.card-type-speech {
     margin-right: 20px;
 }
 
-.avatar-img {
-    width: 80px;
-    height: 80px;
+.header-avatar .avatar-placeholder,
+.header-avatar .avatar-img {
+    width: 150px;
+    height: 150px;
     border-radius: 50%;
+}
+
+.header-avatar .avatar-img {
     object-fit: cover;
     border: 3px solid #772432;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-.avatar-placeholder {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
+.header-avatar .avatar-placeholder {
     background-color: #eee;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 35px;
     color: #999;
-    border: 3px solid #004165;
+    border: 3px solid #772432;
 }
 
 .header-info h2 {
@@ -596,5 +597,11 @@ speech-log-entry.card-type-speech {
         /* For Chrome/modern browsers */
         padding-left: 0.5rem;
         /* Balance padding */
+    }
+
+    .header-avatar .avatar-placeholder,
+    .header-avatar .avatar-img {
+        width: 80px;
+        height: 80px;
     }
 }
