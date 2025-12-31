@@ -69,3 +69,197 @@
 	background-color: #772432;
 	color: white;
 }
+
+/* --- General Form & Tab Styles --- */
+.form-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 20px;
+}
+
+.form-table td {
+	padding: 12px 10px;
+	vertical-align: top;
+	/* Desktop view will use inherited borders from components/forms.css */
+}
+
+.form-table td:first-child,
+.form-table label,
+.form-table strong {
+	width: 30%;
+	font-weight: 600;
+	color: #444;
+	font-family: 'Montserrat', sans-serif;
+	font-size: 16px;
+}
+
+/* Basic Input Styling */
+.form-table input[type="text"],
+.form-table input[type="email"],
+.form-table input[type="password"],
+.form-table input[type="number"],
+.form-table select,
+.form-table textarea {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	box-sizing: border-box;
+	font-size: 14px;
+	transition: border-color 0.3s;
+}
+
+.form-table input:focus,
+.form-table select:focus,
+.form-table textarea:focus {
+	border-color: #772432;
+	outline: none;
+}
+
+/* Tabs Styling */
+.tabs-container {
+	width: 100%;
+}
+
+.nav-tabs {
+	display: flex;
+	justify-content: flex-start;
+	border-bottom: 1px solid #ddd;
+	margin-bottom: 20px;
+	gap: 10px;
+}
+
+.nav-item {
+	background: none;
+	border: none;
+	padding: 10px 20px;
+	font-size: 16px;
+	color: #666;
+	cursor: pointer;
+	border-bottom: 3px solid transparent;
+	transition: all 0.3s ease;
+}
+
+.nav-item:hover {
+	color: #772432;
+}
+
+.nav-item.active {
+	color: #772432;
+	border-bottom-color: #772432;
+	font-weight: bold;
+}
+
+/* --- Mobile Optimization --- */
+@media (max-width: 768px) {
+
+	.form-table,
+	.form-table tbody {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 5px;
+		width: 100%;
+		border: none !important;
+	}
+
+	.form-table tbody {
+		display: contents;
+	}
+
+	.form-table tr {
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 45%;
+		/* Allow 2 items per row nicely (45% * 2 + gap < 100%) */
+		min-width: 140px;
+		/* Safe for small screens */
+		box-sizing: border-box;
+		border: 1px solid #ddd !important;
+		border-radius: 4px;
+		padding: 12px;
+		background-color: #fff;
+		margin-bottom: 0px;
+	}
+
+	/* Specific fields always full width on mobile */
+	.form-table tr:nth-child(1),
+	.form-table tr:nth-child(2),
+	.form-table tr:nth-child(3),
+	.form-table tr:has(textarea) {
+		flex: 1 1 100%;
+	}
+
+	/* Highlight editable rows */
+	.form-table tr:has(input),
+	.form-table tr:has(select),
+	.form-table tr:has(textarea) {
+		background-color: #fffdec;
+		/* Light Egg Yellow */
+		border-color: #ccc !important;
+	}
+
+	.form-table td {
+		border: none !important;
+		/* No internal borders */
+		display: block;
+		width: 100% !important;
+		padding: 2px 0 !important;
+	}
+
+	.form-table td:first-child,
+	.form-table label,
+	.form-table strong {
+		width: 100%;
+		font-size: 14px;
+		color: #772432;
+		margin-bottom: 4px;
+		font-family: 'Montserrat', sans-serif;
+	}
+
+	/* Remove Input Borders on Mobile */
+	.form-table input[type="text"],
+	.form-table input[type="email"],
+	.form-table input[type="number"],
+	.form-table select,
+	.form-table textarea {
+		padding: 8px;
+		font-size: 16px;
+		/* Better for mobile keyboard zoom */
+		cursor: pointer;
+	}
+
+	.form-table textarea {
+		min-height: 150px;
+		font-size: 1.1em;
+	}
+
+	.profile-avatar {
+		width: 120px;
+		height: 120px;
+	}
+
+	.tabs-container {
+		margin-top: 20px !important;
+		padding: 0 15px;
+	}
+
+	.nav-tabs {
+		justify-content: space-between;
+		border-bottom: none !important;
+	}
+
+	.nav-item {
+		flex: 1;
+		text-align: center;
+		padding: 10px 5px;
+		font-size: 14px;
+	}
+
+	.tab-content {
+		padding: 0 10px;
+	}
+
+	h2 {
+		font-size: 1.5rem;
+	}
+}

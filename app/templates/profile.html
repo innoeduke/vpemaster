@@ -2,222 +2,183 @@
 content %}
 
 <div class="tabs-container" style="max-width: 700px; margin: 0 auto; margin-top: 40px;">
-    <div class="nav-tabs">
-        <button class="nav-item active" onclick="openTab(event, 'basic-info')" id="tab-basic-info">Basic Information</button>
-        <button class="nav-item" onclick="openTab(event, 'reset-password')" id="tab-reset-password">Reset Password</button>
-    </div>
+  <div class="nav-tabs">
+    <button class="nav-item active" onclick="openTab(event, 'basic-info')" id="tab-basic-info">Basic
+      Information</button>
+    <button class="nav-item" onclick="openTab(event, 'reset-password')" id="tab-reset-password">Reset Password</button>
+  </div>
 </div>
 
 <div id="basic-info" class="tab-content" style="display: block;">
-    <h2 style="text-align: center; margin-top: 20px; margin-bottom: 20px">
-      Basic Information
-    </h2>
-    <form
-      method="POST"
-      action="{{ url_for('auth_bp.profile') }}"
-      enctype="multipart/form-data"
-      style="max-width: 700px; margin: 0 auto"
-    >
-      <div class="profile-avatar-container">
-        <div id="avatar-placeholder" class="avatar-placeholder" 
-             style="display: {% if user.contact and user.contact.Avatar_URL %}none{% else %}flex{% endif %};">
-            <i class="fas fa-user"></i>
-        </div>
-        {% if user.contact and user.contact.Avatar_URL %}
-            <img src="{{ url_for('static', filename=user.contact.Avatar_URL) }}" 
-                 alt="Avatar" class="profile-avatar"
-                 onerror="this.style.display='none'; document.getElementById('avatar-placeholder').style.display='flex';">
-        {% endif %}
-        
-        <div class="upload-btn-wrapper">
-          <button class="btn-upload">Change Photo</button>
-          <input type="file" name="profile_photo" accept="image/*" onchange="this.form.submit()" />
-        </div>
+  <h2 style="text-align: center; margin-top: 20px; margin-bottom: 20px">
+    Basic Information
+  </h2>
+  <form method="POST" action="{{ url_for('auth_bp.profile') }}" enctype="multipart/form-data"
+    style="max-width: 700px; margin: 0 auto">
+    <div class="profile-avatar-container">
+      <div id="avatar-placeholder" class="avatar-placeholder"
+        style="display: {% if user.contact and user.contact.Avatar_URL %}none{% else %}flex{% endif %};">
+        <i class="fas fa-user"></i>
       </div>
+      {% if user.contact and user.contact.Avatar_URL %}
+      <img src="{{ url_for('static', filename=user.contact.Avatar_URL) }}" alt="Avatar" class="profile-avatar"
+        onerror="this.style.display='none'; document.getElementById('avatar-placeholder').style.display='flex';">
+      {% endif %}
 
-      <input type="hidden" name="action" value="update_profile" />
-      <table class="form-table">
-        <tr>
-          <td><label>Full Name</label></td>
-          <td>
-            {{ user.contact.Name if user.contact else '' }} ({{ user.Username }}) {%
-            if user.contact.DTM %}
-            <sup class="dtm-superscript">DTM</sup>
-            {% endif %}
-          </td>
-        </tr>
-        <tr>
-          <td><label>Role</label></td>
-          <td>{{ user.Role }}</td>
-        </tr>
-        {% if user.contact %}
-        <tr>
-          <td><label>Member ID</label></td>
-          <td>{{ user.contact.Member_ID if user.contact.Member_ID else '' }}</td>
-        </tr>
-        <tr>
-          <td><label for="email">Email:</label></td>
-          <td>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value="{{ user.Email if user.Email else '' }}"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td><label for="phone_number">Phone Number:</label></td>
-          <td>
-            <input
-              type="text"
-              id="phone_number"
-              name="phone_number"
-              value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}"
-            />
-          </td>
-        </tr>
-        <tr>
-          <td><label>Current Path</label></td>
-          <td>{{ user.contact.Current_Path if user.contact.Current_Path else '' }}</td>
-        </tr>
-        <tr>
-          <td><label>Credential:</label></td>
-          <td>{{ user.contact.credentials if user.contact.credentials else '' }}</td>
-        </tr>
-        <tr>
-          <td><strong>Next Project:</strong></td>
-          <td>{{ user.contact.Next_Project if user.contact.Next_Project else '' }}</td>
-        </tr>
-        <tr>
-          <td><label>Mentor:</label></td>
-          <td>{{ user.contact.mentor.Name if user.contact.mentor else '' }}</td>
-        </tr>
-        <tr>
-          <td><label for="bio">Bio:</label></td>
-          <td>
-            <textarea
-              id="bio"
-              name="bio"
-              rows="4"
-              style="
-                width: 100%;
-                padding: 8px;
-                box-sizing: border-box;
-                border: 1px solid #ccc;
-                border-radius: 4px;
-              "
-            >{{ user.contact.Bio if user.contact.Bio else '' }}</textarea>
-          </td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="2" style="text-align: center">
-            <em>This user account is not linked to a contact record.</em>
-          </td>
-        </tr>
-        {% endif %}
-      </table>
-      <p class="note" style="text-align: center; margin-top: 10px;">
-        For any education related questions, please contact the Vice President Education (VPE).
-      </p>
-      <div class="form-actions" style="margin-top: 10px">
-        <button type="submit" class="btn btn-primary">Update Profile</button>
+      <div class="upload-btn-wrapper">
+        <button class="btn-upload">Change Photo</button>
+        <input type="file" name="profile_photo" accept="image/*" onchange="this.form.submit()" />
       </div>
-    </form>
+    </div>
+
+    <input type="hidden" name="action" value="update_profile" />
+    <table class="form-table">
+      <tr>
+        <td><label>Full Name</label></td>
+        <td>
+          {{ user.contact.Name if user.contact else '' }} ({{ user.Username }}) {%
+          if user.contact.DTM %}
+          <sup class="dtm-superscript">DTM</sup>
+          {% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td><label for="email">Email:</label></td>
+        <td>
+          <input type="email" id="email" name="email" value="{{ user.Email if user.Email else '' }}" />
+        </td>
+      </tr>
+      <tr>
+        <td><label for="phone_number">Phone Number:</label></td>
+        <td>
+          <input type="text" id="phone_number" name="phone_number"
+            value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}" />
+        </td>
+      </tr>
+      <tr>
+        <td><label>Role</label></td>
+        <td>{{ user.Role }}</td>
+      </tr>
+      {% if user.contact %}
+      <tr>
+        <td><label>Member ID</label></td>
+        <td>{{ user.contact.Member_ID if user.contact.Member_ID else '' }}</td>
+      </tr>
+      <tr>
+        <td><label>Current Path</label></td>
+        <td>{{ user.contact.Current_Path if user.contact.Current_Path else '' }}</td>
+      </tr>
+      <tr>
+        <td><label>Credential:</label></td>
+        <td>{{ user.contact.credentials if user.contact.credentials else '' }}</td>
+      </tr>
+      <tr>
+        <td><strong>Next Project:</strong></td>
+        <td>{{ user.contact.Next_Project if user.contact.Next_Project else '' }}</td>
+      </tr>
+      <tr>
+        <td><label>Mentor:</label></td>
+        <td>{{ user.contact.mentor.Name if user.contact.mentor else '' }}</td>
+      </tr>
+      <tr>
+        <td><label for="bio">Bio:</label></td>
+        <td>
+          <textarea id="bio" name="bio" rows="4">{{ user.contact.Bio if user.contact.Bio else '' }}</textarea>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="2" style="text-align: center">
+          <em>This user account is not linked to a contact record.</em>
+        </td>
+      </tr>
+      {% endif %}
+    </table>
+    <p class="note" style="text-align: center; margin-top: 10px;">
+      For any education related questions, please contact the Vice President Education (VPE).
+    </p>
+    <div class="form-actions" style="margin-top: 10px">
+      <button type="submit" class="btn btn-primary">Update Profile</button>
+    </div>
+  </form>
 </div>
 
 <div id="reset-password" class="tab-content" style="display: none;">
-    <h2 style="text-align: center; margin-top: 20px; margin-bottom: 20px">
-      Reset Password
-    </h2>
-    <form
-      method="POST"
-      action="{{ url_for('auth_bp.profile', tab='password') }}"
-      style="max-width: 700px; margin: 0 auto"
-    >
-      <input type="hidden" name="action" value="reset_password" />
-      <table class="form-table">
-        <tr>
-          <td><label for="new_password">New Password:</label></td>
-          <td>
-            <input
-              type="password"
-              id="new_password"
-              name="new_password"
-              required
-              minlength="8"
-            />
-            <small class="note">Minimum 8 characters.</small>
-          </td>
-        </tr>
-        <tr>
-          <td><label for="confirm_password">Confirm Password:</label></td>
-          <td>
-            <input
-              type="password"
-              id="confirm_password"
-              name="confirm_password"
-              required
-              minlength="8"
-            />
-          </td>
-        </tr>
-      </table>
-      <div class="form-actions" style="margin-top: 10px">
-        <button type="submit" class="btn btn-primary">Update Password</button>
-      </div>
-    </form>
+  <h2 style="text-align: center; margin-top: 20px; margin-bottom: 20px">
+    Reset Password
+  </h2>
+  <form method="POST" action="{{ url_for('auth_bp.profile', tab='password') }}"
+    style="max-width: 700px; margin: 0 auto">
+    <input type="hidden" name="action" value="reset_password" />
+    <table class="form-table">
+      <tr>
+        <td><label for="new_password">New Password:</label></td>
+        <td>
+          <input type="password" id="new_password" name="new_password" required minlength="8" />
+          <small class="note">Minimum 8 characters.</small>
+        </td>
+      </tr>
+      <tr>
+        <td><label for="confirm_password">Confirm Password:</label></td>
+        <td>
+          <input type="password" id="confirm_password" name="confirm_password" required minlength="8" />
+        </td>
+      </tr>
+    </table>
+    <div class="form-actions" style="margin-top: 10px">
+      <button type="submit" class="btn btn-primary">Update Password</button>
+    </div>
+  </form>
 </div>
 
 <script>
-    function openTab(evt, tabName) {
-        var i, tabcontent, tablinks;
-        
-        // Hide all tab content
-        tabcontent = document.getElementsByClassName("tab-content");
-        for (i = 0; i < tabcontent.length; i++) {
-            tabcontent[i].style.display = "none";
-        }
-        
-        // Remove active class from all tab links
-        tablinks = document.getElementsByClassName("nav-item");
-        for (i = 0; i < tablinks.length; i++) {
-            tablinks[i].className = tablinks[i].className.replace(" active", "");
-        }
-        
-        // Show the specific tab content and add active class to the button
-        document.getElementById(tabName).style.display = "block";
-        if (evt) {
-            evt.currentTarget.className += " active";
-        } else {
-             // Fallback if no event passed (manual trigger)
-             document.getElementById('tab-' + tabName).className += " active";
-        }
-        
-        // Update URL without reloading
-        const url = new URL(window.location);
-        if (tabName === 'reset-password') {
-            url.searchParams.set('tab', 'password');
-        } else {
-            url.searchParams.delete('tab');
-        }
-        window.history.replaceState({}, '', url);
+  function openTab(evt, tabName) {
+    var i, tabcontent, tablinks;
+
+    // Hide all tab content
+    tabcontent = document.getElementsByClassName("tab-content");
+    for (i = 0; i < tabcontent.length; i++) {
+      tabcontent[i].style.display = "none";
     }
 
-    // Check URL parameters on load
-    document.addEventListener("DOMContentLoaded", function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const tab = urlParams.get('tab');
-        
-        if (tab === 'password') {
-            openTab(null, 'reset-password');
-        } else {
-            // Default to basic info if not specified (already open by default HTML, but ensure class matches)
-             // Ensure correct state
-             // openTab(null, 'basic-info'); // This might double-trigger, let's just leave it or force it.
-             // Actually, the HTML defaults to Basic Info visible. If 'password', we switch.
-        }
-    });
+    // Remove active class from all tab links
+    tablinks = document.getElementsByClassName("nav-item");
+    for (i = 0; i < tablinks.length; i++) {
+      tablinks[i].className = tablinks[i].className.replace(" active", "");
+    }
+
+    // Show the specific tab content and add active class to the button
+    document.getElementById(tabName).style.display = "block";
+    if (evt) {
+      evt.currentTarget.className += " active";
+    } else {
+      // Fallback if no event passed (manual trigger)
+      document.getElementById('tab-' + tabName).className += " active";
+    }
+
+    // Update URL without reloading
+    const url = new URL(window.location);
+    if (tabName === 'reset-password') {
+      url.searchParams.set('tab', 'password');
+    } else {
+      url.searchParams.delete('tab');
+    }
+    window.history.replaceState({}, '', url);
+  }
+
+  // Check URL parameters on load
+  document.addEventListener("DOMContentLoaded", function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+
+    if (tab === 'password') {
+      openTab(null, 'reset-password');
+    } else {
+      // Default to basic info if not specified (already open by default HTML, but ensure class matches)
+      // Ensure correct state
+      // openTab(null, 'basic-info'); // This might double-trigger, let's just leave it or force it.
+      // Actually, the HTML defaults to Basic Info visible. If 'password', we switch.
+    }
+  });
 </script>
 {% endblock %}
