@@ -1,4 +1,10 @@
+#agenda-content {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
 /* --- New Agenda Header Styles (Redesigned) --- */
+
 .agenda-header-container {
     display: flex;
     align-items: center;
