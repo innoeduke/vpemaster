@@ -96,6 +96,7 @@
     transition: transform 0.5s ease-in-out;
     position: relative;
     transform-style: preserve-3d;
+    margin: 0 auto;
 }
 
 .wod-display label {

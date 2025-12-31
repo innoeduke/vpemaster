@@ -35,6 +35,16 @@
         </div>
     </div>
 
+    {% if selected_meeting and selected_meeting.WOD %}
+    <div class="wod-display">
+        <div class="envelope-flap"></div>
+        <div class="letter">
+            <label>Word of the Day:</label>
+            <span>"{{ selected_meeting.WOD }}"</span>
+        </div>
+    </div>
+    {% endif %}
+
     {# This is the updated warning block for the full-screen overlay #}
     <div class="orientation-warning">
         <i class="fas fa-mobile-alt warning-icon"></i>
@@ -63,17 +73,6 @@
                 {% endif %}
             </div>
             
-            {% if selected_meeting and selected_meeting.WOD %}
-            <div class="wod-display">
-                <div class="envelope-flap"></div>
-                <div class="letter">
-                    <label>Word of the Day:</label>
-                    <span>"{{ selected_meeting.WOD }}"</span>
-                </div>
-            </div>
-            {% endif %}
-            
-            <!-- Moved GE Style Toggle to meeting-edit-details -->
         </div>
         <div class="action-bar-right">
             <div class="button-group" id="view-mode-buttons">
