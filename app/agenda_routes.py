@@ -1208,223 +1208,237 @@ def _build_sheet4_participants(ws, logs_data):
     _auto_fit_worksheet_columns(ws, min_width=15)
 
 
-@agenda_bp.route('/agenda/create', methods=['POST'])
-@login_required
-def create_from_template():
-    # --- 1. Get ALL form data ---
-    meeting_number = request.form.get('meeting_number')
-    meeting_date_str = request.form.get('meeting_date')
-    start_time_str = request.form.get('start_time')
-    meeting_type = request.form.get('meeting_type')
-    ge_mode = int(request.form.get('ge_mode', 0))
-
-    # --- Get NEW form data ---
-
-    # Look up the template file from the meeting type
+def _validate_meeting_form_data(form):
+    """Parses and validates meeting form data."""
+    meeting_number = form.get('meeting_number')
+    meeting_type = form.get('meeting_type')
+    
+    # Check template validity
     meeting_types_dict = current_app.config.get('MEETING_TYPES', {})
     template_file = meeting_types_dict.get(meeting_type, {}).get('template')
     if not template_file:
-        return redirect(url_for('agenda_bp.agenda', message=f'Invalid meeting type: {meeting_type}', category='error'))
+         raise ValueError(f"Invalid meeting type: {meeting_type}")
 
-    meeting_title = request.form.get('meeting_title')
-    subtitle = request.form.get('subtitle')
-    wod = request.form.get('wod')
-    media_url = request.form.get('media_url')
-
+    meeting_date_str = form.get('meeting_date')
+    start_time_str = form.get('start_time')
     try:
         meeting_date = datetime.strptime(meeting_date_str, '%Y-%m-%d').date()
         start_time = datetime.strptime(start_time_str, '%H:%M').time()
     except (ValueError, TypeError):
-        return redirect(url_for('agenda_bp.agenda', message='Invalid date or time format.', category='error'))
+         raise ValueError("Invalid date or time format.")
 
-    # --- 2. Handle Media URL ---
-    # We must create a Media object to get its ID, per your models.py
-    new_media_id = None
-    if media_url:
-        # Check if a Media object with this URL already exists
-        existing_media = Media.query.filter_by(url=media_url).first()
-        if existing_media:
-            new_media_id = existing_media.id
-        else:
-            # Create a new Media object
-            new_media = Media(url=media_url)
-            db.session.add(new_media)
-            # Flush the session to get the new_media.id before we commit
-            db.session.flush()
-            new_media_id = new_media.id
+    return {
+        'meeting_number': meeting_number,
+        'meeting_date': meeting_date,
+        'start_time': start_time,
+        'meeting_type': meeting_type,
+        'ge_mode': int(form.get('ge_mode', 0)),
+        'meeting_title': form.get('meeting_title'),
+        'subtitle': form.get('subtitle'),
+        'wod': form.get('wod'),
+        'media_url': form.get('media_url'),
+        'template_file': template_file
+    }
 
-    # --- 3. Create or Update Meeting ---
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+
+def _get_or_create_media_id(media_url):
+    """Finds existing media or creates new one, returning the ID."""
+    if not media_url:
+        return None
+        
+    existing_media = Media.query.filter_by(url=media_url).first()
+    if existing_media:
+        return existing_media.id
+    
+    new_media = Media(url=media_url)
+    db.session.add(new_media)
+    db.session.flush()
+    return new_media.id
+
+
+def _upsert_meeting_record(data, media_id):
+    """Creates or updates the Meeting record."""
+    meeting = Meeting.query.filter_by(Meeting_Number=data['meeting_number']).first()
     if not meeting:
         meeting = Meeting(
-            Meeting_Number=meeting_number,
-            Meeting_Date=meeting_date,
-            Start_Time=start_time,
-            ge_mode=ge_mode,
-            type=meeting_type,
-            Meeting_Title=meeting_title,
-            Subtitle=subtitle,
-            WOD=wod,
-            media_id=new_media_id,
-            status='unpublished'  # Set default status to unpublished
+            Meeting_Number=data['meeting_number'],
+            Meeting_Date=data['meeting_date'],
+            Start_Time=data['start_time'],
+            ge_mode=data['ge_mode'],
+            type=data['meeting_type'],
+            Meeting_Title=data['meeting_title'],
+            Subtitle=data['subtitle'],
+            WOD=data['wod'],
+            media_id=media_id,
+            status='unpublished'
         )
         db.session.add(meeting)
     else:
-        meeting.Meeting_Date = meeting_date
-        meeting.Start_Time = start_time
-        meeting.ge_mode = ge_mode
-        meeting.type = meeting_type
-        meeting.Meeting_Title = meeting_title
-        meeting.Subtitle = subtitle
-        meeting.WOD = wod
-        meeting.media_id = new_media_id
+        meeting.Meeting_Date = data['meeting_date']
+        meeting.Start_Time = data['start_time']
+        meeting.ge_mode = data['ge_mode']
+        meeting.type = data['meeting_type']
+        meeting.Meeting_Title = data['meeting_title']
+        meeting.Subtitle = data['subtitle']
+        meeting.WOD = data['wod']
+        meeting.media_id = media_id
         if meeting.status is None:
             meeting.status = 'unpublished'
+    return meeting
 
-    # --- 4. Process Agenda Template ---
-    SessionLog.query.filter_by(Meeting_Number=meeting_number).delete()
 
-    # Commit the Meeting and Media objects first
-    db.session.commit()
-
+def _generate_logs_from_template(meeting, template_file):
+    """Reads the CSV template and generates session logs."""
+    # Clear existing logs
+    SessionLog.query.filter_by(Meeting_Number=meeting.Meeting_Number).delete()
+    
     template_path = os.path.join(
         current_app.static_folder, 'mtg_templates', template_file)
+        
+    # Pre-load settings for efficiency
+    all_settings = load_all_settings()
+    excomm_team = get_excomm_team(all_settings)
+
+    with open(template_path, 'r', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        next(reader, None)  # Skip Header Row
+        
+        seq = 1
+        current_time = meeting.Start_Time
+
+        for row in reader:
+            # Skip perfectly empty rows
+            if not any(cell.strip() for cell in row):
+                continue
+
+            # Parse row columns safely
+            def get_col(idx):
+                return row[idx].strip() if idx < len(row) and row[idx].strip() else None
+
+            type_val = get_col(0)
+            title_val = get_col(1)
+            role_val = get_col(2)
+            owner_val = get_col(3)
+            min_val = get_col(4)
+            max_val = get_col(5)
+
+            # --- Resolve Session Type ---
+            session_type = None
+            type_id = 8  # Default to 'Custom Session' (ID 8)
+            if type_val:
+                session_type = SessionType.query.filter_by(Title=type_val).first()
+                if session_type:
+                    type_id = session_type.id
+            
+            # --- Resolve Session Title ---
+            session_title_for_log = title_val
+            if not session_title_for_log and session_type and session_type.Predefined:
+                    session_title_for_log = session_type.Title
+
+            # --- Resolve Durations ---
+            def local_safe_int(v):
+                try: return int(v) if v else None
+                except ValueError: return None
+
+            duration_min = local_safe_int(min_val)
+            duration_max = local_safe_int(max_val)
+
+            if duration_min is None and duration_max is None and session_type:
+                duration_min = session_type.Duration_Min
+                duration_max = session_type.Duration_Max
+
+            # Special Logic for GE styles
+            if type_id == 16:  # General Evaluation Report
+                if meeting.ge_mode == 1: # Distributed
+                    duration_max = 3
+                else:  # 0: Traditional
+                    duration_max = 5
+            
+            break_minutes = 1
+            if type_id == 31 and meeting.ge_mode == 1:  # Individual Evaluation
+                break_minutes += 1
+
+            # --- Resolve Owner ---
+            owner_id = None
+            credentials = ''
+            if owner_val:
+                owner = Contact.query.filter_by(Name=owner_val).first()
+                if owner:
+                    owner_id = owner.id
+                    credentials = derive_credentials(owner)
+            
+            # Auto-populate from Excomm Team if owner is missing
+            if not owner_id:
+                role_to_check = role_val
+                if not role_to_check and session_type and session_type.role:
+                        role_to_check = session_type.role.name
+                
+                if role_to_check:
+                        officer_name = excomm_team['members'].get(role_to_check)
+                        if officer_name:
+                            owner = Contact.query.filter_by(Name=officer_name).first()
+                            if owner:
+                                owner_id = owner.id
+                                credentials = derive_credentials(owner)
+            
+            # --- Create Log ---
+            new_log = SessionLog(
+                Meeting_Number=meeting.Meeting_Number,
+                Meeting_Seq=seq,
+                Type_ID=type_id,
+                Owner_ID=owner_id,
+                credentials=credentials,
+                Duration_Min=duration_min,
+                Duration_Max=duration_max,
+                Session_Title=session_title_for_log,
+                Status='Booked'
+            )
+
+            # Calculate Start Time
+            is_section = False
+            if session_type and session_type.Is_Section:
+                is_section = True
+            
+            if not is_section:
+                new_log.Start_Time = current_time
+                # Calculate next start time
+                dur_to_add = int(duration_max or 0)
+                dt_current = datetime.combine(meeting.Meeting_Date, current_time)
+                next_dt = dt_current + timedelta(minutes=dur_to_add + break_minutes)
+                current_time = next_dt.time()
+            else:
+                new_log.Start_Time = None
+
+            db.session.add(new_log)
+            seq += 1
+
+
+@agenda_bp.route('/agenda/create', methods=['POST'])
+@login_required
+def create_from_template():
     try:
-        with open(template_path, 'r', encoding='utf-8') as f:
-            reader = csv.reader(f)
-            
-            # 1. Skip Header Row
-            next(reader, None) 
-            
-            seq = 1
-            current_time = start_time
+        # 1. Validation & Data Extraction
+        data = _validate_meeting_form_data(request.form)
+    except ValueError as e:
+        return redirect(url_for('agenda_bp.agenda', message=str(e), category='error'))
 
-            # Helper to safely convert to int
-            def safe_int(value):
-                try:
-                    return int(value) if value is not None else None
-                except ValueError:
-                    return None
+    try:
+        # 2. Handle Media
+        media_id = _get_or_create_media_id(data['media_url'])
 
-            for row in reader:
-                # Skip perfectly empty rows
-                if not any(cell.strip() for cell in row):
-                    continue
-
-                # Ensure row has enough columns (pad if necessary, though strict format implies fixed len)
-                # Helper to safely get index or None
-                def get_col(idx):
-                    return row[idx].strip() if idx < len(row) and row[idx].strip() else None
-
-                # 2. Parse Fixed 6 Columns
-                # [Session Type, Session Title, Role, Owner, Duration Min, Duration Max]
-                type_val = get_col(0)
-                title_val = get_col(1)
-                role_val = get_col(2)
-                owner_val = get_col(3)
-                min_val = get_col(4)
-                max_val = get_col(5)
-
-                # --- Resolve Session Type ---
-                session_type = None
-                type_id = 8  # Default to 'Custom Session' (ID 8) if not found
-
-                if type_val:
-                    session_type = SessionType.query.filter_by(Title=type_val).first()
-                    if session_type:
-                        type_id = session_type.id
-                
-                # --- Resolve Session Title ---
-                # Logic: If CSV has title, use it. 
-                # If CSV title is blank BUT it is a predefined type, use Type Title.
-                # If it's "Section" type, use the CSV title (which acts as header text).
-                session_title_for_log = title_val
-                
-                if not session_title_for_log and session_type and session_type.Predefined:
-                     session_title_for_log = session_type.Title
-
-                # --- Resolve Durations ---
-                duration_min = safe_int(min_val)
-                duration_max = safe_int(max_val)
-
-                # Fallback to SessionType defaults if CSV is blank
-                if duration_min is None and duration_max is None and session_type:
-                    duration_min = session_type.Duration_Min
-                    duration_max = session_type.Duration_Max
-
-                # Special Logic for GE styles (override defaults if needed)
-                if type_id == 16:  # General Evaluation Report
-                    if ge_mode == 1: # Distributed
-                        duration_max = 3
-                    else:  # 0: Traditional
-                        duration_max = 5
-                
-                break_minutes = 1
-                if type_id == 31 and ge_mode == 1:  # Individual Evaluation
-                    break_minutes += 1
-
-                # --- Resolve Owner ---
-                owner_id = None
-                credentials = ''
-                if owner_val:
-                    owner = Contact.query.filter_by(Name=owner_val).first()
-                    if owner:
-                        owner_id = owner.id
-                        credentials = derive_credentials(owner)
-                
-                # Auto-populate form Excomm Team settings if owner is missing
-                if not owner_id:
-                     # Get Excomm Team data
-                    all_settings = load_all_settings()
-                    excomm_team = get_excomm_team(all_settings)
-                    
-                    # Determine the role name to check
-                    role_to_check = role_val
-                    if not role_to_check and session_type and session_type.role:
-                         role_to_check = session_type.role.name
-                    
-                    if role_to_check:
-                         # Check if this role is in the excomm team
-                         officer_name = excomm_team['members'].get(role_to_check)
-                         if officer_name:
-                              owner = Contact.query.filter_by(Name=officer_name).first()
-                              if owner:
-                                   owner_id = owner.id
-                                   credentials = derive_credentials(owner)
-                
-                # --- Create Log ---
-                new_log = SessionLog(
-                    Meeting_Number=meeting_number,
-                    Meeting_Seq=seq,
-                    Type_ID=type_id,
-                    Owner_ID=owner_id,
-                    credentials=credentials,
-                    Duration_Min=duration_min,
-                    Duration_Max=duration_max,
-                    Session_Title=session_title_for_log,
-                    Status='Booked'  # Default status
-                )
-
-                # Calculate Start Time (Skip for Sections)
-                is_section = False
-                if session_type and session_type.Is_Section:
-                    is_section = True
-                
-                if not is_section:
-                   new_log.Start_Time = current_time
-                   # Calculate next start time
-                   dur_to_add = int(duration_max or 0)
-                   dt_current = datetime.combine(meeting_date, current_time)
-                   next_dt = dt_current + timedelta(minutes=dur_to_add + break_minutes)
-                   current_time = next_dt.time()
-                else:
-                   new_log.Start_Time = None
-
-                db.session.add(new_log)
-                seq += 1
-
+        # 3. Create or Update Meeting
+        meeting = _upsert_meeting_record(data, media_id)
+        
+        # Commit to ensure Meeting exists and has proper state before logs are created
         db.session.commit()
-        return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number, message='Meeting created successfully from template!', category='success'))
+
+        # 4. Generate Session Logs from Template
+        _generate_logs_from_template(meeting, data['template_file'])
+        
+        # Final Commit
+        db.session.commit()
+        
+        return redirect(url_for('agenda_bp.agenda', meeting_number=data['meeting_number'], message='Meeting created successfully from template!', category='success'))
 
     except FileNotFoundError:
         return redirect(url_for('agenda_bp.agenda', message='Template file not found.', category='error'))
@@ -1433,7 +1447,6 @@ def create_from_template():
         current_app.logger.error(f"Error creating meeting: {e}")
         return redirect(url_for('agenda_bp.agenda', message=f'Error processing template: {str(e)}', category='error'))
 
-    return redirect(url_for('agenda_bp.agenda', meeting_number=meeting_number))
 
 
 @agenda_bp.route('/agenda/update', methods=['POST'])
