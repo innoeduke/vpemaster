@@ -9,6 +9,192 @@ import configparser
 import os
 import hashlib
 from sqlalchemy import distinct
+from sqlalchemy.orm import joinedload
+import re
+
+# Compile regex pattern once for performance
+LEVEL_CODE_PATTERN = re.compile(r"([A-Z]+)(\d+)")
+
+
+def extract_level_from_path_code(path_level_str):
+    """
+    Parse pathway abbreviation and level from code string.
+    
+    Args:
+        path_level_str (str): Code string like "SR5", "EH2", "PM1.1"
+    
+    Returns:
+        tuple: (pathway_abbr, level) or (None, None) if parsing fails
+               Example: "SR5" → ("SR", 5), "EH2.3" → ("EH", 2)
+    """
+    if not path_level_str:
+        return None, None
+    
+    match = LEVEL_CODE_PATTERN.match(path_level_str)
+    if match:
+        pathway_abbr = match.group(1)
+        level = int(match.group(2))
+        return pathway_abbr, level
+    
+    return None, None
+
+
+def build_pathway_project_cache(project_ids=None, pathway_ids=None):
+    """
+    Pre-fetch PathwayProject data for efficient O(1) lookups.
+    Reduces N database queries in loops to 1-2 queries total.
+    
+    Args:
+        project_ids (list, optional): List of project IDs to fetch data for
+        pathway_ids (list, optional): List of pathway IDs to fetch data for
+    
+    Returns:
+        dict: {project_id: {pathway_id: PathwayProject}}
+              Allows O(1) lookup: cache[project_id][pathway_id]
+    """
+    query = PathwayProject.query.options(joinedload(PathwayProject.pathway))
+    
+    # Apply filters if provided
+    if project_ids:
+        query = query.filter(PathwayProject.project_id.in_(project_ids))
+    if pathway_ids:
+        query = query.filter(PathwayProject.path_id.in_(pathway_ids))
+    
+    all_pp = query.all()
+    
+    # Build nested dictionary for fast lookups
+    cache = {}
+    for pp in all_pp:
+        if pp.project_id not in cache:
+            cache[pp.project_id] = {}
+        cache[pp.project_id][pp.path_id] = pp
+    
+    return cache
+
+
+def normalize_role_name(name):
+    """
+    Normalize role name for comparison.
+    Strips whitespace, removes hyphens and spaces, converts to lowercase.
+    
+    Args:
+        name (str): Role name to normalize
+    
+    Returns:
+        str: Normalized name (e.g., "Topic Master" → "topicmaster")
+    """
+    if not name:
+        return ""
+    return name.strip().replace(' ', '').replace('-', '').lower()
+
+
+def get_role_aliases():
+    """
+    Return mapping of role name aliases for flexible matching.
+    
+    Returns:
+        dict: Alias mappings (both directions)
+              Example: {'tme': 'toastmaster', 'toastmaster': 'tme', ...}
+    """
+    return {
+        'topicmaster': 'topicsmaster',
+        'topicsmaster': 'topicmaster',
+        'tme': 'toastmaster',
+        'toastmaster': 'tme',
+        'ge': 'generalevaluator',
+        'generalevaluator': 'ge'
+    }
+
+
+def get_dropdown_metadata():
+    """
+    Fetch all dropdown metadata (pathways, roles, projects) in one
+    place for consistency across views.
+    
+    Returns:
+        dict: {
+            'pathways': {type: [pathway_names]},
+            'pathway_mapping': {name: abbr},
+            'abbr_to_name': {abbr: name},
+            'roles': {type: [role_names]},
+            'projects': [project_dicts],
+            'meeting_numbers': [numbers]
+        }
+    """
+    from .models import Role, SessionLog
+    
+    # Pathways
+    all_pathways = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
+    pathway_mapping = {p.name: p.abbr for p in all_pathways}
+    abbr_to_name = {p.abbr: p.name for p in all_pathways if p.abbr}
+    
+    grouped_pathways = {}
+    for p in all_pathways:
+        ptype = p.type or "Other"
+        if ptype not in grouped_pathways:
+            grouped_pathways[ptype] = []
+        grouped_pathways[ptype].append(p.name)
+    
+    # Roles
+    available_roles = Role.query.filter(
+        Role.type.in_(['standard', 'club-specific'])
+    ).order_by(Role.name).all()
+    
+    grouped_roles = {}
+    for r in available_roles:
+        rtype = r.type.replace('-', ' ').title()
+        if rtype not in grouped_roles:
+            grouped_roles[rtype] = []
+        grouped_roles[rtype].append(r.name)
+    
+    # Projects
+    projects = Project.query.order_by(Project.Project_Name).all()
+    all_pp = db.session.query(PathwayProject, Pathway.abbr).join(Pathway).all()
+    
+    project_codes_lookup = {}
+    for pp, path_abbr in all_pp:
+        if pp.project_id not in project_codes_lookup:
+            project_codes_lookup[pp.project_id] = {}
+        project_codes_lookup[pp.project_id][path_abbr] = {
+            'code': pp.code,
+            'level': pp.level
+        }
+    
+    projects_data = [
+        {
+            "id": p.id,
+            "Project_Name": p.Project_Name,
+            "path_codes": project_codes_lookup.get(p.id, {}),
+            "Duration_Min": p.Duration_Min,
+            "Duration_Max": p.Duration_Max
+        }
+        for p in projects
+    ]
+    
+    # Meeting numbers
+    meeting_numbers = sorted(
+        [m[0] for m in db.session.query(distinct(SessionLog.Meeting_Number)).join(Project).all()],
+        reverse=True
+    )
+    
+    # Speakers (contacts with logs)
+    speakers = db.session.query(Contact).join(
+        SessionLog, Contact.id == SessionLog.Owner_ID
+    ).distinct().order_by(Contact.Name).all()
+    
+    # All contacts (for impersonation dropdown)
+    all_contacts = Contact.query.order_by(Contact.Name).all()
+    
+    return {
+        'pathways': grouped_pathways,
+        'pathway_mapping': pathway_mapping,
+        'abbr_to_name': abbr_to_name,
+        'roles': grouped_roles,
+        'projects': projects_data,
+        'meeting_numbers': meeting_numbers,
+        'speakers': speakers,
+        'all_contacts': all_contacts
+    }
 
 
 def get_project_code(project_id, context_path_name=None):

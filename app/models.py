@@ -24,6 +24,34 @@ class Contact(db.Model):
 
     mentor = db.relationship('Contact', remote_side=[id], foreign_keys=[Mentor_ID], backref='mentees')
 
+    def get_member_pathways(self):
+        """
+        Get distinct pathways for this contact from their session logs.
+        Returns list of pathway names ordered alphabetically.
+        """
+        from sqlalchemy import distinct
+        query = db.session.query(SessionLog.pathway).filter(
+            SessionLog.Owner_ID == self.id,
+            SessionLog.pathway.isnot(None),
+            SessionLog.pathway != ''
+        ).distinct().order_by(SessionLog.pathway)
+        return [r[0] for r in query.all()]
+
+    def get_completed_levels(self, pathway_name):
+        """
+        Get completed level numbers for the given pathway.
+        Returns set of integers representing completed levels.
+        """
+        if not pathway_name:
+            return set()
+        
+        achievements = Achievement.query.filter_by(
+            contact_id=self.id,
+            path_name=pathway_name,
+            achievement_type='level-completion'
+        ).all()
+        return {a.level for a in achievements if a.level}
+
 
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -241,6 +269,245 @@ class SessionLog(db.Model):
     media = db.relationship('Media', backref='session_log',
                             uselist=False, cascade='all, delete-orphan')
 
+    def get_display_level_and_type(self, pathway_cache=None):
+        """
+        Determine log type, display level, and project code for this session log.
+        
+        Args:
+            pathway_cache (dict, optional): Pre-fetched pathway/project data for performance.
+                                            Format: {project_id: {pathway_id: PathwayProject}}
+        
+        Returns:
+            tuple: (display_level, log_type, project_code)
+                   - display_level: str (e.g., "1", "2", "General")
+                   - log_type: str ("speech" or "role")
+                   - project_code: str (e.g., "SR1.1", "EH2.3", or "")
+        """
+        import re
+        
+        display_level = "General"
+        log_type = 'role'
+        project_code = ""
+        
+        if not self.session_type or not self.session_type.role:
+            return display_level, log_type, project_code
+        
+        is_prepared_speech = self.project and self.project.Format == 'Prepared Speech'
+        
+        # Determine if this is a speech
+        if (self.session_type.Valid_for_Project and self.Project_ID and self.Project_ID != 60) or is_prepared_speech:
+            log_type = 'speech'
+            pathway_abbr = None
+            found_data = False
+            
+            # Priority 1: Lookup PathwayProject data (Canonical)
+            if self.Project_ID:
+                found_via_cache = False
+                if pathway_cache and self.Project_ID in pathway_cache:
+                    # Use cached data if available
+                    pp_data = pathway_cache[self.Project_ID]
+                    if pp_data:
+                        # Find the BEST PathwayProject matching the user's context
+                        target_path = self.pathway or (self.owner.Current_Path if self.owner else None)
+                        first_pp = None
+                        
+                        if target_path:
+                            for pp in pp_data.values():
+                                if pp.pathway and pp.pathway.name == target_path:
+                                    first_pp = pp
+                                    break
+                        
+                        # Fallback to any if not found
+                        if not first_pp:
+                             first_pp = next(iter(pp_data.values()))
+
+                        display_level = str(first_pp.level) if first_pp.level else "1"
+                        # Optimized: Use pre-loaded relationship from cache
+                        if first_pp.pathway and first_pp.pathway.abbr:
+                            pathway_abbr = first_pp.pathway.abbr
+                        
+                        # Set project code from canonical source immediately
+                        if pathway_abbr:
+                             project_code = f"{pathway_abbr}{first_pp.code}"
+                        else:
+                             project_code = first_pp.code
+                        
+                        found_via_cache = True
+                        found_data = True
+                
+                if not found_via_cache:
+                    # No cache, query directly
+                    # Try to find match with user's current path first
+                    if self.owner and self.owner.Current_Path:
+                        user_path = Pathway.query.filter_by(name=self.owner.Current_Path).first()
+                        if user_path:
+                            pp = PathwayProject.query.filter_by(
+                                project_id=self.Project_ID, 
+                                path_id=user_path.id
+                            ).first()
+                            if pp:
+                                pathway_abbr = user_path.abbr
+                                display_level = str(pp.level) if pp.level else "1"
+                                project_code = f"{pathway_abbr}{pp.code}"
+                                found_data = True
+                    
+                    # Fallback: any pathway
+                    if not found_data:
+                        pp = PathwayProject.query.filter_by(project_id=self.Project_ID).first()
+                        if pp:
+                            path_obj = Pathway.query.get(pp.path_id)
+                            if path_obj:
+                                pathway_abbr = path_obj.abbr
+                                display_level = str(pp.level) if pp.level else "1"
+                                project_code = f"{pathway_abbr}{pp.code}"
+                                found_data = True
+
+            # Priority 2: Use current_path_level if no canonical data found (or as supplement?)
+            # Actually, if we found data, we trust DB. If not, use snapshot.
+            if not found_data and self.current_path_level:
+                match = re.match(r"([A-Z]+)(\d+)", self.current_path_level)
+                if match:
+                    pathway_abbr = match.group(1)
+                    display_level = str(match.group(2))
+                    project_code = self.current_path_level
+        
+        else:  # It's a role
+            if self.current_path_level:
+                match = re.match(r"([A-Z]+)(\d+)", self.current_path_level)
+                if match:
+                    display_level = str(match.group(2))
+        
+        return display_level, log_type, project_code
+    
+    def update_media(self, url):
+        """Update, create, or delete associated media."""
+        if url:
+            if self.media:
+                self.media.url = url
+            else:
+                from .models import Media
+                self.media = Media(url=url)
+        elif self.media:
+            db.session.delete(self.media)
+
+    def update_pathway(self, pathway_name):
+        """Update log pathway and sync with user profile if not a series."""
+        if not pathway_name:
+            return
+            
+        self.pathway = pathway_name
+        
+        # Sync to user profile if relevant
+        if self.owner and self.owner.user:
+            # Skip sync for presentation series
+            if "Series" not in pathway_name:
+                self.owner.user.Current_Path = pathway_name
+                db.session.add(self.owner.user)
+
+    def update_durations(self, data, updated_project=None):
+        """
+        Update durations based on structural changes.
+        Priority: Project Defaults > Session Type Defaults > Preserve Manual Edits.
+        """
+        from .models import SessionType
+        
+        new_project_id = data.get('project_id')
+        if new_project_id in [None, "", "null"]:
+            new_project_id = None
+        else:
+            try:
+                new_project_id = int(new_project_id)
+            except (ValueError, TypeError):
+                new_project_id = None
+
+        project_changed = (self.Project_ID != new_project_id)
+        
+        new_st_title = data.get('session_type_title')
+        st_changed = (new_st_title and self.session_type and self.session_type.Title != new_st_title)
+
+        # Update Project ID first if provided
+        if 'project_id' in data:
+            self.Project_ID = new_project_id
+
+        if project_changed and self.Project_ID:
+            if updated_project:
+                self.Duration_Min = updated_project.Duration_Min
+                self.Duration_Max = updated_project.Duration_Max
+        elif st_changed:
+            new_st = SessionType.query.filter_by(Title=new_st_title).first()
+            if new_st:
+                self.Duration_Min = new_st.Duration_Min
+                self.Duration_Max = new_st.Duration_Max
+
+    def get_summary_data(self):
+        """Get project name, code, and pathway for response serialization."""
+        from .models import Project, PathwayProject, Pathway
+        
+        project_name = "N/A"
+        project_code = None
+        current_pathway = self.owner.Current_Path if self.owner else "N/A"
+
+        if self.Project_ID:
+            project = Project.query.get(self.Project_ID)
+            if project:
+                project_name = project.Project_Name
+                pp = PathwayProject.query.filter_by(project_id=project.id).first()
+                if pp:
+                    pathway_obj = Pathway.query.get(pp.path_id)
+                    if pathway_obj:
+                        current_pathway = pathway_obj.name
+                        project_code = f"{pathway_obj.abbr}{pp.code}"
+
+        return {
+            "project_name": project_name,
+            "project_code": project_code,
+            "pathway": current_pathway
+        }
+
+    def matches_filters(self, pathway=None, level=None, status=None, log_type=None):
+        """
+        Check if this log matches the given filters.
+        
+        Args:
+            pathway (str, optional): Pathway name to filter by (or 'all' for no filtering)
+            level (str, optional): Level to filter by (e.g., "1", "2")
+            status (str, optional): Status to filter by (e.g., "Completed")
+            log_type (str, optional): Pre-determined log type ("speech" or "role")
+        
+        Returns:
+            bool: True if log matches all provided filters
+        """
+        # Level filter
+        if level and hasattr(self, '_display_level'):
+            if self._display_level != level:
+                return False
+        
+        # Pathway filter (only for speeches or if pathway is explicitly set)
+        if pathway and pathway != 'all':
+            current_log_path = getattr(self, 'pathway', None)
+            
+            # If log has a pathway and it doesn't match → reject
+            if current_log_path and current_log_path != pathway:
+                return False
+            
+            # If log has no pathway:
+            # - Speeches must belong to the selected pathway → reject
+            # - Roles are generic → accept
+            if not current_log_path and log_type == 'speech':
+                return False
+        
+        # Status filter
+        if status:
+            if log_type == 'speech':
+                if self.Status != status:
+                    return False
+            else:  # role
+                # For roles, only show if linked to project AND status matches
+                if not (self.Project_ID and self.Status == status):
+                    return False
+        
+        return True
+
 
 class LevelRole(db.Model):
     __tablename__ = 'level_roles'
@@ -271,6 +538,8 @@ class PathwayProject(db.Model):
     code = db.Column(db.String(10))
     level = db.Column(db.Integer, nullable=True)
     type = db.Column(db.Enum('elective', 'required', 'other', name='pathway_project_type_enum'), nullable=False)
+
+    pathway = db.relationship('Pathway', backref='pathway_projects')
 
 
 class Media(db.Model):
