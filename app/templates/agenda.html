@@ -9,24 +9,24 @@
         <div class="agenda-header-logo">
             <img src="{{ url_for('static', filename='images/SHLTMC-logo.png') }}" alt="SHLTMC Logo">
         </div>
-        
+
         <div class="agenda-header-info">
             <p class="club-info">Club No.868941 | Area K1 | Division K | Shanghai Leadership Toastmasters Club</p>
             <h1 class="meeting-title view-mode">
                 {% if selected_meeting.type %}
-                    <span class="meeting-type-badge">{{ selected_meeting.type }}</span>
+                <span class="meeting-type-badge">{{ selected_meeting.type }}</span>
                 {% endif %}
                 {% if selected_meeting and selected_meeting.media and selected_meeting.media.url %}
-                    <a href="{{ selected_meeting.media.url }}" target="_blank">
-                        {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
-                    </a>
-                {% else %}
+                <a href="{{ selected_meeting.media.url }}" target="_blank">
                     {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
+                </a>
+                {% else %}
+                {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
                 {% endif %}
             </h1>
             <p class="subtitle view-mode">
                 {% if selected_meeting.Subtitle %}
-                    {{ selected_meeting.Subtitle }}
+                {{ selected_meeting.Subtitle }}
                 {% endif %}
             </p>
             <!-- Removed video meeting button -->
@@ -52,7 +52,7 @@
         <p>For the best experience, please rotate your device to landscape mode to edit the agenda.</p>
     </div>
 
-    <br/>
+    <br />
     <div class="action-bar">
         <div class="action-bar-left">
             <div class="action-bar-left-content" style="display: flex; flex-direction: column; gap: 5px;">
@@ -60,57 +60,61 @@
                     <label for="meeting-filter">Meeting:</label>
                     <select id="meeting-filter" {% if is_editing %}disabled{% endif %}>
                         {% for num, date in meeting_numbers|sort(reverse=True) %}
-                        <option value="{{ num }}" {% if selected_meeting and num == selected_meeting.Meeting_Number %}selected{% endif %}>
+                        <option value="{{ num }}" {% if selected_meeting and num==selected_meeting.Meeting_Number
+                            %}selected{% endif %}>
                             #{{ num }} - {{ date.strftime('%B %d, %Y') if date else 'No Date' }}
                         </option>
                         {% endfor %}
                     </select>
                 </div>
                 {% if selected_meeting and selected_meeting.manager %}
-                    <div class="meeting-manager-display" style="color: #555;">
-                        Manager: {{ selected_meeting.manager.Name }}
-                    </div>
+                <div class="meeting-manager-display" style="color: #555;">
+                    Manager: {{ selected_meeting.manager.Name }}
+                </div>
                 {% endif %}
             </div>
-            
+
         </div>
         <div class="action-bar-right">
             <div class="button-group" id="view-mode-buttons">
-            {% if selected_meeting %}
+                {% if selected_meeting %}
                 {% if is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
                 {% if selected_meeting.status %}
-                    <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}" title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
-                        <i class="fas fa-fw {% if selected_meeting.status == 'unpublished' %}fa-eye-slash{% elif selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>{{ selected_meeting.status.replace('_', ' ').title() }}
-                    </span>
+                <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}"
+                    title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
+                    <i
+                        class="fas fa-fw {% if selected_meeting.status == 'unpublished' %}fa-eye-slash{% elif selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>{{
+                    selected_meeting.status.replace('_', ' ').title() }}
+                </span>
                 {% endif %}
-                <button id="meeting-status-btn" 
-                        class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'unpublished' %}btn-success{% else %}btn-primary{% endif %}"
-                        data-meeting-number="{{ selected_meeting.Meeting_Number }}"
-                        data-current-status="{{ selected_meeting.status }}"
-                        {% if selected_meeting.status == 'cancelled' %}disabled{% endif %}>
+                <button id="meeting-status-btn"
+                    class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'unpublished' %}btn-success{% else %}btn-primary{% endif %}"
+                    data-meeting-number="{{ selected_meeting.Meeting_Number }}"
+                    data-current-status="{{ selected_meeting.status }}" {% if selected_meeting.status=='cancelled'
+                    %}disabled{% endif %}>
                     {% if selected_meeting.status == 'unpublished' %}
-                        Publish
+                    Publish
                     {% elif selected_meeting.status == 'not started' %}
-                        Start
+                    Start
                     {% elif selected_meeting.status == 'running' %}
-                        Stop
+                    Stop
                     {% elif selected_meeting.status == 'finished' %}
-                        Delete
+                    Delete
                     {% elif selected_meeting.status == 'cancelled' %}
-                        Cancelled
+                    Cancelled
                     {% else %}
-                        {{ selected_meeting.status.replace('_', ' ').title() }}
+                    {{ selected_meeting.status.replace('_', ' ').title() }}
                     {% endif %}
                 </button>
                 <button id="create-btn" class="btn btn-success">New</button>
                 <button id="export-btn" class="btn btn-info">Export</button>
                 <button id="edit-btn" class="btn btn-primary">Edit</button>
                 {% endif %}
-            {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
-    
+
     {# Edit Mode Buttons (Only visible if authorized) #}
     {% if is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
     <div class="button-group" id="edit-mode-buttons" style="display: none;">
@@ -121,10 +125,8 @@
     </div>
     {% endif %}
 
-    <div class='table-container'
-         id="table-container"
-         {# Removed data-session-types, data-contacts, data-projects as they are now fetched via API #}
-         data-project-speakers='{{ project_speakers|tojson|safe }}'>
+    <div class='table-container' id="table-container" {# Removed data-session-types, data-contacts, data-projects as
+        they are now fetched via API #} data-project-speakers='{{ project_speakers|tojson|safe }}'>
 
         <table id="logs-table">
             <thead>
@@ -153,120 +155,122 @@
                     data-project-id="{{ log_dict.Project_ID if log_dict.Project_ID is not none else '' }}"
                     data-meeting-number="{{ log_dict.Meeting_Number }}"
                     data-meeting-date="{{ log_dict.meeting_date_str }}"
-                    data-is-section="{{ log_dict.is_section|lower }}"
-                    data-is-hidden="{{ log_dict.is_hidden|lower }}"
+                    data-is-section="{{ log_dict.is_section|lower }}" data-is-hidden="{{ log_dict.is_hidden|lower }}"
                     data-is-readonly="{{ log_dict.is_readonly|default(false)|lower }}"
-                    data-meeting-seq="{{ log_dict.Meeting_Seq }}"
-                    data-start-time="{{ log_dict.Start_Time_str }}"
-                    {# Use predefined title if available, otherwise fallback to log title #}
+                    data-meeting-seq="{{ log_dict.Meeting_Seq }}" data-start-time="{{ log_dict.Start_Time_str }}" {# Use
+                    predefined title if available, otherwise fallback to log title #}
                     data-session-title="{{ log_dict.Session_Title if log_dict.Session_Title is not none else '' }}"
-                    data-type-id="{{ log_dict.Type_ID }}"
-                    data-owner-id="{{ log_dict.Owner_ID }}"
+                    data-type-id="{{ log_dict.Type_ID }}" data-owner-id="{{ log_dict.Owner_ID }}"
                     data-credentials="{{ log_dict.Credentials if log_dict.Credentials is not none else '' }}"
                     data-duration-min="{{ log_dict.Duration_Min if log_dict.Duration_Min is not none else '' }}"
                     data-duration-max="{{ log_dict.Duration_Max if log_dict.Duration_Max is not none else '' }}"
-                    data-status="{{ log_dict.Status if log_dict.Status else '' }}"
-                    data-role="{{ log_dict.role or '' }}"
-                    data-current-path-level="{{ log_dict.current_path_level or '' }}"
+                    data-status="{{ log_dict.Status if log_dict.Status else '' }}" data-role="{{ log_dict.role or '' }}"
+                    data-project-code="{{ log_dict.project_code or '' }}"
                     class="{{ 'section-row' if log_dict.is_section else '' }} {{ 'hidden-row' if log_dict.is_hidden else '' }} {{ 'readonly-row' if log_dict.is_readonly|default(false) else '' }}">
 
                     {# --- Row Content using log_dict --- #}
                     {% if log_dict.is_section %}
-                        <td colspan="4" class="non-edit-mode-cell">
-                            {# Display section title #}
-                            {{ log_dict.Session_Title or log_dict.session_type_title }}
-                        </td>
+                    <td colspan="4" class="non-edit-mode-cell">
+                        {# Display section title #}
+                        {{ log_dict.Session_Title or log_dict.session_type_title }}
+                    </td>
                     {% else %}
-                        <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>
-                        <td class="non-edit-mode-cell">
-                            <div class="speech-tooltip-wrapper">
-                               {% set cleaned_title = log_dict.Session_Title|replace('"', '') if log_dict.Session_Title else '' %}
+                    <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>
+                    <td class="non-edit-mode-cell">
+                        <div class="speech-tooltip-wrapper">
+                            {% set cleaned_title = log_dict.Session_Title|replace('"', '') if log_dict.Session_Title
+                            else '' %}
 
-                               {# Display Title #}
-                               {% if log_dict.session_type_title == 'Evaluation' %}
-                                   {% set display_title = 'Evaluator for ' ~ cleaned_title %}
-                               {% elif log_dict.session_type_title in ['Pathway Speech', 'Presentation'] or log_dict.Project_ID %}
-                                   {% set display_title = '"' ~ cleaned_title ~ '"' %}
-                               {% elif log_dict.predefined %}
-                                   {% set display_title = log_dict.session_type_title %}
-                               {% else %}
-                                   {% set display_title = cleaned_title %}
-                               {% endif %}
-                               
-                               {% if log_dict.media_url %}
-                                   <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
-                                       {{ display_title }}
-                                   </a>
-                               {% else %}
-                                   {{ display_title }}
-                               {% endif %}
-                               
-                               {% if log_dict.session_type_title == 'Evaluation' and log_dict.speaker_is_dtm %}
-                                   <sup class="dtm-superscript">DTM</sup>
-                               {% endif %}
-                               {# Append Project Code if it's a project #}
-                               {% if log_dict.project_code_display %}
-                                   {% if log_dict.Project_ID and log_dict.pathway_code %}
-                                       <a href="{{ url_for('pathways_bp.pathway_library') }}?path={{ log_dict.pathway_code }}&level={{ log_dict.level }}&project_id={{ log_dict.Project_ID }}" class="project-code-link" title="View in Pathway Library">
-                                           ({{ log_dict.project_code_display }})
-                                       </a>
-                                   {% else %}
-                                       <span class="project-code-link" title="Project Code">
-                                           ({{ log_dict.project_code_display }})
-                                       </span>
-                                   {% endif %}
-                               {% endif %}
+                            {# Display Title #}
+                            {% if log_dict.session_type_title == 'Evaluation' %}
+                            {% set display_title = 'Evaluator for ' ~ cleaned_title %}
+                            {% elif log_dict.session_type_title in ['Pathway Speech', 'Presentation'] or
+                            log_dict.Project_ID %}
+                            {% set display_title = '"' ~ cleaned_title ~ '"' %}
+                            {% elif log_dict.predefined %}
+                            {% set display_title = log_dict.session_type_title %}
+                            {% else %}
+                            {% set display_title = cleaned_title %}
+                            {% endif %}
 
-                               {# Tooltip for Projects #}
-                               {% if log_dict.Project_ID %}
-                               <div class="speech-tooltip">
-                                   <span class="tooltip-title">{{ log_dict.project_name }}</span>
-                                   <span class="tooltip-purpose">{{ log_dict.project_purpose }}</span>
-                               </div>
-                               {% endif %}
+                            {% if log_dict.media_url %}
+                            <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
+                                {{ display_title }}
+                            </a>
+                            {% else %}
+                            {{ display_title }}
+                            {% endif %}
+
+                            {% if log_dict.session_type_title == 'Evaluation' and log_dict.speaker_is_dtm %}
+                            <sup class="dtm-superscript">DTM</sup>
+                            {% endif %}
+                            {# Append Project Code if it's a project #}
+                            {% if log_dict.project_code_display %}
+                            {% if log_dict.Project_ID and log_dict.pathway_code %}
+                            <a href="{{ url_for('pathways_bp.pathway_library') }}?path={{ log_dict.pathway_code }}&level={{ log_dict.level }}&project_id={{ log_dict.Project_ID }}"
+                                class="project-code-link" title="View in Pathway Library">
+                                ({{ log_dict.project_code_display }})
+                            </a>
+                            {% else %}
+                            <span class="project-code-link" title="Project Code">
+                                ({{ log_dict.project_code_display }})
+                            </span>
+                            {% endif %}
+                            {% endif %}
+
+                            {# Tooltip for Projects #}
+                            {% if log_dict.Project_ID %}
+                            <div class="speech-tooltip">
+                                <span class="tooltip-title">{{ log_dict.project_name }}</span>
+                                <span class="tooltip-purpose">{{ log_dict.project_purpose }}</span>
                             </div>
-                        </td>
-                        <td class="non-edit-mode-cell">
-                             {# Use pre-fetched owner data from log_dict #}
-                            {% if log_dict.owner_name %}
-                                {{ log_dict.owner_name }}
-                                {% if log_dict.owner_dtm %}
-                                    <sup class="dtm-superscript">DTM</sup>
-                                {% endif %}
-                                {# Show trophy for award winners #}
-                                {% if log_dict.award_type and log_dict.role not in ns.displayed_awards %}
-                                    <span class="icon-btn icon-btn-voted" title="{{ log_dict.award_type }} Winner">
-                                        <i class="fas fa-award"></i>
-                                    </span>
-                                    {% set ns.displayed_awards = ns.displayed_awards + [log_dict.role] %}
-                                {% endif %}
-                                <span class="owner-meta">
-                                    {% if log_dict.Credentials %}
-                                        <br/>{{ log_dict.Credentials }}
-                                    {% endif %}
-                                </span>
                             {% endif %}
-                        </td>
-                        <td class="non-edit-mode-cell">
-                            {% if log_dict.Duration_Min and log_dict.Duration_Max %}{{ log_dict.Duration_Min }}'-{{ log_dict.Duration_Max }}'
-                            {% elif log_dict.Duration_Max %}{{ log_dict.Duration_Max }}'
+                        </div>
+                    </td>
+                    <td class="non-edit-mode-cell">
+                        {# Use pre-fetched owner data from log_dict #}
+                        {% if log_dict.owner_name %}
+                        {{ log_dict.owner_name }}
+                        {% if log_dict.owner_dtm %}
+                        <sup class="dtm-superscript">DTM</sup>
+                        {% endif %}
+                        {# Show trophy for award winners #}
+                        {% if log_dict.award_type and log_dict.role not in ns.displayed_awards %}
+                        <span class="icon-btn icon-btn-voted" title="{{ log_dict.award_type }} Winner">
+                            <i class="fas fa-award"></i>
+                        </span>
+                        {% set ns.displayed_awards = ns.displayed_awards + [log_dict.role] %}
+                        {% endif %}
+                        <span class="owner-meta">
+                            {% if log_dict.Credentials %}
+                            <br />{{ log_dict.Credentials }}
                             {% endif %}
-                        </td>
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="non-edit-mode-cell">
+                        {% if log_dict.Duration_Min and log_dict.Duration_Max %}{{ log_dict.Duration_Min }}'-{{
+                        log_dict.Duration_Max }}'
+                        {% elif log_dict.Duration_Max %}{{ log_dict.Duration_Max }}'
+                        {% endif %}
+                    </td>
                     {% endif %}
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         <div class="footnote">
-            <a href="https://www.toastmasters.org/education/education-programs-faq#faqTop">Pathways award credentials</a> are written as follows:
-        <ul>
-            <li>Only the most recently achieved award will show</li>
-            <li>Any Pathways award credential overwrites a traditional education program award credential (both Communication and Leadership)</li>
-            <li>DTM overwrites all education award credentials, whether traditional program or Pathways</li>
-        </ul>
+            <a href="https://www.toastmasters.org/education/education-programs-faq#faqTop">Pathways award
+                credentials</a> are written as follows:
+            <ul>
+                <li>Only the most recently achieved award will show</li>
+                <li>Any Pathways award credential overwrites a traditional education program award credential (both
+                    Communication and Leadership)</li>
+                <li>DTM overwrites all education award credentials, whether traditional program or Pathways</li>
+            </ul>
         </div>
     </div>
-    
+
     <div id="createAgendaModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeCreateAgendaModal()">&times;</span>
@@ -287,14 +291,16 @@
                     </tr>
                     <tr>
                         <td><label for="start_time">Start Time:</label></td>
-                        <td><input type="time" id="start_time" name="start_time" value="{{ default_start_time }}" required></td>
+                        <td><input type="time" id="start_time" name="start_time" value="{{ default_start_time }}"
+                                required></td>
                     </tr>
                     <tr>
                         <td><label for="meeting_type">Meeting Type:</label></td>
                         <td>
                             <select id="meeting_type" name="meeting_type" required>
                                 {% for type_name in meeting_types.keys() %}
-                                    <option value="{{ type_name }}" {% if type_name == 'Keynote Speech' %}selected{% endif %}>{{ type_name }}</option>
+                                <option value="{{ type_name }}" {% if type_name=='Keynote Speech' %}selected{% endif %}>
+                                    {{ type_name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
@@ -324,9 +330,9 @@
 
     <script>
         // Pass Python data to global JS variables used by speech_modal.js
-        var pathwayMap = {{ pathway_mapping|tojson|safe }};
-        var groupedPathways = {{ pathways|tojson|safe }};
-    
+        var pathwayMap = {{ pathway_mapping| tojson | safe }};
+        var groupedPathways = {{ pathways| tojson | safe }};
+
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>

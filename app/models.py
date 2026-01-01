@@ -258,7 +258,7 @@ class SessionLog(db.Model):
     Status = db.Column(db.String(50))
     state = db.Column(db.String(50), nullable=False,
                       default='active')  # Can be 'active', 'waiting', 'cancelled'
-    current_path_level = db.Column(db.String(10))
+    project_code = db.Column(db.String(10))
     pathway = db.Column(db.String(100))
 
     meeting = db.relationship('Meeting', backref='session_logs')
@@ -362,18 +362,18 @@ class SessionLog(db.Model):
                                 project_code = f"{pathway_abbr}{pp.code}"
                                 found_data = True
 
-            # Priority 2: Use current_path_level if no canonical data found (or as supplement?)
+            # Priority 2: Use project_code if no canonical data found (or as supplement?)
             # Actually, if we found data, we trust DB. If not, use snapshot.
-            if not found_data and self.current_path_level:
-                match = re.match(r"([A-Z]+)(\d+)", self.current_path_level)
+            if not found_data and self.project_code:
+                match = re.match(r"([A-Z]+)(\d+)", self.project_code)
                 if match:
                     pathway_abbr = match.group(1)
                     display_level = str(match.group(2))
-                    project_code = self.current_path_level
+                    project_code = self.project_code
         
         else:  # It's a role
-            if self.current_path_level:
-                match = re.match(r"([A-Z]+)(\d+)", self.current_path_level)
+            if self.project_code:
+                match = re.match(r"([A-Z]+)(\d+)", self.project_code)
                 if match:
                     display_level = str(match.group(2))
         

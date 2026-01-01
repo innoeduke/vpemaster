@@ -815,7 +815,7 @@ document.addEventListener("DOMContentLoaded", () => {
         duration_max: row.dataset.durationMax,
         project_id: row.dataset.projectId,
         status: row.dataset.status,
-        current_path_level: row.dataset.currentPathLevel || "",
+        project_code: row.dataset.projectCode || "",
       };
     }
 
@@ -850,7 +850,7 @@ document.addEventListener("DOMContentLoaded", () => {
         row.querySelector('[data-field="Duration_Max"] input')?.value || null,
       project_id: row.dataset.projectId,
       status: row.dataset.status,
-      current_path_level: row.dataset.currentPathLevel || "", // <-- Include path/level from dataset
+      project_code: row.dataset.projectCode || "", // <-- Include path/level from dataset
     };
   }
 

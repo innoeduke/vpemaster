@@ -13,7 +13,7 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from .utils import derive_current_path_level, load_setting, derive_credentials, get_project_code, get_meetings_by_status, load_all_settings, get_excomm_team
+from .utils import derive_project_code, load_setting, derive_credentials, get_project_code, get_meetings_by_status, load_all_settings, get_excomm_team
 from .tally_sync import sync_participants_to_tally
 
 agenda_bp = Blueprint('agenda_bp', __name__)
@@ -106,7 +106,7 @@ def _create_or_update_session(item, meeting_number, seq):
         # Use the centralized utility function
         credentials = derive_credentials(owner_contact)
 
-    # --- Automatic current_path_level Derivation ---
+    # --- Automatic project_code Derivation ---
     temp_log_data = {
         'Project_ID': project_id,
         'Type_ID': type_id,
@@ -123,7 +123,7 @@ def _create_or_update_session(item, meeting_number, seq):
         log_for_derivation.session_type = session_type
         log_for_derivation.project = temp_log_data['project']
 
-    current_path_level = derive_current_path_level(
+    project_code = derive_project_code(
         log_for_derivation, owner_contact)
         
     # --- Duration Handling ---
@@ -166,7 +166,7 @@ def _create_or_update_session(item, meeting_number, seq):
             Project_ID=project_id,
             Session_Title=session_title,
             Status=status,
-            current_path_level=current_path_level,
+            project_code=project_code,
             pathway=pathway_val
         )
         db.session.add(new_log)
@@ -187,7 +187,7 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Status = status
             if session_title is not None:
                 log.Session_Title = session_title
-            log.current_path_level = current_path_level
+            log.project_code = project_code
             
             # Use captured old_owner_id for logic
             if pathway_val:
@@ -355,7 +355,7 @@ def _get_processed_logs_data(selected_meeting_num):
             'Duration_Min': log.Duration_Min,
             'Duration_Max': log.Duration_Max,
             'Status': log.Status,
-            'current_path_level': log.current_path_level,
+            'project_code': log.project_code,
             # SessionType fields
             'is_section': session_type.Is_Section if session_type else False,
             'session_type_title': session_type.Title if session_type else 'Unknown Type',

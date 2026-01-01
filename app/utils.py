@@ -367,9 +367,9 @@ def sync_contact_metadata(contact_id):
     return contact
 
 
-def derive_current_path_level(log, owner_contact):
+def derive_project_code(log, owner_contact):
     """
-    Derives the 'current_path_level' based on the role, project, and owner's pathway.
+    Derives the 'project_code' based on the role, project, and owner's pathway.
     - For Speakers/Evaluators with a linked project, returns the specific project code (e.g., PM1.1).
     - For other roles, returns the general level code by checking the highest achievement (e.g., PM2 if L1 is done).
     - Returns None if insufficient information is available.
@@ -381,7 +381,7 @@ def derive_current_path_level(log, owner_contact):
         owner_contact (Contact): The Contact object of the person assigned to the role.
 
     Returns:
-        str or None: The derived current_path_level string or None.
+        str or None: The derived project_code string or None.
     """
     if not owner_contact or not owner_contact.Current_Path:
         return None  # Cannot derive without owner or their working path

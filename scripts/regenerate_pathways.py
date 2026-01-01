@@ -32,9 +32,9 @@ def regenerate_pathways(apply_changes=False):
         for log in logs:
             pathway_val = None
 
-            # Priority 1: Parse current_path_level (e.g., "SR5.3")
-            if log.current_path_level:
-                match = re.match(r"([A-Z]+)(\d+)", log.current_path_level)
+            # Priority 1: Parse project_code (e.g., "SR5.3")
+            if log.project_code:
+                match = re.match(r"([A-Z]+)(\d+)", log.project_code)
                 if match:
                     abbr = match.group(1)
                     # Lookup full name
@@ -67,7 +67,7 @@ def regenerate_pathways(apply_changes=False):
             print("Run with --apply to execute changes.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Regenerate pathway field in SessionLogs based on current_path_level or owner's path.")
+    parser = argparse.ArgumentParser(description="Regenerate pathway field in SessionLogs based on project_code or owner's path.")
     parser.add_argument("--apply", action="store_true", help="Apply changes to the database.")
     args = parser.parse_args()
     

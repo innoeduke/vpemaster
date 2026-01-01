@@ -236,7 +236,7 @@ def _sort_and_consolidate(grouped_logs):
                         'role_name': role_name,
                         'session_type': item.session_type,
                         'owner': item.owner,
-                        'current_path_level': item.current_path_level,
+                        'project_code': item.project_code,
                         'display_pathway': item.display_pathway,
                         'logs': [item]
                     }
@@ -523,13 +523,13 @@ def get_speech_log_details(log_id):
     # especially for Presentations or if the user is not linked to a path
     level = 1
     if log.Project_ID and log.project:
-        # Check current_path_level first
-        if log.current_path_level:
-            match = re.match(r"([A-Z]+)(\d+)", log.current_path_level)
+        # Check project_code first
+        if log.project_code:
+            match = re.match(r"([A-Z]+)(\d+)", log.project_code)
             if match:
                 abbr = match.group(1)
                 level = int(match.group(2))
-                log.project_code = log.current_path_level
+                log.project_code = log.project_code
                 
                 pathway_db = Pathway.query.filter_by(abbr=abbr).first()
                 if pathway_db:
