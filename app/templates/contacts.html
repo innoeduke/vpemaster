@@ -154,9 +154,10 @@
 <script>
   var MENTOR_CANDIDATES = [
     {% for m in mentor_candidates %}
-  { id: { { m.id } }, name: "{{ m.Name }}" },
+  { id: {{ m.id }}, name: {{ m.Name | tojson }} },
   {% endfor %}
   ];
+  console.log("MENTOR_CANDIDATES loaded:", MENTOR_CANDIDATES);
 </script>
 <script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
 

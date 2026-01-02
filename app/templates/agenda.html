@@ -39,7 +39,7 @@
     <div class="wod-display">
         <div class="envelope-flap"></div>
         <div class="letter">
-            <label>Word of the Day:</label>
+            <span style="font-weight: 600;">Word of the Day:</span>
             <span>"{{ selected_meeting.WOD }}"</span>
         </div>
     </div>
@@ -279,25 +279,26 @@
                 <table class="form-table">
                     <tr>
                         <td><label for="meeting_number">Meeting Number:</label></td>
-                        <td><input type="number" id="meeting_number" name="meeting_number" required></td>
+                        <td><input type="number" id="meeting_number" name="meeting_number" autocomplete="off" required>
+                        </td>
                     </tr>
                     <tr>
                         <td><label for="meeting_title">Meeting Title:</label></td>
-                        <td><input type="text" id="meeting_title" name="meeting_title"></td>
+                        <td><input type="text" id="meeting_title" name="meeting_title" autocomplete="off"></td>
                     </tr>
                     <tr>
                         <td><label for="meeting_date">Meeting Date:</label></td>
-                        <td><input type="date" id="meeting_date" name="meeting_date" required></td>
+                        <td><input type="date" id="meeting_date" name="meeting_date" autocomplete="off" required></td>
                     </tr>
                     <tr>
                         <td><label for="start_time">Start Time:</label></td>
                         <td><input type="time" id="start_time" name="start_time" value="{{ default_start_time }}"
-                                required></td>
+                                autocomplete="off" required></td>
                     </tr>
                     <tr>
                         <td><label for="meeting_type">Meeting Type:</label></td>
                         <td>
-                            <select id="meeting_type" name="meeting_type" required>
+                            <select id="meeting_type" name="meeting_type" autocomplete="off" required>
                                 {% for type_name in meeting_types.keys() %}
                                 <option value="{{ type_name }}" {% if type_name=='Keynote Speech' %}selected{% endif %}>
                                     {{ type_name }}</option>
@@ -308,7 +309,7 @@
                     <tr>
                         <td><label for="ge_mode">GE Style:</label></td>
                         <td>
-                            <select id="ge_mode" name="ge_mode" required>
+                            <select id="ge_mode" name="ge_mode" autocomplete="off" required>
                                 <option value="1">Distributed (1ms+3m)</option>
                                 <option value="0" selected>Traditional (5m)</option>
                             </select>

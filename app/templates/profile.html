@@ -45,14 +45,15 @@ content %}
       <tr>
         <td><label for="email">Email:</label></td>
         <td>
-          <input type="email" id="email" name="email" value="{{ user.Email if user.Email else '' }}" />
+          <input type="email" id="email" name="email" value="{{ user.Email if user.Email else '' }}"
+            autocomplete="email" />
         </td>
       </tr>
       <tr>
         <td><label for="phone_number">Phone Number:</label></td>
         <td>
           <input type="text" id="phone_number" name="phone_number"
-            value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}" />
+            value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}" autocomplete="tel" />
         </td>
       </tr>
       <tr>
@@ -83,7 +84,8 @@ content %}
       <tr>
         <td><label for="bio">Bio:</label></td>
         <td>
-          <textarea id="bio" name="bio" rows="4">{{ user.contact.Bio if user.contact.Bio else '' }}</textarea>
+          <textarea id="bio" name="bio" rows="4"
+            autocomplete="off">{{ user.contact.Bio if user.contact.Bio else '' }}</textarea>
         </td>
       </tr>
       {% else %}
@@ -114,14 +116,16 @@ content %}
       <tr>
         <td><label for="new_password">New Password:</label></td>
         <td>
-          <input type="password" id="new_password" name="new_password" required minlength="8" />
+          <input type="password" id="new_password" name="new_password" autocomplete="new-password" required
+            minlength="8" />
           <small class="note">Minimum 8 characters.</small>
         </td>
       </tr>
       <tr>
         <td><label for="confirm_password">Confirm Password:</label></td>
         <td>
-          <input type="password" id="confirm_password" name="confirm_password" required minlength="8" />
+          <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required
+            minlength="8" />
         </td>
       </tr>
     </table>
