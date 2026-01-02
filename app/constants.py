@@ -11,3 +11,10 @@ class SessionTypeID:
     TOPICS_SPEECH = 36
     PRESENTATION = 43
     PANEL_DISCUSSION = 44
+
+
+class ProjectID:
+    """
+    Constants for Project IDs to avoid hardcoding.
+    """
+    GENERIC = 60

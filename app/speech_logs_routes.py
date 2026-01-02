@@ -15,6 +15,7 @@ from sqlalchemy import distinct
 from sqlalchemy.orm import joinedload
 from datetime import datetime
 import re
+from .constants import ProjectID
 
 speech_logs_bp = Blueprint('speech_logs_bp', __name__)
 
@@ -491,7 +492,8 @@ def show_speech_logs():
         impersonated_user_name=pathway_info['impersonated_user_name'],
         viewed_contact=viewed_contact,
         member_pathways=pathway_info['member_pathways'],
-        active_level=active_level
+        active_level=active_level,
+        GENERIC_PROJECT_ID=ProjectID.GENERIC
     )
 
 
@@ -551,7 +553,7 @@ def get_speech_log_details(log_id):
                     level = pp.level
             else:
                 log.project_code = ""
-                if log.Project_ID == 60: # Generic
+                if log.project and log.project.is_generic: # Generic
                     log.project_code = "TM1.0"
 
     log_data = {

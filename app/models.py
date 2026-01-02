@@ -1,4 +1,5 @@
 from . import db
+from .constants import ProjectID
 
 
 class Contact(db.Model):
@@ -128,6 +129,11 @@ class Project(db.Model):
     Purpose = db.Column(db.String(255))
     Requirements = db.Column(db.String(500))
     Resources = db.Column(db.String(500))
+    
+    @property
+    def is_generic(self):
+        """Returns True if this is the generic project."""
+        return self.id == ProjectID.GENERIC
 
     def resolve_context(self, context_path_name=None):
         """
@@ -162,7 +168,7 @@ class Project(db.Model):
         Returns the project code based on a pathway context.
         """
         # Handle generic project
-        if self.id == 60:
+        if self.is_generic:
             return "TM1.0"
 
         pp, path_obj = self.resolve_context(context_path_name)
@@ -179,7 +185,7 @@ class Project(db.Model):
         """
         Returns the level based on a pathway context.
         """
-        if self.id == 60:
+        if self.is_generic:
             return 1
             
         pp, _ = self.resolve_context(context_path_name)
@@ -344,7 +350,7 @@ class SessionLog(db.Model):
         is_prepared_speech = self.project and self.project.Format == 'Prepared Speech'
         
         # Determine if this is a speech
-        if (self.session_type.Valid_for_Project and self.Project_ID and self.Project_ID != 60) or is_prepared_speech:
+        if (self.session_type.Valid_for_Project and self.Project_ID and self.Project_ID != ProjectID.GENERIC) or is_prepared_speech:
             log_type = 'speech'
             pathway_abbr = None
             found_data = False

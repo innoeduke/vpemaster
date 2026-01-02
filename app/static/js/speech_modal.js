@@ -326,7 +326,7 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
     levelToSelect = String(levelToSelect);
   }
 
-  if (projectToSelect == "60") {
+  if (projectToSelect == GENERIC_PROJECT_ID) {
     modalElements.genericCheckbox.checked = true;
     toggleGeneric(true);
     modalElements.pathwaySelect.value = pathwayToSelect || "";
@@ -545,7 +545,7 @@ function buildSavePayload() {
     default: // Pathway Speech
       const isGeneric = genericCheckbox.checked;
       payload.session_title = speechTitle.value;
-      payload.project_id = isGeneric ? "60" : projectSelect.value || "60";
+      payload.project_id = isGeneric ? GENERIC_PROJECT_ID : projectSelect.value || GENERIC_PROJECT_ID;
       payload.pathway = pathwaySelect.value;
       break;
   }
@@ -619,7 +619,7 @@ function updateAgendaRow(logId, updateResult, payload) {
       wrapper.className = "speech-tooltip-wrapper";
       wrapper.textContent = `${title} ${code}`.trim();
 
-      if (updateResult.project_id && updateResult.project_id != "60") {
+      if (updateResult.project_id && updateResult.project_id != GENERIC_PROJECT_ID) {
         const tooltip = document.createElement("div");
         tooltip.className = "speech-tooltip";
         tooltip.innerHTML = `<span class="tooltip-title">${projName || ""
@@ -670,13 +670,13 @@ function updateAgendaRow(logId, updateResult, payload) {
   );
   if (viewTitleCell) {
     let title =
-      sessionType === "Pathway Speech" && updateResult.project_id != "60"
+      sessionType === "Pathway Speech" && updateResult.project_id != GENERIC_PROJECT_ID
         ? `"${updateResult.session_title.replace(/"/g, "")}"`
         : updateResult.session_title;
     let code = updateResult.project_code
       ? `(${updateResult.project_code})`
       : "";
-    if (updateResult.project_id == "60") code = "(TM1.0)";
+    if (updateResult.project_id == GENERIC_PROJECT_ID) code = "(TM1.0)";
 
     let projName = updateResult.project_name;
     let projPurpose = "";
@@ -694,7 +694,7 @@ function updateAgendaRow(logId, updateResult, payload) {
     const wrapper = document.createElement("div");
     wrapper.className = "speech-tooltip-wrapper";
     wrapper.textContent = `${title} ${code}`.trim();
-    if (updateResult.project_id && updateResult.project_id != "60") {
+    if (updateResult.project_id && updateResult.project_id != GENERIC_PROJECT_ID) {
       const tooltip = document.createElement("div");
       tooltip.className = "speech-tooltip";
       tooltip.innerHTML = `<span class="tooltip-title">${projName || ""
@@ -729,7 +729,7 @@ function updateSpeechLogCard(logId, updateResult, payload) {
     let code = updateResult.project_code
       ? `(${updateResult.project_code})`
       : "";
-    if (updateResult.project_id == "60") code = "(TM1.0)";
+    if (updateResult.project_id == GENERIC_PROJECT_ID) code = "(TM1.0)";
     card.querySelector(".project-code").innerText = code;
     card.querySelector(".pathway-info").innerText =
       updateResult.pathway || "N/A";

@@ -3,7 +3,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
 from .auth.utils import login_required
 from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, Role, Vote, Pathway, PathwayProject
-from .constants import SessionTypeID
+from .constants import SessionTypeID, ProjectID
 from . import db
 from sqlalchemy import distinct, orm, func
 from datetime import datetime, timedelta
@@ -313,7 +313,7 @@ def _get_processed_logs_data(selected_meeting_num):
                          pathway_code_for_dict = pathway_obj.abbr
                          level_for_dict = pp.level
         
-        elif log.Project_ID == 60:
+        elif log.project and log.project.is_generic:
             project_code_str = "TM1.0"
         elif project:  # Calculate code for any project, even if no owner
             # Use model's resolution logic which includes fallback
@@ -514,7 +514,8 @@ def agenda():
                            project_speakers=project_speakers,  # For JS
                            meeting_templates=meeting_templates,
                            meeting_types=current_app.config['MEETING_TYPES'],
-                           default_start_time=default_start_time)
+                           default_start_time=default_start_time,
+                           GENERIC_PROJECT_ID=ProjectID.GENERIC)
 
 
 # --- API Endpoints for Asynchronous Data Loading ---
@@ -667,7 +668,7 @@ def _get_all_speech_details(logs_data, pathway_mapping):
 
         # Handle Pathway Speech types and Presentation
         if session_type.id in speech_session_type_ids.union({presentation_session_type_id}) and project:
-            if project.id == 60:  # Generic Project
+            if project.is_generic:  # Generic Project
                 pathway_name = "Generic"
                 pathway_project_code = "1.0"
                 pathway_obj = None
@@ -726,7 +727,7 @@ def _format_export_row(log, session_type, contact, project, pathway_mapping):
         session_type.Title if session_type else '')
     project_code_str = None
 
-    if log.Project_ID == 60:
+    if log.project and log.project.is_generic:
         project_code_str = "TM1.0"
         if not log.Session_Title and project:
             session_title_str = project.Project_Name
