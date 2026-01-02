@@ -2,7 +2,7 @@
 
 from .auth.utils import login_required, is_authorized
 from flask import Blueprint, render_template, request, session, jsonify, current_app
-from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole, Waitlist, Role, Vote
+from .models import SessionLog, SessionType, Contact, Meeting, User, LevelRole, Waitlist, Role, Vote, Pathway, PathwayProject
 from . import db
 from datetime import datetime
 import re
@@ -10,6 +10,7 @@ import secrets
 from sqlalchemy import or_
 from .utils import derive_credentials
 from .utils import get_meetings_by_status
+from .constants import SessionTypeID
 
 booking_bp = Blueprint('booking_bp', __name__)
 
@@ -665,6 +666,30 @@ def book_or_assign_role():
         for session_log in sessions_to_update:
             new_path_level = session_log.derive_project_code(
                 owner_contact) if owner_contact else None
+
+            # --- Auto-Resolution of Project ID from Next_Project ---
+            if owner_contact and owner_contact.Next_Project and session_log.Type_ID == SessionTypeID.PREPARED_SPEECH:
+                # 1. Get the current path abbreviation
+                current_path_name = owner_contact.Current_Path
+                if current_path_name:
+                    pathway = Pathway.query.filter_by(name=current_path_name).first()
+                    if pathway and pathway.abbr:
+                        # 2. Check if Next_Project matches current path
+                        if owner_contact.Next_Project.startswith(pathway.abbr):
+                            # 3. Extract the numeric code suffix (e.g., "1.2" from "DL1.2")
+                            code_suffix = owner_contact.Next_Project[len(pathway.abbr):]
+                            
+                            # 4. Find the matching PathwayProject
+                            pp = PathwayProject.query.filter_by(
+                                path_id=pathway.id,
+                                code=code_suffix
+                            ).first()
+                            
+                            if pp:
+                                session_log.Project_ID = pp.project_id
+                                # Re-derive project code now that Project ID is set 
+                                # (though Next_Project basically IS the code, we want consistency)
+                                new_path_level = owner_contact.Next_Project
 
             session_log.Owner_ID = owner_id_to_set
             session_log.project_code = new_path_level

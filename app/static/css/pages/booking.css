@@ -148,6 +148,7 @@
     border: 1px solid transparent;
     border-radius: 4px;
     padding: 0 10px;
+    font-size: 0.8em;
 }
 
 .timeline-event:hover {

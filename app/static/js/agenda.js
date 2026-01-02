@@ -1333,6 +1333,37 @@ document.addEventListener("DOMContentLoaded", () => {
             );
 
             updatePairedSession(currentRow, selectedContact);
+
+            // --- Auto-update Project for Prepared Speeches (ID 30) ---
+            if (
+              currentSessionType &&
+              currentSessionType.id == 30 &&
+              selectedContact.Next_Project &&
+              window.allProjects
+            ) {
+              const nextProjCode = selectedContact.Next_Project;
+              let foundProjId = null;
+
+              for (const proj of window.allProjects) {
+                if (proj.path_codes) {
+                  for (const [abbr, details] of Object.entries(
+                    proj.path_codes
+                  )) {
+                    if (abbr + details.code === nextProjCode) {
+                      foundProjId = proj.id;
+                      break;
+                    }
+                  }
+                }
+                if (foundProjId) break;
+              }
+
+              if (foundProjId) {
+                currentRow.dataset.projectId = foundProjId;
+                // Optional: visual cue?
+                // console.log("Auto-updated project to", foundProjId);
+              }
+            }
           });
           container.appendChild(item);
         });
