@@ -401,23 +401,14 @@ def _get_achievement_status(speaker_id, speaker_user, selected_pathway):
 
 
 def _get_role_metadata():
-    """Fetch role icons and config for template."""
+    """Fetch role icons for template."""
     all_roles_db = Role.query.all()
     role_icons = {
         r.name: r.icon or current_app.config['DEFAULT_ROLE_ICON']
         for r in all_roles_db
     }
     
-    roles_config = {
-        r.name.upper().replace(' ', '_').replace('-', '_'): {
-            'name': r.name,
-            'icon': r.icon,
-            'award': r.award_category,
-            'unique': r.is_distinct
-        } for r in all_roles_db
-    }
-    
-    return role_icons, roles_config
+    return role_icons
 
 
 def _get_level_progress_html(user_id, level, pathway_id=None):
@@ -509,23 +500,19 @@ def show_speech_logs():
     )
     
     # 10. Get role metadata
-    role_icons, roles_config = _get_role_metadata()
+    role_icons = _get_role_metadata()
     
     # 11. Render template
     return render_template(
         'speech_logs.html',
         grouped_logs=sorted_grouped_logs,
-        roles_config=roles_config,
         roles=dropdown_data['roles'],
         role_icons=role_icons,
-        meeting_numbers=dropdown_data['meeting_numbers'],
-        speakers=dropdown_data['speakers'],
         pathways=dropdown_data['pathways'],
         levels=range(1, 6),
         completed_levels=completed_levels,
         projects=dropdown_data['projects'],
         today_date=datetime.today().date(),
-        level_roles=LevelRole.query.order_by(LevelRole.level, LevelRole.type).all(),
         completion_summary=completion_summary,
         selected_filters=filters,
         is_member_view=is_member_view,
@@ -533,7 +520,6 @@ def show_speech_logs():
         view_mode=view_mode,
         pathway_mapping=dropdown_data['pathway_mapping'],
         all_contacts=dropdown_data['all_contacts'],
-        impersonated_user_name=pathway_info['impersonated_user_name'],
         viewed_contact=viewed_contact,
         member_pathways=pathway_info['member_pathways'],
         active_level=active_level,
