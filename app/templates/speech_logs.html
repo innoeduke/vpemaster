@@ -306,14 +306,7 @@
                 {% if log.session_type and log.session_type.Title == 'Presentation' %}
                 <span class="project-name">{{ log.project.Project_Name if log.project else 'N/A' }}</span>
 
-                {% if log.presentation_series and log.presentation_series in series_initials %}
-                {% set p_code = series_initials[log.presentation_series] + (log.presentation_code|string if
-                log.presentation_code else '') %}
-                {% else %}
-                {# Fallback or default presentation level display if series not in initials #}
-                {# Attempt to use level from display_level if available, or just nothing #}
                 {% set p_code = '' %}
-                {% endif %}
                 <span class="project-code">{{ p_code }}</span>
                 {% else %}
                 {# Original Pathway Speech display #}
@@ -501,7 +494,6 @@
     var allProjects = {{ projects| tojson | safe }};
     var pathwayMap = {{ pathway_mapping| tojson | safe }};
     var groupedPathways = {{ pathways| tojson | safe }};
-    var allSeriesInitials = {{ series_initials| tojson | safe }};
     var GENERIC_PROJECT_ID = "{{ GENERIC_PROJECT_ID }}";
 
 </script>

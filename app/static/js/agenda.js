@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
   let allSessionTypes = [];
   let allContacts = [];
   let allProjects = [];
-  let allSeriesInitials = {};
   let allMeetingTypes = {};
   let allMeetingRoles = {};
 
@@ -68,7 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
         allSessionTypes = data.session_types;
         allContacts = data.contacts;
         allProjects = data.projects;
-        allSeriesInitials = data.series_initials;
         allMeetingTypes = data.meeting_types;
         allMeetingRoles = data.meeting_roles;
 

@@ -2,7 +2,7 @@
 
 // --- Globals (from HTML) ---
 // These are assumed to be defined in the HTML <script> tags:
-// - allProjects, pathwayMap, allPresentations, presentationSeries
+// - allProjects, pathwayMap
 
 // --- DOM Elements Cache ---
 const modalElements = {
@@ -385,8 +385,7 @@ function updateLevelOptions() {
 
   if (!pathwayName) return;
 
-  const codeSuffix = (typeof pathwayMap !== 'undefined' ? pathwayMap[pathwayName] : null) ||
-    (typeof allSeriesInitials !== 'undefined' ? allSeriesInitials[pathwayName] : null);
+  const codeSuffix = (typeof pathwayMap !== 'undefined' ? pathwayMap[pathwayName] : null);
 
   if (!codeSuffix) return;
 
@@ -442,12 +441,7 @@ function updateProjectOptions(selectedProjectId = null) {
   // Let's assume standard logic works if `pathwayMap` or equivalent is updated or valid.
   // If `codeSuffix` is undefined, we might fail to find keys.
 
-  // FIX: Access `allSeriesInitials` if `allSeriesInitials` is available globally, or rely on `pathwayMap`.
-  // In `speech_logs_routes`, we pass `series_initials`.
-  // We should try `pathwayMap[pathwayName]` OR `allSeriesInitials[pathwayName]`.
-
-  const codeSuffix = (typeof pathwayMap !== 'undefined' ? pathwayMap[pathwayName] : null) ||
-    (typeof allSeriesInitials !== 'undefined' ? allSeriesInitials[pathwayName] : null);
+  const codeSuffix = (typeof pathwayMap !== 'undefined' ? pathwayMap[pathwayName] : null);
 
   /* console.log("Debug updateProjectOptions:", { pathwayName, codeSuffix, level }); */
 

@@ -395,10 +395,7 @@ def _get_achievement_status(speaker_id, speaker_user, selected_pathway):
 
 
 def _get_role_metadata():
-    """Fetch role icons and series initials for template."""
-    pathways_db = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
-    series_initials = {p.name: p.abbr for p in pathways_db if p.abbr}
-    
+    """Fetch role icons and config for template."""
     all_roles_db = Role.query.all()
     role_icons = {
         r.name: r.icon or current_app.config['DEFAULT_ROLE_ICON']
@@ -414,7 +411,7 @@ def _get_role_metadata():
         } for r in all_roles_db
     }
     
-    return series_initials, role_icons, roles_config
+    return role_icons, roles_config
 
 
 # ============================================================================
@@ -464,7 +461,7 @@ def show_speech_logs():
     )
     
     # 10. Get role metadata
-    series_initials, role_icons, roles_config = _get_role_metadata()
+    role_icons, roles_config = _get_role_metadata()
     
     # 11. Render template
     return render_template(
@@ -479,7 +476,6 @@ def show_speech_logs():
         levels=range(1, 6),
         completed_levels=completed_levels,
         projects=dropdown_data['projects'],
-        series_initials=series_initials,
         today_date=datetime.today().date(),
         level_roles=LevelRole.query.order_by(LevelRole.level, LevelRole.type).all(),
         completion_summary=completion_summary,
@@ -603,12 +599,15 @@ def update_speech_log(log_id):
     # 2. Use Model Methods for Complex logic
     log.update_media(media_url)
     
-    # REQUIREMENT: For presentations, use owner's current path to fill pathway field
-    is_presentation = (log.session_type and log.session_type.Title == 'Presentation')
-    if is_presentation and log.owner and log.owner.Current_Path:
-        log.pathway = log.owner.Current_Path
-    elif 'pathway' in data:
-        log.update_pathway(data['pathway'])
+    # REQUIREMENT: For presentations, default to owner's then-current path if no pathway provided
+    is_presentation = (log.session_type and log.session_type.Title == 'Presentation') or (data.get('session_type_title') == 'Presentation')
+    
+    pathway_val = data.get('pathway')
+    if not pathway_val and is_presentation and log.owner and log.owner.Current_Path:
+        pathway_val = log.owner.Current_Path
+        
+    if pathway_val:
+        log.update_pathway(pathway_val)
 
     log.update_durations(data, updated_project)
     

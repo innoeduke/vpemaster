@@ -135,6 +135,16 @@ class Project(db.Model):
         """Returns True if this is the generic project."""
         return self.id == ProjectID.GENERIC
 
+    @property
+    def is_presentation(self):
+        """Returns True if this is a presentation project."""
+        return self.Format == 'Presentation'
+
+    @property
+    def is_prepared_speech(self):
+        """Returns True if this is a prepared speech project."""
+        return self.Format == 'Prepared Speech'
+
     def resolve_context(self, context_path_name=None):
         """
         Helper to find the best matching PathwayProject entry and its Pathway.
@@ -171,6 +181,9 @@ class Project(db.Model):
         if self.is_generic:
             return "TM1.0"
 
+        if self.is_presentation:
+            context_path_name = None
+
         pp, path_obj = self.resolve_context(context_path_name)
 
         if pp:
@@ -187,6 +200,9 @@ class Project(db.Model):
         """
         if self.is_generic:
             return 1
+            
+        if self.is_presentation:
+            context_path_name = None
             
         pp, _ = self.resolve_context(context_path_name)
         if pp and pp.level:
@@ -296,9 +312,10 @@ class SessionLog(db.Model):
         role_name = self.session_type.role.name if self.session_type and self.session_type.role else None
 
         # --- Priority 1: Speaker/Evaluator with Project ID ---
-        # Special check for Presentation session type or specific presentation roles
+        # Dynamically identify roles linked to session types valid for projects
+        project_specific_roles = [st.role.name for st in SessionType.query.filter_by(Valid_for_Project=True).all() if st.role]
+        
         is_presentation = (self.session_type and self.session_type.Title == 'Presentation')
-        project_specific_roles = ["Prepared Speaker", "Individual Evaluator", "Presenter"]
         
         if (role_name in project_specific_roles or is_presentation) and self.Project_ID:
             # For presentations, we might want to use self.pathway if it's explicitly set to a series
@@ -347,7 +364,7 @@ class SessionLog(db.Model):
         if not self.session_type or not self.session_type.role:
             return display_level, log_type, project_code
         
-        is_prepared_speech = self.project and self.project.Format == 'Prepared Speech'
+        is_prepared_speech = self.project and self.project.is_prepared_speech
         
         # Determine if this is a speech
         if (self.session_type.Valid_for_Project and self.Project_ID and self.Project_ID != ProjectID.GENERIC) or is_prepared_speech:
@@ -448,21 +465,18 @@ class SessionLog(db.Model):
             db.session.delete(self.media)
 
     def update_pathway(self, pathway_name):
-        """Update log pathway and sync with user profile if not a series/presentation."""
+        """Update log pathway and sync with user profile if it's not a generic role log."""
         if not pathway_name:
             return
             
+        old_pathway = self.pathway
         self.pathway = pathway_name
         
-        # Determine if this is a presentation session
-        is_presentation = (self.session_type and self.session_type.Title == 'Presentation')
-        
         # Sync to user profile if relevant
-        if self.owner and self.owner.user:
-            # Skip sync for presentation series or specific Presentation sessions
-            if "Series" not in pathway_name and not is_presentation:
-                self.owner.user.Current_Path = pathway_name
-                db.session.add(self.owner.user)
+        if self.owner and old_pathway != pathway_name:
+            # Sync to the Contact's current path
+            self.owner.Current_Path = pathway_name
+            db.session.add(self.owner)
 
     def update_durations(self, data, updated_project=None):
         """

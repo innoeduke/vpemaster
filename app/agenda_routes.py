@@ -195,17 +195,17 @@ def _create_or_update_session(item, meeting_number, seq):
                 log.Session_Title = session_title
             log.project_code = project_code
             
-            # Use captured old_owner_id for logic
-            if is_presentation and owner_contact and owner_contact.Current_Path:
-                # Force sync to owner's path for presentations
-                log.pathway = owner_contact.Current_Path
-            elif pathway_val:
-                log.pathway = pathway_val
-            elif owner_id != old_owner_id:
+            # Use log.update_pathway for consistent sync logic
+            if not pathway_val and is_presentation and owner_contact and owner_contact.Current_Path:
+                pathway_val = owner_contact.Current_Path
+            elif not pathway_val and owner_id != old_owner_id:
                 # If owner changed, sync to new owner's path.
-                log.pathway = owner_contact.Current_Path if owner_contact else None
-            elif owner_contact and owner_contact.Current_Path and not log.pathway:
-                log.pathway = owner_contact.Current_Path
+                pathway_val = owner_contact.Current_Path if owner_contact else None
+            elif not pathway_val and owner_contact and owner_contact.Current_Path and not log.pathway:
+                pathway_val = owner_contact.Current_Path
+            
+            if pathway_val:
+                log.update_pathway(pathway_val)
 
 
 def _recalculate_start_times(meetings_to_update):
