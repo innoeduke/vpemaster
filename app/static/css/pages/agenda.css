@@ -329,19 +329,20 @@
 }
 
 #edit-mode-buttons {
-    position: fixed;
-    top: 75px;
-    right: 25px;
+    position: sticky;
+    top: 0;
     z-index: 1000;
+    width: 100%;
+    /* Fill the container (agenda-content), which is centered */
+
+    display: flex;
+    justify-content: center;
+    gap: 10px;
 
     background-color: #ffffff;
-    /* Adds the white background */
     padding: 10px;
-    /* Gives the buttons breathing room */
-    border-radius: 8px;
-    /* Softens the corners */
+    border-radius: 0 0 8px 8px;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    /* Adds a subtle shadow */
 }
 
 .action-bar-left #meeting-filter {
@@ -744,19 +745,11 @@
     }
 
     #edit-mode-buttons {
-        top: auto;
-        /* Unset the top position */
-        bottom: 15px;
-        /* Place it 15px from the bottom */
-        width: 90%;
-        /* Scale width to 90% as requested */
-        left: 50%;
-        transform: translateX(-50%);
-        /* Center horizontally */
-        right: auto;
-        /* Reset right positioning */
-        justify-content: center;
-        /* Center buttons inside */
+        top: 60px;
+        /* Below the 60px fixed mobile header */
+        /* It respects the parent padding, so it won't be edge-to-edge but visually centered */
+        border-radius: 8px;
+        /* Full rounding looks better if floating inside padding */
     }
 
     /* Make the Owner column wider on mobile */
