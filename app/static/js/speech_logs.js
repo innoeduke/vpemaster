@@ -42,6 +42,14 @@ function completeSpeechLog(button, logId) {
         // Replace buttons with the checkmark icon
         statusContainer.innerHTML =
           '<i class="fas fa-check-circle" title="Completed"></i>';
+
+        // Update progress summary if provided
+        if (data.progress_html && data.level) {
+          const progressContainer = document.getElementById("progress-" + data.level);
+          if (progressContainer) {
+            progressContainer.innerHTML = data.progress_html;
+          }
+        }
       } else {
         alert("Error updating status: " + data.message);
       }
@@ -68,8 +76,17 @@ function suspendSpeechLog(button, logId) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        // Force a page reload to re-render the card with the new status and button logic
-        window.location.reload();
+        // Update button/status UI without reload
+        const statusContainer = button.parentNode;
+        statusContainer.innerHTML = '<span class="status-delivered">Delivered</span>';
+
+        // Update progress summary if provided
+        if (data.progress_html && data.level) {
+          const progressContainer = document.getElementById("progress-" + data.level);
+          if (progressContainer) {
+            progressContainer.innerHTML = data.progress_html;
+          }
+        }
       } else {
         alert("Error suspending status: " + data.message);
       }

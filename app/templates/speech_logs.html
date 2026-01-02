@@ -169,44 +169,7 @@
     <div class="level-progress-summary" id="progress-{{ level }}"
         style="display: {% if is_expanded %}flex{% else %}none{% endif %};">
         {% set summary = completion_summary.get(level|string) %}
-        {% if summary %}
-        {% if summary.required %}
-        <div class="summary-section">
-            <span class="section-label">Required:</span>
-            <div class="items-grid">
-                {% for req in summary.required %}
-                <div class="progress-item {% if req.count >= req.required %}completed{% endif %}"
-                    title="{{ req.role }}">
-                    <span class="item-label">{{ req.role }}</span>
-                    <div class="item-dots">
-                        {% for item in req.requirement_items %}
-                        <span class="dot {{ item.status }}" title="{{ item.name }}"></span>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-        {% if summary.elective %}
-        <div class="summary-section elective-section">
-            <span class="section-label">Electives:</span>
-            <div class="items-grid">
-                {% for req in summary.elective %}
-                <div class="progress-item {% if req.count >= req.required %}completed{% endif %}"
-                    title="{{ req.role }}">
-                    <span class="item-label">{{ req.role }}</span>
-                    <div class="item-dots">
-                        {% for item in req.requirement_items %}
-                        <span class="dot {{ item.status }}" title="{{ item.name }}"></span>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-        {% endif %}
+        {% include 'partials/_level_progress.html' %}
     </div>
     {% endif %}
 

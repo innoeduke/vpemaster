@@ -420,6 +420,48 @@ def _get_role_metadata():
     return role_icons, roles_config
 
 
+def _get_level_progress_html(user_id, level, pathway_id=None):
+    """
+    Generate the HTML for the level progress summary.
+    """
+    # Create minimal filter set for this user
+    filters = {
+        'meeting_number': None,
+        'pathway': pathway_id, # This might need to be the name or ID depending on usage
+        'level': None,
+        'speaker_id': user_id,
+        'status': None,
+        'role': None
+    }
+    
+    # Needs to be able to get the contact for the user_id
+    contact = Contact.query.get(user_id)
+    if not contact:
+        return ""
+
+    if not filters['pathway'] and contact.Current_Path:
+        filters['pathway'] = contact.Current_Path
+        
+    # We need to fetch logs again to calculate progress
+    # This might be expensive but necessary for accurate update
+    all_logs = _fetch_logs_with_filters(filters)
+    
+    project_ids = [log.Project_ID for log in all_logs if log.Project_ID]
+    pathway_cache = build_pathway_project_cache(project_ids=project_ids)
+    
+    grouped_logs = _process_logs(all_logs, filters, pathway_cache)
+    sorted_grouped_logs = _sort_and_consolidate(grouped_logs)
+    
+    speaker_user = contact.user
+    pp_mapping = _get_pathway_project_mapping(speaker_user)
+    
+    completion_summary = _calculate_completion_summary(grouped_logs, pp_mapping)
+    
+    summary = completion_summary.get(str(level))
+    
+    return render_template('partials/_level_progress.html', summary=summary)
+
+
 # ============================================================================
 # MAIN ROUTE
 # ============================================================================
@@ -646,7 +688,20 @@ def suspend_speech_log(log_id):
     log.Status = 'Delivered'
     try:
         db.session.commit()
-        return jsonify(success=True)
+        
+        # Calculate new progress HTML
+        # We need the level of this log to know which section to update
+        # Re-fetch log to ensure we have fresh data if needed, though we have it locally
+        
+        # Determine the display level of this log
+        # We need the pathway cache logic or just trust the project's level
+        display_level = 1
+        pathway_cache = build_pathway_project_cache(project_ids=[log.Project_ID]) if log.Project_ID else {}
+        display_level, _, _ = log.get_display_level_and_type(pathway_cache)
+        
+        progress_html = _get_level_progress_html(log.Owner_ID, display_level)
+        
+        return jsonify(success=True, level=display_level, progress_html=progress_html)
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
@@ -679,7 +734,18 @@ def complete_speech_log(log_id):
             from .utils import sync_contact_metadata
             sync_contact_metadata(log.Owner_ID)
             
-        return jsonify(success=True)
+        if log.Owner_ID:
+            from .utils import sync_contact_metadata
+            sync_contact_metadata(log.Owner_ID)
+            
+        # Calculate new progress HTML
+        display_level = 1
+        pathway_cache = build_pathway_project_cache(project_ids=[log.Project_ID]) if log.Project_ID else {}
+        display_level, _, _ = log.get_display_level_and_type(pathway_cache)
+        
+        progress_html = _get_level_progress_html(log.Owner_ID, display_level)
+            
+        return jsonify(success=True, level=display_level, progress_html=progress_html)
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
