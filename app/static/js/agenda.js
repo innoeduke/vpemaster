@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cancelButton) {
       cancelButton.addEventListener("click", () => {
         if (isEditing) {
-          toggleEditMode(false);
+          // toggleEditMode(false); // Can cause visual glitch (zombie state) before reload
           window.location.reload();
         }
       });
@@ -256,13 +256,16 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
           // Re-render the table with the new data
+          // Re-render the table with the new data
           if (data.logs_data) {
             renderTableRows(data.logs_data);
+            // Exit edit mode and update UI only after successful render
+            toggleEditMode(false);
+            closeMeetingDetailsModal(); // Close the modal if open
+          } else {
+            // Fallback: If no data returned, force reload to ensure clean state
+            window.location.reload();
           }
-
-          // Exit edit mode and update UI
-          toggleEditMode(false);
-          closeMeetingDetailsModal(); // Close the modal if open
 
           // Show success feedback (optional, since the UI update is the feedback)
           // alert("Changes saved successfully!"); 
