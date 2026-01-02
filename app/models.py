@@ -465,16 +465,27 @@ class SessionLog(db.Model):
             db.session.delete(self.media)
 
     def update_pathway(self, pathway_name):
-        """Update log pathway and sync with user profile if it's not a generic role log."""
+        """
+        Update log pathway and sync with user profile.
+        CRITICAL RULE: Only 'pathway'-type paths (e.g., "Presentation Mastery") are stored in 
+        SessionLog.pathway and Contact.Current_Path. 'presentation'-type paths (Series) 
+        are used purely for project lookup and should NEVER be saved here.
+        """
         if not pathway_name:
             return
             
+        # Verify the pathway type in the database
+        path_obj = Pathway.query.filter_by(name=pathway_name).first()
+        if not path_obj or path_obj.type != 'pathway':
+            # Do not allow storing series/presentation-type paths in the main pathway column
+            return
+
         old_pathway = self.pathway
         self.pathway = pathway_name
         
         # Sync to user profile if relevant
         if self.owner and old_pathway != pathway_name:
-            # Sync to the Contact's current path
+            # Sync to the Contact's current path (ensures profile is updated)
             self.owner.Current_Path = pathway_name
             db.session.add(self.owner)
 

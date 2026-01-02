@@ -107,8 +107,10 @@ def _create_or_update_session(item, meeting_number, seq):
         credentials = derive_credentials(owner_contact)
 
     # --- Automatic project_code Derivation ---
-    is_presentation = (session_type and session_type.Title == 'Presentation') \
-                      or (item.get('session_type_title') == 'Presentation')
+    # RULE: Rely on Project.Format == 'Presentation' for rule enforcement, 
+    # since 'Presentation' session type has been removed and all now use 'Prepared Speech'.
+    log_project = Project.query.get(project_id) if project_id else None
+    is_presentation = log_project is not None and log_project.is_presentation
 
     if item.get('id') == 'new':
         log_for_derivation = SessionLog(
@@ -143,7 +145,8 @@ def _create_or_update_session(item, meeting_number, seq):
         
         # 2. Session Type Defaults (if still None)
         if (duration_min is None and duration_max is None) and session_type:
-            if session_type.Title == 'Presentation':
+            # Note: presentation-specific duration defaults now handled via is_presentation check above
+            if is_presentation:
                 duration_min = 10
                 duration_max = 15
             else:
@@ -153,9 +156,13 @@ def _create_or_update_session(item, meeting_number, seq):
     # --- Pathway Logic ---
     pathway_val = item.get('pathway')
     
-    # REQUIREMENT: For presentations, use owner's current path to fill pathway field
-    if is_presentation and owner_contact and owner_contact.Current_Path:
-        pathway_val = owner_contact.Current_Path
+    # RULE: SessionLog.pathway MUST only store pathway-type paths (e.g., "Presentation Mastery").
+    # For Presentations, we force use of the owner's main pathway-type path, 
+    # even if a "Series" (presentation-type path) was selected in the modal for project lookup.
+    if is_presentation:
+        if owner_contact and owner_contact.Current_Path:
+            pathway_val = owner_contact.Current_Path
+    # Fallback for standard sessions if no pathway provided
     elif not pathway_val and owner_contact and owner_contact.Current_Path:
         pathway_val = owner_contact.Current_Path
         
@@ -196,14 +203,7 @@ def _create_or_update_session(item, meeting_number, seq):
             log.project_code = project_code
             
             # Use log.update_pathway for consistent sync logic
-            if not pathway_val and is_presentation and owner_contact and owner_contact.Current_Path:
-                pathway_val = owner_contact.Current_Path
-            elif not pathway_val and owner_id != old_owner_id:
-                # If owner changed, sync to new owner's path.
-                pathway_val = owner_contact.Current_Path if owner_contact else None
-            elif not pathway_val and owner_contact and owner_contact.Current_Path and not log.pathway:
-                pathway_val = owner_contact.Current_Path
-            
+            # Note: For presentations, pathway_val was already potentially overridden to owner.Current_Path above
             if pathway_val:
                 log.update_pathway(pathway_val)
 
@@ -371,6 +371,7 @@ def _get_processed_logs_data(selected_meeting_num):
             'is_hidden': session_type.Is_Hidden if session_type else False,
             'role': session_type.role.name if session_type and session_type.role else '',
             'valid_for_project': session_type.Valid_for_Project if session_type else False,
+            'pathway': log.pathway, # Explicitly pass current pathway for modal/save sync
             # Meeting fields
             'meeting_date_str': meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting and meeting.Meeting_Date else '',
             'meeting_date_formatted': meeting.Meeting_Date.strftime('%B %d, %Y') if meeting and meeting.Meeting_Date else '',

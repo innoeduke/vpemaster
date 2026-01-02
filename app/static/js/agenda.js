@@ -847,7 +847,8 @@ document.addEventListener("DOMContentLoaded", () => {
         row.querySelector('[data-field="Duration_Max"] input')?.value || null,
       project_id: row.dataset.projectId,
       status: row.dataset.status,
-      project_code: row.dataset.projectCode || "", // <-- Include path/level from dataset
+      project_code: row.dataset.projectCode || "",
+      pathway: row.dataset.pathway || "",
     };
   }
 

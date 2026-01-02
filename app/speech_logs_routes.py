@@ -158,7 +158,8 @@ def _process_logs(all_logs, filters, pathway_cache):
         log.display_pathway = log.pathway
         
         # Identify Presentation Series
-        if log.session_type and log.session_type.Title == 'Presentation' and log.Project_ID:
+        # Updated to check project property instead of session type title
+        if log.project and log.project.is_presentation:
              if pathway_cache and log.Project_ID in pathway_cache:
                   pp_data = pathway_cache[log.Project_ID]
                   for path_id, pp in pp_data.items():
@@ -308,8 +309,13 @@ def _calculate_completion_summary(grouped_logs, pp_mapping):
                 
                 if is_role_match:
                     satisfied = True
-                elif lr.role.lower() == 'speech' and hasattr(log, 'log_type') and log.log_type == 'speech':
-                    if pp_mapping.get(log.Project_ID) == 'required' or not pp_mapping:
+                elif lr.role.lower() == 'speech' and hasattr(log, 'log_type') and (log.log_type == 'speech' or log.log_type == 'presentation'):
+                    # Presentations always count as speeches regardless of pathway mapping
+                    if log.log_type == 'presentation' or pp_mapping.get(log.Project_ID) == 'required' or not pp_mapping:
+                        satisfied = True
+                # Check for specific presentation series requirement (e.g. "Successful Club Series")
+                elif hasattr(log, 'presentation_series') and log.presentation_series:
+                    if normalize_role_name(log.presentation_series.lower()) == norm_target:
                         satisfied = True
                 elif lr.role.lower() == 'elective project' and hasattr(log, 'log_type') and log.log_type == 'speech':
                     if pp_mapping.get(log.Project_ID) == 'elective':
@@ -587,11 +593,16 @@ def update_speech_log(log_id):
     # 2. Use Model Methods for Complex logic
     log.update_media(media_url)
     
-    # REQUIREMENT: For presentations, default to owner's then-current path if no pathway provided
-    is_presentation = (log.session_type and log.session_type.Title == 'Presentation') or (data.get('session_type_title') == 'Presentation')
+    # RULE: SessionLog.pathway MUST only store pathway-type paths (e.g., "Presentation Mastery").
+    # For Presentations, we force use of the owner's main pathway-type path, 
+    # even if a "Series" (presentation-type path) was selected in the modal for project lookup.
+    is_presentation = updated_project.is_presentation if updated_project else (log.project.is_presentation if log.project else False)
     
     pathway_val = data.get('pathway')
-    if not pathway_val and is_presentation and log.owner and log.owner.Current_Path:
+    if is_presentation:
+        if log.owner and log.owner.Current_Path:
+            pathway_val = log.owner.Current_Path
+    elif not pathway_val and log.owner and log.owner.Current_Path:
         pathway_val = log.owner.Current_Path
         
     if pathway_val:

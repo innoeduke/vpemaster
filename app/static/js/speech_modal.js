@@ -518,13 +518,6 @@ function buildSavePayload() {
           ? projectSelectDropdown.value
           : null;
       break;
-    case "Presentation":
-      // Updated to use standardized fields but explicit session type title handling
-      payload.session_title = speechTitle.value;
-      payload.project_id = projectSelect.value || null;
-      // Also include pathway if set
-      payload.pathway = pathwaySelect.value;
-      break;
     default: // Pathway Speech
       const isGeneric = genericCheckbox.checked;
       payload.session_title = speechTitle.value;
@@ -619,6 +612,7 @@ function updateAgendaRow(logId, updateResult, payload) {
   agendaRow.dataset.sessionTitle = updateResult.session_title;
   agendaRow.dataset.durationMin = updateResult.duration_min || "";
   agendaRow.dataset.durationMax = updateResult.duration_max || "";
+  agendaRow.dataset.pathway = updateResult.pathway || "";
 
   // Update Session Title Input/Span
   const editTitleCell = agendaRow.querySelector(
@@ -663,14 +657,10 @@ function updateAgendaRow(logId, updateResult, payload) {
 
     let projName = updateResult.project_name;
     let projPurpose = "";
-    if (sessionType === "Presentation" && updateResult.project_id) {
-      // Try finding in allProjects (unified now)
-      const proj = allProjects.find((p) => p.id == updateResult.project_id);
-      projName = proj ? proj.Project_Name : updateResult.session_title;
-      projPurpose = proj ? proj.Purpose : "";
-    } else {
-      const proj = allProjects.find((p) => p.id == updateResult.project_id);
-      projPurpose = proj ? proj.Purpose : "";
+    const proj = allProjects.find((p) => p.id == updateResult.project_id);
+    if (proj) {
+      projName = proj.Project_Name;
+      projPurpose = proj.Purpose;
     }
 
     viewTitleCell.innerHTML = "";
