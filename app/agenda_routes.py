@@ -902,9 +902,9 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     master_log, master_st, master_contact = None, None, None  # Default to None
     # (Keynote/Master contact determination based on owner_role_id was removed)
 
-    gram_log, gram_st, _, _, _ = find_log(7)  # 7 = Grammarian Intro
-    term = load_setting('ClubSettings', 'Term', default='')
-    excomm_name = load_setting('ClubSettings', 'Excomm Name', default='')
+    gram_log, gram_st, _, _, _ = find_log(SessionTypeID.TABLE_TOPICS)  # 7 = Grammarian Intro (Using Table Topics ID as placeholder/legacy?)
+    term = load_setting('Excomm Team', 'Term', default='')
+    excomm_name = load_setting('Excomm Team', 'Excomm Name', default='')
     excomm_string = f'{term} "{excomm_name}"'.strip()
 
     master_data = [
@@ -985,13 +985,13 @@ def _build_sheet2_powerbi(ws, meeting, logs_data, speech_details_list, pathway_m
     # Include sessions of specific types that are not evaluations (id != 31)
     # Table Topics, Prepared Speaker, Pathway Speech, Panel Discussion
     # But only include Table Topics if it's a valid project (has Valid_for_Project flag)
-    SPEAKER_TYPE_IDS = speech_types_with_project | {43}  # 43 = Presentation
+    SPEAKER_TYPE_IDS = speech_types_with_project | {SessionTypeID.PRESENTATION}  # 43 = Presentation
     speakers = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
                 # Special handling for Table Topics
                 if (st.id in SPEAKER_TYPE_IDS and log.Project_ID)]
     # Type 31 = Individual Evaluator
     evaluators = [(log, st, contact, proj, med) for log, st, contact, proj, med in logs_data
-                  if st.id == 31]
+                  if st.id == SessionTypeID.EVALUATION]
 
     # Create a lookup map for evaluators
     # Key: The name of the speaker being evaluated (from evaluator's Session_Title),
@@ -1120,13 +1120,13 @@ def _get_participants_dict(logs_data):
     # AND Project must be valid (not None) for it to be a speaker role usually,
     # but the sheet 4 logic specifically checks for these types.
     # Note: Logic copied from original _build_sheet4_participants
-    speaker_types = {20, 30, 43, 44}
+    speaker_types = {SessionTypeID.KEYNOTE_SPEECH, SessionTypeID.PREPARED_SPEECH, SessionTypeID.PRESENTATION, SessionTypeID.PANEL_DISCUSSION}
     
     # Individual Evaluators: 31
-    evaluator_type = 31
+    evaluator_type = SessionTypeID.EVALUATION
 
     # Table Topics: 7 (Table Topics Speaker) - typically handled specifically if needed
-    tt_type = 36 # Changed from 7 to 36 to match original logic (Topics Speaker)
+    tt_type = SessionTypeID.TOPICS_SPEECH # Changed from 7 to 36 to match original logic (Topics Speaker)
 
     for log, session_type, contact, project, media in logs_data:
         # Check if we have a valid contact (the person performing the role)
@@ -1370,7 +1370,7 @@ def _generate_logs_from_template(meeting, template_file):
                     duration_max = 5
             
             break_minutes = 1
-            if type_id == 31 and meeting.ge_mode == 1:  # Individual Evaluation
+            if type_id == SessionTypeID.EVALUATION and meeting.ge_mode == 1:  # Individual Evaluation
                 break_minutes += 1
 
             # --- Resolve Owner ---
