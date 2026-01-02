@@ -215,7 +215,7 @@
 
         {% for log in logs %}
         {% if log.log_type == 'grouped_role' %}
-        <div class="speech-log-entry role-log-entry grouped-role-entry"
+        <div class="role-log-entry grouped-role-entry"
             data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
             <div class="card-header">
                 <div class="meeting-info">
@@ -350,8 +350,7 @@
             </div>
         </div>
         {% else %}
-        <div class="speech-log-entry role-log-entry"
-            data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
+        <div class="role-log-entry" data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
             <div class="card-header">
                 <div class="meeting-info">
                     Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting

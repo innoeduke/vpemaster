@@ -112,7 +112,8 @@
 }
 
 /* Redesigned Speech Log Cards */
-.speech-log-entry {
+.speech-log-entry,
+.role-log-entry {
     background-color: #fff;
     border: 1px solid #e2e8f0;
     border-left-width: 6px;
@@ -125,7 +126,8 @@
     transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
 }
 
-.speech-log-entry:hover {
+.speech-log-entry:hover,
+.role-log-entry:hover {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
     transform: translateY(-3px);
 }
@@ -157,12 +159,12 @@
 }
 
 /* New card variant for roles */
-.speech-log-entry.role-log-entry {
+.role-log-entry {
     border-left-color: #4A90E2;
     /* Use a neutral blue for roles */
 }
 
-.speech-log-entry.role-log-entry .pathway-info {
+.role-log-entry .pathway-info {
     color: #4A90E2;
 }
 
@@ -206,8 +208,10 @@
 
 /* Card Typography */
 .speech-log-entry,
+.role-log-entry,
 .speech-log-entry .project-info,
-.speech-log-entry .speaker-info {
+.speech-log-entry .speaker-info,
+.role-log-entry .speaker-info {
     font-family: sans-serif;
 }
 
@@ -250,7 +254,7 @@
     border-radius: 0;
 }
 
-speech-log-entry.card-type-speech {
+.speech-log-entry.card-type-speech {
     border-left-color: #E55353;
 }
 
