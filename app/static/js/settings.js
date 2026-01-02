@@ -298,6 +298,75 @@ function fetchWithRetry(url, options = {}, retries = 3, retryDelay = 1000) {
 }
 
 /**
+ * HELPER: Check if a field is a boolean/checkbox field
+ */
+function isBooleanField(field) {
+  return (
+    field.startsWith("Is_") ||
+    field === "Valid_for_Project" ||
+    field === "Predefined" ||
+    field === "needs_approval" ||
+    field === "is_distinct" ||
+    field === "is_member_only"
+  );
+}
+
+/**
+ * HELPER: Render checkbox HTML
+ */
+function renderCheckbox(checked, disabled = true) {
+  return `<input type="checkbox" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}>`;
+}
+
+/**
+ * HELPER: Get value from a cell (handles checkboxes, selects, and inputs)
+ */
+function getCellValueGeneric(cell, field) {
+  if (isBooleanField(field)) {
+    return cell.querySelector('input[type="checkbox"]').checked;
+  }
+  const input = cell.querySelector("input, select");
+  return input ? input.value : cell.textContent.trim();
+}
+
+/**
+ * HELPER: Setup modal open/close behavior
+ */
+function setupModal(buttonId, modalId) {
+  const button = document.getElementById(buttonId);
+  const modal = document.getElementById(modalId);
+  if (button && modal) {
+    button.addEventListener("click", () => {
+      modal.style.display = "flex";
+    });
+  }
+}
+
+/**
+ * HELPER: Setup table sorting for a given table ID
+ */
+function setupTableSorting(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+
+  table.querySelectorAll("th.sortable").forEach((headerCell) => {
+    headerCell.addEventListener("click", () => {
+      const columnIndex = parseInt(headerCell.dataset.columnIndex, 10);
+      const currentDir = headerCell.dataset.sortDir;
+      const newDir = currentDir === "asc" ? "desc" : "asc";
+
+      sortTableByColumn(table, columnIndex, newDir === "asc");
+
+      table
+        .querySelectorAll("th.sortable")
+        .forEach((th) => delete th.dataset.sortDir);
+
+      headerCell.dataset.sortDir = newDir;
+    });
+  });
+}
+
+/**
  * Show notification to user
  */
 function showNotification(message, type = "info") {
@@ -408,41 +477,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Default to general if nothing is set
     openTab(null, "general");
   }
-  // Attach openTab to window for inline onclick attributes
+  // Attach functions to window for inline onclick attributes
   window.openTab = openTab;
-
-  // --- 2. Modal Logic ---
-  // Attach closeModal to window for inline onclick attributes
   window.closeModal = closeModal;
 
-  // "Add Session" modal
-  const addSessionBtn = document.getElementById("add-session-btn");
-  const sessionModal = document.getElementById("addSessionModal");
-  if (addSessionBtn && sessionModal) {
-    addSessionBtn.addEventListener("click", () => {
-      sessionModal.style.display = "flex";
-    });
-  }
-
-  // "Add Role" modal
-  const addRoleBtn = document.getElementById("add-role-btn");
-  const roleModal = document.getElementById("addRoleModal");
-  if (addRoleBtn && roleModal) {
-    addRoleBtn.addEventListener("click", () => {
-      roleModal.style.display = "flex";
-    });
-  }
-
-  // "Add Level Role" modal
-  const addLevelRoleBtn = document.getElementById("add-level-role-btn");
-  const levelRoleModal = document.getElementById("addLevelRoleModal");
-  if (addLevelRoleBtn && levelRoleModal) {
-    addLevelRoleBtn.addEventListener("click", () => {
-      levelRoleModal.style.display = "flex";
-    });
-  }
-
-
+  // --- 2. Modal Logic ---
+  setupModal("add-session-btn", "addSessionModal");
+  setupModal("add-role-btn", "addRoleModal");
+  setupModal("add-level-role-btn", "addLevelRoleModal");
 
   // Generic modal close-on-click-outside logic
   window.addEventListener("click", (event) => {
@@ -452,31 +494,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- 3. Sortable & Filterable Table Setup ---
-  // A. Setup Sorting for each table by calling the new main.js function
-  function setupTableSorting(tableId) {
-    const table = document.getElementById(tableId);
-    if (!table) return;
-
-    table.querySelectorAll("th.sortable").forEach((headerCell) => {
-      headerCell.addEventListener("click", () => {
-        const columnIndex = parseInt(headerCell.dataset.columnIndex, 10);
-        const currentDir = headerCell.dataset.sortDir;
-        const newDir = currentDir === "asc" ? "desc" : "asc";
-
-        sortTableByColumn(table, columnIndex, newDir === "asc");
-
-        table
-          .querySelectorAll("th.sortable")
-          .forEach((th) => delete th.dataset.sortDir);
-
-        headerCell.dataset.sortDir = newDir;
-      });
-    });
-  }
   setupTableSorting("sessions-table");
   setupTableSorting("user-settings-table");
   setupTableSorting("level-roles-table");
-
   setupTableSorting("roles-table");
 
   // B. Setup the ONE Global Filter
@@ -495,26 +515,16 @@ document.addEventListener("DOMContentLoaded", () => {
     tableId: "sessions-table",
     saveUrl: "/settings/sessions/update",
     createEditor: (cell, field, currentValue) => {
-      if (
-        field.startsWith("Is_") ||
-        field === "Valid_for_Project" ||
-        field == "Predefined"
-      ) {
+      if (isBooleanField(field)) {
         cell.querySelector('input[type="checkbox"]').disabled = false;
       } else if (field === "role_id") {
         const select = document.createElement("select");
         select.className = "form-control-sm";
+        select.appendChild(new Option("None", ""));
 
-        // Add a "None" option
-        const noneOption = new Option("None", "");
-        select.appendChild(noneOption);
-
-        // Populate with roles from global data
         ROLES_DATA.forEach((role) => {
           const option = new Option(role.name, role.id);
-          if (role.name === currentValue) {
-            option.selected = true;
-          }
+          if (role.name === currentValue) option.selected = true;
           select.appendChild(option);
         });
 
@@ -530,39 +540,24 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     },
     restoreCell: (cell, field, originalValue) => {
-      if (
-        field.startsWith("Is_") ||
-        field === "Valid_for_Project" ||
-        field == "Predefined"
-      ) {
-        cell.innerHTML = `<input type="checkbox" ${originalValue ? "checked" : ""
-          } disabled>`;
+      if (isBooleanField(field)) {
+        cell.innerHTML = renderCheckbox(originalValue);
       } else {
         cell.textContent = originalValue;
       }
     },
     getCellValue: (cell, field) => {
-      if (
-        field.startsWith("Is_") ||
-        field === "Valid_for_Project" ||
-        field == "Predefined"
-      ) {
+      if (isBooleanField(field)) {
         return cell.querySelector('input[type="checkbox"]').checked;
       } else if (field === "role_id") {
-        const select = cell.querySelector("select");
-        return select.value;
+        return cell.querySelector("select").value;
       } else {
         return cell.querySelector("input").value;
       }
     },
     updateCell: (cell, field, value) => {
-      if (
-        field.startsWith("Is_") ||
-        field === "Valid_for_Project" ||
-        field == "Predefined"
-      ) {
-        cell.innerHTML = `<input type="checkbox" ${value ? "checked" : ""
-          } disabled>`;
+      if (isBooleanField(field)) {
+        cell.innerHTML = renderCheckbox(value);
       } else if (field === "role_id") {
         const selectedRole = ROLES_DATA.find((role) => role.id == value);
         cell.textContent = selectedRole ? selectedRole.name : "";
@@ -604,10 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
     restoreCell: (cell, field, originalValue) => {
       cell.textContent = originalValue;
     },
-    getCellValue: (cell, field) => {
-      const input = cell.querySelector("input, select");
-      return input ? input.value : cell.textContent;
-    },
+    getCellValue: getCellValueGeneric,
     updateCell: (cell, field, value) => {
       cell.textContent = value;
     },
@@ -622,11 +614,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tableId: "roles-table",
     saveUrl: "/settings/roles/update",
     createEditor: (cell, field, currentValue) => {
-      if (
-        field === "needs_approval" ||
-        field === "is_distinct" ||
-        field === "is_member_only"
-      ) {
+      if (isBooleanField(field)) {
         cell.querySelector('input[type="checkbox"]').disabled = false;
       } else if (field === "type") {
         const select = document.createElement("select");
@@ -641,7 +629,6 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (field === "award_category") {
         const select = document.createElement("select");
         select.className = "form-control-sm";
-        // Empty option for 'none'
         select.appendChild(new Option("none", ""));
         ["speaker", "evaluator", "role-taker", "table-topic"].forEach((opt) => {
           const option = new Option(opt, opt);
@@ -660,13 +647,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     },
     restoreCell: (cell, field, originalValue) => {
-      if (
-        field === "needs_approval" ||
-        field === "is_distinct" ||
-        field === "is_member_only"
-      ) {
-        cell.innerHTML = `<input type="checkbox" ${originalValue ? "checked" : ""
-          } disabled>`;
+      if (isBooleanField(field)) {
+        cell.innerHTML = renderCheckbox(originalValue);
       } else if (field === "icon") {
         cell.innerHTML = `<i class="fas ${originalValue}"></i> ${originalValue}`;
       } else {
@@ -674,11 +656,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     },
     getCellValue: (cell, field) => {
-      if (
-        field === "needs_approval" ||
-        field === "is_distinct" ||
-        field === "is_member_only"
-      ) {
+      if (isBooleanField(field)) {
         return cell.querySelector('input[type="checkbox"]').checked;
       } else {
         const input = cell.querySelector("input, select");
@@ -686,13 +664,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     },
     updateCell: (cell, field, value) => {
-      if (
-        field === "needs_approval" ||
-        field === "is_distinct" ||
-        field === "is_member_only"
-      ) {
-        cell.innerHTML = `<input type="checkbox" ${value ? "checked" : ""
-          } disabled>`;
+      if (isBooleanField(field)) {
+        cell.innerHTML = renderCheckbox(value);
       } else if (field === "icon") {
         cell.innerHTML = `<i class="fas ${value}"></i> ${value}`;
       } else {
