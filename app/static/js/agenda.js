@@ -27,7 +27,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let allSessionTypes = [];
   let allContacts = [];
-  let allProjects = [];
   let allMeetingTypes = {};
   let allMeetingRoles = {};
 

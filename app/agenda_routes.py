@@ -503,11 +503,16 @@ def agenda():
     default_start_time = load_setting(
         'ClubSettings', 'Meeting Start Time', default='18:55')
 
+    # --- Projects for Speech Modal ---
+    from .utils import get_dropdown_metadata
+    dropdown_data = get_dropdown_metadata()
+    
     # --- Render Template ---
     return render_template('agenda.html',
                            logs_data=logs_data,               # Use the processed list of dictionaries
                            pathways=pathways,               # For modals
                            pathway_mapping=pathway_mapping,
+                           projects=dropdown_data['projects'],
                            meeting_numbers=meeting_numbers,
                            selected_meeting=selected_meeting,  # Pass the Meeting object
                            members=members,                 # If needed elsewhere

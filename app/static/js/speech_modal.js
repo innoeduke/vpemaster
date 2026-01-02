@@ -315,58 +315,47 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
     });
   }
 
-  let {
-    pathway: pathwayToSelect,
-    level: levelToSelect,
-    Project_ID: projectToSelect,
-  } = logData;
+  let pathwayToSelect = logData.pathway;
+  let levelToSelect = logData.level;
+  let projectToSelect = logData.Project_ID;
+  const projectCode = logData.project_code || nextProject;
+
+  // REQUIREMENT: Populate path/level/project based on project_code if available and non-generic
+  if (projectToSelect != GENERIC_PROJECT_ID && projectCode && !['TM1.0', '', 'null'].includes(projectCode)) {
+    const codeMatch = projectCode.match(/^([A-Z]+)(\d+(?:\.\d+)?)$/);
+    if (codeMatch) {
+      const abbr = codeMatch[1];
+      const codePart = codeMatch[2];
+
+      const pathwayName = Object.keys(pathwayMap).find(name => pathwayMap[name] === abbr);
+      if (pathwayName) {
+        pathwayToSelect = pathwayName;
+        // Search by code string match
+        const foundProject = allProjects.find(p => p.path_codes[abbr] && String(p.path_codes[abbr].code) === codePart);
+        if (foundProject) {
+          projectToSelect = foundProject.id;
+          levelToSelect = foundProject.path_codes[abbr].level;
+        }
+      }
+    }
+  } else if (!pathwayToSelect && workingPath) {
+    pathwayToSelect = workingPath;
+  }
 
   // Ensure level value is string type to match dropdown options
   if (levelToSelect !== undefined && levelToSelect !== null) {
     levelToSelect = String(levelToSelect);
   }
 
-  if (projectToSelect == GENERIC_PROJECT_ID) {
-    modalElements.genericCheckbox.checked = true;
-    toggleGeneric(true);
-    modalElements.pathwaySelect.value = pathwayToSelect || "";
-  } else {
-    modalElements.genericCheckbox.checked = false;
+  const isGeneric = projectToSelect == GENERIC_PROJECT_ID;
+  modalElements.genericCheckbox.checked = isGeneric;
+  toggleGeneric(isGeneric);
 
-    toggleGeneric(false);
-    if (!projectToSelect) {
-      // Logic for auto-selecting next project for standard speeches
-      if (window.location.pathname.includes("/agenda")) {
-        if (nextProject) {
-          try {
-            const [, nextPathAbbr, nextLevel] =
-              nextProject.match(/([A-Z]{2})(\d)/);
-            const pathwayName = Object.keys(pathwayMap).find(
-              (name) => pathwayMap[name] === nextPathAbbr
-            );
-            if (pathwayName) {
-              pathwayToSelect = pathwayName;
-              levelToSelect = nextLevel;
-              const codeSuffix = pathwayMap[pathwayToSelect];
-              const projectCode = nextProject.substring(2);
-              const foundProject = allProjects.find(p => p.path_codes[codeSuffix] && p.path_codes[codeSuffix].code === projectCode);
-              if (foundProject) projectToSelect = foundProject.id;
-            }
-          } catch (e) {
-            /* Parsing failed */
-          }
-        } else if (workingPath) {
-          pathwayToSelect = workingPath;
-        }
-      }
-    }
-    modalElements.pathwaySelect.value = pathwayToSelect || "";
-    // Update levels based on selected pathway BEFORE trying to set the level value
+  modalElements.pathwaySelect.value = pathwayToSelect || "";
+
+  if (!isGeneric) {
     updateLevelOptions();
-
-    // Now set the level if valid
     modalElements.levelSelect.value = levelToSelect || "";
-
     updateProjectOptions(projectToSelect);
   }
 }
@@ -394,7 +383,7 @@ function updateLevelOptions() {
 
   allProjects.forEach(p => {
     const info = p.path_codes[codeSuffix];
-    if (info && info.level) {
+    if (info && (info.level || info.level === 0 || info.level === '0')) {
       availableLevels.add(info.level);
     }
   });

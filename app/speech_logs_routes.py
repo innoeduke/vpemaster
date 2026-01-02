@@ -516,41 +516,28 @@ def get_speech_log_details(log_id):
     # Use the helper function to get project code
     project_code = ""
     pathway_name_to_return = log.owner.Current_Path if log.owner and log.owner.Current_Path else "Presentation Mastery"
+    level = 1
     
     # Better logic: if there is a Project linked, try to find the pathway it belongs to
     # especially for Presentations or if the user is not linked to a path
-    level = 1
     if log.Project_ID and log.project:
-        # Check project_code first
+        # 1. First, establish the pathway context
         if log.project_code:
-            match = re.match(r"([A-Z]+)(\d+)", log.project_code)
+            match = re.match(r"([A-Z]+)", log.project_code)
             if match:
                 abbr = match.group(1)
-                level = int(match.group(2))
-                log.project_code = log.project_code
-                
                 pathway_db = Pathway.query.filter_by(abbr=abbr).first()
                 if pathway_db:
                     pathway_name_to_return = pathway_db.name
 
+        if not pathway_name_to_return and log.owner:
+            pathway_name_to_return = log.owner.Current_Path
+
+        # 2. Derive level and project code based on that pathway
+        level = log.project.get_level(pathway_name_to_return)
+        
         if not getattr(log, 'project_code', None):
-            pp, path_obj = log.project.resolve_context(log.owner.Current_Path if log.owner else None)
-            
-            if path_obj:
-                pathway_name_to_return = path_obj.name
-            
-            if pp:
-                if path_obj and path_obj.abbr:
-                    log.project_code = f"{path_obj.abbr}{pp.code}"
-                else:
-                    log.project_code = pp.code
-                
-                if pp.level:
-                    level = pp.level
-            else:
-                log.project_code = ""
-                if log.project and log.project.is_generic: # Generic
-                    log.project_code = "TM1.0"
+            log.project_code = log.project.get_code(pathway_name_to_return)
 
     log_data = {
         "id": log.id,
@@ -558,6 +545,7 @@ def get_speech_log_details(log_id):
         "Project_ID": log.Project_ID,
         "pathway": pathway_name_to_return,
         "level": level,
+        "project_code": log.project_code,
         "Media_URL": log.media.url if log.media else ""
     }
 
