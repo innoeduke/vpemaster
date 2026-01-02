@@ -189,8 +189,13 @@
     {% endmacro %}
 
     {# Macro to render role tables, with or without accordion #}
-    {% macro render_role_tables(roles, status, is_admin_view, contacts, current_user_contact_id,
+    {% macro render_role_tables(roles, sorted_role_groups, status, is_admin_view, contacts, current_user_contact_id,
     selected_meeting_number) %}
+
+    {% set use_accordion = (status in ['running', 'not started', 'unpublished']) or (status == 'finished' and
+    is_admin_view) %}
+    {% set default_open = (status == 'not started') or (status == 'unpublished') %}
+
     {% set table_header %}
     <thead>
         <tr>
@@ -203,19 +208,16 @@
     </thead>
     {% endset %}
 
-    {% set use_accordion = (status == 'running') or (status == 'finished' and is_admin_view) or (status == 'not
-    started') or (status == 'unpublished') %}
-
     {% if use_accordion %}
     <div class="award-accordion">
         {% for category, items in sorted_role_groups %}
-        {% if category and category != 'none' %}
-        <div class="accordion-item" data-category="{{ category }}">
-            <button class="accordion-header">
-                <span>{{ category|replace('-', ' ')|title }} Roles</span>
+        {% if items %}
+        <div class="accordion-item" data-category="{{ category or 'other' }}">
+            <button class="accordion-header {{ 'active' if default_open else '' }}">
+                <span>{{ (category or 'Other')|replace('-', ' ')|title }} Roles</span>
                 <i class="fas fa-chevron-down"></i>
             </button>
-            <div class="accordion-content">
+            <div class="accordion-content" {% if default_open %}style="max-height: none;" {% endif %}>
                 <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
                     <tbody>
                         {% for role in items %}
@@ -231,7 +233,8 @@
     </div>
 
 
-    {% else %} {# e.g., finished member view #}
+    {% else %}
+    {# e.g., finished member view #}
     <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
         <tbody>
             {% set ns = namespace(displayed_awards=[]) %}
@@ -261,10 +264,9 @@
     </div>
     {% else %}
     {# Pass context to macro to access sorted_role_groups #}
-    {% with %}
-    {{ render_role_tables(roles, selected_meeting.status, is_admin_view, contacts, current_user_contact_id,
+    {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
+    current_user_contact_id,
     selected_meeting_number) }}
-    {% endwith %}
     {% endif %}
 
     {% else %}

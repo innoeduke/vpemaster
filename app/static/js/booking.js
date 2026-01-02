@@ -198,7 +198,23 @@ function updateSessionRow(sessionData) {
     ownerDisplay.textContent = sessionData.owner_name || 'Unassigned';
   }
 
-  // 3. Clear icons if unassigned
+  // 3. Update Avatar
+  const avatarContainer = row.querySelector('.role-avatar:not(.waitlist-avatar)');
+  if (avatarContainer) {
+    if (sessionData.owner_name) {
+      avatarContainer.title = sessionData.owner_name;
+    } else {
+      avatarContainer.removeAttribute('title');
+    }
+
+    if (sessionData.owner_avatar_url) {
+      avatarContainer.innerHTML = `<img src="/static/${sessionData.owner_avatar_url}" alt="User Avatar">`;
+    } else {
+      avatarContainer.innerHTML = '<i class="fas fa-user-circle"></i>';
+    }
+  }
+
+  // 4. Clear icons if unassigned
   if (!sessionData.owner_id || sessionData.owner_id == 0) {
     const roleActions = row.querySelector(".role-cell-actions");
     if (roleActions) {

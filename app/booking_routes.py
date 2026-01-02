@@ -699,6 +699,7 @@ def book_or_assign_role():
                 'session_id': session_log.id,
                 'owner_id': owner_id_to_set,
                 'owner_name': owner_contact.Name if owner_contact else None,
+                'owner_avatar_url': owner_contact.Avatar_URL if owner_contact else None,
                 'credentials': new_credentials
             })
 
