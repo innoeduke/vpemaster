@@ -13,7 +13,7 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from .utils import derive_project_code, load_setting, derive_credentials, get_project_code, get_meetings_by_status, load_all_settings, get_excomm_team
+from .utils import load_setting, derive_credentials, get_project_code, get_meetings_by_status, load_all_settings, get_excomm_team
 from .tally_sync import sync_participants_to_tally
 
 agenda_bp = Blueprint('agenda_bp', __name__)
@@ -107,24 +107,26 @@ def _create_or_update_session(item, meeting_number, seq):
         credentials = derive_credentials(owner_contact)
 
     # --- Automatic project_code Derivation ---
-    temp_log_data = {
-        'Project_ID': project_id,
-        'Type_ID': type_id,
-        'session_type': session_type,  # Pass fetched session_type
-        # Fetch project if needed
-        'project': Project.query.get(project_id) if project_id else None
-    }
-    # Create a temporary object-like structure or fetch existing log if updating
-    log_for_derivation = SessionLog.query.get(item['id']) if item.get(
-        'id') != 'new' else type('obj', (object,), temp_log_data)()
-    if item.get('id') == 'new':  # If new, update the temp obj with necessary fields
+    is_presentation = (session_type and session_type.Title == 'Presentation') \
+                      or (item.get('session_type_title') == 'Presentation')
+
+    if item.get('id') == 'new':
+        log_for_derivation = SessionLog(
+            Project_ID=project_id,
+            Type_ID=type_id,
+            Owner_ID=owner_id,
+            session_type=session_type,
+            project=Project.query.get(project_id) if project_id else None
+        )
+    else:
+        log_for_derivation = SessionLog.query.get(item['id'])
+        # Temporarily update for derivation
         log_for_derivation.Project_ID = project_id
         log_for_derivation.Type_ID = type_id
+        log_for_derivation.Owner_ID = owner_id
         log_for_derivation.session_type = session_type
-        log_for_derivation.project = temp_log_data['project']
 
-    project_code = derive_project_code(
-        log_for_derivation, owner_contact)
+    project_code = log_for_derivation.derive_project_code(owner_contact)
         
     # --- Duration Handling ---
     duration_min = safe_int(item.get('duration_min'))
@@ -150,7 +152,11 @@ def _create_or_update_session(item, meeting_number, seq):
 
     # --- Pathway Logic ---
     pathway_val = item.get('pathway')
-    if not pathway_val and owner_contact and owner_contact.Current_Path:
+    
+    # REQUIREMENT: For presentations, use owner's current path to fill pathway field
+    if is_presentation and owner_contact and owner_contact.Current_Path:
+        pathway_val = owner_contact.Current_Path
+    elif not pathway_val and owner_contact and owner_contact.Current_Path:
         pathway_val = owner_contact.Current_Path
         
     # --- Create or Update SessionLog ---
@@ -190,11 +196,13 @@ def _create_or_update_session(item, meeting_number, seq):
             log.project_code = project_code
             
             # Use captured old_owner_id for logic
-            if pathway_val:
+            if is_presentation and owner_contact and owner_contact.Current_Path:
+                # Force sync to owner's path for presentations
+                log.pathway = owner_contact.Current_Path
+            elif pathway_val:
                 log.pathway = pathway_val
             elif owner_id != old_owner_id:
-                # If owner changed (or is being set for the first time), sync to new owner's path.
-                # This clears the pathway (sets to None) if the new owner has no path.
+                # If owner changed, sync to new owner's path.
                 log.pathway = owner_contact.Current_Path if owner_contact else None
             elif owner_contact and owner_contact.Current_Path and not log.pathway:
                 log.pathway = owner_contact.Current_Path

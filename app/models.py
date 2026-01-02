@@ -269,6 +269,55 @@ class SessionLog(db.Model):
     media = db.relationship('Media', backref='session_log',
                             uselist=False, cascade='all, delete-orphan')
 
+    def derive_project_code(self, owner_contact=None):
+        """
+        Derives the 'project_code' based on the role, project, and owner's pathway.
+        Consolidated logic from legacy utils.derive_project_code.
+        """
+        import re
+        from .utils import get_project_code
+        
+        contact = owner_contact or self.owner
+        if not contact or not contact.Current_Path:
+            return None
+
+        pathway_name = contact.Current_Path
+        path_obj = db.session.query(Pathway).filter_by(name=pathway_name).first()
+        if not path_obj:
+            return None
+
+        pathway_suffix = path_obj.abbr
+        role_name = self.session_type.role.name if self.session_type and self.session_type.role else None
+
+        # --- Priority 1: Speaker/Evaluator with Project ID ---
+        # Special check for Presentation session type or specific presentation roles
+        is_presentation = (self.session_type and self.session_type.Title == 'Presentation')
+        project_specific_roles = ["Prepared Speaker", "Individual Evaluator", "Presenter"]
+        
+        if (role_name in project_specific_roles or is_presentation) and self.Project_ID:
+            # For presentations, we might want to use self.pathway if it's explicitly set to a series
+            # but per requirement, we use owner's current path for the DB field, 
+            # while Project.get_code will naturally find the series fallback.
+            code = get_project_code(self.Project_ID, pathway_name)
+            if code:
+                return code
+
+        # --- Priority 2: Other roles - Use highest level achievement + 1 ---
+        else:
+            # Determine base level from contact.credentials for consistency
+            start_level = 1
+            if contact.credentials:
+                # Match the current path abbreviation followed by a level number
+                match = re.match(rf"^{pathway_suffix}(\d+)$", contact.credentials.strip().upper())
+                if match:
+                    level_achieved = int(match.group(1))
+                    # If level L is completed, the current work is for level L+1 (capped at 5)
+                    start_level = min(level_achieved + 1, 5)
+                
+            return f"{pathway_suffix}{start_level}"
+
+        return None
+
     def get_display_level_and_type(self, pathway_cache=None):
         """
         Determine log type, display level, and project code for this session log.
@@ -393,16 +442,19 @@ class SessionLog(db.Model):
             db.session.delete(self.media)
 
     def update_pathway(self, pathway_name):
-        """Update log pathway and sync with user profile if not a series."""
+        """Update log pathway and sync with user profile if not a series/presentation."""
         if not pathway_name:
             return
             
         self.pathway = pathway_name
         
+        # Determine if this is a presentation session
+        is_presentation = (self.session_type and self.session_type.Title == 'Presentation')
+        
         # Sync to user profile if relevant
         if self.owner and self.owner.user:
-            # Skip sync for presentation series
-            if "Series" not in pathway_name:
+            # Skip sync for presentation series or specific Presentation sessions
+            if "Series" not in pathway_name and not is_presentation:
                 self.owner.user.Current_Path = pathway_name
                 db.session.add(self.owner.user)
 

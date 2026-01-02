@@ -601,15 +601,22 @@ def update_speech_log(log_id):
     # 2. Use Model Methods for Complex logic
     log.update_media(media_url)
     
-    if 'pathway' in data:
+    # REQUIREMENT: For presentations, use owner's current path to fill pathway field
+    is_presentation = (log.session_type and log.session_type.Title == 'Presentation')
+    if is_presentation and log.owner and log.owner.Current_Path:
+        log.pathway = log.owner.Current_Path
+    elif 'pathway' in data:
         log.update_pathway(data['pathway'])
 
     log.update_durations(data, updated_project)
+    
+    # 3. Derive Project Code
+    log.project_code = log.derive_project_code()
 
     try:
         db.session.commit()
         
-        # 3. Get response data from model
+        # 4. Get response data from model
         summary = log.get_summary_data()
 
         return jsonify(

@@ -8,7 +8,7 @@ from datetime import datetime
 import re
 import secrets
 from sqlalchemy import or_
-from .utils import derive_project_code, derive_credentials
+from .utils import derive_credentials
 from .utils import get_meetings_by_status
 
 booking_bp = Blueprint('booking_bp', __name__)
@@ -663,8 +663,8 @@ def book_or_assign_role():
 
         updated_sessions = []
         for session_log in sessions_to_update:
-            new_path_level = derive_project_code(
-                session_log, owner_contact) if owner_contact else None
+            new_path_level = session_log.derive_project_code(
+                owner_contact) if owner_contact else None
 
             session_log.Owner_ID = owner_id_to_set
             session_log.project_code = new_path_level
