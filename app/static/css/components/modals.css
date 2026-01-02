@@ -65,6 +65,18 @@
     margin-top: 25px;
 }
 
+/* Ensure form-table inside modals has adequate label width */
+.modal-content .form-table td:first-child {
+    width: 120px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.modal-content .form-table td {
+    border: none;
+    padding: 10px 5px;
+}
+
 .modal .close {
     color: #aaa;
     float: right;

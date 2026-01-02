@@ -337,20 +337,22 @@ class SessionLog(db.Model):
                 
                 if not found_via_cache:
                     # No cache, query directly
-                    # Try to find match with user's current path first
-                    if self.owner and self.owner.Current_Path:
-                        user_path = Pathway.query.filter_by(name=self.owner.Current_Path).first()
-                        if user_path:
+                    # Try to find match with log's own pathway first, then user's current path
+                    target_path_name = self.pathway or (self.owner.Current_Path if self.owner else None)
+                    
+                    if target_path_name:
+                        target_path = Pathway.query.filter_by(name=target_path_name).first()
+                        if target_path:
                             pp = PathwayProject.query.filter_by(
                                 project_id=self.Project_ID, 
-                                path_id=user_path.id
+                                path_id=target_path.id
                             ).first()
                             if pp:
-                                pathway_abbr = user_path.abbr
+                                pathway_abbr = target_path.abbr
                                 display_level = str(pp.level) if pp.level else "1"
-                                project_code = f"{pathway_abbr}{pp.code}"
+                                project_code = f"{pathway_abbr}{pp.code}" if pathway_abbr else pp.code
                                 found_data = True
-                    
+                        
                     # Fallback: any pathway
                     if not found_data:
                         pp = PathwayProject.query.filter_by(project_id=self.Project_ID).first()
@@ -441,22 +443,20 @@ class SessionLog(db.Model):
 
     def get_summary_data(self):
         """Get project name, code, and pathway for response serialization."""
-        from .models import Project, PathwayProject, Pathway
+        from .models import Project
         
         project_name = "N/A"
-        project_code = None
-        current_pathway = self.owner.Current_Path if self.owner else "N/A"
+        project_code = ""
+        current_pathway = self.pathway or (self.owner.Current_Path if self.owner else "N/A")
 
         if self.Project_ID:
             project = Project.query.get(self.Project_ID)
             if project:
                 project_name = project.Project_Name
-                pp = PathwayProject.query.filter_by(project_id=project.id).first()
-                if pp:
-                    pathway_obj = Pathway.query.get(pp.path_id)
-                    if pathway_obj:
-                        current_pathway = pathway_obj.name
-                        project_code = f"{pathway_obj.abbr}{pp.code}"
+                
+                # Use the more robust logic to get level, type, and code
+                _, _, derived_code = self.get_display_level_and_type()
+                project_code = derived_code
 
         return {
             "project_name": project_name,
@@ -516,9 +516,6 @@ class LevelRole(db.Model):
     role = db.Column(db.String(255), nullable=False)
     type = db.Column(db.String(50), nullable=False)
     count_required = db.Column(db.Integer, nullable=False, default=0)
-
-
-
 
 
 class Pathway(db.Model):

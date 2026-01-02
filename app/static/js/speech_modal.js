@@ -275,11 +275,11 @@ function setupSpecialProjectModal(logData, { sessionType, workingPath }) {
   modalElements.pathwaySelectDropdown.value =
     logData.pathway || workingPath || "";
 
-  modalElements.pathwayGroup.style.display = "none";
+  modalElements.pathwayGroup.style.display = isProject ? "block" : "none";
   modalElements.projectSelectDropdown.style.display = "none";
 
   modalElements.isProjectChk.onchange = (e) => {
-    modalElements.pathwayGroup.style.display = "none";
+    modalElements.pathwayGroup.style.display = e.target.checked ? "block" : "none";
     if (!e.target.checked) {
       modalElements.pathwaySelectDropdown.value = "";
     }
