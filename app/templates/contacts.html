@@ -1,5 +1,5 @@
-{% extends "base.html" %} 
-{% block title %}Contacts{% endblock %} 
+{% extends "base.html" %}
+{% block title %}Contacts{% endblock %}
 
 
 {% block content %}
@@ -19,17 +19,8 @@
 
   <div class="search-and-buttons">
     <div class="search-container">
-      <input
-        type="text"
-        id="searchInput"
-        placeholder="Search all columns..."
-        class="search-box"
-      />
-      <button
-        id="clear-searchInput"
-        class="clear-search-btn"
-        style="display: none"
-      >
+      <input type="text" id="searchInput" placeholder="Search all columns..." class="search-box" />
+      <button id="clear-searchInput" class="clear-search-btn" style="display: none">
         &times;
       </button>
     </div>
@@ -38,10 +29,7 @@
       <button class="btn btn-primary" onclick="openContactModal()">
         New Contact
       </button>
-      <button
-        class="btn btn-info"
-        onclick="window.location.href='{{ url_for('roster_bp.roster') }}'"
-      >
+      <button class="btn btn-info" onclick="window.location.href='{{ url_for('roster_bp.roster') }}'">
         Open Roster
       </button>
     </div>
@@ -78,81 +66,79 @@
     <tbody>
       {% for contact in contacts %}
       <tr data-type="{{ contact.Type }}">
-          <td>
-            <div class="contact-name-cell">
-              {% if contact.Avatar_URL %}
-                <img src="{{ url_for('static', filename=contact.Avatar_URL) }}" alt="Avatar" class="contact-avatar-small">
-              {% else %}
-                <div class="contact-avatar-placeholder-small">
-                  <i class="fas fa-user"></i>
-                </div>
-              {% endif %}
-              <div class="contact-name-info {% if can_view_all_logs %}clickable-name{% endif %}" 
-                   {% if can_view_all_logs %}onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id, view_mode='member') }}'" 
-                   title="View {{ contact.Name }}'s speech logs"{% endif %}>
-                {{ contact.Name }} 
-                {% if contact.DTM %}
-                <sup class="dtm-superscript">DTM</sup>
-                {% endif %}
-                {% if contact.Member_ID %}
-                <span class="badge-member-id" style="margin-left: 5px; font-size: 0.8em; vertical-align: text-top; background-color: rgb(231, 231, 228); border-radius: 5px; padding: 2px 5px;">{{ contact.Member_ID }}</span>
-                {% endif %}
-              </div>
+        <td>
+          <div class="contact-name-cell">
+            {% if contact.Avatar_URL %}
+            <img src="{{ url_for('static', filename=contact.Avatar_URL) }}" alt="Avatar" class="contact-avatar-small">
+            {% else %}
+            <div class="contact-avatar-placeholder-small">
+              <i class="fas fa-user"></i>
             </div>
-          </td>
-         <td data-sort="{{ '1' if contact.is_qualified else '0' }}_{{ '%03d'|format(contact.tt_count) }}_{{ '%03d'|format(contact.role_count) }}_{{ '%03d'|format(contact.attendance_count) }}_{{ '%03d'|format(contact.award_count) }}">
-             <div class="participation-container">
-                 {% if contact.is_qualified %}
-                 <i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>
-                 {% endif %}
-                 <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
-                    title="Topic Speeches" class="participation-badge badge-tt">
-                      <i class="fas fa-comment"></i> {{ contact.tt_count }}
-                 </a>
-                 <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
-                    title="Roles Taken" class="participation-badge badge-roles">
-                      <i class="fas fa-user-tag"></i> {{ contact.role_count }}
-                 </a>
-                 <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
-                    title="Attendance" class="participation-badge badge-attendance">
-                      <i class="fas fa-calendar-check"></i> {{ contact.attendance_count }}
-                 </a>
-                 <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" 
-                    title="Awards Won" class="participation-badge badge-awards">
-                      <i class="fas fa-trophy"></i> {{ contact.award_count }}
-                 </a>
-             </div>
-         </td>
-         <td>{{ contact.Phone_Number if contact.Phone_Number else '-' }}</td>
-         <td>{{ contact.Club if contact.Club else '-' }}</td>
-         <td>{{ contact.Completed_Paths if contact.Completed_Paths else '-' }}</td>
-         <td>{{ contact.credentials if contact.credentials else '-' }}</td>
-         <td>{{ contact.Next_Project if contact.Next_Project else '-' }}</td>
-         <td>{{ contact.mentor.Name if contact.mentor else '-' }}</td>
+            {% endif %}
+            <div class="contact-name-info {% if can_view_all_logs %}clickable-name{% endif %}" {% if can_view_all_logs
+              %}onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id, view_mode='member') }}'"
+              title="View {{ contact.Name }}'s speech logs" {% endif %}>
+              {{ contact.Name }}
+              {% if contact.DTM %}
+              <sup class="dtm-superscript">DTM</sup>
+              {% endif %}
+              {% if contact.Member_ID %}
+              <span class="badge-member-id"
+                style="margin-left: 5px; font-size: 0.8em; vertical-align: text-top; background-color: rgb(231, 231, 228); border-radius: 5px; padding: 2px 5px;">{{
+                contact.Member_ID }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </td>
+        <td
+          data-sort="{{ '1' if contact.is_qualified else '0' }}_{{ '%03d'|format(contact.role_count) }}_{{ '%03d'|format(contact.tt_count) }}_{{ '%03d'|format(contact.attendance_count) }}_{{ '%03d'|format(contact.award_count) }}">
+          <div class="participation-container">
+            {% if contact.is_qualified %}
+            <i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>
+            {% endif %}
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Roles Taken"
+              class="participation-badge badge-roles">
+              <i class="fas fa-user-tag"></i> {{ contact.role_count }}
+            </a>
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Topic Speeches"
+              class="participation-badge badge-tt">
+              <i class="fas fa-comment"></i> {{ contact.tt_count }}
+            </a>
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Attendance"
+              class="participation-badge badge-attendance">
+              <i class="fas fa-calendar-check"></i> {{ contact.attendance_count }}
+            </a>
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Awards Won"
+              class="participation-badge badge-awards">
+              <i class="fas fa-trophy"></i> {{ contact.award_count }}
+            </a>
+          </div>
+        </td>
+        <td>{{ contact.Phone_Number if contact.Phone_Number else '-' }}</td>
+        <td>{{ contact.Club if contact.Club else '-' }}</td>
+        <td>{{ contact.Completed_Paths if contact.Completed_Paths else '-' }}</td>
+        <td>{{ contact.credentials if contact.credentials else '-' }}</td>
+        <td>{{ contact.Next_Project if contact.Next_Project else '-' }}</td>
+        <td>{{ contact.mentor.Name if contact.mentor else '-' }}</td>
         {% if is_authorized('CONTACT_BOOK_EDIT') %}
         <td>
           <div class="action-links">
-            <button
-              class="icon-btn"
-              onclick="openContactModal({{ contact.id }})"
-              title="Edit"
-            >
+            <button class="icon-btn" onclick="openContactModal({{ contact.id }})" title="Edit">
               <i class="fas fa-edit"></i>
             </button>
-            
+
             {% if not contact.user %}
-            <form action="{{ url_for('users_bp.quick_add_user', contact_id=contact.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Create user for {{ contact.Name }}?');">
-                <button type="submit" class="icon-btn" title="Quick Add User">
-                    <i class="fas fa-user-plus"></i>
-                </button>
+            <form action="{{ url_for('users_bp.quick_add_user', contact_id=contact.id) }}" method="POST"
+              style="display:inline;" onsubmit="return confirm('Create user for {{ contact.Name }}?');">
+              <button type="submit" class="icon-btn" title="Quick Add User">
+                <i class="fas fa-user-plus"></i>
+              </button>
             </form>
             {% endif %}
- 
-            <button
-              class="delete-btn icon-btn"
+
+            <button class="delete-btn icon-btn"
               onclick="openDeleteModal('{{ url_for('contacts_bp.delete_contact',contact_id=contact.id) }}', 'contact')"
-              title="Delete"
-            >
+              title="Delete">
               <i class="fas fa-trash-alt"></i>
             </button>
           </div>
@@ -168,8 +154,8 @@
 <script>
   var MENTOR_CANDIDATES = [
     {% for m in mentor_candidates %}
-      { id: {{ m.id }}, name: "{{ m.Name }}" },
-    {% endfor %}
+  { id: { { m.id } }, name: "{{ m.Name }}" },
+  {% endfor %}
   ];
 </script>
 <script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
