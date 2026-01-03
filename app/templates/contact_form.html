@@ -3,38 +3,44 @@
 {% block title %}{{ 'Edit Contact' if contact else 'Add New Contact' }}{% endblock %}
 
 {% block content %}
-    <h1>{{ 'Edit Contact' if contact else 'Add New Contact' }}</h1>
-    <form method="POST" action="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) if contact else url_for('contacts_bp.contact_form') }}">
-        <table class="form-table">
-            <tr>
-                <td><label for="name">Name: <span class="required-field">*</span></label></td>
-                <td><input type="text" id="name" name="name" value="{{ contact.Name if contact else '' }}" required></td>
-            </tr>
-            <tr>
-                <td><label for="type">Type: <span class="required-field">*</span></label></td>
-                <td>
-                    <select id="type" name="type" required>
-                        <option value="Member" {% if contact and contact.Type == 'Member' %}selected{% endif %}>Member</option>
-                        <option value="Guest" {% if contact and contact.Type == 'Guest' %}selected{% endif %}>Guest</option>
-                        <option value="Officer" {% if contact and contact.Type == 'Officer' %}selected{% endif %}>System</option>
-                    </select>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="club">Club:</label></td>
-                <td><input type="text" id="club" name="club" value="{{ contact.Club if contact else '' }}" placeholder="e.g., Club1/Club2"></td>
-            </tr>
-                <tr>
-                    <td><label for="completed_paths">Completed Paths:</label></td>
-                    <td><input type="text" id="completed_paths" name="completed_paths" value="{{ contact.Completed_Paths if contact else '' }}" placeholder="e.g., PM1, DL2..."></td>
-                </tr>
-                <tr>
-                    <td><label for="dtm">DTM:</label></td>
-                    <td><input type="checkbox" id="dtm" name="dtm" {% if contact and contact.DTM %}checked{% endif %}></td>
-                </tr>
-            </table>        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save</button>
-            <a href="{{ url_for('contacts_bp.show_contacts') }}" class="btn btn-danger">Cancel</a>
-        </div>
-    </form>
+<h1>{{ 'Edit Contact' if contact else 'Add New Contact' }}</h1>
+<form method="POST"
+    action="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) if contact else url_for('contacts_bp.contact_form') }}">
+    <table class="form-table">
+        <tr>
+            <td><label for="name">Name: <span class="required-field">*</span></label></td>
+            <td><input type="text" id="name" name="name" value="{{ contact.Name if contact else '' }}" required></td>
+        </tr>
+        <tr>
+            <td><label for="type">Type: <span class="required-field">*</span></label></td>
+            <td>
+                <select id="type" name="type" required>
+                    <option value="Member" {% if contact and contact.Type=='Member' %}selected{% endif %}>Member
+                    </option>
+                    <option value="Guest" {% if contact and contact.Type=='Guest' %}selected{% endif %}>Guest</option>
+                    <option value="Officer" {% if contact and contact.Type=='Officer' %}selected{% endif %}>System
+                    </option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="club">Club:</label></td>
+            <td><input type="text" id="club" name="club" value="{{ contact.Club if contact else '' }}" placeholder="-">
+            </td>
+        </tr>
+        <tr>
+            <td><label for="completed_paths">Completed Paths:</label></td>
+            <td><input type="text" id="completed_paths" name="completed_paths"
+                    value="{{ contact.Completed_Paths if contact else '' }}" placeholder="e.g., PM1, DL2..."></td>
+        </tr>
+        <tr>
+            <td><label for="dtm">DTM:</label></td>
+            <td><input type="checkbox" id="dtm" name="dtm" {% if contact and contact.DTM %}checked{% endif %}></td>
+        </tr>
+    </table>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a href="{{ url_for('contacts_bp.show_contacts') }}" class="btn btn-danger">Cancel</a>
+    </div>
+</form>
 {% endblock %}

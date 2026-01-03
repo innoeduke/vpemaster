@@ -193,7 +193,7 @@ def contact_form(contact_id=None):
 
         email = request.form.get('email', '').strip() or None
         contact_type = request.form.get('type', 'Guest')
-        club = request.form.get('club', '').strip() or 'SHLTMC'
+        club = request.form.get('club', '').strip() or None
         phone = request.form.get('phone_number', '').strip() or None
         bio = request.form.get('bio', '').strip() or None
         member_id = request.form.get('member_id', '').strip() or None
@@ -248,7 +248,7 @@ def contact_form(contact_id=None):
                 Name=name,
                 Email=email,
                 Type=contact_type,
-                Club=club or 'SHLTMC',
+                Club=club or None,
                 Date_Created=date.today(),
                 Phone_Number=phone,
                 Bio=bio,
@@ -336,7 +336,7 @@ def create_contact_api():
             Name=data['name'],
             Email=data.get('email') or None,
             Type=data['type'],
-            Club=data.get('club') or 'SHLTMC',
+            Club=data.get('club') or None,
             Date_Created=date.today(),
             Phone_Number=data.get('phone') or None
         )
