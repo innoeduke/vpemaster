@@ -968,3 +968,13 @@
         font-size: 0.9em;
     }
 }
+
+/* Landscape-specific footnote scaling */
+@media (max-width: 992px) and (orientation: landscape) {
+    .footnote {
+        font-size: 0.7em;
+    }
+    .footnote ul {
+        font-size: 0.85em;
+    }
+}
