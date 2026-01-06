@@ -58,6 +58,14 @@
     </div>
 
     {% if selected_meeting %}
+
+    {% if selected_meeting.status == 'running' %}
+    <div class="voting-instruction-alert">
+        <i class="fas fa-info-circle"></i>
+        <span><strong>Select your winners!</strong> Click a candidate's row to cast your vote for each category.</span>
+    </div>
+    {% endif %}
+
     {# ============================================= #}
     {# ================ MACRO DEFINITIONS ================ #}
     {# ============================================= #}

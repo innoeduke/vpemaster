@@ -55,6 +55,26 @@
 }
 
 /* Shared styles for buttons in filter container to ensure equal height */
+.voting-instruction-alert {
+    background-color: #f8f9fa;
+    color: #333;
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin: 10px 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.1em;
+    border: 1px solid #772432;
+    border-left-width: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.voting-instruction-alert i {
+    font-size: 1.3em;
+    color: #772432;
+}
+
 .booking-filter-container .btn,
 .booking-filter-container .role-guide-link {
     display: inline-flex;
