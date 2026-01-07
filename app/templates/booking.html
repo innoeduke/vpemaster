@@ -59,10 +59,10 @@
 
     {% if selected_meeting %}
 
-    {% if selected_meeting.status == 'running' %}
+    {% if selected_meeting.status == 'running' and not has_voted %}
     <div class="voting-instruction-alert">
         <i class="fas fa-info-circle"></i>
-        <span><strong>Select your winners!</strong> Click a candidate's row to cast your vote for each category.</span>
+        <span><strong>Select your winners!</strong> Click a candidate to cast your vote for each category.</span>
     </div>
     {% endif %}
 
@@ -190,8 +190,10 @@
             {# Admin view: Show buttons in finished state #}
             {% set can_vote = role.owner_id and role.award_category %}
             {% if (role.owner_id and role.award_category) and can_vote %}
-            <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote"
-                onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}"
+            {% set should_show = role.award_type %}
+            <button type="button"
+                class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %} {% if not should_show %}vote-auto-hide{% endif %}"
+                title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}"
                 data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
                 <i class="fas fa-vote-yea"></i>
             </button>
@@ -237,7 +239,14 @@
             <button
                 class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }}">
                 <span>{{ (category or 'Other')|replace('-', ' ')|title }} Roles</span>
-                <i class="fas fa-chevron-down"></i>
+                <div class="accordion-header-right">
+                    {% if category_voted %}
+                    <span class="voted-label">
+                        <i class="fas fa-trophy"></i> VOTED
+                    </span>
+                    {% endif %}
+                    <i class="fas fa-chevron-down"></i>
+                </div>
             </button>
             <div class="accordion-content" {% if default_open %}style="max-height: none;" {% endif %}>
                 <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
@@ -296,8 +305,9 @@
     {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
     current_user_contact_id,
     selected_meeting_number) }}
+    {% endif %}
 
-    {% if selected_meeting.status == 'running' %}
+    {% if selected_meeting.status == 'running' and not (has_voted and not is_admin_view) %}
     <div id="batch-vote-actions" style="display: none; text-align: center; margin-top: 20px; padding-bottom: 30px;">
         <button id="done-voting-btn" class="btn btn-primary btn-lg"
             style="width: 80%; max-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
@@ -309,7 +319,6 @@
         <h2>Thank You!</h2>
         <p>Your votes have been submitted.</p>
     </div>
-    {% endif %}
     {% endif %}
     {% endif %}
 

@@ -25,6 +25,7 @@ ROLE_PERMISSIONS = {
     },
     "Officer": {
         "AGENDA_VIEW",
+        "BOOKING_ASSIGN_ALL",
         "BOOKING_BOOK_OWN",
         "SPEECH_LOGS_VIEW_ALL",
         "CONTACT_BOOK_VIEW",

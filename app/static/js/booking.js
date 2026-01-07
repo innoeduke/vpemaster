@@ -357,15 +357,50 @@ function updateVoteButtonsUI(category, newWinnerId) {
     }
   });
 
-  // NEW: Update accordion header color
+  // NEW: Update accordion header color and label
   const accordionItem = document.querySelector(`.accordion-item[data-category="${category}"]`);
   if (accordionItem) {
     const header = accordionItem.querySelector('.accordion-header');
     if (header) {
+      // Find or create the header-right container
+      let headerRight = header.querySelector('.accordion-header-right');
+      if (!headerRight) {
+        // If it doesn't exist, create it and move the chevron into it
+        headerRight = document.createElement('div');
+        headerRight.className = 'accordion-header-right';
+        const chevron = header.querySelector('.fa-chevron-down');
+        if (chevron) {
+          headerRight.appendChild(chevron);
+        }
+        header.appendChild(headerRight);
+      }
+
       if (newWinnerId !== null) {
         header.classList.add('voted');
+
+        // Add VOTED label if it doesn't exist
+        let votedLabel = headerRight.querySelector('.voted-label');
+        if (!votedLabel) {
+          votedLabel = document.createElement('span');
+          votedLabel.className = 'voted-label';
+          votedLabel.innerHTML = '<i class="fas fa-trophy"></i> VOTED';
+
+          // Insert before the chevron icon
+          const chevron = headerRight.querySelector('.fa-chevron-down');
+          if (chevron) {
+            headerRight.insertBefore(votedLabel, chevron);
+          } else {
+            headerRight.insertBefore(votedLabel, headerRight.firstChild);
+          }
+        }
       } else {
         header.classList.remove('voted');
+
+        // Remove VOTED label if it exists
+        const votedLabel = headerRight.querySelector('.voted-label');
+        if (votedLabel) {
+          votedLabel.remove();
+        }
       }
     }
   }
