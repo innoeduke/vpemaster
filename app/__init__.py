@@ -1,9 +1,7 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-
 from flask_bcrypt import Bcrypt
-from flask_apscheduler import APScheduler
 
 import os
 
@@ -14,9 +12,7 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 migrate = Migrate()
 from flask_mail import Mail
-
 mail = Mail()
-scheduler = APScheduler()
 from .assets import assets
 
 from flask_login import LoginManager
@@ -44,23 +40,6 @@ def create_app(config_class='config.Config'):
     login_manager.init_app(app)
     mail.init_app(app)
     assets.init_app(app)
-    scheduler.init_app(app)
-    
-    from .tasks import cache_external_assets
-    
-    # Schedule background task
-    if not scheduler.running:
-        scheduler.add_job(id='cache_assets_daily', func=cache_external_assets, trigger='interval', hours=24)
-        scheduler.start()
-
-    # Initial run if cache is missing
-    with app.app_context():
-        cache_dir = os.path.join(app.static_folder, 'cache', 'css')
-        if not os.path.exists(cache_dir) or not os.listdir(cache_dir):
-            try:
-                cache_external_assets()
-            except Exception as e:
-                print(f"Initial cache ignored due to error: {e}")
 
     # Register context processors
     from .auth.utils import is_authorized

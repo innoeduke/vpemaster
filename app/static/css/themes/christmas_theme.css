@@ -1,6 +1,6 @@
 /* static/css/christmas_theme.css */
-@import url('../../cache/css/quicksand.css');
-@import url('../../cache/css/great-vibes.css');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
 
 /* --- Base Overrides --- */
 body {
