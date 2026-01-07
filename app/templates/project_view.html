@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Project View{% endblock %}
+
+{% block content %}
+<div class="speech-logs-content project-view-container">
+	<div class="speech-logs-toolbar">
+		<div class="toolbar-spacer"></div>
+		<div class="view-mode-toggle">
+			<a href="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="btn btn-secondary btn-sm">
+				<i class="fas fa-list"></i> Back to Member View
+			</a>
+		</div>
+	</div>
+
+	<form method="GET" action="{{ url_for('speech_logs_bp.show_project_view') }}" class="filters-container"
+		id="speech-logs-filter-form">
+		<div class="filter-row" style="align-items: center;">
+			<div class="form-group" style="display: flex; align-items: center; margin-bottom: 0;">
+				<label for="term-select"
+					style="margin-right: 15px; font-weight: bold; font-size: 1.1em; white-space: nowrap;">Term:</label>
+				<select name="term" id="term-select" onchange="this.form.submit()" class="form-control"
+					style="font-size: 1.1em; flex: 1;">
+					{% for term in terms %}
+					<option value="{{ term.id }}" {% if current_term and current_term.id==term.id %}selected{% endif %}>
+						{{ term.label }}
+					</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="form-group" style="display: flex; align-items: center; margin-bottom: 0;">
+				<label for="pathway-select"
+					style="margin-right: 15px; font-weight: bold; font-size: 1.1em; white-space: nowrap;">Pathway:</label>
+				<select name="pathway" id="pathway-select" onchange="this.form.submit()" class="form-control"
+					style="font-size: 1.1em; flex: 1;">
+					<option value="">All Pathways</option>
+
+					<optgroup label="Active">
+						{% for p in active_pathways %}
+						<option value="{{ p }}" {% if selected_pathway==p %}selected{% endif %}>
+							{{ p }}
+						</option>
+						{% endfor %}
+					</optgroup>
+
+					{% if inactive_pathways %}
+					<optgroup label="Inactive">
+						{% for p in inactive_pathways %}
+						<option value="{{ p }}" {% if selected_pathway==p %}selected{% endif %}>
+							{{ p }}
+						</option>
+						{% endfor %}
+					</optgroup>
+					{% endif %}
+				</select>
+			</div>
+		</div>
+	</form>
+
+	<div class="chart-container">
+		<h3>Project Completion Metrics ({{ current_term.label }})</h3>
+
+		{% if chart_data %}
+		<div class="projects-chart">
+			{% for item in chart_data %}
+			<div class="chart-row">
+				<div class="project-label" title="{{ item.project_name }}">
+					{{ item.project_name }}
+				</div>
+				<div class="bar-wrapper">
+					<!-- 
+                        Max width logic: assume max possible count is something reasonable, 
+                        or relative to max in dataset. 
+                        Let's use relative to max in dataset for scaling.
+                    -->
+					{% set max_count = chart_data[0].count %}
+
+					<div class="stacked-bar-container" style="width: {{ (item.count / max_count) * 70 }}%;">
+						{% for status in ['Completed', 'Delivered', 'Booked'] %}
+						{% set s_count = item.status_counts.get(status, 0) %}
+						{% if s_count > 0 %}
+						{% set s_pct = (s_count / item.count) * 100 %}
+						<div class="bar-fill status-{{ status|lower }}" style="width: {{ s_pct }}%;"
+							title="{{ status }}: {{ s_count }}">
+							{% if s_pct > 15 %}
+							<span class="bar-count">{{ s_count }}</span>
+							{% endif %}
+						</div>
+						{% endif %}
+						{% endfor %}
+					</div>
+
+					<div class="avatar-stack">
+						{% for contact in item.owners %}
+						<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member', speaker_id=contact.id) }}"
+							class="avatar-item" title="View {{ contact.Name }}'s logs">
+							{% if contact.Avatar_URL %}
+							<img src="{{ url_for('static', filename=contact.Avatar_URL) }}" alt="{{ contact.Name }}"
+								class="avatar-img"
+								onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+							{% else %}
+							<div class="avatar-placeholder-small">{{ contact.Name[0] }}</div>
+							{% endif %}
+						</a>
+						{% endfor %}
+					</div>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+		{% else %}
+		<p class="no-logs-message">No project completions found for this term.</p>
+		{% endif %}
+	</div>
+</div>
+{% endblock %}

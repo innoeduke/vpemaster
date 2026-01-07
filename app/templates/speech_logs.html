@@ -51,14 +51,18 @@
             {% if view_mode == 'admin' %}
             <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}"
                 class="btn btn-secondary btn-sm">
-                <i class="fas fa-user"></i> Switch to Member View
+                <i class="fas fa-user"></i> Member View
             </a>
             {% else %}
             <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}"
                 class="btn btn-primary btn-sm">
-                <i class="fas fa-user-shield"></i> Switch to Admin View
+                <i class="fas fa-user-shield"></i> Admin View
             </a>
             {% endif %}
+            <a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn btn-info btn-sm"
+                style="margin-left: 10px; color: white;">
+                <i class="fas fa-chart-bar"></i> Project View
+            </a>
         </div>
         {% endif %}
     </div>
