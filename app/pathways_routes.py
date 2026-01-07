@@ -26,6 +26,19 @@ def pathway_library():
     grouped_pathways = {}
     pathways_data = []
 
+    # Fetch all project associations for ALL pathways in one go
+    # Join Project to get details
+    all_pathway_projects = db.session.query(PathwayProject, Project)\
+        .join(Project, PathwayProject.project_id == Project.id)\
+        .all()
+
+    # Group by path_id in memory
+    pp_by_path = {}
+    for pp, proj in all_pathway_projects:
+        if pp.path_id not in pp_by_path:
+            pp_by_path[pp.path_id] = []
+        pp_by_path[pp.path_id].append((pp, proj))
+
     for pathway in pathways:
         pathway_dict = {
             'id': pathway.id,
@@ -35,10 +48,16 @@ def pathway_library():
             'projects': []
         }
         
-        # Get all project associations for this pathway
-        pathway_projects = db.session.query(PathwayProject, Project).join(Project, PathwayProject.project_id == Project.id).filter(PathwayProject.path_id == pathway.id).all()
+        # specific projects for this pathway from cache
+        # sort by level then code? Original code didn't sort explicitly but relied on DB insertion order or default? 
+        # Let's trust the order we appended or sort if needed. 
+        # Usually level is important.
+        
+        projs = pp_by_path.get(pathway.id, [])
+        # Optional: Sort by level for better display
+        projs.sort(key=lambda x: (x[0].level if x[0].level else 99, x[0].code))
 
-        for pathway_project, project in pathway_projects:
+        for pathway_project, project in projs:
             project_dict = {
                 "id": project.id,
                 "Project_Name": project.Project_Name,

@@ -281,8 +281,56 @@ def _get_processed_logs_data(selected_meeting_num):
     logs_data = []
     all_pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways}
+
+    # --- Pre-fetch Pathway Project Data for current meeting logs ---
+    project_ids = [log.Project_ID for log in raw_session_logs if log.Project_ID]
+    pp_entries = db.session.query(PathwayProject, Pathway)\
+        .join(Pathway, PathwayProject.path_id == Pathway.id)\
+        .filter(PathwayProject.project_id.in_(project_ids))\
+        .all()
+        
+    pp_cache = {}
+    for pp, path in pp_entries:
+        if pp.project_id not in pp_cache:
+            pp_cache[pp.project_id] = []
+        pp_cache[pp.project_id].append({'pp': pp, 'path': path})
     
+    def resolve_context_in_memory(project_id, context_path_name, cache):
+        if not project_id or project_id not in cache:
+            return None, None
+            
+        entries = cache[project_id]
+        match = None
+        
+        # 1. Try exact match by name or abbr
+        if context_path_name:
+            for entry in entries:
+                if entry['path'].name == context_path_name or entry['path'].abbr == context_path_name:
+                    match = entry
+                    break
+        
+        # 2. Fallback: Take first available if no match found
+        if not match and entries:
+            match = entries[0]
+            
+        if match:
+            return match['pp'], match['path']
+        return None, None
+    
+    # Pre-fetch potential speakers for DTM check (Evaluation logs)
+    evaluator_speaker_names = [
+        log.Session_Title for log in raw_session_logs 
+        if log.session_type and log.session_type.Title == 'Evaluation' and log.Session_Title
+    ]
+    
+    speaker_dtm_cache = {}
+    if evaluator_speaker_names:
+        speakers = Contact.query.filter(Contact.Name.in_(evaluator_speaker_names)).all()
+        for s in speakers:
+            speaker_dtm_cache[s.Name] = s.DTM
+
     for log in raw_session_logs:
+        # ... (rest of loop setup)
         session_type = log.session_type
         meeting = log.meeting
         project = log.project
@@ -300,25 +348,26 @@ def _get_processed_logs_data(selected_meeting_num):
         if session_type and session_type.Title == 'Presentation' and log.Project_ID:
             project = log.project
             if project:
-                # Need to find Pathway info (Series)
-                pp = PathwayProject.query.filter_by(project_id=project.id).first()
-                if pp:
-                    pathway_obj = Pathway.query.get(pp.path_id)
-                    if pathway_obj:
-                         if not session_title_for_dict:
-                             session_title_for_dict = project.Project_Name
-                         project_name_for_dict = pathway_obj.name # Series Name
-                         project_purpose_for_dict = f"Level {pp.level} - {project.Project_Name}"
-                         project_code_str = f"{pathway_obj.abbr}{pp.code}"
-                         pathway_code_for_dict = pathway_obj.abbr
-                         level_for_dict = pp.level
+                # Need to find Pathway info (Series) -> Use Cache
+                pp, pathway_obj = resolve_context_in_memory(log.Project_ID, None, pp_cache)
+                
+                if pp and pathway_obj:
+                     if not session_title_for_dict:
+                         session_title_for_dict = project.Project_Name
+                     project_name_for_dict = pathway_obj.name # Series Name
+                     project_purpose_for_dict = f"Level {pp.level} - {project.Project_Name}"
+                     project_code_str = f"{pathway_obj.abbr}{pp.code}"
+                     pathway_code_for_dict = pathway_obj.abbr
+                     level_for_dict = pp.level
         
         elif log.project and log.project.is_generic:
             project_code_str = "TM1.0"
         elif project:  # Calculate code for any project, even if no owner
             # Use model's resolution logic which includes fallback
             context_path = owner.Current_Path if (owner and owner.Current_Path) else None
-            pp, path_obj = project.resolve_context(context_path)
+            
+            # OPTIMIZED: Use memory cache instead of project.resolve_context(context_path)
+            pp, path_obj = resolve_context_in_memory(log.Project_ID, context_path, pp_cache)
             
             if pp and path_obj and path_obj.abbr:
                 project_code_str = f"{path_obj.abbr}{pp.code}"
@@ -345,8 +394,7 @@ def _get_processed_logs_data(selected_meeting_num):
 
         speaker_is_dtm = False
         if session_type and session_type.Title == 'Evaluation' and log.Session_Title:
-            speaker = Contact.query.filter_by(Name=log.Session_Title).first()
-            if speaker and speaker.DTM:
+            if log.Session_Title in speaker_dtm_cache and speaker_dtm_cache[log.Session_Title]:
                 speaker_is_dtm = True
 
         log_dict = {

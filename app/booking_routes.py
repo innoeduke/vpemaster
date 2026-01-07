@@ -11,6 +11,7 @@ from sqlalchemy import or_
 from .utils import derive_credentials
 from .utils import get_meetings_by_status
 from .constants import SessionTypeID
+from sqlalchemy.orm import joinedload, subqueryload
 
 booking_bp = Blueprint('booking_bp', __name__)
 
@@ -19,6 +20,11 @@ def _fetch_session_logs(selected_meeting_number, meeting_obj=None):
     """Fetches session logs for a given meeting, filtering by user role."""
     # Fetch the full SessionLog objects to ensure all data is available for consolidation.
     query = db.session.query(SessionLog)\
+        .options(
+            joinedload(SessionLog.session_type).joinedload(SessionType.role),
+            joinedload(SessionLog.owner),
+            subqueryload(SessionLog.waitlists).joinedload(Waitlist.contact)
+        )\
         .join(SessionType, SessionLog.Type_ID == SessionType.id)\
         .join(Role, SessionType.role_id == Role.id)\
         .filter(SessionLog.Meeting_Number == selected_meeting_number)\
@@ -63,6 +69,7 @@ def _consolidate_roles(session_logs, is_admin_booker):
             roles_dict[dict_key] = {
                 'role': role_name,
                 'role_key': role_name,
+                'role_obj': role_obj, # Store the actual role object to avoid re-querying
                 'owner_id': owner_id,
                 'owner_name': log.owner.Name if log.owner else None,
                 'owner_avatar_url': log.owner.Avatar_URL if log.owner else None,
@@ -122,7 +129,10 @@ def _enrich_role_data(roles_dict, selected_meeting):
 
     enriched_roles = []
     for _, role_data in roles_dict.items():
-        role_obj = Role.query.filter_by(name=role_data['role_key']).first()
+        role_obj = role_data.get('role_obj')
+        if not role_obj:
+             # Fallback (should normally be there)
+             role_obj = Role.query.filter_by(name=role_data['role_key']).first()
 
         role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else "fa-question-circle"
         role_data['session_id'] = role_data['session_ids'][0]

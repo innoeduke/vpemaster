@@ -16,10 +16,10 @@ contacts_bp = Blueprint('contacts_bp', __name__)
 def search_contacts_by_name():
     search_term = request.args.get('q', '')
     if search_term:
-        contacts = Contact.query.filter(
+        contacts = Contact.query.options(db.joinedload(Contact.user)).filter(
             Contact.Name.ilike(f'%{search_term}%')).all()
     else:
-        contacts = Contact.query.all()
+        contacts = Contact.query.options(db.joinedload(Contact.user)).all()
 
     contacts_data = [{
         "id": c.id,
@@ -39,8 +39,7 @@ def show_contacts():
         return redirect(url_for('agenda_bp.agenda'))
 
     from sqlalchemy.orm import joinedload
-    contacts = Contact.query.options(joinedload(Contact.mentor)).outerjoin(
-        Contact.user).order_by(Contact.Name.asc()).all()
+    contacts = Contact.query.options(joinedload(Contact.mentor), joinedload(Contact.user)).order_by(Contact.Name.asc()).all()
     
     # 1. Attendance (Roster)
     # Count how many times each contact appears in Roster
