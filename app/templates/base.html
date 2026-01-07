@@ -1,233 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no"
-    />
-    <title>Meeting Manager - {% block title %}{% endblock %}</title>
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="{{ url_for('static', filename='icons/favicon.ico') }}"
-    />
-    {% assets "css_all" %}
-    <link rel="stylesheet" href="{{ ASSET_URL }}">
-    {% endassets %}
-    
-    {% block head_extra %}{% endblock %}
-    
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}"
-    />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="{{ url_for('static', filename='vendor/css/fonts.css') }}"
-      rel="stylesheet"
-    />
-    <link
-      href="{{ url_for('static', filename='vendor/css/indie-flower.css') }}"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
-    <div class="container-wrapper">
-      <div class="mobile-header" id="mobile-header">
-        <a href="#" class="nav-toggle" id="mobile-nav-toggle"
-          ><i class="fas fa-bars"></i
-        ></a>
-      </div>
 
-      <div class="nav-pane" id="nav-pane">
-        <div class="beta-badge">Beta</div>
-        <div class="nav-header">
-          <a href="#" class="nav-toggle" id="pc-nav-toggle">
-            <i class="fas fa-bars"></i>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Meeting Manager - {% block title %}{% endblock %}</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
+  {% assets "css_all" %}
+  <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+
+  {% block head_extra %}{% endblock %}
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}" />
+  <link href="{{ url_for('static', filename='cache/css/fonts.css') }}" rel="stylesheet" />
+  <link href="{{ url_for('static', filename='cache/css/indie-flower.css') }}" rel="stylesheet" />
+</head>
+
+<body>
+  <div class="container-wrapper">
+    <div class="mobile-header" id="mobile-header">
+      <a href="#" class="nav-toggle" id="mobile-nav-toggle"><i class="fas fa-bars"></i></a>
+    </div>
+
+    <div class="nav-pane" id="nav-pane">
+      <div class="beta-badge">Beta</div>
+      <div class="nav-header">
+        <a href="#" class="nav-toggle" id="pc-nav-toggle">
+          <i class="fas fa-bars"></i>
+        </a>
+        <h2 class="nav-title">Meeting Manager</h2>
+      </div>
+      <ul class="nav-links">
+        <li class="{% if request.endpoint and request.endpoint.startswith('agenda_bp') %}active{% endif %}">
+          <a href="{{ url_for('agenda_bp.agenda') }}">
+            <i class="fas fa-calendar-alt nav-icon"></i>
+            <span>Agenda</span>
           </a>
-          <h2 class="nav-title">Meeting Manager</h2>
+        </li>
+        <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}">
+          <a href="{{ url_for('booking_bp.booking') }}">
+            <i class="fas fa-tag nav-icon"></i>
+            <span>{% if current_user.is_authenticated %}Booking{% else %}Voting{% endif
+              %}</span>
+          </a>
+        </li>
+        {% if is_authorized('CONTACT_BOOK_VIEW') %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
+          <a href="{{ url_for('contacts_bp.show_contacts') }}">
+            <i class="fas fa-book nav-icon"></i>
+            <span>Contacts</span>
+          </a>
+        </li>
+        {% endif %} {% if current_user.is_authenticated %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
+          <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
+            <i class="fas fa-tasks nav-icon"></i>
+            <span>Journals</span>
+          </a>
+        </li>
+        {% endif %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
+          <a href="{{ url_for('pathways_bp.pathway_library') }}">
+            <i class="fas fa-landmark nav-icon"></i>
+            <span>Pathway Library</span>
+          </a>
+        </li>
+        {% if is_authorized('SETTINGS_VIEW_ALL') %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
+          <a href="{{ url_for('settings_bp.settings') }}">
+            <i class="fas fa-cog nav-icon"></i>
+            <span>Settings</span>
+          </a>
+        </li>
+        {% endif %}
+      </ul>
+      {% if current_user.is_authenticated %}
+      <div class="logout-container">
+        <a href="{{ url_for('auth_bp.logout') }}" class="btn btn-primary">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </a>
+      </div>
+      {% else %}
+      <div class="logout-container">
+        <a href="{{ url_for('auth_bp.login') }}" class="btn btn-success">
+          <i class="fas fa-sign-in-alt"></i>
+          <span>Login</span>
+        </a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div id="nav-overlay"></div>
+
+    <div class="main-content" id="main-content">
+      {% if current_user.is_authenticated and current_user.contact %}
+      <div class="profile-container">
+        <div class="profile-trigger" id="profile-trigger">
+          <i class="fas fa-user-circle"></i>
+          <span>{{ current_user.contact.Name }}</span>
+          <i class="fas fa-caret-down"></i>
         </div>
-        <ul class="nav-links">
-          <li
-            class="{% if request.endpoint and request.endpoint.startswith('agenda_bp') %}active{% endif %}"
-          >
-            <a href="{{ url_for('agenda_bp.agenda') }}">
-              <i class="fas fa-calendar-alt nav-icon"></i>
-              <span>Agenda</span>
-            </a>
-          </li>
-          <li
-            class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}"
-          >
-            <a href="{{ url_for('booking_bp.booking') }}">
-              <i class="fas fa-tag nav-icon"></i>
-              <span
-                >{% if current_user.is_authenticated %}Booking{% else %}Voting{% endif
-                %}</span
-              >
-            </a>
-          </li>
-          {% if is_authorized('CONTACT_BOOK_VIEW') %}
-          <li
-            class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}"
-          >
-            <a href="{{ url_for('contacts_bp.show_contacts') }}">
-              <i class="fas fa-book nav-icon"></i>
-              <span>Contacts</span>
-            </a>
-          </li>
-          {% endif %} {% if current_user.is_authenticated %}
-          <li
-            class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}"
-          >
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
-              <i class="fas fa-tasks nav-icon"></i>
-              <span>Journals</span>
-            </a>
-          </li>
-          {% endif %}
-          <li
-            class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}"
-          >
-            <a href="{{ url_for('pathways_bp.pathway_library') }}">
-              <i class="fas fa-landmark nav-icon"></i>
-              <span>Pathway Library</span>
-            </a>
-          </li>
-          {% if is_authorized('SETTINGS_VIEW_ALL') %}
-          <li
-            class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}"
-          >
-            <a href="{{ url_for('settings_bp.settings') }}">
-              <i class="fas fa-cog nav-icon"></i>
-              <span>Settings</span>
-            </a>
-          </li>
-          {% endif %}
-        </ul>
-        {% if current_user.is_authenticated %}
-        <div class="logout-container">
-          <a href="{{ url_for('auth_bp.logout') }}" class="btn btn-primary">
-            <i class="fas fa-sign-out-alt"></i>
-            <span>Logout</span>
-          </a>
+        <div class="profile-menu" id="profile-menu">
+          <a href="{{ url_for('auth_bp.profile') }}"><i class="fas fa-user-edit"></i> User Profile</a>
+          <a href="{{ url_for('auth_bp.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
-        {% else %}
-        <div class="logout-container">
-          <a href="{{ url_for('auth_bp.login') }}" class="btn btn-success">
-            <i class="fas fa-sign-in-alt"></i>
-            <span>Login</span>
-          </a>
+      </div>
+      {% endif %}
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+        {% if category != 'duplicate_warning' %}
+        <div class="flash {{ category }}">
+          {{ message }}
+          <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
         </div>
         {% endif %}
+        {% endfor %}
       </div>
+      {% endif %}
+      {% endwith %}
 
-      <div id="nav-overlay"></div>
-
-      <div class="main-content" id="main-content">
-        {% if current_user.is_authenticated and current_user.contact %}
-        <div class="profile-container">
-          <div class="profile-trigger" id="profile-trigger">
-            <i class="fas fa-user-circle"></i>
-            <span>{{ current_user.contact.Name }}</span>
-            <i class="fas fa-caret-down"></i>
-          </div>
-          <div class="profile-menu" id="profile-menu">
-            <a href="{{ url_for('auth_bp.profile') }}"
-              ><i class="fas fa-user-edit"></i> User Profile</a
-            >
-            <a href="{{ url_for('auth_bp.logout') }}"
-              ><i class="fas fa-sign-out-alt"></i> Logout</a
-            >
-          </div>
-        </div>
-        {% endif %} 
-        
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="flash-messages">
-              {% for category, message in messages %}
-                {% if category != 'duplicate_warning' %}
-                <div class="flash {{ category }}">
-                  {{ message }}
-                  <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
-                </div>
-                {% endif %}
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
-        
-        {% block
-        content %}{% endblock %}
-      </div>
+      {% block
+      content %}{% endblock %}
     </div>
+  </div>
 
-    <div class="snow-container" aria-hidden="true">
-      {% for i in range(25) %}
-      <div class="snow"></div>
-      {% endfor %}
-    </div>
+  <div class="snow-container" aria-hidden="true">
+    {% for i in range(25) %}
+    <div class="snow"></div>
+    {% endfor %}
+  </div>
 
-    {% include '_delete_modal.html' %}
-    <script src="{{ url_for('static', filename='vendor/js/Sortable.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/search.js') }}"></script>
-    {% block scripts %}{% endblock %}
+  {% include '_delete_modal.html' %}
+  <script src="{{ url_for('static', filename='vendor/js/Sortable.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+  {% block scripts %}{% endblock %}
 
-    <script>
-      // --- Navigation and Profile Menu Logic ---
-      const navPane = document.getElementById("nav-pane");
-      const mobileNavToggle = document.getElementById("mobile-nav-toggle");
-      const pcNavToggle = document.getElementById("pc-nav-toggle");
+  <script>
+    // --- Navigation and Profile Menu Logic ---
+    const navPane = document.getElementById("nav-pane");
+    const mobileNavToggle = document.getElementById("mobile-nav-toggle");
+    const pcNavToggle = document.getElementById("pc-nav-toggle");
 
-      if (mobileNavToggle) {
-        mobileNavToggle.addEventListener("click", (e) => {
-          e.preventDefault();
-          navPane.classList.toggle("expanded");
-        });
-      }
-      if (pcNavToggle) {
-        pcNavToggle.addEventListener("click", (e) => {
-          e.preventDefault();
-          navPane.classList.toggle("expanded");
-        });
-      }
-
-      const profileTrigger = document.getElementById("profile-trigger");
-      const profileMenu = document.getElementById("profile-menu");
-
-      if (profileTrigger) {
-        profileTrigger.addEventListener("click", (event) => {
-          event.stopPropagation();
-          profileMenu.classList.toggle("active");
-        });
-      }
-      document.addEventListener("click", () => {
-        if (profileMenu && profileMenu.classList.contains("active")) {
-          profileMenu.classList.remove("active");
-        }
+    if (mobileNavToggle) {
+      mobileNavToggle.addEventListener("click", (e) => {
+        e.preventDefault();
+        navPane.classList.toggle("expanded");
       });
+    }
+    if (pcNavToggle) {
+      pcNavToggle.addEventListener("click", (e) => {
+        e.preventDefault();
+        navPane.classList.toggle("expanded");
+      });
+    }
 
-      // --- Generic Delete Modal Logic ---
-      const deleteModal = document.getElementById("deleteModal");
-      const deleteForm = document.getElementById("deleteForm");
-      const deleteModalText = document.getElementById("deleteModalText");
+    const profileTrigger = document.getElementById("profile-trigger");
+    const profileMenu = document.getElementById("profile-menu");
 
-      function openDeleteModal(actionUrl, itemName) {
-        if (deleteForm && deleteModal && deleteModalText) {
-          deleteForm.action = actionUrl;
-          deleteModalText.textContent = `Are you sure you want to delete this ${itemName}?`;
-          deleteModal.style.display = "flex";
-        }
+    if (profileTrigger) {
+      profileTrigger.addEventListener("click", (event) => {
+        event.stopPropagation();
+        profileMenu.classList.toggle("active");
+      });
+    }
+    document.addEventListener("click", () => {
+      if (profileMenu && profileMenu.classList.contains("active")) {
+        profileMenu.classList.remove("active");
       }
+    });
 
-      function closeDeleteModal() {
-        if (deleteModal) {
-          deleteModal.style.display = "none";
-        }
+    // --- Generic Delete Modal Logic ---
+    const deleteModal = document.getElementById("deleteModal");
+    const deleteForm = document.getElementById("deleteForm");
+    const deleteModalText = document.getElementById("deleteModalText");
+
+    function openDeleteModal(actionUrl, itemName) {
+      if (deleteForm && deleteModal && deleteModalText) {
+        deleteForm.action = actionUrl;
+        deleteModalText.textContent = `Are you sure you want to delete this ${itemName}?`;
+        deleteModal.style.display = "flex";
       }
-    </script>
-  </body>
+    }
+
+    function closeDeleteModal() {
+      if (deleteModal) {
+        deleteModal.style.display = "none";
+      }
+    }
+  </script>
+</body>
+
 </html>
