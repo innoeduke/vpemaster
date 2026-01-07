@@ -172,6 +172,53 @@ class Project(db.Model):
                 path_obj = db.session.query(Pathway).get(pp.path_id)
         
         return pp, path_obj
+    
+    @classmethod
+    def prefetch_context(cls, project_ids):
+        """
+        Pre-fetch PathwayProject data for a list of project IDs to avoid N+1 queries.
+        Returns a cache dictionary: {project_id: [{'pp': PathwayProject, 'path': Pathway}, ...]}
+        """
+        if not project_ids:
+            return {}
+
+        pp_entries = db.session.query(PathwayProject, Pathway)\
+            .join(Pathway, PathwayProject.path_id == Pathway.id)\
+            .filter(PathwayProject.project_id.in_(project_ids))\
+            .all()
+            
+        pp_cache = {}
+        for pp, path in pp_entries:
+            if pp.project_id not in pp_cache:
+                pp_cache[pp.project_id] = []
+            pp_cache[pp.project_id].append({'pp': pp, 'path': path})
+        return pp_cache
+
+    @classmethod
+    def resolve_context_from_cache(cls, project_id, context_path_name, cache):
+        """
+        Resolve context (PathwayProject, Pathway) using the pre-fetched cache.
+        """
+        if not project_id or project_id not in cache:
+            return None, None
+            
+        entries = cache[project_id]
+        match = None
+        
+        # 1. Try exact match by name or abbr
+        if context_path_name:
+            for entry in entries:
+                if entry['path'].name == context_path_name or entry['path'].abbr == context_path_name:
+                    match = entry
+                    break
+        
+        # 2. Fallback: Take first available if no match found
+        if not match and entries:
+            match = entries[0]
+            
+        if match:
+            return match['pp'], match['path']
+        return None, None
 
     def get_code(self, context_path_name=None):
         """
@@ -452,6 +499,8 @@ class SessionLog(db.Model):
                     display_level = str(match.group(2))
         
         return display_level, log_type, project_code
+    
+
     
     def update_media(self, url):
         """Update, create, or delete associated media."""

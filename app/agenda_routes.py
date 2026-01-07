@@ -284,38 +284,7 @@ def _get_processed_logs_data(selected_meeting_num):
 
     # --- Pre-fetch Pathway Project Data for current meeting logs ---
     project_ids = [log.Project_ID for log in raw_session_logs if log.Project_ID]
-    pp_entries = db.session.query(PathwayProject, Pathway)\
-        .join(Pathway, PathwayProject.path_id == Pathway.id)\
-        .filter(PathwayProject.project_id.in_(project_ids))\
-        .all()
-        
-    pp_cache = {}
-    for pp, path in pp_entries:
-        if pp.project_id not in pp_cache:
-            pp_cache[pp.project_id] = []
-        pp_cache[pp.project_id].append({'pp': pp, 'path': path})
-    
-    def resolve_context_in_memory(project_id, context_path_name, cache):
-        if not project_id or project_id not in cache:
-            return None, None
-            
-        entries = cache[project_id]
-        match = None
-        
-        # 1. Try exact match by name or abbr
-        if context_path_name:
-            for entry in entries:
-                if entry['path'].name == context_path_name or entry['path'].abbr == context_path_name:
-                    match = entry
-                    break
-        
-        # 2. Fallback: Take first available if no match found
-        if not match and entries:
-            match = entries[0]
-            
-        if match:
-            return match['pp'], match['path']
-        return None, None
+    pp_cache = Project.prefetch_context(project_ids)
     
     # Pre-fetch potential speakers for DTM check (Evaluation logs)
     evaluator_speaker_names = [
@@ -330,7 +299,6 @@ def _get_processed_logs_data(selected_meeting_num):
             speaker_dtm_cache[s.Name] = s.DTM
 
     for log in raw_session_logs:
-        # ... (rest of loop setup)
         session_type = log.session_type
         meeting = log.meeting
         project = log.project
@@ -349,7 +317,7 @@ def _get_processed_logs_data(selected_meeting_num):
             project = log.project
             if project:
                 # Need to find Pathway info (Series) -> Use Cache
-                pp, pathway_obj = resolve_context_in_memory(log.Project_ID, None, pp_cache)
+                pp, pathway_obj = Project.resolve_context_from_cache(log.Project_ID, None, pp_cache)
                 
                 if pp and pathway_obj:
                      if not session_title_for_dict:
@@ -366,8 +334,8 @@ def _get_processed_logs_data(selected_meeting_num):
             # Use model's resolution logic which includes fallback
             context_path = owner.Current_Path if (owner and owner.Current_Path) else None
             
-            # OPTIMIZED: Use memory cache instead of project.resolve_context(context_path)
-            pp, path_obj = resolve_context_in_memory(log.Project_ID, context_path, pp_cache)
+            # OPTIMIZED: Use memory cache via Model Method
+            pp, path_obj = Project.resolve_context_from_cache(log.Project_ID, context_path, pp_cache)
             
             if pp and path_obj and path_obj.abbr:
                 project_code_str = f"{path_obj.abbr}{pp.code}"
