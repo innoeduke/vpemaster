@@ -810,3 +810,77 @@
         display: none;
     }
 }
+
+/* Vote Count Badge */
+.vote-count-badge {
+    background-color: #17a2b8;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: bold;
+    display: inline-block;
+    vertical-align: middle;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-left: 8px;
+    /* Spacing from button if present */
+}
+
+/* Flex layout for icon button */
+.icon-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+}
+
+/* Vote Bricks */
+.vote-bricks-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    margin-left: 8px;
+    /* Space from avatar */
+    align-items: center;
+    max-width: 150px;
+    /* Prevent it from stretching too wide */
+}
+
+.vote-brick {
+    width: 6px;
+    height: 14px;
+    background-color: #772432;
+    border-radius: 2px;
+    transition: transform 0.2s ease;
+}
+
+.vote-brick:hover {
+    transform: scale(1.2);
+    background-color: #5a1b26;
+}
+
+/* Ensure status cell aligns items correctly */
+.status-cell-content {
+    display: flex;
+    align-items: center;
+}
+
+/* Helper to hide vote button unless voted */
+.vote-auto-hide {
+    visibility: hidden;
+    opacity: 0;
+}
+
+/* Ensure voted button is always visible */
+.icon-btn.icon-btn-voted {
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Voted Accordion indicator */
+.accordion-header.voted {
+    background-color: #d4edda !important;
+    /* Light green */
+    border-color: #c3e6cb;
+    color: #155724;
+}

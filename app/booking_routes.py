@@ -7,7 +7,7 @@ from . import db
 from datetime import datetime
 import re
 import secrets
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from .utils import derive_credentials
 from .utils import get_meetings_by_status
 from .constants import SessionTypeID
@@ -127,6 +127,17 @@ def _enrich_role_data(roles_dict, selected_meeting):
             'role-taker': selected_meeting.best_role_taker_id,
         }
 
+    # --- NEW: Vote Counts for Officers ---
+    vote_counts = {}
+    if is_authorized('BOOKING_ASSIGN_ALL', meeting=selected_meeting) and selected_meeting and selected_meeting.status in ['running', 'finished']:
+        # Aggregate votes for this meeting per (contact_id, award_category)
+        counts = db.session.query(Vote.contact_id, Vote.award_category, func.count(Vote.id)).filter(
+            Vote.meeting_number == selected_meeting.Meeting_Number
+        ).group_by(Vote.contact_id, Vote.award_category).all()
+        
+        for cid, cat, count in counts:
+            vote_counts[(cid, cat)] = count
+
     enriched_roles = []
     for _, role_data in roles_dict.items():
         role_obj = role_data.get('role_obj')
@@ -150,6 +161,12 @@ def _enrich_role_data(roles_dict, selected_meeting):
         
         role_data['needs_approval'] = role_obj.needs_approval if role_obj else False
         role_data['is_member_only'] = role_obj.is_member_only if role_obj else False
+        
+        # Attach vote count if available
+        if vote_counts:
+            # We use the award category and owner ID for lookup
+            if award_category:
+                role_data['vote_count'] = vote_counts.get((owner_id, award_category), 0)
 
         enriched_roles.append(role_data)
     return enriched_roles
@@ -289,11 +306,19 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
         'is_admin_view': is_authorized('BOOKING_ASSIGN_ALL'),
         'current_user_contact_id': current_user_contact_id,
         'user_role': current_user.Role if current_user.is_authenticated else 'Guest', # Passed to template if needed
-        'best_award_ids': set()
+        'best_award_ids': set(),
+        'has_voted': False
     }
 
     if not selected_meeting_number:
         return context
+
+    # Check if user has voted for this meeting
+    voter_identifier = _get_voter_identifier()
+    if voter_identifier:
+        vote_exists = Vote.query.filter_by(meeting_number=selected_meeting_number, voter_identifier=voter_identifier).first()
+        if vote_exists:
+            context['has_voted'] = True
 
     selected_meeting = Meeting.query.filter_by(
         Meeting_Number=selected_meeting_number).first()
@@ -359,12 +384,7 @@ def _group_roles_by_category(roles):
     grouped = []
     for key, group in groupby(roles, key=lambda x: x.get('award_category')):
         grouped.append((key, list(group)))
-        
-    # Double check sorting of the groups themselves?
-    # Since roles were sorted by category priority, the groups should emerge in that order.
-    # Speaker (1) -> Evaluator (2) -> Role-Taker (3) -> Table-Topics (4).
-    # Yes.
-    
+
     return grouped
 
 
@@ -766,6 +786,69 @@ def _get_all_session_ids_for_group(log, logical_role_key, owner_id):
         query = query.filter(SessionLog.Owner_ID.is_(None))
         
     return [l.id for l in query.all()]
+
+
+def _get_voter_identifier():
+    """Helper to determine the voter identifier."""
+    if current_user.is_authenticated:
+        return f"user_{current_user.id}"
+    elif 'voter_token' in session:
+        return session['voter_token']
+    return None
+
+
+@booking_bp.route('/booking/batch_vote', methods=['POST'])
+def batch_vote():
+    data = request.get_json()
+    meeting_number = data.get('meeting_number')
+    votes = data.get('votes', [])  # List of {contact_id, award_category}
+
+    if not meeting_number:
+        return jsonify(success=False, message="Missing meeting number."), 400
+
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found."), 404
+
+    # Only allow for running meetings (as per requirement)
+    if meeting.status != 'running':
+         return jsonify(success=False, message="Voting is not active for this meeting."), 403
+
+    # 1. Determine voter identity
+    voter_identifier = _get_voter_identifier()
+    if not voter_identifier:
+         # Create token if guest and not exists
+         if 'voter_token' not in session:
+            session['voter_token'] = secrets.token_hex(16)
+         voter_identifier = session['voter_token']
+
+    try:
+        # 2. Clear previous votes for this voter in this meeting
+        # This treats "Done" as a full submission of the voter's choices.
+        Vote.query.filter_by(
+            meeting_number=meeting_number,
+            voter_identifier=voter_identifier
+        ).delete()
+        
+        # 3. Add new votes
+        for v in votes:
+            contact_id = v.get('contact_id')
+            award_category = v.get('award_category')
+            if contact_id and award_category:
+                new_vote = Vote(
+                    meeting_number=meeting_number,
+                    voter_identifier=voter_identifier,
+                    award_category=award_category,
+                    contact_id=contact_id
+                )
+                db.session.add(new_vote)
+        
+        db.session.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error processing batch vote: {e}")
+        return jsonify(success=False, message="An internal error occurred."), 500
 
 
 @booking_bp.route('/booking/vote', methods=['POST'])

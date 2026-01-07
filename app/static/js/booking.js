@@ -4,6 +4,9 @@
 // - isAdminView (Boolean)
 // - selectedMeetingNumber (String or Number)
 
+var localVotes = {}; // Store votes locally before batch submission
+
+
 document.addEventListener("DOMContentLoaded", function () {
   // Find elements inside DOMContentLoaded
   const meetingFilter = document.getElementById("meeting-filter");
@@ -75,6 +78,9 @@ document.addEventListener("DOMContentLoaded", function () {
   categories.forEach(category => {
     const votedButton = document.querySelector(`button.icon-btn-voted[data-award-category="${category}"]`);
     const winnerId = votedButton ? parseInt(votedButton.dataset.contactId, 10) : null;
+    if (winnerId) {
+      localVotes[category] = winnerId;
+    }
     updateVoteButtonsUI(category, winnerId);
   });
 
@@ -98,7 +104,72 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // NEW: Done button listener
+  const doneBtn = document.getElementById('done-voting-btn');
+  if (doneBtn) {
+    doneBtn.addEventListener('click', function () {
+      submitBatchVotes();
+    });
+  }
+
 }); // End of DOMContentLoaded listener
+
+function submitBatchVotes() {
+  const votes = [];
+  for (const [category, contactId] of Object.entries(localVotes)) {
+    votes.push({
+      contact_id: contactId,
+      award_category: category
+    });
+  }
+
+  // Allow empty votes (clearing votes) but maybe prompt?
+  // Proceeding to wipe votes if empty logic is desired behavior for "unvoting".
+
+  fetch("/booking/batch_vote", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      meeting_number: selectedMeetingNumber,
+      votes: votes
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        if (isOfficer) {
+          window.location.reload(true);
+        } else {
+          // Transition to Thank You state
+          const accordion = document.querySelector('.award-accordion');
+          if (accordion) accordion.style.display = 'none';
+
+          const actions = document.getElementById('batch-vote-actions');
+          if (actions) actions.style.display = 'none';
+
+          const instruction = document.querySelector('.voting-instruction-alert');
+          if (instruction) instruction.style.display = 'none';
+
+          const thanks = document.getElementById('thank-you-message');
+          if (thanks) {
+            thanks.style.display = 'block';
+            thanks.scrollIntoView({ behavior: 'smooth' });
+          }
+
+          // Optional: Reload after a short delay to ensure server-side 'has_voted' check takes over next time
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }
+      } else {
+        alert("Error: " + data.message);
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("An error occurred during voting.");
+    });
+}
 
 // Functions remain global (or could be wrapped in an IIFE)
 function bookOrCancelRole(sessionId, action) {
@@ -224,30 +295,41 @@ function updateSessionRow(sessionData) {
 }
 
 function handleVoteClick(buttonEl) {
-  const data = {
-    meeting_number: buttonEl.dataset.meetingNumber,
-    contact_id: parseInt(buttonEl.dataset.contactId, 10),
-    award_category: buttonEl.dataset.awardCategory,
-  };
+  const meetingNumber = buttonEl.dataset.meetingNumber;
+  const contactId = parseInt(buttonEl.dataset.contactId, 10);
+  const awardCategory = buttonEl.dataset.awardCategory;
 
-  fetch("/booking/vote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
-    .then((response) => response.json())
-    .then((result) => {
-      if (result.success) {
-        // Update the UI dynamically without a full page reload
-        updateVoteButtonsUI(result.award_category, result.your_vote_id);
-      } else {
-        alert("Error: " + result.message);
+  // Toggle logic: if already selected, unselect
+  if (localVotes[awardCategory] === contactId) {
+    delete localVotes[awardCategory];
+    updateVoteButtonsUI(awardCategory, null);
+  } else {
+    localVotes[awardCategory] = contactId;
+    updateVoteButtonsUI(awardCategory, contactId);
+
+    // Auto-collapse accordion
+    const accordionItem = buttonEl.closest('.accordion-item');
+    if (accordionItem) {
+      const header = accordionItem.querySelector('.accordion-header');
+      const content = accordionItem.querySelector('.accordion-content');
+      if (header && header.classList.contains('active')) {
+        // Collapse it
+        header.classList.remove('active');
+        content.style.maxHeight = null;
+        // Update session state
+        const category = accordionItem.dataset.category;
+        const accordionState = JSON.parse(sessionStorage.getItem('accordionState')) || {};
+        if (category) delete accordionState[category];
+        sessionStorage.setItem('accordionState', JSON.stringify(accordionState));
       }
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      alert("An error occurred.");
-    });
+    }
+  }
+
+  // Show Done button if we have interaction
+  const doneBtnContainer = document.getElementById('batch-vote-actions');
+  if (doneBtnContainer) {
+    doneBtnContainer.style.display = 'block';
+  }
 }
 
 function updateVoteButtonsUI(category, newWinnerId) {
@@ -274,6 +356,19 @@ function updateVoteButtonsUI(category, newWinnerId) {
       button.title = `Cancel Vote (${category})`;
     }
   });
+
+  // NEW: Update accordion header color
+  const accordionItem = document.querySelector(`.accordion-item[data-category="${category}"]`);
+  if (accordionItem) {
+    const header = accordionItem.querySelector('.accordion-header');
+    if (header) {
+      if (newWinnerId !== null) {
+        header.classList.add('voted');
+      } else {
+        header.classList.remove('voted');
+      }
+    }
+  }
 }
 
 function leaveWaitlist(sessionId) {

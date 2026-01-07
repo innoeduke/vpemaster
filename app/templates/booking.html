@@ -83,7 +83,6 @@
                 </div>
             </div>
         </td>
-
         {# Status cell: waitlist for 'not started', winner label for 'finished' #}
         <td class="status-cell">
             <div class="status-cell-content">
@@ -94,6 +93,13 @@
                     <i class="fas fa-user-circle"></i>
                     {% endif %}
                 </div>
+                {% if is_admin_view and role.vote_count and role.vote_count > 0 %}
+                <div class="vote-bricks-container" title="{{ role.vote_count }} Votes">
+                    {% for n in range(role.vote_count) %}
+                    <div class="vote-brick"></div>
+                    {% endfor %}
+                </div>
+                {% endif %}
                 {% if status in ['not started', 'unpublished'] and role.waitlist %}
                 {% for user in role.waitlist %}
                 <div class="role-avatar waitlist-avatar" title="{{ user.name }} (Waitlist)">
@@ -168,16 +174,22 @@
                         class="fas fa-user-check"></i></button>{% endif %}
             </div>
             {% elif status == 'running' %}
-            {% if role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
-            <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote"
-                onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}"
+            {% set can_vote = role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
+
+            {% if (role.owner_id and role.award_category) and can_vote %}
+            {% set should_show = role.award_type %}
+            <button type="button"
+                class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %} {% if not should_show %}vote-auto-hide{% endif %}"
+                title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}"
                 data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
                 <i class="fas fa-vote-yea"></i>
             </button>
             {% endif %}
             {% elif status == 'finished' %}
             {% if is_admin_view %}
-            {% if role.owner_id and role.award_category %}
+            {# Admin view: Show buttons in finished state #}
+            {% set can_vote = role.owner_id and role.award_category %}
+            {% if (role.owner_id and role.award_category) and can_vote %}
             <button type="button" class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %}" title="Vote"
                 onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}"
                 data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
@@ -220,8 +232,10 @@
     <div class="award-accordion">
         {% for category, items in sorted_role_groups %}
         {% if items %}
+        {% set category_voted = items|selectattr('award_type')|list|length > 0 %}
         <div class="accordion-item" data-category="{{ category or 'other' }}">
-            <button class="accordion-header {{ 'active' if default_open else '' }}">
+            <button
+                class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }}">
                 <span>{{ (category or 'Other')|replace('-', ' ')|title }} Roles</span>
                 <i class="fas fa-chevron-down"></i>
             </button>
@@ -272,9 +286,31 @@
     </div>
     {% else %}
     {# Pass context to macro to access sorted_role_groups #}
+    {% if has_voted and not is_admin_view %}
+    <div id="thank-you-message" style="text-align: center; margin-top: 40px; padding: 20px;">
+        <i class="fas fa-check-circle" style="font-size: 4em; color: #28a745; margin-bottom: 20px;"></i>
+        <h2>Thank You!</h2>
+        <p>Your votes have been submitted.</p>
+    </div>
+    {% else %}
     {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
     current_user_contact_id,
     selected_meeting_number) }}
+
+    {% if selected_meeting.status == 'running' %}
+    <div id="batch-vote-actions" style="display: none; text-align: center; margin-top: 20px; padding-bottom: 30px;">
+        <button id="done-voting-btn" class="btn btn-primary btn-lg"
+            style="width: 80%; max-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            Done <i class="fas fa-check"></i>
+        </button>
+    </div>
+    <div id="thank-you-message" style="display: none; text-align: center; margin-top: 40px; padding: 20px;">
+        <i class="fas fa-check-circle" style="font-size: 4em; color: #28a745; margin-bottom: 20px;"></i>
+        <h2>Thank You!</h2>
+        <p>Your votes have been submitted.</p>
+    </div>
+    {% endif %}
+    {% endif %}
     {% endif %}
 
     {% else %}
@@ -288,6 +324,7 @@
     var isAdminView = {{ is_admin_view| tojson }};
     var selectedMeetingNumber = {{ selected_meeting_number| tojson }};
     var currentUserName = "{{ session.display_name|e }}";
+    var isOfficer = {{ is_admin_view| tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/booking.js') }}"></script>
 {% endblock %}
