@@ -1,0 +1,192 @@
+/* voting.css - Voting-specific styles */
+
+/* --- Voting Instruction Alert --- */
+.voting-instruction-alert {
+	background-color: #f8f9fa;
+	color: #333;
+	padding: 12px 20px;
+	border-radius: 8px;
+	margin: 10px 0 20px 0;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	font-size: 1.1em;
+	border: 1px solid #772432;
+	border-left-width: 5px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.voting-instruction-alert i {
+	font-size: 1.3em;
+	color: #772432;
+}
+
+/* --- Accordion Styles --- */
+.award-accordion {
+	margin-top: 20px;
+}
+
+.accordion-item {
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	margin-bottom: 10px;
+	overflow: hidden;
+}
+
+.accordion-header {
+	background-color: #f8f9fa;
+	color: #333;
+	cursor: pointer;
+	padding: 15px 20px;
+	width: 100%;
+	border: none;
+	text-align: left;
+	outline: none;
+	font-size: 1.2em;
+	font-weight: bold;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	transition: background-color 0.3s ease;
+}
+
+.accordion-header:hover {
+	background-color: #e9ecef;
+}
+
+.accordion-header.active {
+	background-color: #e0e0e0;
+}
+
+.accordion-header-right {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.accordion-header i {
+	transition: transform 0.3s ease;
+}
+
+.accordion-header.active i.fa-chevron-down {
+	transform: rotate(180deg);
+}
+
+.accordion-content {
+	padding: 0;
+	background-color: white;
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height 0.3s ease-out;
+}
+
+.accordion-content .booking-table {
+	box-shadow: none;
+	border-radius: 0;
+}
+
+/* --- Voting Icon Styles --- */
+/* Color the icon red only when it's the voted one */
+.is-running-meeting .icon-btn.icon-btn-voted .fa-vote-yea {
+	color: #772432;
+}
+
+.winner-label {
+	font-family: 'Montserrat', sans-serif;
+	color: #555;
+}
+
+/* Style for a row that has been voted for */
+.booking-table tr.voted {
+	background-color: #e9f7ef;
+	border-left: 5px solid #28a745;
+}
+
+/* --- Vote Bricks --- */
+.vote-bricks-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2px;
+	margin-left: 8px;
+	align-items: center;
+	width: 100%;
+}
+
+.vote-brick {
+	width: 6px;
+	height: 14px;
+	background-color: #772432;
+	border-radius: 2px;
+	transition: transform 0.2s ease;
+}
+
+.vote-brick:hover {
+	transform: scale(1.2);
+	background-color: #5a1b26;
+}
+
+/* Helper to hide vote button unless voted */
+.vote-auto-hide {
+	visibility: hidden;
+	opacity: 0;
+}
+
+/* Ensure voted button is always visible */
+.icon-btn.icon-btn-voted {
+	visibility: visible !important;
+	opacity: 1 !important;
+}
+
+/* Voted label badge */
+.voted-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background-color: #28a745;
+	color: white;
+	padding: 6px 12px;
+	border-radius: 20px;
+	font-size: 0.75em;
+	font-weight: bold;
+	white-space: nowrap;
+}
+
+.voted-label i {
+	font-size: 1em;
+}
+
+/* --- Mobile view overrides --- */
+@media (max-width: 768px) {
+	.accordion-content {
+		background-color: transparent;
+	}
+
+	/* Remove border from the accordion container itself */
+	.accordion-item {
+		border: none;
+	}
+
+	.booking-table .winner-label {
+		display: none;
+	}
+
+	/* Ensure vote bricks display horizontally below avatar in mobile view */
+	.vote-bricks-container {
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: wrap;
+		gap: 2px;
+		width: 100%;
+		max-width: none;
+		margin-left: 0;
+		justify-content: flex-start;
+		align-items: center;
+	}
+
+	/* Ensure bricks maintain consistent size in mobile */
+	.vote-brick {
+		width: 6px;
+		height: 14px;
+		flex-shrink: 0;
+	}
+}

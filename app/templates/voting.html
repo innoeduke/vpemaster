@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Voting{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/voting.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="booking-container">
+	<h1>Voting Assistant</h1>
+
+	<div class="booking-filter-container">
+		<div class="filter-left">
+			<i class="fas fa-calendar-alt"></i>
+			<select id="meeting-filter" onchange="window.location.href = '/voting/' + this.value;">
+				{% for meeting_num, meeting_date in upcoming_meetings | sort(attribute=0, reverse=True) %}
+				<option value="{{ meeting_num }}" {% if meeting_num==selected_meeting_number %}selected{% endif %}>
+					#{{ meeting_num }} - {{ meeting_date.strftime('%B %d, %Y') if meeting_date else 'No Date' }}
+				</option>
+				{% endfor %}
+			</select>
+		</div>
+	</div>
+
+	{% if selected_meeting %}
+
+	{% if selected_meeting.status == 'running' and not has_voted %}
+	<div class="voting-instruction-alert">
+		<i class="fas fa-info-circle"></i>
+		<span><strong>Select your winners!</strong> Click a candidate to cast your vote for each category.</span>
+	</div>
+	{% endif %}
+
+	{# ============================================= #}
+	{# ================ MACRO DEFINITIONS ================ #}
+	{# ============================================= #}
+
+	{# Macro to render a single role row in the table #}
+	{% macro render_role_row(role, status, is_admin_view, selected_meeting_number) %}
+	<tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}"
+		class="{% if role.award_type %}voted{% endif %}">
+		<td class="role-cell">
+			<div class="role-cell-content">
+				<i class="fas {{ role.icon }}"></i>
+				<div class="role-display-text">
+					<span>{{ role.role }}</span>
+					{% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
+				</div>
+			</div>
+		</td>
+		{# Status cell: avatar and vote bricks #}
+		<td class="status-cell">
+			<div class="status-cell-content">
+				<div class="role-avatar" {% if role.owner_name %}title="{{ role.owner_name }}" {% endif %}>
+					{% if role.owner_avatar_url %}
+					<img src="{{ url_for('static', filename=role.owner_avatar_url) }}" alt="User Avatar">
+					{% else %}
+					<i class="fas fa-user-circle"></i>
+					{% endif %}
+				</div>
+				{% if is_admin_view and role.vote_count and role.vote_count > 0 %}
+				<div class="vote-bricks-container" title="{{ role.vote_count }} Votes">
+					{% for n in range(role.vote_count) %}
+					<div class="vote-brick"></div>
+					{% endfor %}
+				</div>
+				{% endif %}
+			</div>
+		</td>
+
+		{# Name cell #}
+		<td class="assign-cell">
+			<div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
+		</td>
+
+		{# Action Icons cell #}
+		<td class="icon-cell">
+			{% if status == 'running' %}
+			{% set can_vote = role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
+
+			{% if (role.owner_id and role.award_category) and can_vote %}
+			{% set should_show = role.award_type %}
+			<button type="button"
+				class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %} {% if not should_show %}vote-auto-hide{% endif %}"
+				title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}"
+				data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
+				<i class="fas fa-vote-yea"></i>
+			</button>
+			{% endif %}
+			{% elif status == 'finished' %}
+			{% if is_admin_view %}
+			{# Admin view: Show buttons in finished state #}
+			{% set can_vote = role.owner_id and role.award_category %}
+			{% if (role.owner_id and role.award_category) and can_vote %}
+			{% set should_show = role.award_type %}
+			<button type="button"
+				class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %} {% if not should_show %}vote-auto-hide{% endif %}"
+				title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}"
+				data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
+				<i class="fas fa-vote-yea"></i>
+			</button>
+			{% endif %}
+			{% elif role.award_type %}
+			<span class="icon-btn icon-btn-voted" title="{{ role.award_type }} Winner">
+				<i class="fas fa-award"></i>
+				<span class="winner-label">{{ role.award_type|replace('-', ' ')|title }}</span>
+			</span>
+			{% endif %}
+			{% endif %}
+		</td>
+	</tr>
+	{% endmacro %}
+
+	{# Macro to render role tables with accordion #}
+	{% macro render_role_tables(roles, sorted_role_groups, status, is_admin_view, selected_meeting_number) %}
+
+	{% set use_accordion = (status in ['running']) or (status == 'finished' and is_admin_view) %}
+	{% set default_open = False %}
+
+	{% if use_accordion %}
+	<div class="award-accordion">
+		{% for category, items in sorted_role_groups %}
+		{% if items and category and category != 'none' %}
+		{% set category_voted = items|selectattr('award_type')|list|length > 0 %}
+		<div class="accordion-item" data-category="{{ category or 'other' }}">
+			<button
+				class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }}">
+				<span>{{ (category or 'Other')|replace('-', ' ')|title }} Roles</span>
+				<div class="accordion-header-right">
+					{% if category_voted %}
+					<span class="voted-label">
+						<i class="fas fa-trophy"></i> VOTED
+					</span>
+					{% endif %}
+					<i class="fas fa-chevron-down"></i>
+				</div>
+			</button>
+			<div class="accordion-content" {% if default_open %}style="max-height: none;" {% endif %}>
+				<table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
+					<tbody>
+						{% for role in items %}
+						{{ render_role_row(role, status, is_admin_view, selected_meeting_number) }}
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+		{% endif %}
+		{% endfor %}
+	</div>
+
+
+	{% else %}
+	{# Finished member view #}
+	<table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
+		<tbody>
+			{% set ns = namespace(displayed_awards=[]) %}
+			{% for role in roles %}
+			{% if role.award_type and role.award_type not in ns.displayed_awards %}
+			{{ render_role_row(role, status, is_admin_view, selected_meeting_number) }}
+			{% set ns.displayed_awards = ns.displayed_awards + [role.award_type] %}
+			{% endif %}
+			{% endfor %}
+		</tbody>
+	</table>
+	{% endif %}
+	{% endmacro %}
+
+
+	{# ============================================= #}
+	{# =============== MAIN VIEW LOGIC =============== #}
+	{# ============================================= #}
+
+	{% if selected_meeting.status not in ['running', 'finished'] %}
+	<p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Voting for Meeting #{{
+		selected_meeting_number }} is not yet available.</p>
+	<div style="text-align: center; margin-top: 20px;">
+		<img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon"
+			style="max-width: 100%; height: auto; border: 5px solid #c5c5c5; border-radius: 15px;">
+	</div>
+	{% else %}
+	{% if has_voted and not is_admin_view %}
+	<div id="thank-you-message" style="text-align: center; margin-top: 40px; padding: 20px;">
+		<i class="fas fa-check-circle" style="font-size: 4em; color: #28a745; margin-bottom: 20px;"></i>
+		<h2>Thank You!</h2>
+		<p>Your votes have been submitted.</p>
+	</div>
+	{% else %}
+	{{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view,
+	selected_meeting_number) }}
+	{% endif %}
+
+	{% if selected_meeting.status == 'running' and not (has_voted and not is_admin_view) %}
+	<div id="batch-vote-actions" style="display: none; text-align: center; margin-top: 20px; padding-bottom: 30px;">
+		<button id="done-voting-btn" class="btn btn-primary btn-lg"
+			style="width: 80%; max-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+			Done <i class="fas fa-check"></i>
+		</button>
+	</div>
+	<div id="thank-you-message" style="display: none; text-align: center; margin-top: 40px; padding: 20px;">
+		<i class="fas fa-check-circle" style="font-size: 4em; color: #28a745; margin-bottom: 20px;"></i>
+		<h2>Thank You!</h2>
+		<p>Your votes have been submitted.</p>
+	</div>
+	{% endif %}
+	{% endif %}
+
+	{% else %}
+	<p>Please select a meeting to view voting options.</p>
+	{% endif %}
+
+</div>
+
+<script>
+	// Pass Python data to global JS variables used by voting.js
+	var isAdminView = {{ is_admin_view| tojson }};
+	var selectedMeetingNumber = {{ selected_meeting_number| tojson }};
+	var isOfficer = {{ is_admin_view| tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/voting.js') }}"></script>
+{% endblock %}

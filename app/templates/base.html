@@ -39,11 +39,18 @@
             <span>Agenda</span>
           </a>
         </li>
+        {% if current_user.is_authenticated %}
         <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}">
           <a href="{{ url_for('booking_bp.booking') }}">
             <i class="fas fa-tag nav-icon"></i>
-            <span>{% if current_user.is_authenticated %}Booking{% else %}Voting{% endif
-              %}</span>
+            <span>Booking</span>
+          </a>
+        </li>
+        {% endif %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('voting_bp') %}active{% endif %}">
+          <a href="{{ url_for('voting_bp.voting') }}">
+            <i class="fas fa-vote-yea nav-icon"></i>
+            <span>Voting</span>
           </a>
         </li>
         {% if is_authorized('CONTACT_BOOK_VIEW') %}

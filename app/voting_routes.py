@@ -1,0 +1,346 @@
+# vpemaster/voting_routes.py
+
+from .auth.utils import login_required, is_authorized
+from flask import Blueprint, render_template, request, session, jsonify, current_app
+from .models import SessionLog, SessionType, Contact, Meeting, User, Role, Vote
+from . import db
+from datetime import datetime
+import secrets
+from sqlalchemy import func
+from flask_login import current_user
+
+from .booking_voting_shared import (
+    get_voter_identifier,
+    get_user_info,
+    get_meetings,
+    fetch_session_logs,
+    consolidate_roles,
+    group_roles_by_category,
+    get_best_award_ids
+)
+
+voting_bp = Blueprint('voting_bp', __name__)
+
+
+def _enrich_role_data_for_voting(roles_dict, selected_meeting):
+    """
+    Enriches role data with voting-specific information (awards, vote counts).
+    
+    Args:
+        roles_dict: Dictionary of consolidated roles
+        selected_meeting: Meeting object
+    
+    Returns:
+        list: Enriched roles list
+    """
+    if not selected_meeting:
+        return []
+
+    winner_ids = {}
+    if selected_meeting.status == 'running':
+        # For a running meeting, the "winner" is who the current user voted for
+        voter_identifier = get_voter_identifier()
+        
+        if voter_identifier:
+            user_votes = Vote.query.filter_by(
+                meeting_number=selected_meeting.Meeting_Number,
+                voter_identifier=voter_identifier
+            ).all()
+            winner_ids = {vote.award_category: vote.contact_id for vote in user_votes}
+
+    elif selected_meeting.status == 'finished':
+        # For a finished meeting, the final winners are stored in the meeting object
+        winner_ids = {
+            'speaker': selected_meeting.best_speaker_id,
+            'evaluator': selected_meeting.best_evaluator_id,
+            'table-topic': selected_meeting.best_table_topic_id,
+            'role-taker': selected_meeting.best_role_taker_id,
+        }
+
+    # Vote counts for officers
+    vote_counts = {}
+    if is_authorized('BOOKING_ASSIGN_ALL', meeting=selected_meeting) and selected_meeting and selected_meeting.status in ['running', 'finished']:
+        counts = db.session.query(Vote.contact_id, Vote.award_category, func.count(Vote.id)).filter(
+            Vote.meeting_number == selected_meeting.Meeting_Number
+        ).group_by(Vote.contact_id, Vote.award_category).all()
+        
+        for cid, cat, count in counts:
+            vote_counts[(cid, cat)] = count
+
+    enriched_roles = []
+    for _, role_data in roles_dict.items():
+        role_obj = role_data.get('role_obj')
+        if not role_obj:
+            role_obj = Role.query.filter_by(name=role_data['role_key']).first()
+
+        role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else "fa-question-circle"
+        role_data['session_id'] = role_data['session_ids'][0]
+
+        owner_id = role_data['owner_id']
+        award_category = role_obj.award_category if role_obj else None
+
+        role_data['award_category'] = award_category
+        role_data['award_type'] = award_category if owner_id and award_category and owner_id == winner_ids.get(award_category) else None
+        role_data['award_category_open'] = bool(award_category and not winner_ids.get(award_category))
+        
+        # Attach vote count if available
+        if vote_counts and award_category:
+            role_data['vote_count'] = vote_counts.get((owner_id, award_category), 0)
+
+        enriched_roles.append(role_data)
+    
+    return enriched_roles
+
+
+def _sort_roles_for_voting(roles):
+    """
+    Sorts roles for voting view by award category priority.
+    
+    Args:
+        roles: List of role dictionaries
+    
+    Returns:
+        list: Sorted roles
+    """
+    CATEGORY_ORDER = {
+        'speaker': 1,
+        'evaluator': 2,
+        'role-taker': 3,
+        'table-topic': 4
+    }
+    
+    def get_category_priority(role):
+        cat = role.get('award_category', '') or ''
+        return CATEGORY_ORDER.get(cat, 99)
+
+    roles.sort(key=lambda x: (
+        get_category_priority(x),
+        x.get('award_category', '') or '', 
+        x['role']
+    ))
+    
+    return roles
+
+
+def _get_roles_for_voting(selected_meeting_number, selected_meeting):
+    """
+    Helper function to get and process roles for the voting page.
+    
+    Args:
+        selected_meeting_number: Meeting number
+        selected_meeting: Meeting object
+    
+    Returns:
+        list: Processed roles for voting
+    """
+    session_logs = fetch_session_logs(selected_meeting_number, meeting_obj=selected_meeting)
+    roles_dict = consolidate_roles(session_logs)
+    enriched_roles = _enrich_role_data_for_voting(roles_dict, selected_meeting)
+    sorted_roles = _sort_roles_for_voting(enriched_roles)
+
+    # Filter to only show roles with award categories
+    if selected_meeting.status in ['running', 'finished']:
+        sorted_roles = [role for role in sorted_roles if role.get('award_category') and role.get('award_category') != 'none']
+
+    return sorted_roles
+
+
+def _get_voting_page_context(selected_meeting_number, user, current_user_contact_id):
+    """
+    Gathers all context needed for the voting page template.
+    
+    Args:
+        selected_meeting_number: Meeting number
+        user: Current user object
+        current_user_contact_id: Current user's contact ID
+    
+    Returns:
+        dict: Context dictionary for template
+    """
+    # Only show running and finished meetings for voting
+    upcoming_meetings, default_meeting_num = get_meetings(limit_past=5, status_filter=['running', 'finished'])
+
+    if not selected_meeting_number:
+        selected_meeting_number = default_meeting_num or (
+            upcoming_meetings[0][0] if upcoming_meetings else None)
+
+    context = {
+        'roles': [],
+        'upcoming_meetings': upcoming_meetings,
+        'selected_meeting_number': selected_meeting_number,
+        'selected_meeting': None,
+        'is_admin_view': is_authorized('BOOKING_ASSIGN_ALL'),
+        'current_user_contact_id': current_user_contact_id,
+        'user_role': current_user.Role if current_user.is_authenticated else 'Guest',
+        'best_award_ids': set(),
+        'has_voted': False,
+        'sorted_role_groups': []
+    }
+
+    if not selected_meeting_number:
+        return context
+
+    # Check if user has voted for this meeting
+    voter_identifier = get_voter_identifier()
+    if voter_identifier:
+        vote_exists = Vote.query.filter_by(meeting_number=selected_meeting_number, voter_identifier=voter_identifier).first()
+        if vote_exists:
+            context['has_voted'] = True
+
+    selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_number).first()
+    
+    # Access control for unpublished meetings
+    is_manager = current_user.is_authenticated and current_user.Contact_ID == selected_meeting.manager_id if selected_meeting else False
+    if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (current_user.is_authenticated and current_user.is_officer) or is_manager):
+        from flask import abort
+        abort(403)
+
+    context['selected_meeting'] = selected_meeting
+    context['is_admin_view'] = is_authorized('BOOKING_ASSIGN_ALL', meeting=selected_meeting)
+
+    roles = _get_roles_for_voting(selected_meeting_number, selected_meeting)
+    context['roles'] = roles
+    context['sorted_role_groups'] = group_roles_by_category(roles)
+    context['best_award_ids'] = get_best_award_ids(selected_meeting)
+
+    return context
+
+
+@voting_bp.route('/voting', defaults={'selected_meeting_number': None}, methods=['GET'])
+@voting_bp.route('/voting/<int:selected_meeting_number>', methods=['GET'])
+def voting(selected_meeting_number):
+    """Main voting page route."""
+    user, current_user_contact_id = get_user_info()
+    context = _get_voting_page_context(selected_meeting_number, user, current_user_contact_id)
+    return render_template('voting.html', **context)
+
+
+@voting_bp.route('/voting/batch_vote', methods=['POST'])
+def batch_vote():
+    """Batch vote submission endpoint."""
+    data = request.get_json()
+    meeting_number = data.get('meeting_number')
+    votes = data.get('votes', [])
+
+    if not meeting_number:
+        return jsonify(success=False, message="Missing meeting number."), 400
+
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found."), 404
+
+    if meeting.status != 'running':
+        return jsonify(success=False, message="Voting is not active for this meeting."), 403
+
+    # Determine voter identity
+    voter_identifier = get_voter_identifier()
+    if not voter_identifier:
+        if 'voter_token' not in session:
+            session['voter_token'] = secrets.token_hex(16)
+        voter_identifier = session['voter_token']
+
+    try:
+        # Clear previous votes for this voter in this meeting
+        Vote.query.filter_by(
+            meeting_number=meeting_number,
+            voter_identifier=voter_identifier
+        ).delete()
+        
+        # Add new votes
+        for v in votes:
+            contact_id = v.get('contact_id')
+            award_category = v.get('award_category')
+            if contact_id and award_category:
+                new_vote = Vote(
+                    meeting_number=meeting_number,
+                    voter_identifier=voter_identifier,
+                    award_category=award_category,
+                    contact_id=contact_id
+                )
+                db.session.add(new_vote)
+        
+        db.session.commit()
+        return jsonify(success=True)
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error processing batch vote: {e}")
+        return jsonify(success=False, message="An internal error occurred."), 500
+
+
+@voting_bp.route('/voting/vote', methods=['POST'])
+def vote_for_award():
+    """Individual vote submission endpoint."""
+    data = request.get_json()
+    meeting_number = data.get('meeting_number')
+    contact_id = data.get('contact_id')
+    award_category = data.get('award_category')
+
+    if not all([meeting_number, contact_id, award_category]):
+        return jsonify(success=False, message="Missing data."), 400
+
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found."), 404
+
+    is_admin = is_authorized('BOOKING_ASSIGN_ALL')
+
+    if not (meeting.status == 'running' or (meeting.status == 'finished' and is_admin)):
+        return jsonify(success=False, message="Voting is not active for this meeting."), 403
+
+    # Determine voter identity
+    if current_user.is_authenticated:
+        voter_identifier = f"user_{current_user.id}"
+    else:
+        if 'voter_token' not in session:
+            session['voter_token'] = secrets.token_hex(16)
+        voter_identifier = session['voter_token']
+    
+    # Check for an existing vote from this identifier for this category
+    existing_vote = Vote.query.filter_by(
+        meeting_number=meeting_number,
+        voter_identifier=voter_identifier,
+        award_category=award_category
+    ).first()
+
+    your_vote_id = None
+
+    try:
+        if existing_vote:
+            if existing_vote.contact_id == contact_id:
+                # User clicked the same person again, so cancel the vote
+                db.session.delete(existing_vote)
+                your_vote_id = None
+            else:
+                # User is changing their vote to a new person
+                existing_vote.contact_id = contact_id
+                your_vote_id = contact_id
+        else:
+            # New vote
+            new_vote = Vote(
+                meeting_number=meeting_number,
+                voter_identifier=voter_identifier,
+                award_category=award_category,
+                contact_id=contact_id
+            )
+            db.session.add(new_vote)
+            your_vote_id = contact_id
+
+        db.session.commit()
+
+        if meeting.status == 'finished' and is_admin:
+            if award_category == 'speaker':
+                meeting.best_speaker_id = your_vote_id
+            elif award_category == 'evaluator':
+                meeting.best_evaluator_id = your_vote_id
+            elif award_category == 'table-topic':
+                meeting.best_table_topic_id = your_vote_id
+            elif award_category == 'role-taker':
+                meeting.best_role_taker_id = your_vote_id
+            db.session.commit()
+
+        return jsonify(success=True, your_vote_id=your_vote_id, award_category=award_category)
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error processing vote: {e}")
+        return jsonify(success=False, message="An internal error occurred."), 500

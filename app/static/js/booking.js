@@ -4,13 +4,8 @@
 // - isAdminView (Boolean)
 // - selectedMeetingNumber (String or Number)
 
-var localVotes = {}; // Store votes locally before batch submission
-
 
 document.addEventListener("DOMContentLoaded", function () {
-  // Find elements inside DOMContentLoaded
-  const meetingFilter = document.getElementById("meeting-filter");
-
   if (isAdminView) {
     document.querySelectorAll(".admin-assign-select").forEach((select) => {
       select.addEventListener("change", function () {
@@ -21,21 +16,14 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-
-
-
-
-  document.querySelectorAll(".timeline-event").forEach((item) => {
-    item.addEventListener("click", function () {
-      const meetingNumber = this.dataset.meetingNumber;
-      if (meetingNumber) {
-        window.location.href = "/booking/" + meetingNumber;
-      }
-    });
-  });
-
   // Accordion functionality
-  const accordionState = JSON.parse(sessionStorage.getItem('accordionState')) || {};
+  let accordionState = {};
+  try {
+    accordionState = JSON.parse(sessionStorage.getItem('bookingAccordionState')) || {};
+  } catch (e) {
+    console.warn("Session storage not available:", e);
+  }
+
   const accordionHeaders = document.querySelectorAll(".accordion-header");
 
   accordionHeaders.forEach(header => {
@@ -63,115 +51,36 @@ document.addEventListener("DOMContentLoaded", function () {
           accordionState[category] = true;
         }
       }
-      sessionStorage.setItem('accordionState', JSON.stringify(accordionState));
-    });
-  });
-
-  // Set the initial UI state for all voting buttons on page load.
-  const categories = new Set();
-  const allVoteButtons = document.querySelectorAll('button.icon-btn[data-award-category]');
-
-  allVoteButtons.forEach(btn => {
-    categories.add(btn.dataset.awardCategory);
-  });
-
-  categories.forEach(category => {
-    const votedButton = document.querySelector(`button.icon-btn-voted[data-award-category="${category}"]`);
-    const winnerId = votedButton ? parseInt(votedButton.dataset.contactId, 10) : null;
-    if (winnerId) {
-      localVotes[category] = winnerId;
-    }
-    updateVoteButtonsUI(category, winnerId);
-  });
-
-
-  // Allow clicking anywhere on the row to vote (for all devices)
-  document.querySelectorAll('.is-running-meeting').forEach(table => {
-    table.addEventListener('click', function (event) {
-      // Find the clicked row by traversing up from the event target
-      const row = event.target.closest('tr');
-      if (!row) return; // Exit if the click was not inside a row
-
-      // Find the vote button within that row
-      const voteButton = row.querySelector('button.icon-btn[onclick^="handleVoteClick"]');
-
-      // If there's a vote button and the click didn't originate from the button itself, trigger the action.
-      if (voteButton && !voteButton.contains(event.target)) {
-        // Instead of voteButton.click(), call the handler function directly
-        // to avoid issues with clicking a hidden element.
-        handleVoteClick(voteButton);
+      try {
+        sessionStorage.setItem('bookingAccordionState', JSON.stringify(accordionState));
+      } catch (e) {
+        // Ignore session storage errors
       }
     });
   });
 
-  // NEW: Done button listener
-  const doneBtn = document.getElementById('done-voting-btn');
-  if (doneBtn) {
-    doneBtn.addEventListener('click', function () {
-      submitBatchVotes();
+  // Meeting Filter Logic
+  const meetingFilter = document.getElementById("meeting-filter");
+  if (meetingFilter) {
+    meetingFilter.addEventListener("change", function () {
+      if (this.value) {
+        window.location.href = '/booking/' + this.value;
+      }
     });
   }
+
+  document.querySelectorAll(".timeline-event").forEach((item) => {
+    item.addEventListener("click", function () {
+      const meetingNumber = this.dataset.meetingNumber;
+      if (meetingNumber) {
+        window.location.href = "/booking/" + meetingNumber;
+      }
+    });
+  });
 
 }); // End of DOMContentLoaded listener
 
-function submitBatchVotes() {
-  const votes = [];
-  for (const [category, contactId] of Object.entries(localVotes)) {
-    votes.push({
-      contact_id: contactId,
-      award_category: category
-    });
-  }
 
-  // Allow empty votes (clearing votes) but maybe prompt?
-  // Proceeding to wipe votes if empty logic is desired behavior for "unvoting".
-
-  fetch("/booking/batch_vote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      meeting_number: selectedMeetingNumber,
-      votes: votes
-    }),
-  })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
-        if (isOfficer) {
-          window.location.reload(true);
-        } else {
-          // Transition to Thank You state
-          const accordion = document.querySelector('.award-accordion');
-          if (accordion) accordion.style.display = 'none';
-
-          const actions = document.getElementById('batch-vote-actions');
-          if (actions) actions.style.display = 'none';
-
-          const instruction = document.querySelector('.voting-instruction-alert');
-          if (instruction) instruction.style.display = 'none';
-
-          const thanks = document.getElementById('thank-you-message');
-          if (thanks) {
-            thanks.style.display = 'block';
-            thanks.scrollIntoView({ behavior: 'smooth' });
-          }
-
-          // Optional: Reload after a short delay to ensure server-side 'has_voted' check takes over next time
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
-        }
-      } else {
-        alert("Error: " + data.message);
-      }
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      alert("An error occurred during voting.");
-    });
-}
-
-// Functions remain global (or could be wrapped in an IIFE)
 function bookOrCancelRole(sessionId, action) {
   fetch("/booking/book", {
     method: "POST",
@@ -191,6 +100,7 @@ function bookOrCancelRole(sessionId, action) {
     });
 }
 
+
 function assignRole(sessionId, contactId) {
   fetch("/booking/book", {
     method: "POST",
@@ -209,15 +119,11 @@ function assignRole(sessionId, contactId) {
             updateSessionRow(session);
           });
         } else {
-          // Fallback: If un-assigning without updated_sessions (old behavior?) 
-          // or just safe fallback.
           if (contactId === "0") {
-            // If un-assigning, update the UI dynamically without a full page reload.
             const row = document.querySelector(
               `tr[data-session-id="${sessionId}"]`
             );
             if (row) {
-              // 1. Reset the dropdown menu
               const selectElement = row.querySelector(".admin-assign-select");
               if (selectElement) {
                 selectElement.value = "0";
@@ -228,11 +134,9 @@ function assignRole(sessionId, contactId) {
                 }
               }
 
-              // 2. Remove any award or voting icons from the role cell actions
-              // (Note: 'role-cell-actions' might strictly be 'icon-cell' children depending on template version, keeping generic safety)
               const roleActions = row.querySelector(".role-cell-actions");
               if (roleActions) {
-                roleActions.innerHTML = ""; // Clear out the buttons
+                roleActions.innerHTML = "";
               }
             }
           } else {
@@ -245,15 +149,15 @@ function assignRole(sessionId, contactId) {
     });
 }
 
+
 function updateSessionRow(sessionData) {
   const row = document.querySelector(`tr[data-session-id="${sessionData.session_id}"]`);
   if (!row) return;
 
-  // 1. Update Dropdown (if present - usually Admin Book / Assign View)
+  // Update Dropdown (if present - Admin Book / Assign View)
   const selectElement = row.querySelector(".admin-assign-select");
   if (selectElement) {
     selectElement.value = sessionData.owner_id !== null ? sessionData.owner_id : "0";
-    // Update selected attribute for consistency
     Array.from(selectElement.options).forEach(option => {
       if (option.value == selectElement.value) {
         option.setAttribute('selected', 'selected');
@@ -263,13 +167,13 @@ function updateSessionRow(sessionData) {
     });
   }
 
-  // 2. Update Text Display (if present - usually Running/Finished/User View)
+  // Update Text Display (if present)
   const ownerDisplay = row.querySelector('.owner-display');
   if (ownerDisplay) {
     ownerDisplay.textContent = sessionData.owner_name || 'Unassigned';
   }
 
-  // 3. Update Avatar
+  // Update Avatar
   const avatarContainer = row.querySelector('.role-avatar:not(.waitlist-avatar)');
   if (avatarContainer) {
     if (sessionData.owner_name) {
@@ -285,7 +189,7 @@ function updateSessionRow(sessionData) {
     }
   }
 
-  // 4. Clear icons if unassigned
+  // Clear icons if unassigned
   if (!sessionData.owner_id || sessionData.owner_id == 0) {
     const roleActions = row.querySelector(".role-cell-actions");
     if (roleActions) {
@@ -294,117 +198,6 @@ function updateSessionRow(sessionData) {
   }
 }
 
-function handleVoteClick(buttonEl) {
-  const meetingNumber = buttonEl.dataset.meetingNumber;
-  const contactId = parseInt(buttonEl.dataset.contactId, 10);
-  const awardCategory = buttonEl.dataset.awardCategory;
-
-  // Toggle logic: if already selected, unselect
-  if (localVotes[awardCategory] === contactId) {
-    delete localVotes[awardCategory];
-    updateVoteButtonsUI(awardCategory, null);
-  } else {
-    localVotes[awardCategory] = contactId;
-    updateVoteButtonsUI(awardCategory, contactId);
-
-    // Auto-collapse accordion
-    const accordionItem = buttonEl.closest('.accordion-item');
-    if (accordionItem) {
-      const header = accordionItem.querySelector('.accordion-header');
-      const content = accordionItem.querySelector('.accordion-content');
-      if (header && header.classList.contains('active')) {
-        // Collapse it
-        header.classList.remove('active');
-        content.style.maxHeight = null;
-        // Update session state
-        const category = accordionItem.dataset.category;
-        const accordionState = JSON.parse(sessionStorage.getItem('accordionState')) || {};
-        if (category) delete accordionState[category];
-        sessionStorage.setItem('accordionState', JSON.stringify(accordionState));
-      }
-    }
-  }
-
-  // Show Done button if we have interaction
-  const doneBtnContainer = document.getElementById('batch-vote-actions');
-  if (doneBtnContainer) {
-    doneBtnContainer.style.display = 'block';
-  }
-}
-
-function updateVoteButtonsUI(category, newWinnerId) {
-  // Find all buttons in this award category
-  const allButtons = document.querySelectorAll(
-    `button[data-award-category="${category}"]`
-  );
-
-  allButtons.forEach((button) => {
-    const buttonContactId = parseInt(button.dataset.contactId, 10);
-    const row = button.closest('tr');
-
-    // Default state: hide button, remove classes, and reset title
-    button.style.display = 'none';
-    button.classList.remove('icon-btn-voted');
-    if (row) row.classList.remove('voted');
-    button.title = "Vote";
-
-    // If this button belongs to the winner, show it and apply voted styles
-    if (newWinnerId !== null && buttonContactId === newWinnerId) {
-      button.style.display = 'inline-block';
-      button.classList.add('icon-btn-voted');
-      if (row) row.classList.add('voted');
-      button.title = `Cancel Vote (${category})`;
-    }
-  });
-
-  // NEW: Update accordion header color and label
-  const accordionItem = document.querySelector(`.accordion-item[data-category="${category}"]`);
-  if (accordionItem) {
-    const header = accordionItem.querySelector('.accordion-header');
-    if (header) {
-      // Find or create the header-right container
-      let headerRight = header.querySelector('.accordion-header-right');
-      if (!headerRight) {
-        // If it doesn't exist, create it and move the chevron into it
-        headerRight = document.createElement('div');
-        headerRight.className = 'accordion-header-right';
-        const chevron = header.querySelector('.fa-chevron-down');
-        if (chevron) {
-          headerRight.appendChild(chevron);
-        }
-        header.appendChild(headerRight);
-      }
-
-      if (newWinnerId !== null) {
-        header.classList.add('voted');
-
-        // Add VOTED label if it doesn't exist
-        let votedLabel = headerRight.querySelector('.voted-label');
-        if (!votedLabel) {
-          votedLabel = document.createElement('span');
-          votedLabel.className = 'voted-label';
-          votedLabel.innerHTML = '<i class="fas fa-trophy"></i> VOTED';
-
-          // Insert before the chevron icon
-          const chevron = headerRight.querySelector('.fa-chevron-down');
-          if (chevron) {
-            headerRight.insertBefore(votedLabel, chevron);
-          } else {
-            headerRight.insertBefore(votedLabel, headerRight.firstChild);
-          }
-        }
-      } else {
-        header.classList.remove('voted');
-
-        // Remove VOTED label if it exists
-        const votedLabel = headerRight.querySelector('.voted-label');
-        if (votedLabel) {
-          votedLabel.remove();
-        }
-      }
-    }
-  }
-}
 
 function leaveWaitlist(sessionId) {
   fetch("/booking/book", {
@@ -418,14 +211,13 @@ function leaveWaitlist(sessionId) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        // Reload the page to ensure all role statuses and buttons are correctly updated from the server.
-        // This is more robust than trying to manage complex state on the client side.
         window.location.reload(true);
       } else {
         alert("Error: " + data.message);
       }
     });
 }
+
 
 function approveWaitlist(sessionId) {
   fetch("/booking/book", {
@@ -446,6 +238,7 @@ function approveWaitlist(sessionId) {
     });
 }
 
+
 function joinWaitlist(sessionId) {
   fetch("/booking/book", {
     method: "POST",
@@ -458,7 +251,6 @@ function joinWaitlist(sessionId) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        // Reload the page to ensure all role statuses and buttons are correctly updated from the server.
         window.location.reload(true);
       } else {
         alert("Error: " + data.message);
@@ -466,12 +258,12 @@ function joinWaitlist(sessionId) {
     });
 }
 
+
 function syncTally() {
   if (!confirm("Are you sure you want to sync the roles for this meeting to Tally?")) {
     return;
   }
 
-  // Use global selectedMeetingNumber
   if (!selectedMeetingNumber) {
     alert("No meeting selected.");
     return;
