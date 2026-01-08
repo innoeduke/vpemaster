@@ -5,7 +5,9 @@ content %}
   <div class="nav-tabs">
     <button class="nav-item active" onclick="openTab(event, 'basic-info')" id="tab-basic-info">Basic
       Information</button>
+    {% if is_own_profile %}
     <button class="nav-item" onclick="openTab(event, 'reset-password')" id="tab-reset-password">Reset Password</button>
+    {% endif %}
   </div>
 </div>
 
@@ -25,10 +27,12 @@ content %}
         onerror="this.style.display='none'; document.getElementById('avatar-placeholder').style.display='flex';">
       {% endif %}
 
+      {% if is_own_profile %}
       <div class="upload-btn-wrapper">
         <button class="btn-upload">Change Photo</button>
         <input type="file" name="profile_photo" accept="image/*" onchange="this.form.submit()" />
       </div>
+      {% endif %}
     </div>
 
     <input type="hidden" name="action" value="update_profile" />
@@ -46,14 +50,15 @@ content %}
         <td><label for="email">Email:</label></td>
         <td>
           <input type="email" id="email" name="email" value="{{ user.Email if user.Email else '' }}"
-            autocomplete="email" />
+            autocomplete="email" {% if not is_own_profile %}disabled{% endif %} />
         </td>
       </tr>
       <tr>
         <td><label for="phone_number">Phone Number:</label></td>
         <td>
           <input type="text" id="phone_number" name="phone_number"
-            value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}" autocomplete="tel" />
+            value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}" autocomplete="tel" {% if not
+            is_own_profile %}disabled{% endif %} />
         </td>
       </tr>
       <tr>
@@ -84,8 +89,8 @@ content %}
       <tr>
         <td><label for="bio">Bio:</label></td>
         <td>
-          <textarea id="bio" name="bio" rows="4"
-            autocomplete="off">{{ user.contact.Bio if user.contact.Bio else '' }}</textarea>
+          <textarea id="bio" name="bio" rows="4" autocomplete="off" {% if not is_own_profile %}disabled{% endif
+            %}>{{ user.contact.Bio if user.contact.Bio else '' }}</textarea>
         </td>
       </tr>
       {% else %}
@@ -99,12 +104,15 @@ content %}
     <p class="note" style="text-align: center; margin-top: 10px;">
       For any education related questions, please contact the Vice President Education (VPE).
     </p>
+    {% if is_own_profile %}
     <div class="form-actions" style="margin-top: 10px">
       <button type="submit" class="btn btn-primary">Update Profile</button>
     </div>
+    {% endif %}
   </form>
 </div>
 
+{% if is_own_profile %}
 <div id="reset-password" class="tab-content" style="display: none;">
   <h2 style="text-align: center; margin-top: 20px; margin-bottom: 20px">
     Reset Password
@@ -134,6 +142,7 @@ content %}
     </div>
   </form>
 </div>
+{% endif %}
 
 <script>
   function openTab(evt, tabName) {

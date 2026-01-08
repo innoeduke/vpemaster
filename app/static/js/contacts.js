@@ -97,4 +97,38 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Initial filter
   filterTable();
+
+  // --- Auto-open Contact Modal via ID param ---
+  const urlParams = new URLSearchParams(window.location.search);
+  const contactIdToOpen = urlParams.get('id');
+
+  if (contactIdToOpen) {
+    // Find the row for this contact to get its type
+    const rows = table.querySelectorAll("tbody tr");
+    let targetRow = null;
+    rows.forEach(row => {
+      // We don't have a data-id on the row, but we can look for the edit button or just find by id if we added it.
+      // Let's assume we can find it by checking if an edit button with this id exists in the row.
+      const editBtn = row.querySelector(`button[onclick^="openContactModal(${contactIdToOpen})"]`);
+      if (editBtn) {
+        targetRow = row;
+      }
+    });
+
+    if (targetRow) {
+      const contactType = targetRow.dataset.type;
+      const tabToActivate = Array.from(tabs).find(t => t.dataset.type === contactType);
+      
+      if (tabToActivate) {
+        tabs.forEach(t => t.classList.remove("active"));
+        tabToActivate.classList.add("active");
+        filterTable(); // Refresh table to show the target row's tab
+      }
+      
+      // Open the modal
+      if (typeof openContactModal === 'function') {
+        openContactModal(contactIdToOpen);
+      }
+    }
+  }
 });

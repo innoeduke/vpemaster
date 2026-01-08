@@ -82,14 +82,43 @@ def check_password_reset():
             return redirect(url_for('auth_bp.profile', tab='password'))
 
 @auth_bp.route('/profile', methods=['GET', 'POST'])
+@auth_bp.route('/profile/<int:contact_id>', methods=['GET', 'POST'])
 @login_required 
-def profile():
+def profile(contact_id=None):
     """
-    Displays the logged-in user's profile page and handles password reset.
+    Displays a user's profile page and handles password reset.
     """
-    user = current_user
+    is_own_profile = True
+    if contact_id and contact_id != current_user.Contact_ID:
+        if not current_user.is_officer:
+            flash('Unauthorized access.', 'error')
+            return redirect(url_for('auth_bp.profile'))
+        
+        from ..models import Contact
+        contact = Contact.query.get_or_404(contact_id)
+        # Handle cases where contact might not have a user account
+        if contact.user:
+            user = contact.user
+        else:
+            # Create a mock user object to satisfy the template's needs if possible, 
+            # or just pass the contact info. For now, let's assume they have accounts 
+            # as these are journals. If not, we still show the contact info.
+            class MockUser:
+                def __init__(self, contact):
+                    self.contact = contact
+                    self.Username = "No Account"
+                    self.Email = contact.Email
+                    self.Role = contact.Type
+            user = MockUser(contact)
+        is_own_profile = False
+    else:
+        user = current_user
 
     if request.method == 'POST':
+        if not is_own_profile:
+            flash('You cannot modify someone else\'s profile.', 'error')
+            return redirect(url_for('auth_bp.profile', contact_id=contact_id))
+
         action = request.form.get('action')
 
         if action == 'update_profile':
@@ -141,7 +170,7 @@ def profile():
                     flash('Your password has been updated successfully! Please log in with your new password.', 'success')
                     logout_user() # Logout ensuring clean state
                     return redirect(url_for('auth_bp.login'))
-    return render_template('profile.html', user=user)
+    return render_template('profile.html', user=user, is_own_profile=is_own_profile)
 
 
 @auth_bp.route('/reset_password', methods=['GET', 'POST'])

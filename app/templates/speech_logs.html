@@ -7,7 +7,7 @@
 <div class="speech-logs-content">
     {% if is_member_view and viewed_contact %}
     <div class="speech-log-header">
-        <div class="header-avatar">
+        <div class="header-avatar" style="text-align: center;">
             {% if viewed_contact.Avatar_URL %}
             <img src="{{ url_for('static', filename=viewed_contact.Avatar_URL) }}" alt="{{ viewed_contact.Name }}"
                 class="avatar-img">
@@ -17,9 +17,18 @@
         </div>
         <div class="header-info">
             <h2>{{ viewed_contact.Name }}'s Activity Logs</h2>
-            {% if request.args.get('speaker_id') %}
-            <span class="badge badge-info"
-                style="font-size: 0.8em; margin-top: 5px; display: inline-block;">Impersonating View</span>
+        </div>
+        <div class="header-actions">
+            {% if is_authorized('CONTACT_BOOK_VIEW') %}
+            <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn btn-info btn-sm"
+                style="color: white;" title="View Profile">
+                <i class="fas fa-id-card"></i> Profile
+            </a>
+            {% elif current_user.Contact_ID == viewed_contact.id %}
+            <a href="{{ url_for('auth_bp.profile') }}" class="btn btn-info btn-sm" style="color: white;"
+                title="My Profile">
+                <i class="fas fa-user-circle"></i> Profile
+            </a>
             {% endif %}
         </div>
     </div>
@@ -36,7 +45,8 @@
                 <select name="pathway" onchange="this.form.submit()" class="form-control">
                     <option value="all">All My Pathways</option>
                     {% for p_name in member_pathways %}
-                    <option value="{{ p_name }}" {% if selected_filters.pathway==p_name %}selected{% endif %}>{{ p_name
+                    <option value="{{ p_name }}" {% if selected_filters.pathway==p_name %}selected{% endif %}>{{
+                        p_name
                         }}</option>
                     {% endfor %}
                 </select>
@@ -49,8 +59,7 @@
         {% if can_view_all %}
         <div class="view-mode-toggle">
             {% if view_mode == 'admin' %}
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}"
-                class="btn btn-secondary btn-sm">
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn btn-info btn-sm">
                 <i class="fas fa-user"></i> Member View
             </a>
             {% else %}
@@ -59,8 +68,8 @@
                 <i class="fas fa-user-shield"></i> Admin View
             </a>
             {% endif %}
-            <a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn btn-info btn-sm"
-                style="margin-left: 10px; color: white;">
+            <a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn btn-secondary btn-sm"
+                style="color: white;">
                 <i class="fas fa-chart-bar"></i> Project View
             </a>
         </div>
@@ -78,7 +87,8 @@
                     {% for type, p_list in pathways.items() %}
                     <optgroup label="{{ type }}">
                         {% for pathway in p_list %}
-                        <option value="{{ pathway }}" {% if selected_filters.pathway==pathway %}selected{% endif %}>{{
+                        <option value="{{ pathway }}" {% if selected_filters.pathway==pathway %}selected{% endif %}>
+                            {{
                             pathway }}</option>
                         {% endfor %}
                     </optgroup>
@@ -90,7 +100,8 @@
                     <option value="">All Levels</option>
                     <option value="General" {% if selected_filters.level=='General' %}selected{% endif %}>General
                     </option> {% for level in levels %}
-                    <option value="{{ level }}" {% if selected_filters.level==level|string %}selected{% endif %}>Level
+                    <option value="{{ level }}" {% if selected_filters.level==level|string %}selected{% endif %}>
+                        Level
                         {{ level }}</option>
                     {% endfor %}
                 </select>
@@ -98,10 +109,13 @@
             <div class="form-group">
                 <select name="status" onchange="this.form.submit()">
                     <option value="">All Statuses</option>
-                    <option value="Booked" {% if selected_filters.status=='Booked' %}selected{% endif %}>Booked</option>
-                    <option value="Delivered" {% if selected_filters.status=='Delivered' %}selected{% endif %}>Delivered
+                    <option value="Booked" {% if selected_filters.status=='Booked' %}selected{% endif %}>Booked
                     </option>
-                    <option value="Completed" {% if selected_filters.status=='Completed' %}selected{% endif %}>Completed
+                    <option value="Delivered" {% if selected_filters.status=='Delivered' %}selected{% endif %}>
+                        Delivered
+                    </option>
+                    <option value="Completed" {% if selected_filters.status=='Completed' %}selected{% endif %}>
+                        Completed
                     </option>
                 </select>
             </div>
@@ -111,7 +125,8 @@
                     {% for type, roles in roles.items() %}
                     <optgroup label="{{ type }}">
                         {% for role in roles %}
-                        <option value="{{ role }}" {% if selected_filters.role==role %}selected{% endif %}>{{ role }}
+                        <option value="{{ role }}" {% if selected_filters.role==role %}selected{% endif %}>{{ role
+                            }}
                         </option>
                         {% endfor %}
                     </optgroup>
@@ -201,7 +216,7 @@
                 {{ log.owner.Name if log.owner else 'N/A' }}
             </div>
 
-            <div class="grouped-role-list" style="margin-top: 10px; max-height: 200px; overflow-y: auto;">
+            <div class="grouped-role-list" style="margin-bottom:10px; max-height: 200px; overflow-y: auto;">
                 <table class="table table-sm table-borderless"
                     style="font-size: 0.9em; width: 100%; font-family: 'Quicksand', sans-serif;">
                     <tbody>
@@ -209,7 +224,8 @@
                         <tr>
                             <td class="meeting-info"
                                 style="border: none; padding: 4px 0; text-align: center; position: relative;">
-                                Meeting #{{ item.Meeting_Number }} | {{ item.meeting.Meeting_Date.strftime('%Y-%m-%d')
+                                Meeting #{{ item.Meeting_Number }} | {{
+                                item.meeting.Meeting_Date.strftime('%Y-%m-%d')
                                 if item.meeting and item.meeting.Meeting_Date else 'N/A' }}
                                 {% if log.session_type.Valid_for_Project and is_authorized(current_user.id ==
                                 log.owner.id, 'SPEECH_LOGS_EDIT_ALL') %}
@@ -245,7 +261,8 @@
             data-session-type-title="{{ log.session_type.Title if log.session_type else 'Pathway Speech' }}">
             <div class="card-header">
                 <div class="meeting-info">
-                    Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting
+                    Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if
+                    log.meeting
                     and log.meeting.Meeting_Date else 'N/A' }}
                 </div>
                 <div class="card-actions">
@@ -304,7 +321,8 @@
                     {# Only show complete/suspend if the meeting date is in the past #}
                     {% if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date < today_date %} {% if
                         is_authorized('SPEECH_LOGS_EDIT_ALL') %} <button onclick="suspendSpeechLog(this, {{ log.id }})"
-                        class="icon-btn btn-suspend" title="Suspend"><i class="fas fa-pause-circle"></i></button>
+                        class="icon-btn btn-suspend" title="Suspend">
+                        <i class="fas fa-pause-circle"></i></button>
                         {% endif %}
                         {# All users can mark their own past speeches as complete #}
                         <button onclick="completeSpeechLog(this, {{ log.id }})"
@@ -320,7 +338,8 @@
         <div class="role-log-entry" data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
             <div class="card-header">
                 <div class="meeting-info">
-                    Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting
+                    Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if
+                    log.meeting
                     and log.meeting.Meeting_Date else 'N/A' }}
                 </div>
                 <div class="card-actions">

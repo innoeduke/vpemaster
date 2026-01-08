@@ -7,8 +7,12 @@
 	<div class="speech-logs-toolbar">
 		<div class="toolbar-spacer"></div>
 		<div class="view-mode-toggle">
-			<a href="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="btn btn-secondary btn-sm">
-				<i class="fas fa-list"></i> Back to Member View
+			<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn btn-info btn-sm">
+				<i class="fas fa-user"></i> Member View
+			</a>
+			<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}"
+				class="btn btn-primary btn-sm">
+				<i class="fas fa-users-cog"></i> Admin View
 			</a>
 		</div>
 	</div>
