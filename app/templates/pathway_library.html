@@ -37,30 +37,15 @@
     </div>
   </div>
 
-  <div
-    id="project-details"
-    class="project-details-container"
-    style="display: none"
-  >
+  <div id="project-details" class="project-details-container" style="display: none">
     <div class="project-header">
       <h2 id="project-name"></h2>
       <div class="button-group">
-        <a
-          id="download-project-btn"
-          class="icon-btn"
-          title="Download Evaluation"
-          style="display: none"
-          target="_blank"
-        >
+        <a id="download-project-btn" class="icon-btn" title="Download Evaluation" style="display: none" target="_blank">
           <i class="fas fa-download"></i>
         </a>
         {% if is_authorized('PATHWAY_LIB_EDIT') %}
-        <button
-          id="cancel-project-btn"
-          class="icon-btn"
-          style="display: none"
-          title="Cancel"
-        >
+        <button id="cancel-project-btn" class="icon-btn" style="display: none" title="Cancel">
           <i class="fas fa-times"></i>
         </button>
         <button id="edit-project-btn" class="icon-btn" title="Edit">
@@ -70,83 +55,58 @@
       </div>
     </div>
     <div class="path-codes">
-      <div class="path-code-box path-dl" id="dl-code" data-path="DL">
-        DL: <span></span>
+      <div class="path-code-box path-dl btn-sm" id="dl-code" data-path="DL">
+        <i class="fas fa-chart-line"></i> DL: <span></span>
       </div>
-      <div class="path-code-box path-eh" id="eh-code" data-path="EH">
-        EH: <span></span>
+      <div class="path-code-box path-eh btn-sm" id="eh-code" data-path="EH">
+        <i class="fas fa-laugh"></i> EH: <span></span>
       </div>
-      <div class="path-code-box path-ms" id="ms-code" data-path="MS">
-        MS: <span></span>
+      <div class="path-code-box path-ms btn-sm" id="ms-code" data-path="MS">
+        <i class="fas fa-fire"></i> MS: <span></span>
       </div>
-      <div class="path-code-box path-pi" id="pi-code" data-path="PI">
-        PI: <span></span>
+      <div class="path-code-box path-pi btn-sm" id="pi-code" data-path="PI">
+        <i class="fas fa-handshake"></i> PI: <span></span>
       </div>
-      <div class="path-code-box path-pm" id="pm-code" data-path="PM">
-        PM: <span></span>
+      <div class="path-code-box path-pm btn-sm" id="pm-code" data-path="PM">
+        <i class="fas fa-chalkboard-teacher"></i> PM: <span></span>
       </div>
-      <div class="path-code-box path-vc" id="vc-code" data-path="VC">
-        VC: <span></span>
+      <div class="path-code-box path-vc btn-sm" id="vc-code" data-path="VC">
+        <i class="fas fa-lightbulb"></i> VC: <span></span>
       </div>
-      <div class="path-code-box path-dtm" id="dtm-code" data-path="DTM">
-        DTM: <span></span>
+      <div class="path-code-box path-dtm btn-sm" id="dtm-code" data-path="DTM">
+        <i class="fas fa-trophy"></i> DTM: <span></span>
       </div>
     </div>
     <br />
     <div class="project-section">
       <h3>Purpose</h3>
       <p id="project-purpose"></p>
-      <textarea
-        id="edit-purpose"
-        class="edit-textarea"
-        rows="3"
-        style="display: none; width: 100%"
-      ></textarea>
+      <textarea id="edit-purpose" class="edit-textarea" rows="3" style="display: none; width: 100%"></textarea>
     </div>
     <div class="project-section">
       <h3>Introduction</h3>
       <p id="project-introduction"></p>
-      <textarea
-        id="edit-introduction"
-        class="edit-textarea"
-        rows="3"
-        style="display: none; width: 100%"
-      ></textarea>
+      <textarea id="edit-introduction" class="edit-textarea" rows="3" style="display: none; width: 100%"></textarea>
     </div>
     <div class="project-section">
       <h3>Overview</h3>
       <p id="project-overview"></p>
-      <textarea
-        id="edit-overview"
-        class="edit-textarea"
-        rows="3"
-        style="display: none; width: 100%"
-      ></textarea>
+      <textarea id="edit-overview" class="edit-textarea" rows="3" style="display: none; width: 100%"></textarea>
     </div>
     <div class="project-section">
       <h3>Requirements</h3>
       <p id="project-requirements"></p>
-      <textarea
-        id="edit-requirements"
-        class="edit-textarea"
-        rows="3"
-        style="display: none; width: 100%"
-      ></textarea>
+      <textarea id="edit-requirements" class="edit-textarea" rows="3" style="display: none; width: 100%"></textarea>
     </div>
     <div class="project-section">
       <h3>Resources</h3>
       <p id="project-resources"></p>
-      <textarea
-        id="edit-resources"
-        class="edit-textarea"
-        rows="3"
-        style="display: none; width: 100%"
-      ></textarea>
+      <textarea id="edit-resources" class="edit-textarea" rows="3" style="display: none; width: 100%"></textarea>
     </div>
   </div>
 </div>
 <script>
-  const pathways = {{ pathways|tojson }};
+  const pathways = {{ pathways| tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/pathway_library.js') }}"></script>
 {% endblock %}

@@ -9,7 +9,7 @@
     background-color: #fff;
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .project-header {
@@ -54,8 +54,10 @@
     gap: 10px;
     margin-bottom: 20px;
 }
+
 .path-code-box {
     font-weight: bold;
+    font-family: 'Montserrat', sans-serif;
     color: #fff;
     padding: 5px 15px;
     border-radius: 8px;
@@ -65,15 +67,53 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    gap: 6px;
 }
-.path-dl { background-color: #4A90E2; } /* Soft Blue */
-.path-eh { background-color: #F5A623; } /* Warm Amber */
-.path-ms { background-color: #F8E71C; } /* Bright Yellow */
-.path-pi { background-color: #50E3C2; } /* Teal */
-.path-pm { background-color: #E55353; } /* Muted Red/Coral */
-.path-vc { background-color: #9013FE; } /* Soft Purple */
+
+.path-code-box i {
+    margin-right: 4px;
+}
+
+.path-dl {
+    background-color: #EF4444;
+}
+
+/* Red */
+
+.path-eh {
+    background-color: #F59E0B;
+}
+
+/* Orange */
+
+.path-ms {
+    background-color: #10B981;
+}
+
+/* Green */
+
+.path-pi {
+    background-color: #3B82F6;
+}
+
+/* Blue */
+
+.path-pm {
+    background-color: #8B5CF6;
+}
+
+/* Purple */
+
+.path-vc {
+    background-color: #EC4899;
+}
+
+/* Pink */
+
+/* Soft Purple */
 /* --- Mobile / Tablet Responsive Styles --- */
 @media (max-width: 992px) {
+
     /* --- Pathway Library Responsive Fixes --- */
     #pathway-library-container .filters-container {
         flex-direction: column;

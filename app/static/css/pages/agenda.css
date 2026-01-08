@@ -612,6 +612,7 @@
 .autocomplete-container {
     position: relative;
     width: 100%;
+    font-size: 0.85em;
 }
 
 .table-container .owner-cell-wrapper {
@@ -974,6 +975,7 @@
     .footnote {
         font-size: 0.7em;
     }
+
     .footnote ul {
         font-size: 0.85em;
     }
