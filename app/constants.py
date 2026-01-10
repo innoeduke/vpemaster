@@ -18,3 +18,7 @@ class ProjectID:
     Constants for Project IDs to avoid hardcoding.
     """
     GENERIC = 60
+    TOPICSMASTER_PROJECT = 10
+    KEYNOTE_SPEAKER_PROJECT = 51
+    MODERATOR_PROJECT = 57
+    EVALUATION_PROJECTS = [4,5,6]

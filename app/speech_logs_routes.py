@@ -567,7 +567,7 @@ def show_speech_logs():
         viewed_contact=viewed_contact,
         member_pathways=pathway_info['member_pathways'],
         active_level=active_level,
-        GENERIC_PROJECT_ID=ProjectID.GENERIC
+        ProjectID=ProjectID
     )
 
 

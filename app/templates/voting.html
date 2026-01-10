@@ -103,7 +103,7 @@
 			{% elif status == 'finished' %}
 			{% if role.award_type %}
 			<span class="icon-btn icon-btn-voted" style="cursor: default;" title="{{ role.award_type }} Winner">
-				<i class="fas fa-award"></i>
+				<i class="fas fa-award"></i>&nbsp;
 				<span class="winner-label">{{ role.award_type|replace('-', ' ')|title }}</span>
 			</span>
 			{% endif %}

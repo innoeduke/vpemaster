@@ -479,7 +479,13 @@
     var allProjects = {{ projects| tojson | safe }};
     var pathwayMap = {{ pathway_mapping| tojson | safe }};
     var groupedPathways = {{ pathways| tojson | safe }};
-    var GENERIC_PROJECT_ID = "{{ GENERIC_PROJECT_ID }}";
+    var ProjectID = {
+        GENERIC: {{ ProjectID.GENERIC }},
+    TOPICSMASTER_PROJECT: {{ ProjectID.TOPICSMASTER_PROJECT }},
+    KEYNOTE_SPEAKER_PROJECT: {{ ProjectID.KEYNOTE_SPEAKER_PROJECT }},
+    MODERATOR_PROJECT: {{ ProjectID.MODERATOR_PROJECT }},
+    EVALUATION_PROJECTS: {{ ProjectID.EVALUATION_PROJECTS | tojson | safe }}
+    };
 
 </script>
 

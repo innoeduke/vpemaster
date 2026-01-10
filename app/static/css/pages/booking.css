@@ -553,7 +553,6 @@
 .btn-leave-waitlist {
     padding: 5px 15px;
     border-radius: 5px;
-    color: #333;
     border: none;
     cursor: pointer;
     display: flex;
@@ -565,12 +564,13 @@
 
 .btn-join-waitlist {
     background-color: #ffc700;
+    color: #333;
     font-weight: normal;
 }
 
 .btn-leave-waitlist {
-    background-color: #772432;
-    /* A standard danger color */
+    background-color: #dc3545;
+    color: #fff;
 }
 
 

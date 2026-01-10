@@ -2,7 +2,7 @@
   <div class="modal-content">
     <span class="close" onclick="closeSpeechEditModal()">&times;</span>
     <h1>Edit Speech Details</h1>
-    
+
     <form id="speechEditForm" onsubmit="saveSpeechChanges(event)">
       <input type="hidden" id="edit-log-id" name="log_id" />
       <input type="hidden" id="edit-session-type-title" name="session_type_title" />
@@ -13,47 +13,42 @@
       </div>
 
       <div class="form-group" id="project-group" style="display: none;">
-        <div class="checkbox-input-wrapper">
-            <label for="is-project-chk" style="margin-right: 10px; cursor: pointer;">Is this for a project?</label>
-            <input type="checkbox" id="is-project-chk" name="is_project" class="scaled-checkbox">
+        <div class="checkbox-input-wrapper" style="display: flex; align-items: center;">
+          <input type="checkbox" id="is-project-chk" name="is_project" class="scaled-checkbox">
+          <label for="is-project-chk" style="margin-left: 10px; cursor: pointer; margin-bottom: 0;">Is Project?</label>
         </div>
       </div>
 
       <div id="project-mode-fields" style="display: none;">
         <div class="form-group" id="pathway-group">
-            <label for="pathway-select-dropdown" class="modal-label">Pathway:</label>
-            <select id="pathway-select-dropdown" name="pathway_dropdown">
-                <option value="">-- Select Pathway --</option>
-            </select>
+          <label for="pathway-select-dropdown" class="modal-label">Pathway:</label>
+          <select id="pathway-select-dropdown" name="pathway_dropdown">
+            <option value="">-- Select Pathway --</option>
+          </select>
         </div>
         <div class="form-group">
-            <label for="project-select-dropdown" class="modal-label">Project:</label>
-            <select id="project-select-dropdown" name="project_dropdown">
-                <option value="">-- Select Project --</option>
-            </select>
+          <label for="project-select-dropdown" class="modal-label">Project:</label>
+          <select id="project-select-dropdown" name="project_dropdown">
+            <option value="">-- Select Project --</option>
+          </select>
         </div>
       </div>
 
       <div id="standard-selection" style="display: none;">
         <div class="form-group modal-form-row" id="pathway-generic-row">
-            <div class="modal-split-row">
-                <div class="form-group modal-col-expand">
-                    <label for="edit-pathway" id="label-pathway-series" class="modal-label">Pathway:</label>
-                    <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
-                </div>
-                <div class="form-group modal-col-fixed">
-                    <label for="edit-is-generic" class="modal-label">Generic:</label>
-                    <div class="checkbox-vertical-align">
-                        <input
-                            type="checkbox"
-                            id="edit-is-generic"
-                            name="is_generic"
-                            onchange="toggleGeneric(this.checked)"
-                            class="scaled-checkbox"
-                        />
-                    </div>
-                </div>
+          <div class="modal-split-row">
+            <div class="form-group modal-col-expand">
+              <label for="edit-pathway" id="label-pathway-series" class="modal-label">Pathway:</label>
+              <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
             </div>
+            <div class="form-group modal-col-fixed">
+              <label for="edit-is-generic" class="modal-label">Generic:</label>
+              <div class="checkbox-vertical-align">
+                <input type="checkbox" id="edit-is-generic" name="is_generic" onchange="toggleGeneric(this.checked)"
+                  class="scaled-checkbox" />
+              </div>
+            </div>
+          </div>
         </div>
         <div class="form-group" id="level-select-group">
           <label for="edit-level" id="label-level" class="modal-label">Level:</label>
@@ -75,12 +70,7 @@
 
       <div class="form-group">
         <label for="edit-speech-media-url" class="modal-label">Media URL:</label>
-        <input
-          type="text"
-          id="edit-speech-media-url"
-          name="media_url"
-          placeholder="e.g., https://youtu.be/..."
-        />
+        <input type="text" id="edit-speech-media-url" name="media_url" placeholder="e.g., https://youtu.be/..." />
       </div>
 
       <div class="form-actions">

@@ -251,6 +251,19 @@ def book_or_assign_role():
     if not logical_role_key:
         return jsonify(success=False, message="Could not determine the role key."), 400
 
+    # Validation: Check meeting status
+    meeting = Meeting.query.filter_by(Meeting_Number=log.Meeting_Number).first()
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found."), 404
+
+    if meeting.status == 'finished':
+        return jsonify(success=False, message="Booking is closed for finished meetings."), 403
+
+    if action == 'book':
+        if meeting.status == 'running':
+            if not is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting):
+                return jsonify(success=False, message="Booking is closed for this meeting."), 403
+
     if action == 'join_waitlist':
         is_distinct = session_type.role.is_distinct if session_type and session_type.role else False
         
@@ -321,7 +334,7 @@ def book_or_assign_role():
 
         db.session.commit()
         return jsonify(success=True, message="You have been removed from the waitlist.")
-    elif action == 'assign' and is_authorized('BOOKING_ASSIGN_ALL'):
+    elif action == 'assign' and is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting):
         contact_id = data.get('contact_id', '0')
         owner_id_to_set = int(contact_id) if contact_id != '0' else None
 
@@ -335,7 +348,7 @@ def book_or_assign_role():
             Waitlist.query.filter(Waitlist.session_log_id.in_(
                 sessions_to_clear_waitlist), Waitlist.contact_id == owner_id_to_set).delete(synchronize_session=False)
 
-    elif action == 'approve_waitlist' and is_authorized('BOOKING_ASSIGN_ALL'):
+    elif action == 'approve_waitlist' and is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting):
         waitlist_entry = Waitlist.query.filter_by(
             session_log_id=session_id).order_by(Waitlist.timestamp).first()
 

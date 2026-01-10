@@ -126,6 +126,7 @@ async function openSpeechEditModal(
       Evaluation: setupEvaluatorModal,
       "Panel Discussion": setupSpecialProjectModal,
       "Table Topics": setupSpecialProjectModal,
+      "Keynote Speech": setupSpecialProjectModal,
       default: setupSpeechModal,
     };
     const setupFunction =
@@ -215,7 +216,7 @@ function setupEvaluatorModal(logData) {
   modalElements.speechTitleLabel.textContent = "Evaluator for:";
 
   const evalProjects = allProjects
-    .filter((p) => [4, 5, 6].includes(p.id))
+    .filter((p) => ProjectID.EVALUATION_PROJECTS.includes(p.id))
     .sort((a, b) => a.id - b.id);
   populateDropdown(modalElements.projectSelectDropdown, evalProjects, {
     defaultOption: "-- Select Evaluation Project --",
@@ -237,7 +238,7 @@ function setupEvaluatorModal(logData) {
   };
 
   const isEvalProject =
-    logData.Project_ID && ["4", "5", "6"].includes(String(logData.Project_ID));
+    logData.Project_ID && ProjectID.EVALUATION_PROJECTS.includes(Number(logData.Project_ID));
   modalElements.isProjectChk.checked = isEvalProject;
 
   // Show/hide the project mode fields container
@@ -256,7 +257,11 @@ function setupSpecialProjectModal(logData, { sessionType, workingPath }) {
   modalElements.speechTitle.disabled = true;
   modalElements.projectGroup.style.display = "block";
 
-  const PROJECT_IDS = { "Table Topics": 10, "Panel Discussion": 57 };
+  const PROJECT_IDS = {
+    "Table Topics": ProjectID.TOPICSMASTER_PROJECT,
+    "Panel Discussion": ProjectID.MODERATOR_PROJECT,
+    "Keynote Speech": ProjectID.KEYNOTE_SPEAKER_PROJECT
+  };
   const isProject = logData.Project_ID == PROJECT_IDS[sessionType];
   modalElements.isProjectChk.checked = isProject;
 
@@ -321,7 +326,7 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
   const projectCode = logData.project_code || nextProject;
 
   // REQUIREMENT: Populate path/level/project based on project_code if available and non-generic
-  if (projectToSelect != GENERIC_PROJECT_ID && projectCode && !['TM1.0', '', 'null'].includes(projectCode)) {
+  if (projectToSelect != ProjectID.GENERIC && projectCode && !['TM1.0', '', 'null'].includes(projectCode)) {
     const codeMatch = projectCode.match(/^([A-Z]+)(\d+(?:\.\d+)?)$/);
     if (codeMatch) {
       const abbr = codeMatch[1];
@@ -347,7 +352,7 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
     levelToSelect = String(levelToSelect);
   }
 
-  const isGeneric = projectToSelect == GENERIC_PROJECT_ID;
+  const isGeneric = projectToSelect == ProjectID.GENERIC;
   modalElements.genericCheckbox.checked = isGeneric;
   toggleGeneric(isGeneric);
 
@@ -505,11 +510,15 @@ function buildSavePayload() {
 
   switch (sessionType.value) {
     case "Panel Discussion":
-      payload.project_id = isProject ? 57 : null;
+      payload.project_id = isProject ? ProjectID.MODERATOR_PROJECT : null;
       payload.pathway = isProject ? pathwaySelectDropdown.value || "" : null;
       break;
     case "Table Topics":
-      payload.project_id = isProject ? 10 : null;
+      payload.project_id = isProject ? ProjectID.TOPICSMASTER_PROJECT : null;
+      payload.pathway = isProject ? pathwaySelectDropdown.value || "" : null;
+      break;
+    case "Keynote Speech":
+      payload.project_id = isProject ? ProjectID.KEYNOTE_SPEAKER_PROJECT : null;
       payload.pathway = isProject ? pathwaySelectDropdown.value || "" : null;
       break;
     case "Evaluation":
@@ -521,7 +530,7 @@ function buildSavePayload() {
     default: // Pathway Speech
       const isGeneric = genericCheckbox.checked;
       payload.session_title = speechTitle.value;
-      payload.project_id = isGeneric ? GENERIC_PROJECT_ID : projectSelect.value || GENERIC_PROJECT_ID;
+      payload.project_id = isGeneric ? ProjectID.GENERIC : projectSelect.value || ProjectID.GENERIC;
       payload.pathway = pathwaySelect.value;
       break;
   }
@@ -581,7 +590,9 @@ function updateAgendaRow(logId, updateResult, payload) {
       let title =
         sessionType === "Table Topics"
           ? "Table Topics Master"
-          : "Panel Discussion";
+          : sessionType === "Keynote Speech"
+            ? "Keynote Speech"
+            : "Panel Discussion";
       let code = updateResult.project_code
         ? `(${updateResult.project_code})`
         : "";
@@ -595,7 +606,7 @@ function updateAgendaRow(logId, updateResult, payload) {
       wrapper.className = "speech-tooltip-wrapper";
       wrapper.textContent = `${title} ${code}`.trim();
 
-      if (updateResult.project_id && updateResult.project_id != GENERIC_PROJECT_ID) {
+      if (updateResult.project_id && updateResult.project_id != ProjectID.GENERIC) {
         const tooltip = document.createElement("div");
         tooltip.className = "speech-tooltip";
         tooltip.innerHTML = `<span class="tooltip-title">${projName || ""
@@ -647,13 +658,13 @@ function updateAgendaRow(logId, updateResult, payload) {
   );
   if (viewTitleCell) {
     let title =
-      sessionType === "Pathway Speech" && updateResult.project_id != GENERIC_PROJECT_ID
+      sessionType === "Pathway Speech" && updateResult.project_id != ProjectID.GENERIC
         ? `"${updateResult.session_title.replace(/"/g, "")}"`
         : updateResult.session_title;
     let code = updateResult.project_code
       ? `(${updateResult.project_code})`
       : "";
-    if (updateResult.project_id == GENERIC_PROJECT_ID) code = "(TM1.0)";
+    if (updateResult.project_id == ProjectID.GENERIC) code = "(TM1.0)";
 
     let projName = updateResult.project_name;
     let projPurpose = "";
@@ -667,7 +678,7 @@ function updateAgendaRow(logId, updateResult, payload) {
     const wrapper = document.createElement("div");
     wrapper.className = "speech-tooltip-wrapper";
     wrapper.textContent = `${title} ${code}`.trim();
-    if (updateResult.project_id && updateResult.project_id != GENERIC_PROJECT_ID) {
+    if (updateResult.project_id && updateResult.project_id != ProjectID.GENERIC) {
       const tooltip = document.createElement("div");
       tooltip.className = "speech-tooltip";
       tooltip.innerHTML = `<span class="tooltip-title">${projName || ""
@@ -702,7 +713,7 @@ function updateSpeechLogCard(logId, updateResult, payload) {
     let code = updateResult.project_code
       ? `(${updateResult.project_code})`
       : "";
-    if (updateResult.project_id == GENERIC_PROJECT_ID) code = "(TM1.0)";
+    if (updateResult.project_id == ProjectID.GENERIC) code = "(TM1.0)";
     card.querySelector(".project-code").innerText = code;
     card.querySelector(".pathway-info").innerText =
       updateResult.pathway || "N/A";

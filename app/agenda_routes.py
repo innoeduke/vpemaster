@@ -537,7 +537,7 @@ def agenda():
                            meeting_templates=meeting_templates,
                            meeting_types=current_app.config['MEETING_TYPES'],
                            default_start_time=default_start_time,
-                           GENERIC_PROJECT_ID=ProjectID.GENERIC)
+                           ProjectID=ProjectID)
 
 
 # --- API Endpoints for Asynchronous Data Loading ---

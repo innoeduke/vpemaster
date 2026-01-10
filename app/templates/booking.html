@@ -101,7 +101,7 @@
 
         {# Assign/Action cell #}
         <td class="assign-cell">
-            {% if status in ['not started', 'unpublished'] %}
+            {% if status in ['not started', 'unpublished'] or is_admin_view %}
             {% if is_admin_view %}
             <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}"
                 data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
@@ -134,8 +134,13 @@
             <button class="btn btn-leave-waitlist"
                 onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
             {% else %}
+            {% if role.needs_approval %}
+            <button class="btn btn-join-waitlist"
+                onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
+            {% else %}
             <button class="btn btn-book"
                 onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role_key }}')">Book</button>
+            {% endif %}
             {% endif %}
             {% endif %}
             {% endif %}
@@ -145,7 +150,6 @@
         {# Action Icons cell #}
         {% if is_admin_view %}
         <td class="icon-cell">
-            {% if status in ['not started', 'unpublished'] %}
             <div class="button-group">
                 <button class="icon-btn" title="Unassign Role" onclick="assignRole('{{ role.session_id }}', '0')"><i
                         class="fas fa-undo"></i></button>
@@ -153,7 +157,6 @@
                     onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')"><i
                         class="fas fa-user-check"></i></button>{% endif %}
             </div>
-            {% endif %}
         </td>
         {% endif %}
     </tr>
@@ -177,17 +180,7 @@
             </button>
             <div class="accordion-content" {% if default_open %}style="max-height: none;" {% endif %}>
                 <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
-                    <thead>
-                        <tr>
-                            <th class="role-header">Role</th>
-                            <th class="status-header"></th>
-                            <th class="assign-header">{% if is_admin_view and status in ['not started', 'unpublished']
-                                %}Assign{%
-                                else %}Name{% endif %}
-                            </th>
-                            {% if is_admin_view %}<th class="action-header">Action</th>{% endif %}
-                        </tr>
-                    </thead>
+
                     <tbody>
                         {% for role in items %}
                         {{ render_role_row(role, status, is_admin_view, contacts, current_user_contact_id) }}
@@ -206,7 +199,7 @@
     {# =============== MAIN VIEW LOGIC =============== #}
     {# ============================================= #}
 
-    {% if selected_meeting.status not in ['not started', 'unpublished'] %}
+    {% if selected_meeting.status == 'finished' or (selected_meeting.status == 'running' and not is_admin_view) %}
     <p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Booking for Meeting #{{
         selected_meeting_number }} is closed.</p>
     <div style="text-align: center; margin-top: 20px;">
