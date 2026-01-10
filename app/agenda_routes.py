@@ -1612,9 +1612,10 @@ def _tally_votes_and_set_winners(meeting):
 
     # Update meeting object with winners
     for category, (winner_id, _) in winners.items():
-        award_attr = f"best_{category.replace('-', '_')}_id"
-        if hasattr(meeting, award_attr):
-            setattr(meeting, award_attr, winner_id)
+        if category:
+            award_attr = f"best_{category.replace('-', '_')}_id"
+            if hasattr(meeting, award_attr):
+                setattr(meeting, award_attr, winner_id)
 
     # Calculate NPS (Average of non-blank scores)
     nps_avg = db.session.query(func.avg(Vote.score)).filter(

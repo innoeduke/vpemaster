@@ -13,6 +13,8 @@ ROLE_PERMISSIONS = {
         "CONTACT_BOOK_EDIT",
         "SETTINGS_EDIT_ALL",
         "ACHIEVEMENTS_EDIT",
+        "VOTING_VIEW_RESULTS",
+        "VOTING_TRACK_PROGRESS",
     },
     "VPE": {
         "AGENDA_EDIT",
@@ -22,6 +24,7 @@ ROLE_PERMISSIONS = {
         "CONTACT_BOOK_EDIT",
         "SETTINGS_VIEW_ALL",
         "ACHIEVEMENTS_EDIT",
+        "VOTING_VIEW_RESULTS",
     },
     "Officer": {
         "AGENDA_VIEW",
@@ -31,6 +34,7 @@ ROLE_PERMISSIONS = {
         "CONTACT_BOOK_VIEW",
         "PATHWAY_LIB_VIEW",
         "ACHIEVEMENTS_VIEW",
+        "VOTING_VIEW_RESULTS",
     },
     "Member": {
         "AGENDA_VIEW",
@@ -80,7 +84,7 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
         if hasattr(current_user, 'Contact_ID') and current_user.Contact_ID == meeting.manager_id:
             # Grant VPE-level permissions relevant to meeting management
             # Specifically Agenda Edit and Booking management
-            if target_perm in {'AGENDA_EDIT', 'BOOKING_ASSIGN_ALL', 'BOOKING_BOOK_OWN'}:
+            if target_perm in {'AGENDA_EDIT', 'BOOKING_ASSIGN_ALL', 'BOOKING_BOOK_OWN', 'VOTING_VIEW_RESULTS'}:
                 return True
 
     # Usage 2: Check current user logic

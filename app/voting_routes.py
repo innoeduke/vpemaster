@@ -208,7 +208,13 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
         abort(403)
 
     context['selected_meeting'] = selected_meeting
-    context['is_admin_view'] = is_authorized('BOOKING_ASSIGN_ALL', meeting=selected_meeting)
+    
+    # Permission checks
+    # is_admin_view controls seeing results/accordion (Admin, Officer, VPE, Manager)
+    context['is_admin_view'] = is_authorized('VOTING_VIEW_RESULTS', meeting=selected_meeting)
+    
+    # can_track_progress controls seeing results WHILE running (Admin only)
+    context['can_track_progress'] = is_authorized('VOTING_TRACK_PROGRESS', meeting=selected_meeting)
 
     roles = _get_roles_for_voting(selected_meeting_number, selected_meeting)
     context['roles'] = roles

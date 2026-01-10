@@ -4,6 +4,7 @@
 // - isAdminView (Boolean)
 // - selectedMeetingNumber (String or Number)
 // - userRole (String)
+// - canTrackProgress (Boolean)
 
 var localVotes = {}; // Store votes locally before batch submission
 var localMeetingRating = null;
@@ -144,7 +145,7 @@ function submitBatchVotes() {
 		.then((response) => response.json())
 		.then((data) => {
 			if (data.success) {
-				if (userRole === 'Admin') {
+				if (canTrackProgress) {
 					window.location.reload(true);
 				} else {
 					// Transition to Thank You state
