@@ -11,7 +11,7 @@
     left: 0;
     transition: width 0.3s ease-in-out;
     overflow: hidden;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
     z-index: 100;
 }
 
@@ -20,12 +20,19 @@
 }
 
 .nav-header {
-    padding: 10px 15px;
+    padding: 10px 0;
+    /* Centered in collapsed mode */
     display: flex;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: center;
+    /* Center content */
     height: 60px;
     box-sizing: border-box;
+}
+
+.nav-pane.expanded .nav-header {
+    justify-content: flex-start;
+    padding: 10px 15px;
 }
 
 .nav-pane h2 {
@@ -33,9 +40,20 @@
     font-size: 1.2rem;
     color: #f2c94c;
     opacity: 0;
-    transition: opacity 0.3s ease-in-out;
+    max-width: 0;
+    /* Fully hide in collapsed */
+    margin-left: 0;
+    transition: all 0.3s ease-in-out;
+    white-space: nowrap;
+    /* Prevent title from wrapping */
+}
+
+.nav-pane.expanded h2 {
+    opacity: 1;
+    max-width: 200px;
     margin-left: 10px;
-    white-space: nowrap; /* Prevent title from wrapping */
+    white-space: nowrap;
+    /* Prevent title from wrapping */
 }
 
 .beta-badge {
@@ -43,25 +61,28 @@
     top: 6px;
     left: -24px;
     transform: rotate(-45deg);
-    background-color: #f2c94c; /* Contrasting yellow */
-    color: #004165; /* Dark theme blue for text */
+    background-color: #f2c94c;
+    /* Contrasting yellow */
+    color: #004165;
+    /* Dark theme blue for text */
     padding: 5px 30px;
     font-size: 0.8em;
     font-weight: bold;
     text-align: center;
-    pointer-events: none; /* Allow clicks to pass through the badge */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    pointer-events: none;
+    /* Allow clicks to pass through the badge */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     z-index: 1;
     transition: opacity 0.3s ease-in-out;
-    opacity: 0; /* Hidden when collapsed */
+    opacity: 0;
+    /* Hidden when collapsed */
 }
 
-.nav-pane.expanded h2 {
-    opacity: 1;
-}
+/* .nav-pane.expanded h2 rule moved up to merge with base rule for clarity */
 
 .nav-pane.expanded .beta-badge {
-    opacity: 1; /* Visible when expanded */
+    opacity: 1;
+    /* Visible when expanded */
 }
 
 .nav-toggle {
@@ -85,6 +106,7 @@
 .nav-pane .nav-toggle .fa-times {
     display: none;
 }
+
 .nav-pane.expanded .nav-toggle .fa-times {
     display: inline-block;
 }
@@ -105,11 +127,18 @@
     text-decoration: none;
     display: flex;
     align-items: center;
-    padding: 10px 15px;
+    justify-content: center;
+    /* Center icons in collapsed */
+    padding: 10px 0;
     border-radius: 5px;
     transition: background-color 0.3s;
     white-space: nowrap;
     overflow: hidden;
+}
+
+.nav-pane.expanded ul li a {
+    justify-content: flex-start;
+    padding: 10px 15px;
 }
 
 .nav-pane ul li a .nav-icon {
@@ -121,12 +150,17 @@
 
 .nav-pane ul li a span {
     opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-    margin-left: 15px;
+    max-width: 0;
+    /* Fully hide */
+    margin-left: 0;
+    transition: all 0.3s ease-in-out;
 }
 
 .nav-pane.expanded ul li a span {
     opacity: 1;
+    max-width: 200px;
+    /* Reveal text */
+    margin-left: 15px;
 }
 
 .nav-pane ul li.active a {
@@ -175,7 +209,7 @@
     background-color: white;
     border: 1px solid #ddd;
     border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     min-width: 180px;
     overflow: hidden;
 }
