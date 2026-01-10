@@ -56,5 +56,6 @@ def seed_metadata(dump_file='instance/metadata_dump.json'):
             print(f"Error seeding database: {e}")
             db.session.rollback()
 
+
 if __name__ == "__main__":
     seed_metadata()
