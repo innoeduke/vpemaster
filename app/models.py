@@ -727,6 +727,9 @@ class Vote(db.Model):
                                'table-topic', name='award_category_enum'), nullable=True)
     contact_id = db.Column(db.Integer, db.ForeignKey(
         'Contacts.id'), nullable=True)
+    question = db.Column(db.String(255), nullable=True)
+    score = db.Column(db.Integer, nullable=True)
+    comments = db.Column(db.Text, nullable=True)
 
     # Relationship with Contact table
     contact = db.relationship('Contact', backref='votes')

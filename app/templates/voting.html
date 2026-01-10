@@ -27,8 +27,9 @@
 
 	{% if selected_meeting.status == 'running' and not has_voted %}
 	<div class="voting-instruction-alert">
-		<i class="fas fa-info-circle"></i>
-		<span><strong>Select your winners!</strong> Click a candidate to cast your vote for each category.</span>
+		<span><i class="fas fa-info-circle"></i><strong> Select your winners!</strong>
+			<p>Click a candidate to cast your vote for each category.</p>
+		</span>
 	</div>
 	{% endif %}
 
@@ -123,10 +124,24 @@
 		{% for category, items in sorted_role_groups %}
 		{% if items and category and category != 'none' %}
 		{% set category_voted = items|selectattr('award_type')|list|length > 0 %}
+		{% set category_meta = {
+		'speaker': {'num': 1, 'title': 'Best Speaker'},
+		'evaluator': {'num': 2, 'title': 'Best Evaluator'},
+		'role-taker': {'num': 3, 'title': 'Best Role Taker'},
+		'table-topic': {'num': 4, 'title': 'Best Table Topic Speaker'}
+		} %}
+		{% set meta = category_meta.get(category, {'num': '', 'title': (category or 'Other')|replace('-', ' ')|title + '
+		Roles'}) %}
+
 		<div class="accordion-item" data-category="{{ category or 'other' }}">
 			<button
 				class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }}">
-				<span>{{ (category or 'Other')|replace('-', ' ')|title }} Roles</span>
+				<div class="header-left" style="display: flex; align-items: center; gap: 15px;">
+					{% if meta.num %}
+					<div class="question-number">{{ meta.num }}</div>
+					{% endif %}
+					<span class="question-text">{{ meta.title }}</span>
+				</div>
 				<div class="accordion-header-right">
 					{% if category_voted %}
 					<span class="voted-label">
@@ -189,12 +204,42 @@
 	{% else %}
 	{{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view,
 	selected_meeting_number) }}
+
+	{% if selected_meeting.status == 'running' %}
+	<div class="meeting-rating-section">
+		<div class="rating-question" style="justify-content: flex-start; gap: 15px;">
+			<div class="question-number">5</div>
+			<div class="question-text">How likely are you to recommend this meeting to a friend or colleague?</div>
+		</div>
+		<div class="rating-scale">
+			{% for i in range(11) %}
+			<button type="button" class="rating-btn" data-score="{{ i }}" onclick="handleRatingClick(this)">{{ i
+				}}</button>
+			{% endfor %}
+		</div>
+		<div class="rating-labels">
+			<span>Not at all likely</span>
+			<span>Extremely likely</span>
+		</div>
+	</div>
+
+	<div class="feedback-section">
+		<div class="feedback-question">
+			<div class="question-number">6</div>
+			<div class="question-text">Meeting Feedback / Comments</div>
+		</div>
+		<div class="feedback-input-container">
+			<textarea id="feedback-input" class="feedback-input" placeholder="Enter your answer" rows="4"
+				oninput="handleFeedbackInput(this)"></textarea>
+		</div>
+	</div>
+	{% endif %}
 	{% endif %}
 
 	{% if selected_meeting.status == 'running' and not (has_voted and not is_admin_view) %}
-	<div id="batch-vote-actions" style="display: none; text-align: center; margin-top: 20px; padding-bottom: 30px;">
-		<button id="done-voting-btn" class="btn btn-primary btn-lg"
-			style="width: 80%; max-width: 300px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+	<div id="batch-vote-actions" style="text-align: center; margin-top: 20px; padding-bottom: 30px;">
+		<button id="done-voting-btn" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
+			disabled>
 			Done <i class="fas fa-check"></i>
 		</button>
 	</div>
@@ -217,6 +262,8 @@
 	var isAdminView = {{ is_admin_view| tojson }};
 	var selectedMeetingNumber = {{ selected_meeting_number| tojson }};
 	var isOfficer = {{ is_admin_view| tojson }};
+	var initialMeetingRating = {{ meeting_rating_score| tojson }};
+	var initialMeetingFeedback = {{ meeting_feedback_comment| tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/voting.js') }}"></script>
 {% endblock %}

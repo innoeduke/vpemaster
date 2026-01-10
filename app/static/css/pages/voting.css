@@ -1,7 +1,15 @@
-/* voting.css - Voting-specific styles */
+/* --- Disabled Button Style --- */
+#done-voting-btn:disabled {
+	background-color: #e9ecef;
+	color: #adb5bd;
+	cursor: not-allowed;
+	box-shadow: none !important;
+	border: 1px solid #dee2e6;
+}
 
 /* --- Voting Instruction Alert --- */
 .voting-instruction-alert {
+	font-family: 'Montserrat', sans-serif;
 	background-color: #f8f9fa;
 	color: #333;
 	padding: 12px 20px;
@@ -10,15 +18,10 @@
 	display: flex;
 	align-items: center;
 	gap: 12px;
-	font-size: 1.1em;
+	font-size: 0.8em;
 	border: 1px solid #772432;
 	border-left-width: 5px;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.voting-instruction-alert i {
-	font-size: 1.3em;
-	color: #772432;
 }
 
 /* --- Accordion Styles --- */
@@ -27,19 +30,22 @@
 }
 
 .accordion-item {
-	border: 1px solid #e0e0e0;
+	padding: 20px;
 	border-radius: 8px;
-	margin-bottom: 10px;
-	overflow: hidden;
+	margin-top: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	border: none;
+	overflow: visible;
+	/* Modified from hidden, usually better for shadows/dropdowns */
 }
 
 .accordion-header {
-	background-color: #f8f9fa;
+	background-color: transparent;
 	color: #333;
 	cursor: pointer;
-	padding: 15px 20px;
+	padding: 5px 0;
+	/* Reduced padding since container has padding */
 	width: 100%;
-	border: none;
 	text-align: left;
 	outline: none;
 	font-size: 1.2em;
@@ -47,15 +53,18 @@
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	transition: background-color 0.3s ease;
+	transition: opacity 0.2s ease;
 }
 
 .accordion-header:hover {
-	background-color: #e9ecef;
+	background-color: transparent;
+	opacity: 0.8;
 }
 
 .accordion-header.active {
-	background-color: #e0e0e0;
+	background-color: transparent;
+	margin-bottom: 15px;
+	/* Add space when active */
 }
 
 .accordion-header-right {
@@ -188,5 +197,173 @@
 		width: 6px;
 		height: 14px;
 		flex-shrink: 0;
+	}
+}
+
+/* --- Meeting Rating Section --- */
+.meeting-rating-section,
+.feedback-section {
+	padding: 20px;
+	border-radius: 8px;
+	margin-top: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rating-question {
+	margin-bottom: 15px;
+	color: #333;
+	/* Font family handled by .question-text */
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.rating-question i {
+	color: #a0a0a0;
+	font-size: 0.9em;
+}
+
+.rating-scale {
+	display: flex;
+	justify-content: space-between;
+	gap: 0;
+	margin-bottom: 10px;
+	background-color: white;
+	padding: 0;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.rating-btn {
+	flex: 1;
+	padding: 12px 0;
+	border: none;
+	border-right: 1px solid #eee;
+	background-color: white;
+	cursor: pointer;
+	font-weight: normal;
+	color: #aaa;
+	min-width: 30px;
+	transition: all 0.2s ease;
+	font-size: 1.1em;
+}
+
+.rating-btn:last-child {
+	border-right: none;
+}
+
+.rating-btn:hover {
+	background-color: #f8f9fa;
+	color: #555;
+}
+
+.rating-btn.selected {
+	background-color: #772432;
+	color: white;
+	font-weight: bold;
+}
+
+.rating-labels {
+	display: flex;
+	justify-content: space-between;
+	color: #333;
+	font-size: 0.9em;
+	margin-top: 10px;
+	padding: 0 5px;
+}
+
+/* Moved media query to bottom */
+
+/* --- Feedback Section --- */
+
+.feedback-question {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	margin-bottom: 15px;
+}
+
+.question-number {
+	background-color: #772432;
+	color: white;
+	width: 30px;
+	height: 30px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	border-radius: 4px;
+	font-weight: bold;
+	font-size: 1.1em;
+	flex-shrink: 0;
+}
+
+.question-text {
+	font-size: 1em;
+	color: #333;
+	font-weight: normal;
+	font-family: 'Montserrat', sans-serif;
+}
+
+.accordion-header .question-text {
+	font-weight: bold;
+}
+
+.feedback-input-container {
+	margin-top: 10px;
+}
+
+.feedback-input {
+	width: 100%;
+	height: 120px;
+	/* Made taller as requested */
+	box-sizing: border-box;
+	/* Prevent padding from adding to width */
+	padding: 15px;
+	border: 1px solid #e0e0e0;
+	border-radius: 6px;
+	background-color: #f8f9fa;
+	font-size: 1em;
+	font-family: inherit;
+	resize: none;
+	transition: border-color 0.2s;
+}
+
+.feedback-input:focus {
+	border-color: #7d7d7d;
+	background-color: white;
+	outline: none;
+}
+
+/* --- Mobile view overrides --- */
+@media (max-width: 600px) {
+	.voted-label {
+		font-size: 0.6em;
+	}
+
+	.rating-btn {
+		font-size: 0.85em;
+		padding: 8px 0;
+		min-width: 0;
+	}
+
+	.question-text {
+		font-size: 0.85em;
+	}
+
+	.question-number {
+		width: 24px;
+		height: 24px;
+		font-size: 0.9em;
+	}
+
+	/* Remove card styling on mobile */
+	.accordion-item,
+	.meeting-rating-section,
+	.feedback-section {
+		background-color: transparent;
+		box-shadow: none;
+		padding: 10px 0;
+		border-radius: 0;
 	}
 }

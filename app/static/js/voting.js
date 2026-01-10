@@ -6,6 +6,8 @@
 // - isOfficer (Boolean)
 
 var localVotes = {}; // Store votes locally before batch submission
+var localMeetingRating = null;
+var localMeetingFeedback = "";
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -59,6 +61,21 @@ document.addEventListener("DOMContentLoaded", function () {
 		updateVoteButtonsUI(category, winnerId);
 	});
 
+	// Initialize Meeting Rating UI
+	if (typeof initialMeetingRating !== 'undefined' && initialMeetingRating !== null) {
+		localMeetingRating = parseInt(initialMeetingRating, 10);
+		updateRatingUI(localMeetingRating);
+	}
+
+	// Initialize Meeting Feedback UI
+	if (typeof initialMeetingFeedback !== 'undefined' && initialMeetingFeedback !== null) {
+		localMeetingFeedback = initialMeetingFeedback;
+		const feedbackInput = document.getElementById('feedback-input');
+		if (feedbackInput) {
+			feedbackInput.value = localMeetingFeedback;
+		}
+	}
+
 
 	// Allow clicking anywhere on the row to vote (for all devices)
 	document.querySelectorAll('.is-running-meeting').forEach(table => {
@@ -83,6 +100,8 @@ document.addEventListener("DOMContentLoaded", function () {
 		doneBtn.addEventListener('click', function () {
 			submitBatchVotes();
 		});
+		// Initial status check
+		updateDoneButtonState();
 	}
 
 }); // End of DOMContentLoaded listener
@@ -94,6 +113,20 @@ function submitBatchVotes() {
 		votes.push({
 			contact_id: contactId,
 			award_category: category
+		});
+	}
+
+	if (localMeetingRating !== null) {
+		votes.push({
+			question: "How likely are you to recommend this meeting to a friend or colleague?",
+			score: localMeetingRating
+		});
+	}
+
+	if (localMeetingFeedback.trim() !== "") {
+		votes.push({
+			question: "More feedback/comments",
+			comments: localMeetingFeedback
 		});
 	}
 
@@ -174,11 +207,7 @@ function handleVoteClick(buttonEl) {
 		}
 	}
 
-	// Show Done button if we have interaction
-	const doneBtnContainer = document.getElementById('batch-vote-actions');
-	if (doneBtnContainer) {
-		doneBtnContainer.style.display = 'block';
-	}
+	updateDoneButtonState();
 }
 
 
@@ -253,5 +282,45 @@ function updateVoteButtonsUI(category, newWinnerId) {
 				}
 			}
 		}
+	}
+}
+
+function handleRatingClick(btn) {
+	const score = parseInt(btn.dataset.score, 10);
+	localMeetingRating = score;
+	updateRatingUI(score);
+	updateDoneButtonState();
+}
+
+function updateRatingUI(selectedScore) {
+	const buttons = document.querySelectorAll('.rating-btn');
+	buttons.forEach(btn => {
+		const score = parseInt(btn.dataset.score, 10);
+		if (score === selectedScore) {
+			btn.classList.add('selected');
+		} else {
+			btn.classList.remove('selected');
+		}
+	});
+}
+
+function handleFeedbackInput(input) {
+	localMeetingFeedback = input.value;
+	updateDoneButtonState();
+}
+
+function updateDoneButtonState() {
+	const doneBtn = document.getElementById('done-voting-btn');
+	if (!doneBtn) return;
+
+	// Check if there are any votes, rating, or feedback
+	const hasVotes = Object.keys(localVotes).length > 0;
+	const hasRating = localMeetingRating !== null;
+	const hasFeedback = localMeetingFeedback.trim() !== "";
+
+	if (hasVotes || hasRating || hasFeedback) {
+		doneBtn.removeAttribute('disabled');
+	} else {
+		doneBtn.setAttribute('disabled', 'disabled');
 	}
 }

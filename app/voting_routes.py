@@ -203,6 +203,28 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     context['sorted_role_groups'] = group_roles_by_category(roles)
     context['best_award_ids'] = get_best_award_ids(selected_meeting)
 
+    # Fetch existing meeting rating
+    context['meeting_rating_score'] = None
+    if voter_identifier:
+        rating_vote = Vote.query.filter_by(
+            meeting_number=selected_meeting_number,
+            voter_identifier=voter_identifier,
+            question="How likely are you to recommend this meeting to a friend or colleague?"
+        ).first()
+        if rating_vote:
+            context['meeting_rating_score'] = rating_vote.score
+
+    # Fetch existing meeting feedback
+    context['meeting_feedback_comment'] = ""
+    if voter_identifier:
+        feedback_vote = Vote.query.filter_by(
+            meeting_number=selected_meeting_number,
+            voter_identifier=voter_identifier,
+            question="More feedback/comments"
+        ).first()
+        if feedback_vote:
+            context['meeting_feedback_comment'] = feedback_vote.comments
+
     return context
 
 
@@ -256,6 +278,21 @@ def batch_vote():
                     voter_identifier=voter_identifier,
                     award_category=award_category,
                     contact_id=contact_id
+                )
+                db.session.add(new_vote)
+            
+            # Handle question votes
+            question = v.get('question')
+            score = v.get('score')
+            comments = v.get('comments')
+            
+            if question is not None and (score is not None or comments is not None):
+                new_vote = Vote(
+                    meeting_number=meeting_number,
+                    voter_identifier=voter_identifier,
+                    question=question,
+                    score=score,
+                    comments=comments
                 )
                 db.session.add(new_vote)
         

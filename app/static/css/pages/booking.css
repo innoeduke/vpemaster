@@ -99,6 +99,7 @@
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
+    font-size: 1em;
 }
 
 .booking-filter-container .filter-right {
