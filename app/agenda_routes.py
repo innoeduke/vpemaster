@@ -1616,6 +1616,15 @@ def _tally_votes_and_set_winners(meeting):
         if hasattr(meeting, award_attr):
             setattr(meeting, award_attr, winner_id)
 
+    # Calculate NPS (Average of non-blank scores)
+    nps_avg = db.session.query(func.avg(Vote.score)).filter(
+        Vote.meeting_number == meeting.Meeting_Number,
+        Vote.score.isnot(None)
+    ).scalar()
+
+    if nps_avg is not None:
+        meeting.nps = float(nps_avg)
+
 
 @agenda_bp.route('/agenda/status/<int:meeting_number>', methods=['POST'])
 @login_required

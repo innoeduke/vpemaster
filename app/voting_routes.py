@@ -79,6 +79,18 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
         owner_id = role_data['owner_id']
         award_category = role_obj.award_category if role_obj else None
 
+        if role_obj and role_obj.name == 'Keynote Speaker':
+            from .constants import ProjectID
+            # Check the first session log for project details
+            # Note: 'logs' key is removed in consolidate_roles, must fetch by ID
+            session_ids = role_data.get('session_ids')
+            first_log = SessionLog.query.get(session_ids[0]) if session_ids else None
+            
+            if first_log:
+                # If no project or generic project, disqualify from voting
+                if not first_log.Project_ID or first_log.Project_ID == ProjectID.GENERIC:
+                    award_category = None
+
         role_data['award_category'] = award_category
         role_data['award_type'] = award_category if owner_id and award_category and owner_id == winner_ids.get(award_category) else None
         role_data['award_category_open'] = bool(award_category and not winner_ids.get(award_category))

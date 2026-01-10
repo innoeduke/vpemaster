@@ -38,7 +38,8 @@
 	{# ============================================= #}
 
 	{# Macro to render a single role row in the table #}
-	{% macro render_role_row(role, status, is_admin_view, selected_meeting_number) %}
+	{% macro render_role_row(role, status, is_admin_view, selected_meeting_number, user_role, has_voted,
+	voting_disabled=False) %}
 	<tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}"
 		class="{% if role.award_type %}voted{% endif %}">
 		<td class="role-cell">
@@ -60,7 +61,8 @@
 					<i class="fas fa-user-circle"></i>
 					{% endif %}
 				</div>
-				{% if is_admin_view and role.vote_count and role.vote_count > 0 %}
+				{% if is_admin_view and role.vote_count and role.vote_count > 0 and (user_role == 'Admin' or status ==
+				'finished') %}
 				<div class="vote-bricks-container" title="{{ role.vote_count }} Votes">
 					{% for n in range(role.vote_count) %}
 					<div class="vote-brick"></div>
@@ -81,13 +83,21 @@
 			{% set can_vote = role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
 
 			{% if (role.owner_id and role.award_category) and can_vote %}
+			{% if voting_disabled %}
+			<button type="button" class="icon-btn" disabled style="color: #ccc; cursor: not-allowed;"
+				title="Not enough candidates to vote">
+				<i class="fas fa-vote-yea"></i>
+			</button>
+			{% else %}
 			{% set should_show = role.award_type %}
 			<button type="button"
 				class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %} {% if not should_show %}vote-auto-hide{% endif %}"
-				title="Vote" onclick="handleVoteClick(this)" data-meeting-number="{{ selected_meeting_number }}"
+				title="Vote" {% if has_voted %}disabled style="cursor: default;" {% else
+				%}onclick="handleVoteClick(this)" {% endif %} data-meeting-number="{{ selected_meeting_number }}"
 				data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
 				<i class="fas fa-vote-yea"></i>
 			</button>
+			{% endif %}
 			{% endif %}
 			{% elif status == 'finished' %}
 			{% if is_admin_view %}
@@ -114,7 +124,8 @@
 	{% endmacro %}
 
 	{# Macro to render role tables with accordion #}
-	{% macro render_role_tables(roles, sorted_role_groups, status, is_admin_view, selected_meeting_number) %}
+	{% macro render_role_tables(roles, sorted_role_groups, status, is_admin_view, selected_meeting_number, user_role,
+	has_voted) %}
 
 	{% set use_accordion = (status in ['running']) or (status == 'finished' and is_admin_view) %}
 	{% set default_open = False %}
@@ -134,8 +145,12 @@
 		Roles'}) %}
 
 		<div class="accordion-item" data-category="{{ category or 'other' }}">
-			<button
-				class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }}">
+			{% set voting_disabled = False %}
+			{% set candidate_count = items | selectattr('owner_id') | list | length %}
+			{% if category in ['speaker', 'evaluator'] and candidate_count < 3 %} {% set voting_disabled=True %} {% elif
+				category=='table-topic' and candidate_count < 5 %} {% set voting_disabled=True %} {% endif %} <button
+				class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }} {{ 'disabled' if voting_disabled else '' }}"
+				{% if voting_disabled %}disabled title="Not enough candidates to vote" {% endif %}>
 				<div class="header-left" style="display: flex; align-items: center; gap: 15px;">
 					{% if meta.num %}
 					<div class="question-number">{{ meta.num }}</div>
@@ -148,18 +163,22 @@
 						<i class="fas fa-trophy"></i> VOTED
 					</span>
 					{% endif %}
-					<i class="fas fa-chevron-down"></i>
+					{% if voting_disabled %}
+					<span style="font-size: 0.8em; color: #777; margin-right: 10px;">
+						{% if category == 'table-topic' %}(Candidates < 5){% else %}(Candidates < 3){% endif %} </span>
+							{% endif %}
+							<i class="fas fa-chevron-down"></i>
 				</div>
-			</button>
-			<div class="accordion-content" {% if default_open %}style="max-height: none;" {% endif %}>
-				<table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
-					<tbody>
-						{% for role in items %}
-						{{ render_role_row(role, status, is_admin_view, selected_meeting_number) }}
-						{% endfor %}
-					</tbody>
-				</table>
-			</div>
+				</button>
+				<div class="accordion-content" {% if default_open %}style="max-height: none;" {% endif %}>
+					<table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
+						<tbody>
+							{% for role in items %}
+							{{ render_role_row(role, status, is_admin_view, selected_meeting_number, user_role,
+							has_voted, voting_disabled) }}
+							{% endfor %} </tbody>
+					</table>
+				</div>
 		</div>
 		{% endif %}
 		{% endfor %}
@@ -173,7 +192,7 @@
 			{% set ns = namespace(displayed_awards=[]) %}
 			{% for role in roles %}
 			{% if role.award_type and role.award_type not in ns.displayed_awards %}
-			{{ render_role_row(role, status, is_admin_view, selected_meeting_number) }}
+			{{ render_role_row(role, status, is_admin_view, selected_meeting_number, user_role, has_voted) }}
 			{% set ns.displayed_awards = ns.displayed_awards + [role.award_type] %}
 			{% endif %}
 			{% endfor %}
@@ -195,7 +214,7 @@
 			style="max-width: 100%; height: auto; border: 5px solid #c5c5c5; border-radius: 15px;">
 	</div>
 	{% else %}
-	{% if has_voted and not is_admin_view %}
+	{% if has_voted and (user_role != 'Admin') and selected_meeting.status == 'running' %}
 	<div id="thank-you-message" style="text-align: center; margin-top: 40px; padding: 20px;">
 		<i class="fas fa-check-circle" style="font-size: 4em; color: #28a745; margin-bottom: 20px;"></i>
 		<h2>Thank You!</h2>
@@ -203,7 +222,7 @@
 	</div>
 	{% else %}
 	{{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view,
-	selected_meeting_number) }}
+	selected_meeting_number, user_role, has_voted) }}
 
 	{% if selected_meeting.status == 'running' %}
 	<div class="meeting-rating-section">
@@ -213,7 +232,8 @@
 		</div>
 		<div class="rating-scale">
 			{% for i in range(11) %}
-			<button type="button" class="rating-btn" data-score="{{ i }}" onclick="handleRatingClick(this)">{{ i
+			<button type="button" class="rating-btn" data-score="{{ i }}" {% if has_voted %}disabled
+				style="cursor: default;" {% else %}onclick="handleRatingClick(this)" {% endif %}>{{ i
 				}}</button>
 			{% endfor %}
 		</div>
@@ -229,18 +249,18 @@
 			<div class="question-text">Meeting Feedback / Comments</div>
 		</div>
 		<div class="feedback-input-container">
-			<textarea id="feedback-input" class="feedback-input" placeholder="Enter your answer" rows="4"
-				oninput="handleFeedbackInput(this)"></textarea>
+			<textarea id="feedback-input" class="feedback-input" placeholder="Enter your answer" rows="4" {% if
+				has_voted %}disabled{% else %}oninput="handleFeedbackInput(this)" {% endif %}></textarea>
 		</div>
 	</div>
 	{% endif %}
 	{% endif %}
 
-	{% if selected_meeting.status == 'running' and not (has_voted and not is_admin_view) %}
+	{% if selected_meeting.status == 'running' and not has_voted %}
 	<div id="batch-vote-actions" style="text-align: center; margin-top: 20px; padding-bottom: 30px;">
 		<button id="done-voting-btn" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
 			disabled>
-			Done <i class="fas fa-check"></i>
+			Submit
 		</button>
 	</div>
 	<div id="thank-you-message" style="display: none; text-align: center; margin-top: 40px; padding: 20px;">
@@ -261,7 +281,7 @@
 	// Pass Python data to global JS variables used by voting.js
 	var isAdminView = {{ is_admin_view| tojson }};
 	var selectedMeetingNumber = {{ selected_meeting_number| tojson }};
-	var isOfficer = {{ is_admin_view| tojson }};
+	var userRole = {{ user_role| tojson }};
 	var initialMeetingRating = {{ meeting_rating_score| tojson }};
 	var initialMeetingFeedback = {{ meeting_feedback_comment| tojson }};
 </script>

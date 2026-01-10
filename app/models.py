@@ -277,6 +277,7 @@ class Meeting(db.Model):
     ge_mode = db.Column(db.Integer, default=0)
     status = db.Column(db.Enum('unpublished', 'not started', 'running', 'finished', 'cancelled', name='meeting_status'),
                        default='unpublished', nullable=False)
+    nps = db.Column(db.Float, nullable=True)
     manager_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
 
     manager = db.relationship('Contact', foreign_keys=[manager_id], backref='managed_meetings')

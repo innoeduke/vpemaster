@@ -61,6 +61,19 @@
 	opacity: 0.8;
 }
 
+/* Allow expansion but style differently */
+.accordion-header.disabled {
+	cursor: pointer;
+}
+
+.accordion-header.disabled .question-text {
+	color: #999;
+}
+
+.accordion-header.disabled .question-number {
+	background-color: #ccc;
+}
+
 .accordion-header.active {
 	background-color: transparent;
 	margin-bottom: 15px;

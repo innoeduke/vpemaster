@@ -3,7 +3,7 @@
 // Note: This script assumes the following global variables are defined in the HTML:
 // - isAdminView (Boolean)
 // - selectedMeetingNumber (String or Number)
-// - isOfficer (Boolean)
+// - userRole (String)
 
 var localVotes = {}; // Store votes locally before batch submission
 var localMeetingRating = null;
@@ -19,14 +19,17 @@ document.addEventListener("DOMContentLoaded", function () {
 		const accordionItem = header.parentElement;
 		const category = accordionItem.dataset.category;
 		const accordionContent = header.nextElementSibling;
+		const isDisabled = header.classList.contains('disabled');
 
-		// Restore state on page load
-		if (category && accordionState[category]) {
+		// Restore state on page load, but only if not disabled
+		if (!isDisabled && category && accordionState[category]) {
 			header.classList.add("active");
 			accordionContent.style.maxHeight = accordionContent.scrollHeight + "px";
 		}
 
 		header.addEventListener("click", () => {
+			if (header.classList.contains('disabled')) return; // Prevent interaction if disabled
+
 			const isActive = header.classList.toggle("active");
 
 			if (accordionContent.style.maxHeight) {
@@ -141,7 +144,7 @@ function submitBatchVotes() {
 		.then((response) => response.json())
 		.then((data) => {
 			if (data.success) {
-				if (isOfficer) {
+				if (userRole === 'Admin') {
 					window.location.reload(true);
 				} else {
 					// Transition to Thank You state
@@ -153,6 +156,12 @@ function submitBatchVotes() {
 
 					const instruction = document.querySelector('.voting-instruction-alert');
 					if (instruction) instruction.style.display = 'none';
+
+					const ratingSection = document.querySelector('.meeting-rating-section');
+					if (ratingSection) ratingSection.style.display = 'none';
+
+					const feedbackSection = document.querySelector('.feedback-section');
+					if (feedbackSection) feedbackSection.style.display = 'none';
 
 					const thanks = document.getElementById('thank-you-message');
 					if (thanks) {
@@ -313,12 +322,34 @@ function updateDoneButtonState() {
 	const doneBtn = document.getElementById('done-voting-btn');
 	if (!doneBtn) return;
 
-	// Check if there are any votes, rating, or feedback
-	const hasVotes = Object.keys(localVotes).length > 0;
-	const hasRating = localMeetingRating !== null;
-	const hasFeedback = localMeetingFeedback.trim() !== "";
+	// 1. Validate Award Categories (Q1-Q4)
+	let allCategoriesValid = true;
+	const accordionItems = document.querySelectorAll('.accordion-item');
 
-	if (hasVotes || hasRating || hasFeedback) {
+	accordionItems.forEach(item => {
+		const category = item.dataset.category;
+		if (!category) return;
+
+		// Check if this category is disabled (e.g., insufficient candidates)
+		const header = item.querySelector('.accordion-header');
+		const isDisabled = header && (header.classList.contains('disabled') || header.hasAttribute('disabled'));
+
+		if (!isDisabled) {
+			// If active, user MUST have voted
+			if (!localVotes[category]) {
+				allCategoriesValid = false;
+			}
+		}
+	});
+
+	// 2. Validate Meeting Rating (Q5)
+	// Must be selected (not null)
+	const hasRating = localMeetingRating !== null;
+
+	// 3. Feedback (Q6) is optional usually, but let's stick to user request "Q1 to Q5"
+	// So we don't enforce feedback.
+
+	if (allCategoriesValid && hasRating) {
 		doneBtn.removeAttribute('disabled');
 	} else {
 		doneBtn.setAttribute('disabled', 'disabled');
