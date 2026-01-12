@@ -11,6 +11,7 @@ roster_bp = Blueprint('roster_bp', __name__)
 @login_required
 def roster():
     # Get current meeting logic, same as agenda page
+    next_unallocated_entry = None
     today = db.func.current_date()
 
     # Query future meetings
@@ -57,7 +58,6 @@ def roster():
     selected_meeting = None
     roster_entries = []
     first_unallocated_entry = None
-    next_unallocated_entry = None
     if selected_meeting_num:
         selected_meeting = Meeting.query.filter(
             Meeting.Meeting_Number == selected_meeting_num

@@ -507,14 +507,17 @@ def load_all_settings():
         return all_settings  # Return empty dict on error
 
 
-def get_meetings_by_status(limit_past=8, columns=None):
+def get_meetings_by_status(limit_past=8, columns=None, status_filter=None):
     """
     Fetches meetings, categorizing them as 'active' or 'past' based on status.
-
+    
     Args:
         limit_past (int): The maximum number of past meetings to retrieve.
         columns (list): A list of specific Meeting columns to query. 
                         If None, queries the full Meeting object.
+        status_filter (list): Optional list of status strings to filter by.
+                              If provided, overrides the default active/past logic
+                              for simpler queries.
 
     Returns:
         tuple: (all_meetings, default_meeting_num)
@@ -522,6 +525,20 @@ def get_meetings_by_status(limit_past=8, columns=None):
                - default_meeting_num: The number of the soonest 'not started' meeting.
     """
     query_cols = [Meeting] if columns is None else columns
+    
+    # --- Mode 1: Simple Filter (if status_filter provided) ---
+    if status_filter:
+        query = db.session.query(*query_cols)\
+            .filter(Meeting.status.in_(status_filter))\
+            .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number)\
+            .distinct()\
+            .order_by(Meeting.Meeting_Number.desc())
+            
+        all_meetings = query.all()
+        default_meeting_num = get_default_meeting_number()
+        return all_meetings, default_meeting_num
+
+    # --- Mode 2: Default Hybrid Active/Past Logic ---
 
     # Fetch active meetings ('unpublished', 'not started', or 'running')
     active_statuses = ['not started', 'running']
@@ -530,7 +547,6 @@ def get_meetings_by_status(limit_past=8, columns=None):
         if current_user.is_authenticated and current_user.is_officer:
             active_statuses.append('unpublished')
     except Exception:
-        # Not in a request context or other issue
         pass
         
     active_meetings = db.session.query(*query_cols)\
@@ -565,12 +581,25 @@ def get_meetings_by_status(limit_past=8, columns=None):
                           key=lambda m: m.Meeting_Number, reverse=True)
 
     # Filter meetings to only those that have session logs
+    # Note: For efficiency, we should do this in the origin query, but maintaining 
+    # exact parity with original logic means filtering post-fetch or subquery.
+    # The original logic used a subquery to filter only those in the result set.
     meetings_with_logs_subquery = db.session.query(
         distinct(SessionLog.Meeting_Number)).subquery()
-    all_meetings = [m for m in all_meetings if m.Meeting_Number in [
-        row[0] for row in db.session.query(meetings_with_logs_subquery).all()]]
+    
+    final_meetings = []
+    
+    # Optimize: Get all valid numbers in one go for the set check
+    valid_numbers = {row[0] for row in db.session.query(meetings_with_logs_subquery).all()}
+    
+    for m in all_meetings:
+        m_num = m.Meeting_Number if hasattr(m, 'Meeting_Number') else m[0] # Handle tuple vs obj
+        if m_num in valid_numbers:
+            final_meetings.append(m)
 
-    return all_meetings
+    default_meeting = get_default_meeting_number()
+
+    return final_meetings, default_meeting
 
 
 def get_default_meeting_number():
@@ -618,6 +647,131 @@ def get_default_meeting_number():
         return upcoming_meeting.Meeting_Number
     
     return None
+
+def get_session_voter_identifier():
+    """
+    Helper to determine the voter identifier for the current user/guest.
+    Migrated from booking_voting_shared.py.
+    
+    Returns:
+        str: Voter identifier (user_id for authenticated users, token for guests)
+    """
+    from flask import session
+    from flask_login import current_user
+    
+    if current_user.is_authenticated:
+        return f"user_{current_user.id}"
+    elif 'voter_token' in session:
+        return session['voter_token']
+    return None
+
+
+def get_current_user_info():
+    """
+    Gets user information from current_user.
+    Migrated from booking_voting_shared.py (was get_user_info).
+    
+    Returns:
+        tuple: (user object, contact_id)
+    """
+    from flask_login import current_user
+    if current_user.is_authenticated:
+        user = current_user
+        current_user_contact_id = user.Contact_ID
+    else:
+        user = None
+        current_user_contact_id = None
+    return user, current_user_contact_id
+
+
+def consolidate_session_logs(session_logs):
+    """
+    Consolidates session logs into a dictionary of roles.
+    Groups by (role_id, owner_id) unless role is marked as distinct.
+    Migrated from booking_voting_shared.py (was consolidate_roles).
+    
+    Args:
+        session_logs: List of SessionLog objects
+    
+    Returns:
+        dict: Consolidated roles dictionary
+    """
+    roles_dict = {}
+
+    for log in session_logs:
+        if not log.session_type or not log.session_type.role:
+            continue
+
+        role_obj = log.session_type.role
+        role_name = role_obj.name.strip()
+        role_id = role_obj.id
+        owner_id = log.Owner_ID
+        
+        is_distinct = role_obj.is_distinct
+
+        if is_distinct:
+            dict_key = f"{role_id}_{owner_id}_{log.id}"
+        else:
+            dict_key = f"{role_id}_{owner_id}"
+
+        if dict_key not in roles_dict:
+            roles_dict[dict_key] = {
+                'role': role_name,
+                'role_key': role_name,
+                'role_obj': role_obj,
+                'owner_id': owner_id,
+                'owner_name': log.owner.Name if log.owner else None,
+                'owner_avatar_url': log.owner.Avatar_URL if log.owner else None,
+                'session_ids': [],
+                'type_id': log.Type_ID,
+                'speaker_name': log.Session_Title.strip() if role_name == "Individual Evaluator" and log.Session_Title else None,
+                'waitlist': [],
+                'logs': []
+            }
+
+        roles_dict[dict_key]['session_ids'].append(log.id)
+        roles_dict[dict_key]['logs'].append(log)
+
+    # Consolidate waitlists for each group
+    for dict_key, role_data in roles_dict.items():
+        seen_waitlist_ids = set()
+        for log in role_data['logs']:
+            for waitlist_entry in log.waitlists:
+                if waitlist_entry.contact_id not in seen_waitlist_ids:
+                    role_data['waitlist'].append({
+                        'name': waitlist_entry.contact.Name,
+                        'id': waitlist_entry.contact_id,
+                        'avatar_url': waitlist_entry.contact.Avatar_URL
+                    })
+                    seen_waitlist_ids.add(waitlist_entry.contact_id)
+        del role_data['logs']
+
+    return roles_dict
+
+
+def group_roles_by_category(roles):
+    """
+    Groups roles by award_category and sorts groups by priority.
+    Migrated from booking_voting_shared.py.
+    
+    Args:
+        roles: List of role dictionaries
+    
+    Returns:
+        list: List of tuples [(category_name, [list_of_roles]), ...]
+    """
+    from itertools import groupby
+    
+    grouped = []
+    # Ensure sorted by category if not already, though caller usually handles sort
+    # groupby expects consecutive keys, so we sort just in case
+    # Taking safe approach to sort by award_category string using a default empty string
+    roles.sort(key=lambda x: x.get('award_category') or "")
+    
+    for key, group in groupby(roles, key=lambda x: x.get('award_category')):
+        grouped.append((key, list(group)))
+
+    return grouped
 
 
 def get_excomm_team(all_settings):

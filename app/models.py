@@ -1,6 +1,7 @@
 from . import db
 from .constants import ProjectID
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload, subqueryload
 
 
 class Contact(db.Model):
@@ -291,6 +292,22 @@ class Meeting(db.Model):
     best_role_taker = db.relationship(
         'Contact', foreign_keys=[best_role_taker_id])
     media = db.relationship('Media', foreign_keys=[media_id])
+
+    def get_best_award_ids(self):
+        """
+        Gets the set of best award IDs for this meeting.
+        
+        Returns:
+            set: Set of award IDs
+        """
+        return {
+            award_id for award_id in [
+                self.best_table_topic_id,
+                self.best_evaluator_id,
+                self.best_speaker_id,
+                self.best_role_taker_id
+            ] if award_id
+        }
 
 
 class SessionType(db.Model):
@@ -641,6 +658,127 @@ class SessionLog(db.Model):
                     return False
         
         return True
+
+    @classmethod
+    def assign_role_owner(cls, target_log, new_owner_id):
+        """
+        Assigns an owner to a session log (and related logs if role is not distinct).
+        Updates credentials and project codes.
+        Syncs with Roster.
+        
+        Args:
+            target_log: The SessionLog object to update (or one of them)
+            new_owner_id: ID of the new owner (or None to unassign)
+            
+        Returns:
+            list: List of updated SessionLog objects
+        """
+        from .models import SessionType, Role, Contact, Pathway, PathwayProject, Roster, Project
+        from .utils import derive_credentials
+        from .constants import SessionTypeID
+        
+        # 1. Identify all logs to update (handle is_distinct)
+        session_type = target_log.session_type
+        role_obj = session_type.role if session_type else None
+        
+        sessions_to_update = [target_log]
+        
+        if role_obj and not role_obj.is_distinct:
+            # Find all logs for this role in this meeting
+            target_role_id = role_obj.id
+            current_owner_id = target_log.Owner_ID
+            
+            query = db.session.query(cls)\
+                .join(SessionType, cls.Type_ID == SessionType.id)\
+                .join(Role, SessionType.role_id == Role.id)\
+                .filter(cls.Meeting_Number == target_log.Meeting_Number)\
+                .filter(Role.id == target_role_id)
+            
+            if current_owner_id is None:
+                query = query.filter(cls.Owner_ID.is_(None))
+            else:
+                query = query.filter(cls.Owner_ID == current_owner_id)
+                
+            sessions_to_update = query.all()
+
+        # 2. Prepare Data (Credentials, Project Code)
+        owner_contact = Contact.query.get(new_owner_id) if new_owner_id else None
+        new_credentials = derive_credentials(owner_contact)
+        
+        # Capture original owner from the target log (assuming others are consistent)
+        original_owner_id = target_log.Owner_ID
+
+        # 3. Update Logs
+        for log in sessions_to_update:
+            log.Owner_ID = new_owner_id
+            log.credentials = new_credentials
+            
+            # Project Code Logic
+            new_path_level = None
+            if owner_contact:
+                # Basic derivation
+                new_path_level = log.derive_project_code(owner_contact)
+                
+                # Auto-Resolution from Next_Project for Prepared Speeches
+                # This logic checks if the planned Next_Project matches strict criteria
+                if owner_contact.Next_Project and log.Type_ID == SessionTypeID.PREPARED_SPEECH:
+                    current_path_name = owner_contact.Current_Path
+                    if current_path_name:
+                        pathway = Pathway.query.filter_by(name=current_path_name).first()
+                        if pathway and pathway.abbr:
+                            if owner_contact.Next_Project.startswith(pathway.abbr):
+                                code_suffix = owner_contact.Next_Project[len(pathway.abbr):]
+                                pp = PathwayProject.query.filter_by(
+                                    path_id=pathway.id,
+                                    code=code_suffix
+                                ).first()
+                                if pp:
+                                    log.Project_ID = pp.project_id
+                                    new_path_level = owner_contact.Next_Project
+            
+            log.project_code = new_path_level
+
+        # 4. Sync Roster
+        if role_obj:
+            # Handle unassign old
+            if original_owner_id and original_owner_id != new_owner_id:
+                Roster.sync_role_assignment(target_log.Meeting_Number, original_owner_id, role_obj, 'unassign')
+            
+            # Handle assign new
+            if new_owner_id:
+                Roster.sync_role_assignment(target_log.Meeting_Number, new_owner_id, role_obj, 'assign')
+
+        return sessions_to_update
+
+    @classmethod
+    def fetch_for_meeting(cls, selected_meeting_number, meeting_obj=None):
+        """
+        Fetches session logs for a given meeting, filtering by user role access where appropriate.
+        
+        Args:
+            selected_meeting_number: Meeting number to fetch logs for
+            meeting_obj: Optional meeting object for authorization check
+        
+        Returns:
+            list: Session logs with eager-loaded relationships
+        """
+        from .auth.utils import is_authorized
+        
+        query = db.session.query(cls)\
+            .options(
+                joinedload(cls.session_type).joinedload(SessionType.role),
+                joinedload(cls.owner),
+                subqueryload(cls.waitlists).joinedload(Waitlist.contact)
+            )\
+            .join(SessionType, cls.Type_ID == SessionType.id)\
+            .join(Role, SessionType.role_id == Role.id)\
+            .filter(cls.Meeting_Number == selected_meeting_number)\
+            .filter(Role.name != '', Role.name.isnot(None))
+
+        if not is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting_obj):
+            query = query.filter(Role.type != 'officer')
+
+        return query.all()
 
 
 class LevelRole(db.Model):

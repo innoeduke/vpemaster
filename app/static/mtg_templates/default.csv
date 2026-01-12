@@ -12,14 +12,14 @@ Table Topics,Table Topics,Topicsmaster,,0,25
 New Guest Greetings,New Guest Greetings,Welcome Officer,,0,5
 Generic,Networking & Break,,,0,10
 Section,PREPARED SPEECHES,,,0,
-Prepared Speech,Prepared Speech,Prepared Speaker,,,
-Prepared Speech,Prepared Speech,Prepared Speaker,,,
-Prepared Speech,Prepared Speech,Prepared Speaker,,,
+Prepared Speech,Prepared Speech 1,Prepared Speaker,,,
+Prepared Speech,Prepared Speech 2,Prepared Speaker,,,
+Prepared Speech,Prepared Speech 3,Prepared Speaker,,,
 Section,EVALUATION REPORTS,,,0,
 General Evaluator's Address,,General Evaluator,,0,1
-Evaluation,,Individual Evaluator,,2,3
-Evaluation,,Individual Evaluator,,2,3
-Evaluation,,Individual Evaluator,,2,3
+Evaluation,Speaker 1,Individual Evaluator,,2,3
+Evaluation,Speaker 2,Individual Evaluator,,2,3
+Evaluation,Speaker 3,Individual Evaluator,,2,3
 Ah-Counter Report,,Ah-Counter,,0,1
 Grammarian Report,,Grammarian,,0,2
 Timer Report,,Timer,,0,1

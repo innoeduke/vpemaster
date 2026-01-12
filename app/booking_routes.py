@@ -8,24 +8,15 @@ from datetime import datetime
 from sqlalchemy import func
 from .utils import derive_credentials
 from .constants import SessionTypeID
-from .booking_voting_shared import assign_role_owner
-from flask_login import current_user
-
-from .booking_voting_shared import (
-    get_user_info,
-    get_meetings,
-    fetch_session_logs,
-    consolidate_roles,
-    get_best_award_ids,
+from .utils import (
+    derive_credentials,
+    get_current_user_info,
+    get_meetings_by_status,
+    consolidate_session_logs,
     group_roles_by_category
 )
 
 booking_bp = Blueprint('booking_bp', __name__)
-
-
-
-
-
 
 def _enrich_role_data_for_booking(roles_dict, selected_meeting):
     """
@@ -111,8 +102,8 @@ def _sort_roles_for_booking(roles, current_user_contact_id, is_past_meeting):
 
 def _get_roles_for_booking(selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting):
     """Helper function to get and process roles for the booking page."""
-    session_logs = fetch_session_logs(selected_meeting_number, meeting_obj=selected_meeting)
-    roles_dict = consolidate_roles(session_logs)
+    session_logs = SessionLog.fetch_for_meeting(selected_meeting_number, meeting_obj=selected_meeting)
+    roles_dict = consolidate_session_logs(session_logs)
     enriched_roles = _enrich_role_data_for_booking(roles_dict, selected_meeting)
     filtered_roles = _apply_user_filters_and_rules(
         enriched_roles, current_user_contact_id, selected_meeting_number)
@@ -178,7 +169,8 @@ def _get_user_bookings(current_user_contact_id):
 def _get_booking_page_context(selected_meeting_number, user, current_user_contact_id):
     """Gathers all context needed for the booking page template."""
     # Show all recent meetings in the dropdown, even if booking is closed for them
-    upcoming_meetings, default_meeting_num = get_meetings(limit_past=5)
+    upcoming_meetings, default_meeting_num = get_meetings_by_status(
+        limit_past=5, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
 
     if not selected_meeting_number:
         selected_meeting_number = default_meeting_num or (
@@ -193,7 +185,7 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
         'selected_meeting': None,
         'is_admin_view': is_authorized('BOOKING_ASSIGN_ALL'),
         'current_user_contact_id': current_user_contact_id,
-        'user_role': current_user.Role if current_user.is_authenticated else 'Guest',
+        'user_role': user.Role if user else 'Guest',
         'best_award_ids': set()
     }
 
@@ -202,8 +194,8 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
 
     selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_number).first()
     
-    is_manager = current_user.is_authenticated and current_user.Contact_ID == selected_meeting.manager_id if selected_meeting else False
-    if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (current_user.is_authenticated and current_user.is_officer) or is_manager):
+    is_manager = user.Contact_ID == selected_meeting.manager_id if (user and selected_meeting) else False
+    if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (user and user.is_officer) or is_manager):
         from flask import abort
         abort(403)
 
@@ -221,7 +213,7 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     if context['is_admin_view']:
         context['contacts'] = Contact.query.order_by(Contact.Name).all()
 
-    context['best_award_ids'] = get_best_award_ids(selected_meeting)
+    context['best_award_ids'] = selected_meeting.get_best_award_ids() if selected_meeting else set()
     context['sorted_role_groups'] = group_roles_by_category(roles)
 
     return context
@@ -231,7 +223,7 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
 @booking_bp.route('/booking/<int:selected_meeting_number>', methods=['GET'])
 def booking(selected_meeting_number):
     """Main booking page route."""
-    user, current_user_contact_id = get_user_info()
+    user, current_user_contact_id = get_current_user_info()
     context = _get_booking_page_context(selected_meeting_number, user, current_user_contact_id)
     return render_template('booking.html', **context)
 
@@ -244,7 +236,7 @@ def book_or_assign_role():
     session_id = data.get('session_id')
     action = data.get('action')
 
-    user, current_user_contact_id = get_user_info()
+    user, current_user_contact_id = get_current_user_info()
 
     log = SessionLog.query.get(session_id)
     if not log:
@@ -376,7 +368,7 @@ def book_or_assign_role():
 
     try:
         # Use shared service to handle assignment, credential derivation, and roster sync
-        updated_logs = assign_role_owner(log, owner_id_to_set)
+        updated_logs = SessionLog.assign_role_owner(log, owner_id_to_set)
         
         updated_sessions = []
         for session_log in updated_logs:

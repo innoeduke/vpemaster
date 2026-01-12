@@ -9,14 +9,12 @@ import secrets
 from sqlalchemy import func
 from flask_login import current_user
 
-from .booking_voting_shared import (
-    get_voter_identifier,
-    get_user_info,
-    get_meetings,
-    fetch_session_logs,
-    consolidate_roles,
-    group_roles_by_category,
-    get_best_award_ids
+from .utils import (
+    get_session_voter_identifier,
+    get_current_user_info,
+    get_meetings_by_status,
+    consolidate_session_logs,
+    group_roles_by_category
 )
 
 voting_bp = Blueprint('voting_bp', __name__)
@@ -39,7 +37,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
     winner_ids = {}
     if selected_meeting.status == 'running':
         # For a running meeting, the "winner" is who the current user voted for
-        voter_identifier = get_voter_identifier()
+        voter_identifier = get_session_voter_identifier()
         
         if voter_identifier:
             user_votes = Vote.query.filter_by(
@@ -145,8 +143,8 @@ def _get_roles_for_voting(selected_meeting_number, selected_meeting):
     Returns:
         list: Processed roles for voting
     """
-    session_logs = fetch_session_logs(selected_meeting_number, meeting_obj=selected_meeting)
-    roles_dict = consolidate_roles(session_logs)
+    session_logs = SessionLog.fetch_for_meeting(selected_meeting_number, meeting_obj=selected_meeting)
+    roles_dict = consolidate_session_logs(session_logs)
     enriched_roles = _enrich_role_data_for_voting(roles_dict, selected_meeting)
     sorted_roles = _sort_roles_for_voting(enriched_roles)
 
@@ -170,7 +168,8 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
         dict: Context dictionary for template
     """
     # Show all recent meetings in the dropdown, even if voting is not yet available for some
-    upcoming_meetings, default_meeting_num = get_meetings(limit_past=5)
+    upcoming_meetings, default_meeting_num = get_meetings_by_status(
+        limit_past=5, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
 
     if not selected_meeting_number:
         selected_meeting_number = default_meeting_num or (
@@ -196,7 +195,7 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
         return context
 
     # Check if user has voted for this meeting
-    voter_identifier = get_voter_identifier()
+    voter_identifier = get_session_voter_identifier()
     if voter_identifier:
         vote_exists = Vote.query.filter_by(meeting_number=selected_meeting_number, voter_identifier=voter_identifier).first()
         if vote_exists:
@@ -222,7 +221,7 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     roles = _get_roles_for_voting(selected_meeting_number, selected_meeting)
     context['roles'] = roles
     context['sorted_role_groups'] = group_roles_by_category(roles)
-    context['best_award_ids'] = get_best_award_ids(selected_meeting)
+    context['best_award_ids'] = selected_meeting.get_best_award_ids() if selected_meeting else set()
 
     # Fetch existing meeting rating
     context['meeting_rating_score'] = None
@@ -253,7 +252,7 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
 @voting_bp.route('/voting/<int:selected_meeting_number>', methods=['GET'])
 def voting(selected_meeting_number):
     """Main voting page route."""
-    user, current_user_contact_id = get_user_info()
+    user, current_user_contact_id = get_current_user_info()
     context = _get_voting_page_context(selected_meeting_number, user, current_user_contact_id)
     return render_template('voting.html', **context)
 
@@ -276,7 +275,7 @@ def batch_vote():
         return jsonify(success=False, message="Voting is not active for this meeting."), 403
 
     # Determine voter identity
-    voter_identifier = get_voter_identifier()
+    voter_identifier = get_session_voter_identifier()
     if not voter_identifier:
         if 'voter_token' not in session:
             session['voter_token'] = secrets.token_hex(16)
