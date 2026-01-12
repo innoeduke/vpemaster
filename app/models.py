@@ -118,7 +118,6 @@ class User(UserMixin, db.Model):
         return self.Role in ['Officer', 'Admin', 'VPE']
 
 
-
 class Project(db.Model):
     __tablename__ = 'Projects'
     id = db.Column(db.Integer, primary_key=True)
@@ -308,6 +307,41 @@ class Meeting(db.Model):
                 self.best_role_taker_id
             ] if award_id
         }
+
+    def delete_full(self):
+        """
+        Deletes the meeting and all associated data in the correct order.
+        Returns:
+            tuple: (success (bool), message (str or None))
+        """
+        try:
+            # 1. Delete Waitlist entries
+            Waitlist.delete_for_meeting(self.Meeting_Number)
+
+            # 2. Delete SessionLog entries
+            SessionLog.delete_for_meeting(self.Meeting_Number)
+
+            # 3. Delete Roster and RosterRole entries
+            Roster.delete_for_meeting(self.Meeting_Number)
+
+            # 4. Delete Vote entries
+            Vote.delete_for_meeting(self.Meeting_Number)
+
+            # 5. Handle Meeting's Media
+            if self.media_id:
+                media_to_delete = self.media
+                self.media_id = None # Break the link first
+                db.session.delete(media_to_delete)
+
+            # 6. Delete the Meeting itself
+            db.session.delete(self)
+            
+            db.session.commit()
+            return True, None
+            
+        except Exception as e:
+            db.session.rollback()
+            return False, str(e)
 
 
 class SessionType(db.Model):
@@ -780,6 +814,15 @@ class SessionLog(db.Model):
 
         return query.all()
 
+    @classmethod
+    def delete_for_meeting(cls, meeting_number):
+        """Deletes all session logs for a specific meeting."""
+        logs = cls.query.filter_by(Meeting_Number=meeting_number).all()
+        for log in logs:
+            if log.media:
+                db.session.delete(log.media)
+            db.session.delete(log)
+
 
 class LevelRole(db.Model):
     __tablename__ = 'level_roles'
@@ -832,6 +875,16 @@ class Waitlist(db.Model):
     session_log = db.relationship('SessionLog', backref='waitlists')
     contact = db.relationship('Contact', backref='waitlists')
 
+    @classmethod
+    def delete_for_meeting(cls, meeting_number):
+        """Deletes all waitlist entries associated with a meeting."""
+        # Find session logs for the meeting to identify relevant waitlists
+        session_logs = SessionLog.query.filter_by(Meeting_Number=meeting_number).all()
+        session_log_ids = [log.id for log in session_logs]
+        
+        if session_log_ids:
+            cls.query.filter(cls.session_log_id.in_(session_log_ids)).delete(synchronize_session=False)
+
 
 class RosterRole(db.Model):
     """Junction table for many-to-many relationship between Roster and Role"""
@@ -850,7 +903,7 @@ class Roster(db.Model):
     __tablename__ = 'roster'
     id = db.Column(db.Integer, primary_key=True)
     meeting_number = db.Column(db.Integer, nullable=False)
-    order_number = db.Column(db.Integer, nullable=False)
+    order_number = db.Column(db.Integer, nullable=True)
     ticket = db.Column(db.String(20), nullable=True)
     contact_id = db.Column(db.Integer, db.ForeignKey(
         'Contacts.id'), nullable=True)
@@ -885,6 +938,18 @@ class Roster(db.Model):
         """Get list of role names for this roster entry"""
         return [role.name for role in self.roles]
 
+    @classmethod
+    def delete_for_meeting(cls, meeting_number):
+        """Deletes all roster entries and associated roles for a meeting."""
+        rosters = cls.query.filter_by(meeting_number=meeting_number).all()
+        roster_ids = [r.id for r in rosters]
+        
+        if roster_ids:
+            # Delete assignments first
+            RosterRole.query.filter(RosterRole.roster_id.in_(roster_ids)).delete(synchronize_session=False)
+            # Delete roster entries
+            cls.query.filter(cls.id.in_(roster_ids)).delete(synchronize_session=False)
+
     @staticmethod
     def sync_role_assignment(meeting_number, contact_id, role_obj, action):
         """
@@ -907,16 +972,37 @@ class Roster(db.Model):
         
         if not roster_entry:
             if action == 'assign':
-                # Create new roster entry if it doesn't exist
-                max_order = db.session.query(func.max(Roster.order_number)).filter_by(
-                    meeting_number=meeting_number
-                ).scalar() or 0
-                
+                # Fetch contact details
+                contact = db.session.get(Contact, contact_id)
+                contact_type = contact.Type
+                is_officer = (contact.user and contact.user.is_officer) or contact.Type == 'Officer'
+
+                # Logic for Order Number
+                new_order = None
+                if is_officer:
+                    # Officers get the next available order number starting from 1000
+                    max_order = db.session.query(func.max(Roster.order_number)).filter(
+                        Roster.meeting_number == meeting_number,
+                        Roster.order_number >= 1000
+                    ).scalar()
+                    new_order = (max_order or 999) + 1
+                else:
+                    # Members/Guests get blank order number (None)
+                    new_order = None
+
+                # Logic for Ticket Class
+                ticket_class = "Role Taker" # Default for Guest
+                if is_officer:
+                    ticket_class = "Officer"
+                elif contact_type == 'Member':
+                    ticket_class = "Member"
+
                 roster_entry = Roster(
                     meeting_number=meeting_number,
                     contact_id=contact_id,
-                    order_number=max_order + 1,
-                    contact_type=db.session.get(Contact, contact_id).Type if contact_id else None
+                    order_number=new_order,
+                    ticket=ticket_class,
+                    contact_type=contact_type
                 )
                 db.session.add(roster_entry)
             else:
@@ -963,6 +1049,11 @@ class Vote(db.Model):
     __table_args__ = (
         db.Index('idx_meeting_voter', 'meeting_number', 'voter_identifier'),
     )
+
+    @classmethod
+    def delete_for_meeting(cls, meeting_number):
+        """Deletes all votes for a meeting."""
+        cls.query.filter_by(meeting_number=meeting_number).delete(synchronize_session=False)
 
 
 class Achievement(db.Model):

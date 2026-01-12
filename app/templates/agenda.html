@@ -76,8 +76,7 @@
         </div>
         <div class="action-bar-right">
             <div class="button-group" id="view-mode-buttons">
-                {% if selected_meeting %}
-                {% if is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
+                {% if selected_meeting and is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
                 {% if selected_meeting.status %}
                 <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}"
                     title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
@@ -105,12 +104,15 @@
                     {{ selected_meeting.status.replace('_', ' ').title() }}
                     {% endif %}
                 </button>
+                {% endif %}
+
                 {% if is_authorized('AGENDA_EDIT') %}
                 <button id="create-btn" class="btn btn-success">New</button>
                 {% endif %}
+
+                {% if selected_meeting and is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
                 <button id="export-btn" class="btn btn-info">Export</button>
                 <button id="edit-btn" class="btn btn-primary">Edit</button>
-                {% endif %}
                 {% endif %}
             </div>
         </div>
