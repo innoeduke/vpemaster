@@ -302,9 +302,8 @@ def upgrade():
     # Try multiple paths for robustness
     current_dir = os.path.dirname(__file__)
     possible_paths = [
-        os.path.join(os.getcwd(), 'instance/metadata_dump.json'),
+        os.path.join(os.getcwd(), 'deploy/metadata_dump.json'),
         os.path.join(os.getcwd(), 'scripts/metadata_dump.json'),
-        os.path.abspath(os.path.join(current_dir, '../../instance/metadata_dump.json'))
     ]
     
     dump_path = None
