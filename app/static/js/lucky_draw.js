@@ -25,7 +25,8 @@ function initializeLuckyDraw(elements) {
                 name: entry.dataset.name,
                 avatar: entry.dataset.avatar,
                 type: entry.dataset.type,
-                ticket: entry.dataset.ticket
+                ticket: entry.dataset.ticket,
+                hasTopicsRole: entry.dataset.hasTopicsRole
             };
             allEntries.push(entryData);
         });
@@ -69,7 +70,7 @@ function getFilteredEntries() {
             case 'guests':
                 return entry.type === 'Guest';
             case 'table-topics':
-                return entry.ticket === 'Role-taker';
+                return entry.hasTopicsRole === 'true';
             case 'full-house':
                 // Full House: Everyone including Officers
                 return true;
@@ -221,3 +222,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const elements = cacheElements();
     initializeLuckyDraw(elements);
 });
+
+// Expose for testing
+window._luckyDrawHooks = {
+    getFilteredEntries,
+    allEntries,
+    drawnWinners
+};

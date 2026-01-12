@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template
 from .auth.utils import login_required
 from .models import Roster, Meeting, Contact
+from .constants import RoleID
 from . import db
 
 lucky_draw_bp = Blueprint('lucky_draw_bp', __name__)
@@ -27,24 +28,18 @@ def lucky_draw():
 
     # Get roster entries for this meeting (excluding cancelled entries)
     roster_entries = []
-    table_topic_speakers = []
     if current_meeting:
         roster_entries = Roster.query\
+            .options(db.joinedload(Roster.roles))\
             .outerjoin(Contact, Roster.contact_id == Contact.id)\
             .filter(Roster.meeting_number == current_meeting.Meeting_Number)\
             .filter(Roster.ticket != 'Cancelled')\
             .order_by(Roster.order_number.asc())\
             .all()
-        
-        # Get table topic speakers (those with Role-taker ticket)
-        table_topic_speakers = [
-            entry for entry in roster_entries 
-            if entry.ticket == 'Role-taker'
-        ]
 
     return render_template(
         'lucky_draw.html',
         current_meeting=current_meeting,
         roster_entries=roster_entries,
-        table_topic_speakers=table_topic_speakers
+        RoleID=RoleID
     )

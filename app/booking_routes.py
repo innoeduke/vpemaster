@@ -238,11 +238,11 @@ def book_or_assign_role():
 
     user, current_user_contact_id = get_current_user_info()
 
-    log = SessionLog.query.get(session_id)
+    log = db.session.get(SessionLog, session_id)
     if not log:
         return jsonify(success=False, message="Session not found."), 404
 
-    session_type = SessionType.query.get(log.Type_ID)
+    session_type = db.session.get(SessionType, log.Type_ID)
     logical_role_key = session_type.role.name if session_type and session_type.role else None
 
     if not logical_role_key:
@@ -283,7 +283,53 @@ def book_or_assign_role():
         db.session.commit()
         return jsonify(success=True)
 
-    elif action == 'book':
+    # ---------------------------------------------------------
+    # DUPLICATE CHECK: Prevent booking same role multiple times
+    # ---------------------------------------------------------
+    target_owner_id_for_check = None
+    should_check_duplicates = False
+
+    if action == 'book':
+        # Self-booking
+        target_owner_id_for_check = current_user_contact_id
+        should_check_duplicates = True
+    elif action == 'assign' and is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting):
+        # Admin assignment
+        contact_id_str = data.get('contact_id', '0')
+        if contact_id_str != '0':
+            target_owner_id_for_check = int(contact_id_str)
+            should_check_duplicates = True
+    elif action == 'approve_waitlist' and is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting):
+        # Approve waitlist (promotion)
+        # Need to find who is on waitlist to check them
+        waitlist_entry = Waitlist.query.filter_by(
+            session_log_id=session_id).order_by(Waitlist.timestamp).first()
+        if waitlist_entry:
+            target_owner_id_for_check = waitlist_entry.contact_id
+            should_check_duplicates = True
+
+    if should_check_duplicates and target_owner_id_for_check:
+        # Determine current role ID
+        # session_type is already fetched: session_type = SessionType.query.get(log.Type_ID)
+        current_role_id = session_type.role_id if session_type else None
+
+        if current_role_id:
+            # Check if this user already holds a SessionLog for the same Meeting and Role
+            # Exclude the current session_id (in case of re-booking same slot, though usually blocked by "already booked" check)
+            
+            existing_booking = db.session.query(SessionLog.id)\
+                .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+                .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
+                .filter(SessionLog.Owner_ID == target_owner_id_for_check)\
+                .filter(SessionType.role_id == current_role_id)\
+                .filter(SessionLog.id != session_id)\
+                .first()
+
+            if existing_booking:
+                # Return 200 with success=False to avoid console 400 errors, as this is a "business logic" warning
+                return jsonify(success=False, message="Warning: You have already booked a role of this type for this meeting."), 200
+
+    if action == 'book':
         role_needs_approval = session_type.role.needs_approval if session_type and session_type.role else False
 
         if role_needs_approval:
@@ -373,7 +419,7 @@ def book_or_assign_role():
         updated_sessions = []
         for session_log in updated_logs:
             # Re-fetch contact to ensure we have latest data
-            contact = Contact.query.get(session_log.Owner_ID) if session_log.Owner_ID else None
+            contact = db.session.get(Contact, session_log.Owner_ID) if session_log.Owner_ID else None
             
             updated_sessions.append({
                 'session_id': session_log.id,

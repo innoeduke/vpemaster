@@ -65,6 +65,7 @@ def roster():
 
         # Get roster entries for this meeting (including unallocated entries)
         roster_entries = Roster.query\
+            .options(db.joinedload(Roster.roles))\
             .outerjoin(Contact, Roster.contact_id == Contact.id)\
             .filter(Roster.meeting_number == selected_meeting_num)\
             .order_by(Roster.order_number.asc())\

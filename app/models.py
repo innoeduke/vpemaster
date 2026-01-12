@@ -65,7 +65,7 @@ from flask import current_app
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 class User(UserMixin, db.Model):
     __tablename__ = 'Users'
@@ -99,7 +99,7 @@ class User(UserMixin, db.Model):
             user_id = s.loads(token, max_age=expires_sec).get('user_id')
         except:
             return None
-        return User.query.get(user_id)
+        return db.session.get(User, user_id)
 
     def can(self, permission):
         # Local import to avoid circular dependency
@@ -171,7 +171,7 @@ class Project(db.Model):
         if not pp:
             pp = db.session.query(PathwayProject).filter_by(project_id=self.id).first()
             if pp:
-                path_obj = db.session.query(Pathway).get(pp.path_id)
+                path_obj = db.session.get(Pathway, pp.path_id)
         
         return pp, path_obj
     
@@ -495,7 +495,7 @@ class SessionLog(db.Model):
                     if not found_data:
                         pp = PathwayProject.query.filter_by(project_id=self.Project_ID).first()
                         if pp:
-                            path_obj = Pathway.query.get(pp.path_id)
+                            path_obj = db.session.get(Pathway, pp.path_id)
                             if path_obj:
                                 pathway_abbr = path_obj.abbr
                                 display_level = str(pp.level) if pp.level else "1"
@@ -601,7 +601,7 @@ class SessionLog(db.Model):
         current_pathway = self.pathway or (self.owner.Current_Path if self.owner else "N/A")
 
         if self.Project_ID:
-            project = Project.query.get(self.Project_ID)
+            project = db.session.get(Project, self.Project_ID)
             if project:
                 project_name = project.Project_Name
                 
@@ -702,7 +702,7 @@ class SessionLog(db.Model):
             sessions_to_update = query.all()
 
         # 2. Prepare Data (Credentials, Project Code)
-        owner_contact = Contact.query.get(new_owner_id) if new_owner_id else None
+        owner_contact = db.session.get(Contact, new_owner_id) if new_owner_id else None
         new_credentials = derive_credentials(owner_contact)
         
         # Capture original owner from the target log (assuming others are consistent)
@@ -916,7 +916,7 @@ class Roster(db.Model):
                     meeting_number=meeting_number,
                     contact_id=contact_id,
                     order_number=max_order + 1,
-                    contact_type=Contact.query.get(contact_id).Type if contact_id else None
+                    contact_type=db.session.get(Contact, contact_id).Type if contact_id else None
                 )
                 db.session.add(roster_entry)
             else:
@@ -929,7 +929,6 @@ class Roster(db.Model):
         elif action == 'unassign':
             # Remove role if assigned
             roster_entry.remove_role(role_obj)
-
 
 
 class Role(db.Model):
