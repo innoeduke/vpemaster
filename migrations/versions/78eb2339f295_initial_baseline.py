@@ -250,6 +250,8 @@ def upgrade():
     # Seed data
     import json
     import os
+    from werkzeug.security import generate_password_hash
+    from datetime import date
     from sqlalchemy.sql import table, column
     from sqlalchemy import String, Integer, Boolean, Text, Float, Enum, Date, Time, SmallInteger
 
@@ -316,6 +318,15 @@ def upgrade():
         column('count_required', sa.Integer)
     )
 
+    users_table = table('Users',
+        column('id', sa.Integer),
+        column('Username', sa.String),
+        column('Pass_Hash', sa.String),
+        column('Role', sa.String),
+        column('Status', sa.String),
+        column('Date_Created', sa.Date)
+    )
+
     # Load data from dump
     # Try multiple paths for robustness
     current_dir = os.path.dirname(__file__)
@@ -348,6 +359,19 @@ def upgrade():
             op.bulk_insert(level_roles_table, data['level_roles'])
     else:
         print("Warning: metadata_dump.json not found. Skipping data seeding.")
+
+    # Create initial admin user
+    op.bulk_insert(users_table,
+        [
+            {
+                'Username': 'admin',
+                'Pass_Hash': generate_password_hash('admin'),
+                'Role': 'Admin',
+                'Status': 'active',
+                'Date_Created': date.today()
+            }
+        ]
+    )
 
 
 def downgrade():

@@ -29,9 +29,6 @@
                 {{ selected_meeting.Subtitle }}
                 {% endif %}
             </p>
-            <!-- Removed video meeting button -->
-            <!-- Removed video meeting button -->
-            <!-- Details now in modal -->
         </div>
     </div>
 
@@ -39,7 +36,7 @@
     <div class="wod-display">
         <div class="envelope-flap"></div>
         <div class="letter">
-            <span style="font-weight: 600;">Word of the Day:</span>
+            <span style="font-weight: 600; font-size: 0.7em; color:#555;">Word of the Day:</span>
             <span>"{{ selected_meeting.WOD }}"</span>
         </div>
     </div>
@@ -56,6 +53,7 @@
     <div class="action-bar">
         <div class="action-bar-left">
             <div class="action-bar-left-content" style="display: flex; flex-direction: column; gap: 5px;">
+                {% if meeting_numbers %}
                 <div class="inline-filter-group">
                     <label for="meeting-filter">Meeting:</label>
                     <select id="meeting-filter" {% if is_editing %}disabled{% endif %}>
@@ -67,6 +65,7 @@
                         {% endfor %}
                     </select>
                 </div>
+                {% endif %}
                 {% if selected_meeting and selected_meeting.manager %}
                 <div class="meeting-manager-display" style="color: #555;">
                     Manager: {{ selected_meeting.manager.Name }}
@@ -106,7 +105,9 @@
                     {{ selected_meeting.status.replace('_', ' ').title() }}
                     {% endif %}
                 </button>
+                {% if is_authorized('AGENDA_EDIT') %}
                 <button id="create-btn" class="btn btn-success">New</button>
+                {% endif %}
                 <button id="export-btn" class="btn btn-info">Export</button>
                 <button id="edit-btn" class="btn btn-primary">Edit</button>
                 {% endif %}
@@ -329,20 +330,6 @@
     {% include 'role_modal.html' %}
     {% include '_meeting_details_modal.html' %}
 
-    <script>
-        // Pass Python data to global JS variables used by speech_modal.js
-        var allProjects = {{ projects| tojson | safe }};
-        var pathways = {{ pathways| tojson | safe }};
-        var pathwayMap = {{ pathway_mapping| tojson | safe }};
-        var groupedPathways = {{ pathways| tojson | safe }};
-        var ProjectID = {
-            GENERIC: {{ ProjectID.GENERIC }},
-        TOPICSMASTER_PROJECT: {{ ProjectID.TOPICSMASTER_PROJECT }},
-        KEYNOTE_SPEAKER_PROJECT: {{ ProjectID.KEYNOTE_SPEAKER_PROJECT }},
-        MODERATOR_PROJECT: {{ ProjectID.MODERATOR_PROJECT }},
-        EVALUATION_PROJECTS: {{ ProjectID.EVALUATION_PROJECTS | tojson | safe }}
-        };
-    </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
 </div> {# End of #agenda-content wrapper #}

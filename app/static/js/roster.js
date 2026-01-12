@@ -323,7 +323,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (typeof setupTableSorting === "function") {
     setupTableSorting("rosterTable");
   }
-  initializeLuckyDraw();
 });
 
 function openContactModalWithReferer() {
@@ -335,63 +334,5 @@ function openContactModalWithReferer() {
     const actionUrl = new URL(contactForm.action);
     actionUrl.searchParams.set("referer", window.location.href);
     contactForm.action = actionUrl.toString();
-  }
-}
-
-function initializeLuckyDraw() {
-  const drawButton = document.getElementById('drawButton');
-  if (drawButton) {
-    drawButton.addEventListener('click', performLuckyDraw);
-  }
-}
-
-let drawnWinners = [];
-
-function performLuckyDraw() {
-  const validEntries = [];
-  const rows = document.querySelectorAll("#rosterTable tbody tr");
-
-  rows.forEach(row => {
-    const orderCell = row.querySelector('td:first-child');
-    if (orderCell && orderCell.textContent.trim() !== '' && orderCell.textContent.trim() !== 'N/A') {
-      const ticketCell = row.querySelector('td:nth-child(3)');
-      if (ticketCell && ticketCell.textContent.trim() !== 'Cancelled') {
-        const order = orderCell.textContent.trim();
-        const name = row.querySelector('td:nth-child(2)').textContent.trim();
-
-        const isAlreadyDrawn = drawnWinners.some(winner =>
-          winner.order === order && winner.name === name
-        );
-
-        if (!isAlreadyDrawn) {
-          validEntries.push({
-            order: order,
-            name: name
-          });
-        }
-      }
-    }
-  });
-
-  if (validEntries.length === 0) {
-    document.getElementById('luckyDrawResult').innerHTML =
-      '<div class="no-entries">No valid entries for drawing</div>';
-    return;
-  }
-
-  const randomIndex = Math.floor(Math.random() * validEntries.length);
-  const selectedEntry = validEntries[randomIndex];
-
-  drawnWinners.push(selectedEntry);
-
-  document.getElementById('luckyDrawResult').innerHTML =
-    '<div class="winner-order">' + selectedEntry.order + '</div>' +
-    '<div class="winner-name">' + selectedEntry.name + '</div>';
-
-  const winnersList = document.getElementById('winnersList');
-  if (winnersList) {
-    const winnerElement = document.createElement('div');
-    winnerElement.textContent = selectedEntry.order + '# ' + selectedEntry.name;
-    winnersList.appendChild(winnerElement);
   }
 }

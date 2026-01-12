@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let allSessionTypes = [];
   let allContacts = [];
+  let allProjects = [];
   let allMeetingTypes = {};
   let allMeetingRoles = {};
 
@@ -61,7 +62,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Only fetch edit-related data if the edit button is present (i.e., user is authorized)
   if (editBtn) {
     fetch("/api/data/all")
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then((data) => {
         allSessionTypes = data.session_types;
         allContacts = data.contacts;
@@ -71,10 +77,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Make data available globally for speech_modal.js, which expects them as globals
         window.allProjects = allProjects;
+        window.pathways = data.pathways;
+        window.pathwayMap = data.pathway_mapping;
+        window.groupedPathways = data.pathways;
+        window.ProjectID = data.project_id_constants;
 
         initializeAgendaPage(); // Now that data is loaded, initialize the page
       })
-      .catch((error) => console.error("Error fetching initial data:", error));
+      .catch((error) => {
+        console.error("Error fetching initial data:", error);
+        alert("Warning: Could not load some editing data. You may need to reload the page to edit fully.\n\nError: " + error.message);
+        // Even if data load fails, we MUST initialize the page so buttons work!
+        initializeAgendaPage();
+      });
   } else {
     initializeAgendaPage(); // Initialize for guest view without fetching edit data
   }
@@ -175,7 +190,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateHeaderVisibility(enable);
     updateRowsForEditMode(enable);
     updateActionButtonsVisibility(enable);
-    meetingFilter.disabled = enable;
+    if (meetingFilter) {
+      meetingFilter.disabled = enable;
+    }
     initializeSortable(enable);
     if (enable && geStyleSelect) {
       geStyleSelect.value = geStyleSelect.dataset.currentStyle;

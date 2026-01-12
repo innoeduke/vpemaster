@@ -609,6 +609,17 @@ A single endpoint to fetch all data needed for the agenda modals.
     # Fetch Series Initials from DB
     pathways_db = Pathway.query.filter_by(status='active').all()
     series_initials_db = {p.name: p.abbr for p in pathways_db if p.abbr}
+    
+    # Pathways grouped by type
+    pathways_grouped = {}
+    for p in pathways_db:
+        ptype = p.type or "Other"
+        if ptype not in pathways_grouped:
+            pathways_grouped[ptype] = []
+        pathways_grouped[ptype].append(p.name)
+    
+    # Pathway mapping
+    pathway_mapping = {p.name: p.abbr for p in pathways_db}
 
     return jsonify({
         'session_types': session_types_data,
@@ -616,7 +627,16 @@ A single endpoint to fetch all data needed for the agenda modals.
         'projects': projects_data,
         'series_initials': series_initials_db,
         'meeting_types': current_app.config['MEETING_TYPES'],
-        'meeting_roles': meeting_roles_data
+        'meeting_roles': meeting_roles_data,
+        'pathways': pathways_grouped,
+        'pathway_mapping': pathway_mapping,
+        'project_id_constants': {
+            'GENERIC': ProjectID.GENERIC,
+            'TOPICSMASTER_PROJECT': ProjectID.TOPICSMASTER_PROJECT,
+            'KEYNOTE_SPEAKER_PROJECT': ProjectID.KEYNOTE_SPEAKER_PROJECT,
+            'MODERATOR_PROJECT': ProjectID.MODERATOR_PROJECT,
+            'EVALUATION_PROJECTS': ProjectID.EVALUATION_PROJECTS
+        }
     })
 
 

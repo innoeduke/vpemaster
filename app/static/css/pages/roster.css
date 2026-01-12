@@ -1,370 +1,253 @@
+.roster-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.header-container h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-family: 'Montserrat', sans-serif;
+    color: #333;
+}
+
+.booking-filter-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.filter-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.filter-left i {
+    color: #555;
+}
+
+#meeting-filter {
+    border: none;
+    background: transparent;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    outline: none;
+}
+
 .roster-main-content {
     display: flex;
     flex-direction: row;
-    gap: 20px;
-    /* space between columns */
+    gap: 30px;
     width: 100%;
 }
 
 .roster-table-container {
-    flex: 1 1 auto;
-    /* Adjust width automatically based on content */
+    flex: 1;
     min-width: 0;
-    /* Allow shrinking to fit container */
 }
 
 .roster-table-container table {
-    table-layout: auto;
+    table-layout: fixed;
     width: 100%;
-    min-width: 500px;
-    /* Ensure minimum table width */
 }
 
 .roster-table-container table th,
 .roster-table-container table td {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 0.5rem;
-    box-sizing: border-box;
+    padding: 12px 15px;
+    font-size: 0.95em;
+    vertical-align: middle;
 }
 
-.roster-table-container table th:first-child,
-.roster-table-container table td:first-child {
-    width: 1%;
-    white-space: nowrap;
+/* Explicit widths and alignment */
+.header-order {
+    width: 60px;
+    text-align: center;
 }
 
-.roster-table-container table th:nth-child(2),
-.roster-table-container table td:nth-child(2) {
+.header-name {
     width: auto;
-    min-width: 150px;
 }
 
-.roster-table-container table th:nth-child(3),
-.roster-table-container table td:nth-child(3) {
-    width: auto;
-    min-width: 120px;
+.header-ticket {
+    width: 140px;
 }
 
-.roster-table-container table th:nth-child(4),
-.roster-table-container table td:nth-child(4) {
-    width: auto;
-    min-width: 120px;
+.roster-header-actions {
+    width: 90px;
+    text-align: right;
 }
 
-.roster-table-container table th:last-child,
-.roster-table-container table td:last-child {
-    width: 1%;
+/* Ensure cell content aligns with headers */
+#rosterTable td:first-child {
+    text-align: center;
+    font-weight: 600;
+}
+
+.cell-actions {
+    text-align: right;
     white-space: nowrap;
 }
 
-.roster-form-container {
-    flex: 0 0 auto;
-    /* Adjust based on content, but do not shrink */
-    min-width: 300px;
-    /* Form minimum width */
-    max-width: 400px;
-    /* Form maximum width */
-    align-self: flex-start;
-    /* Align to top */
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    /* Space between cards */
-}
-
+/* Restoring Card and Form Styles */
 .card {
     border: 1px solid #e0e0e0;
-    border-radius: .25rem;
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, .075);
-    height: fit-content;
-    /* Adjust height based on content */
-    min-height: fit-content;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    background-color: #fff;
+    overflow: hidden;
 }
 
 .card-body {
-    padding: 1.25rem;
+    padding: 24px;
 }
 
 .card-title {
-    margin-bottom: 0.75rem;
-}
-
-.form-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-    margin-top: 1rem;
-}
-
-#meeting-filter-form label {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.25rem;
     font-family: 'Montserrat', sans-serif;
+    color: #333;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
 }
 
 #roster-form {
     display: grid;
     grid-template-columns: auto 1fr;
-    gap: 1rem;
+    gap: 15px 20px;
+    /* Row gap 15px, Col gap 20px */
     align-items: center;
 }
 
 #roster-form label {
-    grid-column: 1 / 2;
+    grid-column: 1;
     text-align: right;
     white-space: nowrap;
-    font-family: 'Montserrat', sans-serif;
-}
-
-#roster-form .form-buttons {
-    grid-column: 1 / -1;
-    /* Span all columns */
+    font-weight: 600;
+    color: #555;
+    font-size: 0.9em;
+    justify-self: end;
+    /* Ensure right alignment within the cell */
 }
 
 #roster-form>input,
 #roster-form>select,
 #roster-form>.contact-input-container {
-    grid-column: 2 / 3;
-    min-width: 150px;
+    grid-column: 2;
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+    /* Prevent flex/grid overflow issues */
+}
+
+/* Ensure form controls look consistent even if bootstrap is missing */
+.form-control {
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .contact-input-container {
-    position: relative;
     display: flex;
+    gap: 8px;
     align-items: center;
-    gap: 0.5rem;
+    width: 100%;
+    position: relative;
 }
 
-.contact-input-container #contact_name {
-    flex-grow: 1;
+.contact-input-container input {
+    flex: 1;
     min-width: 0;
 }
 
-#add-contact-btn {
-    flex-shrink: 0;
-    padding: 0.25rem 0.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-#contact_type {
-    margin-bottom: 0.5rem;
-}
-
-/* Lucky draw card styles */
-.lucky-draw-card {
-    margin-top: 20px;
-}
-
-.lucky-draw-grid {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    gap: 15px;
-    height: 100%;
-}
-
-.lucky-draw-top {
-    grid-row: 1;
-}
-
-.lucky-draw-bottom {
-    grid-row: 2;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 15px;
-    align-items: flex-start;
-    /* Changed to top alignment */
-}
-
-.lucky-draw-result {
-    min-height: 150px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
-    border: 1px dashed #ccc;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-    margin: 10px 0;
-}
-
-.placeholder-text {
-    color: #999;
-    font-style: italic;
-}
-
-.no-entries {
-    color: #999;
-    font-style: italic;
-    text-align: center;
-}
-
-.winner-order {
-    font-size: 4rem;
-    font-weight: bold;
-    color: #007bff;
-    line-height: 1;
-}
-
-.winner-name {
-    font-size: 1.5rem;
-    margin-top: 10px;
-    color: #333;
-}
-
-.winners-list {
-    max-height: 150px;
-    overflow-y: auto;
-    border: 1px solid #e0e0e0;
-    border-radius: 5px;
-    padding: 10px;
-    background-color: #f8f9fa;
-}
-
-.winners-list div {
-    padding: 5px 0;
-    border-bottom: 1px solid #eee;
-    font-size: 0.8em;
-    font-family: 'Montserrat', sans-serif;
-}
-
-.winners-list div:last-child {
-    border-bottom: none;
-}
-
-.draw-button-container {
+.form-buttons {
+    grid-column: 1 / -1;
     display: flex;
     justify-content: flex-end;
-    align-items: flex-start;
-    /* Changed to top alignment */
+    gap: 10px;
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #f0f0f0;
 }
 
-@media (max-width: 768px) {
+.roster-form-container {
+    flex: 0 0 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+
+/* Responsive Overrides */
+@media (max-width: 992px) {
     .roster-main-content {
         flex-direction: column;
     }
 
-    .roster-table-container {
-        display: block;
-        width: 100%;
-        max-width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .roster-table-container table {
-        min-width: 0;
-    }
-
-    /* Allow table to display fully by wrapping text */
-    .roster-table-container table th,
-    .roster-table-container table td {
-        white-space: normal;
-        overflow: visible;
-        text-overflow: clip;
-        padding: 0.25rem;
-        font-size: 0.9em;
-        /* Slightly smaller font */
-    }
-
-    /* Remove min-width constraints on Name column */
-    .roster-table-container table th:nth-child(2),
-    .roster-table-container table td:nth-child(2) {
-        min-width: 0;
-        width: auto;
-    }
-
-    /* Make Ticket (3rd) and Actions (last) columns equal width on mobile */
-    .roster-table-container table th:nth-child(3),
-    .roster-table-container table td:nth-child(3),
-    .roster-table-container table th:last-child,
-    .roster-table-container table td:last-child {
-        min-width: 0;
-        width: 22%;
-        /* Increased width */
-        white-space: nowrap;
-        padding-left: 2px;
-        padding-right: 2px;
-        text-align: center;
-    }
-
-    /* Reduce button padding in table for mobile to fit */
-    .roster-table-container table td button {
-        padding: 2px 6px;
-        font-size: 0.9em;
-    }
-
     .roster-form-container {
+        flex: none;
         width: 100%;
-        max-width: 100%;
-        min-width: 0;
     }
 
-    /* Stack form elements on small screens for better usability */
+    .header-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 576px) {
     #roster-form {
         grid-template-columns: 1fr;
     }
 
     #roster-form label {
         text-align: left;
-        grid-column: 1 / -1;
     }
 
-    #roster-form>input,
-    #roster-form>select,
-    #roster-form>.contact-input-container {
-        grid-column: 1 / -1;
-    }
-
-    .form-buttons {
-        justify-content: stretch;
-    }
-
-    .form-buttons .btn {
-        flex: 1;
-    }
-
-    /* Hide text descriptions and separators on mobile */
-    .roster-text,
-    .roster-separator {
-        display: none;
-    }
-
-    /* Adjust icon spacing for mobile */
-    .roster-icon {
-        margin-right: 5px;
-        font-size: 1.1em;
+    .roster-table-container {
+        overflow-x: auto;
     }
 }
 
-/* Desktop styles for icons */
+/* Roster specific utilities */
 .roster-icon {
-    margin-right: 5px;
-    color: #555;
-    display: inline-block;
+    margin-right: 8px;
     width: 20px;
     text-align: center;
 }
 
-/* Icon Colors */
 .roster-color-officer {
     color: #fd7e14;
-    /* Orange */
 }
 
 .roster-color-member {
     color: #0dcaf0;
-    /* Light Blue */
 }
 
 .roster-color-guest {
     color: #198754;
-    /* Green */
 }
 
 .roster-color-unpaid {
     color: #dc3545;
-    /* Red */
 }

@@ -39,7 +39,7 @@
             <span>Agenda</span>
           </a>
         </li>
-        {% if current_user.is_authenticated %}
+        {% if current_user.is_authenticated and has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}">
           <a href="{{ url_for('booking_bp.booking') }}">
             <i class="fas fa-tag nav-icon"></i>
@@ -47,12 +47,14 @@
           </a>
         </li>
         {% endif %}
+        {% if has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('voting_bp') %}active{% endif %}">
           <a href="{{ url_for('voting_bp.voting') }}">
             <i class="fas fa-vote-yea nav-icon"></i>
             <span>Voting</span>
           </a>
         </li>
+        {% endif %}
         {% if is_authorized('CONTACT_BOOK_VIEW') %}
         <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
           <a href="{{ url_for('contacts_bp.show_contacts') }}">
@@ -60,7 +62,8 @@
             <span>Contacts</span>
           </a>
         </li>
-        {% endif %} {% if current_user.is_authenticated %}
+        {% endif %}
+        {% if current_user.is_authenticated and has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
           <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
             <i class="fas fa-tasks nav-icon"></i>
@@ -74,6 +77,14 @@
             <span>Pathway Library</span>
           </a>
         </li>
+        {% if is_authorized('ROSTER_VIEW') %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('lucky_draw_bp') %}active{% endif %}">
+          <a href="{{ url_for('lucky_draw_bp.lucky_draw') }}">
+            <i class="fas fa-gift nav-icon"></i>
+            <span>Lucky Draw</span>
+          </a>
+        </li>
+        {% endif %}
         {% if is_authorized('SETTINGS_VIEW_ALL') %}
         <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
           <a href="{{ url_for('settings_bp.settings') }}">

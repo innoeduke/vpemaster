@@ -57,6 +57,7 @@ def roster():
     selected_meeting = None
     roster_entries = []
     first_unallocated_entry = None
+    next_unallocated_entry = None
     if selected_meeting_num:
         selected_meeting = Meeting.query.filter(
             Meeting.Meeting_Number == selected_meeting_num

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Lucky Draw{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/lucky_draw.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="lucky-draw-container">
+        <h1 class="page-title">Lucky Draw</h1>
+
+        {% if current_meeting %}
+        <div class="meeting-info">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Meeting #{{ current_meeting.Meeting_Number }} - {{ current_meeting.Meeting_Date.strftime('%B %d, %Y')
+                if current_meeting.Meeting_Date else 'No Date' }}</span>
+        </div>
+
+        <div class="draw-controls">
+            <div class="draw-type-selector">
+                <label for="drawType">Draw Type:</label>
+                <select id="drawType" class="draw-type-select">
+                    <option value="all-audience">All Audience</option>
+                    <option value="members">Members Only</option>
+                    <option value="guests">Guests Only</option>
+                    <option value="table-topics">Table Topic Speakers</option>
+                    <option value="full-house">Full House</option>
+                </select>
+            </div>
+
+            <div class="draw-buttons">
+                <button id="resetButton" class="btn btn-secondary reset-button">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+                <button id="drawButton" class="btn btn-primary draw-button">
+                    <i class="fas fa-gift"></i> Draw
+                </button>
+            </div>
+        </div>
+
+        <!-- Winners Wall -->
+        <div class="winners-wall" id="winnersWall">
+            <div class="wall-placeholder">
+                <i class="fas fa-trophy"></i>
+                <p>Winners will appear here</p>
+            </div>
+        </div>
+
+        <!-- Hidden data for JavaScript -->
+        <div id="rosterData" style="display: none;">
+            {% for entry in roster_entries %}
+            <div class="roster-entry" data-order="{{ entry.order_number }}"
+                data-name="{{ entry.contact.Name if entry.contact else 'N/A' }}"
+                data-avatar="{% if entry.contact and entry.contact.Avatar_URL %}{{ url_for('static', filename=entry.contact.Avatar_URL) }}{% endif %}"
+                data-type="{% if entry.contact_type %}{{ entry.contact_type }}{% elif entry.contact and entry.contact.user and entry.contact.user.is_officer %}Officer{% elif entry.contact %}{{ entry.contact.Type }}{% else %}Guest{% endif %}"
+                data-ticket="{{ entry.ticket }}">
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <p class="no-meeting-message">No meeting available for lucky draw.</p>
+        {% endif %}
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/lucky_draw.js') }}"></script>
+{% endblock %}

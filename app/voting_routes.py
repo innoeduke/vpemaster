@@ -169,8 +169,8 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     Returns:
         dict: Context dictionary for template
     """
-    # Only show running and finished meetings for voting
-    upcoming_meetings, default_meeting_num = get_meetings(limit_past=5, status_filter=['running', 'finished'])
+    # Show all recent meetings in the dropdown, even if voting is not yet available for some
+    upcoming_meetings, default_meeting_num = get_meetings(limit_past=5)
 
     if not selected_meeting_number:
         selected_meeting_number = default_meeting_num or (
@@ -186,7 +186,10 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
         'user_role': current_user.Role if current_user.is_authenticated else 'Guest',
         'best_award_ids': set(),
         'has_voted': False,
-        'sorted_role_groups': []
+        'sorted_role_groups': [],
+        'can_track_progress': False,
+        'meeting_rating_score': None,
+        'meeting_feedback_comment': ""
     }
 
     if not selected_meeting_number:
