@@ -1,5 +1,6 @@
 from . import db
 from .constants import ProjectID
+from sqlalchemy import func
 
 
 class Contact(db.Model):
@@ -694,6 +695,19 @@ class Waitlist(db.Model):
     contact = db.relationship('Contact', backref='waitlists')
 
 
+class RosterRole(db.Model):
+    """Junction table for many-to-many relationship between Roster and Role"""
+    __tablename__ = 'roster_roles'
+    id = db.Column(db.Integer, primary_key=True)
+    roster_id = db.Column(db.Integer, db.ForeignKey('roster.id'), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+    
+    # Unique constraint to prevent duplicate role assignments
+    __table_args__ = (
+        db.UniqueConstraint('roster_id', 'role_id', name='uq_roster_role'),
+    )
+
+
 class Roster(db.Model):
     __tablename__ = 'roster'
     id = db.Column(db.Integer, primary_key=True)
@@ -705,6 +719,79 @@ class Roster(db.Model):
     contact_type = db.Column(db.String(50), nullable=True)
 
     contact = db.relationship('Contact', backref='roster_entries')
+    roles = db.relationship('Role', secondary='roster_roles', backref='roster_entries')
+
+    def add_role(self, role):
+        """Add a role to this roster entry if not already assigned"""
+        if not self.has_role(role):
+            self.roles.append(role)
+            return True
+        return False
+
+    def remove_role(self, role):
+        """Remove a role from this roster entry if assigned"""
+        if self.has_role(role):
+            self.roles.remove(role)
+            return True
+        return False
+
+    def has_role(self, role):
+        """Check if this roster entry has the specified role"""
+        return role in self.roles
+
+    def clear_roles(self):
+        """Remove all roles from this roster entry"""
+        self.roles = []
+
+    def get_role_names(self):
+        """Get list of role names for this roster entry"""
+        return [role.name for role in self.roles]
+
+    @staticmethod
+    def sync_role_assignment(meeting_number, contact_id, role_obj, action):
+        """
+        Sync roster role assignments when booking/agenda changes.
+        
+        Args:
+            meeting_number: Meeting number
+            contact_id: Contact ID (or None for unassignment)
+            role_obj: Role object being assigned/unassigned
+            action: 'assign' or 'unassign'
+        """
+        if not contact_id or not role_obj:
+            return
+        
+        # Find roster entry for this contact in this meeting
+        roster_entry = Roster.query.filter_by(
+            meeting_number=meeting_number,
+            contact_id=contact_id
+        ).first()
+        
+        if not roster_entry:
+            if action == 'assign':
+                # Create new roster entry if it doesn't exist
+                max_order = db.session.query(func.max(Roster.order_number)).filter_by(
+                    meeting_number=meeting_number
+                ).scalar() or 0
+                
+                roster_entry = Roster(
+                    meeting_number=meeting_number,
+                    contact_id=contact_id,
+                    order_number=max_order + 1,
+                    contact_type=Contact.query.get(contact_id).Type if contact_id else None
+                )
+                db.session.add(roster_entry)
+            else:
+                # Contact not in roster and we are unassigning - nothing to do
+                return
+        
+        if action == 'assign':
+            # Add role if not already assigned
+            roster_entry.add_role(role_obj)
+        elif action == 'unassign':
+            # Remove role if assigned
+            roster_entry.remove_role(role_obj)
+
 
 
 class Role(db.Model):

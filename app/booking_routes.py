@@ -2,12 +2,13 @@
 
 from .auth.utils import login_required, is_authorized
 from flask import Blueprint, render_template, request, session, jsonify, current_app
-from .models import SessionLog, SessionType, Contact, Meeting, Pathway, PathwayProject, Waitlist, Role
+from .models import SessionLog, SessionType, Contact, Meeting, Pathway, PathwayProject, Waitlist, Role, Roster
 from . import db
 from datetime import datetime
 from sqlalchemy import func
 from .utils import derive_credentials
 from .constants import SessionTypeID
+from .booking_voting_shared import assign_role_owner
 from flask_login import current_user
 
 from .booking_voting_shared import (
@@ -20,6 +21,10 @@ from .booking_voting_shared import (
 )
 
 booking_bp = Blueprint('booking_bp', __name__)
+
+
+
+
 
 
 def _enrich_role_data_for_booking(roles_dict, selected_meeting):
@@ -370,68 +375,26 @@ def book_or_assign_role():
         return jsonify(success=False, message="Invalid action or permissions."), 403
 
     try:
-        owner_contact = Contact.query.get(owner_id_to_set) if owner_id_to_set else None
-        new_credentials = derive_credentials(owner_contact)
-
-        session_type = log.session_type
-        role_obj = session_type.role
-        is_distinct = role_obj.is_distinct
-
-        if is_distinct:
-            sessions_to_update = [log]
-        else:
-            target_role_id = role_obj.id
-            target_owner_id = log.Owner_ID
-            
-            sessions_query = db.session.query(SessionLog)\
-                .join(SessionType, SessionLog.Type_ID == SessionType.id)\
-                .join(Role, SessionType.role_id == Role.id)\
-                .filter(SessionLog.Meeting_Number == log.Meeting_Number)\
-                .filter(Role.id == target_role_id)
-            
-            if target_owner_id is None:
-                sessions_query = sessions_query.filter(SessionLog.Owner_ID.is_(None))
-            else:
-                sessions_query = sessions_query.filter(SessionLog.Owner_ID == target_owner_id)
-            
-            sessions_to_update = sessions_query.all()
-
+        # Use shared service to handle assignment, credential derivation, and roster sync
+        updated_logs = assign_role_owner(log, owner_id_to_set)
+        
         updated_sessions = []
-        for session_log in sessions_to_update:
-            new_path_level = session_log.derive_project_code(owner_contact) if owner_contact else None
-
-            # Auto-Resolution of Project ID from Next_Project
-            if owner_contact and owner_contact.Next_Project and session_log.Type_ID == SessionTypeID.PREPARED_SPEECH:
-                current_path_name = owner_contact.Current_Path
-                if current_path_name:
-                    pathway = Pathway.query.filter_by(name=current_path_name).first()
-                    if pathway and pathway.abbr:
-                        if owner_contact.Next_Project.startswith(pathway.abbr):
-                            code_suffix = owner_contact.Next_Project[len(pathway.abbr):]
-                            
-                            pp = PathwayProject.query.filter_by(
-                                path_id=pathway.id,
-                                code=code_suffix
-                            ).first()
-                            
-                            if pp:
-                                session_log.Project_ID = pp.project_id
-                                new_path_level = owner_contact.Next_Project
-
-            session_log.Owner_ID = owner_id_to_set
-            session_log.project_code = new_path_level
-            session_log.credentials = new_credentials
+        for session_log in updated_logs:
+            # Re-fetch contact to ensure we have latest data
+            contact = Contact.query.get(session_log.Owner_ID) if session_log.Owner_ID else None
             
             updated_sessions.append({
                 'session_id': session_log.id,
-                'owner_id': owner_id_to_set,
-                'owner_name': owner_contact.Name if owner_contact else None,
-                'owner_avatar_url': owner_contact.Avatar_URL if owner_contact else None,
-                'credentials': new_credentials
+                'owner_id': session_log.Owner_ID,
+                'owner_name': contact.Name if contact else None,
+                'owner_avatar_url': contact.Avatar_URL if contact else None,
+                'credentials': session_log.credentials
             })
-
+        
         db.session.commit()
+        
         return jsonify(success=True, updated_sessions=updated_sessions)
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error during booking/assignment: {e}")

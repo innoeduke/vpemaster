@@ -15,6 +15,7 @@ from openpyxl.styles import Font, Alignment
 from io import BytesIO
 from .utils import load_setting, derive_credentials, get_project_code, get_meetings_by_status, load_all_settings, get_excomm_team
 from .tally_sync import sync_participants_to_tally
+from .booking_voting_shared import assign_role_owner
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -167,12 +168,13 @@ def _create_or_update_session(item, meeting_number, seq):
         pathway_val = owner_contact.Current_Path
         
     # --- Create or Update SessionLog ---
+    # Create valid log object first (Owner_ID will be handled by assign_role_owner if needed)
     if item['id'] == 'new':
         new_log = SessionLog(
             Meeting_Number=meeting_number,
             Meeting_Seq=seq,
             Type_ID=type_id,
-            Owner_ID=owner_id,
+            Owner_ID=owner_id, # Set initially, but assign_role_owner will handle logic
             credentials=credentials,
             Duration_Min=duration_min,
             Duration_Max=duration_max,
@@ -183,6 +185,8 @@ def _create_or_update_session(item, meeting_number, seq):
             pathway=pathway_val
         )
         db.session.add(new_log)
+        log = new_log
+        old_owner_id = None
     else:
         log = SessionLog.query.get(item['id'])
         if log:
@@ -192,20 +196,44 @@ def _create_or_update_session(item, meeting_number, seq):
             log.Meeting_Number = meeting_number
             log.Meeting_Seq = seq
             log.Type_ID = type_id
-            log.Owner_ID = owner_id
-            log.credentials = credentials
+            # log.Owner_ID = owner_id # Handled below
+            # log.credentials = credentials # Handled below if owner changes
             log.Duration_Min = duration_min
             log.Duration_Max = duration_max
             log.Project_ID = project_id
             log.Status = status
             if session_title is not None:
                 log.Session_Title = session_title
-            log.project_code = project_code
             
             # Use log.update_pathway for consistent sync logic
-            # Note: For presentations, pathway_val was already potentially overridden to owner.Current_Path above
             if pathway_val:
                 log.update_pathway(pathway_val)
+
+    # Use shared assignment logic if owner changed or it's a new log with an owner
+    if log:
+        should_update_owner = False
+        if item['id'] == 'new' and owner_id:
+            should_update_owner = True
+        elif item['id'] != 'new' and old_owner_id != owner_id:
+             should_update_owner = True
+        
+        # Also update if owner is same but credentials/project_code need refresh?
+        # For now, trust manual credentials unless owner changes. 
+        # But wait, agenda_routes calc credentials manually above (lines 103-107).
+        # assign_role_owner will overwrite them if called.
+        
+        if should_update_owner:
+             assign_role_owner(log, owner_id)
+        else:
+             # If owner didn't change, we still might need to save other fields 
+             # that assign_role_owner updates (like project_code if project_id changed?)
+             # agenda_routes calculated project_code manually above.
+             
+             # Fallback: Just set the fields we calculated manually if NOT calling assign_role_owner
+             log.Owner_ID = owner_id
+             log.credentials = credentials
+             log.project_code = project_code
+
 
 
 def _recalculate_start_times(meetings_to_update):
