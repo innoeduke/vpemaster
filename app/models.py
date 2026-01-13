@@ -1,6 +1,7 @@
 from . import db
 from .constants import ProjectID
 from sqlalchemy import func
+from sqlalchemy.dialects import mysql
 from sqlalchemy.orm import joinedload, subqueryload
 
 
@@ -263,7 +264,7 @@ class Meeting(db.Model):
     __tablename__ = 'Meetings'
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(255), default='Keynote Speech')
-    Meeting_Number = db.Column(db.SmallInteger, unique=True, nullable=False)
+    Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), unique=True, nullable=False)
     Meeting_Date = db.Column(db.Date)
     Meeting_Title = db.Column(db.String(255))
     Subtitle = db.Column(db.String(255), nullable=True)
@@ -363,7 +364,7 @@ class SessionType(db.Model):
 class SessionLog(db.Model):
     __tablename__ = 'Session_Logs'
     id = db.Column(db.Integer, primary_key=True)
-    Meeting_Number = db.Column(db.SmallInteger, db.ForeignKey(
+    Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), db.ForeignKey(
         'Meetings.Meeting_Number'), nullable=False)
     Meeting_Seq = db.Column(db.Integer)
     # For custom titles like speeches

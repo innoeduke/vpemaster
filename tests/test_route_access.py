@@ -91,37 +91,47 @@ class RouteAccessTestCase(unittest.TestCase):
 
     def test_guest_access(self):
         # 1. Unpublished Meeting -> Should be 403 Forbidden
+        # 1. Unpublished Meeting -> Should Redirect to Voting
         response = self.client.get(f'/agenda?meeting_number={self.m_unpublished.Meeting_Number}')
-        self.assertEqual(response.status_code, 403, "Guest accessing unpublished agenda should be 403")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(f'/voting/{self.m_unpublished.Meeting_Number}' in response.location)
         
         # 2. Not Started -> Should be 403 Forbidden (New Restriction)
+        # 2. Not Started -> Should Redirect to Voting
         response = self.client.get(f'/agenda?meeting_number={self.m_not_started.Meeting_Number}')
-        self.assertEqual(response.status_code, 403, "Guest accessing not started agenda should be 403")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(f'/voting/{self.m_not_started.Meeting_Number}' in response.location)
         
         # 3. Running -> 200 OK
         response = self.client.get(f'/agenda?meeting_number={self.m_running.Meeting_Number}')
         self.assertEqual(response.status_code, 200, "Guest accessing running agenda should be 200")
 
         # 4. Finished -> Should be 403 Forbidden (New Restriction)
+        # 4. Finished -> Should Redirect to Voting
         response = self.client.get(f'/agenda?meeting_number={self.m_finished.Meeting_Number}')
-        self.assertEqual(response.status_code, 403, "Guest accessing finished agenda should be 403")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(f'/voting/{self.m_finished.Meeting_Number}' in response.location)
 
         # Booking / Voting / Roster checks
         
-        # Booking Unpublished
+        # Booking Unpublished -> Redirect to Voting
         response = self.client.get(f'/booking/{self.m_unpublished.Meeting_Number}')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(f'/voting/{self.m_unpublished.Meeting_Number}' in response.location)
         
-        # Voting Unpublished
+        # Voting Unpublished -> 200 (Not Started Page)
         response = self.client.get(f'/voting/{self.m_unpublished.Meeting_Number}')
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Voting for Meeting', response.data)
+        self.assertIn(b'is not yet available', response.data)
 
     def test_member_access(self):
         self.login('member@test.com', 'password')
         
-        # Member vs Unpublished -> 403 (unless manager)
+        # Member vs Unpublished -> Redirect to Voting
         response = self.client.get(f'/agenda?meeting_number={self.m_unpublished.Meeting_Number}')
-        self.assertEqual(response.status_code, 403, "Member accessing unpublished agenda should be 403")
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(f'/voting/{self.m_unpublished.Meeting_Number}' in response.location)
 
         # Member vs Not Started -> 200
         response = self.client.get(f'/agenda?meeting_number={self.m_not_started.Meeting_Number}')

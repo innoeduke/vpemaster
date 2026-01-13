@@ -745,11 +745,21 @@ def group_roles_by_category(roles):
     """
     from itertools import groupby
     
+    CATEGORY_PRIORITY = {
+        'speaker': 1,
+        'evaluator': 2,
+        'role-taker': 3,
+        'table-topic': 4,
+        'none': 99
+    }
+    
+    def get_priority(role):
+        cat = role.get('award_category') or 'none'
+        return CATEGORY_PRIORITY.get(cat, 99)
+
     grouped = []
-    # Ensure sorted by category if not already, though caller usually handles sort
-    # groupby expects consecutive keys, so we sort just in case
-    # Taking safe approach to sort by award_category string using a default empty string
-    roles.sort(key=lambda x: x.get('award_category') or "")
+    # Sort roles by priority first, then alphabetical for consistency within same priority (though distinct categories)
+    roles.sort(key=lambda x: (get_priority(x), x.get('award_category') or ""))
     
     for key, group in groupby(roles, key=lambda x: x.get('award_category')):
         grouped.append((key, list(group)))

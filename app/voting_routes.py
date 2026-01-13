@@ -209,12 +209,16 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     # 1. Guests can ONLY access 'running' meetings
     if not current_user.is_authenticated:
         if selected_meeting.status != 'running':
-            from flask import abort
-            abort(403)
+            context['force_not_started'] = True
+            context['selected_meeting'] = selected_meeting
+            context['roles'] = [] # Prevent data leakage
+            return context
 
     if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (current_user.is_authenticated and current_user.is_officer) or is_manager):
-        from flask import abort
-        abort(403)
+        context['force_not_started'] = True
+        context['selected_meeting'] = selected_meeting
+        context['roles'] = [] # Prevent data leakage
+        return context
 
     context['selected_meeting'] = selected_meeting
     

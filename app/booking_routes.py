@@ -7,6 +7,7 @@ from .models import SessionLog, SessionType, Contact, Meeting, Pathway, PathwayP
 from . import db
 from datetime import datetime
 from sqlalchemy import func
+from flask import redirect, url_for
 from .utils import derive_credentials
 from .constants import SessionTypeID
 from .utils import (
@@ -200,13 +201,13 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     # 1. Guests can ONLY access 'running' meetings
     if not user:
         if selected_meeting.status != 'running':
-            from flask import abort
-            abort(403)
+            context['redirect_to_voting'] = True
+            return context
 
     # 2. Unpublished check
     if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (user and user.is_officer) or is_manager):
-        from flask import abort
-        abort(403)
+        context['redirect_to_voting'] = True
+        return context
 
     context['selected_meeting'] = selected_meeting
     context['is_admin_view'] = is_authorized('BOOKING_ASSIGN_ALL', meeting=selected_meeting)
@@ -234,6 +235,10 @@ def booking(selected_meeting_number):
     """Main booking page route."""
     user, current_user_contact_id = get_current_user_info()
     context = _get_booking_page_context(selected_meeting_number, user, current_user_contact_id)
+    
+    if context.get('redirect_to_voting'):
+        return redirect(url_for('voting_bp.voting', selected_meeting_number=selected_meeting_number))
+        
     return render_template('booking.html', **context)
 
 

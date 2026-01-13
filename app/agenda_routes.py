@@ -517,17 +517,16 @@ def agenda():
         from flask_login import current_user
         
         # 1. Guests can ONLY access 'running' meetings
+        # 1. Guests can ONLY access 'running' meetings
         if not current_user.is_authenticated:
             if selected_meeting.status != 'running':
-                from flask import abort
-                abort(403)
+                return redirect(url_for('voting_bp.voting', selected_meeting_number=selected_meeting_num))
 
         # 2. Members can NOT access 'unpublished' (Officers/Managers can)
         if selected_meeting and selected_meeting.status == 'unpublished':
             is_manager = current_user.is_authenticated and current_user.Contact_ID == selected_meeting.manager_id
             if not ((current_user.is_authenticated and current_user.is_officer) or is_manager):
-                from flask import abort
-                abort(403) # Forbidden
+                return redirect(url_for('voting_bp.voting', selected_meeting_number=selected_meeting_num))
 
     # --- Other Data for Template ---
     project_speakers = _get_project_speakers(selected_meeting_num)

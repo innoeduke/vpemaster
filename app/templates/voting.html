@@ -196,7 +196,7 @@
 	{# =============== MAIN VIEW LOGIC =============== #}
 	{# ============================================= #}
 
-	{% if selected_meeting.status not in ['running', 'finished'] %}
+	{% if force_not_started or selected_meeting.status not in ['running', 'finished'] %}
 	<p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Voting for Meeting #{{
 		selected_meeting_number }} is not yet available.</p>
 	<div style="text-align: center; margin-top: 20px;">
