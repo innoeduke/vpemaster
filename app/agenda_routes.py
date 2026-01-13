@@ -15,6 +15,7 @@ from openpyxl.styles import Font, Alignment
 from io import BytesIO
 from .utils import load_setting, derive_credentials, get_project_code, get_meetings_by_status, load_all_settings, get_excomm_team
 from .tally_sync import sync_participants_to_tally
+from .services.role_service import RoleService
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -222,7 +223,7 @@ def _create_or_update_session(item, meeting_number, seq):
         # assign_role_owner will overwrite them if called.
         
         if should_update_owner:
-             SessionLog.assign_role_owner(log, owner_id)
+             RoleService.assign_meeting_role(log, owner_id, is_admin=True)
         else:
              # If owner didn't change, we still might need to save other fields 
              # that assign_role_owner updates (like project_code if project_id changed?)

@@ -695,20 +695,22 @@ class SessionLog(db.Model):
         return True
 
     @classmethod
-    def assign_role_owner(cls, target_log, new_owner_id):
+    def set_owner(cls, target_log, new_owner_id):
         """
-        Assigns an owner to a session log (and related logs if role is not distinct).
-        Updates credentials and project codes.
-        Syncs with Roster.
+        Sets the owner for a session log (and related logs if role is not distinct),
+        updates credentials, and derives project codes.
+        
+        This method DOES NOT sync with Roster or clear Waitlists. 
+        Those side effects are managed by RoleService.
         
         Args:
-            target_log: The SessionLog object to update (or one of them)
+            target_log: The SessionLog object to update
             new_owner_id: ID of the new owner (or None to unassign)
             
         Returns:
             list: List of updated SessionLog objects
         """
-        from .models import SessionType, Role, Contact, Pathway, PathwayProject, Roster, Project
+        from .models import SessionType, Role, Contact, Pathway, PathwayProject
         from .utils import derive_credentials
         from .constants import SessionTypeID
         
@@ -739,9 +741,6 @@ class SessionLog(db.Model):
         # 2. Prepare Data (Credentials, Project Code)
         owner_contact = db.session.get(Contact, new_owner_id) if new_owner_id else None
         new_credentials = derive_credentials(owner_contact)
-        
-        # Capture original owner from the target log (assuming others are consistent)
-        original_owner_id = target_log.Owner_ID
 
         # 3. Update Logs
         for log in sessions_to_update:
@@ -772,16 +771,6 @@ class SessionLog(db.Model):
                                     new_path_level = owner_contact.Next_Project
             
             log.project_code = new_path_level
-
-        # 4. Sync Roster
-        if role_obj:
-            # Handle unassign old
-            if original_owner_id and original_owner_id != new_owner_id:
-                Roster.sync_role_assignment(target_log.Meeting_Number, original_owner_id, role_obj, 'unassign')
-            
-            # Handle assign new
-            if new_owner_id:
-                Roster.sync_role_assignment(target_log.Meeting_Number, new_owner_id, role_obj, 'assign')
 
         return sessions_to_update
 
