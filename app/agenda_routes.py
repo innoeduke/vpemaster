@@ -1096,6 +1096,7 @@ def export_agenda(meeting_number):
     ws2 = wb.create_sheet(title="PowerBI Data")
     ws3 = wb.create_sheet(title="Roster")
     ws4 = wb.create_sheet(title="Participants")
+    ws5 = wb.create_sheet(title="Votes")
 
     # 3. Build Sheets
     _build_sheet1(ws1, logs_data, speech_details_list, pathway_mapping)
@@ -1103,6 +1104,7 @@ def export_agenda(meeting_number):
                           speech_details_list, pathway_mapping)
     _build_sheet3_roster(ws3, meeting_number)
     _build_sheet4_participants(ws4, logs_data)
+    _build_sheet5_votes(ws5, meeting_number)
 
     # 4. Save and Send
     output = io.BytesIO()
@@ -1237,6 +1239,74 @@ def _build_sheet4_participants(ws, logs_data):
     write_group("Table Topics Speakers", data["Table Topics Speakers"], ws)
 
     _auto_fit_worksheet_columns(ws, min_width=15)
+
+
+def _build_sheet5_votes(ws, meeting_number):
+    """Populates Sheet 5 (Votes) of the workbook."""
+    ws.title = "Votes"
+    # Swapped Table Topic and Role Taker
+    headers = ['Best Speaker', 'Best Evaluator', 'Best Table Topic', 'Best Role Taker', 'NPS', 'Feedback']
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    # Fetch all votes for the meeting
+    votes = Vote.query.options(orm.joinedload(Vote.contact)).filter_by(meeting_number=meeting_number).all()
+
+    # Pre-fetch role names for this meeting to enrichment "Best Role Taker"
+    # Mapping: {contact_id: role_name}
+    role_map = {}
+    logs = db.session.query(SessionLog, SessionType).join(SessionType)\
+        .filter(SessionLog.Meeting_Number == meeting_number, SessionLog.Owner_ID.isnot(None)).all()
+    for log, st in logs:
+        role_name = st.Title
+        if st.role:
+            role_name = st.role.name
+        role_map[log.Owner_ID] = role_name
+
+    # Group votes by voter_identifier
+    voter_data = {} # {voter_identifier: {category/question: content}}
+
+    # Question strings from static/js/voting.js
+    NS_QUESTION = "How likely are you to recommend this meeting to a friend or colleague?"
+    FEEDBACK_QUESTION = "More feedback/comments"
+
+    for v in votes:
+        if v.voter_identifier not in voter_data:
+            voter_data[v.voter_identifier] = {}
+        
+        if v.award_category:
+            contact_name = v.contact.Name if v.contact else ""
+            if v.award_category == 'role-taker' and v.contact_id in role_map:
+                voter_data[v.voter_identifier][v.award_category] = f"{role_map[v.contact_id]}: {contact_name}"
+            else:
+                voter_data[v.voter_identifier][v.award_category] = contact_name
+        elif v.question == NS_QUESTION:
+            voter_data[v.voter_identifier]['nps'] = v.score
+        elif v.question == FEEDBACK_QUESTION:
+            voter_data[v.voter_identifier]['feedback'] = v.comments
+
+    # Write rows
+    for voter_id, data in voter_data.items():
+        row = [
+            data.get('speaker', ''),
+            data.get('evaluator', ''),
+            data.get('table-topic', ''),
+            data.get('role-taker', ''),
+            data.get('nps', ''),
+            data.get('feedback', '')
+        ]
+        ws.append(row)
+        
+        # Apply wrapping to feedback column (column 6)
+        cell = ws.cell(row=ws.max_row, column=6)
+        if cell.value:
+            cell.alignment = Alignment(wrap_text=True, vertical='top')
+
+    _auto_fit_worksheet_columns(ws, min_width=15)
+    
+    # Adjust feedback column width specifically if needed
+    ws.column_dimensions['F'].width = 40
 
 
 def _validate_meeting_form_data(form):
