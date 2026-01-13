@@ -541,33 +541,14 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None):
     # --- Mode 2: Default Hybrid Active/Past Logic ---
 
     # Fetch active meetings ('unpublished', 'not started', or 'running')
-    active_statuses = ['not started', 'running']
-    try:
-        from flask_login import current_user
-        if current_user.is_authenticated and current_user.is_officer:
-            active_statuses.append('unpublished')
-    except Exception:
-        pass
+    # Updated: Always include 'unpublished' so list is same for all users
+    active_statuses = ['not started', 'running', 'unpublished']
         
     active_meetings = db.session.query(*query_cols)\
         .filter(Meeting.status.in_(active_statuses))\
         .order_by(Meeting.Meeting_Number.desc()).all()
 
-    # Also include unpublished meetings if current user is the manager
-    try:
-        from flask_login import current_user
-        if current_user.is_authenticated and current_user.Contact_ID:
-            manager_meetings = db.session.query(*query_cols)\
-                .filter(Meeting.status == 'unpublished')\
-                .filter(Meeting.manager_id == current_user.Contact_ID)\
-                .all()
-            # deduplicate
-            existing_nums = {m.Meeting_Number for m in active_meetings}
-            for m in manager_meetings:
-                if m.Meeting_Number not in existing_nums:
-                    active_meetings.append(m)
-    except Exception:
-        pass
+    # Manager check removed as 'unpublished' is now always included
 
     active_meetings.sort(key=lambda m: m.Meeting_Number, reverse=True)
 
@@ -615,6 +596,7 @@ def get_default_meeting_number():
         return running_meeting.Meeting_Number
 
     # 2. Check for next not-started meeting
+    # Updated: Always include 'unpublished' for consistency
     upcoming_priority_statuses = ['not started']
     try:
         from flask_login import current_user
@@ -622,6 +604,7 @@ def get_default_meeting_number():
             upcoming_priority_statuses.append('unpublished')
     except Exception:
         pass
+
     from .models import SessionLog
     upcoming_meeting = Meeting.query \
         .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number) \
@@ -629,7 +612,7 @@ def get_default_meeting_number():
         .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc()) \
         .first()
     
-    # If no meeting found, check if user is a manager of an unpublished meeting
+    # If no meeting found via standard check, check if user is a manager of an unpublished meeting
     if not upcoming_meeting:
         try:
             from flask_login import current_user

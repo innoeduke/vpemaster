@@ -10,27 +10,10 @@ roster_bp = Blueprint('roster_bp', __name__)
 @roster_bp.route('/', methods=['GET'])
 @login_required
 def roster():
-    # Get current meeting logic, same as agenda page
-    next_unallocated_entry = None
-    today = db.func.current_date()
+    # Use shared helper to ensure consistency with Agenda/Booking/Voting
+    from .utils import get_meetings_by_status
+    all_meetings, default_meeting_num = get_meetings_by_status(limit_past=8)
 
-    # Query future meetings
-    future_meetings_q = Meeting.query.filter(
-        Meeting.Meeting_Date >= today
-    )
-
-    # Query recent past meetings
-    past_meetings_q = Meeting.query.filter(
-        Meeting.Meeting_Date < today
-    ).order_by(Meeting.Meeting_Date.desc()).limit(8)
-
-    # Execute queries
-    future_meetings = future_meetings_q.all()
-    past_meetings = past_meetings_q.all()
-
-    # Merge, sort and get meeting numbers
-    all_meetings = sorted(
-        future_meetings + past_meetings, key=lambda m: m.Meeting_Date, reverse=True)
     meeting_numbers = [m.Meeting_Number for m in all_meetings]
 
     selected_meeting_str = request.args.get('meeting_number')
@@ -42,22 +25,18 @@ def roster():
         except ValueError:
             selected_meeting_num = None
     else:
-        # Find the next upcoming meeting
-        upcoming_meeting = Meeting.query\
-            .filter(Meeting.Meeting_Date >= today)\
-            .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc())\
-            .first()
-
-        if upcoming_meeting:
-            selected_meeting_num = upcoming_meeting.Meeting_Number
-        elif meeting_numbers:
-            # Fallback to the most recent existing meeting
+        # Use simple default (running or next upcoming)
+        selected_meeting_num = default_meeting_num
+        
+        # Fallback if no default found but we have meetings (unlikely)
+        if not selected_meeting_num and meeting_numbers:
             selected_meeting_num = meeting_numbers[0]
 
     # Get the selected meeting
     selected_meeting = None
     roster_entries = []
     first_unallocated_entry = None
+    next_unallocated_entry = None
     if selected_meeting_num:
         selected_meeting = Meeting.query.filter(
             Meeting.Meeting_Number == selected_meeting_num
@@ -74,7 +53,7 @@ def roster():
         # Find next available order number (last order number + 1)
         next_unallocated_entry = None
         if roster_entries:
-            valid_orders = [entry.order_number for entry in roster_entries if entry.order_number < 1000]
+            valid_orders = [entry.order_number for entry in roster_entries if entry.order_number is not None and entry.order_number < 1000]
             max_order = max(valid_orders) if valid_orders else 0
             next_unallocated_entry = type('obj', (object,), {'order_number': max_order + 1})()
         else:

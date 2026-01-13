@@ -169,7 +169,7 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     """
     # Show all recent meetings in the dropdown, even if voting is not yet available for some
     upcoming_meetings, default_meeting_num = get_meetings_by_status(
-        limit_past=5, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
+        limit_past=8, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
 
     if not selected_meeting_number:
         selected_meeting_number = default_meeting_num or (
@@ -205,6 +205,13 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     
     # Access control for unpublished meetings
     is_manager = current_user.is_authenticated and current_user.Contact_ID == selected_meeting.manager_id if selected_meeting else False
+    
+    # 1. Guests can ONLY access 'running' meetings
+    if not current_user.is_authenticated:
+        if selected_meeting.status != 'running':
+            from flask import abort
+            abort(403)
+
     if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (current_user.is_authenticated and current_user.is_officer) or is_manager):
         from flask import abort
         abort(403)

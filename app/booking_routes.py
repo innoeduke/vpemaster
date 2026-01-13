@@ -1,6 +1,7 @@
 # vpemaster/booking_routes.py
 
 from .auth.utils import login_required, is_authorized
+from flask_login import current_user
 from flask import Blueprint, render_template, request, session, jsonify, current_app
 from .models import SessionLog, SessionType, Contact, Meeting, Pathway, PathwayProject, Waitlist, Role, Roster
 from . import db
@@ -170,7 +171,7 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     """Gathers all context needed for the booking page template."""
     # Show all recent meetings in the dropdown, even if booking is closed for them
     upcoming_meetings, default_meeting_num = get_meetings_by_status(
-        limit_past=5, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
+        limit_past=8, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
 
     if not selected_meeting_number:
         selected_meeting_number = default_meeting_num or (
@@ -195,6 +196,14 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_number).first()
     
     is_manager = user.Contact_ID == selected_meeting.manager_id if (user and selected_meeting) else False
+    
+    # 1. Guests can ONLY access 'running' meetings
+    if not user:
+        if selected_meeting.status != 'running':
+            from flask import abort
+            abort(403)
+
+    # 2. Unpublished check
     if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (user and user.is_officer) or is_manager):
         from flask import abort
         abort(403)
