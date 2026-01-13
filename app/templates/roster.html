@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/meeting_filter.html" import render_meeting_filter %}
 
 {% block title %}Meeting Roster{% endblock %}
 
@@ -12,20 +13,8 @@
         <div class="header-container" style="flex-direction: column; align-items: flex-start; gap: 10px;">
             <h1>Meeting Roster</h1>
 
-            <div class="booking-filter-container" style="padding: 0; background: none; border: none; box-shadow: none;">
-                <div class="filter-left">
-                    <i class="fas fa-calendar-alt"></i>
-                    <select id="meeting-filter" style="font-size: 1.1em; font-weight: bold; padding: 5px 0;">
-                        {% for meeting in all_meetings %}
-                        <option value="{{ meeting.Meeting_Number }}" {% if selected_meeting_num and
-                            meeting.Meeting_Number==selected_meeting_num %}selected{% endif %}>
-                            #{{ meeting.Meeting_Number }} - {{ meeting.Meeting_Date.strftime('%B %d, %Y') if
-                            meeting.Meeting_Date else 'No Date' }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
+            {{ render_meeting_filter(all_meetings, selected_meeting_num, label=None, data_format='object',
+            extra_style='padding: 0; background: none; border: none; box-shadow: none;') }}
         </div>
     </div>
 

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/meeting_filter.html" import render_meeting_filter %}
 
 {% block title %}Meeting Agenda{% endblock %}
 
@@ -54,17 +55,8 @@
         <div class="action-bar-left">
             <div class="action-bar-left-content" style="display: flex; flex-direction: column; gap: 5px;">
                 {% if meeting_numbers %}
-                <div class="inline-filter-group">
-                    <label for="meeting-filter">Meeting:</label>
-                    <select id="meeting-filter" {% if is_editing %}disabled{% endif %}>
-                        {% for num, date in meeting_numbers|sort(reverse=True) %}
-                        <option value="{{ num }}" {% if selected_meeting and num==selected_meeting.Meeting_Number
-                            %}selected{% endif %}>
-                            #{{ num }} - {{ date.strftime('%B %d, %Y') if date else 'No Date' }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
+                {{ render_meeting_filter(meeting_numbers|sort(reverse=True), selected_meeting.Meeting_Number if
+                selected_meeting else none, is_disabled=is_editing) }}
                 {% endif %}
                 {% if selected_meeting and selected_meeting.manager %}
                 <div class="meeting-manager-display" style="color: #555;">

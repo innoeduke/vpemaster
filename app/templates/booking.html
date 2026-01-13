@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/meeting_filter.html" import render_meeting_filter %}
 
 {% block title %}Role Booking{% endblock %}
 
@@ -34,16 +35,8 @@
     <h3 class="booking-section-header">Booking Roles</h3>
     {% endif %}
     <div class="booking-filter-container">
-        <div class="filter-left">
-            <i class="fas fa-calendar-alt"></i>
-            <select id="meeting-filter">
-                {% for meeting_num, meeting_date in upcoming_meetings | sort(attribute=0, reverse=True) %}
-                <option value="{{ meeting_num }}" {% if meeting_num==selected_meeting_number %}selected{% endif %}>
-                    #{{ meeting_num }} - {{ meeting_date.strftime('%B %d, %Y') if meeting_date else 'No Date' }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
+        {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
+        render_outer_container=False) }}
         <div class="filter-right">
             {#
             {% if is_admin_view %}
