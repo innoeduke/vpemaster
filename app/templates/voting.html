@@ -197,8 +197,8 @@
 	{# ============================================= #}
 
 	{% if selected_meeting.status not in ['running', 'finished'] %}
-	<p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Voting for Meeting #{{
-		selected_meeting_number }} is not yet available.</p>
+	<p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Meeting #{{
+		selected_meeting_number }} is not yet started.</p>
 	<div style="text-align: center; margin-top: 20px;">
 		<img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon"
 			style="max-width: 100%; height: auto; border: 5px solid #c5c5c5; border-radius: 15px;">
