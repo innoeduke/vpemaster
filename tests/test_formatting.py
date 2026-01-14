@@ -1,14 +1,21 @@
 """
 Test script to verify Excel formatting is applied correctly.
 Run this to generate a test Excel file and verify formatting.
+
+This is a manual integration test, not run by pytest.
+Run it directly: python tests/test_formatting.py <meeting_number>
 """
 
 from app import create_app
 from app.services.export.service import MeetingExportService
 import sys
+import pytest
 
-def test_export_formatting(meeting_number):
-    """Test that formatting is applied to exported Excel file."""
+# Skip this file in pytest - it's meant to be run manually
+pytestmark = pytest.mark.skip(reason="Manual integration test - run directly with python")
+
+def export_meeting_for_manual_testing(meeting_number):
+    """Generate Excel export for manual verification."""
     app = create_app()
     
     with app.app_context():
@@ -34,8 +41,9 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         meeting_num = int(sys.argv[1])
     else:
-        print("Usage: python test_formatting.py <meeting_number>")
+        print("Usage: python tests/test_formatting.py <meeting_number>")
         print("Using default meeting number: 1")
         meeting_num = 1
     
-    test_export_formatting(meeting_num)
+    export_meeting_for_manual_testing(meeting_num)
+
