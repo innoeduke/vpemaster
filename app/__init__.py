@@ -94,5 +94,9 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(lucky_draw_bp, url_prefix='/lucky_draw')
         app.register_blueprint(achievements_bp)
 
+    # Register CLI commands
+    from scripts.create_admin import create_admin
+    app.cli.add_command(create_admin)
+
     # 7. Return the configured app instance
     return app
