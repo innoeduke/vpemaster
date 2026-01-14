@@ -45,8 +45,14 @@ def create_app(config_class='config.Config'):
     from .auth.utils import is_authorized
 
     @app.context_processor
-    def inject_authorization():
-        return dict(is_authorized=is_authorized)
+    def inject_global_vars():
+        from .models import Meeting
+        # Check if at least one meeting exists
+        has_meetings = db.session.query(Meeting.id).first() is not None
+        return dict(
+            is_authorized=is_authorized,
+            has_meetings=has_meetings
+        )
 
     # Register Blueprints
     # Imports are *inside* the factory to avoid circular import issues
@@ -62,6 +68,7 @@ def create_app(config_class='config.Config'):
         from .booking_routes import booking_bp
         from .voting_routes import voting_bp
         from .roster_routes import roster_bp
+        from .lucky_draw_routes import lucky_draw_bp
         from .achievements_routes import achievements_bp
 
         # Import models so SQLAlchemy knows about them
@@ -84,7 +91,12 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(booking_bp)
         app.register_blueprint(voting_bp)
         app.register_blueprint(roster_bp, url_prefix='/roster')
+        app.register_blueprint(lucky_draw_bp, url_prefix='/lucky_draw')
         app.register_blueprint(achievements_bp)
+
+    # Register CLI commands
+    from scripts.create_admin import create_admin
+    app.cli.add_command(create_admin)
 
     # 7. Return the configured app instance
     return app

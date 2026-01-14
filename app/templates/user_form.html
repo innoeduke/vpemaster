@@ -7,16 +7,31 @@
     <form method="POST" action="{{ url_for('users_bp.user_form', user_id=user.id) if user else url_for('users_bp.user_form') }}">
         <table class="form-table">
             <tr>
-                <td><label for="contact_id">Link to Contact:</label></td>
+                <td><label for="contact_search">Select contact:</label></td>
                 <td>
-                    <select id="contact_id" name="contact_id">
-                        <option value="0">None</option>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div style="position: relative; flex-grow: 1;">
+                            <input type="text" id="contact_search" placeholder="Search contacts..." 
+                                   value="{% if user and user.contact %}{{ user.contact.Name }}{% endif %}"
+                                   autocomplete="off" style="width: 100%;">
+                            <div id="contact_dropdown" class="autocomplete-suggestions" style="display: none; width: 100%;"></div>
+                        </div>
+                        <input type="hidden" name="contact_id" id="contact_id_hidden" value="{{ user.Contact_ID if user else 0 }}">
+                        {% if not user %}
+                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap;" title="Create new contact">
+                            <input type="checkbox" name="create_new_contact" id="create_new_contact">
+                            <i class="fas fa-user-plus"></i>
+                        </label>
+                        {% endif %}
+                    </div>
+                    <!-- Hidden source for JS to use -->
+                    <script id="contact_data" type="application/json">
+                        [
                         {% for contact in contacts %}
-                            <option value="{{ contact.id }}" {% if user and user.Contact_ID == contact.id %}selected{% endif %}>
-                                {{ contact.Name }}
-                            </option>
+                            {"id": {{ contact.id }}, "name": {{ contact.Name | tojson }}}{% if not loop.last %},{% endif %}
                         {% endfor %}
-                    </select>
+                        ]
+                    </script>
                 </td>
             </tr>
             <tr>
@@ -30,10 +45,13 @@
             <tr>
                 <td><label for="status">Status:</label></td>
                 <td>
-                    <select id="status" name="status" required>
+                    <select id="status" name="status" required {% if not user %}disabled style="background-color: #f0f0f0;"{% endif %}>
                         <option value="active" {% if (user and user.Status == 'active') or not user %}selected{% endif %}>Active</option>
                         <option value="inactive" {% if user and user.Status == 'inactive' %}selected{% endif %}>Inactive</option>
                     </select>
+                    {% if not user %}
+                        <input type="hidden" name="status" value="active">
+                    {% endif %}
                 </td>
             </tr>
             <tr>
@@ -74,4 +92,8 @@
             <a href="{{ url_for('users_bp.show_users') }}" class="btn btn-danger">Cancel</a>
         </div>
     </form>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/user_form.js') }}"></script>
 {% endblock %}

@@ -1,5 +1,8 @@
 from . import db
 from .constants import ProjectID
+from sqlalchemy import func
+from sqlalchemy.dialects import mysql
+from sqlalchemy.orm import joinedload, subqueryload
 
 
 class Contact(db.Model):
@@ -63,7 +66,7 @@ from flask import current_app
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 class User(UserMixin, db.Model):
     __tablename__ = 'Users'
@@ -97,7 +100,7 @@ class User(UserMixin, db.Model):
             user_id = s.loads(token, max_age=expires_sec).get('user_id')
         except:
             return None
-        return User.query.get(user_id)
+        return db.session.get(User, user_id)
 
     def can(self, permission):
         # Local import to avoid circular dependency
@@ -114,7 +117,6 @@ class User(UserMixin, db.Model):
     @property
     def is_officer(self):
         return self.Role in ['Officer', 'Admin', 'VPE']
-
 
 
 class Project(db.Model):
@@ -169,7 +171,7 @@ class Project(db.Model):
         if not pp:
             pp = db.session.query(PathwayProject).filter_by(project_id=self.id).first()
             if pp:
-                path_obj = db.session.query(Pathway).get(pp.path_id)
+                path_obj = db.session.get(Pathway, pp.path_id)
         
         return pp, path_obj
     
@@ -262,7 +264,7 @@ class Meeting(db.Model):
     __tablename__ = 'Meetings'
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(255), default='Keynote Speech')
-    Meeting_Number = db.Column(db.SmallInteger, unique=True, nullable=False)
+    Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), unique=True, nullable=False)
     Meeting_Date = db.Column(db.Date)
     Meeting_Title = db.Column(db.String(255))
     Subtitle = db.Column(db.String(255), nullable=True)
@@ -291,6 +293,57 @@ class Meeting(db.Model):
         'Contact', foreign_keys=[best_role_taker_id])
     media = db.relationship('Media', foreign_keys=[media_id])
 
+    def get_best_award_ids(self):
+        """
+        Gets the set of best award IDs for this meeting.
+        
+        Returns:
+            set: Set of award IDs
+        """
+        return {
+            award_id for award_id in [
+                self.best_table_topic_id,
+                self.best_evaluator_id,
+                self.best_speaker_id,
+                self.best_role_taker_id
+            ] if award_id
+        }
+
+    def delete_full(self):
+        """
+        Deletes the meeting and all associated data in the correct order.
+        Returns:
+            tuple: (success (bool), message (str or None))
+        """
+        try:
+            # 1. Delete Waitlist entries
+            Waitlist.delete_for_meeting(self.Meeting_Number)
+
+            # 2. Delete SessionLog entries
+            SessionLog.delete_for_meeting(self.Meeting_Number)
+
+            # 3. Delete Roster and RosterRole entries
+            Roster.delete_for_meeting(self.Meeting_Number)
+
+            # 4. Delete Vote entries
+            Vote.delete_for_meeting(self.Meeting_Number)
+
+            # 5. Handle Meeting's Media
+            if self.media_id:
+                media_to_delete = self.media
+                self.media_id = None # Break the link first
+                db.session.delete(media_to_delete)
+
+            # 6. Delete the Meeting itself
+            db.session.delete(self)
+            
+            db.session.commit()
+            return True, None
+            
+        except Exception as e:
+            db.session.rollback()
+            return False, str(e)
+
 
 class SessionType(db.Model):
     __tablename__ = 'Session_Types'
@@ -311,7 +364,7 @@ class SessionType(db.Model):
 class SessionLog(db.Model):
     __tablename__ = 'Session_Logs'
     id = db.Column(db.Integer, primary_key=True)
-    Meeting_Number = db.Column(db.SmallInteger, db.ForeignKey(
+    Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), db.ForeignKey(
         'Meetings.Meeting_Number'), nullable=False)
     Meeting_Seq = db.Column(db.Integer)
     # For custom titles like speeches
@@ -477,7 +530,7 @@ class SessionLog(db.Model):
                     if not found_data:
                         pp = PathwayProject.query.filter_by(project_id=self.Project_ID).first()
                         if pp:
-                            path_obj = Pathway.query.get(pp.path_id)
+                            path_obj = db.session.get(Pathway, pp.path_id)
                             if path_obj:
                                 pathway_abbr = path_obj.abbr
                                 display_level = str(pp.level) if pp.level else "1"
@@ -583,7 +636,7 @@ class SessionLog(db.Model):
         current_pathway = self.pathway or (self.owner.Current_Path if self.owner else "N/A")
 
         if self.Project_ID:
-            project = Project.query.get(self.Project_ID)
+            project = db.session.get(Project, self.Project_ID)
             if project:
                 project_name = project.Project_Name
                 
@@ -641,6 +694,125 @@ class SessionLog(db.Model):
         
         return True
 
+    @classmethod
+    def set_owner(cls, target_log, new_owner_id):
+        """
+        Sets the owner for a session log (and related logs if role is not distinct),
+        updates credentials, and derives project codes.
+        
+        This method DOES NOT sync with Roster or clear Waitlists. 
+        Those side effects are managed by RoleService.
+        
+        Args:
+            target_log: The SessionLog object to update
+            new_owner_id: ID of the new owner (or None to unassign)
+            
+        Returns:
+            list: List of updated SessionLog objects
+        """
+        from .models import SessionType, Role, Contact, Pathway, PathwayProject
+        from .utils import derive_credentials
+        from .constants import SessionTypeID
+        
+        # 1. Identify all logs to update (handle is_distinct)
+        session_type = target_log.session_type
+        role_obj = session_type.role if session_type else None
+        
+        sessions_to_update = [target_log]
+        
+        if role_obj and not role_obj.is_distinct:
+            # Find all logs for this role in this meeting
+            target_role_id = role_obj.id
+            current_owner_id = target_log.Owner_ID
+            
+            query = db.session.query(cls)\
+                .join(SessionType, cls.Type_ID == SessionType.id)\
+                .join(Role, SessionType.role_id == Role.id)\
+                .filter(cls.Meeting_Number == target_log.Meeting_Number)\
+                .filter(Role.id == target_role_id)
+            
+            if current_owner_id is None:
+                query = query.filter(cls.Owner_ID.is_(None))
+            else:
+                query = query.filter(cls.Owner_ID == current_owner_id)
+                
+            sessions_to_update = query.all()
+
+        # 2. Prepare Data (Credentials, Project Code)
+        owner_contact = db.session.get(Contact, new_owner_id) if new_owner_id else None
+        new_credentials = derive_credentials(owner_contact)
+
+        # 3. Update Logs
+        for log in sessions_to_update:
+            log.Owner_ID = new_owner_id
+            log.credentials = new_credentials
+            
+            # Project Code Logic
+            new_path_level = None
+            if owner_contact:
+                # Basic derivation
+                new_path_level = log.derive_project_code(owner_contact)
+                
+                # Auto-Resolution from Next_Project for Prepared Speeches
+                # This logic checks if the planned Next_Project matches strict criteria
+                if owner_contact.Next_Project and log.Type_ID == SessionTypeID.PREPARED_SPEECH:
+                    current_path_name = owner_contact.Current_Path
+                    if current_path_name:
+                        pathway = Pathway.query.filter_by(name=current_path_name).first()
+                        if pathway and pathway.abbr:
+                            if owner_contact.Next_Project.startswith(pathway.abbr):
+                                code_suffix = owner_contact.Next_Project[len(pathway.abbr):]
+                                pp = PathwayProject.query.filter_by(
+                                    path_id=pathway.id,
+                                    code=code_suffix
+                                ).first()
+                                if pp:
+                                    log.Project_ID = pp.project_id
+                                    new_path_level = owner_contact.Next_Project
+            
+            log.project_code = new_path_level
+
+        return sessions_to_update
+
+    @classmethod
+    def fetch_for_meeting(cls, selected_meeting_number, meeting_obj=None):
+        """
+        Fetches session logs for a given meeting, filtering by user role access where appropriate.
+        
+        Args:
+            selected_meeting_number: Meeting number to fetch logs for
+            meeting_obj: Optional meeting object for authorization check
+        
+        Returns:
+            list: Session logs with eager-loaded relationships
+        """
+        from .auth.utils import is_authorized
+        
+        query = db.session.query(cls)\
+            .options(
+                joinedload(cls.session_type).joinedload(SessionType.role),
+                joinedload(cls.owner),
+                subqueryload(cls.waitlists).joinedload(Waitlist.contact)
+            )\
+            .join(SessionType, cls.Type_ID == SessionType.id)\
+            .join(Role, SessionType.role_id == Role.id)\
+            .filter(cls.Meeting_Number == selected_meeting_number)\
+            .filter(Role.name != '', Role.name.isnot(None))
+
+        if not is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting_obj):
+            query = query.filter(Role.type != 'officer')
+
+        return query.all()
+
+    @classmethod
+    def delete_for_meeting(cls, meeting_number):
+        """Deletes all session logs for a specific meeting."""
+        logs = cls.query.filter_by(Meeting_Number=meeting_number).all()
+        for log in logs:
+            if log.media:
+                db.session.delete(log.media)
+            db.session.delete(log)
+
 
 class LevelRole(db.Model):
     __tablename__ = 'level_roles'
@@ -693,18 +865,146 @@ class Waitlist(db.Model):
     session_log = db.relationship('SessionLog', backref='waitlists')
     contact = db.relationship('Contact', backref='waitlists')
 
+    @classmethod
+    def delete_for_meeting(cls, meeting_number):
+        """Deletes all waitlist entries associated with a meeting."""
+        # Find session logs for the meeting to identify relevant waitlists
+        session_logs = SessionLog.query.filter_by(Meeting_Number=meeting_number).all()
+        session_log_ids = [log.id for log in session_logs]
+        
+        if session_log_ids:
+            cls.query.filter(cls.session_log_id.in_(session_log_ids)).delete(synchronize_session=False)
+
+
+class RosterRole(db.Model):
+    """Junction table for many-to-many relationship between Roster and Role"""
+    __tablename__ = 'roster_roles'
+    id = db.Column(db.Integer, primary_key=True)
+    roster_id = db.Column(db.Integer, db.ForeignKey('roster.id'), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+    
+    # Unique constraint to prevent duplicate role assignments
+    __table_args__ = (
+        db.UniqueConstraint('roster_id', 'role_id', name='uq_roster_role'),
+    )
+
 
 class Roster(db.Model):
     __tablename__ = 'roster'
     id = db.Column(db.Integer, primary_key=True)
     meeting_number = db.Column(db.Integer, nullable=False)
-    order_number = db.Column(db.Integer, nullable=False)
+    order_number = db.Column(db.Integer, nullable=True)
     ticket = db.Column(db.String(20), nullable=True)
     contact_id = db.Column(db.Integer, db.ForeignKey(
         'Contacts.id'), nullable=True)
     contact_type = db.Column(db.String(50), nullable=True)
 
     contact = db.relationship('Contact', backref='roster_entries')
+    roles = db.relationship('Role', secondary='roster_roles', backref='roster_entries')
+
+    def add_role(self, role):
+        """Add a role to this roster entry if not already assigned"""
+        if not self.has_role(role):
+            self.roles.append(role)
+            return True
+        return False
+
+    def remove_role(self, role):
+        """Remove a role from this roster entry if assigned"""
+        if self.has_role(role):
+            self.roles.remove(role)
+            return True
+        return False
+
+    def has_role(self, role):
+        """Check if this roster entry has the specified role"""
+        return role in self.roles
+
+    def clear_roles(self):
+        """Remove all roles from this roster entry"""
+        self.roles = []
+
+    def get_role_names(self):
+        """Get list of role names for this roster entry"""
+        return [role.name for role in self.roles]
+
+    @classmethod
+    def delete_for_meeting(cls, meeting_number):
+        """Deletes all roster entries and associated roles for a meeting."""
+        rosters = cls.query.filter_by(meeting_number=meeting_number).all()
+        roster_ids = [r.id for r in rosters]
+        
+        if roster_ids:
+            # Delete assignments first
+            RosterRole.query.filter(RosterRole.roster_id.in_(roster_ids)).delete(synchronize_session=False)
+            # Delete roster entries
+            cls.query.filter(cls.id.in_(roster_ids)).delete(synchronize_session=False)
+
+    @staticmethod
+    def sync_role_assignment(meeting_number, contact_id, role_obj, action):
+        """
+        Sync roster role assignments when booking/agenda changes.
+        
+        Args:
+            meeting_number: Meeting number
+            contact_id: Contact ID (or None for unassignment)
+            role_obj: Role object being assigned/unassigned
+            action: 'assign' or 'unassign'
+        """
+        if not contact_id or not role_obj:
+            return
+        
+        # Find roster entry for this contact in this meeting
+        roster_entry = Roster.query.filter_by(
+            meeting_number=meeting_number,
+            contact_id=contact_id
+        ).first()
+        
+        if not roster_entry:
+            if action == 'assign':
+                # Fetch contact details
+                contact = db.session.get(Contact, contact_id)
+                contact_type = contact.Type
+                is_officer = (contact.user and contact.user.is_officer) or contact.Type == 'Officer'
+
+                # Logic for Order Number
+                new_order = None
+                if is_officer:
+                    # Officers get the next available order number starting from 1000
+                    max_order = db.session.query(func.max(Roster.order_number)).filter(
+                        Roster.meeting_number == meeting_number,
+                        Roster.order_number >= 1000
+                    ).scalar()
+                    new_order = (max_order or 999) + 1
+                else:
+                    # Members/Guests get blank order number (None)
+                    new_order = None
+
+                # Logic for Ticket Class
+                ticket_class = "Role Taker" # Default for Guest
+                if is_officer:
+                    ticket_class = "Officer"
+                elif contact_type == 'Member':
+                    ticket_class = "Member"
+
+                roster_entry = Roster(
+                    meeting_number=meeting_number,
+                    contact_id=contact_id,
+                    order_number=new_order,
+                    ticket=ticket_class,
+                    contact_type=contact_type
+                )
+                db.session.add(roster_entry)
+            else:
+                # Contact not in roster and we are unassigning - nothing to do
+                return
+        
+        if action == 'assign':
+            # Add role if not already assigned
+            roster_entry.add_role(role_obj)
+        elif action == 'unassign':
+            # Remove role if assigned
+            roster_entry.remove_role(role_obj)
 
 
 class Role(db.Model):
@@ -739,6 +1039,11 @@ class Vote(db.Model):
     __table_args__ = (
         db.Index('idx_meeting_voter', 'meeting_number', 'voter_identifier'),
     )
+
+    @classmethod
+    def delete_for_meeting(cls, meeting_number):
+        """Deletes all votes for a meeting."""
+        cls.query.filter_by(meeting_number=meeting_number).delete(synchronize_session=False)
 
 
 class Achievement(db.Model):

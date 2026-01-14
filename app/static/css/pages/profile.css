@@ -79,7 +79,7 @@
 
 .form-table td {
 	padding: 12px 10px;
-	vertical-align: top;
+	vertical-align: middle;
 	/* Desktop view will use inherited borders from components/forms.css */
 }
 

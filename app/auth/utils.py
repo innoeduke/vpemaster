@@ -15,6 +15,7 @@ ROLE_PERMISSIONS = {
         "ACHIEVEMENTS_EDIT",
         "VOTING_VIEW_RESULTS",
         "VOTING_TRACK_PROGRESS",
+        "ROSTER_VIEW"
     },
     "VPE": {
         "AGENDA_EDIT",
@@ -25,6 +26,7 @@ ROLE_PERMISSIONS = {
         "SETTINGS_VIEW_ALL",
         "ACHIEVEMENTS_EDIT",
         "VOTING_VIEW_RESULTS",
+        "ROSTER_VIEW"
     },
     "Officer": {
         "AGENDA_VIEW",

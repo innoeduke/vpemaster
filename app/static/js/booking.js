@@ -8,10 +8,14 @@
 document.addEventListener("DOMContentLoaded", function () {
   if (isAdminView) {
     document.querySelectorAll(".admin-assign-select").forEach((select) => {
+      select.addEventListener("focus", function () {
+        // Store the current value to support reverting on error
+        this.dataset.previousValue = this.value;
+      });
       select.addEventListener("change", function () {
         const sessionId = this.dataset.sessionId;
         const contactId = this.value;
-        assignRole(sessionId, contactId);
+        assignRole(sessionId, contactId, this);
       });
     });
   }
@@ -101,7 +105,7 @@ function bookOrCancelRole(sessionId, action) {
 }
 
 
-function assignRole(sessionId, contactId) {
+function assignRole(sessionId, contactId, selectElement) {
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -144,7 +148,17 @@ function assignRole(sessionId, contactId) {
           }
         }
       } else {
-        alert("Error: " + data.message);
+        showFlashMessage(data.message, "error", selectElement); // Display message inline if possible
+
+        // Revert the dropdown if provided
+        if (selectElement && selectElement.dataset.previousValue !== undefined) {
+          selectElement.value = selectElement.dataset.previousValue;
+        } else if (selectElement) {
+          // Fallback: try to match DOM state or reload? 
+          // If we don't have previousValue, we can't easily revert accurately without a fetch.
+          // But we added the focus listener so it should exist.
+          selectElement.value = selectElement.dataset.previousValue || "0";
+        }
       }
     });
 }
@@ -276,13 +290,88 @@ function syncTally() {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        alert("Synced successfully!");
+        showFlashMessage("Synced successfully!", "success");
       } else {
-        alert("Error: " + data.message);
+        showFlashMessage("Error: " + data.message, "error");
       }
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert("An error occurred.");
+      showFlashMessage("An error occurred.", "error");
     });
+}
+
+function showFlashMessage(message, category, targetElement) {
+  let container;
+  let isRowInjection = false;
+
+  if (targetElement) {
+    const row = targetElement.closest('tr');
+    if (row && row.parentNode) {
+      // We will create a new row to show the message below the current row
+      isRowInjection = true;
+
+      // Check if a flash row already exists below this row
+      const nextRow = row.nextElementSibling;
+      if (nextRow && nextRow.classList.contains('flash-message-row')) {
+        nextRow.remove(); // Remove existing to replace/refresh
+      }
+
+      // Create the new row structure
+      const flashRow = document.createElement('tr');
+      flashRow.className = 'flash-message-row';
+      const colCount = row.children.length;
+
+      const cell = document.createElement('td');
+      cell.colSpan = colCount;
+      cell.style.padding = '0'; // Let the div handle padding
+      cell.style.border = 'none';
+
+      container = cell; // We will append the div to this cell
+      flashRow.appendChild(cell);
+
+      // Insert after current row
+      row.parentNode.insertBefore(flashRow, row.nextSibling);
+
+      // Auto-remove row after 5 seconds
+      setTimeout(() => {
+        if (flashRow && flashRow.parentElement) {
+          flashRow.remove();
+        }
+      }, 5000);
+    }
+  }
+
+  // Fallback to global container
+  if (!container) {
+    container = document.querySelector(".flash-messages");
+    if (!container) {
+      container = document.createElement("div");
+      container.className = "flash-messages";
+      document.body.appendChild(container);
+    }
+  }
+
+  // Create the message element
+  const flashDiv = document.createElement("div");
+  flashDiv.className = `flash ${category}`;
+
+  if (isRowInjection) {
+    flashDiv.style.margin = "5px 10px"; // Add some spacing within the row
+    flashDiv.style.borderRadius = "4px";
+  }
+
+  flashDiv.innerHTML = `${message}<span class="close-flash" onclick="this.closest('${isRowInjection ? 'tr' : '.flash'}').remove();">&times;</span>`;
+
+  // Append to container
+  container.appendChild(flashDiv);
+
+  // Auto-remove (global only, row handled above)
+  if (!isRowInjection) {
+    setTimeout(() => {
+      if (flashDiv.parentElement) {
+        flashDiv.remove();
+      }
+    }, 5000);
+  }
 }

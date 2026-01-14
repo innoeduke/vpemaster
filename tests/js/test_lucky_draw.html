@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Lucky Draw Filter Test</title>
+    <style>
+        .pass {
+            color: green;
+            font-weight: bold;
+        }
+
+        .fail {
+            color: red;
+            font-weight: bold;
+        }
+
+        #test-results {
+            font-family: monospace;
+            white-space: pre;
+            background: #f0f0f0;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Lucky Draw Filter Test</h1>
+    <div id="test-results">Running tests...</div>
+
+    <!-- Mock DOM -->
+    <select id="drawType">
+        <option value="all-audience">All Audience</option>
+        <option value="members">Members Only</option>
+        <option value="guests">Guests Only</option>
+        <option value="table-topics">Table Topic Speakers</option>
+        <option value="full-house">Full House</option>
+    </select>
+    <button id="drawButton"></button>
+    <button id="resetButton"></button>
+    <div id="winnersWall"></div>
+    <div id="rosterData">
+        <!-- Ticket=Role-taker, Role=True -->
+        <div class="roster-entry" data-order="1" data-name="Valid Speaker" data-type="Member" data-ticket="Role-taker"
+            data-has-topics-role="true"></div>
+
+        <!-- Ticket=Role-taker, Role=False (Should fail filter) -->
+        <div class="roster-entry" data-order="2" data-name="Invalid Role-taker" data-type="Member"
+            data-ticket="Role-taker" data-has-topics-role="false"></div>
+
+        <!-- Ticket=Guest, Role=True (Should pass filter) -->
+        <div class="roster-entry" data-order="3" data-name="Guest Speaker" data-type="Guest" data-ticket="Guest"
+            data-has-topics-role="true"></div>
+
+        <!-- Ticket=Member, Role=False -->
+        <div class="roster-entry" data-order="4" data-name="Regular Member" data-type="Member" data-ticket="Member"
+            data-has-topics-role="false"></div>
+    </div>
+
+    <script>
+        const logs = [];
+        function log(msg, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${msg}`);
+            logs.push(`<div class="${type}">${msg}</div>`);
+            document.getElementById('test-results').innerHTML = logs.join('');
+        }
+        function assert(condition, message) {
+            if (condition) log(`PASS: ${message}`, 'pass');
+            else log(`FAIL: ${message}`, 'fail');
+        }
+
+        window.onload = function () {
+            setTimeout(() => {
+                if (!window._luckyDrawHooks) {
+                    log("FATAL: _luckyDrawHooks not found", 'fail');
+                    return;
+                }
+
+                const { getFilteredEntries } = window._luckyDrawHooks;
+
+                // Set to table-topics
+                document.getElementById('drawType').value = 'table-topics';
+
+                const entries = getFilteredEntries();
+                const names = entries.map(e => e.name);
+
+                log(`Filtered entries: ${JSON.stringify(names)}`);
+
+                assert(names.includes("Valid Speaker"), "Should include user with topics role");
+                assert(names.includes("Guest Speaker"), "Should include guest with topics role");
+                assert(!names.includes("Invalid Role-taker"), "Should exclude role-taker ticket without explicit role");
+                assert(!names.includes("Regular Member"), "Should exclude regular member");
+
+                if (names.length === 2) {
+                    log("SUCCESS: Correct number of entries returned", 'pass');
+                } else {
+                    log(`FAIL: Expected 2 entries, got ${names.length}`, 'fail');
+                }
+
+            }, 500);
+        };
+    </script>
+    <script src="../../app/static/js/lucky_draw.js"></script>
+</body>
+
+</html>

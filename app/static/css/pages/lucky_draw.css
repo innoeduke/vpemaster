@@ -1,0 +1,338 @@
+.lucky-draw-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 15px;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-family: 'Montserrat', sans-serif;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.meeting-info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    color: #555;
+    margin-bottom: 30px;
+}
+
+.meeting-info i {
+    color: #772432;
+}
+
+.no-meeting-message {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #6c757d;
+    margin-top: 50px;
+}
+
+/* Draw Controls */
+.draw-controls {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    margin-bottom: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.draw-type-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.draw-type-selector label {
+    font-weight: 600;
+    color: #333;
+    font-size: 1rem;
+}
+
+.draw-type-select {
+    padding: 10px 16px;
+    font-size: 1rem;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    background: white;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 200px;
+}
+
+.draw-type-select:hover {
+    border-color: #772432;
+}
+
+.draw-type-select:focus {
+    outline: none;
+    border-color: #772432;
+    box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
+}
+
+.draw-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.reset-button {
+    padding: 12px 28px !important;
+    font-size: 0.95rem !important;
+    font-weight: 600;
+    background: #6c757d;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+    white-space: nowrap;
+    height: auto !important;
+    line-height: normal !important;
+}
+
+.reset-button:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+}
+
+.reset-button:active {
+    transform: translateY(0);
+}
+
+.reset-button i {
+    margin-right: 6px;
+}
+
+.draw-button {
+    padding: 12px 36px !important;
+    font-size: 0.95rem !important;
+    font-weight: 700;
+    background: #772432;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 10px rgba(119, 36, 50, 0.3);
+    white-space: nowrap;
+    height: auto !important;
+    line-height: normal !important;
+}
+
+.draw-button:hover {
+    background: #8e2a3d;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(119, 36, 50, 0.4);
+}
+
+.draw-button:active {
+    transform: translateY(0);
+}
+
+.draw-button i {
+    margin-right: 8px;
+}
+
+/* Winners Wall */
+.winners-wall {
+    min-height: 300px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 30px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 20px;
+    align-content: start;
+}
+
+.wall-placeholder {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: #adb5bd;
+}
+
+.wall-placeholder i {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.wall-placeholder p {
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+/* Winner Tile */
+.winner-tile {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.winner-tile:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.winner-order-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: #fff;
+    color: #772432;
+    font-weight: 800;
+    font-size: 1.3rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.winner-order-badge i {
+    font-size: 1rem;
+}
+
+.winner-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid #772432;
+}
+
+.winner-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-initials {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #772432;
+    user-select: none;
+}
+
+.winner-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+    word-break: break-word;
+}
+
+/* Notification */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.notification-warning {
+    border-left: 4px solid #ffc107;
+    color: #856404;
+}
+
+.notification-info {
+    border-left: 4px solid #17a2b8;
+    color: #0c5460;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .page-title {
+        font-size: 2rem;
+    }
+
+    .draw-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+    }
+
+    .draw-type-selector {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .draw-type-select {
+        width: 100%;
+    }
+
+    .draw-buttons {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .reset-button,
+    .draw-button {
+        width: 100%;
+    }
+
+    .winners-wall {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 15px;
+        padding: 20px;
+    }
+
+    .winner-avatar {
+        width: 80px;
+        height: 80px;
+    }
+
+    .avatar-initials {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .winners-wall {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
+}

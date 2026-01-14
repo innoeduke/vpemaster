@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/meeting_filter.html" import render_meeting_filter %}
 
 {% block title %}Meeting Roster{% endblock %}
 
@@ -8,193 +9,187 @@
 
 {% block content %}
 <div class="container-fluid mt-4">
-    <div class="header-container">
-        <h1>Meeting Roster</h1>
-        
-        <!-- Meeting Selector -->
-        <form method="GET" id="meeting-filter-form" class="mb-3">
-            <div class="form-group">
-                <label for="meeting-filter">Select Meeting:</label>
-                <select name="meeting_number" id="meeting-filter" class="form-control">
-                    {% for meeting in all_meetings %}
-                    <option value="{{ meeting.Meeting_Number }}" {% if selected_meeting_num and meeting.Meeting_Number == selected_meeting_num %}selected{% endif %}>
-                        Meeting {{ meeting.Meeting_Number }} - {{ meeting.Meeting_Date.strftime('%Y-%m-%d') }}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-        </form>
+    <div class="roster-container">
+        <div class="header-container" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+            <h1>Meeting Roster</h1>
+
+            {{ render_meeting_filter(all_meetings, selected_meeting_num, label=None, data_format='object',
+            extra_style='padding: 0; background: none; border: none; box-shadow: none;') }}
+        </div>
     </div>
 
-    {% if selected_meeting %}
-    <div class="roster-main-content">
-        <!-- Left side: Roster table -->
-        <div class="roster-table-container">
-            <table class="table table-striped" id="rosterTable">
-                <thead>
-                    <tr>
-                        <th class="sortable" data-column-index="0">Order</th>
-                        <th class="sortable" data-column-index="1">Name</th>
-                        <th class="sortable" data-column-index="2">Ticket</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for entry in roster_entries %}
-                    <tr data-entry-id="{{ entry.id }}" data-order="{{ entry.order_number }}" data-contact-id="{{ entry.contact_id or '' }}" data-ticket="{{ entry.ticket }}">
-                        <td>{{ entry.order_number }}</td>
-                        <td>
-                            {{ entry.contact.Name if entry.contact else 'N/A' }}
-                            {% if entry.contact_type %}
+    <div class="roster-container">
+        {% if selected_meeting %}
+        <div class="roster-main-content">
+            <!-- Left side: Roster table -->
+            <div class="roster-table-container">
+                <table class="table table-striped" id="rosterTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable header-order" data-column-index="0">Order</th>
+                            <th class="sortable header-name" data-column-index="1">Name</th>
+                            <th class="header-roles">Meeting Roles</th>
+                            <th class="sortable header-ticket" data-column-index="2">Ticket</th>
+                            <th class="roster-header-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in roster_entries %}
+                        <tr data-entry-id="{{ entry.id }}" data-order="{{ entry.order_number }}"
+                            data-contact-id="{{ entry.contact_id or '' }}" data-ticket="{{ entry.ticket }}">
+                            <td>{{ entry.order_number }}</td>
+                            <td class="cell-name">
+                                {{ entry.contact.Name if entry.contact else 'N/A' }}
+                                {% if entry.contact_type %}
                                 {% set c_type = entry.contact_type %}
-                            {% elif entry.contact %}
+                                {% elif entry.contact %}
                                 {% if entry.contact.user and entry.contact.user.is_officer %}
-                                    {% set c_type = 'Officer' %}
+                                {% set c_type = 'Officer' %}
                                 {% else %}
-                                    {% set c_type = entry.contact.Type %}
+                                {% set c_type = entry.contact.Type %}
                                 {% endif %}
-                            {% else %}
+                                {% else %}
                                 {% set c_type = 'Guest' %}
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if c_type == 'Officer' %}
-                                {% set icon_color_class = 'roster-color-officer' %}
-                            {% elif c_type == 'Member' %}
-                                {% set icon_color_class = 'roster-color-member' %}
-                            {% elif c_type == 'Guest' %}
-                                {% set icon_color_class = 'roster-color-guest' %}
-                            {% else %}
-                                {% set icon_color_class = '' %}
-                            {% endif %}
-
-                            {% if entry.ticket == 'Unpaid' %}
-                                {% set icon_color_class = 'roster-color-unpaid' %}
-                            {% endif %}
-
-                            {# Ticket Class Icon with Dynamic Color #}
-                            {% if entry.ticket == 'Early-bird' %}
-                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-dove" title="Early-bird"></i></span>
-                            {% elif entry.ticket == 'Walk-in' %}
-                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-walking" title="Walk-in"></i></span>
-                            {% elif entry.ticket == 'Role-taker' %}
-                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-microphone" title="Role-taker"></i></span>
-                            {% elif entry.ticket == 'Coupon' %}
-                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-tag" title="Coupon"></i></span>
-                            {% elif entry.ticket == 'Unpaid' %}
-                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-exclamation-circle" title="Unpaid"></i></span>
-                            {% elif c_type == 'Officer' %}
-                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-user-shield" title="Officer"></i></span>
-                            {% endif %}
-                            
-                            <span class="roster-text">
-                                {% if c_type == 'Officer' %}
-                                    Officer
-                                {% else %}
-                                    {{ entry.ticket }}
                                 {% endif %}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} edit-entry" data-id="{{ entry.id }}" title="Edit" {% if entry.ticket == 'Cancelled' %}disabled{% endif %}>
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} cancel-entry" data-id="{{ entry.id }}" title="Cancel" {% if entry.ticket == 'Cancelled' %}disabled{% endif %}>
-                                <i class="fas fa-ban"></i>
-                            </button>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    
-                    {# If no entries, display 15 blank rows #}
-                    {% if not roster_entries %}
+                            </td>
+                            <td class="cell-roles">
+                                {% for role in entry.roles %}
+                                <div class="role-item">
+                                    <i class="fas {{ role.icon or 'fa-question-circle' }} fa-fw"
+                                        style="margin-right: 5px; color: #6c757d;"></i>{{ role.name }}
+                                </div>
+                                {% endfor %}
+                            </td>
+                            <td>
+                                {% if c_type == 'Officer' %}
+                                {% set icon_color_class = 'roster-color-officer' %}
+                                {% elif c_type == 'Member' %}
+                                {% set icon_color_class = 'roster-color-member' %}
+                                {% elif c_type == 'Guest' %}
+                                {% set icon_color_class = 'roster-color-guest' %}
+                                {% else %}
+                                {% set icon_color_class = '' %}
+                                {% endif %}
+
+                                {% if entry.ticket == 'Unpaid' %}
+                                {% set icon_color_class = 'roster-color-unpaid' %}
+                                {% endif %}
+
+                                {# Ticket Class Icon with Dynamic Color #}
+                                {% if entry.ticket == 'Early-bird' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-dove"
+                                        title="Early-bird"></i></span>
+                                {% elif entry.ticket == 'Walk-in' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-walking"
+                                        title="Walk-in"></i></span>
+                                {% elif entry.ticket == 'Role-taker' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-microphone"
+                                        title="Role-taker"></i></span>
+                                {% elif entry.ticket == 'Coupon' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-tag"
+                                        title="Coupon"></i></span>
+                                {% elif entry.ticket == 'Unpaid' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-exclamation-circle"
+                                        title="Unpaid"></i></span>
+                                {% elif c_type == 'Officer' %}
+                                <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-user-shield"
+                                        title="Officer"></i></span>
+                                {% endif %}
+
+                                <span class="roster-text">
+                                    {% if c_type == 'Officer' %}
+                                    Officer
+                                    {% else %}
+                                    {{ entry.ticket }}
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td class="cell-actions">
+                                <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} edit-entry"
+                                    data-id="{{ entry.id }}" title="Edit" {% if entry.ticket=='Cancelled' %}disabled{%
+                                    endif %}>
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} cancel-entry"
+                                    data-id="{{ entry.id }}" title="Cancel" {% if entry.ticket=='Cancelled' %}disabled{%
+                                    endif %}>
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        {# If no entries, display 15 blank rows #}
+                        {% if not roster_entries %}
                         {% for i in range(1, 16) %}
                         <tr>
                             <td>{{ i }}</td>
+                            <td class="cell-name"></td>
                             <td></td>
                             <td></td>
                             <td></td>
                         </tr>
                         {% endfor %}
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
-        
-        <!-- Right side: Add/Update form -->
-        <div class="roster-form-container">
-            <div class="card">
-                <div class="card-body">
-                    <form id="roster-form" class="roster-form-grid">
-                        <h3 class="card-title" id="form-title">Add Entry</h3>
-                        <input type="hidden" id="entry-id" value="">
-                        
-                        <label for="order_number">Order Number:</label>
-                        <input type="number" class="form-control" id="order_number" value="1" required>
-                        
-                        <label for="contact_name">Contact Name:</label>
-                        <div class="contact-input-container">
-                            <input type="text" class="form-control" id="contact_name" placeholder="Type to search..." autocomplete="off" required>
-                            <input type="hidden" id="contact_id">
-                            <button class="btn btn-primary" type="button" id="add-contact-btn" title="Add New Contact" onclick="openContactModalWithReferer()">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-
-                        <label for="contact_type">Contact Type:</label>
-                        <select class="form-control" id="contact_type" required>
-                            <option value="">Select Type</option>
-                            <option value="Guest">Guest</option>
-                            <option value="Member">Member</option>
-                            <option value="Officer">Officer</option>
-                        </select>
-
-                        <label for="ticket">Ticket Class:</label>
-                        <select class="form-control" id="ticket" required>
-                            <option value="Early-bird" selected>Early Bird</option>
-                            <option value="Walk-in">Walk-in</option>
-                            <option value="Role-taker">Role Taker</option>
-                            <option value="Officer">Officer</option>
-                            <option value="Coupon">Coupon</option>
-                            <option value="Unpaid">Unpaid</option>
-                        </select>
-
-                        <div class="form-buttons">
-                            <button type="submit" class="btn btn-success">Save</button>
-                            <button type="button" class="btn btn-secondary" id="cancel-edit">Cancel</button>
-                        </div>
-                    </form>
-                </div>
+                        {% endif %}
+                    </tbody>
+                </table>
             </div>
-            
-            <!-- Lucky Draw Card -->
-            <div class="card lucky-draw-card">
-                <div class="card-body">
-                    <div class="lucky-draw-grid">
-                        <div class="lucky-draw-top">
-                            <h3 class="card-title">Lucky Draw</h3>
-                            <div class="lucky-draw-result" id="luckyDrawResult">
-                                <div class="placeholder-text">Click "Draw" to select a winner</div>
+
+            <!-- Right side: Add/Update form -->
+            <div class="roster-form-container">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="roster-form" class="roster-form-grid">
+                            <h3 class="card-title" id="form-title">Add Entry</h3>
+                            <input type="hidden" id="entry-id" value="">
+
+                            <label for="order_number">Order Number:</label>
+                            <input type="number" class="form-control" id="order_number" value="1" required>
+
+                            <label for="contact_name">Contact Name:</label>
+                            <div class="contact-input-container">
+                                <input type="text" class="form-control" id="contact_name"
+                                    placeholder="Type to search..." autocomplete="off" required>
+                                <input type="hidden" id="contact_id">
+                                <button class="btn btn-primary" type="button" id="add-contact-btn"
+                                    title="Add New Contact" onclick="openContactModalWithReferer()">
+                                    <i class="fas fa-plus"></i>
+                                </button>
                             </div>
-                        </div>
-                        <div class="lucky-draw-bottom">
-                            <div class="winners-list" id="winnersList">
-                                <!-- Winners will be listed here -->
+
+                            <label for="contact_type">Contact Type:</label>
+                            <select class="form-control" id="contact_type" required>
+                                <option value="">Select Type</option>
+                                <option value="Guest">Guest</option>
+                                <option value="Member">Member</option>
+                                <option value="Officer">Officer</option>
+                            </select>
+
+                            <label for="ticket">Ticket Class:</label>
+                            <select class="form-control" id="ticket" required>
+                                <option value="Early-bird" selected>Early Bird</option>
+                                <option value="Walk-in">Walk-in</option>
+                                <option value="Role-taker">Role Taker</option>
+                                <option value="Officer">Officer</option>
+                                <option value="Coupon">Coupon</option>
+                                <option value="Unpaid">Unpaid</option>
+                            </select>
+
+                            <div class="form-buttons">
+                                <button type="submit" class="btn btn-success">Save</button>
+                                <button type="button" class="btn btn-secondary" id="cancel-edit">Cancel</button>
                             </div>
-                            <div class="draw-button-container">
-                                <button id="drawButton" class="btn btn-success">Draw</button>
-                            </div>
-                        </div>
+                        </form>
                     </div>
                 </div>
             </div>
         </div>
+
+        {% include '_contact_modal.html' %}
+        {% else %}
+        <p>Please select a meeting to view or manage roster entries.</p>
+        {% endif %}
     </div>
-    
-    {% include '_contact_modal.html' %}
-    {% else %}
-    <p>Please select a meeting to view or manage roster entries.</p>
-    {% endif %}
 </div>
 <script src="{{ url_for('static', filename='js/roster.js') }}"></script>
 {% endblock %}

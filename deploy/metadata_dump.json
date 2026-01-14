@@ -1,0 +1,4515 @@
+{
+  "roles": [
+    {
+      "id": 1,
+      "name": "Toastmaster",
+      "icon": "fa-microphone",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": true
+    },
+    {
+      "id": 2,
+      "name": "General Evaluator",
+      "icon": "fa-search",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 3,
+      "name": "Individual Evaluator",
+      "icon": "fa-pen-square",
+      "type": "standard",
+      "award_category": "evaluator",
+      "needs_approval": false,
+      "is_distinct": true,
+      "is_member_only": false
+    },
+    {
+      "id": 4,
+      "name": "Topicsmaster",
+      "icon": "fa-comments",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 5,
+      "name": "Grammarian",
+      "icon": "fa-book",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": false,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 6,
+      "name": "Timer",
+      "icon": "fa-stopwatch",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": false,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 7,
+      "name": "Ah-Counter",
+      "icon": "fa-calculator",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": false,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 8,
+      "name": "Prepared Speaker",
+      "icon": "fa-user-tie",
+      "type": "standard",
+      "award_category": "speaker",
+      "needs_approval": true,
+      "is_distinct": true,
+      "is_member_only": true
+    },
+    {
+      "id": 9,
+      "name": "Topics Speaker",
+      "icon": "fa-comment",
+      "type": "standard",
+      "award_category": "table-topic",
+      "needs_approval": false,
+      "is_distinct": true,
+      "is_member_only": false
+    },
+    {
+      "id": 10,
+      "name": "Keynote Speaker",
+      "icon": "fa-star",
+      "type": "club-specific",
+      "award_category": "speaker",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 11,
+      "name": "Welcome Officer",
+      "icon": "fa-smile",
+      "type": "club-specific",
+      "award_category": "role-taker",
+      "needs_approval": false,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 12,
+      "name": "Photographer",
+      "icon": "fa-camera",
+      "type": "club-specific",
+      "award_category": "role-taker",
+      "needs_approval": false,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 15,
+      "name": "Election Chair",
+      "icon": "fa-vote-yea",
+      "type": "club-specific",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 16,
+      "name": "Chief Contest Judge",
+      "icon": "fa-gavel",
+      "type": "club-specific",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 17,
+      "name": "Moderator",
+      "icon": "fa-gavel",
+      "type": "club-specific",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 18,
+      "name": "Panelist",
+      "icon": "fa-users",
+      "type": "club-specific",
+      "award_category": "",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 19,
+      "name": "Debate Host",
+      "icon": "fa-comments",
+      "type": "club-specific",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 20,
+      "name": "Debater",
+      "icon": "fa-balance-scale",
+      "type": "club-specific",
+      "award_category": "",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 21,
+      "name": "Club Mentor",
+      "icon": "fa-graduation-cap",
+      "type": "club-specific",
+      "award_category": "",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 22,
+      "name": "Introductory Mentor",
+      "icon": "fa-seedling",
+      "type": "club-specific",
+      "award_category": "",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 23,
+      "name": "SAA",
+      "icon": "fa-door-open",
+      "type": "officer",
+      "award_category": "",
+      "needs_approval": false,
+      "is_distinct": false,
+      "is_member_only": true
+    },
+    {
+      "id": 24,
+      "name": "President",
+      "icon": "fa-gavel",
+      "type": "officer",
+      "award_category": "",
+      "needs_approval": false,
+      "is_distinct": false,
+      "is_member_only": true
+    },
+    {
+      "id": 25,
+      "name": "VPM",
+      "icon": "fa-handshake",
+      "type": "officer",
+      "award_category": "",
+      "needs_approval": false,
+      "is_distinct": false,
+      "is_member_only": true
+    },
+    {
+      "id": 26,
+      "name": "Contest Chair",
+      "icon": "fa-microphone",
+      "type": "club-specific",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 27,
+      "name": "Ballot Counter",
+      "icon": "fa-calculator",
+      "type": "club-specific",
+      "award_category": "role-taker",
+      "needs_approval": false,
+      "is_distinct": false,
+      "is_member_only": false
+    },
+    {
+      "id": 28,
+      "name": "Timer",
+      "icon": null,
+      "type": "meeting",
+      "award_category": null,
+      "needs_approval": false,
+      "is_distinct": false,
+      "is_member_only": false
+    }
+  ],
+  "pathways": [
+    {
+      "id": 1,
+      "name": "Dynamic Leadership",
+      "abbr": "DL",
+      "type": "pathway",
+      "status": "active"
+    },
+    {
+      "id": 2,
+      "name": "Engaging Humor",
+      "abbr": "EH",
+      "type": "pathway",
+      "status": "active"
+    },
+    {
+      "id": 3,
+      "name": "Motivational Strategies",
+      "abbr": "MS",
+      "type": "pathway",
+      "status": "active"
+    },
+    {
+      "id": 4,
+      "name": "Persuasive Influence",
+      "abbr": "PI",
+      "type": "pathway",
+      "status": "active"
+    },
+    {
+      "id": 5,
+      "name": "Presentation Mastery",
+      "abbr": "PM",
+      "type": "pathway",
+      "status": "active"
+    },
+    {
+      "id": 6,
+      "name": "Visionary Communication",
+      "abbr": "VC",
+      "type": "pathway",
+      "status": "active"
+    },
+    {
+      "id": 7,
+      "name": "Distinguished Toastmasters",
+      "abbr": "DTM",
+      "type": "program",
+      "status": "active"
+    },
+    {
+      "id": 8,
+      "name": "Generic",
+      "abbr": "TM",
+      "type": "dummy",
+      "status": "active"
+    },
+    {
+      "id": 9,
+      "name": "Successful Club Series",
+      "abbr": "SC",
+      "type": "presentation",
+      "status": "active"
+    },
+    {
+      "id": 10,
+      "name": "Better Speaker Series",
+      "abbr": "BS",
+      "type": "presentation",
+      "status": "active"
+    },
+    {
+      "id": 11,
+      "name": "Leadership Excellence Series",
+      "abbr": "LE",
+      "type": "presentation",
+      "status": "active"
+    },
+    {
+      "id": 12,
+      "name": "Club Coach Program",
+      "abbr": "CCP",
+      "type": "program",
+      "status": "active"
+    },
+    {
+      "id": 13,
+      "name": "Effective Coaching",
+      "abbr": "EC",
+      "type": "pathway",
+      "status": "inactive"
+    },
+    {
+      "id": 14,
+      "name": "Innovative Planning",
+      "abbr": "IP",
+      "type": "pathway",
+      "status": "inactive"
+    },
+    {
+      "id": 15,
+      "name": "Leadership Development",
+      "abbr": "LD",
+      "type": "pathway",
+      "status": "inactive"
+    },
+    {
+      "id": 16,
+      "name": "Strategic Relationships",
+      "abbr": "SR",
+      "type": "pathway",
+      "status": "inactive"
+    },
+    {
+      "id": 17,
+      "name": "Team Collaboration",
+      "abbr": "TC",
+      "type": "pathway",
+      "status": "inactive"
+    }
+  ],
+  "projects": [
+    {
+      "id": 1,
+      "Project_Name": "Ice Breaker",
+      "Format": "Prepared Speech",
+      "Duration_Min": 4,
+      "Duration_Max": 6,
+      "Introduction": "Ice Breaker (required)\nBEGINNING\nThis project marks the beginning of your Toastmasters journey. It is your opportunity to introduce yourself to the group and share something about yourself.\nCULMINATION\nThis project culminates in you giving a 4- to 6-minute speech, the first one that all Toastmasters present to their clubs.\nAs you work through this project, you will learn how to recognize skills you already have, build upon those skills to foster confidence, and identify areas for improvement.\nYou will learn to distinguish the basic elements of speech structure and utilize rehearsal techniques that balance preparation and spontaneity.",
+      "Overview": "Write and deliver a speech about any topic to introduce yourself to your club. Your speech may be humorous, informational, or any other style that appeals to you.",
+      "Purpose": "The purpose of this project is to introduce yourself to the club and learn the basic structure of a public speech.",
+      "Requirements": "None.",
+      "Resources": ""
+    },
+    {
+      "id": 2,
+      "Project_Name": "Writing a Speech with Purpose",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Writing a Speech with Purpose (required)\nEach speech you deliver during your Toastmasters meetings or outside is a reflection of who you are and what you want to contribute. You may be looking to share information, entertain your audience, persuade or inspire them. Whatever your goal, the first step is to write a speech that has meaning, not only for you, but for every member of your audience. In this project you will learn strategies for selecting a topic, defining a purpose, and producing a well-written and organized speech. You will learn different organizational structures for speeches, and how to create clear transitions between sections of your speech",
+      "Overview": "Select a topic that appeals to you. It can be anything. Be sure your topic is narrow enough to be an effective 5- to 7-minute speech. Clearly define your topic and consider your goal for your speech. Before you organize your speech, identify and express your purpose in a single sentence. Practice your speech and refine its organization. Present your speech at a club meeting.",
+      "Purpose": "The purpose of this project is to learn or review basic methods for writing a speech with a defined purpose and to present a well-organized speech on any topic.",
+      "Requirements": "Defining a general purpose and a specific purpose; Topic and Purpose Worksheet; The Speech Outline Worksheet",
+      "Resources": "This project includes: \n\u25a0 Defining a general purpose and a specific purpose\n\u25a0 Topic and Purpose Worksheet\n\u25a0 The Speech Outline Worksheet\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 3,
+      "Project_Name": "Introduction to Vocal Variety and Body Language",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Introduction to Vocal Variety (required)\nYou hold within you the most powerful tools to succeed as a public speaker. Recognizing when to raise or lower your voice, how to use silence to add impact, and the power of movement and gestures to leave an impression on an audience are fundamental skills that when developed can bring any type of content to life. With time and practice, every Toastmaster can become skilled at using their voice, gestures, and body language to inspire an audience",
+      "Overview": "Learn or review the importance of vocal variety and body language. Present a 5- to 7-minute speech on any topic at a club meeting. The primary focus of the evaluation is your vocal variety or your body language and gestures. You will identify the skills you are working on for your evaluator before you deliver your speech and be evaluated on those skills. Your speech can be persuasive, humorous, informational, or crafted in any style that appeals to you and supports your speech content.",
+      "Purpose": "The purpose of this project is to practice using vocal variety or body language to enhance a speech.",
+      "Requirements": "None.",
+      "Resources": "This project includes: \n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 4,
+      "Project_Name": "Evaluation and Feedback-First Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Evaluation and Feedback (required)\nIn this project, you will learn strategies to effectively receive feedback and apply it to improve your public speaking and leadership skills. You will also learn how to deliver tactful and constructive feedback. You will gain an understanding of how to identify the type of feedback an individual requires and expects, the importance of using positive language in feedback, and the difference between feedback and advice.",
+      "Overview": "This project includes two 5- to 7-minute speeches. Choose any topic for your first Evaluation and Feedback speech. After your speech, carefully review the feedback you received from your evaluator. At a future club meeting, present your second Evaluation and Feedback speech. You may create a new speech, revise your first Evaluation and Feedback speech, or present your first Evaluation and Feedback speech again if you are focusing on feedback you received on how you delivered your first Evaluation and Feedback speech. Your second speech should reflect some or all of the feedback you received after your first Evaluation and Feedback speech. Finally, after you have completed both speeches, serve as an evaluator at a club meeting and deliver constructive feedback about another member\u2019s presentation.",
+      "Purpose": "The purpose of this project is to practice applying feedback and serve as a speech evaluator during a club meeting.",
+      "Requirements": "Speech Evaluator: Serve as a speech evaluator",
+      "Resources": "This project includes: \n\u25a0 Speech one: A 5- to 7-minute speech on any topic\n\u25a0 Speech two: A 5- to 7-minute speech on any topic, that incorporating at least some of the feedback received from speech one. This may be the same speech as speech one, a revision of that speech, or an entirely new speech depending on feedback and your goals.\n\u25a0 Speech Evaluator: Serve as a speech evaluator"
+    },
+    {
+      "id": 5,
+      "Project_Name": "Evaluation and Feedback-Second Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Evaluation and Feedback (required)\nIn this project, you will learn strategies to effectively receive feedback and apply it to improve your public speaking and leadership skills. You will also learn how to deliver tactful and constructive feedback. You will gain an understanding of how to identify the type of feedback an individual requires and expects, the importance of using positive language in feedback, and the difference between feedback and advice.",
+      "Overview": "This project includes two 5- to 7-minute speeches. Choose any topic for your first Evaluation and Feedback speech. After your speech, carefully review the feedback you received from your evaluator. At a future club meeting, present your second Evaluation and Feedback speech. You may create a new speech, revise your first Evaluation and Feedback speech, or present your first Evaluation and Feedback speech again if you are focusing on feedback you received on how you delivered your first Evaluation and Feedback speech. Your second speech should reflect some or all of the feedback you received after your first Evaluation and Feedback speech. Finally, after you have completed both speeches, serve as an evaluator at a club meeting and deliver constructive feedback about another member\u2019s presentation.",
+      "Purpose": "The purpose of this project is to practice applying feedback and serve as a speech evaluator during a club meeting.",
+      "Requirements": "Speech Evaluator: Serve as a speech evaluator",
+      "Resources": "This project includes: \n\u25a0 Speech one: A 5- to 7-minute speech on any topic\n\u25a0 Speech two: A 5- to 7-minute speech on any topic, that incorporating at least some of the feedback received from speech one. This may be the same speech as speech one, a revision of that speech, or an entirely new speech depending on feedback and your goals.\n\u25a0 Speech Evaluator: Serve as a speech evaluator"
+    },
+    {
+      "id": 6,
+      "Project_Name": "Evaluation and Feedback-Individual Evaluation",
+      "Format": "Evaluation",
+      "Duration_Min": 2,
+      "Duration_Max": 3,
+      "Introduction": "Evaluation and Feedback (required)\nIn this project, you will learn strategies to effectively receive feedback and apply it to improve your public speaking and leadership skills. You will also learn how to deliver tactful and constructive feedback. You will gain an understanding of how to identify the type of feedback an individual requires and expects, the importance of using positive language in feedback, and the difference between feedback and advice.",
+      "Overview": "This project includes two 5- to 7-minute speeches. Choose any topic for your first Evaluation and Feedback speech. After your speech, carefully review the feedback you received from your evaluator. At a future club meeting, present your second Evaluation and Feedback speech. You may create a new speech, revise your first Evaluation and Feedback speech, or present your first Evaluation and Feedback speech again if you are focusing on feedback you received on how you delivered your first Evaluation and Feedback speech. Your second speech should reflect some or all of the feedback you received after your first Evaluation and Feedback speech. Finally, after you have completed both speeches, serve as an evaluator at a club meeting and deliver constructive feedback about another member\u2019s presentation.",
+      "Purpose": "The purpose of this project is to practice applying feedback and serve as a speech evaluator during a club meeting.",
+      "Requirements": "Speech Evaluator: Serve as a speech evaluator",
+      "Resources": "This project includes: \n\u25a0 Speech one: A 5- to 7-minute speech on any topic\n\u25a0 Speech two: A 5- to 7-minute speech on any topic, that incorporating at least some of the feedback received from speech one. This may be the same speech as speech one, a revision of that speech, or an entirely new speech depending on feedback and your goals.\n\u25a0 Speech Evaluator: Serve as a speech evaluator"
+    },
+    {
+      "id": 7,
+      "Project_Name": "Know Your Sense of Humor",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Know your sense of humor (elective)",
+      "Overview": "Give a 5- to 7-minute speech on a topic of your choosing. Your speech should include at least one anecdote or story intended to entertain or bring humor into your presentation.",
+      "Purpose": "The purpose of this project is to begin developing a collection of humorous stories and to present a speech that includes humor.",
+      "Requirements": "None",
+      "Resources": ""
+    },
+    {
+      "id": 8,
+      "Project_Name": "Understanding Your Communication Style",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Understanding Your Communication Style (required)\nThis project focuses on recognizing your preferred communication style and understanding how your style impacts your interactions with others.",
+      "Overview": "Complete the Discover Your Communication Style questionnaire to help you identify your style. Deliver a 5- to 7-minute speech at a club meeting about your communication style and its impact on your professional and&#x2F;or personal relationships. If you are uncomfortable discussing your communication style, you may speak about the communication styles you have encountered and how they impact you. Your speech should not be a report of the content of this project.",
+      "Purpose": "The purpose of this project is to learn about different communication styles and identify your primary style.",
+      "Requirements": "The Discover Your Communication Style questionnaire",
+      "Resources": "This project includes: \n\u25a0 The Discover Your Communication Style questionnaire\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 9,
+      "Project_Name": "Understanding Your Leadership Style",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Understanding Your Leadership Style (required)\nThis project is designed to introduce the different styles of leadership and help you identify your preferred style.\n",
+      "Overview": "Complete the Discover Your Leadership Style questionnaire. Consider how your leadership style impacts the people around you and how you can adjust it to more effectively lead people with styles different from your own. Deliver a 5- to 7-minute speech at a club meeting to share some aspect of your leadership style or leadership styles in general. You may choose to discuss your style preferences when working with others, your style and how you can adapt it to situations, or leadership styles in general and how they impact a group.",
+      "Purpose": "The purpose of this project is to identify your primary leadership style or styles.",
+      "Requirements": "The Discover Your Leadership Style questionnaire",
+      "Resources": "This project includes: \n\u25a0 The Discover Your Leadership Style questionnaire\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 10,
+      "Project_Name": "Active Listening",
+      "Format": "Table Topic",
+      "Duration_Min": 20,
+      "Duration_Max": 30,
+      "Introduction": "Active Listening (elective)\nThis project covers the difference between hearing and listening, and steps for exploring the ways listening helps build strong, lasting connections.",
+      "Overview": "At a club meeting, fulfill the role of Topicsmaster. As Topicsmaster, comment on each speaker\u2019s Table Topics\u00ae speech to demonstrate your active listening skills. For example, you might say, \u201cThank you. That was a compelling opinion on the benefits of gardening. I understand you feel strongly that everyone needs to spend some time doing something they love.",
+      "Purpose": "The purpose of this project is to demonstrate your ability to listen to what others say.",
+      "Requirements": "Serving as Topicsmaster at a club meeting",
+      "Resources": "This project includes: \n\u25a0 Serving as Topicsmaster at a club meeting"
+    },
+    {
+      "id": 11,
+      "Project_Name": "Connect with Your Audience",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Connect with Your Audience (elective)\nThis project focuses on different audience types and how to address them effectively.",
+      "Overview": "Develop a 5- to 7-minute speech on a topic that is unfamiliar to the majority of your audience. Because you deliver this speech in your Toastmasters club, you are familiar with the audience members\u2019 preferences and personalities. Selecting a topic that is new or unfamiliar to your club members will allow you to practice adapting as you present. As you speak, monitor the audience\u2019s reaction to your topic and adapt as necessary to maintain engagement.",
+      "Purpose": "The purpose of this project is to practice the skills needed to connect with an unfamiliar audience.",
+      "Requirements": "",
+      "Resources": "This project includes: \n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 12,
+      "Project_Name": "Effective Body Language",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Effective Body Language (required)\nThis project focuses on how to recognize body language used when speaking publicly and how to use gestures to enhance speech content.",
+      "Overview": "Prepare a 5- to 7-minute speech on a topic that lends itself to expression through your movement and gestures. Video record your presentation and get feedback from your mentor or another reviewer before speaking to your club. If you do not have access to a recording device, perform your speech in front of a mirror and make adjustments before your scheduled speech.",
+      "Purpose": "The purpose of this project is to deliver a speech with awareness of your intentional and unintentional body language, as well as to learn, practice, and refine how you use nonverbal communication when delivering a speech.",
+      "Requirements": "\u25a0 A 5- to 7-minute speech",
+      "Resources": "https://www.youtube.com/watch?v=ZK3jSXYBNak\n\n<iframe width=\"560\" height=\"315\" src=\"https://www.youtube.com/embed/eOoCe3An4VE?si=1t6Y5n9_VA6Qk0yZ\" title=\"YouTube video player\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></i"
+    },
+    {
+      "id": 13,
+      "Project_Name": "Introduction to Toastmasters Mentoring",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Introduction to Toastmasters Mentoring (required)\nThis project introduces the value of mentorship and the Toastmasters view of mentors and prot\u00e9g\u00e9s.",
+      "Overview": "Write and present a 5- to 7-minute speech about a time when you were a prot\u00e9g\u00e9. Share the impact and importance of having a mentor. This speech is not a report on the content of this project.",
+      "Purpose": "The purpose of this project is to clearly define how Toastmasters envisions mentoring.",
+      "Requirements": "None",
+      "Resources": "This project includes: \n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 14,
+      "Project_Name": "Develop a Communication Plan",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Develop a Communication Plan (required)\nThis project focuses on how to formulate a central message and develop a communication plan for a target audience.",
+      "Overview": "Develop a communication plan for any event or situation. The plan may be for a real or hypothetical need. At a club meeting, present a 5- to 7-minute speech about your experience. You may choose to speak about the planning process, the benefits of developing a plan, or the impact of your plan if you implemented it. Show your vice president education your completed plan to receive credit for this project.",
+      "Purpose": "The purpose of this project is to practice developing a communication plan.",
+      "Requirements": "Developing a communication plan; The Write a Communication Plan resource",
+      "Resources": "This project includes: \n\u25a0 Developing a communication plan\n\u25a0 The Write a Communication Plan resource\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 15,
+      "Project_Name": "Engage Your Audience with Humor",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Engage Your Audience with Humor (required)",
+      "Overview": "",
+      "Purpose": "The purpose of this project is for the member to determine their style of humor and apply it to a speech that centers around a central message.",
+      "Requirements": "",
+      "Resources": ""
+    },
+    {
+      "id": 16,
+      "Project_Name": "Negotiate the Best Outcome",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Negotiate the Best Outcome (required)\nThis project focuses on identifying negotiation styles, engaging in mutually beneficial discussions, and finding and building common ground.\n\n",
+      "Overview": "Develop a 5- to 7-minute speech about a past or upcoming negotiation in your life. The negotiation must be one that you have participated in or will participate in. You may choose to reflect on the strategies you used or those that you believe would be the most beneficial in the future. Your speech can be persuasive, humorous, informational, or crafted in any style that appeals to you and supports your speech content.",
+      "Purpose": "The purpose of this project is to learn about different types of negotiation and the strategies that can be used when negotiating.",
+      "Requirements": "Analyzing a past or future negotiation in your life; The Negotiation Goal Setting resource",
+      "Resources": "This project includes: \n\u25a0 Analyzing a past or future negotiation in your life\n\u25a0 The Negotiation Goal Setting resource\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 17,
+      "Project_Name": "Persuasive Speaking",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Persuasive Speaking (required)\nThis project focuses on helping you to develop and support a viewpoint, and identify the most appropriate type of persuasive speech for your topic.\n",
+      "Overview": "Choose any topic that lends itself to speaking persuasively and prepare a speech. Present your 5- to 7-minute speech at a club meeting. If your vice president education approves a non-club event or group, your evaluator must be present for your speech.",
+      "Purpose": "The purpose of this project is to understand the types of persuasive speeches and deliver a persuasive speech at a club meeting.",
+      "Requirements": "The Persuasive Speech Outline Worksheet",
+      "Resources": "This project includes: \n\u25a0 The Persuasive Speech Outline Worksheet\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 18,
+      "Project_Name": "Understanding Conflict Resolution",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Understanding Conflict Resolution (required)\nThis project is designed to introduce conflict resolution strategies and provide an opportunity to resolve a conflict scenario within an interactive activity.",
+      "Overview": "Complete the conflict resolution video activity in the project. Prepare a 5- to 7-minute speech to discuss how you manage conflict, how you can develop a stronger strategy, and your best attributes in a conflict situation. You may also share the impact of the video activity. Your speech may be humorous, informational, or any style that appeals to you. This project is not a report on or a critique of the content of this project.",
+      "Purpose": "The purpose of this project is to develop or enhance your understanding of the steps and strategies to address conflict.",
+      "Requirements": "A conflict resolution video activity",
+      "Resources": "This project includes: \n\u25a0 A conflict resolution video activity\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 19,
+      "Project_Name": "Understanding Emotional Intelligence",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Understanding Emotional Intelligence (required)\nThis project addresses elements of emotional intelligence. It is designed to help you understand your own emotions and the emotions of others.",
+      "Overview": "For a minimum of two weeks, keep a journal about your emotions and how they impact you and others. Discuss the impact of tracking your emotions in a 5- to 7-minute speech at a club meeting. (Note: You are not required to share the intimacies of your experience.) Finally, submit the signed Project Completion Form to your vice president education to indicate you completed your journal.",
+      "Purpose": "The purpose of this project is to cultivate an understanding of how your emotions impact your relationships. It is also designed to help you identify how others\u2019 emotions impact your emotional state.",
+      "Requirements": "A journal you maintain for a minimum of two weeks; The Project Completion Form",
+      "Resources": "This project includes: \n\u25a0 A journal you maintain for a minimum of two weeks\n\u25a0 The Project Completion Form\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 20,
+      "Project_Name": "Connect with Storytelling",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Connect with Storytelling (elective)\nThis project addresses storytelling techniques and descriptive skills to help make every speech relatable and interesting.",
+      "Overview": "Choose an established story, a story about your life, or a fictional tale of your own creation. Deliver the 5- to 7-minute speech at a club meeting.",
+      "Purpose": "The purpose of this project is to practice using a story within a speech or giving a speech that is a story.",
+      "Requirements": "",
+      "Resources": "This project includes: \n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 21,
+      "Project_Name": "Creating Effective Visual Aids",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Creating Effective Visual Aids (elective)\nThis project addresses effective methods for choosing the best visual aid for your presentation along with the creation and use of each type.",
+      "Overview": "Choose a speech topic that lends itself well to using visual aids. Create at least one but no more than three visual aids to enhance your presentation. Deliver your 5- to 7-minute presentation at a club meeting.",
+      "Purpose": "The purpose of this project is to practice selecting and using a variety of visual aids during a speech.",
+      "Requirements": "Creating one to three visual aids",
+      "Resources": "This project includes: \n\u25a0 Creating one to three visual aids\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 22,
+      "Project_Name": "Deliver Social Speeches-FIRST SPEECH",
+      "Format": "Prepared Speech",
+      "Duration_Min": 3,
+      "Duration_Max": 4,
+      "Introduction": "Deliver Social Speeches (elective)\nThis project addresses the skills needed to compose a speech for a social occasion including a toast, eulogy, an acceptance speech and a speech praising an individual or group.",
+      "Overview": "Develop two different social speeches\u2014each 3 to 4 minutes\u2014and present them at two separate club meetings. You may choose any two types of social speeches that appeal to you or that you would like to practice.",
+      "Purpose": "The purpose of this project is to practice delivering social speeches in front of your club members.",
+      "Requirements": "The Social Speech Basics resource",
+      "Resources": "This project includes: \n\u25a0 The Social Speech Basics resource\n\u25a0 Two 3- to 4-minute speeches"
+    },
+    {
+      "id": 23,
+      "Project_Name": "Deliver Social Speeches-SECOND SPEECH",
+      "Format": "Prepared Speech",
+      "Duration_Min": 3,
+      "Duration_Max": 4,
+      "Introduction": "Deliver Social Speeches (elective)\nThis project addresses the skills needed to compose a speech for a social occasion including a toast, eulogy, an acceptance speech and a speech praising an individual or group.",
+      "Overview": "Develop two different social speeches\u2014each 3 to 4 minutes\u2014and present them at two separate club meetings. You may choose any two types of social speeches that appeal to you or that you would like to practice.",
+      "Purpose": "The purpose of this project is to practice delivering social speeches in front of your club members.",
+      "Requirements": "The Social Speech Basics resource",
+      "Resources": "This project includes: \n\u25a0 The Social Speech Basics resource\n\u25a0 Two 3- to 4-minute speeches"
+    },
+    {
+      "id": 24,
+      "Project_Name": "Focus on the Positive",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Focus on the Positive (elective)\nThis project addresses strategies for improving your personal interactions by understanding the impact of your attitudes and thoughts on daily interactions.",
+      "Overview": "Keep a daily record of your moods and attitudes for a minimum of two weeks, noting when you feel positive or negative, your successes and efforts, and three things for which you are grateful. Record and evaluate any changes in your behavior or the behavior of those around you. At a club meeting, share some aspect of your experience. You may choose to schedule a 2-to 3-minute report or a 5-to 7-minute speech. After completing your speech, submit your signed Project Completion Form to your vice president education to indicate you completed the journal.",
+      "Purpose": "The purpose of this project is to practice being aware of your thoughts and feelings, as well as the impact of your responses on others.",
+      "Requirements": "Recording your daily moods and attitudes for a minimum of two weeks; The Project Completion Form",
+      "Resources": "This project includes: \n\u25a0 Recording your daily moods and attitudes for a minimum of two weeks\n\u25a0 A 2- to 3-minute report or a 5- to 7-minute speech\n\u25a0 The Project Completion Form"
+    },
+    {
+      "id": 25,
+      "Project_Name": "Inspire Your Audience",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Inspire Your Audience (elective)\nThis project addresses how to present a speech in an enthusiastic and inspiring fashion to establish a strong rapport with your audience.",
+      "Overview": "Select a topic with the intent of inspiring your audience and prepare a 5- to 7-minute speech for your club.",
+      "Purpose": "The purpose of this project is to practice writing and delivering a speech that inspires others.",
+      "Requirements": "",
+      "Resources": "This project includes: \n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 26,
+      "Project_Name": "Make Connections Through Networking",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Make Connections Through Networking (elective)\nThis project focuses on how to network effectively and understanding the importance of being a professional ally to people in your network.\n",
+      "Overview": "Prepare for and attend a networking event. After the event, present a 5- to 7-minute speech to your club. Your speech can include a story or stories about your experience, a description of what you learned, or a discussion on the benefits of networking. Your speech may be personal to you or informational about networking. If you attend a non-Toastmasters event, you must sign the Project Completion Form and give it to your vice president education.",
+      "Purpose": "The purpose of this project is to develop and practice a personal strategy for building connections through networking.",
+      "Requirements": "The Prepare to Network resource; Attending a networking event; The Project Completion Form",
+      "Resources": "This project includes: \n\u25a0 The Prepare to Network resource\n\u25a0 Attending a networking event\n\u25a0 The Project Completion Form\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 27,
+      "Project_Name": "Prepare for an Interview",
+      "Format": "Role-Play Interview",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Prepare for an Interview (elective)\nThis project addresses the skills you need to identify and speak about personal strengths and present yourself well in an interview of any type.\n",
+      "Overview": "Determine which type of interview you would like to practice, such as a job or expert interview. Prepare by reviewing your skills and abilities. Complete the resources in the project and give them to your interviewer before your presentation. You determine which member of your club interviews you, but your interviewer must be someone other than your evaluator. In a 5- to 7-minute role-play presentation at a club meeting, practice answering interview questions to promote your skills, abilities, and experience.",
+      "Purpose": "The purpose of this project is to practice the skills needed to present yourself well in an interview.",
+      "Requirements": "The Identifying Your Skills Worksheet; The Interviewer Instructions resource",
+      "Resources": "This project includes: \n\u25a0 The Identifying Your Skills Worksheet\n\u25a0 The Interviewer Instructions resource\n\u25a0 A 5- to 7-minute role-play interview at a club meeting"
+    },
+    {
+      "id": 28,
+      "Project_Name": "Understanding Vocal Variety",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Understanding Vocal Variety (elective)\nThis project addresses the importance of vocal variety when giving a speech and provides activities to develop and nurture its use.\n",
+      "Overview": "Learn or review the importance of vocal variety. Use the exercises in this project to improve your vocal variety skills. Then, present a 5- to 7-minute speech on any topic at a club meeting. The primary focus of the evaluation is your vocal variety.",
+      "Purpose": "The purpose of this project is to practice using vocal variety to enhance a speech.",
+      "Requirements": "",
+      "Resources": "This project includes: \n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 29,
+      "Project_Name": "Using Descriptive Language",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Using Descriptive Language (elective)\nThis project addresses the difference between literal and figurative language along with how to determine when to use each to create vivid descriptions.\n",
+      "Overview": "You may speak on any topic. Develop a 5- to 7-minute speech describing the topic in detail and present it at your club meeting.",
+      "Purpose": "The purpose of this project is to practice writing a speech with an emphasis on adding language to increase interest and impact.",
+      "Requirements": "",
+      "Resources": "This project includes: \n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 30,
+      "Project_Name": "Using Presentation Software",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Using Presentation Software (elective)\nThis project addresses the use of presentation software\u2014from identifying topics that benefit from the use of technology to effective slide design and presentation.",
+      "Overview": "Select a speech topic that lends well to a visual presentation using technology. Use the content of this project and your own research to help you develop your slides. Give a 5- to 7-minute speech using the slides you developed. Your speech can be humorous, demonstrative, or informational, and it may include stories or anecdotes.",
+      "Purpose": "The purpose of this project is to introduce or review basic presentation software strategies for creating and using slides to support or enhance a speech.",
+      "Requirements": "Developing presentation slides",
+      "Resources": "This project includes: \n\u25a0 Developing presentation slides\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 31,
+      "Project_Name": "Communicate Change",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Communicate Change (required)\nThis project focuses on creating a communication plan by gathering evidence to support the need for change and communicating change with your audience.\n",
+      "Overview": "Develop a plan for communicating a change to an audience affected by the change. At a club meeting, communicate the change in a 5- to 7-minute speech. You may speak about a real or hypothetical change that affects your club or another group in your life. This speech is not a report on the content of this project, but a speech about how you would or will communicate a real or hypothetical change.",
+      "Purpose": "The purpose of this project is to practice the skills needed to effectively communicate change to a group or organization.",
+      "Requirements": "Developing a plan for communicating change",
+      "Resources": "This project includes: \n\u25a0 Developing a plan for communicating change\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 32,
+      "Project_Name": "Leading in Difficult Situations",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Leading in Difficult Situations (required)\nThis project focuses on the fundamentals of managing challenges, analyzing difficult situations and identifying best strategies for overcoming adversity.",
+      "Overview": "Design and complete a project plan for any event or set of goals. Your plan may be real or hypothetical. Add as many details to your plan as possible for the best success of this project. In a 5- to 7-minute speech at a club meeting, share your plan. Distribute copies of the Plan Disruption Ideas resource to club members and allow them 2 to 3 minutes to discuss possible disruptions to your plan. Listen and present impromptu solutions to the disruptions introduced by club members. The total time to complete this assignment in a club meeting is 15 to 20 minutes.",
+      "Purpose": "The purpose of this project is to practice strategies for adjusting to unexpected changes to a finalized plan.",
+      "Requirements": "Designing a detailed project plan; The Project Plan resource; The Project Plan Overview resource; The Plan Disruption Ideas resource",
+      "Resources": "This project includes: \n\u25a0 Designing a detailed project plan\n\u25a0 The Project Plan resource\n\u25a0 The Project Plan Overview resource\n\u25a0 The Plan Disruption Ideas resource\n\u25a0 A 5- to 7-minute speech to share your plan\n\u25a0 An impromptu speech to present solutions to disruptions"
+    },
+    {
+      "id": 33,
+      "Project_Name": "Manage Change",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Manage Change (required)\nThis project focuses on how to plan for change, develop a communication plan, and identify obstacles to success.",
+      "Overview": "Create a change management plan for a real or hypothetical situation. You may create a plan that is based on a past change or a future change that is happening in your personal, Toastmasters, or professional life. Share your change management plan with your club in a 5- to 7-minute speech. Your speech may be humorous, informational, or any other style that appeals to you. It is not a report on what you learned from the project, but an overview of your plan and how it will benefit you and the group the change affects.",
+      "Purpose": "The purpose of this project is to practice developing a change management plan.",
+      "Requirements": "Creating a change management plan; The Prepare for Change Worksheet; The Write a Communication Plan resource",
+      "Resources": "This project includes: \n\u25a0 Creating a change management plan\n\u25a0 The Prepare for Change Worksheet\n\u25a0 The Write a Communication Plan resource\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 34,
+      "Project_Name": "Managing a Difficult Audience",
+      "Format": "Prepared Speech",
+      "Duration_Min": 12,
+      "Duration_Max": 15,
+      "Introduction": "Managing a Difficult Audience (required)\nThis project covers common behaviors of difficult audience members and how to address each behavior in a calm, effective and professional way.",
+      "Overview": "Prepare a 5- to 7-minute speech on a topic of your choosing. You may write a new speech or use a speech you presented previously. You will be evaluated on the way you manage audience disruptions, not the content of your speech. Before your club meeting, send the Role Play Assignments resource to the Toastmaster and vice president education. As you present your speech, respond to different types of difficult audience members that disrupt you. The process of speaking and responding to audience members will take 12 to 15 minutes.",
+      "Purpose": "The purpose of this project is to practice the skills needed to address audience challenges when you present outside of your Toastmasters club.",
+      "Requirements": "A role play assignment for club members",
+      "Resources": "This project includes: \n\u25a0 A role play assignment for club members\n\u25a0 A 5-to 7-minute speech"
+    },
+    {
+      "id": 35,
+      "Project_Name": "Motivate Others",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Motivate Others (required)\nThis project focuses on how people are motivated. It is designed to help you build your leadership skills by effectively motivating team members.",
+      "Overview": "Build a team of three to four people to help you create and complete a project to benefit your club. Use the information in the project to develop motivational strategies for each team member. After the project, you may choose to ask team members and at least one club officer to complete a 360\u00b0 evaluation to give you feedback on your communication and leadership. Deliver a 5- to 7-minute speech at a club meeting about your experience. Your speech is not a report on the content of this project.",
+      "Purpose": "The purpose of this project is to practice the skills needed to motivate team members through the completion of a project.",
+      "Requirements": "Building and motivating a team to complete a project that benefits your club; The Team-Building Activities resource; The 360\u00ac\u221e Evaluation resource",
+      "Resources": "This project includes: \n\u25a0 Building and motivating a team to complete a project that benefits your club\n\u25a0 The Team-Building Activities resource\n\u25a0 The 360\u00b0 Evaluation resource\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 36,
+      "Project_Name": "The Power of Humor in an Impromptu Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 4,
+      "Duration_Max": 6,
+      "Introduction": "The Power of Humor In an Impromptu Speech (required)",
+      "Overview": "",
+      "Purpose": "The purpose of this project is for the member to develop their method for giving impromptu speeches and practice adapting rehearsed stories during a presentation.",
+      "Requirements": "",
+      "Resources": ""
+    },
+    {
+      "id": 37,
+      "Project_Name": "Building a Social Media Presence",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Building a Social Media Presence (elective)\nThis project addresses how best to use different types of online communication. You will create and maintain an online profile to promote yourself or an organization.",
+      "Overview": "Use this project and your own research to build a new social media presence or enhance an existing presence. You may focus on a personal goal (such as connecting with old friends or promoting a blog) or on a professional goal (such as promoting a business or organization). Use the tools you identify as best for you and your purpose. After you achieve your goal, deliver a 5- to 7-minute speech to your club about your results, experience, and the benefits of social media. Submit the Project Completion Form to your vice president education to receive credit for completing the project.",
+      "Purpose": "The purpose of this project is to apply your understanding of social media to enhance an established or new social media presence.",
+      "Requirements": "Establishing or enhancing a social media presence; The Project Completion Form",
+      "Resources": "This project includes: \n\u25a0 Establishing or enhancing a social media presence\n\u25a0 The Project Completion Form\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 38,
+      "Project_Name": "Create a Podcast",
+      "Format": "Prepared Speech",
+      "Duration_Min": 2,
+      "Duration_Max": 3,
+      "Introduction": "Create a Podcast (elective)\nThis project addresses the skills you need to develop a podcast, create interesting content and organize a cohesive program. You will learn how to record and upload it to the internet",
+      "Overview": "Use this project and your own research to create a podcast. Record a minimum of 60 minutes of content. You are free to divide the episodes as you choose. Each separate episode must be at least 10 minutes, but may be longer if it fits your topic and style. After you record all content, play a 5- to 10-minute segment in your club. Introduce the segment in a 2- to 3-minute speech.",
+      "Purpose": "The purpose of this project is to introduce you to the skills needed to organize and present a podcast.",
+      "Requirements": "Recording 60 minutes of podcast content",
+      "Resources": "This project includes: \n\u25a0 Recording 60 minutes of podcast content\n\u25a0 A 2- to 3-minute introduction speech"
+    },
+    {
+      "id": 39,
+      "Project_Name": "Manage Online Meetings",
+      "Format": "Meeting Manager",
+      "Duration_Min": 20,
+      "Duration_Max": 30,
+      "Introduction": "Manage Online Meetings (elective)\nThis project addresses how to effectively conduct online meetings and webinars, prepare and organize necessary visual aids, and lead with confidence.",
+      "Overview": "Conduct a 20- to 25-minute online meeting with fellow Toastmasters or a 20- to 25-minute webinar with visual aids for fellow Toastmasters. You determine the topic of your meeting or webinar. Research and use software that best fits your needs and geographic area. Invite your evaluator to participate in the online meeting or webinar. If you complete your assignment with non-Toastmasters, you must receive approval from the vice president education and invite your evaluator to attend.",
+      "Purpose": "The purpose of this project is to practice facilitating an online meeting or leading a webinar.",
+      "Requirements": "The Online Meeting Agenda resource; The Online Meeting Basics resource; Planning and conducting a 20- to 25-minute online meeting or webinar",
+      "Resources": "This project includes: \n\u25a0 The Online Meeting Agenda resource\n\u25a0 The Online Meeting Basics resource\n\u25a0 Planning and conducting a 20- to 25-minute online meeting or webinar"
+    },
+    {
+      "id": 40,
+      "Project_Name": "Manage Projects Successfully-Plan Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 2,
+      "Duration_Max": 3,
+      "Introduction": "Manage Projects Successfully (elective)\nThis project focuses on skills needed to effectively manage a project, develop rapport with stakeholders and cultivate strong relationships with a team.",
+      "Overview": "Form a team of three to four people and choose a project. Create a plan for your project and present the plan to your club in a 2- to 3-minute speech. Work with your team to complete your project. Present a 5- to 7-minute speech about your experience. This speech may be humorous, informational, or any type of speech that appeals to you. It should not be a report about the content of this project, but a reflection of your experience applying what you learned.",
+      "Purpose": "The purpose of this project is to practice developing a plan, building a team, and fulfilling the plan with the help of your team.",
+      "Requirements": "Building a team; Creating a project plan; The Project Plan resource; Completing the plan with your team",
+      "Resources": "This project includes: \n\u25a0 Building a team\n\u25a0 Creating a project plan\n\u25a0 The Project Plan resource\n\u25a0 A 2- to 3-minute speech about your plan\n\u25a0 Completing the plan with your team\n\u25a0 A 5- to 7-minute speech about your experience"
+    },
+    {
+      "id": 41,
+      "Project_Name": "Manage Projects Successfully-Experience Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Manage Projects Successfully (elective)\nThis project focuses on skills needed to effectively manage a project, develop rapport with stakeholders and cultivate strong relationships with a team.",
+      "Overview": "Form a team of three to four people and choose a project. Create a plan for your project and present the plan to your club in a 2- to 3-minute speech. Work with your team to complete your project. Present a 5- to 7-minute speech about your experience. This speech may be humorous, informational, or any type of speech that appeals to you. It should not be a report about the content of this project, but a reflection of your experience applying what you learned.",
+      "Purpose": "The purpose of this project is to practice developing a plan, building a team, and fulfilling the plan with the help of your team.",
+      "Requirements": "Building a team; Creating a project plan; The Project Plan resource; Completing the plan with your team",
+      "Resources": "This project includes: \n\u25a0 Building a team\n\u25a0 Creating a project plan\n\u25a0 The Project Plan resource\n\u25a0 A 2- to 3-minute speech about your plan\n\u25a0 Completing the plan with your team\n\u25a0 A 5- to 7-minute speech about your experience"
+    },
+    {
+      "id": 42,
+      "Project_Name": "Public Relations Strategies",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Public Relations Strategies (elective)\nThis project focuses on how to promote awareness of an organization, formulate a public relations strategy and use various public relations tactics.\n\n",
+      "Overview": "Create a public relations plan for a real or hypothetical group or situation. If it involves your club, it must be hypothetical unless you communicate with the vice president public relations and club president. Share your plan in a 5- to 7-minute speech at a club meeting. This speech is not a report on the content of this project, but an example of how you will or might apply what you learned.",
+      "Purpose": "The purpose of this project is to practice the skills needed to effectively use public relations strategies for any group or situation.",
+      "Requirements": "Creating a public relations strategy",
+      "Resources": "This project includes: \n\u25a0 Creating a public relations strategy\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 43,
+      "Project_Name": "Question-and-Answer Session",
+      "Format": "Prepared Speech",
+      "Duration_Min": 15,
+      "Duration_Max": 20,
+      "Introduction": "Question-and-Answer Session (elective)\nThis project addresses how to prepare to answer questions and provide information clearly, concisely and with confidence.",
+      "Overview": "Select a topic of which you are particularly knowledgeable. Prepare and deliver a speech on this topic, followed by a question-and-answer session. Together, the speech and question-and-answer session must be 15 to 20 minutes. Use your time effectively to ensure both segments are completed.",
+      "Purpose": "The purpose of this project is to learn about and practice facilitating a question-and-answer session.",
+      "Requirements": "A question-and-answer session after the speech",
+      "Resources": "This project includes: \n\u25a0 A 5-to 7-minute speech\n\u25a0 A question-and-answer session after the speech"
+    },
+    {
+      "id": 44,
+      "Project_Name": "Write a Compelling Blog",
+      "Format": "Prepared Speech",
+      "Duration_Min": 2,
+      "Duration_Max": 3,
+      "Introduction": "Write a Compelling Blog (elective)\nThis project addresses the basics of developing a compelling blog and successfully engaging a readership",
+      "Overview": "Post a minimum of eight blog posts in one month. Your blog may be new or one you have already established. You must receive approval from the vice president education to blog on behalf of your club. Deliver a 2- to 3-minute speech at a club meeting about the impact of your blogging experience. You may choose to have your blog evaluated by members of the club. Submit your signed Project Completion Form to the vice president education to receive credit for this project.",
+      "Purpose": "The purpose of this project is to review or introduce the skills needed to write and maintain a blog.",
+      "Requirements": "Maintaining a blog and posting at least eight times in one month; The Blog Evaluation Form; The Project Completion Form",
+      "Resources": "This project includes: \n\u25a0 Maintaining a blog and posting at least eight times in one month\n\u25a0 The Blog Evaluation Form\n\u25a0 The Project Completion Form\n\u25a0 A 2- to 3-minute speech"
+    },
+    {
+      "id": 45,
+      "Project_Name": "Deliver Your Message with Humor",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Deliver Your Message With Humor (required)",
+      "Overview": "",
+      "Purpose": "The purpose of this project is for the member to practice developing and presenting a longer humorous speech.",
+      "Requirements": "",
+      "Resources": ""
+    },
+    {
+      "id": 46,
+      "Project_Name": "Develop Your Vision - First Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Develop Your Vision (required)\nThis project focuses on developing a vision for your work or personal life.\n",
+      "Overview": "Develop a vision and present it at a club meeting in a 5- to 7-minute speech. Establish a timeline for implementing your plan using the resources included in this project. Deliver another 5- to 7-minute speech at a later meeting to present your plan to bring your vision to fruition. Submit your signed Project Completion Form to the vice president education to show you completed all resources included in the project.",
+      "Purpose": "The purpose of this project is to develop a detailed vision for your personal life, professional life, or an organization.",
+      "Requirements": "Developing a vision and establishing a plan to implement it; The Idea Map Worksheet; The Goal Setting Worksheet; The Goal Task List; The Vision Plan resource; The Project Completion Form",
+      "Resources": "This project includes: \n\u25a0 Developing a vision and establishing a plan to implement it\n\u25a0 The Idea Map Worksheet\n\u25a0 The Goal Setting Worksheet\n\u25a0 The Goal Task List\n\u25a0 The Vision Plan resource\n\u25a0 Two 5- to 7-minute speeches\n\u25a0 The Project Completion Form"
+    },
+    {
+      "id": 47,
+      "Project_Name": "Develop Your Vision - Second Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Develop Your Vision (required)\nThis project focuses on developing a vision for your work or personal life.\n",
+      "Overview": "Develop a vision and present it at a club meeting in a 5- to 7-minute speech. Establish a timeline for implementing your plan using the resources included in this project. Deliver another 5- to 7-minute speech at a later meeting to present your plan to bring your vision to fruition. Submit your signed Project Completion Form to the vice president education to show you completed all resources included in the project.",
+      "Purpose": "The purpose of this project is to develop a detailed vision for your personal life, professional life, or an organization.",
+      "Requirements": "Developing a vision and establishing a plan to implement it; The Idea Map Worksheet; The Goal Setting Worksheet; The Goal Task List; The Vision Plan resource; The Project Completion Form",
+      "Resources": "This project includes: \n\u25a0 Developing a vision and establishing a plan to implement it\n\u25a0 The Idea Map Worksheet\n\u25a0 The Goal Setting Worksheet\n\u25a0 The Goal Task List\n\u25a0 The Vision Plan resource\n\u25a0 Two 5- to 7-minute speeches\n\u25a0 The Project Completion Form"
+    },
+    {
+      "id": 48,
+      "Project_Name": "High Performance Leadership-First Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "High Performance Leadership (elective)\nThe focus of this project is to design and complete a project with well-defined goals, lead a team and be accountable to a guidance committee.",
+      "Overview": "Select a project to complete with a team of at least three other members. Form a guidance committee and meet at least five times through the duration of the project. Deliver a 5-to 7-minute speech at a club meeting to introduce your plan and vision. After you implement the plan, deliver a second 5- to 7-minute speech at a club meeting to share your experience developing and completing your plan.",
+      "Purpose": "The purpose of this project is to apply your leadership and planning knowledge to develop a project plan, organize a guidance committee, and implement your plan with the help of a team.",
+      "Requirements": "Selecting, leading, and completing a project with a team; Forming and meeting with a guidance committee at least five times; The Guidance Committee Introduction resource; The Meeting Agenda resource; The Project Plan Overview resource; The Project Plan resource; The Vision Plan resource; The Event Planning Worksheet; The 360\u00ac\u221e Evaluation resource",
+      "Resources": "This project includes: \n\u25a0 Selecting, leading, and completing a project with a team\n\u25a0 Forming and meeting with a guidance committee at least five times\n\u25a0 The Guidance Committee Introduction resource\n\u25a0 The Meeting Agenda resource\n\u25a0 The Project Plan Overview resource\n\u25a0 The Project Plan resource\n\u25a0 The Vision Plan resource\n\u25a0 The Event Planning Worksheet\n\u25a0 The 360\u00b0 Evaluation resource\n\u25a0 Two 5- to 7-minute speeches"
+    },
+    {
+      "id": 49,
+      "Project_Name": "High Performance Leadership-Second Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "High Performance Leadership (elective)\nThe focus of this project is to design and complete a project with well-defined goals, lead a team and be accountable to a guidance committee.",
+      "Overview": "Select a project to complete with a team of at least three other members. Form a guidance committee and meet at least five times through the duration of the project. Deliver a 5-to 7-minute speech at a club meeting to introduce your plan and vision. After you implement the plan, deliver a second 5- to 7-minute speech at a club meeting to share your experience developing and completing your plan.",
+      "Purpose": "The purpose of this project is to apply your leadership and planning knowledge to develop a project plan, organize a guidance committee, and implement your plan with the help of a team.",
+      "Requirements": "Selecting, leading, and completing a project with a team; Forming and meeting with a guidance committee at least five times; The Guidance Committee Introduction resource; The Meeting Agenda resource; The Project Plan Overview resource; The Project Plan resource; The Vision Plan resource; The Event Planning Worksheet; The 360\u00ac\u221e Evaluation resource",
+      "Resources": "This project includes: \n\u25a0 Selecting, leading, and completing a project with a team\n\u25a0 Forming and meeting with a guidance committee at least five times\n\u25a0 The Guidance Committee Introduction resource\n\u25a0 The Meeting Agenda resource\n\u25a0 The Project Plan Overview resource\n\u25a0 The Project Plan resource\n\u25a0 The Vision Plan resource\n\u25a0 The Event Planning Worksheet\n\u25a0 The 360\u00b0 Evaluation resource\n\u25a0 Two 5- to 7-minute speeches"
+    },
+    {
+      "id": 50,
+      "Project_Name": "Lead in Any Situation",
+      "Format": "Prepared Speech",
+      "Duration_Min": 8,
+      "Duration_Max": 10,
+      "Introduction": "Lead in Any Situation (required)\nThis project focuses on leadership and recognizing the need to adapt your style based on the situation and the people you lead.",
+      "Overview": "For at least six months, take on a leadership role in Toastmasters (at any level), within another volunteer organization, or in your career. While serving in your role, ask your peers to complete a 360\u00b0 evaluation. Present an 8- to 10-minute speech about your experience as a leader. Your speech may be humorous, informational, or any type that appeals to you. The speech is not a report on the content of this project, but a reflection of your experience and&#x2F;or the impact of the 360\u00b0 evaluation.",
+      "Purpose": "The purpose of this project is to apply the skills needed to successfully lead in a volunteer or other organization.",
+      "Requirements": "Serving in a leadership for a minimum of six months; A 360\u00ac\u221e evaluation",
+      "Resources": "This project includes: \n\u25a0 Serving in a leadership for a minimum of six months\n\u25a0 A 360\u00b0 evaluation\n\u25a0 An 8- to 10-minute speech"
+    },
+    {
+      "id": 51,
+      "Project_Name": "Prepare to Speak Professionally",
+      "Format": "Keynote Speech",
+      "Duration_Min": 18,
+      "Duration_Max": 22,
+      "Introduction": "Prepare to Speak Professionally (required)\nThis project is designed to help you define the attributes of professional speakers and apply that understanding to your own skills as a speaker.\n\n",
+      "Overview": "Write and present an 18- to 22-minute keynote-style speech. Exemplify the point of view or message you would convey as a professional-level speaker. You may choose to use visual aids if they fit your speech and your style. Your speech may be humorous, informational, or any style that appeals to you and supports your speech content. If you receive advance approval from the vice president education, you may present your speech to a nonToastmasters group.",
+      "Purpose": "The purpose of this project is to practice developing and presenting a longer speech.",
+      "Requirements": "The Speech Outline Worksheet",
+      "Resources": "This project includes: \n\u25a0 The Speech Outline Worksheet\n\u25a0 An 18- to 22-minute keynote-style speech"
+    },
+    {
+      "id": 52,
+      "Project_Name": "Team Building",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Team Building (required)\nThis\u2002project\u2002focuses\u2002on\u2002how\u2002people\u2002are\u2002motivated.\u2002It\u2002is\u2002designed\u2002to\u2002help\u2002you\u2002build\u2002your\u2002leadership\u2002skills\u2002by effectively\u2002motivating\u2002team\u2002members.\n\n",
+      "Overview": "Build\u2002a\u2002team\u2002of\u2002three\u2002to\u2002four\u2002people\u2002to\u2002help\u2002you\u2002create\u2002and\u2002complete\u2002a\u2002project\u2002to\u2002benefit\u2002your\u2002club. Use\u2002the\u2002information\u2002in\u2002the\u2002project\u2002to\u2002develop\u2002motivational\u2002strategies\u2002for\u2002each\u2002team\u2002member.\u2002After\u2002the\u2002project,\u2002you may\u2002choose\u2002to\u2002ask\u2002team\u2002members\u2002and\u2002at\u2002least\u2002one\u2002club\u2002officer\u2002to\u2002complete\u2002a\u2002360\u00b0\u2002evaluation\u2002to\u2002give\u2002you\u2002feedback on\u2002your\u2002communication\u2002and\u2002leadership.\u2002Deliver\u2002a\u20025-\u2002to\u20027-minute\u2002speech\u2002at\u2002a\u2002club\u2002meeting\u2002about\u2002your\u2002experience. Your\u2002speech\u2002is\u2002not\u2002a\u2002report\u2002on\u2002the\u2002content\u2002of\u2002this\u2002project.",
+      "Purpose": "The purpose of this project is to practice the skills needed to motivate team members through the completion of a project.",
+      "Requirements": "Building\u201a\u00c4\u00c7and\u201a\u00c4\u00c7motivating\u201a\u00c4\u00c7a\u201a\u00c4\u00c7team\u201a\u00c4\u00c7to\u201a\u00c4\u00c7complete\u201a\u00c4\u00c7a\u201a\u00c4\u00c7project\u201a\u00c4\u00c7that\u201a\u00c4\u00c7benefits\u201a\u00c4\u00c7your\u201a\u00c4\u00c7club; The\u201a\u00c4\u00c7Team-Building\u201a\u00c4\u00c7Activities\u201a\u00c4\u00c7resource; The\u201a\u00c4\u00c7360\u00ac\u221e\u201a\u00c4\u00c7Evaluation\u201a\u00c4\u00c7resource",
+      "Resources": "This project includes: \n\u25a0 Building\u2002and\u2002motivating\u2002a\u2002team\u2002to\u2002complete\u2002a\u2002project\u2002that\u2002benefits\u2002your\u2002club\n\u25a0 The\u2002Team-Building\u2002Activities\u2002resource\n\u25a0 The\u2002360\u00b0\u2002Evaluation\u2002resource\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 53,
+      "Project_Name": "Reflect on Your Path",
+      "Format": "Prepared Speech",
+      "Duration_Min": 10,
+      "Duration_Max": 12,
+      "Introduction": "Reflect on Your Path (required)\nThis project is designed to give you an opportunity to share your experience at the end of your path.",
+      "Overview": "At a club meeting, present a 10- to 12-minute speech to share your experience completing your path. Use this as an opportunity to reflect on how far you have come, summarize the skills you have learned and developed, and to celebrate your achievements. Your speech can be humorous, informational, or any style that that appeals to you and supports your speech content.",
+      "Purpose": "The purpose of this project is to reflect on your growth during the completion of an entire path.",
+      "Requirements": "The Your Toastmasters Journey resource",
+      "Resources": "This project includes: \n\u25a0 The Your Toastmasters Journey resource\n\u25a0 A 10- to 12-minute speech"
+    },
+    {
+      "id": 54,
+      "Project_Name": "Ethical Leadership",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Ethical Leadership (elective)\nThis project addresses the importance of recognizing the effect of decisions that impact ethics, best practices for making ethical decisions and developing an ethical framework.",
+      "Overview": "Define an ethical framework for yourself. To do this, you may need to complete personal research beyond the contents of this project. Then, organize and moderate a 20- to 40-minute panel discussion about ethics, followed by a question-and-answer session. If you have never facilitated a panel discussion, review the \u201cModerate a Panel Discussion\u201d elective project.",
+      "Purpose": "The purpose of this project is to develop a clear understanding of your own ethical framework and create an opportunity for others to hear about and discuss ethics in your organization or community.",
+      "Requirements": "The Ethical Framework resource; Organizing and moderating a panel discussion as well as a question-and-answer session",
+      "Resources": "This project includes: \n\u25a0 The Ethical Framework resource\n\u25a0 Organizing and moderating a panel discussion as well as a question-and-answer session"
+    },
+    {
+      "id": 55,
+      "Project_Name": "Leading in Your Volunteer Organization",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Leading in Your Volunteer Organization (elective)\nThis project focuses on the skills required to lead in a volunteer organization and the importance of recognition and reward in motivating volunteers.",
+      "Overview": "Serve in a leadership role in Toastmasters or another volunteer organization for at least six months. You may complete this project based on your employment, but a volunteer organization is preferable. Ask members of the organization to complete a 360\u00b0 evaluation of your leadership skills. Create a succession plan to aid in the transition after you leave your position of leadership. After your six-month term, deliver a 5- to 7-minute speech at a club meeting to reflect on your personal experience.",
+      "Purpose": "The purpose of this project is to apply the skills needed to successfully lead in a volunteer organization.",
+      "Requirements": "Serving in a volunteer leadership role for a minimum of six months; Conducting a 360\u00ac\u221e evaluation of your leadership skills; Creating a succession plan; The Succession Plan resource; The 360\u00ac\u221e Evaluation resource",
+      "Resources": "This project includes: \n\u25a0 Serving in a volunteer leadership role for a minimum of six months\n\u25a0 Conducting a 360\u00b0 evaluation of your leadership skills\n\u25a0 Creating a succession plan\n\u25a0 The Succession Plan resource\n\u25a0 The 360\u00b0 Evaluation resource\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 56,
+      "Project_Name": "Lessons Learned",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "Lessons Learned (elective)\nThis project addresses how to identify the discussion points of a large group meeting, encourage a culture of contribution and voicing opinions, and facilitate productive discussion that yields results.",
+      "Overview": "Facilitate a lessons learned meeting for a team with which you are completing or have completed a project. This meeting is separate from your regular Toastmasters meeting. Organize and facilitate a discussion. Record the results into a document you and your team members can use to facilitate the current project or future projects. If you haven\u2019t already, give team members an opportunity to complete a 360\u00b0 evaluation of you as a team leader. (Use the 360\u00b0 Evaluation resource.) Finally, present a 5- to 7-minute speech in your club about the lessons learned meeting or your leadership experience.",
+      "Purpose": "The purpose of this project is to learn about and apply the skills needed to run a lessons learned meeting during a project or after its completion.",
+      "Requirements": "Facilitating a lessons learned meeting; Documenting the results of the lessons learned meeting; The 360\u00ac\u221e Evaluation resource; The Lessons Learned Response Log; The Metrics Log",
+      "Resources": "This project includes: \n\u25a0 Facilitating a lessons learned meeting\n\u25a0 Documenting the results of the lessons learned meeting\n\u25a0 The 360\u00b0 Evaluation resource\n\u25a0 The Lessons Learned Response Log\n\u25a0 The Metrics Log\n\u25a0 A 5- to 7-minute speech"
+    },
+    {
+      "id": 57,
+      "Project_Name": "Moderate a Panel Discussion",
+      "Format": "Panel Discussion",
+      "Duration_Min": 20,
+      "Duration_Max": 40,
+      "Introduction": "Moderate a Panel Discussion (elective)\nThis project addresses the skills needed to successfully moderate a panel discussion and how to be an effective participant on a panel.",
+      "Overview": "Plan and moderate a 20- to 40-minute panel discussion. The panel discussion can be on any topic and may take place at a club meeting or outside of Toastmasters with the approval of your vice president education. Toastmasters who participate as panelists do not receive credit in Toastmasters Pathways. When you have the opportunity, volunteer to act as a panelist for another member completing this project.",
+      "Purpose": "The purpose of this project is to apply your skills as a public speaker and leader to facilitate a panel discussion.",
+      "Requirements": "Planning and moderating a 20- to 40-minute panel discussion; The Panelist Basics resource; The Project Completion Form",
+      "Resources": "This project includes: \n\u25a0 Planning and moderating a 20- to 40-minute panel discussion\n\u25a0 The Panelist Basics resource\n\u25a0 The Project Completion Form"
+    },
+    {
+      "id": 58,
+      "Project_Name": "Distinguished Toastmaster-First Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": "",
+      "Overview": "",
+      "Purpose": "The purpose of this first speech is for the member to introduce his or her plan and vision.",
+      "Requirements": "",
+      "Resources": ""
+    },
+    {
+      "id": 59,
+      "Project_Name": "Distinguished Toastmaster-Second Speech",
+      "Format": "Prepared Speech",
+      "Duration_Min": 8,
+      "Duration_Max": 10,
+      "Introduction": "",
+      "Overview": "",
+      "Purpose": "The purpose of this second speech is for the member to share some aspect of his or her experience completing the project.",
+      "Requirements": "",
+      "Resources": ""
+    },
+    {
+      "id": 60,
+      "Project_Name": "Generic",
+      "Format": "Prepared Speech",
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "Introduction": null,
+      "Overview": null,
+      "Purpose": null,
+      "Requirements": null,
+      "Resources": null
+    },
+    {
+      "id": 61,
+      "Project_Name": "Creating the Best Club Climate",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 62,
+      "Project_Name": "Meeting Roles and Responsibilities",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 63,
+      "Project_Name": "Keeping the Commitment",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 64,
+      "Project_Name": "Going Beyond Our Club",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 65,
+      "Project_Name": "Finding New Members",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 66,
+      "Project_Name": "Closing the Sale",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 67,
+      "Project_Name": "How to Be a Distinguished Club",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 68,
+      "Project_Name": "Toastmasters Educational Program",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 69,
+      "Project_Name": "Beginning Your Speech",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Better Speaker Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 70,
+      "Project_Name": "Concluding Your Speech",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Better Speaker Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 71,
+      "Project_Name": "Controlling Your Fear",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Better Speaker Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 72,
+      "Project_Name": "Impromptu Speaking",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Better Speaker Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 73,
+      "Project_Name": "Selecting Your Topic",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Better Speaker Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 74,
+      "Project_Name": "Know Your Audience",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Better Speaker Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 75,
+      "Project_Name": "Organizing Your Speech",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Better Speaker Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 76,
+      "Project_Name": "Creating an Introduction",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Better Speaker Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 77,
+      "Project_Name": "Preparation and Practice",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Better Speaker Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 78,
+      "Project_Name": "Using Body Language",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Better Speaker Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 79,
+      "Project_Name": "Moments of Truth",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 80,
+      "Project_Name": "Evaluate to Motivate",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 81,
+      "Project_Name": "Mentoring",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Successful Club Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 82,
+      "Project_Name": "Service and Leadership",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 83,
+      "Project_Name": "The Leader as a Coach",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 84,
+      "Project_Name": "Developing a Mission",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 85,
+      "Project_Name": "Motivating People",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 86,
+      "Project_Name": "Building a Team",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 87,
+      "Project_Name": "Delegate to Empower",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 88,
+      "Project_Name": "Resolving Conflict",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 89,
+      "Project_Name": "Visionary Leader",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 90,
+      "Project_Name": "Values and Leadership",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 91,
+      "Project_Name": "Goal Setting and Planning",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    },
+    {
+      "id": 92,
+      "Project_Name": "Giving Effective Feedback",
+      "Format": "Presentation",
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "Introduction": "Presentation from series: Leadership Excellence Series",
+      "Overview": null,
+      "Purpose": "Educational Presentation",
+      "Requirements": "View resources",
+      "Resources": null
+    }
+  ],
+  "level_roles": [
+    {
+      "id": 1,
+      "level": 1,
+      "role": "Topics Speaker",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 2,
+      "level": 1,
+      "role": "Individual Evaluator",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 3,
+      "level": 1,
+      "role": "Timer",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 4,
+      "level": 1,
+      "role": "Ah-Counter",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 5,
+      "level": 2,
+      "role": "Grammarian",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 6,
+      "level": 2,
+      "role": "Topicsmaster",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 7,
+      "level": 2,
+      "role": "Individual Evaluator",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 8,
+      "level": 2,
+      "role": "TME",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 9,
+      "level": 2,
+      "role": "Timer",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 10,
+      "level": 2,
+      "role": "Ah-Counter",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 11,
+      "level": 3,
+      "role": "TME",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 12,
+      "level": 3,
+      "role": "Individual Evaluator",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 13,
+      "level": 3,
+      "role": "Topicsmaster",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 14,
+      "level": 3,
+      "role": "Topics Speaker",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 15,
+      "level": 3,
+      "role": "Introductory Mentor",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 16,
+      "level": 4,
+      "role": "TME",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 17,
+      "level": 4,
+      "role": "GE",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 18,
+      "level": 4,
+      "role": "Individual Evaluator",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 19,
+      "level": 4,
+      "role": "Topicsmaster",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 20,
+      "level": 4,
+      "role": "Topics Speaker",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 21,
+      "level": 4,
+      "role": "Photographer",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 22,
+      "level": 4,
+      "role": "Welcome Officer",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 24,
+      "level": 4,
+      "role": "Debater",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 25,
+      "level": 4,
+      "role": "Panelist",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 26,
+      "level": 5,
+      "role": "TME",
+      "type": "required",
+      "count_required": 2
+    },
+    {
+      "id": 27,
+      "level": 5,
+      "role": "GE",
+      "type": "required",
+      "count_required": 2
+    },
+    {
+      "id": 28,
+      "level": 5,
+      "role": "Individual Evaluator",
+      "type": "required",
+      "count_required": 2
+    },
+    {
+      "id": 29,
+      "level": 5,
+      "role": "Topicsmaster",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 30,
+      "level": 5,
+      "role": "Topics Speaker",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 31,
+      "level": 5,
+      "role": "Timer",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 32,
+      "level": 5,
+      "role": "Ah-Counter",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 33,
+      "level": 5,
+      "role": "Grammarian",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 34,
+      "level": 5,
+      "role": "Photographer",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 35,
+      "level": 5,
+      "role": "Club Mentor",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 36,
+      "level": 5,
+      "role": "Welcome Officer",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 38,
+      "level": 5,
+      "role": "Debater",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 39,
+      "level": 5,
+      "role": "Panelist",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 64,
+      "level": 3,
+      "role": "Successful Club Series",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 65,
+      "level": 4,
+      "role": "Successful Club Series",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 66,
+      "level": 4,
+      "role": "Better Speaker Series",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 67,
+      "level": 5,
+      "role": "Successful Club Series",
+      "type": "required",
+      "count_required": 1
+    },
+    {
+      "id": 68,
+      "level": 5,
+      "role": "Leadership Excellence Series",
+      "type": "required",
+      "count_required": 1
+    }
+  ],
+  "session_types": [
+    {
+      "id": 1,
+      "Title": "SAA Introduction",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 1,
+      "role_id": 23
+    },
+    {
+      "id": 2,
+      "Title": "President's Address",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 2,
+      "role_id": 24
+    },
+    {
+      "id": 3,
+      "Title": "Toastmaster of the Evening's Address",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 2,
+      "role_id": 1
+    },
+    {
+      "id": 4,
+      "Title": "Ah-Counter Introduction",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 1,
+      "role_id": 7
+    },
+    {
+      "id": 5,
+      "Title": "Grammarian Introduction",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 2,
+      "role_id": 5
+    },
+    {
+      "id": 6,
+      "Title": "Timer Introduction",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 1,
+      "role_id": 6
+    },
+    {
+      "id": 7,
+      "Title": "Table Topics",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": true,
+      "Duration_Min": 0,
+      "Duration_Max": 25,
+      "role_id": 4
+    },
+    {
+      "id": 8,
+      "Title": "Generic",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 7,
+      "role_id": null
+    },
+    {
+      "id": 9,
+      "Title": "New Member Induction",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 7,
+      "role_id": 25
+    },
+    {
+      "id": 10,
+      "Title": "New Guest Greetings",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 5,
+      "role_id": 11
+    },
+    {
+      "id": 11,
+      "Title": "Networking",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 10,
+      "role_id": null
+    },
+    {
+      "id": 12,
+      "Title": "General Evaluator's Address",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 1,
+      "role_id": 2
+    },
+    {
+      "id": 13,
+      "Title": "Ah-Counter Report",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 1,
+      "role_id": 7
+    },
+    {
+      "id": 14,
+      "Title": "Grammarian Report",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 2,
+      "role_id": 5
+    },
+    {
+      "id": 15,
+      "Title": "Timer Report",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 1,
+      "role_id": 6
+    },
+    {
+      "id": 16,
+      "Title": "General Evaluation Report",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 3,
+      "role_id": 2
+    },
+    {
+      "id": 17,
+      "Title": "Voting and Announcements",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 3,
+      "role_id": 1
+    },
+    {
+      "id": 18,
+      "Title": "Awards / Meeting Closing",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 2,
+      "role_id": 24
+    },
+    {
+      "id": 20,
+      "Title": "Keynote Speech",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": false,
+      "Valid_for_Project": true,
+      "Duration_Min": 0,
+      "Duration_Max": 23,
+      "role_id": 10
+    },
+    {
+      "id": 30,
+      "Title": "Prepared Speech",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": false,
+      "Valid_for_Project": true,
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "role_id": 8
+    },
+    {
+      "id": 31,
+      "Title": "Evaluation",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": false,
+      "Valid_for_Project": true,
+      "Duration_Min": 2,
+      "Duration_Max": 3,
+      "role_id": 3
+    },
+    {
+      "id": 32,
+      "Title": "Section",
+      "Default_Owner": "",
+      "Is_Section": true,
+      "Is_Hidden": false,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": null
+    },
+    {
+      "id": 34,
+      "Title": "Backup Speaker",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": true,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "role_id": null
+    },
+    {
+      "id": 35,
+      "Title": "Photography",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": true,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": 12
+    },
+    {
+      "id": 36,
+      "Title": "Topics Speech",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": true,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": 2,
+      "Duration_Max": 3,
+      "role_id": 9
+    },
+    {
+      "id": 37,
+      "Title": "Introductory Mentor",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": true,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": 22
+    },
+    {
+      "id": 38,
+      "Title": "Club Mentor",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": true,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": 21
+    },
+    {
+      "id": 40,
+      "Title": "Debate",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": true,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": 19
+    },
+    {
+      "id": 41,
+      "Title": "Panelist",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": true,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": 18
+    },
+    {
+      "id": 42,
+      "Title": "Meeting Manager",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": true,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": null
+    },
+    {
+      "id": 44,
+      "Title": "Panel Discussion",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": false,
+      "Valid_for_Project": true,
+      "Duration_Min": 0,
+      "Duration_Max": 40,
+      "role_id": 17
+    },
+    {
+      "id": 45,
+      "Title": "Club Election",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": true,
+      "Valid_for_Project": false,
+      "Duration_Min": 0,
+      "Duration_Max": 60,
+      "role_id": 15
+    },
+    {
+      "id": 46,
+      "Title": "Contest Chair Address",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": 1,
+      "Duration_Max": 5,
+      "role_id": 26
+    },
+    {
+      "id": 47,
+      "Title": "Ballot Counting",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": 2,
+      "role_id": 27
+    },
+    {
+      "id": 48,
+      "Title": "Hidden Section",
+      "Default_Owner": "",
+      "Is_Section": true,
+      "Is_Hidden": true,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": null
+    }
+  ],
+  "pathway_projects": [
+    {
+      "id": 1,
+      "path_id": 1,
+      "project_id": 1,
+      "code": "1.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 2,
+      "path_id": 1,
+      "project_id": 2,
+      "code": "1.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 3,
+      "path_id": 1,
+      "project_id": 3,
+      "code": "1.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 4,
+      "path_id": 1,
+      "project_id": 4,
+      "code": "1.4.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 5,
+      "path_id": 1,
+      "project_id": 5,
+      "code": "1.4.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 6,
+      "path_id": 1,
+      "project_id": 6,
+      "code": "1.4.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 7,
+      "path_id": 1,
+      "project_id": 7,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 8,
+      "path_id": 1,
+      "project_id": 8,
+      "code": "2.2",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 9,
+      "path_id": 1,
+      "project_id": 9,
+      "code": "2.1",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 10,
+      "path_id": 1,
+      "project_id": 10,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 11,
+      "path_id": 1,
+      "project_id": 11,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 12,
+      "path_id": 1,
+      "project_id": 12,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 13,
+      "path_id": 1,
+      "project_id": 13,
+      "code": "2.3",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 14,
+      "path_id": 1,
+      "project_id": 16,
+      "code": "3.1",
+      "level": 3,
+      "type": "required"
+    },
+    {
+      "id": 15,
+      "path_id": 1,
+      "project_id": 20,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 16,
+      "path_id": 1,
+      "project_id": 21,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 17,
+      "path_id": 1,
+      "project_id": 22,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 18,
+      "path_id": 1,
+      "project_id": 23,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 19,
+      "path_id": 1,
+      "project_id": 24,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 20,
+      "path_id": 1,
+      "project_id": 25,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 21,
+      "path_id": 1,
+      "project_id": 26,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 22,
+      "path_id": 1,
+      "project_id": 27,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 23,
+      "path_id": 1,
+      "project_id": 28,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 24,
+      "path_id": 1,
+      "project_id": 29,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 25,
+      "path_id": 1,
+      "project_id": 30,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 26,
+      "path_id": 1,
+      "project_id": 33,
+      "code": "4.1",
+      "level": 4,
+      "type": "required"
+    },
+    {
+      "id": 27,
+      "path_id": 1,
+      "project_id": 37,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 28,
+      "path_id": 1,
+      "project_id": 38,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 29,
+      "path_id": 1,
+      "project_id": 39,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 30,
+      "path_id": 1,
+      "project_id": 40,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 31,
+      "path_id": 1,
+      "project_id": 41,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 32,
+      "path_id": 1,
+      "project_id": 42,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 33,
+      "path_id": 1,
+      "project_id": 43,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 34,
+      "path_id": 1,
+      "project_id": 44,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 35,
+      "path_id": 1,
+      "project_id": 48,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 36,
+      "path_id": 1,
+      "project_id": 49,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 37,
+      "path_id": 1,
+      "project_id": 50,
+      "code": "5.1",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 38,
+      "path_id": 1,
+      "project_id": 51,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 39,
+      "path_id": 1,
+      "project_id": 53,
+      "code": "5.3",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 40,
+      "path_id": 1,
+      "project_id": 54,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 41,
+      "path_id": 1,
+      "project_id": 55,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 42,
+      "path_id": 1,
+      "project_id": 56,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 43,
+      "path_id": 1,
+      "project_id": 57,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 44,
+      "path_id": 2,
+      "project_id": 1,
+      "code": "1.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 45,
+      "path_id": 2,
+      "project_id": 2,
+      "code": "1.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 46,
+      "path_id": 2,
+      "project_id": 3,
+      "code": "1.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 47,
+      "path_id": 2,
+      "project_id": 4,
+      "code": "1.4.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 48,
+      "path_id": 2,
+      "project_id": 5,
+      "code": "1.4.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 49,
+      "path_id": 2,
+      "project_id": 6,
+      "code": "1.4.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 50,
+      "path_id": 2,
+      "project_id": 7,
+      "code": "2.1",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 51,
+      "path_id": 2,
+      "project_id": 10,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 52,
+      "path_id": 2,
+      "project_id": 11,
+      "code": "2.2",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 53,
+      "path_id": 2,
+      "project_id": 12,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 54,
+      "path_id": 2,
+      "project_id": 13,
+      "code": "2.3",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 55,
+      "path_id": 2,
+      "project_id": 15,
+      "code": "3.1",
+      "level": 3,
+      "type": "required"
+    },
+    {
+      "id": 56,
+      "path_id": 2,
+      "project_id": 20,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 57,
+      "path_id": 2,
+      "project_id": 21,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 58,
+      "path_id": 2,
+      "project_id": 22,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 59,
+      "path_id": 2,
+      "project_id": 23,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 60,
+      "path_id": 2,
+      "project_id": 24,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 61,
+      "path_id": 2,
+      "project_id": 25,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 62,
+      "path_id": 2,
+      "project_id": 26,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 63,
+      "path_id": 2,
+      "project_id": 27,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 64,
+      "path_id": 2,
+      "project_id": 28,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 65,
+      "path_id": 2,
+      "project_id": 29,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 66,
+      "path_id": 2,
+      "project_id": 30,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 67,
+      "path_id": 2,
+      "project_id": 34,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 68,
+      "path_id": 2,
+      "project_id": 36,
+      "code": "4.1",
+      "level": 4,
+      "type": "required"
+    },
+    {
+      "id": 69,
+      "path_id": 2,
+      "project_id": 37,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 70,
+      "path_id": 2,
+      "project_id": 38,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 71,
+      "path_id": 2,
+      "project_id": 39,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 72,
+      "path_id": 2,
+      "project_id": 40,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 73,
+      "path_id": 2,
+      "project_id": 41,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 74,
+      "path_id": 2,
+      "project_id": 42,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 75,
+      "path_id": 2,
+      "project_id": 43,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 76,
+      "path_id": 2,
+      "project_id": 44,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 77,
+      "path_id": 2,
+      "project_id": 45,
+      "code": "5.1",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 78,
+      "path_id": 2,
+      "project_id": 48,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 79,
+      "path_id": 2,
+      "project_id": 49,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 80,
+      "path_id": 2,
+      "project_id": 51,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 81,
+      "path_id": 2,
+      "project_id": 53,
+      "code": "5.3",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 82,
+      "path_id": 2,
+      "project_id": 54,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 83,
+      "path_id": 2,
+      "project_id": 55,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 84,
+      "path_id": 2,
+      "project_id": 56,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 85,
+      "path_id": 2,
+      "project_id": 57,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 86,
+      "path_id": 3,
+      "project_id": 1,
+      "code": "1.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 87,
+      "path_id": 3,
+      "project_id": 2,
+      "code": "1.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 88,
+      "path_id": 3,
+      "project_id": 3,
+      "code": "1.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 89,
+      "path_id": 3,
+      "project_id": 4,
+      "code": "1.4.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 90,
+      "path_id": 3,
+      "project_id": 5,
+      "code": "1.4.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 91,
+      "path_id": 3,
+      "project_id": 6,
+      "code": "1.4.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 92,
+      "path_id": 3,
+      "project_id": 7,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 93,
+      "path_id": 3,
+      "project_id": 8,
+      "code": "2.1",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 94,
+      "path_id": 3,
+      "project_id": 10,
+      "code": "2.2",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 95,
+      "path_id": 3,
+      "project_id": 11,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 96,
+      "path_id": 3,
+      "project_id": 12,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 97,
+      "path_id": 3,
+      "project_id": 13,
+      "code": "2.3",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 98,
+      "path_id": 3,
+      "project_id": 19,
+      "code": "3.1",
+      "level": 3,
+      "type": "required"
+    },
+    {
+      "id": 99,
+      "path_id": 3,
+      "project_id": 20,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 100,
+      "path_id": 3,
+      "project_id": 21,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 101,
+      "path_id": 3,
+      "project_id": 22,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 102,
+      "path_id": 3,
+      "project_id": 23,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 103,
+      "path_id": 3,
+      "project_id": 24,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 104,
+      "path_id": 3,
+      "project_id": 25,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 105,
+      "path_id": 3,
+      "project_id": 26,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 106,
+      "path_id": 3,
+      "project_id": 27,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 107,
+      "path_id": 3,
+      "project_id": 28,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 108,
+      "path_id": 3,
+      "project_id": 29,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 109,
+      "path_id": 3,
+      "project_id": 30,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 110,
+      "path_id": 3,
+      "project_id": 34,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 111,
+      "path_id": 3,
+      "project_id": 35,
+      "code": "4.1",
+      "level": 4,
+      "type": "required"
+    },
+    {
+      "id": 112,
+      "path_id": 3,
+      "project_id": 37,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 113,
+      "path_id": 3,
+      "project_id": 38,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 114,
+      "path_id": 3,
+      "project_id": 39,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 115,
+      "path_id": 3,
+      "project_id": 40,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 116,
+      "path_id": 3,
+      "project_id": 41,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 117,
+      "path_id": 3,
+      "project_id": 42,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 118,
+      "path_id": 3,
+      "project_id": 43,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 119,
+      "path_id": 3,
+      "project_id": 44,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 120,
+      "path_id": 3,
+      "project_id": 48,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 121,
+      "path_id": 3,
+      "project_id": 49,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 122,
+      "path_id": 3,
+      "project_id": 51,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 123,
+      "path_id": 3,
+      "project_id": 52,
+      "code": "5.1",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 124,
+      "path_id": 3,
+      "project_id": 53,
+      "code": "5.3",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 125,
+      "path_id": 3,
+      "project_id": 54,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 126,
+      "path_id": 3,
+      "project_id": 55,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 127,
+      "path_id": 3,
+      "project_id": 56,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 128,
+      "path_id": 3,
+      "project_id": 57,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 129,
+      "path_id": 4,
+      "project_id": 1,
+      "code": "1.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 130,
+      "path_id": 4,
+      "project_id": 2,
+      "code": "1.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 131,
+      "path_id": 4,
+      "project_id": 3,
+      "code": "1.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 132,
+      "path_id": 4,
+      "project_id": 4,
+      "code": "1.4.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 133,
+      "path_id": 4,
+      "project_id": 5,
+      "code": "1.4.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 134,
+      "path_id": 4,
+      "project_id": 6,
+      "code": "1.4.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 135,
+      "path_id": 4,
+      "project_id": 7,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 136,
+      "path_id": 4,
+      "project_id": 9,
+      "code": "2.1",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 137,
+      "path_id": 4,
+      "project_id": 10,
+      "code": "2.2",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 138,
+      "path_id": 4,
+      "project_id": 11,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 139,
+      "path_id": 4,
+      "project_id": 12,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 140,
+      "path_id": 4,
+      "project_id": 13,
+      "code": "2.3",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 141,
+      "path_id": 4,
+      "project_id": 18,
+      "code": "3.1",
+      "level": 3,
+      "type": "required"
+    },
+    {
+      "id": 142,
+      "path_id": 4,
+      "project_id": 20,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 143,
+      "path_id": 4,
+      "project_id": 21,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 144,
+      "path_id": 4,
+      "project_id": 22,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 145,
+      "path_id": 4,
+      "project_id": 23,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 146,
+      "path_id": 4,
+      "project_id": 24,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 147,
+      "path_id": 4,
+      "project_id": 25,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 148,
+      "path_id": 4,
+      "project_id": 26,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 149,
+      "path_id": 4,
+      "project_id": 27,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 150,
+      "path_id": 4,
+      "project_id": 28,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 151,
+      "path_id": 4,
+      "project_id": 29,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 152,
+      "path_id": 4,
+      "project_id": 30,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 153,
+      "path_id": 4,
+      "project_id": 32,
+      "code": "4.1",
+      "level": 4,
+      "type": "required"
+    },
+    {
+      "id": 154,
+      "path_id": 4,
+      "project_id": 37,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 155,
+      "path_id": 4,
+      "project_id": 38,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 156,
+      "path_id": 4,
+      "project_id": 39,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 157,
+      "path_id": 4,
+      "project_id": 40,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 158,
+      "path_id": 4,
+      "project_id": 41,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 159,
+      "path_id": 4,
+      "project_id": 42,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 160,
+      "path_id": 4,
+      "project_id": 43,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 161,
+      "path_id": 4,
+      "project_id": 44,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 162,
+      "path_id": 4,
+      "project_id": 48,
+      "code": "5.1",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 163,
+      "path_id": 4,
+      "project_id": 49,
+      "code": "5.1",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 164,
+      "path_id": 4,
+      "project_id": 51,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 165,
+      "path_id": 4,
+      "project_id": 53,
+      "code": "5.3",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 166,
+      "path_id": 4,
+      "project_id": 54,
+      "code": "5.1",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 167,
+      "path_id": 4,
+      "project_id": 55,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 168,
+      "path_id": 4,
+      "project_id": 56,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 169,
+      "path_id": 4,
+      "project_id": 57,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 170,
+      "path_id": 5,
+      "project_id": 1,
+      "code": "1.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 171,
+      "path_id": 5,
+      "project_id": 2,
+      "code": "1.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 172,
+      "path_id": 5,
+      "project_id": 3,
+      "code": "1.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 173,
+      "path_id": 5,
+      "project_id": 4,
+      "code": "1.4.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 174,
+      "path_id": 5,
+      "project_id": 5,
+      "code": "1.4.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 175,
+      "path_id": 5,
+      "project_id": 6,
+      "code": "1.4.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 176,
+      "path_id": 5,
+      "project_id": 7,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 177,
+      "path_id": 5,
+      "project_id": 8,
+      "code": "2.1",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 178,
+      "path_id": 5,
+      "project_id": 10,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 179,
+      "path_id": 5,
+      "project_id": 11,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 180,
+      "path_id": 5,
+      "project_id": 12,
+      "code": "2.2",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 181,
+      "path_id": 5,
+      "project_id": 13,
+      "code": "2.3",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 182,
+      "path_id": 5,
+      "project_id": 17,
+      "code": "3.1",
+      "level": 3,
+      "type": "required"
+    },
+    {
+      "id": 183,
+      "path_id": 5,
+      "project_id": 20,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 184,
+      "path_id": 5,
+      "project_id": 21,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 185,
+      "path_id": 5,
+      "project_id": 22,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 186,
+      "path_id": 5,
+      "project_id": 23,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 187,
+      "path_id": 5,
+      "project_id": 24,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 188,
+      "path_id": 5,
+      "project_id": 25,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 189,
+      "path_id": 5,
+      "project_id": 26,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 190,
+      "path_id": 5,
+      "project_id": 27,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 191,
+      "path_id": 5,
+      "project_id": 28,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 192,
+      "path_id": 5,
+      "project_id": 29,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 193,
+      "path_id": 5,
+      "project_id": 30,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 194,
+      "path_id": 5,
+      "project_id": 34,
+      "code": "4.1",
+      "level": 4,
+      "type": "required"
+    },
+    {
+      "id": 195,
+      "path_id": 5,
+      "project_id": 37,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 196,
+      "path_id": 5,
+      "project_id": 38,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 197,
+      "path_id": 5,
+      "project_id": 39,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 198,
+      "path_id": 5,
+      "project_id": 40,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 199,
+      "path_id": 5,
+      "project_id": 41,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 200,
+      "path_id": 5,
+      "project_id": 43,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 201,
+      "path_id": 5,
+      "project_id": 44,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 202,
+      "path_id": 5,
+      "project_id": 48,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 203,
+      "path_id": 5,
+      "project_id": 49,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 204,
+      "path_id": 5,
+      "project_id": 51,
+      "code": "5.1",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 205,
+      "path_id": 5,
+      "project_id": 53,
+      "code": "5.3",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 206,
+      "path_id": 5,
+      "project_id": 54,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 207,
+      "path_id": 5,
+      "project_id": 55,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 208,
+      "path_id": 5,
+      "project_id": 56,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 209,
+      "path_id": 5,
+      "project_id": 57,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 210,
+      "path_id": 6,
+      "project_id": 1,
+      "code": "1.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 211,
+      "path_id": 6,
+      "project_id": 2,
+      "code": "1.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 212,
+      "path_id": 6,
+      "project_id": 3,
+      "code": "1.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 213,
+      "path_id": 6,
+      "project_id": 4,
+      "code": "1.4.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 214,
+      "path_id": 6,
+      "project_id": 5,
+      "code": "1.4.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 215,
+      "path_id": 6,
+      "project_id": 6,
+      "code": "1.4.3",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 216,
+      "path_id": 6,
+      "project_id": 7,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 217,
+      "path_id": 6,
+      "project_id": 8,
+      "code": "2.2",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 218,
+      "path_id": 6,
+      "project_id": 9,
+      "code": "2.1",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 219,
+      "path_id": 6,
+      "project_id": 10,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 220,
+      "path_id": 6,
+      "project_id": 11,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 221,
+      "path_id": 6,
+      "project_id": 12,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 222,
+      "path_id": 6,
+      "project_id": 13,
+      "code": "2.3",
+      "level": 2,
+      "type": "required"
+    },
+    {
+      "id": 223,
+      "path_id": 6,
+      "project_id": 14,
+      "code": "3.1",
+      "level": 3,
+      "type": "required"
+    },
+    {
+      "id": 224,
+      "path_id": 6,
+      "project_id": 20,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 225,
+      "path_id": 6,
+      "project_id": 21,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 226,
+      "path_id": 6,
+      "project_id": 22,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 227,
+      "path_id": 6,
+      "project_id": 23,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 228,
+      "path_id": 6,
+      "project_id": 24,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 229,
+      "path_id": 6,
+      "project_id": 25,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 230,
+      "path_id": 6,
+      "project_id": 26,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 231,
+      "path_id": 6,
+      "project_id": 27,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 232,
+      "path_id": 6,
+      "project_id": 28,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 233,
+      "path_id": 6,
+      "project_id": 29,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 234,
+      "path_id": 6,
+      "project_id": 30,
+      "code": "3.2",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 235,
+      "path_id": 6,
+      "project_id": 31,
+      "code": "4.1",
+      "level": 4,
+      "type": "required"
+    },
+    {
+      "id": 236,
+      "path_id": 6,
+      "project_id": 37,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 237,
+      "path_id": 6,
+      "project_id": 38,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 238,
+      "path_id": 6,
+      "project_id": 39,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 239,
+      "path_id": 6,
+      "project_id": 40,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 240,
+      "path_id": 6,
+      "project_id": 41,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 241,
+      "path_id": 6,
+      "project_id": 42,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 242,
+      "path_id": 6,
+      "project_id": 43,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 243,
+      "path_id": 6,
+      "project_id": 44,
+      "code": "4.2",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 244,
+      "path_id": 6,
+      "project_id": 46,
+      "code": "5.1.1",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 245,
+      "path_id": 6,
+      "project_id": 47,
+      "code": "5.1.2",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 246,
+      "path_id": 6,
+      "project_id": 48,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 247,
+      "path_id": 6,
+      "project_id": 49,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 248,
+      "path_id": 6,
+      "project_id": 51,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 249,
+      "path_id": 6,
+      "project_id": 53,
+      "code": "5.3",
+      "level": 5,
+      "type": "required"
+    },
+    {
+      "id": 250,
+      "path_id": 6,
+      "project_id": 54,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 251,
+      "path_id": 6,
+      "project_id": 55,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 252,
+      "path_id": 6,
+      "project_id": 56,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 253,
+      "path_id": 6,
+      "project_id": 57,
+      "code": "5.2",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 254,
+      "path_id": 7,
+      "project_id": 58,
+      "code": "1.1",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 255,
+      "path_id": 7,
+      "project_id": 59,
+      "code": "1.2",
+      "level": 1,
+      "type": "required"
+    },
+    {
+      "id": 256,
+      "path_id": 8,
+      "project_id": 60,
+      "code": "1.0",
+      "level": 1,
+      "type": "other"
+    },
+    {
+      "id": 257,
+      "path_id": 9,
+      "project_id": 61,
+      "code": "294",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 258,
+      "path_id": 9,
+      "project_id": 62,
+      "code": "295",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 259,
+      "path_id": 9,
+      "project_id": 63,
+      "code": "297",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 260,
+      "path_id": 9,
+      "project_id": 64,
+      "code": "298",
+      "level": 3,
+      "type": "elective"
+    },
+    {
+      "id": 261,
+      "path_id": 9,
+      "project_id": 65,
+      "code": "291",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 262,
+      "path_id": 9,
+      "project_id": 66,
+      "code": "293",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 263,
+      "path_id": 9,
+      "project_id": 67,
+      "code": "299",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 264,
+      "path_id": 9,
+      "project_id": 68,
+      "code": "300",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 265,
+      "path_id": 10,
+      "project_id": 69,
+      "code": "270",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 266,
+      "path_id": 10,
+      "project_id": 70,
+      "code": "271",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 267,
+      "path_id": 10,
+      "project_id": 71,
+      "code": "272",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 268,
+      "path_id": 10,
+      "project_id": 72,
+      "code": "273",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 269,
+      "path_id": 10,
+      "project_id": 73,
+      "code": "274",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 270,
+      "path_id": 10,
+      "project_id": 74,
+      "code": "275",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 271,
+      "path_id": 10,
+      "project_id": 75,
+      "code": "276",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 272,
+      "path_id": 10,
+      "project_id": 76,
+      "code": "277",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 273,
+      "path_id": 10,
+      "project_id": 77,
+      "code": "278",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 274,
+      "path_id": 10,
+      "project_id": 78,
+      "code": "279",
+      "level": 4,
+      "type": "elective"
+    },
+    {
+      "id": 275,
+      "path_id": 9,
+      "project_id": 79,
+      "code": "290",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 276,
+      "path_id": 9,
+      "project_id": 80,
+      "code": "292",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 277,
+      "path_id": 9,
+      "project_id": 81,
+      "code": "296",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 278,
+      "path_id": 11,
+      "project_id": 82,
+      "code": "320",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 279,
+      "path_id": 11,
+      "project_id": 83,
+      "code": "318",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 280,
+      "path_id": 11,
+      "project_id": 84,
+      "code": "312",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 281,
+      "path_id": 11,
+      "project_id": 85,
+      "code": "319",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 282,
+      "path_id": 11,
+      "project_id": 86,
+      "code": "316",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 283,
+      "path_id": 11,
+      "project_id": 87,
+      "code": "315",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 284,
+      "path_id": 11,
+      "project_id": 88,
+      "code": "321",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 285,
+      "path_id": 11,
+      "project_id": 89,
+      "code": "311",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 286,
+      "path_id": 11,
+      "project_id": 90,
+      "code": "313",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 287,
+      "path_id": 11,
+      "project_id": 91,
+      "code": "314",
+      "level": 5,
+      "type": "elective"
+    },
+    {
+      "id": 288,
+      "path_id": 11,
+      "project_id": 92,
+      "code": "317",
+      "level": 5,
+      "type": "elective"
+    }
+  ]
+}

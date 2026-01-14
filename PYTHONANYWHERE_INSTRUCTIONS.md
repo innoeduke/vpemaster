@@ -21,5 +21,20 @@ python fix_password.py
 ## 3. Reload Web App
 Go to the **Web** tab in your PythonAnywhere dashboard and click the green **Reload** button to apply the code changes.
 
+## Troubleshooting: ImportError
+If you see an error like `cannot import name 'app' from 'app'`, it means your PythonAnywhere WSGI configuration needs to be updated for the application factory pattern.
+
+1. Go to the **Web** tab on PythonAnywhere.
+2. Find the **WSGI configuration file** link and click it.
+3. Replace the line:
+   ```python
+   from app import app as application
+   ```
+   with:
+   ```python
+   from run import app as application
+   ```
+4. Save the file and **Reload** your web app again.
+
 ## 4. Verify
 Try logging in to your live site with the username `admin` (or your user) and password `leadership`.

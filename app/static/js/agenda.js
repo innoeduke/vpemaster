@@ -27,6 +27,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let allSessionTypes = [];
   let allContacts = [];
+  let allProjects = [];
   let allMeetingTypes = {};
   let allMeetingRoles = {};
 
@@ -61,7 +62,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Only fetch edit-related data if the edit button is present (i.e., user is authorized)
   if (editBtn) {
     fetch("/api/data/all")
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
       .then((data) => {
         allSessionTypes = data.session_types;
         allContacts = data.contacts;
@@ -71,10 +77,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Make data available globally for speech_modal.js, which expects them as globals
         window.allProjects = allProjects;
+        window.pathways = data.pathways;
+        window.pathwayMap = data.pathway_mapping;
+        window.groupedPathways = data.pathways;
+        window.ProjectID = data.project_id_constants;
 
         initializeAgendaPage(); // Now that data is loaded, initialize the page
       })
-      .catch((error) => console.error("Error fetching initial data:", error));
+      .catch((error) => {
+        console.error("Error fetching initial data:", error);
+        alert("Warning: Could not load some editing data. You may need to reload the page to edit fully.\n\nError: " + error.message);
+        // Even if data load fails, we MUST initialize the page so buttons work!
+        initializeAgendaPage();
+      });
   } else {
     initializeAgendaPage(); // Initialize for guest view without fetching edit data
   }
@@ -175,7 +190,9 @@ document.addEventListener("DOMContentLoaded", () => {
     updateHeaderVisibility(enable);
     updateRowsForEditMode(enable);
     updateActionButtonsVisibility(enable);
-    meetingFilter.disabled = enable;
+    if (meetingFilter) {
+      meetingFilter.disabled = enable;
+    }
     initializeSortable(enable);
     if (enable && geStyleSelect) {
       geStyleSelect.value = geStyleSelect.dataset.currentStyle;
@@ -885,32 +902,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     tableBody.querySelectorAll("tr").forEach((row) => {
-      const typeSelect = row.querySelector('[data-field="Type_ID"] select');
-      const ownerInput = row.querySelector(
-        '.autocomplete-container input[type="text"]'
-      );
-      // Get the project ID from the row's dataset
+      // Use dataset attributes which are persistent and available even before inputs are built
+      const typeId = row.dataset.typeId;
+      const ownerId = row.dataset.ownerId;
       const projectId = row.dataset.projectId;
 
-      // Check if the required elements exist
-      if (typeSelect && ownerInput && ownerInput.value) {
-        const typeId = typeSelect.value;
+      // Check if we have valid data
+      if (typeId && ownerId) {
         const sessionType = allSessionTypes.find((st) => st.id == typeId);
 
         // Skip if session type isn't found
         if (!sessionType) return;
 
-        const speakerName = ownerInput.value;
+        // Lookup speaker name from allContacts using ownerId
+        const contact = allContacts.find(c => c.id == ownerId);
+        const speakerName = contact ? contact.Name : null;
+
+        if (!speakerName) return;
 
         // 1. EXCLUSION: Skip Individual Evaluators completely
         if (sessionType.Title === "Evaluation") {
           return;
         }
 
-        // 2. INCLUSION: Add if it's a speech OR has a project ID
+        // 2. INCLUSION: Add if it's a speech ("Prepared Speech") OR has a project ID
+        // Note: We use the SessionType titles to identify speech types generally
         if (
-          sessionType.Title === "Pathway Speech" ||
-          sessionType.Title === "Presentation" ||
+          sessionType.Title === "Prepared Speech" ||
           (projectId && projectId !== "")
         ) {
           currentSpeakers.add(speakerName);
@@ -918,6 +936,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
     projectSpeakers = [...currentSpeakers];
+    return projectSpeakers;
   }
 
   function handleSectionChange(selectElement) {
@@ -1123,29 +1142,34 @@ document.addEventListener("DOMContentLoaded", () => {
   ) {
     // Check if session type is Evaluation (ID 31)
     if (sessionTypeTitle === "Evaluation") {
-      updateProjectSpeakers();
+      // Use the returned list directly
+      const speakers = updateProjectSpeakers();
       const select = document.createElement("select");
       select.add(new Option("-- Select Speaker --", ""));
 
-      // Populate with current speakers
-      projectSpeakers.forEach((name) => select.add(new Option(name, name)));
+      // Populate with returned speakers
+      if (speakers) {
+        speakers.forEach((name) => select.add(new Option(name, name)));
+      }
       select.value = originalValue || "";
 
       // Update speaker list on mouse down
       select.addEventListener("mousedown", function () {
         const currentValue = this.value;
-        updateProjectSpeakers();
+        const currentSpeakers = updateProjectSpeakers();
 
         // Clear all options except the first one
         while (this.options.length > 1) {
           this.remove(1);
         }
 
-        // Repopulate with current speakers
-        projectSpeakers.forEach((name) => this.add(new Option(name, name)));
+        // Repopulate with updated speakers
+        if (currentSpeakers) {
+          currentSpeakers.forEach((name) => this.add(new Option(name, name)));
+        }
 
         // Keep current selection if it still exists
-        const stillExists = projectSpeakers.some(
+        const stillExists = currentSpeakers && currentSpeakers.some(
           (name) => name === currentValue
         );
         if (stillExists) {
@@ -1520,6 +1544,16 @@ document.addEventListener("DOMContentLoaded", () => {
     // which reads the updated dataset via getRowData.
     closeRoleEditModal();
   };
+  // --- Test Hooks ---
+  if (typeof window !== 'undefined') {
+    window._agendaTestHooks = {
+      updateProjectSpeakers: updateProjectSpeakers,
+      getProjectSpeakers: () => projectSpeakers,
+      setSessionTypes: (types) => { allSessionTypes = types; },
+      setContacts: (contacts) => { allContacts = contacts; }
+    };
+  }
+
   // --- Init ---
 }); // End of DOMContentLoaded listener
 

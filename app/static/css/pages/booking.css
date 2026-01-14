@@ -782,7 +782,26 @@
         padding-right: 20px;
     }
 
+    /* Flash Message Row Fix for Mobile */
+    .booking-table tr.flash-message-row {
+        display: block;
+        /* Override grid */
+        width: 100%;
+        border: none;
+        box-shadow: none;
+        background-color: transparent;
+        padding: 0;
+        margin-bottom: 10px;
+        /* Space before next card */
+        margin-top: -15px;
+        /* Pull closer to the card above */
+    }
 
+    .booking-table tr.flash-message-row td {
+        display: block;
+        width: 100%;
+        padding: 0;
+    }
 }
 
 /* Flex layout for icon button */

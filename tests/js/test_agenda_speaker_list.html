@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Agenda Speaker List Test</title>
+    <style>
+        .pass {
+            color: green;
+            font-weight: bold;
+        }
+
+        .fail {
+            color: red;
+            font-weight: bold;
+        }
+
+        #test-results {
+            font-family: monospace;
+            white-space: pre;
+            background: #f0f0f0;
+            padding: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Agenda Speaker List Test</h1>
+    <div id="test-results">Running tests...</div>
+
+    <!-- Mocks for DOM elements expected by agenda.js -->
+    <div id="loading-overlay" style="display: none;"></div>
+    <div id="agenda-content"></div>
+    <div id="edit-btn"></div>
+    <div id="edit-logs-btn"></div>
+    <div id="cancel-edit-btn"></div>
+    <div id="add-row-btn"></div>
+    <div id="create-btn"></div>
+    <div id="meeting-filter"></div>
+    <div id="export-btn"></div>
+    <div id="table-container" data-project-speakers='[]'>
+        <table id="logs-table">
+            <thead>
+                <tr class="edit-mode-header">
+                    <th class="col-no">No</th>
+                    <th class="col-start-time">Start Time</th>
+                    <th class="col-session-type">Session Type</th>
+                    <th class="col-session-title">Session Title</th>
+                    <th class="col-owner">Owner</th>
+                    <th class="col-credentials">Credentials</th>
+                    <th class="col-duration-min">Min</th>
+                    <th class="col-duration-max">Max</th>
+                    <th class="actions-column">Actions</th>
+                </tr>
+                <tr class="non-edit-mode-header" style="display: none;">
+                    <th>No</th>
+                    <th>Start</th>
+                    <th>Title</th>
+                    <th>Owner</th>
+                    <th>Duration</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <div id="meeting-status-btn"></div>
+    <div id="ge-style-select"></div>
+    <div id="view-mode-buttons"></div>
+    <div class="wod-display"></div>
+    <div id="edit-mode-buttons"></div>
+    <div class="meeting-status-display"></div>
+
+    <!-- Mock Modals -->
+    <div id="speechEditModal" style="display: none;"></div>
+    <div id="roleEditModal" style="display: none;">
+        <input id="edit-role-log-id" type="hidden">
+        <span id="role-name-display"></span>
+        <input id="edit-current-path-level" type="text">
+    </div>
+    <div id="createAgendaModal" style="display: none;"></div>
+    <div id="copyAgendaModal" style="display: none;"></div>
+
+    <script>
+        // --- Test Setup ---
+        const logs = [];
+        function log(msg, type = 'info') {
+            console.log(`[${type.toUpperCase()}] ${msg}`);
+            logs.push(`<div class="${type}">${msg}</div>`);
+            document.getElementById('test-results').innerHTML = logs.join('');
+        }
+        function assert(condition, message) {
+            if (condition) {
+                log(`PASS: ${message}`, 'pass');
+            } else {
+                log(`FAIL: ${message}`, 'fail');
+            }
+        }
+
+        // --- Mock Data ---
+        const mockSessionTypes = [
+            { id: 1, Title: "Introduction", Predefined: true, Is_Section: false, Duration_Min: 1, Duration_Max: 1 },
+            { id: 30, Title: "Prepared Speech", Predefined: false, Is_Section: false, Valid_for_Project: true, Duration_Min: 5, Duration_Max: 7 },
+            { id: 31, Title: "Evaluation", Predefined: false, Is_Section: false, Valid_for_Project: false, Duration_Min: 2, Duration_Max: 3 },
+            { id: 20, Title: "Keynote Speech", Predefined: false, Is_Section: false, Valid_for_Project: true, Duration_Min: 10, Duration_Max: 15 },
+        ];
+
+        const mockContacts = [
+            { id: 101, Name: "Alice Speaker" },
+            { id: 102, Name: "Bob ProjectOwner" },
+            { id: 103, Name: "Charlie Evaluator" },
+            { id: 104, Name: "Dave Guest" }
+        ];
+
+        // --- Mock Fetch ---
+        window.fetch = async (url) => {
+            if (url === "/api/data/all") {
+                return {
+                    ok: true,
+                    json: async () => ({
+                        session_types: mockSessionTypes,
+                        contacts: mockContacts,
+                        projects: [],
+                        meeting_types: {},
+                        meeting_roles: {},
+                        pathways: {},
+                        pathway_mapping: {},
+                        project_id_constants: {}
+                    })
+                };
+            }
+            return { ok: false };
+        };
+
+        // --- Helper to build a table row ---
+        function createRow(typeId, ownerId, projectId = '') {
+            const tr = document.createElement('tr');
+            tr.dataset.typeId = typeId;
+            tr.dataset.ownerId = ownerId;
+            tr.dataset.projectId = projectId;
+
+            // Minimal DOM for querySelector calls inside `updateProjectSpeakers` (if any logic depends on children)
+            // The current robust logic relies on dataset, but let's add the basic structure just in case.
+
+            // Type Select
+            const tdType = document.createElement('td');
+            tdType.dataset.field = 'Type_ID';
+            const select = document.createElement('select');
+            select.value = typeId;
+            tdType.appendChild(select);
+            tr.appendChild(tdType);
+
+            // Owner Input container
+            const tdOwner = document.createElement('td');
+            const container = document.createElement('div');
+            container.className = 'autocomplete-container';
+            const input = document.createElement('input');
+            input.type = 'text';
+            const contact = mockContacts.find(c => c.id == ownerId);
+            input.value = contact ? contact.Name : '';
+            container.appendChild(input);
+            tdOwner.appendChild(container);
+            tr.appendChild(tdOwner);
+
+            document.querySelector('#logs-table tbody').appendChild(tr);
+            return tr;
+        }
+
+        // --- Run Tests after script load ---
+        window.addEventListener('load', async () => {
+            // Give agenda.js a moment to init and fetch
+            setTimeout(() => {
+                if (!window._agendaTestHooks) {
+                    log("FATAL: _agendaTestHooks not found. Make sure agenda.js exposes it.", 'fail');
+                    return;
+                }
+
+                const { updateProjectSpeakers, getProjectSpeakers, setSessionTypes, setContacts } = window._agendaTestHooks;
+
+                // Force set data just in case fetch mock timing is off
+                setSessionTypes(mockSessionTypes);
+                setContacts(mockContacts);
+
+                log("Starting tests...");
+
+                // Test Case 1: Prepared Speech Owner should be included
+                document.querySelector('#logs-table tbody').innerHTML = ''; // Clear table
+                createRow(30, 101, ''); // Prepared Speech, Alice
+
+                let speakers = updateProjectSpeakers();
+                assert(speakers.includes("Alice Speaker"), "Prepared Speech owner (Alice) should be in list");
+                assert(!speakers.includes("Bob ProjectOwner"), "Bob should not be in list yet");
+
+                // Test Case 2: Project ID present should be included (even if type is not Prepared Speech, e.g. Keynote)
+                createRow(20, 102, '500'); // Keynote (Valid for Project), Bob, ProjectID=500
+                speakers = updateProjectSpeakers();
+                assert(speakers.includes("Bob ProjectOwner"), "Project owner (Bob) should be in list");
+
+                // Test Case 3: Evaluation owner should NOT be included
+                createRow(31, 103, ''); // Evaluation, Charlie
+                speakers = updateProjectSpeakers();
+                assert(!speakers.includes("Charlie Evaluator"), "Evaluator (Charlie) should NOT be in list");
+
+                // Test Case 4: Random type without project ID should NOT be included
+                createRow(1, 104, ''); // Introduction, Dave
+                speakers = updateProjectSpeakers();
+                assert(!speakers.includes("Dave Guest"), "Intro owner (Dave) should NOT be in list");
+
+                log("Tests completed.");
+            }, 500);
+        });
+    </script>
+
+    <!-- Load the script under test -->
+    <script src="../../app/static/js/agenda.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,38 @@
+{% macro render_meeting_filter(meetings, selected_id, base_url='', label='Meeting:', data_format='tuple',
+extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False, render_outer_container=True) %}
+{% if render_outer_container %}
+<div class="{{ 'inline-filter-group' if label else 'booking-filter-container' }} {{ extra_classes }}"
+    style="{{ extra_style }}">
+    {% endif %}
+    {% if label %}
+    <label for="{{ select_id }}">{{ label }}</label>
+    {% else %}
+    <div class="filter-left">
+        <i class="fas fa-calendar-alt"></i>
+        {% endif %}
+
+        <select id="{{ select_id }}" {% if base_url %}onchange="window.location.href = '{{ base_url }}/' + this.value;"
+            {% endif %} {% if not label %}style="font-size: 1.1em; font-weight: bold; padding: 5px 0;" {% endif %} {% if
+            is_disabled %}disabled{% endif %}>
+            {% for item in meetings %}
+            {% if data_format == 'tuple' %}
+            {% set num = item[0] %}
+            {% set date = item[1] %}
+            {% else %}
+            {% set num = item.Meeting_Number %}
+            {% set date = item.Meeting_Date %}
+            {% endif %}
+
+            <option value="{{ num }}" {% if selected_id and num==selected_id %}selected{% endif %}>
+                #{{ num }} - {{ date.strftime('%B %d, %Y') if date else 'No Date' }}
+            </option>
+            {% endfor %}
+        </select>
+
+        {% if not label %}
+    </div>
+    {% endif %}
+    {% if render_outer_container %}
+</div>
+{% endif %}
+{% endmacro %}

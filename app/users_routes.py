@@ -38,8 +38,21 @@ def _create_or_update_user(user=None, **kwargs):
     # Profile fields (Member_ID, Current_Path, etc.) are now on Contact model.
     # We do not set them here.
 
-    contact_id = kwargs.get('contact_id', 0)
-    user.Contact_ID = contact_id if contact_id != 0 else None
+    create_new_contact = kwargs.get('create_new_contact', False)
+    if create_new_contact and user.id is None:
+        # Create a new contact with username
+        new_contact = Contact(
+            Name=user.Username,
+            Email=user.Email,
+            Type='Member',
+            Date_Created=date.today()
+        )
+        db.session.add(new_contact)
+        db.session.flush() # Get ID
+        user.Contact_ID = new_contact.id
+    else:
+        contact_id = kwargs.get('contact_id', 0)
+        user.Contact_ID = contact_id if contact_id != 0 else None
 
 
 @users_bp.route('/users')
@@ -84,6 +97,7 @@ def user_form(user_id):
             role=request.form.get('role'),
             status=request.form.get('status'),
             contact_id=request.form.get('contact_id', 0, type=int),
+            create_new_contact=request.form.get('create_new_contact') == 'on',
             password=request.form.get('password')
         )
         db.session.commit()

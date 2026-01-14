@@ -1,40 +1,44 @@
 # Fresh Docker Deployment Instructions
 
-This guide explains how to perform a fresh deployment of the VPEMaster app with the required metadata migration.
+This guide explains how to perform a fresh deployment of the VPEMaster app.
 
 ## 1. Prerequisites
-The `scripts/` directory now contains two new artifacts:
-- `export_metadata.py`: Used to snapshot the current metadata.
-- `metadata_dump.json`: The snapshot of the 6 metadata tables (`level_roles`, `pathways`, `pathway_projects`, `projects`, `roles`, `session_types`).
-- `seed_metadata.py`: Used to initialize the new database with this snapshot.
-
-A generated `metadata_dump.json` is already present. If you need to update it from your current environment, run:
-```bash
-python3 scripts/export_metadata.py
-```
+The database metadata is managed via Flask-Migrate. The initial baseline migration includes the necessary data seeding.
 
 ## 2. Deploying with Docker
-Build and start your containers as usual:
+Build and start your containers:
 
 ```bash
 docker-compose up -d --build
 ```
 
 ## 3. Initialize the Database
-Once the containers are running, you need to run the seed script inside the `web` container. This will:
-1. **DROP ALL TABLES** (Zeroing strictly all other tables).
-2. Re-create the database schema.
-3. Import the data from `metadata_dump.json` into the 6 metadata tables.
-
-Run the following command:
+Once the containers are running, simply run the database migrations. This will create the schema and seed the initial metadata.
 
 ```bash
-docker-compose exec web python scripts/seed_metadata.py
+docker-compose exec web flask db upgrade
 ```
 
 ## 4. Verification
-After seeding, the database will contain:
+After the upgrade, the database will contain:
 - Populated metadata tables (`roles`, `pathways`, etc.)
-- Empty user/transaction tables (`users`, `contacts`, `meetings`, `session_logs`, etc.)
+- Empty user/transaction tables (`Users`, `Contacts`, `Meetings`, `Session_Logs`, etc.)
 
 You can now proceed with creating your initial admin user or other setup steps.
+
+## Troubleshooting: Version Mismatch
+If you receive an error like `Can't locate revision identified by '...'` on an existing server, run this one-liner to reset the migration record:
+
+```bash
+python3 -c "from app import create_app, db; import sqlalchemy as sa; app=create_app(); ctx=app.app_context(); ctx.push(); db.session.execute(sa.text('DROP TABLE IF EXISTS alembic_version')); db.session.commit()"
+```
+
+Then run the setup again:
+```bash
+flask db stamp head
+python scripts/seed_metadata.py
+flask db upgrade
+```
+
+> [!NOTE]
+> `flask db upgrade` only runs the seeding logic on a **fresh** database. If you have an existing database and use `stamp head`, you must run `python scripts/seed_metadata.py` manually to populate the metadata.

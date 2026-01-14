@@ -10,4 +10,7 @@ app/static/css/packed.css
 app/static/.webassets-cache/
 app/static/uploads/
 WARP.md
-
+.coverage
+.coverage.*
+htmlcov/
+.
