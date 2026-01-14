@@ -7,7 +7,7 @@
 <div id="agenda-content"> {# Wrapper for edit-mode class #}
     <div class="agenda-header-container">
         <div class="agenda-header-logo">
-            <img src="{{ url_for('static', filename='images/SHLTMC-logo.png') }}" alt="SHLTMC Logo">
+            <img src="{{ url_for('static', filename='images/SHLTMC-logo.webp') }}" alt="SHLTMC Logo">
         </div>
 
         <div class="agenda-header-info">
@@ -337,10 +337,10 @@
         var groupedPathways = {{ pathways| tojson | safe }};
         var ProjectID = {
             GENERIC: {{ ProjectID.GENERIC }},
-        TOPICSMASTER_PROJECT: {{ ProjectID.TOPICSMASTER_PROJECT }},
-        KEYNOTE_SPEAKER_PROJECT: {{ ProjectID.KEYNOTE_SPEAKER_PROJECT }},
-        MODERATOR_PROJECT: {{ ProjectID.MODERATOR_PROJECT }},
-        EVALUATION_PROJECTS: {{ ProjectID.EVALUATION_PROJECTS | tojson | safe }}
+        TOPICSMASTER_PROJECT: { { ProjectID.TOPICSMASTER_PROJECT } },
+        KEYNOTE_SPEAKER_PROJECT: { { ProjectID.KEYNOTE_SPEAKER_PROJECT } },
+        MODERATOR_PROJECT: { { ProjectID.MODERATOR_PROJECT } },
+        EVALUATION_PROJECTS: { { ProjectID.EVALUATION_PROJECTS | tojson | safe } }
         };
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
