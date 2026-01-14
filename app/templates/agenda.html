@@ -331,17 +331,11 @@
 
     <script>
         // Pass Python data to global JS variables used by speech_modal.js
-        var allProjects = {{ projects| tojson | safe }};
-        var pathways = {{ pathways| tojson | safe }};
-        var pathwayMap = {{ pathway_mapping| tojson | safe }};
-        var groupedPathways = {{ pathways| tojson | safe }};
-        var ProjectID = {
-            GENERIC: {{ ProjectID.GENERIC }},
-        TOPICSMASTER_PROJECT: { { ProjectID.TOPICSMASTER_PROJECT } },
-        KEYNOTE_SPEAKER_PROJECT: { { ProjectID.KEYNOTE_SPEAKER_PROJECT } },
-        MODERATOR_PROJECT: { { ProjectID.MODERATOR_PROJECT } },
-        EVALUATION_PROJECTS: { { ProjectID.EVALUATION_PROJECTS | tojson | safe } }
-        };
+        var allProjects = {{ projects | tojson | safe }};
+        var pathways = {{ pathways | tojson | safe }};
+        var pathwayMap = {{ pathway_mapping | tojson | safe }};
+        var groupedPathways = {{ pathways | tojson | safe }};
+        var ProjectID = {{ ProjectID | tojson | safe }};
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>

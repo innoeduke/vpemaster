@@ -525,6 +525,15 @@ def agenda():
     dropdown_data = get_dropdown_metadata()
     
     # --- Render Template ---
+    # Serialize ProjectID as a dictionary for safe JSON conversion in template
+    project_id_dict = {
+        'GENERIC': ProjectID.GENERIC,
+        'TOPICSMASTER_PROJECT': ProjectID.TOPICSMASTER_PROJECT,
+        'KEYNOTE_SPEAKER_PROJECT': ProjectID.KEYNOTE_SPEAKER_PROJECT,
+        'MODERATOR_PROJECT': ProjectID.MODERATOR_PROJECT,
+        'EVALUATION_PROJECTS': ProjectID.EVALUATION_PROJECTS
+    }
+    
     return render_template('agenda.html',
                            logs_data=logs_data,               # Use the processed list of dictionaries
                            pathways=pathways,               # For modals
@@ -537,7 +546,7 @@ def agenda():
                            meeting_templates=meeting_templates,
                            meeting_types=current_app.config['MEETING_TYPES'],
                            default_start_time=default_start_time,
-                           ProjectID=ProjectID)
+                           ProjectID=project_id_dict)
 
 
 # --- API Endpoints for Asynchronous Data Loading ---
