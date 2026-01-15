@@ -20,6 +20,9 @@ login_manager = LoginManager()
 login_manager.login_view = 'auth_bp.login'
 login_manager.login_message_category = 'info'
 
+from flask_principal import Principal, Identity, AnonymousIdentity, identity_loaded
+principal = Principal()
+
 
 def create_app(config_class='config.Config'):
     """
@@ -38,8 +41,40 @@ def create_app(config_class='config.Config'):
     bcrypt.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
+    principal.init_app(app)
     mail.init_app(app)
     assets.init_app(app)
+    
+    # Set up identity loader for Flask-Principal
+    from flask_login import user_loaded_from_request, user_loaded_from_cookie
+    from flask_principal import identity_changed, RoleNeed, UserNeed
+    
+    @user_loaded_from_cookie.connect_via(app)
+    @user_loaded_from_request.connect_via(app)
+    def on_user_loaded(sender, user):
+        """Load user identity when user logs in."""
+        identity_changed.send(sender, identity=Identity(user.id))
+    
+    @identity_loaded.connect_via(app)
+    def on_identity_loaded(sender, identity):
+        """Load user permissions into identity."""
+        from .models import User
+        
+        # Set the identity user object
+        identity.user = User.query.get(identity.id)
+        
+        if identity.user:
+            # Add UserNeed
+            identity.provides.add(UserNeed(identity.id))
+            
+            # Add role needs
+            for role in identity.user.roles:
+                identity.provides.add(RoleNeed(role.name))
+            
+            # Add permission needs
+            for permission_name in identity.user.get_permissions():
+                from flask_principal import Permission as PrincipalPermission
+                identity.provides.add(('permission', permission_name))
 
     # Register context processors
     from .auth.utils import is_authorized

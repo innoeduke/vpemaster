@@ -20,7 +20,7 @@ class SessionType(db.Model):
     Duration_Max = db.Column(db.Integer)
     role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=True)
 
-    role = db.relationship('Role', backref='session_types')
+    role = db.relationship('app.models.roster.Role', backref='session_types')
 
 
 class SessionLog(db.Model):

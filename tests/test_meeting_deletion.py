@@ -7,7 +7,8 @@ from datetime import datetime, date, time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import Meeting, SessionLog, SessionType, Role, Waitlist, Vote, Roster, RosterRole, Contact, Media
+from app.models import Meeting, SessionLog, SessionType, Waitlist, Vote, Roster, RosterRole, Contact, Media
+from app.models.roster import Role
 from config import Config
 
 class TestConfig(Config):

@@ -17,6 +17,12 @@ from .voting import Vote
 from .media import Media
 from .achievement import Achievement
 
+# Import permission system models
+from .permission import Permission
+from .role import Role as AuthRole  # Alias to avoid conflict with roster.Role
+from .role_permission import RolePermission
+from .user_role import UserRole as UserRoleAssociation
+
 # Import Flask-Login user loader
 from .. import login_manager
 
@@ -44,4 +50,9 @@ __all__ = [
     'Media',
     'Achievement',
     'load_user',
+    # Permission system models
+    'Permission',
+    'AuthRole',
+    'RolePermission',
+    'UserRoleAssociation',
 ]

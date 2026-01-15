@@ -1,7 +1,8 @@
 import unittest
 from datetime import datetime, date
 from app import create_app, db
-from app.models import SessionLog, SessionType, Role, Contact, Meeting, Waitlist, Roster
+from app.models import SessionLog, SessionType, Contact, Meeting, Waitlist, Roster
+from app.models.roster import Role
 from app.services.role_service import RoleService
 from app.constants import SessionTypeID
 from config import Config

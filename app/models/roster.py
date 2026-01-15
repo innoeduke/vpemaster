@@ -39,7 +39,7 @@ class Roster(db.Model):
     contact_type = db.Column(db.String(50), nullable=True)
 
     contact = db.relationship('Contact', backref='roster_entries')
-    roles = db.relationship('Role', secondary='roster_roles', backref='roster_entries')
+    roles = db.relationship('app.models.roster.Role', secondary='roster_roles', backref='roster_entries')
 
     def add_role(self, role):
         """Add a role to this roster entry if not already assigned"""

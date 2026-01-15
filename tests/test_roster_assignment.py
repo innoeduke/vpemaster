@@ -7,7 +7,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import Roster, Contact, Role
+from app.models import Roster, Contact
+from app.models.roster import Role
 from config import Config
 from sqlalchemy import func
 

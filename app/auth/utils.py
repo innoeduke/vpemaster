@@ -2,6 +2,7 @@ from flask_login import login_required, current_user
 from functools import wraps
 from flask import redirect, url_for, session
 
+# DEPRECATED: This will be removed in Phase 7
 # A single, centralized map of all permissions in the application.
 # We use sets for very fast "in" lookups.
 ROLE_PERMISSIONS = {
@@ -71,6 +72,8 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
     """
     Checks if a user/role is authorized for a feature.
     
+    Updated to use database-backed permission system.
+    
     Usage 1 (Legacy/Role-based): is_authorized('Admin', 'AGENDA_EDIT')
     Usage 2 (Current User): is_authorized('AGENDA_EDIT') -> checks current_user
     Usage 3 (Context-aware): is_authorized('AGENDA_EDIT', meeting=selected_meeting)
@@ -88,17 +91,18 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
             if target_perm in {'AGENDA_EDIT', 'BOOKING_ASSIGN_ALL', 'BOOKING_BOOK_OWN', 'VOTING_VIEW_RESULTS'}:
                 return True
 
-    # Usage 2: Check current user logic
+    # Usage 2: Check current user logic (PRIMARY USE CASE)
     if permission is None:
         # Argument is the permission name
         perm_name = user_role_or_permission
         if current_user.is_authenticated:
-            return current_user.can(perm_name)
+            # Use new database-backed permission system
+            return current_user.has_permission(perm_name)
         else:
-            # Guest check
+            # Guest check - fallback to old system
             return perm_name in ROLE_PERMISSIONS.get("Guest", set())
 
-    # Usage 1: Explicit role check (Legacy support)
+    # Usage 1: Explicit role check (Legacy support - DEPRECATED)
     user_role = user_role_or_permission
     if user_role is None:
         user_role = "Guest"

@@ -1,6 +1,7 @@
 
 from app import create_app, db
-from app.models import Roster, Contact, Role, User
+from app.models import Roster, Contact, User
+from app.models.roster import Role
 from sqlalchemy import func
 
 app = create_app()

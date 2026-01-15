@@ -6,7 +6,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import User, Contact, Role, SessionType, Meeting, SessionLog
+from app.models import User, Contact, SessionType, Meeting, SessionLog
+from app.models.roster import Role
 from app.constants import SessionTypeID
 from config import Config
 from datetime import date, time
