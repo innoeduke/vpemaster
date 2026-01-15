@@ -1,9 +1,10 @@
 # vpemaster/booking_routes.py
 
 from .auth.utils import login_required, is_authorized
+from .auth.permissions import Permissions
 from flask_login import current_user
 from flask import Blueprint, render_template, request, session, jsonify, current_app
-from .models import SessionLog, SessionType, Contact, Meeting, Pathway, PathwayProject, Waitlist, Role, Roster
+from .models import SessionLog, SessionType, Contact, Meeting, Pathway, PathwayProject, Waitlist, MeetingRole, Roster
 from . import db
 from datetime import datetime
 from sqlalchemy import func
@@ -39,7 +40,7 @@ def _enrich_role_data_for_booking(roles_dict, selected_meeting):
     for _, role_data in roles_dict.items():
         role_obj = role_data.get('role_obj')
         if not role_obj:
-            role_obj = Role.query.filter_by(name=role_data['role_key']).first()
+            role_obj = MeetingRole.query.filter_by(name=role_data['role_key']).first()
 
         role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else "fa-question-circle"
         role_data['session_id'] = role_data['session_ids'][0]
@@ -54,15 +55,15 @@ def _enrich_role_data_for_booking(roles_dict, selected_meeting):
 
 def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeting_number):
     """Applies filtering and business rules based on user permissions."""
-    if is_authorized('BOOKING_ASSIGN_ALL'):
+    if is_authorized(Permissions.BOOKING_ASSIGN_ALL):
         return roles
 
     # 3-Week Policy speaker rule
     if current_user.is_authenticated and current_user.contact and current_user.contact.Current_Path:
         three_meetings_ago = selected_meeting_number - 2
-        recent_speaker_log = db.session.query(SessionLog.id).join(SessionType).join(Role, SessionType.role_id == Role.id)\
+        recent_speaker_log = db.session.query(SessionLog.id).join(SessionType).join(MeetingRole, SessionType.role_id == MeetingRole.id)\
             .filter(SessionLog.Owner_ID == current_user_contact_id)\
-            .filter(Role.name == "Prepared Speaker")\
+            .filter(MeetingRole.name == "Prepared Speaker")\
             .filter(SessionLog.Meeting_Number.between(three_meetings_ago, selected_meeting_number)).first()
 
         if recent_speaker_log:
@@ -124,7 +125,7 @@ def _sort_roles_for_booking(roles, current_user_contact_id, is_past_meeting):
         cat = role.get('award_category', '') or ''
         return CATEGORY_ORDER.get(cat, 99)
 
-    if is_past_meeting or is_authorized('BOOKING_ASSIGN_ALL'):
+    if is_past_meeting or is_authorized(Permissions.BOOKING_ASSIGN_ALL):
         roles.sort(key=lambda x: (
             get_category_priority(x),
             x.get('award_category', '') or '', 
@@ -151,7 +152,7 @@ def _get_roles_for_booking(selected_meeting_number, current_user_contact_id, sel
         filtered_roles, current_user_contact_id, is_past_meeting)
 
     # For 'not started' or 'unpublished' meetings, only show Topics Speaker to admins
-    is_admin_booker = is_authorized('BOOKING_ASSIGN_ALL', meeting=selected_meeting)
+    is_admin_booker = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting)
     if selected_meeting.status in ['not started', 'unpublished'] and not is_admin_booker:
         sorted_roles = [
             role for role in sorted_roles
@@ -169,19 +170,19 @@ def _get_user_bookings(current_user_contact_id):
     today = datetime.today().date()
     user_bookings_query = db.session.query(
         db.func.min(SessionLog.id).label('id'),
-        Role.name,
+        MeetingRole.name,
         Meeting.Meeting_Number,
         Meeting.Meeting_Date,
-        Role.icon
+        MeetingRole.icon
     ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
-     .join(Role, SessionType.role_id == Role.id)\
+     .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
      .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
      .filter(SessionLog.Owner_ID == current_user_contact_id)\
      .filter(Meeting.Meeting_Date >= today)\
-     .filter(Role.name != '', Role.name.isnot(None))\
-     .filter(Role.type != 'officer')\
-     .group_by(Meeting.Meeting_Number, Role.name, Meeting.Meeting_Date, Role.icon)\
-     .order_by(Meeting.Meeting_Number, Meeting.Meeting_Date, Role.name)
+     .filter(MeetingRole.name != '', MeetingRole.name.isnot(None))\
+     .filter(MeetingRole.type != 'officer')\
+     .group_by(Meeting.Meeting_Number, MeetingRole.name, Meeting.Meeting_Date, MeetingRole.icon)\
+     .order_by(Meeting.Meeting_Number, Meeting.Meeting_Date, MeetingRole.name)
 
     user_bookings = user_bookings_query.all()
 
@@ -210,7 +211,7 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     """Gathers all context needed for the booking page template."""
     # Show all recent meetings in the dropdown, even if booking is closed for them
     upcoming_meetings, default_meeting_num = get_meetings_by_status(
-        limit_past=8, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
+        limit_past=8, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date, Meeting.status])
 
     if not selected_meeting_number:
         selected_meeting_number = default_meeting_num or (
@@ -223,9 +224,9 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
         'user_bookings_by_date': [],
         'contacts': [],
         'selected_meeting': None,
-        'is_admin_view': is_authorized('BOOKING_ASSIGN_ALL'),
+        'is_admin_view': is_authorized(Permissions.BOOKING_ASSIGN_ALL),
         'current_user_contact_id': current_user_contact_id,
-        'user_role': user.Role if user else 'Guest',
+        'user_role': user.primary_role_name if user else 'Guest',
         'best_award_ids': set()
     }
 
@@ -239,16 +240,16 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     # 1. Guests can ONLY access 'running' meetings
     if not user:
         if selected_meeting.status != 'running':
-            context['redirect_to_voting'] = True
+            context['redirect_to_not_started'] = True
             return context
 
     # 2. Unpublished check
-    if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (user and user.is_officer) or is_manager):
-        context['redirect_to_voting'] = True
+    if selected_meeting and selected_meeting.status == 'unpublished' and not (is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)):
+        context['redirect_to_not_started'] = True
         return context
 
     context['selected_meeting'] = selected_meeting
-    context['is_admin_view'] = is_authorized('BOOKING_ASSIGN_ALL', meeting=selected_meeting)
+    context['is_admin_view'] = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting)
 
     is_past_meeting = selected_meeting.status == 'finished' if selected_meeting else False
 
@@ -269,13 +270,15 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
 
 @booking_bp.route('/booking', defaults={'selected_meeting_number': None}, methods=['GET'])
 @booking_bp.route('/booking/<int:selected_meeting_number>', methods=['GET'])
+@login_required
 def booking(selected_meeting_number):
     """Main booking page route."""
     user, current_user_contact_id = get_current_user_info()
     context = _get_booking_page_context(selected_meeting_number, user, current_user_contact_id)
     
-    if context.get('redirect_to_voting'):
-        return redirect(url_for('voting_bp.voting', selected_meeting_number=selected_meeting_number))
+    if context.get('redirect_to_not_started'):
+        meeting_num = context.get('selected_meeting_number') or selected_meeting_number
+        return redirect(url_for('agenda_bp.meeting_notice', meeting_number=meeting_num))
         
     return render_template('booking.html', **context)
 
@@ -329,7 +332,7 @@ def book_or_assign_role():
             return jsonify(success=success, message=msg)
 
         # Admin Actions
-        elif action == 'assign' and is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting):
+        elif action == 'assign' and is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
             contact_id = data.get('contact_id', '0')
             owner_id_to_set = int(contact_id) if contact_id != '0' else None
             
@@ -365,7 +368,7 @@ def book_or_assign_role():
             db.session.commit()
             return jsonify(success=True, updated_sessions=updated_sessions)
 
-        elif action == 'approve_waitlist' and is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting):
+        elif action == 'approve_waitlist' and is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
             success, msg = RoleService.approve_waitlist(log)
             if not success:
                  return jsonify(success=False, message=msg), 404

@@ -18,13 +18,37 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
             {% if data_format == 'tuple' %}
             {% set num = item[0] %}
             {% set date = item[1] %}
+            {% set status = item[2] if item|length > 2 else none %}
             {% else %}
             {% set num = item.Meeting_Number %}
             {% set date = item.Meeting_Date %}
+            {% set status = item.status if item.status else none %}
+            {% endif %}
+
+            {# Determine status icon and label #}
+            {% if status == 'unpublished' %}
+            {% set status_icon = '🔒' %}
+            {% set status_label = 'Unpublished' %}
+            {% elif status == 'not started' %}
+            {% set status_icon = '▶️' %}
+            {% set status_label = 'Not Started' %}
+            {% elif status == 'running' %}
+            {% set status_icon = '🔴' %}
+            {% set status_label = 'Running' %}
+            {% elif status == 'finished' %}
+            {% set status_icon = '✅' %}
+            {% set status_label = 'Finished' %}
+            {% elif status == 'cancelled' %}
+            {% set status_icon = '🚫' %}
+            {% set status_label = 'Cancelled' %}
+            {% else %}
+            {% set status_icon = '' %}
+            {% set status_label = '' %}
             {% endif %}
 
             <option value="{{ num }}" {% if selected_id and num==selected_id %}selected{% endif %}>
-                #{{ num }} - {{ date.strftime('%B %d, %Y') if date else 'No Date' }}
+                {{ status_icon }} #{{ num }} - {{ date.strftime('%B %d, %Y') if date else 'No Date' }}{% if status_label
+                %} ({{ status_label }}){% endif %}
             </option>
             {% endfor %}
         </select>

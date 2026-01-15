@@ -36,6 +36,12 @@
     <button class="nav-item" onclick="openTab(event, 'achievements')">
       Achievements
     </button>
+    <button class="nav-item" onclick="openTab(event, 'roles-permissions')">
+      Roles & Permissions
+    </button>
+    <button class="nav-item" onclick="openTab(event, 'audit-log')">
+      Audit Log
+    </button>
   </div>
 
   <div id="general" class="tab-content">
@@ -241,7 +247,13 @@
             <em class="user-not-linked">Not Linked</em>
             {% endif %}
           </td>
-          <td>{{ user.Role }}</td>
+          <td>
+            {% for role in user.roles %}
+            {{ role.name }}{% if not loop.last %}, {% endif %}
+            {% else %}
+            <em class="text-muted">No Role</em>
+            {% endfor %}
+          </td>
           <td>{{ user.Email if user.Email else '' }}</td>
           <td>
             {{ user.contact.Phone_Number if user.contact and
@@ -306,7 +318,7 @@
     <div class="settings-header">
       <h2>Achievement Tracking</h2>
       <div class="button-group">
-        {% if is_authorized('ACHIEVEMENTS_EDIT') %}
+        {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
         <a href="{{ url_for('achievements_bp.achievement_form') }}" class="btn btn-success">
           Add Achievement
         </a>
@@ -325,7 +337,7 @@
             <th class="sortable" data-column-index="4">Path</th>
             <th class="sortable" data-column-index="5">Level</th>
             <th class="sortable" data-column-index="6">Notes</th>
-            {% if is_authorized('ACHIEVEMENTS_EDIT') %}
+            {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
             <th>Actions</th>
             {% endif %}
           </tr>
@@ -341,7 +353,7 @@
             <td>{{ achievement.path_name or '-' }}</td>
             <td>{{ achievement.level if achievement.level else '-' }}</td>
             <td>{{ achievement.notes or '-' }}</td>
-            {% if is_authorized('ACHIEVEMENTS_EDIT') %}
+            {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
             <td>
               <div class="action-links">
                 <a href="{{ url_for('achievements_bp.achievement_form', id=achievement.id) }}" class="icon-btn"
@@ -372,43 +384,90 @@
 
 
 
-  {% include '_session_modal.html' %} {% include '_role_modal.html' %}
+</div>
 
-  <!-- Mobile Warning Modal -->
-  <div id="mobile-settings-warning-modal" class="modal" style="display: none; background-color: rgba(0,0,0,0.9);">
-    <div class="modal-content" style="width: 90%; max-width: 400px; text-align: center;">
-      <!-- No close button -->
-      <h1 style="color: #004165; margin-bottom: 25px;">Desktop Required</h1>
-      <div style="font-size: 48px; color: #d9534f; margin-bottom: 20px;">
-        <i class="fas fa-desktop"></i>
-      </div>
-      <p style="margin-bottom: 25px; font-size: 1.1em; line-height: 1.5;">
-        System Settings are not available on mobile devices. <br>
-        <br>
-        Please access this page from a PC to configure settings.
-      </p>
-      <a href="{{ url_for('agenda_bp.agenda') }}" class="btn btn-primary"
-        style="width: 90%; display: block; text-decoration: none; height: 40px; line-height: 40px;">
-        Return to Agenda
-      </a>
+<div id="roles-permissions" class="tab-content">
+  <div class="settings-header">
+    <h2>Roles & Permissions</h2>
+    <div class="button-group">
+      <button id="save-permissions-btn" class="btn btn-primary" title="Save changes to role permissions">
+        <i class="fas fa-save"></i> Save Changes
+      </button>
     </div>
   </div>
+  <div class="permissions-matrix-container">
+    <p class="matrix-instruction">Manage permissions for each system role. Changes will take effect on next login.</p>
+    <div id="permissions-matrix-loading" class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i> Loading permissions...
+    </div>
+    <div id="permissions-matrix" style="display: none;">
+      <!-- Matrix will be rendered by JS -->
+    </div>
+  </div>
+</div>
 
-  <script>
-    var ROLES_DATA = {{ roles| tojson }};
-  </script>
-  {% endblock %} {% block scripts %}
-  <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      // Check if mobile (width < 768px matches typical tablet/mobile breakpoint)
-      if (window.innerWidth < 768) {
-        const modal = document.getElementById('mobile-settings-warning-modal');
-        modal.style.display = 'flex';
+<div id="audit-log" class="tab-content">
+  <div class="settings-header">
+    <h2>Permission Audit Log</h2>
+    <div class="search-container">
+      <input type="text" id="audit-search" placeholder="Filter by user or action..." class="search-box">
+    </div>
+  </div>
+  <div class="table-container">
+    <table id="audit-log-table">
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Admin</th>
+          <th>Action</th>
+          <th>Target</th>
+          <th>Changes</th>
+        </tr>
+      </thead>
+      <tbody id="audit-log-body">
+        <!-- Will be rendered by JS -->
+      </tbody>
+    </table>
+  </div>
+</div>
 
-        // Prevent scrolling on body
-        document.body.style.overflow = 'hidden';
-      }
-    });
-  </script>
-  {% endblock %}
+{% include '_session_modal.html' %} {% include '_role_modal.html' %}
+
+<!-- Mobile Warning Modal -->
+<div id="mobile-settings-warning-modal" class="modal" style="display: none; background-color: rgba(0,0,0,0.9);">
+  <div class="modal-content" style="width: 90%; max-width: 400px; text-align: center;">
+    <!-- No close button -->
+    <h1 style="color: #004165; margin-bottom: 25px;">Desktop Required</h1>
+    <div style="font-size: 48px; color: #d9534f; margin-bottom: 20px;">
+      <i class="fas fa-desktop"></i>
+    </div>
+    <p style="margin-bottom: 25px; font-size: 1.1em; line-height: 1.5;">
+      System Settings are not available on mobile devices. <br>
+      <br>
+      Please access this page from a PC to configure settings.
+    </p>
+    <a href="{{ url_for('agenda_bp.agenda') }}" class="btn btn-primary"
+      style="width: 90%; display: block; text-decoration: none; height: 40px; line-height: 40px;">
+      Return to Agenda
+    </a>
+  </div>
+</div>
+
+<script>
+  var ROLES_DATA = {{ roles| tojson }};
+</script>
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Check if mobile (width < 768px matches typical tablet/mobile breakpoint)
+    if (window.innerWidth < 768) {
+      const modal = document.getElementById('mobile-settings-warning-modal');
+      modal.style.display = 'flex';
+
+      // Prevent scrolling on body
+      document.body.style.overflow = 'hidden';
+    }
+  });
+</script>
+{% endblock %}

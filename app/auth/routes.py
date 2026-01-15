@@ -1,4 +1,5 @@
 from flask import render_template, request, redirect, url_for, session, flash, current_app
+from .permissions import Permissions
 import os
 from sqlalchemy import or_
 from flask_login import login_user, logout_user, login_required, current_user
@@ -90,7 +91,7 @@ def profile(contact_id=None):
     """
     is_own_profile = True
     if contact_id and contact_id != current_user.Contact_ID:
-        if not current_user.is_officer:
+        if not current_user.has_role(Permissions.STAFF):
             flash('Unauthorized access.', 'error')
             return redirect(url_for('auth_bp.profile'))
         

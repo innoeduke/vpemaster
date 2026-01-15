@@ -1,8 +1,10 @@
 # vpemaster/agenda_routes.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
-from .auth.utils import login_required
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, Role, Vote, Pathway, PathwayProject
+from flask_login import current_user
+from .auth.utils import login_required, is_authorized
+from .auth.permissions import Permissions
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject
 from .constants import SessionTypeID, ProjectID, SPEECH_TYPES_WITH_PROJECT
 from .services.export import MeetingExportService
 from .services.export.context import MeetingExportContext
@@ -78,8 +80,7 @@ def _create_or_update_session(item, meeting_number, seq):
         meeting = new_meeting
 
     type_id = safe_int(item.get('type_id'))
-    session_type = SessionType.query.get(
-        type_id) if type_id else None  # Get the SessionType object
+    session_type = db.session.get(SessionType, type_id) if type_id else None
 
     # --- Owner ID Handling ---
     owner_id = safe_int(item.get('owner_id'))
@@ -87,7 +88,7 @@ def _create_or_update_session(item, meeting_number, seq):
     if owner_id == 0: 
         owner_id = None
         
-    owner_contact = Contact.query.get(owner_id) if owner_id else None
+    owner_contact = db.session.get(Contact, owner_id) if owner_id else None
 
     # --- Project ID and Status ---
     project_id = safe_int(item.get('project_id'))
@@ -105,7 +106,7 @@ def _create_or_update_session(item, meeting_number, seq):
     # --- Automatic project_code Derivation ---
     # RULE: Rely on Project.Format == 'Presentation' for rule enforcement, 
     # since 'Presentation' session type has been removed and all now use 'Prepared Speech'.
-    log_project = Project.query.get(project_id) if project_id else None
+    log_project = db.session.get(Project, project_id) if project_id else None
     is_presentation = log_project is not None and log_project.is_presentation
 
     if item.get('id') == 'new':
@@ -114,10 +115,10 @@ def _create_or_update_session(item, meeting_number, seq):
             Type_ID=type_id,
             Owner_ID=owner_id,
             session_type=session_type,
-            project=Project.query.get(project_id) if project_id else None
+            project=db.session.get(Project, project_id) if project_id else None
         )
     else:
-        log_for_derivation = SessionLog.query.get(item['id'])
+        log_for_derivation = db.session.get(SessionLog, item['id'])
         # Temporarily update for derivation
         log_for_derivation.Project_ID = project_id
         log_for_derivation.Type_ID = type_id
@@ -134,7 +135,7 @@ def _create_or_update_session(item, meeting_number, seq):
     if duration_min is None and duration_max is None:
         # 1. Project Defaults
         if project_id:
-            project_obj = Project.query.get(project_id)
+            project_obj = db.session.get(Project, project_id)
             if project_obj:
                 duration_min = project_obj.Duration_Min
                 duration_max = project_obj.Duration_Max
@@ -480,7 +481,7 @@ def agenda():
     # --- Determine Selected Meeting ---
     all_meetings, _ = get_meetings_by_status(limit_past=8)
 
-    meeting_numbers = [(m.Meeting_Number, m.Meeting_Date) for m in all_meetings]
+    meeting_numbers = [(m.Meeting_Number, m.Meeting_Date, m.status) for m in all_meetings]
 
     selected_meeting_str = request.args.get('meeting_number')
     selected_meeting_num = None
@@ -505,24 +506,18 @@ def agenda():
     # --- Use Helper to Get Processed Data ---
     logs_data = []
     selected_meeting = None
+    
     if selected_meeting_num:
         logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_num)
         
-        # Security check: Only admins/officers can see unpublished meetings
-        # Custom Security Check:
-        from flask_login import current_user
+        # Custom Security Check based on Status
         
-        # 1. Guests can ONLY access 'running' meetings
-        # 1. Guests can ONLY access 'running' meetings
-        if not current_user.is_authenticated:
-            if selected_meeting.status != 'running':
-                return redirect(url_for('voting_bp.voting', selected_meeting_number=selected_meeting_num))
-
-        # 2. Members can NOT access 'unpublished' (Officers/Managers can)
-        if selected_meeting and selected_meeting.status == 'unpublished':
-            is_manager = current_user.is_authenticated and current_user.Contact_ID == selected_meeting.manager_id
-            if not ((current_user.is_authenticated and current_user.is_officer) or is_manager):
-                return redirect(url_for('voting_bp.voting', selected_meeting_number=selected_meeting_num))
+        # 1. Unpublished: Only Officers/Admin can view full details
+        if selected_meeting.status == 'unpublished':
+            if not is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting):
+                # Unauthorized users cannot view unpublished meetings
+                # Redirect to generic not-started page
+                return redirect(url_for('agenda_bp.meeting_notice', meeting_number=selected_meeting_num))
 
     # --- Other Data for Template ---
     project_speakers = _get_project_speakers(selected_meeting_num)
@@ -580,6 +575,14 @@ def agenda():
                            ProjectID=project_id_dict)
 
 
+@agenda_bp.route('/meeting-notice/<int:meeting_number>')
+def meeting_notice(meeting_number):
+    """Generic meeting notice page for unauthorized access."""
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    status = meeting.status if meeting else 'unknown'
+    return render_template('meeting_notice.html', meeting_number=meeting_number, meeting_status=status)
+
+
 # --- API Endpoints for Asynchronous Data Loading ---
 
 @agenda_bp.route('/api/data/all')
@@ -634,7 +637,7 @@ A single endpoint to fetch all data needed for the agenda modals.
 
     # Meeting Roles (Constructed from DB for backward compatibility with frontend keys)
     # We use name.upper().replace(' ', '_') to match the legacy Config.ROLES keys where possible.
-    roles_from_db = Role.query.all()
+    roles_from_db = MeetingRole.query.all()
     meeting_roles_data = {}
     for r in roles_from_db:
         role_key = r.name.upper().replace(' ', '_').replace('-', '_')
@@ -693,7 +696,7 @@ def export_agenda(meeting_number):
         return "Meeting not found", 404
 
     # Fetch meeting for filename
-    meeting = Meeting.query.get(meeting_number) or Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    meeting = db.session.get(Meeting, meeting_number) or Meeting.query.filter_by(Meeting_Number=meeting_number).first()
     filename = f"Agenda_{meeting.Meeting_Date.strftime('%Y-%m-%d')}.xlsx" if meeting else f"Agenda_{meeting_number}.xlsx"
 
     return send_file(
@@ -724,6 +727,11 @@ def _validate_meeting_form_data(form):
         start_time = datetime.strptime(start_time_str, '%H:%M').time()
     except (ValueError, TypeError):
          raise ValueError("Invalid date or time format.")
+
+    # Validate that new meeting date is not earlier than the most recent meeting
+    most_recent_meeting = Meeting.query.order_by(Meeting.Meeting_Date.desc()).first()
+    if most_recent_meeting and meeting_date < most_recent_meeting.Meeting_Date:
+        raise ValueError(f"Meeting date cannot be earlier than the most recent meeting ({most_recent_meeting.Meeting_Date.strftime('%Y-%m-%d')})")
 
     return {
         'meeting_number': meeting_number,

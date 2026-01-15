@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, date
 from app import create_app, db
 from app.models import SessionLog, SessionType, Contact, Meeting, Waitlist, Roster
-from app.models.roster import Role
+from app.models.roster import MeetingRole
 from app.services.role_service import RoleService
 from app.constants import SessionTypeID
 from config import Config
@@ -28,11 +28,11 @@ class TestRoleService(unittest.TestCase):
         db.session.add_all([self.contact1, self.contact2])
         
         # Create Role: Toastmaster (Distinct, No Approval)
-        self.role_tm = Role(name="Toastmaster", type="meeting", needs_approval=False, is_distinct=True, is_member_only=False)
+        self.role_tm = MeetingRole(name="Toastmaster", type="meeting", needs_approval=False, is_distinct=True, is_member_only=False)
         db.session.add(self.role_tm)
 
         # Create Role: Speaker (Not Distinct, Needs Approval for test)
-        self.role_spk = Role(name="Speaker", type="meeting", needs_approval=True, is_distinct=False, is_member_only=True)
+        self.role_spk = MeetingRole(name="Speaker", type="meeting", needs_approval=True, is_distinct=False, is_member_only=True)
         db.session.add(self.role_spk)
         
         db.session.commit()

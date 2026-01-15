@@ -19,7 +19,7 @@
             <h2>{{ viewed_contact.Name }}'s Activity Logs</h2>
         </div>
         <div class="header-actions">
-            {% if is_authorized('CONTACT_BOOK_VIEW') %}
+            {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
             <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn btn-info btn-sm"
                 style="color: white;" title="View Profile">
                 <i class="fas fa-id-card"></i> Profile
@@ -228,7 +228,7 @@
                                 item.meeting.Meeting_Date.strftime('%Y-%m-%d')
                                 if item.meeting and item.meeting.Meeting_Date else 'N/A' }}
                                 {% if log.session_type.Valid_for_Project and is_authorized(current_user.id ==
-                                log.owner.id, 'SPEECH_LOGS_EDIT_ALL') %}
+                                log.owner.id, Permissions.SPEECH_LOGS_EDIT_ALL) %}
                                 <button class="icon-btn edit-log-btn"
                                     onclick="openSpeechEditModal({{ item.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)"
                                     title="Edit" style="font-size: 0.8em; margin-left: 8px;"><i
@@ -271,7 +271,7 @@
                         <i class="fas fa-play-circle"></i>
                     </a>
                     {% endif %}
-                    {% if is_authorized('SPEECH_LOGS_EDIT_ALL') %}
+                    {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
                     <button class="icon-btn edit-log-btn"
                         onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)"
                         title="Edit"><i class="fas fa-edit"></i></button>
@@ -311,7 +311,7 @@
                     {% if log.Status == 'Completed' %}
                     <i class="fas fa-check-circle" title="Completed"></i>
                     {% elif log.Status == 'Delivered' %}
-                    {% if is_authorized('SPEECH_LOGS_EDIT_ALL') %}
+                    {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
                     <button onclick="completeSpeechLog(this, {{ log.id }})"
                         class="btn btn-success btn-sm">Complete</button>
                     {% else %}
@@ -320,8 +320,8 @@
                     {% else %} {# Booked or Null #}
                     {# Only show complete/suspend if the meeting date is in the past #}
                     {% if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date < today_date %} {% if
-                        is_authorized('SPEECH_LOGS_EDIT_ALL') %} <button onclick="suspendSpeechLog(this, {{ log.id }})"
-                        class="icon-btn btn-suspend" title="Suspend">
+                        is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %} <button
+                        onclick="suspendSpeechLog(this, {{ log.id }})" class="icon-btn btn-suspend" title="Suspend">
                         <i class="fas fa-pause-circle"></i></button>
                         {% endif %}
                         {# All users can mark their own past speeches as complete #}
@@ -349,7 +349,7 @@
                     </a>
                     {% endif %}
                     {% if log.session_type.Valid_for_Project and is_authorized(current_user.id == log.Owner_ID,
-                    'SPEECH_LOGS_EDIT_ALL') %}
+                    Permissions.SPEECH_LOGS_EDIT_ALL) %}
                     <button class="icon-btn edit-log-btn"
                         onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)"
                         title="Edit"><i class="fas fa-edit"></i></button>
@@ -481,10 +481,10 @@
     var groupedPathways = {{ pathways| tojson | safe }};
     var ProjectID = {
         GENERIC: {{ ProjectID.GENERIC }},
-    TOPICSMASTER_PROJECT: {{ ProjectID.TOPICSMASTER_PROJECT }},
-    KEYNOTE_SPEAKER_PROJECT: {{ ProjectID.KEYNOTE_SPEAKER_PROJECT }},
-    MODERATOR_PROJECT: {{ ProjectID.MODERATOR_PROJECT }},
-    EVALUATION_PROJECTS: {{ ProjectID.EVALUATION_PROJECTS | tojson | safe }}
+    TOPICSMASTER_PROJECT: { { ProjectID.TOPICSMASTER_PROJECT } },
+    KEYNOTE_SPEAKER_PROJECT: { { ProjectID.KEYNOTE_SPEAKER_PROJECT } },
+    MODERATOR_PROJECT: { { ProjectID.MODERATOR_PROJECT } },
+    EVALUATION_PROJECTS: { { ProjectID.EVALUATION_PROJECTS | tojson | safe } }
     };
 
 </script>

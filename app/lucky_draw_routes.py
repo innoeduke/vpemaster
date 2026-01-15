@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template
-from .auth.utils import login_required
+from flask import Blueprint, render_template, redirect, url_for
+from .auth.utils import login_required, is_authorized
+from .auth.permissions import Permissions
 from .models import Roster, Meeting, Contact
 from .constants import RoleID
 from . import db
@@ -10,6 +11,9 @@ lucky_draw_bp = Blueprint('lucky_draw_bp', __name__)
 @lucky_draw_bp.route('/', methods=['GET'])
 @login_required
 def lucky_draw():
+    if not is_authorized(Permissions.LUCKY_DRAW_VIEW):
+        return redirect(url_for('agenda_bp.agenda'))
+
     # Get current meeting (next upcoming or most recent)
     today = db.func.current_date()
 

@@ -43,7 +43,7 @@
                                 {% if entry.contact_type %}
                                 {% set c_type = entry.contact_type %}
                                 {% elif entry.contact %}
-                                {% if entry.contact.user and entry.contact.user.is_officer %}
+                                {% if entry.contact.user and entry.contact.user.has_role(Permissions.OFFICER) %}
                                 {% set c_type = 'Officer' %}
                                 {% else %}
                                 {% set c_type = entry.contact.Type %}

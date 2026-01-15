@@ -1,5 +1,5 @@
 """User model for authentication and authorization."""
-from flask_login import UserMixin
+from flask_login import UserMixin, AnonymousUserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer as Serializer
 from flask import current_app
@@ -17,7 +17,6 @@ class User(UserMixin, db.Model):
         'Contacts.id'), nullable=True, unique=True)
     Pass_Hash = db.Column(db.String(255), nullable=False)
     Date_Created = db.Column(db.Date)
-    Role = db.Column(db.String(50), nullable=False, default='Member')  # DEPRECATED: Will be removed after migration
     Status = db.Column(db.String(50), nullable=False, default='active')
     
     # Relationships
@@ -66,6 +65,19 @@ class User(UserMixin, db.Model):
         """Check if user has a specific role."""
         return any(role.name == role_name for role in self.roles)
     
+    @property
+    def primary_role(self):
+        """Returns the user's highest-level role."""
+        if not self.roles:
+            return None
+        return max(self.roles, key=lambda r: r.level if r.level is not None else 0)
+
+    @property
+    def primary_role_name(self):
+        """Returns the name of the user's highest-level role."""
+        role = self.primary_role
+        return role.name if role else "User"
+
     def add_role(self, role):
         """Add a role to this user."""
         if role not in self.roles:
@@ -78,33 +90,39 @@ class User(UserMixin, db.Model):
             self.roles.remove(role)
             self._permission_cache = None  # Clear cache
     
-    # Legacy methods - will be updated/removed during migration
-    
     def can(self, permission):
-        """Check if user has a permission. Updated to use new permission system."""
-        # Try new permission system first
-        if self.roles:
-            return self.has_permission(permission)
+        """Check if user has a permission."""
+        return self.has_permission(permission)
+
+
+class AnonymousUser(AnonymousUserMixin):
+    """Anonymous user with Guest role permissions."""
+    
+    _permission_cache = None
+
+    def get_permissions(self):
+        """Get permissions for Guest role."""
+        if self._permission_cache is None:
+            # Import here to avoid circular dependencies
+            from .role import Role
+            
+            guest_role = Role.get_by_name('Guest')
+            permissions = set()
+            if guest_role:
+                for permission in guest_role.permissions:
+                    permissions.add(permission.name)
+            
+            self._permission_cache = permissions
         
-        # Fallback to old system during migration
-        from ..auth.utils import ROLE_PERMISSIONS 
-        role = self.Role if self.Role else "Guest"
-        return permission in ROLE_PERMISSIONS.get(role, set())
+        return self._permission_cache
+
+    def has_permission(self, permission_name):
+        """Check if guest has a specific permission."""
+        return permission_name in self.get_permissions()
+
+    def can(self, permission):
+        return self.has_permission(permission)
 
     @property
-    def is_admin(self):
-        """Check if user is admin. Will be removed - use has_role('Admin') instead."""
-        # Try new system first
-        if self.roles:
-            return self.has_role('Admin')
-        # Fallback to old system
-        return self.Role == 'Admin'
-
-    @property
-    def is_officer(self):
-        """Check if user is officer. Will be removed - use has_role() instead."""
-        # Try new system first
-        if self.roles:
-            return self.has_role('Officer') or self.has_role('VPE') or self.has_role('Admin')
-        # Fallback to old system
-        return self.Role in ['Officer', 'Admin', 'VPE']
+    def primary_role_name(self):
+        return 'Guest'

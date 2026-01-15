@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from . import db
 from .models import Achievement, Contact, Pathway
 from .auth.utils import login_required, is_authorized
+from .auth.permissions import Permissions
 from datetime import datetime
 
 achievements_bp = Blueprint('achievements_bp', __name__)
@@ -9,7 +10,7 @@ achievements_bp = Blueprint('achievements_bp', __name__)
 @achievements_bp.route('/achievements')
 @login_required
 def show_achievements():
-    if not is_authorized('ACHIEVEMENTS_VIEW'):
+    if not is_authorized(Permissions.ACHIEVEMENTS_VIEW):
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -22,13 +23,13 @@ def show_achievements():
 @achievements_bp.route('/achievement/form/<int:id>', methods=['GET', 'POST'])
 @login_required
 def achievement_form(id):
-    if not is_authorized('ACHIEVEMENTS_EDIT'):
+    if not is_authorized(Permissions.ACHIEVEMENTS_EDIT):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 
     achievement = None
     if id:
-        achievement = Achievement.query.get_or_404(id)
+        achievement = db.get_or_404(Achievement, id)
 
     if request.method == 'POST':
         contact_id = request.form.get('contact_id')
@@ -39,7 +40,7 @@ def achievement_form(id):
         notes = request.form.get('notes')
         member_id = None
         if contact_id:
-            contact = Contact.query.get(contact_id)
+            contact = db.session.get(Contact, contact_id)
             if contact:
                 member_id = contact.Member_ID
 
@@ -136,7 +137,7 @@ def achievement_form(id):
 @achievements_bp.route('/achievement/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_achievement(id):
-    if not is_authorized('ACHIEVEMENTS_EDIT'):
+    if not is_authorized(Permissions.ACHIEVEMENTS_EDIT):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 

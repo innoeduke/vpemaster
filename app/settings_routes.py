@@ -2,9 +2,11 @@
 
 from flask import Blueprint, render_template, session, redirect, url_for, request, jsonify, current_app, flash
 from .auth.utils import login_required, is_authorized
+from .auth.permissions import Permissions
 from flask_login import current_user
 
-from .models import SessionType, User, LevelRole, Role, Achievement, Contact
+from .models import SessionType, User, LevelRole, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, UserRoleAssociation, PermissionAudit
+import json
 from . import db
 from .utils import load_all_settings, get_excomm_team
 import os
@@ -20,7 +22,7 @@ def settings():
     """
     Renders the settings page, visible only to administrators.
     """
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
     all_settings = load_all_settings()
@@ -40,7 +42,7 @@ def settings():
     level_roles = LevelRole.query.order_by(
         LevelRole.level.asc(), LevelRole.type.desc()).all()
     all_users = User.query.order_by(User.Username.asc()).all()
-    roles_query = Role.query.order_by(Role.name.asc()).all()
+    roles_query = MeetingRole.query.order_by(MeetingRole.name.asc()).all()
     roles = [{'id': role.id, 'name': role.name} for role in roles_query]
     
     # Achievements data
@@ -53,7 +55,7 @@ def settings():
 @settings_bp.route('/settings/sessions/add', methods=['POST'])
 @login_required
 def add_session_type():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
 
     try:
@@ -138,7 +140,7 @@ def add_session_type():
 @settings_bp.route('/settings/sessions/update', methods=['POST'])
 @login_required
 def update_session_types():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
 
     data = request.get_json()
@@ -147,7 +149,7 @@ def update_session_types():
 
     try:
         for item in data:
-            session_type = SessionType.query.get(item['id'])
+            session_type = db.session.get(SessionType, item['id'])
             if session_type:
                 session_type.Title = item.get('Title')
                 session_type.Default_Owner = item.get('Default_Owner')
@@ -178,11 +180,11 @@ def update_session_types():
 @settings_bp.route('/settings/roles/add', methods=['POST'])
 @login_required
 def add_role():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
     try:
-        new_role = Role(
+        new_role = MeetingRole(
             name=request.form.get('name'),
             icon=request.form.get('icon'),
             type=request.form.get('type'),
@@ -204,7 +206,7 @@ def add_role():
 @settings_bp.route('/settings/roles/update', methods=['POST'])
 @login_required
 def update_roles():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
 
     data = request.get_json()
@@ -213,7 +215,7 @@ def update_roles():
 
     try:
         for item in data:
-            role = Role.query.get(item['id'])
+            role = db.session.get(MeetingRole, item['id'])
             if role:
                 role.name = item.get('name')
                 role.icon = item.get('icon')
@@ -233,7 +235,7 @@ def update_roles():
 @settings_bp.route('/settings/roles/import', methods=['POST'])
 @login_required
 def import_roles():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
     if 'file' not in request.files:
@@ -255,8 +257,8 @@ def import_roles():
 
             for row in reader:
                 role_name = row.get('name')
-                if role_name and not Role.query.filter_by(name=role_name).first():
-                    new_role = Role(
+                if role_name and not MeetingRole.query.filter_by(name=role_name).first():
+                    new_role = MeetingRole(
                         name=role_name,
                         icon=row.get('icon'),
                         type=row.get('type'),
@@ -283,7 +285,7 @@ def import_roles():
 @settings_bp.route('/settings/level-roles/add', methods=['POST'])
 @login_required
 def add_level_role():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
     try:
@@ -305,7 +307,7 @@ def add_level_role():
 @settings_bp.route('/settings/level-roles/update', methods=['POST'])
 @login_required
 def update_level_roles():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
 
     data = request.get_json()
@@ -314,7 +316,7 @@ def update_level_roles():
 
     try:
         for item in data:
-            level_role = LevelRole.query.get(item['id'])
+            level_role = db.session.get(LevelRole, item['id'])
             if level_role:
                 level_role.level = int(
                     item.get('level')) if item.get('level') else None
@@ -331,3 +333,135 @@ def update_level_roles():
 
 
 
+
+@settings_bp.route('/api/permissions/matrix', methods=['GET'])
+@login_required
+def get_permissions_matrix():
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    roles = AuthRole.query.order_by(AuthRole.id).all()
+    permissions = Permission.query.order_by(Permission.category, Permission.name).all()
+    
+    # Get current mappings
+    mappings = RolePermission.query.all()
+    role_perms = {} # role_id -> [perm_id, ...]
+    for m in mappings:
+        if m.role_id not in role_perms:
+            role_perms[m.role_id] = []
+        role_perms[m.role_id].append(m.permission_id)
+
+    return jsonify({
+        'roles': [{'id': r.id, 'name': r.name} for r in roles],
+        'permissions': [{
+            'id': p.id, 
+            'name': p.name, 
+            'category': p.category, 
+            'resource': p.resource,
+            'description': p.description
+        } for p in permissions],
+        'role_perms': role_perms
+    })
+
+@settings_bp.route('/api/permissions/update', methods=['POST'])
+@login_required
+def update_permission_matrix():
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify(success=False, message="No data received"), 400
+
+    try:
+        # data should be list of {role_id: X, permission_ids: [Y, Z]}
+        for item in data:
+            role_id = item.get('role_id')
+            new_perm_ids = set(item.get('permission_ids', []))
+            
+            role = db.session.get(AuthRole, role_id)
+            if not role:
+                continue
+
+            # Get current perms
+            current_perms = RolePermission.query.filter_by(role_id=role_id).all()
+            current_perm_ids = {p.permission_id for p in current_perms}
+
+            # To add
+            for pid in new_perm_ids - current_perm_ids:
+                db.session.add(RolePermission(role_id=role_id, permission_id=pid))
+
+            # To remove
+            for p in current_perms:
+                if p.permission_id not in new_perm_ids:
+                    db.session.delete(p)
+            
+            # Audit log
+            audit = PermissionAudit(
+                admin_id=current_user.id,
+                action='UPDATE_ROLE_PERMS',
+                target_type='ROLE',
+                target_id=role_id,
+                target_name=role.name,
+                changes=f"Updated permissions: {list(new_perm_ids)}"
+            )
+            db.session.add(audit)
+
+        db.session.commit()
+        return jsonify(success=True, message="Permissions updated successfully")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+@settings_bp.route('/api/audit-log', methods=['GET'])
+@login_required
+def get_audit_log():
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    logs = PermissionAudit.query.order_by(PermissionAudit.timestamp.desc()).limit(100).all()
+    return jsonify([l.to_dict() for l in logs])
+
+@settings_bp.route('/api/user-roles/update', methods=['POST'])
+@login_required
+def update_user_roles():
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    data = request.get_json() # {user_id: X, role_ids: [Y, Z]}
+    user_id = data.get('user_id')
+    new_role_ids = set(data.get('role_ids', []))
+
+    try:
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify(success=False, message="User not found"), 404
+
+        current_roles = UserRoleAssociation.query.filter_by(user_id=user_id).all()
+        current_role_ids = {r.role_id for r in current_roles}
+
+        # To add
+        for rid in new_role_ids - current_role_ids:
+            db.session.add(UserRoleAssociation(user_id=user_id, role_id=rid))
+
+        # To remove
+        for r in current_roles:
+            if r.role_id not in new_role_ids:
+                db.session.delete(r)
+
+        # Audit log
+        audit = PermissionAudit(
+            admin_id=current_user.id,
+            action='UPDATE_USER_ROLES',
+            target_type='USER',
+            target_id=user_id,
+            target_name=user.Username,
+            changes=f"Updated roles: {list(new_role_ids)}"
+        )
+        db.session.add(audit)
+
+        db.session.commit()
+        return jsonify(success=True, message="User roles updated successfully")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500

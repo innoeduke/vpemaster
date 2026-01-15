@@ -809,3 +809,193 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 });
+
+// --- 7. Permission Management & Audit Log ---
+
+/**
+ * Fetches and renders the permission matrix.
+ */
+function loadPermissionsMatrix() {
+  const container = document.getElementById("permissions-matrix");
+  const loading = document.getElementById("permissions-matrix-loading");
+
+  if (!container || !loading) return;
+
+  container.style.display = "none";
+  loading.style.display = "block";
+
+  fetch("/api/permissions/matrix")
+    .then((r) => r.json())
+    .then((data) => {
+      renderPermissionsMatrix(data);
+      loading.style.display = "none";
+      container.style.display = "block";
+    })
+    .catch((e) => {
+      console.error("Matrix load error:", e);
+      loading.innerHTML = `<span class="text-danger">Error loading permissions: ${e.message}</span>`;
+    });
+}
+
+function renderPermissionsMatrix(data) {
+  const container = document.getElementById("permissions-matrix");
+  const { roles, permissions, role_perms } = data;
+
+  let html = `
+    <div class="table-responsive">
+      <table class="table matrix-table">
+        <thead>
+          <tr>
+            <th>Permission</th>
+            ${roles.map((r) => `<th>${r.name}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  let currentCategory = "";
+  permissions.forEach((p) => {
+    if (p.category !== currentCategory) {
+      currentCategory = p.category;
+      html += `
+        <tr class="category-row">
+          <td colspan="${roles.length + 1}"><strong>${currentCategory.toUpperCase()}</strong></td>
+        </tr>
+      `;
+    }
+
+    html += `
+      <tr data-perm-id="${p.id}">
+        <td title="${p.description || ""}">
+          ${p.name}
+          <div class="small text-muted">${p.resource}:${p.description || ""}</div>
+        </td>
+        ${roles
+        .map((r) => {
+          const checked = role_perms[r.id]?.includes(p.id) ? "checked" : "";
+          return `<td><input type="checkbox" class="perm-checkbox" data-role-id="${r.id}" data-perm-id="${p.id}" ${checked}></td>`;
+        })
+        .join("")}
+      </tr>
+    `;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  container.innerHTML = html;
+}
+
+/**
+ * Saves current permission checks to the server.
+ */
+function savePermissions() {
+  const container = document.getElementById("permissions-matrix");
+  if (!container) return;
+
+  const roles = [];
+  // Get all unique role IDs from checkboxes
+  const roleIds = new Set();
+  container.querySelectorAll(".perm-checkbox").forEach((cb) => {
+    roleIds.add(cb.dataset.roleId);
+  });
+
+  const payload = Array.from(roleIds).map((rid) => {
+    const checkedPerms = Array.from(
+      container.querySelectorAll(`.perm-checkbox[data-role-id="${rid}"]:checked`)
+    ).map((cb) => parseInt(cb.dataset.permId));
+    return { role_id: parseInt(rid), permission_ids: checkedPerms };
+  });
+
+  fetch("/api/permissions/update", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  })
+    .then((r) => r.json())
+    .then((data) => {
+      if (data.success) {
+        showNotification("Permissions updated successfully!", "success");
+      } else {
+        showNotification(data.message, "error");
+      }
+    })
+    .catch((e) => showNotification(e.message, "error"));
+}
+
+/**
+ * Fetches and renders the audit log.
+ */
+function loadAuditLog() {
+  const body = document.getElementById("audit-log-body");
+  if (!body) return;
+
+  fetch("/api/audit-log")
+    .then((r) => r.json())
+    .then((data) => {
+      body.innerHTML = data
+        .map(
+          (log) => `
+        <tr>
+          <td class="small">${log.timestamp}</td>
+          <td>${log.admin_name}</td>
+          <td><span class="badge bg-secondary">${log.action}</span></td>
+          <td><small>${log.target_type}:</small> ${log.target_name}</td>
+          <td class="small">${log.changes}</td>
+        </tr>
+      `
+        )
+        .join("");
+    })
+    .catch((e) => {
+      body.innerHTML = `<tr><td colspan="5" class="text-danger">Error: ${e.message}</td></tr>`;
+    });
+}
+
+// Attach event listeners for the new tabs
+document.addEventListener("DOMContentLoaded", () => {
+  // Save button
+  const saveBtn = document.getElementById("save-permissions-btn");
+  if (saveBtn) {
+    saveBtn.addEventListener("click", savePermissions);
+  }
+
+  // Load matrix when tab is clicked
+  const tabs = document.querySelectorAll(".nav-item");
+  tabs.forEach((tab) => {
+    tab.addEventListener("click", (e) => {
+      const tabName = e.currentTarget
+        .getAttribute("onclick")
+        .match(/'([^']+)'/)[1];
+      if (tabName === "roles-permissions") {
+        loadPermissionsMatrix();
+      } else if (tabName === "audit-log") {
+        loadAuditLog();
+      }
+    });
+  });
+
+  // Initial load if tab is deep-linked
+  const activeTab = localStorage.getItem("settings_active_tab");
+  if (activeTab === "roles-permissions") {
+    loadPermissionsMatrix();
+  } else if (activeTab === "audit-log") {
+    loadAuditLog();
+  }
+
+  // Audit log search (local filter)
+  const auditSearch = document.getElementById("audit-search");
+  if (auditSearch) {
+    auditSearch.addEventListener("keyup", () => {
+      const filter = auditSearch.value.toUpperCase();
+      const rows = document.querySelectorAll("#audit-log-body tr");
+      rows.forEach(row => {
+        const text = row.textContent.toUpperCase();
+        row.style.display = text.includes(filter) ? "" : "none";
+      });
+    });
+  }
+});

@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
 from app.models import User, Contact, SessionType, Meeting, SessionLog
-from app.models.roster import Role
+from app.models.roster import MeetingRole
 from app.constants import SessionTypeID
 from config import Config
 from datetime import date, time
@@ -27,8 +27,8 @@ class TestBookingDuplicates(unittest.TestCase):
         db.create_all()
 
         # Create basic data
-        self.speaker_role = Role(name="Speaker", type="speech", needs_approval=False, is_distinct=True)
-        self.timer_role = Role(name="Timer", type="role", needs_approval=False, is_distinct=False)
+        self.speaker_role = MeetingRole(name="Speaker", type="speech", needs_approval=False, is_distinct=True)
+        self.timer_role = MeetingRole(name="Timer", type="role", needs_approval=False, is_distinct=False)
         db.session.add_all([self.speaker_role, self.timer_role])
         db.session.commit()
 
@@ -50,7 +50,7 @@ class TestBookingDuplicates(unittest.TestCase):
         db.session.add(self.contact)
         db.session.commit()
         
-        self.user = User(Username="testuser", Email="test@example.com", Contact_ID=self.contact.id, Role='Member')
+        self.user = User(Username="testuser", Email="test@example.com", Contact_ID=self.contact.id)
         self.user.set_password('password')
         db.session.add(self.user)
         db.session.commit()
@@ -99,8 +99,8 @@ class TestBookingDuplicates(unittest.TestCase):
             # Book first slot
             data = {'session_id': self.sess1.id, 'action': 'book'}
             resp = self.client.post('/booking/book', json=data)
-            if resp.status_code != 200:
-                print(f"Book 1 failed: {resp.data}")
+            # if resp.status_code != 200:
+            #     print(f"Book 1 failed: {resp.data}")
             self.assertEqual(resp.status_code, 200)
             self.assertEqual(resp.json['success'], True)
             

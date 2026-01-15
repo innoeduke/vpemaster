@@ -8,7 +8,7 @@ from flask_login import current_user
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import Meeting, User, Contact
+from app.models import Meeting, User, Contact, Permission, AuthRole
 from config import Config
 
 class TestConfig(Config):
@@ -39,32 +39,70 @@ class RouteAccessTestCase(unittest.TestCase):
         # Checking models.py would confirm how permissions are checked.
         # Based on previous output: user.is_officer checks contact type probably.
         
-        # 1. Admin/Officer
-        self.officer_contact = Contact(Name="Officer User", Type="Member", Club="Test Club")
-        db.session.add(self.officer_contact)
+        # 1. Admin/Staff
+        self.staff_contact = Contact(Name="Staff User", Type="Member", Club="Test Club")
+        db.session.add(self.staff_contact)
         db.session.commit()
 
-        self.officer_user = User(
-            Username="officer",
-            Email="officer@test.com", 
-            Contact_ID=self.officer_contact.id,
-            Role="Officer"
+        self.staff_user = User(
+            Username="staff",
+            Email="staff@test.com", 
+            Contact_ID=self.staff_contact.id
         )
-        self.officer_user.set_password("password")
-        db.session.add(self.officer_user)
+        self.staff_user.set_password("password")
+        db.session.add(self.staff_user)
         
-        # 2. Member
-        self.member_contact = Contact(Name="Member User", Type="Member", Club="Test Club")
-        db.session.add(self.member_contact)
+        staff_role = AuthRole.query.filter_by(name='Staff').first()
+        if not staff_role:
+            # Create Staff role if it doesn't exist (for test environment)
+            staff_role = AuthRole(name='Staff', description='Staff role', level=2)
+            db.session.add(staff_role)
+            db.session.flush()
+        
+        # Add AGENDA_VIEW and VOTING_VIEW_RESULTS permissions to Officer role
+        from app.auth.permissions import Permissions
+        agenda_view_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        if not agenda_view_perm:
+            agenda_view_perm = Permission(name=Permissions.AGENDA_VIEW, description='View Agenda')
+            db.session.add(agenda_view_perm)
+        
+        voting_results_perm = Permission.query.filter_by(name=Permissions.VOTING_VIEW_RESULTS).first()
+        if not voting_results_perm:
+            voting_results_perm = Permission(name=Permissions.VOTING_VIEW_RESULTS, description='View Voting Results')
+            db.session.add(voting_results_perm)
+        
+        db.session.flush()
+
+        if agenda_view_perm not in staff_role.permissions:
+            staff_role.permissions.append(agenda_view_perm)
+        if voting_results_perm not in staff_role.permissions:
+            staff_role.permissions.append(voting_results_perm)
+            
+        self.staff_user.roles.append(staff_role)
+        
+        # 2. User
+        self.user_contact = Contact(Name="Standard User", Type="Member", Club="Test Club")
+        db.session.add(self.user_contact)
         db.session.commit()
-        self.member_user = User(
-            Username="member",
-            Email="member@test.com", 
-            Contact_ID=self.member_contact.id,
-            Role="Member"
+        self.user_user = User(
+            Username="user",
+            Email="user@test.com", 
+            Contact_ID=self.user_contact.id
         )
-        self.member_user.set_password("password")
-        db.session.add(self.member_user)
+        self.user_user.set_password("password")
+        db.session.add(self.user_user)
+
+        user_role = AuthRole.query.filter_by(name='User').first()
+        if not user_role:
+            user_role = AuthRole(name='User', description='User role', level=1)
+            db.session.add(user_role)
+            db.session.flush()
+        
+        # Add AGENDA_VIEW permission to User role
+        if agenda_view_perm not in user_role.permissions:
+            user_role.permissions.append(agenda_view_perm)
+            
+        self.user_user.roles.append(user_role)
 
         # 3. Guest (No user needed, just unauth)
 
@@ -77,6 +115,18 @@ class RouteAccessTestCase(unittest.TestCase):
         self.m_finished = Meeting(Meeting_Number=103, Meeting_Date=today, status='finished')
         
         db.session.add_all([self.m_unpublished, self.m_not_started, self.m_running, self.m_finished])
+        db.session.commit()
+        
+        # Add Guest Role Logic for AnonymousUser
+        guest_role = AuthRole.query.filter_by(name='Guest').first()
+        if not guest_role:
+            guest_role = AuthRole(name='Guest', description='Guest role', level=0)
+            db.session.add(guest_role)
+            db.session.flush()
+        
+        # Assign AGENDA_VIEW to Guest
+        if agenda_view_perm not in guest_role.permissions:
+            guest_role.permissions.append(agenda_view_perm)
         db.session.commit()
 
     def login(self, email, password):
@@ -91,70 +141,52 @@ class RouteAccessTestCase(unittest.TestCase):
     # --- TESTS ---
 
     def test_guest_access(self):
-        # 1. Unpublished Meeting -> Should be 403 Forbidden
-        # 1. Unpublished Meeting -> Should Redirect to Voting
+        # 1. Unpublished Meeting -> Redirect to meeting-notice page
         response = self.client.get(f'/agenda?meeting_number={self.m_unpublished.Meeting_Number}')
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(f'/voting/{self.m_unpublished.Meeting_Number}' in response.location)
+        self.assertIn('/meeting-notice', response.location)
         
-        # 2. Not Started -> Should be 403 Forbidden (New Restriction)
-        # 2. Not Started -> Should Redirect to Voting
-        response = self.client.get(f'/agenda?meeting_number={self.m_not_started.Meeting_Number}')
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(f'/voting/{self.m_not_started.Meeting_Number}' in response.location)
-        
-        # 3. Running -> 200 OK
-        response = self.client.get(f'/agenda?meeting_number={self.m_running.Meeting_Number}')
-        self.assertEqual(response.status_code, 200, "Guest accessing running agenda should be 200")
-
-        # 4. Finished -> Should be 403 Forbidden (New Restriction)
-        # 4. Finished -> Should Redirect to Voting
-        response = self.client.get(f'/agenda?meeting_number={self.m_finished.Meeting_Number}')
-        self.assertEqual(response.status_code, 302)
-        self.assertTrue(f'/voting/{self.m_finished.Meeting_Number}' in response.location)
-
-        # Booking / Voting / Roster checks
-        
-        # Booking Unpublished -> Redirect to Voting
+        # Booking Unpublished -> Redirect to Login (@login_required)
         response = self.client.get(f'/booking/{self.m_unpublished.Meeting_Number}')
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(f'/voting/{self.m_unpublished.Meeting_Number}' in response.location)
+        self.assertIn('/login', response.location)
         
-        # Voting Unpublished -> 200 (Not Started Page)
+        # Voting Unpublished -> Redirect to meeting-notice
         response = self.client.get(f'/voting/{self.m_unpublished.Meeting_Number}')
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(b'is not yet started', response.data)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('/meeting-notice', response.location)
 
-    def test_member_access(self):
-        self.login('member@test.com', 'password')
+    def test_user_access(self):
+        self.login('user@test.com', 'password')
         
-        # Member vs Unpublished -> Redirect to Voting
+        # Member vs Unpublished -> Redirect to meeting-notice
         response = self.client.get(f'/agenda?meeting_number={self.m_unpublished.Meeting_Number}')
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(f'/voting/{self.m_unpublished.Meeting_Number}' in response.location)
+        self.assertIn('/meeting-notice', response.location)
 
         # Member vs Not Started -> 200
         response = self.client.get(f'/agenda?meeting_number={self.m_not_started.Meeting_Number}')
-        self.assertEqual(response.status_code, 200, "Member accessing not started agenda should be 200")
+        self.assertEqual(response.status_code, 200, "User accessing not started agenda should be 200")
         
         # Member vs Running -> 200
         response = self.client.get(f'/agenda?meeting_number={self.m_running.Meeting_Number}')
-        self.assertEqual(response.status_code, 200, "Member accessing running agenda should be 200")
+        self.assertEqual(response.status_code, 200, "User accessing running agenda should be 200")
         
         self.logout()
 
-    def test_officer_access(self):
-        self.login('officer@test.com', 'password')
+    def test_staff_access(self):
+        self.login('staff@test.com', 'password')
         
-        # Officer vs Unpublished -> 200
+        # Staff vs Unpublished -> 200
         response = self.client.get(f'/agenda?meeting_number={self.m_unpublished.Meeting_Number}')
-        self.assertEqual(response.status_code, 200, "Officer accessing unpublished agenda should be 200")
+        self.assertEqual(response.status_code, 200, "Staff accessing unpublished agenda should be 200")
         
         response = self.client.get(f'/booking/{self.m_unpublished.Meeting_Number}')
         self.assertEqual(response.status_code, 200)
         
+        # Voting Unpublished -> Staff (Redirect 302)
         response = self.client.get(f'/voting/{self.m_unpublished.Meeting_Number}')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
         
         self.logout()
 

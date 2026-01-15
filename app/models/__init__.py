@@ -8,20 +8,22 @@ from .base import db
 
 # Import all models from their respective modules
 from .contact import Contact
-from .user import User
+from .user import User, AnonymousUser
+
 from .project import Project, Pathway, PathwayProject, LevelRole
 from .meeting import Meeting
 from .session import SessionType, SessionLog
-from .roster import Roster, RosterRole, Role, Waitlist
+from .roster import Roster, RosterRole, MeetingRole, Waitlist
 from .voting import Vote
 from .media import Media
 from .achievement import Achievement
 
 # Import permission system models
 from .permission import Permission
-from .role import Role as AuthRole  # Alias to avoid conflict with roster.Role
+from .role import Role as AuthRole
 from .role_permission import RolePermission
 from .user_role import UserRole as UserRoleAssociation
+from .permission_audit import PermissionAudit
 
 # Import Flask-Login user loader
 from .. import login_manager
@@ -29,6 +31,8 @@ from .. import login_manager
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
+
+login_manager.anonymous_user = AnonymousUser
 
 # Export all models for backward compatibility
 __all__ = [
@@ -44,7 +48,7 @@ __all__ = [
     'SessionLog',
     'Roster',
     'RosterRole',
-    'Role',
+    'MeetingRole',
     'Waitlist',
     'Vote',
     'Media',
@@ -55,4 +59,5 @@ __all__ = [
     'AuthRole',
     'RolePermission',
     'UserRoleAssociation',
+    'PermissionAudit',
 ]

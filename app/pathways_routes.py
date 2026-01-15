@@ -4,6 +4,7 @@ from flask import Blueprint, render_template, request, jsonify, session
 from . import db
 from .models import Project, Pathway, PathwayProject
 from .auth.utils import login_required, is_authorized
+from .auth.permissions import Permissions
 from flask_login import current_user
 
 
@@ -85,7 +86,7 @@ def pathway_library():
 @pathways_bp.route('/pathway_library/update_project/<int:project_id>', methods=['POST'])
 @login_required
 def update_project(project_id):
-    if not is_authorized('PATHWAY_LIB_EDIT'):
+    if not is_authorized(Permissions.PATHWAY_LIB_EDIT):
         return jsonify(success=False, message="Permission denied"), 403
 
     project = Project.query.get_or_404(project_id)

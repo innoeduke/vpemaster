@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
 from app.models import Meeting, Roster, RosterRole, Contact
-from app.models.roster import Role
+from app.models.roster import MeetingRole
 from config import Config
 
 class TestConfig(Config):
@@ -31,7 +31,7 @@ class TestMeetingDeletion(unittest.TestCase):
         self.contact = Contact(Name="Delete Test User")
         db.session.add(self.contact)
         
-        self.role = Role(name="Delete Test Role", type="generic", needs_approval=False, is_distinct=False)
+        self.role = MeetingRole(name="Delete Test Role", type="generic", needs_approval=False, is_distinct=False)
         db.session.add(self.role)
         db.session.commit()
         

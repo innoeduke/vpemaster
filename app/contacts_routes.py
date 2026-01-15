@@ -4,6 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from . import db
 from .models import Contact, SessionLog, Pathway
 from .auth.utils import login_required, is_authorized
+from .auth.permissions import Permissions
 from flask_login import current_user
 
 from datetime import date
@@ -25,8 +26,8 @@ def search_contacts_by_name():
         "id": c.id,
         "Name": c.Name,
         "Type": c.Type,
-        "UserRole": c.user.Role if c.user else None,
-        "is_officer": c.user.is_officer if c.user else False
+        "UserRole": c.user.primary_role_name if c.user else None,
+        "is_officer": c.user.has_role(Permissions.STAFF) if c.user else False
     } for c in contacts]
     return jsonify(contacts_data)
 
@@ -34,7 +35,7 @@ def search_contacts_by_name():
 @contacts_bp.route('/contacts')
 @login_required
 def show_contacts():
-    if not is_authorized('CONTACT_BOOK_VIEW'):
+    if not is_authorized(Permissions.CONTACT_BOOK_VIEW):
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -43,7 +44,7 @@ def show_contacts():
     
     # 1. Attendance (Roster)
     # Count how many times each contact appears in Roster
-    from .models import Roster, SessionType, Role
+    from .models import Roster, SessionType, MeetingRole
     from sqlalchemy import func
     
     attendance_counts = db.session.query(
@@ -54,11 +55,10 @@ def show_contacts():
     # 2. Roles (SessionLog where SessionType is a Role)
     # We want to count distinct (Meeting, Role) pairs per user.
     distinct_roles = db.session.query(
-        SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id, Role.name
-    ).select_from(SessionLog).join(SessionType).join(Role).filter(
-        SessionLog.Owner_ID.isnot(None),
+        SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id, MeetingRole.name
+    ).select_from(SessionLog).join(SessionType).join(MeetingRole).filter(
         SessionType.role_id.isnot(None),
-        Role.type.in_(['standard', 'club-specific'])
+        MeetingRole.type.in_(['standard', 'club-specific'])
     ).distinct().all()
 
     role_map = {}
@@ -139,7 +139,7 @@ def show_contacts():
         Contact.Type.in_(['Member', 'Past Member'])
     ).order_by(Contact.Name.asc()).all()
 
-    can_view_all_logs = is_authorized('SPEECH_LOGS_VIEW_ALL')
+    can_view_all_logs = is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL)
     
     return render_template('contacts.html', 
                            contacts=contacts, 
@@ -155,7 +155,7 @@ def show_contacts():
 @contacts_bp.route('/contact/form/<int:contact_id>', methods=['GET', 'POST'])
 @login_required
 def contact_form(contact_id=None):
-    if not is_authorized('CONTACT_BOOK_EDIT'):
+    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -298,7 +298,7 @@ def contact_form(contact_id=None):
 @contacts_bp.route('/contact/delete/<int:contact_id>', methods=['POST'])
 @login_required
 def delete_contact(contact_id):
-    if not is_authorized('CONTACT_BOOK_EDIT'):
+    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -312,7 +312,7 @@ def delete_contact(contact_id):
 @contacts_bp.route('/api/contact', methods=['POST'])
 @login_required
 def create_contact_api():
-    if not is_authorized('CONTACT_BOOK_EDIT'):
+    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
         return jsonify({'error': 'Permission denied'}), 403
 
     try:

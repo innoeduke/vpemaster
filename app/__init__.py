@@ -46,12 +46,13 @@ def create_app(config_class='config.Config'):
     assets.init_app(app)
     
     # Set up identity loader for Flask-Principal
-    from flask_login import user_loaded_from_request, user_loaded_from_cookie
+    from flask_login import user_loaded_from_request, user_loaded_from_cookie, user_logged_in
     from flask_principal import identity_changed, RoleNeed, UserNeed
     
+    @user_logged_in.connect_via(app)
     @user_loaded_from_cookie.connect_via(app)
     @user_loaded_from_request.connect_via(app)
-    def on_user_loaded(sender, user):
+    def on_user_loaded(sender, user, **extra):
         """Load user identity when user logs in."""
         identity_changed.send(sender, identity=Identity(user.id))
     
@@ -61,7 +62,7 @@ def create_app(config_class='config.Config'):
         from .models import User
         
         # Set the identity user object
-        identity.user = User.query.get(identity.id)
+        identity.user = db.session.get(User, identity.id)
         
         if identity.user:
             # Add UserNeed
@@ -73,7 +74,6 @@ def create_app(config_class='config.Config'):
             
             # Add permission needs
             for permission_name in identity.user.get_permissions():
-                from flask_principal import Permission as PrincipalPermission
                 identity.provides.add(('permission', permission_name))
 
     # Register context processors
@@ -82,11 +82,13 @@ def create_app(config_class='config.Config'):
     @app.context_processor
     def inject_global_vars():
         from .models import Meeting
+        from .auth.permissions import Permissions
         # Check if at least one meeting exists
         has_meetings = db.session.query(Meeting.id).first() is not None
         return dict(
             is_authorized=is_authorized,
-            has_meetings=has_meetings
+            has_meetings=has_meetings,
+            Permissions=Permissions
         )
 
     # Register Blueprints

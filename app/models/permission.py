@@ -1,5 +1,5 @@
 """Permission model for authorization system."""
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import db
 
 
@@ -13,7 +13,7 @@ class Permission(db.Model):
     category = db.Column(db.String(50), index=True)  # e.g., 'agenda', 'booking', 'settings'
     resource = db.Column(db.String(50))  # e.g., 'agenda', 'booking', 'speech_logs'
     action = db.Column(db.String(50))    # e.g., 'edit', 'view', 'assign', 'delete'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
     roles = db.relationship('app.models.role.Role', secondary='role_permissions', back_populates='permissions')

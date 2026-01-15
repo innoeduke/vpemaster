@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
 from app.models import Meeting, SessionLog, SessionType, Waitlist, Vote, Roster, RosterRole, Contact, Media
-from app.models.roster import Role
+from app.models.roster import MeetingRole
 from config import Config
 
 class TestConfig(Config):
@@ -33,7 +33,7 @@ class MeetingDeletionTestCase(unittest.TestCase):
 
     def populate_base_data(self):
         # Create minimal required data types
-        self.role = Role(name="Speaker", type="speech", needs_approval=False, is_distinct=False)
+        self.role = MeetingRole(name="Speaker", type="speech", needs_approval=False, is_distinct=False)
         db.session.add(self.role)
         db.session.commit()
 

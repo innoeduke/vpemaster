@@ -3,6 +3,7 @@
 from flask import current_app
 # Ensure Project model is imported if needed elsewhere
 from .models import Project, Meeting, SessionLog, Pathway, PathwayProject, Achievement, Contact
+from .auth.permissions import Permissions
 from . import db
 import re
 import configparser
@@ -121,7 +122,7 @@ def get_dropdown_metadata():
             'meeting_numbers': [numbers]
         }
     """
-    from .models import Role, SessionLog
+    from .models import MeetingRole, SessionLog
     
     # Pathways
     all_pathways = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
@@ -136,9 +137,9 @@ def get_dropdown_metadata():
         grouped_pathways[ptype].append(p.name)
     
     # Roles
-    available_roles = Role.query.filter(
-        Role.type.in_(['standard', 'club-specific'])
-    ).order_by(Role.name).all()
+    available_roles = MeetingRole.query.filter(
+        MeetingRole.type.in_(['standard', 'club-specific'])
+    ).order_by(MeetingRole.name).all()
     
     grouped_roles = {}
     for r in available_roles:
@@ -356,7 +357,7 @@ def sync_contact_metadata(contact_id):
     """
     Update Contact metadata and commit to DB.
     """
-    contact = Contact.query.get(contact_id)
+    contact = db.session.get(Contact, contact_id)
     if not contact:
         return None
 
@@ -587,7 +588,7 @@ def get_default_meeting_number():
     """
     Determines the default meeting number based on priority:
     1. 'running' meeting
-    2. Soonest 'not started' meeting
+    2. Lowest numbered unfinished meeting ('not started' or 'unpublished')
     Returns None if neither is found.
     """
     # 1. Check for running meeting
@@ -595,36 +596,14 @@ def get_default_meeting_number():
     if running_meeting:
         return running_meeting.Meeting_Number
 
-    # 2. Check for next not-started meeting
-    # Updated: Always include 'unpublished' for consistency
-    upcoming_priority_statuses = ['not started']
-    try:
-        from flask_login import current_user
-        if current_user.is_authenticated and current_user.is_officer:
-            upcoming_priority_statuses.append('unpublished')
-    except Exception:
-        pass
-
+    # 2. Check for next unfinished meeting (not started or unpublished)
+    # Always include both statuses to ensure lower-numbered meetings are prioritized
     from .models import SessionLog
     upcoming_meeting = Meeting.query \
         .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number) \
-        .filter(Meeting.status.in_(upcoming_priority_statuses)) \
-        .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc()) \
+        .filter(Meeting.status.in_(['not started', 'unpublished'])) \
+        .order_by(Meeting.Meeting_Number.asc()) \
         .first()
-    
-    # If no meeting found via standard check, check if user is a manager of an unpublished meeting
-    if not upcoming_meeting:
-        try:
-            from flask_login import current_user
-            if current_user.is_authenticated and current_user.Contact_ID:
-                upcoming_meeting = Meeting.query \
-                    .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number) \
-                    .filter(Meeting.status == 'unpublished') \
-                    .filter(Meeting.manager_id == current_user.Contact_ID) \
-                    .order_by(Meeting.Meeting_Date.asc()) \
-                    .first()
-        except Exception:
-            pass
 
     if upcoming_meeting:
         return upcoming_meeting.Meeting_Number

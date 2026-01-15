@@ -3,95 +3,108 @@
 {% block title %}{{ 'Edit User' if user else 'Add New User' }}{% endblock %}
 
 {% block content %}
-    <h1>{{ 'Edit User' if user else 'Add New User' }}</h1>
-    <form method="POST" action="{{ url_for('users_bp.user_form', user_id=user.id) if user else url_for('users_bp.user_form') }}">
-        <table class="form-table">
-            <tr>
-                <td><label for="contact_search">Select contact:</label></td>
-                <td>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div style="position: relative; flex-grow: 1;">
-                            <input type="text" id="contact_search" placeholder="Search contacts..." 
-                                   value="{% if user and user.contact %}{{ user.contact.Name }}{% endif %}"
-                                   autocomplete="off" style="width: 100%;">
-                            <div id="contact_dropdown" class="autocomplete-suggestions" style="display: none; width: 100%;"></div>
+<h1>{{ 'Edit User' if user else 'Add New User' }}</h1>
+<form method="POST"
+    action="{{ url_for('users_bp.user_form', user_id=user.id) if user else url_for('users_bp.user_form') }}">
+    <table class="form-table">
+        <tr>
+            <td><label for="contact_search">Select contact:</label></td>
+            <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="position: relative; flex-grow: 1;">
+                        <input type="text" id="contact_search" placeholder="Search contacts..."
+                            value="{% if user and user.contact %}{{ user.contact.Name }}{% endif %}" autocomplete="off"
+                            style="width: 100%;">
+                        <div id="contact_dropdown" class="autocomplete-suggestions" style="display: none; width: 100%;">
                         </div>
-                        <input type="hidden" name="contact_id" id="contact_id_hidden" value="{{ user.Contact_ID if user else 0 }}">
-                        {% if not user %}
-                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap;" title="Create new contact">
-                            <input type="checkbox" name="create_new_contact" id="create_new_contact">
-                            <i class="fas fa-user-plus"></i>
-                        </label>
-                        {% endif %}
                     </div>
-                    <!-- Hidden source for JS to use -->
-                    <script id="contact_data" type="application/json">
+                    <input type="hidden" name="contact_id" id="contact_id_hidden"
+                        value="{{ user.Contact_ID if user else 0 }}">
+                    {% if not user %}
+                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap;"
+                        title="Create new contact">
+                        <input type="checkbox" name="create_new_contact" id="create_new_contact">
+                        <i class="fas fa-user-plus"></i>
+                    </label>
+                    {% endif %}
+                </div>
+                <!-- Hidden source for JS to use -->
+                <script id="contact_data" type="application/json">
                         [
                         {% for contact in contacts %}
                             {"id": {{ contact.id }}, "name": {{ contact.Name | tojson }}}{% if not loop.last %},{% endif %}
                         {% endfor %}
                         ]
                     </script>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="username">Username:</label></td>
-                <td><input type="text" id="username" name="username" value="{{ user.Username if user else '' }}" required></td>
-            </tr>
-            <tr>
-                <td><label for="email">Email:</label></td>
-                <td><input type="email" id="email" name="email" value="{{ user.Email if user and user.Email else '' }}"></td>
-            </tr>
-            <tr>
-                <td><label for="status">Status:</label></td>
-                <td>
-                    <select id="status" name="status" required {% if not user %}disabled style="background-color: #f0f0f0;"{% endif %}>
-                        <option value="active" {% if (user and user.Status == 'active') or not user %}selected{% endif %}>Active</option>
-                        <option value="inactive" {% if user and user.Status == 'inactive' %}selected{% endif %}>Inactive</option>
-                    </select>
-                    {% if not user %}
-                        <input type="hidden" name="status" value="active">
-                    {% endif %}
-                </td>
-            </tr>
-            <tr>
-                <td><label for="role">Role:</label></td>
-                <td>
-                    <select id="role" name="role" required>
-                        <option value="Admin" {% if user and user.Role == 'Admin' %}selected{% endif %}>Admin</option>
-                        <option value="VPE" {% if user and user.Role == 'VPE' %}selected{% endif %}>VPE</option>
-                        <option value="Officer" {% if user and user.Role == 'Officer' %}selected{% endif %}>Officer</option>
-                        <option value="Member" {% if (user and user.Role == 'Member') or not user %}selected{% endif %}>Member</option>
-                    </select>
-                </td>
-            </tr>
-            <!-- Profile fields (Member ID, Path, Mentor, etc.) are managed on the Contact page -->
-            <tr>
-                <td colspan="2">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
-                        Member Profile details (Current Path, Mentor, Credentials, etc.) are managed in the 
-                        <a href="{{ url_for('contacts_bp.show_contacts') }}">Contact Book</a>.
-                    </div>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="password">Password:</label></td>
-                <td>
-                    <input type="password" id="password" name="password">
-                    {% if user %}
-                        <small class="note">Leave blank to keep current password.</small>
-                    {% else %}
-                        <small class="note">Leave blank to use default password 'leadership'.</small>
-                    {% endif %}
-                </td>
-            </tr>
-        </table>
-        <div style="text-align: center;">
-            <button type="submit" class="btn btn-primary">{{ 'Save User' if user else 'Add User' }}</button>
-            <a href="{{ url_for('users_bp.show_users') }}" class="btn btn-danger">Cancel</a>
-        </div>
-    </form>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="username">Username:</label></td>
+            <td><input type="text" id="username" name="username" value="{{ user.Username if user else '' }}" required>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="email">Email:</label></td>
+            <td><input type="email" id="email" name="email" value="{{ user.Email if user and user.Email else '' }}">
+            </td>
+        </tr>
+        <tr>
+            <td><label for="status">Status:</label></td>
+            <td>
+                <select id="status" name="status" required {% if not user %}disabled style="background-color: #f0f0f0;"
+                    {% endif %}>
+                    <option value="active" {% if (user and user.Status=='active' ) or not user %}selected{% endif %}>
+                        Active</option>
+                    <option value="inactive" {% if user and user.Status=='inactive' %}selected{% endif %}>Inactive
+                    </option>
+                </select>
+                {% if not user %}
+                <input type="hidden" name="status" value="active">
+                {% endif %}
+            </td>
+        <tr>
+            <td><label>Role</label></td>
+            <td>
+                <div class="roles-checkbox-list"
+                    style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 4px;">
+                    {% for r in all_auth_roles %}
+                    <label style="display: block; margin-bottom: 5px; cursor: pointer;">
+                        <input type="checkbox" name="roles" value="{{ r.id }}" {% if user and r.id in user_role_ids
+                            %}checked{% endif %}>
+                        {{ r.name }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <small class="note">Select one or more system roles.</small>
+            </td>
+        </tr>
+        <!-- Profile fields (Member ID, Path, Mentor, etc.) are managed on the Contact page -->
+        <tr>
+            <td colspan="2">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    Member Profile details (Current Path, Mentor, Credentials, etc.) are managed in the
+                    <a href="{{ url_for('contacts_bp.show_contacts') }}">Contact Book</a>.
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td><label for="password">Password:</label></td>
+            <td>
+                <input type="password" id="password" name="password">
+                {% if user %}
+                <small class="note">Leave blank to keep current password.</small>
+                {% else %}
+                <small class="note">Leave blank to use default password 'leadership'.</small>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+    <div style="text-align: center;">
+        <button type="submit" class="btn btn-primary">{{ 'Save User' if user else 'Add User' }}</button>
+        <a href="{{ url_for('users_bp.show_users') }}" class="btn btn-danger">Cancel</a>
+    </div>
+</form>
 {% endblock %}
 
 {% block scripts %}

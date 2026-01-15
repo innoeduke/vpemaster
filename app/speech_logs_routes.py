@@ -1,8 +1,9 @@
 # innoeduke/vpemaster/vpemaster-dev0.3/speech_logs_routes.py
 from flask import Blueprint, jsonify, render_template, request, session, current_app
 from . import db
-from .models import SessionLog, Contact, Project, User, SessionType, Media, Role, Pathway, PathwayProject, LevelRole, Achievement, Meeting
+from .models import SessionLog, Contact, Project, User, SessionType, Media, MeetingRole, Pathway, PathwayProject, LevelRole, Achievement, Meeting
 from .auth.utils import login_required, is_authorized
+from .auth.permissions import Permissions
 from flask_login import current_user
 from .utils import (
     get_project_code, 
@@ -29,7 +30,7 @@ def _get_view_settings():
     Determine view permissions and mode.
     Returns: (can_view_all, view_mode, is_member_view)
     """
-    can_view_all = is_authorized('SPEECH_LOGS_VIEW_ALL')
+    can_view_all = is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL)
     view_mode = request.args.get('view_mode', 'member')
     
     if can_view_all and view_mode == 'admin':
@@ -77,7 +78,7 @@ def _get_viewed_contact(speaker_id):
         return None
     
     try:
-        return Contact.query.get(int(speaker_id))
+        return db.session.get(Contact, int(speaker_id))
     except (ValueError, TypeError):
         return None
 
@@ -123,10 +124,10 @@ def _fetch_logs_with_filters(filters):
         joinedload(SessionLog.meeting),
         joinedload(SessionLog.owner),
         joinedload(SessionLog.project)
-    ).join(SessionType).join(Role, SessionType.role_id == Role.id).filter(
-        Role.name.isnot(None),
-        Role.name != '',
-        Role.type.in_(['standard', 'club-specific'])
+    ).join(SessionType).join(MeetingRole, SessionType.role_id == MeetingRole.id).filter(
+        MeetingRole.name.isnot(None),
+        MeetingRole.name != '',
+        MeetingRole.type.in_(['standard', 'club-specific'])
     )
     
     if filters['speaker_id']:
@@ -134,7 +135,7 @@ def _fetch_logs_with_filters(filters):
     if filters['meeting_number']:
         base_query = base_query.filter(SessionLog.Meeting_Number == filters['meeting_number'])
     if filters['role']:
-        base_query = base_query.filter(Role.name == filters['role'])
+        base_query = base_query.filter(MeetingRole.name == filters['role'])
     
     return base_query.order_by(SessionLog.Meeting_Number.desc()).all()
 
@@ -381,7 +382,7 @@ def _get_achievement_status(speaker_id, speaker_user, selected_pathway):
     
     if speaker_id and speaker_id != -1 and target_path_name:
         try:
-            contact = Contact.query.get(int(speaker_id))
+            contact = db.session.get(Contact, int(speaker_id))
             if contact:
                 completed_levels = contact.get_completed_levels(target_path_name)
         except (ValueError, TypeError):
@@ -402,7 +403,7 @@ def _get_achievement_status(speaker_id, speaker_user, selected_pathway):
 
 def _get_role_metadata():
     """Fetch role icons for template."""
-    all_roles_db = Role.query.all()
+    all_roles_db = MeetingRole.query.all()
     role_icons = {
         r.name: r.icon or current_app.config['DEFAULT_ROLE_ICON']
         for r in all_roles_db
@@ -426,7 +427,7 @@ def _get_level_progress_html(user_id, level, pathway_id=None):
     }
     
     # Needs to be able to get the contact for the user_id
-    contact = Contact.query.get(user_id)
+    contact = db.session.get(Contact, user_id)
     if not contact:
         return ""
 
@@ -578,7 +579,7 @@ def show_project_view():
     Display speech logs in a project-centric view (bar chart style).
     Accessible to admins mainly, but logic could allow others.
     """
-    if not is_authorized('SPEECH_LOGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL):
         # Or redirect to member view if not admin? 
         # For now, let's assume this is an admin-specific view or general view but showing all projects.
         # If regular user accesses, maybe show only their stats? 
@@ -692,7 +693,7 @@ def get_speech_log_details(log_id):
 
     current_user_contact_id = current_user.Contact_ID if current_user.is_authenticated else None
 
-    if not is_authorized('SPEECH_LOGS_EDIT_ALL'):
+    if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
         if log.Owner_ID != current_user_contact_id:
             return jsonify(success=False, message="Permission denied. You can only view details for your own speech logs."), 403
 
@@ -750,9 +751,9 @@ def update_speech_log(log_id):
 
     # Permission Checks
     current_user_contact_id = current_user.Contact_ID if current_user.is_authenticated else None
-    if not is_authorized('SPEECH_LOGS_EDIT_ALL'):
+    if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
         is_owner = (current_user_contact_id == log.Owner_ID)
-        if not (is_authorized('SPEECH_LOGS_VIEW_OWN') and is_owner):
+        if not (is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and is_owner):
             return jsonify(success=False, message="Permission denied. You can only edit your own speech logs."), 403
 
     data = request.get_json()
@@ -762,7 +763,7 @@ def update_speech_log(log_id):
     # Pre-fetch project if needed for duration logic
     updated_project = None
     if project_id and project_id not in [None, "", "null"]:
-        updated_project = Project.query.get(project_id)
+        updated_project = db.session.get(Project, project_id)
 
     # 1. Update Basic Fields
     if 'session_title' in data:
@@ -817,7 +818,7 @@ def update_speech_log(log_id):
 @speech_logs_bp.route('/speech_log/suspend/<int:log_id>', methods=['POST'])
 @login_required
 def suspend_speech_log(log_id):
-    if not is_authorized('SPEECH_LOGS_EDIT_ALL'):
+    if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
         return jsonify(success=False, message="Permission denied"), 403
 
     log = SessionLog.query.get_or_404(log_id)
@@ -852,7 +853,7 @@ def complete_speech_log(log_id):
 
     current_user_contact_id = current_user.Contact_ID if current_user.is_authenticated else None
 
-    if not is_authorized('SPEECH_LOGS_EDIT_ALL'):
+    if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
         if log.Owner_ID != current_user_contact_id:
             return jsonify(success=False, message="Permission denied."), 403
         # Also check if meeting is in the past for non-admins

@@ -1,5 +1,5 @@
 from app import db
-from app.models import SessionLog, SessionType, Waitlist, Roster, Role, Contact, Meeting
+from app.models import SessionLog, SessionType, Waitlist, Roster, MeetingRole, Contact, Meeting
 from app.constants import SessionTypeID
 from datetime import datetime, timezone
 from sqlalchemy import or_

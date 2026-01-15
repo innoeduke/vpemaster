@@ -44,7 +44,7 @@
         <a id="download-project-btn" class="icon-btn" title="Download Evaluation" style="display: none" target="_blank">
           <i class="fas fa-download"></i>
         </a>
-        {% if is_authorized('PATHWAY_LIB_EDIT') %}
+        {% if is_authorized(Permissions.PATHWAY_LIB_EDIT) %}
         <button id="cancel-project-btn" class="icon-btn" style="display: none" title="Cancel">
           <i class="fas fa-times"></i>
         </button>

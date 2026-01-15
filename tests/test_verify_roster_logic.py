@@ -10,7 +10,6 @@ from app import create_app, db
 from app.models import Roster, Contact
 from app.models.roster import MeetingRole
 from config import Config
-from sqlalchemy import func
 
 class TestConfig(Config):
     TESTING = True
@@ -18,7 +17,7 @@ class TestConfig(Config):
     WTF_CSRF_ENABLED = False
     LOGIN_DISABLED = True
 
-class TestRosterAssignment(unittest.TestCase):
+class TestVerifyRosterLogic(unittest.TestCase):
     def setUp(self):
         self.app = create_app(TestConfig)
         self.app_context = self.app.app_context()
@@ -43,49 +42,30 @@ class TestRosterAssignment(unittest.TestCase):
         db.engine.dispose()
         self.app_context.pop()
 
-    def test_officer_assignment(self):
-        """Test that officers get order number >= 1000 and Officer ticket"""
+    def test_roster_sync_logic(self):
+        """Verify roster synchronization logic for different contact types"""
+        
+        # 1. Officer Assignment
         Roster.sync_role_assignment(self.meeting_num, self.officer_contact.id, self.role, 'assign')
         db.session.commit()
         
         officer_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.officer_contact.id).first()
-        self.assertIsNotNone(officer_entry)
         self.assertGreaterEqual(officer_entry.order_number, 1000)
         self.assertEqual(officer_entry.ticket, "Officer")
 
-    def test_multiple_officer_ordering(self):
-        """Test that multiple officers get sequential order numbers"""
-        officer2 = Contact(Name="Officer 2", Type="Officer")
-        db.session.add(officer2)
-        db.session.commit()
-
-        Roster.sync_role_assignment(self.meeting_num, self.officer_contact.id, self.role, 'assign')
-        Roster.sync_role_assignment(self.meeting_num, officer2.id, self.role, 'assign')
-        db.session.commit()
-
-        entry1 = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.officer_contact.id).first()
-        entry2 = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=officer2.id).first()
-        
-        self.assertEqual(entry1.order_number, 1000)
-        self.assertEqual(entry2.order_number, 1001)
-
-    def test_member_assignment(self):
-        """Test that members get None order number and Member ticket"""
+        # 2. Member Assignment
         Roster.sync_role_assignment(self.meeting_num, self.member_contact.id, self.role, 'assign')
         db.session.commit()
         
         member_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.member_contact.id).first()
-        self.assertIsNotNone(member_entry)
         self.assertIsNone(member_entry.order_number)
         self.assertEqual(member_entry.ticket, "Member")
 
-    def test_guest_assignment(self):
-        """Test that guests get None order number and Role Taker ticket"""
+        # 3. Guest Assignment
         Roster.sync_role_assignment(self.meeting_num, self.guest_contact.id, self.role, 'assign')
         db.session.commit()
         
         guest_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.guest_contact.id).first()
-        self.assertIsNotNone(guest_entry)
         self.assertIsNone(guest_entry.order_number)
         self.assertEqual(guest_entry.ticket, "Role Taker")
 

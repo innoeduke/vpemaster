@@ -1,5 +1,6 @@
-from flask import Blueprint, render_template, request, jsonify
-from .auth.utils import login_required
+from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from .auth.utils import login_required, is_authorized
+from .auth.permissions import Permissions
 from .models import Roster, Meeting, Contact
 from . import db
 from sqlalchemy import distinct
@@ -10,6 +11,11 @@ roster_bp = Blueprint('roster_bp', __name__)
 @roster_bp.route('/', methods=['GET'])
 @login_required
 def roster():
+    if not is_authorized(Permissions.ROSTER_VIEW):
+        # specific flash message or just redirect
+        # using return redirect(url_for('agenda_bp.agenda')) per other routes pattern for 403
+        return redirect(url_for('agenda_bp.agenda'))
+
     # Use shared helper to ensure consistency with Agenda/Booking/Voting
     from .utils import get_meetings_by_status
     all_meetings, default_meeting_num = get_meetings_by_status(limit_past=8)
@@ -125,7 +131,7 @@ def create_roster_entry():
 @roster_bp.route('/api/roster/<int:entry_id>', methods=['GET'])
 @login_required
 def get_roster_entry(entry_id):
-    entry = Roster.query.get(entry_id)
+    entry = db.session.get(Roster, entry_id)
     if not entry:
         return jsonify({'error': 'Entry not found'}), 404
     
@@ -136,7 +142,7 @@ def get_roster_entry(entry_id):
         contact_name = entry.contact.Name
         if not contact_type:
             # Identify as Officer if linked user has an officer role
-            if entry.contact.user and entry.contact.user.is_officer:
+            if entry.contact.user and entry.contact.user.has_role(Permissions.STAFF):
                 contact_type = 'Officer'
             else:
                 contact_type = entry.contact.Type
@@ -155,7 +161,7 @@ def get_roster_entry(entry_id):
 @roster_bp.route('/api/roster/<int:entry_id>', methods=['PUT'])
 @login_required
 def update_roster_entry(entry_id):
-    entry = Roster.query.get(entry_id)
+    entry = db.session.get(Roster, entry_id)
     if not entry:
         return jsonify({'error': 'Entry not found'}), 404
 
@@ -186,7 +192,7 @@ def update_roster_entry(entry_id):
 @roster_bp.route('/api/roster/<int:entry_id>', methods=['DELETE'])
 @login_required
 def cancel_roster_entry(entry_id):
-    entry = Roster.query.get(entry_id)
+    entry = db.session.get(Roster, entry_id)
     if not entry:
         return jsonify({'error': 'Entry not found'}), 404
 

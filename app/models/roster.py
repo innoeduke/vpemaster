@@ -3,8 +3,8 @@ from sqlalchemy import func
 from .base import db
 
 
-class Role(db.Model):
-    __tablename__ = 'roles'
+class MeetingRole(db.Model):
+    __tablename__ = 'meeting_roles'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     icon = db.Column(db.String(50))
@@ -20,7 +20,7 @@ class RosterRole(db.Model):
     __tablename__ = 'roster_roles'
     id = db.Column(db.Integer, primary_key=True)
     roster_id = db.Column(db.Integer, db.ForeignKey('roster.id'), nullable=False)
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=False)
+    role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), nullable=False)
     
     # Unique constraint to prevent duplicate role assignments
     __table_args__ = (
@@ -39,7 +39,7 @@ class Roster(db.Model):
     contact_type = db.Column(db.String(50), nullable=True)
 
     contact = db.relationship('Contact', backref='roster_entries')
-    roles = db.relationship('app.models.roster.Role', secondary='roster_roles', backref='roster_entries')
+    roles = db.relationship('app.models.roster.MeetingRole', secondary='roster_roles', backref='roster_entries')
 
     def add_role(self, role):
         """Add a role to this roster entry if not already assigned"""
@@ -105,7 +105,8 @@ class Roster(db.Model):
                 from .contact import Contact
                 contact = db.session.get(Contact, contact_id)
                 contact_type = contact.Type
-                is_officer = (contact.user and contact.user.is_officer) or contact.Type == 'Officer'
+                from ..auth.permissions import Permissions
+                is_officer = (contact.user and contact.user.has_role(Permissions.STAFF)) or contact.Type == 'Officer'
 
                 # Logic for Order Number
                 new_order = None
@@ -163,6 +164,8 @@ class Waitlist(db.Model):
     def delete_for_meeting(cls, meeting_number):
         """Deletes all waitlist entries associated with a meeting."""
         from .session import SessionLog
+        from app.auth.permissions import Permissions
+        from app.models.meeting import Meeting
         
         # Find session logs for the meeting to identify relevant waitlists
         session_logs = SessionLog.query.filter_by(Meeting_Number=meeting_number).all()

@@ -1,0 +1,27 @@
+from datetime import datetime
+from .base import db
+
+class PermissionAudit(db.Model):
+    __tablename__ = 'permission_audits'
+
+    id = db.Column(db.Integer, primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    admin_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
+    action = db.Column(db.String(50), nullable=False)  # 'ASSIGN_ROLE', 'REMOVE_ROLE', 'UPDATE_ROLE_PERMS'
+    target_type = db.Column(db.String(50), nullable=False)  # 'USER', 'ROLE'
+    target_id = db.Column(db.Integer, nullable=False)
+    target_name = db.Column(db.String(100))
+    changes = db.Column(db.Text)  # JSON or descriptive string
+
+    admin = db.relationship('User', foreign_keys=[admin_id])
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'timestamp': self.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            'admin_name': self.admin.contact.Name if self.admin and self.admin.contact else self.admin.Username,
+            'action': self.action,
+            'target_type': self.target_type,
+            'target_name': self.target_name,
+            'changes': self.changes
+        }

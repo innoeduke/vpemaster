@@ -24,7 +24,7 @@
         &times;
       </button>
     </div>
-    {% if is_authorized('CONTACT_BOOK_EDIT') %}
+    {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
     <div class="button-group">
       <button class="btn btn-primary" onclick="openContactModal()">
         New Contact
@@ -58,7 +58,7 @@
         <th class="sortable" data-column-index="5" data-sort-type="string">Credentials</th>
         <th class="sortable" data-column-index="6" data-sort-type="string">Next Project</th>
         <th class="sortable" data-column-index="7" data-sort-type="string">Mentor</th>
-        {% if is_authorized('CONTACT_BOOK_EDIT') %}
+        {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
         <th class="action-header" data-column-index="8">Actions</th>
         {% endif %}
       </tr>
@@ -120,7 +120,7 @@
         <td>{{ contact.credentials if contact.credentials else '-' }}</td>
         <td>{{ contact.Next_Project if contact.Next_Project else '-' }}</td>
         <td>{{ contact.mentor.Name if contact.mentor else '-' }}</td>
-        {% if is_authorized('CONTACT_BOOK_EDIT') %}
+        {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
         <td>
           <div class="action-links">
             <button class="icon-btn" onclick="openContactModal({{ contact.id }})" title="Edit">
@@ -154,7 +154,7 @@
 <script>
   var MENTOR_CANDIDATES = [
     {% for m in mentor_candidates %}
-  { id: {{ m.id }}, name: {{ m.Name | tojson }} },
+  { id: { { m.id } }, name: { { m.Name | tojson } } },
   {% endfor %}
   ];
   console.log("MENTOR_CANDIDATES loaded:", MENTOR_CANDIDATES);

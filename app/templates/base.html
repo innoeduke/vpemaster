@@ -55,7 +55,7 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized('CONTACT_BOOK_VIEW') %}
+        {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
           <a href="{{ url_for('contacts_bp.show_contacts') }}">
             <i class="fas fa-book nav-icon"></i>
@@ -77,7 +77,15 @@
             <span>Pathway Library</span>
           </a>
         </li>
-        {% if is_authorized('ROSTER_VIEW') %}
+        {% if is_authorized(Permissions.ROSTER_VIEW) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}active{% endif %}">
+          <a href="{{ url_for('roster_bp.roster') }}">
+            <i class="fas fa-clipboard-list nav-icon"></i>
+            <span>Roster</span>
+          </a>
+        </li>
+        {% endif %}
+        {% if is_authorized(Permissions.LUCKY_DRAW_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('lucky_draw_bp') %}active{% endif %}">
           <a href="{{ url_for('lucky_draw_bp.lucky_draw') }}">
             <i class="fas fa-gift nav-icon"></i>
@@ -85,7 +93,7 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized('SETTINGS_VIEW_ALL') %}
+        {% if is_authorized(Permissions.SETTINGS_VIEW_ALL) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
           <a href="{{ url_for('settings_bp.settings') }}">
             <i class="fas fa-cog nav-icon"></i>

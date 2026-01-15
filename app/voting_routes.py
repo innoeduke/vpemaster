@@ -1,8 +1,9 @@
 # vpemaster/voting_routes.py
 
 from .auth.utils import login_required, is_authorized
-from flask import Blueprint, render_template, request, session, jsonify, current_app
-from .models import SessionLog, SessionType, Contact, Meeting, User, Role, Vote
+from .auth.permissions import Permissions
+from flask import Blueprint, render_template, request, session, jsonify, current_app, redirect, url_for
+from .models import SessionLog, SessionType, Contact, Meeting, User, MeetingRole, Vote
 from . import db
 from datetime import datetime
 import secrets
@@ -57,7 +58,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
 
     # Vote counts for officers
     vote_counts = {}
-    if is_authorized('BOOKING_ASSIGN_ALL', meeting=selected_meeting) and selected_meeting and selected_meeting.status in ['running', 'finished']:
+    if is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting) and selected_meeting and selected_meeting.status in ['running', 'finished']:
         counts = db.session.query(Vote.contact_id, Vote.award_category, func.count(Vote.id)).filter(
             Vote.meeting_number == selected_meeting.Meeting_Number
         ).group_by(Vote.contact_id, Vote.award_category).all()
@@ -69,7 +70,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
     for _, role_data in roles_dict.items():
         role_obj = role_data.get('role_obj')
         if not role_obj:
-            role_obj = Role.query.filter_by(name=role_data['role_key']).first()
+            role_obj = MeetingRole.query.filter_by(name=role_data['role_key']).first()
 
         role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else "fa-question-circle"
         role_data['session_id'] = role_data['session_ids'][0]
@@ -82,7 +83,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
             # Check the first session log for project details
             # Note: 'logs' key is removed in consolidate_roles, must fetch by ID
             session_ids = role_data.get('session_ids')
-            first_log = SessionLog.query.get(session_ids[0]) if session_ids else None
+            first_log = db.session.get(SessionLog, session_ids[0]) if session_ids else None
             
             if first_log:
                 # If no project or generic project, disqualify from voting
@@ -169,7 +170,7 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     """
     # Show all recent meetings in the dropdown, even if voting is not yet available for some
     upcoming_meetings, default_meeting_num = get_meetings_by_status(
-        limit_past=8, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date])
+        limit_past=8, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date, Meeting.status])
 
     if not selected_meeting_number:
         selected_meeting_number = default_meeting_num or (
@@ -180,9 +181,9 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
         'upcoming_meetings': upcoming_meetings,
         'selected_meeting_number': selected_meeting_number,
         'selected_meeting': None,
-        'is_admin_view': is_authorized('BOOKING_ASSIGN_ALL'),
+        'is_admin_view': is_authorized(Permissions.BOOKING_ASSIGN_ALL),
         'current_user_contact_id': current_user_contact_id,
-        'user_role': current_user.Role if current_user.is_authenticated else 'Guest',
+        'user_role': current_user.primary_role_name if current_user.is_authenticated else 'Guest',
         'best_award_ids': set(),
         'has_voted': False,
         'sorted_role_groups': [],
@@ -214,7 +215,7 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
             context['roles'] = [] # Prevent data leakage
             return context
 
-    if selected_meeting and selected_meeting.status == 'unpublished' and not (context['is_admin_view'] or (current_user.is_authenticated and current_user.is_officer) or is_manager):
+    if selected_meeting and selected_meeting.status == 'unpublished' and not (is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)):
         context['force_not_started'] = True
         context['selected_meeting'] = selected_meeting
         context['roles'] = [] # Prevent data leakage
@@ -224,10 +225,10 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     
     # Permission checks
     # is_admin_view controls seeing results/accordion (Admin, Officer, VPE, Manager)
-    context['is_admin_view'] = is_authorized('VOTING_VIEW_RESULTS', meeting=selected_meeting)
+    context['is_admin_view'] = is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)
     
     # can_track_progress controls seeing results WHILE running (Admin only)
-    context['can_track_progress'] = is_authorized('VOTING_TRACK_PROGRESS', meeting=selected_meeting)
+    context['can_track_progress'] = is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=selected_meeting)
 
     roles = _get_roles_for_voting(selected_meeting_number, selected_meeting)
     context['roles'] = roles
@@ -265,6 +266,19 @@ def voting(selected_meeting_number):
     """Main voting page route."""
     user, current_user_contact_id = get_current_user_info()
     context = _get_voting_page_context(selected_meeting_number, user, current_user_contact_id)
+    
+    # Access Control Logic
+    meeting = context.get('selected_meeting')
+    if meeting:
+        if meeting.status in ['unpublished', 'not started']:
+            if not is_authorized(Permissions.VOTING_TRACK_PROGRESS):
+                return redirect(url_for('agenda_bp.meeting_notice', meeting_number=meeting.Meeting_Number))
+        elif meeting.status == 'finished':
+            # Finished meetings: Only users with VOTING_VIEW_RESULTS can see results
+            # Others (guests and regular users) should not access this page
+            if not is_authorized(Permissions.VOTING_VIEW_RESULTS):
+                return redirect(url_for('agenda_bp.agenda'))
+                 
     return render_template('voting.html', **context)
 
 
@@ -350,7 +364,7 @@ def vote_for_award():
     if not meeting:
         return jsonify(success=False, message="Meeting not found."), 404
 
-    is_admin = is_authorized('BOOKING_ASSIGN_ALL')
+    is_admin = is_authorized(Permissions.BOOKING_ASSIGN_ALL)
 
     if not (meeting.status == 'running' or (meeting.status == 'finished' and is_admin)):
         return jsonify(success=False, message="Voting is not active for this meeting."), 403

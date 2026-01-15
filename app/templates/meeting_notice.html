@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Meeting Notice{% endblock %}
+
+{% block content %}
+<div class="booking-container">
+	<p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">
+		Meeting #{{ meeting_number }} is {{ meeting_status }}.
+	</p>
+	<div style="text-align: center; margin-top: 20px;">
+		<img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Meeting notice"
+			style="max-width: 100%; height: auto; border: 5px solid #c5c5c5; border-radius: 15px;">
+	</div>
+</div>
+{% endblock %}

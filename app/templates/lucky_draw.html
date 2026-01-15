@@ -55,7 +55,7 @@
             <div class="roster-entry" data-order="{{ entry.order_number }}"
                 data-name="{{ entry.contact.Name if entry.contact else 'N/A' }}"
                 data-avatar="{% if entry.contact and entry.contact.Avatar_URL %}{{ url_for('static', filename=entry.contact.Avatar_URL) }}{% endif %}"
-                data-type="{% if entry.contact_type %}{{ entry.contact_type }}{% elif entry.contact and entry.contact.user and entry.contact.user.is_officer %}Officer{% elif entry.contact %}{{ entry.contact.Type }}{% else %}Guest{% endif %}"
+                data-type="{% if entry.contact_type %}{{ entry.contact_type }}{% elif entry.contact and entry.contact.user and entry.contact.user.has_role(Permissions.OFFICER) %}Officer{% elif entry.contact %}{{ entry.contact.Type }}{% else %}Guest{% endif %}"
                 data-ticket="{{ entry.ticket }}"
                 data-has-topics-role="{{ 'true' if RoleID.TOPICS_SPEAKER in entry.roles|map(attribute='id') else 'false' }}">
             </div>

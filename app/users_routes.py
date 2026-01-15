@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from . import db
 from .models import User, Contact, Pathway
 from .auth.utils import is_authorized, login_required
+from .auth.permissions import Permissions
 from flask_login import current_user
 
 from werkzeug.security import generate_password_hash
@@ -33,8 +34,57 @@ def _create_or_update_user(user=None, **kwargs):
     user.Username = kwargs.get('username')
     user.Email = kwargs.get('email')
     
-    user.Role = kwargs.get('role')
+    # Handle multiple roles
+    role_ids = kwargs.get('role_ids', [])
+    role_name = kwargs.get('role') # Legacy single-role support
+    from .models import UserRoleAssociation, AuthRole, PermissionAudit
+    from flask_login import current_user
     
+    # If role_name is provided but role_ids is not, try to find the role
+    if not role_ids and role_name:
+        role_obj = AuthRole.query.filter_by(name=role_name).first()
+        if role_obj:
+            role_ids = [role_obj.id]
+
+    if user.id:
+        current_roles = UserRoleAssociation.query.filter_by(user_id=user.id).all()
+        current_role_ids = {r.role_id for r in current_roles}
+        new_role_ids = set(role_ids)
+
+        if current_role_ids != new_role_ids:
+            # To add
+            for rid in new_role_ids - current_role_ids:
+                db.session.add(UserRoleAssociation(user_id=user.id, role_id=rid))
+
+            # To remove
+            for r in current_roles:
+                if r.role_id not in new_role_ids:
+                    db.session.delete(r)
+
+            # Audit log
+            if current_user.is_authenticated:
+                audit = PermissionAudit(
+                    admin_id=current_user.id,
+                    action='UPDATE_USER_ROLES',
+                    target_type='USER',
+                    target_id=user.id,
+                    target_name=user.Username,
+                    changes=f"Updated roles: {list(new_role_ids)}"
+                )
+                db.session.add(audit)
+    else:
+        # For new users, we'll assign roles after commit to get user.id
+        # We store them in the user object temporarily or handle after commit.
+        # Let's handle it after commit in the callers for now, 
+        # but _create_or_update_user should really handle the flush/commit if it's responsible for roles.
+        # Alternatively, we can use user.roles relationship if it's set up correctly.
+        if role_ids:
+            # If we have AuthRole objects, we could append. If we have IDs, we need to fetch.
+            for rid in role_ids:
+                robj = db.session.get(AuthRole, rid)
+                if robj:
+                    user.roles.append(robj)
+
     # Profile fields (Member_ID, Current_Path, etc.) are now on Contact model.
     # We do not set them here.
 
@@ -58,7 +108,7 @@ def _create_or_update_user(user=None, **kwargs):
 @users_bp.route('/users')
 @login_required
 def show_users():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
     return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
@@ -68,7 +118,7 @@ def show_users():
 @users_bp.route('/user/form/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def user_form(user_id):
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
     user = None
@@ -90,26 +140,34 @@ def user_form(user_id):
         pathways[ptype].append(p.name)
 
     if request.method == 'POST':
+        role_ids = request.form.getlist('roles', type=int)
         _create_or_update_user(
             user=user,
             username=request.form.get('username'),
             email=request.form.get('email'),
-            role=request.form.get('role'),
+            role_ids=role_ids,
             status=request.form.get('status'),
             contact_id=request.form.get('contact_id', 0, type=int),
             create_new_contact=request.form.get('create_new_contact') == 'on',
             password=request.form.get('password')
         )
         db.session.commit()
+        
+        db.session.commit()
+
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
-    return render_template('user_form.html', user=user, contacts=member_contacts, users=users, mentor_contacts=mentor_contacts, pathways=pathways)
+    from .models import AuthRole
+    all_auth_roles = AuthRole.query.order_by(AuthRole.id).all()
+    user_role_ids = [r.id for r in user.roles] if user else []
+
+    return render_template('user_form.html', user=user, contacts=member_contacts, users=users, mentor_contacts=mentor_contacts, pathways=pathways, all_auth_roles=all_auth_roles, user_role_ids=user_role_ids)
 
 
 @users_bp.route('/user/delete/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
     user = User.query.get_or_404(user_id)
@@ -121,7 +179,7 @@ def delete_user(user_id):
 @users_bp.route('/user/bulk_import', methods=['POST'])
 @login_required
 def bulk_import_users():
-    if not is_authorized('SETTINGS_VIEW_ALL'):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
@@ -173,7 +231,7 @@ def bulk_import_users():
                 email=email,
                 member_id=member_id,
                 mentor_id=mentor_id,
-                role='Member',
+                role='User',
                 password='leadership'
             )
             success_count += 1
@@ -194,7 +252,7 @@ def bulk_import_users():
 @users_bp.route('/user/quick_add/<int:contact_id>', methods=['POST'])
 @login_required
 def quick_add_user(contact_id):
-    if not is_authorized('CONTACT_BOOK_EDIT'):
+    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('contacts_bp.show_contacts'))
 
@@ -265,7 +323,7 @@ def quick_add_user(contact_id):
             username=username,
             contact_id=contact.id,
             email=contact.Email,
-            role='Member',
+            role='User',
             status='active',
             password='leadership'
         )

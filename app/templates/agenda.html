@@ -68,7 +68,7 @@
         </div>
         <div class="action-bar-right">
             <div class="button-group" id="view-mode-buttons">
-                {% if selected_meeting and is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
+                {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
                 {% if selected_meeting.status %}
                 <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}"
                     title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
@@ -98,11 +98,11 @@
                 </button>
                 {% endif %}
 
-                {% if is_authorized('AGENDA_EDIT') %}
+                {% if is_authorized(Permissions.AGENDA_EDIT) %}
                 <button id="create-btn" class="btn btn-success">New</button>
                 {% endif %}
 
-                {% if selected_meeting and is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
+                {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
                 <button id="export-btn" class="btn btn-info">Export</button>
                 <button id="edit-btn" class="btn btn-primary">Edit</button>
                 {% endif %}
@@ -111,7 +111,7 @@
     </div>
 
     {# Edit Mode Buttons (Only visible if authorized) #}
-    {% if is_authorized('AGENDA_EDIT', meeting=selected_meeting) %}
+    {% if is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
     <div class="button-group" id="edit-mode-buttons" style="display: none;">
         <button id="cancel-edit-btn" class="btn btn-danger">Cancel</button>
         <button id="view-details-btn" class="btn btn-success">View Details</button>

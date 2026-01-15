@@ -1,5 +1,5 @@
 """Association table for User-Role many-to-many relationship."""
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import db
 
 
@@ -10,7 +10,7 @@ class UserRole(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('Users.id', ondelete='CASCADE'), nullable=False)
     role_id = db.Column(db.Integer, db.ForeignKey('auth_roles.id', ondelete='CASCADE'), nullable=False)
-    assigned_at = db.Column(db.DateTime, default=datetime.utcnow)
+    assigned_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     assigned_by = db.Column(db.Integer, db.ForeignKey('Users.id', ondelete='SET NULL'))
     
     # Unique constraint to prevent duplicate user-role assignments

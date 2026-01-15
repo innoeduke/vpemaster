@@ -1,5 +1,5 @@
 """Role model for authorization system."""
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import db
 
 
@@ -11,7 +11,7 @@ class Role(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False, index=True)
     description = db.Column(db.Text)
     level = db.Column(db.Integer)  # For hierarchy: Admin=8, VPE=4, Officer=2, Member=1
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
     permissions = db.relationship('Permission', secondary='role_permissions', back_populates='roles')

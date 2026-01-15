@@ -18,9 +18,9 @@ class SessionType(db.Model):
     Valid_for_Project = db.Column(db.Boolean, default=False)
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)
-    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=True)
+    role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), nullable=True)
 
-    role = db.relationship('app.models.roster.Role', backref='session_types')
+    role = db.relationship('app.models.roster.MeetingRole', backref='session_types')
 
 
 class SessionLog(db.Model):
@@ -373,7 +373,7 @@ class SessionLog(db.Model):
         Returns:
             list: List of updated SessionLog objects
         """
-        from .roster import Role
+        from .roster import MeetingRole
         from .contact import Contact
         from .project import Pathway, PathwayProject
         from ..utils import derive_credentials
@@ -391,9 +391,9 @@ class SessionLog(db.Model):
             
             query = db.session.query(cls)\
                 .join(SessionType, cls.Type_ID == SessionType.id)\
-                .join(Role, SessionType.role_id == Role.id)\
+                .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
                 .filter(cls.Meeting_Number == target_log.Meeting_Number)\
-                .filter(Role.id == target_role_id)
+                .filter(MeetingRole.id == target_role_id)
             
             if current_owner_id is None:
                 query = query.filter(cls.Owner_ID.is_(None))
@@ -450,8 +450,9 @@ class SessionLog(db.Model):
         Returns:
             list: Session logs with eager-loaded relationships
         """
+        from ..auth.permissions import Permissions
         from ..auth.utils import is_authorized
-        from .roster import Waitlist, Role
+        from .roster import Waitlist, MeetingRole
         
         query = db.session.query(cls)\
             .options(
@@ -460,12 +461,12 @@ class SessionLog(db.Model):
                 subqueryload(cls.waitlists).joinedload(Waitlist.contact)
             )\
             .join(SessionType, cls.Type_ID == SessionType.id)\
-            .join(Role, SessionType.role_id == Role.id)\
+            .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
             .filter(cls.Meeting_Number == selected_meeting_number)\
-            .filter(Role.name != '', Role.name.isnot(None))
+            .filter(MeetingRole.name != '', MeetingRole.name.isnot(None))
 
-        if not is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting_obj):
-            query = query.filter(Role.type != 'officer')
+        if not is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting_obj):
+            query = query.filter(MeetingRole.type != 'officer')
 
         return query.all()
 
