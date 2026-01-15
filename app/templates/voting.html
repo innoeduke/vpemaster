@@ -9,8 +9,6 @@
 
 {% block content %}
 <div class="booking-container">
-	<h1>Voting Assistant</h1>
-
 	<div class="booking-filter-container">
 		{{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
 		base_url='/voting', render_outer_container=False) }}

@@ -1,0 +1,479 @@
+"""Session models including SessionType and SessionLog."""
+import re
+from sqlalchemy.dialects import mysql
+from sqlalchemy.orm import joinedload, subqueryload
+
+from .base import db
+from ..constants import ProjectID, SessionTypeID
+
+
+class SessionType(db.Model):
+    __tablename__ = 'Session_Types'
+    id = db.Column(db.Integer, primary_key=True)
+    Title = db.Column(db.String(255), nullable=False, unique=True)
+    Default_Owner = db.Column(db.String(255))
+    Is_Section = db.Column(db.Boolean, default=False)
+    Is_Hidden = db.Column(db.Boolean, default=False)
+    Predefined = db.Column(db.Boolean, default=True)
+    Valid_for_Project = db.Column(db.Boolean, default=False)
+    Duration_Min = db.Column(db.Integer)
+    Duration_Max = db.Column(db.Integer)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'), nullable=True)
+
+    role = db.relationship('Role', backref='session_types')
+
+
+class SessionLog(db.Model):
+    __tablename__ = 'Session_Logs'
+    id = db.Column(db.Integer, primary_key=True)
+    Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), db.ForeignKey(
+        'Meetings.Meeting_Number'), nullable=False)
+    Meeting_Seq = db.Column(db.Integer)
+    # For custom titles like speeches
+    Session_Title = db.Column(db.String(255))
+    Type_ID = db.Column(db.Integer, db.ForeignKey(
+        'Session_Types.id'), nullable=False)
+    Owner_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    credentials = db.Column(db.String(255), default='')
+    Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.id'))
+    Start_Time = db.Column(db.Time)
+    Duration_Min = db.Column(db.Integer, default=0)
+    Duration_Max = db.Column(db.Integer)
+    Notes = db.Column(db.String(1000))
+    Status = db.Column(db.String(50))
+    state = db.Column(db.String(50), nullable=False,
+                      default='active')  # Can be 'active', 'waiting', 'cancelled'
+    project_code = db.Column(db.String(10))
+    pathway = db.Column(db.String(100))
+
+    meeting = db.relationship('Meeting', backref='session_logs')
+    project = db.relationship('Project', backref='session_logs')
+    owner = db.relationship('Contact', backref='session_logs')
+    session_type = db.relationship('SessionType', backref='session_logs')
+
+    media = db.relationship('Media', backref='session_log',
+                            uselist=False, cascade='all, delete-orphan')
+
+    def derive_project_code(self, owner_contact=None):
+        """
+        Derives the 'project_code' based on the role, project, and owner's pathway.
+        Consolidated logic from legacy utils.derive_project_code.
+        """
+        from ..utils import get_project_code
+        from .project import Pathway
+        
+        contact = owner_contact or self.owner
+        if not contact or not contact.Current_Path:
+            return None
+
+        pathway_name = contact.Current_Path
+        path_obj = db.session.query(Pathway).filter_by(name=pathway_name).first()
+        if not path_obj:
+            return None
+
+        pathway_suffix = path_obj.abbr
+        role_name = self.session_type.role.name if self.session_type and self.session_type.role else None
+
+        # --- Priority 1: Speaker/Evaluator with Project ID ---
+        # Dynamically identify roles linked to session types valid for projects
+        project_specific_roles = [st.role.name for st in SessionType.query.filter_by(Valid_for_Project=True).all() if st.role]
+        
+        is_presentation = (self.session_type and self.session_type.Title == 'Presentation')
+        
+        if (role_name in project_specific_roles or is_presentation) and self.Project_ID:
+            # For presentations, we might want to use self.pathway if it's explicitly set to a series
+            # but per requirement, we use owner's current path for the DB field, 
+            # while Project.get_code will naturally find the series fallback.
+            code = get_project_code(self.Project_ID, pathway_name)
+            if code:
+                return code
+
+        # --- Priority 2: Other roles - Use highest level achievement + 1 ---
+        else:
+            # Determine base level from contact.credentials for consistency
+            start_level = 1
+            if contact.credentials:
+                # Match the current path abbreviation followed by a level number
+                match = re.match(rf"^{pathway_suffix}(\d+)$", contact.credentials.strip().upper())
+                if match:
+                    level_achieved = int(match.group(1))
+                    # If level L is completed, the current work is for level L+1 (capped at 5)
+                    start_level = min(level_achieved + 1, 5)
+                
+            return f"{pathway_suffix}{start_level}"
+
+        return None
+
+    def get_display_level_and_type(self, pathway_cache=None):
+        """
+        Determine log type, display level, and project code for this session log.
+        
+        Args:
+            pathway_cache (dict, optional): Pre-fetched pathway/project data for performance.
+                                            Format: {project_id: {pathway_id: PathwayProject}}
+        
+        Returns:
+            tuple: (display_level, log_type, project_code)
+                   - display_level: str (e.g., "1", "2", "General")
+                   - log_type: str ("speech" or "role")
+                   - project_code: str (e.g., "SR1.1", "EH2.3", or "")
+        """
+        from .project import Pathway, PathwayProject
+        
+        display_level = "General"
+        log_type = 'role'
+        project_code = ""
+        
+        if not self.session_type or not self.session_type.role:
+            return display_level, log_type, project_code
+        
+        is_prepared_speech = self.project and self.project.is_prepared_speech
+        
+        # Determine if this is a speech
+        if (self.session_type.Valid_for_Project and self.Project_ID and self.Project_ID != ProjectID.GENERIC) or is_prepared_speech:
+            log_type = 'speech'
+            pathway_abbr = None
+            found_data = False
+            
+            # Priority 1: Lookup PathwayProject data (Canonical)
+            if self.Project_ID:
+                found_via_cache = False
+                if pathway_cache and self.Project_ID in pathway_cache:
+                    # Use cached data if available
+                    pp_data = pathway_cache[self.Project_ID]
+                    if pp_data:
+                        # Find the BEST PathwayProject matching the user's context
+                        target_path = self.pathway or (self.owner.Current_Path if self.owner else None)
+                        first_pp = None
+                        
+                        if target_path:
+                            for pp in pp_data.values():
+                                if pp.pathway and pp.pathway.name == target_path:
+                                    first_pp = pp
+                                    break
+                        
+                        # Fallback to any if not found
+                        if not first_pp:
+                             first_pp = next(iter(pp_data.values()))
+
+                        display_level = str(first_pp.level) if first_pp.level else "1"
+                        # Optimized: Use pre-loaded relationship from cache
+                        if first_pp.pathway and first_pp.pathway.abbr:
+                            pathway_abbr = first_pp.pathway.abbr
+                        
+                        # Set project code from canonical source immediately
+                        if pathway_abbr:
+                             project_code = f"{pathway_abbr}{first_pp.code}"
+                        else:
+                             project_code = first_pp.code
+                        
+                        found_via_cache = True
+                        found_data = True
+                
+                if not found_via_cache:
+                    # No cache, query directly
+                    # Try to find match with log's own pathway first, then user's current path
+                    target_path_name = self.pathway or (self.owner.Current_Path if self.owner else None)
+                    
+                    if target_path_name:
+                        target_path = Pathway.query.filter_by(name=target_path_name).first()
+                        if target_path:
+                            pp = PathwayProject.query.filter_by(
+                                project_id=self.Project_ID, 
+                                path_id=target_path.id
+                            ).first()
+                            if pp:
+                                pathway_abbr = target_path.abbr
+                                display_level = str(pp.level) if pp.level else "1"
+                                project_code = f"{pathway_abbr}{pp.code}" if pathway_abbr else pp.code
+                                found_data = True
+                        
+                    # Fallback: any pathway
+                    if not found_data:
+                        pp = PathwayProject.query.filter_by(project_id=self.Project_ID).first()
+                        if pp:
+                            path_obj = db.session.get(Pathway, pp.path_id)
+                            if path_obj:
+                                pathway_abbr = path_obj.abbr
+                                display_level = str(pp.level) if pp.level else "1"
+                                project_code = f"{pathway_abbr}{pp.code}"
+                                found_data = True
+
+            # Priority 2: Use project_code if no canonical data found (or as supplement?)
+            # Actually, if we found data, we trust DB. If not, use snapshot.
+            if not found_data and self.project_code:
+                match = re.match(r"([A-Z]+)(\d+)", self.project_code)
+                if match:
+                    pathway_abbr = match.group(1)
+                    display_level = str(match.group(2))
+                    project_code = self.project_code
+        
+        else:  # It's a role
+            if self.project_code:
+                match = re.match(r"([A-Z]+)(\d+)", self.project_code)
+                if match:
+                    display_level = str(match.group(2))
+        
+        return display_level, log_type, project_code
+    
+
+    
+    def update_media(self, url):
+        """Update, create, or delete associated media."""
+        from .media import Media
+        
+        if url:
+            if self.media:
+                self.media.url = url
+            else:
+                self.media = Media(url=url)
+        elif self.media:
+            db.session.delete(self.media)
+
+    def update_pathway(self, pathway_name):
+        """
+        Update log pathway and sync with user profile.
+        CRITICAL RULE: Only 'pathway'-type paths (e.g., "Presentation Mastery") are stored in 
+        SessionLog.pathway and Contact.Current_Path. 'presentation'-type paths (Series) 
+        are used purely for project lookup and should NEVER be saved here.
+        """
+        from .project import Pathway
+        
+        if not pathway_name:
+            return
+            
+        # Verify the pathway type in the database
+        path_obj = Pathway.query.filter_by(name=pathway_name).first()
+        if not path_obj or path_obj.type != 'pathway':
+            # Do not allow storing series/presentation-type paths in the main pathway column
+            return
+
+        old_pathway = self.pathway
+        self.pathway = pathway_name
+        
+        # Sync to user profile if relevant
+        if self.owner and old_pathway != pathway_name:
+            # Sync to the Contact's current path (ensures profile is updated)
+            self.owner.Current_Path = pathway_name
+            db.session.add(self.owner)
+
+    def update_durations(self, data, updated_project=None):
+        """
+        Update durations based on structural changes.
+        Priority: Project Defaults > Session Type Defaults > Preserve Manual Edits.
+        """
+        new_project_id = data.get('project_id')
+        if new_project_id in [None, "", "null"]:
+            new_project_id = None
+        else:
+            try:
+                new_project_id = int(new_project_id)
+            except (ValueError, TypeError):
+                new_project_id = None
+
+        project_changed = (self.Project_ID != new_project_id)
+        
+        new_st_title = data.get('session_type_title')
+        st_changed = (new_st_title and self.session_type and self.session_type.Title != new_st_title)
+
+        # Update Project ID first if provided
+        if 'project_id' in data:
+            self.Project_ID = new_project_id
+
+        if project_changed and self.Project_ID:
+            if updated_project:
+                self.Duration_Min = updated_project.Duration_Min
+                self.Duration_Max = updated_project.Duration_Max
+        elif st_changed:
+            new_st = SessionType.query.filter_by(Title=new_st_title).first()
+            if new_st:
+                self.Duration_Min = new_st.Duration_Min
+                self.Duration_Max = new_st.Duration_Max
+
+    def get_summary_data(self):
+        """Get project name, code, and pathway for response serialization."""
+        from .project import Project
+        
+        project_name = "N/A"
+        project_code = ""
+        current_pathway = self.pathway or (self.owner.Current_Path if self.owner else "N/A")
+
+        if self.Project_ID:
+            project = db.session.get(Project, self.Project_ID)
+            if project:
+                project_name = project.Project_Name
+                
+                # Use the more robust logic to get level, type, and code
+                _, _, derived_code = self.get_display_level_and_type()
+                project_code = derived_code
+
+        return {
+            "project_name": project_name,
+            "project_code": project_code,
+            "pathway": current_pathway
+        }
+
+    def matches_filters(self, pathway=None, level=None, status=None, log_type=None):
+        """
+        Check if this log matches the given filters.
+        
+        Args:
+            pathway (str, optional): Pathway name to filter by (or 'all' for no filtering)
+            level (str, optional): Level to filter by (e.g., "1", "2")
+            status (str, optional): Status to filter by (e.g., "Completed")
+            log_type (str, optional): Pre-determined log type ("speech" or "role")
+        
+        Returns:
+            bool: True if log matches all provided filters
+        """
+        # Level filter
+        if level and hasattr(self, '_display_level'):
+            if self._display_level != level:
+                return False
+        
+        # Pathway filter (only for speeches or if pathway is explicitly set)
+        if pathway and pathway != 'all':
+            current_log_path = getattr(self, 'pathway', None)
+            
+            # If log has a pathway and it doesn't match → reject
+            if current_log_path and current_log_path != pathway:
+                return False
+            
+            # If log has no pathway:
+            # - Speeches must belong to the selected pathway → reject
+            # - Roles are generic → accept
+            if not current_log_path and log_type == 'speech':
+                return False
+        
+        # Status filter
+        if status:
+            if log_type == 'speech':
+                if self.Status != status:
+                    return False
+            else:  # role
+                # For roles, only show if linked to project AND status matches
+                if not (self.Project_ID and self.Status == status):
+                    return False
+        
+        return True
+
+    @classmethod
+    def set_owner(cls, target_log, new_owner_id):
+        """
+        Sets the owner for a session log (and related logs if role is not distinct),
+        updates credentials, and derives project codes.
+        
+        This method DOES NOT sync with Roster or clear Waitlists. 
+        Those side effects are managed by RoleService.
+        
+        Args:
+            target_log: The SessionLog object to update
+            new_owner_id: ID of the new owner (or None to unassign)
+            
+        Returns:
+            list: List of updated SessionLog objects
+        """
+        from .roster import Role
+        from .contact import Contact
+        from .project import Pathway, PathwayProject
+        from ..utils import derive_credentials
+        
+        # 1. Identify all logs to update (handle is_distinct)
+        session_type = target_log.session_type
+        role_obj = session_type.role if session_type else None
+        
+        sessions_to_update = [target_log]
+        
+        if role_obj and not role_obj.is_distinct:
+            # Find all logs for this role in this meeting
+            target_role_id = role_obj.id
+            current_owner_id = target_log.Owner_ID
+            
+            query = db.session.query(cls)\
+                .join(SessionType, cls.Type_ID == SessionType.id)\
+                .join(Role, SessionType.role_id == Role.id)\
+                .filter(cls.Meeting_Number == target_log.Meeting_Number)\
+                .filter(Role.id == target_role_id)
+            
+            if current_owner_id is None:
+                query = query.filter(cls.Owner_ID.is_(None))
+            else:
+                query = query.filter(cls.Owner_ID == current_owner_id)
+                
+            sessions_to_update = query.all()
+
+        # 2. Prepare Data (Credentials, Project Code)
+        owner_contact = db.session.get(Contact, new_owner_id) if new_owner_id else None
+        new_credentials = derive_credentials(owner_contact)
+
+        # 3. Update Logs
+        for log in sessions_to_update:
+            log.Owner_ID = new_owner_id
+            log.credentials = new_credentials
+            
+            # Project Code Logic
+            new_path_level = None
+            if owner_contact:
+                # Basic derivation
+                new_path_level = log.derive_project_code(owner_contact)
+                
+                # Auto-Resolution from Next_Project for Prepared Speeches
+                # This logic checks if the planned Next_Project matches strict criteria
+                if owner_contact.Next_Project and log.Type_ID == SessionTypeID.PREPARED_SPEECH:
+                    current_path_name = owner_contact.Current_Path
+                    if current_path_name:
+                        pathway = Pathway.query.filter_by(name=current_path_name).first()
+                        if pathway and pathway.abbr:
+                            if owner_contact.Next_Project.startswith(pathway.abbr):
+                                code_suffix = owner_contact.Next_Project[len(pathway.abbr):]
+                                pp = PathwayProject.query.filter_by(
+                                    path_id=pathway.id,
+                                    code=code_suffix
+                                ).first()
+                                if pp:
+                                    log.Project_ID = pp.project_id
+                                    new_path_level = owner_contact.Next_Project
+            
+            log.project_code = new_path_level
+
+        return sessions_to_update
+
+    @classmethod
+    def fetch_for_meeting(cls, selected_meeting_number, meeting_obj=None):
+        """
+        Fetches session logs for a given meeting, filtering by user role access where appropriate.
+        
+        Args:
+            selected_meeting_number: Meeting number to fetch logs for
+            meeting_obj: Optional meeting object for authorization check
+        
+        Returns:
+            list: Session logs with eager-loaded relationships
+        """
+        from ..auth.utils import is_authorized
+        from .roster import Waitlist, Role
+        
+        query = db.session.query(cls)\
+            .options(
+                joinedload(cls.session_type).joinedload(SessionType.role),
+                joinedload(cls.owner),
+                subqueryload(cls.waitlists).joinedload(Waitlist.contact)
+            )\
+            .join(SessionType, cls.Type_ID == SessionType.id)\
+            .join(Role, SessionType.role_id == Role.id)\
+            .filter(cls.Meeting_Number == selected_meeting_number)\
+            .filter(Role.name != '', Role.name.isnot(None))
+
+        if not is_authorized('BOOKING_ASSIGN_ALL', meeting=meeting_obj):
+            query = query.filter(Role.type != 'officer')
+
+        return query.all()
+
+    @classmethod
+    def delete_for_meeting(cls, meeting_number):
+        """Deletes all session logs for a specific meeting."""
+        logs = cls.query.filter_by(Meeting_Number=meeting_number).all()
+        for log in logs:
+            if log.media:
+                db.session.delete(log.media)
+            db.session.delete(log)
