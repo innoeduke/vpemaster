@@ -45,6 +45,13 @@ def _create_or_update_user(user=None, **kwargs):
         role_obj = AuthRole.query.filter_by(name=role_name).first()
         if role_obj:
             role_ids = [role_obj.id]
+    
+    # For new users, ensure they get at least the "User" role by default
+    is_new_user = user.id is None
+    if is_new_user and not role_ids:
+        default_role = AuthRole.query.filter_by(name='User').first()
+        if default_role:
+            role_ids = [default_role.id]
 
     if user.id:
         current_roles = UserRoleAssociation.query.filter_by(user_id=user.id).all()
@@ -54,7 +61,11 @@ def _create_or_update_user(user=None, **kwargs):
         if current_role_ids != new_role_ids:
             # To add
             for rid in new_role_ids - current_role_ids:
-                db.session.add(UserRoleAssociation(user_id=user.id, role_id=rid))
+                db.session.add(UserRoleAssociation(
+                    user_id=user.id, 
+                    role_id=rid,
+                    assigned_by=current_user.id if current_user.is_authenticated else None
+                ))
 
             # To remove
             for r in current_roles:

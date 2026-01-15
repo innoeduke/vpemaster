@@ -276,16 +276,38 @@ def _calculate_completion_summary(grouped_logs, pp_mapping):
     used_log_ids = set()
     role_aliases = get_role_aliases()
     
+    # Pre-process elective pool requirements
+    elective_pool_requirements = {}
+    for lr in level_requirements:
+        if lr.role.strip().lower() == 'elective pool':
+            elective_pool_requirements[str(lr.level)] = lr.count_required
+
     for lr in level_requirements:
         level_str = str(lr.level)
         if level_str not in completion_summary:
-            completion_summary[level_str] = {'required': [], 'elective': []}
+            completion_summary[level_str] = {
+                'required': [], 
+                'elective': [], 
+                'required_completed': True, 
+                'elective_completed': False,
+                'required_count': 0,
+                'required_total': 0,
+                'elective_count': 0,
+                'elective_required': elective_pool_requirements.get(level_str, 1 if lr.level <= 3 else 2)
+            }
         
+        # Skip processing 'elective pool' record as a role itself
+        if lr.role.strip().lower() == 'elective pool':
+            continue
+
         count = 0
         details = []
         logs_for_level = grouped_logs.get(level_str, [])
         
         for entry in logs_for_level:
+            if count >= lr.count_required:
+                break
+
             items_to_process = entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]
             
             for log in items_to_process:
@@ -321,8 +343,6 @@ def _calculate_completion_summary(grouped_logs, pp_mapping):
                 elif lr.role.lower() == 'elective project' and hasattr(log, 'log_type') and log.log_type == 'speech':
                     if pp_mapping.get(log.Project_ID) == 'elective':
                         satisfied = True
-                elif target_role_name == 'individual evaluator' and 'evaluat' in actual_role_name:
-                    satisfied = True
                
                 if satisfied:
                     if log.Status == 'Completed' or (hasattr(log, 'log_type') and log.log_type == 'role'):
@@ -337,12 +357,24 @@ def _calculate_completion_summary(grouped_logs, pp_mapping):
             details.append({'name': f"Pending {lr.role}", 'status': 'pending'})
         
         target_group = 'elective' if lr.type == 'elective' else 'required'
-        completion_summary[level_str][target_group].append({
+        item_data = {
             'role': lr.role,
             'count': count,
             'required': lr.count_required,
             'requirement_items': details
-        })
+        }
+        completion_summary[level_str][target_group].append(item_data)
+
+        # Update section completion status
+        if target_group == 'required':
+            completion_summary[level_str]['required_count'] += count
+            completion_summary[level_str]['required_total'] += lr.count_required
+            if count < lr.count_required:
+                completion_summary[level_str]['required_completed'] = False
+        else: # elective
+            completion_summary[level_str]['elective_count'] += count
+            if completion_summary[level_str]['elective_count'] >= completion_summary[level_str]['elective_required']:
+                completion_summary[level_str]['elective_completed'] = True
     
     return completion_summary
 

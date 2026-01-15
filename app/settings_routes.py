@@ -442,7 +442,11 @@ def update_user_roles():
 
         # To add
         for rid in new_role_ids - current_role_ids:
-            db.session.add(UserRoleAssociation(user_id=user_id, role_id=rid))
+            db.session.add(UserRoleAssociation(
+                user_id=user_id, 
+                role_id=rid,
+                assigned_by=current_user.id
+            ))
 
         # To remove
         for r in current_roles:

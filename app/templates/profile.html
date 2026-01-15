@@ -1,5 +1,21 @@
-{% extends "base.html" %} {% block title %}User Profile{% endblock %} {% block
-content %}
+{% extends "base.html" %}
+{% block title %}User Profile{% endblock %}
+{% block flash_messages %}{% endblock %}
+{% block content %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% set flashes = messages %}
+{% if flashes %}
+<div class="flash-container-inline" style="max-width: 700px; margin: 20px auto 0 auto;">
+  {% for category, message in flashes %}
+  <div class="flash {{ category }}">
+    {{ message }}
+    <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
 
 <div class="tabs-container" style="max-width: 700px; margin: 0 auto; margin-top: 40px;">
   <div class="nav-tabs">

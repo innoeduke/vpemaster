@@ -103,7 +103,8 @@ def get_role_aliases():
         'tme': 'toastmaster',
         'toastmaster': 'tme',
         'ge': 'generalevaluator',
-        'generalevaluator': 'ge'
+        'generalevaluator': 'ge',
+        'evaluator': 'individualevaluator'
     }
 
 

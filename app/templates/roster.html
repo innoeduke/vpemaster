@@ -28,7 +28,6 @@
                         <tr>
                             <th class="sortable header-order" data-column-index="0">Order</th>
                             <th class="sortable header-name" data-column-index="1">Name</th>
-                            <th class="header-roles">Meeting Roles</th>
                             <th class="sortable header-ticket" data-column-index="2">Ticket</th>
                             <th class="roster-header-actions">Actions</th>
                         </tr>
@@ -51,14 +50,6 @@
                                 {% else %}
                                 {% set c_type = 'Guest' %}
                                 {% endif %}
-                            </td>
-                            <td class="cell-roles">
-                                {% for role in entry.roles %}
-                                <div class="role-item">
-                                    <i class="fas {{ role.icon or 'fa-question-circle' }} fa-fw"
-                                        style="margin-right: 5px; color: #6c757d;"></i>{{ role.name }}
-                                </div>
-                                {% endfor %}
                             </td>
                             <td>
                                 {% if c_type == 'Officer' %}
@@ -125,7 +116,6 @@
                         <tr>
                             <td>{{ i }}</td>
                             <td class="cell-name"></td>
-                            <td></td>
                             <td></td>
                             <td></td>
                         </tr>

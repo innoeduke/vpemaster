@@ -37,17 +37,20 @@
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" autocomplete="current-password" required />
       </div>
+      <div class="forgot-password-container">
+        <a href="{{ url_for('auth_bp.reset_password_request') }}" class="login-link">Forgot Password?</a>
+      </div>
       <div>
         <button type="submit" class="btn btn-primary" style="height: 40px">
           Login
         </button>
       </div>
     </form>
-    <div style="text-align: center; margin-top: 15px;">
-      <a href="{{ url_for('auth_bp.reset_password_request') }}" class="login-link">Forgot Password?</a>
+    <div class="divider">
+      <span>or</span>
     </div>
-    <div class="guest-login" style="text-align: center; margin-top: 15px">
-      <a href="{{ url_for('agenda_bp.agenda') }}" class="login-link">Continue as Guest</a>
+    <div class="guest-login">
+      <a href="{{ url_for('agenda_bp.agenda') }}" class="btn btn-secondary">Continue as Guest</a>
     </div>
   </div>
 </body>

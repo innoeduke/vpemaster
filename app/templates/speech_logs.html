@@ -68,8 +68,7 @@
                 <i class="fas fa-user-shield"></i> Admin View
             </a>
             {% endif %}
-            <a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn btn-secondary btn-sm"
-                style="color: white;">
+            <a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn btn-success btn-sm">
                 <i class="fas fa-chart-bar"></i> Project View
             </a>
         </div>
@@ -193,7 +192,7 @@
     {% endif %}
 
     <div class="logs-container" id="logs-{{ level }}"
-        style="display: {% if is_expanded %}grid{% else %}none{% endif %};">
+        style="display: {% if is_expanded %}block{% else %}none{% endif %};">
 
         {% for log in logs %}
         {% if log.log_type == 'grouped_role' %}
@@ -480,11 +479,11 @@
     var pathwayMap = {{ pathway_mapping| tojson | safe }};
     var groupedPathways = {{ pathways| tojson | safe }};
     var ProjectID = {
-        GENERIC: {{ ProjectID.GENERIC }},
-    TOPICSMASTER_PROJECT: { { ProjectID.TOPICSMASTER_PROJECT } },
-    KEYNOTE_SPEAKER_PROJECT: { { ProjectID.KEYNOTE_SPEAKER_PROJECT } },
-    MODERATOR_PROJECT: { { ProjectID.MODERATOR_PROJECT } },
-    EVALUATION_PROJECTS: { { ProjectID.EVALUATION_PROJECTS | tojson | safe } }
+        GENERIC: {{ ProjectID.GENERIC | tojson | safe }},
+    TOPICSMASTER_PROJECT: {{ ProjectID.TOPICSMASTER_PROJECT | tojson | safe }},
+    KEYNOTE_SPEAKER_PROJECT: {{ ProjectID.KEYNOTE_SPEAKER_PROJECT | tojson | safe }},
+    MODERATOR_PROJECT: {{ ProjectID.MODERATOR_PROJECT | tojson | safe }},
+    EVALUATION_PROJECTS: {{ ProjectID.EVALUATION_PROJECTS | tojson | safe }}
     };
 
 </script>
@@ -501,7 +500,7 @@
         const isHidden = logsContainer.style.display === 'none';
 
         if (isHidden) {
-            logsContainer.style.display = 'grid';
+            logsContainer.style.display = 'block';
             if (progressSummary) progressSummary.style.display = 'flex';
             caret.classList.remove('fa-chevron-right');
             caret.classList.add('fa-chevron-down');
