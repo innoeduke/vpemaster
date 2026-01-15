@@ -22,6 +22,10 @@ def _drop_all_tables():
     op.execute('SET FOREIGN_KEY_CHECKS=0')
     
     # Drop tables if they exist
+    op.execute('DROP TABLE IF EXISTS user_roles')
+    op.execute('DROP TABLE IF EXISTS role_permissions')
+    op.execute('DROP TABLE IF EXISTS auth_roles')
+    op.execute('DROP TABLE IF EXISTS permissions')
     op.execute('DROP TABLE IF EXISTS waitlists')
     op.execute('DROP TABLE IF EXISTS Media')
     op.execute('DROP TABLE IF EXISTS roster_roles')
@@ -139,6 +143,43 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('Meeting_Number')
     )
+    op.create_table('permissions',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=100), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('category', sa.String(length=50), nullable=True),
+    sa.Column('resource', sa.String(length=50), nullable=True),
+    sa.Column('action', sa.String(length=50), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
+    with op.batch_alter_table('permissions', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_permissions_name'), ['name'], unique=True)
+        batch_op.create_index(batch_op.f('ix_permissions_category'), ['category'], unique=False)
+
+    op.create_table('auth_roles',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('level', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
+    with op.batch_alter_table('auth_roles', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_auth_roles_name'), ['name'], unique=True)
+
+    op.create_table('role_permissions',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('role_id', sa.Integer(), nullable=False),
+    sa.Column('permission_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['permission_id'], ['permissions.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('role_id', 'permission_id', name='unique_role_permission')
+    )
+
     op.create_table('Session_Types',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('Title', sa.String(length=255), nullable=False),
@@ -168,6 +209,19 @@ def upgrade():
     sa.UniqueConstraint('Contact_ID'),
     sa.UniqueConstraint('Email'),
     sa.UniqueConstraint('Username')
+    )
+
+    op.create_table('user_roles',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('role_id', sa.Integer(), nullable=False),
+    sa.Column('assigned_at', sa.DateTime(), nullable=True),
+    sa.Column('assigned_by', sa.Integer(), nullable=True),
+    sa.ForeignKeyConstraint(['assigned_by'], ['Users.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['Users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('user_id', 'role_id', name='unique_user_role')
     )
     op.create_table('achievements',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -266,6 +320,119 @@ def upgrade():
     sa.ForeignKeyConstraint(['session_log_id'], ['Session_Logs.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+
+    # Seed metadata
+    import os
+    import json
+    
+    file_path = os.path.join(os.path.dirname(__file__), '../../deploy/metadata_dump.json')
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+            
+        # Seed roles
+        roles_table = sa.table('roles',
+            sa.column('id', sa.Integer),
+            sa.column('name', sa.String),
+            sa.column('icon', sa.String),
+            sa.column('type', sa.String),
+            sa.column('award_category', sa.String),
+            sa.column('needs_approval', sa.Boolean),
+            sa.column('is_distinct', sa.Boolean),
+            sa.column('is_member_only', sa.Boolean)
+        )
+        op.bulk_insert(roles_table, data.get('roles', []))
+        
+        # Seed pathways
+        pathways_table = sa.table('pathways',
+            sa.column('id', sa.Integer),
+            sa.column('name', sa.String),
+            sa.column('abbr', sa.String),
+            sa.column('type', sa.String),
+            sa.column('status', sa.String)
+        )
+        op.bulk_insert(pathways_table, data.get('pathways', []))
+        
+        # Seed projects
+        projects_table = sa.table('Projects',
+            sa.column('id', sa.Integer),
+            sa.column('Project_Name', sa.String),
+            sa.column('Format', sa.String),
+            sa.column('Duration_Min', sa.Integer),
+            sa.column('Duration_Max', sa.Integer),
+            sa.column('Introduction', sa.String),
+            sa.column('Overview', sa.String),
+            sa.column('Purpose', sa.String),
+            sa.column('Requirements', sa.String),
+            sa.column('Resources', sa.String)
+        )
+        op.bulk_insert(projects_table, data.get('projects', []))
+        
+        # Seed level_roles
+        level_roles_table = sa.table('level_roles',
+            sa.column('id', sa.Integer),
+            sa.column('level', sa.Integer),
+            sa.column('role', sa.String),
+            sa.column('type', sa.String),
+            sa.column('count_required', sa.Integer)
+        )
+        op.bulk_insert(level_roles_table, data.get('level_roles', []))
+        
+        # Seed Session_Types
+        session_types_table = sa.table('Session_Types',
+            sa.column('id', sa.Integer),
+            sa.column('Title', sa.String),
+            sa.column('Default_Owner', sa.String),
+            sa.column('Is_Section', sa.Boolean),
+            sa.column('Is_Hidden', sa.Boolean),
+            sa.column('Predefined', sa.Boolean),
+            sa.column('Valid_for_Project', sa.Boolean),
+            sa.column('Duration_Min', sa.Integer),
+            sa.column('Duration_Max', sa.Integer),
+            sa.column('role_id', sa.Integer)
+        )
+        op.bulk_insert(session_types_table, data.get('session_types', []))
+        
+        # Seed pathway_projects
+        pathway_projects_table = sa.table('pathway_projects',
+            sa.column('id', sa.Integer),
+            sa.column('path_id', sa.Integer),
+            sa.column('project_id', sa.Integer),
+            sa.column('code', sa.String),
+            sa.column('level', sa.Integer),
+            sa.column('type', sa.String)
+        )
+        op.bulk_insert(pathway_projects_table, data.get('pathway_projects', []))
+
+        # Seed permissions
+        permissions_table = sa.table('permissions',
+            sa.column('id', sa.Integer),
+            sa.column('name', sa.String),
+            sa.column('description', sa.Text),
+            sa.column('category', sa.String),
+            sa.column('resource', sa.String),
+            sa.column('action', sa.String),
+            sa.column('created_at', sa.DateTime)
+        )
+        op.bulk_insert(permissions_table, data.get('permissions', []))
+
+        # Seed auth_roles
+        auth_roles_table = sa.table('auth_roles',
+            sa.column('id', sa.Integer),
+            sa.column('name', sa.String),
+            sa.column('description', sa.Text),
+            sa.column('level', sa.Integer),
+            sa.column('created_at', sa.DateTime)
+        )
+        op.bulk_insert(auth_roles_table, data.get('auth_roles', []))
+
+        # Seed role_permissions
+        role_permissions_table = sa.table('role_permissions',
+            sa.column('id', sa.Integer),
+            sa.column('role_id', sa.Integer),
+            sa.column('permission_id', sa.Integer)
+        )
+        op.bulk_insert(role_permissions_table, data.get('role_permissions', []))
     # ### end Alembic commands ###
 
 

@@ -91,61 +91,69 @@ ROLE_LEVELS = {
 
 
 def upgrade():
-    # Create permissions table
-    op.create_table(
-        'permissions',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('name', sa.String(length=100), nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('category', sa.String(length=50), nullable=True),
-        sa.Column('resource', sa.String(length=50), nullable=True),
-        sa.Column('action', sa.String(length=50), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('name')
-    )
-    op.create_index(op.f('ix_permissions_name'), 'permissions', ['name'], unique=False)
-    op.create_index(op.f('ix_permissions_category'), 'permissions', ['category'], unique=False)
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_tables = inspector.get_table_names()
+
+    # Create permissions table if not exists
+    if 'permissions' not in existing_tables:
+        op.create_table(
+            'permissions',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('name', sa.String(length=100), nullable=False),
+            sa.Column('description', sa.Text(), nullable=True),
+            sa.Column('category', sa.String(length=50), nullable=True),
+            sa.Column('resource', sa.String(length=50), nullable=True),
+            sa.Column('action', sa.String(length=50), nullable=True),
+            sa.Column('created_at', sa.DateTime(), nullable=True),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('name')
+        )
+        op.create_index(op.f('ix_permissions_name'), 'permissions', ['name'], unique=False)
+        op.create_index(op.f('ix_permissions_category'), 'permissions', ['category'], unique=False)
     
-    # Create auth_roles table
-    op.create_table(
-        'auth_roles',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('name', sa.String(length=50), nullable=False),
-        sa.Column('description', sa.Text(), nullable=True),
-        sa.Column('level', sa.Integer(), nullable=True),
-        sa.Column('created_at', sa.DateTime(), nullable=True),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('name')
-    )
-    op.create_index(op.f('ix_auth_roles_name'), 'auth_roles', ['name'], unique=False)
+    # Create auth_roles table if not exists
+    if 'auth_roles' not in existing_tables:
+        op.create_table(
+            'auth_roles',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('name', sa.String(length=50), nullable=False),
+            sa.Column('description', sa.Text(), nullable=True),
+            sa.Column('level', sa.Integer(), nullable=True),
+            sa.Column('created_at', sa.DateTime(), nullable=True),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('name')
+        )
+        op.create_index(op.f('ix_auth_roles_name'), 'auth_roles', ['name'], unique=False)
     
-    # Create role_permissions association table
-    op.create_table(
-        'role_permissions',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('role_id', sa.Integer(), nullable=False),
-        sa.Column('permission_id', sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(['permission_id'], ['permissions.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('role_id', 'permission_id', name='unique_role_permission')
-    )
+    # Create role_permissions association table if not exists
+    if 'role_permissions' not in existing_tables:
+        op.create_table(
+            'role_permissions',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('role_id', sa.Integer(), nullable=False),
+            sa.Column('permission_id', sa.Integer(), nullable=False),
+            sa.ForeignKeyConstraint(['permission_id'], ['permissions.id'], ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('role_id', 'permission_id', name='unique_role_permission')
+        )
     
-    # Create user_roles association table
-    op.create_table(
-        'user_roles',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('role_id', sa.Integer(), nullable=False),
-        sa.Column('assigned_at', sa.DateTime(), nullable=True),
-        sa.Column('assigned_by', sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(['assigned_by'], ['Users.id'], ondelete='SET NULL'),
-sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['user_id'], ['Users.id'], ondelete='CASCADE'),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('user_id', 'role_id', name='unique_user_role')
-    )
+    # Create user_roles association table if not exists
+    if 'user_roles' not in existing_tables:
+        op.create_table(
+            'user_roles',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('user_id', sa.Integer(), nullable=False),
+            sa.Column('role_id', sa.Integer(), nullable=False),
+            sa.Column('assigned_at', sa.DateTime(), nullable=True),
+            sa.Column('assigned_by', sa.Integer(), nullable=True),
+            sa.ForeignKeyConstraint(['assigned_by'], ['Users.id'], ondelete='SET NULL'),
+            sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['user_id'], ['Users.id'], ondelete='CASCADE'),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('user_id', 'role_id', name='unique_user_role')
+        )
     
     # Seed permissions
     permissions_table = sa.table('permissions',
@@ -174,7 +182,10 @@ sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
             'created_at': datetime.utcnow()
         })
     
-    op.bulk_insert(permissions_table, permission_rows)
+    # Only seed if permissions table is empty
+    existing_perms = conn.execute(sa.text("SELECT count(*) FROM permissions")).scalar()
+    if existing_perms == 0:
+        op.bulk_insert(permissions_table, permission_rows)
     
     # Seed roles
     roles_table = sa.table('auth_roles',
@@ -193,7 +204,10 @@ sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
             'created_at': datetime.utcnow()
         })
     
-    op.bulk_insert(roles_table, role_rows)
+    # Only seed if auth_roles table is empty
+    existing_roles = conn.execute(sa.text("SELECT count(*) FROM auth_roles")).scalar()
+    if existing_roles == 0:
+        op.bulk_insert(roles_table, role_rows)
     
     # Seed role-permission mappings
     # Note: We need to query the IDs after insertion, so we'll use raw SQL
@@ -218,10 +232,17 @@ sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
                 
                 if perm_result:
                     perm_id = perm_result[0]
-                    conn.execute(
-                        sa.text("INSERT INTO role_permissions (role_id, permission_id) VALUES (:role_id, :perm_id)"),
+                    # Check if mapping already exists
+                    mapping_exists = conn.execute(
+                        sa.text("SELECT 1 FROM role_permissions WHERE role_id = :role_id AND permission_id = :perm_id"),
                         {"role_id": role_id, "perm_id": perm_id}
-                    )
+                    ).fetchone()
+                    
+                    if not mapping_exists:
+                        conn.execute(
+                            sa.text("INSERT INTO role_permissions (role_id, permission_id) VALUES (:role_id, :perm_id)"),
+                            {"role_id": role_id, "perm_id": perm_id}
+                        )
     
     # Migrate existing user roles to user_roles table
     users_result = conn.execute(sa.text("SELECT id, Role FROM Users WHERE Role IS NOT NULL"))
@@ -237,10 +258,17 @@ sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
         
         if role_result:
             role_id = role_result[0]
-            conn.execute(
-                sa.text("INSERT INTO user_roles (user_id, role_id, assigned_at) VALUES (:user_id, :role_id, :assigned_at)"),
-                {"user_id": user_id, "role_id": role_id, "assigned_at": datetime.utcnow()}
-            )
+            # Check if user already has this role
+            user_role_exists = conn.execute(
+                sa.text("SELECT 1 FROM user_roles WHERE user_id = :user_id AND role_id = :role_id"),
+                {"user_id": user_id, "role_id": role_id}
+            ).fetchone()
+            
+            if not user_role_exists:
+                conn.execute(
+                    sa.text("INSERT INTO user_roles (user_id, role_id, assigned_at) VALUES (:user_id, :role_id, :assigned_at)"),
+                    {"user_id": user_id, "role_id": role_id, "assigned_at": datetime.utcnow()}
+                )
 
 
 def downgrade():

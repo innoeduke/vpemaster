@@ -6,11 +6,13 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import LevelRole, Pathway, PathwayProject, Project, Role, SessionType
+from app.models import LevelRole, Pathway, PathwayProject, Project, MeetingRole, SessionType, Permission, AuthRole, RolePermission
 
 def to_dict(model_instance):
     """Convert a SQLAlchemy model instance to a dictionary."""
     d = {}
+    if not model_instance:
+        return d
     for column in model_instance.__table__.columns:
         d[column.name] = getattr(model_instance, column.name)
     return d
@@ -19,12 +21,15 @@ def export_metadata():
     app = create_app()
     with app.app_context():
         data = {
-            "roles": [to_dict(r) for r in Role.query.all()],
+            "roles": [to_dict(r) for r in MeetingRole.query.all()],
             "pathways": [to_dict(p) for p in Pathway.query.all()],
             "projects": [to_dict(p) for p in Project.query.all()],
             "level_roles": [to_dict(l) for l in LevelRole.query.all()],
             "session_types": [to_dict(s) for s in SessionType.query.all()],
-            "pathway_projects": [to_dict(pp) for pp in PathwayProject.query.all()]
+            "pathway_projects": [to_dict(pp) for pp in PathwayProject.query.all()],
+            "permissions": [to_dict(p) for p in Permission.query.all()],
+            "auth_roles": [to_dict(r) for r in AuthRole.query.all()],
+            "role_permissions": [to_dict(rp) for rp in RolePermission.query.all()]
         }
         
         output_file = os.path.join(os.path.dirname(__file__), 'metadata_dump.json')
