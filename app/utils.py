@@ -384,7 +384,8 @@ def derive_credentials(contact):
     if contact.DTM:
         return 'DTM'
     elif contact.Type == 'Guest':
-        return f"Guest@{contact.Club}" if contact.Club else "Guest"
+        primary_club = contact.get_primary_club()
+        return f"Guest@{primary_club.club_name}" if primary_club else "Guest"
     elif contact.Type in ['Member', 'Officer']:
         return contact.credentials or ''
     return ''

@@ -115,7 +115,7 @@
           </div>
         </td>
         <td>{{ contact.Phone_Number if contact.Phone_Number else '-' }}</td>
-        <td>{{ contact.Club if contact.Club else '-' }}</td>
+        <td>{{ contact.get_primary_club().club_name if contact.get_primary_club() else '-' }}</td>
         <td>{{ contact.Completed_Paths if contact.Completed_Paths else '-' }}</td>
         <td>{{ contact.credentials if contact.credentials else '-' }}</td>
         <td>{{ contact.Next_Project if contact.Next_Project else '-' }}</td>

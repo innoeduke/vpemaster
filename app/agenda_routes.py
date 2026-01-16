@@ -20,7 +20,7 @@ from io import BytesIO
 from .utils import derive_credentials, get_project_code, get_meetings_by_status
 from .tally_sync import sync_participants_to_tally
 from .services.role_service import RoleService
-from .club_context import get_current_club_id, filter_by_club
+from .club_context import get_current_club_id, filter_by_club, authorized_club_required
 from .models import ContactClub
 
 agenda_bp = Blueprint('agenda_bp', __name__)
@@ -430,7 +430,7 @@ def _get_processed_logs_data(selected_meeting_num):
             'owner_name': owner.Name if owner else '',
             'owner_dtm': owner.DTM if owner else False,
             'owner_type': owner.Type if owner else '',
-            'owner_club': owner.Club if owner else '',
+            'owner_club': owner.get_primary_club().club_name if (owner and owner.get_primary_club()) else '',
             'owner_completed_levels': owner.Completed_Paths if owner else '',
             'media_url': media.url if media and media.url else None,
             # Add award type if this specific role won the award
@@ -482,7 +482,17 @@ def _get_processed_logs_data(selected_meeting_num):
 
 
 @agenda_bp.route('/agenda', methods=['GET'])
+@authorized_club_required
 def agenda():
+    # --- Handle Club Context for Guests ---
+    club_id_param = request.args.get('club_id')
+    if club_id_param:
+        try:
+            from .club_context import set_current_club_id
+            set_current_club_id(int(club_id_param))
+        except (ValueError, TypeError):
+            pass
+
     # --- Determine Selected Meeting ---
     all_meetings, _ = get_meetings_by_status(limit_past=8)
 
@@ -598,6 +608,7 @@ def meeting_notice(meeting_number):
 
 @agenda_bp.route('/api/data/all')
 @login_required
+@authorized_club_required
 def get_all_data_for_modals():
     """
 A single endpoint to fetch all data needed for the agenda modals.
@@ -622,7 +633,8 @@ A single endpoint to fetch all data needed for the agenda modals.
     contacts_data = [
         {
             "id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type,
-            "Club": c.Club, "Completed_Paths": c.Completed_Paths,
+            "Club": c.get_primary_club().club_name if c.get_primary_club() else '', 
+            "Completed_Paths": c.Completed_Paths,
             "Credentials": derive_credentials(c),
             "Current_Path": c.Current_Path,
             "Next_Project": c.Next_Project
@@ -698,6 +710,7 @@ A single endpoint to fetch all data needed for the agenda modals.
 
 @agenda_bp.route('/agenda/export/<int:meeting_number>')
 @login_required
+@authorized_club_required
 def export_agenda(meeting_number):
     """
     Generates a multi-sheet XLSX export of the agenda using the ExportService.

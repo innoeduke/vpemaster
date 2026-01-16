@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, redirect, url_fo
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from .models import Roster, Meeting, Contact, ContactClub
-from .club_context import get_current_club_id
+from .club_context import get_current_club_id, authorized_club_required
 from . import db
 from sqlalchemy import distinct
 
@@ -11,6 +11,7 @@ roster_bp = Blueprint('roster_bp', __name__)
 
 @roster_bp.route('/', methods=['GET'])
 @login_required
+@authorized_club_required
 def roster():
     if not is_authorized(Permissions.ROSTER_VIEW):
         # specific flash message or just redirect
@@ -102,6 +103,7 @@ def roster():
 
 @roster_bp.route('/api/roster', methods=['POST'])
 @login_required
+@authorized_club_required
 def create_roster_entry():
     """Create a new roster entry"""
     data = request.get_json()
@@ -134,6 +136,7 @@ def create_roster_entry():
 
 @roster_bp.route('/api/roster/<int:entry_id>', methods=['GET'])
 @login_required
+@authorized_club_required
 def get_roster_entry(entry_id):
     entry = db.session.get(Roster, entry_id)
     if not entry:
@@ -164,6 +167,7 @@ def get_roster_entry(entry_id):
 
 @roster_bp.route('/api/roster/<int:entry_id>', methods=['PUT'])
 @login_required
+@authorized_club_required
 def update_roster_entry(entry_id):
     entry = db.session.get(Roster, entry_id)
     if not entry:
@@ -195,6 +199,7 @@ def update_roster_entry(entry_id):
 
 @roster_bp.route('/api/roster/<int:entry_id>', methods=['DELETE'])
 @login_required
+@authorized_club_required
 def cancel_roster_entry(entry_id):
     entry = db.session.get(Roster, entry_id)
     if not entry:

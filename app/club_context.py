@@ -124,3 +124,52 @@ def switch_club(club_id):
         set_current_club_id(club_id)
         return True
     return False
+
+
+def authorized_club_required(f):
+    """
+    Decorator to ensure the user is authorized for the current club context.
+    
+    1. Ensures club context is set.
+    2. For authenticated users: Allows access if Admin or if they have a 
+       membership record for the current club.
+    3. For anonymous users: Allows access if they have ABOUT_CLUB_VIEW permission.
+    """
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        from flask_login import current_user
+        from flask import abort
+        from app.auth.permissions import Permissions
+        from app.models import ContactClub
+        
+        # Ensure club context is established
+        club_id = get_or_set_default_club()
+        if not club_id:
+            abort(404, description="No club context found")
+            
+        if current_user.is_authenticated:
+            # SysAdmin can access any club
+            if current_user.has_role('SysAdmin'):
+                return f(*args, **kwargs)
+            
+            # Check for explicit membership if user is linked to a contact
+            if hasattr(current_user, 'Contact_ID') and current_user.Contact_ID:
+                membership = ContactClub.query.filter_by(
+                    contact_id=current_user.Contact_ID,
+                    club_id=club_id
+                ).first()
+                if not membership:
+                    abort(403, description="You are not authorized for this club")
+            else:
+                # User has no contact linked - might be a legacy user or system user
+                # Fallback to permission check
+                if not current_user.can(Permissions.ABOUT_CLUB_VIEW):
+                    abort(403)
+        else:
+            # Anonymous guests: check if they have general club view permission
+            # (The 'Guest' role in DB should typically have this)
+            if not current_user.can(Permissions.ABOUT_CLUB_VIEW):
+                abort(403)
+                
+        return f(*args, **kwargs)
+    return decorated_function

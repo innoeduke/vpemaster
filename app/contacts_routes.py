@@ -178,7 +178,6 @@ def contact_form(contact_id=None):
                 'Name': contact.Name,
                 'Email': contact.Email,
                 'Type': contact.Type,
-                'Club': contact.Club,
                 'Phone_Number': contact.Phone_Number,
                 'Bio': contact.Bio,
                 'Member_ID': contact.Member_ID,
@@ -215,7 +214,6 @@ def contact_form(contact_id=None):
             contact.Name = name
             contact.Email = email
             contact.Type = contact_type
-            contact.Club = club
             contact.Phone_Number = phone
             contact.Bio = bio
             contact.Member_ID = member_id
@@ -255,7 +253,6 @@ def contact_form(contact_id=None):
                 Name=name,
                 Email=email,
                 Type=contact_type,
-                Club=club or None,
                 Date_Created=date.today(),
                 Phone_Number=phone,
                 Bio=bio,
@@ -354,7 +351,6 @@ def create_contact_api():
             Name=data['name'],
             Email=data.get('email') or None,
             Type=data['type'],
-            Club=data.get('club') or None,
             Date_Created=date.today(),
             Phone_Number=data.get('phone') or None
         )

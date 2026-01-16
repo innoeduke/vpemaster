@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, session, redirect, url_for, reques
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
-from .club_context import get_current_club_id
+from .club_context import get_current_club_id, authorized_club_required
 from .models import SessionType, User, LevelRole, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, UserRoleAssociation, PermissionAudit, ContactClub, Club, ExComm
 import json
 from . import db
@@ -18,6 +18,7 @@ settings_bp = Blueprint('settings_bp', __name__)
 
 @settings_bp.route('/settings')
 @login_required
+@authorized_club_required
 def settings():
     """
     Renders the settings page, visible only to administrators.
@@ -42,6 +43,7 @@ def settings():
 
 @settings_bp.route('/about_club')
 @login_required
+@authorized_club_required
 def about_club():
     """Renders the About Club page."""
     if not is_authorized(Permissions.ABOUT_CLUB_VIEW):
@@ -94,6 +96,7 @@ def about_club():
 
 @settings_bp.route('/about_club/update', methods=['POST'])
 @login_required
+@authorized_club_required
 def about_club_update():
     """Update club settings from the about club page."""
     if not is_authorized(Permissions.ABOUT_CLUB_EDIT):

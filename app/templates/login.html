@@ -58,9 +58,28 @@
       <span>or</span>
     </div>
     <div class="guest-login">
-      <a href="{{ url_for('agenda_bp.agenda') }}" class="btn btn-secondary">Continue as Guest</a>
+      <a href="{{ url_for('agenda_bp.agenda') }}" id="guest-login-link" class="btn btn-secondary">Continue as Guest</a>
     </div>
   </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const clubSelector = document.getElementById('club_names');
+      const guestLink = document.getElementById('guest-login-link');
+      
+      const updateGuestLink = () => {
+        const clubId = clubSelector.value;
+        const baseUrl = "{{ url_for('agenda_bp.agenda') }}";
+        guestLink.href = `${baseUrl}?club_id=${clubId}`;
+      };
+
+      // Initial update
+      updateGuestLink();
+
+      // Update on change
+      clubSelector.addEventListener('change', updateGuestLink);
+    });
+  </script>
 </body>
 
 </html>
