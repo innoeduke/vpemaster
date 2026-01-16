@@ -33,13 +33,15 @@
         <h2 class="nav-title">Meeting Manager</h2>
       </div>
       <ul class="nav-links">
+        {% if is_authorized(Permissions.AGENDA_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('agenda_bp') %}active{% endif %}">
           <a href="{{ url_for('agenda_bp.agenda') }}">
             <i class="fas fa-calendar-alt nav-icon"></i>
             <span>Agenda</span>
           </a>
         </li>
-        {% if current_user.is_authenticated and has_meetings %}
+        {% endif %}
+        {% if is_authorized(Permissions.BOOKING_BOOK_OWN) and has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}">
           <a href="{{ url_for('booking_bp.booking') }}">
             <i class="fas fa-tag nav-icon"></i>
@@ -63,7 +65,7 @@
           </a>
         </li>
         {% endif %}
-        {% if current_user.is_authenticated and has_meetings %}
+        {% if is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
           <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
             <i class="fas fa-tasks nav-icon"></i>
@@ -71,12 +73,14 @@
           </a>
         </li>
         {% endif %}
+        {% if is_authorized(Permissions.PATHWAY_LIB_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
           <a href="{{ url_for('pathways_bp.pathway_library') }}">
             <i class="fas fa-landmark nav-icon"></i>
             <span>Pathway Library</span>
           </a>
         </li>
+        {% endif %}
         {% if is_authorized(Permissions.ROSTER_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}active{% endif %}">
           <a href="{{ url_for('roster_bp.roster') }}">

@@ -84,17 +84,15 @@ def _create_or_update_user(user=None, **kwargs):
                 )
                 db.session.add(audit)
     else:
-        # For new users, we'll assign roles after commit to get user.id
-        # We store them in the user object temporarily or handle after commit.
-        # Let's handle it after commit in the callers for now, 
-        # but _create_or_update_user should really handle the flush/commit if it's responsible for roles.
-        # Alternatively, we can use user.roles relationship if it's set up correctly.
+        # For new users, flush to get user.id then create associations
         if role_ids:
-            # If we have AuthRole objects, we could append. If we have IDs, we need to fetch.
+            db.session.flush() # Ensure user has an ID
             for rid in role_ids:
-                robj = db.session.get(AuthRole, rid)
-                if robj:
-                    user.roles.append(robj)
+                db.session.add(UserRoleAssociation(
+                    user_id=user.id,
+                    role_id=rid,
+                    assigned_by=current_user.id if current_user.is_authenticated else None
+                ))
 
     # Profile fields (Member_ID, Current_Path, etc.) are now on Contact model.
     # We do not set them here.

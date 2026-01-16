@@ -29,6 +29,8 @@ from .permission_audit import PermissionAudit
 from .club import Club
 from .contact_club import ContactClub
 from .excomm import ExComm
+from .guest import Guest
+from .user_club import UserClub
 
 # Import Flask-Login user loader
 from .. import login_manager
@@ -69,4 +71,6 @@ __all__ = [
     'Club',
     'ContactClub',
     'ExComm',
+    'Guest',
+    'UserClub',
 ]

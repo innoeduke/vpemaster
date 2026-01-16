@@ -19,6 +19,13 @@ class User(UserMixin, db.Model):
     Date_Created = db.Column(db.Date)
     Status = db.Column(db.String(50), nullable=False, default='active')
     
+    # Additional member information
+    member_no = db.Column(db.String(50), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    dtm = db.Column(db.Boolean, default=False, nullable=False)
+    avatar_url = db.Column(db.String(255), nullable=True)
+    bio = db.Column(db.Text, nullable=True)
+    
     # Relationships
     contact = db.relationship('Contact', foreign_keys=[Contact_ID], backref=db.backref('user', uselist=False))
     roles = db.relationship('app.models.role.Role', secondary='user_roles', back_populates='users', lazy='joined', foreign_keys='[UserRole.user_id, UserRole.role_id]')

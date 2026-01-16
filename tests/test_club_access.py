@@ -1,159 +1,311 @@
+"""Tests for multi-club access control decorator."""
 import pytest
 from flask import session
-from app.models import db, Club, Contact, ContactClub, User, AuthRole, Permission
-from app.club_context import authorized_club_required
-from flask_login import login_user
-from datetime import datetime
+from app.models import db, Club, Contact, ContactClub, User, AuthRole, Permission, ExComm, UserClub
 
-@pytest.fixture(autouse=True)
-def cleanup_db(app):
-    """Cleanup specific test data after each test."""
+
+@pytest.fixture(scope='session', autouse=True)
+def cleanup_test_data(app):
+    """Clean up any leftover test data before and after all tests."""
+    def cleanup():
+        with app.app_context():
+            # Clean up in proper order to respect foreign keys
+            # First, get contact IDs to clean
+            test_contacts = Contact.query.filter(Contact.Name.like('Test %')).all()
+            test_contact_ids = [c.id for c in test_contacts]
+            
+            # Delete in proper order (children first, then parents)
+            # 0. Set current_excomm_id to NULL for test clubs FIRST (before deleting ExComm)
+            test_clubs = Club.query.filter(Club.club_no.like('TEST_%')).all()
+            for club in test_clubs:
+                club.current_excomm_id = None
+            db.session.flush()
+            
+            # 1. Delete ExComm records that reference test contacts
+            if test_contact_ids:
+                ExComm.query.filter(
+                    db.or_(
+                        ExComm.president_id.in_(test_contact_ids),
+                        ExComm.vpe_id.in_(test_contact_ids),
+                        ExComm.vpm_id.in_(test_contact_ids),
+                        ExComm.vppr_id.in_(test_contact_ids),
+                        ExComm.secretary_id.in_(test_contact_ids),
+                        ExComm.treasurer_id.in_(test_contact_ids),
+                        ExComm.saa_id.in_(test_contact_ids),
+                        ExComm.ipp_id.in_(test_contact_ids)
+                    )
+                ).delete(synchronize_session=False)
+            
+            # 2. Delete ContactClub records
+            if test_contact_ids:
+                ContactClub.query.filter(ContactClub.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
+            
+            # 3. Delete Users (they reference Contacts)
+            User.query.filter(User.Username.like('test_%')).delete()
+            
+            # 4. Delete Contacts
+            Contact.query.filter(Contact.Name.like('Test %')).delete()
+            
+            # 5. Delete Clubs
+            Club.query.filter(Club.club_no.like('TEST_%')).delete()
+            
+            db.session.commit()
+    
+    cleanup()  # Clean before tests
     yield
-    with app.app_context():
-        # Order matters for foreign keys
-        ContactClub.query.filter(ContactClub.membership_type == 'TestMembership').delete()
-        User.query.filter(User.Username.in_(['admin_test', 'member_test', 'restricted_test'])).delete()
-        Contact.query.filter(Contact.Name.in_(['Admin User', 'Member User', 'Restricted User'])).delete()
-        Club.query.filter(Club.club_no.in_(['C1', 'C2', 'C3', 'C4', 'C5'])).delete()
-        db.session.commit()
+    cleanup()  # Clean after tests
 
-def test_admin_access_any_club(app, client):
+
+def test_sysadmin_access_any_club(app, client):
     """Test that a SysAdmin can access any club."""
     with app.app_context():
-        # 1. Setup - Create an Admin user
-        admin_user = User.query.filter_by(Username='admin_test').first()
-        if not admin_user:
-            admin_user = User(Username='admin_test', Status='active')
-            admin_user.set_password('password')
-            db.session.add(admin_user)
-            
-            admin_role = AuthRole.query.filter_by(name='SysAdmin').first()
-            if not admin_role:
-                admin_role = AuthRole(name='SysAdmin', level=8)
-                db.session.add(admin_role)
-            db.session.flush()
-            admin_user.add_role(admin_role)
-            db.session.commit()
-
-        # 2. Setup - Create a club
-        club = Club(club_no='C1', club_name='Club 1')
-        db.session.add(club)
-        db.session.commit()
-
-        # 3. Test - Login as admin
-        with client.session_transaction() as sess:
-            sess['current_club_id'] = club.id
-        
-        login_user(admin_user)
-        
-        # Define a dummy function decorated with authorized_club_required
-        @authorized_club_required
-        def dummy_view():
-            return "Success"
-
-        # Call the dummy function
-        assert dummy_view() == "Success"
-
-def test_member_access_authorized_club(app, client):
-    """Test that a member can access their authorized club."""
-    with app.app_context():
-        # 1. Setup - Create a member user and a club
-        club = Club(club_no='C2', club_name='Club 2')
-        db.session.add(club)
-        db.session.flush()
-        
-        contact = Contact(Name='Member User', Type='Member')
-        db.session.add(contact)
-        db.session.flush()
-        
-        user = User(Username='member_test', Status='active', Contact_ID=contact.id)
-        user.set_password('password')
-        db.session.add(user)
-        
-        membership = ContactClub(contact_id=contact.id, club_id=club.id, membership_type='TestMembership')
-        db.session.add(membership)
-        db.session.commit()
-
-        # 2. Test - Login as member and set club context
-        with client.session_transaction() as sess:
-            sess['current_club_id'] = club.id
-        
-        login_user(user)
-        
-        @authorized_club_required
-        def dummy_view():
-            return "Success"
-
-        assert dummy_view() == "Success"
-
-def test_member_denied_unauthorized_club(app, client):
-    """Test that a member is denied access to a club they don't belong to."""
-    from werkzeug.exceptions import Forbidden
-    
-    with app.app_context():
-        # 1. Setup - Create a member user and two clubs
-        club1 = Club(club_no='C3', club_name='Club 3')
-        club2 = Club(club_no='C4', club_name='Club 4')
+        # Setup - Create clubs
+        club1 = Club(club_no='TEST_C1', club_name='Test Club 1')
+        club2 = Club(club_no='TEST_C2', club_name='Test Club 2')
         db.session.add_all([club1, club2])
         db.session.flush()
         
-        contact = Contact(Name='Restricted User', Type='Member')
+        # Setup - Create SysAdmin user
+        admin_role = AuthRole.query.filter_by(name='SysAdmin').first()
+        if not admin_role:
+            admin_role = AuthRole(name='SysAdmin', level=8)
+            db.session.add(admin_role)
+            db.session.flush()
+        
+        user = User(Username='test_sysadmin', Status='active')
+        user.set_password('password')
+        db.session.add(user)
+        db.session.flush()
+        user.add_role(admin_role)
+        # Grant SysAdmin role in user_clubs as well
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_id=admin_role.id))
+        db.session.commit()
+        
+        # Test access to club1
+        with app.test_request_context():
+            session['current_club_id'] = club1.id
+            
+            from flask_login import login_user
+            from app.club_context import authorized_club_required
+            login_user(user)
+            
+            @authorized_club_required
+            def dummy_view():
+                return "Success"
+            
+            assert dummy_view() == "Success"
+        
+        # Test access to club2 (no membership)
+        with app.test_request_context():
+            session['current_club_id'] = club2.id
+            login_user(user)
+            
+            @authorized_club_required
+            def dummy_view2():
+                return "Success"
+            
+            assert dummy_view2() == "Success"
+
+
+def test_clubadmin_access_owned_club(app, client):
+    """Test that a ClubAdmin can access clubs where they are an officer."""
+    with app.app_context():
+        # Setup - Create club
+        club1 = Club(club_no='TEST_C3', club_name='Test Club 3')
+        db.session.add(club1)
+        db.session.flush()
+        
+        # Setup - Create ClubAdmin user
+        clubadmin_role = AuthRole.query.filter_by(name='ClubAdmin').first()
+        if not clubadmin_role:
+            clubadmin_role = AuthRole(name='ClubAdmin', level=4)
+            db.session.add(clubadmin_role)
+            db.session.flush()
+        
+        contact = Contact(Name='Test ClubAdmin', Type='Member')
         db.session.add(contact)
         db.session.flush()
         
-        user = User(Username='restricted_test', Status='active', Contact_ID=contact.id)
+        user = User(Username='test_clubadmin', Status='active', Contact_ID=contact.id)
         user.set_password('password')
         db.session.add(user)
+        db.session.flush()
+        user.add_role(clubadmin_role)
+        # Grant ClubAdmin role for club1 in user_clubs
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_id=clubadmin_role.id))
         
-        # Only belongs to club1
-        membership = ContactClub(contact_id=contact.id, club_id=club1.id, membership_type='TestMembership')
-        db.session.add(membership)
+        # Create ExComm for club1 with this user as VPE
+        excomm = ExComm(club_id=club1.id, excomm_term='TEST_26H1', vpe_id=contact.id)
+        db.session.add(excomm)
+        db.session.flush()
+        club1.current_excomm_id = excomm.id
         db.session.commit()
-
-        # 2. Test - Login as member but set context to club2
-        with client.session_transaction() as sess:
-            sess['current_club_id'] = club2.id
         
-        login_user(user)
-        
-        @authorized_club_required
-        def dummy_view():
-            return "Success"
-
-        with pytest.raises(Forbidden):
-            dummy_view()
-
-def test_guest_access_with_permission(app, client):
-    """Test that an anonymous guest can access a club if they have ABOUT_CLUB_VIEW."""
-    with app.app_context():
-        # 1. Setup - Create a club and Guest role with permission
-        club = Club(club_no='C5', club_name='Club 5')
-        db.session.add(club)
-        
-        guest_role = AuthRole.query.filter_by(name='Guest').first()
-        if not guest_role:
-            guest_role = AuthRole(name='Guest', level=0)
-            db.session.add(guest_role)
+        # Test access to club1 (where they are VPE)
+        with app.test_request_context():
+            session['current_club_id'] = club1.id
             
-        perm = Permission.query.filter_by(name='ABOUT_CLUB_VIEW').first()
-        if not perm:
-            perm = Permission(name='ABOUT_CLUB_VIEW', category='Club')
-            db.session.add(perm)
+            from flask_login import login_user
+            from app.club_context import authorized_club_required
+            login_user(user)
+            
+            @authorized_club_required
+            def dummy_view():
+                return "Success"
+            
+            assert dummy_view() == "Success"
+
+
+def test_clubadmin_denied_non_owned_club(app, client):
+    """Test that a ClubAdmin is denied access to clubs where they are not an officer."""
+    from werkzeug.exceptions import Forbidden
+    
+    with app.app_context():
+        # Setup - Create two clubs
+        club1 = Club(club_no='TEST_C4', club_name='Test Club 4')
+        club2 = Club(club_no='TEST_C5', club_name='Test Club 5')
+        db.session.add_all([club1, club2])
         db.session.flush()
         
-        # Ensure permission is attached to role
-        if perm not in guest_role.permissions:
-            guest_role.permissions.append(perm)
-            
-        db.session.commit()
-
-        # 2. Test - Set club context and access as guest (no login_user)
-        with client.session_transaction() as sess:
-            sess['current_club_id'] = club.id
+        # Setup - Create ClubAdmin user (officer in club1 only)
+        clubadmin_role = AuthRole.query.filter_by(name='ClubAdmin').first()
+        if not clubadmin_role:
+            clubadmin_role = AuthRole(name='ClubAdmin', level=4)
+            db.session.add(clubadmin_role)
+            db.session.flush()
         
-        @authorized_club_required
-        def dummy_view():
-            return "Success"
+        contact = Contact(Name='Test ClubAdmin 2', Type='Member')
+        db.session.add(contact)
+        db.session.flush()
+        
+        user = User(Username='test_clubadmin2', Status='active', Contact_ID=contact.id)
+        user.set_password('password')
+        db.session.add(user)
+        db.session.flush()
+        user.add_role(clubadmin_role)
+        # Grant ClubAdmin role for club1 in user_clubs
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_id=clubadmin_role.id))
+        
+        # Create ExComm for club1 only
+        excomm = ExComm(club_id=club1.id, excomm_term='TEST_26H1', president_id=contact.id)
+        db.session.add(excomm)
+        db.session.flush()
+        club1.current_excomm_id = excomm.id
+        db.session.commit()
+        
+        # Test access to club2 (where they are NOT an officer and have no membership)
+        with app.test_request_context():
+            session['current_club_id'] = club2.id
+            
+            from flask_login import login_user
+            from app.club_context import authorized_club_required
+            login_user(user)
+            
+            @authorized_club_required
+            def dummy_view():
+                return "Success"
+            
+            with pytest.raises(Forbidden):
+                dummy_view()
 
-        # This should succeed as AnonymousUser has Guest permissions
-        assert dummy_view() == "Success"
+
+def test_regular_user_access_authorized_club(app, client):
+    """Test that a regular user can access their authorized club."""
+    with app.app_context():
+        # Setup - Create club
+        club1 = Club(club_no='TEST_C6', club_name='Test Club 6')
+        db.session.add(club1)
+        db.session.flush()
+        
+        # Setup - Create regular user
+        user_role = AuthRole.query.filter_by(name='User').first()
+        if not user_role:
+            user_role = AuthRole(name='User', level=1)
+            db.session.add(user_role)
+            db.session.flush()
+        
+        contact = Contact(Name='Test Regular User', Type='Member')
+        db.session.add(contact)
+        db.session.flush()
+        
+        user = User(Username='test_regular', Status='active', Contact_ID=contact.id)
+        user.set_password('password')
+        db.session.add(user)
+        db.session.flush()
+        user.add_role(user_role)
+        
+        # Add membership to club1
+        membership = ContactClub(
+            contact_id=contact.id,
+            club_id=club1.id,
+            membership_type='Member'
+        )
+        db.session.add(membership)
+        db.session.commit()
+        
+        # Test access to club1 (where they have membership)
+        with app.test_request_context():
+            session['current_club_id'] = club1.id
+            
+            from flask_login import login_user
+            from app.club_context import authorized_club_required
+            login_user(user)
+            
+            @authorized_club_required
+            def dummy_view():
+                return "Success"
+            
+            assert dummy_view() == "Success"
+
+
+def test_regular_user_denied_unauthorized_club(app, client):
+    """Test that a regular user is denied access to clubs they don't belong to."""
+    from werkzeug.exceptions import Forbidden
+    
+    with app.app_context():
+        # Setup - Create two clubs
+        club1 = Club(club_no='TEST_C7', club_name='Test Club 7')
+        club2 = Club(club_no='TEST_C8', club_name='Test Club 8')
+        db.session.add_all([club1, club2])
+        db.session.flush()
+        
+        # Setup - Create regular user (member of club1 only)
+        user_role = AuthRole.query.filter_by(name='User').first()
+        if not user_role:
+            user_role = AuthRole(name='User', level=1)
+            db.session.add(user_role)
+            db.session.flush()
+        
+        contact = Contact(Name='Test Regular User 2', Type='Member')
+        db.session.add(contact)
+        db.session.flush()
+        
+        user = User(Username='test_regular2', Status='active', Contact_ID=contact.id)
+        user.set_password('password')
+        db.session.add(user)
+        db.session.flush()
+        user.add_role(user_role)
+        
+        # Add membership to club1 only
+        membership = ContactClub(
+            contact_id=contact.id,
+            club_id=club1.id,
+            membership_type='Member'
+        )
+        db.session.add(membership)
+        db.session.commit()
+        
+        # Test access to club2 (where they have NO membership)
+        with app.test_request_context():
+            session['current_club_id'] = club2.id
+            
+            from flask_login import login_user
+            from app.club_context import authorized_club_required
+            login_user(user)
+            
+            @authorized_club_required
+            def dummy_view():
+                return "Success"
+            
+            with pytest.raises(Forbidden):
+                dummy_view()

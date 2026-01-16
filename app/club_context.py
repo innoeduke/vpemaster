@@ -131,8 +131,10 @@ def authorized_club_required(f):
     Decorator to ensure the user is authorized for the current club context.
     
     1. Ensures club context is set.
-    2. For authenticated users: Allows access if Admin or if they have a 
-       membership record for the current club.
+    2. For authenticated users:
+       - SysAdmin: Can access any club
+       - ClubAdmin: Can access clubs where they are an ExComm officer
+       - Other users: Must have a membership record for the current club
     3. For anonymous users: Allows access if they have ABOUT_CLUB_VIEW permission.
     """
     @wraps(f)
@@ -140,7 +142,8 @@ def authorized_club_required(f):
         from flask_login import current_user
         from flask import abort
         from app.auth.permissions import Permissions
-        from app.models import ContactClub
+        from app.models import ContactClub, Club, ExComm
+        from app.models.base import db
         
         # Ensure club context is established
         club_id = get_or_set_default_club()
@@ -148,9 +151,40 @@ def authorized_club_required(f):
             abort(404, description="No club context found")
             
         if current_user.is_authenticated:
-            # SysAdmin can access any club
-            if current_user.has_role('SysAdmin'):
-                return f(*args, **kwargs)
+            from app.models import AuthRole, UserClub
+            from app.auth.permissions import Permissions
+            
+            # SysAdmin can access any club (checked via user_clubs table)
+            sys_role = AuthRole.get_by_name(Permissions.ADMIN)
+            if sys_role:
+                is_sysadmin = UserClub.query.filter_by(user_id=current_user.id, club_role_id=sys_role.id).first()
+                if is_sysadmin:
+                    return f(*args, **kwargs)
+            
+            # ClubAdmin can access owned clubs (checked via user_clubs table)
+            club_role = AuthRole.get_by_name(Permissions.OPERATOR)
+            if club_role:
+                # Check if user has ClubAdmin role for the current club
+                is_clubadmin = UserClub.query.filter_by(
+                    user_id=current_user.id,
+                    club_id=club_id,
+                    club_role_id=club_role.id
+                ).first()
+                if is_clubadmin:
+                    return f(*args, **kwargs)
+            
+            # Legacy/Fallback: Check if user is an officer in the current club's ExComm
+            club = db.session.get(Club, club_id)
+            if club and club.current_excomm_id:
+                excomm = db.session.get(ExComm, club.current_excomm_id)
+                if excomm and hasattr(current_user, 'Contact_ID') and current_user.Contact_ID:
+                    contact_id = current_user.Contact_ID
+                    officer_ids = [
+                        excomm.president_id, excomm.vpe_id, excomm.vpm_id, excomm.vppr_id,
+                        excomm.secretary_id, excomm.treasurer_id, excomm.saa_id, excomm.ipp_id
+                    ]
+                    if contact_id in officer_ids:
+                        return f(*args, **kwargs)
             
             # Check for explicit membership if user is linked to a contact
             if hasattr(current_user, 'Contact_ID') and current_user.Contact_ID:
