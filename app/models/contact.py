@@ -40,6 +40,7 @@ class Contact(db.Model):
         ).distinct().order_by(SessionLog.pathway)
         return [r[0] for r in query.all()]
 
+
     def get_completed_levels(self, pathway_name):
         """
         Get completed level numbers for the given pathway.
@@ -56,3 +57,35 @@ class Contact(db.Model):
             achievement_type='level-completion'
         ).all()
         return {a.level for a in achievements if a.level}
+    
+    def get_primary_club(self):
+        """Get the primary club for this contact."""
+        from .contact_club import ContactClub
+        cc = ContactClub.query.filter_by(contact_id=self.id, is_primary=True).first()
+        return cc.club if cc else None
+    
+    def get_club_membership(self, club_id):
+        """
+        Get membership details for a specific club.
+        
+        Args:
+            club_id: ID of the club
+            
+        Returns:
+            ContactClub object or None
+        """
+        from .contact_club import ContactClub
+        return ContactClub.query.filter_by(contact_id=self.id, club_id=club_id).first()
+    
+    def get_clubs(self):
+        """
+        Get all clubs this contact belongs to.
+        
+        Returns:
+            List of Club objects
+        """
+        from .contact_club import ContactClub
+        from .club import Club
+        club_ids = [cc.club_id for cc in ContactClub.query.filter_by(contact_id=self.id).all()]
+        return Club.query.filter(Club.id.in_(club_ids)).all() if club_ids else []
+

@@ -2,8 +2,9 @@
 
 from flask import current_app
 # Ensure Project model is imported if needed elsewhere
-from .models import Project, Meeting, SessionLog, Pathway, PathwayProject, Achievement, Contact
+from .models import Project, Meeting, SessionLog, Pathway, PathwayProject, Achievement, Contact, Club
 from .auth.permissions import Permissions
+from .club_context import get_current_club_id
 from . import db
 import re
 import configparser
@@ -540,23 +541,32 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None):
         return all_meetings, default_meeting_num
 
     # --- Mode 2: Default Hybrid Active/Past Logic ---
+    club_id = get_current_club_id()
 
     # Fetch active meetings ('unpublished', 'not started', or 'running')
     # Updated: Always include 'unpublished' so list is same for all users
     active_statuses = ['not started', 'running', 'unpublished']
         
-    active_meetings = db.session.query(*query_cols)\
-        .filter(Meeting.status.in_(active_statuses))\
-        .order_by(Meeting.Meeting_Number.desc()).all()
+    active_query = db.session.query(*query_cols)\
+        .filter(Meeting.status.in_(active_statuses))
+    
+    if club_id:
+        active_query = active_query.filter(Meeting.club_id == club_id)
+        
+    active_meetings = active_query.order_by(Meeting.Meeting_Number.desc()).all()
 
     # Manager check removed as 'unpublished' is now always included
 
     active_meetings.sort(key=lambda m: m.Meeting_Number, reverse=True)
 
     # Fetch recent inactive meetings ('finished' or 'cancelled')
-    past_meetings = db.session.query(*query_cols)\
-        .filter(Meeting.status.in_(['finished', 'cancelled']))\
-        .order_by(Meeting.Meeting_Number.desc()).limit(limit_past).all()
+    past_query = db.session.query(*query_cols)\
+        .filter(Meeting.status.in_(['finished', 'cancelled']))
+    
+    if club_id:
+        past_query = past_query.filter(Meeting.club_id == club_id)
+        
+    past_meetings = past_query.order_by(Meeting.Meeting_Number.desc()).limit(limit_past).all()
 
     # Combine and sort all meetings by meeting number
     all_meetings = sorted(active_meetings + past_meetings,
@@ -592,17 +602,27 @@ def get_default_meeting_number():
     Returns None if neither is found.
     """
     # 1. Check for running meeting
-    running_meeting = Meeting.query.filter_by(status='running').first()
+    club_id = get_current_club_id()
+    
+    running_query = Meeting.query.filter_by(status='running')
+    if club_id:
+        running_query = running_query.filter(Meeting.club_id == club_id)
+    
+    running_meeting = running_query.first()
     if running_meeting:
         return running_meeting.Meeting_Number
 
     # 2. Check for next unfinished meeting (not started or unpublished)
     # Always include both statuses to ensure lower-numbered meetings are prioritized
     from .models import SessionLog
-    upcoming_meeting = Meeting.query \
+    upcoming_query = Meeting.query \
         .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number) \
-        .filter(Meeting.status.in_(['not started', 'unpublished'])) \
-        .order_by(Meeting.Meeting_Number.asc()) \
+        .filter(Meeting.status.in_(['not started', 'unpublished']))
+    
+    if club_id:
+        upcoming_query = upcoming_query.filter(Meeting.club_id == club_id)
+        
+    upcoming_meeting = upcoming_query.order_by(Meeting.Meeting_Number.asc()) \
         .first()
 
     if upcoming_meeting:
@@ -797,7 +817,155 @@ def get_meeting_types(all_settings):
     # Sort meeting types alphabetically by title
     sorted_meeting_types = {k: meeting_types[k] for k in sorted(meeting_types.keys())}
     return sorted_meeting_types
+
+
+def load_club_settings(all_settings):
+    """
+    Parses the [Club Settings] section from settings.
+    Returns a dictionary with club configuration.
+    """
+    raw_data = all_settings.get('Club Settings', {})
     
+    # Return empty dict if no club settings found
+    if not raw_data:
+        return {}
+    
+    # Parse club settings with case-insensitive key matching
+    club_settings = {}
+    for key, value in raw_data.items():
+        normalized_key = key.lower().replace(' ', '_')
+        club_settings[normalized_key] = value
+    
+    return club_settings
+
+
+def sync_club_from_settings():
+    """
+    Loads club settings from settings.ini and creates/updates Club record in database.
+    Returns Club object or None if settings not found.
+    """
+    from .models import Club
+    from datetime import datetime
+    
+    all_settings = load_all_settings()
+    club_settings = load_club_settings(all_settings)
+    
+    if not club_settings:
+        current_app.logger.warning("No [Club Settings] found in settings.ini")
+        return None
+    
+    # Get or create club record (assuming single club for now)
+    # In future, we can use club_no to support multiple clubs
+    club = Club.query.first()
+    
+    if not club:
+        club = Club()
+        db.session.add(club)
+    
+    # Update club fields from settings
+    club.club_no = club_settings.get('club_no', 'DEFAULT')
+    club.club_name = club_settings.get('club_name', '')
+    club.short_name = club_settings.get('short_name')
+    club.district = club_settings.get('district')
+    club.division = club_settings.get('division')
+    club.area = club_settings.get('area')
+    club.club_address = club_settings.get('club_address')
+    club.meeting_date = club_settings.get('meeting_date')
+    club.contact_phone_number = club_settings.get('contact_phone_number')
+    
+    # Parse meeting time if provided
+    meeting_time_str = club_settings.get('meeting_start_time')
+    if meeting_time_str:
+        try:
+            from datetime import datetime
+            club.meeting_time = datetime.strptime(meeting_time_str, '%H:%M').time()
+        except ValueError:
+            current_app.logger.warning(f"Invalid meeting time format: {meeting_time_str}")
+    
+    # Parse founded date if provided
+    founded_date_str = club_settings.get('founded_date')
+    if founded_date_str:
+        try:
+            from datetime import datetime
+            club.founded_date = datetime.strptime(founded_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            current_app.logger.warning(f"Invalid founded date format: {founded_date_str}")
+    
+    club.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    return club
+
+
+def sync_excomm_from_settings():
+    """
+    Loads excomm team settings from settings.ini and creates/updates ExComm record.
+    Looks up Contact records by name for officer positions.
+    Returns ExComm object or None if settings not found.
+    """
+    from .models import ExComm, Club, Contact
+    from datetime import datetime
+    
+    all_settings = load_all_settings()
+    excomm_data = get_excomm_team(all_settings)
+    
+    if not excomm_data or not excomm_data.get('term'):
+        current_app.logger.warning("No [Excomm Team] found in settings.ini")
+        return None
+    
+    # Get or create club
+    club = Club.query.first()
+    if not club:
+        current_app.logger.error("No club found. Please sync club settings first.")
+        return None
+    
+    # Get or create excomm record for this term
+    term = excomm_data.get('term')
+    excomm = ExComm.query.filter_by(club_id=club.id, excomm_term=term).first()
+    
+    if not excomm:
+        excomm = ExComm(club_id=club.id, excomm_term=term)
+        db.session.add(excomm)
+    
+    # Update excomm fields
+    excomm.excomm_name = excomm_data.get('name', 'Unknown')
+    
+    # Map officer positions to contact IDs
+    officer_mapping = {
+        'president': 'President',
+        'vpe': 'VPE',
+        'vpm': 'VPM',
+        'vppr': 'VPPR',
+        'secretary': 'Secretary',
+        'treasurer': 'Treasurer',
+        'saa': 'SAA'
+    }
+    
+    members = excomm_data.get('members', {})
+    
+    for db_field, settings_key in officer_mapping.items():
+        officer_name = members.get(settings_key)
+        if officer_name:
+            # Look up contact by name
+            contact = Contact.query.filter_by(Name=officer_name).first()
+            if contact:
+                setattr(excomm, f'{db_field}_id', contact.id)
+            else:
+                current_app.logger.warning(f"Contact not found for {settings_key}: {officer_name}")
+                setattr(excomm, f'{db_field}_id', None)
+        else:
+            setattr(excomm, f'{db_field}_id', None)
+    
+    excomm.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    # Update club's current_excomm_id
+    if club.current_excomm_id != excomm.id:
+        club.current_excomm_id = excomm.id
+        db.session.commit()
+    
+    return excomm
 
 def process_avatar(file, contact_id):
     """

@@ -19,8 +19,23 @@ class TestRoleService(unittest.TestCase):
         self.app_context.push()
         db.create_all()
 
+        # Create Club (required for Meeting)
+        from app.models import Club
+        self.club = Club(
+            club_no='000000',
+            club_name='Test Club',
+            district='Test District'
+        )
+        db.session.add(self.club)
+        db.session.commit()
+
         # Create Basic Data
-        self.meeting = Meeting(Meeting_Number=1, Meeting_Date=date.today(), status='running')
+        self.meeting = Meeting(
+            Meeting_Number=1, 
+            Meeting_Date=date.today(), 
+            status='running',
+            club_id=self.club.id
+        )
         db.session.add(self.meeting)
         
         self.contact1 = Contact(Name="Alice", Email="alice@example.com")

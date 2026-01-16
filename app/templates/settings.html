@@ -4,6 +4,11 @@
 
 {% block head_extra %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+  #roles-permissions .permissions-matrix-container {
+    padding: 20px;
+  }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -19,10 +24,7 @@
   </div>
 
   <div class="nav-tabs">
-    <button class="nav-item active" onclick="openTab(event, 'general')">
-      General
-    </button>
-    <button class="nav-item" onclick="openTab(event, 'agenda-settings')">
+    <button class="nav-item active" onclick="openTab(event, 'agenda-settings')">
       Agenda
     </button>
     <button class="nav-item" onclick="openTab(event, 'sessions')">
@@ -42,55 +44,6 @@
     <button class="nav-item" onclick="openTab(event, 'audit-log')">
       Audit Log
     </button>
-  </div>
-
-  <div id="general" class="tab-content">
-    <h2>General Settings</h2>
-
-    <table class="form-table general-settings-table">
-      <thead>
-        <tr>
-          <th>Setting</th>
-          <th>Value</th>
-        </tr>
-      </thead>
-      <tbody>
-      <tbody>
-        {% for key, value in general_settings.items() %}
-        {% if key.lower() not in ['term', 'excomm_name'] %}
-        <tr>
-          <td><strong>{{ key.replace('_', ' ')|title }}</strong></td>
-          <td>{{ value }}</td>
-        </tr>
-        {% endif %}
-        {% else %}
-        <tr>
-          <td colspan="2" class="no-settings-message">
-            Could not load settings.ini or [Club Settings] section is empty.
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <h2>Excomm Team</h2>
-    <table class="form-table general-settings-table">
-      <thead>
-        <tr>
-          <th colspan="2">
-            {{ excomm_team.name }} ({{ excomm_team.term }})
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for role, name in excomm_team.members.items() %}
-        <tr>
-          <td><strong>{{ role }}</strong></td>
-          <td>{{ name }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
   </div>
 
   <div id="sessions" class="tab-content">
@@ -456,6 +409,7 @@
 <script>
   var ROLES_DATA = {{ roles| tojson }};
 </script>
+</script>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 <script>
@@ -468,6 +422,7 @@
       // Prevent scrolling on body
       document.body.style.overflow = 'hidden';
     }
+
   });
 </script>
 {% endblock %}

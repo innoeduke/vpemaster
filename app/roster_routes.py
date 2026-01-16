@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
-from .models import Roster, Meeting, Contact
+from .models import Roster, Meeting, Contact, ContactClub
+from .club_context import get_current_club_id
 from . import db
 from sqlalchemy import distinct
 
@@ -43,10 +44,12 @@ def roster():
     roster_entries = []
     first_unallocated_entry = None
     next_unallocated_entry = None
+    club_id = get_current_club_id()
     if selected_meeting_num:
-        selected_meeting = Meeting.query.filter(
-            Meeting.Meeting_Number == selected_meeting_num
-        ).first()
+        query = Meeting.query.filter(Meeting.Meeting_Number == selected_meeting_num)
+        if club_id:
+            query = query.filter(Meeting.club_id == club_id)
+        selected_meeting = query.first()
 
         # Get roster entries for this meeting (including unallocated entries)
         roster_entries = Roster.query\
@@ -71,8 +74,9 @@ def roster():
                 first_unallocated_entry = entry
                 break
 
-    # Get all contacts for the dropdown menu
-    contacts = Contact.query.order_by(Contact.Name).all()
+    # Get all contacts for the dropdown menu, filtered by club
+    contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
+        .order_by(Contact.Name).all()
 
     from .models import Pathway
     all_pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()

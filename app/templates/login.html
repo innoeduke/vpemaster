@@ -30,6 +30,14 @@
     {% endif %} {% endwith %}
     <form action="{{ url_for('auth_bp.login') }}" method="post" class="login-form">
       <div>
+        <label for="club_names">Club:</label>
+        <select id="club_names" name="club_names" required>
+          {% for club in clubs %}
+          <option value="{{ club.id }}" {% if club.id==1 %}selected{% endif %}>{{ club.club_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
         <label for="username">Username or Email:</label>
         <input type="text" id="username" name="username" autocomplete="username" required />
       </div>

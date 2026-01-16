@@ -19,6 +19,8 @@ from .utils import (
     group_roles_by_category
 )
 from .services.role_service import RoleService
+from .club_context import get_current_club_id
+from .models import ContactClub
 
 booking_bp = Blueprint('booking_bp', __name__)
 
@@ -233,7 +235,11 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     if not selected_meeting_number:
         return context
 
-    selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_number).first()
+    club_id = get_current_club_id()
+    selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_number)
+    if club_id:
+        selected_meeting = selected_meeting.filter(Meeting.club_id == club_id)
+    selected_meeting = selected_meeting.first()
     
     is_manager = user.Contact_ID == selected_meeting.manager_id if (user and selected_meeting) else False
     
@@ -260,7 +266,7 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     context['user_bookings_by_date'] = _get_user_bookings(current_user_contact_id)
 
     if context['is_admin_view']:
-        context['contacts'] = Contact.query.order_by(Contact.Name).all()
+        context['contacts'] = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id).order_by(Contact.Name).all()
 
     context['best_award_ids'] = selected_meeting.get_best_award_ids() if selected_meeting else set()
     context['sorted_role_groups'] = group_roles_by_category(roles)
@@ -304,7 +310,11 @@ def book_or_assign_role():
         return jsonify(success=False, message="Could not determine the role key."), 400
 
     # Validation: Check meeting status
-    meeting = Meeting.query.filter_by(Meeting_Number=log.Meeting_Number).first()
+    club_id = get_current_club_id()
+    meeting_query = Meeting.query.filter_by(Meeting_Number=log.Meeting_Number)
+    if club_id:
+        meeting_query = meeting_query.filter(Meeting.club_id == club_id)
+    meeting = meeting_query.first()
     if not meeting:
         return jsonify(success=False, message="Meeting not found."), 404
 

@@ -81,14 +81,26 @@ def create_app(config_class='config.Config'):
 
     @app.context_processor
     def inject_global_vars():
-        from .models import Meeting
+        from .models import Meeting, Club
         from .auth.permissions import Permissions
-        # Check if at least one meeting exists
-        has_meetings = db.session.query(Meeting.id).first() is not None
+        from .club_context import get_or_set_default_club, get_current_club_id
+        
+        # Ensure club context is initialized
+        club_id = get_or_set_default_club()
+        
+        # Get current club object
+        club = db.session.get(Club, club_id) if club_id else None
+        
+        # Check if at least one meeting exists for this club
+        has_meetings = False
+        if club_id:
+            has_meetings = db.session.query(Meeting.id).filter(Meeting.club_id == club_id).first() is not None
+            
         return dict(
             is_authorized=is_authorized,
             has_meetings=has_meetings,
-            Permissions=Permissions
+            Permissions=Permissions,
+            club=club
         )
 
     # Register Blueprints

@@ -6,7 +6,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 
 from . import auth_bp  # Import the blueprint
 from .. import db       # Import db from the parent package
-from ..models import User
+from ..models import User, Club
+from ..club_context import set_current_club_id
 from .email import send_reset_email
 
 # Login route
@@ -53,6 +54,13 @@ def login():
                 flash('Please change your default password immediately.', 'error')
                 return redirect(url_for('auth_bp.profile', tab='password'))
             
+            # Set current club ID from form
+            club_id = request.form.get('club_names')
+            if club_id:
+                set_current_club_id(int(club_id))
+            else:
+                set_current_club_id(1)
+
             # Helper to redirect to 'next' page if present
             next_page = request.args.get('next')
             if not next_page or not next_page.startswith('/'):
@@ -62,7 +70,8 @@ def login():
             flash('Invalid username or password.', 'error')
             return redirect(url_for('auth_bp.login'))
             
-    return render_template('login.html')
+    clubs = Club.query.all()
+    return render_template('login.html', clubs=clubs)
 
 # Logout route
 @auth_bp.route('/logout')

@@ -20,6 +20,8 @@ from io import BytesIO
 from .utils import load_setting, derive_credentials, get_project_code, get_meetings_by_status, load_all_settings, get_excomm_team
 from .tally_sync import sync_participants_to_tally
 from .services.role_service import RoleService
+from .club_context import get_current_club_id, filter_by_club
+from .models import ContactClub
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -268,16 +270,19 @@ def _get_processed_logs_data(selected_meeting_num):
     Fetches and processes session logs for a given meeting number.
     Returns the list of log dictionaries ready for the frontend.
     """
-    selected_meeting = None
+    club_id = get_current_club_id()
     if selected_meeting_num:
-        selected_meeting = Meeting.query.options(
+        query = Meeting.query.options(
             orm.joinedload(Meeting.best_table_topic_speaker),
             orm.joinedload(Meeting.best_evaluator),
             orm.joinedload(Meeting.best_speaker),
             orm.joinedload(Meeting.best_role_taker),
             orm.joinedload(Meeting.media),
             orm.joinedload(Meeting.manager)
-        ).filter(Meeting.Meeting_Number == selected_meeting_num).first()
+        ).filter(Meeting.Meeting_Number == selected_meeting_num)
+        if club_id:
+            query = query.filter(Meeting.club_id == club_id)
+        selected_meeting = query.first()
 
     # Create a simple set of (award_category, contact_id) tuples for quick lookups.
     award_winners = set()
@@ -540,8 +545,11 @@ def agenda():
         meeting_templates = []
 
     # --- Minimal Data for Initial Page Load ---
-    members = Contact.query.filter_by(
-        Type='Member').order_by(Contact.Name.asc()).all()
+    club_id = get_current_club_id()
+    members = Contact.query.join(ContactClub).filter(
+        ContactClub.club_id == club_id,
+        Contact.Type == 'Member'
+    ).order_by(Contact.Name.asc()).all()
 
     default_start_time = load_setting(
         'ClubSettings', 'Meeting Start Time', default='18:55')
@@ -605,8 +613,9 @@ A single endpoint to fetch all data needed for the agenda modals.
     ]
 
     # Contacts
-    contacts = Contact.query.options(orm.joinedload(
-        Contact.user)).order_by(Contact.Name.asc()).all()
+    club_id = get_current_club_id()
+    contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
+        .options(orm.joinedload(Contact.user)).order_by(Contact.Name.asc()).all()
     contacts_data = [
         {
             "id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type,

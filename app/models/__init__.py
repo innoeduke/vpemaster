@@ -25,6 +25,11 @@ from .role_permission import RolePermission
 from .user_role import UserRole as UserRoleAssociation
 from .permission_audit import PermissionAudit
 
+# Import club and excomm models
+from .club import Club
+from .contact_club import ContactClub
+from .excomm import ExComm
+
 # Import Flask-Login user loader
 from .. import login_manager
 
@@ -60,4 +65,8 @@ __all__ = [
     'RolePermission',
     'UserRoleAssociation',
     'PermissionAudit',
+    # Club and ExComm models
+    'Club',
+    'ContactClub',
+    'ExComm',
 ]

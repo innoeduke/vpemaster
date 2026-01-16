@@ -4693,14 +4693,14 @@
   "auth_roles": [
     {
       "id": 1,
-      "name": "Admin",
+      "name": "SysAdmin",
       "description": "Admin role",
       "level": 8,
       "created_at": "2026-01-15 07:42:37"
     },
     {
       "id": 2,
-      "name": "Operator",
+      "name": "ClubAdmin",
       "description": "VPE role",
       "level": 4,
       "created_at": "2026-01-15 07:42:37"

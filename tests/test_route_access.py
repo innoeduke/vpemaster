@@ -106,13 +106,23 @@ class RouteAccessTestCase(unittest.TestCase):
 
         # 3. Guest (No user needed, just unauth)
 
+        # Create Club (required for Meeting)
+        from app.models import Club
+        self.club = Club(
+            club_no='000000',
+            club_name='Test Club',
+            district='Test District'
+        )
+        db.session.add(self.club)
+        db.session.commit()
+
         # Create Meetings with different statuses
         today = date.today()
         
-        self.m_unpublished = Meeting(Meeting_Number=100, Meeting_Date=today, status='unpublished')
-        self.m_not_started = Meeting(Meeting_Number=101, Meeting_Date=today, status='not started')
-        self.m_running = Meeting(Meeting_Number=102, Meeting_Date=today, status='running')
-        self.m_finished = Meeting(Meeting_Number=103, Meeting_Date=today, status='finished')
+        self.m_unpublished = Meeting(Meeting_Number=100, Meeting_Date=today, status='unpublished', club_id=self.club.id)
+        self.m_not_started = Meeting(Meeting_Number=101, Meeting_Date=today, status='not started', club_id=self.club.id)
+        self.m_running = Meeting(Meeting_Number=102, Meeting_Date=today, status='running', club_id=self.club.id)
+        self.m_finished = Meeting(Meeting_Number=103, Meeting_Date=today, status='finished', club_id=self.club.id)
         
         db.session.add_all([self.m_unpublished, self.m_not_started, self.m_running, self.m_finished])
         db.session.commit()

@@ -6,6 +6,7 @@ from .base import db
 class Meeting(db.Model):
     __tablename__ = 'Meetings'
     id = db.Column(db.Integer, primary_key=True)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False, index=True)
     type = db.Column(db.String(255), default='Keynote Speech')
     Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), unique=True, nullable=False)
     Meeting_Date = db.Column(db.Date)
@@ -26,6 +27,7 @@ class Meeting(db.Model):
     manager_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
 
     manager = db.relationship('Contact', foreign_keys=[manager_id], backref='managed_meetings')
+    club = db.relationship('Club', foreign_keys=[club_id], backref='meetings')
 
     best_table_topic_speaker = db.relationship(
         'Contact', foreign_keys=[best_table_topic_id])

@@ -31,8 +31,15 @@ def create_admin(username, email, password, contact_name, club):
         if not contact_name:
             contact_name = username
         
+        # Get SysAdmin role
+        from app.models import AuthRole
+        sysadmin_role = AuthRole.query.filter_by(name='SysAdmin').first()
+        if not sysadmin_role:
+            click.echo("❌ Error: 'SysAdmin' role not found in database. Please run seed data first.", err=True)
+            return
+
         # Generate a unique Member_ID for admin
-        admin_count = User.query.filter_by(Role='Admin').count()
+        admin_count = User.query.join(User.roles).filter(AuthRole.name == 'SysAdmin').count()
         member_id = f"ADMIN{admin_count + 1:03d}"
         
         # Create contact first
@@ -51,11 +58,11 @@ def create_admin(username, email, password, contact_name, club):
         admin = User(
             Username=username,
             Email=email,
-            Role='Admin',
             Status='active',
             Contact_ID=contact.id
         )
         admin.set_password(password)
+        admin.add_role(sysadmin_role)
         db.session.add(admin)
         
         # Commit the transaction
