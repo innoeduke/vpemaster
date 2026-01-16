@@ -1,5 +1,5 @@
 """Club model for multi-club support."""
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import db
 
 
@@ -19,9 +19,9 @@ class Club(db.Model):
     contact_phone_number = db.Column(db.String(50), nullable=True)
     website = db.Column(db.String(255), nullable=True)
     founded_date = db.Column(db.Date, nullable=True)
-    current_excomm_id = db.Column(db.Integer, db.ForeignKey('excomm.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    current_excomm_id = db.Column(db.Integer, db.ForeignKey('excomm.id', use_alter=True, name='fk_club_current_excomm'), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     current_excomm = db.relationship(

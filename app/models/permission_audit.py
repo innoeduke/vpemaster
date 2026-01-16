@@ -1,11 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import db
 
 class PermissionAudit(db.Model):
     __tablename__ = 'permission_audits'
 
     id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     admin_id = db.Column(db.Integer, db.ForeignKey('Users.id'), nullable=False)
     action = db.Column(db.String(50), nullable=False)  # 'ASSIGN_ROLE', 'REMOVE_ROLE', 'UPDATE_ROLE_PERMS'
     target_type = db.Column(db.String(50), nullable=False)  # 'USER', 'ROLE'

@@ -1,5 +1,5 @@
 """ExComm (Executive Committee) model for tracking officer terms."""
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import db
 
 
@@ -7,7 +7,7 @@ class ExComm(db.Model):
     __tablename__ = 'excomm'
     
     id = db.Column(db.Integer, primary_key=True)
-    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id', use_alter=True, name='fk_excomm_club'), nullable=False)
     excomm_term = db.Column(db.String(20), nullable=False, index=True)  # e.g., "26H1", "26H2"
     start_date = db.Column(db.Date, nullable=True)
     end_date = db.Column(db.Date, nullable=True)
@@ -23,8 +23,8 @@ class ExComm(db.Model):
     saa_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
     ipp_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
     
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships to Contact model for each officer position
     president = db.relationship('Contact', foreign_keys=[president_id], backref='excomm_as_president')

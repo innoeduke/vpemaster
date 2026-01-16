@@ -104,25 +104,27 @@ class TestSpeechLogicSummary(unittest.TestCase):
         self.assertTrue(summary['1']['elective_completed'])
 
     def test_level4_elective_pool(self):
-        # Case 1: One elective role completed (L4 need 2)
-        log1 = SessionLog(id=1, Meeting_Number=1, Type_ID=self.st_tm_sm.id, Owner_ID=self.contact.id, Status='Completed', state='active')
-        log1.session_type = self.st_tm_sm
-        log1.log_type = 'role'
-        log1.project = None
-        
-        summary = _calculate_completion_summary({'4': [log1]}, {})
-        self.assertEqual(summary['4']['elective_count'], 1)
-        self.assertFalse(summary['4']['elective_completed'])
+        # Prevent auto-flush warning when creating transient logs
+        with db.session.no_autoflush:
+            # Case 1: One elective role completed (L4 need 2)
+            log1 = SessionLog(id=1, Meeting_Number=1, Type_ID=self.st_tm_sm.id, Owner_ID=self.contact.id, Status='Completed', state='active')
+            log1.session_type = self.st_tm_sm
+            log1.log_type = 'role'
+            log1.project = None
+            
+            summary = _calculate_completion_summary({'4': [log1]}, {})
+            self.assertEqual(summary['4']['elective_count'], 1)
+            self.assertFalse(summary['4']['elective_completed'])
 
-        # Case 2: Two elective roles completed
-        log2 = SessionLog(id=2, Meeting_Number=1, Type_ID=self.st_ts.id, Owner_ID=self.contact.id, Status='Completed', state='active')
-        log2.session_type = self.st_ts
-        log2.log_type = 'role'
-        log2.project = None
-        
-        summary = _calculate_completion_summary({'4': [log1, log2]}, {})
-        self.assertEqual(summary['4']['elective_count'], 2)
-        self.assertTrue(summary['4']['elective_completed'])
+            # Case 2: Two elective roles completed
+            log2 = SessionLog(id=2, Meeting_Number=1, Type_ID=self.st_ts.id, Owner_ID=self.contact.id, Status='Completed', state='active')
+            log2.session_type = self.st_ts
+            log2.log_type = 'role'
+            log2.project = None
+            
+            summary = _calculate_completion_summary({'4': [log1, log2]}, {})
+            self.assertEqual(summary['4']['elective_count'], 2)
+            self.assertTrue(summary['4']['elective_completed'])
 
     def test_role_matching_strictness(self):
         # L2 IE needs 1 count

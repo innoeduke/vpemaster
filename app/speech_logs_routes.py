@@ -271,112 +271,114 @@ def _calculate_completion_summary(grouped_logs, pp_mapping):
     Calculate completion summary against LevelRole requirements.
     Uses normalize_role_name and get_role_aliases from utils.
     """
-    level_requirements = LevelRole.query.order_by(LevelRole.level, LevelRole.type.desc()).all()
-    completion_summary = {}
-    used_log_ids = set()
-    role_aliases = get_role_aliases()
-    
-    # Pre-process elective pool requirements
-    elective_pool_requirements = {}
-    for lr in level_requirements:
-        if lr.role.strip().lower() == 'elective pool':
-            elective_pool_requirements[str(lr.level)] = lr.count_required
-
-    for lr in level_requirements:
-        level_str = str(lr.level)
-        if level_str not in completion_summary:
-            completion_summary[level_str] = {
-                'required': [], 
-                'elective': [], 
-                'required_completed': True, 
-                'elective_completed': False,
-                'required_count': 0,
-                'required_total': 0,
-                'elective_count': 0,
-                'elective_required': elective_pool_requirements.get(level_str, 1 if lr.level <= 3 else 2)
-            }
+    # Use no_autoflush to prevent warnings about objects not in session during query and property access
+    with db.session.no_autoflush:
+        level_requirements = LevelRole.query.order_by(LevelRole.level, LevelRole.type.desc()).all()
+        completion_summary = {}
+        used_log_ids = set()
+        role_aliases = get_role_aliases()
         
-        # Skip processing 'elective pool' record as a role itself
-        if lr.role.strip().lower() == 'elective pool':
-            continue
+        # Pre-process elective pool requirements
+        elective_pool_requirements = {}
+        for lr in level_requirements:
+            if lr.role.strip().lower() == 'elective pool':
+                elective_pool_requirements[str(lr.level)] = lr.count_required
 
-        count = 0
-        details = []
-        logs_for_level = grouped_logs.get(level_str, [])
-        
-        for entry in logs_for_level:
-            if count >= lr.count_required:
-                break
-
-            items_to_process = entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]
+        for lr in level_requirements:
+            level_str = str(lr.level)
+            if level_str not in completion_summary:
+                completion_summary[level_str] = {
+                    'required': [], 
+                    'elective': [], 
+                    'required_completed': True, 
+                    'elective_completed': False,
+                    'required_count': 0,
+                    'required_total': 0,
+                    'elective_count': 0,
+                    'elective_required': elective_pool_requirements.get(level_str, 1 if lr.level <= 3 else 2)
+                }
             
-            for log in items_to_process:
-                if log.id in used_log_ids:
-                    continue
-                
-                satisfied = False
-                item_name = log.Session_Title or (log.project.Project_Name if log.project else None) or (log.session_type.Title if log.session_type else "Activity")
-                
-                if hasattr(log, 'project_code') and log.project_code:
-                    item_name = f"{log.project_code} {item_name}"
-                
-                actual_role_name = (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "")).strip().lower()
-                target_role_name = lr.role.strip().lower()
-                
-                norm_actual = normalize_role_name(actual_role_name)
-                norm_target = normalize_role_name(target_role_name)
-                
-                is_role_match = (norm_actual == norm_target)
-                if not is_role_match and role_aliases.get(norm_actual) == norm_target:
-                    is_role_match = True
-                
-                if is_role_match:
-                    satisfied = True
-                elif lr.role.lower() == 'speech' and hasattr(log, 'log_type') and (log.log_type == 'speech' or log.log_type == 'presentation'):
-                    # Presentations always count as speeches regardless of pathway mapping
-                    if log.log_type == 'presentation' or pp_mapping.get(log.Project_ID) == 'required' or not pp_mapping:
-                        satisfied = True
-                # Check for specific presentation series requirement (e.g. "Successful Club Series")
-                elif hasattr(log, 'presentation_series') and log.presentation_series:
-                    if normalize_role_name(log.presentation_series.lower()) == norm_target:
-                        satisfied = True
-                elif lr.role.lower() == 'elective project' and hasattr(log, 'log_type') and log.log_type == 'speech':
-                    if pp_mapping.get(log.Project_ID) == 'elective':
-                        satisfied = True
-               
-                if satisfied:
-                    if log.Status == 'Completed' or (hasattr(log, 'log_type') and log.log_type == 'role'):
-                        count += 1
-                        details.append({'name': item_name, 'status': 'completed'})
-                        used_log_ids.add(log.id)
-                        if count >= lr.count_required:
-                            break
-        
-        pending_count = max(0, lr.count_required - count)
-        for i in range(pending_count):
-            details.append({'name': f"Pending {lr.role}", 'status': 'pending'})
-        
-        target_group = 'elective' if lr.type == 'elective' else 'required'
-        item_data = {
-            'role': lr.role,
-            'count': count,
-            'required': lr.count_required,
-            'requirement_items': details
-        }
-        completion_summary[level_str][target_group].append(item_data)
+            # Skip processing 'elective pool' record as a role itself
+            if lr.role.strip().lower() == 'elective pool':
+                continue
 
-        # Update section completion status
-        if target_group == 'required':
-            completion_summary[level_str]['required_count'] += count
-            completion_summary[level_str]['required_total'] += lr.count_required
-            if count < lr.count_required:
-                completion_summary[level_str]['required_completed'] = False
-        else: # elective
-            completion_summary[level_str]['elective_count'] += count
-            if completion_summary[level_str]['elective_count'] >= completion_summary[level_str]['elective_required']:
-                completion_summary[level_str]['elective_completed'] = True
-    
-    return completion_summary
+            count = 0
+            details = []
+            logs_for_level = grouped_logs.get(level_str, [])
+            
+            for entry in logs_for_level:
+                if count >= lr.count_required:
+                    break
+
+                items_to_process = entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]
+                
+                for log in items_to_process:
+                    if log.id in used_log_ids:
+                        continue
+                    
+                    satisfied = False
+                    item_name = log.Session_Title or (log.project.Project_Name if log.project else None) or (log.session_type.Title if log.session_type else "Activity")
+                    
+                    if hasattr(log, 'project_code') and log.project_code:
+                        item_name = f"{log.project_code} {item_name}"
+                    
+                    actual_role_name = (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "")).strip().lower()
+                    target_role_name = lr.role.strip().lower()
+                    
+                    norm_actual = normalize_role_name(actual_role_name)
+                    norm_target = normalize_role_name(target_role_name)
+                    
+                    is_role_match = (norm_actual == norm_target)
+                    if not is_role_match and role_aliases.get(norm_actual) == norm_target:
+                        is_role_match = True
+                    
+                    if is_role_match:
+                        satisfied = True
+                    elif lr.role.lower() == 'speech' and hasattr(log, 'log_type') and (log.log_type == 'speech' or log.log_type == 'presentation'):
+                        # Presentations always count as speeches regardless of pathway mapping
+                        if log.log_type == 'presentation' or pp_mapping.get(log.Project_ID) == 'required' or not pp_mapping:
+                            satisfied = True
+                    # Check for specific presentation series requirement (e.g. "Successful Club Series")
+                    elif hasattr(log, 'presentation_series') and log.presentation_series:
+                        if normalize_role_name(log.presentation_series.lower()) == norm_target:
+                            satisfied = True
+                    elif lr.role.lower() == 'elective project' and hasattr(log, 'log_type') and log.log_type == 'speech':
+                        if pp_mapping.get(log.Project_ID) == 'elective':
+                            satisfied = True
+                
+                    if satisfied:
+                        if log.Status == 'Completed' or (hasattr(log, 'log_type') and log.log_type == 'role'):
+                            count += 1
+                            details.append({'name': item_name, 'status': 'completed'})
+                            used_log_ids.add(log.id)
+                            if count >= lr.count_required:
+                                break
+            
+            pending_count = max(0, lr.count_required - count)
+            for i in range(pending_count):
+                details.append({'name': f"Pending {lr.role}", 'status': 'pending'})
+            
+            target_group = 'elective' if lr.type == 'elective' else 'required'
+            item_data = {
+                'role': lr.role,
+                'count': count,
+                'required': lr.count_required,
+                'requirement_items': details
+            }
+            completion_summary[level_str][target_group].append(item_data)
+
+            # Update section completion status
+            if target_group == 'required':
+                completion_summary[level_str]['required_count'] += count
+                completion_summary[level_str]['required_total'] += lr.count_required
+                if count < lr.count_required:
+                    completion_summary[level_str]['required_completed'] = False
+            else: # elective
+                completion_summary[level_str]['elective_count'] += count
+                if completion_summary[level_str]['elective_count'] >= completion_summary[level_str]['elective_required']:
+                    completion_summary[level_str]['elective_completed'] = True
+        
+        return completion_summary
 
 
 def _get_speaker_user(viewed_contact, is_member_view):

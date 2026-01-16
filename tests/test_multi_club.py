@@ -144,7 +144,7 @@ class TestMeetingClubRelationship:
             meetings = Meeting.query.all()
             
             for meeting in meetings:
-                club = Club.query.get(meeting.club_id)
+                club = db.session.get(Club, meeting.club_id)
                 assert club is not None, \
                     f"Meeting {meeting.id} references non-existent club {meeting.club_id}"
 
@@ -164,7 +164,7 @@ class TestContactClubMethods:
 
             assert cc is not None, "Should have at least one primary club association"
             
-            contact = Contact.query.get(cc.contact_id)
+            contact = db.session.get(Contact, cc.contact_id)
             assert contact is not None
             
             primary_club = contact.get_primary_club()
@@ -179,7 +179,7 @@ class TestContactClubMethods:
             cc = default_contact_club
             assert cc is not None
             
-            contact = Contact.query.get(cc.contact_id)
+            contact = db.session.get(Contact, cc.contact_id)
             assert contact is not None
             
             clubs = contact.get_clubs()
@@ -195,7 +195,7 @@ class TestContactClubMethods:
             cc = default_contact_club
             assert cc is not None
             
-            contact = Contact.query.get(cc.contact_id)
+            contact = db.session.get(Contact, cc.contact_id)
             assert contact is not None
             
             membership = contact.get_club_membership(cc.club_id)
@@ -252,11 +252,11 @@ class TestMultiClubDataIntegrity:
             contact_clubs = ContactClub.query.all()
             
             for cc in contact_clubs:
-                contact = Contact.query.get(cc.contact_id)
+                contact = db.session.get(Contact, cc.contact_id)
                 assert contact is not None, \
                     f"ContactClub {cc.id} references non-existent contact {cc.contact_id}"
                 
-                club = Club.query.get(cc.club_id)
+                club = db.session.get(Club, cc.club_id)
                 assert club is not None, \
                     f"ContactClub {cc.id} references non-existent club {cc.club_id}"
     

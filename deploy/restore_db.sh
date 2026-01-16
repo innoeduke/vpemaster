@@ -23,11 +23,11 @@ else
     PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
     BACKUP_DIR="$PROJECT_ROOT/instance/backup"
     
-    echo "INFO: No backup file provided, searching for latest backup in '$BACKUP_DIR' (format: backup_YYYYMMDD.sql)..."
+    echo "INFO: No backup file provided, searching for latest backup in '$BACKUP_DIR' (format: backup_YYYYMMDD_HHMMSS.sql)..."
     
     # Find the latest backup_YYYYMMDD.sql file
     # Use sort -r to reverse sort filenames, take the first one as the latest date
-    LATEST_BACKUP=$(ls -1 $BACKUP_DIR/backup_[0-9]*.sql 2>/dev/null | sort -r | head -n 1)
+    LATEST_BACKUP=$(ls -1 $BACKUP_DIR/backup_[0-9]*_[0-9]*.sql 2>/dev/null | sort -r | head -n 1)
     
     if [ -n "$LATEST_BACKUP" ]; then
         INPUT_FILE="$LATEST_BACKUP"

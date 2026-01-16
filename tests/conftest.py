@@ -41,6 +41,9 @@ def default_club(app):
             )
             db.session.add(club)
             db.session.commit()
+            db.session.refresh(club)
+        
+        db.session.expunge(club)
         return club
 
 
@@ -59,6 +62,9 @@ def default_excomm(app, default_club):
             )
             db.session.add(excomm)
             db.session.commit()
+            db.session.refresh(excomm)
+        
+        db.session.expunge(excomm)
         return excomm
 
 
@@ -78,6 +84,9 @@ def default_contact(app):
             )
             db.session.add(contact)
             db.session.commit()
+            db.session.refresh(contact)
+        
+        db.session.expunge(contact)
         return contact
 
 
@@ -102,4 +111,7 @@ def default_contact_club(app, default_contact, default_club):
             )
             db.session.add(cc)
             db.session.commit()
+            db.session.refresh(cc)
+        
+        db.session.expunge(cc)
         return cc

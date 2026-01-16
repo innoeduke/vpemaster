@@ -1,5 +1,5 @@
 """ContactClub junction table for many-to-many relationship between contacts and clubs."""
-from datetime import datetime
+from datetime import datetime, timezone
 from .base import db
 
 
@@ -13,8 +13,8 @@ class ContactClub(db.Model):
     membership_type = db.Column(db.String(50), nullable=True)  # 'Member', 'Guest', 'Officer'
     joined_date = db.Column(db.Date, nullable=True)
     is_primary = db.Column(db.Boolean, default=False, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
     contact = db.relationship('Contact', backref='club_memberships')
