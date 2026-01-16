@@ -39,6 +39,127 @@ function openTab(evt, tabName) {
 
   // Save active tab
   localStorage.setItem("settings_active_tab", tabName);
+
+  // Trigger pagination update for the active tab's table if it has a paginator
+  if (window.activePaginators) {
+    const paginator = window.activePaginators[tabName];
+    if (paginator) {
+      paginator.currentPage = 1;
+      paginator.update();
+    }
+  }
+}
+
+/**
+ * Class to handle client-side table pagination
+ */
+class TablePaginator {
+  constructor(config) {
+    this.tableId = config.tableId;
+    this.containerId = config.containerId;
+    this.pageSize = config.pageSize || 25;
+    this.currentPage = 1;
+    this.storageKey = config.storageKey;
+    
+    this.table = document.getElementById(this.tableId);
+    this.container = document.getElementById(this.containerId);
+    
+    if (!this.table || !this.container) return;
+
+    this.tbody = this.table.querySelector('tbody');
+    this.infoDisplay = this.container.querySelector('.pagination-info');
+    this.currentPageDisplay = this.container.querySelector('.current-page-display');
+    this.totalPagesDisplay = this.container.querySelector('.total-pages-display');
+    this.pageSizeSelect = this.container.querySelector('.page-size-select');
+    
+    this.firstBtn = this.container.querySelector('.first-page-btn');
+    this.prevBtn = this.container.querySelector('.prev-page-btn');
+    this.nextBtn = this.container.querySelector('.next-page-btn');
+    this.lastBtn = this.container.querySelector('.last-page-btn');
+
+    this.init();
+  }
+
+  init() {
+    // Load saved page size
+    if (this.storageKey) {
+      const savedSize = localStorage.getItem(`${this.storageKey}_page_size`);
+      if (savedSize) {
+        this.pageSize = parseInt(savedSize);
+        if (this.pageSizeSelect) this.pageSizeSelect.value = this.pageSize;
+      }
+    }
+
+    // Event listeners
+    if (this.pageSizeSelect) {
+      this.pageSizeSelect.addEventListener('change', (e) => {
+        this.pageSize = parseInt(e.target.value);
+        this.currentPage = 1;
+        if (this.storageKey) {
+          localStorage.setItem(`${this.storageKey}_page_size`, this.pageSize);
+        }
+        this.update();
+      });
+    }
+
+    if (this.firstBtn) this.firstBtn.addEventListener('click', () => { this.currentPage = 1; this.update(); });
+    if (this.prevBtn) this.prevBtn.addEventListener('click', () => { this.currentPage = Math.max(1, this.currentPage - 1); this.update(); });
+    if (this.nextBtn) this.nextBtn.addEventListener('click', () => { this.currentPage++; this.update(); });
+    if (this.lastBtn) this.lastBtn.addEventListener('click', () => { this.currentPage = this.getTotalPages(); this.update(); });
+
+    this.update();
+  }
+
+  getFilteredRows() {
+    // Return rows that are not hidden by the search filter
+    return Array.from(this.tbody.rows).filter(row => {
+      // Check if row is not hidden by search (we use a custom attribute or check style)
+      return row.getAttribute('data-search-hidden') !== 'true';
+    });
+  }
+
+  getTotalPages() {
+    const rows = this.getFilteredRows();
+    return Math.ceil(rows.length / this.pageSize) || 1;
+  }
+
+  update() {
+    const rows = this.getFilteredRows();
+    const totalPages = this.getTotalPages();
+    
+    if (this.currentPage > totalPages) this.currentPage = totalPages;
+    if (this.currentPage < 1) this.currentPage = 1;
+
+    const startIndex = (this.currentPage - 1) * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+
+    // Show/hide rows
+    rows.forEach((row, index) => {
+      if (index >= startIndex && index < endIndex) {
+        row.style.display = "";
+      } else {
+        row.style.display = "none";
+      }
+    });
+
+    // Update displays
+    if (this.infoDisplay) {
+      if (rows.length === 0) {
+        this.infoDisplay.textContent = 'No records found';
+      } else {
+        this.infoDisplay.textContent = `Showing ${startIndex + 1} - ${Math.min(endIndex, rows.length)} of ${rows.length}`;
+      }
+    }
+
+    if (this.currentPageDisplay) this.currentPageDisplay.textContent = this.currentPage;
+    if (this.totalPagesDisplay) this.totalPagesDisplay.textContent = totalPages;
+
+    // Update buttons
+    if (this.firstBtn) this.firstBtn.disabled = this.currentPage === 1;
+    if (this.prevBtn) this.prevBtn.disabled = this.currentPage === 1;
+    if (this.nextBtn) this.nextBtn.disabled = this.currentPage >= totalPages;
+    if (this.lastBtn) this.lastBtn.disabled = this.currentPage >= totalPages;
+  }
 }
 
 /**
@@ -175,7 +296,7 @@ function setupGlobalFilter(searchInputId, searchClearId, tabNavSelector) {
     if (!activeTab) return;
 
     const table = activeTab.querySelector("table");
-    if (!table) return; // 'General' tab has no table
+    if (!table) return;
 
     const tbody = table.querySelector("tbody");
     if (!tbody) return;
@@ -194,8 +315,28 @@ function setupGlobalFilter(searchInputId, searchClearId, tabNavSelector) {
         }
       });
 
-      row.style.display = rowText.includes(filter) ? "" : "none";
+      row.setAttribute('data-search-hidden', rowText.includes(filter) ? 'false' : 'true');
     });
+
+    // Notify paginator if active
+    if (window.activePaginators) {
+      const activeTabId = activeTab.id;
+      const paginator = window.activePaginators[activeTabId];
+      if (paginator) {
+        paginator.currentPage = 1;
+        paginator.update();
+      } else {
+        // Fallback for non-paginated tables in a paginated state
+        rows.forEach(row => {
+          row.style.display = row.getAttribute('data-search-hidden') === 'true' ? "none" : "";
+        });
+      }
+    } else {
+      // Fallback for non-paginated setup
+      rows.forEach(row => {
+        row.style.display = row.getAttribute('data-search-hidden') === 'true' ? "none" : "";
+      });
+    }
   };
 
   const clearSearch = () => {
@@ -484,7 +625,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 2. Modal Logic ---
   setupModal("add-session-btn", "addSessionModal");
   setupModal("add-role-btn", "addRoleModal");
-  setupModal("add-level-role-btn", "addLevelRoleModal");
+
 
   // Generic modal close-on-click-outside logic
   window.addEventListener("click", (event) => {
@@ -496,7 +637,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 3. Sortable & Filterable Table Setup ---
   setupTableSorting("sessions-table");
   setupTableSorting("user-settings-table");
-  setupTableSorting("level-roles-table");
+
   setupTableSorting("roles-table");
 
   // B. Setup the ONE Global Filter
@@ -567,43 +708,7 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   });
 
-  // 4b. Level Roles
-  setupInlineEdit({
-    editBtnId: "edit-level-roles-btn",
-    cancelBtnId: "cancel-level-roles-btn",
-    tableId: "level-roles-table",
-    saveUrl: "/settings/level-roles/update",
-    createEditor: (cell, field, currentValue) => {
-      if (field === "type") {
-        const select = document.createElement("select");
-        select.className = "form-control-sm";
-        ["required", "elective"].forEach((opt) => {
-          const option = new Option(opt, opt);
-          if (opt === currentValue.toLowerCase()) option.selected = true;
-          select.appendChild(option);
-        });
-        cell.textContent = "";
-        cell.appendChild(select);
-      } else {
-        const input = document.createElement("input");
-        input.type =
-          field.includes("level") || field.includes("count")
-            ? "number"
-            : "text";
-        input.value = currentValue;
-        input.className = "form-control-sm";
-        cell.textContent = "";
-        cell.appendChild(input);
-      }
-    },
-    restoreCell: (cell, field, originalValue) => {
-      cell.textContent = originalValue;
-    },
-    getCellValue: getCellValueGeneric,
-    updateCell: (cell, field, value) => {
-      cell.textContent = value;
-    },
-  });
+
 
 
 
@@ -998,4 +1103,27 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
   }
+
+  // --- 8. Initialize Paginators ---
+  window.activePaginators = {
+    'user-settings': new TablePaginator({
+      tableId: 'user-settings-table',
+      containerId: 'user-pagination',
+      storageKey: 'user_settings'
+    }),
+    'achievements': new TablePaginator({
+      tableId: 'achievementsTable',
+      containerId: 'achievement-pagination',
+      storageKey: 'achievements'
+    })
+  };
+
+  // Re-run filter once to apply initial pagination
+  setTimeout(() => {
+    const searchInput = document.getElementById('global-settings-search');
+    if (searchInput) {
+      const event = new Event('keyup');
+      searchInput.dispatchEvent(event);
+    }
+  }, 100);
 });

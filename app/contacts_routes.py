@@ -380,3 +380,97 @@ def create_contact_api():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@contacts_bp.route('/api/contacts/all')
+@login_required
+def get_all_contacts_api():
+    """API endpoint to fetch all contacts for client-side caching."""
+    if not is_authorized(Permissions.CONTACT_BOOK_VIEW):
+        return jsonify({'error': 'Permission denied'}), 403
+
+    from sqlalchemy.orm import joinedload
+    from .models import Roster, SessionType, MeetingRole, Meeting
+    from sqlalchemy import func
+    
+    club_id = get_current_club_id()
+    contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
+        .options(joinedload(Contact.mentor), joinedload(Contact.user))\
+        .order_by(Contact.Name.asc()).all()
+    
+    # Calculate participation metrics (same logic as show_contacts)
+    # 1. Attendance counts
+    attendance_counts = db.session.query(
+        Roster.contact_id, func.count(Roster.id)
+    ).filter(Roster.contact_id.isnot(None)).group_by(Roster.contact_id).all()
+    attendance_map = {c_id: count for c_id, count in attendance_counts}
+
+    # 2. Role counts
+    distinct_roles = db.session.query(
+        SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id, MeetingRole.name
+    ).select_from(SessionLog).join(SessionType).join(MeetingRole).filter(
+        SessionType.role_id.isnot(None),
+        MeetingRole.type.in_(['standard', 'club-specific'])
+    ).distinct().all()
+
+    role_map = {}
+    contact_tt_count = {}
+    contact_other_role_count = {}
+
+    for owner_id, _, _, role_name in distinct_roles:
+        role_map[owner_id] = role_map.get(owner_id, 0) + 1
+        r_name = role_name.strip() if role_name else ""
+        if r_name == "Topics Speaker":
+            contact_tt_count[owner_id] = contact_tt_count.get(owner_id, 0) + 1
+        else:
+            contact_other_role_count[owner_id] = contact_other_role_count.get(owner_id, 0) + 1
+
+    # 3. Awards
+    award_map = {}
+    best_tt_map = {}
+
+    for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
+        counts = db.session.query(
+            getattr(Meeting, field), func.count(Meeting.id)
+        ).filter(getattr(Meeting, field).isnot(None)).group_by(getattr(Meeting, field)).all()
+        for c_id, count in counts:
+            award_map[c_id] = award_map.get(c_id, 0) + count
+            if field == 'best_table_topic_id':
+                best_tt_map[c_id] = count
+
+    def check_membership_qualification(tt_count, best_tt_count, other_role_count):
+        return (tt_count >= 4 and best_tt_count >= 1 and other_role_count >= 2)
+
+    # Build JSON response
+    contacts_data = []
+    for c in contacts:
+        tt = contact_tt_count.get(c.id, 0)
+        best_tt = best_tt_map.get(c.id, 0)
+        other_roles = contact_other_role_count.get(c.id, 0)
+        
+        primary_club = c.get_primary_club()
+        
+        contacts_data.append({
+            'id': c.id,
+            'Name': c.Name,
+            'Type': c.Type,
+            'Phone_Number': c.Phone_Number if c.Phone_Number else '-',
+            'Club': primary_club.club_name if primary_club else '-',
+            'Completed_Paths': c.Completed_Paths if c.Completed_Paths else '-',
+            'credentials': c.credentials if c.credentials else '-',
+            'Next_Project': c.Next_Project if c.Next_Project else '-',
+            'Mentor': c.mentor.Name if c.mentor else '-',
+            'Member_ID': c.Member_ID,
+            'DTM': c.DTM,
+            'Avatar_URL': c.Avatar_URL,
+            'role_count': role_map.get(c.id, 0),
+            'tt_count': tt,
+            'attendance_count': attendance_map.get(c.id, 0),
+            'award_count': award_map.get(c.id, 0),
+            'is_qualified': check_membership_qualification(tt, best_tt, other_roles),
+            'has_user': c.user is not None,
+            'user_role': c.user.primary_role_name if c.user else None,
+            'is_officer': c.user.has_role(Permissions.STAFF) if c.user else False
+        })
+
+    return jsonify(contacts_data)

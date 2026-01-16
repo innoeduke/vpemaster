@@ -238,7 +238,8 @@ def test_regular_user_access_authorized_club(app, client):
         membership = ContactClub(
             contact_id=contact.id,
             club_id=club1.id,
-            membership_type='Member'
+            membership_type='Member',
+            is_primary=True
         )
         db.session.add(membership)
         db.session.commit()
@@ -290,7 +291,8 @@ def test_regular_user_denied_unauthorized_club(app, client):
         membership = ContactClub(
             contact_id=contact.id,
             club_id=club1.id,
-            membership_type='Member'
+            membership_type='Member',
+            is_primary=True
         )
         db.session.add(membership)
         db.session.commit()

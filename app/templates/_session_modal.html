@@ -112,54 +112,6 @@
   </div>
 </div>
 
-<div id="addLevelRoleModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeModal('addLevelRoleModal')">&times;</span>
-    <h1>Add New Level Role</h1>
-    <form action="{{ url_for('settings_bp.add_level_role') }}" method="POST">
-      <table class="form-table">
-        <tr>
-          <td><label for="level">Level:</label></td>
-          <td><input type="number" id="level" name="level" required /></td>
-        </tr>
-        <tr>
-          <td><label for="role">Role:</label></td>
-          <td><input type="text" id="role" name="role" required /></td>
-        </tr>
-        <tr>
-          <td><label for="type">Type:</label></td>
-          <td>
-            <select id="type" name="type" required>
-              <option value="">Select Type</option>
-              <option value="required">Required</option>
-              <option value="elective">Elective</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td><label for="count_required">Count Required:</label></td>
-          <td>
-            <input
-              type="number"
-              id="count_required"
-              name="count_required"
-              required
-            />
-          </td>
-        </tr>
-      </table>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save Level Role</button>
-        <button
-          type="button"
-          class="btn btn-danger"
-          onclick="closeModal('addLevelRoleModal')"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
+
 
 

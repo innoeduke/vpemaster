@@ -29,7 +29,10 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
     from app.auth.permissions import Permissions
 
     # 1. SysAdmin Override: Full access to all resources/actions of all clubs
-    # Retrieval from user_clubs as per requirement
+    # Checks both global roles and club-specific roles
+    if hasattr(current_user, 'has_role') and current_user.has_role(Permissions.ADMIN):
+        return True
+        
     sys_role = AuthRole.get_by_name(Permissions.ADMIN)
     if sys_role:
         # If user has SysAdmin role in ANY club entry in user_clubs, they are a SysAdmin

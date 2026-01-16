@@ -34,6 +34,9 @@ def _create_or_update_user(user=None, **kwargs):
     user.Username = kwargs.get('username')
     user.Email = kwargs.get('email')
     
+    # Capture old contact ID for syncing
+    old_contact_id = user.Contact_ID
+    
     # Handle multiple roles
     role_ids = kwargs.get('role_ids', [])
     role_name = kwargs.get('role') # Legacy single-role support
@@ -112,6 +115,11 @@ def _create_or_update_user(user=None, **kwargs):
     else:
         contact_id = kwargs.get('contact_id', 0)
         user.Contact_ID = contact_id if contact_id != 0 else None
+
+    # Sync UserClub.contact_id if Contact_ID changed
+    if user.id and user.Contact_ID and user.Contact_ID != old_contact_id:
+        from .models import UserClub
+        UserClub.query.filter_by(user_id=user.id).update({UserClub.contact_id: user.Contact_ID})
 
 
 @users_bp.route('/users')

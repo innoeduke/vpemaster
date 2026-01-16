@@ -101,7 +101,6 @@
 
 /* --- Default state for cancel buttons --- */
 #cancel-sessions-btn,
-#cancel-level-roles-btn,
 #cancel-presentations-btn {
   display: none;
 }

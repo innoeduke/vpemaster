@@ -98,16 +98,14 @@
         <td class="assign-cell">
             {% if status in ['not started', 'unpublished'] or is_admin_view %}
             {% if is_admin_view %}
-            <select class="admin-assign-select {% if not role.owner_id %}unassigned-role{% endif %}"
-                data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
-                <option value="0">--- Select ---</option>
-                {% for contact in contacts %}
-                {% if not role.is_member_only or (role.is_member_only and contact.Type == 'Member') %}
-                <option value="{{ contact.id }}" {% if role.owner_id==contact.id %}selected{% endif %}>{{ contact.Name
-                    }}</option>
-                {% endif %}
-                {% endfor %}
-            </select>
+            <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}" data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
+                <input type="text" class="admin-assign-input {% if not role.owner_id %}unassigned-role{% endif %}"
+                    placeholder="--- Select ---"
+                    value="{% if role.owner_id %}{{ role.owner_name }}{% endif %}"
+                    data-current-id="{{ role.owner_id or 0 }}"
+                    autocomplete="off">
+                <div class="autocomplete-results"></div>
+            </div>
             {% else %}
             {% if role.owner_id %}
             {% if role.owner_id == current_user_contact_id %}
@@ -217,6 +215,16 @@
     // Pass Python data to global JS variables used by booking.js
     var isAdminView = {{ is_admin_view| tojson }};
     var selectedMeetingNumber = {{ selected_meeting_number| tojson }};
+    var allContacts = [
+        {% for contact in contacts %}
+        {
+            id: {{ contact.id }},
+            name: {{ contact.Name | tojson }},
+            type: {{ contact.Type | tojson }},
+            avatar_url: {{ (url_for('static', filename=contact.Avatar_URL) if contact.Avatar_URL else None) | tojson }}
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ];
 </script>
 <script src="{{ url_for('static', filename='js/booking.js') }}"></script>
 {% endblock %}

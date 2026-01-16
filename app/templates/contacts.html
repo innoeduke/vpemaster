@@ -150,14 +150,56 @@
   </table>
 </div>
 
+<!-- Pagination Controls -->
+<div class="pagination-container" id="paginationContainer">
+  <div class="pagination-info">
+    <span id="paginationInfo">Showing 0 - 0 of 0 contacts</span>
+  </div>
+  
+  <div class="pagination-controls">
+    <button id="firstPageBtn" class="pagination-btn" title="First Page">
+      <i class="fas fa-angle-double-left"></i>
+    </button>
+    <button id="prevPageBtn" class="pagination-btn" title="Previous Page">
+      <i class="fas fa-angle-left"></i>
+    </button>
+    
+    <span class="page-indicator">
+      Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+    </span>
+    
+    <button id="nextPageBtn" class="pagination-btn" title="Next Page">
+      <i class="fas fa-angle-right"></i>
+    </button>
+    <button id="lastPageBtn" class="pagination-btn" title="Last Page">
+      <i class="fas fa-angle-double-right"></i>
+    </button>
+  </div>
+  
+  <div class="pagination-size">
+    <label for="pageSizeSelect">Show:</label>
+    <select id="pageSizeSelect" class="page-size-select">
+      <option value="10">10</option>
+      <option value="25" selected>25</option>
+      <option value="50">50</option>
+      <option value="100">100</option>
+    </select>
+    <span>per page</span>
+  </div>
+</div>
+
 {% include '_contact_modal.html' %}
 <script>
   var MENTOR_CANDIDATES = [
     {% for m in mentor_candidates %}
-  { id: { { m.id } }, name: { { m.Name | tojson } } },
+  { id: {{ m.id }}, name: {{ m.Name | tojson }} },
   {% endfor %}
   ];
   console.log("MENTOR_CANDIDATES loaded:", MENTOR_CANDIDATES);
+  
+  // Global variables for contacts.js
+  var canViewAllLogs = {{ 'true' if can_view_all_logs else 'false' }};
+  var hasEditPermission = {{ 'true' if is_authorized(Permissions.CONTACT_BOOK_EDIT) else 'false' }};
 </script>
 <script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
 

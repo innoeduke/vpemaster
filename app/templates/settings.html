@@ -32,9 +32,7 @@
     </button>
     <button class="nav-item" onclick="openTab(event, 'user-settings')">
       Users</button>
-    <button class="nav-item" onclick="openTab(event, 'level-roles')">
-      Level Roles
-    </button>
+
     <button class="nav-item" onclick="openTab(event, 'achievements')">
       Achievements
     </button>
@@ -231,41 +229,29 @@
         {% endfor %}
       </tbody>
     </table>
-  </div>
-  <div id="level-roles" class="tab-content">
-    <div class="settings-header">
-      <h2>Level Roles</h2>
-      <div class="button-group">
-        <button id="add-level-role-btn" class="btn btn-success">Add New</button>
-        <button id="edit-level-roles-btn" class="btn btn-primary">Edit</button>
-        <button id="cancel-level-roles-btn" class="btn btn-danger" style="display: none">
-          Cancel
-        </button>
+    <div class="pagination-container" id="user-pagination">
+      <div class="pagination-info" id="user-pagination-info">Showing 0 - 0 of 0 users</div>
+      <div class="pagination-controls">
+        <button class="pagination-btn first-page-btn" title="First Page"><i class="fas fa-angle-double-left"></i></button>
+        <button class="pagination-btn prev-page-btn" title="Previous Page"><i class="fas fa-angle-left"></i></button>
+        <span class="page-indicator">
+          Page <span class="current-page-display">1</span> of <span class="total-pages-display">1</span>
+        </span>
+        <button class="pagination-btn next-page-btn" title="Next Page"><i class="fas fa-angle-right"></i></button>
+        <button class="pagination-btn last-page-btn" title="Last Page"><i class="fas fa-angle-double-right"></i></button>
+      </div>
+      <div class="pagination-size">
+        <label>Show:</label>
+        <select class="page-size-select">
+          <option value="10">10</option>
+          <option value="25" selected>25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
       </div>
     </div>
-    <table id="level-roles-table">
-      <thead>
-        <tr>
-          <th class="sortable" data-column-index="0">ID</th>
-          <th class="sortable" data-column-index="1">Level</th>
-          <th class="sortable" data-column-index="2">Role</th>
-          <th class="sortable" data-column-index="3">Type</th>
-          <th class="sortable" data-column-index="4">Count Required</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for lr in level_roles %}
-        <tr data-id="{{ lr.id }}">
-          <td>{{ lr.id }}</td>
-          <td data-field="level">{{ lr.level }}</td>
-          <td data-field="role">{{ lr.role }}</td>
-          <td data-field="type">{{ lr.type }}</td>
-          <td data-field="count_required">{{ lr.count_required }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
   </div>
+
 
   <div id="achievements" class="tab-content">
     <div class="settings-header">
@@ -331,6 +317,27 @@
           {% endfor %}
         </tbody>
       </table>
+    </div>
+    <div class="pagination-container" id="achievement-pagination">
+      <div class="pagination-info" id="achievement-pagination-info">Showing 0 - 0 of 0 achievements</div>
+      <div class="pagination-controls">
+        <button class="pagination-btn first-page-btn" title="First Page"><i class="fas fa-angle-double-left"></i></button>
+        <button class="pagination-btn prev-page-btn" title="Previous Page"><i class="fas fa-angle-left"></i></button>
+        <span class="page-indicator">
+          Page <span class="current-page-display">1</span> of <span class="total-pages-display">1</span>
+        </span>
+        <button class="pagination-btn next-page-btn" title="Next Page"><i class="fas fa-angle-right"></i></button>
+        <button class="pagination-btn last-page-btn" title="Last Page"><i class="fas fa-angle-double-right"></i></button>
+      </div>
+      <div class="pagination-size">
+        <label>Show:</label>
+        <select class="page-size-select">
+          <option value="10">10</option>
+          <option value="25" selected>25</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </div>
     </div>
   </div>
 

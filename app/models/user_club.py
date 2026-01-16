@@ -9,6 +9,7 @@ class UserClub(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('Users.id', ondelete='CASCADE'), nullable=False)
+    contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id', ondelete='CASCADE'), nullable=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id', ondelete='CASCADE'), nullable=False)
     club_role_id = db.Column(db.Integer, nullable=True)  # Reference to club officer role (e.g., from ExComm)
     current_path_id = db.Column(db.Integer, db.ForeignKey('pathways.id'), nullable=True)
@@ -21,11 +22,24 @@ class UserClub(db.Model):
     
     # Relationships
     user = db.relationship('User', backref='club_memberships')
+    contact = db.relationship('Contact', foreign_keys=[contact_id], backref='user_club_records')
     club = db.relationship('Club', backref='user_memberships')
     current_path = db.relationship('Pathway', foreign_keys=[current_path_id])
     mentor = db.relationship('Contact', foreign_keys=[mentor_id])
     next_project = db.relationship('Project', foreign_keys=[next_project_id])
     
+    def __init__(self, **kwargs):
+        super(UserClub, self).__init__(**kwargs)
+        if not self.contact_id:
+            # Try to get from user object first
+            if hasattr(self, 'user') and self.user and hasattr(self.user, 'Contact_ID'):
+                self.contact_id = self.user.Contact_ID
+            elif self.user_id:
+                from .user import User
+                user = db.session.get(User, self.user_id)
+                if user and user.Contact_ID:
+                    self.contact_id = user.Contact_ID
+
     # Constraints and indexes
     __table_args__ = (
         db.UniqueConstraint('user_id', 'club_id', name='uq_user_club'),
@@ -34,13 +48,14 @@ class UserClub(db.Model):
     )
     
     def __repr__(self):
-        return f'<UserClub user_id={self.user_id} club_id={self.club_id} is_home={self.is_home}>'
+        return f'<UserClub user_id={self.user_id} contact_id={self.contact_id} club_id={self.club_id} is_home={self.is_home}>'
     
     def to_dict(self):
         """Convert to dictionary for JSON serialization."""
         return {
             'id': self.id,
             'user_id': self.user_id,
+            'contact_id': self.contact_id,
             'club_id': self.club_id,
             'club_role_id': self.club_role_id,
             'current_path_id': self.current_path_id,

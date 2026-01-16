@@ -5,7 +5,7 @@ from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
-from .models import SessionType, User, LevelRole, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, UserRoleAssociation, PermissionAudit, ContactClub, Club, ExComm
+from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, UserRoleAssociation, PermissionAudit, ContactClub, Club, ExComm
 import json
 from . import db
 import os
@@ -27,8 +27,7 @@ def settings():
         return redirect(url_for('agenda_bp.agenda'))
 
     session_types = SessionType.query.order_by(SessionType.id.asc()).all()
-    level_roles = LevelRole.query.order_by(
-        LevelRole.level.asc(), LevelRole.type.desc()).all()
+
     all_users = User.query.order_by(User.Username.asc()).all()
     roles_query = MeetingRole.query.order_by(MeetingRole.name.asc()).all()
     roles = [{'id': role.id, 'name': role.name} for role in roles_query]
@@ -37,7 +36,7 @@ def settings():
     achievements = Achievement.query.join(Contact).order_by(Achievement.issue_date.desc()).all()
 
     return render_template('settings.html', session_types=session_types, all_users=all_users, 
-                          level_roles=level_roles, roles=roles, roles_query=roles_query, 
+                          roles=roles, roles_query=roles_query, 
                           achievements=achievements)
 
 
@@ -452,54 +451,7 @@ def import_roles():
     return redirect(url_for('settings_bp.settings', _anchor='agenda-settings'))
 
 
-@settings_bp.route('/settings/level-roles/add', methods=['POST'])
-@login_required
-def add_level_role():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
-        return redirect(url_for('agenda_bp.agenda'))
 
-    try:
-        new_role = LevelRole(
-            level=int(request.form.get('level')),
-            role=request.form.get('role'),
-            type=request.form.get('type'),
-            count_required=int(request.form.get('count_required')) if request.form.get(
-                'count_required') else 0
-        )
-        db.session.add(new_role)
-        db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-
-    return redirect(url_for('settings_bp.settings', default_tab='level-roles'))
-
-
-@settings_bp.route('/settings/level-roles/update', methods=['POST'])
-@login_required
-def update_level_roles():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
-        return jsonify(success=False, message="Permission denied"), 403
-
-    data = request.get_json()
-    if not data:
-        return jsonify(success=False, message="No data received"), 400
-
-    try:
-        for item in data:
-            level_role = db.session.get(LevelRole, item['id'])
-            if level_role:
-                level_role.level = int(
-                    item.get('level')) if item.get('level') else None
-                level_role.role = item.get('role')
-                level_role.type = item.get('type')
-                level_role.count_required = int(
-                    item.get('count_required')) if item.get('count_required') else 0
-
-        db.session.commit()
-        return jsonify(success=True, message="Level roles updated successfully.")
-    except Exception as e:
-        db.session.rollback()
-        return jsonify(success=False, message=str(e)), 500
 
 
 

@@ -7,17 +7,92 @@
 
 document.addEventListener("DOMContentLoaded", function () {
   if (isAdminView) {
-    document.querySelectorAll(".admin-assign-select").forEach((select) => {
-      select.addEventListener("focus", function () {
-        // Store the current value to support reverting on error
+    document.querySelectorAll(".autocomplete-container").forEach((container) => {
+      const input = container.querySelector(".admin-assign-input");
+      const results = container.querySelector(".autocomplete-results");
+      const sessionId = container.dataset.sessionId;
+      const isMemberOnly = container.dataset.isMemberOnly === "true";
+
+      input.addEventListener("focus", function () {
         this.dataset.previousValue = this.value;
+        this.dataset.previousId = this.dataset.currentId;
+        showResults("", results, sessionId, input, isMemberOnly);
       });
-      select.addEventListener("change", function () {
-        const sessionId = this.dataset.sessionId;
-        const contactId = this.value;
-        assignRole(sessionId, contactId, this);
+
+      input.addEventListener("input", function () {
+        showResults(this.value, results, sessionId, input, isMemberOnly);
+      });
+
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          results.classList.remove("active");
+        }
       });
     });
+
+    // Close results when clicking outside
+    document.addEventListener("click", function (e) {
+      if (!e.target.closest(".autocomplete-container")) {
+        document.querySelectorAll(".autocomplete-results").forEach((res) => {
+          res.classList.remove("active");
+        });
+      }
+    });
+
+    function showResults(query, resultsContainer, sessionId, input, isMemberOnly) {
+      const filteredContacts = allContacts.filter((c) => {
+        const matchesQuery = c.name.toLowerCase().includes(query.toLowerCase());
+        const matchesType = !isMemberOnly || c.type === "Member";
+        return matchesQuery && matchesType;
+      }).slice(0, 5);
+
+      resultsContainer.innerHTML = "";
+
+      // Add "Unassign" option if query is empty or matches "none" or "unassign"
+      if (query === "" || "unassign".includes(query.toLowerCase()) || "none".includes(query.toLowerCase())) {
+        const unassignItem = document.createElement("div");
+        unassignItem.className = "autocomplete-item unassign-item";
+        unassignItem.innerHTML = `<i class="fas fa-undo"></i> --- Unassign ---`;
+        unassignItem.addEventListener("click", () => {
+          selectContact(sessionId, "0", "", input, resultsContainer);
+        });
+        resultsContainer.appendChild(unassignItem);
+      }
+
+      filteredContacts.forEach((contact) => {
+        const item = document.createElement("div");
+        item.className = "autocomplete-item";
+        item.innerHTML = `
+          <div class="item-avatar">
+              ${contact.avatar_url ? `<img src="${contact.avatar_url}" alt="">` : `<i class="fas fa-user-circle"></i>`}
+          </div>
+          <div class="item-name">${contact.name}</div>
+          <div class="item-type ${contact.type.toLowerCase()}">${contact.type}</div>
+        `;
+        item.addEventListener("click", () => {
+          selectContact(sessionId, contact.id, contact.name, input, resultsContainer);
+        });
+        resultsContainer.appendChild(item);
+      });
+
+      if (resultsContainer.children.length > 0) {
+        resultsContainer.classList.add("active");
+      } else {
+        resultsContainer.classList.remove("active");
+      }
+    }
+
+    function selectContact(sessionId, contactId, contactName, input, resultsContainer) {
+      input.value = contactName;
+      input.dataset.currentId = contactId;
+      resultsContainer.classList.remove("active");
+      if (contactId === "0") {
+        input.classList.add("unassigned-role");
+      } else {
+        input.classList.remove("unassigned-role");
+      }
+      assignRole(sessionId, contactId, input);
+    }
   }
 
   // Accordion functionality
@@ -82,7 +157,8 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-}); // End of DOMContentLoaded listener
+});
+ // End of DOMContentLoaded listener
 
 
 function bookOrCancelRole(sessionId, action) {
@@ -128,14 +204,11 @@ function assignRole(sessionId, contactId, selectElement) {
               `tr[data-session-id="${sessionId}"]`
             );
             if (row) {
-              const selectElement = row.querySelector(".admin-assign-select");
-              if (selectElement) {
-                selectElement.value = "0";
-                const previouslySelected =
-                  selectElement.querySelector("option[selected]");
-                if (previouslySelected) {
-                  previouslySelected.removeAttribute("selected");
-                }
+              const inputElement = row.querySelector(".admin-assign-input");
+              if (inputElement) {
+                inputElement.value = "";
+                inputElement.dataset.currentId = "0";
+                inputElement.classList.add("unassigned-role");
               }
 
               const roleActions = row.querySelector(".role-cell-actions");
@@ -150,14 +223,15 @@ function assignRole(sessionId, contactId, selectElement) {
       } else {
         showFlashMessage(data.message, "error", selectElement); // Display message inline if possible
 
-        // Revert the dropdown if provided
+        // Revert the input if provided
         if (selectElement && selectElement.dataset.previousValue !== undefined) {
           selectElement.value = selectElement.dataset.previousValue;
-        } else if (selectElement) {
-          // Fallback: try to match DOM state or reload? 
-          // If we don't have previousValue, we can't easily revert accurately without a fetch.
-          // But we added the focus listener so it should exist.
-          selectElement.value = selectElement.dataset.previousValue || "0";
+          selectElement.dataset.currentId = selectElement.dataset.previousId;
+          if (selectElement.dataset.currentId === "0") {
+              selectElement.classList.add("unassigned-role");
+          } else {
+              selectElement.classList.remove("unassigned-role");
+          }
         }
       }
     });
@@ -168,17 +242,16 @@ function updateSessionRow(sessionData) {
   const row = document.querySelector(`tr[data-session-id="${sessionData.session_id}"]`);
   if (!row) return;
 
-  // Update Dropdown (if present - Admin Book / Assign View)
-  const selectElement = row.querySelector(".admin-assign-select");
-  if (selectElement) {
-    selectElement.value = sessionData.owner_id !== null ? sessionData.owner_id : "0";
-    Array.from(selectElement.options).forEach(option => {
-      if (option.value == selectElement.value) {
-        option.setAttribute('selected', 'selected');
-      } else {
-        option.removeAttribute('selected');
-      }
-    });
+  // Update Input (if present - Admin Book / Assign View)
+  const inputElement = row.querySelector(".admin-assign-input");
+  if (inputElement) {
+    inputElement.value = sessionData.owner_name || '';
+    inputElement.dataset.currentId = sessionData.owner_id !== null ? sessionData.owner_id : "0";
+    if (sessionData.owner_id && sessionData.owner_id != 0) {
+      inputElement.classList.remove('unassigned-role');
+    } else {
+      inputElement.classList.add('unassigned-role');
+    }
   }
 
   // Update Text Display (if present)
