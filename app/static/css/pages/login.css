@@ -27,7 +27,8 @@ h6 {
     box-sizing: border-box;
 }
 
-.login-form input {
+.login-form input,
+.login-form select {
     width: 100%;
     padding: 10px;
     margin: 8px 0;

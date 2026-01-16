@@ -23,9 +23,19 @@ class TestMeetingDeletion(unittest.TestCase):
         self.app_context.push()
         db.create_all()
         
+        # Create Club (required for Meeting)
+        from app.models import Club
+        self.club = Club(
+            club_no='000000',
+            club_name='Test Club',
+            district='Test District'
+        )
+        db.session.add(self.club)
+        db.session.commit()
+        
         # Setup Data
         self.meeting_num = 8888
-        self.meeting = Meeting(Meeting_Number=self.meeting_num, status='finished')
+        self.meeting = Meeting(Meeting_Number=self.meeting_num, status='finished', club_id=self.club.id)
         db.session.add(self.meeting)
         
         self.contact = Contact(Name="Delete Test User")

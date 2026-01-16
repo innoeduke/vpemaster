@@ -24,6 +24,39 @@ def upgrade():
     # 1. Rename table 'roles' -> 'meeting_roles'
     if 'roles' in tables and 'meeting_roles' not in tables:
         op.rename_table('roles', 'meeting_roles')
+    elif 'roles' in tables and 'meeting_roles' in tables:
+        # Both tables exist (from obsolete backup) - drop the old 'roles' table
+        # First, ensure foreign keys point to 'meeting_roles', then drop 'roles'
+        
+        # Update Session_Types FK if it points to 'roles'
+        if 'Session_Types' in tables:
+            fks_to_roles = get_fk_names('Session_Types', 'roles', conn)
+            for fk_name in fks_to_roles:
+                with op.batch_alter_table('Session_Types', schema=None) as batch_op:
+                    batch_op.drop_constraint(fk_name, type_='foreignkey')
+            
+            fks_to_meeting_roles = get_fk_names('Session_Types', 'meeting_roles', conn)
+            if not fks_to_meeting_roles:
+                with op.batch_alter_table('Session_Types', schema=None) as batch_op:
+                    batch_op.create_foreign_key(None, 'meeting_roles', ['role_id'], ['id'])
+        
+        # Update roster_roles FK if it points to 'roles'
+        if 'roster_roles' in tables:
+            fks_to_roles = get_fk_names('roster_roles', 'roles', conn)
+            for fk_name in fks_to_roles:
+                with op.batch_alter_table('roster_roles', schema=None) as batch_op:
+                    batch_op.drop_constraint(fk_name, type_='foreignkey')
+            
+            fks_to_meeting_roles = get_fk_names('roster_roles', 'meeting_roles', conn)
+            if not fks_to_meeting_roles:
+                with op.batch_alter_table('roster_roles', schema=None) as batch_op:
+                    batch_op.create_foreign_key(None, 'meeting_roles', ['role_id'], ['id'])
+        
+        # Now safe to drop the old 'roles' table
+        op.drop_table('roles')
+        
+        # Skip the FK update logic below since we already handled it
+        return
     
     # Refresh tables list after potential rename
     inspector = inspect(conn)

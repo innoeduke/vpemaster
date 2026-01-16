@@ -42,6 +42,15 @@ class MeetingDeletionTestCase(unittest.TestCase):
         
         self.contact = Contact(Name="Test User")
         db.session.add(self.contact)
+        
+        # Create Club (required for Meeting)
+        from app.models import Club
+        self.club = Club(
+            club_no='000000',
+            club_name='Test Club',
+            district='Test District'
+        )
+        db.session.add(self.club)
         db.session.commit()
 
     def create_meeting(self, meeting_number=100):
@@ -49,7 +58,8 @@ class MeetingDeletionTestCase(unittest.TestCase):
             Meeting_Number=meeting_number,
             Meeting_Date=date.today(),
             Start_Time=time(19, 0),
-            status='finished'
+            status='finished',
+            club_id=self.club.id
         )
         db.session.add(meeting)
         db.session.commit()

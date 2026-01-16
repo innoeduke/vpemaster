@@ -27,7 +27,7 @@
     font-size: 0.9em;
     color: #555;
     margin: 0;
-    line-height: 1;
+    line-height: 1.4;
     text-align: center;
 }
 
@@ -667,17 +667,23 @@
 /* Footnote styling */
 .footnote {
     font-size: 0.8em;
-    color: #666;
-    margin-top: 20px;
-    padding-top: 10px;
+    color: #888;
+    margin-top: 30px;
+    padding: 15px 0;
     border-top: 1px solid #eee;
-    font-style: italic;
+    text-align: center;
+    font-style: normal;
+}
+
+.footnote p {
+    margin: 5px 0;
 }
 
 .footnote ul {
     font-size: 0.9em;
     padding-left: 20px;
     margin: 5px 0;
+    text-align: left;
 }
 
 .footnote li {
@@ -692,6 +698,54 @@
 .footnote a:hover {
     color: #772432;
     text-decoration: none;
+}
+
+.footnote .footnote-website {
+    font-family: 'Montserrat', sans-serif;
+    text-decoration: none !important;
+    color: #495057;
+    font-weight: 600;
+}
+
+.footnote .footnote-website:hover {
+    color: #004165;
+}
+
+/* --- Dismissible Info Message --- */
+.dismissible-info {
+    position: relative;
+    background-color: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 8px;
+    padding: 15px 40px 15px 20px;
+    margin: 20px 0;
+    font-size: 0.85em;
+    color: #5d4037;
+    line-height: 1.5;
+}
+
+.dismissible-info .close-info {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #8d6e63;
+    transition: color 0.2s;
+}
+
+.dismissible-info .close-info:hover {
+    color: #3e2723;
+}
+
+.dismissible-info p {
+    margin: 0 0 10px 0;
+    font-weight: 600;
+}
+
+.dismissible-info ul {
+    margin: 0;
+    padding-left: 20px;
 }
 
 .meeting-status-display {

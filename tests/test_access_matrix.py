@@ -20,7 +20,7 @@ class TestConfig(Config):
 
 class AccessMatrixTestCase(unittest.TestCase):
     # Class-level constants to avoid redundancy
-    ALL_ROLES = ['guest', 'user', 'staff', 'operator', 'admin']
+    ALL_ROLES = ['guest', 'user', 'staff', 'clubadmin', 'sysadmin']
     ALL_STATUSES = ['unpublished', 'not started', 'running', 'finished']
     ADMIN_RESOURCES = ['/settings', '/users']
     PUBLIC_RESOURCES = ['/pathway_library', '/lucky_draw/', '/roster/', '/contacts', '/speech_logs']
@@ -36,7 +36,7 @@ class AccessMatrixTestCase(unittest.TestCase):
         
         # Cache role permissions for test logic
         self.role_permissions_map = {}
-        for role_name in ['Admin', 'Operator', 'Staff', 'User']:
+        for role_name in ['SysAdmin', 'ClubAdmin', 'Staff', 'User']:
             u = User.query.filter_by(Username=role_name.lower()).first()
             self.role_permissions_map[role_name.lower()] = u.get_permissions()
             
@@ -54,14 +54,14 @@ class AccessMatrixTestCase(unittest.TestCase):
         # Create Roles
         self.roles = {}
         # Added Guest Role (Level 0)
-        for name, level in [('Admin', 10), ('Operator', 5), ('Staff', 2), ('User', 1), ('Guest', 0)]:
+        for name, level in [('SysAdmin', 10), ('ClubAdmin', 5), ('Staff', 2), ('User', 1), ('Guest', 0)]:
             role = AuthRole(name=name, description=f"{name} Role", level=level)
             db.session.add(role)
             self.roles[name] = role
         
         # Create Users
         self.users = {}
-        for role_name in ['Admin', 'Operator', 'Staff', 'User']:
+        for role_name in ['SysAdmin', 'ClubAdmin', 'Staff', 'User']:
             contact = Contact(Name=f"{role_name} User", Type="Member")
             db.session.add(contact)
             db.session.flush()
@@ -78,7 +78,7 @@ class AccessMatrixTestCase(unittest.TestCase):
 
         # Define Permissions
         all_perms_map = {
-            'Admin': [
+            'SysAdmin': [
                 Permissions.AGENDA_VIEW, Permissions.AGENDA_EDIT,
                 Permissions.BOOKING_BOOK_OWN, Permissions.BOOKING_ASSIGN_ALL,
                 Permissions.SETTINGS_VIEW_ALL, Permissions.ROSTER_VIEW, Permissions.ROSTER_EDIT,
@@ -87,7 +87,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                 Permissions.VOTING_TRACK_PROGRESS, Permissions.LUCKY_DRAW_VIEW, Permissions.LUCKY_DRAW_EDIT,
                 Permissions.PATHWAY_LIB_EDIT, Permissions.PATHWAY_LIB_VIEW
             ],
-            'Operator': [
+            'ClubAdmin': [
                 Permissions.AGENDA_VIEW, Permissions.BOOKING_ASSIGN_ALL, 
                 Permissions.SETTINGS_VIEW_ALL, Permissions.ROSTER_VIEW, Permissions.ROSTER_EDIT,
                 Permissions.CONTACT_BOOK_VIEW, Permissions.SPEECH_LOGS_VIEW_ALL,
@@ -128,6 +128,16 @@ class AccessMatrixTestCase(unittest.TestCase):
             for p_name in p_names:
                 role.permissions.append(perm_objs[p_name])
 
+        # Create Club (required for Meeting)
+        from app.models import Club
+        self.club = Club(
+            club_no='000000',
+            club_name='Test Club',
+            district='Test District'
+        )
+        db.session.add(self.club)
+        db.session.commit()
+
         # Create Meetings
         today = date.today()
         self.meetings = {}
@@ -137,7 +147,8 @@ class AccessMatrixTestCase(unittest.TestCase):
             meeting = Meeting(
                 Meeting_Number=m_num, 
                 Meeting_Date=today, 
-                status=status
+                status=status,
+                club_id=self.club.id
             )
             db.session.add(meeting)
             self.meetings[status] = meeting
@@ -155,7 +166,7 @@ class AccessMatrixTestCase(unittest.TestCase):
 
     def test_role_definitions(self):
         """Verify that roles have the expected permissions."""
-        admin_perms = self.role_permissions_map['admin']
+        admin_perms = self.role_permissions_map['sysadmin']
         self.assertIn(Permissions.LUCKY_DRAW_VIEW, admin_perms)
         self.assertIn(Permissions.ROSTER_EDIT, admin_perms)
         self.assertIn(Permissions.VOTING_TRACK_PROGRESS, admin_perms)

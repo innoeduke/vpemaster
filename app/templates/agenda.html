@@ -12,7 +12,14 @@
         </div>
 
         <div class="agenda-header-info">
-            <p class="club-info">Club No.868941 | Area K1 | Division K | Shanghai Leadership Toastmasters Club</p>
+            <p class="club-info">
+                {% if club %}
+                Club No.{{ club.club_no }} | Area {{ club.area or '?' }} | Division {{ club.division or '?' }} | {{
+                club.club_name }}
+                {% else %}
+                Club No.868941 | Area K1 | Division K | Shanghai Leadership Toastmasters Club
+                {% endif %}
+            </p>
             <h1 class="meeting-title view-mode">
                 {% if selected_meeting.type %}
                 <span class="meeting-type-badge">{{ selected_meeting.type }}</span>
@@ -120,9 +127,7 @@
     </div>
     {% endif %}
 
-    <div class='table-container' id="table-container" {# Removed data-session-types, data-contacts, data-projects as
-        they are now fetched via API #} data-project-speakers='{{ project_speakers|tojson|safe }}'>
-
+    <div class='table-container' id="table-container" data-project-speakers='{{ project_speakers|tojson|safe }}'>
         <table id="logs-table">
             <thead>
                 <tr class="non-edit-mode-header">
@@ -254,17 +259,32 @@
                 {% endfor %}
             </tbody>
         </table>
-        <div class="footnote">
-            <a href="https://www.toastmasters.org/education/education-programs-faq#faqTop">Pathways award
-                credentials</a> are written as follows:
-            <ul>
-                <li>Only the most recently achieved award will show</li>
-                <li>Any Pathways award credential overwrites a traditional education program award credential (both
-                    Communication and Leadership)</li>
-                <li>DTM overwrites all education award credentials, whether traditional program or Pathways</li>
-            </ul>
-        </div>
     </div>
+
+    {# Pathways Info (Dismissible) - Moved down here #}
+    <div id="pathways-info-box" class="dismissible-info" style="display: none;">
+        <span class="close-info" onclick="dismissAgendaMessage('pathways-info-box')">&times;</span>
+        <p><a href="https://www.toastmasters.org/education/education-programs-faq#faqTop" target="_blank">Pathways
+                award credentials</a> are written as follows:</p>
+        <ul>
+            <li>Only the most recently achieved award will show</li>
+            <li>Any Pathways award credential overwrites a traditional education program award credential</li>
+            <li>DTM overwrites all education award credentials</li>
+        </ul>
+    </div>
+
+    {# Real Footnote: Club Address & Website #}
+    {% if club %}
+    <div class="footnote">
+        {% if club.club_address %}
+        <p style="white-space: pre-line;">{{ club.club_address }}</p>
+        {% endif %}
+        {% if club.website %}
+        <p><a href="{{ 'https://' ~ club.website if '://' not in club.website else club.website }}" target="_blank"
+                class="footnote-website">{{ club.website }}</a></p>
+        {% endif %}
+    </div>
+    {% endif %}
 
     <div id="createAgendaModal" class="modal">
         <div class="modal-content">
@@ -283,7 +303,8 @@
                     </tr>
                     <tr>
                         <td><label for="meeting_date">Meeting Date:</label></td>
-                        <td><input type="date" id="meeting_date" name="meeting_date" autocomplete="off" required></td>
+                        <td><input type="date" id="meeting_date" name="meeting_date" autocomplete="off" required>
+                        </td>
                     </tr>
                     <tr>
                         <td><label for="start_time">Start Time:</label></td>
@@ -334,5 +355,21 @@
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
+    <script>
+        function dismissAgendaMessage(elementId) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.style.display = 'none';
+                localStorage.setItem('dismissed_' + elementId, 'true');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const pathwaysBox = document.getElementById('pathways-info-box');
+            if (pathwaysBox && !localStorage.getItem('dismissed_pathways-info-box')) {
+                pathwaysBox.style.display = 'block';
+            }
+        });
+    </script>
 </div> {# End of #agenda-content wrapper #}
 {% endblock %}

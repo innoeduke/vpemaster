@@ -2,9 +2,10 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from . import db
-from .models import Contact, SessionLog, Pathway
+from .models import Contact, SessionLog, Pathway, ContactClub
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
+from .club_context import get_current_club_id
 from flask_login import current_user
 
 from datetime import date
@@ -16,11 +17,13 @@ contacts_bp = Blueprint('contacts_bp', __name__)
 @login_required
 def search_contacts_by_name():
     search_term = request.args.get('q', '')
+    club_id = get_current_club_id()
+    query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id).options(db.joinedload(Contact.user))
+    
     if search_term:
-        contacts = Contact.query.options(db.joinedload(Contact.user)).filter(
-            Contact.Name.ilike(f'%{search_term}%')).all()
+        contacts = query.filter(Contact.Name.ilike(f'%{search_term}%')).all()
     else:
-        contacts = Contact.query.options(db.joinedload(Contact.user)).all()
+        contacts = query.all()
 
     contacts_data = [{
         "id": c.id,
@@ -40,7 +43,10 @@ def show_contacts():
         return redirect(url_for('agenda_bp.agenda'))
 
     from sqlalchemy.orm import joinedload
-    contacts = Contact.query.options(joinedload(Contact.mentor), joinedload(Contact.user)).order_by(Contact.Name.asc()).all()
+    club_id = get_current_club_id()
+    contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
+        .options(joinedload(Contact.mentor), joinedload(Contact.user))\
+        .order_by(Contact.Name.asc()).all()
     
     # 1. Attendance (Roster)
     # Count how many times each contact appears in Roster
@@ -135,7 +141,9 @@ def show_contacts():
             pathways[ptype] = []
         pathways[ptype].append(p.name)
 
-    mentor_candidates = Contact.query.filter(
+    club_id = get_current_club_id()
+    mentor_candidates = Contact.query.join(ContactClub).filter(
+        ContactClub.club_id == club_id,
         Contact.Type.in_(['Member', 'Past Member'])
     ).order_by(Contact.Name.asc()).all()
 
@@ -267,6 +275,17 @@ def contact_form(contact_id=None):
                     new_contact.Avatar_URL = avatar_url
                     db.session.commit()
 
+            # Associate with current club
+            current_cid = get_current_club_id()
+            if current_cid:
+                db.session.add(ContactClub(
+                    contact_id=new_contact.id,
+                    club_id=current_cid,
+                    membership_type=contact_type,
+                    is_primary=True
+                ))
+                db.session.commit()
+
             # Sync metadata 
             from .utils import sync_contact_metadata
             sync_contact_metadata(new_contact.id)
@@ -342,6 +361,17 @@ def create_contact_api():
 
         db.session.add(new_contact)
         db.session.commit()
+
+        # Associate with current club
+        current_cid = get_current_club_id()
+        if current_cid:
+            db.session.add(ContactClub(
+                contact_id=new_contact.id,
+                club_id=current_cid,
+                membership_type=data['type'],
+                is_primary=True
+            ))
+            db.session.commit()
 
         return jsonify({
             'id': new_contact.id,

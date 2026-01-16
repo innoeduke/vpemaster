@@ -2,11 +2,12 @@
 
 from flask import current_app
 # Ensure Project model is imported if needed elsewhere
-from .models import Project, Meeting, SessionLog, Pathway, PathwayProject, Achievement, Contact
+from .models import Project, Meeting, SessionLog, Pathway, PathwayProject, Achievement, Contact, Club
 from .auth.permissions import Permissions
+from .club_context import get_current_club_id
 from . import db
 import re
-import configparser
+
 import os
 import hashlib
 from sqlalchemy import distinct
@@ -454,59 +455,7 @@ def get_unique_identifier(request):
     return hashlib.sha256(combined_string.encode('utf-8')).hexdigest()
 
 
-def load_setting(section, setting_key, default=None):
-    """
-    Loads a specific setting from a given section of settings.ini.
-    """
-    try:
-        config = configparser.ConfigParser()
-        # current_app.root_path points to the 'app' folder, so '../' goes to the project root
-        settings_path = os.path.join(
-            current_app.root_path, '..', 'settings.ini')
 
-        if not os.path.exists(settings_path):
-            print(f"Warning: settings.ini file not found at {settings_path}")
-            return default
-
-        config.read(settings_path)
-
-        # .get() will return the value or None if not found, avoiding a crash
-        return config.get(section, setting_key, fallback=default)
-
-    except (configparser.NoSectionError, configparser.Error) as e:
-        print(
-            f"Error reading settings.ini (Section: {section}, Key: {setting_key}): {e}")
-        return default
-
-
-def load_all_settings():
-    """
-    Loads all sections and settings from settings.ini and returns them as a nested dict.
-    """
-    all_settings = {}
-    try:
-        config = configparser.ConfigParser()
-        config.optionxform = str  # Preserve case
-        # current_app.root_path points to the 'app' folder, so '../' goes to the project root
-        settings_path = os.path.join(
-            current_app.root_path, '..', 'settings.ini')
-
-        if not os.path.exists(settings_path):
-            print(f"Warning: settings.ini file not found at {settings_path}")
-            return all_settings
-
-        config.read(settings_path)
-
-        for section in config.sections():
-            # configparser keys are auto-lowercased when read.
-            # Convert the section (which is a dict-like object) to a standard dict.
-            all_settings[section] = dict(config[section])
-
-        return all_settings
-
-    except configparser.Error as e:
-        print(f"Error reading settings.ini: {e}")
-        return all_settings  # Return empty dict on error
 
 
 def get_meetings_by_status(limit_past=8, columns=None, status_filter=None):
@@ -541,23 +490,32 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None):
         return all_meetings, default_meeting_num
 
     # --- Mode 2: Default Hybrid Active/Past Logic ---
+    club_id = get_current_club_id()
 
     # Fetch active meetings ('unpublished', 'not started', or 'running')
     # Updated: Always include 'unpublished' so list is same for all users
     active_statuses = ['not started', 'running', 'unpublished']
         
-    active_meetings = db.session.query(*query_cols)\
-        .filter(Meeting.status.in_(active_statuses))\
-        .order_by(Meeting.Meeting_Number.desc()).all()
+    active_query = db.session.query(*query_cols)\
+        .filter(Meeting.status.in_(active_statuses))
+    
+    if club_id:
+        active_query = active_query.filter(Meeting.club_id == club_id)
+        
+    active_meetings = active_query.order_by(Meeting.Meeting_Number.desc()).all()
 
     # Manager check removed as 'unpublished' is now always included
 
     active_meetings.sort(key=lambda m: m.Meeting_Number, reverse=True)
 
     # Fetch recent inactive meetings ('finished' or 'cancelled')
-    past_meetings = db.session.query(*query_cols)\
-        .filter(Meeting.status.in_(['finished', 'cancelled']))\
-        .order_by(Meeting.Meeting_Number.desc()).limit(limit_past).all()
+    past_query = db.session.query(*query_cols)\
+        .filter(Meeting.status.in_(['finished', 'cancelled']))
+    
+    if club_id:
+        past_query = past_query.filter(Meeting.club_id == club_id)
+        
+    past_meetings = past_query.order_by(Meeting.Meeting_Number.desc()).limit(limit_past).all()
 
     # Combine and sort all meetings by meeting number
     all_meetings = sorted(active_meetings + past_meetings,
@@ -593,17 +551,27 @@ def get_default_meeting_number():
     Returns None if neither is found.
     """
     # 1. Check for running meeting
-    running_meeting = Meeting.query.filter_by(status='running').first()
+    club_id = get_current_club_id()
+    
+    running_query = Meeting.query.filter_by(status='running')
+    if club_id:
+        running_query = running_query.filter(Meeting.club_id == club_id)
+    
+    running_meeting = running_query.first()
     if running_meeting:
         return running_meeting.Meeting_Number
 
     # 2. Check for next unfinished meeting (not started or unpublished)
     # Always include both statuses to ensure lower-numbered meetings are prioritized
     from .models import SessionLog
-    upcoming_meeting = Meeting.query \
+    upcoming_query = Meeting.query \
         .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number) \
-        .filter(Meeting.status.in_(['not started', 'unpublished'])) \
-        .order_by(Meeting.Meeting_Number.asc()) \
+        .filter(Meeting.status.in_(['not started', 'unpublished']))
+    
+    if club_id:
+        upcoming_query = upcoming_query.filter(Meeting.club_id == club_id)
+        
+    upcoming_meeting = upcoming_query.order_by(Meeting.Meeting_Number.asc()) \
         .first()
 
     if upcoming_meeting:
@@ -747,58 +715,7 @@ def group_roles_by_category(roles):
     return grouped
 
 
-def get_excomm_team(all_settings):
-    """
-    Parses the [Excomm Team] section from settings.
-    Returns a dictionary with 'name', 'term', and 'members' list.
-    """
-    raw_data = all_settings.get('Excomm Team', {})
-    
-    # Case-insensitive lookup for specific keys
-    team_name = 'Unknown'
-    term = 'Unknown'
-    
-    for k, v in raw_data.items():
-        if k.lower() == 'excomm name':
-            team_name = v
-        elif k.lower() == 'term':
-            term = v
 
-    # Filter out the non-member keys (case-insensitive check)
-    members = {
-        k: v 
-        for k, v in raw_data.items() 
-        if k.lower() not in ['excomm name', 'term']
-    }
-    
-    return {
-        'name': team_name,
-        'term': term,
-        'members': members
-    }
-
-def get_meeting_types(all_settings):
-    """
-    Parses the [Meeting Types] section from settings.
-    Example line in INI: Debate = 40, debate.csv, #D4F1F4, #000000
-    Returns a dictionary compatible with Config.MEETING_TYPES.
-    """
-    raw_data = all_settings.get('Meeting Types', {})
-    meeting_types = {}
-    
-    for title, value_str in raw_data.items():
-        parts = [p.strip() for p in value_str.split(',')]
-        if len(parts) >= 3:
-            meeting_types[title] = {
-                "template": parts[0],
-                "background_color": parts[1],
-                "foreground_color": parts[2]
-            }
-                
-    # Sort meeting types alphabetically by title
-    sorted_meeting_types = {k: meeting_types[k] for k in sorted(meeting_types.keys())}
-    return sorted_meeting_types
-    
 
 def process_avatar(file, contact_id):
     """

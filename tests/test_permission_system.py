@@ -39,7 +39,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         db.session.add_all([self.perm_view, self.perm_edit])
         
         # 2. Create roles
-        self.role_admin = AuthRole(name="Admin", description="Admin Role", level=10)
+        self.role_admin = AuthRole(name="SysAdmin", description="Admin Role", level=10)
         self.role_user = AuthRole(name="User", description="User Role", level=1)
         self.role_guest = AuthRole(name="Guest", description="Guest Role", level=0)
         db.session.add_all([self.role_admin, self.role_user, self.role_guest])
@@ -68,6 +68,15 @@ class PermissionSystemTestCase(unittest.TestCase):
         self.user_user.roles.append(self.role_user)
         
         db.session.add_all([self.user_admin, self.user_user])
+        
+        # Create Club (required for Meeting)
+        from app.models import Club
+        self.club = Club(
+            club_no='000000',
+            club_name='Test Club',
+            district='Test District'
+        )
+        db.session.add(self.club)
         db.session.commit()
 
     def test_model_has_permission(self):
@@ -82,11 +91,11 @@ class PermissionSystemTestCase(unittest.TestCase):
 
     def test_model_has_role(self):
         """Test User.has_role method."""
-        self.assertTrue(self.user_admin.has_role("Admin"))
+        self.assertTrue(self.user_admin.has_role("SysAdmin"))
         self.assertFalse(self.user_admin.has_role("User"))
         
         self.assertTrue(self.user_user.has_role("User"))
-        self.assertFalse(self.user_user.has_role("Admin"))
+        self.assertFalse(self.user_user.has_role("SysAdmin"))
 
     def test_multiple_roles_union(self):
         """Test that permissions are unioned when a user has multiple roles."""
@@ -110,7 +119,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         from app.auth.utils import is_authorized
         
         # Create a meeting
-        meeting = Meeting(Meeting_Number=500, Meeting_Date=date.today(), status='not started', manager_id=self.contact_user.id)
+        meeting = Meeting(Meeting_Number=500, Meeting_Date=date.today(), status='not started', manager_id=self.contact_user.id, club_id=self.club.id)
         db.session.add(meeting)
         db.session.commit()
         
@@ -124,7 +133,7 @@ class PermissionSystemTestCase(unittest.TestCase):
             self.assertTrue(is_authorized(Permissions.AGENDA_EDIT, meeting=meeting))
             
             # Non-managed meeting should still be False
-            other_meeting = Meeting(Meeting_Number=501, Meeting_Date=date.today(), status='not started', manager_id=self.contact_admin.id)
+            other_meeting = Meeting(Meeting_Number=501, Meeting_Date=date.today(), status='not started', manager_id=self.contact_admin.id, club_id=self.club.id)
             self.assertFalse(is_authorized(Permissions.AGENDA_EDIT, meeting=other_meeting))
 
     def test_guest_access_fallback(self):
@@ -151,7 +160,7 @@ class PermissionSystemTestCase(unittest.TestCase):
             return jsonify(status="ok")
 
         @self.app.route('/test-role')
-        @role_required("Admin")
+        @role_required("SysAdmin")
         def test_role():
             return jsonify(status="ok")
 
@@ -222,7 +231,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         """Test assigning multiple roles to a user through the service/model."""
         from app.models import AuthRole, UserRoleAssociation
         # Use existing roles from setup
-        role_admin = AuthRole.query.filter_by(name='Admin').first()
+        role_admin = AuthRole.query.filter_by(name='SysAdmin').first()
         role_user = AuthRole.query.filter_by(name='User').first()
         
         # Clear existing
@@ -236,7 +245,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         # Verify
         db.session.refresh(self.user_user)
         self.assertEqual(len(self.user_user.roles), 2)
-        self.assertTrue(self.user_user.has_role('Admin'))
+        self.assertTrue(self.user_user.has_role('SysAdmin'))
         self.assertTrue(self.user_user.has_role('User'))
 
     def test_permission_audit_logging(self):
@@ -248,7 +257,7 @@ class PermissionSystemTestCase(unittest.TestCase):
             action='UPDATE_ROLE_PERMS',
             target_type='ROLE',
             target_id=self.role_admin.id,
-            target_name='Admin',
+            target_name='SysAdmin',
             changes='{"added": [1, 2], "removed": []}'
         )
         db.session.add(audit)
@@ -257,7 +266,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         saved_audit = PermissionAudit.query.filter_by(admin_id=self.user_admin.id).first()
         self.assertIsNotNone(saved_audit)
         self.assertEqual(saved_audit.action, 'UPDATE_ROLE_PERMS')
-        self.assertEqual(saved_audit.target_name, 'Admin')
+        self.assertEqual(saved_audit.target_name, 'SysAdmin')
         
         # Test to_dict
         d = saved_audit.to_dict()

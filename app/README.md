@@ -100,20 +100,6 @@ DATABASE_URL='sqlite:///vpemaster.db'
 # DATABASE_URL='mysql+pymysql://user:password@localhost/vpemaster_db'
 ```
 
-### 2. Club Settings (`settings.ini` file)
-
-Create a file named `settings.ini` in the project root directory. This file stores club-specific information.
-
-```ini
-# settings.ini
-
-[ClubSettings]
-Club Name = Your Toastmasters Club Name
-Term = 25H2
-Excomm Name = Your Excomm Team Name
-Meeting Start Time = 18:55
-```
-
 ### 3. Database Initialization
 
 With the `DATABASE_URL` configured in your `.env` file, you can now create and initialize the database using Flask-Migrate.

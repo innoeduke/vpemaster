@@ -127,9 +127,11 @@ class Permissions:
     VOTING_TRACK_PROGRESS = 'VOTING_TRACK_PROGRESS'
     ROSTER_VIEW = 'ROSTER_VIEW'
     ROSTER_EDIT = 'ROSTER_EDIT'
+    ABOUT_CLUB_VIEW = 'ABOUT_CLUB_VIEW'
+    ABOUT_CLUB_EDIT = 'ABOUT_CLUB_EDIT'
     
     # Roles
-    ADMIN = 'Admin'
-    OPERATOR = 'Operator'
+    ADMIN = 'SysAdmin'
+    OPERATOR = 'ClubAdmin'
     STAFF = 'Staff'
     USER = 'User'

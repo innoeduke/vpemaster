@@ -245,38 +245,58 @@ def upgrade():
                         )
     
     # Migrate existing user roles to user_roles table
-    users_result = conn.execute(sa.text("SELECT id, Role FROM Users WHERE Role IS NOT NULL"))
+    # First check if the Role column exists in the Users table
+    users_columns = [col['name'] for col in inspector.get_columns('Users')]
     
-    for user_row in users_result:
-        user_id, role_name = user_row
+    if 'Role' in users_columns:
+        users_result = conn.execute(sa.text("SELECT id, Role FROM Users WHERE Role IS NOT NULL"))
         
-        # Get role ID
-        role_result = conn.execute(
-            sa.text("SELECT id FROM auth_roles WHERE name = :name"),
-            {"name": role_name}
-        ).fetchone()
-        
-        if role_result:
-            role_id = role_result[0]
-            # Check if user already has this role
-            user_role_exists = conn.execute(
-                sa.text("SELECT 1 FROM user_roles WHERE user_id = :user_id AND role_id = :role_id"),
-                {"user_id": user_id, "role_id": role_id}
+        for user_row in users_result:
+            user_id, role_name = user_row
+            
+            # Get role ID
+            role_result = conn.execute(
+                sa.text("SELECT id FROM auth_roles WHERE name = :name"),
+                {"name": role_name}
             ).fetchone()
             
-            if not user_role_exists:
-                conn.execute(
-                    sa.text("INSERT INTO user_roles (user_id, role_id, assigned_at) VALUES (:user_id, :role_id, :assigned_at)"),
-                    {"user_id": user_id, "role_id": role_id, "assigned_at": datetime.utcnow()}
-                )
+            if role_result:
+                role_id = role_result[0]
+                # Check if user already has this role
+                user_role_exists = conn.execute(
+                    sa.text("SELECT 1 FROM user_roles WHERE user_id = :user_id AND role_id = :role_id"),
+                    {"user_id": user_id, "role_id": role_id}
+                ).fetchone()
+                
+                if not user_role_exists:
+                    conn.execute(
+                        sa.text("INSERT INTO user_roles (user_id, role_id, assigned_at) VALUES (:user_id, :role_id, :assigned_at)"),
+                        {"user_id": user_id, "role_id": role_id, "assigned_at": datetime.utcnow()}
+                    )
 
 
 def downgrade():
-    # Drop tables in reverse order
-    op.drop_table('user_roles')
-    op.drop_table('role_permissions')
-    op.drop_index(op.f('ix_auth_roles_name'), table_name='auth_roles')
-    op.drop_table('auth_roles')
-    op.drop_index(op.f('ix_permissions_category'), table_name='permissions')
-    op.drop_index(op.f('ix_permissions_name'), table_name='permissions')
-    op.drop_table('permissions')
+    # Drop tables in reverse order, checking for existence first
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_tables = inspector.get_table_names()
+    
+    if 'user_roles' in existing_tables:
+        op.drop_table('user_roles')
+    
+    if 'role_permissions' in existing_tables:
+        op.drop_table('role_permissions')
+    
+    if 'auth_roles' in existing_tables:
+        auth_roles_indexes = {idx['name'] for idx in inspector.get_indexes('auth_roles')}
+        if 'ix_auth_roles_name' in auth_roles_indexes:
+            op.drop_index(op.f('ix_auth_roles_name'), table_name='auth_roles')
+        op.drop_table('auth_roles')
+    
+    if 'permissions' in existing_tables:
+        permissions_indexes = {idx['name'] for idx in inspector.get_indexes('permissions')}
+        if 'ix_permissions_category' in permissions_indexes:
+            op.drop_index(op.f('ix_permissions_category'), table_name='permissions')
+        if 'ix_permissions_name' in permissions_indexes:
+            op.drop_index(op.f('ix_permissions_name'), table_name='permissions')
+        op.drop_table('permissions')

@@ -17,9 +17,11 @@ import os
 import openpyxl
 from openpyxl.styles import Font, Alignment
 from io import BytesIO
-from .utils import load_setting, derive_credentials, get_project_code, get_meetings_by_status, load_all_settings, get_excomm_team
+from .utils import derive_credentials, get_project_code, get_meetings_by_status
 from .tally_sync import sync_participants_to_tally
 from .services.role_service import RoleService
+from .club_context import get_current_club_id, filter_by_club
+from .models import ContactClub
 
 agenda_bp = Blueprint('agenda_bp', __name__)
 
@@ -268,16 +270,19 @@ def _get_processed_logs_data(selected_meeting_num):
     Fetches and processes session logs for a given meeting number.
     Returns the list of log dictionaries ready for the frontend.
     """
-    selected_meeting = None
+    club_id = get_current_club_id()
     if selected_meeting_num:
-        selected_meeting = Meeting.query.options(
+        query = Meeting.query.options(
             orm.joinedload(Meeting.best_table_topic_speaker),
             orm.joinedload(Meeting.best_evaluator),
             orm.joinedload(Meeting.best_speaker),
             orm.joinedload(Meeting.best_role_taker),
             orm.joinedload(Meeting.media),
             orm.joinedload(Meeting.manager)
-        ).filter(Meeting.Meeting_Number == selected_meeting_num).first()
+        ).filter(Meeting.Meeting_Number == selected_meeting_num)
+        if club_id:
+            query = query.filter(Meeting.club_id == club_id)
+        selected_meeting = query.first()
 
     # Create a simple set of (award_category, contact_id) tuples for quick lookups.
     award_winners = set()
@@ -540,11 +545,14 @@ def agenda():
         meeting_templates = []
 
     # --- Minimal Data for Initial Page Load ---
-    members = Contact.query.filter_by(
-        Type='Member').order_by(Contact.Name.asc()).all()
+    club_id = get_current_club_id()
+    members = Contact.query.join(ContactClub).filter(
+        ContactClub.club_id == club_id,
+        Contact.Type == 'Member'
+    ).order_by(Contact.Name.asc()).all()
 
-    default_start_time = load_setting(
-        'ClubSettings', 'Meeting Start Time', default='18:55')
+    # Default meeting start time (can be overridden by Club model if needed)
+    default_start_time = '18:55'
 
     # --- Projects for Speech Modal ---
     from .utils import get_dropdown_metadata
@@ -560,6 +568,9 @@ def agenda():
         'EVALUATION_PROJECTS': ProjectID.EVALUATION_PROJECTS
     }
     
+    # Meeting types based on templates
+    meeting_types = {f[:-4]: f for f in meeting_templates}
+
     return render_template('agenda.html',
                            logs_data=logs_data,               # Use the processed list of dictionaries
                            pathways=pathways,               # For modals
@@ -570,7 +581,7 @@ def agenda():
                            members=members,                 # If needed elsewhere
                            project_speakers=project_speakers,  # For JS
                            meeting_templates=meeting_templates,
-                           meeting_types=current_app.config['MEETING_TYPES'],
+                           meeting_types=meeting_types,
                            default_start_time=default_start_time,
                            ProjectID=project_id_dict)
 
@@ -605,8 +616,9 @@ A single endpoint to fetch all data needed for the agenda modals.
     ]
 
     # Contacts
-    contacts = Contact.query.options(orm.joinedload(
-        Contact.user)).order_by(Contact.Name.asc()).all()
+    club_id = get_current_club_id()
+    contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
+        .options(orm.joinedload(Contact.user)).order_by(Contact.Name.asc()).all()
     contacts_data = [
         {
             "id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type,
@@ -669,7 +681,6 @@ A single endpoint to fetch all data needed for the agenda modals.
         'contacts': contacts_data,
         'projects': projects_data,
         'series_initials': series_initials_db,
-        'meeting_types': current_app.config['MEETING_TYPES'],
         'meeting_roles': meeting_roles_data,
         'pathways': pathways_grouped,
         'pathway_mapping': pathway_mapping,
@@ -714,11 +725,12 @@ def _validate_meeting_form_data(form):
     meeting_number = form.get('meeting_number')
     meeting_type = form.get('meeting_type')
     
-    # Check template validity
-    meeting_types_dict = current_app.config.get('MEETING_TYPES', {})
-    template_file = meeting_types_dict.get(meeting_type, {}).get('template')
-    if not template_file:
-         raise ValueError(f"Invalid meeting type: {meeting_type}")
+    # Check template validity by verifying the CSV file exists
+    template_file = f"{meeting_type}.csv" if not meeting_type.endswith('.csv') else meeting_type
+    template_path = os.path.join(current_app.static_folder, 'mtg_templates', template_file)
+    
+    if not os.path.exists(template_path):
+         raise ValueError(f"Invalid meeting type or template not found: {meeting_type}")
 
     meeting_date_str = form.get('meeting_date')
     start_time_str = form.get('start_time')
@@ -801,9 +813,19 @@ def _generate_logs_from_template(meeting, template_file):
     template_path = os.path.join(
         current_app.static_folder, 'mtg_templates', template_file)
         
-    # Pre-load settings for efficiency
-    all_settings = load_all_settings()
-    excomm_team = get_excomm_team(all_settings)
+    # Get current ExComm team from database for officer auto-population
+    from .models import ExComm
+    club_id = get_current_club_id()
+    excomm = None
+    excomm_officers = {}
+    
+    if club_id:
+        # Get the most recent ExComm record for this club
+        excomm = ExComm.query.filter_by(club_id=club_id).order_by(ExComm.id.desc()).first()
+        
+        if excomm:
+            # Build officer mapping from ExComm model
+            excomm_officers = excomm.get_officers()  # Returns dict like {'President': Contact, 'VPE': Contact, ...}
 
     with open(template_path, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
@@ -874,18 +896,17 @@ def _generate_logs_from_template(meeting, template_file):
                     credentials = derive_credentials(owner)
             
             # Auto-populate from Excomm Team if owner is missing
-            if not owner_id:
+            if not owner_id and excomm_officers:
                 role_to_check = role_val
                 if not role_to_check and session_type and session_type.role:
                         role_to_check = session_type.role.name
                 
                 if role_to_check:
-                        officer_name = excomm_team['members'].get(role_to_check)
-                        if officer_name:
-                            owner = Contact.query.filter_by(Name=officer_name).first()
-                            if owner:
-                                owner_id = owner.id
-                                credentials = derive_credentials(owner)
+                        # Check if this role exists in the ExComm officers dict
+                        officer_contact = excomm_officers.get(role_to_check)
+                        if officer_contact:
+                            owner_id = officer_contact.id
+                            credentials = derive_credentials(officer_contact)
             
             # --- Create Log ---
             new_log = SessionLog(

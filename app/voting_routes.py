@@ -9,6 +9,7 @@ from datetime import datetime
 import secrets
 from sqlalchemy import func
 from flask_login import current_user
+from .club_context import get_current_club_id
 
 from .utils import (
     get_session_voter_identifier,
@@ -202,7 +203,11 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
         if vote_exists:
             context['has_voted'] = True
 
-    selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_number).first()
+    club_id = get_current_club_id()
+    selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_number)
+    if club_id:
+        selected_meeting = selected_meeting.filter(Meeting.club_id == club_id)
+    selected_meeting = selected_meeting.first()
     
     # Access control for unpublished meetings
     is_manager = current_user.is_authenticated and current_user.Contact_ID == selected_meeting.manager_id if selected_meeting else False
@@ -292,7 +297,11 @@ def batch_vote():
     if not meeting_number:
         return jsonify(success=False, message="Missing meeting number."), 400
 
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    club_id = get_current_club_id()
+    meeting_query = Meeting.query.filter_by(Meeting_Number=meeting_number)
+    if club_id:
+        meeting_query = meeting_query.filter(Meeting.club_id == club_id)
+    meeting = meeting_query.first()
     if not meeting:
         return jsonify(success=False, message="Meeting not found."), 404
 
@@ -360,7 +369,11 @@ def vote_for_award():
     if not all([meeting_number, contact_id, award_category]):
         return jsonify(success=False, message="Missing data."), 400
 
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    club_id = get_current_club_id()
+    meeting_query = Meeting.query.filter_by(Meeting_Number=meeting_number)
+    if club_id:
+        meeting_query = meeting_query.filter(Meeting.club_id == club_id)
+    meeting = meeting_query.first()
     if not meeting:
         return jsonify(success=False, message="Meeting not found."), 404
 

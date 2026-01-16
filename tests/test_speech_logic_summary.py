@@ -28,6 +28,18 @@ class TestSpeechLogicSummary(unittest.TestCase):
         self.app_context.pop()
 
     def seed_data(self):
+        # Create a test club first (required for Meeting.club_id)
+        from app.models import Club
+        self.club = Club(
+            club_no='000000',
+            club_name='Test Club',
+            district='Test District',
+            division='Test Division',
+            area='Test Area'
+        )
+        db.session.add(self.club)
+        db.session.commit()
+        
         # Add LevelRoles (including elective pool)
         db.session.add_all([
             LevelRole(level=1, role='Toastmaster', type='required', count_required=1),
@@ -70,7 +82,7 @@ class TestSpeechLogicSummary(unittest.TestCase):
         db.session.add(self.contact)
         db.session.commit()
 
-        self.meeting = Meeting(Meeting_Number=1, Meeting_Date=date.today())
+        self.meeting = Meeting(Meeting_Number=1, Meeting_Date=date.today(), club_id=self.club.id)
         db.session.add(self.meeting)
         db.session.commit()
 

@@ -1796,6 +1796,41 @@
       "role": "Leadership Excellence Series",
       "type": "required",
       "count_required": 1
+    },
+    {
+      "id": 69,
+      "level": 1,
+      "role": "Elective Pool",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 70,
+      "level": 2,
+      "role": "Elective Pool",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 71,
+      "level": 3,
+      "role": "Elective Pool",
+      "type": "elective",
+      "count_required": 1
+    },
+    {
+      "id": 72,
+      "level": 4,
+      "role": "Elective Pool",
+      "type": "elective",
+      "count_required": 2
+    },
+    {
+      "id": 73,
+      "level": 5,
+      "role": "Elective Pool",
+      "type": "elective",
+      "count_required": 2
     }
   ],
   "session_types": [
@@ -4688,19 +4723,37 @@
       "resource": "voting",
       "action": "view_results",
       "created_at": "2026-01-15 07:42:37"
+    },
+    {
+      "id": 19,
+      "name": "ABOUT_CLUB_VIEW",
+      "description": "View club information and executive committee",
+      "category": "club",
+      "resource": "club",
+      "action": "view",
+      "created_at": "2026-01-16 08:16:30"
+    },
+    {
+      "id": 20,
+      "name": "ABOUT_CLUB_EDIT",
+      "description": "Edit club information and executive committee",
+      "category": "club",
+      "resource": "club",
+      "action": "edit",
+      "created_at": "2026-01-16 08:16:30"
     }
   ],
   "auth_roles": [
     {
       "id": 1,
-      "name": "Admin",
+      "name": "SysAdmin",
       "description": "Admin role",
       "level": 8,
       "created_at": "2026-01-15 07:42:37"
     },
     {
       "id": 2,
-      "name": "Operator",
+      "name": "ClubAdmin",
       "description": "VPE role",
       "level": 4,
       "created_at": "2026-01-15 07:42:37"
@@ -4807,6 +4860,16 @@
       "permission_id": 18
     },
     {
+      "id": 44,
+      "role_id": 1,
+      "permission_id": 19
+    },
+    {
+      "id": 48,
+      "role_id": 1,
+      "permission_id": 20
+    },
+    {
       "id": 26,
       "role_id": 2,
       "permission_id": 1
@@ -4882,6 +4945,16 @@
       "permission_id": 18
     },
     {
+      "id": 45,
+      "role_id": 2,
+      "permission_id": 19
+    },
+    {
+      "id": 49,
+      "role_id": 2,
+      "permission_id": 20
+    },
+    {
       "id": 34,
       "role_id": 3,
       "permission_id": 2
@@ -4917,6 +4990,11 @@
       "permission_id": 18
     },
     {
+      "id": 46,
+      "role_id": 3,
+      "permission_id": 19
+    },
+    {
       "id": 40,
       "role_id": 4,
       "permission_id": 4
@@ -4935,6 +5013,11 @@
       "id": 41,
       "role_id": 4,
       "permission_id": 16
+    },
+    {
+      "id": 47,
+      "role_id": 4,
+      "permission_id": 19
     }
   ]
 }

@@ -37,10 +37,21 @@ class TestBookingDuplicates(unittest.TestCase):
         db.session.add_all([self.speech_type, self.timer_type])
         db.session.commit()
 
+        # Create Club (required for Meeting)
+        from app.models import Club
+        self.club = Club(
+            club_no='000000',
+            club_name='Test Club',
+            district='Test District'
+        )
+        db.session.add(self.club)
+        db.session.commit()
+
         self.meeting = Meeting(
             Meeting_Number=123,
             Meeting_Date=date(2025, 1, 1),
-            status='unpublished' # Initially unpublished to allow setup
+            status='unpublished',  # Initially unpublished to allow setup
+            club_id=self.club.id
         )
         db.session.add(self.meeting)
         db.session.commit()
