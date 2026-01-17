@@ -15,7 +15,7 @@ def create_admin(username, email, password, contact_name, club):
     """Create an admin user with associated contact."""
     
     # Check if user already exists
-    existing_user = User.query.filter_by(Username=username).first()
+    existing_user = User.query.filter_by(username=username).first()
     if existing_user:
         click.echo(f"❌ Error: User '{username}' already exists.", err=True)
         return
@@ -56,10 +56,10 @@ def create_admin(username, email, password, contact_name, club):
         
         # Create admin user
         admin = User(
-            Username=username,
+            username=username,
             Email=email,
-            Status='active',
-            Contact_ID=contact.id
+            status='active',
+            contact_id=contact.id
         )
         admin.set_password(password)
         admin.add_role(sysadmin_role)

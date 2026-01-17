@@ -64,7 +64,7 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
     meeting = kwargs.get('meeting')
     if meeting:
         # If user is the manager of this specific meeting
-        if hasattr(current_user, 'Contact_ID') and current_user.Contact_ID == meeting.manager_id:
+        if hasattr(current_user, 'contact_id') and current_user.contact_id == meeting.manager_id:
             # Grant Operator-level permissions relevant to meeting management
             # Specifically Agenda Edit and Booking management
             if target_perm in {'AGENDA_EDIT', 'BOOKING_ASSIGN_ALL', 'BOOKING_BOOK_OWN', 'VOTING_VIEW_RESULTS', 'VOTING_TRACK_PROGRESS'}:

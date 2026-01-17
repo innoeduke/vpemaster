@@ -1,0 +1,159 @@
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask_login import login_required, current_user
+from app import db
+from app.models import Club, ExComm, Contact, ContactClub
+from app.auth.permissions import Permissions
+from app.auth.utils import is_authorized
+from datetime import datetime
+
+clubs_bp = Blueprint('clubs_bp', __name__)
+
+@clubs_bp.route('/clubs')
+@login_required
+def list_clubs():
+    if not is_authorized(Permissions.SYSADMIN):
+        flash('You do not have permission to view this page.', 'danger')
+        return redirect(url_for('agenda_bp.dashboard'))
+    
+    clubs = Club.query.all()
+    return render_template('clubs.html', clubs=clubs)
+
+@clubs_bp.route('/clubs/new', methods=['GET', 'POST'])
+@login_required
+def create_club():
+    if not is_authorized(Permissions.SYSADMIN):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('agenda_bp.dashboard'))
+        
+    if request.method == 'POST':
+        club_no = request.form.get('club_no')
+        club_name = request.form.get('club_name')
+        
+        if not club_no or not club_name:
+            flash('Club Number and Name are required.', 'danger')
+            return redirect(url_for('clubs_bp.create_club'))
+            
+        existing_club = Club.query.filter_by(club_no=club_no).first()
+        if existing_club:
+            flash('Club Number already exists.', 'danger')
+            return redirect(url_for('clubs_bp.create_club'))
+            
+        new_club = Club(
+            club_no=club_no,
+            club_name=club_name,
+            short_name=request.form.get('short_name'),
+            district=request.form.get('district'),
+            division=request.form.get('division'),
+            area=request.form.get('area'),
+            club_address=request.form.get('club_address'),
+            meeting_date=request.form.get('meeting_date'),
+            contact_phone_number=request.form.get('contact_phone_number'),
+            website=request.form.get('website')
+        )
+        
+        # Handle time specific parsing if present
+        meeting_time_str = request.form.get('meeting_time')
+        if meeting_time_str:
+            try:
+                new_club.meeting_time = datetime.strptime(meeting_time_str, '%H:%M').time()
+            except ValueError:
+                pass # Ignore invalid time for now or handle better
+        
+        # Handle date specific parsing if present
+        founded_date_str = request.form.get('founded_date')
+        if founded_date_str:
+            try:
+                new_club.founded_date = datetime.strptime(founded_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+
+        try:
+            db.session.add(new_club)
+            db.session.commit()
+            flash('Club created successfully.', 'success')
+            return redirect(url_for('clubs_bp.list_clubs'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating club: {str(e)}', 'danger')
+            
+    return render_template('club_form.html', title="Create New Club")
+
+@clubs_bp.route('/clubs/<int:club_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_club(club_id):
+    if not is_authorized(Permissions.SYSADMIN):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('agenda_bp.dashboard'))
+        
+    club = db.session.get(Club, club_id)
+    if not club:
+        flash('Club not found.', 'danger')
+        return redirect(url_for('clubs_bp.list_clubs'))
+        
+    if request.method == 'POST':
+        club.club_no = request.form.get('club_no')
+        club.club_name = request.form.get('club_name')
+        club.short_name = request.form.get('short_name')
+        club.district = request.form.get('district')
+        club.division = request.form.get('division')
+        club.area = request.form.get('area')
+        club.club_address = request.form.get('club_address')
+        club.meeting_date = request.form.get('meeting_date')
+        club.contact_phone_number = request.form.get('contact_phone_number')
+        
+        website = request.form.get('website')
+        if website and not (website.startswith('http://') or website.startswith('https://')):
+            website = 'https://' + website
+        club.website = website
+        
+        meeting_time_str = request.form.get('meeting_time')
+        if meeting_time_str:
+            try:
+                club.meeting_time = datetime.strptime(meeting_time_str, '%H:%M').time()
+            except ValueError:
+                pass
+        else:
+             club.meeting_time = None
+             
+        founded_date_str = request.form.get('founded_date')
+        if founded_date_str:
+            try:
+                club.founded_date = datetime.strptime(founded_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                pass
+        else:
+            club.founded_date = None
+
+        try:
+            db.session.commit()
+            flash('Club updated successfully.', 'success')
+            return redirect(url_for('clubs_bp.list_clubs'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating club: {str(e)}', 'danger')
+            
+    return render_template('club_form.html', title="Edit Club", club=club)
+
+@clubs_bp.route('/clubs/<int:club_id>/delete', methods=['POST'])
+@login_required
+def delete_club(club_id):
+    if not is_authorized(Permissions.SYSADMIN):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('agenda_bp.dashboard'))
+        
+    club = db.session.get(Club, club_id)
+    if not club:
+        flash('Club not found.', 'danger')
+        return redirect(url_for('clubs_bp.list_clubs'))
+        
+    try:
+        # Check for dependencies/related data that might prevent deletion?
+        # For now, rely on cascade or throw error if FK constraint fails
+        db.session.delete(club)
+        db.session.commit()
+        flash('Club deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting club: {str(e)}', 'danger')
+        
+    return redirect(url_for('clubs_bp.list_clubs'))

@@ -21,22 +21,19 @@
         <table class="form-table">
             <tr>
             <td>
-                <label for="name">Name: <span class="required-field">*</span></label>
+                <label for="first_name">First Name: <span class="required-field">*</span></label>
             </td>
-            <td><input type="text" id="name" name="name" required /></td>
+            <td><input type="text" id="first_name" name="first_name" required /></td>
             </tr>
             <tr>
             <td>
-                <label for="type">Type: <span class="required-field">*</span></label>
+                <label for="last_name">Last Name:</label>
             </td>
-            <td>
-                <select id="type" name="type" required>
-                <option value="Member">Member</option>
-                <option value="Guest" selected>Guest</option>
-                </select>
-            </td>
+            <td><input type="text" id="last_name" name="last_name" /></td>
             </tr>
-            <tr>
+            <input type="hidden" id="type" name="type" value="Guest" />
+            <input type="hidden" id="name" name="name" value="" />
+            <tr id="member_id_row" style="display: none;">
             <td><label for="member_id">Member ID:</label></td>
             <td><input type="text" id="member_id" name="member_id" placeholder="Optional" /></td>
             </tr>
@@ -54,7 +51,7 @@
                 <textarea id="bio" name="bio" rows="3" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;"></textarea>
             </td>
             </tr>
-            <tr>
+            <tr id="mentor_id_row" style="display: none;">
                 <td><label for="mentor_id">Mentor:</label></td>
                 <td>
                 <select id="mentor_id" name="mentor_id">

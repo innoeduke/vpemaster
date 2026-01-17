@@ -118,7 +118,7 @@ def test_verify_all_permissions_exist_in_db(app):
             if attr.isupper() and not attr.startswith('_'):
                 value = getattr(Permissions, attr)
                 # Filter out Role names which are also in Constants but shouldn't be in Permission table
-                if attr in ['ADMIN', 'OPERATOR', 'STAFF', 'USER']:
+                if attr in ['SYSADMIN', 'CLUBADMIN', 'STAFF', 'USER']:
                     continue
                 expected_perms.add(value)
         

@@ -105,6 +105,14 @@
           </a>
         </li>
         {% endif %}
+        {% if is_authorized(Permissions.SYSADMIN) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
+          <a href="{{ url_for('clubs_bp.list_clubs') }}">
+            <i class="fas fa-network-wired nav-icon"></i>
+            <span>Manage Clubs</span>
+          </a>
+        </li>
+        {% endif %}
       </ul>
       {% if current_user.is_authenticated %}
       <div class="logout-container">
@@ -130,7 +138,7 @@
       <div class="profile-container">
         <div class="profile-trigger" id="profile-trigger">
           <i class="fas fa-user-circle"></i>
-          <span>{{ current_user.contact.Name if current_user.contact else current_user.Username }}</span>
+          <span>{{ current_user.contact.Name if current_user.contact else current_user.username }}</span>
           <i class="fas fa-caret-down"></i>
         </div>
         <div class="profile-menu" id="profile-menu">

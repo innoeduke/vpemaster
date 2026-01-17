@@ -24,7 +24,7 @@
                 style="color: white;" title="View Profile">
                 <i class="fas fa-id-card"></i> Profile
             </a>
-            {% elif current_user.Contact_ID == viewed_contact.id %}
+            {% elif current_user.contact_id == viewed_contact.id %}
             <a href="{{ url_for('auth_bp.profile') }}" class="btn btn-info btn-sm" style="color: white;"
                 title="My Profile">
                 <i class="fas fa-user-circle"></i> Profile
@@ -307,9 +307,9 @@
                     {% endif %}
                 </div>
                 <div class="status-info">
-                    {% if log.Status == 'Completed' %}
+                    {% if log.status == 'Completed' %}
                     <i class="fas fa-check-circle" title="Completed"></i>
-                    {% elif log.Status == 'Delivered' %}
+                    {% elif log.status == 'Delivered' %}
                     {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
                     <button onclick="completeSpeechLog(this, {{ log.id }})"
                         class="btn btn-success btn-sm">Complete</button>

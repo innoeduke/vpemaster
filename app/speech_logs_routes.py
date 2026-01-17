@@ -61,8 +61,11 @@ def _parse_filters(is_member_view, can_view_all):
             # Admin impersonating user
             pass
         else:
-            if current_user and current_user.Contact_ID:
-                filters['speaker_id'] = current_user.Contact_ID
+            from .club_context import get_current_club_id
+            club_id = get_current_club_id()
+            contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
+            if contact:
+                filters['speaker_id'] = contact.id
             else:
                 filters['speaker_id'] = -1
     
@@ -392,10 +395,13 @@ def _get_speaker_user(viewed_contact, is_member_view):
 
 def _get_pathway_project_mapping(speaker_user):
     """Get mapping of project IDs to types (required/elective)."""
-    if not speaker_user or not speaker_user.contact or not speaker_user.contact.Current_Path:
+    from .club_context import get_current_club_id
+    club_id = get_current_club_id()
+    contact = speaker_user.get_contact(club_id) if speaker_user else None
+    if not contact or not contact.Current_Path:
         return {}
     
-    pathway_obj = Pathway.query.filter_by(name=speaker_user.contact.Current_Path).first()
+    pathway_obj = Pathway.query.filter_by(name=contact.Current_Path).first()
     if not pathway_obj:
         return {}
     
@@ -411,8 +417,12 @@ def _get_achievement_status(speaker_id, speaker_user, selected_pathway):
     completed_levels = set()
     target_path_name = selected_pathway
     
-    if not target_path_name and speaker_user and speaker_user.contact and speaker_user.contact.Current_Path:
-        target_path_name = speaker_user.contact.Current_Path
+    if not target_path_name and speaker_user:
+        from .club_context import get_current_club_id
+        club_id = get_current_club_id()
+        contact = speaker_user.get_contact(club_id)
+        if contact and contact.Current_Path:
+            target_path_name = contact.Current_Path
     
     if speaker_id and speaker_id != -1 and target_path_name:
         try:
@@ -725,7 +735,10 @@ def get_speech_log_details(log_id):
     log = db.session.query(SessionLog).options(
         joinedload(SessionLog.media)).get_or_404(log_id)
 
-    current_user_contact_id = current_user.Contact_ID if current_user.is_authenticated else None
+    from .club_context import get_current_club_id
+    club_id = get_current_club_id()
+    contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
+    current_user_contact_id = contact.id if contact else None
 
     if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
         if log.Owner_ID != current_user_contact_id:
@@ -784,7 +797,11 @@ def update_speech_log(log_id):
     ).get_or_404(log_id)
 
     # Permission Checks
-    current_user_contact_id = current_user.Contact_ID if current_user.is_authenticated else None
+    from .club_context import get_current_club_id
+    club_id = get_current_club_id()
+    contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
+    current_user_contact_id = contact.id if contact else None
+    
     if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
         is_owner = (current_user_contact_id == log.Owner_ID)
         if not (is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and is_owner):
@@ -885,7 +902,7 @@ def suspend_speech_log(log_id):
 def complete_speech_log(log_id):
     log = SessionLog.query.get_or_404(log_id)
 
-    current_user_contact_id = current_user.Contact_ID if current_user.is_authenticated else None
+    current_user_contact_id = current_user.contact_id if current_user.is_authenticated else None
 
     if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
         if log.Owner_ID != current_user_contact_id:

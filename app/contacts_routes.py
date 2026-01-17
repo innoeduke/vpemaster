@@ -18,12 +18,15 @@ contacts_bp = Blueprint('contacts_bp', __name__)
 def search_contacts_by_name():
     search_term = request.args.get('q', '')
     club_id = get_current_club_id()
-    query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id).options(db.joinedload(Contact.user))
+    query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)
     
     if search_term:
         contacts = query.filter(Contact.Name.ilike(f'%{search_term}%')).all()
     else:
         contacts = query.all()
+    
+    # Batch populate users to avoid N+1 and fix invalid joinedload
+    Contact.populate_users(contacts, club_id)
 
     contacts_data = [{
         "id": c.id,
@@ -45,8 +48,11 @@ def show_contacts():
     from sqlalchemy.orm import joinedload
     club_id = get_current_club_id()
     contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
-        .options(joinedload(Contact.mentor), joinedload(Contact.user))\
+        .options(joinedload(Contact.mentor))\
         .order_by(Contact.Name.asc()).all()
+    Contact.populate_users(contacts, club_id)
+    # Batch populate primary clubs to avoid N+1 queries in template
+    Contact.populate_primary_clubs(contacts)
     
     # 1. Attendance (Roster)
     # Count how many times each contact appears in Roster
@@ -176,6 +182,8 @@ def contact_form(contact_id=None):
             'contact': {
                 'id': contact.id,
                 'Name': contact.Name,
+                'first_name': contact.first_name,
+                'last_name': contact.last_name,
                 'Email': contact.Email,
                 'Type': contact.Type,
                 'Phone_Number': contact.Phone_Number,
@@ -190,6 +198,7 @@ def contact_form(contact_id=None):
                 'mentor_id': contact.Mentor_ID
             }
         })
+
 
     if request.method == 'POST':
         first_name = request.form.get('first_name', '').strip() or None
@@ -225,6 +234,8 @@ def contact_form(contact_id=None):
             
             # Validate Name is not empty
             if not contact.Name:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify(success=False, message='Name or first/last name is required.'), 400
                 flash('Name or first/last name is required.', 'error')
                 return redirect(url_for('contacts_bp.show_contacts'))
             
@@ -264,12 +275,16 @@ def contact_form(contact_id=None):
             
             # Validate Name is not empty
             if not new_contact.Name:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify(success=False, message='Name or first/last name is required.'), 400
                 flash('Name or first/last name is required.', 'error')
                 return redirect(url_for('contacts_bp.show_contacts'))
             
             # Check for existing name
             existing_name = Contact.query.filter_by(Name=new_contact.Name).first()
             if existing_name:
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify(success=False, message=f"A contact with the name '{new_contact.Name}' already exists."), 400
                 flash(f"A contact with the name '{new_contact.Name}' already exists.", 'error')
                 return redirect(url_for('contacts_bp.show_contacts'))
                 
@@ -277,6 +292,8 @@ def contact_form(contact_id=None):
             if email:
                 existing_email = Contact.query.filter_by(Email=email).first()
                 if existing_email:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify(success=False, message=f"A contact with the email '{email}' already exists."), 400
                     flash(f"A contact with the email '{email}' already exists.", 'error')
                     return redirect(url_for('contacts_bp.show_contacts'))
             
@@ -328,7 +345,14 @@ def contact_form(contact_id=None):
         if ptype not in pathways:
             pathways[ptype] = []
         pathways[ptype].append(p.name)
-    return render_template('contact_form.html', contact=contact, pathways=pathways)
+    
+    club_id = get_current_club_id()
+    mentor_candidates = Contact.query.join(ContactClub).filter(
+        ContactClub.club_id == club_id,
+        Contact.Type.in_(['Member', 'Past Member'])
+    ).order_by(Contact.Name.asc()).all()
+    
+    return render_template('contact_form.html', contact=contact, pathways=pathways, mentor_candidates=mentor_candidates)
 
 
 @contacts_bp.route('/contact/delete/<int:contact_id>', methods=['POST'])
@@ -415,8 +439,9 @@ def get_all_contacts_api():
     
     club_id = get_current_club_id()
     contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
-        .options(joinedload(Contact.mentor), joinedload(Contact.user))\
+        .options(joinedload(Contact.mentor),)\
         .order_by(Contact.Name.asc()).all()
+    Contact.populate_users(contacts, club_id)
     
     # Calculate participation metrics (same logic as show_contacts)
     # 1. Attendance counts
@@ -460,6 +485,9 @@ def get_all_contacts_api():
 
     def check_membership_qualification(tt_count, best_tt_count, other_role_count):
         return (tt_count >= 4 and best_tt_count >= 1 and other_role_count >= 2)
+
+    # Batch populate primary clubs to avoid N+1 queries in the loop below
+    Contact.populate_primary_clubs(contacts)
 
     # Build JSON response
     contacts_data = []

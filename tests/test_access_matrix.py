@@ -9,7 +9,7 @@ from flask_login import login_user, logout_user
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import User, Contact, AuthRole, Meeting, Permission
+from app.models import User, Contact, AuthRole, Meeting, Permission, UserClub
 from app.auth.permissions import Permissions
 from config import Config
 
@@ -37,7 +37,7 @@ class AccessMatrixTestCase(unittest.TestCase):
         # Cache role permissions for test logic
         self.role_permissions_map = {}
         for role_name in ['SysAdmin', 'ClubAdmin', 'Staff', 'User']:
-            u = User.query.filter_by(Username=role_name.lower()).first()
+            u = User.query.filter_by(username=role_name.lower()).first()
             self.role_permissions_map[role_name.lower()] = u.get_permissions()
             
         # Refactored: Fetch Guest permissions from DB
@@ -61,19 +61,33 @@ class AccessMatrixTestCase(unittest.TestCase):
         
         # Create Users
         self.users = {}
+        # Create Club (required for Meeting and UserClub)
+        from app.models import Club
+        self.club = Club(
+            club_no='000000',
+            club_name='Test Club',
+            district='Test District'
+        )
+        db.session.add(self.club)
+        db.session.flush()
+
         for role_name in ['SysAdmin', 'ClubAdmin', 'Staff', 'User']:
             contact = Contact(Name=f"{role_name} User", Type="Member")
             db.session.add(contact)
             db.session.flush()
             
             user = User(
-                Username=role_name.lower(),
-                Email=f"{role_name.lower()}@test.com",
-                Contact_ID=contact.id
+                username=role_name.lower(),
+                email=f"{role_name.lower()}@test.com",
+                contact_id=contact.id
             )
             user.set_password("password")
-            user.roles.append(self.roles[role_name])
             db.session.add(user)
+            db.session.flush()
+            
+            # Use UserClub to link role to user and club
+            uc = UserClub(user_id=user.id, club_id=self.club.id, club_role_id=self.roles[role_name].id, contact_id=contact.id)
+            db.session.add(uc)
             self.users[role_name.lower()] = user
 
         # Define Permissions
@@ -128,14 +142,6 @@ class AccessMatrixTestCase(unittest.TestCase):
             for p_name in p_names:
                 role.permissions.append(perm_objs[p_name])
 
-        # Create Club (required for Meeting)
-        from app.models import Club
-        self.club = Club(
-            club_no='000000',
-            club_name='Test Club',
-            district='Test District'
-        )
-        db.session.add(self.club)
         db.session.commit()
 
         # Create Meetings
@@ -281,7 +287,7 @@ class AccessMatrixTestCase(unittest.TestCase):
         
         with self.subTest(role=role, status=status, url=url):
             self.assertEqual(resp.status_code, expected_code, 
-                             f"Result match. Role={role}, Status={status}. Expected {expected_code}, Got {resp.status_code}")
+                             f"Result match. Role={role}, status={status}. Expected {expected_code}, Got {resp.status_code}")
 
     def test_agenda_matrix(self):
         for role in self.ALL_ROLES:

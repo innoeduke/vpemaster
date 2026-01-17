@@ -319,7 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
       row.dataset.credentials = log.Credentials !== null ? log.Credentials : '';
       row.dataset.durationMin = log.Duration_Min !== null ? log.Duration_Min : '';
       row.dataset.durationMax = log.Duration_Max !== null ? log.Duration_Max : '';
-      row.dataset.status = log.Status || '';
+      row.dataset.status = log.status || '';
       row.dataset.role = log.role || '';
       row.dataset.currentPathLevel = log.current_path_level || '';
 

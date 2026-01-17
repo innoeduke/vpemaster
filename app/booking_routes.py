@@ -61,7 +61,11 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeti
         return roles
 
     # 3-Week Policy speaker rule
-    if current_user.is_authenticated and current_user.contact and current_user.contact.Current_Path:
+    from .club_context import get_current_club_id
+    club_id = get_current_club_id()
+    contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
+    
+    if contact and contact.Current_Path:
         three_meetings_ago = selected_meeting_number - 2
         recent_speaker_log = db.session.query(SessionLog.id).join(SessionType).join(MeetingRole, SessionType.role_id == MeetingRole.id)\
             .filter(SessionLog.Owner_ID == current_user_contact_id)\
@@ -241,7 +245,8 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
         selected_meeting = selected_meeting.filter(Meeting.club_id == club_id)
     selected_meeting = selected_meeting.first()
     
-    is_manager = user.Contact_ID == selected_meeting.manager_id if (user and selected_meeting) else False
+    contact = user.get_contact(club_id) if (user and selected_meeting) else None
+    is_manager = (contact and contact.id == selected_meeting.manager_id) if selected_meeting else False
     
     # 1. Guests can ONLY access 'running' meetings
     if not user:

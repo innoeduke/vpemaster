@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Club Management</h2>
+        <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Create New Club
+        </a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Club No</th>
+                            <th>Name</th>
+                            <th>District/Area</th>
+                            <th>Meeting Info</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for club in clubs %}
+                        <tr>
+                            <td>{{ club.club_no }}</td>
+                            <td>
+                                <strong>{{ club.club_name }}</strong>
+                                {% if club.website %}
+                                    <br>
+                                    <a href="{{ club.website }}" target="_blank" class="small text-muted">
+                                        <i class="fas fa-external-link-alt"></i> Website
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if club.district %}D{{ club.district }}{% endif %}
+                                {% if club.division %} / Div {{ club.division }}{% endif %}
+                                {% if club.area %} / Area {{ club.area }}{% endif %}
+                            </td>
+                            <td>
+                                {% if club.meeting_date %}{{ club.meeting_date }}{% endif %}
+                                {% if club.meeting_time %}<br>{{ club.meeting_time.strftime('%H:%M') }}{% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ club.id }}" title="Delete">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Delete Confirmation Modal -->
+                                <div class="modal fade" id="deleteModal{{ club.id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Confirm Delete</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Are you sure you want to delete club <strong>{{ club.club_name }}</strong>?
+                                                <p class="text-danger small mt-2">This action cannot be undone.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <form action="{{ url_for('clubs_bp.delete_club', club_id=club.id) }}" method="POST" class="d-inline">
+                                                    <button type="submit" class="btn btn-danger">Delete Club</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

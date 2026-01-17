@@ -38,9 +38,12 @@ def settings():
     if club_id:
         all_users = User.query.join(UserClub).filter(
             UserClub.club_id == club_id
-        ).order_by(User.Username.asc()).all()
+        ).options(db.joinedload(User.roles)).order_by(User.username.asc()).all()
     else:
-        all_users = User.query.order_by(User.Username.asc()).all()
+        all_users = User.query.options(db.joinedload(User.roles)).order_by(User.username.asc()).all()
+    
+    # Batch populate contacts for the current club to avoid N+1 queries in template
+    User.populate_contacts(all_users, club_id)
     
     # Achievements: Filter by club
     if club_id:
@@ -596,11 +599,15 @@ def update_user_roles():
                 club_id = default_club.id if default_club else None
             
             if club_id and highest_role_id:
+                # Try to reuse an existing contact_id from another club membership
+                existing_uc = UserClub.query.filter_by(user_id=user_id).first()
+                contact_id = existing_uc.contact_id if existing_uc else None
+                
                 new_uc = UserClub(
                     user_id=user_id,
                     club_id=club_id,
                     club_role_id=highest_role_id,
-                    contact_id=user.Contact_ID
+                    contact_id=contact_id
                 )
                 db.session.add(new_uc)
         else:
@@ -614,7 +621,7 @@ def update_user_roles():
             action='UPDATE_USER_ROLES',
             target_type='USER',
             target_id=user_id,
-            target_name=user.Username,
+            target_name=user.username,
             changes=f"Updated role to: {highest_role_id}"
         )
         db.session.add(audit)

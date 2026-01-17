@@ -72,97 +72,7 @@ function initTooltips() {
 document.addEventListener('DOMContentLoaded', function () {
     // Initialize tooltips
     initTooltips();
-    // ===== USER SEARCH (for adding existing users to club) =====
-    const userSearch = document.getElementById('user_search');
-    const userDropdown = document.getElementById('user_dropdown');
-    const userDataScript = document.getElementById('user_data');
     
-    if (userSearch && userDropdown && userDataScript) {
-        let users = [];
-        try {
-            users = JSON.parse(userDataScript.textContent);
-        } catch (e) {
-            console.error("Failed to parse user data", e);
-        }
-        
-        userSearch.addEventListener('input', function () {
-            const val = this.value.toLowerCase().trim();
-            userDropdown.innerHTML = '';
-            
-            if (!val) {
-                userDropdown.style.display = 'none';
-                return;
-            }
-            
-            // Search by username, email, phone, or contact name
-            const filtered = users.filter(u => {
-                const username = (u.username || '').toLowerCase();
-                const email = (u.email || '').toLowerCase();
-                const phone = (u.phone || '').toLowerCase();
-                const contactName = (u.contact_name || '').toLowerCase();
-                
-                return username.includes(val) || 
-                       email.includes(val) || 
-                       phone.includes(val) || 
-                       contactName.includes(val);
-            }).slice(0, 10); // Limit to top 10
-            
-            if (filtered.length > 0) {
-                filtered.forEach(u => {
-                    const div = document.createElement('div');
-                    div.className = 'autocomplete-suggestion';
-                    
-                    // Build display text - show only name information for privacy
-                    let displayText = u.contact_name || u.username;
-                    if (u.contact_name && u.username) {
-                        displayText = `${u.contact_name} (${u.username})`;
-                    }
-                    
-                    div.textContent = displayText;
-                    div.addEventListener('click', function () {
-                        // Redirect to edit this user (add to club)
-                        window.location.href = `/user/form/${u.id}`;
-                    });
-                    userDropdown.appendChild(div);
-                });
-                userDropdown.style.display = 'block';
-            } else {
-                userDropdown.style.display = 'none';
-            }
-        });
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function (e) {
-            if (e.target !== userSearch && e.target !== userDropdown) {
-                userDropdown.style.display = 'none';
-            }
-        });
-    }
-
-    // ===== AUTO-GENERATE FULL NAME =====
-    const firstName = document.getElementById('first_name');
-    const lastName = document.getElementById('last_name');
-    const fullName = document.getElementById('full_name');
-
-    if (firstName && lastName && fullName) {
-        let isManuallyEdited = false;
-
-        fullName.addEventListener('input', () => {
-            isManuallyEdited = true;
-        });
-
-        const updateFullName = () => {
-            if (isManuallyEdited) return;
-            
-            const first = firstName.value.trim();
-            const last = lastName.value.trim();
-            fullName.value = `${first} ${last}`.trim();
-        };
-
-        firstName.addEventListener('input', updateFullName);
-        lastName.addEventListener('input', updateFullName);
-    }
-
     // ===== DUPLICATE DETECTION LOGIC =====
     const userForm = document.querySelector('form');
     const duplicateModal = document.getElementById('duplicateModal');
@@ -172,28 +82,47 @@ document.addEventListener('DOMContentLoaded', function () {
     const closeDuplicateModal = document.getElementById('closeDuplicateModal');
     
     let isEditing = window.location.pathname.includes('/user/form/') && !window.location.pathname.endsWith('/form');
-    let hasCheckedDuplicates = false;
 
     if (userForm && duplicateModal) {
-        userForm.addEventListener('submit', async function (e) {
+        let lastCheckedValues = {
+            username: '',
+            first_name: '',
+            last_name: '',
+            email: '',
+            phone: ''
+        };
+        
+        let currentSuggestion = null;
+
+        const checkDuplicates = async () => {
             // Only check duplicates for new users
-            if (isEditing || hasCheckedDuplicates) {
+            if (isEditing) return;
+
+            const username = document.getElementById('username')?.value || '';
+            const firstName = document.getElementById('first_name')?.value || '';
+            const lastName = document.getElementById('last_name')?.value || '';
+            const email = document.getElementById('email')?.value || '';
+            const phone = document.getElementById('phone')?.value || '';
+
+            // Check if anything has actually changed to avoid redundant popups
+            if (username === lastCheckedValues.username && 
+                firstName === lastCheckedValues.first_name && 
+                lastName === lastCheckedValues.last_name && 
+                email === lastCheckedValues.email && 
+                phone === lastCheckedValues.phone) {
                 return;
             }
+            
+            // Don't check if all fields are empty
+            if (!username && !firstName && !lastName && !email && !phone) return;
 
-            e.preventDefault();
-
-            const username = document.getElementById('username').value;
-            const fullName = document.getElementById('full_name').value;
-            const email = document.getElementById('email').value;
-            const phone = document.getElementById('phone').value;
+            // Construct full name for backend compatibility
+            const fullName = `${firstName} ${lastName}`.trim();
 
             try {
                 const response = await fetch('/user/check_duplicates', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         username: username,
                         full_name: fullName,
@@ -205,69 +134,123 @@ document.addEventListener('DOMContentLoaded', function () {
                 const data = await response.json();
 
                 if (data.duplicates && data.duplicates.length > 0) {
+                    currentSuggestion = data.suggested_username;
+                    // Update last checked values to prevent immediate re-popup for same data
+                    lastCheckedValues = { username, first_name: firstName, last_name: lastName, email, phone };
+                    
+                    let hasHardDuplicate = false;
+                    const modalTitle = document.querySelector('#duplicateModal h2');
+                    
                     // Show duplicates in modal
                     duplicateList.innerHTML = '';
                     data.duplicates.forEach(dup => {
                         const div = document.createElement('div');
-                        div.style.cssText = 'padding: 10px; border: 1px solid #eee; margin-bottom: 10px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; background: #fafafa;';
+                        div.className = 'duplicate-item';
                         
                         const info = document.createElement('div');
+                        info.className = 'duplicate-info';
+                        const clubsText = dup.clubs && dup.clubs.length > 0 ? dup.clubs.join(', ') : 'No club memberships';
+                        
+                        let membershipNotice = '';
+                        let buttonText = 'Pick This User';
+                        
+                        if (dup.in_current_club) {
+                            if (dup.type === 'User' || dup.has_user) {
+                                membershipNotice = `<br><span style="color: #dc3545; font-size: 0.85em; font-weight: 500;">Already a member of this club.</span>`;
+                                buttonText = 'View Member';
+                                hasHardDuplicate = true;
+                            } else {
+                                membershipNotice = `<br><span style="color: #28a745; font-size: 0.85em; font-weight: 500;">Existing guest in this club.</span>`;
+                                buttonText = 'Convert to User';
+                            }
+                        }
+
                         info.innerHTML = `
                             <strong>${dup.full_name}</strong> (${dup.username})<br>
-                            <small>${dup.email} | ${dup.phone}</small><br>
-                            <span class="badge ${dup.type === 'User' ? 'btn-primary' : 'btn-secondary'}" style="font-size: 0.7em; padding: 2px 5px; border-radius: 3px; color: white;">${dup.type}</span>
+                            <small>${clubsText}</small>
+                            ${membershipNotice}
                         `;
+                        
+                        const actionDiv = document.createElement('div');
+                        actionDiv.className = 'duplicate-actions';
                         
                         const pickBtn = document.createElement('button');
                         pickBtn.type = 'button';
                         pickBtn.className = 'btn btn-sm btn-info';
-                        pickBtn.textContent = 'Pick This User';
-                        pickBtn.style.minWidth = '100px';
+                        pickBtn.textContent = buttonText;
+                        pickBtn.style.minWidth = '120px';
                         pickBtn.addEventListener('click', () => {
-                            if (dup.type === 'User') {
-                                window.location.href = `/user/form/${dup.id}`;
+                            if (dup.type === 'Contact' && !dup.has_user && dup.in_current_club) {
+                                // Requirement 4: Convert guest to user
+                                window.location.href = `/user/form?contact_id=${dup.id}`;
                             } else {
-                                // For contact-only matches, we might want to link it, 
-                                // but for now let's just go to the user creation with this contact context?
-                                // Actually, let's just suggest the user record if it exists.
-                                // If it's just a contact, we should maybe allow linking.
-                                // For simplicity, if it's a contact, let's just proceed or pick if it has a user.
-                                if (dup.has_user) {
-                                     // This shouldn't happen with our backend logic but just in case
-                                     alert("This contact already has a user account. Redirecting...");
+                                const targetId = dup.type === 'User' ? dup.id : dup.user_id;
+                                if (targetId) {
+                                    window.location.href = `/user/form/${targetId}`;
                                 } else {
-                                     // Proceeding with new user but maybe we should link it? 
-                                     // The backend _create_or_update_user creates a new contact always currently.
-                                     // Let's just create new for now as requested.
+                                    duplicateModal.style.display = 'none';
                                 }
                             }
                         });
                         
+                        actionDiv.appendChild(pickBtn);
                         div.appendChild(info);
-                        div.appendChild(pickBtn);
+                        div.appendChild(actionDiv);
                         duplicateList.appendChild(div);
                     });
                     
+                    // Update modal UI based on whether we have a hard duplicate
+                    if (hasHardDuplicate) {
+                        modalTitle.textContent = 'User Already Exists';
+                        proceedWithNewBtn.style.display = 'none';
+                    } else {
+                        modalTitle.textContent = 'Potential Duplicate Found';
+                        proceedWithNewBtn.style.display = 'block';
+                    }
+                    
                     duplicateModal.style.display = 'flex';
-                } else {
-                    // No duplicates, proceed
-                    hasCheckedDuplicates = true;
-                    userForm.submit();
                 }
             } catch (err) {
                 console.error("Duplication check failed", err);
-                hasCheckedDuplicates = true;
-                userForm.submit();
+            }
+        };
+
+        // Attachment of event listeners for real-time check
+        ['username', 'first_name', 'last_name', 'email', 'phone'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('blur', checkDuplicates);
+            }
+        });
+
+        // Simple submit without interception (or minor check)
+        userForm.addEventListener('submit', function (e) {
+            // If modal is open, prevent submission
+            if (duplicateModal.style.display === 'flex') {
+                e.preventDefault();
+                return;
             }
         });
 
         proceedWithNewBtn.addEventListener('click', () => {
-            hasCheckedDuplicates = true;
-            userForm.submit();
+            if (currentSuggestion) {
+                const unElement = document.getElementById('username');
+                if (unElement) {
+                    unElement.value = currentSuggestion;
+                    // Trigger flash or simple color change to notify user
+                    unElement.style.backgroundColor = '#e8f0fe';
+                    setTimeout(() => unElement.style.backgroundColor = '', 2000);
+                }
+            }
+            duplicateModal.style.display = 'none';
         });
 
         cancelSaveBtn.addEventListener('click', () => {
-            duplicateModal.style.display = 'none';
+            // Abort creation and go back to user settings or home
+            const cancelUrl = isEditing ? 
+                '/settings?tab=user-settings' : 
+                '/settings?tab=user-settings';
+            window.location.href = cancelUrl;
         });
 
         closeDuplicateModal.addEventListener('click', () => {

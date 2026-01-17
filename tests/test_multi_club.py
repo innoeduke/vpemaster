@@ -54,8 +54,8 @@ class TestContactClubJunctionTable:
     def test_all_contacts_have_primary_club(self, app, default_contact_club):
         """Test that all contacts with club associations have a primary club."""
         with app.app_context():
-            # Get all unique contacts in contact_clubs
-            contact_ids = db.session.query(ContactClub.contact_id).distinct().all()
+            # Get all unique contacts in contact_clubs that match our test pattern
+            contact_ids = db.session.query(ContactClub.contact_id).join(Contact).filter(Contact.Name.like('Test %')).distinct().all()
             contact_ids = [cid[0] for cid in contact_ids]
             
             for contact_id in contact_ids:

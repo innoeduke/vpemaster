@@ -6,7 +6,7 @@ def send_reset_email(user):
     token = user.get_reset_token()
     msg = Message('Password Reset Request',
                   sender=current_app.config['MAIL_DEFAULT_SENDER'],
-                  recipients=[user.Email])
+                  recipients=[user.email])
     
     # We'll use a simple string body for now to ensure it works, or a template if available.
     # Plan calls for reset_password.html template.
@@ -27,7 +27,7 @@ If you did not make this request then simply ignore this email and no changes wi
     
     # NOTE: Since we are in development and might not have a real mail server, 
     # printing to console is helpful.
-    print(f"DEBUG: Password Reset Link for {user.Username}: {reset_url}")
+    print(f"DEBUG: Password Reset Link for {user.username}: {reset_url}")
     
     try:
         mail.send(msg)

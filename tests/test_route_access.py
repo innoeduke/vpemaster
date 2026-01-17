@@ -34,20 +34,34 @@ class RouteAccessTestCase(unittest.TestCase):
         self.app_context.pop()
 
     def populate_data(self):
+        # Create Club first (required for Meeting and ContactClub)
+        from app.models import Club, ContactClub, UserClub
+        self.club = Club(
+            club_no='000000',
+            club_name='Test Club',
+            district='Test District'
+        )
+        db.session.add(self.club)
+        db.session.commit()
+
         # Create Users with different roles
         # Note: Role logic typically depends on Contact.Type or User.Role or User.is_officer property
         # Checking models.py would confirm how permissions are checked.
         # Based on previous output: user.is_officer checks contact type probably.
         
         # 1. Admin/Staff
-        self.staff_contact = Contact(Name="Staff User", Type="Member", Club="Test Club")
+        self.staff_contact = Contact(Name="Staff User", Type="Member")
         db.session.add(self.staff_contact)
+        db.session.commit()
+        
+        # Link to club
+        db.session.add(ContactClub(contact_id=self.staff_contact.id, club_id=self.club.id, is_primary=True))
         db.session.commit()
 
         self.staff_user = User(
-            Username="staff",
-            Email="staff@test.com", 
-            Contact_ID=self.staff_contact.id
+            username="staff",
+            email="staff@test.com", 
+            contact_id=self.staff_contact.id
         )
         self.staff_user.set_password("password")
         db.session.add(self.staff_user)
@@ -79,15 +93,29 @@ class RouteAccessTestCase(unittest.TestCase):
             staff_role.permissions.append(voting_results_perm)
             
         self.staff_user.roles.append(staff_role)
+
+        # Manually create UserClub for Staff
+        db.session.add(UserClub(
+            user_id=self.staff_user.id,
+            club_id=self.club.id,
+            club_role_id=staff_role.id,
+            contact_id=self.staff_contact.id
+        ))
+        db.session.commit()
         
         # 2. User
-        self.user_contact = Contact(Name="Standard User", Type="Member", Club="Test Club")
+        self.user_contact = Contact(Name="Standard User", Type="Member")
         db.session.add(self.user_contact)
         db.session.commit()
+        
+        # Link to club
+        db.session.add(ContactClub(contact_id=self.user_contact.id, club_id=self.club.id, is_primary=True))
+        db.session.commit()
+        
         self.user_user = User(
-            Username="user",
-            Email="user@test.com", 
-            Contact_ID=self.user_contact.id
+            username="user",
+            email="user@test.com", 
+            contact_id=self.user_contact.id
         )
         self.user_user.set_password("password")
         db.session.add(self.user_user)
@@ -103,18 +131,17 @@ class RouteAccessTestCase(unittest.TestCase):
             user_role.permissions.append(agenda_view_perm)
             
         self.user_user.roles.append(user_role)
+        
+        # Manually create UserClub for User
+        db.session.add(UserClub(
+            user_id=self.user_user.id,
+            club_id=self.club.id,
+            club_role_id=user_role.id,
+            contact_id=self.user_user.contact_id
+        ))
+        db.session.commit()
 
         # 3. Guest (No user needed, just unauth)
-
-        # Create Club (required for Meeting)
-        from app.models import Club
-        self.club = Club(
-            club_no='000000',
-            club_name='Test Club',
-            district='Test District'
-        )
-        db.session.add(self.club)
-        db.session.commit()
 
         # Create Meetings with different statuses
         today = date.today()
@@ -134,9 +161,19 @@ class RouteAccessTestCase(unittest.TestCase):
             db.session.add(guest_role)
             db.session.flush()
         
-        # Assign AGENDA_VIEW to Guest
+        # Assign AGENDA_VIEW and ABOUT_CLUB_VIEW to Guest (Required for Authorized Club Context)
         if agenda_view_perm not in guest_role.permissions:
             guest_role.permissions.append(agenda_view_perm)
+            
+        about_club_perm = Permission.query.filter_by(name=Permissions.ABOUT_CLUB_VIEW).first()
+        if not about_club_perm:
+             about_club_perm = Permission(name=Permissions.ABOUT_CLUB_VIEW, description='View Club Info')
+             db.session.add(about_club_perm)
+             db.session.flush()
+
+        if about_club_perm not in guest_role.permissions:
+            guest_role.permissions.append(about_club_perm)
+            
         db.session.commit()
 
     def login(self, email, password):

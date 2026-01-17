@@ -71,9 +71,82 @@ class Contact(db.Model):
     
     def get_primary_club(self):
         """Get the primary club for this contact."""
+        # Optimization: Check if batch-populated
+        if hasattr(self, '_primary_club'):
+            return self._primary_club
+            
         from .contact_club import ContactClub
         cc = ContactClub.query.filter_by(contact_id=self.id, is_primary=True).first()
         return cc.club if cc else None
+
+    @property
+    def user_id(self):
+        """Get the ID of the user associated with this contact in the current club."""
+        from ..club_context import get_current_club_id
+        club_id = get_current_club_id()
+        for uc in self.user_club_records:
+            if uc.club_id == club_id:
+                return uc.user_id
+        return None
+
+    @property
+    def user(self):
+        """Get the user associated with this contact in the current club."""
+        # Optimization: Check if batch-populated
+        if hasattr(self, '_user'):
+            return self._user
+            
+        from ..club_context import get_current_club_id
+        club_id = get_current_club_id()
+        for uc in self.user_club_records:
+            if uc.club_id == club_id:
+                return uc.user
+        return None
+
+    @staticmethod
+    def populate_users(contacts, club_id=None):
+        """
+        Batch-populates user records for a list of contacts for a specific club.
+        Adds a _user attribute to each contact object to avoid N+1 queries.
+        """
+        if not contacts:
+            return
+            
+        from .user_club import UserClub
+        from ..club_context import get_current_club_id
+        
+        if not club_id:
+            club_id = get_current_club_id()
+            
+        contact_ids = [c.id for c in contacts]
+        ucs = UserClub.query.filter(
+            UserClub.contact_id.in_(contact_ids),
+            UserClub.club_id == club_id
+        ).options(db.joinedload(UserClub.user)).all()
+        
+        user_map = {uc.contact_id: uc.user for uc in ucs}
+        for contact in contacts:
+            contact._user = user_map.get(contact.id)
+
+    @staticmethod
+    def populate_primary_clubs(contacts):
+        """
+        Batch-populates primary club records for a list of contacts.
+        Adds a _primary_club attribute to each contact object to avoid N+1 queries.
+        """
+        if not contacts:
+            return
+            
+        from .contact_club import ContactClub
+        contact_ids = [c.id for c in contacts]
+        ccs = ContactClub.query.filter(
+            ContactClub.contact_id.in_(contact_ids),
+            ContactClub.is_primary == True
+        ).options(db.joinedload(ContactClub.club)).all()
+        
+        cc_map = {cc.contact_id: cc.club for cc in ccs}
+        for contact in contacts:
+            contact._primary_club = cc_map.get(contact.id)
     
     def get_club_membership(self, club_id):
         """

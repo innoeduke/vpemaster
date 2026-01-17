@@ -607,9 +607,12 @@ def get_current_user_info():
         tuple: (user object, contact_id)
     """
     from flask_login import current_user
+    from .club_context import get_current_club_id
     if current_user.is_authenticated:
         user = current_user
-        current_user_contact_id = user.Contact_ID
+        club_id = get_current_club_id()
+        contact = user.get_contact(club_id)
+        current_user_contact_id = contact.id if contact else None
     else:
         user = None
         current_user_contact_id = None

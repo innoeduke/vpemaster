@@ -24,7 +24,7 @@ def generate_test_users():
             contact_name = f"Test Keynote Contact {i}"
             
             # Check if user already exists
-            if User.query.filter_by(Username=username).first():
+            if User.query.filter_by(username=username).first():
                 print(f"User {username} already exists. Skipping.")
                 continue
                 
@@ -44,12 +44,12 @@ def generate_test_users():
             
             # 2. Create User linked to Contact
             user = User(
-                Username=username,
+                username=username,
                 Email=email,
-                Pass_Hash=generate_password_hash('password', method='pbkdf2:sha256'),
+                password_hash=generate_password_hash('password', method='pbkdf2:sha256'),
                 Role='Member',
-                Status='active',
-                Contact_ID=contact.id
+                status='active',
+                contact_id=contact.id
             )
             db.session.add(user)
             

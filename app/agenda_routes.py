@@ -39,7 +39,7 @@ def _get_agenda_logs(meeting_number):
             orm.joinedload(SessionLog.meeting),      # Eager load Meeting
             orm.joinedload(SessionLog.project),      # Eager load Project
             # Eager load Owner and associated User
-            orm.joinedload(SessionLog.owner).joinedload(Contact.user),
+            orm.joinedload(SessionLog.owner),
             orm.joinedload(SessionLog.media)
     )
 
@@ -47,7 +47,12 @@ def _get_agenda_logs(meeting_number):
         query = query.filter(SessionLog.Meeting_Number == meeting_number)
 
     # Order by sequence
-    return query.order_by(SessionLog.Meeting_Seq.asc()).all()
+    logs = query.order_by(SessionLog.Meeting_Seq.asc()).all()
+    owners = [log.owner for log in logs if log.owner]
+    if owners:
+        from .club_context import get_current_club_id
+        Contact.populate_users(owners, get_current_club_id())
+    return logs
 
 
 def _get_project_speakers(meeting_number):
@@ -631,11 +636,12 @@ A single endpoint to fetch all data needed for the agenda modals.
             "Duration_Min": s.Duration_Min, "Duration_Max": s.Duration_Max
         } for s in session_types
     ]
-
-    # Contacts
     club_id = get_current_club_id()
     contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
-        .options(orm.joinedload(Contact.user)).order_by(Contact.Name.asc()).all()
+        .order_by(Contact.Name.asc()).all()
+    
+    Contact.populate_users(contacts, club_id)
+    
     contacts_data = [
         {
             "id": c.id, "Name": c.Name, "DTM": c.DTM, "Type": c.Type,

@@ -8,7 +8,7 @@ class UserClub(db.Model):
     __tablename__ = 'user_clubs'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('Users.id', ondelete='CASCADE'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id', ondelete='CASCADE'), nullable=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id', ondelete='CASCADE'), nullable=False)
     club_role_id = db.Column(db.Integer, db.ForeignKey('auth_roles.id', ondelete='SET NULL'), nullable=True)  # Reference to club officer role (e.g., from ExComm)
@@ -31,15 +31,7 @@ class UserClub(db.Model):
     
     def __init__(self, **kwargs):
         super(UserClub, self).__init__(**kwargs)
-        if not self.contact_id:
-            # Try to get from user object first
-            if hasattr(self, 'user') and self.user and hasattr(self.user, 'Contact_ID'):
-                self.contact_id = self.user.Contact_ID
-            elif self.user_id:
-                from .user import User
-                user = db.session.get(User, self.user_id)
-                if user and user.Contact_ID:
-                    self.contact_id = user.Contact_ID
+        # contact_id should be explicitly provided or managed by User.ensure_contact
 
     # Constraints and indexes
     __table_args__ = (

@@ -6,82 +6,33 @@
 <h1>{{ 'Edit User' if user else 'Add New User' }}</h1>
 <form method="POST"
     action="{{ url_for('users_bp.user_form', user_id=user.id) if user else url_for('users_bp.user_form') }}">
+    <input type="hidden" name="contact_id" value="{{ source_contact.id if source_contact else (user.contact.id if user and user.contact else '') }}">
     <table class="form-table">
-        {% if not user %}
-        <tr class="tr-full-width">
-            <td>
-                <label for="user_search">Search existing user: 
-                    <i class="fas fa-info-circle info-icon-tooltip" 
-                       style="color: #007bff; cursor: pointer; font-size: 0.9em;" 
-                       data-tooltip="Search for an existing user to add to this club, or create a new user below."></i>
-                </label>
-            </td>
-            <td>
-                <div style="position: relative;">
-                    <input type="text" id="user_search" placeholder="Search by name, email, or phone..." autocomplete="off" style="width: 100%;">
-                    <div id="user_dropdown" class="autocomplete-suggestions" style="display: none; width: 100%;"></div>
-                </div>
-                <!-- Hidden source for JS to use -->
-                <script id="user_data" type="application/json">
-                    [
-                    {% for u in users %}
-                        {
-                            "id": {{ u.id }}, 
-                            "username": {{ u.Username | tojson }},
-                            "email": {{ u.Email | tojson if u.Email else 'null' }},
-                            "phone": {{ u.phone | tojson if u.phone else 'null' }},
-                            "contact_name": {{ u.contact.Name | tojson if u.contact else 'null' }}
-                        }{% if not loop.last %},{% endif %}
-                    {% endfor %}
-                    ]
-                </script>
-            </td>
-        </tr>
-        {% endif %}
         <tr class="tr-full-width">
             <td><label for="username">Username:</label></td>
-            <td><input type="text" id="username" name="username" value="{{ user.Username if user else '' }}" required>
+            <td><input type="text" id="username" name="username" value="{{ user.username if user else '' }}" required>
             </td>
         </tr>
         <tr>
             <td><label for="first_name">First Name:</label></td>
-            <td><input type="text" id="first_name" name="first_name" value="{{ user.contact.first_name if user and user.contact else '' }}">
+            <td><input type="text" id="first_name" name="first_name" value="{{ source_contact.first_name if source_contact else (user.contact.first_name if user and user.contact else '') }}">
             </td>
         </tr>
         <tr>
             <td><label for="last_name">Last Name:</label></td>
-            <td><input type="text" id="last_name" name="last_name" value="{{ user.contact.last_name if user and user.contact else '' }}">
-            </td>
-        </tr>
-        <tr class="tr-full-width">
-            <td><label for="full_name">Full Name:</label></td>
-            <td><input type="text" id="full_name" name="full_name" value="{{ user.contact.Name if user and user.contact else '' }}" required>
+            <td><input type="text" id="last_name" name="last_name" value="{{ source_contact.last_name if source_contact else (user.contact.last_name if user and user.contact else '') }}">
             </td>
         </tr>
         <tr>
             <td><label for="email">Email:</label></td>
-            <td><input type="email" id="email" name="email" value="{{ user.Email if user and user.Email else '' }}">
+            <td><input type="email" id="email" name="email" value="{{ source_contact.Email if source_contact else (user.email if user and user.email else '') }}">
             </td>
         </tr>
         <tr>
             <td><label for="phone">Phone:</label></td>
-            <td><input type="text" id="phone" name="phone" value="{{ user.phone if user and user.phone else '' }}">
+            <td><input type="text" id="phone" name="phone" value="{{ source_contact.Phone_Number if source_contact else (user.phone if user and user.phone else '') }}">
             </td>
         </tr>
-        <tr>
-            <td><label for="status">Status:</label></td>
-            <td>
-                <select id="status" name="status" required {% if not user %}disabled style="background-color: #f0f0f0;"
-                    {% endif %}>
-                    <option value="active" {% if (user and user.Status=='active' ) or not user %}selected{% endif %}>
-                        Active</option>
-                    <option value="inactive" {% if user and user.Status=='inactive' %}selected{% endif %}>Inactive
-                    </option>
-                </select>
-                {% if not user %}
-                <input type="hidden" name="status" value="active">
-                {% endif %}
-            </td>
         <tr>
             <td>
                 <label>Role 
@@ -123,12 +74,12 @@
         <h2>Potential Duplicate Found</h2>
         <p>The following existing users/contacts match the information you entered. Would you like to use one of them instead?</p>
         
-        <div id="duplicateList" style="margin: 20px 0; max-height: 300px; overflow-y: auto;">
+        <div id="duplicateList" class="duplicate-list">
             <!-- Duplicates will be injected here -->
         </div>
         
-        <div class="form-actions" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
-            <button type="button" class="btn btn-secondary" id="proceedWithNew" style="width: 200px;">Create New User Anyway</button>
+        <div class="form-actions" style="margin-top: 20px; display: flex; justify-content: center; gap: 15px;">
+            <button type="button" class="btn btn-secondary" id="proceedWithNew" style="width: 160px;">Continue Anyway</button>
             <button type="button" class="btn btn-danger" id="cancelSave" style="width: 120px;">Cancel</button>
         </div>
     </div>

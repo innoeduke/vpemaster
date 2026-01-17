@@ -36,12 +36,21 @@ def cleanup_test_data(app):
                     )
                 ).delete(synchronize_session=False)
             
-            # 2. Delete ContactClub records
+            # 2. Delete all records that reference test contacts
             if test_contact_ids:
+                from app.models import SessionLog, UserClub, Waitlist, Vote, Roster, Achievement
+                SessionLog.query.filter(SessionLog.Owner_ID.in_(test_contact_ids)).delete(synchronize_session=False)
+                Waitlist.query.filter(Waitlist.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
+                Vote.query.filter(Vote.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
+                Roster.query.filter(Roster.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
+                Achievement.query.filter(Achievement.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
+                UserClub.query.filter(UserClub.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
                 ContactClub.query.filter(ContactClub.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
+                db.session.commit()
             
             # 3. Delete Users (they reference Contacts)
-            User.query.filter(User.Username.like('test_%')).delete()
+            User.query.filter(User.username.like('test_%')).delete(synchronize_session=False)
+            db.session.commit()
             
             # 4. Delete Contacts
             Contact.query.filter(Contact.Name.like('Test %')).delete()
@@ -72,7 +81,7 @@ def test_sysadmin_access_any_club(app, client):
             db.session.add(admin_role)
             db.session.flush()
         
-        user = User(Username='test_sysadmin', Status='active')
+        user = User(username='test_sysadmin', status='active')
         user.set_password('password')
         db.session.add(user)
         db.session.flush()
@@ -126,7 +135,7 @@ def test_clubadmin_access_owned_club(app, client):
         db.session.add(contact)
         db.session.flush()
         
-        user = User(Username='test_clubadmin', Status='active', Contact_ID=contact.id)
+        user = User(username='test_clubadmin', status='active', contact_id=contact.id)
         user.set_password('password')
         db.session.add(user)
         db.session.flush()
@@ -178,7 +187,7 @@ def test_clubadmin_denied_non_owned_club(app, client):
         db.session.add(contact)
         db.session.flush()
         
-        user = User(Username='test_clubadmin2', Status='active', Contact_ID=contact.id)
+        user = User(username='test_clubadmin2', status='active', contact_id=contact.id)
         user.set_password('password')
         db.session.add(user)
         db.session.flush()
@@ -228,7 +237,7 @@ def test_regular_user_access_authorized_club(app, client):
         db.session.add(contact)
         db.session.flush()
         
-        user = User(Username='test_regular', Status='active', Contact_ID=contact.id)
+        user = User(username='test_regular', status='active', contact_id=contact.id)
         user.set_password('password')
         db.session.add(user)
         db.session.flush()
@@ -281,7 +290,7 @@ def test_regular_user_denied_unauthorized_club(app, client):
         db.session.add(contact)
         db.session.flush()
         
-        user = User(Username='test_regular2', Status='active', Contact_ID=contact.id)
+        user = User(username='test_regular2', status='active', contact_id=contact.id)
         user.set_password('password')
         db.session.add(user)
         db.session.flush()

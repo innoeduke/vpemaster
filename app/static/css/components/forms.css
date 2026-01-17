@@ -178,6 +178,73 @@
     color: #000;
 }
 
+/* --- Duplicate Modal Styling --- */
+.duplicate-list {
+    margin: 20px 0;
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.duplicate-item {
+    padding: 15px;
+    border: 1px solid #ddd;
+    margin-bottom: 15px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fdfdfd;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.duplicate-info {
+    line-height: 1.8;
+    flex-grow: 1;
+}
+
+.duplicate-info strong {
+    font-size: 1.1em;
+    color: #333;
+}
+
+.duplicate-info small {
+    display: block;
+    color: #666;
+    margin-top: 4px;
+}
+
+.duplicate-actions {
+    margin-left: 20px;
+}
+
+/* --- Badge Styling --- */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 0.75em;
+    font-weight: 600;
+    line-height: 1.4;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 4px;
+    color: #fff !important;
+    margin-top: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.badge-user {
+    background-color: #772432;
+    /* Toastmasters Maroon */
+}
+
+.badge-contact {
+    background-color: #6c757d;
+    /* Standard Grey */
+}
+
 
 /* --- Mobile / Tablet Responsive Styles --- */
 @media (max-width: 992px) {

@@ -56,7 +56,7 @@
       <tr class="tr-full-width">
         <td><label>Full Name</label></td>
         <td>
-          {{ user.contact.Name if user.contact else '' }} ({{ user.Username }}) {%
+          {{ user.contact.Name if user.contact else '' }} ({{ user.username }}) {%
           if user.contact.DTM %}
           <sup class="dtm-superscript">DTM</sup>
           {% endif %}
@@ -65,7 +65,7 @@
       <tr>
         <td><label for="email">Email:</label></td>
         <td>
-          <input type="email" id="email" name="email" value="{{ user.Email if user.Email else '' }}"
+          <input type="email" id="email" name="email" value="{{ user.email if user.email else '' }}"
             autocomplete="email" {% if not is_own_profile %}disabled{% endif %} />
         </td>
       </tr>

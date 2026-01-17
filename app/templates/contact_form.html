@@ -8,18 +8,29 @@
     action="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) if contact else url_for('contacts_bp.contact_form') }}">
     <table class="form-table">
         <tr>
-            <td><label for="name">Name: <span class="required-field">*</span></label></td>
-            <td><input type="text" id="name" name="name" value="{{ contact.Name if contact else '' }}" required></td>
+            <td><label for="first_name">First Name: <span class="required-field">*</span></label></td>
+            <td><input type="text" id="first_name" name="first_name" value="{{ contact.first_name if contact else '' }}" required></td>
         </tr>
         <tr>
-            <td><label for="type">Type: <span class="required-field">*</span></label></td>
+            <td><label for="last_name">Last Name:</label></td>
+            <td><input type="text" id="last_name" name="last_name" value="{{ contact.last_name if contact else '' }}"></td>
+        </tr>
+        <input type="hidden" id="type" name="type" value="{{ contact.Type if contact else 'Guest' }}">
+        <input type="hidden" id="name" name="name" value="{{ contact.Name if contact else '' }}">
+        <tr id="member_id_row" {% if contact and contact.Type == 'Guest' %}style="display: none;"{% endif %}>
+            <td><label for="member_id">Member ID:</label></td>
+            <td><input type="text" id="member_id" name="member_id" value="{{ contact.Member_ID if contact else '' }}"></td>
+        </tr>
+        <tr id="mentor_id_row" {% if contact and contact.Type == 'Guest' %}style="display: none;"{% endif %}>
+            <td><label for="mentor_id">Mentor:</label></td>
             <td>
-                <select id="type" name="type" required>
-                    <option value="Member" {% if contact and contact.Type=='Member' %}selected{% endif %}>Member
+                <select id="mentor_id" name="mentor_id">
+                    <option value="">None</option>
+                    {% for mentor in mentor_candidates %}
+                    <option value="{{ mentor.id }}" {% if contact and contact.Mentor_ID == mentor.id %}selected{% endif %}>
+                        {{ mentor.Name }}
                     </option>
-                    <option value="Guest" {% if contact and contact.Type=='Guest' %}selected{% endif %}>Guest</option>
-                    <option value="Officer" {% if contact and contact.Type=='Officer' %}selected{% endif %}>System
-                    </option>
+                    {% endfor %}
                 </select>
             </td>
         </tr>

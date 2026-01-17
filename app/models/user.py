@@ -8,16 +8,15 @@ from .base import db
 
 
 class User(UserMixin, db.Model):
-    __tablename__ = 'Users'
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
-    Username = db.Column(db.String(50), nullable=False, unique=True)
-    Email = db.Column(db.String(120), unique=True, nullable=True)
+    username = db.Column(db.String(50), nullable=False, unique=True)
+    email = db.Column(db.String(120), unique=True, nullable=True)
     # Migrated to Contact: Member_ID, Mentor_ID, Current_Path, Next_Project, credentials
-    Contact_ID = db.Column(db.Integer, db.ForeignKey(
-        'Contacts.id'), nullable=True, unique=True)
-    Pass_Hash = db.Column(db.String(255), nullable=False)
-    Date_Created = db.Column(db.Date)
-    Status = db.Column(db.String(50), nullable=False, default='active')
+    # contact_id removed as it's now club-specific in UserClub
+    password_hash = db.Column(db.String(255), nullable=False)
+    created_at = db.Column(db.Date)
+    status = db.Column(db.String(50), nullable=False, default='active')
     
     # Additional member information
     member_no = db.Column(db.String(50), nullable=True)
@@ -27,7 +26,7 @@ class User(UserMixin, db.Model):
     bio = db.Column(db.Text, nullable=True)
     
     # Relationships
-    contact = db.relationship('Contact', foreign_keys=[Contact_ID], backref=db.backref('user', uselist=False))
+    # contact relationship removed, use UserClub.contact instead
     roles = db.relationship(
         'app.models.role.Role',
         secondary='user_clubs',
@@ -42,10 +41,10 @@ class User(UserMixin, db.Model):
     _permission_cache = None
 
     def set_password(self, password):
-        self.Pass_Hash = generate_password_hash(password, method='pbkdf2:sha256')
+        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
 
     def check_password(self, password):
-        return check_password_hash(self.Pass_Hash, password)
+        return check_password_hash(self.password_hash, password)
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(current_app.config['SECRET_KEY'])
@@ -108,6 +107,177 @@ class User(UserMixin, db.Model):
     def can(self, permission):
         """Check if user has a permission."""
         return self.has_permission(permission)
+
+    def can(self, permission):
+        """Check if user has a permission."""
+        return self.has_permission(permission)
+
+    def get_user_club(self, club_id):
+        """Get the UserClub record for a specific club."""
+        from .user_club import UserClub
+        if not club_id:
+            return None
+        return UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
+
+    def get_contact(self, club_id=None):
+        """Get the contact record for this user in a specific club."""
+        from ..club_context import get_current_club_id
+        
+        # Optimization: Check if batch-populated for the current club
+        current_club_id = get_current_club_id()
+        if (not club_id or club_id == current_club_id) and hasattr(self, '_current_contact'):
+            return self._current_contact
+            
+        if not club_id:
+            club_id = current_club_id
+        
+        uc = self.get_user_club(club_id)
+        return uc.contact if uc else None
+
+    @property
+    def contact(self):
+        """
+        Ambiguous property for backward compatibility. 
+        Returns the contact for the current club context.
+        """
+        return self.get_contact()
+
+    @staticmethod
+    def populate_contacts(users, club_id=None):
+        """
+        Batch-populates contact records for a list of users for a specific club.
+        Adds a _current_contact attribute to each user object to avoid N+1 queries.
+        """
+        if not users:
+            return
+            
+        from .user_club import UserClub
+        from ..club_context import get_current_club_id
+        
+        if not club_id:
+            club_id = get_current_club_id()
+            
+        user_ids = [u.id for u in users]
+        ucs = UserClub.query.filter(
+            UserClub.user_id.in_(user_ids),
+            UserClub.club_id == club_id
+        ).options(db.joinedload(UserClub.contact)).all()
+        
+        # Map user_id to contact
+        contact_map = {uc.user_id: uc.contact for uc in ucs}
+        
+        # Set a transient attribute on users
+        for user in users:
+            user._current_contact = contact_map.get(user.id)
+
+    def ensure_contact(self, full_name=None, first_name=None, last_name=None, email=None, phone=None, club_id=None):
+        """
+        Ensure the user has an associated contact record for the given club.
+        """
+        from datetime import date
+        from .contact import Contact
+        from .contact_club import ContactClub
+        from .club import Club
+        from .user_club import UserClub
+        from ..club_context import get_current_club_id
+
+        if not club_id:
+             club_id = get_current_club_id()
+             if not club_id:
+                 default_club = Club.query.first()
+                 club_id = default_club.id if default_club else None
+        
+        if not club_id:
+            return None
+
+        # Name construction
+        if not full_name and (first_name or last_name):
+            full_name = f"{first_name or ''} {last_name or ''}".strip()
+        final_name = full_name or self.username
+
+        uc = self.get_user_club(club_id)
+        contact = uc.contact if uc else None
+
+        if contact is None:
+             # Create new contact
+             contact = Contact(
+                 Name=final_name,
+                 first_name=first_name,
+                 last_name=last_name,
+                 Email=email or self.email,
+                 Phone_Number=phone or self.phone,
+                 Type='Member',
+                 Date_Created=date.today()
+             )
+             db.session.add(contact)
+             db.session.flush()
+             
+             if uc:
+                 uc.contact_id = contact.id
+             else:
+                 uc = UserClub(
+                     user_id=self.id,
+                     club_id=club_id,
+                     contact_id=contact.id
+                 )
+                 db.session.add(uc)
+             
+             # Also link via ContactClub for roster/contact management
+             contact_club = ContactClub.query.filter_by(contact_id=contact.id, club_id=club_id).first()
+             if not contact_club:
+                 db.session.add(ContactClub(contact_id=contact.id, club_id=club_id))
+        else:
+             # Sync to existing contact
+             if full_name: contact.Name = full_name
+             if first_name: contact.first_name = first_name
+             if last_name: contact.last_name = last_name
+             if email: contact.Email = email
+             if phone: contact.Phone_Number = phone
+             
+             # Ensure contact is linked to club via ContactClub
+             exists = ContactClub.query.filter_by(contact_id=contact.id, club_id=club_id).first()
+             if not exists:
+                 db.session.add(ContactClub(contact_id=contact.id, club_id=club_id))
+        
+        return contact
+
+    def set_club_role(self, club_id, role_id):
+        """
+        Set the user's role for a specific club using UserClub.
+        """
+        from .user_club import UserClub
+        from .club import Club
+        from ..club_context import get_current_club_id
+        
+        if not club_id:
+             club_id = get_current_club_id()
+             if not club_id:
+                 default_club = Club.query.first()
+                 club_id = default_club.id if default_club else None
+        
+        if not club_id or not role_id:
+            return
+
+        user_clubs = UserClub.query.filter_by(user_id=self.id).all()
+        
+        # Check if we already have a record for this club
+        existing_uc = None
+        for uc in user_clubs:
+            if uc.club_id == club_id:
+                existing_uc = uc
+                break
+        
+        if existing_uc:
+            existing_uc.club_role_id = role_id
+        else:
+            new_uc = UserClub(
+                user_id=self.id,
+                club_id=club_id,
+                club_role_id=role_id
+            )
+            # contact_id will be set by UserClub.__init__ or ensure_contact
+            db.session.add(new_uc)
+
 
 
 class AnonymousUser(AnonymousUserMixin):

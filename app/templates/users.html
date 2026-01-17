@@ -21,7 +21,7 @@
         {% for user in users %}
         <tr>
             <td>{{ loop.index }}</td>
-            <td>{{ user.Username }}</td>
+            <td>{{ user.username }}</td>
             <td>
                 {% if user.contact %}
                 {{ user.contact.Name }}
@@ -31,7 +31,7 @@
                 {% endif %}
             </td>
             <td>{{ user.primary_role_name }}</td>
-            <td>{{ user.Date_Created.strftime('%Y-%m-%d') if user.Date_Created else '' }}</td>
+            <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '' }}</td>
             <td>
                 <div class="action-links">
                     <a href="{{ url_for('users_bp.user_form', user_id=user.id) }}" class="icon-btn" title="Edit"><i

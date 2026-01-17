@@ -35,6 +35,9 @@ def permission_required(permission_name):
         def decorated_function(*args, **kwargs):
             permission = create_permission(permission_name)
             if not permission.can():
+                if not current_user.is_authenticated:
+                    from flask import redirect, url_for
+                    return redirect(url_for('auth_bp.login'))
                 abort(403)
             return f(*args, **kwargs)
         return decorated_function
@@ -55,6 +58,9 @@ def role_required(role_name):
         def decorated_function(*args, **kwargs):
             permission = create_role_permission(role_name)
             if not permission.can():
+                if not current_user.is_authenticated:
+                    from flask import redirect, url_for
+                    return redirect(url_for('auth_bp.login'))
                 abort(403)
             return f(*args, **kwargs)
         return decorated_function
@@ -77,6 +83,10 @@ def any_permission_required(*permission_names):
                 permission = create_permission(perm_name)
                 if permission.can():
                     return f(*args, **kwargs)
+            
+            if not current_user.is_authenticated:
+                from flask import redirect, url_for
+                return redirect(url_for('auth_bp.login'))
             abort(403)
         return decorated_function
     return decorator
@@ -97,6 +107,9 @@ def all_permissions_required(*permission_names):
             for perm_name in permission_names:
                 permission = create_permission(perm_name)
                 if not permission.can():
+                    if not current_user.is_authenticated:
+                        from flask import redirect, url_for
+                        return redirect(url_for('auth_bp.login'))
                     abort(403)
             return f(*args, **kwargs)
         return decorated_function

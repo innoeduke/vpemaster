@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import MetaData
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
 
@@ -8,7 +9,18 @@ import os
 
 # 1. Create extension instances WITHOUT an app
 # They will be "connected" to the app inside the factory
-db = SQLAlchemy()
+
+# Define naming convention for SQLAlchemy
+convention = {
+    "ix": 'ix_%(column_0_label)s',
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+metadata = MetaData(naming_convention=convention)
+
+db = SQLAlchemy(metadata=metadata)
 bcrypt = Bcrypt()
 migrate = Migrate()
 from flask_mail import Mail
@@ -135,6 +147,8 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(voting_bp)
         app.register_blueprint(roster_bp, url_prefix='/roster')
         app.register_blueprint(lucky_draw_bp, url_prefix='/lucky_draw')
+        from .clubs_routes import clubs_bp
+        app.register_blueprint(clubs_bp)
         app.register_blueprint(achievements_bp)
 
     # Register CLI commands

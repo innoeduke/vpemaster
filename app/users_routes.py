@@ -10,180 +10,107 @@ from datetime import date
 from sqlalchemy import or_
 import csv
 import io
+from .club_context import get_current_club_id
 
 users_bp = Blueprint('users_bp', __name__)
 
 
-def _create_or_update_user(user=None, **kwargs):
-    """Helper function to create or update a user."""
-
-    if user is None:
-        # Creating a new user
-        user = User(Date_Created=date.today())
-        password = kwargs.get('password') or 'leadership'
-        user.Pass_Hash = generate_password_hash(password, method='pbkdf2:sha256')
-        user.Status = 'active'
-        user.phone = kwargs.get('phone')
-        db.session.add(user)
-    else:
-        # Updating an existing user
-        password = kwargs.get('password')
-        if password:
-            user.Pass_Hash = generate_password_hash(password, method='pbkdf2:sha256')
-        user.Status = kwargs.get('status')
-        user.phone = kwargs.get('phone')
-
-    user.Username = kwargs.get('username')
-    # Set email to None if empty to avoid unique constraint violation
-    email = kwargs.get('email')
-    user.Email = email if email else None
-    
-    # Capture old contact ID for syncing
-    old_contact_id = user.Contact_ID
-    
-    # Handle multiple roles - now stored in user_clubs table
-    role_ids = kwargs.get('role_ids', [])
-    role_name = kwargs.get('role') # Legacy single-role support
-    from .models import UserClub, AuthRole, PermissionAudit, Club
-    from flask_login import current_user
+def _save_user_data(user=None, **kwargs):
+    """
+    Orchestrates user creation/updating.
+    Separates business logic (roles, audit) from data logic (model).
+    """
+    from .models import AuthRole, PermissionAudit, Club, Contact
     from .club_context import get_current_club_id
     
-    # If role_name is provided but role_ids is not, try to find the role
-    if not role_ids and role_name:
-        role_obj = AuthRole.query.filter_by(name=role_name).first()
-        if role_obj:
-            role_ids = [role_obj.id]
-    
-    # For new users, ensure they get at least the "User" role by default
-    is_new_user = user.id is None
-    if is_new_user and not role_ids:
-        default_role = AuthRole.query.filter_by(name='User').first()
-        if default_role:
-            role_ids = [default_role.id]
-    
-    # Determine the highest role to assign
-    highest_role_id = None
-    if role_ids:
-        roles = AuthRole.query.filter(AuthRole.id.in_(role_ids)).all()
-        if roles:
-            highest_role = max(roles, key=lambda r: r.level if r.level is not None else 0)
-            highest_role_id = highest_role.id
-
-    if user.id:
-        # Update existing user's club memberships with new role
-        if highest_role_id:
-            user_clubs = UserClub.query.filter_by(user_id=user.id).all()
-            
-            # If user has no club memberships yet, create one for current or default club
-            if not user_clubs:
-                club_id = get_current_club_id()
-                if not club_id:
-                    default_club = Club.query.first()
-                    club_id = default_club.id if default_club else None
-                
-                if club_id:
-                    new_uc = UserClub(
-                        user_id=user.id,
-                        club_id=club_id,
-                        club_role_id=highest_role_id
-                    )
-                    db.session.add(new_uc)
-            else:
-                # Update role for all existing club memberships
-                for uc in user_clubs:
-                    old_role_id = uc.club_role_id
-                    uc.club_role_id = highest_role_id
-                    
-            # Audit log
-            if current_user.is_authenticated:
-                audit = PermissionAudit(
-                    admin_id=current_user.id,
-                    action='UPDATE_USER_ROLES',
-                    target_type='USER',
-                    target_id=user.id,
-                    target_name=user.Username,
-                    changes=f"Updated role to: {highest_role_id}"
-                )
-                db.session.add(audit)
-    else:
-        # For new users, we'll create a UserClub record after user is created
-        # Store the role_id temporarily to use after flush
-        user._pending_role_id = highest_role_id
-
-
-    # Profile fields (Member_ID, Current_Path, etc.) are now on Contact model.
-    # We do not set them here.
-
-    # Always create a contact for new users
-    if user.id is None:
-        # Create a new contact with provided details
-        new_contact = Contact(
-            Name=kwargs.get('full_name') or user.Username,
-            first_name=kwargs.get('first_name'),
-            last_name=kwargs.get('last_name'),
-            Email=user.Email,
-            Phone_Number=user.phone,
-            Type='Member',
-            Date_Created=date.today()
+    # 1. Create or Update User instance
+    is_new = user is None
+    if is_new:
+        user = User(
+            username=kwargs.get('username'),
+            created_at=date.today(),
+            status='active'
         )
-        db.session.add(new_contact)
-        db.session.flush() # Get ID
-        user.Contact_ID = new_contact.id
-        
-        # Also create ContactClub record to link contact to current club
-        from .club_context import get_current_club_id
-        club_id = get_current_club_id()
-        if not club_id:
-            default_club = Club.query.first()
-            club_id = default_club.id if default_club else None
-        
-        if club_id:
-            from .models import ContactClub
-            contact_club = ContactClub(
-                contact_id=new_contact.id,
-                club_id=club_id
-            )
-            db.session.add(contact_club)
+        password = kwargs.get('password') or 'leadership'
+        user.set_password(password)
+        db.session.add(user)
     else:
-        # Sync details to contact if it exists
-        if user.contact:
-            if kwargs.get('full_name'):
-                user.contact.Name = kwargs.get('full_name')
-            if kwargs.get('first_name'):
-                user.contact.first_name = kwargs.get('first_name')
-            if kwargs.get('last_name'):
-                user.contact.last_name = kwargs.get('last_name')
-            if user.Email:
-                user.contact.Email = user.Email
-            if user.phone:
-                user.contact.Phone_Number = user.phone
+        if kwargs.get('username'):
+            user.username = kwargs.get('username')
+        password = kwargs.get('password')
+        if password:
+            user.set_password(password)
+        if kwargs.get('status'):
+            user.status = kwargs.get('status')
 
-    # Sync UserClub.contact_id if Contact_ID changed
-    if user.id and user.Contact_ID and user.Contact_ID != old_contact_id:
-        from .models import UserClub
-        UserClub.query.filter_by(user_id=user.id).update({UserClub.contact_id: user.Contact_ID})
+    # Update other fields
+    user.phone = kwargs.get('phone')
+    email = kwargs.get('email')
+    if email is not None:
+         user.email = email if email else None
+
+    # Ensure ID exists for relationships
+    db.session.flush()
+
+    # Link existing contact if provided
+    contact_id = kwargs.get('contact_id')
+    create_new_contact = kwargs.get('create_new_contact')
+    club_id = get_current_club_id()
     
-    # For new users, create UserClub record with pending role
-    if hasattr(user, '_pending_role_id') and user._pending_role_id:
-        if not user.id:
-            db.session.flush()  # Ensure user has an ID
+    # 1. User selected an existing contact to link
+    if contact_id and contact_id != 0 and not create_new_contact:
+        # Verify contact exists
+        contact = db.session.get(Contact, contact_id)
+        if contact and club_id:
+            from .models import UserClub
+            uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
+            if uc:
+                uc.contact_id = contact_id
+            else:
+                db.session.add(UserClub(user_id=user.id, club_id=club_id, contact_id=contact_id))
+
+    # 2. Handle Contact (Delegated to Model or ensure existing)
+    user.ensure_contact(
+        full_name=kwargs.get('full_name'),
+        first_name=kwargs.get('first_name'),
+        last_name=kwargs.get('last_name'),
+        email=user.email,
+        phone=user.phone,
+        club_id=club_id
+    )
+
+    # 3. Handle Roles
+    # Logic: Calculate highest role from bitmask (role_level) and assign to CURRENT club
+    role_level = kwargs.get('role_level')
+    if role_level is None and is_new:
+        role_level = 1 # Default User
         
-        # Get current or default club
+    highest_role_id = None
+    if role_level is not None:
+         all_roles = AuthRole.query.filter(AuthRole.level > 0).all()
+         matching_roles = [r for r in all_roles if (role_level & r.level) == r.level]
+         if matching_roles:
+             highest_role = max(matching_roles, key=lambda r: r.level)
+             highest_role_id = highest_role.id
+
+    if highest_role_id:
         club_id = get_current_club_id()
-        if not club_id:
-            default_club = Club.query.first()
-            club_id = default_club.id if default_club else None
+        user.set_club_role(club_id, highest_role_id)
         
-        if club_id:
-            new_uc = UserClub(
-                user_id=user.id,
-                club_id=club_id,
-                club_role_id=user._pending_role_id,
-                contact_id=user.Contact_ID
-            )
-            db.session.add(new_uc)
-        
-        delattr(user, '_pending_role_id')
+        # 4. Audit Log
+        if current_user and current_user.is_authenticated:
+             audit = PermissionAudit(
+                 admin_id=current_user.id,
+                 action='UPDATE_USER_ROLES',
+                 target_type='USER',
+                 target_id=user.id,
+                 target_name=user.username,
+                 changes=f"Updated role to: {highest_role_id} (Level {role_level})"
+             )
+             db.session.add(audit)
+    
+    return user
+
 
 
 @users_bp.route('/users')
@@ -205,12 +132,16 @@ def user_form(user_id):
     user = None
     if user_id:
         user = User.query.get_or_404(user_id)
+    
+    source_contact = None
+    contact_id = request.args.get('contact_id', type=int)
+    if contact_id and not user:
+        source_contact = Contact.query.get(contact_id)
 
     member_contacts = Contact.query.filter(
         Contact.Type.in_(['Member', 'Officer'])).order_by(Contact.Name.asc()).all()
     mentor_contacts = Contact.query.filter(or_(
         Contact.Type == 'Member', Contact.Type == 'Past Member')).order_by(Contact.Name.asc()).all()
-    users = User.query.order_by(User.Username.asc()).all()
 
     all_pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
     pathways = {}
@@ -232,7 +163,14 @@ def user_form(user_id):
                 flash("Only SysAdmins can assign the SysAdmin role.", 'error')
                 return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
         
-        _create_or_update_user(
+        # Calculate role_level from role_ids
+        role_level = 0
+        if role_ids:
+             roles = AuthRole.query.filter(AuthRole.id.in_(role_ids)).all()
+             for r in roles:
+                 role_level += r.level if r.level else 0
+        
+        _save_user_data(
             user=user,
             username=request.form.get('username'),
             full_name=request.form.get('full_name'),
@@ -240,7 +178,7 @@ def user_form(user_id):
             last_name=request.form.get('last_name'),
             email=request.form.get('email'),
             phone=request.form.get('phone'),
-            role_ids=role_ids,
+            role_level=role_level,
             status=request.form.get('status'),
             contact_id=request.form.get('contact_id', 0, type=int),
             create_new_contact=request.form.get('create_new_contact') == 'on',
@@ -279,7 +217,7 @@ def user_form(user_id):
     
     user_role_ids = [r.id for r in user.roles] if user else []
 
-    return render_template('user_form.html', user=user, contacts=member_contacts, users=users, mentor_contacts=mentor_contacts, pathways=pathways, all_auth_roles=filtered_roles, user_role_ids=user_role_ids)
+    return render_template('user_form.html', user=user, source_contact=source_contact, contacts=member_contacts, mentor_contacts=mentor_contacts, pathways=pathways, all_auth_roles=filtered_roles, user_role_ids=user_role_ids)
 
 
 @users_bp.route('/user/check_duplicates', methods=['POST'])
@@ -298,22 +236,36 @@ def check_duplicates():
     user_query = User.query
     user_filters = []
     if username:
-        user_filters.append(User.Username == username)
+        user_filters.append(User.username == username)
     if email:
-        user_filters.append(User.Email == email)
+        user_filters.append(User.email == email)
     if phone:
         user_filters.append(User.phone == phone)
-        
+    
     if user_filters:
         existing_users = User.query.filter(or_(*user_filters)).all()
+        current_club_id = get_current_club_id()
+        from .models import ContactClub
+        
+        # Batch populate contacts to avoid N+1 in the loop below
+        User.populate_contacts(existing_users, current_club_id)
+        
         for u in existing_users:
+            in_current_club = False
+            contact = u.get_contact(current_club_id)
+            if contact:
+                in_current_club = ContactClub.query.filter_by(
+                    contact_id=contact.id, 
+                    club_id=current_club_id
+                ).first() is not None
+            
             duplicates.append({
                 'type': 'User',
                 'id': u.id,
-                'username': u.Username,
-                'full_name': u.contact.Name if u.contact else 'N/A',
-                'email': u.Email or 'N/A',
-                'phone': u.phone or 'N/A'
+                'username': u.username,
+                'full_name': contact.Name if contact else 'N/A',
+                'clubs': [c.club_name for c in contact.get_clubs()] if contact else [],
+                'in_current_club': in_current_club
             })
             
     # Check contacts (that don't have users linked yet, or just to be safe)
@@ -327,22 +279,52 @@ def check_duplicates():
         
     if contact_filters:
         existing_contacts = Contact.query.filter(or_(*contact_filters)).all()
+        from .models import ContactClub
+        current_club_id = get_current_club_id()
+
         for c in existing_contacts:
             # Skip if this contact is already represented in our duplicates list (via its user)
             if any(d['type'] == 'User' and d['full_name'] == c.Name for d in duplicates):
                 continue
                 
+            in_current_club = ContactClub.query.filter_by(
+                contact_id=c.id, 
+                club_id=current_club_id
+            ).first() is not None
+
+            # Requirement 3 & 4: if no user is linked, only consider duplicate if in current club
+            if not c.user and not in_current_club:
+                continue
+
             duplicates.append({
                 'type': 'Contact',
                 'id': c.id,
-                'username': 'N/A',
+                'user_id': c.user.id if c.user else None,
+                'username': c.user.username if c.user else 'N/A',
                 'full_name': c.Name,
-                'email': c.Email or 'N/A',
-                'phone': c.Phone_Number or 'N/A',
-                'has_user': c.user is not None
+                'clubs': [club.club_name for club in c.get_clubs()],
+                'has_user': c.user is not None,
+                'in_current_club': in_current_club
             })
             
-    return {'duplicates': duplicates}
+    username_taken = any(d['username'].lower() == (username or '').lower() for d in duplicates if d['username'] and d['username'] != 'N/A')
+    suggested_username = None
+    
+    if username_taken:
+        # Generate a suggestion
+        base = username
+        counter = 1
+        while True:
+            candidate = f"{base}{counter}"
+            if not User.query.filter_by(username=candidate).first():
+                suggested_username = candidate
+                break
+            counter += 1
+
+    return {
+        'duplicates': duplicates,
+        'suggested_username': suggested_username
+    }
 
 
 
@@ -355,11 +337,11 @@ def delete_user(user_id):
 
     user = User.query.get_or_404(user_id)
     
-    # Delete linked contact if exists
-    if user.Contact_ID:
-        contact = db.session.get(Contact, user.Contact_ID)
-        if contact:
-            db.session.delete(contact)
+    # Delete linked contact for the current club if exists
+    current_club_id = get_current_club_id()
+    contact = user.get_contact(current_club_id)
+    if contact:
+        db.session.delete(contact)
     
     db.session.delete(user)
     db.session.commit()
@@ -404,7 +386,7 @@ def bulk_import_users():
                 continue
 
             # Duplication check
-            if User.query.filter_by(Username=username).first():
+            if User.query.filter_by(username=username).first():
                 failed_users.append(
                     f"Skipping user '{username}': User already exists.")
                 continue
@@ -415,13 +397,14 @@ def bulk_import_users():
             mentor = Contact.query.filter_by(Name=mentor_name).first()
             mentor_id = mentor.id if mentor else None
 
-            _create_or_update_user(
+            from .models import AuthRole
+            user_role = AuthRole.query.filter_by(name='User').first()
+            role_level = user_role.level if user_role else 1
+
+            _save_user_data(
                 username=username,
-                contact_id=contact_id,
                 email=email,
-                member_id=member_id,
-                mentor_id=mentor_id,
-                role='User',
+                role_level=role_level,
                 password='leadership'
             )
             success_count += 1

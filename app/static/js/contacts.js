@@ -97,6 +97,12 @@ function renderContactsPage() {
 
   // Update pagination controls
   updatePaginationControls(startIndex, endIndex, filteredContacts.length, totalPages);
+  
+  // Show the table now that pagination is complete
+  const table = document.getElementById('contactsTable');
+  if (table && table.style.opacity === '0') {
+    table.style.opacity = '1';
+  }
 }
 
 /**
@@ -117,7 +123,7 @@ function createContactRow(contact) {
           : `<div class="contact-avatar-placeholder-small"><i class="fas fa-user"></i></div>`
         }
         <div class="contact-name-info ${canViewAllLogs ? 'clickable-name' : ''}" 
-             ${canViewAllLogs ? `onclick="window.location.href='/speech_logs/${contact.id}?view_mode=member'" title="View ${contact.Name}'s speech logs"` : ''}>
+             ${canViewAllLogs ? `onclick="window.location.href='/speech_logs?speaker_id=${contact.id}&view_mode=member'" title="View ${contact.Name}'s speech logs"` : ''}>
           ${contact.Name}
           ${contact.DTM ? '<sup class="dtm-superscript">DTM</sup>' : ''}
           ${contact.Member_ID ? `<span class="badge-member-id" style="margin-left: 5px; font-size: 0.8em; vertical-align: text-top; background-color: rgb(231, 231, 228); border-radius: 5px; padding: 2px 5px;">${contact.Member_ID}</span>` : ''}
@@ -127,16 +133,16 @@ function createContactRow(contact) {
     <td data-sort="${sortValue}">
       <div class="participation-container">
         ${contact.is_qualified ? '<i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>' : ''}
-        <a href="/speech_logs/${contact.id}" title="Roles Taken" class="participation-badge badge-roles">
+        <a href="/speech_logs?speaker_id=${contact.id}" title="Roles Taken" class="participation-badge badge-roles">
           <i class="fas fa-user-tag"></i> ${contact.role_count}
         </a>
-        <a href="/speech_logs/${contact.id}" title="Topic Speeches" class="participation-badge badge-tt">
+        <a href="/speech_logs?speaker_id=${contact.id}" title="Topic Speeches" class="participation-badge badge-tt">
           <i class="fas fa-comment"></i> ${contact.tt_count}
         </a>
-        <a href="/speech_logs/${contact.id}" title="Attendance" class="participation-badge badge-attendance">
+        <a href="/speech_logs?speaker_id=${contact.id}" title="Attendance" class="participation-badge badge-attendance">
           <i class="fas fa-calendar-check"></i> ${contact.attendance_count}
         </a>
-        <a href="/speech_logs/${contact.id}" title="Awards Won" class="participation-badge badge-awards">
+        <a href="/speech_logs?speaker_id=${contact.id}" title="Awards Won" class="participation-badge badge-awards">
           <i class="fas fa-trophy"></i> ${contact.award_count}
         </a>
       </div>
@@ -267,7 +273,14 @@ function handleContactFormSubmit(event) {
         "X-Requested-With": "XMLHttpRequest",
       },
     })
-      .then((response) => response.json())
+      .then((response) => {
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          return response.json();
+        } else {
+          throw new Error("Server returned an unexpected response. Please check your permissions and try again.");
+        }
+      })
       .then((data) => {
         if (data.success) {
           // Close the modal

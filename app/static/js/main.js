@@ -129,17 +129,28 @@ function openContactModal(contactId) {
     })
       .then((response) => response.json())
       .then((data) => {
-        document.getElementById("name").value = data.contact.Name || "";
+        // Populate first_name and last_name instead of name
+        document.getElementById("first_name").value = data.contact.first_name || "";
+        document.getElementById("last_name").value = data.contact.last_name || "";
+        document.getElementById("name").value = data.contact.Name || ""; // Hidden field
+        document.getElementById("type").value = data.contact.Type || "Guest"; // Hidden field
+        
         document.getElementById("member_id").value = data.contact.Member_ID || "";
         document.getElementById("email").value = data.contact.Email || "";
-        document.getElementById("type").value = data.contact.Type || "Member";
-        document.getElementById("club").value = data.contact.Club || "";
         document.getElementById("phone_number").value =
           data.contact.Phone_Number || "";
         document.getElementById("bio").value = data.contact.Bio || "";
         document.getElementById("completed_paths").value =
           data.contact.Completed_Paths || "";
         document.getElementById("dtm").checked = data.contact.DTM;
+
+        // Show/hide member_id and mentor_id rows based on type
+        const memberIdRow = document.getElementById("member_id_row");
+        const mentorIdRow = document.getElementById("mentor_id_row");
+        const isGuest = data.contact.Type === 'Guest';
+        
+        if (memberIdRow) memberIdRow.style.display = isGuest ? 'none' : '';
+        if (mentorIdRow) mentorIdRow.style.display = isGuest ? 'none' : '';
 
         // Handle Avatar Preview
         const avatarImg = document.getElementById("modal-avatar-img");
@@ -187,7 +198,8 @@ function openContactModal(contactId) {
           const panel = btn.nextElementSibling;
           if (index === 0) {
             btn.classList.add("active");
-            panel.style.maxHeight = panel.scrollHeight + "px";
+            // Use a large fixed value to ensure accordion is expanded
+            panel.style.maxHeight = "1000px";
           } else {
             btn.classList.remove("active");
             panel.style.maxHeight = null;
@@ -198,6 +210,12 @@ function openContactModal(contactId) {
     contactModalTitle.textContent = "Add New Contact";
     contactForm.action = "/contact/form";
     document.getElementById("educationFieldsWrapper").style.display = "none";
+    
+    // Hide member_id and mentor_id rows for new contacts (default is Guest)
+    const memberIdRow = document.getElementById("member_id_row");
+    const mentorIdRow = document.getElementById("mentor_id_row");
+    if (memberIdRow) memberIdRow.style.display = 'none';
+    if (mentorIdRow) mentorIdRow.style.display = 'none';
 
     // Reset Avatar for New Entry
     document.getElementById("modal-avatar-img").style.display = 'none';
@@ -209,7 +227,8 @@ function openContactModal(contactId) {
       const panel = btn.nextElementSibling;
       if (index === 0) {
         btn.classList.add("active");
-        panel.style.maxHeight = panel.scrollHeight + "px";
+        // Use a large fixed value to ensure accordion is expanded
+        panel.style.maxHeight = "1000px";
       } else {
         btn.classList.remove("active");
         panel.style.maxHeight = null;

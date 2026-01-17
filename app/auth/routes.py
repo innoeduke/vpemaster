@@ -22,7 +22,7 @@ def login():
         
         # Input validation
         if not login_identifier or not password:
-            flash('Username/email and password are required.', 'error')
+            flash('Username, email, or phone and password are required.', 'error')
             return redirect(url_for('auth_bp.login'))
         
         if len(login_identifier) > 255 or len(password) > 128:
@@ -32,8 +32,9 @@ def login():
         # DB Query
         user = User.query.filter(
             or_(
-                User.Username == login_identifier, 
-                User.Email == login_identifier
+                User.username == login_identifier, 
+                User.email == login_identifier,
+                User.phone == login_identifier
             )
         ).first()
 
@@ -42,7 +43,7 @@ def login():
         time.sleep(0.1)
 
         if user and user.check_password(password):
-            if user.Status != 'active':
+            if user.status != 'active':
                 flash('Account is inactive.', 'error')
                 return redirect(url_for('auth_bp.login'))
 
@@ -99,7 +100,7 @@ def profile(contact_id=None):
     Displays a user's profile page and handles password reset.
     """
     is_own_profile = True
-    if contact_id and contact_id != current_user.Contact_ID:
+    if contact_id and contact_id != current_user.contact_id:
         if not current_user.has_role(Permissions.STAFF):
             flash('Unauthorized access.', 'error')
             return redirect(url_for('auth_bp.profile'))
@@ -116,8 +117,8 @@ def profile(contact_id=None):
             class MockUser:
                 def __init__(self, contact):
                     self.contact = contact
-                    self.Username = "No Account"
-                    self.Email = contact.Email
+                    self.username = "No Account"
+                    self.email = contact.Email
                     self.Role = contact.Type
             user = MockUser(contact)
         is_own_profile = False
@@ -132,7 +133,7 @@ def profile(contact_id=None):
         action = request.form.get('action')
 
         if action == 'update_profile':
-            user.Email = request.form.get('email')
+            user.email = request.form.get('email')
             if user.contact:
                 user.contact.Phone_Number = request.form.get('phone_number')
                 user.contact.Bio = request.form.get('bio')
@@ -190,7 +191,7 @@ def reset_password_request():
     
     if request.method == 'POST':
         email = request.form.get('email')
-        user = User.query.filter_by(Email=email).first()
+        user = User.query.filter_by(email=email).first()
         if user:
             try:
                 send_reset_email(user)

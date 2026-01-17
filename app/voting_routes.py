@@ -210,7 +210,8 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     selected_meeting = selected_meeting.first()
     
     # Access control for unpublished meetings
-    is_manager = current_user.is_authenticated and current_user.Contact_ID == selected_meeting.manager_id if selected_meeting else False
+    contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
+    is_manager = (contact and contact.id == selected_meeting.manager_id) if selected_meeting else False
     
     # 1. Guests can ONLY access 'running' meetings
     if not current_user.is_authenticated:
