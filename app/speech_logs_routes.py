@@ -121,16 +121,20 @@ def _fetch_logs_with_filters(filters):
     Build and execute query for session logs with filters.
     Returns: list of SessionLog objects
     """
+    from .club_context import get_current_club_id
+    current_club_id = get_current_club_id()
+    
     base_query = db.session.query(SessionLog).options(
         joinedload(SessionLog.media),
         joinedload(SessionLog.session_type).joinedload(SessionType.role),
         joinedload(SessionLog.meeting),
         joinedload(SessionLog.owner),
         joinedload(SessionLog.project)
-    ).join(SessionType).join(MeetingRole, SessionType.role_id == MeetingRole.id).filter(
+    ).join(SessionLog.session_type).join(SessionType.role).join(SessionLog.meeting).filter(
         MeetingRole.name.isnot(None),
         MeetingRole.name != '',
-        MeetingRole.type.in_(['standard', 'club-specific'])
+        MeetingRole.type.in_(['standard', 'club-specific']),
+        Meeting.club_id == current_club_id
     )
     
     if filters['speaker_id']:
@@ -656,6 +660,9 @@ def show_project_view():
     if not current_term:
         current_term = _get_active_term(terms)
         
+    from .club_context import get_current_club_id
+    current_club_id = get_current_club_id()
+    
     # Query Data
     # We want count of sessions per project within the date range
     start_date = current_term['start']
@@ -664,7 +671,8 @@ def show_project_view():
     filters = [
         SessionLog.Project_ID.isnot(None),
         SessionLog.Project_ID != ProjectID.GENERIC,
-        SessionLog.meeting.has(Meeting.Meeting_Date.between(start_date, end_date))
+        Meeting.club_id == current_club_id,
+        Meeting.Meeting_Date.between(start_date, end_date)
     ]
     
     if selected_pathway_id:
