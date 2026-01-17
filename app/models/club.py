@@ -35,7 +35,13 @@ class Club(db.Model):
         foreign_keys='ExComm.club_id',
         backref='club',
         lazy='dynamic',
-        order_by='ExComm.start_date.desc()'
+        order_by='ExComm.start_date.desc()',
+        cascade='all, delete-orphan'
+    )
+    meetings = db.relationship(
+        'Meeting',
+        back_populates='club',
+        cascade='all, delete-orphan'
     )
     
     def __repr__(self):

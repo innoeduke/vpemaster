@@ -105,7 +105,7 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.SYSADMIN) %}
+        {% if is_authorized(Permissions.CLUBS_MANAGE) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
           <a href="{{ url_for('clubs_bp.list_clubs') }}">
             <i class="fas fa-network-wired nav-icon"></i>

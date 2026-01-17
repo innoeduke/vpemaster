@@ -38,7 +38,7 @@ class Roster(db.Model):
         'Contacts.id'), nullable=True)
     contact_type = db.Column(db.String(50), nullable=True)
 
-    contact = db.relationship('Contact', backref='roster_entries')
+    contact = db.relationship('Contact', back_populates='roster_entries')
     roles = db.relationship('app.models.roster.MeetingRole', secondary='roster_roles', backref='roster_entries')
 
     def add_role(self, role):
@@ -158,7 +158,7 @@ class Waitlist(db.Model):
     timestamp = db.Column(db.DateTime, nullable=True)
 
     session_log = db.relationship('SessionLog', backref='waitlists')
-    contact = db.relationship('Contact', backref='waitlists')
+    contact = db.relationship('Contact', back_populates='waitlists')
 
     @classmethod
     def delete_for_meeting(cls, meeting_number):

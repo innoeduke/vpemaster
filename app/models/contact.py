@@ -26,6 +26,12 @@ class Contact(db.Model):
 
     mentor = db.relationship('Contact', remote_side=[id], foreign_keys=[Mentor_ID], backref='mentees')
     
+    # Add cascades for child records to ensure clean deletion of contacts
+    achievements = db.relationship('Achievement', cascade='all, delete-orphan', back_populates='contact')
+    waitlists = db.relationship('Waitlist', cascade='all, delete-orphan', back_populates='contact')
+    roster_entries = db.relationship('Roster', cascade='all, delete-orphan', back_populates='contact')
+    user_club_records = db.relationship('UserClub', cascade='all, delete-orphan', back_populates='contact', foreign_keys='UserClub.contact_id')
+    
     def update_name_from_parts(self):
         """Auto-populate Name from first_name and last_name if Name is blank."""
         if not self.Name and (self.first_name or self.last_name):

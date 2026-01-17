@@ -40,7 +40,7 @@ class Meeting(db.Model):
     manager_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
 
     manager = db.relationship('Contact', foreign_keys=[manager_id], backref='managed_meetings')
-    club = db.relationship('Club', foreign_keys=[club_id], backref='meetings')
+    club = db.relationship('Club', foreign_keys=[club_id], back_populates='meetings')
 
     best_table_topic_speaker = db.relationship(
         'Contact', foreign_keys=[best_table_topic_id])

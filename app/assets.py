@@ -13,6 +13,7 @@ css_all = Bundle(
     'css/components/pagination.css',
     'css/pages/agenda.css',
     'css/pages/booking.css',
+    'css/pages/clubs.css',
     'css/pages/contacts.css',
     'css/pages/login.css',
     'css/pages/pathway_library.css',

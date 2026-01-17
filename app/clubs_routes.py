@@ -11,12 +11,12 @@ clubs_bp = Blueprint('clubs_bp', __name__)
 @clubs_bp.route('/clubs')
 @login_required
 def list_clubs():
-    if not is_authorized(Permissions.SYSADMIN):
+    if not is_authorized(Permissions.CLUBS_MANAGE):
         flash('You do not have permission to view this page.', 'danger')
         return redirect(url_for('agenda_bp.agenda'))
     
     page = request.args.get('page', 1, type=int)
-    per_page = 12
+    per_page = request.args.get('per_page', 12, type=int)
     pagination = Club.query.order_by(Club.club_no).paginate(page=page, per_page=per_page, error_out=False)
     clubs = pagination.items
     
@@ -25,7 +25,7 @@ def list_clubs():
 @clubs_bp.route('/clubs/new', methods=['GET', 'POST'])
 @login_required
 def create_club():
-    if not is_authorized(Permissions.SYSADMIN):
+    if not is_authorized(Permissions.CLUBS_MANAGE):
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('agenda_bp.agenda'))
         
@@ -85,7 +85,7 @@ def create_club():
 @clubs_bp.route('/clubs/<int:club_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_club(club_id):
-    if not is_authorized(Permissions.SYSADMIN):
+    if not is_authorized(Permissions.CLUBS_MANAGE):
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('agenda_bp.agenda'))
         
@@ -141,7 +141,7 @@ def edit_club(club_id):
 @clubs_bp.route('/clubs/<int:club_id>/delete', methods=['POST'])
 @login_required
 def delete_club(club_id):
-    if not is_authorized(Permissions.SYSADMIN):
+    if not is_authorized(Permissions.CLUBS_MANAGE):
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('agenda_bp.agenda'))
         
@@ -151,11 +151,38 @@ def delete_club(club_id):
         return redirect(url_for('clubs_bp.list_clubs'))
         
     try:
-        # Check for dependencies/related data that might prevent deletion?
-        # For now, rely on cascade or throw error if FK constraint fails
+        # Find all contacts associated with this club before deleting
+        associated_contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id).all()
+        
+        # 1. Manually delete all meetings to ensure full cleanup (Roster, SessionLogs, etc.)
+        # Meeting.delete_full() handles the child items tied by meeting_number
+        from .models import Meeting
+        meetings = Meeting.query.filter_by(club_id=club_id).all()
+        for meeting in meetings:
+            success, error = meeting.delete_full()
+            if not success:
+                raise Exception(f"Failed to delete meeting {meeting.Meeting_Number}: {error}")
+        
+        # 2. Delete the club - this will cascade to UserClub and ContactClub records
+        # and any other models with SQLAlchemy cascade defined
         db.session.delete(club)
         db.session.commit()
-        flash('Club deleted successfully.', 'success')
+        
+        # 3. Cleanup contacts that are no longer associated with any club
+        # We don't delete Users, only their associated Contact records if those Records are now orphans
+        for contact in associated_contacts:
+            # Check if this contact still has any memberships or user associations in other clubs
+            has_other_club = ContactClub.query.filter_by(contact_id=contact.id).first() is not None
+            has_other_user_link = UserClub.query.filter_by(contact_id=contact.id).first() is not None
+            
+            if not has_other_club and not has_other_user_link:
+                # This contact is truly an orphan now
+                # Delete any remaining orphan data (like achievement records, which we haven't cascaded yet)
+                # For safety, we can just delete the contact and rely on DB FKs or simple cleanup
+                db.session.delete(contact)
+        
+        db.session.commit()
+        flash('Club, its meetings, and its specific contacts deleted successfully.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error deleting club: {str(e)}', 'danger')

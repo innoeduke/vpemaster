@@ -142,6 +142,7 @@ class Permissions:
     ROSTER_EDIT = 'ROSTER_EDIT'
     ABOUT_CLUB_VIEW = 'ABOUT_CLUB_VIEW'
     ABOUT_CLUB_EDIT = 'ABOUT_CLUB_EDIT'
+    CLUBS_MANAGE = 'CLUBS_MANAGE'
     
     # Roles
     SYSADMIN = 'SysAdmin'

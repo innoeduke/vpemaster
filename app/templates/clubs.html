@@ -194,56 +194,6 @@
         box-shadow: 0 6px 15px rgba(119, 36, 50, 0.3);
     }
 
-    /* Pagination Styling */
-    .pagination-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 25px;
-        padding: 0 5px;
-    }
-
-    .pagination-info {
-        color: #64748b;
-        font-size: 0.9em;
-    }
-
-    .pagination {
-        display: flex;
-        gap: 5px;
-        margin: 0;
-    }
-
-    .page-link {
-        padding: 8px 14px;
-        border-radius: 8px !important;
-        border: 1px solid #dee2e6;
-        color: #004165;
-        font-weight: 600;
-        font-size: 0.9em;
-        text-decoration: none;
-        transition: all 0.2s;
-        background: white;
-    }
-
-    .page-link:hover {
-        background: #f8f9fa;
-        color: #772432;
-        border-color: #772432;
-    }
-
-    .page-item.active .page-link {
-        background-color: #004165;
-        border-color: #004165;
-        color: white;
-    }
-
-    .page-item.disabled .page-link {
-        color: #adb5bd;
-        background-color: #fff;
-        border-color: #dee2e6;
-        cursor: not-allowed;
-    }
 </style>
 {% endblock %}
 
@@ -364,61 +314,122 @@
     {% if pagination and pagination.pages > 1 %}
     <div class="pagination-container">
         <div class="pagination-info">
-            Showing {{ (pagination.page - 1) * pagination.per_page + 1 }}-{{ [pagination.page * pagination.per_page, pagination.total]|min }} of {{ pagination.total }} clubs
+            Showing {{ (pagination.page - 1) * pagination.per_page + 1 }} - {{ [pagination.page * pagination.per_page, pagination.total]|min }} of {{ pagination.total }} clubs
         </div>
-        <nav aria-label="Club pagination">
-            <ul class="pagination">
-                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('clubs_bp.list_clubs', page=pagination.prev_num) if pagination.has_prev else '#' }}">
-                        <i class="fas fa-chevron-left fa-xs"></i>
-                    </a>
-                </li>
-                
-                {% for page_num in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
-                    {% if page_num %}
-                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                            <a class="page-link" href="{{ url_for('clubs_bp.list_clubs', page=page_num) }}">{{ page_num }}</a>
-                        </li>
-                    {% else %}
-                        <li class="page-item disabled"><span class="page-link">...</span></li>
-                    {% endif %}
-                {% endfor %}
-                
-                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
-                    <a class="page-link" href="{{ url_for('clubs_bp.list_clubs', page=pagination.next_num) if pagination.has_next else '#' }}">
-                        <i class="fas fa-chevron-right fa-xs"></i>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+        
+        <div class="pagination-controls">
+            <!-- First Page -->
+            <a href="{{ url_for('clubs_bp.list_clubs', page=1, per_page=pagination.per_page) }}" 
+            class="pagination-btn" 
+            title="First Page"
+            {% if pagination.page == 1 %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
+            <i class="fas fa-angle-double-left"></i>
+            </a>
+
+            <!-- Prev Page -->
+            <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.prev_num, per_page=pagination.per_page) if pagination.has_prev else '#' }}" 
+            class="pagination-btn" 
+            title="Previous Page"
+            {% if not pagination.has_prev %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
+            <i class="fas fa-angle-left"></i>
+            </a>
+            
+            <span class="page-indicator">
+            Page <span class="current-page-display">{{ pagination.page }}</span> of <span class="total-pages-display">{{ pagination.pages }}</span>
+            </span>
+            
+            <!-- Next Page -->
+            <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.next_num, per_page=pagination.per_page) if pagination.has_next else '#' }}" 
+            class="pagination-btn" 
+            title="Next Page"
+            {% if not pagination.has_next %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
+            <i class="fas fa-angle-right"></i>
+            </a>
+
+            <!-- Last Page -->
+            <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.pages, per_page=pagination.per_page) }}" 
+            class="pagination-btn" 
+            title="Last Page"
+            {% if pagination.page == pagination.pages %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
+            <i class="fas fa-angle-double-right"></i>
+            </a>
+        </div>
+        
+        <div class="pagination-size">
+            <label for="pageSizeSelect">Show:</label>
+            <select id="pageSizeSelect" class="page-size-select" onchange="window.location.href=this.value">
+            {% for size in [12, 25, 50, 100] %}
+            <option value="{{ url_for('clubs_bp.list_clubs', page=1, per_page=size) }}" {% if pagination.per_page == size %}selected{% endif %}>{{ size }}</option>
+            {% endfor %}
+            </select>
+            <span>per page</span>
+        </div>
     </div>
     {% endif %}
 </div>
 
 <!-- Modals outside table to prevent layout issues -->
 {% for club in clubs %}
-<div class="modal fade" id="deleteModal{{ club.id }}" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header bg-light border-0">
-                <h5 class="modal-title font-weight-bold" style="color: #772432;">Delete Club?</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal" id="deleteModal{{ club.id }}">
+    <div class="modal-content delete-modal-content">
+        <div class="delete-modal-header">
+            <h3>Delete Club?</h3>
+            <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
+        </div>
+        <div class="delete-modal-body">
+            <p>Are you sure you want to delete <strong>{{ club.club_name }}</strong>?</p>
+            <div class="warning-box">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>All data associated with this club might be affected. This action cannot be undone.</span>
             </div>
-            <div class="modal-body py-4">
-                <p>Are you sure you want to delete <strong>{{ club.club_name }}</strong>?</p>
-                <div class="alert alert-warning py-2 mb-0">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    <small>All data associated with this club might be affected. This action cannot be undone.</small>
-                </div>
-            </div>
-            <div class="modal-footer border-0">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Club</button>
-                <form action="{{ url_for('clubs_bp.delete_club', club_id=club.id) }}" method="POST">
-                    <button type="submit" class="btn btn-danger px-4">Delete Permanently</button>
-                </form>
-            </div>
+        </div>
+        <div class="delete-modal-footer">
+            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Keep Club</button>
+            <form action="{{ url_for('clubs_bp.delete_club', club_id=club.id) }}" method="POST" style="margin: 0;">
+                <button type="submit" class="btn-delete-confirm">Delete Permanently</button>
+            </form>
         </div>
     </div>
 </div>
 {% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle opening modals
+        const deleteButtons = document.querySelectorAll('.action-btn.delete');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('data-bs-target');
+                const modal = document.querySelector(targetId);
+                if (modal) {
+                    modal.style.display = 'flex';
+                    modal.classList.add('show');
+                }
+            });
+        });
+
+        // Handle closing modals
+        const closeButtons = document.querySelectorAll('[data-bs-dismiss="modal"]');
+        closeButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const modal = this.closest('.modal');
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.classList.remove('show');
+                }
+            });
+        });
+
+        // Close on click outside
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+                e.target.classList.remove('show');
+            }
+        });
+    });
+</script>
 {% endblock %}

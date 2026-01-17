@@ -14,4 +14,4 @@ class Achievement(db.Model):
     level = db.Column(db.Integer)
     notes = db.Column(db.Text)
 
-    contact = db.relationship('Contact', backref='achievements')
+    contact = db.relationship('Contact', back_populates='achievements')

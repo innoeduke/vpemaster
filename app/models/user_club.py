@@ -22,7 +22,7 @@ class UserClub(db.Model):
     
     # Relationships
     user = db.relationship('User', backref=db.backref('club_memberships', cascade='all, delete-orphan'))
-    contact = db.relationship('Contact', foreign_keys=[contact_id], backref='user_club_records')
+    contact = db.relationship('Contact', foreign_keys=[contact_id], back_populates='user_club_records')
     club = db.relationship('Club', backref='user_memberships')
     club_role = db.relationship('Role')
     current_path = db.relationship('Pathway', foreign_keys=[current_path_id])

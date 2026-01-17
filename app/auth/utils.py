@@ -41,8 +41,9 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
             return True
 
     # 2. ClubAdmin Override: Full access to owned clubs
+    # But ClubAdmins should NOT be able to access global SysAdmin features (like Manage Clubs)
     club_role = AuthRole.get_by_name(Permissions.CLUBADMIN)
-    if club_role:
+    if club_role and target_perm != Permissions.SYSADMIN:
         # Resolve club_id from context
         club_id = kwargs.get('club_id')
         meeting = kwargs.get('meeting')
