@@ -58,7 +58,7 @@ class UserRefactorTestCase(unittest.TestCase):
         db.session.add(self.admin_contact)
         db.session.flush()
         
-        self.admin_user = User(username="admin", email="admin@test.com", contact_id=self.admin_contact.id)
+        self.admin_user = User(username="admin", email="admin@test.com")
         self.admin_user.set_password("password")
         db.session.add(self.admin_user)
         db.session.flush() # Ensure ID is generated
@@ -132,7 +132,7 @@ class UserRefactorTestCase(unittest.TestCase):
         target_contact = Contact(Name="Update Target")
         db.session.add(target_contact)
         db.session.flush()
-        target_user = User(username="target", email="target@test.com", contact_id=target_contact.id)
+        target_user = User(username="target", email="target@test.com")
         target_user.set_password('password')
         db.session.add(target_user)
         db.session.commit()

@@ -60,8 +60,7 @@ class RouteAccessTestCase(unittest.TestCase):
 
         self.staff_user = User(
             username="staff",
-            email="staff@test.com", 
-            contact_id=self.staff_contact.id
+            email="staff@test.com"
         )
         self.staff_user.set_password("password")
         db.session.add(self.staff_user)
@@ -114,8 +113,7 @@ class RouteAccessTestCase(unittest.TestCase):
         
         self.user_user = User(
             username="user",
-            email="user@test.com", 
-            contact_id=self.user_contact.id
+            email="user@test.com"
         )
         self.user_user.set_password("password")
         db.session.add(self.user_user)
@@ -137,7 +135,7 @@ class RouteAccessTestCase(unittest.TestCase):
             user_id=self.user_user.id,
             club_id=self.club.id,
             club_role_id=user_role.id,
-            contact_id=self.user_user.contact_id
+            contact_id=self.user_contact.id
         ))
         db.session.commit()
 

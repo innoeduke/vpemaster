@@ -13,17 +13,21 @@ clubs_bp = Blueprint('clubs_bp', __name__)
 def list_clubs():
     if not is_authorized(Permissions.SYSADMIN):
         flash('You do not have permission to view this page.', 'danger')
-        return redirect(url_for('agenda_bp.dashboard'))
+        return redirect(url_for('agenda_bp.agenda'))
     
-    clubs = Club.query.all()
-    return render_template('clubs.html', clubs=clubs)
+    page = request.args.get('page', 1, type=int)
+    per_page = 12
+    pagination = Club.query.order_by(Club.club_no).paginate(page=page, per_page=per_page, error_out=False)
+    clubs = pagination.items
+    
+    return render_template('clubs.html', clubs=clubs, pagination=pagination)
 
 @clubs_bp.route('/clubs/new', methods=['GET', 'POST'])
 @login_required
 def create_club():
     if not is_authorized(Permissions.SYSADMIN):
         flash('You do not have permission to access this page.', 'danger')
-        return redirect(url_for('agenda_bp.dashboard'))
+        return redirect(url_for('agenda_bp.agenda'))
         
     if request.method == 'POST':
         club_no = request.form.get('club_no')
@@ -83,7 +87,7 @@ def create_club():
 def edit_club(club_id):
     if not is_authorized(Permissions.SYSADMIN):
         flash('You do not have permission to access this page.', 'danger')
-        return redirect(url_for('agenda_bp.dashboard'))
+        return redirect(url_for('agenda_bp.agenda'))
         
     club = db.session.get(Club, club_id)
     if not club:
@@ -139,7 +143,7 @@ def edit_club(club_id):
 def delete_club(club_id):
     if not is_authorized(Permissions.SYSADMIN):
         flash('You do not have permission to access this page.', 'danger')
-        return redirect(url_for('agenda_bp.dashboard'))
+        return redirect(url_for('agenda_bp.agenda'))
         
     club = db.session.get(Club, club_id)
     if not club:

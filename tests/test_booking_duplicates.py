@@ -61,7 +61,7 @@ class TestBookingDuplicates(unittest.TestCase):
         db.session.add(self.contact)
         db.session.commit()
         
-        self.user = User(username="testuser", email="test@example.com", contact_id=self.contact.id)
+        self.user = User(username="testuser", email="test@example.com")
         self.user.set_password('password')
         db.session.add(self.user)
         db.session.commit()

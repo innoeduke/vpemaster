@@ -108,10 +108,6 @@ class User(UserMixin, db.Model):
         """Check if user has a permission."""
         return self.has_permission(permission)
 
-    def can(self, permission):
-        """Check if user has a permission."""
-        return self.has_permission(permission)
-
     def get_user_club(self, club_id):
         """Get the UserClub record for a specific club."""
         from .user_club import UserClub
@@ -125,13 +121,21 @@ class User(UserMixin, db.Model):
         
         # Optimization: Check if batch-populated for the current club
         current_club_id = get_current_club_id()
-        if (not club_id or club_id == current_club_id) and hasattr(self, '_current_contact'):
+        if (not club_id or club_id == current_club_id) and getattr(self, '_current_contact', None):
             return self._current_contact
             
         if not club_id:
             club_id = current_club_id
         
-        uc = self.get_user_club(club_id)
+        if club_id:
+            uc = self.get_user_club(club_id)
+            if uc:
+                return uc.contact
+            
+        # Fallback for cases where no club ID is resolved: 
+        # Return the first available contact this user is associated with.
+        from .user_club import UserClub
+        uc = UserClub.query.filter_by(user_id=self.id).first()
         return uc.contact if uc else None
 
     @property
@@ -141,6 +145,14 @@ class User(UserMixin, db.Model):
         Returns the contact for the current club context.
         """
         return self.get_contact()
+
+    @property
+    def contact_id(self):
+        """
+        Returns the contact ID for the current club context.
+        """
+        contact = self.contact
+        return contact.id if contact else None
 
     @staticmethod
     def populate_contacts(users, club_id=None):

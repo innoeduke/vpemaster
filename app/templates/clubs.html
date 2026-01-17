@@ -1,18 +1,267 @@
 {% extends "base.html" %}
 
+{% block title %}Club Management{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+    .clubs-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 30px 20px;
+    }
+
+    .clubs-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #eef2f7;
+        padding-bottom: 15px;
+    }
+
+    .clubs-header h1 {
+        color: #004165;
+        font-weight: 700;
+        margin: 0;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 2rem;
+    }
+
+    .club-list-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        border: 1px solid #eef2f7;
+        overflow: hidden;
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+    .table thead th {
+        background-color: #fcfdfe;
+        color: #004165;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.8em;
+        letter-spacing: 0.08em;
+        border-top: none;
+        border-bottom: 2px solid #eef2f7;
+        padding: 18px 20px;
+    }
+
+    .table tbody td {
+        padding: 20px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f8f9fa;
+        color: #444;
+    }
+
+    .club-no {
+        background-color: #f1f4f8;
+        color: #004165;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 0.85em;
+        display: inline-block;
+    }
+
+    .club-name {
+        color: #004165;
+        font-weight: 700;
+        font-size: 1.05em;
+        text-decoration: none;
+        transition: color 0.2s;
+        display: block;
+        margin-bottom: 4px;
+    }
+
+    .club-name:hover {
+        color: #772432;
+    }
+
+    .club-meta {
+        font-size: 0.85em;
+        color: #888;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .org-info {
+        font-weight: 600;
+        color: #555;
+    }
+
+    .schedule-info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .schedule-item {
+        font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .schedule-item i {
+        width: 14px;
+        color: #999;
+    }
+
+    .action-btns {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: all 0.2s;
+        border: 1px solid #dee2e6;
+        background: #f8f9fa;
+        color: #495057;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .action-btn i {
+        font-size: 0.9em;
+    }
+
+    .action-btn:hover {
+        background: #e9ecef;
+        color: #004165;
+        border-color: #adb5bd;
+    }
+
+    .action-btn.delete:hover {
+        background: #fff5f5;
+        color: #dc3545;
+        border-color: #feb2b2;
+    }
+
+    .empty-state {
+        padding: 80px 40px;
+        text-align: center;
+        background: #fafbfc;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #e2e8f0;
+        margin-bottom: 20px;
+    }
+
+    .empty-state p {
+        color: #64748b;
+        font-size: 1.1rem;
+        margin-bottom: 25px;
+    }
+
+    .btn-create {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.85em;
+        padding: 10px 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 8px;
+        background-color: #772432;
+        color: white !important;
+        border: none;
+        box-shadow: 0 4px 10px rgba(119, 36, 50, 0.2);
+    }
+    
+    .btn-create:hover {
+        background-color: #5d1c27;
+        box-shadow: 0 6px 15px rgba(119, 36, 50, 0.3);
+    }
+
+    /* Pagination Styling */
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 25px;
+        padding: 0 5px;
+    }
+
+    .pagination-info {
+        color: #64748b;
+        font-size: 0.9em;
+    }
+
+    .pagination {
+        display: flex;
+        gap: 5px;
+        margin: 0;
+    }
+
+    .page-link {
+        padding: 8px 14px;
+        border-radius: 8px !important;
+        border: 1px solid #dee2e6;
+        color: #004165;
+        font-weight: 600;
+        font-size: 0.9em;
+        text-decoration: none;
+        transition: all 0.2s;
+        background: white;
+    }
+
+    .page-link:hover {
+        background: #f8f9fa;
+        color: #772432;
+        border-color: #772432;
+    }
+
+    .page-item.active .page-link {
+        background-color: #004165;
+        border-color: #004165;
+        color: white;
+    }
+
+    .page-item.disabled .page-link {
+        color: #adb5bd;
+        background-color: #fff;
+        border-color: #dee2e6;
+        cursor: not-allowed;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Club Management</h2>
-        <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Create New Club
+<div class="clubs-container">
+    <div class="clubs-header">
+        <h1>Club Management</h1>
+        <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary btn-create">
+            <i class="fas fa-plus"></i>
+            Create New Club
         </a>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{{ category }} alert-dismissible fade show mb-4" role="alert">
+                    <i class="fas {% if category == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -20,79 +269,156 @@
         {% endif %}
     {% endwith %}
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Club No</th>
-                            <th>Name</th>
-                            <th>District/Area</th>
-                            <th>Meeting Info</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for club in clubs %}
-                        <tr>
-                            <td>{{ club.club_no }}</td>
-                            <td>
-                                <strong>{{ club.club_name }}</strong>
-                                {% if club.website %}
-                                    <br>
-                                    <a href="{{ club.website }}" target="_blank" class="small text-muted">
-                                        <i class="fas fa-external-link-alt"></i> Website
-                                    </a>
+    <div class="club-list-card">
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead>
+                    <tr>
+                        <th style="width: 140px;">Club No</th>
+                        <th>Club Identity</th>
+                        <th>Organisation</th>
+                        <th>Schedule</th>
+                        <th style="width: 120px; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for club in clubs %}
+                    <tr>
+                        <td>
+                            <span class="club-no">{{ club.club_no }}</span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="club-name">
+                                {{ club.club_name }}
+                            </a>
+                            <div class="club-meta">
+                                {% if club.short_name %}
+                                <span>{{ club.short_name }}</span>
                                 {% endif %}
-                            </td>
-                            <td>
+                                {% if club.website %}
+                                <a href="{{ club.website }}" target="_blank" class="text-muted" style="text-decoration: none;">
+                                    <i class="fas fa-link fa-xs"></i>
+                                    {{ club.website | replace('https://', '') | replace('http://', '') | truncate(30) }}
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="org-info">
                                 {% if club.district %}D{{ club.district }}{% endif %}
-                                {% if club.division %} / Div {{ club.division }}{% endif %}
-                                {% if club.area %} / Area {{ club.area }}{% endif %}
-                            </td>
-                            <td>
-                                {% if club.meeting_date %}{{ club.meeting_date }}{% endif %}
-                                {% if club.meeting_time %}<br>{{ club.meeting_time.strftime('%H:%M') }}{% endif %}
-                            </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="btn btn-sm btn-outline-secondary" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ club.id }}" title="Delete">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                {% if club.division %}<span class="text-muted mx-1">/</span> Div {{ club.division }}{% endif %}
+                                {% if club.area %}<span class="text-muted mx-1">/</span> Area {{ club.area }}{% endif %}
+                                {% if not club.district and not club.division and not club.area %}
+                                <span class="text-muted italic small">Not specified</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="schedule-info">
+                                {% if club.meeting_date %}
+                                <div class="schedule-item">
+                                    <i class="far fa-calendar-alt"></i>
+                                    {{ club.meeting_date }}
                                 </div>
+                                {% endif %}
+                                {% if club.meeting_time %}
+                                <div class="schedule-item">
+                                    <i class="far fa-clock"></i>
+                                    {{ club.meeting_time.strftime('%H:%M') }}
+                                </div>
+                                {% endif %}
+                                {% if not club.meeting_date and not club.meeting_time %}
+                                <span class="text-muted italic small">TBD</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="action-btn" title="Edit Club">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </a>
+                                <button type="button" class="action-btn delete" data-bs-toggle="modal" data-bs-target="#deleteModal{{ club.id }}" title="Delete Club">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fas fa-layer-group"></i>
+                                <p>You haven't added any clubs yet.</p>
+                                <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary">
+                                    Add Your First Club
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-                                <!-- Delete Confirmation Modal -->
-                                <div class="modal fade" id="deleteModal{{ club.id }}" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Confirm Delete</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                Are you sure you want to delete club <strong>{{ club.club_name }}</strong>?
-                                                <p class="text-danger small mt-2">This action cannot be undone.</p>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                <form action="{{ url_for('clubs_bp.delete_club', club_id=club.id) }}" method="POST" class="d-inline">
-                                                    <button type="submit" class="btn btn-danger">Delete Club</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+    {% if pagination and pagination.pages > 1 %}
+    <div class="pagination-container">
+        <div class="pagination-info">
+            Showing {{ (pagination.page - 1) * pagination.per_page + 1 }}-{{ [pagination.page * pagination.per_page, pagination.total]|min }} of {{ pagination.total }} clubs
+        </div>
+        <nav aria-label="Club pagination">
+            <ul class="pagination">
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('clubs_bp.list_clubs', page=pagination.prev_num) if pagination.has_prev else '#' }}">
+                        <i class="fas fa-chevron-left fa-xs"></i>
+                    </a>
+                </li>
+                
+                {% for page_num in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
+                    {% if page_num %}
+                        <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('clubs_bp.list_clubs', page=page_num) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                    {% endif %}
+                {% endfor %}
+                
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    <a class="page-link" href="{{ url_for('clubs_bp.list_clubs', page=pagination.next_num) if pagination.has_next else '#' }}">
+                        <i class="fas fa-chevron-right fa-xs"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Modals outside table to prevent layout issues -->
+{% for club in clubs %}
+<div class="modal fade" id="deleteModal{{ club.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title font-weight-bold" style="color: #772432;">Delete Club?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p>Are you sure you want to delete <strong>{{ club.club_name }}</strong>?</p>
+                <div class="alert alert-warning py-2 mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <small>All data associated with this club might be affected. This action cannot be undone.</small>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Keep Club</button>
+                <form action="{{ url_for('clubs_bp.delete_club', club_id=club.id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger px-4">Delete Permanently</button>
+                </form>
             </div>
         </div>
     </div>
 </div>
+{% endfor %}
 {% endblock %}

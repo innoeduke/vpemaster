@@ -1,90 +1,264 @@
 {% extends "base.html" %}
 
+{% block title %}{{ title }}{% endblock %}
+
+{% block head_extra %}
+<style>
+    .club-form-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .club-form-container h1 {
+        color: #004165;
+        margin-bottom: 25px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .club-form-container h1 i {
+        font-size: 0.8em;
+        opacity: 0.8;
+    }
+
+    .club-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    @media (max-width: 992px) {
+        .club-form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        overflow: hidden;
+        border: 1px solid #eee;
+    }
+
+    .form-section-header {
+        background-color: #f8f9fa;
+        padding: 12px 20px;
+        border-bottom: 1px solid #eee;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #004165;
+        text-transform: uppercase;
+        font-size: 0.9em;
+        letter-spacing: 0.05em;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .form-table {
+        width: 100%;
+        border-collapse: collapse;
+        border-top: 1px solid #eee;
+    }
+
+    .form-table td {
+        padding: 12px 20px;
+        border: none;
+        border-bottom: 1px solid #eee;
+        vertical-align: middle;
+    }
+
+    .form-table td:first-child {
+        width: 35%;
+        background-color: #fcfdfe;
+        font-weight: 600;
+        color: #555;
+        border-right: 1px solid #f0f0f0;
+    }
+
+    .form-control {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 8px 12px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        display: block;
+    }
+
+    input[type="date"].form-control,
+    input[type="time"].form-control {
+        padding: 6px 10px;
+        height: 40px;
+    }
+
+    .form-control:focus {
+        border-color: #004165;
+        box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
+        outline: none;
+    }
+
+    .form-text {
+        font-size: 0.8em;
+        color: #777;
+        margin-top: 4px;
+    }
+
+    label.required::after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    .actions-bar {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        margin-top: 30px;
+        padding: 0;
+    }
+
+    .small-inputs-row {
+        display: flex;
+        gap: 10px;
+    }
+    .small-inputs-row > div {
+        flex: 1;
+    }
+
+    .form-table textarea {
+        min-height: 100px;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">{{ title }}</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="club_no" class="form-label">Club Number *</label>
-                                <input type="text" class="form-control" id="club_no" name="club_no" value="{{ club.club_no if club else '' }}" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="club_name" class="form-label">Club Name *</label>
-                                <input type="text" class="form-control" id="club_name" name="club_name" value="{{ club.club_name if club else '' }}" required>
-                            </div>
-                        </div>
+<div class="club-form-container">
+    <h1>
+        <i class="fas fa-university"></i>
+        {{ title }}
+    </h1>
 
-                        <div class="mb-3">
-                            <label for="short_name" class="form-label">Short Name</label>
-                            <input type="text" class="form-control" id="short_name" name="short_name" value="{{ club.short_name if club else '' }}">
-                            <div class="form-text">Used for abbreviation or internal reference.</div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-4">
-                                <label for="district" class="form-label">District</label>
-                                <input type="text" class="form-control" id="district" name="district" value="{{ club.district if club else '' }}">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="division" class="form-label">Division</label>
-                                <input type="text" class="form-control" id="division" name="division" value="{{ club.division if club else '' }}">
-                            </div>
-                            <div class="col-md-4">
-                                <label for="area" class="form-label">Area</label>
-                                <input type="text" class="form-control" id="area" name="area" value="{{ club.area if club else '' }}">
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="club_address" class="form-label">Address</label>
-                            <textarea class="form-control" id="club_address" name="club_address" rows="3">{{ club.club_address if club else '' }}</textarea>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="meeting_date" class="form-label">Meeting Schedule Text</label>
-                                <input type="text" class="form-control" id="meeting_date" name="meeting_date" value="{{ club.meeting_date if club else '' }}">
-                                <div class="form-text">E.g., "Every Wednesday", "Every 2nd and 4th Monday"</div>
-                            </div>
-                            <div class="col-md-6">
-                                <label for="meeting_time" class="form-label">Meeting Time</label>
-                                <input type="time" class="form-control" id="meeting_time" name="meeting_time" value="{{ club.meeting_time.strftime('%H:%M') if club and club.meeting_time else '' }}">
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="contact_phone_number" class="form-label">Contact Phone</label>
-                                <input type="text" class="form-control" id="contact_phone_number" name="contact_phone_number" value="{{ club.contact_phone_number if club else '' }}">
-                            </div>
-                            <div class="col-md-6">
-                                <label for="website" class="form-label">Website</label>
-                                <input type="text" class="form-control" id="website" name="website" value="{{ club.website if club else '' }}">
-                            </div>
-                        </div>
-                        
-                         <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="founded_date" class="form-label">Founded Date</label>
+    <form method="POST">
+        <div class="club-form-grid">
+            <!-- Left Column -->
+            <div class="form-sections-stack">
+                <div class="form-section mb-4">
+                    <div class="form-section-header">
+                        <i class="fas fa-info-circle"></i> Basic Information
+                    </div>
+                    <table class="form-table">
+                        <tr>
+                            <td><label for="club_no" class="required">Club Number</label></td>
+                            <td>
+                                <input type="text" class="form-control" id="club_no" name="club_no" value="{{ club.club_no if club else '' }}" required placeholder="e.g. 1234">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="club_name" class="required">Club Name</label></td>
+                            <td>
+                                <input type="text" class="form-control" id="club_name" name="club_name" value="{{ club.club_name if club else '' }}" required placeholder="Toastmasters Club Name">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="short_name">Short Name</label></td>
+                            <td>
+                                <input type="text" class="form-control" id="short_name" name="short_name" value="{{ club.short_name if club else '' }}">
+                                <div class="form-text">Internal reference or abbreviation</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="founded_date">Founded Date</label></td>
+                            <td>
                                 <input type="date" class="form-control" id="founded_date" name="founded_date" value="{{ club.founded_date.isoformat() if club and club.founded_date else '' }}">
-                            </div>
-                        </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="website">Website</label></td>
+                            <td>
+                                <input type="text" class="form-control" id="website" name="website" value="{{ club.website if club else '' }}" placeholder="www.example.com">
+                            </td>
+                        </tr>
+                    </table>
+                </div>
 
-                        <div class="d-flex justify-content-end gap-2">
-                             <a href="{{ url_for('clubs_bp.list_clubs') }}" class="btn btn-secondary">Cancel</a>
-                            <button type="submit" class="btn btn-primary">Save Club</button>
-                        </div>
-                    </form>
+                <div class="form-section">
+                    <div class="form-section-header">
+                        <i class="fas fa-calendar-alt"></i> Meeting Schedule
+                    </div>
+                    <table class="form-table">
+                        <tr>
+                            <td><label for="meeting_date">Schedule Text</label></td>
+                            <td>
+                                <input type="text" class="form-control" id="meeting_date" name="meeting_date" value="{{ club.meeting_date if club else '' }}" placeholder="e.g. Every Wednesday">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="meeting_time">Meeting Time</label></td>
+                            <td>
+                                <input type="time" class="form-control" id="meeting_time" name="meeting_time" value="{{ club.meeting_time.strftime('%H:%M') if club and club.meeting_time else '' }}">
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="form-sections-stack">
+                <div class="form-section mb-4">
+                    <div class="form-section-header">
+                        <i class="fas fa-map-marker-alt"></i> Location & Contact
+                    </div>
+                    <table class="form-table">
+                        <tr>
+                            <td>Organisational</td>
+                            <td>
+                                <div class="small-inputs-row">
+                                    <div>
+                                        <label class="form-text mt-0 d-block">District</label>
+                                        <input type="text" class="form-control" id="district" name="district" value="{{ club.district if club else '' }}">
+                                    </div>
+                                    <div>
+                                        <label class="form-text mt-0 d-block">Division</label>
+                                        <input type="text" class="form-control" id="division" name="division" value="{{ club.division if club else '' }}">
+                                    </div>
+                                    <div>
+                                        <label class="form-text mt-0 d-block">Area</label>
+                                        <input type="text" class="form-control" id="area" name="area" value="{{ club.area if club else '' }}">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="contact_phone_number">Contact Phone</label></td>
+                            <td>
+                                <input type="text" class="form-control" id="contact_phone_number" name="contact_phone_number" value="{{ club.contact_phone_number if club else '' }}">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="club_address">Club Address</label></td>
+                            <td>
+                                <textarea class="form-control" id="club_address" name="club_address" placeholder="Physical meeting location">{{ club.club_address if club else '' }}</textarea>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
         </div>
-    </div>
+
+        <div class="actions-bar">
+            <a href="{{ url_for('clubs_bp.list_clubs') }}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Cancel
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Club
+            </button>
+        </div>
+    </form>
 </div>
 {% endblock %}

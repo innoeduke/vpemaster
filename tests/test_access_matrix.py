@@ -78,8 +78,7 @@ class AccessMatrixTestCase(unittest.TestCase):
             
             user = User(
                 username=role_name.lower(),
-                email=f"{role_name.lower()}@test.com",
-                contact_id=contact.id
+                email=f"{role_name.lower()}@test.com"
             )
             user.set_password("password")
             db.session.add(user)

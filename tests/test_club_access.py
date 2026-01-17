@@ -38,11 +38,17 @@ def cleanup_test_data(app):
             
             # 2. Delete all records that reference test contacts
             if test_contact_ids:
-                from app.models import SessionLog, UserClub, Waitlist, Vote, Roster, Achievement
+                from app.models import SessionLog, UserClub, Waitlist, Vote, Roster, Achievement, RosterRole
                 SessionLog.query.filter(SessionLog.Owner_ID.in_(test_contact_ids)).delete(synchronize_session=False)
                 Waitlist.query.filter(Waitlist.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
                 Vote.query.filter(Vote.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
+                
+                # Delete RosterRole before Roster
+                roster_ids = [r.id for r in Roster.query.filter(Roster.contact_id.in_(test_contact_ids)).all()]
+                if roster_ids:
+                    RosterRole.query.filter(RosterRole.roster_id.in_(roster_ids)).delete(synchronize_session=False)
                 Roster.query.filter(Roster.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
+                
                 Achievement.query.filter(Achievement.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
                 UserClub.query.filter(UserClub.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
                 ContactClub.query.filter(ContactClub.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)

@@ -46,9 +46,13 @@ def test_duplicate_user_in_current_club(test_app, test_client):
         admin_contact = Contact(Name='Admin', Email='admin@test.com')
         db.session.add(admin_contact)
         db.session.commit()
-        admin_user = User(username='admin', email='admin@test.com', contact_id=admin_contact.id)
+        admin_user = User(username='admin', email='admin@test.com')
         admin_user.set_password('password')
         db.session.add(admin_user)
+        db.session.commit()
+
+        from app.models import UserClub
+        db.session.add(UserClub(user_id=admin_user.id, club_id=club.id, contact_id=admin_contact.id))
         db.session.commit()
 
         # Login
@@ -60,9 +64,13 @@ def test_duplicate_user_in_current_club(test_app, test_client):
         db.session.add(contact)
         db.session.commit()
         
-        user = User(username='dupuser', email='dup@test.com', contact_id=contact.id)
+        user = User(username='dupuser', email='dup@test.com')
         user.set_password('password')
         db.session.add(user)
+        db.session.commit()
+        
+        from app.models import UserClub
+        db.session.add(UserClub(user_id=user.id, club_id=club.id, contact_id=contact.id))
         
         cc = ContactClub(contact_id=contact.id, club_id=club.id, membership_type='Member')
         db.session.add(cc)
@@ -95,9 +103,13 @@ def test_duplicate_user_not_in_current_club(test_app, test_client):
         admin_contact = Contact(Name='Admin', Email='admin@test.com')
         db.session.add(admin_contact)
         db.session.commit()
-        admin_user = User(username='admin', email='admin@test.com', contact_id=admin_contact.id)
+        admin_user = User(username='admin', email='admin@test.com')
         admin_user.set_password('password')
         db.session.add(admin_user)
+        db.session.commit()
+
+        from app.models import UserClub
+        db.session.add(UserClub(user_id=admin_user.id, club_id=club_a.id, contact_id=admin_contact.id))
         db.session.commit()
         test_client.post('/login', data={'username': 'admin', 'password': 'password'})
         
@@ -107,9 +119,13 @@ def test_duplicate_user_not_in_current_club(test_app, test_client):
         db.session.add(contact)
         db.session.commit()
         
-        user = User(username='extuser', email='ext@test.com', contact_id=contact.id)
+        user = User(username='extuser', email='ext@test.com')
         user.set_password('password')
         db.session.add(user)
+        db.session.commit()
+        
+        from app.models import UserClub
+        db.session.add(UserClub(user_id=user.id, club_id=club_a.id, contact_id=contact.id))
         
         cc = ContactClub(contact_id=contact.id, club_id=club_a.id, membership_type='Member')
         db.session.add(cc)
@@ -140,9 +156,13 @@ def test_duplicate_contact_guest_in_current_club(test_app, test_client):
         admin_contact = Contact(Name='Admin', Email='admin@test.com')
         db.session.add(admin_contact)
         db.session.commit()
-        admin_user = User(username='admin', email='admin@test.com', contact_id=admin_contact.id)
+        admin_user = User(username='admin', email='admin@test.com')
         admin_user.set_password('password')
         db.session.add(admin_user)
+        db.session.commit()
+        
+        from app.models import UserClub
+        db.session.add(UserClub(user_id=admin_user.id, club_id=club.id, contact_id=admin_contact.id))
         db.session.commit()
         test_client.post('/login', data={'username': 'admin', 'password': 'password'})
         
@@ -181,9 +201,13 @@ def test_duplicate_contact_guest_in_other_club(test_app, test_client):
         admin_contact = Contact(Name='Admin', Email='admin@test.com')
         db.session.add(admin_contact)
         db.session.commit()
-        admin_user = User(username='admin', email='admin@test.com', contact_id=admin_contact.id)
+        admin_user = User(username='admin', email='admin@test.com')
         admin_user.set_password('password')
         db.session.add(admin_user)
+        db.session.commit()
+
+        from app.models import UserClub
+        db.session.add(UserClub(user_id=admin_user.id, club_id=club_a.id, contact_id=admin_contact.id))
         db.session.commit()
         test_client.post('/login', data={'username': 'admin', 'password': 'password'})
         

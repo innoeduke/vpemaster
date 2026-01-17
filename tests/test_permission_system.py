@@ -57,10 +57,10 @@ class PermissionSystemTestCase(unittest.TestCase):
         db.session.add_all([self.contact_admin, self.contact_user])
         db.session.flush()
         
-        self.user_admin = User(username="admin", email="admin@test.com", contact_id=self.contact_admin.id)
+        self.user_admin = User(username="admin", email="admin@test.com")
         self.user_admin.set_password("password")
         
-        self.user_user = User(username="user", email="user@test.com", contact_id=self.contact_user.id)
+        self.user_user = User(username="user", email="user@test.com")
         self.user_user.set_password("password")
         
         db.session.add_all([self.user_admin, self.user_user])
@@ -261,7 +261,7 @@ class PermissionSystemTestCase(unittest.TestCase):
             user_id=self.user_user.id,
             club_id=self.club.id,
             club_role_id=role_admin.id,
-            contact_id=self.user_user.contact_id
+            contact_id=self.contact_user.id
         ))
         db.session.commit()
         

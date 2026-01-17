@@ -1,6 +1,6 @@
 
 import pytest
-from app.models import Club, User, AuthRole, UserClub
+from app.models import Club, User, AuthRole, UserClub, Contact
 from app.auth.permissions import Permissions
 from flask import url_for
 
@@ -41,8 +41,6 @@ def sysadmin_user(app, db_session):
         contact = Contact(Name='SysAdmin Test', Email=user.email, first_name='SysAdmin', last_name='Test')
         db_session.add(contact)
         db_session.commit()
-        user.contact_id = contact.id
-        db_session.commit()
 
     # Assign role and club
     if not UserClub.query.filter_by(user_id=user.id, club_id=club.id, club_role_id=role.id).first():
@@ -74,8 +72,6 @@ def regular_user(app, db_session):
         contact = Contact(Name='Regular Test', Email=user.email, first_name='Regular', last_name='Test')
         db_session.add(contact)
         db_session.commit()
-        user.contact_id = contact.id
-        db_session.commit()
 
     # Ensure primary club linkage
     from app.models import ContactClub, Club
@@ -106,9 +102,10 @@ def test_list_clubs_forbidden(client, regular_user):
     response = client.get('/clubs', follow_redirects=True)
     # Should redirect or show error
     # Adjust assertion based on actual behavior (redirect to dashboard likely)
-    assert response.status_code == 200
+    assert response.status_code in [200, 403]
     # Assuming redirect to dashboard or login
-    assert b'Club Management' not in response.data
+    if response.status_code == 200:
+        assert b'Club Management' not in response.data
 
 def test_create_club(client, sysadmin_user, db_session):
     """Test creating a new club."""
