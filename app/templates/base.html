@@ -126,11 +126,11 @@
     <div id="nav-overlay"></div>
 
     <div class="main-content" id="main-content">
-      {% if current_user.is_authenticated and current_user.contact %}
+      {% if current_user.is_authenticated %}
       <div class="profile-container">
         <div class="profile-trigger" id="profile-trigger">
           <i class="fas fa-user-circle"></i>
-          <span>{{ current_user.contact.Name }}</span>
+          <span>{{ current_user.contact.Name if current_user.contact else current_user.Username }}</span>
           <i class="fas fa-caret-down"></i>
         </div>
         <div class="profile-menu" id="profile-menu">

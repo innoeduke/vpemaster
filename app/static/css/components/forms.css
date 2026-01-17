@@ -14,6 +14,8 @@
     cursor: pointer;
     font-size: 14px;
     min-width: 80px;
+    box-sizing: border-box;
+    vertical-align: middle;
 }
 
 /* Modifier classes for button colors */

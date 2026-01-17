@@ -1,7 +1,7 @@
 Type,Title,Role,Owner,Duration_Min,Duration_Max
 Section,OPENING,,,0,
-SAA Introduction,SAA Introduction,SAA,Fei Ding,0,1
-President's Address,President's Address,President,Siqi Shao,0,2
+SAA Introduction,SAA Introduction,SAA,,0,1
+President's Address,President's Address,President,,0,2
 Generic,Introduction to Contest Team,Toastmaster,,0,3
 Section,International Speech Contest,,,0,
 Contest Chair Address,Contest Chair Address,Contest Chair,,0,5
@@ -16,6 +16,6 @@ Ballot Counting,Ballot Counting,Ballot Counter,,0,2
 Section,EVALUATION REPORTS,,,0,
 Chief Judge Report,Chief Judge Report,Chief Judge,,0,10
 Voting and Announcements,Voting and Announcements,Toastmaster,,0,2
-Awards / Meeting Closing,Awards / Meeting Closing,President,Siqi Shao,0,2
+Awards / Meeting Closing,Awards / Meeting Closing,President,,0,2
 Hidden Section,ADDITIONAL ROLES,,,0,
 Photography,Photography,Photographer,,0,

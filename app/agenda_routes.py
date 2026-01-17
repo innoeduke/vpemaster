@@ -1,6 +1,6 @@
 # vpemaster/agenda_routes.py
 
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app, flash
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
@@ -547,12 +547,9 @@ def agenda():
             pathways[ptype] = []
         pathways[ptype].append(p.name)
 
-    template_dir = os.path.join(current_app.static_folder, 'mtg_templates')
-    try:
-        meeting_templates = [f for f in os.listdir(
-            template_dir) if f.endswith('.csv')]
-    except FileNotFoundError:
-        meeting_templates = []
+    # --- Template Data ---
+    # We use the mapping defined in the Meeting model as the source of truth
+    meeting_types = Meeting.TYPE_TO_TEMPLATE
 
     # --- Minimal Data for Initial Page Load ---
     club_id = get_current_club_id()
@@ -563,6 +560,17 @@ def agenda():
 
     # Default meeting start time (can be overridden by Club model if needed)
     default_start_time = '18:55'
+
+    # Calculate next meeting number and suggested date
+    next_meeting_num = db.session.query(func.max(Meeting.Meeting_Number)).filter(Meeting.club_id == club_id).scalar()
+    next_meeting_num = (next_meeting_num or 0) + 1
+    
+    # Suggest next meeting date (last meeting + 7 days, or today)
+    last_meeting = Meeting.query.filter_by(club_id=club_id).order_by(Meeting.Meeting_Date.desc()).first()
+    if last_meeting and last_meeting.Meeting_Date:
+        next_meeting_date = (last_meeting.Meeting_Date + timedelta(days=7)).strftime('%Y-%m-%d')
+    else:
+        next_meeting_date = datetime.now().strftime('%Y-%m-%d')
 
     # --- Projects for Speech Modal ---
     from .utils import get_dropdown_metadata
@@ -578,9 +586,6 @@ def agenda():
         'EVALUATION_PROJECTS': ProjectID.EVALUATION_PROJECTS
     }
     
-    # Meeting types based on templates
-    meeting_types = {f[:-4]: f for f in meeting_templates}
-
     return render_template('agenda.html',
                            logs_data=logs_data,               # Use the processed list of dictionaries
                            pathways=pathways,               # For modals
@@ -590,9 +595,10 @@ def agenda():
                            selected_meeting=selected_meeting,  # Pass the Meeting object
                            members=members,                 # If needed elsewhere
                            project_speakers=project_speakers,  # For JS
-                           meeting_templates=meeting_templates,
                            meeting_types=meeting_types,
                            default_start_time=default_start_time,
+                           next_meeting_num=next_meeting_num,
+                           next_meeting_date=next_meeting_date,
                            ProjectID=project_id_dict)
 
 
@@ -738,12 +744,15 @@ def _validate_meeting_form_data(form):
     meeting_number = form.get('meeting_number')
     meeting_type = form.get('meeting_type')
     
-    # Check template validity by verifying the CSV file exists
-    template_file = f"{meeting_type}.csv" if not meeting_type.endswith('.csv') else meeting_type
+    # Check template validity using the model's mapping
+    template_file = Meeting.TYPE_TO_TEMPLATE.get(meeting_type)
+    if not template_file:
+         raise ValueError(f"Invalid meeting type: {meeting_type}")
+         
     template_path = os.path.join(current_app.static_folder, 'mtg_templates', template_file)
     
     if not os.path.exists(template_path):
-         raise ValueError(f"Invalid meeting type or template not found: {meeting_type}")
+         raise ValueError(f"Template file not found for meeting type: {meeting_type}")
 
     meeting_date_str = form.get('meeting_date')
     start_time_str = form.get('start_time')
@@ -753,8 +762,13 @@ def _validate_meeting_form_data(form):
     except (ValueError, TypeError):
          raise ValueError("Invalid date or time format.")
 
-    # Validate that new meeting date is not earlier than the most recent meeting
-    most_recent_meeting = Meeting.query.order_by(Meeting.Meeting_Date.desc()).first()
+    # Validate that new meeting date is not earlier than the most recent meeting for this club
+    club_id = get_current_club_id()
+    query = Meeting.query
+    if club_id:
+        query = query.filter_by(club_id=club_id)
+    most_recent_meeting = query.order_by(Meeting.Meeting_Date.desc()).first()
+    
     if most_recent_meeting and meeting_date < most_recent_meeting.Meeting_Date:
         raise ValueError(f"Meeting date cannot be earlier than the most recent meeting ({most_recent_meeting.Meeting_Date.strftime('%Y-%m-%d')})")
 

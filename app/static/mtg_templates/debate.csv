@@ -1,7 +1,7 @@
 Type,Title,Role,Owner,Duration_Min,Duration_Max
 Section,OPENING,,,0,
-SAA Introduction,,SAA,Fei Ding,0,1
-President's Address,,President,Siqi Shao,0,2
+SAA Introduction,,SAA,,0,1
+President's Address,,President,,0,2
 Toastmaster of the Evening's Address,,Toastmaster,,0,2
 Ah-Counter Introduction,,Ah-Counter,,0,1
 Grammarian Introduction,,Grammarian,,0,2
@@ -26,7 +26,7 @@ Timer Report,,Timer,,0,1
 General Evaluation Report,,General Evaluator,,0,5
 Section,AWARDS & CLOSING,,,0,
 Voting and Announcements,,Toastmaster,,0,3
-Awards / Meeting Closing,,President,Siqi Shao,0,2
+Awards / Meeting Closing,,President,,0,2
 Hidden Section,ADDITIONAL ROLES,,,0,
 Photography,,Photographer,,0,
 Topics Speech,Topics Speech,Topics Speaker,,1,2

@@ -8,7 +8,7 @@
     action="{{ url_for('users_bp.user_form', user_id=user.id) if user else url_for('users_bp.user_form') }}">
     <table class="form-table">
         {% if not user %}
-        <tr>
+        <tr class="tr-full-width">
             <td>
                 <label for="user_search">Search existing user: 
                     <i class="fas fa-info-circle info-icon-tooltip" 
@@ -38,14 +38,34 @@
             </td>
         </tr>
         {% endif %}
-        <tr>
+        <tr class="tr-full-width">
             <td><label for="username">Username:</label></td>
             <td><input type="text" id="username" name="username" value="{{ user.Username if user else '' }}" required>
             </td>
         </tr>
         <tr>
+            <td><label for="first_name">First Name:</label></td>
+            <td><input type="text" id="first_name" name="first_name" value="{{ user.contact.first_name if user and user.contact else '' }}">
+            </td>
+        </tr>
+        <tr>
+            <td><label for="last_name">Last Name:</label></td>
+            <td><input type="text" id="last_name" name="last_name" value="{{ user.contact.last_name if user and user.contact else '' }}">
+            </td>
+        </tr>
+        <tr class="tr-full-width">
+            <td><label for="full_name">Full Name:</label></td>
+            <td><input type="text" id="full_name" name="full_name" value="{{ user.contact.Name if user and user.contact else '' }}" required>
+            </td>
+        </tr>
+        <tr>
             <td><label for="email">Email:</label></td>
             <td><input type="email" id="email" name="email" value="{{ user.Email if user and user.Email else '' }}">
+            </td>
+        </tr>
+        <tr>
+            <td><label for="phone">Phone:</label></td>
+            <td><input type="text" id="phone" name="phone" value="{{ user.phone if user and user.phone else '' }}">
             </td>
         </tr>
         <tr>
@@ -75,32 +95,44 @@
                     style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 4px;">
                     {% for r in all_auth_roles %}
                     <label style="display: flex; align-items: center; margin-bottom: 5px; cursor: pointer;">
+                        {% if r.name == 'User' %}
+                        <input type="checkbox" checked disabled style="margin-right: 8px;">
+                        <input type="hidden" name="roles" value="{{ r.id }}">
+                        {% else %}
                         <input type="checkbox" name="roles" value="{{ r.id }}" {% if user and r.id in user_role_ids
                             %}checked{% endif %} style="margin-right: 8px;">
+                        {% endif %}
                         <span>{{ r.name }}</span>
                     </label>
                     {% endfor %}
                 </div>
             </td>
         </tr>
-        <tr>
-            <td>
-                <label for="password">Password: 
-                    <i class="fas fa-info-circle info-icon-tooltip" 
-                       style="color: #007bff; cursor: pointer; font-size: 0.9em;" 
-                       data-tooltip="{% if user %}Leave blank to keep current password.{% else %}Leave blank to use default password 'leadership'.{% endif %}"></i>
-                </label>
-            </td>
-            <td>
-                <input type="password" id="password" name="password">
-            </td>
-        </tr>
+
     </table>
-    <div style="text-align: center;">
-        <button type="submit" class="btn btn-primary">{{ 'Save User' if user else 'Add User' }}</button>
-        <a href="{{ url_for('users_bp.show_users') }}" class="btn btn-danger">Cancel</a>
+    <div class="form-actions">
+        <button type="submit" class="btn btn-success" style="width: 120px;">Save</button>
+        <a href="{{ url_for('users_bp.show_users') }}" class="btn btn-danger" style="width: 120px;">Cancel</a>
     </div>
 </form>
+
+<!-- Duplicate Detection Modal -->
+<div id="duplicateModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <span class="close" id="closeDuplicateModal">&times;</span>
+        <h2>Potential Duplicate Found</h2>
+        <p>The following existing users/contacts match the information you entered. Would you like to use one of them instead?</p>
+        
+        <div id="duplicateList" style="margin: 20px 0; max-height: 300px; overflow-y: auto;">
+            <!-- Duplicates will be injected here -->
+        </div>
+        
+        <div class="form-actions" style="margin-top: 20px; display: flex; justify-content: center; gap: 10px;">
+            <button type="button" class="btn btn-secondary" id="proceedWithNew" style="width: 200px;">Create New User Anyway</button>
+            <button type="button" class="btn btn-danger" id="cancelSave" style="width: 120px;">Cancel</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

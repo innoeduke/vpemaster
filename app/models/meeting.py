@@ -5,6 +5,19 @@ from .base import db
 
 class Meeting(db.Model):
     __tablename__ = 'Meetings'
+    
+    # Meeting Type Mapping to Template Files
+    TYPE_TO_TEMPLATE = {
+        'Keynote Speech': 'default.csv',
+        'Speech Marathon': 'speech_marathon.csv',
+        'Speech Contest': 'speech_contest.csv',
+        'Panel Discussion': 'panel_discussion.csv',
+        'Debate': 'debate.csv',
+        'Pecha Kucha': 'pecha_kucha.csv',
+        'Gavel Passing': 'gavel_passing.csv',
+        'Club Election': 'club_election.csv'
+    }
+
     id = db.Column(db.Integer, primary_key=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False, index=True)
     type = db.Column(db.String(255), default='Keynote Speech')

@@ -182,9 +182,9 @@
 	}
 
 	/* Specific fields always full width on mobile */
-	.form-table tr:nth-child(1),
-	.form-table tr:nth-child(2),
-	.form-table tr:nth-child(3),
+	.form-table tr.tr-full-width,
+	.form-table tr:last-child,
+	/* Usually Role or Bio */
 	.form-table tr:has(textarea) {
 		flex: 1 1 100%;
 	}

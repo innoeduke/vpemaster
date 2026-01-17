@@ -344,7 +344,11 @@ def book_or_assign_role():
         # Admin Actions
         elif action == 'assign' and is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
             contact_id = data.get('contact_id', '0')
-            owner_id_to_set = int(contact_id) if contact_id != '0' else None
+            try:
+                contact_id_int = int(contact_id)
+                owner_id_to_set = contact_id_int if contact_id_int != 0 else None
+            except (ValueError, TypeError):
+                owner_id_to_set = None
             
             # Use Assign (which handles unassign if None)
             RoleService.assign_meeting_role(log, owner_id_to_set, is_admin=True)

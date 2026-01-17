@@ -14,9 +14,22 @@ document.addEventListener("DOMContentLoaded", function () {
       const isMemberOnly = container.dataset.isMemberOnly === "true";
 
       input.addEventListener("focus", function () {
+        if (results.classList.contains("active")) return;
         this.dataset.previousValue = this.value;
         this.dataset.previousId = this.dataset.currentId;
+        
+        // Hide placeholder on focus
+        this.dataset.savedPlaceholder = this.placeholder;
+        this.placeholder = "";
+
         showResults("", results, sessionId, input, isMemberOnly);
+      });
+
+      input.addEventListener("blur", function () {
+        // Restore placeholder on blur
+        if (this.dataset.savedPlaceholder) {
+          this.placeholder = this.dataset.savedPlaceholder;
+        }
       });
 
       input.addEventListener("input", function () {
@@ -31,9 +44,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     // Close results when clicking outside
-    document.addEventListener("click", function (e) {
+    document.addEventListener("mousedown", function (e) {
       if (!e.target.closest(".autocomplete-container")) {
-        document.querySelectorAll(".autocomplete-results").forEach((res) => {
+        document.querySelectorAll(".autocomplete-results.active").forEach((res) => {
           res.classList.remove("active");
         });
       }
@@ -48,17 +61,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
       resultsContainer.innerHTML = "";
 
-      // Add "Unassign" option if query is empty or matches "none" or "unassign"
-      if (query === "" || "unassign".includes(query.toLowerCase()) || "none".includes(query.toLowerCase())) {
-        const unassignItem = document.createElement("div");
-        unassignItem.className = "autocomplete-item unassign-item";
-        unassignItem.innerHTML = `<i class="fas fa-undo"></i> --- Unassign ---`;
-        unassignItem.addEventListener("click", () => {
-          selectContact(sessionId, "0", "", input, resultsContainer);
-        });
-        resultsContainer.appendChild(unassignItem);
-      }
-
       filteredContacts.forEach((contact) => {
         const item = document.createElement("div");
         item.className = "autocomplete-item";
@@ -69,7 +71,8 @@ document.addEventListener("DOMContentLoaded", function () {
           <div class="item-name">${contact.name}</div>
           <div class="item-type ${contact.type.toLowerCase()}">${contact.type}</div>
         `;
-        item.addEventListener("click", () => {
+        item.addEventListener("mousedown", (e) => {
+          e.preventDefault();
           selectContact(sessionId, contact.id, contact.name, input, resultsContainer);
         });
         resultsContainer.appendChild(item);
@@ -86,7 +89,7 @@ document.addEventListener("DOMContentLoaded", function () {
       input.value = contactName;
       input.dataset.currentId = contactId;
       resultsContainer.classList.remove("active");
-      if (contactId === "0") {
+      if (contactId === "0" || contactId === 0) {
         input.classList.add("unassigned-role");
       } else {
         input.classList.remove("unassigned-role");

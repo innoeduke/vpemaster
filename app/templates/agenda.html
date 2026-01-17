@@ -293,7 +293,7 @@
                 <table class="form-table">
                     <tr>
                         <td><label for="meeting_number">Meeting Number:</label></td>
-                        <td><input type="number" id="meeting_number" name="meeting_number" autocomplete="off" required>
+                        <td><input type="number" id="meeting_number" name="meeting_number" value="{{ next_meeting_num }}" autocomplete="off" required>
                         </td>
                     </tr>
                     <tr>
@@ -302,7 +302,7 @@
                     </tr>
                     <tr>
                         <td><label for="meeting_date">Meeting Date:</label></td>
-                        <td><input type="date" id="meeting_date" name="meeting_date" autocomplete="off" required>
+                        <td><input type="date" id="meeting_date" name="meeting_date" value="{{ next_meeting_date }}" autocomplete="off" required>
                         </td>
                     </tr>
                     <tr>

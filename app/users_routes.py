@@ -23,6 +23,7 @@ def _create_or_update_user(user=None, **kwargs):
         password = kwargs.get('password') or 'leadership'
         user.Pass_Hash = generate_password_hash(password, method='pbkdf2:sha256')
         user.Status = 'active'
+        user.phone = kwargs.get('phone')
         db.session.add(user)
     else:
         # Updating an existing user
@@ -30,6 +31,7 @@ def _create_or_update_user(user=None, **kwargs):
         if password:
             user.Pass_Hash = generate_password_hash(password, method='pbkdf2:sha256')
         user.Status = kwargs.get('status')
+        user.phone = kwargs.get('phone')
 
     user.Username = kwargs.get('username')
     # Set email to None if empty to avoid unique constraint violation
@@ -114,10 +116,13 @@ def _create_or_update_user(user=None, **kwargs):
 
     # Always create a contact for new users
     if user.id is None:
-        # Create a new contact with username
+        # Create a new contact with provided details
         new_contact = Contact(
-            Name=user.Username,
+            Name=kwargs.get('full_name') or user.Username,
+            first_name=kwargs.get('first_name'),
+            last_name=kwargs.get('last_name'),
             Email=user.Email,
+            Phone_Number=user.phone,
             Type='Member',
             Date_Created=date.today()
         )
@@ -139,6 +144,19 @@ def _create_or_update_user(user=None, **kwargs):
                 club_id=club_id
             )
             db.session.add(contact_club)
+    else:
+        # Sync details to contact if it exists
+        if user.contact:
+            if kwargs.get('full_name'):
+                user.contact.Name = kwargs.get('full_name')
+            if kwargs.get('first_name'):
+                user.contact.first_name = kwargs.get('first_name')
+            if kwargs.get('last_name'):
+                user.contact.last_name = kwargs.get('last_name')
+            if user.Email:
+                user.contact.Email = user.Email
+            if user.phone:
+                user.contact.Phone_Number = user.phone
 
     # Sync UserClub.contact_id if Contact_ID changed
     if user.id and user.Contact_ID and user.Contact_ID != old_contact_id:
@@ -217,7 +235,11 @@ def user_form(user_id):
         _create_or_update_user(
             user=user,
             username=request.form.get('username'),
+            full_name=request.form.get('full_name'),
+            first_name=request.form.get('first_name'),
+            last_name=request.form.get('last_name'),
             email=request.form.get('email'),
+            phone=request.form.get('phone'),
             role_ids=role_ids,
             status=request.form.get('status'),
             contact_id=request.form.get('contact_id', 0, type=int),
@@ -229,7 +251,6 @@ def user_form(user_id):
         db.session.commit()
 
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
-
 
     from .models import AuthRole, UserClub
     all_auth_roles = AuthRole.query.order_by(AuthRole.id).all()
@@ -259,6 +280,71 @@ def user_form(user_id):
     user_role_ids = [r.id for r in user.roles] if user else []
 
     return render_template('user_form.html', user=user, contacts=member_contacts, users=users, mentor_contacts=mentor_contacts, pathways=pathways, all_auth_roles=filtered_roles, user_role_ids=user_role_ids)
+
+
+@users_bp.route('/user/check_duplicates', methods=['POST'])
+@login_required
+def check_duplicates():
+    """Checks for potential duplicate users or contacts."""
+    data = request.json
+    username = data.get('username', '').strip()
+    full_name = data.get('full_name', '').strip()
+    email = data.get('email', '').strip()
+    phone = data.get('phone', '').strip()
+    
+    duplicates = []
+    
+    # Check users
+    user_query = User.query
+    user_filters = []
+    if username:
+        user_filters.append(User.Username == username)
+    if email:
+        user_filters.append(User.Email == email)
+    if phone:
+        user_filters.append(User.phone == phone)
+        
+    if user_filters:
+        existing_users = User.query.filter(or_(*user_filters)).all()
+        for u in existing_users:
+            duplicates.append({
+                'type': 'User',
+                'id': u.id,
+                'username': u.Username,
+                'full_name': u.contact.Name if u.contact else 'N/A',
+                'email': u.Email or 'N/A',
+                'phone': u.phone or 'N/A'
+            })
+            
+    # Check contacts (that don't have users linked yet, or just to be safe)
+    contact_filters = []
+    if full_name:
+        contact_filters.append(Contact.Name == full_name)
+    if email:
+        contact_filters.append(Contact.Email == email)
+    if phone:
+        contact_filters.append(Contact.Phone_Number == phone)
+        
+    if contact_filters:
+        existing_contacts = Contact.query.filter(or_(*contact_filters)).all()
+        for c in existing_contacts:
+            # Skip if this contact is already represented in our duplicates list (via its user)
+            if any(d['type'] == 'User' and d['full_name'] == c.Name for d in duplicates):
+                continue
+                
+            duplicates.append({
+                'type': 'Contact',
+                'id': c.id,
+                'username': 'N/A',
+                'full_name': c.Name,
+                'email': c.Email or 'N/A',
+                'phone': c.Phone_Number or 'N/A',
+                'has_user': c.user is not None
+            })
+            
+    return {'duplicates': duplicates}
+
+
 
 
 @users_bp.route('/user/delete/<int:user_id>', methods=['POST'])
