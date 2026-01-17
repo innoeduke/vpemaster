@@ -7,37 +7,37 @@
 <form method="POST"
     action="{{ url_for('users_bp.user_form', user_id=user.id) if user else url_for('users_bp.user_form') }}">
     <table class="form-table">
+        {% if not user %}
         <tr>
-            <td><label for="contact_search">Select contact:</label></td>
             <td>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="position: relative; flex-grow: 1;">
-                        <input type="text" id="contact_search" placeholder="Search contacts..."
-                            value="{% if user and user.contact %}{{ user.contact.Name }}{% endif %}" autocomplete="off"
-                            style="width: 100%;">
-                        <div id="contact_dropdown" class="autocomplete-suggestions" style="display: none; width: 100%;">
-                        </div>
-                    </div>
-                    <input type="hidden" name="contact_id" id="contact_id_hidden"
-                        value="{{ user.Contact_ID if user else 0 }}">
-                    {% if not user %}
-                    <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; white-space: nowrap;"
-                        title="Create new contact">
-                        <input type="checkbox" name="create_new_contact" id="create_new_contact">
-                        <i class="fas fa-user-plus"></i>
-                    </label>
-                    {% endif %}
+                <label for="user_search">Search existing user: 
+                    <i class="fas fa-info-circle info-icon-tooltip" 
+                       style="color: #007bff; cursor: pointer; font-size: 0.9em;" 
+                       data-tooltip="Search for an existing user to add to this club, or create a new user below."></i>
+                </label>
+            </td>
+            <td>
+                <div style="position: relative;">
+                    <input type="text" id="user_search" placeholder="Search by name, email, or phone..." autocomplete="off" style="width: 100%;">
+                    <div id="user_dropdown" class="autocomplete-suggestions" style="display: none; width: 100%;"></div>
                 </div>
                 <!-- Hidden source for JS to use -->
-                <script id="contact_data" type="application/json">
-                        [
-                        {% for contact in contacts %}
-                            {"id": {{ contact.id }}, "name": {{ contact.Name | tojson }}}{% if not loop.last %},{% endif %}
-                        {% endfor %}
-                        ]
-                    </script>
+                <script id="user_data" type="application/json">
+                    [
+                    {% for u in users %}
+                        {
+                            "id": {{ u.id }}, 
+                            "username": {{ u.Username | tojson }},
+                            "email": {{ u.Email | tojson if u.Email else 'null' }},
+                            "phone": {{ u.phone | tojson if u.phone else 'null' }},
+                            "contact_name": {{ u.contact.Name | tojson if u.contact else 'null' }}
+                        }{% if not loop.last %},{% endif %}
+                    {% endfor %}
+                    ]
+                </script>
             </td>
         </tr>
+        {% endif %}
         <tr>
             <td><label for="username">Username:</label></td>
             <td><input type="text" id="username" name="username" value="{{ user.Username if user else '' }}" required>
@@ -63,40 +63,36 @@
                 {% endif %}
             </td>
         <tr>
-            <td><label>Role</label></td>
+            <td>
+                <label>Role 
+                    <i class="fas fa-info-circle info-icon-tooltip" 
+                       style="color: #007bff; cursor: pointer; font-size: 0.9em;" 
+                       data-tooltip="Select one or more system roles."></i>
+                </label>
+            </td>
             <td>
                 <div class="roles-checkbox-list"
                     style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 4px;">
                     {% for r in all_auth_roles %}
-                    <label style="display: block; margin-bottom: 5px; cursor: pointer;">
+                    <label style="display: flex; align-items: center; margin-bottom: 5px; cursor: pointer;">
                         <input type="checkbox" name="roles" value="{{ r.id }}" {% if user and r.id in user_role_ids
-                            %}checked{% endif %}>
-                        {{ r.name }}
+                            %}checked{% endif %} style="margin-right: 8px;">
+                        <span>{{ r.name }}</span>
                     </label>
                     {% endfor %}
                 </div>
-                <small class="note">Select one or more system roles.</small>
-            </td>
-        </tr>
-        <!-- Profile fields (Member ID, Path, Mentor, etc.) are managed on the Contact page -->
-        <tr>
-            <td colspan="2">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    Member Profile details (Current Path, Mentor, Credentials, etc.) are managed in the
-                    <a href="{{ url_for('contacts_bp.show_contacts') }}">Contact Book</a>.
-                </div>
             </td>
         </tr>
         <tr>
-            <td><label for="password">Password:</label></td>
+            <td>
+                <label for="password">Password: 
+                    <i class="fas fa-info-circle info-icon-tooltip" 
+                       style="color: #007bff; cursor: pointer; font-size: 0.9em;" 
+                       data-tooltip="{% if user %}Leave blank to keep current password.{% else %}Leave blank to use default password 'leadership'.{% endif %}"></i>
+                </label>
+            </td>
             <td>
                 <input type="password" id="password" name="password">
-                {% if user %}
-                <small class="note">Leave blank to keep current password.</small>
-                {% else %}
-                <small class="note">Leave blank to use default password 'leadership'.</small>
-                {% endif %}
             </td>
         </tr>
     </table>

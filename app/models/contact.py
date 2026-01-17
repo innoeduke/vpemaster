@@ -6,6 +6,8 @@ class Contact(db.Model):
     __tablename__ = 'Contacts'
     id = db.Column(db.Integer, primary_key=True)
     Name = db.Column(db.String(100), nullable=False, unique=True)
+    first_name = db.Column(db.String(100), nullable=True)
+    last_name = db.Column(db.String(100), nullable=True)
     Email = db.Column(db.String(120), unique=True, nullable=True)
     Type = db.Column(db.String(50), nullable=False, default='Guest')
     Date_Created = db.Column(db.Date)
@@ -23,6 +25,16 @@ class Contact(db.Model):
     Avatar_URL = db.Column(db.String(255), nullable=True)
 
     mentor = db.relationship('Contact', remote_side=[id], foreign_keys=[Mentor_ID], backref='mentees')
+    
+    def update_name_from_parts(self):
+        """Auto-populate Name from first_name and last_name if Name is blank."""
+        if not self.Name and (self.first_name or self.last_name):
+            parts = []
+            if self.first_name:
+                parts.append(self.first_name.strip())
+            if self.last_name:
+                parts.append(self.last_name.strip())
+            self.Name = ' '.join(parts)
 
     def get_member_pathways(self):
         """

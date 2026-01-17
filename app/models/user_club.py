@@ -21,7 +21,7 @@ class UserClub(db.Model):
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
     # Relationships
-    user = db.relationship('User', backref='club_memberships')
+    user = db.relationship('User', backref=db.backref('club_memberships', cascade='all, delete-orphan'))
     contact = db.relationship('Contact', foreign_keys=[contact_id], backref='user_club_records')
     club = db.relationship('Club', backref='user_memberships')
     club_role = db.relationship('Role')

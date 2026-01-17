@@ -127,15 +127,6 @@
               <i class="fas fa-edit"></i>
             </button>
 
-            {% if not contact.user %}
-            <form action="{{ url_for('users_bp.quick_add_user', contact_id=contact.id) }}" method="POST"
-              style="display:inline;" onsubmit="return confirm('Create user for {{ contact.Name }}?');">
-              <button type="submit" class="icon-btn" title="Quick Add User">
-                <i class="fas fa-user-plus"></i>
-              </button>
-            </form>
-            {% endif %}
-
             <button class="delete-btn icon-btn"
               onclick="openDeleteModal('{{ url_for('contacts_bp.delete_contact',contact_id=contact.id) }}', 'contact')"
               title="Delete">

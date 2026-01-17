@@ -1,88 +1,141 @@
 /**
- * Logic for the User Form contact search and automatic contact creation.
+ * Logic for the User Form - user search functionality and tooltips.
  */
-document.addEventListener('DOMContentLoaded', function () {
-    const contactSearch = document.getElementById('contact_search');
-    const contactIdHidden = document.getElementById('contact_id_hidden');
-    const createNewCheckbox = document.getElementById('create_new_contact');
-    const contactDropdown = document.getElementById('contact_dropdown');
-    const contactDataScript = document.getElementById('contact_data');
 
-    if (!contactSearch || !createNewCheckbox || !contactDropdown || !contactDataScript) return;
-
-    let contacts = [];
-    try {
-        contacts = JSON.parse(contactDataScript.textContent);
-    } catch (e) {
-        console.error("Failed to parse contact data", e);
+/**
+ * Show tooltip on click for info icons
+ */
+function initTooltips() {
+    // Remove any existing tooltip
+    const existingTooltip = document.querySelector('.custom-tooltip');
+    if (existingTooltip) {
+        existingTooltip.remove();
     }
 
-    // Handle checkbox toggling
-    createNewCheckbox.addEventListener('change', function () {
-        if (this.checked) {
-            contactSearch.disabled = true;
-            contactSearch.style.backgroundColor = '#f0f0f0';
-            contactSearch.value = '';
-            contactIdHidden.value = '0';
-            contactDropdown.style.display = 'none';
-        } else {
-            contactSearch.disabled = false;
-            contactSearch.style.backgroundColor = '';
-        }
-    });
-
-    // Handle custom autocomplete selection
-    contactSearch.addEventListener('input', function () {
-        const val = this.value.toLowerCase();
-        contactDropdown.innerHTML = '';
-
-        if (!val) {
-            contactDropdown.style.display = 'none';
-            contactIdHidden.value = '0';
-            return;
-        }
-
-        const filtered = contacts
-            .filter(c => c.name.toLowerCase().includes(val))
-            .slice(0, 5); // Limit to top 5
-
-        if (filtered.length > 0) {
-            filtered.forEach(c => {
-                const div = document.createElement('div');
-                div.className = 'autocomplete-suggestion';
-                div.textContent = c.name;
-                div.addEventListener('click', function () {
-                    contactSearch.value = c.name;
-                    contactIdHidden.value = c.id;
-                    contactDropdown.style.display = 'none';
-                });
-                contactDropdown.appendChild(div);
-            });
-            contactDropdown.style.display = 'block';
-        } else {
-            contactDropdown.style.display = 'none';
-            contactIdHidden.value = '0';
-        }
-    });
-
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function (e) {
-        if (e.target !== contactSearch && e.target !== contactDropdown) {
-            contactDropdown.style.display = 'none';
-        }
-    });
-
-    // Ensure hidden field is updated if user clears the search box manually
-    contactSearch.addEventListener('blur', function () {
-        // We use a timeout to let the click event on the suggestion execute first
-        setTimeout(() => {
-            const currentVal = contactSearch.value.toLowerCase();
-            const match = contacts.find(c => c.name.toLowerCase() === currentVal);
-            if (match) {
-                contactIdHidden.value = match.id;
-            } else if (contactSearch.value === '') {
-                contactIdHidden.value = '0';
+    const infoIcons = document.querySelectorAll('.info-icon-tooltip');
+    
+    infoIcons.forEach(icon => {
+        icon.addEventListener('click', function(e) {
+            e.preventDefault(); // Prevent label from focusing input
+            e.stopPropagation();
+            
+            // Remove any existing tooltip
+            const existingTooltip = document.querySelector('.custom-tooltip');
+            if (existingTooltip) {
+                existingTooltip.remove();
             }
-        }, 200);
+            
+            // Create new tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'custom-tooltip';
+            tooltip.textContent = this.getAttribute('data-tooltip');
+            
+            // Style the tooltip
+            tooltip.style.cssText = `
+                position: absolute;
+                background-color: #333;
+                color: white;
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 0.85em;
+                max-width: 300px;
+                z-index: 10000;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                line-height: 1.4;
+            `;
+            
+            // Position tooltip near the icon
+            document.body.appendChild(tooltip);
+            const iconRect = this.getBoundingClientRect();
+            tooltip.style.left = (iconRect.left + window.scrollX) + 'px';
+            tooltip.style.top = (iconRect.bottom + window.scrollY + 5) + 'px';
+            
+            // Adjust if tooltip goes off screen
+            const tooltipRect = tooltip.getBoundingClientRect();
+            if (tooltipRect.right > window.innerWidth) {
+                tooltip.style.left = (window.innerWidth - tooltipRect.width - 10) + 'px';
+            }
+        });
     });
+    
+    // Close tooltip when clicking anywhere else
+    document.addEventListener('click', function(e) {
+        if (!e.target.classList.contains('info-icon-tooltip')) {
+            const tooltip = document.querySelector('.custom-tooltip');
+            if (tooltip) {
+                tooltip.remove();
+            }
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    // Initialize tooltips
+    initTooltips();
+    // ===== USER SEARCH (for adding existing users to club) =====
+    const userSearch = document.getElementById('user_search');
+    const userDropdown = document.getElementById('user_dropdown');
+    const userDataScript = document.getElementById('user_data');
+    
+    if (userSearch && userDropdown && userDataScript) {
+        let users = [];
+        try {
+            users = JSON.parse(userDataScript.textContent);
+        } catch (e) {
+            console.error("Failed to parse user data", e);
+        }
+        
+        userSearch.addEventListener('input', function () {
+            const val = this.value.toLowerCase().trim();
+            userDropdown.innerHTML = '';
+            
+            if (!val) {
+                userDropdown.style.display = 'none';
+                return;
+            }
+            
+            // Search by username, email, phone, or contact name
+            const filtered = users.filter(u => {
+                const username = (u.username || '').toLowerCase();
+                const email = (u.email || '').toLowerCase();
+                const phone = (u.phone || '').toLowerCase();
+                const contactName = (u.contact_name || '').toLowerCase();
+                
+                return username.includes(val) || 
+                       email.includes(val) || 
+                       phone.includes(val) || 
+                       contactName.includes(val);
+            }).slice(0, 10); // Limit to top 10
+            
+            if (filtered.length > 0) {
+                filtered.forEach(u => {
+                    const div = document.createElement('div');
+                    div.className = 'autocomplete-suggestion';
+                    
+                    // Build display text - show only name information for privacy
+                    let displayText = u.contact_name || u.username;
+                    if (u.contact_name && u.username) {
+                        displayText = `${u.contact_name} (${u.username})`;
+                    }
+                    
+                    div.textContent = displayText;
+                    div.addEventListener('click', function () {
+                        // Redirect to edit this user (add to club)
+                        window.location.href = `/user/form/${u.id}`;
+                    });
+                    userDropdown.appendChild(div);
+                });
+                userDropdown.style.display = 'block';
+            } else {
+                userDropdown.style.display = 'none';
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function (e) {
+            if (e.target !== userSearch && e.target !== userDropdown) {
+                userDropdown.style.display = 'none';
+            }
+        });
+    }
 });

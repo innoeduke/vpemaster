@@ -131,7 +131,7 @@ class Permissions:
     ABOUT_CLUB_EDIT = 'ABOUT_CLUB_EDIT'
     
     # Roles
-    ADMIN = 'SysAdmin'
-    OPERATOR = 'ClubAdmin'
+    SYSADMIN = 'SysAdmin'
+    CLUBADMIN = 'ClubAdmin'
     STAFF = 'Staff'
     USER = 'User'

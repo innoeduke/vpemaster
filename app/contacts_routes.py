@@ -192,11 +192,10 @@ def contact_form(contact_id=None):
         })
 
     if request.method == 'POST':
+        first_name = request.form.get('first_name', '').strip() or None
+        last_name = request.form.get('last_name', '').strip() or None
         name = request.form.get('name', '').strip()
-        if not name:
-            flash('Name is required.', 'error')
-            return redirect(url_for('contacts_bp.show_contacts'))
-
+        
         email = request.form.get('email', '').strip() or None
         contact_type = request.form.get('type', 'Guest')
         club = request.form.get('club', '').strip() or None
@@ -211,6 +210,8 @@ def contact_form(contact_id=None):
         if contact_id:
             # Update Existing Contact
             contact = Contact.query.get_or_404(contact_id)
+            contact.first_name = first_name
+            contact.last_name = last_name
             contact.Name = name
             contact.Email = email
             contact.Type = contact_type
@@ -218,6 +219,14 @@ def contact_form(contact_id=None):
             contact.Bio = bio
             contact.Member_ID = member_id
             contact.Mentor_ID = mentor_id
+            
+            # Auto-populate Name if blank
+            contact.update_name_from_parts()
+            
+            # Validate Name is not empty
+            if not contact.Name:
+                flash('Name or first/last name is required.', 'error')
+                return redirect(url_for('contacts_bp.show_contacts'))
             
             # Update profile fields (Member/Officer specific)
             if contact_type in ['Member', 'Officer']:
@@ -236,20 +245,9 @@ def contact_form(contact_id=None):
             target_contact = contact
         else:
             # Create New Contact
-            # Check for existing name
-            existing_name = Contact.query.filter_by(Name=name).first()
-            if existing_name:
-                flash(f"A contact with the name '{name}' already exists.", 'error')
-                return redirect(url_for('contacts_bp.show_contacts'))
-                
-            # Check for existing email if provided
-            if email:
-                existing_email = Contact.query.filter_by(Email=email).first()
-                if existing_email:
-                    flash(f"A contact with the email '{email}' already exists.", 'error')
-                    return redirect(url_for('contacts_bp.show_contacts'))
-
             new_contact = Contact(
+                first_name=first_name,
+                last_name=last_name,
                 Name=name,
                 Email=email,
                 Type=contact_type,
@@ -260,6 +258,28 @@ def contact_form(contact_id=None):
                 Mentor_ID=mentor_id,
                 Current_Path=request.form.get('current_path') if contact_type in ['Member', 'Officer'] else None
             )
+            
+            # Auto-populate Name if blank
+            new_contact.update_name_from_parts()
+            
+            # Validate Name is not empty
+            if not new_contact.Name:
+                flash('Name or first/last name is required.', 'error')
+                return redirect(url_for('contacts_bp.show_contacts'))
+            
+            # Check for existing name
+            existing_name = Contact.query.filter_by(Name=new_contact.Name).first()
+            if existing_name:
+                flash(f"A contact with the name '{new_contact.Name}' already exists.", 'error')
+                return redirect(url_for('contacts_bp.show_contacts'))
+                
+            # Check for existing email if provided
+            if email:
+                existing_email = Contact.query.filter_by(Email=email).first()
+                if existing_email:
+                    flash(f"A contact with the email '{email}' already exists.", 'error')
+                    return redirect(url_for('contacts_bp.show_contacts'))
+            
             db.session.add(new_contact)
             db.session.commit() # Commit to get ID for avatar naming
             

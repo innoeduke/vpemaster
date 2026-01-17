@@ -26,14 +26,29 @@ def settings():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
+    # Get current club context
+    club_id = get_current_club_id()
+    
+    # Session types and meeting roles are global (shared across clubs)
     session_types = SessionType.query.order_by(SessionType.id.asc()).all()
-
-    all_users = User.query.order_by(User.Username.asc()).all()
     roles_query = MeetingRole.query.order_by(MeetingRole.name.asc()).all()
     roles = [{'id': role.id, 'name': role.name} for role in roles_query]
     
-    # Achievements data
-    achievements = Achievement.query.join(Contact).order_by(Achievement.issue_date.desc()).all()
+    # Users: Filter by club membership
+    if club_id:
+        all_users = User.query.join(UserClub).filter(
+            UserClub.club_id == club_id
+        ).order_by(User.Username.asc()).all()
+    else:
+        all_users = User.query.order_by(User.Username.asc()).all()
+    
+    # Achievements: Filter by club
+    if club_id:
+        achievements = Achievement.query.join(Contact).join(ContactClub).filter(
+            ContactClub.club_id == club_id
+        ).order_by(Achievement.issue_date.desc()).all()
+    else:
+        achievements = Achievement.query.join(Contact).order_by(Achievement.issue_date.desc()).all()
 
     return render_template('settings.html', session_types=session_types, all_users=all_users, 
                           roles=roles, roles_query=roles_query, 
@@ -462,7 +477,10 @@ def get_permissions_matrix():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
 
-    roles = AuthRole.query.order_by(AuthRole.id).all()
+    # Exclude SysAdmin and ClubAdmin from the permissions matrix
+    roles = AuthRole.query.filter(
+        AuthRole.name.notin_(['SysAdmin', 'ClubAdmin'])
+    ).order_by(AuthRole.id).all()
     permissions = Permission.query.order_by(Permission.category, Permission.name).all()
     
     # Get current mappings

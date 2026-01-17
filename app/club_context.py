@@ -155,7 +155,7 @@ def authorized_club_required(f):
             from app.auth.permissions import Permissions
             
             # SysAdmin can access any club - check if user has SysAdmin role in ANY club
-            sys_role = AuthRole.get_by_name(Permissions.ADMIN)
+            sys_role = AuthRole.get_by_name(Permissions.SYSADMIN)
             if sys_role:
                 is_sysadmin = UserClub.query.filter_by(
                     user_id=current_user.id,
@@ -175,32 +175,6 @@ def authorized_club_required(f):
                 if role:
                     return f(*args, **kwargs)
             
-            # Legacy/Fallback: Check if user is an officer in the current club's ExComm
-            club = db.session.get(Club, club_id)
-            if club and club.current_excomm_id:
-                excomm = db.session.get(ExComm, club.current_excomm_id)
-                if excomm and hasattr(current_user, 'Contact_ID') and current_user.Contact_ID:
-                    contact_id = current_user.Contact_ID
-                    officer_ids = [
-                        excomm.president_id, excomm.vpe_id, excomm.vpm_id, excomm.vppr_id,
-                        excomm.secretary_id, excomm.treasurer_id, excomm.saa_id, excomm.ipp_id
-                    ]
-                    if contact_id in officer_ids:
-                        return f(*args, **kwargs)
-            
-            # Check for explicit membership if user is linked to a contact
-            if hasattr(current_user, 'Contact_ID') and current_user.Contact_ID:
-                membership = ContactClub.query.filter_by(
-                    contact_id=current_user.Contact_ID,
-                    club_id=club_id
-                ).first()
-                if not membership:
-                    abort(403, description="You are not authorized for this club")
-            else:
-                # User has no contact linked - might be a legacy user or system user
-                # Fallback to permission check
-                if not current_user.can(Permissions.ABOUT_CLUB_VIEW):
-                    abort(403)
         else:
             # Anonymous guests: check if they have general club view permission
             # (The 'Guest' role in DB should typically have this)

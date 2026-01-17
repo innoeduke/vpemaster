@@ -955,12 +955,19 @@ def _generate_logs_from_template(meeting, template_file):
 
 @agenda_bp.route('/agenda/create', methods=['POST'])
 @login_required
+@authorized_club_required
 def create_from_template():
+    # Check if user has permission to edit agenda
+    if not is_authorized(Permissions.AGENDA_EDIT):
+        flash("You don't have permission to create meetings.", 'error')
+        return redirect(url_for('agenda_bp.agenda'))
+    
     try:
         # 1. Validation & Data Extraction
         data = _validate_meeting_form_data(request.form)
     except ValueError as e:
-        return redirect(url_for('agenda_bp.agenda', message=str(e), category='error'))
+        flash(str(e), 'error')
+        return redirect(url_for('agenda_bp.agenda'))
 
     try:
         # 2. Handle Media
@@ -968,6 +975,12 @@ def create_from_template():
 
         # 3. Create or Update Meeting
         meeting = _upsert_meeting_record(data, media_id)
+        
+        # Set club_id for the meeting
+        from .club_context import get_current_club_id
+        club_id = get_current_club_id()
+        if club_id:
+            meeting.club_id = club_id
         
         # Commit to ensure Meeting exists and has proper state before logs are created
         db.session.commit()
@@ -978,14 +991,17 @@ def create_from_template():
         # Final Commit
         db.session.commit()
         
-        return redirect(url_for('agenda_bp.agenda', meeting_number=data['meeting_number'], message='Meeting created successfully from template!', category='success'))
+        flash('Meeting created successfully from template!', 'success')
+        return redirect(url_for('agenda_bp.agenda', meeting_number=data['meeting_number']))
 
     except FileNotFoundError:
-        return redirect(url_for('agenda_bp.agenda', message='Template file not found.', category='error'))
+        flash('Template file not found.', 'error')
+        return redirect(url_for('agenda_bp.agenda'))
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error creating meeting: {e}")
-        return redirect(url_for('agenda_bp.agenda', message=f'Error processing template: {str(e)}', category='error'))
+        flash(f'Error processing template: {str(e)}', 'error')
+        return redirect(url_for('agenda_bp.agenda'))
 
 
 

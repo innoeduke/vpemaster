@@ -32,7 +32,9 @@ def _create_or_update_user(user=None, **kwargs):
         user.Status = kwargs.get('status')
 
     user.Username = kwargs.get('username')
-    user.Email = kwargs.get('email')
+    # Set email to None if empty to avoid unique constraint violation
+    email = kwargs.get('email')
+    user.Email = email if email else None
     
     # Capture old contact ID for syncing
     old_contact_id = user.Contact_ID
@@ -106,11 +108,12 @@ def _create_or_update_user(user=None, **kwargs):
         # Store the role_id temporarily to use after flush
         user._pending_role_id = highest_role_id
 
+
     # Profile fields (Member_ID, Current_Path, etc.) are now on Contact model.
     # We do not set them here.
 
-    create_new_contact = kwargs.get('create_new_contact', False)
-    if create_new_contact and user.id is None:
+    # Always create a contact for new users
+    if user.id is None:
         # Create a new contact with username
         new_contact = Contact(
             Name=user.Username,
@@ -121,9 +124,21 @@ def _create_or_update_user(user=None, **kwargs):
         db.session.add(new_contact)
         db.session.flush() # Get ID
         user.Contact_ID = new_contact.id
-    else:
-        contact_id = kwargs.get('contact_id', 0)
-        user.Contact_ID = contact_id if contact_id != 0 else None
+        
+        # Also create ContactClub record to link contact to current club
+        from .club_context import get_current_club_id
+        club_id = get_current_club_id()
+        if not club_id:
+            default_club = Club.query.first()
+            club_id = default_club.id if default_club else None
+        
+        if club_id:
+            from .models import ContactClub
+            contact_club = ContactClub(
+                contact_id=new_contact.id,
+                club_id=club_id
+            )
+            db.session.add(contact_club)
 
     # Sync UserClub.contact_id if Contact_ID changed
     if user.id and user.Contact_ID and user.Contact_ID != old_contact_id:
@@ -189,6 +204,16 @@ def user_form(user_id):
 
     if request.method == 'POST':
         role_ids = request.form.getlist('roles', type=int)
+        
+        # Security check: Only SysAdmins can assign SysAdmin role
+        from .models import AuthRole
+        sysadmin_role = AuthRole.query.filter_by(name='SysAdmin').first()
+        if sysadmin_role and sysadmin_role.id in role_ids:
+            # Check if current user is a SysAdmin
+            if not is_authorized(Permissions.SYSADMIN):
+                flash("Only SysAdmins can assign the SysAdmin role.", 'error')
+                return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+        
         _create_or_update_user(
             user=user,
             username=request.form.get('username'),
@@ -205,11 +230,35 @@ def user_form(user_id):
 
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
-    from .models import AuthRole
+
+    from .models import AuthRole, UserClub
     all_auth_roles = AuthRole.query.order_by(AuthRole.id).all()
+    
+    # Security: Check if current user is actually a SysAdmin
+    # We need to check the database directly to ensure accuracy
+    sysadmin_role = AuthRole.query.filter_by(name='SysAdmin').first()
+    current_user_is_sysadmin = False
+    if sysadmin_role and current_user.is_authenticated:
+        # Check if user has SysAdmin role in any club
+        current_user_is_sysadmin = UserClub.query.filter_by(
+            user_id=current_user.id, 
+            club_role_id=sysadmin_role.id
+        ).first() is not None
+    
+    # Filter roles based on permissions
+    filtered_roles = []
+    for role in all_auth_roles:
+        # Only SysAdmins can see/assign SysAdmin role
+        if role.name == 'SysAdmin' and not current_user_is_sysadmin:
+            continue
+        # Guest role should not be assignable in user management
+        if role.name == 'Guest':
+            continue
+        filtered_roles.append(role)
+    
     user_role_ids = [r.id for r in user.roles] if user else []
 
-    return render_template('user_form.html', user=user, contacts=member_contacts, users=users, mentor_contacts=mentor_contacts, pathways=pathways, all_auth_roles=all_auth_roles, user_role_ids=user_role_ids)
+    return render_template('user_form.html', user=user, contacts=member_contacts, users=users, mentor_contacts=mentor_contacts, pathways=pathways, all_auth_roles=filtered_roles, user_role_ids=user_role_ids)
 
 
 @users_bp.route('/user/delete/<int:user_id>', methods=['POST'])
@@ -219,6 +268,13 @@ def delete_user(user_id):
         return redirect(url_for('agenda_bp.agenda'))
 
     user = User.query.get_or_404(user_id)
+    
+    # Delete linked contact if exists
+    if user.Contact_ID:
+        contact = db.session.get(Contact, user.Contact_ID)
+        if contact:
+            db.session.delete(contact)
+    
     db.session.delete(user)
     db.session.commit()
     return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
@@ -295,94 +351,3 @@ def bulk_import_users():
         flash('Invalid file type. Please upload a .csv file.', 'error')
 
     return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
-
-
-@users_bp.route('/user/quick_add/<int:contact_id>', methods=['POST'])
-@login_required
-def quick_add_user(contact_id):
-    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
-        flash("You don't have permission to perform this action.", 'error')
-        return redirect(url_for('contacts_bp.show_contacts'))
-
-    contact = Contact.query.get_or_404(contact_id)
-
-    if contact.user:
-        flash(f'Contact {contact.Name} already has a user account.', 'error')
-        return redirect(url_for('contacts_bp.show_contacts'))
-
-    # Derive username logic:
-    # 1. Split name into First and Last (last token)
-    # 2. Max length 8.
-    # 3. Strategy: 
-    #    - If First+Last <= 8 chars: Use combined.
-    #    - Else: Prioritize Last Name (up to 7 chars). Fill remainder with First Name.
-    #    - Ex: "Christopher Lee" -> "chrislee" (Last=3, First=5)
-    #    - Ex: "John Longlastname" -> "jlongname" (Last=7, First=1)
-    
-    parts = contact.Name.strip().split()
-    if not parts:
-        # Fallback for empty name? Should not happen for valid contact.
-        base_username = f"user{contact.id}"
-    elif len(parts) == 1:
-        base_username = parts[0].lower()[:8]
-    else:
-        first_name = parts[0].lower()
-        last_name = parts[-1].lower()
-        
-        # Remove non-alphanumeric characters if needed? 
-        # Requirement simple: just letters. Let's assume input is clean or just slice.
-        # Ideally, we should filter for alphanumeric to avoid "O'Reilly" issues in username.
-        first_name = "".join(filter(str.isalnum, first_name))
-        last_name = "".join(filter(str.isalnum, last_name))
-        
-        combined = first_name + last_name
-        if len(combined) <= 8:
-            base_username = combined
-        else:
-            # We need to cut.
-            # Max possible chars from last name is 7 (leaving 1 for first name at minimum implicit in "first letter...")
-            # Actually user said: "use more letters from the first name to backfill [if last is short]"
-            # This implies:
-            # Target total = 8.
-            # Len Last used = min(len(last_name), 7)
-            # Len First used = 8 - Len Last used
-            
-            len_last_used = min(len(last_name), 7)
-            len_first_used = 8 - len_last_used
-            
-            # Ensure we have enough first name chars (usually yes if len > 8 total)
-            # But edge case: "A Verylongname" (First=1, Last=12).
-            # Last used = 7 ("Verylon"). First used = 1 ("A"). Total 8. Matches.
-            
-            base_username = first_name[:len_first_used] + last_name[:len_last_used]
-            
-    # Simple uniqueness check
-    username = base_username
-    counter = 1
-    while User.query.filter_by(Username=username).first():
-        # If duplicated, append number? User said "avoid duplication".
-        # Appending number increases length > 8 potentially.
-        # But uniqueness is hard constraint.
-        username = f"{base_username}{counter}"
-        counter += 1
-
-    try:
-        _create_or_update_user(
-            username=username,
-            contact_id=contact.id,
-            email=contact.Email,
-            role='User',
-            status='active',
-            password='leadership'
-        )
-        
-        # Update contact type to Member
-        contact.Type = 'Member'
-        
-        db.session.commit()
-        flash(f'User created for {contact.Name} with username: {username}', 'success')
-    except Exception as e:
-        db.session.rollback()
-        flash(f'Error creating user: {str(e)}', 'error')
-
-    return redirect(url_for('contacts_bp.show_contacts'))

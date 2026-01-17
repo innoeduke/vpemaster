@@ -30,10 +30,10 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
 
     # 1. SysAdmin Override: Full access to all resources/actions of all clubs
     # Checks both global roles and club-specific roles
-    if hasattr(current_user, 'has_role') and current_user.has_role(Permissions.ADMIN):
+    if hasattr(current_user, 'has_role') and current_user.has_role(Permissions.SYSADMIN):
         return True
         
-    sys_role = AuthRole.get_by_name(Permissions.ADMIN)
+    sys_role = AuthRole.get_by_name(Permissions.SYSADMIN)
     if sys_role:
         # If user has SysAdmin role in ANY club entry in user_clubs, they are a SysAdmin
         is_sysadmin = UserClub.query.filter_by(user_id=current_user.id, club_role_id=sys_role.id).first()
@@ -41,7 +41,7 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
             return True
 
     # 2. ClubAdmin Override: Full access to owned clubs
-    club_role = AuthRole.get_by_name(Permissions.OPERATOR)
+    club_role = AuthRole.get_by_name(Permissions.CLUBADMIN)
     if club_role:
         # Resolve club_id from context
         club_id = kwargs.get('club_id')
