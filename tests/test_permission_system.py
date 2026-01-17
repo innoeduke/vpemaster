@@ -59,24 +59,35 @@ class PermissionSystemTestCase(unittest.TestCase):
         
         self.user_admin = User(Username="admin", Email="admin@test.com", Contact_ID=self.contact_admin.id)
         self.user_admin.set_password("password")
-        self.user_admin.roles.append(self.role_admin)
-        
-        self.user_admin.roles.append(self.role_admin)
         
         self.user_user = User(Username="user", Email="user@test.com", Contact_ID=self.contact_user.id)
         self.user_user.set_password("password")
-        self.user_user.roles.append(self.role_user)
         
         db.session.add_all([self.user_admin, self.user_user])
         
         # Create Club (required for Meeting)
-        from app.models import Club
+        from app.models import Club, UserClub
         self.club = Club(
             club_no='000000',
             club_name='Test Club',
             district='Test District'
         )
         db.session.add(self.club)
+        db.session.flush()
+        
+        # Assign roles via UserClub
+        db.session.add(UserClub(
+            user_id=self.user_admin.id,
+            club_id=self.club.id,
+            club_role_id=self.role_admin.id,
+            contact_id=self.contact_admin.id
+        ))
+        db.session.add(UserClub(
+            user_id=self.user_user.id,
+            club_id=self.club.id,
+            club_role_id=self.role_user.id,
+            contact_id=self.contact_user.id
+        ))
         db.session.commit()
 
     def test_model_has_permission(self):
@@ -98,18 +109,26 @@ class PermissionSystemTestCase(unittest.TestCase):
         self.assertFalse(self.user_user.has_role("SysAdmin"))
 
     def test_multiple_roles_union(self):
-        """Test that permissions are unioned when a user has multiple roles."""
+        """Test that a user gets permissions from their assigned role via UserClub."""
+        from app.models import UserClub
         # Create a new role with a unique permission
         perm_special = Permission(name="SPECIAL_PERM", description="Special Permission")
-        role_special = AuthRole(name="Specialist", description="Specialist Role")
+        perm_view = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        role_special = AuthRole(name="Specialist", description="Specialist Role", level=5)
         role_special.permissions.append(perm_special)
+        role_special.permissions.append(perm_view)  # Also give view permission
         db.session.add_all([perm_special, role_special])
+        db.session.flush()
         
-        # Assign new role to user
-        self.user_user.roles.append(role_special)
+        # Update user's club role to the special role
+        user_club = UserClub.query.filter_by(user_id=self.user_user.id).first()
+        user_club.club_role_id = role_special.id
         db.session.commit()
         
-        # Should now have both view and special
+        # Force reload
+        db.session.expire(self.user_user)
+        
+        # Should now have both view and special permissions from the Specialist role
         self.assertTrue(self.user_user.has_permission(Permissions.AGENDA_VIEW))
         self.assertTrue(self.user_user.has_permission("SPECIAL_PERM"))
         self.assertFalse(self.user_user.has_permission(Permissions.AGENDA_EDIT))
@@ -228,25 +247,29 @@ class PermissionSystemTestCase(unittest.TestCase):
         event.remove(db.engine, "before_cursor_execute", count_queries)
 
     def test_user_multiple_roles_assignment(self):
-        """Test assigning multiple roles to a user through the service/model."""
-        from app.models import AuthRole, UserRoleAssociation
+        """Test assigning multiple roles to a user through UserClub."""
+        from app.models import AuthRole, UserClub
         # Use existing roles from setup
         role_admin = AuthRole.query.filter_by(name='SysAdmin').first()
         role_user = AuthRole.query.filter_by(name='User').first()
         
         # Clear existing
-        UserRoleAssociation.query.filter_by(user_id=self.user_user.id).delete()
+        UserClub.query.filter_by(user_id=self.user_user.id).delete()
         
-        # Add two roles
-        db.session.add(UserRoleAssociation(user_id=self.user_user.id, role_id=role_admin.id))
-        db.session.add(UserRoleAssociation(user_id=self.user_user.id, role_id=role_user.id))
+        # Add user with admin role in the club
+        db.session.add(UserClub(
+            user_id=self.user_user.id,
+            club_id=self.club.id,
+            club_role_id=role_admin.id,
+            contact_id=self.user_user.Contact_ID
+        ))
         db.session.commit()
         
-        # Verify
-        db.session.refresh(self.user_user)
-        self.assertEqual(len(self.user_user.roles), 2)
+        # Verify - user should now have SysAdmin role
+        db.session.expire(self.user_user)  # Force reload of relationships
         self.assertTrue(self.user_user.has_role('SysAdmin'))
-        self.assertTrue(self.user_user.has_role('User'))
+        # Note: User will only have one role now (the highest one assigned via UserClub)
+        
 
     def test_permission_audit_logging(self):
         """Test that permission audits are recorded correctly."""

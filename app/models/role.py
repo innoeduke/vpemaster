@@ -15,7 +15,14 @@ class Role(db.Model):
     
     # Relationships
     permissions = db.relationship('Permission', secondary='role_permissions', back_populates='roles')
-    users = db.relationship('User', secondary='user_roles', back_populates='roles', foreign_keys='[UserRole.user_id, UserRole.role_id]')
+    users = db.relationship(
+        'User',
+        secondary='user_clubs',
+        back_populates='roles',
+        primaryjoin='Role.id == UserClub.club_role_id',
+        secondaryjoin='User.id == UserClub.user_id',
+        viewonly=True
+    )
     
     def __repr__(self):
         return f'<Role {self.name}>'

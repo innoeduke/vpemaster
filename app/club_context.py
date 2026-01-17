@@ -154,23 +154,25 @@ def authorized_club_required(f):
             from app.models import AuthRole, UserClub
             from app.auth.permissions import Permissions
             
-            # SysAdmin can access any club (checked via user_clubs table)
+            # SysAdmin can access any club - check if user has SysAdmin role in ANY club
             sys_role = AuthRole.get_by_name(Permissions.ADMIN)
             if sys_role:
-                is_sysadmin = UserClub.query.filter_by(user_id=current_user.id, club_role_id=sys_role.id).first()
+                is_sysadmin = UserClub.query.filter_by(
+                    user_id=current_user.id,
+                    club_role_id=sys_role.id
+                ).first()
                 if is_sysadmin:
                     return f(*args, **kwargs)
             
-            # ClubAdmin can access owned clubs (checked via user_clubs table)
-            club_role = AuthRole.get_by_name(Permissions.OPERATOR)
-            if club_role:
-                # Check if user has ClubAdmin role for the current club
-                is_clubadmin = UserClub.query.filter_by(
-                    user_id=current_user.id,
-                    club_id=club_id,
-                    club_role_id=club_role.id
-                ).first()
-                if is_clubadmin:
+            # Check if user has a UserClub record for THIS specific club
+            user_club = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
+            
+            if user_club and user_club.club_role_id:
+                # User has a club membership with a role for this club
+                role = db.session.get(AuthRole, user_club.club_role_id)
+                
+                # ClubAdmin and other roles can access their clubs
+                if role:
                     return f(*args, **kwargs)
             
             # Legacy/Fallback: Check if user is an officer in the current club's ExComm

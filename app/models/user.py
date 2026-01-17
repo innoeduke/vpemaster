@@ -28,7 +28,15 @@ class User(UserMixin, db.Model):
     
     # Relationships
     contact = db.relationship('Contact', foreign_keys=[Contact_ID], backref=db.backref('user', uselist=False))
-    roles = db.relationship('app.models.role.Role', secondary='user_roles', back_populates='users', lazy='joined', foreign_keys='[UserRole.user_id, UserRole.role_id]')
+    roles = db.relationship(
+        'app.models.role.Role',
+        secondary='user_clubs',
+        back_populates='users',
+        lazy='joined',
+        primaryjoin='User.id == UserClub.user_id',
+        secondaryjoin='app.models.role.Role.id == UserClub.club_role_id',
+        viewonly=True
+    )
     
     # Cache for permissions to avoid repeated queries
     _permission_cache = None

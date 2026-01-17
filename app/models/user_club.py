@@ -11,7 +11,7 @@ class UserClub(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('Users.id', ondelete='CASCADE'), nullable=False)
     contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id', ondelete='CASCADE'), nullable=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id', ondelete='CASCADE'), nullable=False)
-    club_role_id = db.Column(db.Integer, nullable=True)  # Reference to club officer role (e.g., from ExComm)
+    club_role_id = db.Column(db.Integer, db.ForeignKey('auth_roles.id', ondelete='SET NULL'), nullable=True)  # Reference to club officer role (e.g., from ExComm)
     current_path_id = db.Column(db.Integer, db.ForeignKey('pathways.id'), nullable=True)
     joined_date = db.Column(db.Date, nullable=True)
     is_home = db.Column(db.Boolean, default=False, nullable=False)  # Indicates if this is the user's home club
@@ -24,6 +24,7 @@ class UserClub(db.Model):
     user = db.relationship('User', backref='club_memberships')
     contact = db.relationship('Contact', foreign_keys=[contact_id], backref='user_club_records')
     club = db.relationship('Club', backref='user_memberships')
+    club_role = db.relationship('Role')
     current_path = db.relationship('Pathway', foreign_keys=[current_path_id])
     mentor = db.relationship('Contact', foreign_keys=[mentor_id])
     next_project = db.relationship('Project', foreign_keys=[next_project_id])

@@ -37,11 +37,12 @@ def _create_or_update_user(user=None, **kwargs):
     # Capture old contact ID for syncing
     old_contact_id = user.Contact_ID
     
-    # Handle multiple roles
+    # Handle multiple roles - now stored in user_clubs table
     role_ids = kwargs.get('role_ids', [])
     role_name = kwargs.get('role') # Legacy single-role support
-    from .models import UserRoleAssociation, AuthRole, PermissionAudit
+    from .models import UserClub, AuthRole, PermissionAudit, Club
     from flask_login import current_user
+    from .club_context import get_current_club_id
     
     # If role_name is provided but role_ids is not, try to find the role
     if not role_ids and role_name:
@@ -55,26 +56,40 @@ def _create_or_update_user(user=None, **kwargs):
         default_role = AuthRole.query.filter_by(name='User').first()
         if default_role:
             role_ids = [default_role.id]
+    
+    # Determine the highest role to assign
+    highest_role_id = None
+    if role_ids:
+        roles = AuthRole.query.filter(AuthRole.id.in_(role_ids)).all()
+        if roles:
+            highest_role = max(roles, key=lambda r: r.level if r.level is not None else 0)
+            highest_role_id = highest_role.id
 
     if user.id:
-        current_roles = UserRoleAssociation.query.filter_by(user_id=user.id).all()
-        current_role_ids = {r.role_id for r in current_roles}
-        new_role_ids = set(role_ids)
-
-        if current_role_ids != new_role_ids:
-            # To add
-            for rid in new_role_ids - current_role_ids:
-                db.session.add(UserRoleAssociation(
-                    user_id=user.id, 
-                    role_id=rid,
-                    assigned_by=current_user.id if current_user.is_authenticated else None
-                ))
-
-            # To remove
-            for r in current_roles:
-                if r.role_id not in new_role_ids:
-                    db.session.delete(r)
-
+        # Update existing user's club memberships with new role
+        if highest_role_id:
+            user_clubs = UserClub.query.filter_by(user_id=user.id).all()
+            
+            # If user has no club memberships yet, create one for current or default club
+            if not user_clubs:
+                club_id = get_current_club_id()
+                if not club_id:
+                    default_club = Club.query.first()
+                    club_id = default_club.id if default_club else None
+                
+                if club_id:
+                    new_uc = UserClub(
+                        user_id=user.id,
+                        club_id=club_id,
+                        club_role_id=highest_role_id
+                    )
+                    db.session.add(new_uc)
+            else:
+                # Update role for all existing club memberships
+                for uc in user_clubs:
+                    old_role_id = uc.club_role_id
+                    uc.club_role_id = highest_role_id
+                    
             # Audit log
             if current_user.is_authenticated:
                 audit = PermissionAudit(
@@ -83,19 +98,13 @@ def _create_or_update_user(user=None, **kwargs):
                     target_type='USER',
                     target_id=user.id,
                     target_name=user.Username,
-                    changes=f"Updated roles: {list(new_role_ids)}"
+                    changes=f"Updated role to: {highest_role_id}"
                 )
                 db.session.add(audit)
     else:
-        # For new users, flush to get user.id then create associations
-        if role_ids:
-            db.session.flush() # Ensure user has an ID
-            for rid in role_ids:
-                db.session.add(UserRoleAssociation(
-                    user_id=user.id,
-                    role_id=rid,
-                    assigned_by=current_user.id if current_user.is_authenticated else None
-                ))
+        # For new users, we'll create a UserClub record after user is created
+        # Store the role_id temporarily to use after flush
+        user._pending_role_id = highest_role_id
 
     # Profile fields (Member_ID, Current_Path, etc.) are now on Contact model.
     # We do not set them here.
@@ -120,6 +129,28 @@ def _create_or_update_user(user=None, **kwargs):
     if user.id and user.Contact_ID and user.Contact_ID != old_contact_id:
         from .models import UserClub
         UserClub.query.filter_by(user_id=user.id).update({UserClub.contact_id: user.Contact_ID})
+    
+    # For new users, create UserClub record with pending role
+    if hasattr(user, '_pending_role_id') and user._pending_role_id:
+        if not user.id:
+            db.session.flush()  # Ensure user has an ID
+        
+        # Get current or default club
+        club_id = get_current_club_id()
+        if not club_id:
+            default_club = Club.query.first()
+            club_id = default_club.id if default_club else None
+        
+        if club_id:
+            new_uc = UserClub(
+                user_id=user.id,
+                club_id=club_id,
+                club_role_id=user._pending_role_id,
+                contact_id=user.Contact_ID
+            )
+            db.session.add(new_uc)
+        
+        delattr(user, '_pending_role_id')
 
 
 @users_bp.route('/users')

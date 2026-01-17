@@ -5,7 +5,7 @@ from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
-from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, UserRoleAssociation, PermissionAudit, ContactClub, Club, ExComm
+from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, PermissionAudit, ContactClub, Club, ExComm, UserClub
 import json
 from . import db
 import os
@@ -559,21 +559,36 @@ def update_user_roles():
         if not user:
             return jsonify(success=False, message="User not found"), 404
 
-        current_roles = UserRoleAssociation.query.filter_by(user_id=user_id).all()
-        current_role_ids = {r.role_id for r in current_roles}
-
-        # To add
-        for rid in new_role_ids - current_role_ids:
-            db.session.add(UserRoleAssociation(
-                user_id=user_id, 
-                role_id=rid,
-                assigned_by=current_user.id
-            ))
-
-        # To remove
-        for r in current_roles:
-            if r.role_id not in new_role_ids:
-                db.session.delete(r)
+        # Determine the highest role to assign
+        highest_role_id = None
+        if new_role_ids:
+            roles = AuthRole.query.filter(AuthRole.id.in_(new_role_ids)).all()
+            if roles:
+                highest_role = max(roles, key=lambda r: r.level if r.level is not None else 0)
+                highest_role_id = highest_role.id
+        
+        # Update all user's club memberships with the new role
+        user_clubs = UserClub.query.filter_by(user_id=user_id).all()
+        
+        if not user_clubs:
+            # If user has no club memberships, create one for the current or default club
+            club_id = get_current_club_id()
+            if not club_id:
+                default_club = Club.query.first()
+                club_id = default_club.id if default_club else None
+            
+            if club_id and highest_role_id:
+                new_uc = UserClub(
+                    user_id=user_id,
+                    club_id=club_id,
+                    club_role_id=highest_role_id,
+                    contact_id=user.Contact_ID
+                )
+                db.session.add(new_uc)
+        else:
+            # Update role for all existing club memberships
+            for uc in user_clubs:
+                uc.club_role_id = highest_role_id
 
         # Audit log
         audit = PermissionAudit(
@@ -582,7 +597,7 @@ def update_user_roles():
             target_type='USER',
             target_id=user_id,
             target_name=user.Username,
-            changes=f"Updated roles: {list(new_role_ids)}"
+            changes=f"Updated role to: {highest_role_id}"
         )
         db.session.add(audit)
 

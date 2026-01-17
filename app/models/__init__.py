@@ -22,7 +22,7 @@ from .achievement import Achievement
 from .permission import Permission
 from .role import Role as AuthRole
 from .role_permission import RolePermission
-from .user_role import UserRole as UserRoleAssociation
+
 from .permission_audit import PermissionAudit
 
 # Import club and excomm models
@@ -64,7 +64,7 @@ __all__ = [
     'Permission',
     'AuthRole',
     'RolePermission',
-    'UserRoleAssociation',
+
     'PermissionAudit',
     # Club and ExComm models
     'Club',
