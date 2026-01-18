@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from . import db
-from .models import Contact, SessionLog, Pathway, ContactClub
+from .models import Contact, SessionLog, Pathway, ContactClub, Meeting, Vote, ExComm, UserClub
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from .club_context import get_current_club_id
@@ -407,7 +407,6 @@ def delete_contact(contact_id):
         return redirect(url_for('contacts_bp.show_contacts'))
 
     # Nullify references that don't have cascades
-    from .models import Meeting, UserClub, Contact
     
     # 1. Meeting awards and managers
     Meeting.query.filter(Meeting.best_table_topic_id == contact_id).update({"best_table_topic_id": None})
@@ -423,11 +422,25 @@ def delete_contact(contact_id):
     Contact.query.filter(Contact.Mentor_ID == contact_id).update({"Mentor_ID": None})
     
     # 4. SessionLogs (Owner_ID)
+    from .models.session import SessionLog
     SessionLog.query.filter_by(Owner_ID=contact_id).update({"Owner_ID": None})
+
+    # 5. Votes (contact_id)
+    Vote.query.filter_by(contact_id=contact_id).update({"contact_id": None})
+
+    # 6. ExComm (officer positions)
+    ExComm.query.filter(ExComm.president_id == contact_id).update({"president_id": None})
+    ExComm.query.filter(ExComm.vpe_id == contact_id).update({"vpe_id": None})
+    ExComm.query.filter(ExComm.vpm_id == contact_id).update({"vpm_id": None})
+    ExComm.query.filter(ExComm.vppr_id == contact_id).update({"vppr_id": None})
+    ExComm.query.filter(ExComm.secretary_id == contact_id).update({"secretary_id": None})
+    ExComm.query.filter(ExComm.treasurer_id == contact_id).update({"treasurer_id": None})
+    ExComm.query.filter(ExComm.saa_id == contact_id).update({"saa_id": None})
+    ExComm.query.filter(ExComm.ipp_id == contact_id).update({"ipp_id": None})
     
-    contact = Contact.query.get_or_404(contact_id)
     db.session.delete(contact)
     db.session.commit()
+    flash('Contact deleted successfully!', 'success')
     return redirect(url_for('contacts_bp.show_contacts'))
 
 

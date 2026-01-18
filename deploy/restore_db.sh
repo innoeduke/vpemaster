@@ -6,6 +6,10 @@ EXPLICIT_FILE=""
 BACKUP_PATH=""
 USE_INIT=false
 
+# Determine directory locations early
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
+
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
@@ -33,19 +37,47 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# If DATABASE_NAME is not provided, try to find it in .env
 if [ -z "$DATABASE_NAME" ]; then
-    echo "ERROR: database_name is required."
-    echo "Usage: $0 <database_name> [backup_file] [--init] [--path <path>]"
-    echo "  database_name: Name of the database to restore to (mandatory)"
-    echo "  backup_file: Path to backup SQL file (optional)"
-    echo "  --init: Force use of 'backup_init.sql' from the backup directory"
-    echo "  --path: Specify directory containing backup files"
+    ENV_FILE="$PROJECT_ROOT/.env"
+    if [ -f "$ENV_FILE" ]; then
+        DATABASE_URL=$(grep "DATABASE_URL" "$ENV_FILE" | cut -d '=' -f2-)
+        # Extract DB name: remove everything up to the last slash, then remove query params
+        EXTRACTED_DB=$(echo "$DATABASE_URL" | sed -e 's|.*/||' -e 's|?.*||')
+        if [ -n "$EXTRACTED_DB" ]; then
+            DATABASE_NAME="$EXTRACTED_DB"
+            echo "INFO: database_name not provided. Using '$DATABASE_NAME' from .env"
+        fi
+    fi
+fi
+
+# If still not found, try getting it from ~/.my.cnf
+if [ -z "$DATABASE_NAME" ]; then
+    MY_CNF="$HOME/.my.cnf"
+    if [ -f "$MY_CNF" ]; then
+        # Look for 'database = name' or 'database=name'
+        # Normalize spaces around '=', grab right side
+        EXTRACTED_DB=$(grep -E "^database\s*=" "$MY_CNF" | head -n 1 | sed -e 's/database\s*=\s*//' -e 's/^\s*//' -e 's/\s*$//')
+        if [ -n "$EXTRACTED_DB" ]; then
+            DATABASE_NAME="$EXTRACTED_DB"
+            echo "INFO: database_name not provided. Using '$DATABASE_NAME' from $MY_CNF"
+        fi
+    fi
+fi
+
+if [ -z "$DATABASE_NAME" ] && [ "$USE_INIT" = false ]; then
+    # Relaxed check: if --init is used, we might not strictly need DB name IF the script didn't rely on it for file searching.
+    # BUT, the script currently searches for backup_${DATABASE_NAME}_... unless --init is used.
+    # However, user said "no need to provide db name when --init is used".
+    # And currently INPUT_FILE for --init is hardcoded to backup_init.sql.
+    # So if --init is used, we can proceed without DATABASE_NAME for the *file finding* part,
+    # BUT we still need a database name to *restore into* (mysql $DATABASE_NAME < ...).
+    # So DATABASE_NAME is still mandatory for the actual restore command.
+    echo "ERROR: database_name is required and could not be found in .env or ~/.my.cnf."
+    echo "Usage: $0 [database_name] [backup_file] [--init] [--path <path>]"
     exit 1
 fi
 
-# 2. Determine backup directory
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$( cd "$SCRIPT_DIR/.." && pwd )"
 
 if [ -n "$BACKUP_PATH" ]; then
     BACKUP_DIR="$BACKUP_PATH"
@@ -55,7 +87,7 @@ fi
 
 # 3. Determine input file
 if [ "$USE_INIT" = true ]; then
-    INPUT_FILE="$BACKUP_DIR/backup_${DATABASE_NAME}_init.sql"
+    INPUT_FILE="$BACKUP_DIR/backup_init.sql"
     if [ ! -f "$INPUT_FILE" ]; then
          echo "ERROR: --init specified but '$INPUT_FILE' not found."
          exit 1

@@ -58,23 +58,30 @@ def upgrade():
             if project_result:
                 next_project_id = project_result[0]
         
-        # Insert into user_clubs
-        connection.execute(sa.text("""
-            INSERT INTO user_clubs 
-            (user_id, club_id, club_role_id, current_path_id, is_home, mentor_id, next_project_id, created_at, updated_at)
-            VALUES 
-            (:user_id, :club_id, :club_role_id, :current_path_id, :is_home, :mentor_id, :next_project_id, :created_at, :updated_at)
-        """), {
-            'user_id': user_id,
-            'club_id': 1,
-            'club_role_id': 4,
-            'current_path_id': current_path_id,
-            'is_home': True,
-            'mentor_id': mentor_id,
-            'next_project_id': next_project_id,
-            'created_at': datetime.now(timezone.utc),
-            'updated_at': datetime.now(timezone.utc)
-        })
+        # Check if user_club already exists
+        existing_uc = connection.execute(sa.text("""
+            SELECT 1 FROM user_clubs 
+            WHERE user_id = :user_id AND club_id = :club_id
+        """), {'user_id': user_id, 'club_id': 1}).fetchone()
+
+        if not existing_uc:
+            # Insert into user_clubs
+            connection.execute(sa.text("""
+                INSERT INTO user_clubs 
+                (user_id, club_id, club_role_id, current_path_id, is_home, mentor_id, next_project_id, created_at, updated_at)
+                VALUES 
+                (:user_id, :club_id, :club_role_id, :current_path_id, :is_home, :mentor_id, :next_project_id, :created_at, :updated_at)
+            """), {
+                'user_id': user_id,
+                'club_id': 1,
+                'club_role_id': 4,
+                'current_path_id': current_path_id,
+                'is_home': True,
+                'mentor_id': mentor_id,
+                'next_project_id': next_project_id,
+                'created_at': datetime.now(timezone.utc),
+                'updated_at': datetime.now(timezone.utc)
+            })
 
 
 def downgrade():

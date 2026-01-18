@@ -37,11 +37,13 @@ HOST=$(echo "$DATABASE_URL" | sed -e 's|.*@||' -e 's|/.*||')
 # Perform backup
 echo "Backing up database: $DB_NAME to $BACKUP_FILE..."
 echo "Ignoring table: alembic_version"
+echo "Note: Using --no-defaults to avoid conflicts with global config (e.g., ~/.my.cnf)"
 
+# Use --no-defaults to prevent reading incompatible variables from ~/.my.cnf
 # Use --no-tablespaces to avoid PROCESS privilege requirement
 # Use --set-gtid-purged=OFF to avoid GTID related warnings
 # Use --single-transaction for a consistent backup without locking tables
-mysqldump -h "$HOST" -u "$USER" -p"$PASS" \
+mysqldump --no-defaults -h "$HOST" -u "$USER" -p"$PASS" \
     --no-tablespaces \
     --set-gtid-purged=OFF \
     --single-transaction \

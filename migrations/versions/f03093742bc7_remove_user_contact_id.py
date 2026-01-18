@@ -47,10 +47,33 @@ def upgrade():
 
 
 def downgrade():
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('users')]
+    indexes = [idx['name'] for idx in inspector.get_indexes('users')]
+
     with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('contact_id', sa.Integer(), nullable=True))
-        batch_op.create_unique_constraint('Contact_ID', ['contact_id'])
-        batch_op.create_foreign_key('Users_ibfk_1', 'Contacts', ['contact_id'], ['id'])
+        if 'contact_id' not in columns:
+            batch_op.add_column(sa.Column('contact_id', sa.Integer(), nullable=True))
+        
+        # Check if index/constraint exists
+        if 'Contact_ID' not in indexes:
+            batch_op.create_unique_constraint('Contact_ID', ['contact_id'])
+    
+    # Re-fetch inspector for FK check
+    inspector = sa.inspect(conn)
+    fks = inspector.get_foreign_keys('users')
+    fk_exists = any(fk['name'] == 'Users_ibfk_1' for fk in fks) or \
+                any(fk['constrained_columns'] == ['contact_id'] for fk in fks)
+    
+    if not fk_exists:
+        try:
+            op.create_foreign_key('Users_ibfk_1', 'users', 'Contacts', ['contact_id'], ['id'])
+        except Exception as e:
+            # Handle duplicate key or name errors from MySQL
+            err_msg = str(e).lower()
+            if 'duplicate foreign key' not in err_msg and 'already exists' not in err_msg:
+                raise
     
     # Backfill users.contact_id from user_clubs (best effort)
     op.execute("""

@@ -22,8 +22,8 @@ def upgrade():
     inspector = sa.inspect(conn)
     table_names = inspector.get_table_names()
     
-    # Rename table if it exists as 'Users'
-    if 'Users' in table_names:
+    # Rename table if it exists as 'Users' and 'users' does not exist
+    if 'Users' in table_names and 'users' not in table_names:
         op.rename_table('Users', 'users')
     
     # Get the current table name (either 'users' or 'Users')
@@ -69,12 +69,26 @@ def downgrade():
     # to the 'users' table and will automatically update to point to 'Users' when we rename it back.
     # We don't need to drop and recreate them.
 
-    with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.alter_column('username', new_column_name='Username', existing_type=sa.String(50), nullable=False)
-        batch_op.alter_column('email', new_column_name='Email', existing_type=sa.String(120), nullable=True)
-        batch_op.alter_column('contact_id', new_column_name='Contact_ID', existing_type=sa.Integer(), nullable=True)
-        batch_op.alter_column('password_hash', new_column_name='Pass_Hash', existing_type=sa.String(255), nullable=False)
-        batch_op.alter_column('created_at', new_column_name='Date_Created', existing_type=sa.Date(), nullable=True)
-        batch_op.alter_column('status', new_column_name='Status', existing_type=sa.String(50), nullable=False, server_default='active')
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    table_names = inspector.get_table_names()
+    
+    # Get current columns for 'users'
+    columns = {col['name']: col for col in inspector.get_columns('users')} if 'users' in table_names else {}
 
-    op.rename_table('users', 'Users')
+    with op.batch_alter_table('users', schema=None) as batch_op:
+        if 'username' in columns:
+            batch_op.alter_column('username', new_column_name='Username', existing_type=sa.String(50), nullable=False)
+        if 'email' in columns:
+            batch_op.alter_column('email', new_column_name='Email', existing_type=sa.String(120), nullable=True)
+        if 'contact_id' in columns:
+            batch_op.alter_column('contact_id', new_column_name='Contact_ID', existing_type=sa.Integer(), nullable=True)
+        if 'password_hash' in columns:
+            batch_op.alter_column('password_hash', new_column_name='Pass_Hash', existing_type=sa.String(255), nullable=False)
+        if 'created_at' in columns:
+            batch_op.alter_column('created_at', new_column_name='Date_Created', existing_type=sa.Date(), nullable=True)
+        if 'status' in columns:
+            batch_op.alter_column('status', new_column_name='Status', existing_type=sa.String(50), nullable=False, server_default='active')
+
+    if 'users' in table_names and 'Users' not in table_names:
+        op.rename_table('users', 'Users')
