@@ -307,9 +307,9 @@
                     {% endif %}
                 </div>
                 <div class="status-info">
-                    {% if log.status == 'Completed' %}
+                    {% if log.Status == 'Completed' %}
                     <i class="fas fa-check-circle" title="Completed"></i>
-                    {% elif log.status == 'Delivered' %}
+                    {% elif log.Status == 'Delivered' %}
                     {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
                     <button onclick="completeSpeechLog(this, {{ log.id }})"
                         class="btn btn-success btn-sm">Complete</button>

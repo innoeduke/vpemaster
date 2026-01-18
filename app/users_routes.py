@@ -131,12 +131,12 @@ def user_form(user_id):
 
     user = None
     if user_id:
-        user = User.query.get_or_404(user_id)
+        user = db.get_or_404(User, user_id)
     
     source_contact = None
     contact_id = request.args.get('contact_id', type=int)
     if contact_id and not user:
-        source_contact = Contact.query.get(contact_id)
+        source_contact = db.session.get(Contact, contact_id)
 
     member_contacts = Contact.query.filter(
         Contact.Type.in_(['Member', 'Officer'])).order_by(Contact.Name.asc()).all()
@@ -335,13 +335,23 @@ def delete_user(user_id):
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
-    user = User.query.get_or_404(user_id)
-    
-    # Delete linked contact for the current club if exists
+    user = db.get_or_404(User, user_id)
     current_club_id = get_current_club_id()
+    
     contact = user.get_contact(current_club_id)
     if contact:
-        db.session.delete(contact)
+        # Instead of deleting, convert to Guest and clear sensitive member info
+        contact.Type = 'Guest'
+        contact.Member_ID = None
+        contact.credentials = None
+        contact.Current_Path = None
+        contact.Next_Project = None
+        
+        # Update membership types in all clubs
+        from .models import ContactClub
+        ContactClub.query.filter_by(contact_id=contact.id).update({"membership_type": "Guest"})
+        
+        db.session.add(contact)
     
     db.session.delete(user)
     db.session.commit()

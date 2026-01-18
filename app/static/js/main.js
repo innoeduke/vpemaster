@@ -207,7 +207,7 @@ function openContactModal(contactId) {
         });
       });
   } else {
-    contactModalTitle.textContent = "Add New Contact";
+    contactModalTitle.textContent = "Add Guest";
     contactForm.action = "/contact/form";
     document.getElementById("educationFieldsWrapper").style.display = "none";
     

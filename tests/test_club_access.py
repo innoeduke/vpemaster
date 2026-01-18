@@ -58,10 +58,15 @@ def cleanup_test_data(app):
             User.query.filter(User.username.like('test_%')).delete(synchronize_session=False)
             db.session.commit()
             
-            # 4. Delete Contacts
+            # 4. Set Mentor_ID to NULL for contacts we're about to delete
+            # to avoid self-referential foreign key constraint failures
+            Contact.query.filter(Contact.Name.like('Test %')).update({Contact.Mentor_ID: None}, synchronize_session=False)
+            db.session.flush()
+
+            # 5. Delete Contacts
             Contact.query.filter(Contact.Name.like('Test %')).delete()
             
-            # 5. Delete Clubs
+            # 6. Delete Clubs
             Club.query.filter(Club.club_no.like('TEST_%')).delete()
             
             db.session.commit()
@@ -141,13 +146,13 @@ def test_clubadmin_access_owned_club(app, client):
         db.session.add(contact)
         db.session.flush()
         
-        user = User(username='test_clubadmin', status='active', contact_id=contact.id)
+        user = User(username='test_clubadmin', status='active')
         user.set_password('password')
         db.session.add(user)
         db.session.flush()
         user.add_role(clubadmin_role)
         # Grant ClubAdmin role for club1 in user_clubs
-        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_id=clubadmin_role.id))
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_id=clubadmin_role.id, contact_id=contact.id))
         
         # Create ExComm for club1 with this user as VPE
         excomm = ExComm(club_id=club1.id, excomm_term='TEST_26H1', vpe_id=contact.id)
@@ -193,13 +198,13 @@ def test_clubadmin_denied_non_owned_club(app, client):
         db.session.add(contact)
         db.session.flush()
         
-        user = User(username='test_clubadmin2', status='active', contact_id=contact.id)
+        user = User(username='test_clubadmin2', status='active')
         user.set_password('password')
         db.session.add(user)
         db.session.flush()
         user.add_role(clubadmin_role)
         # Grant ClubAdmin role for club1 in user_clubs
-        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_id=clubadmin_role.id))
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_id=clubadmin_role.id, contact_id=contact.id))
         
         # Create ExComm for club1 only
         excomm = ExComm(club_id=club1.id, excomm_term='TEST_26H1', president_id=contact.id)
@@ -243,13 +248,14 @@ def test_regular_user_access_authorized_club(app, client):
         db.session.add(contact)
         db.session.flush()
         
-        user = User(username='test_regular', status='active', contact_id=contact.id)
+        user = User(username='test_regular', status='active')
         user.set_password('password')
         db.session.add(user)
         db.session.flush()
         user.add_role(user_role)
         
         # Add membership to club1
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, contact_id=contact.id, club_role_id=user_role.id))
         membership = ContactClub(
             contact_id=contact.id,
             club_id=club1.id,
@@ -296,13 +302,14 @@ def test_regular_user_denied_unauthorized_club(app, client):
         db.session.add(contact)
         db.session.flush()
         
-        user = User(username='test_regular2', status='active', contact_id=contact.id)
+        user = User(username='test_regular2', status='active')
         user.set_password('password')
         db.session.add(user)
         db.session.flush()
         user.add_role(user_role)
         
         # Add membership to club1 only
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, contact_id=contact.id, club_role_id=user_role.id))
         membership = ContactClub(
             contact_id=contact.id,
             club_id=club1.id,

@@ -237,7 +237,9 @@
 }
 
 /* --- Specific View Styles --- */
-/* GUEST VIEW: Hide Paths(5), Creds(6), Next(7), Mentor(8) */
+/* GUEST VIEW: Hide Club(4), Paths(5), Creds(6), Next(7), Mentor(8) */
+.guest-view th:nth-child(4),
+.guest-view td:nth-child(4),
 .guest-view th:nth-child(5),
 .guest-view td:nth-child(5),
 .guest-view th:nth-child(6),

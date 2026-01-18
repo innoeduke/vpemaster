@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Edit Contact' if contact else 'Add New Contact' }}{% endblock %}
+{% block title %}{{ 'Edit Contact' if contact else 'Add Guest' }}{% endblock %}
 
 {% block content %}
-<h1>{{ 'Edit Contact' if contact else 'Add New Contact' }}</h1>
+<h1>{{ 'Edit Contact' if contact else 'Add Guest' }}</h1>
 <form method="POST"
     action="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) if contact else url_for('contacts_bp.contact_form') }}">
     <table class="form-table">

@@ -14,6 +14,10 @@ def app():
     """Create application for testing."""
     from app import create_app
     app = create_app('config.Config')
+    app.config.update({
+        'TESTING': True,
+        'WTF_CSRF_ENABLED': False
+    })
     return app
 
 

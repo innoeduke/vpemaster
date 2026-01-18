@@ -207,6 +207,12 @@ def contact_form(contact_id=None):
         
         email = request.form.get('email', '').strip() or None
         contact_type = request.form.get('type', 'Guest')
+        
+        # Architectural Decision: All new contacts created via the contact form 
+        # must be guests. Members are created via user registration or conversion.
+        if not contact_id:
+            contact_type = 'Guest'
+            
         club = request.form.get('club', '').strip() or None
         phone = request.form.get('phone_number', '').strip() or None
         bio = request.form.get('bio', '').strip() or None
@@ -358,11 +364,30 @@ def contact_form(contact_id=None):
 @contacts_bp.route('/contact/delete/<int:contact_id>', methods=['POST'])
 @login_required
 def delete_contact(contact_id):
-    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
-        flash("You don't have permission to perform this action.", 'error')
-        return redirect(url_for('agenda_bp.agenda'))
+    contact = Contact.query.get_or_404(contact_id)
+    if contact.Type != 'Guest':
+        flash("Only Guest contacts can be deleted directly. Members and Officers must be managed through their user accounts.", 'error')
+        return redirect(url_for('contacts_bp.show_contacts'))
 
+    # Nullify references that don't have cascades
+    from .models import Meeting, UserClub, Contact
+    
+    # 1. Meeting awards and managers
+    Meeting.query.filter(Meeting.best_table_topic_id == contact_id).update({"best_table_topic_id": None})
+    Meeting.query.filter(Meeting.best_evaluator_id == contact_id).update({"best_evaluator_id": None})
+    Meeting.query.filter(Meeting.best_speaker_id == contact_id).update({"best_speaker_id": None})
+    Meeting.query.filter(Meeting.best_role_taker_id == contact_id).update({"best_role_taker_id": None})
+    Meeting.query.filter(Meeting.manager_id == contact_id).update({"manager_id": None})
+    
+    # 2. UserClub mentors
+    UserClub.query.filter(UserClub.mentor_id == contact_id).update({"mentor_id": None})
+    
+    # 3. Contact mentors (mentees of this contact)
+    Contact.query.filter(Contact.Mentor_ID == contact_id).update({"Mentor_ID": None})
+    
+    # 4. SessionLogs (Owner_ID)
     SessionLog.query.filter_by(Owner_ID=contact_id).update({"Owner_ID": None})
+    
     contact = Contact.query.get_or_404(contact_id)
     db.session.delete(contact)
     db.session.commit()
@@ -391,10 +416,13 @@ def create_contact_api():
             if existing_email:
                 return jsonify({'error': f"A contact with the email '{data['email']}' already exists."}), 400
 
+        # Architectural Decision: All contacts created via the API must be guests.
+        contact_type = 'Guest'
+
         new_contact = Contact(
             Name=data['name'],
             Email=data.get('email') or None,
-            Type=data['type'],
+            Type=contact_type,
             Date_Created=date.today(),
             Phone_Number=data.get('phone') or None
         )
@@ -408,7 +436,7 @@ def create_contact_api():
             db.session.add(ContactClub(
                 contact_id=new_contact.id,
                 club_id=current_cid,
-                membership_type=data['type'],
+                membership_type=contact_type,
                 is_primary=True
             ))
             db.session.commit()

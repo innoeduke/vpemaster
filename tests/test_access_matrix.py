@@ -118,7 +118,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                 Permissions.AGENDA_VIEW, Permissions.BOOKING_BOOK_OWN, Permissions.PATHWAY_LIB_VIEW
             ],
             'Guest': [
-                Permissions.AGENDA_VIEW, Permissions.PATHWAY_LIB_VIEW
+                Permissions.AGENDA_VIEW, Permissions.PATHWAY_LIB_VIEW, Permissions.ABOUT_CLUB_VIEW
             ]
         }
         

@@ -183,7 +183,7 @@ def test_delete_club(client, sysadmin_user, db_session):
 
     response = client.post(f'/clubs/{club.id}/delete', follow_redirects=True)
     assert response.status_code == 200
-    assert b'Club deleted successfully' in response.data
+    assert b'Club, its meetings, and its specific contacts deleted successfully.' in response.data
     
     deleted_club = db_session.get(Club, club.id)
     assert deleted_club is None

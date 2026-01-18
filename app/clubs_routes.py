@@ -156,7 +156,7 @@ def delete_club(club_id):
         
         # 1. Manually delete all meetings to ensure full cleanup (Roster, SessionLogs, etc.)
         # Meeting.delete_full() handles the child items tied by meeting_number
-        from .models import Meeting
+        from .models import Meeting, UserClub
         meetings = Meeting.query.filter_by(club_id=club_id).all()
         for meeting in meetings:
             success, error = meeting.delete_full()

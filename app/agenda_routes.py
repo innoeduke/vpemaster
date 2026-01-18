@@ -191,7 +191,7 @@ def _create_or_update_session(item, meeting_number, seq):
         log = new_log
         old_owner_id = None
     else:
-        log = SessionLog.query.get(item['id'])
+        log = db.session.get(SessionLog, item['id'])
         if log:
             # Capture old owner ID to detect changes
             old_owner_id = log.Owner_ID

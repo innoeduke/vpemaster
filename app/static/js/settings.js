@@ -124,7 +124,8 @@ class TablePaginator {
   }
 
   update() {
-    const rows = this.getFilteredRows();
+    const rows = Array.from(this.tbody.rows);
+    const filteredRows = this.getFilteredRows();
     const totalPages = this.getTotalPages();
     
     if (this.currentPage > totalPages) this.currentPage = totalPages;
@@ -133,9 +134,12 @@ class TablePaginator {
     const startIndex = (this.currentPage - 1) * this.pageSize;
     const endIndex = startIndex + this.pageSize;
 
+    // Create a Set of rows that should be visible (on current page)
+    const visibleRows = new Set(filteredRows.slice(startIndex, endIndex));
+
     // Show/hide rows
-    rows.forEach((row, index) => {
-      if (index >= startIndex && index < endIndex) {
+    rows.forEach((row) => {
+      if (visibleRows.has(row)) {
         row.style.display = "";
       } else {
         row.style.display = "none";
@@ -290,8 +294,10 @@ function setupGlobalFilter(searchInputId, searchClearId, tabNavSelector) {
     searchClear.style.display = filter.length > 0 ? "block" : "none";
 
     // Find the active tab and its table
-    const activeTab = document.querySelector(
-      ".tab-content[style*='display: block']"
+    const activeTab = Array.from(document.querySelectorAll(".tab-content")).find(
+      (el) =>
+        el.style.display === "block" ||
+        window.getComputedStyle(el).display === "block"
     );
     if (!activeTab) return;
 

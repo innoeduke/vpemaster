@@ -4,7 +4,13 @@ from .base import db
 
 
 class UserClub(db.Model):
-    """Junction table linking users to clubs with membership details."""
+    """
+    Junction table linking users to clubs with membership details.
+    
+    NOTE: Both user_clubs and contact_clubs include contact_id and club_id for 
+    associating contacts with clubs. The difference is that 'user_clubs' contains 
+    ONLY contacts linked to users.
+    """
     __tablename__ = 'user_clubs'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -23,7 +29,7 @@ class UserClub(db.Model):
     # Relationships
     user = db.relationship('User', backref=db.backref('club_memberships', cascade='all, delete-orphan'))
     contact = db.relationship('Contact', foreign_keys=[contact_id], back_populates='user_club_records')
-    club = db.relationship('Club', backref='user_memberships')
+    club = db.relationship('Club', backref=db.backref('user_memberships', cascade='all, delete-orphan'))
     club_role = db.relationship('Role')
     current_path = db.relationship('Pathway', foreign_keys=[current_path_id])
     mentor = db.relationship('Contact', foreign_keys=[mentor_id])

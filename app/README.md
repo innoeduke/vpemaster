@@ -16,6 +16,7 @@ VPEMaster is a comprehensive web application designed to help Toastmasters clubs
 
 - **Backend**: Flask (Python)
 - **Database**: SQLAlchemy ORM (compatible with SQLite, PostgreSQL, MySQL) with Flask-Migrate for database migrations.
+    - *Architectural Note*: Both `user_clubs` and `contact_clubs` associate contacts with clubs. `user_clubs` specifically links contacts to actual user accounts, while `contact_clubs` tracks all potential members (both registered users and guest contacts) within a club context.
 - **Frontend**: Jinja2 templates, JavaScript, HTML, CSS.
 
 ---

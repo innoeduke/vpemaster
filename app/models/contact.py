@@ -31,6 +31,7 @@ class Contact(db.Model):
     waitlists = db.relationship('Waitlist', cascade='all, delete-orphan', back_populates='contact')
     roster_entries = db.relationship('Roster', cascade='all, delete-orphan', back_populates='contact')
     user_club_records = db.relationship('UserClub', cascade='all, delete-orphan', back_populates='contact', foreign_keys='UserClub.contact_id')
+    club_memberships = db.relationship('ContactClub', cascade='all, delete-orphan', back_populates='contact')
     
     def update_name_from_parts(self):
         """Auto-populate Name from first_name and last_name if Name is blank."""

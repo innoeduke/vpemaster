@@ -131,7 +131,7 @@ def switch_club(club_id):
     """
     from app.models import Club
     
-    club = Club.query.get(club_id)
+    club = db.session.get(Club, club_id)
     if club:
         set_current_club_id(club_id)
         return True

@@ -20,7 +20,7 @@ async function fetchAndCacheContacts() {
       throw new Error('Failed to fetch contacts');
     }
     allContactsCache = await response.json();
-    console.log(`Cached ${allContactsCache.length} contacts`);
+
     return allContactsCache;
   } catch (error) {
     console.error('Error fetching contacts:', error);
@@ -32,7 +32,7 @@ async function fetchAndCacheContacts() {
  * Refreshes the contact cache (call after add/edit/delete)
  */
 async function refreshContactCache() {
-  console.log('Refreshing contact cache...');
+
   await fetchAndCacheContacts();
   applyFiltersAndPaginate();
 }
@@ -159,16 +159,11 @@ function createContactRow(contact) {
         <button class="icon-btn" onclick="openContactModal(${contact.id})" title="Edit">
           <i class="fas fa-edit"></i>
         </button>
-        ${!contact.has_user ? `
-        <form action="/users/quick_add/${contact.id}" method="POST" style="display:inline;" onsubmit="return confirm('Create user for ${contact.Name}?');">
-          <button type="submit" class="icon-btn" title="Quick Add User">
-            <i class="fas fa-user-plus"></i>
-          </button>
-        </form>
-        ` : ''}
+        ${contact.Type === 'Guest' ? `
         <button class="delete-btn icon-btn" onclick="openDeleteModal('/contact/delete/${contact.id}', 'contact')" title="Delete">
           <i class="fas fa-trash-alt"></i>
         </button>
+        ` : ''}
       </div>
     </td>
     ` : ''}
