@@ -98,10 +98,12 @@ function renderContactsPage() {
   // Update pagination controls
   updatePaginationControls(startIndex, endIndex, filteredContacts.length, totalPages);
   
-  // Show the table now that pagination is complete
+  // Hide loading spinner and show table
+  const spinner = document.getElementById('contactsLoadingSpinner');
   const table = document.getElementById('contactsTable');
-  if (table && table.style.opacity === '0') {
-    table.style.opacity = '1';
+  if (spinner && table) {
+    spinner.style.display = 'none';
+    table.style.display = 'table';
   }
 }
 
@@ -339,7 +341,7 @@ function handleDeleteFormSubmit(event) {
 /**
  * Sets up the search, sort, tab, and pagination functionality
  */
-document.addEventListener("DOMContentLoaded", async function () {
+document.addEventListener("DOMContentLoaded", function () {
   const table = document.getElementById("contactsTable");
   const searchInput = document.getElementById("searchInput");
   const clearBtn = document.getElementById("clear-searchInput");
@@ -373,9 +375,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     deleteForm.addEventListener('submit', handleDeleteFormSubmit);
   }
 
-  // Fetch and cache all contacts
-  await fetchAndCacheContacts();
-
   // Initialize sorting
   setupTableSorting("contactsTable");
 
@@ -403,9 +402,6 @@ document.addEventListener("DOMContentLoaded", async function () {
       table.classList.remove("guest-view", "member-view");
     }
   }
-
-  // Initial render
-  applyFiltersAndPaginate();
 
   // Tab click logic
   tabs.forEach((tab) => {
@@ -477,30 +473,36 @@ document.addEventListener("DOMContentLoaded", async function () {
     });
   }
 
-  // Auto-open Contact Modal via ID param
-  const urlParams = new URLSearchParams(window.location.search);
-  const contactIdToOpen = urlParams.get('id');
+  // Fetch and cache all contacts asynchronously (non-blocking)
+  fetchAndCacheContacts().then(() => {
+    // Initial render after data is loaded
+    applyFiltersAndPaginate();
 
-  if (contactIdToOpen) {
-    // Find the contact in cache
-    const targetContact = allContactsCache.find(c => c.id === parseInt(contactIdToOpen));
-    
-    if (targetContact) {
-      const contactType = targetContact.Type;
-      const tabToActivate = Array.from(tabs).find(t => t.dataset.type === contactType);
+    // Auto-open Contact Modal via ID param
+    const urlParams = new URLSearchParams(window.location.search);
+    const contactIdToOpen = urlParams.get('id');
+
+    if (contactIdToOpen) {
+      // Find the contact in cache
+      const targetContact = allContactsCache.find(c => c.id === parseInt(contactIdToOpen));
       
-      if (tabToActivate) {
-        tabs.forEach(t => t.classList.remove("active"));
-        tabToActivate.classList.add("active");
-        applyFiltersAndPaginate();
-      }
-      
-      // Open the modal
-      if (typeof openContactModal === 'function') {
-        openContactModal(contactIdToOpen);
+      if (targetContact) {
+        const contactType = targetContact.Type;
+        const tabToActivate = Array.from(tabs).find(t => t.dataset.type === contactType);
+        
+        if (tabToActivate) {
+          tabs.forEach(t => t.classList.remove("active"));
+          tabToActivate.classList.add("active");
+          applyFiltersAndPaginate();
+        }
+        
+        // Open the modal
+        if (typeof openContactModal === 'function') {
+          openContactModal(contactIdToOpen);
+        }
       }
     }
-  }
+  });
 });
 
 // Make refreshContactCache available globally for modal callbacks

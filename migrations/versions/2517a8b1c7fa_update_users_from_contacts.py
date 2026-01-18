@@ -19,19 +19,25 @@ depends_on = None
 def upgrade():
     """Update Users table with data from Contacts table."""
     connection = op.get_bind()
+    inspector = sa.inspect(connection)
+    columns = [c['name'] for c in inspector.get_columns('Users')]
     
-    # Update Users table with data from Contacts where Contact_ID is not null
-    connection.execute(sa.text("""
-        UPDATE Users u
-        INNER JOIN Contacts c ON u.Contact_ID = c.id
-        SET 
-            u.member_no = c.Member_ID,
-            u.phone = c.Phone_Number,
-            u.dtm = c.DTM,
-            u.avatar_url = c.Avatar_URL,
-            u.bio = c.Bio
-        WHERE u.Contact_ID IS NOT NULL
-    """))
+    # Check if Contact_ID exists (case-insensitive)
+    has_contact_id = any(c.lower() == 'contact_id' for c in columns)
+
+    if has_contact_id:
+        # Update Users table with data from Contacts where Contact_ID is not null
+        connection.execute(sa.text("""
+            UPDATE Users u
+            INNER JOIN Contacts c ON u.Contact_ID = c.id
+            SET 
+                u.member_no = c.Member_ID,
+                u.phone = c.Phone_Number,
+                u.dtm = c.DTM,
+                u.avatar_url = c.Avatar_URL,
+                u.bio = c.Bio
+            WHERE u.Contact_ID IS NOT NULL
+        """))
 
 
 def downgrade():

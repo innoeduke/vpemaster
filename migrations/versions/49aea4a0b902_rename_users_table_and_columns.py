@@ -17,41 +17,57 @@ depends_on = None
 
 
 def upgrade():
-    # Rename table
-    op.rename_table('Users', 'users')
+    # Check if the table needs to be renamed
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    table_names = inspector.get_table_names()
+    
+    # Rename table if it exists as 'Users'
+    if 'Users' in table_names:
+        op.rename_table('Users', 'users')
+    
+    # Get the current table name (either 'users' or 'Users')
+    current_table_name = 'users' if 'users' in table_names else 'Users'
+    
+    # Get current columns
+    columns = {col['name']: col for col in inspector.get_columns(current_table_name)}
+    
+    # Rename columns only if they exist with the old names
+    with op.batch_alter_table(current_table_name, schema=None) as batch_op:
+        if 'Username' in columns:
+            batch_op.alter_column('Username', new_column_name='username', existing_type=sa.String(50), nullable=False)
+        if 'Email' in columns:
+            batch_op.alter_column('Email', new_column_name='email', existing_type=sa.String(120), nullable=True)
+        if 'Contact_ID' in columns:
+            batch_op.alter_column('Contact_ID', new_column_name='contact_id', existing_type=sa.Integer(), nullable=True)
+        if 'Pass_Hash' in columns:
+            batch_op.alter_column('Pass_Hash', new_column_name='password_hash', existing_type=sa.String(255), nullable=False)
+        if 'Date_Created' in columns:
+            batch_op.alter_column('Date_Created', new_column_name='created_at', existing_type=sa.Date(), nullable=True)
+        if 'Status' in columns:
+            batch_op.alter_column('Status', new_column_name='status', existing_type=sa.String(50), nullable=False, server_default='active')
 
-    # Rename columns
-    with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.alter_column('Username', new_column_name='username', existing_type=sa.String(50), nullable=False)
-        batch_op.alter_column('Email', new_column_name='email', existing_type=sa.String(120), nullable=True)
-        batch_op.alter_column('Contact_ID', new_column_name='contact_id', existing_type=sa.Integer(), nullable=True)
-        # Note: server_default might be lost/changed if not specified, but Status had default='active' which is app level usually, but DB level 'active'
-        batch_op.alter_column('Pass_Hash', new_column_name='password_hash', existing_type=sa.String(255), nullable=False)
-        batch_op.alter_column('Date_Created', new_column_name='created_at', existing_type=sa.Date(), nullable=True)
-        batch_op.alter_column('Status', new_column_name='status', existing_type=sa.String(50), nullable=False, server_default='active')
+    # Update FKs pointing to this table - only if they exist
+    try:
+        with op.batch_alter_table('permission_audits', schema=None) as batch_op:
+            batch_op.drop_constraint('permission_audits_ibfk_1', type_='foreignkey')
+            batch_op.create_foreign_key(None, 'users', ['admin_id'], ['id'])
+    except Exception:
+        pass  # Constraint might not exist or already updated
 
-    # Update FKs pointing to this table
-    with op.batch_alter_table('permission_audits', schema=None) as batch_op:
-        # Constraint name might vary, but assuming the one from autogen is correct.
-        # If strict naming convention is used by Alembic, this works. 
-        # Safest to try dropping by name if known, else we might leave old constraint? 
-        # MySQL usually updates FK target table name automatically on rename, but let's be explicit to match metadata.
-        batch_op.drop_constraint('permission_audits_ibfk_1', type_='foreignkey')
-        batch_op.create_foreign_key(None, 'users', ['admin_id'], ['id'])
-
-    with op.batch_alter_table('user_clubs', schema=None) as batch_op:
-        batch_op.drop_constraint('user_clubs_ibfk_5', type_='foreignkey')
-        batch_op.create_foreign_key(None, 'users', ['user_id'], ['id'], ondelete='CASCADE')
+    try:
+        with op.batch_alter_table('user_clubs', schema=None) as batch_op:
+            batch_op.drop_constraint('user_clubs_ibfk_5', type_='foreignkey')
+            batch_op.create_foreign_key(None, 'users', ['user_id'], ['id'], ondelete='CASCADE')
+    except Exception:
+        pass  # Constraint might not exist or already updated
 
 
 def downgrade():
-    with op.batch_alter_table('user_clubs', schema=None) as batch_op:
-        batch_op.drop_constraint(None, type_='foreignkey')
-        batch_op.create_foreign_key('user_clubs_ibfk_5', 'Users', ['user_id'], ['id'], ondelete='CASCADE')
-
-    with op.batch_alter_table('permission_audits', schema=None) as batch_op:
-        batch_op.drop_constraint(None, type_='foreignkey')
-        batch_op.create_foreign_key('permission_audits_ibfk_1', 'Users', ['admin_id'], ['id'])
+    # Note: MySQL automatically updates foreign key references when a table is renamed,
+    # so the FK constraints user_clubs_ibfk_5 and permission_audits_ibfk_1 already point
+    # to the 'users' table and will automatically update to point to 'Users' when we rename it back.
+    # We don't need to drop and recreate them.
 
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.alter_column('username', new_column_name='Username', existing_type=sa.String(50), nullable=False)

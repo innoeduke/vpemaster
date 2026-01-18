@@ -21,14 +21,21 @@ def upgrade():
     from datetime import datetime, timezone
     
     connection = op.get_bind()
+    inspector = sa.inspect(connection)
+    columns = [c['name'] for c in inspector.get_columns('Users')]
     
-    # Get all users with Contact_ID
-    users_with_contacts = connection.execute(sa.text("""
-        SELECT u.id as user_id, c.id as contact_id, c.Mentor_ID, c.Current_Path, c.Next_Project
-        FROM Users u
-        INNER JOIN Contacts c ON u.Contact_ID = c.id
-        WHERE u.Contact_ID IS NOT NULL
-    """)).fetchall()
+    # Check if Contact_ID exists (case-insensitive)
+    has_contact_id = any(c.lower() == 'contact_id' for c in columns)
+
+    users_with_contacts = []
+    if has_contact_id:
+        # Get all users with Contact_ID
+        users_with_contacts = connection.execute(sa.text("""
+            SELECT u.id as user_id, c.id as contact_id, c.Mentor_ID, c.Current_Path, c.Next_Project
+            FROM Users u
+            INNER JOIN Contacts c ON u.Contact_ID = c.id
+            WHERE u.Contact_ID IS NOT NULL
+        """)).fetchall()
     
     for user_row in users_with_contacts:
         user_id, contact_id, mentor_id, current_path, next_project = user_row

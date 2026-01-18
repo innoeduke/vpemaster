@@ -17,9 +17,16 @@ depends_on = None
 
 
 def upgrade():
-    # Add first_name and last_name columns
-    op.add_column('Contacts', sa.Column('first_name', sa.String(100), nullable=True))
-    op.add_column('Contacts', sa.Column('last_name', sa.String(100), nullable=True))
+    # Check if columns exist before adding them
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('Contacts')]
+    
+    # Add first_name and last_name columns only if they don't exist
+    if 'first_name' not in columns:
+        op.add_column('Contacts', sa.Column('first_name', sa.String(100), nullable=True))
+    if 'last_name' not in columns:
+        op.add_column('Contacts', sa.Column('last_name', sa.String(100), nullable=True))
 
 
 def downgrade():

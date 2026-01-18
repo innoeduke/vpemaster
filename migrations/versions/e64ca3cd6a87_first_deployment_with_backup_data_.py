@@ -288,6 +288,9 @@ def downgrade():
     if 'contact_clubs' in tables:
         op.drop_table('contact_clubs')
 
+    if 'user_clubs' in tables:
+        op.drop_table('user_clubs')
+
     # Dropping excomm might fail if clubs refers to it.
     # So we should drop FK from clubs first.
         

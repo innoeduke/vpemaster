@@ -17,10 +17,18 @@ depends_on = None
 
 
 def upgrade():
+    # Check if columns exist before dropping them
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('contact_clubs')]
+    
     with op.batch_alter_table('contact_clubs', schema=None) as batch_op:
-        batch_op.drop_column('membership_type')
-        batch_op.drop_column('is_primary')
-        batch_op.drop_column('joined_date')
+        if 'membership_type' in columns:
+            batch_op.drop_column('membership_type')
+        if 'is_primary' in columns:
+            batch_op.drop_column('is_primary')
+        if 'joined_date' in columns:
+            batch_op.drop_column('joined_date')
 
 
 def downgrade():

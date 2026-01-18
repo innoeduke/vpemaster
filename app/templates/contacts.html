@@ -1,6 +1,33 @@
 {% extends "base.html" %}
 {% block title %}Contacts{% endblock %}
 
+{% block head_extra %}
+<style>
+.loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.loading-spinner {
+  text-align: center;
+  color: #666;
+}
+
+.loading-spinner i {
+  font-size: 3rem;
+  color: #004165;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.loading-spinner p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+</style>
+{% endblock %}
 
 {% block content %}
 <h1><i class="fas fa-book"></i> Contacts</h1>
@@ -47,7 +74,15 @@
 </div>
 
 <div class="contact-table-container">
-  <table id="contactsTable" style="opacity: 0; transition: opacity 0.3s ease;">
+  <!-- Loading Spinner -->
+  <div id="contactsLoadingSpinner" class="loading-spinner-container">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+      <p>Loading contacts...</p>
+    </div>
+  </div>
+
+  <table id="contactsTable" style="display: none;">
     <thead>
       <tr>
         <th class="sortable" data-column-index="0" data-sort-type="string">Name</th>

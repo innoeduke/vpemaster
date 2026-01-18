@@ -17,21 +17,33 @@ depends_on = None
 
 
 def upgrade():
-    # 1. Backfill user_clubs.contact_id from users.contact_id
-    # We use a raw SQL execution for efficiency and to avoid model dependency
-    op.execute("""
-        UPDATE user_clubs 
-        JOIN users ON user_clubs.user_id = users.id 
-        SET user_clubs.contact_id = users.contact_id 
-        WHERE user_clubs.contact_id IS NULL AND users.contact_id IS NOT NULL
-    """)
+    # Check if users.contact_id exists before trying to use it
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('users')]
     
-    # 2. Drop foreign key and column from users table
-    # Using batch_alter_table for compatibility and cleaner syntax
-    with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.drop_constraint('Users_ibfk_1', type_='foreignkey')
-        batch_op.drop_index('Contact_ID') # DROP UNIQUE INDEX if exists
-        batch_op.drop_column('contact_id')
+    # 1. Backfill user_clubs.contact_id from users.contact_id only if the column exists
+    if 'contact_id' in columns:
+        op.execute("""
+            UPDATE user_clubs 
+            JOIN users ON user_clubs.user_id = users.id 
+            SET user_clubs.contact_id = users.contact_id 
+            WHERE user_clubs.contact_id IS NULL AND users.contact_id IS NOT NULL
+        """)
+        
+        # 2. Drop foreign key and column from users table
+        with op.batch_alter_table('users', schema=None) as batch_op:
+            try:
+                batch_op.drop_constraint('Users_ibfk_1', type_='foreignkey')
+            except Exception:
+                pass  # Constraint might not exist
+            
+            try:
+                batch_op.drop_index('Contact_ID')  # DROP UNIQUE INDEX if exists
+            except Exception:
+                pass  # Index might not exist
+            
+            batch_op.drop_column('contact_id')
 
 
 def downgrade():
