@@ -7,6 +7,7 @@ from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from .club_context import get_current_club_id
 from flask_login import current_user
+from sqlalchemy.orm import joinedload
 
 from datetime import date
 
@@ -170,6 +171,8 @@ def show_contacts():
 @login_required
 def contact_form(contact_id=None):
     if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify(success=False, message="You don't have permission to perform this action."), 403
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -178,6 +181,28 @@ def contact_form(contact_id=None):
         contact = Contact.query.get_or_404(contact_id)
 
     if request.method == 'GET' and contact:
+        # Fetch User Clubs for Home Club Selector
+        user_clubs_data = []
+        home_club_id = None
+        
+        # Check if contact is linked to a user
+        # Note: We need to check across ALL clubs, so we look for any UserClub with this contact_id or user_id
+        # Actually, contact.user property checks current club context.
+        # But for Home Club, we might want to see ALL clubs the user is in.
+        
+        # Strategy: Find the User associated with this contact.
+        # Since contact <-> user is many-to-many via UserClub, a contact might be associated with a user in THIS club.
+        # If so, get that user's other clubs.
+        
+        user = contact.user # Uses current club context
+        if user:
+            from .models import UserClub
+            ucs = UserClub.query.filter_by(user_id=user.id).options(joinedload(UserClub.club)).all()
+            user_clubs_data = [{'id': uc.club.id, 'name': uc.club.club_name} for uc in ucs]
+            
+            home_uc = next((uc for uc in ucs if uc.is_home), None)
+            home_club_id = home_uc.club_id if home_uc else None
+
         return jsonify({
             'contact': {
                 'id': contact.id,
@@ -196,7 +221,9 @@ def contact_form(contact_id=None):
                 'credentials': contact.credentials,
                 'Avatar_URL': contact.Avatar_URL,
                 'mentor_id': contact.Mentor_ID
-            }
+            },
+            'user_clubs': user_clubs_data,
+            'home_club_id': home_club_id
         })
 
 
@@ -249,6 +276,15 @@ def contact_form(contact_id=None):
             if contact_type in ['Member', 'Officer']:
                 contact.Current_Path = request.form.get('current_path')
             
+            # Update Home Club (if applicable)
+            home_club_val = request.form.get('home_club_id')
+            # Only update if the field was present in the form submission
+            if 'home_club_id' in request.form:
+                 user = contact.user
+                 if user:
+                     new_home_club_id = int(home_club_val) if home_club_val else None
+                     user.set_home_club(new_home_club_id)
+            
             # Handle Avatar Upload
             file = request.files.get('avatar')
             if file and file.filename != '':
@@ -258,7 +294,8 @@ def contact_form(contact_id=None):
                     contact.Avatar_URL = avatar_url
             
             db.session.commit()
-            flash('Contact updated successfully!', 'success')
+            if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+                flash('Contact updated successfully!', 'success')
             target_contact = contact
         else:
             # Create New Contact
@@ -320,9 +357,7 @@ def contact_form(contact_id=None):
             if current_cid:
                 db.session.add(ContactClub(
                     contact_id=new_contact.id,
-                    club_id=current_cid,
-                    membership_type=contact_type,
-                    is_primary=True
+                    club_id=current_cid
                 ))
                 db.session.commit()
 
@@ -330,19 +365,21 @@ def contact_form(contact_id=None):
             from .utils import sync_contact_metadata
             sync_contact_metadata(new_contact.id)
             
-            flash('Contact added successfully!', 'success')
+            if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
+                flash('Contact added successfully!', 'success')
             target_contact = new_contact
 
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify(success=True, contact={'id': target_contact.id, 'Name': target_contact.Name})
 
-        referer = request.args.get('referer')
+        referer = request.form.get('referer') or request.args.get('referer')
         if referer and 'roster' in referer:
             separator = '&' if '?' in referer else '?'
             redirect_url = f"{referer}{separator}new_contact_id={target_contact.id}&new_contact_name={target_contact.Name}&new_contact_type={target_contact.Type}"
             return redirect(redirect_url)
             
         return redirect(url_for('contacts_bp.show_contacts'))
+
 
     all_pathways = Pathway.query.filter_by(type='pathway', status='active').order_by(Pathway.name).all()
     pathways = {}
@@ -435,9 +472,7 @@ def create_contact_api():
         if current_cid:
             db.session.add(ContactClub(
                 contact_id=new_contact.id,
-                club_id=current_cid,
-                membership_type=contact_type,
-                is_primary=True
+                club_id=current_cid
             ))
             db.session.commit()
 

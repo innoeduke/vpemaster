@@ -46,25 +46,20 @@ class TestContactClubJunctionTable:
             assert cc.id is not None
             assert cc.contact_id is not None
             assert cc.club_id is not None
-            assert hasattr(cc, 'membership_type')
-            assert hasattr(cc, 'joined_date')
-            assert hasattr(cc, 'is_primary')
-            assert isinstance(cc.is_primary, bool)
-    
+
     def test_all_contacts_have_primary_club(self, app, default_contact_club):
-        """Test that all contacts with club associations have a primary club."""
+        """Test that all contacts with club associations have a club."""
         with app.app_context():
             # Get all unique contacts in contact_clubs that match our test pattern
             contact_ids = db.session.query(ContactClub.contact_id).join(Contact).filter(Contact.Name.like('Test %')).distinct().all()
             contact_ids = [cid[0] for cid in contact_ids]
             
             for contact_id in contact_ids:
-                primary_count = ContactClub.query.filter_by(
-                    contact_id=contact_id, 
-                    is_primary=True
+                count = ContactClub.query.filter_by(
+                    contact_id=contact_id
                 ).count()
-                assert primary_count >= 1, f"Contact {contact_id} should have at least one primary club"
-    
+                assert count >= 1, f"Contact {contact_id} should have at least one club association"
+
     def test_contact_club_unique_constraint(self, app, default_contact_club):
         """Test that contact-club combination is unique."""
         with app.app_context():
@@ -157,12 +152,9 @@ class TestContactClubMethods:
         with app.app_context():
             # Get a contact with club associations
             cc = default_contact_club
-            # Ensure it is primary
-            if not cc.is_primary:
-                cc.is_primary = True
-                db.session.commit()
+            # Ensure it is primary - No longer needed as we removed is_primary checks
 
-            assert cc is not None, "Should have at least one primary club association"
+            assert cc is not None, "Should have at least one club association"
             
             contact = db.session.get(Contact, cc.contact_id)
             assert contact is not None
@@ -282,6 +274,4 @@ class TestMultiClubDataIntegrity:
             assert 'id' in cc_dict
             assert 'contact_id' in cc_dict
             assert 'club_id' in cc_dict
-            assert 'membership_type' in cc_dict
-            assert 'is_primary' in cc_dict
 

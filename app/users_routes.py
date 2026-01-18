@@ -338,22 +338,48 @@ def delete_user(user_id):
     user = db.get_or_404(User, user_id)
     current_club_id = get_current_club_id()
     
-    contact = user.get_contact(current_club_id)
-    if contact:
-        # Instead of deleting, convert to Guest and clear sensitive member info
-        contact.Type = 'Guest'
-        contact.Member_ID = None
-        contact.credentials = None
-        contact.Current_Path = None
-        contact.Next_Project = None
-        
-        # Update membership types in all clubs
-        from .models import ContactClub
-        ContactClub.query.filter_by(contact_id=contact.id).update({"membership_type": "Guest"})
-        
-        db.session.add(contact)
+    from .models import UserClub, ContactClub
     
-    db.session.delete(user)
+    # 1. Find and delete UserClub entry for this club
+    uc = UserClub.query.filter_by(user_id=user.id, club_id=current_club_id).first()
+    contact = None
+    
+    if uc:
+        contact = uc.contact
+        db.session.delete(uc)
+    else:
+        # Fallback: Try to find contact via User method if UserClub is missing
+        contact = user.get_contact(current_club_id)
+        
+    # Flush to ensure UserClub deletion is registered for subsequent counts
+    db.session.flush()
+    
+    # 2. Handle Contact and ContactClub
+    if contact:
+        # Delete ContactClub entry for this club
+        cc = ContactClub.query.filter_by(contact_id=contact.id, club_id=current_club_id).first()
+        if cc:
+            db.session.delete(cc)
+            db.session.flush()
+            
+        # Check if Contact is orphaned (not used in any other club)
+        # We check both ContactClub (membership) and UserClub (user link)
+        other_cc_count = ContactClub.query.filter_by(contact_id=contact.id).count()
+        other_uc_count = UserClub.query.filter_by(contact_id=contact.id).count()
+        
+        if other_cc_count == 0 and other_uc_count == 0:
+            db.session.delete(contact)
+            
+    # 3. Check if User is orphaned
+    remaining_clubs = UserClub.query.filter_by(user_id=user.id).count()
+    
+    # Exception: SysAdmin account doesn't need to be associated with a club
+    # We identify SysAdmin by username 'sysadmin' (common convention)
+    is_sysadmin_account = user.username.lower() in ('sysadmin', 'admin')
+    
+    if remaining_clubs == 0 and not is_sysadmin_account:
+        db.session.delete(user)
+        
     db.session.commit()
     return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 

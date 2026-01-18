@@ -12,7 +12,7 @@
 {% endblock %}
 
 {% block content %}
-<h1>System Settings</h1>
+<h1><i class="fas fa-cog"></i> Club Management</h1>
 
 <div class="settings-container">
   <div class="search-container global-search-bar">
@@ -24,17 +24,15 @@
   </div>
 
   <div class="nav-tabs">
-    <button class="nav-item active" onclick="openTab(event, 'agenda-settings')">
-      Agenda
+    <button class="nav-item" onclick="openTab(event, 'user-settings')">
+      Users</button>
+    <button class="nav-item" onclick="openTab(event, 'achievements')">
+      Achievements
+    </button><button class="nav-item active" onclick="openTab(event, 'agenda-settings')">
+      Roles 
     </button>
     <button class="nav-item" onclick="openTab(event, 'sessions')">
       Sessions
-    </button>
-    <button class="nav-item" onclick="openTab(event, 'user-settings')">
-      Users</button>
-
-    <button class="nav-item" onclick="openTab(event, 'achievements')">
-      Achievements
     </button>
     <button class="nav-item" onclick="openTab(event, 'roles-permissions')">
       Roles & Permissions

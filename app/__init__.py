@@ -150,6 +150,8 @@ def create_app(config_class='config.Config'):
         from .clubs_routes import clubs_bp
         app.register_blueprint(clubs_bp)
         app.register_blueprint(achievements_bp)
+        from .messages_routes import messages_bp
+        app.register_blueprint(messages_bp)
 
     # Register CLI commands
     from scripts.create_admin import create_admin

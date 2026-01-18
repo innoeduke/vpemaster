@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, session, flash, current_app
+from flask import render_template, request, redirect, url_for, session, flash, current_app, jsonify
 from .permissions import Permissions
 import os
 from sqlalchemy import or_
@@ -9,6 +9,45 @@ from .. import db       # Import db from the parent package
 from ..models import User, Club
 from ..club_context import set_current_club_id
 from .email import send_reset_email
+
+# API endpoint to lookup user clubs
+@auth_bp.route('/lookup_user_clubs', methods=['POST'])
+def lookup_user_clubs():
+    """
+    Lookup user's associated clubs based on username, email, or phone.
+    Returns JSON with clubs array.
+    """
+    login_identifier = request.json.get('username', '').strip()
+    
+    if not login_identifier:
+        return jsonify({'clubs': []})
+    
+    # Find user by username, email, or phone
+    user = User.query.filter(
+        or_(
+            User.username == login_identifier,
+            User.email == login_identifier,
+            User.phone == login_identifier
+        )
+    ).first()
+    
+    if not user:
+        return jsonify({'clubs': []})
+    
+    # Get user's associated clubs through UserClub
+    from ..models.user_club import UserClub
+    user_clubs = UserClub.query.filter_by(user_id=user.id).all()
+    
+    clubs_data = []
+    for uc in user_clubs:
+        if uc.club:
+            clubs_data.append({
+                'id': uc.club.id,
+                'name': uc.club.club_name,
+                'is_home': uc.is_home
+            })
+    
+    return jsonify({'clubs': clubs_data})
 
 # Login route
 @auth_bp.route('/login', methods=['GET', 'POST'])

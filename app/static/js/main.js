@@ -164,6 +164,27 @@ function openContactModal(contactId) {
           placeholder.style.display = 'flex';
         }
 
+        // Populate Home Club Selector
+        const homeClubSelect = document.getElementById("home_club_id");
+        const homeClubRow = document.getElementById("home_club_row");
+        if (homeClubSelect && homeClubRow) {
+            homeClubSelect.innerHTML = '';
+            if (data.user_clubs && data.user_clubs.length > 0) {
+                data.user_clubs.forEach(club => {
+                    const option = document.createElement("option");
+                    option.value = club.id;
+                    option.textContent = club.name;
+                    homeClubSelect.appendChild(option);
+                });
+                if (data.home_club_id) {
+                    homeClubSelect.value = data.home_club_id;
+                }
+                homeClubRow.style.display = '';
+            } else {
+                homeClubRow.style.display = 'none';
+            }
+        }
+
         // Populate Mentor Dropdown
         const mentorSelect = document.getElementById("mentor_id");
         if (mentorSelect && typeof MENTOR_CANDIDATES !== 'undefined') {
@@ -214,8 +235,10 @@ function openContactModal(contactId) {
     // Hide member_id and mentor_id rows for new contacts (default is Guest)
     const memberIdRow = document.getElementById("member_id_row");
     const mentorIdRow = document.getElementById("mentor_id_row");
+    const homeClubRow = document.getElementById("home_club_row");
     if (memberIdRow) memberIdRow.style.display = 'none';
     if (mentorIdRow) mentorIdRow.style.display = 'none';
+    if (homeClubRow) homeClubRow.style.display = 'none';
 
     // Reset Avatar for New Entry
     document.getElementById("modal-avatar-img").style.display = 'none';

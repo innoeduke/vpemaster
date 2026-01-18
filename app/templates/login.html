@@ -30,16 +30,13 @@
     {% endif %} {% endwith %}
     <form action="{{ url_for('auth_bp.login') }}" method="post" class="login-form">
       <div>
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" autocomplete="username" placeholder="Username, email, or phone number" required />
+      </div>
+      <div id="club-selector-container" style="display: none;">
         <label for="club_names">Club:</label>
         <select id="club_names" name="club_names" required>
-          {% for club in clubs %}
-          <option value="{{ club.id }}" {% if club.id==1 %}selected{% endif %}>{{ club.club_name }}</option>
-          {% endfor %}
         </select>
-      </div>
-      <div>
-        <label for="username">Username, Email, or Phone:</label>
-        <input type="text" id="username" name="username" autocomplete="username" required />
       </div>
       <div>
         <label for="password">Password:</label>
@@ -64,8 +61,11 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
+      const usernameInput = document.getElementById('username');
+      const clubSelectorContainer = document.getElementById('club-selector-container');
       const clubSelector = document.getElementById('club_names');
       const guestLink = document.getElementById('guest-login-link');
+      let lookupTimeout = null;
       
       const updateGuestLink = () => {
         const clubId = clubSelector.value;
@@ -73,10 +73,66 @@
         guestLink.href = `${baseUrl}?club_id=${clubId}`;
       };
 
-      // Initial update
-      updateGuestLink();
+      const lookupUserClubs = async (username) => {
+        if (!username || username.length < 2) {
+          clubSelectorContainer.style.display = 'none';
+          clubSelector.innerHTML = '';
+          clubSelector.removeAttribute('required');
+          return;
+        }
 
-      // Update on change
+        try {
+          const response = await fetch("{{ url_for('auth_bp.lookup_user_clubs') }}", {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username: username })
+          });
+
+          const data = await response.json();
+          
+          if (data.clubs && data.clubs.length > 0) {
+            // Populate club selector
+            clubSelector.innerHTML = '';
+            data.clubs.forEach((club, index) => {
+              const option = document.createElement('option');
+              option.value = club.id;
+              option.textContent = club.name;
+              // Select home club by default, or first club if no home club
+              if (club.is_home || index === 0) {
+                option.selected = true;
+              }
+              clubSelector.appendChild(option);
+            });
+            
+            // Show club selector
+            clubSelectorContainer.style.display = 'block';
+            clubSelector.setAttribute('required', 'required');
+            updateGuestLink();
+          } else {
+            // Hide club selector if no clubs found
+            clubSelectorContainer.style.display = 'none';
+            clubSelector.innerHTML = '';
+            clubSelector.removeAttribute('required');
+          }
+        } catch (error) {
+          console.error('Error looking up user clubs:', error);
+          clubSelectorContainer.style.display = 'none';
+          clubSelector.innerHTML = '';
+          clubSelector.removeAttribute('required');
+        }
+      };
+
+      // Debounced lookup on username input
+      usernameInput.addEventListener('input', function() {
+        clearTimeout(lookupTimeout);
+        lookupTimeout = setTimeout(() => {
+          lookupUserClubs(this.value.trim());
+        }, 300); // 300ms debounce
+      });
+
+      // Update guest link when club selection changes
       clubSelector.addEventListener('change', updateGuestLink);
     });
   </script>

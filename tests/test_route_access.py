@@ -55,7 +55,7 @@ class RouteAccessTestCase(unittest.TestCase):
         db.session.commit()
         
         # Link to club
-        db.session.add(ContactClub(contact_id=self.staff_contact.id, club_id=self.club.id, is_primary=True))
+        db.session.add(ContactClub(contact_id=self.staff_contact.id, club_id=self.club.id))
         db.session.commit()
 
         self.staff_user = User(
@@ -108,7 +108,7 @@ class RouteAccessTestCase(unittest.TestCase):
         db.session.commit()
         
         # Link to club
-        db.session.add(ContactClub(contact_id=self.user_contact.id, club_id=self.club.id, is_primary=True))
+        db.session.add(ContactClub(contact_id=self.user_contact.id, club_id=self.club.id))
         db.session.commit()
         
         self.user_user = User(

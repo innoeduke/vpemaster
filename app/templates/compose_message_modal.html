@@ -1,0 +1,342 @@
+<!-- Compose Modal (Custom Styles) -->
+<style>
+    /* Scoped styles for this modal to ensure consistency with custom theme */
+    .compose-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .compose-modal.flex {
+        display: flex;
+    }
+    
+    .compose-modal-content {
+        background-color: #fff;
+        width: 100%;
+        max-width: 600px;
+        border-radius: 12px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        display: flex;
+        flex-direction: column;
+        animation: modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    
+    @keyframes modalSlideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .compose-header {
+        background-color: #4a6fa5;
+        color: white;
+        padding: 1.25rem 1.5rem;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .compose-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    
+    .compose-close {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.8);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    
+    .compose-close:hover {
+        color: white;
+    }
+    
+    .compose-body {
+        padding: 1.5rem;
+    }
+    
+    .compose-form-group {
+        margin-bottom: 1.25rem;
+    }
+    
+    .compose-label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #4a5568;
+        font-size: 0.95rem;
+    }
+    
+    .compose-input, .compose-textarea, .compose-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 1rem;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box; /* Critical for grid/flex layouts */
+    }
+    
+    .compose-input:focus, .compose-textarea:focus, .compose-select:focus {
+        outline: none;
+        border-color: #4a6fa5;
+        box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+    }
+    
+    .compose-footer {
+        padding: 1rem 1.5rem;
+        background-color: #f7fafc;
+        border-top: 1px solid #e2e8f0;
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+    
+    .btn-cancel {
+        background: white;
+        border: 1px solid #e2e8f0;
+        color: #4a5568;
+        padding: 0.6rem 1.25rem;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    
+    .btn-send {
+        background-color: #4a6fa5;
+        color: white;
+        border: none;
+        padding: 0.6rem 2rem;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(74, 111, 165, 0.2);
+        transition: transform 0.1s;
+    }
+    
+    .btn-send:hover {
+        background-color: #3b5a84;
+        transform: translateY(-1px);
+    }
+    
+    .btn-send:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+    }
+</style>
+
+<div class="compose-modal" id="composeModal">
+    <div class="compose-modal-content">
+        <div class="compose-header">
+            <h3 class="compose-title"><i class="fas fa-pen"></i> New Message</h3>
+            <button class="compose-close" onclick="closeComposeModal()">&times;</button>
+        </div>
+        <form id="composeForm" onsubmit="sendMessage(event)">
+            <div class="compose-body">
+                <div class="compose-form-group" style="position: relative;">
+                    <label for="recipient_search" class="compose-label">Recipient</label>
+                    <input type="text" id="recipient_search" class="compose-input" placeholder="Search for recipient..." autocomplete="off">
+                    <input type="hidden" id="recipient_id" name="recipient_id" required>
+                    
+                    <!-- Autocomplete Dropdown -->
+                    <div id="recipient_results" style="
+                        position: absolute;
+                        top: 100%;
+                        left: 0;
+                        right: 0;
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                        z-index: 10;
+                        max-height: 200px;
+                        overflow-y: auto;
+                        display: none;
+                        margin-top: 4px;
+                    "></div>
+                </div>
+                <div class="compose-form-group">
+                    <label for="subject" class="compose-label">Subject</label>
+                    <input type="text" id="subject" name="subject" class="compose-input" placeholder="Enter subject..." required>
+                </div>
+                <div class="compose-form-group">
+                    <label for="body" class="compose-label">Message</label>
+                    <textarea id="body" name="body" class="compose-textarea" rows="6" placeholder="Type your message here..." required></textarea>
+                </div>
+            </div>
+            <div class="compose-footer">
+                <button type="button" class="btn-cancel" onclick="closeComposeModal()">Cancel</button>
+                <button type="submit" class="btn-send">Send Message</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    let searchTimeout = null;
+
+    function openComposeModal(recipientId = null, recipientName = null, subject = null) {
+        const modal = document.getElementById('composeModal');
+        const modalTitle = modal.querySelector('.compose-title');
+        
+        if (recipientId && recipientName) {
+            document.getElementById('recipient_id').value = recipientId;
+            document.getElementById('recipient_search').value = recipientName;
+            modalTitle.innerHTML = '<i class="fas fa-reply"></i> Reply Message';
+        } else {
+            modalTitle.innerHTML = '<i class="fas fa-pen"></i> New Message';
+        }
+
+        if (subject) {
+            document.getElementById('subject').value = subject;
+        }
+
+        modal.classList.add('flex');
+        
+        if (!recipientId) {
+            document.getElementById('recipient_search').focus();
+        } else if (!subject) {
+            document.getElementById('subject').focus();
+        } else {
+            document.getElementById('body').focus();
+        }
+    }
+    
+    function closeComposeModal() {
+        const modal = document.getElementById('composeModal');
+        modal.classList.remove('flex');
+        setTimeout(() => {
+            document.getElementById('composeForm').reset();
+            document.getElementById('recipient_id').value = '';
+            document.getElementById('recipient_results').style.display = 'none';
+            // Reset modal title
+            modal.querySelector('.compose-title').innerHTML = '<i class="fas fa-pen"></i> New Message';
+        }, 300);
+    }
+    
+    // Autocomplete Logic
+    const searchInput = document.getElementById('recipient_search');
+    const resultsDiv = document.getElementById('recipient_results');
+    const hiddenInput = document.getElementById('recipient_id');
+    
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        
+        // Clear previous timeout
+        if (searchTimeout) clearTimeout(searchTimeout);
+        
+        // Reset ID if user changes text
+        hiddenInput.value = ''; 
+        
+        if (query.length < 1) {
+            resultsDiv.style.display = 'none';
+            return;
+        }
+        
+        // Debounce search
+        searchTimeout = setTimeout(() => {
+            fetch(`/api/messages/recipients?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(users => {
+                    if (users.length === 0) {
+                        resultsDiv.innerHTML = '<div style="padding: 10px; color: #718096; text-align: center;">No results found</div>';
+                    } else {
+                        resultsDiv.innerHTML = users.map(u => `
+                            <div class="recipient-option" onclick="selectRecipient(${u.id}, '${u.name.replace(/'/g, "\\'")}')" style="
+                                padding: 10px 15px;
+                                cursor: pointer;
+                                border-bottom: 1px solid #f7fafc;
+                                transition: background 0.1s;
+                            " onmouseover="this.style.backgroundColor='#f7fafc'" onmouseout="this.style.backgroundColor='white'">
+                                <div style="font-weight: 600; color: #2d3748;">${u.name}</div>
+                                <div style="font-size: 0.8rem; color: #a0aec0;">${u.home_club || 'No Club'}</div>
+                            </div>
+                        `).join('');
+                    }
+                    resultsDiv.style.display = 'block';
+                })
+                .catch(err => console.error('Error fetching recipients:', err));
+        }, 300);
+    });
+    
+    function selectRecipient(id, name) {
+        document.getElementById('recipient_search').value = name;
+        document.getElementById('recipient_id').value = id;
+        document.getElementById('recipient_results').style.display = 'none';
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (e.target !== searchInput && e.target.parentElement !== resultsDiv) {
+            resultsDiv.style.display = 'none';
+        }
+    });
+
+    // Prevent form submission if no recipient selected (though 'required' on hidden input handles this partially, custom check is safer)
+    /* Note: Hidden inputs with required attribute might not trigger browser validation UI correctly in all browsers, 
+       but we can rely on standard form handling or add a check in sendMessage */
+    
+    function sendMessage(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = 'Sending...';
+        
+        const data = {
+            recipient_id: document.getElementById('recipient_id').value,
+            subject: document.getElementById('subject').value,
+            body: document.getElementById('body').value
+        };
+        
+        fetch('/messages/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            
+            if (data.success) {
+                closeComposeModal();
+                if (typeof switchTab === 'function') switchTab('sent');
+                // Optional: Show toast
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            alert('Failed to send message');
+        });
+    }
+    
+    // Close on outside click
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('composeModal');
+        if (event.target == modal) {
+            closeComposeModal();
+        }
+    });
+</script>

@@ -108,10 +108,7 @@ def default_contact_club(app, default_contact, default_club):
         if not cc:
             cc = ContactClub(
                 contact_id=default_contact.id,
-                club_id=default_club.id,
-                membership_type='Member',
-                is_primary=True,
-                joined_date=None
+                club_id=default_club.id
             )
             db.session.add(cc)
             db.session.commit()

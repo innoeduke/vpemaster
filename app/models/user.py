@@ -26,6 +26,12 @@ class User(UserMixin, db.Model):
     bio = db.Column(db.Text, nullable=True)
     
     # Relationships
+    messages_sent = db.relationship('Message',
+                                    foreign_keys='Message.sender_id',
+                                    backref='sender', lazy='dynamic')
+    messages_received = db.relationship('Message',
+                                        foreign_keys='Message.recipient_id',
+                                        backref='recipient', lazy='dynamic')
     # contact relationship removed, use UserClub.contact instead
     roles = db.relationship(
         'app.models.role.Role',
@@ -139,6 +145,32 @@ class User(UserMixin, db.Model):
         return uc.contact if uc else None
 
     @property
+    def home_club(self):
+        """Get the user's home club."""
+        from .user_club import UserClub
+        uc = UserClub.query.filter_by(user_id=self.id, is_home=True).first()
+        return uc.club if uc else None
+
+    def set_home_club(self, club_id):
+        """
+        Set a specific club as the user's home club.
+        Ensures that only one club is marked as home at a time.
+        
+        Args:
+            club_id (int): The ID of the club to set as home. If None, clears home club.
+        """
+        from .user_club import UserClub
+        
+        # Reset all clubs for this user to is_home=False
+        UserClub.query.filter_by(user_id=self.id).update({'is_home': False})
+        
+        if club_id:
+            # Set the specified club as home
+            UserClub.query.filter_by(user_id=self.id, club_id=club_id).update({'is_home': True})
+            
+        db.session.commit()
+
+    @property
     def contact(self):
         """
         Ambiguous property for backward compatibility. 
@@ -153,6 +185,23 @@ class User(UserMixin, db.Model):
         """
         contact = self.contact
         return contact.id if contact else None
+
+    @property
+    def display_name(self):
+        """Returns the contact Name if available, otherwise fallback to username."""
+        contact = self.contact
+        if contact and contact.Name:
+            return contact.Name
+        return self.username
+
+    @property
+    def full_avatar_url(self):
+        """Returns correctly prefixed avatar URL for local assets."""
+        if not self.avatar_url:
+            return None
+        if self.avatar_url.startswith(('http://', 'https://', '/')):
+            return self.avatar_url
+        return f"/static/{self.avatar_url}"
 
     @staticmethod
     def populate_contacts(users, club_id=None):

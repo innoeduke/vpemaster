@@ -1,0 +1,647 @@
+{% extends "base.html" %}
+
+{% block title %}Messages{% endblock %}
+
+{% block head_extra %}
+<style>
+    /* 
+     * Refined Message Interface 
+     * A clean, custom implementation independent of Bootstrap components
+     */
+
+    :root {
+        --msg-sidebar-width: 260px;
+        --msg-header-height: 70px;
+        --msg-bg-color: #f7f9fc;
+        --msg-item-hover: #f1f4f9;
+        --msg-accent: #4a6fa5;
+        --msg-text-primary: #2d3748;
+        --msg-text-secondary: #718096;
+        --msg-border: #e2e8f0;
+        --msg-unread-bg: #fff;
+        --msg-read-bg: #fcfcfc;
+    }
+
+    /* Layout Container */
+    .msg-layout {
+        display: flex;
+        height: calc(100vh - 80px); /* Adjust based on navbar height */
+        background-color: #fff;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        overflow: hidden;
+        margin: 60px 20px 20px 20px; /* Increased top margin to clear profile container */
+        border: 1px solid var(--msg-border);
+    }
+
+    /* Sidebar Navigation */
+    .msg-sidebar {
+        width: var(--msg-sidebar-width);
+        background-color: #fff;
+        border-right: 1px solid var(--msg-border);
+        display: flex;
+        flex-direction: column;
+        padding: 1.5rem;
+    }
+
+    .msg-compose-btn {
+        background-color: var(--msg-accent);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px rgba(74, 111, 165, 0.2);
+    }
+
+    .msg-compose-btn:hover {
+        background-color: #3b5a84;
+        transform: translateY(-1px);
+    }
+
+    .msg-nav-item {
+        padding: 12px 16px;
+        border-radius: 8px;
+        color: var(--msg-text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s;
+        font-weight: 500;
+        user-select: none;
+    }
+
+    .msg-nav-item:hover {
+        background-color: var(--msg-item-hover);
+        color: var(--msg-text-primary);
+    }
+
+    .msg-nav-item.active {
+        background-color: #edf2f7;
+        color: var(--msg-accent);
+        font-weight: 600;
+    }
+
+    .msg-nav-item i {
+        width: 20px;
+        text-align: center;
+    }
+
+    /* Main List Area */
+    .msg-main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background-color: var(--msg-bg-color);
+        min-width: 0; /* Prevent flex overflow */
+    }
+
+    .msg-header {
+        height: var(--msg-header-height);
+        padding: 0 2rem;
+        background-color: #fff;
+        border-bottom: 1px solid var(--msg-border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .msg-header-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--msg-text-primary);
+    }
+
+    .msg-refresh-btn {
+        background: transparent;
+        border: 1px solid var(--msg-border);
+        border-radius: 6px;
+        padding: 6px 12px;
+        color: var(--msg-text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .msg-refresh-btn:hover {
+        background-color: #f7fafc;
+        color: var(--msg-accent);
+        border-color: var(--msg-accent);
+    }
+
+    .msg-list-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.5rem 2rem;
+    }
+
+    /* Message Items */
+    .msg-item {
+        background-color: #fff;
+        border-radius: 10px;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+        border: 1px solid transparent; /* Reserve space for border */
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+    }
+
+    .msg-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.06);
+        border-color: #e2e8f0;
+    }
+    
+    .msg-item.unread {
+        border-left: 4px solid var(--msg-accent);
+        background-color: #fff;
+    }
+    
+    .msg-item.unread .msg-subject {
+        font-weight: 700;
+        color: #1a202c;
+    }
+
+    .msg-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    
+    .msg-avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #a0aec0, #718096);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .msg-content {
+        flex: 1;
+        min-width: 0; /* Important for text truncation */
+    }
+
+    .msg-row-top {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+    }
+
+    .msg-sender {
+        font-weight: 600;
+        color: var(--msg-text-primary);
+        font-size: 1rem;
+    }
+
+    .msg-time {
+        font-size: 0.85rem;
+        color: #a0aec0;
+    }
+
+    .msg-subject {
+        color: var(--msg-text-primary);
+        font-weight: 500;
+        font-size: 1rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .msg-preview {
+        color: var(--msg-text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: #a0aec0;
+    }
+    
+    .empty-state i {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+        opacity: 0.6;
+    }
+
+    /* Modal Styling Refinements */
+    .custom-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .custom-modal.flex {
+        display: flex;
+    }
+    
+    .custom-modal-content {
+        background-color: #fff;
+        width: 90%;
+        max-width: 700px;
+        border-radius: 12px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        display: flex;
+        flex-direction: column;
+        max-height: 90vh;
+        animation: modalFadeIn 0.2s ease-out;
+    }
+    
+    @keyframes modalFadeIn {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    
+    .custom-modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--msg-border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .custom-modal-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--msg-text-primary);
+    }
+    
+    .custom-modal-close {
+        background: none;
+        border: none;
+        color: #a0aec0;
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+    }
+    
+    .custom-modal-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+    }
+    
+    .custom-modal-footer {
+        padding: 1rem 1.5rem;
+        background-color: #f7fafc;
+        border-top: 1px solid var(--msg-border);
+        border-bottom-left-radius: 12px;
+        border-bottom-right-radius: 12px;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .msg-layout {
+            flex-direction: column;
+            height: auto;
+            margin: 10px;
+        }
+        
+        .msg-sidebar {
+            width: 100%;
+            flex-direction: row;
+            border-right: none;
+            border-bottom: 1px solid var(--msg-border);
+            padding: 1rem;
+            align-items: center;
+            gap: 1rem;
+            overflow-x: auto;
+        }
+        
+        .msg-compose-btn {
+            margin-bottom: 0;
+            padding: 8px 16px;
+        }
+        
+        .msg-nav-item {
+            margin-bottom: 0;
+            white-space: nowrap;
+        }
+        
+        .msg-list-container {
+            padding: 1rem;
+            max-height: 60vh;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="msg-layout">
+    <!-- Sidebar -->
+    <div class="msg-sidebar">
+        <button class="msg-compose-btn" onclick="openComposeModal()">
+            <i class="fas fa-plus"></i> Compose
+        </button>
+        
+        <div class="msg-nav-item active" onclick="switchTab('inbox')" id="tab-inbox">
+            <i class="fas fa-inbox"></i> Inbox
+        </div>
+        <div class="msg-nav-item" onclick="switchTab('sent')" id="tab-sent">
+            <i class="fas fa-paper-plane"></i> Sent
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="msg-main">
+        <div class="msg-header">
+            <h2 class="msg-header-title" id="current-view-title">Inbox</h2>
+            <button class="msg-refresh-btn" onclick="loadMessages(currentTab)" title="Refresh">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+        
+        <div class="msg-list-container custom-scrollbar" id="messages-list">
+            <!-- Content loaded via JS -->
+            <div class="empty-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Compose Modal -->
+{% include "compose_message_modal.html" %}
+
+<!-- Message Detail Modal (Custom) -->
+<div class="custom-modal" id="messageDetailModal">
+    <div class="custom-modal-content">
+        <div class="custom-modal-header">
+            <h3 class="custom-modal-title" id="detail-subject">Message Subject</h3>
+            <button class="custom-modal-close" onclick="closeMessageDetailModal()">&times;</button>
+        </div>
+        <div class="custom-modal-body">
+            <div class="message-detail-meta" style="display:flex; align-items:center; margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid #eee;">
+                <div id="detail-avatar"></div>
+                <div style="margin-left:1rem;">
+                    <div id="detail-sender" style="font-weight:700; font-size:1.1rem; color:#2d3748;"></div>
+                    <div id="detail-time" style="color:#718096; font-size:0.9rem;"></div>
+                </div>
+            </div>
+            <div id="detail-body" style="line-height:1.8; color:#4a5568; white-space: pre-wrap;"></div>
+        </div>
+        <div class="custom-modal-footer">
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn btn-primary" onclick="replyToMessage()">
+                    <i class="fas fa-reply"></i> Reply
+                </button>
+                <button class="btn btn-danger" onclick="deleteCurrentMessage()">
+                    <i class="fas fa-trash-alt"></i> Delete
+                </button>
+            </div>
+            <button class="btn btn-secondary" onclick="closeMessageDetailModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Delete Confirmation Modal -->
+<div class="custom-modal" id="deleteConfirmModal">
+    <div class="custom-modal-content" style="max-width: 400px; text-align: center;">
+        <div class="custom-modal-body" style="padding: 2rem;">
+            <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: #e53e3e; margin-bottom: 1rem;"></i>
+            <h3 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; color: #2d3748;">Delete Message?</h3>
+            <p style="color: #718096; margin-bottom: 2rem;">This action cannot be undone.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <button class="btn btn-secondary" onclick="closeDeleteConfirmModal()" style="width: 100px;">Cancel</button>
+                <button class="btn btn-danger" onclick="confirmDeleteMessage()" style="width: 100px;">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentTab = 'inbox';
+    let currentMessages = [];
+    let currentMessageId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadMessages(currentTab);
+        setInterval(() => loadMessages(currentTab, true), 60000);
+    });
+
+    function switchTab(tab) {
+        currentTab = tab;
+        document.querySelectorAll('.msg-nav-item').forEach(t => t.classList.remove('active'));
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        document.getElementById('current-view-title').textContent = tab.charAt(0).toUpperCase() + tab.slice(1);
+        loadMessages(tab);
+    }
+
+    function loadMessages(tab, silent=false) {
+        const list = document.getElementById('messages-list');
+        if (!silent) {
+            list.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading messages...</p>
+                </div>
+            `;
+        }
+
+        fetch(`/api/messages/${tab}`)
+            .then(response => response.json())
+            .then(data => {
+                currentMessages = data.messages;
+                if (data.messages.length === 0) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-${tab === 'inbox' ? 'inbox' : 'paper-plane'}"></i>
+                            <p>No messages in ${tab}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                list.innerHTML = data.messages.map(msg => `
+                    <div class="msg-item ${!msg.read && tab === 'inbox' ? 'unread' : ''}" onclick="showDetail(${msg.id})">
+                        ${msg.avatar_url 
+                            ? `<img src="${msg.avatar_url}" class="msg-avatar" alt="Avatar">`
+                            : `<div class="msg-avatar-placeholder">${getInitials(tab === 'inbox' ? msg.sender : msg.recipient)}</div>`
+                        }
+                        <div class="msg-content">
+                            <div class="msg-row-top">
+                                <span class="msg-sender">${tab === 'inbox' ? msg.sender : 'To: ' + msg.recipient}</span>
+                                <span class="msg-time">${msg.timestamp.split(' ')[0]}</span>
+                            </div>
+                            <div class="msg-subject">${escapeHtml(msg.subject || '(No Subject)')}</div>
+                            <div class="msg-preview">${escapeHtml(msg.body)}</div>
+                        </div>
+                    </div>
+                `).join('');
+            })
+            .catch(error => {
+                console.error('Error loading messages:', error);
+                if (!silent) {
+                    list.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-exclamation-circle" style="color:#e53e3e;"></i>
+                            <p>Error loading messages</p>
+                        </div>
+                    `;
+                }
+            });
+    }
+
+    function showDetail(id) {
+        const msg = currentMessages.find(m => m.id === id);
+        if (!msg) return;
+
+        currentMessageId = id;
+        const modal = document.getElementById('messageDetailModal');
+        const isInbox = currentTab === 'inbox';
+        const otherParty = isInbox ? msg.sender : msg.recipient;
+
+        document.getElementById('detail-subject').textContent = msg.subject || '(No Subject)';
+        document.getElementById('detail-sender').textContent = (isInbox ? 'From ' : 'To ') + otherParty;
+        document.getElementById('detail-time').textContent = msg.timestamp;
+        document.getElementById('detail-body').textContent = msg.body;
+        
+        const avatarContainer = document.getElementById('detail-avatar');
+        avatarContainer.innerHTML = msg.avatar_url 
+            ? `<img src="${msg.avatar_url}" class="msg-avatar" alt="Avatar">`
+            : `<div class="msg-avatar-placeholder">${getInitials(otherParty)}</div>`;
+        
+        modal.classList.add('flex'); // Custom class to show flex
+        
+        if (isInbox && !msg.read) {
+            fetch(`/messages/${id}/read`, { method: 'POST' })
+                .then(() => {
+                    updateUnreadCount(); // Global function
+                    msg.read = true;
+                    // Optimistically update list item style
+                    loadMessages(currentTab, true);
+                });
+        }
+    }
+    
+    function closeMessageDetailModal() {
+        document.getElementById('messageDetailModal').classList.remove('flex');
+        currentMessageId = null;
+    }
+
+    function replyToMessage() {
+        if (!currentMessageId) return;
+        const msg = currentMessages.find(m => m.id === currentMessageId);
+        if (!msg) return;
+
+        const isInbox = currentTab === 'inbox';
+        const recipientId = isInbox ? msg.sender_id : msg.recipient_id;
+        const recipientName = isInbox ? msg.sender : msg.recipient;
+        
+        let subject = msg.subject || '';
+        if (subject && !subject.toLowerCase().startsWith('re:')) {
+            subject = 'Re: ' + subject;
+        } else if (!subject) {
+            subject = 'Re: (No Subject)';
+        }
+
+        closeMessageDetailModal();
+        openComposeModal(recipientId, recipientName, subject);
+    }
+    
+    // Prompt for deletion (opens 2nd modal)
+    function deleteCurrentMessage() {
+        if (!currentMessageId) return;
+        document.getElementById('deleteConfirmModal').classList.add('flex');
+    }
+
+    function closeDeleteConfirmModal() {
+        document.getElementById('deleteConfirmModal').classList.remove('flex');
+    }
+
+    // Actual deletion logic
+    function confirmDeleteMessage() {
+        if (!currentMessageId) return;
+        
+        // Pass context to ensure correct soft-delete flag is set, especially for self-messages
+        const context = currentTab; 
+        const btn = document.querySelector('#deleteConfirmModal .btn-danger');
+        const originalText = btn.textContent;
+        btn.textContent = 'Deleting...';
+        btn.disabled = true;
+
+        fetch(`/messages/${currentMessageId}/delete?context=${context}`, { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                closeDeleteConfirmModal();
+                
+                if (data.success) {
+                    closeMessageDetailModal();
+                    loadMessages(currentTab);
+                } else {
+                    alert('Error deleting message');
+                }
+            })
+            .catch(err => {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                closeDeleteConfirmModal();
+                alert('Error deleting message');
+            });
+    }
+    
+    // Close modal on outside click
+    window.onclick = function(event) {
+        const detailModal = document.getElementById('messageDetailModal');
+        const deleteModal = document.getElementById('deleteConfirmModal');
+        
+        if (event.target == deleteModal) {
+            closeDeleteConfirmModal();
+        } else if (event.target == detailModal) {
+            closeMessageDetailModal();
+        }
+    }
+    
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.innerText = text;
+        return div.innerHTML;
+    }
+    
+    function getInitials(name) {
+        return name ? name.substring(0, 2).toUpperCase() : '??';
+    }
+</script>
+{% endblock %}

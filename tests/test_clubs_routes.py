@@ -51,7 +51,7 @@ def sysadmin_user(app, db_session):
     # Ensure primary club linkage
     from app.models import ContactClub
     if not ContactClub.query.filter_by(contact_id=contact.id, club_id=club.id).first():
-        cc = ContactClub(contact_id=contact.id, club_id=club.id, is_primary=True, membership_type='Member')
+        cc = ContactClub(contact_id=contact.id, club_id=club.id)
         db_session.add(cc)
         db_session.commit()
     
@@ -77,7 +77,7 @@ def regular_user(app, db_session):
     from app.models import ContactClub, Club
     club = Club.query.first()
     if not ContactClub.query.filter_by(contact_id=contact.id, club_id=club.id).first():
-        cc = ContactClub(contact_id=contact.id, club_id=club.id, is_primary=True, membership_type='Member')
+        cc = ContactClub(contact_id=contact.id, club_id=club.id)
         db_session.add(cc)
         db_session.commit()
 

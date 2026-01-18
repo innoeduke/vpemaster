@@ -72,7 +72,7 @@ def test_duplicate_user_in_current_club(test_app, test_client):
         from app.models import UserClub
         db.session.add(UserClub(user_id=user.id, club_id=club.id, contact_id=contact.id))
         
-        cc = ContactClub(contact_id=contact.id, club_id=club.id, membership_type='Member')
+        cc = ContactClub(contact_id=contact.id, club_id=club.id)
         db.session.add(cc)
         db.session.commit()
         
@@ -127,7 +127,7 @@ def test_duplicate_user_not_in_current_club(test_app, test_client):
         from app.models import UserClub
         db.session.add(UserClub(user_id=user.id, club_id=club_a.id, contact_id=contact.id))
         
-        cc = ContactClub(contact_id=contact.id, club_id=club_a.id, membership_type='Member')
+        cc = ContactClub(contact_id=contact.id, club_id=club_a.id)
         db.session.add(cc)
         db.session.commit()
         
@@ -172,7 +172,7 @@ def test_duplicate_contact_guest_in_current_club(test_app, test_client):
         db.session.add(contact)
         db.session.commit()
         
-        cc = ContactClub(contact_id=contact.id, club_id=club.id, membership_type='Guest')
+        cc = ContactClub(contact_id=contact.id, club_id=club.id)
         db.session.add(cc)
         db.session.commit()
         
@@ -217,7 +217,7 @@ def test_duplicate_contact_guest_in_other_club(test_app, test_client):
         db.session.add(contact)
         db.session.commit()
         
-        cc = ContactClub(contact_id=contact.id, club_id=club_a.id, membership_type='Guest')
+        cc = ContactClub(contact_id=contact.id, club_id=club_a.id)
         db.session.add(cc)
         db.session.commit()
         

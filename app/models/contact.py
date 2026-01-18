@@ -83,7 +83,8 @@ class Contact(db.Model):
             return self._primary_club
             
         from .contact_club import ContactClub
-        cc = ContactClub.query.filter_by(contact_id=self.id, is_primary=True).first()
+        # Just return the first club found since is_primary is removed
+        cc = ContactClub.query.filter_by(contact_id=self.id).first()
         return cc.club if cc else None
 
     @property
@@ -146,12 +147,25 @@ class Contact(db.Model):
             
         from .contact_club import ContactClub
         contact_ids = [c.id for c in contacts]
+        
+        # Strategy: Just fetch ONE club for each contact.
+        # We can't easily guarantee "which" one without a flag, but for now ANY club is better than none.
+        # Ideally, this method should be called populate_clubs and return a list, but for backward compat...
+        
+        # Optimization: If we are in a club context (which we usually are), we might want THAT club.
+        # But this method is static and doesn't know the context unless passed.
+        # Let's just fetch all contact clubs for these contacts and pick the first one for each.
+        
         ccs = ContactClub.query.filter(
-            ContactClub.contact_id.in_(contact_ids),
-            ContactClub.is_primary == True
+            ContactClub.contact_id.in_(contact_ids)
         ).options(db.joinedload(ContactClub.club)).all()
         
-        cc_map = {cc.contact_id: cc.club for cc in ccs}
+        # Map contact_id -> first available club
+        cc_map = {}
+        for cc in ccs:
+            if cc.contact_id not in cc_map:
+                cc_map[cc.contact_id] = cc.club
+                
         for contact in contacts:
             contact._primary_club = cc_map.get(contact.id)
     

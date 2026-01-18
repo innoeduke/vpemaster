@@ -80,7 +80,7 @@ def create_club():
             db.session.rollback()
             flash(f'Error creating club: {str(e)}', 'danger')
             
-    return render_template('club_form.html', title="Create New Club")
+    return render_template('club_form.html', title="Create New Club", club=None)
 
 @clubs_bp.route('/clubs/<int:club_id>/edit', methods=['GET', 'POST'])
 @login_required

@@ -65,6 +65,10 @@
           </a>
         </li>
         {% endif %}
+
+        <li class="{% if request.endpoint and request.endpoint.startswith('messages') %}active{% endif %}" style="display: none;">
+          <!-- Moved to profile menu -->
+        </li>
         {% if is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
           <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
@@ -97,19 +101,19 @@
           </a>
         </li>
         {% endif %}
+        {% if current_user.is_authenticated and current_user.primary_role_name == 'SysAdmin' %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
+          <a href="{{ url_for('clubs_bp.list_clubs') }}">
+            <i class="fas fa-network-wired nav-icon"></i>
+            <span>Manage Clubs</span>
+          </a>
+        </li>
+        {% endif %}
         {% if is_authorized(Permissions.SETTINGS_VIEW_ALL) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
           <a href="{{ url_for('settings_bp.settings') }}">
             <i class="fas fa-cog nav-icon"></i>
             <span>Settings</span>
-          </a>
-        </li>
-        {% endif %}
-        {% if is_authorized(Permissions.CLUBS_MANAGE) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
-          <a href="{{ url_for('clubs_bp.list_clubs') }}">
-            <i class="fas fa-network-wired nav-icon"></i>
-            <span>Manage Clubs</span>
           </a>
         </li>
         {% endif %}
@@ -143,6 +147,10 @@
         </div>
         <div class="profile-menu" id="profile-menu">
           <a href="{{ url_for('auth_bp.profile') }}"><i class="fas fa-user-edit"></i> User Profile</a>
+          <a href="{{ url_for('messages.messages') }}">
+              <i class="fas fa-envelope"></i> Inbox
+              <span class="badge" id="unread-messages-count-profile" style="display: none; margin-left: 8px; background: #772432; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: 700; min-width: 18px; text-align: center; line-height: 1.2; position: relative; top: -3px;">0</span>
+          </a>
           {% if is_authorized(Permissions.ABOUT_CLUB_VIEW) %}
           <a href="{{ url_for('settings_bp.about_club') }}"><i class="fas fa-info-circle"></i> About Club</a>
           {% endif %}
@@ -237,6 +245,30 @@
         deleteModal.style.display = "none";
       }
     }
+
+    // --- Unread Messages Logic ---
+    function updateUnreadCount() {
+        const badge = document.getElementById('unread-messages-count-profile');
+        if (!badge) return;
+
+        fetch('/api/messages/unread-count')
+            .then(response => {
+                if (response.ok) return response.json();
+                throw new Error('Network response was not ok');
+            })
+            .then(data => {
+                badge.textContent = data.count;
+                badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+            })
+            .catch(err => {
+                // Squelch errors for unauthenticated/offline
+                console.log('Error fetching unread count', err);
+            });
+    }
+    
+    // Initial load and polling
+    document.addEventListener('DOMContentLoaded', updateUnreadCount);
+    setInterval(updateUnreadCount, 60000);
   </script>
 </body>
 

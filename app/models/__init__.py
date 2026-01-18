@@ -17,6 +17,7 @@ from .roster import Roster, RosterRole, MeetingRole, Waitlist
 from .voting import Vote
 from .media import Media
 from .achievement import Achievement
+from .message import Message
 
 # Import permission system models
 from .permission import Permission
@@ -59,6 +60,7 @@ __all__ = [
     'Vote',
     'Media',
     'Achievement',
+    'Message',
     'load_user',
     # Permission system models
     'Permission',
