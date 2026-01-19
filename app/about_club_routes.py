@@ -200,17 +200,23 @@ def about_club_update():
                             if uc.user_id:
                                 # Check if user needs the Staff role (has no role or lower role than Staff)
                                 current_role = None
-                                if uc.club_role_id:
-                                    current_role = db.session.get(AuthRole, uc.club_role_id)
-                                
-                                needs_upgrade = False
-                                if not current_role:
-                                    needs_upgrade = True
-                                elif staff_role.level is not None and (current_role.level is None or current_role.level < staff_role.level):
-                                    needs_upgrade = True
-                                
-                                if needs_upgrade:
-                                    uc.club_role_id = staff_role.id
+                                # Grant the new role
+                                if uc.club_role_level:
+                                    # If they have existing roles (e.g. Member), add this new role to the bitmask
+                                    # But first, check if they already have *this* role or a conflicting one?
+                                    # Current logic seems to want to overwrite the "Staff" role specifically?
+                                    # Since ExComm is a specific role, we just add it to their existing roles.
+                                    # BUT, logic below (lines 204-210 originally) seemed to try to remove an old role?
+                                    
+                                    # Original logic: get current role, if it's 'Staff' but different ID (impossible if names unique), remove it?
+                                    # Actually, ExComm usually maps to specific Officer roles (President, VPE, etc.)
+                                    # Let's assume we ADD this new role level.
+                                    
+                                    # Check if they already have this specific role level
+                                    if not (uc.club_role_level & staff_role.level):
+                                        uc.club_role_level |= staff_role.level
+                                else:
+                                    uc.club_role_level = staff_role.level
                                     
                                     # Audit log for auto-upgrade
                                     audit = PermissionAudit(

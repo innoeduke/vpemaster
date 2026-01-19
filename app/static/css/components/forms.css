@@ -112,6 +112,13 @@
     margin-top: 20px;
 }
 
+label.required::after {
+    content: "*";
+    color: #772432;
+    margin-left: 4px;
+    font-weight: bold;
+}
+
 /* Login page styles */
 .login-container {
     display: flex;

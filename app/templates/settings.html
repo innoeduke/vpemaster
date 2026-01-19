@@ -197,8 +197,8 @@
             {% endif %}
           </td>
           <td>
-            {% for role in user.roles %}
-            {{ role.name }}{% if not loop.last %}, {% endif %}
+            {% for role_name in user.get_roles_for_club(club_id) if role_name != 'Guest' %}
+            {{ role_name }}{% if not loop.last %}, {% endif %}
             {% else %}
             <em class="text-muted">No Role</em>
             {% endfor %}

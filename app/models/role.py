@@ -19,7 +19,7 @@ class Role(db.Model):
         'User',
         secondary='user_clubs',
         back_populates='roles',
-        primaryjoin='Role.id == UserClub.club_role_id',
+        primaryjoin='Role.level == UserClub.club_role_level.op("&")(Role.level)',
         secondaryjoin='User.id == UserClub.user_id',
         viewonly=True
     )

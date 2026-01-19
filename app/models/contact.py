@@ -5,10 +5,10 @@ from .base import db
 class Contact(db.Model):
     __tablename__ = 'Contacts'
     id = db.Column(db.Integer, primary_key=True)
-    Name = db.Column(db.String(100), nullable=False, unique=True)
+    Name = db.Column(db.String(100), nullable=False, unique=False)
     first_name = db.Column(db.String(100), nullable=True)
     last_name = db.Column(db.String(100), nullable=True)
-    Email = db.Column(db.String(120), unique=True, nullable=True)
+    Email = db.Column(db.String(120), unique=False, nullable=True)
     Type = db.Column(db.String(50), nullable=False, default='Guest')
     Date_Created = db.Column(db.Date)
     Completed_Paths = db.Column(db.String(255))
@@ -17,7 +17,7 @@ class Contact(db.Model):
     Bio = db.Column(db.Text, nullable=True)
     
     # Migrated from User model
-    Member_ID = db.Column(db.String(50), unique=True, nullable=True)
+    Member_ID = db.Column(db.String(50), unique=False, nullable=True)
     Mentor_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
     Current_Path = db.Column(db.String(50), nullable=True)
     Next_Project = db.Column(db.String(100), nullable=True)
@@ -33,9 +33,9 @@ class Contact(db.Model):
     user_club_records = db.relationship('UserClub', cascade='all, delete-orphan', back_populates='contact', foreign_keys='UserClub.contact_id')
     club_memberships = db.relationship('ContactClub', cascade='all, delete-orphan', back_populates='contact')
     
-    def update_name_from_parts(self):
-        """Auto-populate Name from first_name and last_name if Name is blank."""
-        if not self.Name and (self.first_name or self.last_name):
+    def update_name_from_parts(self, overwrite=False):
+        """Auto-populate Name from first_name and last_name."""
+        if (overwrite or not self.Name) and (self.first_name or self.last_name):
             parts = []
             if self.first_name:
                 parts.append(self.first_name.strip())

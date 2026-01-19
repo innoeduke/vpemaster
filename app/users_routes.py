@@ -25,6 +25,7 @@ def _save_user_data(user=None, **kwargs):
     
     # 1. Create or Update User instance
     is_new = user is None
+    is_sysadmin = is_authorized(Permissions.SYSADMIN)
     if is_new:
         user = User(
             username=kwargs.get('username'),
@@ -35,19 +36,26 @@ def _save_user_data(user=None, **kwargs):
         user.set_password(password)
         db.session.add(user)
     else:
-        if kwargs.get('username'):
-            user.username = kwargs.get('username')
-        password = kwargs.get('password')
-        if password:
-            user.set_password(password)
-        if kwargs.get('status'):
-            user.status = kwargs.get('status')
+        # Existing User - Only allow SysAdmin to update these fields
+        if is_sysadmin:
+            if kwargs.get('username'):
+                user.username = kwargs.get('username')
+            password = kwargs.get('password')
+            if password:
+                user.set_password(password)
+            if kwargs.get('status'):
+                user.status = kwargs.get('status')
+    
+    # Update names - Only if NEW or current_user is SysAdmin
+    if is_new or is_sysadmin:
+        if kwargs.get('first_name'):
+            user.first_name = kwargs.get('first_name')
+        if kwargs.get('last_name'):
+            user.last_name = kwargs.get('last_name')
 
-    # Update other fields
-    user.phone = kwargs.get('phone')
-    email = kwargs.get('email')
-    if email is not None:
-         user.email = email if email else None
+        # Update other fields
+        user.phone = kwargs.get('phone')
+        user.email = kwargs.get('email') if kwargs.get('email') is not None else None
 
     # Ensure ID exists for relationships
     db.session.flush()
@@ -59,21 +67,24 @@ def _save_user_data(user=None, **kwargs):
     
     # 1. User selected an existing contact to link
     if contact_id and contact_id != 0 and not create_new_contact:
-        # Verify contact exists
-        contact = db.session.get(Contact, contact_id)
-        if contact and club_id:
-            from .models import UserClub
-            uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
-            if uc:
-                uc.contact_id = contact_id
-            else:
-                db.session.add(UserClub(user_id=user.id, club_id=club_id, contact_id=contact_id))
+        # Verify contact exists AND strictly belongs to the target club to prevent cross-club leakage
+        from .models import ContactClub
+        is_in_club = ContactClub.query.filter_by(contact_id=contact_id, club_id=club_id).first()
+        if is_in_club:
+            contact = db.session.get(Contact, contact_id)
+            if contact and club_id:
+                from .models import UserClub
+                uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
+                if uc:
+                    uc.contact_id = contact_id
+                else:
+                    db.session.add(UserClub(user_id=user.id, club_id=club_id, contact_id=contact_id))
 
     # 2. Handle Contact (Delegated to Model or ensure existing)
     user.ensure_contact(
         full_name=kwargs.get('full_name'),
-        first_name=kwargs.get('first_name'),
-        last_name=kwargs.get('last_name'),
+        first_name=kwargs.get('first_name') or user.first_name,
+        last_name=kwargs.get('last_name') or user.last_name,
         email=user.email,
         phone=user.phone,
         club_id=club_id
@@ -86,15 +97,8 @@ def _save_user_data(user=None, **kwargs):
         role_level = 1 # Default User
         
     highest_role_id = None
-    if role_level is not None:
-         all_roles = AuthRole.query.filter(AuthRole.level > 0).all()
-         matching_roles = [r for r in all_roles if (role_level & r.level) == r.level]
-         if matching_roles:
-             highest_role = max(matching_roles, key=lambda r: r.level)
-             highest_role_id = highest_role.id
-
-    if highest_role_id:
-        user.set_club_role(club_id, highest_role_id)
+    if role_level is not None and role_level > 0:
+        user.set_club_role(club_id, role_level)
         
         # 4. Audit Log
         if current_user and current_user.is_authenticated:
@@ -104,7 +108,7 @@ def _save_user_data(user=None, **kwargs):
                  target_type='USER',
                  target_id=user.id,
                  target_name=user.username,
-                 changes=f"Updated role to: {highest_role_id} (Level {role_level})"
+                 changes=f"Updated role level to: {role_level}"
              )
              db.session.add(audit)
     
@@ -132,7 +136,7 @@ def user_form(user_id):
     if user_id:
         user = db.get_or_404(User, user_id)
     
-    club_id = request.args.get('club_id', type=int) or request.form.get('club_id', type=int)
+    club_id = request.args.get('club_id', type=int) or request.form.get('club_id', type=int) or get_current_club_id()
     target_role_name = request.args.get('role')
     
     source_contact = None
@@ -202,10 +206,8 @@ def user_form(user_id):
     current_user_is_sysadmin = False
     if sysadmin_role and current_user.is_authenticated:
         # Check if user has SysAdmin role in any club
-        current_user_is_sysadmin = UserClub.query.filter_by(
-            user_id=current_user.id, 
-            club_role_id=sysadmin_role.id
-        ).first() is not None
+        user_clubs = UserClub.query.filter_by(user_id=current_user.id).all()
+        current_user_is_sysadmin = any((uc.club_role_level & sysadmin_role.level) == sysadmin_role.level for uc in user_clubs)
     
     # Filter roles based on permissions
     filtered_roles = []
@@ -219,17 +221,28 @@ def user_form(user_id):
         filtered_roles.append(role)
     
     user_role_ids = []
+    user_contact = None
+    is_edit_self = False
+    
     if user:
-        # Fix: Only load roles for the specific club context to prevent leakage
-        uc = user.get_user_club(club_id)
-        if uc and uc.club_role_id:
-            user_role_ids.append(uc.club_role_id)
+        is_edit_self = (user.id == current_user.id)
+        # Fix: Only load roles/contact for the specific club context to prevent leakage
+        from .models import UserClub
+        uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
+        if uc:
+            if uc.roles:
+                user_role_ids.extend([r.id for r in uc.roles])
+            user_contact = uc.contact
+            
+        if not user_contact and not source_contact:
+            # Try to find ANY contact of this user to pre-populate (without linking ID yet)
+            any_uc = UserClub.query.filter_by(user_id=user.id).first()
+            if any_uc:
+                source_contact = any_uc.contact
             
     if not user and target_role_name:
         target_role = AuthRole.query.filter_by(name=target_role_name).first()
         if target_role:
-            user_role_ids.append(target_role.id)
-
             user_role_ids.append(target_role.id)
             
     club_name = None
@@ -239,7 +252,11 @@ def user_form(user_id):
         if club:
             club_name = club.club_name
 
-    return render_template('user_form.html', user=user, source_contact=source_contact, contacts=member_contacts, mentor_contacts=mentor_contacts, pathways=pathways, all_auth_roles=filtered_roles, user_role_ids=user_role_ids, club_id=club_id, club_name=club_name)
+    return render_template('user_form.html', user=user, user_contact=user_contact, source_contact=source_contact, 
+                           contacts=member_contacts, mentor_contacts=mentor_contacts, pathways=pathways, 
+                           all_auth_roles=filtered_roles, user_role_ids=user_role_ids, 
+                           club_id=club_id, club_name=club_name, is_edit_self=is_edit_self,
+                           current_user_is_sysadmin=current_user_is_sysadmin)
 
 
 @users_bp.route('/user/check_duplicates', methods=['POST'])
@@ -248,6 +265,8 @@ def check_duplicates():
     """Checks for potential duplicate users or contacts."""
     data = request.json
     username = data.get('username', '').strip()
+    first_name = data.get('first_name', '').strip()
+    last_name = data.get('last_name', '').strip()
     full_name = data.get('full_name', '').strip()
     email = data.get('email', '').strip()
     phone = data.get('phone', '').strip()
@@ -255,15 +274,30 @@ def check_duplicates():
     
     duplicates = []
     
-    # Check users
+    # 1. Global User Search
+    # Check for existing users across the ENTIRE system (no club restriction)
     user_query = User.query
     user_filters = []
+    
     if username:
         user_filters.append(User.username == username)
     if email:
         user_filters.append(User.email == email)
     if phone:
         user_filters.append(User.phone == phone)
+    
+    # Name Search:
+    # If first/last provided, match exactly.
+    # Logic: OR (username match) OR (email match) OR (phone match) OR (Name Match)
+    if first_name and last_name:
+         user_filters.append(
+             (User._first_name == first_name) & (User._last_name == last_name)
+         )
+    elif full_name:
+         # Fallback if separate parts not available but full_name is (e.g. legacy/other entry points)
+         # This is harder to query on User table directly if names are split.
+         # For now, rely on first/last if possible.
+         pass
     
     if user_filters:
         existing_users = User.query.filter(or_(*user_filters)).all()
@@ -274,23 +308,37 @@ def check_duplicates():
         
         for u in existing_users:
             in_current_club = False
-            contact = u.get_contact(club_id)
+            contact = u.get_contact(club_id) # Result depends on club_id context
+            
+            # Check if strictly a member of the target club
+            # If u.contact exists for this club, then yes.
             if contact:
-                in_current_club = ContactClub.query.filter_by(
+                 # Double check ContactClub specifically
+                 in_current_club = ContactClub.query.filter_by(
                     contact_id=contact.id, 
                     club_id=club_id
-                ).first() is not None
+                 ).first() is not None
             
             duplicates.append({
                 'type': 'User',
                 'id': u.id,
                 'username': u.username,
-                'full_name': contact.Name if contact else 'N/A',
-                'clubs': [c.club_name for c in contact.get_clubs()] if contact else [],
+                'full_name': u.display_name, # Use dynamic property
+                'first_name': u.first_name,
+                'last_name': u.last_name,
+                'clubs': [uc.club.club_name for uc in u.club_memberships if uc.club] if u.club_memberships else [],
                 'in_current_club': in_current_club
             })
             
-    # Check contacts (that don't have users linked yet, or just to be safe)
+    # 2. Local Contact Search (Fallback)
+    # Only search contacts if they are NOT already linked to a user we found above
+    # AND search specifically within the target club properties OR global properties?
+    # User Request: "if not found, loop up local contacts table (target club only)."
+    
+    # If we found matches in User table, user said "if not found...". 
+    # But usually we want to show ALL potential matches. 
+    # Let's check for contacts in the CURRENT club that match.
+    
     contact_filters = []
     if full_name:
         contact_filters.append(Contact.Name == full_name)
@@ -300,23 +348,27 @@ def check_duplicates():
         contact_filters.append(Contact.Phone_Number == phone)
         
     if contact_filters:
-        existing_contacts = Contact.query.filter(or_(*contact_filters)).all()
+        # Filter by Club Context FIRST to satisfy "local contacts table (target club only)"
+        # We join with ContactClub to ensure they are in the target club
         from .models import ContactClub
+        
+        existing_contacts = Contact.query.join(ContactClub).filter(
+            ContactClub.club_id == club_id
+        ).filter(or_(*contact_filters)).all()
 
         for c in existing_contacts:
             # Skip if this contact is already represented in our duplicates list (via its user)
-            if any(d['type'] == 'User' and d['full_name'] == c.Name for d in duplicates):
+            # Check if this contact is linked to any of the users we already found
+            already_found_user_ids = [d['id'] for d in duplicates if d['type'] == 'User']
+            if c.user and c.user.id in already_found_user_ids:
                 continue
                 
-            in_current_club = ContactClub.query.filter_by(
-                contact_id=c.id, 
-                club_id=club_id
-            ).first() is not None
+            # If contact has a user but that user wasn't found by the global search (e.g. name mismatch?),
+            # we should still report it, but ideally as a User match.
+            # However, for now, let's treat it as a Contact match but indicate it has a user.
 
-            # Requirement 3 & 4: if no user is linked, only consider duplicate if in current club
-            if not c.user and not in_current_club:
-                continue
-
+            in_current_club = True # By definition of the query above
+            
             duplicates.append({
                 'type': 'Contact',
                 'id': c.id,
@@ -329,10 +381,10 @@ def check_duplicates():
                 'phone': c.Phone_Number,
                 'clubs': [club.club_name for club in c.get_clubs()],
                 'has_user': c.user is not None,
-                'in_current_club': in_current_club
+                'in_current_club': True
             })
             
-    username_taken = any(d['username'].lower() == (username or '').lower() for d in duplicates if d['username'] and d['username'] != 'N/A')
+    username_taken = any(d['username'].lower() == (username or '').lower() for d in duplicates if d.get('username') and d['username'] != 'N/A')
     suggested_username = None
     
     if username_taken:

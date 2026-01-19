@@ -3,6 +3,7 @@ from flask_login import UserMixin, AnonymousUserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer as Serializer
 from flask import current_app
+from sqlalchemy import event
 
 from .base import db
 
@@ -12,6 +13,8 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), nullable=False, unique=True)
     email = db.Column(db.String(120), unique=True, nullable=True)
+    _first_name = db.Column('first_name', db.String(100), nullable=True)
+    _last_name = db.Column('last_name', db.String(100), nullable=True)
     # Migrated to Contact: Member_ID, Mentor_ID, Current_Path, Next_Project, credentials
     # contact_id removed as it's now club-specific in UserClub
     password_hash = db.Column(db.String(255), nullable=False)
@@ -25,6 +28,38 @@ class User(UserMixin, db.Model):
     avatar_url = db.Column(db.String(255), nullable=True)
     bio = db.Column(db.Text, nullable=True)
     
+    @property
+    def first_name(self):
+        return self._first_name
+    
+    @first_name.setter
+    def first_name(self, value):
+        self._first_name = value
+        # Sync to contact if in a session and contact exists
+        try:
+            contact = self.get_contact()
+            if contact and contact.first_name != value:
+                contact.first_name = value
+                contact.update_name_from_parts(overwrite=True)
+        except:
+            pass
+
+    @property
+    def last_name(self):
+        return self._last_name
+    
+    @last_name.setter
+    def last_name(self, value):
+        self._last_name = value
+        # Sync to contact if in a session and contact exists
+        try:
+            contact = self.get_contact()
+            if contact and contact.last_name != value:
+                contact.last_name = value
+                contact.update_name_from_parts(overwrite=True)
+        except:
+            pass
+    
     # Relationships
     messages_sent = db.relationship('Message',
                                     foreign_keys='Message.sender_id',
@@ -33,13 +68,14 @@ class User(UserMixin, db.Model):
                                         foreign_keys='Message.recipient_id',
                                         backref='recipient', lazy='dynamic')
     # contact relationship removed, use UserClub.contact instead
+    # Actually, lines 71-79 covers roles relationship. first_name lines are 32-45.
     roles = db.relationship(
         'app.models.role.Role',
         secondary='user_clubs',
         back_populates='users',
         lazy='joined',
         primaryjoin='User.id == UserClub.user_id',
-        secondaryjoin='app.models.role.Role.id == UserClub.club_role_id',
+        secondaryjoin='(UserClub.club_role_level.op("&")(app.models.role.Role.level)) == app.models.role.Role.level',
         viewonly=True
     )
     
@@ -88,11 +124,36 @@ class User(UserMixin, db.Model):
         if not club_role:
             return False
             
-        return UserClub.query.filter_by(
-            user_id=self.id,
-            club_id=club_id,
-            club_role_id=club_role.id
-        ).first() is not None
+        uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
+        if not uc:
+            return False
+            
+        return (uc.club_role_level & club_role.level) == club_role.level
+
+    def get_roles_for_club(self, club_id):
+        """Get all roles for this user in a specific club context."""
+        from .user_club import UserClub
+        from ..auth.permissions import Permissions
+        
+        roles_list = []
+        
+        # 1. Global SysAdmin check: SysAdmins are admins everywhere
+        if self.is_sysadmin:
+            roles_list.append(Permissions.SYSADMIN)
+            
+        # 2. Club-specific roles
+        uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
+        if uc:
+            # Base 'User' role for any membership
+            if Permissions.USER not in roles_list:
+                roles_list.append(Permissions.USER)
+                
+            if uc.roles:
+                for r in uc.roles:
+                    if r.name not in roles_list:
+                        roles_list.append(r.name)
+        
+        return sorted(roles_list)
 
     # Permission system methods
     
@@ -136,6 +197,29 @@ class User(UserMixin, db.Model):
     @property
     def primary_role(self):
         """Returns the user's highest-level role."""
+        from ..club_context import get_current_club_id
+        from .user_club import UserClub
+        from .role import Role
+        from ..auth.permissions import Permissions
+
+        # 1. SysAdmin is global
+        if self.is_sysadmin:
+             # Find the SysAdmin role object from self.roles or query it
+             # Attempt to find in loaded roles first to avoid query
+             for r in self.roles:
+                 if r.name == Permissions.SYSADMIN:
+                     return r
+             return Role.query.filter_by(name=Permissions.SYSADMIN).first()
+
+        # 2. Context-aware check
+        club_id = get_current_club_id()
+        if club_id:
+             uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
+             if uc and uc.club_role:
+                 return uc.club_role
+             return None # Becomes "User" in primary_role_name
+
+        # 3. Fallback (no context)
         if not self.roles:
             return None
         return max(self.roles, key=lambda r: r.level if r.level is not None else 0)
@@ -183,11 +267,11 @@ class User(UserMixin, db.Model):
         
         if club_id:
             uc = self.get_user_club(club_id)
-            if uc:
-                return uc.contact
+            return uc.contact if uc else None
             
-        # Fallback for cases where no club ID is resolved: 
+        # Fallback for cases where no club ID is resolved at all: 
         # Return the first available contact this user is associated with.
+        # Note: In a multi-club environment, this fallback should be avoided.
         from .user_club import UserClub
         uc = UserClub.query.filter_by(user_id=self.id).first()
         return uc.contact if uc else None
@@ -309,9 +393,7 @@ class User(UserMixin, db.Model):
 
         # 1. Try to find/reuse contact if not linked to this club yet
         if contact is None:
-             # Strict Club Isolation: 
-             # Only look for contacts explicitly linked to this club via ContactClub
-             # Do NOT look up globally by Email/Name to avoid reusing contacts from other clubs
+             # Try club-specific first (prioritize existing club members)
              if target_email := email or self.email:
                  contact = Contact.query.join(ContactClub).filter(
                      ContactClub.club_id == club_id,
@@ -324,14 +406,31 @@ class User(UserMixin, db.Model):
                      Contact.Name == final_name
                  ).first()
 
+             # Fallback: Check if this user has a contact in ANOTHER club to clone from
+             # We DO NOT reuse the ID, but we copy the data to create a new local contact.
+             prototype_contact = None
+             if not contact:
+                 if target_email := email or self.email:
+                     prototype_contact = Contact.query.filter_by(Email=target_email).first()
+                 if not prototype_contact and final_name:
+                     prototype_contact = Contact.query.filter_by(Name=final_name).first()
+
         # 2. Create if still not found
         if contact is None:
+             # Use prototype data if available, otherwise defaults
+             source = prototype_contact if prototype_contact else None
+             
              contact = Contact(
-                 Name=final_name,
-                 first_name=first_name,
-                 last_name=last_name,
-                 Email=email or self.email,
-                 Phone_Number=phone or self.phone,
+                 Name=full_name or (source.Name if source else final_name),
+                 first_name=first_name or (source.first_name if source else None),
+                 last_name=last_name or (source.last_name if source else None),
+                 Email=email or self.email or (source.Email if source else None),
+                 Phone_Number=phone or self.phone or (source.Phone_Number if source else None),
+                 Member_ID=source.Member_ID if source else None, 
+                 Completed_Paths=source.Completed_Paths if source else None,
+                 DTM=source.DTM if source else False,
+                 Bio=source.Bio if source else None,
+                 Avatar_URL=source.Avatar_URL if source else None,
                  Type='Member',
                  Date_Created=date.today()
              )
@@ -342,6 +441,13 @@ class User(UserMixin, db.Model):
              if full_name: contact.Name = full_name
              if first_name: contact.first_name = first_name
              if last_name: contact.last_name = last_name
+             
+             # If user doesn't have names, copy from contact
+             if not self.first_name and contact.first_name:
+                 self.first_name = contact.first_name
+             if not self.last_name and contact.last_name:
+                 self.last_name = contact.last_name
+
              if email: contact.Email = email
              if phone: contact.Phone_Number = phone
              
@@ -367,9 +473,10 @@ class User(UserMixin, db.Model):
         
         return contact
 
-    def set_club_role(self, club_id, role_id):
+    def set_club_role(self, club_id, role_level):
         """
-        Set the user's role for a specific club using UserClub.
+        Set the user's role level for a specific club using UserClub.
+        role_level is the bitmask sum of all roles.
         """
         from .user_club import UserClub
         from .club import Club
@@ -381,21 +488,24 @@ class User(UserMixin, db.Model):
                  default_club = Club.query.first()
                  club_id = default_club.id if default_club else None
         
-        if not club_id or not role_id:
+        if not club_id:
             return
 
         existing_uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
         
         if existing_uc:
-            existing_uc.club_role_id = role_id
+            existing_uc.club_role_level = role_level
         else:
             new_uc = UserClub(
                 user_id=self.id,
                 club_id=club_id,
-                club_role_id=role_id
+                club_role_level=role_level
             )
             # contact_id will be set by UserClub.__init__ or ensure_contact
             db.session.add(new_uc)
+
+
+
 
 
 

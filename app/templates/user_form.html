@@ -3,44 +3,46 @@
 {% block title %}{{ 'Edit User' if user else 'Add New User' }}{% endblock %}
 
 {% block content %}
-<h1>{{ 'Edit User' if user else 'Add New User' }}</h1>
+<div class="container user-form-container">
+    {% if club_name %}
+    <div class="alert alert-info" role="alert" style="margin-bottom: 20px; background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; padding: 10px; border-radius: 4px;">
+        <i class="fas fa-info-circle"></i> Roles and Contact linkage will be applied to: <strong>{{ club_name }}</strong>
+    </div>
+    {% endif %}
+    <h1>{{ 'Edit User' if user else 'Add New User' }}</h1>
 <form method="POST"
     action="{{ url_for('users_bp.user_form', user_id=user.id) if user else url_for('users_bp.user_form') }}">
-    <input type="hidden" name="contact_id" value="{{ source_contact.id if source_contact else (user.contact.id if user and user.contact else '') }}">
+    <input type="hidden" name="contact_id" value="{{ source_contact.id if source_contact else (user_contact.id if user_contact else '') }}">
     <input type="hidden" name="club_id" value="{{ club_id or '' }}">
     <table class="form-table">
         <tr class="tr-full-width">
-            <td><label for="username">Username:</label></td>
-            <td><input type="text" id="username" name="username" value="{{ user.username if user else '' }}" required>
+            <td><label for="username" class="required">Username:</label></td>
+            <td><input type="text" id="username" name="username" value="{{ user.username if user else '' }}" required {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
             </td>
         </tr>
         <tr>
-            <td><label for="first_name">First Name:</label></td>
-            <td><input type="text" id="first_name" name="first_name" value="{{ source_contact.first_name if source_contact else (user.contact.first_name if user and user.contact else '') }}">
+            <td><label for="first_name" class="required">First Name:</label></td>
+            <td><input type="text" id="first_name" name="first_name" value="{{ user.first_name if user and user.first_name else (source_contact.first_name if source_contact else (user_contact.first_name if user_contact else '')) }}" required {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
             </td>
         </tr>
         <tr>
-            <td><label for="last_name">Last Name:</label></td>
-            <td><input type="text" id="last_name" name="last_name" value="{{ source_contact.last_name if source_contact else (user.contact.last_name if user and user.contact else '') }}">
+            <td><label for="last_name" class="required">Last Name:</label></td>
+            <td><input type="text" id="last_name" name="last_name" value="{{ user.last_name if user and user.last_name else (source_contact.last_name if source_contact else (user_contact.last_name if user_contact else '')) }}" required {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
             </td>
         </tr>
         <tr>
-            <td><label for="email">Email:</label></td>
-            <td><input type="email" id="email" name="email" value="{{ source_contact.Email if source_contact else (user.email if user and user.email else '') }}">
+            <td><label for="email" class="required">Email:</label></td>
+            <td><input type="email" id="email" name="email" value="{{ source_contact.Email if source_contact else (user_contact.Email if (user_contact and user_contact.Email) else (user.email if user and user.email else '')) }}" required {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
             </td>
         </tr>
         <tr>
             <td><label for="phone">Phone:</label></td>
-            <td><input type="text" id="phone" name="phone" value="{{ source_contact.Phone_Number if source_contact else (user.phone if user and user.phone else '') }}">
+            <td><input type="text" id="phone" name="phone" value="{{ source_contact.Phone_Number if source_contact else (user_contact.Phone_Number if (user_contact and user_contact.Phone_Number) else (user.phone if user and user.phone else '')) }}" {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
             </td>
         </tr>
         <tr>
             <td>
-                <label>Role 
-                    <i class="fas fa-info-circle info-icon-tooltip" 
-                       style="color: #007bff; cursor: pointer; font-size: 0.9em;" 
-                       data-tooltip="Select one or more system roles."></i>
-                </label>
+                <label class="required">Role:</label>
             </td>
             <td>
                 <div class="roles-checkbox-list"
@@ -48,6 +50,10 @@
                     {% for r in all_auth_roles %}
                     <label style="display: flex; align-items: center; margin-bottom: 5px; cursor: pointer;">
                         {% if r.name == 'User' %}
+                        <input type="checkbox" checked disabled style="margin-right: 8px;">
+                        <input type="hidden" name="roles" value="{{ r.id }}">
+                        {% elif is_edit_self and r.id in user_role_ids and r.name in ['ClubAdmin', 'SysAdmin'] %}
+                        {# Prevent self-demotion: Disable if editing self and already has the role #}
                         <input type="checkbox" checked disabled style="margin-right: 8px;">
                         <input type="hidden" name="roles" value="{{ r.id }}">
                         {% else %}
@@ -63,7 +69,7 @@
 
         <tr class="tr-full-width">
             <td><label for="password">Password:</label></td>
-            <td><input type="password" id="password" name="password" placeholder="{{ 'Leave blank to keep current' if user else 'Enter password' }}">
+            <td><input type="password" id="password" name="password" placeholder="{{ 'Leave blank to keep current' if user else 'Enter password' }}" {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
             </td>
         </tr>
     </table>

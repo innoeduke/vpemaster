@@ -34,18 +34,35 @@ def lookup_user_clubs():
     if not user:
         return jsonify({'clubs': []})
     
-    # Get user's associated clubs through UserClub
+    # Get user's associated clubs
     from ..models.user_club import UserClub
-    user_clubs = UserClub.query.filter_by(user_id=user.id).all()
+    from ..models import Club
     
-    clubs_data = []
-    for uc in user_clubs:
-        if uc.club:
+    # If user is sysadmin, they can see all clubs
+    if user.is_sysadmin:
+        all_clubs = Club.query.order_by(Club.club_name).all()
+        # Find user's home club to pre-select it if possible
+        home_uc = UserClub.query.filter_by(user_id=user.id, is_home=True).first()
+        home_club_id = home_uc.club_id if home_uc else None
+        
+        clubs_data = []
+        for club in all_clubs:
             clubs_data.append({
-                'id': uc.club.id,
-                'name': uc.club.club_name,
-                'is_home': uc.is_home
+                'id': club.id,
+                'name': club.club_name,
+                'is_home': club.id == home_club_id
             })
+    else:
+        # Regular user: only show their joined clubs
+        user_clubs = UserClub.query.filter_by(user_id=user.id).all()
+        clubs_data = []
+        for uc in user_clubs:
+            if uc.club:
+                clubs_data.append({
+                    'id': uc.club.id,
+                    'name': uc.club.club_name,
+                    'is_home': uc.is_home
+                })
     
     return jsonify({'clubs': clubs_data})
 
@@ -172,6 +189,8 @@ def profile(contact_id=None):
         action = request.form.get('action')
 
         if action == 'update_profile':
+            user.first_name = request.form.get('first_name')
+            user.last_name = request.form.get('last_name')
             user.email = request.form.get('email')
             if user.contact:
                 user.contact.Phone_Number = request.form.get('phone_number')

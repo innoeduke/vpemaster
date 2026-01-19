@@ -118,10 +118,6 @@ input[type="time"].form-control {
 	margin-top: 4px;
 }
 
-label.required::after {
-	content: "*";
-	color: #dc3545;
-}
 
 .form-table textarea {
 	min-height: 100px;

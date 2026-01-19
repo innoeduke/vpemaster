@@ -53,11 +53,24 @@
 
     <input type="hidden" name="action" value="update_profile" />
     <table class="form-table">
-      <tr class="tr-full-width">
-        <td><label>Full Name</label></td>
+      <tr>
+        <td><label for="first_name">First Name:</label></td>
         <td>
-          {{ user.contact.Name if user.contact else '' }} ({{ user.username }}) {%
-          if user.contact.DTM %}
+          <input type="text" id="first_name" name="first_name" value="{{ user.first_name if user.first_name else '' }}"
+            {% if not is_own_profile %}disabled{% endif %} />
+        </td>
+      </tr>
+      <tr>
+        <td><label for="last_name">Last Name:</label></td>
+        <td>
+          <input type="text" id="last_name" name="last_name" value="{{ user.last_name if user.last_name else '' }}"
+            {% if not is_own_profile %}disabled{% endif %} />
+        </td>
+      </tr>
+      <tr class="tr-full-width">
+        <td><label>Username</label></td>
+        <td>
+          {{ user.username }} {% if user.contact and user.contact.DTM %}
           <sup class="dtm-superscript">DTM</sup>
           {% endif %}
         </td>

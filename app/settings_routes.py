@@ -38,9 +38,13 @@ def settings():
     if club_id:
         all_users = User.query.join(UserClub).filter(
             UserClub.club_id == club_id
-        ).options(db.joinedload(User.roles)).order_by(User.username.asc()).all()
+        ).options(
+            db.joinedload(User.club_memberships)
+        ).order_by(User.username.asc()).all()
     else:
-        all_users = User.query.options(db.joinedload(User.roles)).order_by(User.username.asc()).all()
+        all_users = User.query.options(
+            db.joinedload(User.club_memberships)
+        ).order_by(User.username.asc()).all()
     
     # Batch populate contacts for the current club to avoid N+1 queries in template
     User.populate_contacts(all_users, club_id)
@@ -55,7 +59,7 @@ def settings():
 
     return render_template('settings.html', session_types=session_types, all_users=all_users, 
                           roles=roles, roles_query=roles_query, 
-                          achievements=achievements)
+                          achievements=achievements, club_id=club_id)
 
 
 @settings_bp.route('/settings/sessions/add', methods=['POST'])
@@ -399,15 +403,14 @@ def update_user_roles():
         if not user:
             return jsonify(success=False, message="User not found"), 404
 
-        # Determine the highest role to assign
-        highest_role_id = None
+        # Calculate bitmask sum of all selected roles
+        role_level = 0
         if new_role_ids:
             roles = AuthRole.query.filter(AuthRole.id.in_(new_role_ids)).all()
-            if roles:
-                highest_role = max(roles, key=lambda r: r.level if r.level is not None else 0)
-                highest_role_id = highest_role.id
+            for r in roles:
+                role_level += r.level if r.level is not None else 0
         
-        # Update all user's club memberships with the new role
+        # Update all user's club memberships with the new role level
         user_clubs = UserClub.query.filter_by(user_id=user_id).all()
         
         if not user_clubs:
@@ -417,22 +420,24 @@ def update_user_roles():
                 default_club = Club.query.first()
                 club_id = default_club.id if default_club else None
             
-            if club_id and highest_role_id:
+            if club_id:
                 # Try to reuse an existing contact_id from another club membership
                 existing_uc = UserClub.query.filter_by(user_id=user_id).first()
                 contact_id = existing_uc.contact_id if existing_uc else None
                 
-                new_uc = UserClub(
-                    user_id=user_id,
+                # Create a new UserClub entry
+                uc = UserClub(
+                    user_id=user.id,
                     club_id=club_id,
-                    club_role_id=highest_role_id,
+                    club_role_level=role_level,
                     contact_id=contact_id
                 )
-                db.session.add(new_uc)
+                db.session.add(uc)
         else:
-            # Update role for all existing club memberships
+            # Update role level for all existing club memberships
             for uc in user_clubs:
-                uc.club_role_id = highest_role_id
+                if uc.club_role_level != role_level:
+                    uc.club_role_level = role_level
 
         # Audit log
         audit = PermissionAudit(
@@ -441,7 +446,7 @@ def update_user_roles():
             target_type='USER',
             target_id=user_id,
             target_name=user.username,
-            changes=f"Updated role to: {highest_role_id}"
+            changes=f"Updated role level to: {role_level}"
         )
         db.session.add(audit)
 

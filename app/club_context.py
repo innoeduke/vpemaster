@@ -169,24 +169,21 @@ def authorized_club_required(f):
             # SysAdmin can access any club - check if user has SysAdmin role in ANY club
             sys_role = AuthRole.get_by_name(Permissions.SYSADMIN)
             if sys_role:
-                is_sysadmin = UserClub.query.filter_by(
-                    user_id=current_user.id,
-                    club_role_id=sys_role.id
-                ).first()
-                if is_sysadmin:
+                # Optimized check: any membership where the bitmask includes SysAdmin level
+                # This avoids N+1 by querying filter once, or iterating if list is small.
+                # Let's iterate user's memberships since we can't easily do bitwise across all rows without custom SQL or loading all UCs.
+                # Actually, filtering filtering by user_id isn't too expensive.
+                all_ucs = UserClub.query.filter_by(user_id=current_user.id).all()
+                if any((uc.club_role_level & sys_role.level) == sys_role.level for uc in all_ucs):
                     return f(*args, **kwargs)
             
             # Check if user has a UserClub record for THIS specific club
             user_club = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
             
-            if user_club and user_club.club_role_id:
-                # User has a club membership with a role for this club
-                role = db.session.get(AuthRole, user_club.club_role_id)
-                
-                # ClubAdmin and other roles can access their clubs
-                # ClubAdmin and other roles can access their clubs
-                if role:
-                    return f(*args, **kwargs)
+            if user_club and user_club.club_role_level > 0:
+                # User has a club membership with at least one role for this club
+                # For now, any role grants access (Member, Officer, ClubAdmin)
+                return f(*args, **kwargs)
             
             # If we fall through here, the authenticated user is unauthorized for this club
             abort(403)

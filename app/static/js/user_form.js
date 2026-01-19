@@ -127,6 +127,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         username: username,
+                        first_name: firstName,
+                        last_name: lastName,
                         full_name: fullName,
                         email: email,
                         phone: phone,
@@ -168,8 +170,23 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                         }
 
+                        // Construct name from parts if available to ensure we show "First Last"
+                        let nameDisplay = dup.username;
+                        const first = dup.first_name || '';
+                        const last = dup.last_name || '';
+                        
+                        if (first || last) {
+                            nameDisplay = `${first} ${last}`.trim();
+                        } else if (dup.full_name && dup.full_name.toLowerCase() !== dup.username.toLowerCase()) {
+                            nameDisplay = dup.full_name;
+                        }
+
+                        const displayName = nameDisplay.toLowerCase() !== dup.username.toLowerCase() 
+                            ? `<strong>${nameDisplay}</strong> (${dup.username})`
+                            : `<strong>${nameDisplay}</strong>`;
+
                         info.innerHTML = `
-                            <strong>${dup.full_name}</strong> (${dup.username})<br>
+                            ${displayName}<br>
                             <small>${clubsText}</small>
                             ${membershipNotice}
                         `;

@@ -1,7 +1,7 @@
 import click
 from flask.cli import with_appcontext
 from app import db
-from app.models import User, Contact
+from app.models import User, Contact, Club, UserClub, ContactClub, AuthRole
 
 
 @click.command('create-admin')
@@ -21,7 +21,8 @@ def create_admin(username, email, password, contact_name, club):
         return
     
     # Check if email already exists
-    existing_email = User.query.filter_by(Email=email).first()
+    # Fix: User model uses lowercase 'email'
+    existing_email = User.query.filter_by(email=email).first()
     if existing_email:
         click.echo(f"❌ Error: Email '{email}' is already in use.", err=True)
         return
@@ -32,10 +33,23 @@ def create_admin(username, email, password, contact_name, club):
             contact_name = username
         
         # Get SysAdmin role
-        from app.models import AuthRole
         sysadmin_role = AuthRole.query.filter_by(name='SysAdmin').first()
         if not sysadmin_role:
             click.echo("❌ Error: 'SysAdmin' role not found in database. Please run seed data first.", err=True)
+            return
+
+        # Resolve Club
+        club_obj = None
+        if club:
+            club_obj = Club.query.filter_by(club_name=club).first()
+            if not club_obj:
+               click.echo(f"⚠️  Warning: Club '{club}' not found. Falling back to default.", err=True)
+        
+        if not club_obj:
+            club_obj = Club.query.first()
+            
+        if not club_obj:
+            click.echo("❌ Error: No clubs found in database. Please create a club first.", err=True)
             return
 
         # Generate a unique Member_ID for admin
@@ -43,11 +57,11 @@ def create_admin(username, email, password, contact_name, club):
         member_id = f"ADMIN{admin_count + 1:03d}"
         
         # Create contact first
+        # Fix: Removed 'Club' field as it's not in Contact model
         contact = Contact(
             Name=contact_name,
-            Email=email,
+            Email=email, # Contact uses Capitalized Email
             Type='Member',
-            Club=club,
             Member_ID=member_id,
             Completed_Paths=''
         )
@@ -55,15 +69,33 @@ def create_admin(username, email, password, contact_name, club):
         db.session.flush()  # Get the contact ID
         
         # Create admin user
+        # Fix: Removed 'contact_id' (now in UserClub) and fixed 'Email' to 'email'
         admin = User(
             username=username,
-            Email=email,
-            status='active',
-            contact_id=contact.id
+            email=email,
+            status='active'
         )
         admin.set_password(password)
         admin.add_role(sysadmin_role)
         db.session.add(admin)
+        db.session.flush() # Get user ID
+
+        # Create UserClub linkage
+        uc = UserClub(
+            user_id=admin.id,
+            club_id=club_obj.id,
+            contact_id=contact.id,
+            is_home=True,
+            club_role_level=0 # SysAdmin role is global via AuthRole
+        )
+        db.session.add(uc)
+
+        # Create ContactClub linkage
+        cc = ContactClub(
+            contact_id=contact.id,
+            club_id=club_obj.id
+        )
+        db.session.add(cc)
         
         # Commit the transaction
         db.session.commit()
@@ -72,7 +104,7 @@ def create_admin(username, email, password, contact_name, club):
         click.echo(f"   Email: {email}")
         click.echo(f"   Contact: {contact_name}")
         click.echo(f"   Member ID: {member_id}")
-        click.echo(f"   Club: {club}")
+        click.echo(f"   Club: {club_obj.club_name}")
         
     except Exception as e:
         db.session.rollback()

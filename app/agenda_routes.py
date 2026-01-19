@@ -853,7 +853,7 @@ def _upsert_meeting_record(data, media_id):
         club_id = get_current_club_id()
         if club_id:
             # Find all staff members for this club (Officers/Admins)
-            staff_members = UserClub.query.join(AuthRole, UserClub.club_role_id == AuthRole.id)\
+            staff_members = UserClub.query.join(AuthRole, (UserClub.club_role_level.op("&")(AuthRole.level)) == AuthRole.level)\
                 .filter(UserClub.club_id == club_id, AuthRole.level > 1).all()
             
             # Add each staff member to the roster

@@ -17,7 +17,7 @@ class UserClub(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id', ondelete='CASCADE'), nullable=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id', ondelete='CASCADE'), nullable=False)
-    club_role_id = db.Column(db.Integer, db.ForeignKey('auth_roles.id', ondelete='SET NULL'), nullable=True)  # Reference to club officer role (e.g., from ExComm)
+    club_role_level = db.Column(db.Integer, default=0, nullable=False)  # Bitmask sum of role levels
     current_path_id = db.Column(db.Integer, db.ForeignKey('pathways.id'), nullable=True)
     joined_date = db.Column(db.Date, nullable=True)
     is_home = db.Column(db.Boolean, default=False, nullable=False)  # Indicates if this is the user's home club
@@ -30,10 +30,35 @@ class UserClub(db.Model):
     user = db.relationship('User', backref=db.backref('club_memberships', cascade='all, delete-orphan'))
     contact = db.relationship('Contact', foreign_keys=[contact_id], back_populates='user_club_records')
     club = db.relationship('Club', backref=db.backref('user_memberships', cascade='all, delete-orphan'))
-    club_role = db.relationship('Role')
+    # club_role relationship removed as it is no longer a direct FK
     current_path = db.relationship('Pathway', foreign_keys=[current_path_id])
     mentor = db.relationship('Contact', foreign_keys=[mentor_id])
     next_project = db.relationship('Project', foreign_keys=[next_project_id])
+
+    @property
+    def roles(self):
+        """Returns a list of AuthRole objects that match the bitmask."""
+        from .role import Role
+        if not self.club_role_level:
+            return []
+        
+        # This might catch all roles and filter in python to avoid complex bitwise SQL every time
+        # Alternatively, we could cache roles. 
+        # For now, let's query all active roles and filter.
+        # Ideally, we should cache all_roles globally or per request.
+        all_roles = Role.query.all()
+        return [r for r in all_roles if (self.club_role_level & r.level) == r.level]
+    
+    @property
+    def club_role(self):
+        """
+        Backwards compatibility: Return the HIGHEST role object.
+        Used by existing code that expects a single role.
+        """
+        assigned_roles = self.roles
+        if not assigned_roles:
+            return None
+        return max(assigned_roles, key=lambda r: r.level)
     
     def __init__(self, **kwargs):
         super(UserClub, self).__init__(**kwargs)
@@ -56,7 +81,7 @@ class UserClub(db.Model):
             'user_id': self.user_id,
             'contact_id': self.contact_id,
             'club_id': self.club_id,
-            'club_role_id': self.club_role_id,
+            'club_role_level': self.club_role_level,
             'current_path_id': self.current_path_id,
             'joined_date': self.joined_date.isoformat() if self.joined_date else None,
             'is_home': self.is_home,
