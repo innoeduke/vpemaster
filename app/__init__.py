@@ -128,9 +128,10 @@ def create_app(config_class='config.Config'):
         from .settings_routes import settings_bp
         from .booking_routes import booking_bp
         from .voting_routes import voting_bp
+        from .tools_routes import tools_bp
+        from .achievements_routes import achievements_bp
         from .roster_routes import roster_bp
         from .lucky_draw_routes import lucky_draw_bp
-        from .achievements_routes import achievements_bp
 
         # Import models so SQLAlchemy knows about them
         from . import models
@@ -145,6 +146,7 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(settings_bp)
         app.register_blueprint(booking_bp)
         app.register_blueprint(voting_bp)
+        app.register_blueprint(tools_bp, url_prefix='/tools')
         app.register_blueprint(roster_bp, url_prefix='/roster')
         app.register_blueprint(lucky_draw_bp, url_prefix='/lucky_draw')
         from .clubs_routes import clubs_bp

@@ -36,7 +36,8 @@ function showSuggestions(filteredContacts, elements) {
   if (!suggestionsContainer) {
     suggestionsContainer = document.createElement('div');
     suggestionsContainer.className = 'autocomplete-suggestions';
-    elements.contactNameInput.parentNode.insertBefore(suggestionsContainer, elements.contactNameInput.nextSibling);
+    // Insert after the input field within the same parent
+    elements.contactNameInput.parentNode.appendChild(suggestionsContainer);
   }
   suggestionsContainer.innerHTML = '';
   if (filteredContacts.length === 0) {
@@ -110,7 +111,7 @@ function initializeMeetingFilter(elements) {
   if (!elements.meetingFilter) return;
 
   elements.meetingFilter.addEventListener("change", () => {
-    window.location.href = `/roster?meeting_number=${elements.meetingFilter.value}`;
+    window.location.href = `/tools?tab=roster&meeting_number=${elements.meetingFilter.value}`;
   });
 }
 
@@ -174,7 +175,7 @@ function resetRosterForm(elements) {
 
 // Populate form with data for editing
 function populateRosterEditForm(rosterId, elements) {
-  fetch(`/roster/api/roster/${rosterId}`)
+  fetch(`/tools/api/roster/${rosterId}`)
     .then(response => {
       if (!response.ok) {
         throw new Error('Failed to fetch entry details.');
@@ -214,8 +215,8 @@ function initializeFormHandlers(elements) {
 
       const entryId = elements.entryIdInput.value;
       const url = entryId
-        ? `/roster/api/roster/${entryId}`
-        : "/roster/api/roster";
+        ? `/tools/api/roster/${entryId}`
+        : "/tools/api/roster";
       const method = entryId ? "PUT" : "POST";
 
       const formData = {
@@ -276,6 +277,7 @@ function initializeTableInteractions(elements) {
   elements.tableBody.addEventListener("click", function (e) {
     const editButton = e.target.closest(".edit-entry");
     const cancelButton = e.target.closest(".cancel-entry");
+    const deleteButton = e.target.closest(".delete-entry");
 
     if (editButton) {
       e.preventDefault();
@@ -287,7 +289,7 @@ function initializeTableInteractions(elements) {
       e.preventDefault();
       const entryId = cancelButton.dataset.id;
       if (confirm("Are you sure you want to cancel this roster entry?")) {
-        fetch(`/roster/api/roster/${entryId}`, { method: "DELETE" })
+        fetch(`/tools/api/roster/${entryId}`, { method: "DELETE" })
           .then((response) =>
             response.json().then((data) => ({ ok: response.ok, data }))
           )
@@ -297,6 +299,25 @@ function initializeTableInteractions(elements) {
           })
           .catch((error) => {
             console.error("Error cancelling entry:", error);
+            alert(`Error: ${error.message}`);
+          });
+      }
+    }
+
+    if (deleteButton) {
+      e.preventDefault();
+      const entryId = deleteButton.dataset.id;
+      if (confirm("Are you sure you want to permanently DELETE this roster entry? This cannot be undone.")) {
+        fetch(`/tools/api/roster/${entryId}?hard_delete=true`, { method: "DELETE" })
+          .then((response) =>
+            response.json().then((data) => ({ ok: response.ok, data }))
+          )
+          .then(({ ok, data }) => {
+            if (!ok) throw new Error(data.error || "Failed to delete entry.");
+            window.location.reload();
+          })
+          .catch((error) => {
+            console.error("Error deleting entry:", error);
             alert(`Error: ${error.message}`);
           });
       }

@@ -347,15 +347,17 @@
 
 .action-bar-left #meeting-filter {
     width: auto;
-    /* Allow it to be its natural size */
     max-width: 300px;
-    /* Give it a reasonable max width */
     flex-grow: 0;
     flex-shrink: 1;
     font-weight: bold;
     color: #555;
     font-size: 0.9em;
     margin: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
 }
 
 .session-cell-with-media {

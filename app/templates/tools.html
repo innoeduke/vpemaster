@@ -1,0 +1,331 @@
+{% extends "base.html" %}
+{% from "components/meeting_filter.html" import render_meeting_filter %}
+
+{% block title %}Tools{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/lucky_draw.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/roster.css') }}">
+<style>
+    /* Tools Page Specific Styles */
+    .tools-tabs {
+        display: flex;
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 20px;
+        padding-left: 20px;
+        background-color: transparent;
+    }
+    .tools-tab-item {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        border-bottom: none;
+        margin-bottom: -1px;
+        border-radius: 5px 5px 0 0;
+        color: #495057;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease-in-out;
+    }
+    .tools-tab-item:hover {
+        border-color: #e9ecef #e9ecef #dee2e6;
+        background-color: rgba(255, 255, 255, 0.5);
+    }
+    .tools-tab-item.active {
+        background-color: #fff;
+        border-color: #dee2e6 #dee2e6 #fff;
+        color: #000;
+        font-weight: 600;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.05);
+    }
+    
+    /* Ensure tab content is cleanly separated */
+    .tools-tab-content {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Tabs Navigation -->
+    <div class="tools-tabs">
+        {% if has_lucky_draw_access %}
+        <a href="?tab=luckydraw" class="tools-tab-item {% if active_tab == 'luckydraw' %}active{% endif %}">
+            <i class="fas fa-gift"></i> Lucky Draw
+        </a>
+        {% endif %}
+        {% if has_roster_access %}
+        <a href="?tab=roster" class="tools-tab-item {% if active_tab == 'roster' %}active{% endif %}">
+            <i class="fas fa-clipboard-list"></i> Roster
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Lucky Draw Content -->
+    {% if active_tab == 'luckydraw' %}
+    <div id="luckydraw-content" class="tools-tab-content">
+        {% set current_meeting = ld_current_meeting %}
+        {% set roster_entries = ld_entries %}
+        
+        <div class="lucky-draw-container">
+            <h1 class="page-title"><i class="fas fa-gift"></i> Lucky Draw</h1>
+    
+            {% if current_meeting %}
+            <div class="meeting-info">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Meeting #{{ current_meeting.Meeting_Number }} - {{ current_meeting.Meeting_Date.strftime('%B %d, %Y')
+                    if current_meeting.Meeting_Date else 'No Date' }}</span>
+            </div>
+    
+            <div class="draw-controls">
+                <div class="draw-type-selector">
+                    <label for="drawType">Draw Type:</label>
+                    <select id="drawType" class="draw-type-select">
+                        <option value="all-audience">All Audience</option>
+                        <option value="members">Members Only</option>
+                        <option value="guests">Guests Only</option>
+                        <option value="table-topics">Table Topic Speakers</option>
+                        <option value="full-house">Full House</option>
+                    </select>
+                </div>
+    
+                <div class="draw-buttons">
+                    <button id="resetButton" class="btn btn-secondary reset-button">
+                        <i class="fas fa-redo"></i> Reset
+                    </button>
+                    <button id="drawButton" class="btn btn-primary draw-button">
+                        <i class="fas fa-gift"></i> Draw
+                    </button>
+                </div>
+            </div>
+    
+            <!-- Winners Wall -->
+            <div class="winners-wall" id="winnersWall">
+                <div class="wall-placeholder">
+                    <i class="fas fa-trophy"></i>
+                    <p>Winners will appear here</p>
+                </div>
+            </div>
+    
+            <!-- Hidden data for JavaScript -->
+            <div id="rosterData" style="display: none;">
+                {% for entry in roster_entries %}
+                <div class="roster-entry" data-order="{{ entry.order_number }}"
+                    data-name="{{ entry.contact.Name if entry.contact else 'N/A' }}"
+                    data-avatar="{% if entry.contact and entry.contact.Avatar_URL %}{{ url_for('static', filename=entry.contact.Avatar_URL) }}{% endif %}"
+                    data-type="{% if entry.contact_type %}{{ entry.contact_type }}{% elif entry.contact and entry.contact.user and entry.contact.user.has_role(Permissions.OFFICER) %}Officer{% elif entry.contact %}{{ entry.contact.Type }}{% else %}Guest{% endif %}"
+                    data-ticket="{{ entry.ticket }}"
+                    data-has-topics-role="{{ 'true' if RoleID.TOPICS_SPEAKER in entry.roles|map(attribute='id') else 'false' }}">
+                </div>
+                {% endfor %}
+            </div>
+    
+            {% else %}
+            <p class="no-meeting-message">No meeting available for lucky draw.</p>
+            {% endif %}
+        </div>
+        
+        <script src="{{ url_for('static', filename='js/lucky_draw.js') }}"></script>
+    </div>
+    {% endif %}
+
+    <!-- Roster Content -->
+    {% if active_tab == 'roster' %}
+    <div id="roster-content" class="tools-tab-content">
+        <div class="roster-container">
+            <!-- Header matching Lucky Draw style -->
+            <h1 class="page-title" style="margin-bottom: 10px;"><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
+            
+            <div class="meeting-info" style="margin-bottom: 30px; margin-top: 5px;">
+                {{ render_meeting_filter(all_meetings, selected_meeting_num, label=None, data_format='object',
+                select_id='roster-meeting-filter',
+                extra_style='background: transparent; border: none; box-shadow: none; padding: 0;') }}
+            </div>
+    
+            {% if selected_meeting %}
+            <div class="roster-main-content">
+                
+                <!-- Top: Add/Update Form (Inline) -->
+                <div class="roster-form-container">
+                    <div class="card">
+                        <div class="card-body">
+                            <form id="roster-form">
+                                <input type="hidden" id="entry-id" value="">
+                                <h3 class="card-title" id="form-title" style="display:none;">Add Entry</h3> <!-- Hidden title -->
+    
+                                <div class="form-group-inline input-order">
+                                    <label for="order_number">Order</label>
+                                    <input type="number" class="form-control" id="order_number" value="{{ next_unallocated_entry.order_number if next_unallocated_entry else 1 }}" required>
+                                </div>
+    
+                                <div class="form-group-inline input-name" style="position: relative;">
+                                    <label for="contact_name">Name</label>
+                                    <div class="contact-input-container">
+                                        <input type="text" class="form-control" id="contact_name"
+                                            placeholder="Member/Guest name" autocomplete="off" required>
+                                        <input type="hidden" id="contact_id">
+                                        <button class="btn btn-secondary" type="button" id="add-contact-btn"
+                                            title="Add New Guest" onclick="openContactModalWithReferer()">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+    
+                                <div class="form-group-inline input-type">
+                                    <label for="contact_type">Type</label>
+                                    <select class="form-control" id="contact_type" required>
+                                        <option value="">Select...</option>
+                                        <option value="Guest">Guest</option>
+                                        <option value="Member">Member</option>
+                                        <option value="Officer">Officer</option>
+                                    </select>
+                                </div>
+    
+                                <div class="form-group-inline input-ticket">
+                                    <label for="ticket">Ticket</label>
+                                    <select class="form-control" id="ticket" required>
+                                        <option value="Early-bird" selected>Early Bird</option>
+                                        <option value="Walk-in">Walk-in</option>
+                                        <option value="Role-taker">Role Taker</option>
+                                        <option value="Officer">Officer</option>
+                                        <option value="Coupon">Coupon</option>
+                                        <option value="Unpaid">Unpaid</option>
+                                    </select>
+                                </div>
+    
+                                <div class="form-buttons">
+                                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Save</button>
+                                    <button type="button" class="btn btn-secondary" id="cancel-edit" style="display: none;">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom: Roster Table -->
+                <div class="roster-table-container">
+                    <table class="table table-striped" id="rosterTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable header-order" data-column-index="0">Order</th>
+                                <th class="sortable header-name" data-column-index="1">Name</th>
+                                <th class="sortable header-ticket" data-column-index="2">Ticket</th>
+                                <th class="roster-header-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for entry in roster_entries %}
+                            <tr data-entry-id="{{ entry.id }}" data-order="{{ entry.order_number }}"
+                                data-contact-id="{{ entry.contact_id or '' }}" data-ticket="{{ entry.ticket }}">
+                                <td>{{ entry.order_number }}</td>
+                                <td class="cell-name">
+                                    {{ entry.contact.Name if entry.contact else 'N/A' }}
+                                    {% if entry.contact_type %}
+                                    {% set c_type = entry.contact_type %}
+                                    {% elif entry.contact %}
+                                    {% if entry.contact.user and entry.contact.user.has_role(Permissions.OFFICER) %}
+                                    {% set c_type = 'Officer' %}
+                                    {% else %}
+                                    {% set c_type = entry.contact.Type %}
+                                    {% endif %}
+                                    {% else %}
+                                    {% set c_type = 'Guest' %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if c_type == 'Officer' %}
+                                    {% set icon_color_class = 'roster-color-officer' %}
+                                    {% elif c_type == 'Member' %}
+                                    {% set icon_color_class = 'roster-color-member' %}
+                                    {% elif c_type == 'Guest' %}
+                                    {% set icon_color_class = 'roster-color-guest' %}
+                                    {% else %}
+                                    {% set icon_color_class = '' %}
+                                    {% endif %}
+    
+                                    {% if entry.ticket == 'Unpaid' %}
+                                    {% set icon_color_class = 'roster-color-unpaid' %}
+                                    {% endif %}
+    
+                                    {# Ticket Class Icon with Dynamic Color #}
+                                    {% if entry.ticket == 'Early-bird' %}
+                                    <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-dove"
+                                            title="Early-bird"></i></span>
+                                    {% elif entry.ticket == 'Walk-in' %}
+                                    <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-walking"
+                                            title="Walk-in"></i></span>
+                                    {% elif entry.ticket == 'Role-taker' %}
+                                    <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-microphone"
+                                            title="Role-taker"></i></span>
+                                    {% elif entry.ticket == 'Coupon' %}
+                                    <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-tag"
+                                            title="Coupon"></i></span>
+                                    {% elif entry.ticket == 'Unpaid' %}
+                                    <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-exclamation-circle"
+                                            title="Unpaid"></i></span>
+                                    {% elif c_type == 'Officer' %}
+                                    <span class="roster-icon {{ icon_color_class }}"><i class="fas fa-user-shield"
+                                            title="Officer"></i></span>
+                                    {% endif %}
+    
+                                    <span class="roster-text">
+                                        {% if c_type == 'Officer' %}
+                                        Officer
+                                        {% else %}
+                                        {{ entry.ticket }}
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td class="cell-actions">
+                                    <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} edit-entry"
+                                        data-id="{{ entry.id }}" title="Edit" {% if entry.ticket=='Cancelled' %}disabled{%
+                                        endif %}>
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="{% if entry.ticket != 'Cancelled' %}icon-btn{% endif %} cancel-entry"
+                                        data-id="{{ entry.id }}" title="Cancel" {% if entry.ticket=='Cancelled' %}disabled{%
+                                        endif %}>
+                                        <i class="fas fa-ban"></i>
+                                    </button>
+                                    <button class="icon-btn delete-entry" data-id="{{ entry.id }}" title="Delete">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+    
+                            {# If no entries, display 15 blank rows #}
+                            {% if not roster_entries %}
+                            {% for i in range(1, 16) %}
+                            <tr>
+                                <td>{{ i }}</td>
+                                <td class="cell-name"></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
+                            {% endfor %}
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+    
+            {% include '_contact_modal.html' %}
+            {% else %}
+            <p class="text-center mt-5" style="color: #6c757d; font-size: 1.2rem;">Please select a meeting to view or manage roster entries.</p>
+            {% endif %}
+        </div>
+        
+        <script src="{{ url_for('static', filename='js/roster.js') }}"></script>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}

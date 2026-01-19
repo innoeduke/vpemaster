@@ -24,26 +24,16 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
             return current_user.has_permission(target_perm)
         return False
 
-    # Import models here to avoid circular dependencies
-    from app.models import AuthRole, UserClub
+    # Imports inside function to avoid circular dependency
     from app.auth.permissions import Permissions
 
     # 1. SysAdmin Override: Full access to all resources/actions of all clubs
-    # Checks both global roles and club-specific roles
-    if hasattr(current_user, 'has_role') and current_user.has_role(Permissions.SYSADMIN):
+    # Relies on the helper method on User model
+    if hasattr(current_user, 'is_sysadmin') and current_user.is_sysadmin:
         return True
-        
-    sys_role = AuthRole.get_by_name(Permissions.SYSADMIN)
-    if sys_role:
-        # If user has SysAdmin role in ANY club entry in user_clubs, they are a SysAdmin
-        is_sysadmin = UserClub.query.filter_by(user_id=current_user.id, club_role_id=sys_role.id).first()
-        if is_sysadmin:
-            return True
 
-    # 2. ClubAdmin Override: Full access to owned clubs
-    # But ClubAdmins should NOT be able to access global SysAdmin features (like Manage Clubs)
-    club_role = AuthRole.get_by_name(Permissions.CLUBADMIN)
-    if club_role and target_perm != Permissions.SYSADMIN:
+    # 2. ClubAdmin Override: Full access to owned clubs (except strictly SysAdmin-only features)
+    if target_perm != Permissions.SYSADMIN:
         # Resolve club_id from context
         club_id = kwargs.get('club_id')
         meeting = kwargs.get('meeting')
@@ -52,14 +42,9 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
         if not club_id:
             club_id = session.get('current_club_id')
         
-        if club_id:
-            is_clubadmin = UserClub.query.filter_by(
-                user_id=current_user.id, 
-                club_id=club_id, 
-                club_role_id=club_role.id
-            ).first()
-            if is_clubadmin:
-                return True
+        # Use helper method on User model
+        if hasattr(current_user, 'is_club_admin') and current_user.is_club_admin(club_id):
+            return True
 
     # 3. Check for Meeting Manager override
     meeting = kwargs.get('meeting')

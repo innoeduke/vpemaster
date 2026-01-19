@@ -65,20 +65,79 @@ class User(UserMixin, db.Model):
             return None
         return db.session.get(User, user_id)
     
+    @property
+    def is_sysadmin(self):
+        """Check if user has SysAdmin role (globally/platform-wide)."""
+        from .role import Role
+        from .user_club import UserClub
+        from ..auth.permissions import Permissions
+        
+        sys_role = Role.get_by_name(Permissions.SYSADMIN)
+        if not sys_role:
+             return False
+             
+        # Check if user has SysAdmin role in ANY club context (implies platform admin)
+        return UserClub.query.filter_by(
+            user_id=self.id, 
+            club_role_id=sys_role.id
+        ).first() is not None
+
+    def is_club_admin(self, club_id=None):
+        """Check if user is a ClubAdmin for the specified club."""
+        from .role import Role
+        from .user_club import UserClub
+        from ..auth.permissions import Permissions
+        from ..club_context import get_current_club_id
+        
+        if not club_id:
+            club_id = get_current_club_id()
+        
+        if not club_id:
+            return False
+            
+        club_role = Role.get_by_name(Permissions.CLUBADMIN)
+        if not club_role:
+            return False
+            
+        return UserClub.query.filter_by(
+            user_id=self.id,
+            club_id=club_id,
+            club_role_id=club_role.id
+        ).first() is not None
+
     # Permission system methods
     
     def get_permissions(self):
-        """Get all permissions for this user from their roles."""
+        """Get all permissions for this user from their roles. SysAdmins get all permissions."""
         if self._permission_cache is None:
             permissions = set()
-            for role in self.roles:
-                for permission in role.permissions:
-                    permissions.add(permission.name)
+            
+            # SysAdmin Override: SysAdmin gets implicit access to EVERYTHING
+            if self.is_sysadmin:
+                # We can return a special wildcard or just ensure has_permission checks is_sysadmin.
+                # But for Flask-Principal which relies on this list, we might want to populate it with ALL permissions.
+                # However, filling ALL from DB is expensive.
+                # Better strategy: has_permission handles the bypass.
+                # But external libs (like flask-principal decorators) might use this list.
+                # Let's populate with all defined permissions in the DB if SysAdmin.
+                from .permission import Permission
+                all_perms = Permission.query.all()
+                for p in all_perms:
+                    permissions.add(p.name)
+            else:
+                for role in self.roles:
+                    for permission in role.permissions:
+                        permissions.add(permission.name)
+            
             self._permission_cache = permissions
         return self._permission_cache
     
     def has_permission(self, permission_name):
         """Check if user has a specific permission."""
+        # SysAdmin Bypass
+        if self.is_sysadmin:
+            return True
+            
         return permission_name in self.get_permissions()
     
     def has_role(self, role_name):
