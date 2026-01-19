@@ -95,14 +95,16 @@ document.addEventListener('DOMContentLoaded', function () {
         let currentSuggestion = null;
 
         const checkDuplicates = async () => {
-            // Only check duplicates for new users
-            if (isEditing) return;
+            // Only check duplicates for new users who haven't selected a contact yet
+            const contactId = document.querySelector('input[name="contact_id"]')?.value;
+            if (isEditing || (contactId && contactId !== '')) return;
 
             const username = document.getElementById('username')?.value || '';
             const firstName = document.getElementById('first_name')?.value || '';
             const lastName = document.getElementById('last_name')?.value || '';
             const email = document.getElementById('email')?.value || '';
             const phone = document.getElementById('phone')?.value || '';
+            const clubId = document.querySelector('input[name="club_id"]')?.value || '';
 
             // Check if anything has actually changed to avoid redundant popups
             if (username === lastCheckedValues.username && 
@@ -127,7 +129,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         username: username,
                         full_name: fullName,
                         email: email,
-                        phone: phone
+                        phone: phone,
+                        club_id: clubId
                     })
                 });
 
@@ -181,12 +184,41 @@ document.addEventListener('DOMContentLoaded', function () {
                         pickBtn.style.minWidth = '120px';
                         pickBtn.addEventListener('click', () => {
                             if (dup.type === 'Contact' && !dup.has_user && dup.in_current_club) {
-                                // Requirement 4: Convert guest to user
-                                window.location.href = `/user/form?contact_id=${dup.id}`;
+                                // Requirement 4: Convert guest to user WITHOUT reload to preserve data
+                                document.querySelector('input[name="contact_id"]').value = dup.id;
+                                
+                                // Update fields only if contact has data to offer
+                                if (dup.first_name) document.getElementById('first_name').value = dup.first_name;
+                                if (dup.last_name) document.getElementById('last_name').value = dup.last_name;
+                                if (dup.email) document.getElementById('email').value = dup.email;
+                                if (dup.phone) document.getElementById('phone').value = dup.phone;
+                                
+                                duplicateModal.style.display = 'none';
+                                
+                                // Notify user
+                                const msg = document.createElement('div');
+                                msg.className = 'flash success';
+                                msg.innerHTML = `Linked to existing contact: ${dup.full_name} <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>`;
+                                document.querySelector('h1').after(msg);
                             } else {
                                 const targetId = dup.type === 'User' ? dup.id : dup.user_id;
                                 if (targetId) {
-                                    window.location.href = `/user/form/${targetId}`;
+                                    // Preserve club_id and role
+                                    const urlParams = new URLSearchParams(window.location.search);
+                                    const role = urlParams.get('role');
+                                    
+                                    let targetUrl = `/user/form/${targetId}`;
+                                    const params = [];
+                                    
+                                    // Utilise clubId from the parent scope (checkDuplicates)
+                                    if (clubId) params.push(`club_id=${clubId}`);
+                                    if (role) params.push(`role=${role}`);
+                                    
+                                    if (params.length > 0) {
+                                        targetUrl += `?${params.join('&')}`;
+                                    }
+                                    
+                                    window.location.href = targetUrl;
                                 } else {
                                     duplicateModal.style.display = 'none';
                                 }

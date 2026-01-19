@@ -1,5 +1,6 @@
 """Tests for multi-club support database schema and relationships."""
 import pytest
+from datetime import date
 from app.models import db, Club, Contact, ContactClub, Meeting
 
 
@@ -87,7 +88,7 @@ class TestMeetingClubRelationship:
             if not meeting:
                 meeting = Meeting(
                     Meeting_Number=999,
-                    Meeting_Date='2024-01-01',
+                    Meeting_Date=date(2024, 1, 1),
                     club_id=default_club.id
                 )
                 db.session.add(meeting)
@@ -110,7 +111,7 @@ class TestMeetingClubRelationship:
             if not meeting:
                 meeting = Meeting(
                     Meeting_Number=999,
-                    Meeting_Date='2024-01-01',
+                    Meeting_Date=date(2024, 1, 1),
                     club_id=default_club.id
                 )
                 db.session.add(meeting)
@@ -130,7 +131,7 @@ class TestMeetingClubRelationship:
             if not meeting:
                  meeting = Meeting(
                     Meeting_Number=999,
-                    Meeting_Date='2024-01-01',
+                    Meeting_Date=date(2024, 1, 1),
                     club_id=default_club.id
                 )
                  db.session.add(meeting)

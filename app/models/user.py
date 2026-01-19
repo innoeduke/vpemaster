@@ -309,11 +309,20 @@ class User(UserMixin, db.Model):
 
         # 1. Try to find/reuse contact if not linked to this club yet
         if contact is None:
-             target_email = email or self.email
-             if target_email:
-                 contact = Contact.query.filter_by(Email=target_email).first()
+             # Strict Club Isolation: 
+             # Only look for contacts explicitly linked to this club via ContactClub
+             # Do NOT look up globally by Email/Name to avoid reusing contacts from other clubs
+             if target_email := email or self.email:
+                 contact = Contact.query.join(ContactClub).filter(
+                     ContactClub.club_id == club_id,
+                     Contact.Email == target_email
+                 ).first()
+             
              if not contact:
-                 contact = Contact.query.filter_by(Name=final_name).first()
+                 contact = Contact.query.join(ContactClub).filter(
+                     ContactClub.club_id == club_id,
+                     Contact.Name == final_name
+                 ).first()
 
         # 2. Create if still not found
         if contact is None:
@@ -335,6 +344,10 @@ class User(UserMixin, db.Model):
              if last_name: contact.last_name = last_name
              if email: contact.Email = email
              if phone: contact.Phone_Number = phone
+             
+             # Upgrade Guest to Member if they now have a user account
+             if contact.Type == 'Guest':
+                 contact.Type = 'Member'
 
         # 3. Ensure UserClub linkage
         if not uc:
@@ -371,14 +384,7 @@ class User(UserMixin, db.Model):
         if not club_id or not role_id:
             return
 
-        user_clubs = UserClub.query.filter_by(user_id=self.id).all()
-        
-        # Check if we already have a record for this club
-        existing_uc = None
-        for uc in user_clubs:
-            if uc.club_id == club_id:
-                existing_uc = uc
-                break
+        existing_uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
         
         if existing_uc:
             existing_uc.club_role_id = role_id

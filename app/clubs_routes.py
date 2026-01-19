@@ -74,7 +74,6 @@ def create_club():
         try:
             db.session.add(new_club)
             db.session.commit()
-            flash('Club created successfully.', 'success')
             return redirect(url_for('clubs_bp.list_clubs'))
         except Exception as e:
             db.session.rollback()
@@ -130,7 +129,6 @@ def edit_club(club_id):
 
         try:
             db.session.commit()
-            flash('Club updated successfully.', 'success')
             return redirect(url_for('clubs_bp.list_clubs'))
         except Exception as e:
             db.session.rollback()

@@ -55,7 +55,7 @@ def _save_user_data(user=None, **kwargs):
     # Link existing contact if provided
     contact_id = kwargs.get('contact_id')
     create_new_contact = kwargs.get('create_new_contact')
-    club_id = get_current_club_id()
+    club_id = kwargs.get('club_id') or get_current_club_id()
     
     # 1. User selected an existing contact to link
     if contact_id and contact_id != 0 and not create_new_contact:
@@ -94,7 +94,6 @@ def _save_user_data(user=None, **kwargs):
              highest_role_id = highest_role.id
 
     if highest_role_id:
-        club_id = get_current_club_id()
         user.set_club_role(club_id, highest_role_id)
         
         # 4. Audit Log
@@ -132,6 +131,9 @@ def user_form(user_id):
     user = None
     if user_id:
         user = db.get_or_404(User, user_id)
+    
+    club_id = request.args.get('club_id', type=int) or request.form.get('club_id', type=int)
+    target_role_name = request.args.get('role')
     
     source_contact = None
     contact_id = request.args.get('contact_id', type=int)
@@ -182,7 +184,8 @@ def user_form(user_id):
             status=request.form.get('status'),
             contact_id=request.form.get('contact_id', 0, type=int),
             create_new_contact=request.form.get('create_new_contact') == 'on',
-            password=request.form.get('password')
+            password=request.form.get('password'),
+            club_id=club_id
         )
         db.session.commit()
         
@@ -215,9 +218,28 @@ def user_form(user_id):
             continue
         filtered_roles.append(role)
     
-    user_role_ids = [r.id for r in user.roles] if user else []
+    user_role_ids = []
+    if user:
+        # Fix: Only load roles for the specific club context to prevent leakage
+        uc = user.get_user_club(club_id)
+        if uc and uc.club_role_id:
+            user_role_ids.append(uc.club_role_id)
+            
+    if not user and target_role_name:
+        target_role = AuthRole.query.filter_by(name=target_role_name).first()
+        if target_role:
+            user_role_ids.append(target_role.id)
 
-    return render_template('user_form.html', user=user, source_contact=source_contact, contacts=member_contacts, mentor_contacts=mentor_contacts, pathways=pathways, all_auth_roles=filtered_roles, user_role_ids=user_role_ids)
+            user_role_ids.append(target_role.id)
+            
+    club_name = None
+    if club_id:
+        from .models import Club
+        club = db.session.get(Club, club_id)
+        if club:
+            club_name = club.club_name
+
+    return render_template('user_form.html', user=user, source_contact=source_contact, contacts=member_contacts, mentor_contacts=mentor_contacts, pathways=pathways, all_auth_roles=filtered_roles, user_role_ids=user_role_ids, club_id=club_id, club_name=club_name)
 
 
 @users_bp.route('/user/check_duplicates', methods=['POST'])
@@ -229,6 +251,7 @@ def check_duplicates():
     full_name = data.get('full_name', '').strip()
     email = data.get('email', '').strip()
     phone = data.get('phone', '').strip()
+    club_id = data.get('club_id') or get_current_club_id()
     
     duplicates = []
     
@@ -244,19 +267,18 @@ def check_duplicates():
     
     if user_filters:
         existing_users = User.query.filter(or_(*user_filters)).all()
-        current_club_id = get_current_club_id()
         from .models import ContactClub
         
         # Batch populate contacts to avoid N+1 in the loop below
-        User.populate_contacts(existing_users, current_club_id)
+        User.populate_contacts(existing_users, club_id)
         
         for u in existing_users:
             in_current_club = False
-            contact = u.get_contact(current_club_id)
+            contact = u.get_contact(club_id)
             if contact:
                 in_current_club = ContactClub.query.filter_by(
                     contact_id=contact.id, 
-                    club_id=current_club_id
+                    club_id=club_id
                 ).first() is not None
             
             duplicates.append({
@@ -280,7 +302,6 @@ def check_duplicates():
     if contact_filters:
         existing_contacts = Contact.query.filter(or_(*contact_filters)).all()
         from .models import ContactClub
-        current_club_id = get_current_club_id()
 
         for c in existing_contacts:
             # Skip if this contact is already represented in our duplicates list (via its user)
@@ -289,7 +310,7 @@ def check_duplicates():
                 
             in_current_club = ContactClub.query.filter_by(
                 contact_id=c.id, 
-                club_id=current_club_id
+                club_id=club_id
             ).first() is not None
 
             # Requirement 3 & 4: if no user is linked, only consider duplicate if in current club
@@ -302,6 +323,10 @@ def check_duplicates():
                 'user_id': c.user.id if c.user else None,
                 'username': c.user.username if c.user else 'N/A',
                 'full_name': c.Name,
+                'first_name': c.first_name,
+                'last_name': c.last_name,
+                'email': c.Email,
+                'phone': c.Phone_Number,
                 'clubs': [club.club_name for club in c.get_clubs()],
                 'has_user': c.user is not None,
                 'in_current_club': in_current_club

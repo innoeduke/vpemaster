@@ -131,7 +131,6 @@ def test_create_club(client, sysadmin_user, db_session):
     }
     response = client.post('/clubs/new', data=data, follow_redirects=True)
     assert response.status_code == 200
-    assert b'Club created successfully' in response.data
     
     # Check DB
     club = Club.query.filter_by(club_no=unique_no).first()
@@ -160,7 +159,6 @@ def test_edit_club(client, sysadmin_user, db_session):
     }
     response = client.post(f'/clubs/{club.id}/edit', data=data, follow_redirects=True)
     assert response.status_code == 200
-    assert b'Club updated successfully' in response.data
     
     updated_club = db_session.get(Club, club.id)
     assert updated_club.club_name == 'New Name'

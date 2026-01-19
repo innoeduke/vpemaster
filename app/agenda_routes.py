@@ -860,12 +860,17 @@ def _upsert_meeting_record(data, media_id):
             # Officers get order numbers starting from 1000
             # Filter to ensure we only count members who have a contact_id
             valid_staff = [m for m in staff_members if m.contact_id]
+            
+            # Pre-fetch Officer ticket
+            from .models import Ticket
+            officer_ticket = Ticket.query.filter_by(name='Officer').first()
+            
             for i, membership in enumerate(valid_staff):
                 roster_entry = Roster(
                     meeting_number=meeting.Meeting_Number,
                     contact_id=membership.contact_id,
                     order_number=1000 + i,
-                    ticket='Officer',
+                    ticket=officer_ticket,
                     contact_type='Officer'
                 )
                 db.session.add(roster_entry)

@@ -13,12 +13,37 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + '/..'))
 def app():
     """Create application for testing."""
     from app import create_app
-    app = create_app('config.Config')
-    app.config.update({
-        'TESTING': True,
-        'WTF_CSRF_ENABLED': False
-    })
+    from config import Config
+    
+    # Use in-memory SQLite for tests by default to ensure clean state and speed
+    class TestConfig(Config):
+        TESTING = True
+        SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL', 'sqlite:///:memory:')
+        WTF_CSRF_ENABLED = False
+        PRESERVE_CONTEXT_ON_EXCEPTION = False
+
+    app = create_app(TestConfig)
+    
+    # Initialize database
+    with app.app_context():
+        from app import db
+        db.session.configure(expire_on_commit=False)
+        db.create_all()
+        
     return app
+
+@pytest.fixture(scope='session', autouse=True)
+def cleanup_test_artifacts():
+    """Cleanup temporary files after the test session."""
+    import glob
+    yield
+    # Cleanup excel files created during tests
+    pattern = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'test_meeting_*_export.xlsx'))
+    for f in glob.glob(pattern):
+        try:
+            os.remove(f)
+        except OSError:
+            pass
 
 
 @pytest.fixture(scope='function')
@@ -47,7 +72,8 @@ def default_club(app):
             db.session.commit()
             db.session.refresh(club)
         
-        db.session.expunge(club)
+        db.session.refresh(club)
+        
         return club
 
 
@@ -68,7 +94,6 @@ def default_excomm(app, default_club):
             db.session.commit()
             db.session.refresh(excomm)
         
-        db.session.expunge(excomm)
         return excomm
 
 
@@ -90,7 +115,6 @@ def default_contact(app):
             db.session.commit()
             db.session.refresh(contact)
         
-        db.session.expunge(contact)
         return contact
 
 
@@ -114,5 +138,4 @@ def default_contact_club(app, default_contact, default_club):
             db.session.commit()
             db.session.refresh(cc)
         
-        db.session.expunge(cc)
         return cc

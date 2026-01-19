@@ -1,5 +1,6 @@
 
 import pytest
+from datetime import date
 from app.models import Club, User, Contact, ContactClub, UserClub, Meeting, MeetingRole, Roster
 from app.auth.permissions import Permissions
 from app.models import AuthRole
@@ -54,7 +55,7 @@ def auth_sysadmin(client, app):
         sess['_user_id'] = str(user.id)
         sess['_fresh'] = True
         
-    return user
+    return user.id
 
 def test_delete_club_complex_scenario(client, auth_sysadmin, app):
     """
@@ -68,28 +69,6 @@ def test_delete_club_complex_scenario(client, auth_sysadmin, app):
     with app.app_context():
         from app import db
         
-        # 1. Setup Data
-        # ---------------------------------------------------------
-        # Cleanup pre-existing test data if any (from failed previous runs)
-        for c_no in ['DEL001', 'SAFE001']:
-            exist = Club.query.filter_by(club_no=c_no).first()
-            if exist:
-                 db.session.delete(exist)
-        
-        # Cleanup orphan contacts from potential failed runs
-        for email in ['orphan@example.com', 'shared@example.com', 'linked@example.com']:
-            contacts = Contact.query.filter_by(Email=email).all()
-            for c in contacts:
-                # Need to manually delete because ContactClub cascade might not trigger if club was force removed?
-                # Actually, deleting Contact cascades to other things, so safe to delete.
-                db.session.delete(c)
-        
-        # Also clean up User for sysadmin delete link test if needed? 
-        # The fixture handles sysadmin user, but we create 'linked_user' inside.
-        linked_u = User.query.filter_by(email='linked@example.com').first()
-        if linked_u:
-            db.session.delete(linked_u)
-            
         db.session.commit()
 
         # Create Club to Delete
@@ -132,7 +111,7 @@ def test_delete_club_complex_scenario(client, auth_sysadmin, app):
         db.session.add(ContactClub(contact_id=user_contact.id, club_id=club_to_delete.id))
         
         # Create a Meeting for the club
-        meeting = Meeting(club_id=club_to_delete.id, Meeting_Title='Last Meeting', Meeting_Date='2025-01-01', Meeting_Number=12345)
+        meeting = Meeting(club_id=club_to_delete.id, Meeting_Title='Last Meeting', Meeting_Date=date.today(), Meeting_Number=12345)
         db.session.add(meeting)
         db.session.commit()
         
@@ -184,22 +163,5 @@ def test_delete_club_complex_scenario(client, auth_sysadmin, app):
         # User Account should still exist
         assert db.session.get(User, user_id) is not None
         
-        # User's Contact Record:
-        # Since this user was ONLY in the deleted club (in this test setup)
-        # and has no other links, their contact record should be deleted.
         assert db.session.get(Contact, user_contact_id) is None
-        
-        # Cleanup extra safety (safe_club, and other preserved entities)
-        if safe_club_id:
-            db.session.query(Club).filter_by(id=safe_club_id).delete()
-        if shared_id:
-            db.session.query(Contact).filter_by(id=shared_id).delete()
-        if user_id:
-            db.session.query(User).filter_by(id=user_id).delete()
-        db.session.commit()
-    
-    # Ensure session is removed
-    with app.app_context():
-        from app import db
-        db.session.remove()
 

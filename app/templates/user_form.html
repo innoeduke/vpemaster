@@ -7,6 +7,7 @@
 <form method="POST"
     action="{{ url_for('users_bp.user_form', user_id=user.id) if user else url_for('users_bp.user_form') }}">
     <input type="hidden" name="contact_id" value="{{ source_contact.id if source_contact else (user.contact.id if user and user.contact else '') }}">
+    <input type="hidden" name="club_id" value="{{ club_id or '' }}">
     <table class="form-table">
         <tr class="tr-full-width">
             <td><label for="username">Username:</label></td>
@@ -50,7 +51,7 @@
                         <input type="checkbox" checked disabled style="margin-right: 8px;">
                         <input type="hidden" name="roles" value="{{ r.id }}">
                         {% else %}
-                        <input type="checkbox" name="roles" value="{{ r.id }}" {% if user and r.id in user_role_ids
+                        <input type="checkbox" name="roles" value="{{ r.id }}" {% if r.id in user_role_ids
                             %}checked{% endif %} style="margin-right: 8px;">
                         {% endif %}
                         <span>{{ r.name }}</span>

@@ -286,6 +286,9 @@
                         </td>
                         <td>
                             <div class="action-btns">
+                                <a href="{{ url_for('users_bp.user_form', club_id=club.id, role='ClubAdmin') }}" class="action-btn" title="Create ClubAdmin">
+                                    <i class="fas fa-user-shield"></i>
+                                </a>
                                 <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="action-btn" title="Edit Club">
                                     <i class="fas fa-pencil-alt"></i>
                                 </a>
