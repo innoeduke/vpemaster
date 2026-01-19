@@ -1,5 +1,5 @@
 {% macro render_meeting_filter(meetings, selected_id, base_url='', label='Meeting:', data_format='tuple',
-extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False, render_outer_container=True) %}
+extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False, render_outer_container=True, show_icon=True) %}
 {% if render_outer_container %}
 <div class="{{ 'inline-filter-group' if label else 'booking-filter-container' }} {{ extra_classes }}"
     style="{{ extra_style }}">
@@ -8,8 +8,10 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     <label for="{{ select_id }}">{{ label }}</label>
     {% else %}
     <div class="filter-left">
+        {% if show_icon %}
         <i class="fas fa-calendar-alt"></i>
         {% endif %}
+    {% endif %}
 
         <select id="{{ select_id }}" {% if base_url %}onchange="window.location.href = '{{ base_url }}/' + this.value;"
             {% endif %} {% if not label %}style="font-size: 1.1em; font-weight: bold; padding: 5px 0;" {% endif %} {% if

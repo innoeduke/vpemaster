@@ -144,7 +144,7 @@
               <span class="badge" id="unread-messages-count-profile" style="display: none; margin-left: 8px; background: #772432; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; font-weight: 700; min-width: 18px; text-align: center; line-height: 1.2; position: relative; top: -3px;">0</span>
           </a>
           {% if is_authorized(Permissions.ABOUT_CLUB_VIEW) %}
-          <a href="{{ url_for('settings_bp.about_club') }}"><i class="fas fa-info-circle"></i> About Club</a>
+          <a href="{{ url_for('about_club_bp.about_club') }}"><i class="fas fa-info-circle"></i> About Club</a>
           {% endif %}
           <a href="{{ url_for('auth_bp.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>

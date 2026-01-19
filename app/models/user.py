@@ -68,19 +68,8 @@ class User(UserMixin, db.Model):
     @property
     def is_sysadmin(self):
         """Check if user has SysAdmin role (globally/platform-wide)."""
-        from .role import Role
-        from .user_club import UserClub
         from ..auth.permissions import Permissions
-        
-        sys_role = Role.get_by_name(Permissions.SYSADMIN)
-        if not sys_role:
-             return False
-             
-        # Check if user has SysAdmin role in ANY club context (implies platform admin)
-        return UserClub.query.filter_by(
-            user_id=self.id, 
-            club_role_id=sys_role.id
-        ).first() is not None
+        return self.has_role(Permissions.SYSADMIN)
 
     def is_club_admin(self, club_id=None):
         """Check if user is a ClubAdmin for the specified club."""
@@ -318,8 +307,16 @@ class User(UserMixin, db.Model):
         uc = self.get_user_club(club_id)
         contact = uc.contact if uc else None
 
+        # 1. Try to find/reuse contact if not linked to this club yet
         if contact is None:
-             # Create new contact
+             target_email = email or self.email
+             if target_email:
+                 contact = Contact.query.filter_by(Email=target_email).first()
+             if not contact:
+                 contact = Contact.query.filter_by(Name=final_name).first()
+
+        # 2. Create if still not found
+        if contact is None:
              contact = Contact(
                  Name=final_name,
                  first_name=first_name,
@@ -331,33 +328,29 @@ class User(UserMixin, db.Model):
              )
              db.session.add(contact)
              db.session.flush()
-             
-             if uc:
-                 uc.contact_id = contact.id
-             else:
-                 uc = UserClub(
-                     user_id=self.id,
-                     club_id=club_id,
-                     contact_id=contact.id
-                 )
-                 db.session.add(uc)
-             
-             # Also link via ContactClub for roster/contact management
-             contact_club = ContactClub.query.filter_by(contact_id=contact.id, club_id=club_id).first()
-             if not contact_club:
-                 db.session.add(ContactClub(contact_id=contact.id, club_id=club_id))
         else:
-             # Sync to existing contact
+             # Sync existing contact
              if full_name: contact.Name = full_name
              if first_name: contact.first_name = first_name
              if last_name: contact.last_name = last_name
              if email: contact.Email = email
              if phone: contact.Phone_Number = phone
+
+        # 3. Ensure UserClub linkage
+        if not uc:
+             uc = UserClub(
+                 user_id=self.id,
+                 club_id=club_id,
+                 contact_id=contact.id
+             )
+             db.session.add(uc)
+        else:
+             uc.contact_id = contact.id
              
-             # Ensure contact is linked to club via ContactClub
-             exists = ContactClub.query.filter_by(contact_id=contact.id, club_id=club_id).first()
-             if not exists:
-                 db.session.add(ContactClub(contact_id=contact.id, club_id=club_id))
+        # 4. Ensure ContactClub linkage (for roster/contact management)
+        exists = ContactClub.query.filter_by(contact_id=contact.id, club_id=club_id).first()
+        if not exists:
+            db.session.add(ContactClub(contact_id=contact.id, club_id=club_id))
         
         return contact
 

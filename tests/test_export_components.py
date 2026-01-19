@@ -13,13 +13,14 @@ Tests cover edge cases for:
 """
 
 import unittest
-from unittest.mock import Mock, MagicMock
+from unittest.mock import Mock, MagicMock, patch
 from datetime import time
 import openpyxl
 
 from app.services.export.components.agenda import AgendaComponent
 from app.services.export.components.powerbi_agenda import PowerBIAgendaComponent
 from app.services.export.components.speech_objectives import SpeechObjectivesComponent
+from app.services.export.components.roster import RosterComponent
 from app.services.export.context import MeetingExportContext
 
 
@@ -758,6 +759,84 @@ class TestPowerBIAgendaComponent(unittest.TestCase):
         
         self.assertEqual(title_cell, 'SR1.2 "My Speech"')
         self.assertEqual(owner_cell, "John Doe - CC")
+
+
+class TestRosterComponent(unittest.TestCase):
+    """Test cases for RosterComponent formatting."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.component = RosterComponent()
+        self.wb = openpyxl.Workbook()
+        self.ws = self.wb.active
+
+    @patch('app.services.export.components.roster.orm')
+    @patch('app.services.export.components.roster.Roster')
+    def test_roster_render(self, mock_roster_model, mock_orm):
+        """Test roster rendering with ticket names."""
+        # Setup mock data for orm
+        mock_orm.joinedload.return_value = Mock()
+        
+        # Setup mock data for Roster
+        mock_entry = Mock()
+        mock_entry.order_number = 1
+        
+        mock_entry.contact = Mock()
+        mock_entry.contact.Name = "John Doe"
+        mock_entry.contact.Type = "Member"
+        
+        mock_entry.ticket = Mock()
+        mock_entry.ticket.name = "Early Bird"
+        
+        # Mock the query chain
+        # Roster.query.options(...).filter_by(...).order_by(...).all()
+        mock_query = mock_roster_model.query
+        mock_query.options.return_value = mock_query
+        mock_query.filter_by.return_value = mock_query
+        mock_query.order_by.return_value = mock_query
+        mock_query.all.return_value = [mock_entry]
+        
+        context = Mock()
+        context.meeting_number = 100
+        
+        # Execute
+        self.component.render(self.ws, context, 1)
+        
+        # Verify Headers
+        self.assertEqual(self.ws.cell(row=1, column=1).value, "Order")
+        self.assertEqual(self.ws.cell(row=1, column=2).value, "Name")
+        self.assertEqual(self.ws.cell(row=1, column=3).value, "Ticket")
+        
+        # Verify Data
+        self.assertEqual(self.ws.cell(row=2, column=1).value, 1)
+        self.assertEqual(self.ws.cell(row=2, column=2).value, "John Doe")
+        # Should contain ONLY ticket name, not type
+        self.assertEqual(self.ws.cell(row=2, column=3).value, "Early Bird")
+
+    @patch('app.services.export.components.roster.orm')
+    @patch('app.services.export.components.roster.Roster')
+    def test_roster_render_no_ticket(self, mock_roster_model, mock_orm):
+        """Test roster rendering with missing ticket."""
+        # Setup mock data for orm
+        mock_orm.joinedload.return_value = Mock()
+        
+        mock_entry = Mock()
+        mock_entry.order_number = 2
+        mock_entry.contact.Name = "Jane Doe"
+        mock_entry.ticket = None # No ticket
+        
+        mock_query = mock_roster_model.query
+        mock_query.options.return_value = mock_query
+        mock_query.filter_by.return_value = mock_query
+        mock_query.order_by.return_value = mock_query
+        mock_query.all.return_value = [mock_entry]
+        
+        context = Mock()
+        context.meeting_number = 100
+        
+        self.component.render(self.ws, context, 1)
+        
+        self.assertEqual(self.ws.cell(row=2, column=3).value, "")
 
 
 if __name__ == '__main__':

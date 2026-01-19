@@ -461,7 +461,7 @@
                 data[field] = input.value;
             });
 
-            fetch('{{ url_for("settings_bp.about_club_update") }}', {
+            fetch('{{ url_for("about_club_bp.about_club_update") }}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', },
                 body: JSON.stringify(data)

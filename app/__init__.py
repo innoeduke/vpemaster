@@ -26,6 +26,9 @@ migrate = Migrate()
 from flask_mail import Mail
 mail = Mail()
 from .assets import assets
+from flask_caching import Cache
+cache = Cache()
+
 
 from flask_login import LoginManager
 login_manager = LoginManager()
@@ -56,6 +59,7 @@ def create_app(config_class='config.Config'):
     principal.init_app(app)
     mail.init_app(app)
     assets.init_app(app)
+    cache.init_app(app)
     
     # Set up identity loader for Flask-Principal
     from flask_login import user_loaded_from_request, user_loaded_from_cookie, user_logged_in
@@ -154,6 +158,8 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(achievements_bp)
         from .messages_routes import messages_bp
         app.register_blueprint(messages_bp)
+        from .about_club_routes import about_club_bp
+        app.register_blueprint(about_club_bp)
 
     # Register CLI commands
     from scripts.create_admin import create_admin

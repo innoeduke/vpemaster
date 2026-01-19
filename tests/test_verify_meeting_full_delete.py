@@ -38,6 +38,16 @@ class TestMeetingDeletion(unittest.TestCase):
         self.meeting = Meeting(Meeting_Number=self.meeting_num, status='finished', club_id=self.club.id)
         db.session.add(self.meeting)
         
+        # Seed Guest Role and Permission for authorized_club_required
+        from app.models import Permission, AuthRole as Role
+        from app.auth.permissions import Permissions
+        
+        perm = Permission(name=Permissions.ABOUT_CLUB_VIEW, description="View Club")
+        role = Role(name='Guest', description='Guest')
+        role.permissions.append(perm)
+        db.session.add_all([perm, role])
+        db.session.commit()
+        
         self.contact = Contact(Name="Delete Test User")
         db.session.add(self.contact)
         
@@ -72,7 +82,11 @@ class TestMeetingDeletion(unittest.TestCase):
         
         # Capture ID before deletion
         roster_id = self.roster.id
-
+        
+        # Set session context for authorized_club_required
+        with self.client.session_transaction() as sess:
+            sess['current_club_id'] = self.club.id
+            
         # Perform Deletion via Route
         response = self.client.post(f'/agenda/status/{self.meeting_num}')
         self.assertEqual(response.status_code, 200, f"Response: {response.json}")

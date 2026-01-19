@@ -1,7 +1,7 @@
 // Cache DOM elements once for better performance
 function cacheElements() {
   return {
-    meetingFilter: document.getElementById("meeting-filter"),
+    meetingFilter: document.getElementById("meeting-filter") || document.getElementById("roster-meeting-filter"),
     rosterForm: document.getElementById("roster-form"),
     tableBody: document.querySelector(".table tbody"),
     cancelEditBtn: document.getElementById("cancel-edit"),
@@ -69,10 +69,26 @@ function hideSuggestions() {
 
 // Select a contact from autocomplete
 function selectContact(contact, elements) {
+  // Check if contact already exists in the roster table for this meeting
+  const existingRow = elements.tableBody.querySelector(`tr[data-contact-id="${contact.id}"]`);
+  
+  if (existingRow) {
+    const entryId = existingRow.dataset.entryId;
+    populateRosterEditForm(entryId, elements);
+    return;
+  }
+
+  // If not in roster, ensure we are in "Add" mode for this new contact
+  if (elements.entryIdInput.value) {
+    elements.entryIdInput.value = "";
+    elements.formTitle.textContent = "Add Entry";
+    if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = "none";
+  }
+
   elements.contactNameInput.value = contact.Name;
   elements.contactIdInput.value = contact.id;
 
-  // Prioritize Officer if UserRole indicates they are an officer
+  // Default logic for new entry
   const isOfficer = contact.is_officer;
   if (isOfficer) {
     elements.contactTypeSelect.value = "Officer";
@@ -80,6 +96,7 @@ function selectContact(contact, elements) {
     elements.contactTypeSelect.value = contact.Type;
   }
 
+  // Trigger change handler to set ticket and order number
   if (elements.contactTypeSelect.value) {
     elements.contactTypeSelect.dispatchEvent(new Event('change'));
   }
@@ -149,11 +166,35 @@ function initializeContactTypeHandler(elements) {
     if (isOfficer) {
       elements.ticketSelect.value = "Officer";
     } else {
-      elements.ticketSelect.value = "Early-bird";
+      // Don't overwrite complex tickets (like Online/Voucher) if they already have one
+      const currentTicket = elements.ticketSelect.value;
+      
+      // Determine default ticket based on type (Member gets Member price, others get Guest price)
+      // Note: "Guest" is default if type is unknown or not Member
+      const defaultTicket = (elements.contactTypeSelect.value === 'Member') 
+                            ? "Early-bird (Member)" 
+                            : "Early-bird (Guest)";
+
+      // List of special tickets that shouldn't be overwritten automatically
+      const specialTickets = ["Online", "Voucher", "Unpaid", "Walk-in (Guest)", "Walk-in (Member)", "Role-taker", "Officer"];
+      
+      // Check if current ticket is one of the special ones. 
+      // We also check against the "Officer" value specifically because previously it forced Officer ticket.
+      // If NOT special, or if it WAS Officer (and we are no longer Officer type), reset to default.
+      if (!specialTickets.includes(currentTicket) || currentTicket === "Officer") {
+          elements.ticketSelect.value = defaultTicket;
+      }
     }
 
-    // Only update order number if adding a new entry (no entry ID)
-    if (!elements.entryIdInput.value) {
+    // Processing logic for order number:
+    // Update if: 
+    // 1. It's empty (None)
+    // 2. We are switching ranges (Regular to Officer or vice-versa)
+    const currentOrder = parseInt(elements.orderNumberInput.value, 10);
+    const orderIsNone = isNaN(currentOrder);
+    const rangeMismatch = isOfficer ? (currentOrder < 1000) : (currentOrder >= 1000);
+
+    if (orderIsNone || rangeMismatch) {
       elements.orderNumberInput.value = calculateNextOrder(isOfficer, elements.tableBody);
     }
   });
@@ -168,6 +209,7 @@ function resetRosterForm(elements) {
   elements.contactNameInput.value = "";
   elements.contactIdInput.value = "";
   elements.contactTypeSelect.value = "";
+  if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = "none";
 
   // Default to regular order
   elements.orderNumberInput.value = calculateNextOrder(false, elements.tableBody);
@@ -184,17 +226,23 @@ function populateRosterEditForm(rosterId, elements) {
     })
     .then(entry => {
       elements.entryIdInput.value = entry.id;
-      elements.orderNumberInput.value = entry.order_number;
+      
+      // Load order number if not null, otherwise set to empty string
+      // Setting to empty string will trigger automatic calculation in the type change handler
+      elements.orderNumberInput.value = (entry.order_number !== null && entry.order_number !== undefined) ? entry.order_number : "";
+      
       elements.contactIdInput.value = entry.contact_id;
       elements.contactNameInput.value = entry.contact_name;
       elements.ticketSelect.value = entry.ticket;
 
       if (entry.contact_type) {
         elements.contactTypeSelect.value = entry.contact_type;
+        // This dispatch will handle correctly updating the order number if it was null
         elements.contactTypeSelect.dispatchEvent(new Event('change'));
       }
 
       elements.formTitle.textContent = 'Edit Entry';
+      if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = 'inline-block';
       elements.rosterForm.scrollIntoView({ behavior: 'smooth' });
     })
     .catch(error => {
@@ -277,12 +325,32 @@ function initializeTableInteractions(elements) {
   elements.tableBody.addEventListener("click", function (e) {
     const editButton = e.target.closest(".edit-entry");
     const cancelButton = e.target.closest(".cancel-entry");
+    const restoreButton = e.target.closest(".restore-entry");
     const deleteButton = e.target.closest(".delete-entry");
 
     if (editButton) {
       e.preventDefault();
       const entryId = editButton.dataset.id;
       populateRosterEditForm(entryId, elements);
+    }
+
+    if (restoreButton) {
+      e.preventDefault();
+      const entryId = restoreButton.dataset.id;
+      if (confirm("Are you sure you want to restore this roster entry?")) {
+        fetch(`/tools/api/roster/${entryId}/restore`, { method: "POST" })
+          .then((response) =>
+            response.json().then((data) => ({ ok: response.ok, data }))
+          )
+          .then(({ ok, data }) => {
+            if (!ok) throw new Error(data.error || "Failed to restore entry.");
+            window.location.reload();
+          })
+          .catch((error) => {
+            console.error("Error restoring entry:", error);
+            alert(`Error: ${error.message}`);
+          });
+      }
     }
 
     if (cancelButton) {

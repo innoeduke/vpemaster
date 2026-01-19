@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import User, Contact, Club, ContactClub, AuthRole
+from app.models import User, Contact, Club, ContactClub, AuthRole, UserClub
 from app.auth.permissions import Permissions
 
 class TestConfig:
@@ -57,8 +57,6 @@ def admin_user(test_app):
         db.session.commit()
         
         # Assign SysAdmin role (mechanics depend on app implementation, usually via UserClub)
-        # Assuming current logic uses UserClub
-        from app.models import UserClub
         club = Club(club_no='0000', club_name='Test Club')
         db.session.add(club)
         db.session.commit()
@@ -113,6 +111,7 @@ def test_link_existing_contact(test_app, test_client, admin_user):
         assert contact.id == contact_id
         
         # Verify NO new contact created (count should be 2: Admin + Existing)
+        # Note: admin_user fixture creates 1 contact.
         assert Contact.query.count() == 2
         assert contact.Name == 'Existing Contact'
 
@@ -153,3 +152,65 @@ def test_create_new_contact_explicitly(test_app, test_client, admin_user):
         
         # Check contact count (Admin + New User = 2)
         assert Contact.query.count() == 2 
+
+def test_user_multiple_clubs_linked_contacts(test_app):
+    """Verify that a user is linked to exactly one contact for each club they belong to."""
+    with test_app.app_context():
+        # 1. Setup two clubs
+        club1 = Club(club_no='111', club_name='Club 1')
+        club2 = Club(club_no='222', club_name='Club 2')
+        db.session.add_all([club1, club2])
+        db.session.commit()
+        
+        # 2. Setup user
+        user = User(username='multi_club_user', email='multi@test.com')
+        user.set_password('password')
+        db.session.add(user)
+        db.session.commit()
+        
+        # 3. Join club1 and ensure contact
+        contact1 = user.ensure_contact(full_name='User Club 1', club_id=club1.id)
+        db.session.commit()
+        
+        # 4. Join club2 and ensure contact (with same email)
+        # This should REUSE contact1 but update the name
+        contact2 = user.ensure_contact(full_name='User Club 2', club_id=club2.id)
+        db.session.commit()
+        
+        # 5. Verify memberships
+        memberships = UserClub.query.filter_by(user_id=user.id).all()
+        assert len(memberships) == 2
+        
+        # 6. Verify each membership has exactly one contact
+        for uc in memberships:
+            assert uc.contact_id is not None
+            # Verify the contact exists
+            contact = db.session.get(Contact, uc.contact_id)
+            assert contact is not None
+            
+        # 7. Verify they share the same contact because of the same email
+        c1_contact = user.get_contact(club1.id)
+        c2_contact = user.get_contact(club2.id)
+        
+        assert c1_contact.id == c2_contact.id
+        assert c1_contact.Name == 'User Club 2' # Most recently set name
+        
+        # 8. Test separate contacts with different emails
+        club3 = Club(club_no='333', club_name='Club 3')
+        db.session.add(club3)
+        db.session.commit()
+        
+        contact3 = user.ensure_contact(full_name='Separate Contact', email='other@test.com', club_id=club3.id)
+        db.session.commit()
+        
+        assert contact3.id != c1_contact.id
+        assert user.get_contact(club3.id).Name == 'Separate Contact'
+        assert user.get_contact(club1.id).Name == 'User Club 2' # Unchanged
+
+        # 9. Ensure that calling ensure_contact again stays 1:1
+        updated_c3 = user.ensure_contact(full_name='Updated Separate', email='other@test.com', club_id=club3.id)
+        db.session.commit()
+        
+        assert updated_c3.id == contact3.id
+        assert updated_c3.Name == 'Updated Separate'
+        assert UserClub.query.filter_by(user_id=user.id, club_id=club3.id).count() == 1

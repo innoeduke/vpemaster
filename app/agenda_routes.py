@@ -190,17 +190,18 @@ def _create_or_update_session(item, meeting_number, seq):
         db.session.add(new_log)
         log = new_log
         old_owner_id = None
+        old_role = None
     else:
         log = db.session.get(SessionLog, item['id'])
         if log:
-            # Capture old owner ID to detect changes
+            # Capture old state for roster sync
             old_owner_id = log.Owner_ID
+            old_role = log.session_type.role if log.session_type and log.session_type.role else None
             
             log.Meeting_Number = meeting_number
             log.Meeting_Seq = seq
-            log.Type_ID = type_id
-            # log.Owner_ID = owner_id # Handled below
-            # log.credentials = credentials # Handled below if owner changes
+            # log.Type_ID = type_id # Defer update to handle role changes
+            
             log.Duration_Min = duration_min
             log.Duration_Max = duration_max
             log.Project_ID = project_id
@@ -214,28 +215,24 @@ def _create_or_update_session(item, meeting_number, seq):
 
     # Use shared assignment logic if owner changed or it's a new log with an owner
     if log:
-        should_update_owner = False
-        if item['id'] == 'new' and owner_id:
-            should_update_owner = True
-        elif item['id'] != 'new' and old_owner_id != owner_id:
-             should_update_owner = True
+        new_role = session_type.role if session_type else None
         
-        # Also update if owner is same but credentials/project_code need refresh?
-        # For now, trust manual credentials unless owner changes. 
-        # But wait, agenda_routes calc credentials manually above (lines 103-107).
-        # assign_role_owner will overwrite them if called.
+        role_changed = (old_role != new_role)
+        owner_changed = (old_owner_id != owner_id)
         
-        if should_update_owner:
-             RoleService.assign_meeting_role(log, owner_id, is_admin=True)
+        if role_changed or owner_changed:
+            if item['id'] != 'new' and old_owner_id and old_role and role_changed:
+                # Force unassign from the OLD role if the type changed
+                Roster.sync_role_assignment(log.Meeting_Number, old_owner_id, old_role, 'unassign')
+            
+            # Update role type before calling assignment logic 
+            log.Type_ID = type_id
+            RoleService.assign_meeting_role(log, owner_id, is_admin=True)
         else:
-             # If owner didn't change, we still might need to save other fields 
-             # that assign_role_owner updates (like project_code if project_id changed?)
-             # agenda_routes calculated project_code manually above.
-             
-             # Fallback: Just set the fields we calculated manually if NOT calling assign_role_owner
-             log.Owner_ID = owner_id
-             log.credentials = credentials
-             log.project_code = project_code
+            # Ensure fields are set if NOT calling RoleService (which does this internally)
+            log.Owner_ID = owner_id
+            log.credentials = credentials
+            log.project_code = project_code
 
 
 
@@ -530,8 +527,12 @@ def agenda():
     if selected_meeting_num:
         logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_num)
         
+        if not selected_meeting:
+             # Handle meeting not found (deleted or invalid number)
+             flash(f"Meeting #{selected_meeting_num} not found or you don't have access.", "warning")
+             return redirect(url_for('agenda_bp.agenda'))
+
         # Custom Security Check based on Status
-        
         # 1. Unpublished: Only Officers/Admin can view full details
         if selected_meeting.status == 'unpublished':
             if not is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting):
@@ -745,6 +746,11 @@ def export_agenda(meeting_number):
 
 
 
+class SuspiciousDateError(ValueError):
+    """Exception raised when a meeting date is earlier than existing meetings."""
+    pass
+
+
 def _validate_meeting_form_data(form):
     """Parses and validates meeting form data."""
     meeting_number = form.get('meeting_number')
@@ -775,8 +781,9 @@ def _validate_meeting_form_data(form):
         query = query.filter_by(club_id=club_id)
     most_recent_meeting = query.order_by(Meeting.Meeting_Date.desc()).first()
     
-    if most_recent_meeting and meeting_date < most_recent_meeting.Meeting_Date:
-        raise ValueError(f"Meeting date cannot be earlier than the most recent meeting ({most_recent_meeting.Meeting_Date.strftime('%Y-%m-%d')})")
+    ignore_suspicious_date = form.get('ignore_suspicious_date') == 'true'
+    if not ignore_suspicious_date and most_recent_meeting and meeting_date < most_recent_meeting.Meeting_Date:
+        raise SuspiciousDateError(f"Meeting date ({meeting_date.strftime('%Y-%m-%d')}) is earlier than the most recent meeting ({most_recent_meeting.Meeting_Date.strftime('%Y-%m-%d')}).")
 
     return {
         'meeting_number': meeting_number,
@@ -810,7 +817,10 @@ def _get_or_create_media_id(media_url):
 def _upsert_meeting_record(data, media_id):
     """Creates or updates the Meeting record."""
     meeting = Meeting.query.filter_by(Meeting_Number=data['meeting_number']).first()
+    is_new = False
+    
     if not meeting:
+        is_new = True
         meeting = Meeting(
             Meeting_Number=data['meeting_number'],
             Meeting_Date=data['meeting_date'],
@@ -821,7 +831,8 @@ def _upsert_meeting_record(data, media_id):
             Subtitle=data['subtitle'],
             WOD=data['wod'],
             media_id=media_id,
-            status='unpublished'
+            status='unpublished',
+            club_id=get_current_club_id()
         )
         db.session.add(meeting)
     else:
@@ -835,6 +846,30 @@ def _upsert_meeting_record(data, media_id):
         meeting.media_id = media_id
         if meeting.status is None:
             meeting.status = 'unpublished'
+
+    if is_new:
+        # Auto-add Staff to Roster
+        from .models import UserClub, AuthRole
+        club_id = get_current_club_id()
+        if club_id:
+            # Find all staff members for this club (Officers/Admins)
+            staff_members = UserClub.query.join(AuthRole, UserClub.club_role_id == AuthRole.id)\
+                .filter(UserClub.club_id == club_id, AuthRole.level > 1).all()
+            
+            # Add each staff member to the roster
+            # Officers get order numbers starting from 1000
+            # Filter to ensure we only count members who have a contact_id
+            valid_staff = [m for m in staff_members if m.contact_id]
+            for i, membership in enumerate(valid_staff):
+                roster_entry = Roster(
+                    meeting_number=meeting.Meeting_Number,
+                    contact_id=membership.contact_id,
+                    order_number=1000 + i,
+                    ticket='Officer',
+                    contact_type='Officer'
+                )
+                db.session.add(roster_entry)
+
     return meeting
 
 
@@ -979,15 +1014,19 @@ def _generate_logs_from_template(meeting, template_file):
 def create_from_template():
     # Check if user has permission to edit agenda
     if not is_authorized(Permissions.AGENDA_EDIT):
-        flash("You don't have permission to create meetings.", 'error')
-        return redirect(url_for('agenda_bp.agenda'))
+        return jsonify({'success': False, 'message': "You don't have permission to create meetings."}), 403
     
     try:
         # 1. Validation & Data Extraction
         data = _validate_meeting_form_data(request.form)
+    except SuspiciousDateError as e:
+        return jsonify({
+            'success': False, 
+            'suspicious_date': True, 
+            'message': str(e)
+        }), 400
     except ValueError as e:
-        flash(str(e), 'error')
-        return redirect(url_for('agenda_bp.agenda'))
+        return jsonify({'success': False, 'message': str(e)}), 400
 
     try:
         # 2. Handle Media
@@ -1011,22 +1050,23 @@ def create_from_template():
         # Final Commit
         db.session.commit()
         
-        flash('Meeting created successfully from template!', 'success')
-        return redirect(url_for('agenda_bp.agenda', meeting_number=data['meeting_number']))
+        return jsonify({
+            'success': True, 
+            'message': 'Meeting created successfully!',
+            'redirect_url': url_for('agenda_bp.agenda', meeting_number=data['meeting_number'])
+        }), 201
 
-    except FileNotFoundError:
-        flash('Template file not found.', 'error')
-        return redirect(url_for('agenda_bp.agenda'))
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error creating meeting: {e}")
-        flash(f'Error processing template: {str(e)}', 'error')
+        return jsonify({'success': False, 'message': f'Error processing template: {str(e)}'}), 500
         return redirect(url_for('agenda_bp.agenda'))
 
 
 
 @agenda_bp.route('/agenda/update', methods=['POST'])
 @login_required
+@authorized_club_required
 def update_logs():
     data = request.get_json()
 
@@ -1121,9 +1161,21 @@ def update_logs():
 
 @agenda_bp.route('/agenda/delete/<int:log_id>', methods=['POST'])
 @login_required
+@authorized_club_required
 def delete_log(log_id):
-    log = SessionLog.query.get_or_404(log_id)
+    log = db.session.get(SessionLog, log_id)
+    if not log:
+        return jsonify(success=False, message="Log not found"), 404
+
+    # Security check: Ensure log belongs to current club via meeting
+    club_id = get_current_club_id()
+    if club_id and log.meeting and log.meeting.club_id != club_id:
+        return jsonify(success=False, message="Unauthorized"), 403
     try:
+        if log.Owner_ID:
+            from .services.role_service import RoleService
+            RoleService.cancel_meeting_role(log, log.Owner_ID, is_admin=True)
+
         db.session.delete(log)
         db.session.commit()
         return jsonify(success=True)
@@ -1174,9 +1226,15 @@ def _tally_votes_and_set_winners(meeting):
 
 @agenda_bp.route('/agenda/status/<int:meeting_number>', methods=['POST'])
 @login_required
+@authorized_club_required
 def update_meeting_status(meeting_number):
     """Toggles the status of a meeting."""
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    club_id = get_current_club_id()
+    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number)
+    if club_id:
+        meeting = meeting.filter(Meeting.club_id == club_id)
+    meeting = meeting.first()
+
     if not meeting:
         return jsonify(success=False, message="Meeting not found"), 404
 
@@ -1218,8 +1276,17 @@ def update_meeting_status(meeting_number):
 
 @agenda_bp.route('/agenda/sync_tally/<int:meeting_number>', methods=['POST'])
 @login_required
+@authorized_club_required
 def sync_tally(meeting_number):
     try:
+        # Security check: Ensure meeting belongs to current club
+        club_id = get_current_club_id()
+        meeting = Meeting.query.filter_by(Meeting_Number=meeting_number)
+        if club_id:
+            meeting = meeting.filter(Meeting.club_id == club_id)
+        if not meeting.first():
+             return jsonify(success=False, message="Meeting not found"), 404
+
         context = MeetingExportContext(meeting_number)
         sync_participants_to_tally(context.participants_dict)
         return jsonify(success=True)

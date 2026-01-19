@@ -253,8 +253,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                     expected_code = 302
             
             if '/roster' in resource_template:
-                if Permissions.ROSTER_VIEW not in perms:
-                    expected_code = 302
+                expected_code = 302 # Always redirects to tools
             
             if '/contacts' in resource_template:
                  if Permissions.CONTACT_BOOK_VIEW not in perms:

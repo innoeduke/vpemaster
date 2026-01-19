@@ -1,11 +1,11 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
-from .models import Roster, Meeting, Contact, ContactClub, Pathway
+from .models import Roster, Meeting, Contact, ContactClub, Pathway, Ticket
 from .club_context import get_current_club_id, authorized_club_required
 from . import db
 from sqlalchemy import distinct
-from .utils import get_meetings_by_status
+from .utils import get_meetings_by_status, get_meeting_roles
 from .constants import RoleID
 
 tools_bp = Blueprint('tools_bp', __name__)
@@ -26,12 +26,10 @@ def tools():
     
     # Heuristics for default tab if not specified
     if not active_tab:
-        if request.args.get('meeting_number') and has_roster_access:
+        if has_roster_access:
             active_tab = 'roster'
         elif has_lucky_draw_access:
             active_tab = 'luckydraw'
-        elif has_roster_access:
-            active_tab = 'roster'
             
     # Validate access to requested tab
     if active_tab == 'luckydraw' and not has_lucky_draw_access:
@@ -54,6 +52,10 @@ def tools():
     next_unallocated_entry = None
     pathways = {}
     meeting_numbers = []
+    
+    tickets = []
+    tickets_map = {}
+    roles_map = {}
 
     # Load Data for Active Tab Only
     club_id = get_current_club_id()
@@ -77,10 +79,11 @@ def tools():
         # Get roster entries for this meeting (excluding cancelled entries)
         if ld_current_meeting:
             ld_entries = Roster.query\
-                .options(db.joinedload(Roster.roles))\
+                .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
                 .outerjoin(Contact, Roster.contact_id == Contact.id)\
                 .filter(Roster.meeting_number == ld_current_meeting.Meeting_Number)\
-                .filter(Roster.ticket != 'Cancelled')\
+                .join(Ticket, Roster.ticket_id == Ticket.id)\
+                .filter(Ticket.name != 'Cancelled')\
                 .order_by(Roster.order_number.asc())\
                 .all()
 
@@ -108,11 +111,16 @@ def tools():
 
             # Get roster entries for this meeting (including unallocated entries)
             roster_entries = Roster.query\
-                .options(db.joinedload(Roster.roles))\
+                .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
                 .outerjoin(Contact, Roster.contact_id == Contact.id)\
                 .filter(Roster.meeting_number == selected_meeting_num)\
                 .order_by(Roster.order_number.asc())\
                 .all()
+            
+            # Populate booked roles from SessionLogs using the helper
+            # Populate booked roles from SessionLogs using the helper
+            roles_map = get_meeting_roles(club_id, selected_meeting_num)
+            # We pass roles_map directly to template to avoid transient attribute loss on SQLAlchemy objects
                     
             # Find next available order number (last order number + 1)
             if roster_entries:
@@ -133,6 +141,10 @@ def tools():
                 pathways[ptype] = []
             pathways[ptype].append(p.name)
 
+        # Get all tickets for dropdown and display
+        tickets = Ticket.query.order_by(Ticket.id).all()
+        tickets_map = {t.name: t for t in tickets}
+
     return render_template(
         'tools.html',
         active_tab=active_tab,
@@ -146,11 +158,14 @@ def tools():
         all_meetings=all_meetings,
         selected_meeting=selected_meeting,
         selected_meeting_num=selected_meeting_num,
+        roles_map=roles_map,
         roster_entries=roster_entries,
         contacts=contacts,
         meeting_numbers=meeting_numbers,
         next_unallocated_entry=next_unallocated_entry,
-        pathways=pathways
+        pathways=pathways,
+        tickets=tickets,
+        tickets_map=tickets_map
     )
 
 # --- API Endpoints (Moved from roster_routes.py) ---
@@ -167,10 +182,15 @@ def create_roster_entry():
         if field not in data or not data[field]:
             return jsonify({'error': f'Missing required field: {field}'}), 400
 
+    ticket_name = data['ticket']
+    ticket_obj = Ticket.query.filter_by(name=ticket_name).first()
+    if not ticket_obj:
+         return jsonify({'error': f'Invalid ticket type: {ticket_name}'}), 400
+
     new_entry = Roster(
         meeting_number=data['meeting_number'],
         order_number=data['order_number'],
-        ticket=data['ticket']
+        ticket_id=ticket_obj.id
     )
 
     if 'contact_id' in data and data['contact_id']:
@@ -212,7 +232,7 @@ def get_roster_entry(entry_id):
         'id': entry.id,
         'meeting_number': entry.meeting_number,
         'order_number': entry.order_number,
-        'ticket': entry.ticket,
+        'ticket': entry.ticket.name if entry.ticket else None,
         'contact_id': entry.contact_id,
         'contact_name': contact_name,
         'contact_type': contact_type
@@ -232,7 +252,10 @@ def update_roster_entry(entry_id):
     if 'order_number' in data:
         entry.order_number = data['order_number']
     if 'ticket' in data:
-        entry.ticket = data['ticket']
+        ticket_name = data['ticket']
+        ticket_obj = Ticket.query.filter_by(name=ticket_name).first()
+        if ticket_obj:
+            entry.ticket_id = ticket_obj.id
 
     if 'contact_id' in data:
         if data['contact_id']:  # If contact_id is not empty
@@ -246,6 +269,33 @@ def update_roster_entry(entry_id):
     try:
         db.session.commit()
         return jsonify({'message': 'Entry updated successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@tools_bp.route('/api/roster/<int:entry_id>/restore', methods=['POST'])
+@login_required
+@authorized_club_required
+def restore_roster_entry(entry_id):
+    entry = db.session.get(Roster, entry_id)
+    if not entry:
+        return jsonify({'error': 'Entry not found'}), 404
+
+    if entry.contact_type == 'Officer':
+        ticket_name = 'Officer'
+    elif entry.contact and entry.contact.Type == 'Member':
+        ticket_name = 'Early-bird (Member)'
+    else:
+        ticket_name = 'Early-bird (Guest)'
+    
+    t_obj = Ticket.query.filter_by(name=ticket_name).first()
+    if t_obj:
+        entry.ticket_id = t_obj.id
+
+    try:
+        db.session.commit()
+        return jsonify({'message': 'Entry restored successfully'}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -269,7 +319,9 @@ def delete_roster_entry(entry_id):
             db.session.delete(entry)
             message = 'Entry deleted successfully'
         else:
-            entry.ticket = 'Cancelled'
+            cancelled_ticket = Ticket.query.filter_by(name='Cancelled').first()
+            if cancelled_ticket:
+                entry.ticket_id = cancelled_ticket.id
             message = 'Entry cancelled successfully'
             
         db.session.commit()

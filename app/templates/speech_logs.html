@@ -215,29 +215,22 @@
                 {{ log.owner.Name if log.owner else 'N/A' }}
             </div>
 
-            <div class="grouped-role-list" style="margin-bottom:10px; max-height: 200px; overflow-y: auto;">
-                <table class="table table-sm table-borderless"
-                    style="font-size: 0.9em; width: 100%; font-family: 'Quicksand', sans-serif;">
-                    <tbody>
-                        {% for item in log.logs %}
-                        <tr>
-                            <td class="meeting-info"
-                                style="border: none; padding: 4px 0; text-align: center; position: relative;">
-                                Meeting #{{ item.Meeting_Number }} | {{
-                                item.meeting.Meeting_Date.strftime('%Y-%m-%d')
-                                if item.meeting and item.meeting.Meeting_Date else 'N/A' }}
-                                {% if log.session_type.Valid_for_Project and is_authorized(current_user.id ==
-                                log.owner.id, Permissions.SPEECH_LOGS_EDIT_ALL) %}
-                                <button class="icon-btn edit-log-btn"
-                                    onclick="openSpeechEditModal({{ item.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)"
-                                    title="Edit" style="font-size: 0.8em; margin-left: 8px;"><i
-                                        class="fas fa-edit"></i></button>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="grouped-role-list" style="margin-bottom:10px; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+                {% for item in log.logs %}
+                <div class="meeting-info"
+                    style="padding: 0; text-align: center; position: relative; line-height: 1.2; width: 100%;">
+                    Meeting #{{ item.Meeting_Number }} | {{
+                    item.meeting.Meeting_Date.strftime('%Y-%m-%d')
+                    if item.meeting and item.meeting.Meeting_Date else 'N/A' }}
+                    {% if log.session_type.Valid_for_Project and is_authorized(current_user.id ==
+                    log.owner.id, Permissions.SPEECH_LOGS_EDIT_ALL) %}
+                    <button class="icon-btn edit-log-btn"
+                        onclick="openSpeechEditModal({{ item.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)"
+                        title="Edit" style="font-size: 0.8em; margin-left: 8px; padding: 0;"><i
+                            class="fas fa-edit"></i></button>
+                    {% endif %}
+                </div>
+                {% endfor %}
             </div>
 
             <div class="card-footer">

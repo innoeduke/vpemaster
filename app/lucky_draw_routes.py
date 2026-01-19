@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
-from .models import Roster, Meeting, Contact
+from .models import Roster, Meeting, Contact, Ticket
 from .constants import RoleID
 from . import db
 
@@ -34,10 +34,11 @@ def lucky_draw():
     roster_entries = []
     if current_meeting:
         roster_entries = Roster.query\
-            .options(db.joinedload(Roster.roles))\
+            .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
             .outerjoin(Contact, Roster.contact_id == Contact.id)\
             .filter(Roster.meeting_number == current_meeting.Meeting_Number)\
-            .filter(Roster.ticket != 'Cancelled')\
+            .join(Ticket, Roster.ticket_id == Ticket.id)\
+            .filter(Ticket.name != 'Cancelled')\
             .order_by(Roster.order_number.asc())\
             .all()
 

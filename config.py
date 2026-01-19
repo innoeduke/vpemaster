@@ -21,6 +21,11 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {'pool_recycle': 280}
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # Good practice
 
+    # Cache settings
+    CACHE_TYPE = 'SimpleCache'
+    CACHE_DEFAULT_TIMEOUT = 300
+
+
     # Session settings
     PERMANENT_SESSION_LIFETIME = timedelta(days=30)
     

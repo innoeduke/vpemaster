@@ -208,7 +208,7 @@
     color: #4A90E2;
     font-size: 1.5 em;
     /* Made icon larger */
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     /* Space between icon and text */
     gap: 0;
 }
@@ -228,17 +228,27 @@
     max-height: 200px;
     overflow-y: auto;
     width: 100%;
+    flex: 0 0 auto;
 }
 
-.grouped-role-entry .table {
-    table-layout: fixed;
-    width: 100%;
-    margin-bottom: 0;
+.grouped-role-entry {
+    display: block !important;
+    height: auto;
+    padding: 0.75rem;
 }
 
-.grouped-role-entry .table td {
-    word-wrap: break-word;
-    white-space: normal;
+.grouped-role-entry .role-title {
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+}
+
+.grouped-role-entry .speaker-info {
+    margin-bottom: 0.5rem;
+}
+
+.grouped-role-entry .meeting-info {
+    margin-bottom: 0px;
+    font-size: 0.85em;
 }
 
 /* Card Typography */

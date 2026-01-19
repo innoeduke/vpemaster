@@ -3,6 +3,7 @@ from sqlalchemy import func
 from .base import db
 
 
+
 class MeetingRole(db.Model):
     __tablename__ = 'meeting_roles'
     id = db.Column(db.Integer, primary_key=True)
@@ -33,7 +34,9 @@ class Roster(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     meeting_number = db.Column(db.Integer, nullable=False)
     order_number = db.Column(db.Integer, nullable=True)
-    ticket = db.Column(db.String(20), nullable=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('tickets.id'), nullable=True)
+    
+    ticket = db.relationship('Ticket')
     contact_id = db.Column(db.Integer, db.ForeignKey(
         'Contacts.id'), nullable=True)
     contact_type = db.Column(db.String(50), nullable=True)
@@ -83,12 +86,6 @@ class Roster(db.Model):
     def sync_role_assignment(meeting_number, contact_id, role_obj, action):
         """
         Sync roster role assignments when booking/agenda changes.
-        
-        Args:
-            meeting_number: Meeting number
-            contact_id: Contact ID (or None for unassignment)
-            role_obj: Role object being assigned/unassigned
-            action: 'assign' or 'unassign'
         """
         if not contact_id or not role_obj:
             return
@@ -99,15 +96,18 @@ class Roster(db.Model):
             contact_id=contact_id
         ).first()
         
+        # Fetch contact details for field syncing
+        from .contact import Contact
+        contact = db.session.get(Contact, contact_id)
+        if not contact:
+            return
+
+        from ..auth.permissions import Permissions
+        from .ticket import Ticket
+        is_officer = (contact.user and contact.user.has_role(Permissions.STAFF)) or contact.Type == 'Officer'
+
         if not roster_entry:
             if action == 'assign':
-                # Fetch contact details
-                from .contact import Contact
-                contact = db.session.get(Contact, contact_id)
-                contact_type = contact.Type
-                from ..auth.permissions import Permissions
-                is_officer = (contact.user and contact.user.has_role(Permissions.STAFF)) or contact.Type == 'Officer'
-
                 # Logic for Order Number
                 new_order = None
                 if is_officer:
@@ -118,34 +118,57 @@ class Roster(db.Model):
                     ).scalar()
                     new_order = (max_order or 999) + 1
                 else:
-                    # Members/Guests get blank order number (None)
                     new_order = None
 
                 # Logic for Ticket Class
-                ticket_class = "Role Taker" # Default for Guest
+                ticket_name = "Role-taker" # Default
                 if is_officer:
-                    ticket_class = "Officer"
-                elif contact_type == 'Member':
-                    ticket_class = "Member"
+                    ticket_name = "Officer"
+                elif contact.Type == 'Member':
+                    ticket_name = "Early-bird (Member)"
+
+                ticket_obj = Ticket.query.filter_by(name=ticket_name).first()
+                # Fallback to Role-taker if not found, though DB should have it
+                if not ticket_obj:
+                    ticket_obj = Ticket.query.filter_by(name="Role-taker").first()
 
                 roster_entry = Roster(
                     meeting_number=meeting_number,
                     contact_id=contact_id,
                     order_number=new_order,
-                    ticket=ticket_class,
-                    contact_type=contact_type
+                    ticket_id=ticket_obj.id if ticket_obj else None,
+                    contact_type=contact.Type
                 )
                 db.session.add(roster_entry)
             else:
-                # Contact not in roster and we are unassigning - nothing to do
                 return
+        else:
+            # Update fields except order_number and ticket (per user request)
+            roster_entry.contact_type = contact.Type
         
         if action == 'assign':
             # Add role if not already assigned
             roster_entry.add_role(role_obj)
         elif action == 'unassign':
-            # Remove role if assigned
-            roster_entry.remove_role(role_obj)
+            # Remove role ONLY if they have no other sessions with this role in this meeting
+            from .session import SessionLog, SessionType
+            remaining_role_session = db.session.query(SessionLog.id)\
+                .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+                .filter(SessionLog.Meeting_Number == meeting_number)\
+                .filter(SessionLog.Owner_ID == contact_id)\
+                .filter(SessionType.role_id == role_obj.id)\
+                .first()
+            
+            if not remaining_role_session:
+                roster_entry.remove_role(role_obj)
+            
+            # Delete roster entry if no roles left (and not an officer/cancelled)
+            # Delete roster entry if no roles left (and not an officer/cancelled)
+            if not roster_entry.roles:
+                # Access ticket name via relationship
+                t_name = roster_entry.ticket.name if roster_entry.ticket else None
+                if t_name not in ['Officer', 'Cancelled'] and not is_officer:
+                    db.session.delete(roster_entry)
 
 
 class Waitlist(db.Model):

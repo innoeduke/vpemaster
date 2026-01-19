@@ -289,7 +289,7 @@
         <div class="modal-content">
             <span class="close" onclick="closeCreateAgendaModal()">&times;</span>
             <h1>Create New Agenda</h1>
-            <form action="{{ url_for('agenda_bp.create_from_template') }}" method="POST">
+            <form id="create-meeting-form">
                 <table class="form-table">
                     <tr>
                         <td><label for="meeting_number">Meeting Number:</label></td>
@@ -370,5 +370,16 @@
             }
         });
     </script>
+    <div id="custom-modal" class="custom-modal">
+        <div class="custom-modal-content">
+            <div id="custom-modal-icon" class="custom-modal-icon"></div>
+            <div id="custom-modal-title" class="custom-modal-title"></div>
+            <div id="custom-modal-message" class="custom-modal-message"></div>
+            <div id="custom-modal-actions" class="custom-modal-actions">
+                <button id="custom-modal-cancel" class="custom-modal-btn btn-cancel" style="display: none;">Cancel</button>
+                <button id="custom-modal-ok" class="custom-modal-btn btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
 </div> {# End of #agenda-content wrapper #}
 {% endblock %}

@@ -35,6 +35,16 @@ class TestRosterAssignment(unittest.TestCase):
         self.role = MeetingRole(name="Test Role", type="functionary", needs_approval=False, is_distinct=False)
         
         db.session.add_all([self.officer_contact, self.member_contact, self.guest_contact, self.role])
+        
+        # Seed Tickets
+        from app.models import Ticket
+        tickets = [
+            Ticket(name="Officer", price=0),
+            Ticket(name="Early-bird (Member)", price=0),
+            Ticket(name="Role-taker", price=0),
+            Ticket(name="Guest", price=0)
+        ]
+        db.session.add_all(tickets)
         db.session.commit()
 
     def tearDown(self):
@@ -51,7 +61,7 @@ class TestRosterAssignment(unittest.TestCase):
         officer_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.officer_contact.id).first()
         self.assertIsNotNone(officer_entry)
         self.assertGreaterEqual(officer_entry.order_number, 1000)
-        self.assertEqual(officer_entry.ticket, "Officer")
+        self.assertEqual(officer_entry.ticket.name, "Officer")
 
     def test_multiple_officer_ordering(self):
         """Test that multiple officers get sequential order numbers"""
@@ -77,7 +87,7 @@ class TestRosterAssignment(unittest.TestCase):
         member_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.member_contact.id).first()
         self.assertIsNotNone(member_entry)
         self.assertIsNone(member_entry.order_number)
-        self.assertEqual(member_entry.ticket, "Member")
+        self.assertEqual(member_entry.ticket.name, "Early-bird (Member)")
 
     def test_guest_assignment(self):
         """Test that guests get None order number and Role Taker ticket"""
@@ -87,7 +97,7 @@ class TestRosterAssignment(unittest.TestCase):
         guest_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.guest_contact.id).first()
         self.assertIsNotNone(guest_entry)
         self.assertIsNone(guest_entry.order_number)
-        self.assertEqual(guest_entry.ticket, "Role Taker")
+        self.assertEqual(guest_entry.ticket.name, "Role-taker")
 
 if __name__ == '__main__':
     unittest.main()

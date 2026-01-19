@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .catch((error) => {
         console.error("Error fetching initial data:", error);
-        alert("Warning: Could not load some editing data. You may need to reload the page to edit fully.\n\nError: " + error.message);
+        showCustomAlert("Warning", "Could not load some editing data. You may need to reload the page to edit fully.\n\nError: " + error.message);
         // Even if data load fails, we MUST initialize the page so buttons work!
         initializeAgendaPage();
       });
@@ -174,6 +174,47 @@ document.addEventListener("DOMContentLoaded", () => {
     if (saveDetailsBtn) {
       saveDetailsBtn.addEventListener("click", saveChanges);
     }
+
+    const createMeetingForm = document.getElementById("create-meeting-form");
+    if (createMeetingForm) {
+      createMeetingForm.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const submitForm = (ignoreSuspicious) => {
+          const formData = new FormData(createMeetingForm);
+          if (ignoreSuspicious) {
+            formData.append("ignore_suspicious_date", "true");
+          }
+
+          fetch("/agenda/create", {
+            method: "POST",
+            body: formData,
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          })
+            .then((response) => response.json())
+            .then(async (data) => {
+              if (data.success) {
+                window.location.href = data.redirect_url;
+              } else if (data.suspicious_date) {
+                const confirmed = await showCustomConfirm("Confirm Date", data.message + "\n\nDo you want to create the meeting anyway?");
+                if (confirmed) {
+                  submitForm(true);
+                }
+              } else {
+                showCustomAlert("Error", "Error creating meeting: " + data.message);
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              showCustomAlert("Error", "An error occurred while creating the meeting.");
+            });
+        };
+
+        submitForm(false);
+      });
+    }
   }
 
   // --- Core Functions ---
@@ -222,8 +263,9 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     if (invalidRowFound) {
-      alert(
-        "Save failed: One or more sessions has a missing 'Session Type'.\n\nPlease select a valid type for the highlighted row(s) before saving."
+      showCustomAlert(
+        "Save Failed",
+        "One or more sessions has a missing 'Session Type'.\n\nPlease select a valid type for the highlighted row(s) before saving."
       );
       return; // Stop the save operation
     }
@@ -233,7 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const meetingNumber = meetingFilter.value;
 
     if (!meetingNumber) {
-      alert("Error: No meeting is selected. Cannot save.");
+      showCustomAlert("Error", "No meeting is selected. Cannot save.");
       return;
     }
 
@@ -242,7 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.reload();
       return;
     }
-
     fetch("/agenda/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -273,7 +314,6 @@ document.addEventListener("DOMContentLoaded", () => {
           }
 
           // Re-render the table with the new data
-          // Re-render the table with the new data
           if (data.logs_data) {
             renderTableRows(data.logs_data);
             // Exit edit mode and update UI only after successful render
@@ -283,16 +323,13 @@ document.addEventListener("DOMContentLoaded", () => {
             // Fallback: If no data returned, force reload to ensure clean state
             window.location.reload();
           }
-
-          // Show success feedback (optional, since the UI update is the feedback)
-          // alert("Changes saved successfully!"); 
         } else {
-          alert("Error saving changes: " + data.message);
+          showCustomAlert("Error", "Error saving changes: " + data.message);
         }
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert("An error occurred while saving.");
+        showCustomAlert("Error", "An error occurred while saving.");
       });
   }
 
@@ -474,7 +511,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function addNewRow() {
     if (!meetingFilter.value) {
-      alert("Please select a meeting to add a section to.");
+      showCustomAlert("Select Meeting", "Please select a meeting to add a section to.");
       return;
     }
 
@@ -498,7 +535,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function addSessionToSection(sectionRow) {
     if (!meetingFilter.value) {
-      alert("Please select a meeting.");
+      showCustomAlert("Select Meeting", "Please select a meeting.");
       return;
     }
 
@@ -539,19 +576,21 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (confirm("Are you sure you want to delete this log?")) {
-      fetch(`/agenda/delete/${row.dataset.id}`, { method: "POST" })
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.success) {
-            row.remove();
-            renumberRows();
-          } else {
-            alert("Error deleting log: " + data.message);
-          }
-        })
-        .catch((error) => console.error("Error:", error));
-    }
+    showCustomConfirm("Delete Log", "Are you sure you want to delete this log?")
+      .then((confirmed) => {
+        if (!confirmed) return;
+        fetch(`/agenda/delete/${row.dataset.id}`, { method: "POST" })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              row.remove();
+              renumberRows();
+            } else {
+              showCustomAlert("Error", "Error deleting log: " + data.message);
+            }
+          })
+          .catch((error) => console.error("Error:", error));
+      });
   }
 
   // --- Helper Functions ---
@@ -561,91 +600,89 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentStatus = button.dataset.currentStatus;
 
     if (!meetingNumber) {
-      alert("No meeting selected.");
+      showCustomAlert("No Selection", "No meeting selected.");
       return;
     }
 
     if (currentStatus === "finished") {
-      if (
-        !confirm(
-          "Are you sure you want to PERMANENTLY DELETE this meeting and all its records (logs, votes, media)? This action cannot be undone."
-        )
-      ) {
-        return;
-      }
+      showCustomConfirm("Delete Meeting", "Are you sure you want to PERMANENTLY DELETE this meeting and all its records (logs, votes, media)? This action cannot be undone.")
+        .then((confirmed) => {
+          if (!confirmed) return;
+          performStatusUpdate(meetingNumber);
+        });
+    } else {
+      performStatusUpdate(meetingNumber);
     }
 
-    fetch(`/agenda/status/${meetingNumber}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          if (data.deleted) {
-            // alert("Meeting successfully deleted.");
-            window.location.href = "/agenda"; // Redirect to refresh the list
-            return;
-          }
-          const newStatus = data.new_status;
-          button.dataset.currentStatus = newStatus; // Update status
-
-          // Safely update the status class without affecting other classes
-          statusDisplayElement.classList.remove(
-            "status-unpublished",
-            "status-not-started",
-            "status-running",
-            "status-finished",
-            "status-cancelled"
-          );
-          statusDisplayElement.classList.add(
-            `status-${newStatus.replace(/ /g, "-")}`
-          );
-
-          // Update the icon and text
-          // Update the icon and text
-          let iconClass = "";
-          let statusText = newStatus
-            .replace(/_/g, " ") // Global replace
-            .replace(/\b\w/g, (l) => l.toUpperCase());
-
-          if (newStatus === "not started") {
-            button.textContent = "Start";
-            button.classList.remove("btn-success");
-            button.classList.add("btn-primary");
-            iconClass = "fa-play-circle";
-          } else if (newStatus === "running") {
-            button.textContent = "Stop";
-            iconClass = "fa-broadcast-tower";
-          } else if (newStatus === "finished") {
-            button.textContent = "Delete";
-            iconClass = "fa-check-circle";
-          } else if (newStatus === "cancelled") {
-            button.textContent = "Cancelled";
-            button.disabled = true;
-            button.classList.remove("btn-info", "btn-primary", "btn-success");
-            button.classList.add("btn-secondary"); // Gray color
-            iconClass = "fa-ban";
-          } else if (newStatus === "unpublished") {
-            button.textContent = "Publish";
-            button.classList.add("btn-success");
-            iconClass = "fa-eye-slash";
-          } else {
-            button.textContent = "Start";
-            iconClass = "fa-play-circle";
-          }
-
-          statusDisplayElement.innerHTML = `<i class="fas fa-fw ${iconClass}"></i>${statusText}`;
-        } else {
-          alert("Error updating status: " + data.message);
-        }
+    function performStatusUpdate(meetingNumber) {
+      fetch(`/agenda/status/${meetingNumber}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
       })
-      .catch((error) => {
-        console.error("Error:", error);
-        alert("An error occurred while updating the meeting status.");
-      });
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            if (data.deleted) {
+              window.location.href = "/agenda";
+              return;
+            }
+            const newStatus = data.new_status;
+            button.dataset.currentStatus = newStatus;
+
+            statusDisplayElement.classList.remove(
+              "status-unpublished",
+              "status-not-started",
+              "status-running",
+              "status-finished",
+              "status-cancelled"
+            );
+            statusDisplayElement.classList.add(
+              `status-${newStatus.replace(/ /g, "-")}`
+            );
+
+            let iconClass = "";
+            let statusText = newStatus
+              .replace(/_/g, " ")
+              .replace(/\b\w/g, (l) => l.toUpperCase());
+
+            if (newStatus === "not started") {
+              button.textContent = "Start";
+              button.classList.remove("btn-success");
+              button.classList.add("btn-primary");
+              iconClass = "fa-play-circle";
+            } else if (newStatus === "running") {
+              button.textContent = "Stop";
+              iconClass = "fa-broadcast-tower";
+            } else if (newStatus === "finished") {
+              button.textContent = "Delete";
+              iconClass = "fa-check-circle";
+            } else if (newStatus === "cancelled") {
+              button.textContent = "Cancelled";
+              button.disabled = true;
+              button.classList.remove("btn-info", "btn-primary", "btn-success");
+              button.classList.add("btn-secondary");
+              iconClass = "fa-ban";
+            } else if (newStatus === "unpublished") {
+              button.textContent = "Publish";
+              button.classList.add("btn-success");
+              iconClass = "fa-eye-slash";
+            } else {
+              button.textContent = "Start";
+              iconClass = "fa-play-circle";
+            }
+
+            statusDisplayElement.innerHTML = `<i class="fas fa-fw ${iconClass}"></i>${statusText}`;
+          } else {
+            showCustomAlert("Error", "Error updating status: " + data.message);
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          showCustomAlert("Error", "An error occurred while updating the meeting status.");
+        });
+    }
   }
   function handleContactFormSubmit(event) {
     event.preventDefault(); // Stop the default redirect
@@ -679,12 +716,12 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         } else {
           // Display the specific error message from the server
-          alert(data.message || "An error occurred while saving the contact.");
+          showCustomAlert("Error", data.messsage || "An error occurred while saving the contact.");
         }
       })
       .catch((error) => {
         console.error("Error:", error);
-        alert("An error occurred while saving the contact.");
+        showCustomAlert("Error", "An error occurred while saving the contact.");
       });
   }
 
@@ -888,7 +925,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (meetingNumber) {
       window.location.href = `/agenda/export/${meetingNumber}`;
     } else {
-      alert("Please select a meeting to export.");
+      showCustomAlert("Select Meeting", "Please select a meeting to export.");
     }
   }
 
@@ -1567,3 +1604,71 @@ window.closeCreateAgendaModal = function () {
     createAgendaModal.style.display = "none";
   }
 };
+
+// --- Custom Modal Helper Functions ---
+window.showCustomConfirm = function (title, message, iconClass = "confirm") {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("custom-modal");
+    const titleEl = document.getElementById("custom-modal-title");
+    const messageEl = document.getElementById("custom-modal-message");
+    const iconEl = document.getElementById("custom-modal-icon");
+    const okBtn = document.getElementById("custom-modal-ok");
+    const cancelBtn = document.getElementById("custom-modal-cancel");
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    iconEl.className = "custom-modal-icon " + iconClass;
+    iconEl.innerHTML = iconClass === "confirm" ? '<i class="fas fa-question-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
+    
+    cancelBtn.style.display = "inline-block";
+    modal.style.display = "flex";
+
+    const handleOk = () => {
+      modal.style.display = "none";
+      cleanup();
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      modal.style.display = "none";
+      cleanup();
+      resolve(false);
+    };
+
+    const cleanup = () => {
+      okBtn.removeEventListener("click", handleOk);
+      cancelBtn.removeEventListener("click", handleCancel);
+    };
+
+    okBtn.addEventListener("click", handleOk);
+    cancelBtn.addEventListener("click", handleCancel);
+  });
+};
+
+window.showCustomAlert = function (title, message, iconClass = "alert") {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("custom-modal");
+    const titleEl = document.getElementById("custom-modal-title");
+    const messageEl = document.getElementById("custom-modal-message");
+    const iconEl = document.getElementById("custom-modal-icon");
+    const okBtn = document.getElementById("custom-modal-ok");
+    const cancelBtn = document.getElementById("custom-modal-cancel");
+
+    titleEl.textContent = title;
+    messageEl.textContent = message;
+    iconEl.className = "custom-modal-icon " + iconClass;
+    iconEl.innerHTML = '<i class="fas fa-info-circle"></i>';
+    
+    cancelBtn.style.display = "none";
+    modal.style.display = "flex";
+
+    const handleOk = () => {
+      modal.style.display = "none";
+      okBtn.removeEventListener("click", handleOk);
+      resolve();
+    };
+
+    okBtn.addEventListener("click", handleOk);
+  });
+};
+

@@ -18,6 +18,7 @@ from .voting import Vote
 from .media import Media
 from .achievement import Achievement
 from .message import Message
+from .ticket import Ticket
 
 # Import permission system models
 from .permission import Permission

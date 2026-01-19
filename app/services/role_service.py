@@ -57,6 +57,19 @@ class RoleService:
             if contact_id:
                 Roster.sync_role_assignment(session_log.Meeting_Number, contact_id, role_obj, 'assign')
                 
+            # 2. Assign New Owner (if exists)
+            if contact_id:
+                Roster.sync_role_assignment(session_log.Meeting_Number, contact_id, role_obj, 'assign')
+        
+        # Invalidate Cache
+        from app import cache
+        from app.club_context import get_current_club_id
+        club_id = get_current_club_id()
+        if club_id:
+             cache.delete(f"meeting_roles_{club_id}_{session_log.Meeting_Number}")
+        # Also try deleting without club_id if context is missing or ambiguous (fallback)
+        cache.delete(f"meeting_roles_None_{session_log.Meeting_Number}")
+                
         return updated_logs
 
     @staticmethod
@@ -103,6 +116,15 @@ class RoleService:
         if waitlist_entry:
             db.session.delete(waitlist_entry)
             db.session.commit()
+            db.session.commit()
+            
+            # Invalidate Cache
+            from app import cache
+            from app.club_context import get_current_club_id
+            club_id = get_current_club_id()
+            if club_id:
+                cache.delete(f"meeting_roles_{club_id}_{session_log.Meeting_Number}")
+                
             return True, "Removed from waitlist."
 
         # Check if user is owner
@@ -169,6 +191,15 @@ class RoleService:
         ).delete(synchronize_session=False)
         
         db.session.commit()
+        db.session.commit()
+        
+        # Invalidate Cache
+        from app import cache
+        from app.club_context import get_current_club_id
+        club_id = get_current_club_id()
+        if club_id:
+             cache.delete(f"meeting_roles_{club_id}_{session_log.Meeting_Number}")
+             
         return True, "Removed from waitlist."
 
     @staticmethod

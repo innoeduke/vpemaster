@@ -124,7 +124,7 @@ def get_dropdown_metadata():
             'meeting_numbers': [numbers]
         }
     """
-    from .models import MeetingRole, SessionLog
+    from .models import MeetingRole, SessionLog, Ticket, AuthRole
     
     # Pathways
     all_pathways = Pathway.query.filter(Pathway.type != 'dummy').order_by(Pathway.name).all()
@@ -187,6 +187,12 @@ def get_dropdown_metadata():
     
     # All contacts (for impersonation dropdown)
     all_contacts = Contact.query.order_by(Contact.Name).all()
+
+    # Tickets
+    tickets = Ticket.query.order_by(Ticket.id).all()
+
+    # Auth Roles
+    auth_roles_list = AuthRole.query.order_by(AuthRole.name).all()
     
     return {
         'pathways': grouped_pathways,
@@ -196,7 +202,9 @@ def get_dropdown_metadata():
         'projects': projects_data,
         'meeting_numbers': meeting_numbers,
         'speakers': speakers,
-        'all_contacts': all_contacts
+        'all_contacts': all_contacts,
+        'tickets': tickets,
+        'auth_roles': auth_roles_list
     }
 
 
@@ -764,3 +772,78 @@ def process_avatar(file, contact_id):
     except Exception as e:
         print(f"Error processing avatar for contact {contact_id}: {e}")
         return None
+
+
+def get_meeting_roles(club_id=None, meeting_number=None):
+    """
+    Get all roles taken by contacts in a specific meeting.
+    Uses Flask-Caching for persistent caching.
+    
+    Args:
+        club_id: optional club ID (defaults to current context)
+        meeting_number: optional meeting number (defaults to upcoming/running)
+        
+    Returns:
+        dict: Mapping contact_id (str) -> [roles_data list]
+    """
+    from app import cache
+    from .models import SessionLog, SessionType, MeetingRole, Meeting
+    
+    # 1. Resolve Defaults
+    if not club_id:
+        club_id = get_current_club_id()
+        
+    if not meeting_number:
+        meeting_number = get_default_meeting_number()
+        
+    if not meeting_number:
+        return {}
+
+    # 2. Check Cache
+    cache_key = f"meeting_roles_{club_id}_{meeting_number}"
+    roles_map = cache.get(cache_key)
+    
+    if roles_map is None:
+        # 3. Build Cache (Fetch ALL roles for meeting)
+        logs = db.session.query(SessionLog, MeetingRole)\
+            .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+            .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
+            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+            .filter(SessionLog.Meeting_Number == meeting_number)\
+            .filter(SessionLog.Owner_ID.isnot(None))\
+            .all()
+            
+        # Ensure club_id is treated as int for comparison if possible
+        try:
+            target_club_id = int(club_id)
+        except (ValueError, TypeError):
+            target_club_id = club_id
+
+        if target_club_id is not None:
+             logs = [
+                 (l, r) for l, r in logs 
+                 if l.meeting.club_id == target_club_id
+             ]
+
+        # Map contact_id -> [roles_data]
+        # We use STRING keys for the map to ensure consistency when cached/serialized
+        roles_map = {}
+        for log, role in logs:
+            c_id = str(log.Owner_ID)
+            if c_id not in roles_map:
+                roles_map[c_id] = []
+            
+            role_data = {
+                'id': role.id,
+                'name': role.name
+            }
+            
+            # Avoid duplicates if multiple logs map to same role
+            if role_data not in roles_map[c_id]:
+                roles_map[c_id].append(role_data)
+        
+        cache.set(cache_key, roles_map)
+    
+    # 4. Return Results
+    return roles_map
+

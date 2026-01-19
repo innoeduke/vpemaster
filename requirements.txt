@@ -35,3 +35,4 @@ pytest-cov>=7.0.0
 pytest-watch>=4.2.0
 cryptography==46.0.3
 selenium==4.32.0
+Flask-Caching==2.3.1
