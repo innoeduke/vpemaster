@@ -230,7 +230,7 @@
                                 {% if log.session_type.Valid_for_Project and is_authorized(current_user.id ==
                                 log.owner.id, Permissions.SPEECH_LOGS_EDIT_ALL) %}
                                 <button class="icon-btn edit-log-btn"
-                                    onclick="openSpeechEditModal({{ item.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)"
+                                    onclick="openSpeechEditModal({{ item.id }}, null, (this.closest('.speech-log-entry') || this.closest('.role-log-entry')).dataset.sessionTypeTitle)"
                                     title="Edit" style="font-size: 0.8em; margin-left: 8px;"><i
                                         class="fas fa-edit"></i></button>
                                 {% endif %}
@@ -273,7 +273,7 @@
                     {% endif %}
                     {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
                     <button class="icon-btn edit-log-btn"
-                        onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)"
+                        onclick="openSpeechEditModal({{ log.id }}, null, (this.closest('.speech-log-entry') || this.closest('.role-log-entry')).dataset.sessionTypeTitle)"
                         title="Edit"><i class="fas fa-edit"></i></button>
                     {% endif %}
                 </div>
@@ -351,7 +351,7 @@
                     {% if log.session_type.Valid_for_Project and is_authorized(current_user.id == log.Owner_ID,
                     Permissions.SPEECH_LOGS_EDIT_ALL) %}
                     <button class="icon-btn edit-log-btn"
-                        onclick="openSpeechEditModal({{ log.id }}, null, this.closest('.speech-log-entry').dataset.sessionTypeTitle)"
+                        onclick="openSpeechEditModal({{ log.id }}, null, (this.closest('.speech-log-entry') || this.closest('.role-log-entry')).dataset.sessionTypeTitle)"
                         title="Edit"><i class="fas fa-edit"></i></button>
                     {% endif %}
                 </div>
@@ -410,8 +410,8 @@
             // Serialize contacts data
             const allContactsData = [
                 {% for c in all_contacts %}
-        { id: "{{ c.id }}", name: "{{ c.Name }}" },
-        {% endfor %}
+                { id: {{ c.id | tojson | safe }}, name: {{ c.Name | tojson | safe }} },
+                {% endfor %}
                 ];
 
         function updateDatalist(filterText) {
@@ -476,15 +476,15 @@
 
 <script>
     // Pass Python data to global JS variables
-    var allProjects = {{ projects| tojson | safe }};
-    var pathwayMap = {{ pathway_mapping| tojson | safe }};
-    var groupedPathways = {{ pathways| tojson | safe }};
+    var allProjects = {{ projects | tojson | safe if projects is defined else '[]' }};
+    var pathwayMap = {{ pathway_mapping | tojson | safe if pathway_mapping is defined else '{}' }};
+    var groupedPathways = {{ pathways | tojson | safe if pathways is defined else '{}' }};
     var ProjectID = {
-        GENERIC: {{ ProjectID.GENERIC }},
-    TOPICSMASTER_PROJECT: { { ProjectID.TOPICSMASTER_PROJECT } },
-    KEYNOTE_SPEAKER_PROJECT: { { ProjectID.KEYNOTE_SPEAKER_PROJECT } },
-    MODERATOR_PROJECT: { { ProjectID.MODERATOR_PROJECT } },
-    EVALUATION_PROJECTS: { { ProjectID.EVALUATION_PROJECTS | tojson | safe } }
+        GENERIC: {{ ProjectID.GENERIC | tojson | safe if ProjectID is defined else 'null' }},
+        TOPICSMASTER_PROJECT: {{ ProjectID.TOPICSMASTER_PROJECT | tojson | safe if ProjectID is defined else 'null' }},
+        KEYNOTE_SPEAKER_PROJECT: {{ ProjectID.KEYNOTE_SPEAKER_PROJECT | tojson | safe if ProjectID is defined else 'null' }},
+        MODERATOR_PROJECT: {{ ProjectID.MODERATOR_PROJECT | tojson | safe if ProjectID is defined else 'null' }},
+        EVALUATION_PROJECTS: {{ ProjectID.EVALUATION_PROJECTS | tojson | safe if ProjectID is defined else '[]' }}
     };
 
 </script>

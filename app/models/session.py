@@ -43,7 +43,7 @@ class SessionLog(db.Model):
     Status = db.Column(db.String(50))
     state = db.Column(db.String(50), nullable=False,
                       default='active')  # Can be 'active', 'waiting', 'cancelled'
-    project_code = db.Column(db.String(10))
+    project_code = db.Column(db.String(20))
     pathway = db.Column(db.String(100))
 
     meeting = db.relationship('Meeting', backref='session_logs')

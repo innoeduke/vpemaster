@@ -756,43 +756,44 @@ def update_speech_log(log_id):
         if not (is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and is_owner):
             return jsonify(success=False, message="Permission denied. You can only edit your own speech logs."), 403
 
-    data = request.get_json()
-    media_url = data.get('media_url') or None
-    project_id = data.get('project_id')
-    
-    # Pre-fetch project if needed for duration logic
-    updated_project = None
-    if project_id and project_id not in [None, "", "null"]:
-        updated_project = db.session.get(Project, project_id)
-
-    # 1. Update Basic Fields
-    if 'session_title' in data:
-        log.Session_Title = data['session_title'] or (updated_project.Project_Name if updated_project else None)
-
-    # 2. Use Model Methods for Complex logic
-    log.update_media(media_url)
-    
-    # RULE: SessionLog.pathway MUST only store pathway-type paths (e.g., "Presentation Mastery").
-    # For Presentations, we force use of the owner's main pathway-type path, 
-    # even if a "Series" (presentation-type path) was selected in the modal for project lookup.
-    is_presentation = updated_project.is_presentation if updated_project else (log.project.is_presentation if log.project else False)
-    
-    pathway_val = data.get('pathway')
-    if is_presentation:
-        if log.owner and log.owner.Current_Path:
-            pathway_val = log.owner.Current_Path
-    elif not pathway_val and log.owner and log.owner.Current_Path:
-        pathway_val = log.owner.Current_Path
-        
-    if pathway_val:
-        log.update_pathway(pathway_val)
-
-    log.update_durations(data, updated_project)
-    
-    # 3. Derive Project Code
-    log.project_code = log.derive_project_code()
-
     try:
+        data = request.get_json()
+        if not data:
+             return jsonify(success=False, message="No data provided"), 400
+             
+        media_url = data.get('media_url') or None
+        project_id = data.get('project_id')
+        
+        # Pre-fetch project if needed for duration logic
+        updated_project = None
+        if project_id and project_id not in [None, "", "null"]:
+            updated_project = db.session.get(Project, project_id)
+
+        # 1. Update Basic Fields
+        if 'session_title' in data:
+            log.Session_Title = data['session_title'] or (updated_project.Project_Name if updated_project else None)
+
+        # 2. Use Model Methods for Complex logic
+        log.update_media(media_url)
+        
+        # RULE: SessionLog.pathway MUST only store pathway-type paths (e.g., "Presentation Mastery").
+        is_presentation = updated_project.is_presentation if updated_project else (log.project.is_presentation if log.project else False)
+        
+        pathway_val = data.get('pathway')
+        if is_presentation:
+            if log.owner and log.owner.Current_Path:
+                pathway_val = log.owner.Current_Path
+        elif not pathway_val and log.owner and log.owner.Current_Path:
+            pathway_val = log.owner.Current_Path
+            
+        if pathway_val:
+            log.update_pathway(pathway_val)
+
+        log.update_durations(data, updated_project)
+        
+        # 3. Derive Project Code
+        log.project_code = log.derive_project_code()
+
         db.session.commit()
         
         # 4. Get response data from model
@@ -812,7 +813,10 @@ def update_speech_log(log_id):
 
     except Exception as e:
         db.session.rollback()
-        return jsonify(success=False, message=str(e)), 500
+        import traceback
+        error_msg = f"Error updating speech log: {str(e)}\n{traceback.format_exc()}"
+        current_app.logger.error(error_msg)
+        return jsonify(success=False, message=str(e), detail=traceback.format_exc()), 400
 
 
 @speech_logs_bp.route('/speech_log/suspend/<int:log_id>', methods=['POST'])
