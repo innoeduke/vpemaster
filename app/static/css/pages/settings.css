@@ -65,10 +65,18 @@
 .general-settings-table {
   max-width: 700px;
   margin-top: 15px;
+  border: 1px solid #999;
+  border-collapse: collapse;
+}
+
+.general-settings-table th,
+.general-settings-table td {
+  padding: 8px;
+  background-color: #fff;
+  border: 1px solid #ddd;
 }
 
 .general-settings-table th {
-  padding: 8px;
   background-color: #f2f2f2;
 }
 
@@ -126,4 +134,79 @@
     /* Full width on mobile */
     min-width: unset;
   }
+
+}
+
+/* --- Achievements Grouping --- */
+.achievement-group-header {
+  background-color: #f8f9fa !important;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.achievement-group-header:hover {
+  background-color: #e9ecef !important;
+}
+
+.achievement-group-header .group-header-cell {
+  padding: 12px 15px !important;
+  font-size: 1.05em;
+  vertical-align: middle;
+}
+
+.achievement-group-header .toggle-icon {
+  margin-right: 10px;
+  transition: transform 0.2s;
+  color: #004165;
+  width: 15px;
+}
+
+.achievement-group-header.expanded .toggle-icon {
+  transform: rotate(90deg);
+}
+
+.achievement-row td {
+  background-color: #fff !important;
+}
+
+.achievement-row:hover td {
+  background-color: #f1f8ff !important;
+}
+
+.ms-2 {
+  margin-left: 0.5rem !important;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.35em 0.65em;
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.25rem;
+}
+
+.bg-info {
+  background-color: #0dcaf0 !important;
+}
+
+.bg-primary {
+  background-color: #004165 !important;
+  color: #fff !important;
+}
+
+.bg-success {
+  background-color: #28a745 !important;
+  color: #fff !important;
+}
+
+.bg-warning {
+  background-color: #ffc107 !important;
+}
+
+.text-dark {
+  color: #000 !important;
 }

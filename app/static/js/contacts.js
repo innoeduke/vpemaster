@@ -9,6 +9,8 @@ let allContactsCache = []; // Cache of all contacts from API
 let filteredContacts = []; // Contacts after applying tab and search filters
 let currentPage = 1;
 let pageSize = 25;
+let sortColumnIndex = 1; // Participation
+let sortDirection = 'desc';
 
 /**
  * Fetches all contacts from the API and caches them
@@ -71,6 +73,33 @@ function applyFilters() {
       return searchableText.includes(searchTerm);
     });
   }
+
+  // Sort filtered contacts
+  filteredContacts.sort((a, b) => {
+    const aVal = getContactSortValue(a, sortColumnIndex);
+    const bVal = getContactSortValue(b, sortColumnIndex);
+    const comparison = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
+}
+
+/**
+ * Returns a sortable string value for a contact based on column index
+ */
+function getContactSortValue(contact, index) {
+  switch (index) {
+    case 0: return (contact.Name || '').toLowerCase();
+    case 1:
+      // Participation: [Role Count]_[Qualified]_[TT Count]_[Attendance]_[Awards]
+      return `${String(contact.role_count || 0).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count || 0).padStart(3, '0')}_${String(contact.attendance_count || 0).padStart(3, '0')}_${String(contact.award_count || 0).padStart(3, '0')}`;
+    case 2: return (contact.Phone_Number || '').toLowerCase();
+    case 3: return (contact.Club || '').toLowerCase();
+    case 4: return (contact.Completed_Paths || '').toLowerCase();
+    case 5: return (contact.credentials || '').toLowerCase();
+    case 6: return (contact.Next_Project || '').toLowerCase();
+    case 7: return (contact.Mentor || '').toLowerCase();
+    default: return '';
+  }
 }
 
 /**
@@ -115,7 +144,7 @@ function createContactRow(contact) {
   row.dataset.type = contact.Type;
 
   // Build participation sort value
-  const sortValue = `${contact.is_qualified ? '1' : '0'}_${String(contact.role_count).padStart(3, '0')}_${String(contact.tt_count).padStart(3, '0')}_${String(contact.attendance_count).padStart(3, '0')}_${String(contact.award_count).padStart(3, '0')}`;
+  const sortValue = `${String(contact.role_count).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count).padStart(3, '0')}_${String(contact.attendance_count).padStart(3, '0')}_${String(contact.award_count).padStart(3, '0')}`;
 
   row.innerHTML = `
     <td>
@@ -151,7 +180,15 @@ function createContactRow(contact) {
     </td>
     <td>${contact.Phone_Number}</td>
     <td>${contact.Club}</td>
-    <td>${contact.Completed_Paths}</td>
+    <td>
+      ${contact.Completed_Paths && contact.Completed_Paths !== '-' 
+        ? contact.Completed_Paths.split('/').map(path => {
+            const p = path.trim();
+            const abbr = p.substring(0, 2).toLowerCase();
+            return `<span class="badge-path path-${abbr}">${p}</span>`;
+          }).join(' ')
+        : '-'}
+    </td>
     <td>${contact.credentials}</td>
     <td>${contact.Next_Project}</td>
     <td>${contact.Mentor}</td>
@@ -209,7 +246,12 @@ function updatePaginationControls(startIndex, endIndex, totalContacts, totalPage
 /**
  * Applies filters and updates pagination
  */
-function applyFiltersAndPaginate() {
+function applyFiltersAndPaginate(resetPage = false) {
+  if (resetPage) {
+    currentPage = 1;
+    localStorage.setItem('contacts_current_page', currentPage);
+  }
+
   applyFilters();
   
   // Reset to page 1 if current page exceeds total pages
@@ -376,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Initialize sorting
-  setupTableSorting("contactsTable");
+  setupContactsTableSorting();
 
   // Restore saved tab
   const savedTab = localStorage.getItem("contacts_active_tab");
@@ -504,6 +546,45 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+
+/**
+ * Custom sort setup for the contacts table that works with client-side pagination
+ */
+function setupContactsTableSorting() {
+  const table = document.getElementById("contactsTable");
+  if (!table) return;
+
+  const headers = table.querySelectorAll("th.sortable");
+  headers.forEach(header => {
+    header.addEventListener("click", (e) => {
+      // Prevent any other sort listeners (like from main.js) from firing
+      e.stopImmediatePropagation();
+      e.preventDefault();
+
+      const index = parseInt(header.dataset.columnIndex);
+      if (sortColumnIndex === index) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        sortColumnIndex = index;
+        // Default to descending for Participation, ascending for others
+        sortDirection = (index === 1) ? 'desc' : 'asc';
+      }
+      
+      // Update UI
+      headers.forEach(h => delete h.dataset.sortDir);
+      header.dataset.sortDir = sortDirection;
+      
+      // Sort the whole set and go back to page 1
+      applyFiltersAndPaginate(true);
+    });
+  });
+  
+  // Set initial UI state
+  const initialHeader = Array.from(headers).find(h => parseInt(h.dataset.columnIndex) === sortColumnIndex);
+  if (initialHeader) {
+    initialHeader.dataset.sortDir = sortDirection;
+  }
+}
 
 // Make refreshContactCache available globally for modal callbacks
 window.refreshContactCache = refreshContactCache;

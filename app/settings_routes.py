@@ -49,13 +49,13 @@ def settings():
     # Batch populate contacts for the current club to avoid N+1 queries in template
     User.populate_contacts(all_users, club_id)
     
-    # Achievements: Filter by club
+    # Achievements: Filter by club, order by Member Name then Date
     if club_id:
         achievements = Achievement.query.join(Contact).join(ContactClub).filter(
             ContactClub.club_id == club_id
-        ).order_by(Achievement.issue_date.desc()).all()
+        ).order_by(Contact.Name.asc(), Achievement.issue_date.desc()).all()
     else:
-        achievements = Achievement.query.join(Contact).order_by(Achievement.issue_date.desc()).all()
+        achievements = Achievement.query.join(Contact).order_by(Contact.Name.asc(), Achievement.issue_date.desc()).all()
 
     return render_template('settings.html', session_types=session_types, all_users=all_users, 
                           roles=roles, roles_query=roles_query, 

@@ -291,13 +291,39 @@ def update_next_project(contact):
 def recalculate_contact_metadata(contact):
     """
     Update Contact metadata (DTM, Completed_Paths, credentials, Next_Project) 
-    strictly based on the Achievements table and SessionLogs.
+    strictly based on the Achievements table and SessionLogs for this contact 
+    AND all related contact records (same email or same user).
     Does NOT commit to DB.
     """
     if not contact:
         return
 
-    achievements = Achievement.query.filter_by(contact_id=contact.id).all()
+    # Find all related contact IDs (same email or same linked user)
+    related_contact_ids = {contact.id}
+    
+    # 1. By Email
+    if contact.Email:
+        email_contacts = db.session.query(Contact.id).filter(
+            Contact.Email == contact.Email
+        ).all()
+        for (c_id,) in email_contacts:
+            related_contact_ids.add(c_id)
+            
+    # 2. By Linked User (across all clubs)
+    user_ids = {uc.user_id for uc in contact.user_club_records if uc.user_id}
+    if user_ids:
+        from .models import UserClub
+        user_contacts = db.session.query(UserClub.contact_id).filter(
+            UserClub.user_id.in_(user_ids)
+        ).all()
+        for (c_id,) in user_contacts:
+            if c_id:
+                related_contact_ids.add(c_id)
+
+    # Fetch achievements for ALL related contacts
+    achievements = Achievement.query.filter(
+        Achievement.contact_id.in_(list(related_contact_ids))
+    ).all()
     
     # 1. DTM
     is_dtm = False
@@ -315,12 +341,14 @@ def recalculate_contact_metadata(contact):
     # 2. Completed_Paths
     completed_set = set()
     
-    # Start with existing paths to ensure we don't lose manual/historical entries
-    if contact.Completed_Paths:
-        existing_parts = [p.strip() for p in str(contact.Completed_Paths).split('/') if p.strip()]
-        completed_set.update(existing_parts)
+    # Collect existing paths from all related contacts to ensure no data loss
+    related_contacts = Contact.query.filter(Contact.id.in_(list(related_contact_ids))).all()
+    for c in related_contacts:
+        if c.Completed_Paths:
+            parts = [p.strip() for p in str(c.Completed_Paths).split('/') if p.strip()]
+            completed_set.update(parts)
 
-    # Add paths found in achievements
+    # Add paths found in achievements for any related contact
     for a in achievements:
         if a.achievement_type == 'path-completion':
             pathway = Pathway.query.filter_by(name=a.path_name).first()
@@ -336,6 +364,8 @@ def recalculate_contact_metadata(contact):
     # 3. Credentials
     new_credentials = None
     if contact.Current_Path:
+        # We only check achievements for the Current_Path in THIS contact's context
+        # (Though we could arguably check globally too)
         level_achievements = [
             a for a in achievements 
             if a.achievement_type == 'level-completion' and a.path_name == contact.Current_Path and a.level
@@ -356,8 +386,6 @@ def recalculate_contact_metadata(contact):
         contact.credentials = 'DTM'
     elif new_credentials:
         contact.credentials = new_credentials
-    # Else: If new_credentials is None, do not overwrite if existing credentials exist.
-    # Logic: "if credentials is not blank and no achievement records ... keep the existing value"
 
     # 4. Next Project
     update_next_project(contact)
@@ -365,17 +393,40 @@ def recalculate_contact_metadata(contact):
 
 def sync_contact_metadata(contact_id):
     """
-    Update Contact metadata and commit to DB.
+    Update Contact metadata for a specific contact and all related contacts 
+    (same person in different clubs) and commit to DB.
     """
-    contact = db.session.get(Contact, contact_id)
-    if not contact:
+    primary_contact = db.session.get(Contact, contact_id)
+    if not primary_contact:
         return None
 
-    recalculate_contact_metadata(contact)
+    # Find all related contact IDs
+    related_contact_ids = {primary_contact.id}
+    if primary_contact.Email:
+        email_contacts = db.session.query(Contact.id).filter(
+            Contact.Email == primary_contact.Email
+        ).all()
+        for (c_id,) in email_contacts:
+            related_contact_ids.add(c_id)
+            
+    user_ids = {uc.user_id for uc in primary_contact.user_club_records if uc.user_id}
+    if user_ids:
+        from .models import UserClub
+        user_contacts = db.session.query(UserClub.contact_id).filter(
+            UserClub.user_id.in_(user_ids)
+        ).all()
+        for (c_id,) in user_contacts:
+            if c_id:
+                related_contact_ids.add(c_id)
 
-    db.session.add(contact)
+    # Update all related contacts
+    contacts_to_update = Contact.query.filter(Contact.id.in_(list(related_contact_ids))).all()
+    for contact in contacts_to_update:
+        recalculate_contact_metadata(contact)
+        db.session.add(contact)
+    
     db.session.commit()
-    return contact
+    return primary_contact
 
 
 

@@ -3,362 +3,6 @@
 {% block title %}Messages{% endblock %}
 
 {% block head_extra %}
-<style>
-    /* 
-     * Refined Message Interface 
-     * A clean, custom implementation independent of Bootstrap components
-     */
-
-    :root {
-        --msg-sidebar-width: 260px;
-        --msg-header-height: 70px;
-        --msg-bg-color: #f7f9fc;
-        --msg-item-hover: #f1f4f9;
-        --msg-accent: #4a6fa5;
-        --msg-text-primary: #2d3748;
-        --msg-text-secondary: #718096;
-        --msg-border: #e2e8f0;
-        --msg-unread-bg: #fff;
-        --msg-read-bg: #fcfcfc;
-    }
-
-    /* Layout Container */
-    .msg-layout {
-        display: flex;
-        height: calc(100vh - 80px); /* Adjust based on navbar height */
-        background-color: #fff;
-        border-radius: 12px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        overflow: hidden;
-        margin: 60px 20px 20px 20px; /* Increased top margin to clear profile container */
-        border: 1px solid var(--msg-border);
-    }
-
-    /* Sidebar Navigation */
-    .msg-sidebar {
-        width: var(--msg-sidebar-width);
-        background-color: #fff;
-        border-right: 1px solid var(--msg-border);
-        display: flex;
-        flex-direction: column;
-        padding: 1.5rem;
-    }
-
-    .msg-compose-btn {
-        background-color: var(--msg-accent);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 12px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 6px rgba(74, 111, 165, 0.2);
-    }
-
-    .msg-compose-btn:hover {
-        background-color: #3b5a84;
-        transform: translateY(-1px);
-    }
-
-    .msg-nav-item {
-        padding: 12px 16px;
-        border-radius: 8px;
-        color: var(--msg-text-secondary);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 0.5rem;
-        transition: all 0.2s;
-        font-weight: 500;
-        user-select: none;
-    }
-
-    .msg-nav-item:hover {
-        background-color: var(--msg-item-hover);
-        color: var(--msg-text-primary);
-    }
-
-    .msg-nav-item.active {
-        background-color: #edf2f7;
-        color: var(--msg-accent);
-        font-weight: 600;
-    }
-
-    .msg-nav-item i {
-        width: 20px;
-        text-align: center;
-    }
-
-    /* Main List Area */
-    .msg-main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        background-color: var(--msg-bg-color);
-        min-width: 0; /* Prevent flex overflow */
-    }
-
-    .msg-header {
-        height: var(--msg-header-height);
-        padding: 0 2rem;
-        background-color: #fff;
-        border-bottom: 1px solid var(--msg-border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-    }
-
-    .msg-header-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--msg-text-primary);
-    }
-
-    .msg-refresh-btn {
-        background: transparent;
-        border: 1px solid var(--msg-border);
-        border-radius: 6px;
-        padding: 6px 12px;
-        color: var(--msg-text-secondary);
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .msg-refresh-btn:hover {
-        background-color: #f7fafc;
-        color: var(--msg-accent);
-        border-color: var(--msg-accent);
-    }
-
-    .msg-list-container {
-        flex: 1;
-        overflow-y: auto;
-        padding: 1.5rem 2rem;
-    }
-
-    /* Message Items */
-    .msg-item {
-        background-color: #fff;
-        border-radius: 10px;
-        padding: 1.25rem;
-        margin-bottom: 1rem;
-        border: 1px solid transparent; /* Reserve space for border */
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        gap: 1.25rem;
-        align-items: flex-start;
-    }
-
-    .msg-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.06);
-        border-color: #e2e8f0;
-    }
-    
-    .msg-item.unread {
-        border-left: 4px solid var(--msg-accent);
-        background-color: #fff;
-    }
-    
-    .msg-item.unread .msg-subject {
-        font-weight: 700;
-        color: #1a202c;
-    }
-
-    .msg-avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        object-fit: cover;
-        flex-shrink: 0;
-    }
-    
-    .msg-avatar-placeholder {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #a0aec0, #718096);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 1.1rem;
-        flex-shrink: 0;
-    }
-
-    .msg-content {
-        flex: 1;
-        min-width: 0; /* Important for text truncation */
-    }
-
-    .msg-row-top {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.25rem;
-    }
-
-    .msg-sender {
-        font-weight: 600;
-        color: var(--msg-text-primary);
-        font-size: 1rem;
-    }
-
-    .msg-time {
-        font-size: 0.85rem;
-        color: #a0aec0;
-    }
-
-    .msg-subject {
-        color: var(--msg-text-primary);
-        font-weight: 500;
-        font-size: 1rem;
-        margin-bottom: 0.4rem;
-    }
-
-    .msg-preview {
-        color: var(--msg-text-secondary);
-        font-size: 0.9rem;
-        line-height: 1.5;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-
-    .empty-state {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100%;
-        color: #a0aec0;
-    }
-    
-    .empty-state i {
-        font-size: 3.5rem;
-        margin-bottom: 1rem;
-        opacity: 0.6;
-    }
-
-    /* Modal Styling Refinements */
-    .custom-modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0,0,0,0.5);
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .custom-modal.flex {
-        display: flex;
-    }
-    
-    .custom-modal-content {
-        background-color: #fff;
-        width: 90%;
-        max-width: 700px;
-        border-radius: 12px;
-        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        display: flex;
-        flex-direction: column;
-        max-height: 90vh;
-        animation: modalFadeIn 0.2s ease-out;
-    }
-    
-    @keyframes modalFadeIn {
-        from { opacity: 0; transform: scale(0.95); }
-        to { opacity: 1; transform: scale(1); }
-    }
-    
-    .custom-modal-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid var(--msg-border);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-    
-    .custom-modal-title {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: var(--msg-text-primary);
-    }
-    
-    .custom-modal-close {
-        background: none;
-        border: none;
-        color: #a0aec0;
-        font-size: 1.5rem;
-        cursor: pointer;
-        padding: 0;
-        line-height: 1;
-    }
-    
-    .custom-modal-body {
-        padding: 1.5rem;
-        overflow-y: auto;
-    }
-    
-    .custom-modal-footer {
-        padding: 1rem 1.5rem;
-        background-color: #f7fafc;
-        border-top: 1px solid var(--msg-border);
-        border-bottom-left-radius: 12px;
-        border-bottom-right-radius: 12px;
-        display: flex;
-        justify-content: space-between;
-    }
-    
-    /* Responsive */
-    @media (max-width: 768px) {
-        .msg-layout {
-            flex-direction: column;
-            height: auto;
-            margin: 10px;
-        }
-        
-        .msg-sidebar {
-            width: 100%;
-            flex-direction: row;
-            border-right: none;
-            border-bottom: 1px solid var(--msg-border);
-            padding: 1rem;
-            align-items: center;
-            gap: 1rem;
-            overflow-x: auto;
-        }
-        
-        .msg-compose-btn {
-            margin-bottom: 0;
-            padding: 8px 16px;
-        }
-        
-        .msg-nav-item {
-            margin-bottom: 0;
-            white-space: nowrap;
-        }
-        
-        .msg-list-container {
-            padding: 1rem;
-            max-height: 60vh;
-        }
-    }
-</style>
 {% endblock %}
 
 {% block content %}
@@ -533,12 +177,60 @@
         document.getElementById('detail-subject').textContent = msg.subject || '(No Subject)';
         document.getElementById('detail-sender').textContent = (isInbox ? 'From ' : 'To ') + otherParty;
         document.getElementById('detail-time').textContent = msg.timestamp;
-        document.getElementById('detail-body').textContent = msg.body;
-        
         const avatarContainer = document.getElementById('detail-avatar');
         avatarContainer.innerHTML = msg.avatar_url 
             ? `<img src="${msg.avatar_url}" class="msg-avatar" alt="Avatar">`
             : `<div class="msg-avatar-placeholder">${getInitials(otherParty)}</div>`;
+        
+        // Handle Join Requests
+        const requestMatch = msg.body.match(/\[CLUB_ID:(\d+)\]/);
+        
+        // Clear previous actions if any (though we reset textContent below so simpler)
+        
+        let displayBody = msg.body;
+        if (requestMatch) {
+            displayBody = displayBody.replace(requestMatch[0], '');
+        }
+
+        const bodyEl = document.getElementById('detail-body');
+        
+        // Escape HTML to prevent XSS
+        const escapeHtml = (text) => {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        };
+        
+        // 1. Escape content
+        let safeBody = escapeHtml(displayBody);
+        
+        // 2. Convert newlines to <br>
+        safeBody = safeBody.replace(/\n/g, '<br>');
+        
+        // 3. Convert **bold** to <strong>bold</strong>
+        safeBody = safeBody.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+        bodyEl.innerHTML = safeBody;
+        
+        // Ensure body text is left-aligned (user request), overriding any centering
+        bodyEl.style.textAlign = 'left';
+        
+        if (requestMatch && isInbox) {
+             const actionsHtml = `
+                <div class="message-actions join-request-card">
+                    <h3 class="join-request-title">Club Join Request</h3>
+                    <div class="join-request-actions">
+                        <button onclick="respondToJoinRequest(${msg.id}, 'join')" class="btn btn-join btn-join-accept">
+                            <i class="fas fa-check"></i> Accept
+                        </button>
+                        <button onclick="respondToJoinRequest(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
+                </div>
+            `;
+            bodyEl.insertAdjacentHTML('beforeend', actionsHtml);
+        }
         
         modal.classList.add('flex'); // Custom class to show flex
         
@@ -642,6 +334,97 @@
     
     function getInitials(name) {
         return name ? name.substring(0, 2).toUpperCase() : '??';
+    }
+
+    function respondToJoinRequest(messageId, action) {
+        // Direct action without confirmation dialog
+        const btn = event.target.closest('button');
+        
+        // Disable both buttons to prevent double clicks
+        const container = btn.closest('.message-actions');
+        if (container) {
+            const buttons = container.querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+        } else {
+             btn.disabled = true;
+        }
+        
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        fetch('/user/respond_join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message_id: messageId,
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show toast instead of alert
+                showToast(action === 'join' ? 'You have joined the club!' : 'Request rejected.', 'success');
+                
+                closeMessageDetailModal();
+                loadMessages(currentTab);
+            } else {
+                showToast(data.error || 'Action failed', 'error');
+                btn.innerHTML = originalText;
+                if (container) {
+                     container.querySelectorAll('button').forEach(b => b.disabled = false);
+                } else {
+                     btn.disabled = false;
+                }
+            }
+        })
+        .catch(err => {
+            showToast('Error processing request', 'error');
+            btn.innerHTML = originalText;
+            if (container) {
+                 container.querySelectorAll('button').forEach(b => b.disabled = false);
+            } else {
+                 btn.disabled = false;
+            }
+        });
+    }
+
+    // Simple toast notification helper
+    function showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        // Basic styles if not in CSS
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 24px;
+            background: ${type === 'success' ? '#48bb78' : (type === 'error' ? '#f56565' : '#4299e1')};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 9999;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s, transform 0.3s;
+        `;
+        toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : (type === 'error' ? 'exclamation-circle' : 'info-circle')}"></i> ${message}`;
+        
+        document.body.appendChild(toast);
+        
+        // Trigger animation
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        // Auto remove
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(20px)';
+            toast.addEventListener('transitionend', () => toast.remove());
+        }, 3000);
     }
 </script>
 {% endblock %}

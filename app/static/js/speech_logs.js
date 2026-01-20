@@ -2,14 +2,14 @@ document.addEventListener("DOMContentLoaded", function () {
   setupSearch(
     "meeting-search",
     ".logs-container",
-    ".speech-log-entry",
+    ".speech-log-entry, .role-log-entry",
     ".meeting-info"
   );
   if (document.getElementById("speaker-search")) {
     setupSearch(
       "speaker-search",
       ".logs-container",
-      ".speech-log-entry",
+      ".speech-log-entry, .role-log-entry",
       ".speaker-info"
     );
 

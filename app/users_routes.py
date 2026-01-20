@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, current_app, jsonify
 from . import db
-from .models import User, Contact, Pathway
+from .models import User, Contact, Pathway, Message
 from .auth.utils import is_authorized, login_required
 from .auth.permissions import Permissions
 from flask_login import current_user
@@ -533,3 +533,103 @@ def bulk_import_users():
         flash('Invalid file type. Please upload a .csv file.', 'error')
 
     return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+
+
+@users_bp.route('/user/request_join', methods=['POST'])
+@login_required
+def request_join():
+    """Sends a join request to a user."""
+    data = request.json
+    target_user_id = data.get('target_user_id')
+    club_id = data.get('club_id')
+
+    if not target_user_id or not club_id:
+        return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+    target_user = db.session.get(User, target_user_id)
+    if not target_user:
+        return jsonify({'success': False, 'error': 'User not found'}), 404
+        
+    from .models import Club
+    club = db.session.get(Club, club_id)
+    if not club:
+        return jsonify({'success': False, 'error': 'Club not found'}), 404
+        
+    # Check if already a member
+    from .models import UserClub
+    if UserClub.query.filter_by(user_id=target_user_id, club_id=club_id).first():
+        return jsonify({'success': False, 'error': 'User is already a member'}), 400
+
+    # Create Message with special tag
+    msg = Message(
+        sender_id=current_user.id,
+        recipient_id=target_user_id,
+        subject=f"Invitation to join {club.club_name}",
+        body=f"Hello {target_user.first_name},\n\n{current_user.display_name} has invited you to join **{club.club_name}**.\n\nPlease respond using the buttons below.\n[CLUB_ID:{club_id}]"
+    )
+    
+    db.session.add(msg)
+    db.session.commit()
+    
+    return jsonify({'success': True})
+
+
+@users_bp.route('/user/respond_join', methods=['POST'])
+@login_required
+def respond_join():
+    """Handles response to a join request."""
+    data = request.json
+    message_id = data.get('message_id')
+    action = data.get('action') # 'join' or 'reject'
+    
+    msg = db.session.get(Message, message_id)
+    if not msg:
+        return jsonify({'success': False, 'error': 'Message not found'}), 404
+        
+    if msg.recipient_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+    # Extract Club ID from body
+    import re
+    match = re.search(r'\[CLUB_ID:(\d+)\]', msg.body)
+    if not match:
+        return jsonify({'success': False, 'error': 'Invalid request format'}), 400
+        
+    club_id = int(match.group(1))
+    
+    from .models import Club, UserClub
+    club = db.session.get(Club, club_id)
+    
+    if action == 'join':
+        # Add to club
+        if not UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first():
+            # Ensure contact and linkage exists
+            current_user.ensure_contact(club_id=club_id)
+            # Set default role (User/Member)
+            current_user.set_club_role(club_id, 1)
+            
+            response_body = f"{current_user.display_name} has accepted your request to join {club.club_name}."
+        else:
+             response_body = f"{current_user.display_name} is already a member of {club.club_name}."
+
+    elif action == 'reject':
+        response_body = f"{current_user.display_name} has declined to join {club.club_name}."
+    else:
+        return jsonify({'success': False, 'error': 'Invalid action'}), 400
+
+    # Notify Sender (Club Admin)
+    reply = Message(
+        sender_id=current_user.id,
+        recipient_id=msg.sender_id,
+        subject=f"Join Request Response: {club.club_name}",
+        body=response_body
+    )
+    db.session.add(reply)
+    
+    # Update original message to remove buttons/tag
+    msg.body = msg.body.replace(match.group(0), f"\n\n[Responded: {action.upper()}]")
+    msg.read = True
+    
+    db.session.commit()
+    
+    return jsonify({'success': True})

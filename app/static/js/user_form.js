@@ -157,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const clubsText = dup.clubs && dup.clubs.length > 0 ? dup.clubs.join(', ') : 'No club memberships';
                         
                         let membershipNotice = '';
-                        let buttonText = 'Pick This User';
+                        let buttonText = 'Invite User';
                         
                         if (dup.in_current_club) {
                             if (dup.type === 'User' || dup.has_user) {
@@ -220,6 +220,32 @@ document.addEventListener('DOMContentLoaded', function () {
                             } else {
                                 const targetId = dup.type === 'User' ? dup.id : dup.user_id;
                                 if (targetId) {
+                                    // Logic for adding user from another club
+                                    // Logic for adding user from another club
+                                    if (!dup.in_current_club) {
+                                        // Removed confirm dialog as per user request
+                                        fetch('/user/request_join', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                target_user_id: targetId,
+                                                club_id: clubId
+                                            })
+                                        })
+                                        .then(res => res.json())
+                                        .then(data => {
+                                            if (data.success) {
+                                                duplicateModal.style.display = 'none';
+                                                // Alert user and redirect to close the form
+                                                window.location.href = '/settings?default_tab=user-settings';
+                                            } else {
+                                                alert(data.error || 'Failed to send request.');
+                                            }
+                                        })
+                                        .catch(err => alert('Error sending request.'));
+                                        return; // Stop further execution
+                                    }
+
                                     // Preserve club_id and role
                                     const urlParams = new URLSearchParams(window.location.search);
                                     const role = urlParams.get('role');
@@ -253,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         modalTitle.textContent = 'User Already Exists';
                         proceedWithNewBtn.style.display = 'none';
                     } else {
-                        modalTitle.textContent = 'Potential Duplicate Found';
+                        modalTitle.textContent = 'Existing User Found';
                         proceedWithNewBtn.style.display = 'block';
                     }
                     

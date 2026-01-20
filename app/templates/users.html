@@ -19,13 +19,12 @@
     </thead>
     <tbody>
         {% for user in users %}
-        <tr>
+        <tr class="{{ 'inactive-user' if user.status == 'inactive' else '' }}">
             <td>{{ loop.index }}</td>
             <td>{{ user.username }}</td>
             <td>
                 {% if user.contact %}
                 {{ user.contact.Name }}
-                <i class="fas fa-link" style="color: green; margin-left: 5px;"></i>
                 {% else %}
                 <em style="color: #888;">Not Linked</em>
                 {% endif %}

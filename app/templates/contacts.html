@@ -86,7 +86,10 @@
     <thead>
       <tr>
         <th class="sortable" data-column-index="0" data-sort-type="string">Name</th>
-        <th class="sortable" data-column-index="1" data-sort-type="string">Participation</th>
+        <th class="sortable" data-column-index="1" data-sort-type="string">
+          Participation
+          <i class="fas fa-info-circle info-icon" title="Metrics are based on meetings in the current club from the last 6 months."></i>
+        </th>
         <th class="sortable" data-column-index="2" data-sort-type="string">Phone Number</th>
         <th class="sortable" data-column-index="3" data-sort-type="string">Club</th>
         <th class="sortable" data-column-index="4" data-sort-type="string">Completed Paths</th>
@@ -151,7 +154,17 @@
         </td>
         <td>{{ contact.Phone_Number if contact.Phone_Number else '-' }}</td>
         <td>{{ contact.get_primary_club().club_name if contact.get_primary_club() else '-' }}</td>
-        <td>{{ contact.Completed_Paths if contact.Completed_Paths else '-' }}</td>
+        <td>
+          {% if contact.Completed_Paths %}
+            {% for path in contact.Completed_Paths.split('/') %}
+              {% set path_trimmed = path.strip() %}
+              {% set path_abbr = path_trimmed[:2]|lower %}
+              <span class="badge-path path-{{ path_abbr }}">{{ path_trimmed }}</span>
+            {% endfor %}
+          {% else %}
+            -
+          {% endif %}
+        </td>
         <td>{{ contact.credentials if contact.credentials else '-' }}</td>
         <td>{{ contact.Next_Project if contact.Next_Project else '-' }}</td>
         <td>{{ contact.mentor.Name if contact.mentor else '-' }}</td>

@@ -181,8 +181,7 @@
           <th class="sortable" data-column-index="5">Mentor</th>
           <th class="sortable" data-column-index="6">Current Path</th>
           <th class="sortable" data-column-index="7">Next Project</th>
-          <th class="sortable" data-column-index="8">Status</th>
-          <th data-column-index="9">Actions</th>
+          <th data-column-index="8">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -191,7 +190,6 @@
           <td>{{ loop.index }}</td>
           <td>
             {% if user.contact %} {{ user.contact.Name }} ({{ user.username }})
-            <i class="fas fa-link user-link-icon"></i>
             {% else %}
             <em class="user-not-linked">Not Linked</em>
             {% endif %}
@@ -211,7 +209,6 @@
           <td>{{ user.contact.mentor.Name if user.contact and user.contact.mentor else '' }}</td>
           <td>{{ user.contact.Current_Path if user.contact and user.contact.Current_Path else '' }}</td>
           <td>{{ user.contact.Next_Project if user.contact and user.contact.Next_Project else '' }}</td>
-          <td>{{ user.status }}</td>
           <td>
             <div class="action-links">
               <a href="{{ url_for('users_bp.user_form', user_id=user.id) }}" class="icon-btn" title="Edit"><i
@@ -267,26 +264,58 @@
       <table class="table table-striped" id="achievementsTable">
         <thead>
           <tr>
-            <th class="sortable" data-column-index="0">Date</th>
-            <th class="sortable" data-column-index="1">Member</th>
-            <th class="sortable" data-column-index="2">Member ID</th>
-            <th class="sortable" data-column-index="3">Type</th>
-            <th class="sortable" data-column-index="4">Path</th>
-            <th class="sortable" data-column-index="5">Level</th>
-            <th class="sortable" data-column-index="6">Notes</th>
+            <th></th> <!-- Toggle column -->
+            <th>Date</th>
+            <th>Member ID</th>
+            <th>Type</th>
+            <th>Path</th>
+            <th>Level</th>
+            <th>Notes</th>
             {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
             <th>Actions</th>
             {% endif %}
           </tr>
         </thead>
         <tbody>
-          {% for achievement in achievements %}
-          <tr>
+          {% for group in achievements|groupby('contact_id') %}
+          {% set contact = group.list[0].contact %}
+          <tr class="achievement-group-header" data-id="group-{{ group.grouper }}" onclick="toggleAchievementGroup('{{ group.grouper }}')">
+            <td colspan="{% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}9{% else %}8{% endif %}" class="group-header-cell">
+              <i class="fas fa-chevron-right toggle-icon"></i>
+              <strong>{{ contact.Name }}</strong>
+              {% set path_count = group.list|selectattr('achievement_type', 'equalto', 'path-completion')|list|length %}
+              {% set level_count = group.list|selectattr('achievement_type', 'equalto', 'level-completion')|list|length %}
+              {% set program_count = group.list|selectattr('achievement_type', 'equalto', 'program-completion')|list|length %}
+              {% if path_count > 0 %}
+              <span class="badge bg-primary ms-2">{{ path_count }} Paths</span>
+              {% endif %}
+              {% if level_count > 0 %}
+              <span class="badge bg-success ms-2">{{ level_count }} Levels</span>
+              {% endif %}
+              {% if program_count > 0 %}
+              <span class="badge bg-warning text-dark ms-2">{{ program_count }} Programs</span>
+              {% endif %}
+              {% if path_count == 0 and level_count == 0 and program_count == 0 %}
+              <span class="badge bg-info text-dark ms-2">{{ group.list|length }} Achievements</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% for achievement in group.list %}
+          <tr class="achievement-row" data-parent-id="group-{{ group.grouper }}" style="display: none;">
+            <td></td> <!-- Toggle column alignment -->
             <td>{{ achievement.issue_date.strftime('%Y-%m-%d') }}</td>
-            <td>{{ achievement.contact.Name }}</td>
             <td>{{ achievement.member_id or '-' }}</td>
-            <td>{{ 'DTM' if achievement.achievement_type == 'dtm' else achievement.achievement_type.replace('-', '
-              ').title() }}</td>
+            <td>
+              {% if achievement.achievement_type == 'path-completion' %}
+              <span class="badge bg-primary">Path Completion</span>
+              {% elif achievement.achievement_type == 'level-completion' %}
+              <span class="badge bg-success">Level Completion</span>
+              {% elif achievement.achievement_type == 'program-completion' %}
+              <span class="badge bg-warning text-dark">Program Completion</span>
+              {% else %}
+              <span class="badge bg-info text-dark">{{ 'DTM' if achievement.achievement_type == 'dtm' else achievement.achievement_type.replace('-', ' ').title() }}</span>
+              {% endif %}
+            </td>
             <td>{{ achievement.path_name or '-' }}</td>
             <td>{{ achievement.level if achievement.level else '-' }}</td>
             <td>{{ achievement.notes or '-' }}</td>
@@ -308,9 +337,10 @@
             </td>
             {% endif %}
           </tr>
+          {% endfor %}
           {% else %}
           <tr>
-            <td colspan="8" class="text-center">No achievements found.</td>
+            <td colspan="{% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}9{% else %}8{% endif %}" class="text-center">No achievements found.</td>
           </tr>
           {% endfor %}
         </tbody>

@@ -19,6 +19,7 @@ css_all = Bundle(
     'css/pages/pathway_library.css',
     'css/pages/tools.css',
     'css/pages/settings.css',
+    'css/pages/messages.css',
     'css/pages/speech_logs.css',
     'css/pages/profile.css',
     'css/core/responsive.css',

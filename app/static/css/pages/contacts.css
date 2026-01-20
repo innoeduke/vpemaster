@@ -61,6 +61,18 @@
   font-size: 1em;
 }
 
+.info-icon {
+  font-size: 0.85em;
+  color: #a0aec0;
+  margin-left: 4px;
+  cursor: help;
+  transition: color 0.2s ease;
+}
+
+.info-icon:hover {
+  color: #4a5568;
+}
+
 /* Contact Name Cell with Small Avatar */
 .contact-name-cell {
   display: flex;
@@ -163,6 +175,58 @@
   /* Darker green for icon */
 }
 
+.badge-path {
+  background-color: #004165;
+  /* Toastmasters Blue */
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+  display: inline-block;
+  margin: 2px;
+  white-space: nowrap;
+}
+
+.badge-path.path-dl {
+  background-color: #EF4444;
+}
+
+.badge-path.path-eh {
+  background-color: #F59E0B;
+}
+
+.badge-path.path-ms {
+  background-color: #10B981;
+}
+
+.badge-path.path-pi {
+  background-color: #3B82F6;
+}
+
+.badge-path.path-pm {
+  background-color: #8B5CF6;
+}
+
+.badge-path.path-vc {
+  background-color: #EC4899;
+}
+
+.badge-path.path-dt {
+  background-color: #772432;
+}
+
+/* DTM */
+
+/* Legacy Paths (Dark Gray) */
+.badge-path.path-ec,
+.badge-path.path-ip,
+.badge-path.path-ld,
+.badge-path.path-sr,
+.badge-path.path-tc {
+  background-color: #a0aec0 !important;
+}
+
 /* --- Mobile / Tablet Responsive Styles --- */
 @media (max-width: 992px) {
 
@@ -204,9 +268,14 @@
   }
 
   /* --- Contacts Page Responsive Fixes --- */
+  .contact-table-container {
+    display: block;
+  }
+
   #contactsTable {
     display: block;
     width: 100%;
+    margin: 0;
     overflow-x: auto;
     /* Allow horizontal scrolling if needed */
     -webkit-overflow-scrolling: touch;
@@ -267,7 +336,7 @@
     display: none;
   }
 
-  /* Mobile: Show Name(1), Participation(2), Actions(9). Hide others (3,4,5,6,7,8). */
+  /* Mobile: Show Name(1), Participation(2). Hide others (3-9). */
   #contactsTable th:nth-child(3),
   #contactsTable td:nth-child(3),
   #contactsTable th:nth-child(4),
@@ -279,12 +348,9 @@
   #contactsTable th:nth-child(7),
   #contactsTable td:nth-child(7),
   #contactsTable th:nth-child(8),
-  #contactsTable td:nth-child(8) {
-    display: none;
-  }
-
+  #contactsTable td:nth-child(8),
   #contactsTable th:nth-child(9),
   #contactsTable td:nth-child(9) {
-    width: 80px;
+    display: none;
   }
 }

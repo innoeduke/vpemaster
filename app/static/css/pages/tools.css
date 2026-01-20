@@ -638,6 +638,12 @@
 	width: 100%;
 	border-collapse: collapse;
 	margin: 0;
+	border: 1px solid #999;
+}
+
+.roster-container .table thead th,
+.roster-container .table tbody td {
+	border: 1px solid #ddd;
 }
 
 .roster-container .table thead th {
@@ -823,6 +829,7 @@
 		gap: 10px;
 	}
 
+
 	.roster-container .input-name {
 		min-width: 200px;
 	}
@@ -942,6 +949,7 @@
 		display: block;
 		width: 100%;
 		background: transparent;
+		border: none;
 	}
 
 	/* Hide Header completely */
@@ -952,6 +960,7 @@
 	.roster-container .table tbody {
 		display: block;
 		width: 100%;
+		border: none;
 	}
 
 	/* Flex Row Layout */

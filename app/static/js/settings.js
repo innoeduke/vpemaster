@@ -111,10 +111,11 @@ class TablePaginator {
   }
 
   getFilteredRows() {
-    // Return rows that are not hidden by the search filter
+    // Return rows that are not hidden by the search filter and are not sub-rows
     return Array.from(this.tbody.rows).filter(row => {
-      // Check if row is not hidden by search (we use a custom attribute or check style)
-      return row.getAttribute('data-search-hidden') !== 'true';
+      const isHiddenBySearch = row.getAttribute('data-search-hidden') === 'true';
+      const isSubRow = row.hasAttribute('data-parent-id');
+      return !isHiddenBySearch && !isSubRow;
     });
   }
 
@@ -139,10 +140,22 @@ class TablePaginator {
 
     // Show/hide rows
     rows.forEach((row) => {
-      if (visibleRows.has(row)) {
-        row.style.display = "";
+      const parentId = row.getAttribute('data-parent-id');
+      if (parentId) {
+        // It's a sub-row. Visibility depends on parent row being visible AND expanded.
+        const parentRow = this.tbody.querySelector(`tr[data-id="${parentId}"]`);
+        if (visibleRows.has(parentRow) && parentRow.classList.contains('expanded')) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
       } else {
-        row.style.display = "none";
+        // It's a top-level row
+        if (visibleRows.has(row)) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
       }
     });
 
@@ -1133,3 +1146,21 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, 100);
 });
+
+/**
+ * Toggles a member's achievement group expanded/collapsed state
+ */
+function toggleAchievementGroup(contactId) {
+  const header = document.querySelector(`.achievement-group-header[data-id="group-${contactId}"]`);
+  if (!header) return;
+
+  header.classList.toggle('expanded');
+  
+  // Update the paginator to show/hide the rows
+  if (window.activePaginators && window.activePaginators['achievements']) {
+    window.activePaginators['achievements'].update();
+  }
+}
+
+// Export to window for inline onclick
+window.toggleAchievementGroup = toggleAchievementGroup;

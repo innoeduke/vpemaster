@@ -2,14 +2,15 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from . import db
-from .models import Contact, SessionLog, Pathway, ContactClub, Meeting, Vote, ExComm, UserClub
+from .models import Contact, SessionLog, Pathway, ContactClub, Meeting, Vote, ExComm, UserClub, Roster, SessionType, MeetingRole
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from .club_context import get_current_club_id
 from flask_login import current_user
 from sqlalchemy.orm import joinedload
+from sqlalchemy import func
 
-from datetime import date
+from datetime import date, timedelta
 
 contacts_bp = Blueprint('contacts_bp', __name__)
 
@@ -46,7 +47,6 @@ def show_contacts():
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
-    from sqlalchemy.orm import joinedload
     club_id = get_current_club_id()
     contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
         .options(joinedload(Contact.mentor))\
@@ -57,21 +57,27 @@ def show_contacts():
     
     # 1. Attendance (Roster)
     # Count how many times each contact appears in Roster
-    from .models import Roster, SessionType, MeetingRole
-    from sqlalchemy import func
     
+    six_months_ago = date.today() - timedelta(days=180)
     attendance_counts = db.session.query(
         Roster.contact_id, func.count(Roster.id)
-    ).filter(Roster.contact_id.isnot(None)).group_by(Roster.contact_id).all()
+    ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
+        Roster.contact_id.isnot(None),
+        Meeting.club_id == club_id,
+        Meeting.Meeting_Date >= six_months_ago
+    ).group_by(Roster.contact_id).all()
     attendance_map = {c_id: count for c_id, count in attendance_counts}
 
     # 2. Roles (SessionLog where SessionType is a Role)
     # We want to count distinct (Meeting, Role) pairs per user.
     distinct_roles = db.session.query(
         SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id, MeetingRole.name
-    ).select_from(SessionLog).join(SessionType).join(MeetingRole).filter(
+    ).select_from(SessionLog).join(SessionType).join(MeetingRole)\
+     .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number).filter(
         SessionType.role_id.isnot(None),
-        MeetingRole.type.in_(['standard', 'club-specific'])
+        MeetingRole.type.in_(['standard', 'club-specific']),
+        Meeting.club_id == club_id,
+        Meeting.Meeting_Date >= six_months_ago
     ).distinct().all()
 
     role_map = {}
@@ -91,13 +97,16 @@ def show_contacts():
             contact_other_role_count[owner_id] = contact_other_role_count.get(owner_id, 0) + 1
 
     # 3. Awards (Meeting Best X)
-    from .models import Meeting
     
     # helper to get counts for a specific field
     def get_award_counts(field):
         return db.session.query(
             getattr(Meeting, field), func.count(Meeting.id)
-        ).filter(getattr(Meeting, field).isnot(None)).group_by(getattr(Meeting, field)).all()
+        ).filter(
+            getattr(Meeting, field).isnot(None),
+            Meeting.club_id == club_id,
+            Meeting.Meeting_Date >= six_months_ago
+        ).group_by(getattr(Meeting, field)).all()
 
     award_map = {}
     best_tt_map = {} # Track Best Table Topic separately
@@ -131,6 +140,9 @@ def show_contacts():
         
         c.tt_count = tt  # Expose for frontend display
         c.is_qualified = check_membership_qualification(tt, best_tt, other_roles)
+
+    # Sort contacts by role_count desc by default
+    contacts.sort(key=lambda c: (c.role_count, c.is_qualified, c.tt_count), reverse=True)
 
     total_contacts = len(contacts)
     type_counts = {}
@@ -196,7 +208,6 @@ def contact_form(contact_id=None):
         
         user = contact.user # Uses current club context
         if user:
-            from .models import UserClub
             ucs = UserClub.query.filter_by(user_id=user.id).options(joinedload(UserClub.club)).all()
             user_clubs_data = [{'id': uc.club.id, 'name': uc.club.club_name} for uc in ucs]
             
@@ -262,6 +273,12 @@ def contact_form(contact_id=None):
             contact.Member_ID = member_id
             contact.Mentor_ID = mentor_id
             
+            # Manual overrides for completed paths and DTM if present in form
+            if 'completed_paths' in request.form:
+                contact.Completed_Paths = request.form.get('completed_paths')
+            if 'dtm' in request.form:
+                contact.DTM = 'dtm' in request.form
+            
             # Auto-populate Name if blank
             contact.update_name_from_parts()
             
@@ -294,6 +311,11 @@ def contact_form(contact_id=None):
                     contact.Avatar_URL = avatar_url
             
             db.session.commit()
+            
+            # Sync metadata (this will also aggregate paths if we just added/removed some manually)
+            from .utils import sync_contact_metadata
+            sync_contact_metadata(contact.id)
+            
             if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
                 flash('Contact updated successfully!', 'success')
             target_contact = contact
@@ -422,7 +444,6 @@ def delete_contact(contact_id):
     Contact.query.filter(Contact.Mentor_ID == contact_id).update({"Mentor_ID": None})
     
     # 4. SessionLogs (Owner_ID)
-    from .models.session import SessionLog
     SessionLog.query.filter_by(Owner_ID=contact_id).update({"Owner_ID": None})
 
     # 5. Votes (contact_id)
@@ -509,9 +530,6 @@ def get_all_contacts_api():
     if not is_authorized(Permissions.CONTACT_BOOK_VIEW):
         return jsonify({'error': 'Permission denied'}), 403
 
-    from sqlalchemy.orm import joinedload
-    from .models import Roster, SessionType, MeetingRole, Meeting
-    from sqlalchemy import func
     
     club_id = get_current_club_id()
     contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
@@ -520,18 +538,26 @@ def get_all_contacts_api():
     Contact.populate_users(contacts, club_id)
     
     # Calculate participation metrics (same logic as show_contacts)
+    six_months_ago = date.today() - timedelta(days=180)
     # 1. Attendance counts
     attendance_counts = db.session.query(
         Roster.contact_id, func.count(Roster.id)
-    ).filter(Roster.contact_id.isnot(None)).group_by(Roster.contact_id).all()
+    ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
+        Roster.contact_id.isnot(None),
+        Meeting.club_id == club_id,
+        Meeting.Meeting_Date >= six_months_ago
+    ).group_by(Roster.contact_id).all()
     attendance_map = {c_id: count for c_id, count in attendance_counts}
 
     # 2. Role counts
     distinct_roles = db.session.query(
         SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id, MeetingRole.name
-    ).select_from(SessionLog).join(SessionType).join(MeetingRole).filter(
+    ).select_from(SessionLog).join(SessionType).join(MeetingRole)\
+     .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number).filter(
         SessionType.role_id.isnot(None),
-        MeetingRole.type.in_(['standard', 'club-specific'])
+        MeetingRole.type.in_(['standard', 'club-specific']),
+        Meeting.club_id == club_id,
+        Meeting.Meeting_Date >= six_months_ago
     ).distinct().all()
 
     role_map = {}
@@ -553,7 +579,11 @@ def get_all_contacts_api():
     for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
         counts = db.session.query(
             getattr(Meeting, field), func.count(Meeting.id)
-        ).filter(getattr(Meeting, field).isnot(None)).group_by(getattr(Meeting, field)).all()
+        ).filter(
+            getattr(Meeting, field).isnot(None),
+            Meeting.club_id == club_id,
+            Meeting.Meeting_Date >= six_months_ago
+        ).group_by(getattr(Meeting, field)).all()
         for c_id, count in counts:
             award_map[c_id] = award_map.get(c_id, 0) + count
             if field == 'best_table_topic_id':

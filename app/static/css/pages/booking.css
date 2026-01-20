@@ -245,6 +245,7 @@
     border-radius: 8px;
     /* Removed overflow: hidden to allow dropdowns */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border: none;
 }
 
 .booking-table th,
@@ -252,14 +253,13 @@
     padding: 15px;
     text-align: left;
     border: none;
-    /* No cell borders */
     white-space: nowrap;
     /* Prevent text from wrapping */
     vertical-align: middle;
 }
 
 .booking-table tr {
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #ddd;
     /* Row borders only */
 }
 
@@ -829,6 +829,11 @@
         display: block;
         width: 100%;
         box-sizing: border-box;
+    }
+
+    /* Accordion Item Mobile Override */
+    .accordion-item {
+        border: none !important;
     }
 
     .booking-table tr {
