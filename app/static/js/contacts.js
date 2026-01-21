@@ -329,7 +329,11 @@ function handleContactFormSubmit(event) {
           // Refresh the cache
           refreshContactCache();
         } else {
-          alert(data.message || "An error occurred while saving the contact.");
+          if (data.duplicate_contact) {
+            showDuplicateModal(data.message, data.duplicate_contact);
+          } else {
+            alert(data.message || "An error occurred while saving the contact.");
+          }
         }
       })
       .catch((error) => {

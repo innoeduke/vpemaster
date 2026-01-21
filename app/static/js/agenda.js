@@ -715,8 +715,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           }
         } else {
-          // Display the specific error message from the server
-          showCustomAlert("Error", data.messsage || "An error occurred while saving the contact.");
+          if (data.duplicate_contact) {
+            showDuplicateModal(data.message, data.duplicate_contact);
+          } else {
+            showCustomAlert("Error", data.message || "An error occurred while saving the contact.");
+          }
         }
       })
       .catch((error) => {

@@ -47,7 +47,14 @@ function showSuggestions(filteredContacts, elements) {
   filteredContacts.forEach(contact => {
     const div = document.createElement('div');
     div.className = 'autocomplete-suggestion';
-    div.textContent = contact.Name;
+    
+    let displayText = contact.Name;
+    if (contact.Type === 'Guest' && contact.Phone_Number) {
+      const phone = contact.Phone_Number;
+      const last4 = phone.length > 4 ? phone.slice(-4) : phone;
+      displayText += ` (${last4})`;
+    }
+    div.textContent = displayText;
     div.dataset.contactId = contact.id;
     div.dataset.contactType = contact.Type;
     div.dataset.userRole = contact.UserRole;
@@ -393,10 +400,51 @@ function initializeTableInteractions(elements) {
   });
 }
 
+function handleContactFormSubmit(event) {
+  event.preventDefault();
+  const form = event.target;
+  const formData = new FormData(form);
+
+  fetch(form.action, {
+    method: "POST",
+    body: formData,
+    headers: {
+      "X-Requested-With": "XMLHttpRequest",
+    },
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        // Build the return URL with new contact details
+        const url = new URL(window.location.href);
+        url.searchParams.set("new_contact_id", data.contact.id);
+        url.searchParams.set("new_contact_name", data.contact.Name);
+        url.searchParams.set("new_contact_type", data.contact.Type);
+        window.location.href = url.toString();
+      } else {
+        if (data.duplicate_contact) {
+          showDuplicateModal(data.message, data.duplicate_contact);
+        } else {
+          alert(data.message || "An error occurred while saving the contact.");
+        }
+      }
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+      alert("An error occurred while saving the contact.");
+    });
+}
+
 // Main initialization
 document.addEventListener("DOMContentLoaded", async function () {
   // Cache all DOM elements once
   const elements = cacheElements();
+
+  // Attach contact form listener
+  const contactForm = document.getElementById("contactForm");
+  if (contactForm) {
+      contactForm.addEventListener("submit", handleContactFormSubmit);
+  }
 
   // Fetch contacts before initializing autocomplete
   await fetchContacts();

@@ -203,14 +203,17 @@ function openContactModal(contactId) {
 
         // Handle Education Accordion Visibility
         const educationWrapper = document.getElementById("educationFieldsWrapper");
+        const basicInfoAccordion = document.getElementById("basicInfoAccordion");
         const type = data.contact.Type;
         if (type === 'Member' || type === 'Officer') {
           educationWrapper.style.display = "block";
+          if (basicInfoAccordion) basicInfoAccordion.style.display = "flex"; // Accordions use flex
           document.getElementById("current_path").value = data.contact.current_path || "";
           document.getElementById("next_project").value = data.contact.next_project || "";
           document.getElementById("credentials").value = data.contact.credentials || "";
         } else {
           educationWrapper.style.display = "none";
+          if (basicInfoAccordion) basicInfoAccordion.style.display = "none";
         }
 
         // Reset Accordions: Basic Info open, Education closed
@@ -231,6 +234,8 @@ function openContactModal(contactId) {
     contactModalTitle.textContent = "Add Guest";
     contactForm.action = "/contact/form";
     document.getElementById("educationFieldsWrapper").style.display = "none";
+    const basicInfoAccordion = document.getElementById("basicInfoAccordion");
+    if (basicInfoAccordion) basicInfoAccordion.style.display = "none";
     
     // Hide member_id and mentor_id rows for new contacts (default is Guest)
     const memberIdRow = document.getElementById("member_id_row");
@@ -263,8 +268,50 @@ function openContactModal(contactId) {
 
 function closeContactModal() {
   const contactModal = document.getElementById("contactModal");
-  contactModal.style.display = "none";
+  if (contactModal) contactModal.style.display = "none";
 }
+
+function showDuplicateModal(message, duplicateData) {
+  const modal = document.getElementById('duplicateContactModal');
+  if (!modal) {
+    if (typeof showCustomAlert === 'function') {
+        showCustomAlert("Duplicate Contact", message);
+    } else {
+        alert(message);
+    }
+    return;
+  }
+
+  const msgEl = document.getElementById('duplicateMessage');
+  const nameEl = document.getElementById('dupName');
+  const emailEl = document.getElementById('dupEmail');
+  const phoneEl = document.getElementById('dupPhone');
+
+  if (msgEl) msgEl.textContent = message;
+  if (nameEl) nameEl.textContent = duplicateData.name || '-';
+  if (emailEl) emailEl.textContent = duplicateData.email || '-';
+  if (phoneEl) phoneEl.textContent = duplicateData.phone || '-';
+  
+  // Configure "View Existing" button
+  const viewBtn = document.getElementById('viewDupBtn');
+  if (viewBtn) {
+    viewBtn.onclick = function() {
+        closeDuplicateModal();
+        if (typeof closeContactModal === 'function') closeContactModal();
+        if (typeof openContactModal === 'function') openContactModal(duplicateData.id);
+    };
+  }
+  
+  modal.style.display = 'flex';
+}
+
+function closeDuplicateModal() {
+  const modal = document.getElementById('duplicateContactModal');
+  if (modal) modal.style.display = 'none';
+}
+
+window.closeDuplicateModal = closeDuplicateModal;
+window.showDuplicateModal = showDuplicateModal;
 
 function previewAvatar(input) {
   if (input.files && input.files[0]) {

@@ -34,6 +34,7 @@ def search_contacts_by_name():
         "id": c.id,
         "Name": c.Name,
         "Type": c.Type,
+        "Phone_Number": c.Phone_Number,
         "UserRole": c.user.primary_role_name if c.user else None,
         "is_officer": c.user.has_role(Permissions.STAFF) if c.user else False
     } for c in contacts]
@@ -349,7 +350,16 @@ def contact_form(contact_id=None):
             existing_name = Contact.query.filter_by(Name=new_contact.Name).first()
             if existing_name:
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify(success=False, message=f"A contact with the name '{new_contact.Name}' already exists."), 400
+                    return jsonify({
+                        'success': False, 
+                        'message': f"A contact with the name '{new_contact.Name}' already exists.",
+                        'duplicate_contact': {
+                            'id': existing_name.id,
+                            'name': existing_name.Name,
+                            'email': existing_name.Email,
+                            'phone': existing_name.Phone_Number
+                        }
+                    }), 400
                 flash(f"A contact with the name '{new_contact.Name}' already exists.", 'error')
                 return redirect(url_for('contacts_bp.show_contacts'))
                 
@@ -358,8 +368,35 @@ def contact_form(contact_id=None):
                 existing_email = Contact.query.filter_by(Email=email).first()
                 if existing_email:
                     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return jsonify(success=False, message=f"A contact with the email '{email}' already exists."), 400
+                        return jsonify({
+                            'success': False, 
+                            'message': f"A contact with the email '{email}' already exists.",
+                            'duplicate_contact': {
+                                'id': existing_email.id,
+                                'name': existing_email.Name,
+                                'email': existing_email.Email,
+                                'phone': existing_email.Phone_Number
+                            }
+                        }), 400
                     flash(f"A contact with the email '{email}' already exists.", 'error')
+                    return redirect(url_for('contacts_bp.show_contacts'))
+
+            # Check for existing phone if provided
+            if phone:
+                existing_phone = Contact.query.filter_by(Phone_Number=phone).first()
+                if existing_phone:
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return jsonify({
+                            'success': False, 
+                            'message': f"A contact with the phone '{phone}' already exists.",
+                            'duplicate_contact': {
+                                'id': existing_phone.id,
+                                'name': existing_phone.Name,
+                                'email': existing_phone.Email,
+                                'phone': existing_phone.Phone_Number
+                            }
+                        }), 400
+                    flash(f"A contact with the phone '{phone}' already exists.", 'error')
                     return redirect(url_for('contacts_bp.show_contacts'))
             
             db.session.add(new_contact)
@@ -486,6 +523,12 @@ def create_contact_api():
                 Email=data['email']).first()
             if existing_email:
                 return jsonify({'error': f"A contact with the email '{data['email']}' already exists."}), 400
+
+        if data.get('phone'):
+            existing_phone = Contact.query.filter_by(
+                Phone_Number=data['phone']).first()
+            if existing_phone:
+                return jsonify({'error': f"A contact with the phone '{data['phone']}' already exists."}), 400
 
         # Architectural Decision: All contacts created via the API must be guests.
         contact_type = 'Guest'

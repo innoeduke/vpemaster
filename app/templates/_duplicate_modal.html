@@ -1,0 +1,34 @@
+<div id="duplicateContactModal" class="modal" style="z-index: 1005;">
+  <div class="modal-content" style="max-width: 500px; border-radius: 12px; overflow: hidden; padding: 0;">
+    <div style="background: #772432; color: white; padding: 20px; position: relative;">
+        <h2 style="margin: 0; font-size: 1.5rem;"><i class="fas fa-user-friends"></i> Duplicate Found</h2>
+        <span class="close" onclick="closeDuplicateModal()" style="color: white; position: absolute; right: 20px; top: 15px; font-size: 1.8rem;">&times;</span>
+    </div>
+    
+    <div style="padding: 25px;">
+        <p id="duplicateMessage" style="font-size: 1.1rem; color: #444; margin-bottom: 20px; line-height: 1.4;"></p>
+        
+        <div class="duplicate-details" style="background: #fdf2f4; padding: 20px; border-radius: 10px; border: 1px solid #f5d6da; margin-bottom: 25px;">
+            <div style="display: flex; align-items: flex-start; gap: 15px;">
+                <div style="background: #772432; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div>
+                    <h3 id="dupName" style="margin: 0 0 5px 0; color: #772432; font-size: 1.3rem;"></h3>
+                    <div style="color: #666; font-size: 0.95rem;">
+                        <p style="margin: 3px 0;"><i class="fas fa-envelope fa-fw"></i> <span id="dupEmail"></span></p>
+                        <p style="margin: 3px 0;"><i class="fas fa-phone fa-fw"></i> <span id="dupPhone"></span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="closeDuplicateModal()" style="padding: 10px 20px;">Cancel</button>
+            <button type="button" id="viewDupBtn" class="btn btn-primary" style="padding: 10px 20px; background: #772432; border-color: #772432;">
+                <i class="fas fa-external-link-alt"></i> View Existing Contact
+            </button>
+        </div>
+    </div>
+  </div>
+</div>

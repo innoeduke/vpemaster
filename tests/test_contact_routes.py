@@ -117,3 +117,47 @@ def test_contact_update_has_flash_on_standard_request(client, app, default_club)
             flashes = sess.get('_flashes', [])
             assert any(f[1] == 'Contact updated successfully!' for f in flashes)
 
+
+def test_contact_search_includes_phone(client, app, default_club):
+    """Verify that search results include the Phone_Number field."""
+    with app.app_context():
+        import uuid
+        unique_id = str(uuid.uuid4())[:8]
+        phone = "1234567890"
+        c = Contact(Name=f'Search Test {unique_id}', Type='Guest', Phone_Number=phone)
+        db.session.add(c)
+        db.session.commit()
+        
+        cc = ContactClub(contact_id=c.id, club_id=default_club.id)
+        db.session.add(cc)
+        db.session.commit()
+        
+        contact_name = c.Name
+        
+        # Create a user for authentication
+        from app.models import User
+        u = User(username=f'search_tester_{unique_id}', email=f'tester_{unique_id}@example.com')
+        u.set_password('pass')
+        db.session.add(u)
+        db.session.commit()
+        user_id = u.id
+
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(user_id)
+        sess['current_club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    with patch('app.contacts_routes.is_authorized', return_value=True):
+        resp = client.get(f'/contacts/search?q={contact_name}')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        
+        assert len(data) > 0
+        found = False
+        for item in data:
+            if item['Name'] == contact_name:
+                assert 'Phone_Number' in item
+                assert item['Phone_Number'] == phone
+                found = True
+                break
+        assert found

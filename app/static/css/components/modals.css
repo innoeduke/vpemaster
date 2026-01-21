@@ -65,7 +65,13 @@
     margin-top: 25px;
 }
 
-/* Ensure form-table inside modals has adequate label width */
+/* Ensure form-table inside modals has adequate label width and no borders */
+.modal-content .form-table,
+.modal-content .form-table th,
+.modal-content .form-table td {
+    border: none;
+}
+
 .modal-content .form-table td:first-child {
     width: 120px;
     white-space: nowrap;
@@ -73,7 +79,6 @@
 }
 
 .modal-content .form-table td {
-    border: none;
     padding: 10px 5px;
 }
 
