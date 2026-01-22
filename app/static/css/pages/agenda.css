@@ -328,6 +328,19 @@
     flex-grow: 1;
 }
 
+.action-icon-btn {
+    min-width: 40px !important;
+    width: 40px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-icon-btn i {
+    font-size: 1.2em;
+}
+
 #edit-mode-buttons {
     position: sticky;
     top: 0;

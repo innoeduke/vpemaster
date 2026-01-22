@@ -24,7 +24,7 @@
                 {% if selected_meeting.type %}
                 <span class="meeting-type-badge">{{ selected_meeting.type }}</span>
                 {% endif %}
-                {% if selected_meeting and selected_meeting.media and selected_meeting.media.url %}
+                {% if selected_meeting and selected_meeting.media and selected_meeting.media.url and current_user.is_authenticated %}
                 <a href="{{ selected_meeting.media.url }}" target="_blank">
                     {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
                 </a>
@@ -109,8 +109,9 @@
                 {% endif %}
 
                 {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
-                <button id="export-btn" class="btn btn-info">Export</button>
                 <button id="edit-btn" class="btn btn-primary">Edit</button>
+                <button id="export-btn" class="btn btn-info action-icon-btn" title="Export to Excel"><i class="fas fa-file-excel"></i></button>
+                <button id="ppt-btn" class="btn btn-warning action-icon-btn" title="Download PPT"><i class="fas fa-file-powerpoint"></i></button>
                 {% endif %}
             </div>
         </div>
@@ -192,7 +193,7 @@
                             {% set display_title = cleaned_title %}
                             {% endif %}
 
-                            {% if log_dict.media_url %}
+                            {% if log_dict.media_url and current_user.is_authenticated %}
                             <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
                                 {{ display_title }}
                             </a>

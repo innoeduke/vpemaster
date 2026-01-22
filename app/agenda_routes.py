@@ -267,7 +267,7 @@ def _recalculate_start_times(meetings_to_update):
                 timedelta(minutes=duration_to_add + break_minutes)
             current_time = next_dt.time()
 
-def _get_processed_logs_data(selected_meeting_num):
+def _get_processed_logs_data(selected_meeting_num, is_authenticated=True):
     """
     Fetches and processes session logs for a given meeting number.
     Returns the list of log dictionaries ready for the frontend.
@@ -434,7 +434,7 @@ def _get_processed_logs_data(selected_meeting_num):
             'owner_type': owner.Type if owner else '',
             'owner_club': owner.get_primary_club().club_name if (owner and owner.get_primary_club()) else '',
             'owner_completed_levels': owner.Completed_Paths if owner else '',
-            'media_url': media.url if media and media.url else None,
+            'media_url': media.url if (is_authenticated and media and media.url) else None,
             # Add award type if this specific role won the award
             'award_type': award_type,
             'speaker_is_dtm': speaker_is_dtm
@@ -525,7 +525,7 @@ def agenda():
     selected_meeting = None
     
     if selected_meeting_num:
-        logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_num)
+        logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_num, current_user.is_authenticated)
         
         if not selected_meeting:
              # Handle meeting not found (deleted or invalid number)
@@ -741,6 +741,31 @@ def export_agenda(meeting_number):
         as_attachment=True,
         download_name=filename,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+
+@agenda_bp.route('/agenda/ppt/<int:meeting_number>')
+@login_required
+@authorized_club_required
+def download_pptx_agenda(meeting_number):
+    """
+    Generates a PPTX agenda for the meeting.
+    """
+    output = MeetingExportService.generate_meeting_pptx(meeting_number)
+    if not output:
+        return "Could not generate PPTX. Template might be missing or error occurred.", 500
+
+    meeting = db.session.get(Meeting, meeting_number) or Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    if meeting:
+        filename = f"Meeting_{meeting.Meeting_Number}_{meeting.Meeting_Date.strftime('%Y-%m-%d')}.pptx"
+    else:
+        filename = f"Meeting_{meeting_number}.pptx"
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.presentationml.presentation'
     )
 
 

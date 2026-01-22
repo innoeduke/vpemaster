@@ -43,6 +43,11 @@
     background-color: #4CAF50;
 }
 
+.btn-warning {
+    color: white;
+    background-color: #f0ad4e;
+}
+
 .btn-cancel {
     color: #333;
     background-color: #6c757d;

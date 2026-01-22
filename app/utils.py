@@ -434,7 +434,7 @@ def derive_credentials(contact):
     """
     Derives the credentials string for a given contact.
     - Returns 'DTM' for DTMs.
-    - Formats for Guests (e.g., "Guest@Club").
+    - Returns 'Guest' for Guests.
     - Returns the synced credentials field for Members/Officers.
     """
     if not contact:
@@ -443,8 +443,7 @@ def derive_credentials(contact):
     if contact.DTM:
         return 'DTM'
     elif contact.Type == 'Guest':
-        primary_club = contact.get_primary_club()
-        return f"Guest@{primary_club.club_name}" if primary_club else "Guest"
+        return "Guest"
     elif contact.Type in ['Member', 'Officer']:
         return contact.credentials or ''
     return ''

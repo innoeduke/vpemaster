@@ -145,6 +145,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
+    const pptButton = document.getElementById("ppt-btn");
+    if (pptButton) {
+      pptButton.addEventListener("click", downloadPPT);
+    }
     if (tableBody) {
       tableBody.addEventListener("click", (event) => {
         if (event.target.closest(".delete-btn")) {
@@ -929,6 +933,15 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = `/agenda/export/${meetingNumber}`;
     } else {
       showCustomAlert("Select Meeting", "Please select a meeting to export.");
+    }
+  }
+
+  function downloadPPT() {
+    const meetingNumber = meetingFilter.value;
+    if (meetingNumber) {
+      window.location.href = `/agenda/ppt/${meetingNumber}`;
+    } else {
+      showCustomAlert("Select Meeting", "Please select a meeting to download PPT.");
     }
   }
 
