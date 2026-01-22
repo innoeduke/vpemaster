@@ -267,7 +267,7 @@ def _recalculate_start_times(meetings_to_update):
                 timedelta(minutes=duration_to_add + break_minutes)
             current_time = next_dt.time()
 
-def _get_processed_logs_data(selected_meeting_num, is_authenticated=True):
+def _get_processed_logs_data(selected_meeting_num, show_media=False):
     """
     Fetches and processes session logs for a given meeting number.
     Returns the list of log dictionaries ready for the frontend.
@@ -434,7 +434,7 @@ def _get_processed_logs_data(selected_meeting_num, is_authenticated=True):
             'owner_type': owner.Type if owner else '',
             'owner_club': owner.get_primary_club().club_name if (owner and owner.get_primary_club()) else '',
             'owner_completed_levels': owner.Completed_Paths if owner else '',
-            'media_url': media.url if (is_authenticated and media and media.url) else None,
+            'media_url': media.url if (show_media and media and media.url) else None,
             # Add award type if this specific role won the award
             'award_type': award_type,
             'speaker_is_dtm': speaker_is_dtm
@@ -525,7 +525,7 @@ def agenda():
     selected_meeting = None
     
     if selected_meeting_num:
-        logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_num, current_user.is_authenticated)
+        logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_num, is_authorized(Permissions.MEDIA_ACCESS))
         
         if not selected_meeting:
              # Handle meeting not found (deleted or invalid number)
@@ -1180,7 +1180,7 @@ def update_logs():
         db.session.commit()
 
         # Fetch fresh data for client-side update
-        logs_data, _ = _get_processed_logs_data(meeting_number)
+        logs_data, _ = _get_processed_logs_data(meeting_number, is_authorized(Permissions.MEDIA_ACCESS))
         project_speakers = _get_project_speakers(meeting_number)
 
         return jsonify(success=True, logs_data=logs_data, project_speakers=project_speakers)

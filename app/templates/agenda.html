@@ -24,7 +24,7 @@
                 {% if selected_meeting.type %}
                 <span class="meeting-type-badge">{{ selected_meeting.type }}</span>
                 {% endif %}
-                {% if selected_meeting and selected_meeting.media and selected_meeting.media.url and current_user.is_authenticated %}
+                {% if selected_meeting and selected_meeting.media and selected_meeting.media.url and current_user.has_permission('MEDIA_ACCESS') %}
                 <a href="{{ selected_meeting.media.url }}" target="_blank">
                     {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
                 </a>
@@ -193,7 +193,7 @@
                             {% set display_title = cleaned_title %}
                             {% endif %}
 
-                            {% if log_dict.media_url and current_user.is_authenticated %}
+                            {% if log_dict.media_url and current_user.has_permission('MEDIA_ACCESS') %}
                             <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
                                 {{ display_title }}
                             </a>
