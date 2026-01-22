@@ -341,6 +341,26 @@
     font-size: 1.2em;
 }
 
+/* Desktop-specific styles to keep buttons on one row */
+@media (min-width: 993px) {
+    .action-bar-right .button-group {
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+
+    .action-bar-right .btn {
+        font-size: 13px;
+        padding: 0 12px;
+        min-width: 70px;
+    }
+
+    .meeting-status-display {
+        min-width: 120px;
+        font-size: 0.85em;
+        padding: 4px 10px;
+    }
+}
+
 #edit-mode-buttons {
     position: sticky;
     top: 0;
@@ -800,7 +820,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 100px;
+    min-width: 80px;
     /* Prevent layout shift on text change */
 }
 
@@ -1026,6 +1046,51 @@
         justify-content: center;
         flex-wrap: wrap;
         max-width: 100%;
+    }
+
+    /* Arrange status elements on first row, other buttons on second row */
+    .action-bar-right .button-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .action-bar-right .meeting-status-display {
+        order: 1;
+        flex: 1 1 calc(50% - 5px);
+    }
+
+    .action-bar-right #meeting-status-btn {
+        order: 2;
+        flex: 1 1 calc(50% - 5px);
+    }
+
+    .action-bar-right #create-btn {
+        order: 3;
+        flex: 1 1 100%;
+        max-width: calc(35% - 5px);
+    }
+
+    .action-bar-right #edit-btn {
+        order: 4;
+        flex: 1 1 auto;
+        max-width: calc(35% - 5px);
+    }
+
+    .action-bar-right #export-btn {
+        order: 5;
+        flex: 0 0 auto;
+        width: 50px;
+        min-width: 50px !important;
+        padding: 0 !important;
+    }
+
+    .action-bar-right #ppt-btn {
+        order: 6;
+        flex: 0 0 auto;
+        width: 50px;
+        min-width: 50px !important;
+        padding: 0 !important;
     }
 
     /* Reduce font size in agenda table for mobile */
