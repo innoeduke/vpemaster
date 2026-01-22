@@ -731,7 +731,7 @@ def get_speech_log_details(log_id):
         "pathway": pathway_name_to_return,
         "level": level,
         "project_code": log.project_code,
-        "Media_URL": log.media.url if log.media else ""
+        "Media_URL": log.media.url if (current_user.is_authenticated and log.media) else ""
     }
 
     return jsonify(success=True, log=log_data)
