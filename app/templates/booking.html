@@ -60,7 +60,7 @@
 
     {# Macro to render a single role row in the table #}
     {% macro render_role_row(role, status, is_admin_view, contacts, current_user_contact_id) %}
-    <tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}">
+    <tr data-session-id="{{ role.session_id }}" data-role="{{ role.role }}">
         <td class="role-cell">
             <div class="role-cell-content">
                 <i class="fas {{ role.icon }}"></i>
@@ -73,13 +73,43 @@
         {# Status cell: waitlist #}
         <td class="status-cell">
             <div class="status-cell-content">
-                <div class="role-avatar" {% if role.owner_name %}title="{{ role.owner_name }}" {% endif %}>
+                {% if role.has_single_owner %}
+                <div class="role-avatar {% if is_admin_view %}admin-avatar{% endif %}" {% if role.owner_name %}title="{{ role.owner_name }}" {% endif %} {% if is_admin_view and role.owner_id %}data-owner-id="{{ role.owner_id }}" data-session-id="{{ role.session_id }}"{% endif %}>
                     {% if role.owner_avatar_url %}
                     <img src="{{ url_for('static', filename=role.owner_avatar_url) }}" alt="User Avatar">
                     {% else %}
                     <i class="fas fa-user-circle"></i>
                     {% endif %}
+                    {% if is_admin_view and role.owner_id %}
+                    <button class="avatar-remove-btn" onclick="removeOwner('{{ role.session_id }}', '{{ role.owner_id }}')" title="Remove">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    {% endif %}
                 </div>
+                {% else %}
+                {# Shared role: Show all owners #}
+                {% if role.all_owners %}
+                {% for owner in role.all_owners %}
+                <div class="role-avatar {% if is_admin_view %}admin-avatar{% endif %}" title="{{ owner.name }}" {% if is_admin_view %}data-owner-id="{{ owner.id }}" data-session-id="{{ role.session_id }}"{% endif %}>
+                    {% if owner.avatar_url %}
+                    <img src="{{ url_for('static', filename=owner.avatar_url) }}" alt="{{ owner.name }}">
+                    {% else %}
+                    <i class="fas fa-user-circle"></i>
+                    {% endif %}
+                    {% if is_admin_view %}
+                    <button class="avatar-remove-btn" onclick="removeOwner('{{ role.session_id }}', '{{ owner.id }}')" title="Remove">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="role-avatar">
+                    <i class="fas fa-user-circle"></i>
+                </div>
+                {% endif %}
+                {% endif %}
+                
                 {% if status in ['not started', 'unpublished'] and role.waitlist %}
                 {% for user in role.waitlist %}
                 <div class="role-avatar waitlist-avatar" title="{{ user.name }} (Waitlist)">
@@ -98,7 +128,22 @@
         <td class="assign-cell">
             {% if status in ['not started', 'unpublished'] or is_admin_view %}
             {% if is_admin_view %}
-            <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}" data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
+            {# For shared roles with multiple owners, show one input per owner #}
+            {% if role.all_owners is defined and role.all_owners|length > 0 %}
+            <div class="multi-owner-inputs">
+                {% for owner in role.all_owners %}
+                <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}" data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
+                    <input type="text" class="admin-assign-input"
+                        placeholder="--- Select ---"
+                        value="{{ owner.name }}"
+                        data-current-id="{{ owner.id }}"
+                        autocomplete="off">
+                    <div class="autocomplete-results"></div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}" data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
                 <input type="text" class="admin-assign-input {% if not role.owner_id %}unassigned-role{% endif %}"
                     placeholder="--- Select ---"
                     value="{% if role.owner_id %}{{ role.owner_name }}{% endif %}"
@@ -106,33 +151,36 @@
                     autocomplete="off">
                 <div class="autocomplete-results"></div>
             </div>
+            {% endif %}
             {% else %}
             {% if role.owner_id %}
             {% if role.owner_id == current_user_contact_id %}
             <button class="btn btn-cancel"
-                onclick="bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role_key }}')">Cancel</button>
+                onclick="bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role }}')">Cancel</button>
             {% else %}
             {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
             {% if current_user_contact_id in waitlist_ids %}
             <button class="btn btn-leave-waitlist"
-                onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
+                onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role }}')">Leave Waitlist</button>
             {% else %}
             <button class="btn btn-join-waitlist"
-                onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
+                onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role }}')">Join Waitlist</button>
             {% endif %}
             {% endif %}
             {% else %}
             {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
             {% if current_user_contact_id in waitlist_ids %}
             <button class="btn btn-leave-waitlist"
-                onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Leave Waitlist</button>
+                onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role }}')">Leave Waitlist</button>
             {% else %}
-            {% if role.needs_approval %}
+            {# For shared roles with existing owners, show Join Waitlist instead of Book #}
+            {% set has_existing_owners = role.all_owners is defined and role.all_owners|length > 0 %}
+            {% if role.needs_approval or has_existing_owners %}
             <button class="btn btn-join-waitlist"
-                onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role_key }}')">Join Waitlist</button>
+                onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role }}')">Join Waitlist</button>
             {% else %}
             <button class="btn btn-book"
-                onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role_key }}')">Book</button>
+                onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role }}')">Book</button>
             {% endif %}
             {% endif %}
             {% endif %}
@@ -144,10 +192,8 @@
         {% if is_admin_view %}
         <td class="icon-cell">
             <div class="button-group">
-                <button class="icon-btn" title="Unassign Role" onclick="assignRole('{{ role.session_id }}', '0')"><i
-                        class="fas fa-undo"></i></button>
                 {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="Approve top of waitlist"
-                    onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role_key }}')"><i
+                    onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role }}')"><i
                         class="fas fa-user-check"></i></button>{% endif %}
             </div>
         </td>

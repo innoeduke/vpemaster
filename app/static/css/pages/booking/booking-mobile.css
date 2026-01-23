@@ -56,9 +56,10 @@
 	}
 
 	.role-avatar {
-		width: 60px;
-		height: 60px;
-		margin-left: 10px;
+		width: 50px;
+		height: 50px;
+		margin-left: 0;
+		flex-shrink: 0;
 	}
 
 	/* Container adjustments */
@@ -125,15 +126,15 @@
 	/* Grid layout for table rows */
 	.booking-table tr {
 		display: grid;
-		grid-template-columns: 1fr 1fr 1fr;
+		grid-template-columns: 1fr minmax(120px, auto) 1fr;
 		grid-template-rows: auto auto;
 		grid-template-areas:
 			"role role icons"
-			"waitlist action action";
+			"waitlist waitlist action";
 		margin-bottom: 20px;
 		border: 2px solid #ddd;
 		border-radius: 8px;
-		padding: 10px;
+		padding: 15px 20px;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 		gap: 5px 15px;
 		align-items: center;
@@ -161,13 +162,14 @@
 		font-size: 0.9em;
 	}
 
-	/* Stack status cell content vertically */
+	/* Allow avatars to display side by side on mobile */
 	.booking-table .status-cell .status-cell-content {
 		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: center;
 		gap: 8px;
-		width: 100%;
+		min-width: 140px;
 	}
 
 	.booking-table .owner-display {

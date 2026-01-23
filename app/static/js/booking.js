@@ -164,13 +164,14 @@ document.addEventListener("DOMContentLoaded", function () {
  // End of DOMContentLoaded listener
 
 
-function bookOrCancelRole(sessionId, action) {
+function bookOrCancelRole(sessionId, action, roleLabel) {
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: sessionId,
       action: action,
+      role: roleLabel
     }),
   })
     .then((response) => response.json())
@@ -180,11 +181,44 @@ function bookOrCancelRole(sessionId, action) {
       } else {
         alert("Error: " + data.message);
       }
+    })
+    .catch((error) => {
+      console.error("bookOrCancelRole error:", error);
+      alert("An error occurred. Please try again.");
+      window.location.reload(true);
     });
 }
 
 
+function removeOwner(sessionId, ownerId) {
+  fetch("/booking/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      action: "remove_owner",
+      contact_id: ownerId,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        window.location.reload(true);
+      } else {
+        alert("Error: " + data.message);
+      }
+    })
+    .catch((error) => {
+      console.error("removeOwner error:", error);
+      alert("An error occurred. Please try again.");
+      window.location.reload(true);
+    });
+}
+
 function assignRole(sessionId, contactId, selectElement) {
+  // For shared roles, we need to know which owner to replace
+  const previousContactId = selectElement ? selectElement.dataset.previousId : null;
+  
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -192,6 +226,7 @@ function assignRole(sessionId, contactId, selectElement) {
       session_id: sessionId,
       action: "assign",
       contact_id: contactId,
+      previous_contact_id: previousContactId,
     }),
   })
     .then((response) => response.json())
@@ -207,16 +242,24 @@ function assignRole(sessionId, contactId, selectElement) {
               `tr[data-session-id="${sessionId}"]`
             );
             if (row) {
-              const inputElement = row.querySelector(".admin-assign-input");
-              if (inputElement) {
+              // Clear ALL owner inputs (for shared roles with multiple owners)
+              const inputElements = row.querySelectorAll(".admin-assign-input");
+              inputElements.forEach(inputElement => {
                 inputElement.value = "";
                 inputElement.dataset.currentId = "0";
                 inputElement.classList.add("unassigned-role");
-              }
+              });
 
               const roleActions = row.querySelector(".role-cell-actions");
               if (roleActions) {
                 roleActions.innerHTML = "";
+              }
+              
+              // Also clear avatars for shared roles
+              const avatarsContainer = row.querySelector(".status-cell-content");
+              if (avatarsContainer) {
+                const avatars = avatarsContainer.querySelectorAll(".role-avatar:not(.waitlist-avatar)");
+                avatars.forEach(avatar => avatar.remove());
               }
             }
           } else {
@@ -289,13 +332,14 @@ function updateSessionRow(sessionData) {
 }
 
 
-function leaveWaitlist(sessionId) {
+function leaveWaitlist(sessionId, roleLabel) {
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: sessionId,
       action: "leave_waitlist",
+      role: roleLabel
     }),
   })
     .then((response) => response.json())
@@ -305,17 +349,23 @@ function leaveWaitlist(sessionId) {
       } else {
         alert("Error: " + data.message);
       }
+    })
+    .catch((error) => {
+      console.error("leaveWaitlist error:", error);
+      alert("An error occurred. Please try again.");
+      window.location.reload(true);
     });
 }
 
 
-function approveWaitlist(sessionId) {
+function approveWaitlist(sessionId, roleLabel) {
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: sessionId,
       action: "approve_waitlist",
+      role: roleLabel
     }),
   })
     .then((response) => response.json())
@@ -325,26 +375,43 @@ function approveWaitlist(sessionId) {
       } else {
         alert("Error: " + data.message);
       }
+    })
+    .catch((error) => {
+      console.error("approveWaitlist error:", error);
+      alert("An error occurred. Please try again.");
+      window.location.reload(true);
     });
 }
 
 
-function joinWaitlist(sessionId) {
+function joinWaitlist(sessionId, roleLabel) {
+  console.log("joinWaitlist called with:", { sessionId, roleLabel });
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       session_id: sessionId,
       action: "join_waitlist",
+      role: roleLabel
     }),
   })
-    .then((response) => response.json())
+    .then((response) => {
+      console.log("joinWaitlist response status:", response.status);
+      return response.json();
+    })
     .then((data) => {
+      console.log("joinWaitlist data:", data);
       if (data.success) {
+        console.log("joinWaitlist success, reloading...");
         window.location.reload(true);
       } else {
         alert("Error: " + data.message);
       }
+    })
+    .catch((error) => {
+      console.error("joinWaitlist error:", error);
+      alert("An error occurred. Please try again.");
+      window.location.reload(true);
     });
 }
 

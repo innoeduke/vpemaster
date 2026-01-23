@@ -17,8 +17,13 @@ def sysadmin_user(app, db_session):
     # Ensure role exists
     role = AuthRole.get_by_name(Permissions.SYSADMIN)
     if not role:
-        role = AuthRole(name=Permissions.SYSADMIN)
+        role = AuthRole(name=Permissions.SYSADMIN, level=100)
         db_session.add(role)
+        db_session.commit()
+    
+    # Ensure level is set if already existed
+    if role.level is None:
+        role.level = 100
         db_session.commit()
 
     # Ensure club exists
@@ -43,8 +48,8 @@ def sysadmin_user(app, db_session):
         db_session.commit()
 
     # Assign role and club
-    if not UserClub.query.filter_by(user_id=user.id, club_id=club.id, club_role_id=role.id).first():
-        user_club = UserClub(user_id=user.id, club_id=club.id, club_role_id=role.id, contact_id=contact.id, is_home=True)
+    if not UserClub.query.filter_by(user_id=user.id, club_id=club.id, club_role_level=role.level).first():
+        user_club = UserClub(user_id=user.id, club_id=club.id, club_role_level=role.level, contact_id=contact.id, is_home=True)
         db_session.add(user_club)
         db_session.commit()
     

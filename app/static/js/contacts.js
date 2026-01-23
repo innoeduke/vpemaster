@@ -345,46 +345,6 @@ function handleContactFormSubmit(event) {
 }
 
 /**
- * Handles delete form submission and refreshes cache
- */
-function handleDeleteFormSubmit(event) {
-  event.preventDefault();
-  const form = event.target;
-  
-  fetch(form.action, {
-    method: "POST",
-    headers: {
-      "X-Requested-With": "XMLHttpRequest",
-    },
-  })
-    .then((response) => {
-      // Some routes might redirect, some might return JSON
-      if (response.redirected) {
-        // If it redirected, we should probably refresh anyway
-        if (typeof closeDeleteModal === 'function') closeDeleteModal();
-        refreshContactCache();
-        return;
-      }
-      return response.json();
-    })
-    .then((data) => {
-      if (data && data.success === false) {
-        alert(data.message || "An error occurred while deleting the contact.");
-      } else {
-        // Assume success if no error reported or if it redirected
-        if (typeof closeDeleteModal === 'function') closeDeleteModal();
-        refreshContactCache();
-      }
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      // Even on error, we refresh cache to be safe
-      if (typeof closeDeleteModal === 'function') closeDeleteModal();
-      refreshContactCache();
-    });
-}
-
-/**
  * Sets up the search, sort, tab, and pagination functionality
  */
 document.addEventListener("DOMContentLoaded", function () {
@@ -413,12 +373,6 @@ document.addEventListener("DOMContentLoaded", function () {
   if (contactForm) {
     contactForm.dataset.ajaxSubmit = 'true';
     contactForm.addEventListener('submit', handleContactFormSubmit);
-  }
-
-  // Set up delete form for AJAX submission
-  const deleteForm = document.getElementById('deleteForm');
-  if (deleteForm) {
-    deleteForm.addEventListener('submit', handleDeleteFormSubmit);
   }
 
   // Initialize sorting

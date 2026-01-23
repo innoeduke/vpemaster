@@ -12,7 +12,7 @@ class MeetingRole(db.Model):
     type = db.Column(db.String(20), nullable=False)
     award_category = db.Column(db.String(30))
     needs_approval = db.Column(db.Boolean, nullable=False)
-    is_distinct = db.Column(db.Boolean, nullable=False)
+    has_single_owner = db.Column(db.Boolean, nullable=False)
     is_member_only = db.Column(db.Boolean, default=False)
 
 
@@ -151,11 +151,24 @@ class Roster(db.Model):
             roster_entry.add_role(role_obj)
         elif action == 'unassign':
             # Remove role ONLY if they have no other sessions with this role in this meeting
-            from .session import SessionLog, SessionType
+            from .session import SessionLog, SessionType, OwnerMeetingRoles
+            from .meeting import Meeting
             remaining_role_session = db.session.query(SessionLog.id)\
                 .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+                .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+                .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
                 .filter(SessionLog.Meeting_Number == meeting_number)\
-                .filter(SessionLog.owners.any(id=contact_id))\
+                .filter(db.exists().where(
+                    db.and_(
+                        OwnerMeetingRoles.contact_id == contact_id,
+                        OwnerMeetingRoles.meeting_id == Meeting.id,
+                        OwnerMeetingRoles.role_id == MeetingRole.id,
+                        db.or_(
+                            OwnerMeetingRoles.session_log_id == SessionLog.id,
+                            OwnerMeetingRoles.session_log_id.is_(None)
+                        )
+                    )
+                ))\
                 .filter(SessionType.role_id == role_obj.id)\
                 .first()
             

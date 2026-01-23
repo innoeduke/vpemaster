@@ -27,8 +27,8 @@ class TestBookingDuplicates(unittest.TestCase):
         db.create_all()
 
         # Create basic data
-        self.speaker_role = MeetingRole(name="Speaker", type="speech", needs_approval=False, is_distinct=True)
-        self.timer_role = MeetingRole(name="Timer", type="role", needs_approval=False, is_distinct=False)
+        self.speaker_role = MeetingRole(name="Speaker", type="speech", needs_approval=False, has_single_owner=True)
+        self.timer_role = MeetingRole(name="Timer", type="role", needs_approval=False, has_single_owner=False)
         db.session.add_all([self.speaker_role, self.timer_role])
         db.session.commit()
 
@@ -117,7 +117,7 @@ class TestBookingDuplicates(unittest.TestCase):
             
             # Verify owner
             s1 = db.session.get(SessionLog, self.sess1.id)
-            self.assertEqual(s1.Owner_ID, self.contact.id)
+            self.assertIn(self.contact, s1.owners)
             
             # 2. Attempt to book Speaker 2 (Duplicate Role)
             data = {'session_id': self.sess2.id, 'action': 'book'}
@@ -134,7 +134,7 @@ class TestBookingDuplicates(unittest.TestCase):
             
             # Verify Speaker 2 is NOT booked
             s2 = db.session.get(SessionLog, self.sess2.id)
-            self.assertIsNone(s2.Owner_ID)
+            self.assertEqual(len(s2.owners), 0)
 
     @patch('app.booking_routes.get_current_user_info')
     @patch('app.booking_routes.is_authorized')
@@ -155,7 +155,7 @@ class TestBookingDuplicates(unittest.TestCase):
             self.assertEqual(resp.json['success'], True)
             
             s3 = db.session.get(SessionLog, self.sess3.id)
-            self.assertEqual(s3.Owner_ID, self.contact.id)
+            self.assertIn(self.contact, s3.owners)
 
 if __name__ == '__main__':
     unittest.main()

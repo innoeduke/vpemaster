@@ -55,7 +55,7 @@ class AccessMatrixTestCase(unittest.TestCase):
         self.roles = {}
         # Added Guest Role (Level 0)
         for name, level in [('SysAdmin', 10), ('ClubAdmin', 5), ('Staff', 2), ('User', 1), ('Guest', 0)]:
-            role = AuthRole(name=name, description=f"{name} Role", level=level)
+            role = AuthRole(name=name, description=f"{name} Role", level=level if level is not None else 0)
             db.session.add(role)
             self.roles[name] = role
         
@@ -85,7 +85,7 @@ class AccessMatrixTestCase(unittest.TestCase):
             db.session.flush()
             
             # Use UserClub to link role to user and club
-            uc = UserClub(user_id=user.id, club_id=self.club.id, club_role_id=self.roles[role_name].id, contact_id=contact.id)
+            uc = UserClub(user_id=user.id, club_id=self.club.id, club_role_level=self.roles[role_name].level, contact_id=contact.id)
             db.session.add(uc)
             self.users[role_name.lower()] = user
 
@@ -204,7 +204,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                 expected_code = 200
             elif '/agenda' in resource_template:
                 # GUEST -> AGENDA: Redirect to meeting-notice for unpublished
-                if status == 'unpublished':
+                if status == 'unpublished' or status == 'finished':
                     expected_code = 302
                 else:
                     expected_code = 200

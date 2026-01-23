@@ -49,13 +49,29 @@ class Contact(db.Model):
         Returns list of pathway names ordered alphabetically.
         """
         from sqlalchemy import distinct
-        from .session import SessionLog
+        from .session import SessionLog, SessionType, OwnerMeetingRoles
+        from .meeting import Meeting
+        from .roster import MeetingRole
         
-        query = db.session.query(SessionLog.pathway).filter(
-            SessionLog.owners.any(id=self.id),
-            SessionLog.pathway.isnot(None),
-            SessionLog.pathway != ''
-        ).distinct().order_by(SessionLog.pathway)
+        query = db.session.query(SessionLog.pathway)\
+            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+            .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+            .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
+            .filter(
+                db.exists().where(
+                    db.and_(
+                        OwnerMeetingRoles.contact_id == self.id,
+                        OwnerMeetingRoles.meeting_id == Meeting.id,
+                        OwnerMeetingRoles.role_id == MeetingRole.id,
+                        db.or_(
+                            OwnerMeetingRoles.session_log_id == SessionLog.id,
+                            OwnerMeetingRoles.session_log_id.is_(None)
+                        )
+                    )
+                ),
+                SessionLog.pathway.isnot(None),
+                SessionLog.pathway != ''
+            ).distinct().order_by(SessionLog.pathway)
         return [r[0] for r in query.all()]
 
 

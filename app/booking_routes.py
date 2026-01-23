@@ -1,58 +1,18 @@
 # vpemaster/booking_routes.py
 
+from datetime import datetime
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
-from flask import Blueprint, render_template, request, session, jsonify, current_app
-from .models import SessionLog, SessionType, Contact, Meeting, Pathway, PathwayProject, Waitlist, MeetingRole, Roster
-from . import db
-from datetime import datetime
-from sqlalchemy import func
-from flask import redirect, url_for
-from .utils import derive_credentials
-from .constants import SessionTypeID
-from .utils import (
-    derive_credentials,
-    get_current_user_info,
-    get_meetings_by_status,
-    consolidate_session_logs,
-    group_roles_by_category
-)
-from .services.role_service import RoleService
+from flask import Blueprint, render_template, request, session, jsonify, current_app, redirect, url_for
 from .club_context import get_current_club_id
-from .models import ContactClub
+from .utils import get_current_user_info, group_roles_by_category, get_meetings_by_status, derive_credentials
+from .models import SessionLog, SessionType, Contact, Meeting, Waitlist, MeetingRole, OwnerMeetingRoles, ContactClub
+
+from .services.role_service import RoleService
+from . import db
 
 booking_bp = Blueprint('booking_bp', __name__)
-
-def _enrich_role_data_for_booking(roles_dict, selected_meeting):
-    """
-    Enriches role data with booking-specific information.
-    
-    Args:
-        roles_dict: Dictionary of consolidated roles
-        selected_meeting: Meeting object
-    
-    Returns:
-        list: Enriched roles list
-    """
-    if not selected_meeting:
-        return []
-
-    enriched_roles = []
-    for _, role_data in roles_dict.items():
-        role_obj = role_data.get('role_obj')
-        if not role_obj:
-            role_obj = MeetingRole.query.filter_by(name=role_data['role_key']).first()
-
-        role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else "fa-question-circle"
-        role_data['session_id'] = role_data['session_ids'][0]
-        role_data['needs_approval'] = role_obj.needs_approval if role_obj else False
-        role_data['is_member_only'] = role_obj.is_member_only if role_obj else False
-        role_data['award_category'] = role_obj.award_category if role_obj else None
-
-        enriched_roles.append(role_data)
-    
-    return enriched_roles
 
 
 def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeting_number):
@@ -60,32 +20,51 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeti
     if is_authorized(Permissions.BOOKING_ASSIGN_ALL):
         return roles
 
+    # --- Rule: Hide roles without award category (other roles) for non-admins ---
+    roles = [r for r in roles if r.get('award_category') not in ['none', None, '']]
+
     # 3-Week Policy speaker rule
-    from .club_context import get_current_club_id
     club_id = get_current_club_id()
     contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
     
     if contact and contact.Current_Path:
         three_meetings_ago = selected_meeting_number - 2
-        recent_speaker_log = db.session.query(SessionLog.id).join(SessionType).join(MeetingRole, SessionType.role_id == MeetingRole.id)\
-            .filter(SessionLog.owners.any(id=current_user_contact_id))\
+        
+        # Updated query to use OwnerMeetingRoles
+        recent_speaker_log = db.session.query(SessionLog.id)\
+            .join(SessionType)\
+            .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
+            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+            .filter(
+                db.exists().where(
+                    db.and_(
+                        OwnerMeetingRoles.contact_id == current_user_contact_id,
+                        OwnerMeetingRoles.meeting_id == Meeting.id,
+                        OwnerMeetingRoles.role_id == MeetingRole.id,
+                        db.or_(
+                            OwnerMeetingRoles.session_log_id == SessionLog.id,
+                            OwnerMeetingRoles.session_log_id.is_(None)
+                        )
+                    )
+                )
+            )\
             .filter(MeetingRole.name == "Prepared Speaker")\
             .filter(SessionLog.Meeting_Number.between(three_meetings_ago, selected_meeting_number)).first()
 
         if recent_speaker_log:
             roles = [
                 r for r in roles
-                if r['role_key'] != "Prepared Speaker" or (r['role_key'] == "Prepared Speaker" and r['owner_id'] == current_user_contact_id)
+                if r['role'] != "Prepared Speaker" or (r['role'] == "Prepared Speaker" and r['owner_id'] == current_user_contact_id)
             ]
 
     
     # --- Rule: Hide "Topics Speaker" for non-admins ---
     # These are usually assigned ad-hoc during the meeting
-    roles = [r for r in roles if r['role_key'] != "Topics Speaker"]
+    roles = [r for r in roles if r['role'] != "Topics Speaker"]
 
     # --- Rule: Hide duplicate role types if user already has one ---
     # 1. Identify roles the user currently owns in this meeting
-    owned_role_keys = {r['role_key'] for r in roles if r['owner_id'] == current_user_contact_id}
+    owned_roles = {r['role'] for r in roles if r['owner_id'] == current_user_contact_id}
     
     # 2. Filter logic
     filtered_roles = []
@@ -102,10 +81,30 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeti
     #      What if I don't have one? Should I see all 3 speakers? Usually yes, to pick a slot.)
     
     for r in roles:
-        role_key = r['role_key']
+        role_label = r['role']
         owner_id = r['owner_id']
+        has_single_owner = r.get('has_single_owner', True)
         
-        if role_key in owned_role_keys:
+        # Contextual population for shared roles
+        if not has_single_owner and 'all_owners' in r:
+            all_owner_ids = [o['id'] for o in r['all_owners']]
+            if current_user_contact_id in all_owner_ids:
+                # User is one of the owners, show as owner for their view (to show Cancel)
+                r['owner_id'] = current_user_contact_id
+                # Find their owner data for display
+                for o in r['all_owners']:
+                    if o['id'] == current_user_contact_id:
+                        r['owner_name'] = o['name']
+                        r['owner_avatar_url'] = o['avatar_url']
+                        break
+            else:
+                # Not an owner, show as available
+                r['owner_id'] = None
+            
+            # Update owner_id variable for the filtering logic below
+            owner_id = r['owner_id']
+
+        if role_label in owned_roles:
             # User has a role of this type. Only show their own.
             if owner_id == current_user_contact_id:
                 filtered_roles.append(r)
@@ -149,11 +148,14 @@ def _sort_roles_for_booking(roles, current_user_contact_id, is_past_meeting):
 
 def _get_roles_for_booking(selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting):
     """Helper function to get and process roles for the booking page."""
-    session_logs = SessionLog.fetch_for_meeting(selected_meeting_number, meeting_obj=selected_meeting)
-    roles_dict = consolidate_session_logs(session_logs)
-    enriched_roles = _enrich_role_data_for_booking(roles_dict, selected_meeting)
+    club_id = get_current_club_id()
+    
+    # Use RoleService to get consolidated roles
+    roles = RoleService.get_meeting_roles(selected_meeting_number, club_id)
+    
+    # Apply user-specific filters and rules
     filtered_roles = _apply_user_filters_and_rules(
-        enriched_roles, current_user_contact_id, selected_meeting_number)
+        roles, current_user_contact_id, selected_meeting_number)
     sorted_roles = _sort_roles_for_booking(
         filtered_roles, current_user_contact_id, is_past_meeting)
 
@@ -162,7 +164,7 @@ def _get_roles_for_booking(selected_meeting_number, current_user_contact_id, sel
     if selected_meeting.status in ['not started', 'unpublished'] and not is_admin_booker:
         sorted_roles = [
             role for role in sorted_roles
-            if role['role_key'] != "Topics Speaker"
+            if role['role'] != "Topics Speaker"
         ]
 
     return sorted_roles
@@ -174,6 +176,7 @@ def _get_user_bookings(current_user_contact_id):
         return []
 
     today = datetime.today().date()
+    # Updated query to use OwnerMeetingRoles for filtering
     user_bookings_query = db.session.query(
         db.func.min(SessionLog.id).label('id'),
         MeetingRole.name,
@@ -183,7 +186,19 @@ def _get_user_bookings(current_user_contact_id):
     ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
      .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
      .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
-     .filter(SessionLog.owners.any(id=current_user_contact_id))\
+     .filter(
+         db.exists().where(
+            db.and_(
+                OwnerMeetingRoles.contact_id == current_user_contact_id,
+                OwnerMeetingRoles.meeting_id == Meeting.id,
+                OwnerMeetingRoles.role_id == MeetingRole.id,
+                db.or_(
+                    OwnerMeetingRoles.session_log_id == SessionLog.id,
+                    OwnerMeetingRoles.session_log_id.is_(None)
+                )
+            )
+         )
+     )\
      .filter(Meeting.Meeting_Date >= today)\
      .filter(MeetingRole.name != '', MeetingRole.name.isnot(None))\
      .filter(MeetingRole.type != 'officer')\
@@ -205,7 +220,6 @@ def _get_user_bookings(current_user_contact_id):
             }
         user_bookings_by_date[date_str]['bookings'].append({
             'role': log.name,
-            'role_key': log.name,
             'icon': log.icon or current_app.config['DEFAULT_ROLE_ICON'],
             'session_id': log.id
         })
@@ -216,8 +230,11 @@ def _get_user_bookings(current_user_contact_id):
 def _get_booking_page_context(selected_meeting_number, user, current_user_contact_id):
     """Gathers all context needed for the booking page template."""
     # Show all recent meetings in the dropdown, even if booking is closed for them
+    is_guest = (user.primary_role_name == 'Guest') if user else True
+    limit_past = 8 if is_guest else None
+    
     upcoming_meetings, default_meeting_num = get_meetings_by_status(
-        limit_past=8, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date, Meeting.status])
+        limit_past=limit_past, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date, Meeting.status])
 
     if not selected_meeting_number:
         selected_meeting_number = default_meeting_num or (
@@ -261,6 +278,13 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
 
     context['selected_meeting'] = selected_meeting
     context['is_admin_view'] = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting)
+
+    # 3. Finished check for guests
+    if selected_meeting and selected_meeting.status == 'finished':
+        is_guest = (user.primary_role_name == 'Guest') if user else True
+        if is_guest:
+             context['redirect_to_not_started'] = True
+             return context
 
     is_past_meeting = selected_meeting.status == 'finished' if selected_meeting else False
 
@@ -309,10 +333,10 @@ def book_or_assign_role():
         return jsonify(success=False, message="Session not found."), 404
 
     session_type = db.session.get(SessionType, log.Type_ID)
-    logical_role_key = session_type.role.name if session_type and session_type.role else None
+    logical_role = session_type.role.name if session_type and session_type.role else None
 
-    if not logical_role_key:
-        return jsonify(success=False, message="Could not determine the role key."), 400
+    if not logical_role:
+        return jsonify(success=False, message="Could not determine the role."), 400
 
     # Validation: Check meeting status
     club_id = get_current_club_id()
@@ -328,6 +352,10 @@ def book_or_assign_role():
 
     try:
         if action == 'book':
+            # Validation: Block booking for roles without award category if not admin
+            if session_type.role and session_type.role.award_category in ['none', None, ''] and not is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
+                return jsonify(success=False, message="This role is not available for booking."), 403
+
             success, msg = RoleService.book_meeting_role(log, current_user_contact_id)
             if not success:
                 return jsonify(success=False, message=msg), 200 # Using 200 for internal logic warnings as per legacy
@@ -347,33 +375,48 @@ def book_or_assign_role():
             return jsonify(success=success, message=msg)
 
         # Admin Actions
+        elif action == 'remove_owner' and is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
+            # Remove a specific owner from a shared role
+            owner_id_to_remove = data.get('contact_id')
+            try:
+                owner_id_int = int(owner_id_to_remove)
+            except (ValueError, TypeError):
+                return jsonify(success=False, message="Invalid owner ID"), 400
+            
+            # Get current owners and remove the specified one
+            current_owner_ids = [o.id for o in log.owners]
+            if owner_id_int not in current_owner_ids:
+                return jsonify(success=False, message="Owner not found"), 404
+            
+            new_owner_list = [oid for oid in current_owner_ids if oid != owner_id_int]
+            RoleService.assign_meeting_role(log, new_owner_list if new_owner_list else None, is_admin=True)
+            db.session.commit()
+            return jsonify(success=True, message="Owner removed")
+
         elif action == 'assign' and is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
             contact_id = data.get('contact_id', '0')
+            previous_contact_id = data.get('previous_contact_id')
+            
             try:
                 contact_id_int = int(contact_id)
                 owner_id_to_set = contact_id_int if contact_id_int != 0 else None
             except (ValueError, TypeError):
                 owner_id_to_set = None
             
-            # Use Assign (which handles unassign if None)
-            RoleService.assign_meeting_role(log, owner_id_to_set, is_admin=True)
+            try:
+                previous_contact_id_int = int(previous_contact_id) if previous_contact_id else None
+            except (ValueError, TypeError):
+                previous_contact_id_int = None
             
-            # Return updated data for frontend
-            # Re-fetch logs to get updated state (credentials, etc)
-            updated_logs = [db.session.get(SessionLog, session_id)] # Naive re-fetch, RoleService returns list but we just need current one for response usually
-            # Actually RoleService returns list of updated logs.
-            # But the frontend expects 'updated_sessions' list.
-            # Let's re-fetch the specific log since frontend likely only updates the row it clicked on 
-            # OR we can return what RoleService returned.
+            # Use Assign with replace logic for shared roles
+            updated_logs = RoleService.assign_meeting_role(
+                log, 
+                owner_id_to_set, 
+                is_admin=True, 
+                replace_contact_id=previous_contact_id_int
+            )
             
-            # Re-implement response construction
             updated_sessions = []
-             # RoleService.assign_meeting_role returns updated_logs. Let's capture it.
-             # But wait, I didn't return it in the block above. Let's fix that calling pattern.
-            
-            # Correction: Call assign_meeting_role and capture result
-            updated_logs = RoleService.assign_meeting_role(log, owner_id_to_set, is_admin=True)
-            
             for session_log in updated_logs:
                 contact = session_log.owner # Using the new property
                 updated_sessions.append({
@@ -414,7 +457,7 @@ def book_or_assign_role():
             
             # Re-query
             sessions_to_report = [log]
-            if session_type.role and not session_type.role.is_distinct:
+            if session_type.role and not session_type.role.has_single_owner:
                  sessions_to_report = SessionLog.query.filter_by(Meeting_Number=log.Meeting_Number, Type_ID=log.Type_ID).all()
             
             for session_log in sessions_to_report:

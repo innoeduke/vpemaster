@@ -67,7 +67,7 @@ class UserRefactorTestCase(unittest.TestCase):
         db.session.add(UserClub(
             user_id=self.admin_user.id, 
             club_id=self.club.id, 
-            club_role_id=self.role_admin.id,
+            club_role_level=self.role_admin.level,
             contact_id=self.admin_contact.id
         ))
         db.session.add(ContactClub(contact_id=self.admin_contact.id, club_id=self.club.id))
@@ -122,7 +122,7 @@ class UserRefactorTestCase(unittest.TestCase):
         # Verify Role Assigned
         user_club = UserClub.query.filter_by(user_id=user.id, club_id=self.club.id).first()
         self.assertIsNotNone(user_club, "UserClub record should exist")
-        self.assertEqual(user_club.club_role_id, self.role_user.id, "User role should be assigned")
+        self.assertEqual(user_club.club_role_level, self.role_user.level, "User role should be assigned")
 
     def test_update_user_via_form(self):
         """Test updating a user via the /user/form route."""

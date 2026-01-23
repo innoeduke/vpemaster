@@ -2,7 +2,8 @@
 import unittest
 from app import create_app, db
 from app.models import Contact, Meeting, SessionLog, SessionType, MeetingRole, Roster, Ticket
-from app.utils import get_meeting_roles
+from app.services.role_service import RoleService
+get_meeting_roles = RoleService.get_role_takers
 from datetime import date, datetime, timezone
 from flask import g
 
@@ -22,8 +23,8 @@ class TestMeetingRolesHelper(unittest.TestCase):
         db.create_all()
         
         # Setup Data
-        self.role_tm = MeetingRole(name='Toastmaster', type='standard', needs_approval=False, is_distinct=False)
-        self.role_sp1 = MeetingRole(name='Speaker', type='standard', needs_approval=False, is_distinct=True)
+        self.role_tm = MeetingRole(name='Toastmaster', type='standard', needs_approval=False, has_single_owner=False)
+        self.role_sp1 = MeetingRole(name='Speaker', type='standard', needs_approval=False, has_single_owner=True)
         db.session.add_all([self.role_tm, self.role_sp1])
         db.session.commit()
         
@@ -46,14 +47,14 @@ class TestMeetingRolesHelper(unittest.TestCase):
         self.log1 = SessionLog(
             Meeting_Number=100, 
             Type_ID=self.st_tm.id,
-            Owner_ID=self.contact1.id
+            owners=[self.contact1]
         )
         
         # Contact 1 is ALSO Speaker (Multi-role test)
         self.log2 = SessionLog(
             Meeting_Number=100, 
             Type_ID=self.st_sp1.id, 
-            Owner_ID=self.contact1.id,
+            owners=[self.contact1],
             Session_Title='Speech 1'
         )
         
@@ -80,7 +81,7 @@ class TestMeetingRolesHelper(unittest.TestCase):
         # First call populates cache
         roles_map1 = get_meeting_roles(club_id=1, meeting_number=100)
         
-        cache_key = "meeting_roles_1_100"
+        cache_key = "role_takers_1_100"
         
         # Verify cache entry exists
         self.assertIsNotNone(cache.get(cache_key))

@@ -12,7 +12,7 @@ from .user import User, AnonymousUser
 
 from .project import Project, Pathway, PathwayProject, LevelRole
 from .meeting import Meeting
-from .session import SessionType, SessionLog
+from .session import SessionType, SessionLog, OwnerMeetingRoles
 from .roster import Roster, RosterRole, MeetingRole, Waitlist
 from .voting import Vote
 from .media import Media
@@ -74,4 +74,5 @@ __all__ = [
     'ContactClub',
     'ExComm',
     'UserClub',
+    'OwnerMeetingRoles',
 ]

@@ -51,7 +51,7 @@ class TestMeetingDeletion(unittest.TestCase):
         self.contact = Contact(Name="Delete Test User")
         db.session.add(self.contact)
         
-        self.role = MeetingRole(name="Delete Test Role", type="generic", needs_approval=False, is_distinct=False)
+        self.role = MeetingRole(name="Delete Test Role", type="generic", needs_approval=False, has_single_owner=False)
         db.session.add(self.role)
         db.session.commit()
         

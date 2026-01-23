@@ -1,64 +1,217 @@
 {% macro render_meeting_filter(meetings, selected_id, base_url='', label='Meeting:', data_format='tuple',
 extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False, render_outer_container=True, show_icon=True) %}
+
+{% set ns = namespace(selected_text='', selected_value='') %}
+{% for item in meetings %}
+    {% if data_format == 'tuple' %}
+        {% set num = item[0] %}
+        {% set date = item[1] %}
+        {% set status = item[2] if item|length > 2 else none %}
+    {% else %}
+        {% set num = item.Meeting_Number %}
+        {% set date = item.Meeting_Date %}
+        {% set status = item.status if item.status else none %}
+    {% endif %}
+
+    {% if selected_id and num|string == selected_id|string %}
+        {% set ns.selected_value = num %}
+        {% set status_icon = '' %}
+        {% if status == 'unpublished' %}{% set status_icon = '🔒' %}
+        {% elif status == 'not started' %}{% set status_icon = '▶️' %}
+        {% elif status == 'running' %}{% set status_icon = '🔴' %}
+        {% elif status == 'finished' %}{% set status_icon = '✅' %}
+        {% elif status == 'cancelled' %}{% set status_icon = '🚫' %}{% endif %}
+        {% set ns.selected_text = '#' ~ num ~ ' - ' ~ (date.strftime('%B %d, %Y') if date else 'No Date') %}
+    {% endif %}
+{% endfor %}
+
 {% if render_outer_container %}
 <div class="{{ 'inline-filter-group' if label else 'booking-filter-container' }} {{ extra_classes }}"
     style="{{ extra_style }}">
     {% endif %}
     {% if label %}
-    <label for="{{ select_id }}">{{ label }}</label>
-    {% else %}
-    <div class="filter-left">
-        {% if show_icon %}
-        <i class="fas fa-calendar-alt"></i>
-        {% endif %}
+    <label for="{{ select_id }}-search">{{ label }}</label>
     {% endif %}
 
-        <select id="{{ select_id }}" {% if base_url %}onchange="window.location.href = '{{ base_url }}/' + this.value;"
-            {% endif %} {% if not label %}style="font-size: 1.1em; font-weight: bold; padding: 5px 0;" {% endif %} {% if
-            is_disabled %}disabled{% endif %}>
+    <div class="meeting-autocomplete-container" id="{{ select_id }}-autocomplete-container" style="{{ 'flex-grow: 1;' if not label else '' }}">
+        <div class="search-input-wrapper">
+            {% if show_icon %}
+            <i class="fas fa-search search-icon"></i>
+            {% endif %}
+            <input type="text" id="{{ select_id }}-search" class="autocomplete-search-input" 
+                   placeholder="Search meeting..." value="{{ ns.selected_text }}"
+                   autocomplete="off" {% if is_disabled %}disabled{% endif %}>
+            <i class="fas fa-chevron-down dropdown-icon"></i>
+        </div>
+        
+        <div id="{{ select_id }}-results" class="autocomplete-results-dropdown" style="display: none;">
             {% for item in meetings %}
-            {% if data_format == 'tuple' %}
-            {% set num = item[0] %}
-            {% set date = item[1] %}
-            {% set status = item[2] if item|length > 2 else none %}
-            {% else %}
-            {% set num = item.Meeting_Number %}
-            {% set date = item.Meeting_Date %}
-            {% set status = item.status if item.status else none %}
-            {% endif %}
+                {% if data_format == 'tuple' %}
+                    {% set num = item[0] %}
+                    {% set date = item[1] %}
+                    {% set status = item[2] if item|length > 2 else none %}
+                {% else %}
+                    {% set num = item.Meeting_Number %}
+                    {% set date = item.Meeting_Date %}
+                    {% set status = item.status if item.status else none %}
+                {% endif %}
 
-            {# Determine status icon and label #}
-            {% if status == 'unpublished' %}
-            {% set status_icon = '🔒' %}
-            {% set status_label = 'Unpublished' %}
-            {% elif status == 'not started' %}
-            {% set status_icon = '▶️' %}
-            {% set status_label = 'Not Started' %}
-            {% elif status == 'running' %}
-            {% set status_icon = '🔴' %}
-            {% set status_label = 'Running' %}
-            {% elif status == 'finished' %}
-            {% set status_icon = '✅' %}
-            {% set status_label = 'Finished' %}
-            {% elif status == 'cancelled' %}
-            {% set status_icon = '🚫' %}
-            {% set status_label = 'Cancelled' %}
-            {% else %}
-            {% set status_icon = '' %}
-            {% set status_label = '' %}
-            {% endif %}
+                {% set status_icon = '' %}
+                {% set status_label = '' %}
+                {% if status == 'unpublished' %}
+                    {% set status_icon = '🔒' %}{% set status_label = 'Unpublished' %}
+                {% elif status == 'not started' %}
+                    {% set status_icon = '▶️' %}{% set status_label = 'Not Started' %}
+                {% elif status == 'running' %}
+                    {% set status_icon = '🔴' %}{% set status_label = 'Running' %}
+                {% elif status == 'finished' %}
+                    {% set status_icon = '✅' %}{% set status_label = 'Finished' %}
+                {% elif status == 'cancelled' %}
+                    {% set status_icon = '🚫' %}{% set status_label = 'Cancelled' %}
+                {% endif %}
+                
+                {% set item_text = '#' ~ num ~ ' - ' ~ (date.strftime('%B %d, %Y') if date else 'No Date') %}
+                
+                <div class="autocomplete-result-item" data-value="{{ num }}" data-text="{{ item_text }}">
+                    <span class="status-icon" title="{{ status_label }}">{{ status_icon }}</span>
+                    <span class="meeting-num">#{{ num }}</span>
+                    <span class="meeting-date">{{ date.strftime('%b %d, %Y') if date else 'No Date' }}</span>
+                    {% if status_label %}
+                    <span class="status-tag status-{{ status|replace(' ', '-') }}">{{ status_label }}</span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
 
-            <option value="{{ num }}" {% if selected_id and num==selected_id %}selected{% endif %}>
-                {{ status_icon }} #{{ num }} - {{ date.strftime('%B %d, %Y') if date else 'No Date' }}{% if status_label
-                %} ({{ status_label }}){% endif %}
-            </option>
+        {# Hidden real select to maintain compatibility with existing JS #}
+        <select id="{{ select_id }}" {% if base_url %}onchange="window.location.href = '{{ base_url }}/' + this.value;"
+            {% endif %} style="display: none;" {% if is_disabled %}disabled{% endif %}>
+            {% for item in meetings %}
+                {% if data_format == 'tuple' %}{% set num = item[0] %}{% else %}{% set num = item.Meeting_Number %}{% endif %}
+                <option value="{{ num }}" {% if ns.selected_value|string == num|string %}selected{% endif %}>{{ num }}</option>
             {% endfor %}
         </select>
-
-        {% if not label %}
     </div>
-    {% endif %}
+
     {% if render_outer_container %}
 </div>
 {% endif %}
+
+<script>
+(function() {
+    const container = document.getElementById('{{ select_id }}-autocomplete-container');
+    const input = document.getElementById('{{ select_id }}-search');
+    const results = document.getElementById('{{ select_id }}-results');
+    const realSelect = document.getElementById('{{ select_id }}');
+    const items = results.querySelectorAll('.autocomplete-result-item');
+    let highlightedIndex = -1;
+
+    if (!input || !results || !realSelect) return;
+
+    function showResults() {
+        results.style.display = 'block';
+        filterItems();
+    }
+
+    function hideResults() {
+        setTimeout(() => {
+            results.style.display = 'none';
+        }, 200);
+    }
+
+    function filterItems() {
+        const query = input.value.toLowerCase();
+        let firstVisible = -1;
+        items.forEach((item, index) => {
+            const text = item.innerText.toLowerCase();
+            if (text.includes(query)) {
+                item.style.display = 'flex';
+                if (firstVisible === -1) firstVisible = index;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        highlightedIndex = -1;
+        updateHighlight();
+    }
+
+    function updateHighlight() {
+        items.forEach((item, index) => {
+            item.classList.toggle('highlighted', index === highlightedIndex);
+            if (index === highlightedIndex) {
+                item.scrollIntoView({ block: 'nearest' });
+            }
+        });
+    }
+
+    function selectItem(item) {
+        const value = item.dataset.value;
+        const text = item.dataset.text;
+        input.value = text;
+        realSelect.value = value;
+        
+        // Trigger change event for any listeners
+        realSelect.dispatchEvent(new Event('change'));
+        
+        hideResults();
+    }
+
+    input.addEventListener('focus', showResults);
+    input.addEventListener('input', showResults);
+    input.addEventListener('blur', hideResults);
+
+    input.addEventListener('keydown', (e) => {
+        const visibleItems = Array.from(items).filter(item => item.style.display !== 'none');
+        const currentIndex = visibleItems.indexOf(items[highlightedIndex]);
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (results.style.display === 'none') {
+                showResults();
+            } else {
+                let nextIndex = currentIndex + 1;
+                if (nextIndex >= visibleItems.length) nextIndex = 0;
+                const nextItem = visibleItems[nextIndex];
+                highlightedIndex = Array.from(items).indexOf(nextItem);
+                updateHighlight();
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let nextIndex = currentIndex - 1;
+            if (nextIndex < 0) nextIndex = visibleItems.length - 1;
+            const nextItem = visibleItems[nextIndex];
+            highlightedIndex = Array.from(items).indexOf(nextItem);
+            updateHighlight();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (highlightedIndex >= 0) {
+                selectItem(items[highlightedIndex]);
+            } else if (visibleItems.length > 0) {
+                selectItem(visibleItems[0]);
+            }
+        } else if (e.key === 'Escape') {
+            hideResults();
+        }
+    });
+
+    items.forEach(item => {
+        item.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // Prevent blur
+            selectItem(item);
+        });
+    });
+
+    // Toggle dropdown on icon click
+    const dropdownIcon = container.querySelector('.dropdown-icon');
+    if (dropdownIcon) {
+        dropdownIcon.addEventListener('click', () => {
+            if (results.style.display === 'none') {
+                input.focus();
+            } else {
+                results.style.display = 'none';
+            }
+        });
+    }
+})();
+</script>
 {% endmacro %}

@@ -36,7 +36,7 @@ class TestMultiOwner(unittest.TestCase):
         db.session.add_all([self.contact1, self.contact2, self.contact3])
         
         # Create Role
-        self.role = MeetingRole(name="Speaker", type="speech", needs_approval=False, is_distinct=False)
+        self.role = MeetingRole(name="Speaker", type="speech", needs_approval=False, has_single_owner=False)
         db.session.add(self.role)
         db.session.commit()
         

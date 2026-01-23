@@ -32,7 +32,7 @@ class TestRosterAssignment(unittest.TestCase):
         self.member_contact = Contact(Name="Test Member", Type="Member")
         self.guest_contact = Contact(Name="Test Guest", Type="Guest")
         
-        self.role = MeetingRole(name="Test Role", type="functionary", needs_approval=False, is_distinct=False)
+        self.role = MeetingRole(name="Test Role", type="functionary", needs_approval=False, has_single_owner=False)
         
         db.session.add_all([self.officer_contact, self.member_contact, self.guest_contact, self.role])
         

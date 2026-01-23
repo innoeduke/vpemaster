@@ -28,7 +28,7 @@
 	{% macro render_role_row(role, status, is_admin_view, selected_meeting_number, user_role, has_voted,
 	can_track_progress,
 	voting_disabled=False) %}
-	<tr data-session-id="{{ role.session_id }}" data-role-key="{{ role.role_key }}"
+	<tr data-session-id="{{ role.session_id }}" data-role="{{ role.role }}"
 		class="{% if role.award_type %}voted{% endif %}">
 		<td class="role-cell">
 			<div class="role-cell-content">

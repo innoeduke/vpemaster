@@ -1317,13 +1317,18 @@ document.addEventListener("DOMContentLoaded", () => {
             hiddenInputsContainer.appendChild(hidden);
         });
 
+        // Hide container if empty to avoid gap/space
+        tagsContainer.style.display = selectedIds.length > 0 ? "flex" : "none";
+
         // Sync primary owner data to row (for credentials/project)
         const currentRow = wrapper.closest("tr");
         if (currentRow) {
             const primaryId = selectedIds[0];
             const primaryContact = allContacts.find(c => c.id == primaryId);
             
+            // Critical updates for save logic to pick up
             currentRow.dataset.ownerId = primaryId || "";
+            currentRow.dataset.ownerIds = JSON.stringify(selectedIds);
             
             const credentialsInput = currentRow.querySelector('[data-field="Credentials"] input');
             if (credentialsInput) {
@@ -1332,10 +1337,11 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (primaryContact) {
-                updatePairedSession(currentRow, primaryContact);
+                updatePairedSession(currentRow, selectedIds);
                 
                 // Auto-update Project for Prepared Speeches (ID 30)
                 const typeSelect = currentRow.querySelector('[data-field="Type_ID"] select');
+// ... rest of the logic
                 if (typeSelect && typeSelect.value == 30 && primaryContact.Next_Project && window.allProjects) {
                     const nextProjCode = primaryContact.Next_Project;
                     let foundProjId = null;
@@ -1368,7 +1374,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const searchInput = document.createElement("input");
     searchInput.type = "text";
-    searchInput.placeholder = "Search and add owner...";
+    searchInput.placeholder = ""; // Don't show a placeholder for a blank owner
     searchInput.className = "owner-search-input";
 
     const tempHidden = document.createElement("input");
@@ -1455,7 +1461,19 @@ document.addEventListener("DOMContentLoaded", () => {
     return wrapper;
   }
 
-  function updatePairedSession(currentRow, newContact) {
+  function updatePairedSession(currentRow, ownerData) {
+    let ownerIds = [];
+    if (Array.isArray(ownerData)) {
+      ownerIds = ownerData.filter(id => id !== null && id !== undefined && id !== "");
+    } else if (ownerData && typeof ownerData === 'object' && ownerData.id) {
+      ownerIds = [ownerData.id];
+    } else if (ownerData) {
+      ownerIds = [ownerData];
+    }
+    
+    const primaryId = ownerIds[0];
+    const newContact = allContacts.find(c => c.id == primaryId);
+
     const typeSelect = currentRow.querySelector(
       '[data-field="Type_ID"] select'
     );
@@ -1464,61 +1482,104 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentSessionType = allSessionTypes.find(
       (st) => st.id == typeSelect.value
     );
-    if (!currentSessionType) return;
+    if (!currentSessionType || !currentSessionType.Role) return;
 
-    // Find the paired title, looking in both forward and reverse maps
+    // 1. Determine the "Scope" of synchronization
+    // A. Predefined pairs (legacy logic)
     const pairedSessionTitle =
       sessionPairs[currentSessionType.Title] ||
       reverseSessionPairs[currentSessionType.Title];
-    if (!pairedSessionTitle) return;
+
+    // B. Shared roles (General logic based on has_single_owner property)
+    const roleKey = currentSessionType.Role.toUpperCase().replace(/ /g, "_").replace(/-/g, "_");
+    const roleInfo = allMeetingRoles[roleKey];
+    const isSharedRole = roleInfo && !roleInfo.unique;
+
+    if (!pairedSessionTitle && !isSharedRole) return;
 
     const allRows = document.querySelectorAll("#logs-table tbody tr");
-    const pairedRow = Array.from(allRows).find((row) => {
+    allRows.forEach((row) => {
+      if (row === currentRow) return;
+
       const rowTypeSelect = row.querySelector('[data-field="Type_ID"] select');
+      let shouldSync = false;
+
       if (rowTypeSelect) {
-        // Use allSessionTypes
         const rowSessionType = allSessionTypes.find(
           (st) => st.id == rowTypeSelect.value
         );
-        return rowSessionType && rowSessionType.Title === pairedSessionTitle;
+        if (rowSessionType) {
+            // Match by paired title OR by exact same role (if shared)
+            if (pairedSessionTitle && rowSessionType.Title === pairedSessionTitle) {
+                shouldSync = true;
+            } else if (isSharedRole && rowSessionType.Role === currentSessionType.Role) {
+                shouldSync = true;
+            }
+        }
+      } else {
+          // If not in edit mode, check dataset.role
+          if (isSharedRole && row.dataset.role === currentSessionType.Role) {
+              shouldSync = true;
+          }
       }
-      return false;
+
+      if (shouldSync) {
+        // Sync Dataset (Critical for non-edit mode rows during save)
+        row.dataset.ownerId = primaryId || "";
+        row.dataset.ownerIds = JSON.stringify(ownerIds);
+        if (newContact) {
+            row.dataset.credentials = (newContact.Credentials || "");
+        }
+
+        // If in edit mode, sync UI components
+        if (rowTypeSelect) {
+            // Legacy inputs
+            const pairedHiddenInput = row.querySelector('input[name="owner_id"]');
+            if (pairedHiddenInput) pairedHiddenInput.value = primaryId || "";
+            
+            const pairedCredentialsInput = row.querySelector('[data-field="Credentials"] input');
+            if (pairedCredentialsInput && newContact) {
+                pairedCredentialsInput.value = (newContact.Credentials || "");
+            }
+
+            // [NEW] Multi-owner hidden inputs
+            // We use a simplified sync: if the other row is being edited, 
+            // the user might find it weird that tags don't update.
+            // But implementing a full renderTags cross-call is complex.
+            // Minimum: ensure hidden inputs match so save works.
+            const hiddenContainer = row.querySelector(".hidden-owners-container");
+            if (hiddenContainer) {
+                hiddenContainer.innerHTML = "";
+                ownerIds.forEach(id => {
+                    const hidden = document.createElement("input");
+                    hidden.type = "hidden";
+                    hidden.name = "owner_ids";
+                    hidden.value = id;
+                    hiddenContainer.appendChild(hidden);
+                });
+            }
+            
+            // Sync tags visually if possible
+            const tagsContainer = row.querySelector(".owners-tags-container");
+            if (tagsContainer) {
+                tagsContainer.innerHTML = "";
+                ownerIds.forEach(id => {
+                    const contact = allContacts.find(c => c.id == id);
+                    if (contact) {
+                        const tag = document.createElement("div");
+                        tag.className = "owner-tag";
+                        tag.innerHTML = `<span>${contact.Name}</span>`;
+                        tagsContainer.appendChild(tag);
+                    }
+                });
+                // Toggle visibility based on content
+                tagsContainer.style.display = ownerIds.length > 0 ? "flex" : "none";
+            }
+        }
+      }
     });
 
-    if (pairedRow) {
-      const pairedHiddenInput = pairedRow.querySelector(
-        'input[name="owner_id"]'
-      );
-      const pairedSearchInput = pairedRow.querySelector(
-        '.autocomplete-container input[type="text"]'
-      );
-      const pairedCredentialsInput = pairedRow.querySelector(
-        '[data-field="Credentials"] input'
-      );
-
-      if (newContact) {
-        // Setting a new owner
-        pairedHiddenInput.value = newContact.id;
-        pairedSearchInput.value = newContact.Name;
-        if (pairedCredentialsInput) {
-          const credentials = newContact.DTM
-            ? "DTM"
-            : newContact.Completed_Levels || "";
-          pairedCredentialsInput.value = credentials.replace(/ /g, "/");
-        }
-        pairedSearchInput.readOnly = true;
-        pairedSearchInput.style.pointerEvents = "none";
-      } else {
-        // Clearing the owner
-        pairedHiddenInput.value = "";
-        pairedSearchInput.value = "";
-        if (pairedCredentialsInput) {
-          pairedCredentialsInput.value = "";
-        }
-        pairedSearchInput.readOnly = false;
-        pairedSearchInput.style.pointerEvents = "auto";
-      }
-    }
+    // Generic sync loop completed
   }
 
   function setupAutocomplete(searchInput, hiddenInput) {

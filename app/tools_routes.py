@@ -1,11 +1,13 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
+from flask_login import current_user
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from .models import Roster, Meeting, Contact, ContactClub, Pathway, Ticket
 from .club_context import get_current_club_id, authorized_club_required
 from . import db
 from sqlalchemy import distinct
-from .utils import get_meetings_by_status, get_meeting_roles
+from .utils import get_meetings_by_status
+from .services.role_service import RoleService
 from .constants import RoleID
 
 tools_bp = Blueprint('tools_bp', __name__)
@@ -88,7 +90,11 @@ def tools():
                 .all()
 
     elif active_tab == 'roster':
-        all_meetings, default_meeting_num = get_meetings_by_status(limit_past=8)
+        is_guest = not current_user.is_authenticated or \
+                   (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
+        limit_past = 8 if is_guest else None
+        
+        all_meetings, default_meeting_num = get_meetings_by_status(limit_past=limit_past)
         meeting_numbers = [m.Meeting_Number for m in all_meetings]
 
         selected_meeting_str = request.args.get('meeting_number')
@@ -118,8 +124,7 @@ def tools():
                 .all()
             
             # Populate booked roles from SessionLogs using the helper
-            # Populate booked roles from SessionLogs using the helper
-            roles_map = get_meeting_roles(club_id, selected_meeting_num)
+            roles_map = RoleService.get_role_takers(selected_meeting_num, club_id)
             # We pass roles_map directly to template to avoid transient attribute loss on SQLAlchemy objects
                     
             # Find next available order number (last order number + 1)

@@ -30,7 +30,7 @@ def settings():
     club_id = get_current_club_id()
     
     # Session types and meeting roles are global (shared across clubs)
-    session_types = SessionType.query.order_by(SessionType.id.asc()).all()
+    session_types = SessionType.query.order_by(SessionType.Title.asc()).all()
     roles_query = MeetingRole.query.order_by(MeetingRole.name.asc()).all()
     roles = [{'id': role.id, 'name': role.name} for role in roles_query]
     
@@ -187,6 +187,31 @@ def update_session_types():
         return jsonify(success=False, message=str(e)), 500
 
 
+@settings_bp.route('/settings/sessions/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_session_type(id):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    try:
+        session_type = db.session.get(SessionType, id)
+        if session_type:
+            # Check if used in SessionLogs
+            from .models import SessionLog
+            usage_count = SessionLog.query.filter_by(Type_ID=id).count()
+            if usage_count > 0:
+                return jsonify(success=False, message=f"Cannot delete session type '{session_type.Title}' because it is in use by {usage_count} session log(s). Please reassign or delete the logs first."), 400
+            
+            db.session.delete(session_type)
+            db.session.commit()
+            return jsonify(success=True, message="Session type deleted successfully.")
+        else:
+            return jsonify(success=False, message="Session type not found"), 404
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
 @settings_bp.route('/settings/roles/add', methods=['POST'])
 @login_required
 def add_role():
@@ -200,7 +225,7 @@ def add_role():
             type=request.form.get('type'),
             award_category=request.form.get('award_category'),
             needs_approval='needs_approval' in request.form,
-            is_distinct='is_distinct' in request.form,
+            has_single_owner='has_single_owner' in request.form,
             is_member_only='is_member_only' in request.form
         )
         db.session.add(new_role)
@@ -232,11 +257,30 @@ def update_roles():
                 role.type = item.get('type')
                 role.award_category = item.get('award_category')
                 role.needs_approval = item.get('needs_approval', False)
-                role.is_distinct = item.get('is_distinct', False)
+                role.has_single_owner = item.get('has_single_owner', False)
                 role.is_member_only = item.get('is_member_only', False)
 
         db.session.commit()
         return jsonify(success=True, message="Roles updated successfully.")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/settings/roles/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_role(id):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    try:
+        role = db.session.get(MeetingRole, id)
+        if role:
+            db.session.delete(role)
+            db.session.commit()
+            return jsonify(success=True, message="Role deleted successfully.")
+        else:
+            return jsonify(success=False, message="Role not found"), 404
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
@@ -275,7 +319,7 @@ def import_roles():
                         award_category=row.get('award_category'),
                         needs_approval=row.get(
                             'needs_approval', '0').strip() == '1',
-                        is_distinct=row.get('is_distinct', '0').strip() == '1',
+                        has_single_owner=row.get('has_single_owner', '0').strip() == '1',
                         is_member_only=row.get('is_member_only', '0').strip() == '1'
                     )
                     db.session.add(new_role)

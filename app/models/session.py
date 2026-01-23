@@ -25,10 +25,22 @@ class SessionType(db.Model):
 
 
 # Association Table for Many-to-Many SessionLog <-> Contact
-session_log_owners = db.Table('session_log_owners',
-    db.Column('session_log_id', db.Integer, db.ForeignKey('Session_Logs.id'), primary_key=True),
-    db.Column('contact_id', db.Integer, db.ForeignKey('Contacts.id'), primary_key=True)
-)
+# [DEPRECATED] session_log_owners = db.Table('session_log_owners', ... )
+
+class OwnerMeetingRoles(db.Model):
+    __tablename__ = 'owner_meeting_roles'
+    id = db.Column(db.Integer, primary_key=True)
+    meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), index=True)
+    role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), index=True)
+    contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), index=True)
+    # session_log_id is only populated if role.has_single_owner is True
+    session_log_id = db.Column(db.Integer, db.ForeignKey('Session_Logs.id'), nullable=True, index=False)
+
+    meeting = db.relationship('Meeting', backref='owner_roles')
+    role = db.relationship('app.models.roster.MeetingRole')
+    contact = db.relationship('Contact', backref='meeting_roles')
+    session_log = db.relationship('SessionLog', backref='specific_role_owners')
+
 
 class SessionLog(db.Model):
     __tablename__ = 'Session_Logs'
@@ -64,11 +76,55 @@ class SessionLog(db.Model):
     @property
     def owner(self):
         """Helper for primary owner logic (backward compatibility)"""
-        return self.owners[0] if self.owners else None
+        owners = self.owners
+        return owners[0] if owners else None
     
-    # Many-to-Many Owners Relationship
-    owners = db.relationship('Contact', secondary=session_log_owners, lazy='subquery',
-        backref=db.backref('shared_session_logs', lazy=True))
+    # Dynamic Owners Property
+    @property
+    def owners(self):
+        from .contact import Contact
+        
+        # Safety checks for sessions without a role
+        if not self.session_type or not self.session_type.role:
+            return []
+        if not self.meeting:
+            return []
+            
+        query = Contact.query.join(OwnerMeetingRoles).filter(
+            OwnerMeetingRoles.meeting_id == self.meeting.id,
+            OwnerMeetingRoles.role_id == self.session_type.role_id
+        )
+        if self.session_type.role.has_single_owner:
+             query = query.filter(OwnerMeetingRoles.session_log_id == self.id)
+        else:
+             # For shared roles, session_log_id is NULL
+             query = query.filter(OwnerMeetingRoles.session_log_id == None)
+        return query.all()
+
+    @owners.setter
+    def owners(self, value):
+        from .contact import Contact
+        
+        # Handle different input types (list of objects, list of IDs, single object, single ID)
+        new_owner_ids = []
+        if isinstance(value, (list, tuple)):
+            for item in value:
+                if hasattr(item, 'id'):
+                    new_owner_ids.append(item.id)
+                elif isinstance(item, int):
+                    new_owner_ids.append(item)
+        elif hasattr(value, 'id'):
+            new_owner_ids = [value.id]
+        elif isinstance(value, int):
+            new_owner_ids = [value]
+        elif value is None:
+            new_owner_ids = []
+            
+        # Use class method to update junction table
+        self.set_owners(self, new_owner_ids)
+
+    # Legacy relationship removed/replaced by property logic
+    # owners = db.relationship(...)
 
     session_type = db.relationship('SessionType', backref='session_logs')
 
@@ -399,59 +455,99 @@ class SessionLog(db.Model):
         from .contact import Contact
         from .project import Pathway, PathwayProject
         from ..utils import derive_credentials
+        from .session import OwnerMeetingRoles
         
         if new_owner_ids is None:
             new_owner_ids = []
         if isinstance(new_owner_ids, int):
             new_owner_ids = [new_owner_ids]
             
-        # 1. Identify all logs to update (handle is_distinct)
+        # 1. Identify all logs to update (for recalculating metadata)
         session_type = target_log.session_type
+        if not session_type and target_log.Type_ID:
+             session_type = db.session.get(SessionType, target_log.Type_ID)
+             
         role_obj = session_type.role if session_type else None
         
         sessions_to_update = [target_log]
         
-        if role_obj and not role_obj.is_distinct:
+        has_single_owner = role_obj.has_single_owner if role_obj else True
+        
+        if role_obj and not has_single_owner:
             # Find all logs for this role in this meeting
             target_role_id = role_obj.id
             
-            # Since we support multiple owners, determining "same group" is trickier.
-            # Match logs that share at least one owner with target_log OR are all unassigned.
-            current_owner_ids = [o.id for o in target_log.owners]
-            
+            # For shared roles, ALL logs of this role in the meeting are updated
             query = db.session.query(cls)\
                 .join(SessionType, cls.Type_ID == SessionType.id)\
-                .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
                 .filter(cls.Meeting_Number == target_log.Meeting_Number)\
-                .filter(MeetingRole.id == target_role_id)
-            
-            if not current_owner_ids:
-                query = query.filter(~cls.owners.any())
-            else:
-                # Match logs that share the primary owner
-                query = query.filter(cls.owners.any(id=current_owner_ids[0]))
+                .filter(SessionType.role_id == target_role_id)
                 
             sessions_to_update = query.all()
+            if target_log not in sessions_to_update:
+                sessions_to_update.append(target_log)
 
-        # 2. Prepare Data (Credentials, Project Code)
+        # 2. Update OwnerMeetingRoles (The Source of Truth)
+        # Identify scope - handle case where meeting relationship might not be loaded
+        meeting_id = None
+        if target_log.meeting:
+            meeting_id = target_log.meeting.id
+        
+        if not meeting_id:
+            # Fallback if meeting relationship not loaded or obj new
+            from .meeting import Meeting
+            m = Meeting.query.filter_by(Meeting_Number=target_log.Meeting_Number).first()
+            meeting_id = m.id if m else None
+        
+        if role_obj and meeting_id:
+            role_id = role_obj.id
+            
+            # Determine Deletion Criteria
+            delete_query = OwnerMeetingRoles.query.filter(
+                OwnerMeetingRoles.meeting_id == meeting_id,
+                OwnerMeetingRoles.role_id == role_id
+            )
+            
+            if has_single_owner:
+                delete_query = delete_query.filter(OwnerMeetingRoles.session_log_id == target_log.id)
+            else:
+                delete_query = delete_query.filter(OwnerMeetingRoles.session_log_id == None)
+                
+            delete_query.delete(synchronize_session=False)
+            
+            # Insertion
+            if new_owner_ids:
+                # Deduplicate owner_ids
+                unique_owner_ids = list(dict.fromkeys(new_owner_ids))
+                
+                # Verify contacts exist? (Optional, DB FK enforces it, but cleaner to filter)
+                # We fetch them anyway later.
+                pass 
+                
+                for cid in unique_owner_ids:
+                    new_omr = OwnerMeetingRoles(
+                        meeting_id=meeting_id,
+                        role_id=role_id,
+                        contact_id=cid,
+                        session_log_id=target_log.id if has_single_owner else None
+                    )
+                    db.session.add(new_omr)
+
+        # 3. Prepare Data for Metadata Updates (Credentials, Project Code)
         # Fetch all owner contacts
         owner_contacts = []
         if new_owner_ids:
             # Preserve order of IDs if possible, or just fetch all
             owner_contacts = Contact.query.filter(Contact.id.in_(new_owner_ids)).all()
-            # Sort contacts to match input ID order for consistency in Primary Owner assignment
+            # Sort contacts to match input ID order
             owner_contacts.sort(key=lambda c: new_owner_ids.index(c.id))
 
         primary_owner = owner_contacts[0] if owner_contacts else None
-        new_credentials = derive_credentials(primary_owner) # Credentials derived from Primary Owner
-
-        # 3. Update Logs
+        
+        # 4. Update Logs Metadata
         for log in sessions_to_update:
-            # Update Owners Relationship
-            log.owners = owner_contacts
-            # log.Owner_ID = primary_owner.id if primary_owner else None
-            
-            # log.credentials = new_credentials
+            # Note: log.owners is now a property, so we don't set it.
+            # We updated the DB table `owner_meeting_roles` above, so `log.owners` will return new values.
             
             # Project Code Logic (Based on Primary Owner)
             new_path_level = None
@@ -460,7 +556,6 @@ class SessionLog(db.Model):
                 new_path_level = log.derive_project_code(primary_owner)
                 
                 # Auto-Resolution from Next_Project for Prepared Speeches
-                # This logic checks if the planned Next_Project matches strict criteria
                 if primary_owner.Next_Project and log.Type_ID == SessionTypeID.PREPARED_SPEECH:
                     current_path_name = primary_owner.Current_Path
                     if current_path_name:
@@ -498,8 +593,10 @@ class SessionLog(db.Model):
         
         query = db.session.query(cls)\
             .options(
+                joinedload(cls.meeting),
                 joinedload(cls.session_type).joinedload(SessionType.role),
-                joinedload(cls.owners),
+                # joinedload(cls.owners) Removed as it is now a property
+                # We could attempt to optimize fetching OwnerMeetingRoles here if needed
                 subqueryload(cls.waitlists).joinedload(Waitlist.contact)
             )\
             .join(SessionType, cls.Type_ID == SessionType.id)\

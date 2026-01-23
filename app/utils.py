@@ -2,7 +2,7 @@
 
 from flask import current_app
 # Ensure Project model is imported if needed elsewhere
-from .models import Project, Meeting, SessionLog, Pathway, PathwayProject, Achievement, Contact, Club
+from .models import Project, Meeting, SessionLog, Pathway, PathwayProject, Achievement, Contact, Club, SessionType, MeetingRole, OwnerMeetingRoles
 from .auth.permissions import Permissions
 from .club_context import get_current_club_id
 from . import db
@@ -175,13 +175,16 @@ def get_dropdown_metadata():
     ]
     
     # Meeting numbers
+    # Join with Project to ensure we only get meetings with valid projects? 
+    # Or just all meetings that have any session logs?
     meeting_numbers = sorted(
-        [m[0] for m in db.session.query(distinct(SessionLog.Meeting_Number)).join(Project).all()],
+        [m[0] for m in db.session.query(distinct(SessionLog.Meeting_Number)).all()],
         reverse=True
     )
     
-    # Speakers (contacts with logs)
-    speakers = db.session.query(Contact).join(SessionLog.owners)\
+    # Speakers (contacts with roles)
+    from .models import OwnerMeetingRoles
+    speakers = db.session.query(Contact).join(OwnerMeetingRoles)\
         .distinct().order_by(Contact.Name).all()
     
     # All contacts (for impersonation dropdown)
@@ -265,10 +268,19 @@ def update_next_project(contact):
     # 2. Find the first incomplete project from start_level onwards
     # Get all completed project IDs for this contact
     completed_project_ids = {
-        log.Project_ID for log in SessionLog.query.filter(
-            SessionLog.owners.any(id=contact.id), 
-            SessionLog.Status=='Completed'
-        ).all() if log.Project_ID
+        log.Project_ID for log in SessionLog.query.join(SessionType).join(MeetingRole, SessionType.role_id == MeetingRole.id).join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number).filter(
+            db.exists().where(
+                db.and_(
+                    OwnerMeetingRoles.contact_id == contact.id,
+                    OwnerMeetingRoles.meeting_id == Meeting.id,
+                    OwnerMeetingRoles.role_id == MeetingRole.id,
+                    db.or_(
+                        OwnerMeetingRoles.session_log_id == SessionLog.id,
+                        OwnerMeetingRoles.session_log_id.is_(None)
+                    )
+                )
+            )
+        ).filter(SessionLog.Status=='Completed').all() if log.Project_ID
     }
 
     for level in range(start_level, 6):
@@ -532,12 +544,21 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None):
                - all_meetings: A sorted list of meeting objects or tuples.
                - default_meeting_num: The number of the soonest 'not started' meeting.
     """
+    from flask_login import current_user
+    is_guest = not current_user.is_authenticated or \
+               (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
+
     query_cols = [Meeting] if columns is None else columns
     
     # --- Mode 1: Simple Filter (if status_filter provided) ---
     if status_filter:
+        # Restriction for Guest: cannot view finished meetings
+        effective_status_filter = status_filter
+        if is_guest and 'finished' in status_filter:
+            effective_status_filter = [s for s in status_filter if s != 'finished']
+
         query = db.session.query(*query_cols)\
-            .filter(Meeting.status.in_(status_filter))\
+            .filter(Meeting.status.in_(effective_status_filter))\
             .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number)\
             .distinct()\
             .order_by(Meeting.Meeting_Number.desc())
@@ -566,13 +587,21 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None):
     active_meetings.sort(key=lambda m: m.Meeting_Number, reverse=True)
 
     # Fetch recent inactive meetings ('finished' or 'cancelled')
+    past_statuses = ['finished', 'cancelled']
+    if is_guest:
+        past_statuses = ['cancelled']
+        
     past_query = db.session.query(*query_cols)\
-        .filter(Meeting.status.in_(['finished', 'cancelled']))
+        .filter(Meeting.status.in_(past_statuses))
     
     if club_id:
         past_query = past_query.filter(Meeting.club_id == club_id)
         
-    past_meetings = past_query.order_by(Meeting.Meeting_Number.desc()).limit(limit_past).all()
+    past_query = past_query.order_by(Meeting.Meeting_Number.desc())
+    if limit_past is not None:
+        past_query = past_query.limit(limit_past)
+    
+    past_meetings = past_query.all()
 
     # Combine and sort all meetings by meeting number
     all_meetings = sorted(active_meetings + past_meetings,
@@ -701,9 +730,9 @@ def consolidate_session_logs(session_logs):
         owner = log.owner
         owner_id = owner.id if owner else None
         
-        is_distinct = role_obj.is_distinct
+        has_single_owner = role_obj.has_single_owner
 
-        if is_distinct:
+        if has_single_owner:
             dict_key = f"{role_id}_{owner_id}_{log.id}"
         else:
             dict_key = f"{role_id}_{owner_id}"
@@ -711,7 +740,6 @@ def consolidate_session_logs(session_logs):
         if dict_key not in roles_dict:
             roles_dict[dict_key] = {
                 'role': role_name,
-                'role_key': role_name,
                 'role_obj': role_obj,
                 'owner_id': owner_id,
                 'owner_name': log.owner.Name if log.owner else None,
@@ -825,77 +853,5 @@ def process_avatar(file, contact_id):
         return None
 
 
-def get_meeting_roles(club_id=None, meeting_number=None):
-    """
-    Get all roles taken by contacts in a specific meeting.
-    Uses Flask-Caching for persistent caching.
-    
-    Args:
-        club_id: optional club ID (defaults to current context)
-        meeting_number: optional meeting number (defaults to upcoming/running)
-        
-    Returns:
-        dict: Mapping contact_id (str) -> [roles_data list]
-    """
-    from app import cache
-    from .models import SessionLog, SessionType, MeetingRole, Meeting
-    
-    # 1. Resolve Defaults
-    if not club_id:
-        club_id = get_current_club_id()
-        
-    if not meeting_number:
-        meeting_number = get_default_meeting_number()
-        
-    if not meeting_number:
-        return {}
 
-    # 2. Check Cache
-    cache_key = f"meeting_roles_{club_id}_{meeting_number}"
-    roles_map = cache.get(cache_key)
-    
-    if roles_map is None:
-        # 3. Build Cache (Fetch ALL roles for meeting)
-        logs = db.session.query(SessionLog, MeetingRole)\
-            .join(SessionType, SessionLog.Type_ID == SessionType.id)\
-            .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
-            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
-            .filter(SessionLog.Meeting_Number == meeting_number)\
-            .filter(SessionLog.owners.any())\
-            .all()
-            
-        # Ensure club_id is treated as int for comparison if possible
-        try:
-            target_club_id = int(club_id)
-        except (ValueError, TypeError):
-            target_club_id = club_id
-
-        if target_club_id is not None:
-             logs = [
-                 (l, r) for l, r in logs 
-                 if l.meeting.club_id == target_club_id
-             ]
-
-        # Map contact_id -> [roles_data]
-        # We use STRING keys for the map to ensure consistency when cached/serialized
-        roles_map = {}
-        for log, role in logs:
-            for owner in log.owners:
-                c_id = str(owner.id)
-                if c_id not in roles_map:
-                    roles_map[c_id] = []
-            
-            role_data = {
-                'id': role.id,
-                'name': role.name
-            }
-            
-            # Avoid duplicates if multiple logs map to same role
-            if role_data not in roles_map[c_id]:
-                roles_map[c_id].append(role_data)
-        
-        cache.set(cache_key, roles_map)
-    
-    # 4. Return Results
-    return roles_map
 

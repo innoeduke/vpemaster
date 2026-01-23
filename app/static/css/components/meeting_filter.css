@@ -1,0 +1,179 @@
+/* Meeting Filter Autocomplete Styles */
+
+.meeting-autocomplete-container {
+	position: relative;
+	width: 100%;
+	max-width: 350px;
+	font-family: 'Montserrat', sans-serif;
+}
+
+.search-input-wrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+	background: rgba(255, 255, 255, 0.9);
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	padding: 6px 12px;
+	transition: all 0.3s ease;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.search-input-wrapper:focus-within {
+	border-color: #772432;
+	box-shadow: 0 4px 12px rgba(119, 36, 50, 0.15);
+	background: #fff;
+}
+
+.search-input-wrapper .search-icon {
+	color: #888;
+	margin-right: 10px;
+	font-size: 0.9em;
+}
+
+.search-input-wrapper .dropdown-icon {
+	color: #888;
+	margin-left: 10px;
+	font-size: 0.8em;
+	cursor: pointer;
+	transition: transform 0.3s ease;
+}
+
+.search-input-wrapper:focus-within .dropdown-icon {
+	transform: rotate(180deg);
+}
+
+.autocomplete-search-input {
+	border: none;
+	background: transparent;
+	outline: none;
+	width: 100%;
+	font-size: 1em;
+	font-weight: 600;
+	color: #333;
+	padding: 0;
+}
+
+.autocomplete-search-input::placeholder {
+	color: #aaa;
+	font-weight: 400;
+}
+
+/* Results Dropdown */
+.autocomplete-results-dropdown {
+	position: absolute;
+	top: calc(100% + 5px);
+	left: 0;
+	right: 0;
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+	z-index: 2000;
+	max-height: 400px;
+	overflow-y: auto;
+	padding: 8px;
+	backdrop-filter: blur(10px);
+	border: 1px solid rgba(0, 0, 0, 0.05);
+	animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.autocomplete-result-item {
+	display: flex;
+	align-items: center;
+	padding: 10px 12px;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	gap: 12px;
+}
+
+.autocomplete-result-item:hover {
+	background: #f8f9fa;
+}
+
+.autocomplete-result-item.highlighted {
+	background: #f0f7ff;
+	border-left: 4px solid #772432;
+}
+
+.autocomplete-result-item .status-icon {
+	font-size: 1.1em;
+	width: 24px;
+	display: flex;
+	justify-content: center;
+}
+
+.autocomplete-result-item .meeting-num {
+	font-weight: 700;
+	color: #772432;
+	min-width: 45px;
+}
+
+.autocomplete-result-item .meeting-date {
+	flex-grow: 1;
+	font-size: 0.95em;
+	color: #555;
+}
+
+.autocomplete-result-item .status-tag {
+	font-size: 0.75em;
+	padding: 2px 8px;
+	border-radius: 10px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.status-tag.status-unpublished {
+	background: #eee;
+	color: #777;
+}
+
+.status-tag.status-not-started {
+	background: #e3f2fd;
+	color: #1976d2;
+}
+
+.status-tag.status-running {
+	background: #fff3e0;
+	color: #f57c00;
+}
+
+.status-tag.status-finished {
+	background: #e8f5e9;
+	color: #388e3c;
+}
+
+.status-tag.status-cancelled {
+	background: #ffebee;
+	color: #d32f2f;
+}
+
+/* Scrollbar styling */
+.autocomplete-results-dropdown::-webkit-scrollbar {
+	width: 6px;
+}
+
+.autocomplete-results-dropdown::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.autocomplete-results-dropdown::-webkit-scrollbar-thumb {
+	background: #ddd;
+	border-radius: 10px;
+}
+
+.autocomplete-results-dropdown::-webkit-scrollbar-thumb:hover {
+	background: #ccc;
+}

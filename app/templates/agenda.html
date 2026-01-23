@@ -241,6 +241,10 @@
                         <div class="owner-row">
                             <span class="owner-name">{{ owner_info.name }}</span>
                             
+                            {% if owner_info.credentials == "DTM" %}
+                            <sup class="dtm-superscript">DTM</sup>
+                            {% endif %}
+
                             {# Show credentials if not DTM #}
                             {% if owner_info.credentials and owner_info.credentials != "DTM" %}
                             <span class="owner-meta"> - {{ owner_info.credentials }}</span>

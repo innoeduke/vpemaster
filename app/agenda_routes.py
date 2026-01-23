@@ -39,8 +39,7 @@ def _get_agenda_logs(meeting_number):
             orm.joinedload(SessionLog.meeting),      # Eager load Meeting
             orm.joinedload(SessionLog.project),      # Eager load Project
             orm.joinedload(SessionLog.project),      # Eager load Project
-            # Eager load Owners and associated User
-            orm.joinedload(SessionLog.owners),
+            # owners is now a property, cannot be joinedloaded
             orm.joinedload(SessionLog.media)
     )
 
@@ -64,13 +63,15 @@ def _get_project_speakers(meeting_number):
     """Gets a list of speakers for a given meeting."""
     if not meeting_number:
         return []
+        
+    from .models import OwnerMeetingRoles
     speaker_logs = db.session.query(Contact.Name)\
-        .join(SessionLog.owners)\
-        .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+        .join(OwnerMeetingRoles, Contact.id == OwnerMeetingRoles.contact_id)\
+        .join(SessionType, OwnerMeetingRoles.role_id == SessionType.role_id)\
         .filter(
-            SessionLog.Meeting_Number == meeting_number,
+            OwnerMeetingRoles.meeting_id == meeting_number,
             SessionType.Valid_for_Project == True
-    ).all()
+    ).distinct().all()
     return [name[0] for name in speaker_logs]
 
 
@@ -83,7 +84,7 @@ def safe_int(val):
     except (ValueError, TypeError):
         return None
 
-def _create_or_update_session(item, meeting_number, seq):
+def _create_or_update_session(item, meeting_number, seq, updated_role_groups=None):
     meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
     if not meeting:
         new_meeting = Meeting(Meeting_Number=meeting_number)
@@ -107,8 +108,9 @@ def _create_or_update_session(item, meeting_number, seq):
             
     # Filter 0s and Nones from list
     from flask import current_app
-    current_app.logger.info(f"LOG sync: received owner_ids={owner_ids} for item {item.get('id')}")
+    current_app.logger.info(f"LOG sync: received owner_ids={owner_ids}, owner_id={owner_id} for item {item.get('id')}")
     owner_ids = [safe_int(oid) for oid in owner_ids if safe_int(oid) and safe_int(oid) != 0]
+    current_app.logger.info(f"LOG sync: after conversion owner_ids={owner_ids}")
 
     # Fetch contacts
     owner_contacts = []
@@ -117,6 +119,7 @@ def _create_or_update_session(item, meeting_number, seq):
         # Sort to preserve order of input if important, using dictionary
         contacts_map = {c.id: c for c in owner_contacts}
         owner_contacts = [contacts_map[oid] for oid in owner_ids if oid in contacts_map]
+    current_app.logger.info(f"LOG sync: fetched {len(owner_contacts)} contacts for owner_ids={owner_ids}")
 
     # Primary owner for legacy fields
     owner_contact = owner_contacts[0] if owner_contacts else None
@@ -145,19 +148,17 @@ def _create_or_update_session(item, meeting_number, seq):
         log_for_derivation = SessionLog(
             Project_ID=project_id,
             Type_ID=type_id,
-            # owner is derived from owners initially if needed
+            # owners are now managed via OwnerMeetingRoles, not set directly
             session_type=session_type,
             project=db.session.get(Project, project_id) if project_id else None
         )
-        if owner_contacts:
-            log_for_derivation.owners = owner_contacts
+        # Note: owners is a read-only property; derive_project_code accepts owner_contact directly
     else:
         log_for_derivation = db.session.get(SessionLog, item['id'])
         # Temporarily update for derivation
         log_for_derivation.Project_ID = project_id
         log_for_derivation.Type_ID = type_id
-        if owner_contacts:
-            log_for_derivation.owners = owner_contacts
+        # Note: owners is a read-only property; derive_project_code accepts owner_contact directly
         log_for_derivation.session_type = session_type
 
     project_code = log_for_derivation.derive_project_code(owner_contact)
@@ -199,13 +200,13 @@ def _create_or_update_session(item, meeting_number, seq):
         pathway_val = owner_contact.Current_Path
         
     # --- Create or Update SessionLog ---
-    # Create valid log object first (Owner_ID will be handled by assign_role_owner if needed)
+    # Create valid log object first (owners will be assigned via RoleService.assign_meeting_role)
     if item['id'] == 'new':
         new_log = SessionLog(
             Meeting_Number=meeting_number,
             Meeting_Seq=seq,
             Type_ID=type_id,
-            owners=owner_contacts, # Initialize relationship
+            # owners is a read-only property - do not set here
             Duration_Min=duration_min,
             Duration_Max=duration_max,
             Project_ID=project_id,
@@ -215,6 +216,10 @@ def _create_or_update_session(item, meeting_number, seq):
             pathway=pathway_val
         )
         db.session.add(new_log)
+        # Flush to get the log.id before calling RoleService
+        db.session.flush()
+        # Refresh to load relationships (session_type, meeting) needed by RoleService
+        db.session.refresh(new_log)
         log = new_log
         old_owner_id = None
         old_role = None
@@ -245,6 +250,12 @@ def _create_or_update_session(item, meeting_number, seq):
     if log:
         new_role = session_type.role if session_type else None
         
+        # Track role group to avoid redundant updates for shared roles
+        # Only apply to shared roles (has_single_owner=False)
+        role_group_key = None
+        if new_role and not new_role.has_single_owner:
+            role_group_key = f"{meeting_number}_{new_role.id}"
+
         # Compare sets of IDs
         old_owner_ids_set = set(c.id for c in (log.owners or []))
         new_owner_ids_set = set(owner.id for owner in owner_contacts)
@@ -256,30 +267,30 @@ def _create_or_update_session(item, meeting_number, seq):
         current_app.logger.info(f"LOG {log.id}: role={old_role.name if old_role else 'None'} -> {new_role.name if new_role else 'None'} (changed={role_changed})")
         current_app.logger.info(f"LOG {log.id}: owners={old_owner_ids_set} -> {new_owner_ids_set} (changed={owner_changed})")
         
-        if role_changed or owner_changed:
+        # Skip assignment if this shared role group was already updated in this transaction
+        if role_group_key and updated_role_groups is not None and role_group_key in updated_role_groups:
+             current_app.logger.info(f"LOG {log.id}: Shared role {new_role.name} already updated in this request. Skipping assignment.")
+        elif role_changed or owner_changed:
             if item['id'] != 'new' and old_owner_id and old_role and role_changed:
                 # Force unassign from the OLD role if the type changed
-                # Logic for multi-owner unassign?
-                # Roster.sync expects single ID. We iterate in service.
-                # But here we just call for old primary? 
-                # Ideally RoleService should handle "Unassign from everything".
-                # For now, stick to old primary for backward compact unassign if simple role change.
                 Roster.sync_role_assignment(log.Meeting_Number, old_owner_id, old_role, 'unassign')
             
-            # Update role type before calling assignment logic 
-            log.Type_ID = type_id
-            
             # Call Service with LIST of IDs
+            current_app.logger.info(f"LOG {log.id}: Calling RoleService.assign_meeting_role with owner_ids={[c.id for c in owner_contacts]}")
             RoleService.assign_meeting_role(log, [c.id for c in owner_contacts], is_admin=True)
-        else:
-            # Updates fields if no assignment logic triggered
-            # Ensure owners are set (though set_owners logic handles this usually)
-            if not owner_changed: # Should be same, but just in case
-                 pass
-            else:
-                 log.owners = owner_contacts
-                 
-            log.project_code = project_code
+            
+            # Flush to ensure queries reflect these changes for subsequent logs in the same request
+            db.session.flush()
+            
+            # Mark this role group as updated
+            if role_group_key and updated_role_groups is not None:
+                updated_role_groups.add(role_group_key)
+            
+            current_app.logger.info(f"LOG {log.id}: RoleService.assign_meeting_role completed")
+        
+        # Always update basic fields regardless of whether owner logic was triggered or skipped
+        log.Type_ID = type_id
+        log.project_code = project_code
 
 
 
@@ -553,7 +564,11 @@ def agenda():
             pass
 
     # --- Determine Selected Meeting ---
-    all_meetings, _ = get_meetings_by_status(limit_past=8)
+    is_guest = not current_user.is_authenticated or \
+               (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
+    
+    limit_past = 8 if is_guest else None
+    all_meetings, _ = get_meetings_by_status(limit_past=limit_past)
 
     meeting_numbers = [(m.Meeting_Number, m.Meeting_Date, m.status) for m in all_meetings]
 
@@ -596,6 +611,14 @@ def agenda():
                 # Unauthorized users cannot view unpublished meetings
                 # Redirect to generic not-started page
                 return redirect(url_for('agenda_bp.meeting_notice', meeting_number=selected_meeting_num))
+
+        # 2. Finished: Guest/Anonymous users cannot view finished meetings
+        if selected_meeting.status == 'finished':
+            is_guest = not current_user.is_authenticated or \
+                       (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
+            if is_guest:
+                flash("Guests cannot view finished meeting agendas.", "warning")
+                return redirect(url_for('agenda_bp.agenda'))
 
     # --- Other Data for Template ---
     project_speakers = _get_project_speakers(selected_meeting_num)
@@ -734,13 +757,13 @@ A single endpoint to fetch all data needed for the agenda modals.
     roles_from_db = MeetingRole.query.all()
     meeting_roles_data = {}
     for r in roles_from_db:
-        role_key = r.name.upper().replace(' ', '_').replace('-', '_')
-        meeting_roles_data[role_key] = {
+        formatted_key = r.name.upper().replace(' ', '_').replace('-', '_')
+        meeting_roles_data[formatted_key] = {
             "name": r.name,
             "icon": r.icon,
             "type": r.type,
             "award": r.award_category,
-            "unique": r.is_distinct # Map database is_distinct to legacy 'unique' property
+            "unique": r.has_single_owner # Map database has_single_owner to legacy 'unique' property
         }
 
     # Fetch Series Initials from DB
@@ -1078,9 +1101,6 @@ def _generate_logs_from_template(meeting, template_file):
                 Status='Booked'
             )
             
-            if owner_contact:
-                new_log.owners = [owner_contact]
-
             # Calculate Start Time
             is_section = False
             if session_type and session_type.Is_Section:
@@ -1097,6 +1117,15 @@ def _generate_logs_from_template(meeting, template_file):
                 new_log.Start_Time = None
 
             db.session.add(new_log)
+            db.session.flush()
+
+            if owner_contact:
+                # Ensure session_type is available for RoleService
+                if not new_log.session_type and session_type:
+                    new_log.session_type = session_type
+                
+                from .services.role_service import RoleService
+                RoleService.assign_meeting_role(new_log, [owner_contact.id], is_admin=True)
             seq += 1
 
 
@@ -1233,13 +1262,17 @@ def update_logs():
                         item['duration_max'] = 5
                     break
 
+        updated_role_groups = set()
         for seq, item in enumerate(agenda_data, 1):
-            _create_or_update_session(item, meeting_number, seq)
+            _create_or_update_session(item, meeting_number, seq, updated_role_groups)
 
         _recalculate_start_times([meeting])
 
         # Commit the final session and time changes.
         db.session.commit()
+        
+        # Invalidate Cache (final clear after all batch updates)
+        RoleService._clear_meeting_cache(meeting_number)
 
         # Fetch fresh data for client-side update
         logs_data, _ = _get_processed_logs_data(meeting_number, is_authorized(Permissions.MEDIA_ACCESS))
@@ -1264,9 +1297,9 @@ def delete_log(log_id):
     if club_id and log.meeting and log.meeting.club_id != club_id:
         return jsonify(success=False, message="Unauthorized"), 403
     try:
-        if log.Owner_ID:
+        if log.owners:
             from .services.role_service import RoleService
-            RoleService.cancel_meeting_role(log, log.Owner_ID, is_admin=True)
+            RoleService.cancel_meeting_role(log, log.owners[0].id, is_admin=True)
 
         db.session.delete(log)
         db.session.commit()
@@ -1360,6 +1393,10 @@ def update_meeting_status(meeting_number):
 
     try:
         db.session.commit()
+        
+        # Invalidate Cache
+        RoleService._clear_meeting_cache(meeting_number)
+        
         return jsonify(success=True, new_status=new_status)
     except Exception as e:
         db.session.rollback()

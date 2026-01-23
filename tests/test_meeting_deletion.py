@@ -33,7 +33,7 @@ class MeetingDeletionTestCase(unittest.TestCase):
 
     def populate_base_data(self):
         # Create minimal required data types
-        self.role = MeetingRole(name="Speaker", type="speech", needs_approval=False, is_distinct=False)
+        self.role = MeetingRole(name="Speaker", type="speech", needs_approval=False, has_single_owner=False)
         db.session.add(self.role)
         db.session.commit()
 
@@ -73,7 +73,7 @@ class MeetingDeletionTestCase(unittest.TestCase):
         log = SessionLog(
             Meeting_Number=meeting_num, 
             Type_ID=self.st.id, 
-            Owner_ID=self.contact.id
+            owners=[self.contact]
         )
         db.session.add(log)
         db.session.commit()
@@ -147,7 +147,7 @@ class MeetingDeletionTestCase(unittest.TestCase):
         log = SessionLog(
             Meeting_Number=meeting_num, 
             Type_ID=self.st.id, 
-            Owner_ID=self.contact.id
+            owners=[self.contact]
         )
         db.session.add(log)
         db.session.commit() # Commit to get log.id

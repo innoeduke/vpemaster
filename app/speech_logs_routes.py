@@ -1,7 +1,7 @@
 # innoeduke/vpemaster/vpemaster-dev0.3/speech_logs_routes.py
 from flask import Blueprint, jsonify, render_template, request, session, current_app
 from . import db
-from .models import SessionLog, Contact, Project, User, SessionType, Media, MeetingRole, Pathway, PathwayProject, LevelRole, Achievement, Meeting
+from .models import SessionLog, Contact, Project, User, SessionType, Media, MeetingRole, Pathway, PathwayProject, LevelRole, Achievement, Meeting, OwnerMeetingRoles
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
@@ -128,7 +128,6 @@ def _fetch_logs_with_filters(filters):
         joinedload(SessionLog.media),
         joinedload(SessionLog.session_type).joinedload(SessionType.role),
         joinedload(SessionLog.meeting),
-        joinedload(SessionLog.owners),
         joinedload(SessionLog.project)
     ).join(SessionLog.session_type).join(SessionType.role).join(SessionLog.meeting).filter(
         MeetingRole.name.isnot(None),
@@ -137,9 +136,27 @@ def _fetch_logs_with_filters(filters):
         Meeting.club_id == current_club_id
     )
     
+    # Restriction for Guest: cannot view finished meetings
+    is_guest = not current_user.is_authenticated or \
+               (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
+    if is_guest:
+        base_query = base_query.filter(Meeting.status != 'finished')
+    
     if filters['speaker_id']:
         # Filter by ANY owner
-        base_query = base_query.filter(SessionLog.owners.any(id=filters['speaker_id']))
+        base_query = base_query.filter(
+            db.exists().where(
+                db.and_(
+                    OwnerMeetingRoles.contact_id == filters['speaker_id'],
+                    OwnerMeetingRoles.meeting_id == Meeting.id,
+                    OwnerMeetingRoles.role_id == MeetingRole.id,
+                    db.or_(
+                        OwnerMeetingRoles.session_log_id == SessionLog.id,
+                        OwnerMeetingRoles.session_log_id.is_(None)
+                    )
+                )
+            )
+        )
     if filters['meeting_number']:
         base_query = base_query.filter(SessionLog.Meeting_Number == filters['meeting_number'])
     if filters['role']:
@@ -184,10 +201,10 @@ def _process_logs(all_logs, filters, pathway_cache):
         # Deduplicate roles
         if log_type == 'role' and not log.Project_ID:
             owner_id = log.owner.id if log.owners else None
-            role_key = (log.Meeting_Number, owner_id, log.session_type.role.name)
-            if role_key in processed_roles:
+            dedup_key = (log.Meeting_Number, owner_id, log.session_type.role.name)
+            if dedup_key in processed_roles:
                 continue
-            processed_roles.add(role_key)
+            processed_roles.add(dedup_key)
         
         # Apply filters using model method
         if not log.matches_filters(
@@ -682,7 +699,7 @@ def show_project_view():
         
     query = db.session.query(SessionLog).join(SessionLog.meeting).filter(*filters).order_by(SessionLog.Meeting_Number.asc()).options(
         joinedload(SessionLog.project),
-        joinedload(SessionLog.owners)
+        joinedload(SessionLog.meeting)
     )
     
     logs = query.all()
@@ -809,7 +826,7 @@ def update_speech_log(log_id):
     Updates a speech log with new data from the edit modal.
     """
     log = SessionLog.query.options(
-        joinedload(SessionLog.owners),
+        joinedload(SessionLog.meeting),
         joinedload(SessionLog.session_type),
         joinedload(SessionLog.project)
     ).get_or_404(log_id)

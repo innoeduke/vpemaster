@@ -1,12 +1,12 @@
 from app import db
-from app.models import SessionLog, SessionType, Waitlist, Roster, MeetingRole, Contact, Meeting
+from app.models import SessionLog, SessionType, Waitlist, Roster, MeetingRole, Contact, Meeting, OwnerMeetingRoles
 from app.constants import SessionTypeID
 from datetime import datetime, timezone
 from sqlalchemy import or_
 
 class RoleService:
     @staticmethod
-    def assign_meeting_role(session_log, contact_ids, is_admin=False):
+    def assign_meeting_role(session_log, contact_ids, is_admin=False, replace_contact_id=None):
         """
         Assigns contact(s) to a session log (and related logs if role is not distinct).
         
@@ -14,6 +14,7 @@ class RoleService:
             session_log: The SessionLog object to update
             contact_ids: ID or List of IDs of the new owner(s) (or None to unassign)
             is_admin: Boolean indicating if action is performed by an admin
+            replace_contact_id: For shared roles, the ID of the owner being replaced
             
         Returns:
             list: List of updated SessionLog objects
@@ -26,6 +27,20 @@ class RoleService:
             contact_ids = []
         if isinstance(contact_ids, int):
             contact_ids = [contact_ids]
+        
+        # For shared roles with replace_contact_id, modify the existing owner list
+        session_type = session_log.session_type
+        role_obj = session_type.role if session_type else None
+        
+        if replace_contact_id and role_obj and not role_obj.has_single_owner:
+            # Get current owners and replace the specific one
+            current_owners = [o.id for o in session_log.owners]
+            if replace_contact_id in current_owners:
+                # Replace the old owner with the new one
+                new_owner_list = [cid for cid in current_owners if cid != replace_contact_id]
+                if contact_ids:
+                    new_owner_list.extend(contact_ids)
+                contact_ids = new_owner_list
 
         # Delegate everything to the internal helper which handles Model updates, Roster Sync, AND Waitlist clearing
         return RoleService._captured_assign_role(session_log, contact_ids, is_admin)
@@ -73,15 +88,30 @@ class RoleService:
                 Roster.sync_role_assignment(session_log.Meeting_Number, new_id, role_obj, 'assign')
         
         # Invalidate Cache
-        from app import cache
-        from app.club_context import get_current_club_id
-        club_id = get_current_club_id()
-        if club_id:
-             cache.delete(f"meeting_roles_{club_id}_{session_log.Meeting_Number}")
-        # Also try deleting without club_id if context is missing or ambiguous (fallback)
-        cache.delete(f"meeting_roles_None_{session_log.Meeting_Number}")
+        RoleService._clear_meeting_cache(session_log.Meeting_Number)
                 
         return updated_logs
+
+    @staticmethod
+    def _clear_meeting_cache(meeting_number, club_id=None):
+        """
+        Invalidates all cached data related to a meeting's roles and role-takers.
+        """
+        from app import cache
+        from app.club_context import get_current_club_id
+        
+        if not club_id:
+            club_id = get_current_club_id()
+            
+        # 1. Clear Meeting Roles (consolidated for booking)
+        if club_id:
+            cache.delete(f"meeting_roles_{club_id}_{meeting_number}")
+        cache.delete(f"meeting_roles_None_{meeting_number}") # Fallback
+        
+        # 2. Clear Role Takers (mapped by person for voting/roster)
+        if club_id:
+            cache.delete(f"role_takers_{club_id}_{meeting_number}")
+        cache.delete(f"role_takers_None_{meeting_number}") # Fallback
 
     @staticmethod
     def book_meeting_role(session_log, user_contact_id):
@@ -132,11 +162,7 @@ class RoleService:
             db.session.commit()
             
             # Invalidate Cache
-            from app import cache
-            from app.club_context import get_current_club_id
-            club_id = get_current_club_id()
-            if club_id:
-                cache.delete(f"meeting_roles_{club_id}_{session_log.Meeting_Number}")
+            RoleService._clear_meeting_cache(session_log.Meeting_Number)
                 
             return True, "Removed from waitlist."
 
@@ -183,6 +209,19 @@ class RoleService:
         # Handle 'distinct' roles vs grouped roles waitlisting
         session_ids = RoleService._get_related_session_ids(session_log)
         
+        # Check total limit (Owners + Waitlist) <= 4
+        # We check the first session log since they are grouped
+        target_log = SessionLog.query.get(session_ids[0]) if session_ids else session_log
+        owner_count = len(target_log.owners)
+        
+        # Count distinct contact_ids in waitlist for related sessions
+        existing_waitlist_contacts = db.session.query(Waitlist.contact_id)\
+            .filter(Waitlist.session_log_id.in_(session_ids))\
+            .distinct().count()
+            
+        if (owner_count + existing_waitlist_contacts) >= 4:
+            return False, "Waitlist full (Max 4 total participants)."
+
         added = False
         for s_id in session_ids:
             exists = Waitlist.query.filter_by(session_log_id=s_id, contact_id=contact_id).first()
@@ -193,6 +232,10 @@ class RoleService:
         
         if added:
             db.session.commit()
+            
+            # Invalidate Cache
+            RoleService._clear_meeting_cache(session_log.Meeting_Number)
+            
             return True, "Added to waitlist."
         return True, "Already on waitlist." # Treated as success
 
@@ -209,11 +252,7 @@ class RoleService:
         db.session.commit()
         
         # Invalidate Cache
-        from app import cache
-        from app.club_context import get_current_club_id
-        club_id = get_current_club_id()
-        if club_id:
-             cache.delete(f"meeting_roles_{club_id}_{session_log.Meeting_Number}")
+        RoleService._clear_meeting_cache(session_log.Meeting_Number)
              
         return True, "Removed from waitlist."
 
@@ -226,33 +265,22 @@ class RoleService:
         
         contact_id = wl_entry.contact_id
         
-        # New Logic: Add or Replace?
-        # Usually approval implies "filling the spot".
-        # If spot already has owners (e.g. multi-owner scenario), this might be an "Add" operation?
-        # But waitlist is usually for a *blocked* spot.
-        # Let's assume standard behavior: Approve -> Becomes Owner. 
-        # But if there are *already* owners, do we append or replace?
-        # In single-owner world, it replaces (or filled empty).
-        # In multi-owner world, waitlist usually implies "I want IN".
-        # Let's check existing owners.
+        # Get current owners and role info
         current_owner_ids = [c.id for c in session_log.owners]
+        session_type = session_log.session_type
+        role_obj = session_type.role if session_type else None
         
         # If currently empty -> Set as owner
         if not current_owner_ids:
             RoleService._captured_assign_role(session_log, [contact_id])
         else:
-            # If not empty, usually waitlist means "I'm next if someone drops" OR "I want to join".
-            # If the role is distinct (e.g. Toastmaster), distinct=True means 1 person usually.
-            # But we are adding multi-owner now. 
-            # Let's assume 'Approve' from waitlist means "Add to team" if supported, or "Replace" if conflict?
-            # Safest bet: If waitlist was joined because it was FULL (or distinct), approval takes the slot.
-            # BUT, we changed logic so `set_owners` replaces the list provided.
-            # So if we want to APPEND, we must pass [existing + new].
-            # However, `approve_waitlist` is admin action.
-            # For now, let's treat it as "Take the slot" -> effectively replace if distinct, or append if meant to be shared?
-            # Actually, `approve_waitlist` is typically for "Speaker" roles where previous logic was 1-person.
-            # Let's stick to "Assign this person".
-            RoleService._captured_assign_role(session_log, [contact_id])
+            # If role supports multiple owners (shared role), append to existing owners
+            if role_obj and not role_obj.has_single_owner:
+                new_owner_list = current_owner_ids + [contact_id]
+                RoleService._captured_assign_role(session_log, new_owner_list)
+            else:
+                # Single-owner role: Replace the current owner
+                RoleService._captured_assign_role(session_log, [contact_id])
 
         db.session.commit()
         
@@ -273,8 +301,20 @@ class RoleService:
         # For now, standard check:
         existing = db.session.query(SessionLog.id)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+            .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
             .filter(SessionLog.Meeting_Number == session_log.Meeting_Number)\
-            .filter(SessionLog.owners.any(id=contact_id))\
+            .filter(db.exists().where(
+                db.and_(
+                    OwnerMeetingRoles.contact_id == contact_id,
+                    OwnerMeetingRoles.meeting_id == Meeting.id,
+                    OwnerMeetingRoles.role_id == MeetingRole.id,
+                    db.or_(
+                        OwnerMeetingRoles.session_log_id == SessionLog.id,
+                        OwnerMeetingRoles.session_log_id.is_(None)
+                    )
+                )
+            ))\
             .filter(SessionType.role_id == current_role_id)\
             .filter(SessionLog.id != session_log.id)\
             .first()
@@ -290,7 +330,7 @@ class RoleService:
         session_type = session_log.session_type
         role_obj = session_type.role if session_type else None
         
-        if role_obj and role_obj.is_distinct:
+        if role_obj and role_obj.has_single_owner:
             return [session_log.id]
             
         # If not distinct, find all sessions with same role in this meeting
@@ -305,3 +345,212 @@ class RoleService:
             .all()
             
         return [l.id for l in logs]
+
+    @staticmethod
+    def get_meeting_roles(meeting_number, club_id=None):
+        """
+        Get all roles for a meeting, consolidated for booking page display.
+        
+        Roles with has_single_owner=True: Each session log becomes its own slot.
+        Roles with has_single_owner=False: All session logs of that role type are 
+        consolidated into a single record (shared role).
+        
+        Args:
+            meeting_number: The meeting number to query
+            club_id: Optional club ID filter
+            
+        Returns:
+            list: List of role dictionaries ready for booking page display
+        """
+        from app import cache
+        from app.club_context import get_current_club_id
+        from sqlalchemy.orm import joinedload, subqueryload
+        
+        if not club_id:
+            club_id = get_current_club_id()
+            
+        if not meeting_number:
+            return []
+
+        # Check Cache
+        cache_key = f"meeting_roles_{club_id}_{meeting_number}"
+        cached_roles = cache.get(cache_key)
+        if cached_roles is not None:
+            return cached_roles
+
+        # Query session logs with eager loading
+        query = db.session.query(SessionLog)\
+            .options(
+                joinedload(SessionLog.session_type).joinedload(SessionType.role),
+                joinedload(SessionLog.meeting),
+                subqueryload(SessionLog.waitlists).joinedload(Waitlist.contact)
+            )\
+            .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+            .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
+            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+            .filter(SessionLog.Meeting_Number == meeting_number)\
+            .filter(MeetingRole.name != '', MeetingRole.name.isnot(None))
+        
+        if club_id:
+            query = query.filter(Meeting.club_id == club_id)
+            
+        session_logs = query.all()
+        
+        # Consolidate roles
+        roles_dict = {}
+        
+        # Track which roles we've processed as shared
+        shared_roles_processed = set()
+        roles_list = []
+
+        for log in session_logs:
+            if not log.session_type or not log.session_type.role:
+                continue
+                
+            role_obj = log.session_type.role
+            role_id = role_obj.id
+            has_single_owner = role_obj.has_single_owner
+            
+            if has_single_owner:
+                # One slot per session log
+                owner = log.owner
+                roles_list.append({
+                    'role': role_obj.name.strip(),
+                    'role_id': role_id,
+                    'owner_id': owner.id if owner else None,
+                    'owner_name': owner.Name if owner else None,
+                    'owner_avatar_url': owner.Avatar_URL if owner else None,
+                    'session_id': log.id,
+                    'icon': role_obj.icon,
+                    'is_member_only': role_obj.is_member_only,
+                    'needs_approval': role_obj.needs_approval,
+                    'award_category': role_obj.award_category,
+                    'has_single_owner': True,
+                    'speaker_name': log.Session_Title.strip() if role_obj.name.strip() == "Individual Evaluator" and log.Session_Title else None,
+                    'waitlist': [
+                        {
+                            'name': w.contact.Name,
+                            'id': w.contact_id,
+                            'avatar_url': w.contact.Avatar_URL
+                        } for w in log.waitlists
+                    ]
+                })
+            else:
+                # Shared role: Group all owners across all session logs of this type
+                if role_id in shared_roles_processed:
+                    continue
+                shared_roles_processed.add(role_id)
+                
+                # Get all session logs for this shared role to consolidate waitlists
+                related_logs = [l for l in session_logs if l.session_type.role_id == role_id]
+                first_log = related_logs[0]
+                
+                # Consolidate waitlists across all related logs
+                seen_waitlist_ids = set()
+                consolidated_waitlist = []
+                for l in related_logs:
+                    for w in l.waitlists:
+                        if w.contact_id not in seen_waitlist_ids:
+                            consolidated_waitlist.append({
+                                'name': w.contact.Name,
+                                'id': w.contact_id,
+                                'avatar_url': w.contact.Avatar_URL
+                            })
+                            seen_waitlist_ids.add(w.contact_id)
+                
+                # Get all owners for this shared role (all session logs share the same owners)
+                all_owners = first_log.owners
+                
+                # Create ONE record for the shared role
+                roles_list.append({
+                    'role': role_obj.name.strip(),
+                    'role_id': role_id,
+                    'owner_id': None, # Populated contextually in route
+                    'owner_name': None,
+                    'owner_avatar_url': None,
+                    'all_owners': [
+                        {
+                            'id': o.id,
+                            'name': o.Name,
+                            'avatar_url': o.Avatar_URL
+                        } for o in all_owners
+                    ],
+                    'session_id': first_log.id,
+                    'icon': role_obj.icon,
+                    'is_member_only': role_obj.is_member_only,
+                    'needs_approval': role_obj.needs_approval,
+                    'award_category': role_obj.award_category,
+                    'has_single_owner': False,
+                    'waitlist': consolidated_waitlist
+                })
+        
+        # Cache the result
+        cache.set(cache_key, roles_list)
+        
+        return roles_list
+
+    @staticmethod
+    def get_role_takers(meeting_number, club_id=None):
+        """
+        Get all role takers for a meeting from OwnerMeetingRoles.
+        
+        Returns a map of contact_id -> [role_data] showing which roles
+        each contact has taken in the meeting.
+        
+        Args:
+            meeting_number: The meeting number to query
+            club_id: Optional club ID filter
+            
+        Returns:
+            dict: Map of contact_id (str) -> list of role dictionaries
+        """
+        from app import cache
+        from app.club_context import get_current_club_id
+        
+        if not club_id:
+            club_id = get_current_club_id()
+            
+        if not meeting_number:
+            return {}
+
+        # Check Cache
+        cache_key = f"role_takers_{club_id}_{meeting_number}"
+        cached_result = cache.get(cache_key)
+        if cached_result is not None:
+            return cached_result
+
+        # Query OwnerMeetingRoles joined with Meeting and MeetingRole
+        query = db.session.query(OwnerMeetingRoles, MeetingRole, Contact)\
+            .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
+            .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+            .join(Contact, OwnerMeetingRoles.contact_id == Contact.id)\
+            .filter(Meeting.Meeting_Number == meeting_number)
+        
+        if club_id:
+            query = query.filter(Meeting.club_id == club_id)
+            
+        results = query.all()
+        
+        # Build map: contact_id -> [roles]
+        role_takers = {}
+        for omr, role, contact in results:
+            c_id = str(contact.id)
+            role_data = {
+                'id': role.id,
+                'name': role.name,
+                'icon': role.icon,
+                'award_category': role.award_category.strip() if role.award_category else "",
+                'session_log_id': omr.session_log_id,
+                'owner_name': contact.Name,
+                'owner_avatar_url': contact.Avatar_URL
+            }
+            if c_id not in role_takers:
+                role_takers[c_id] = []
+            # Avoid duplicates
+            if role_data not in role_takers[c_id]:
+                role_takers[c_id].append(role_data)
+        
+        # Cache the result
+        cache.set(cache_key, role_takers)
+        
+        return role_takers

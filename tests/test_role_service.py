@@ -43,11 +43,11 @@ class TestRoleService(unittest.TestCase):
         db.session.add_all([self.contact1, self.contact2])
         
         # Create Role: Toastmaster (Distinct, No Approval)
-        self.role_tm = MeetingRole(name="Toastmaster", type="meeting", needs_approval=False, is_distinct=True, is_member_only=False)
+        self.role_tm = MeetingRole(name="Toastmaster", type="meeting", needs_approval=False, has_single_owner=True, is_member_only=False)
         db.session.add(self.role_tm)
 
         # Create Role: Speaker (Not Distinct, Needs Approval for test)
-        self.role_spk = MeetingRole(name="Speaker", type="meeting", needs_approval=True, is_distinct=False, is_member_only=True)
+        self.role_spk = MeetingRole(name="Speaker", type="meeting", needs_approval=True, has_single_owner=False, is_member_only=True)
         db.session.add(self.role_spk)
         
         db.session.commit()
@@ -75,7 +75,7 @@ class TestRoleService(unittest.TestCase):
         """Test booking a distinct role that doesn't need approval."""
         success, msg = RoleService.book_meeting_role(self.log_tm, self.contact1.id)
         self.assertTrue(success)
-        self.assertEqual(self.log_tm.Owner_ID, self.contact1.id)
+        self.assertEqual(self.log_tm.owner.id, self.contact1.id)
         
         # Check Roster Sync
         roster_entry = Roster.query.filter_by(meeting_number=1, contact_id=self.contact1.id).first()
@@ -115,7 +115,7 @@ class TestRoleService(unittest.TestCase):
         self.assertTrue(success)
         
         # Verify assignment
-        self.assertEqual(self.log_spk1.Owner_ID, self.contact1.id)
+        self.assertEqual(self.log_spk1.owner.id, self.contact1.id)
         
         # Verify waitlist cleared for THIS group of roles?
         # RoleService.approve_waitlist calls assign_meeting_role -> set_owner -> clears waitlists
@@ -136,7 +136,7 @@ class TestRoleService(unittest.TestCase):
         self.assertTrue(success)
         
         # Verify Contact2 is now owner
-        self.assertEqual(self.log_tm.Owner_ID, self.contact2.id)
+        self.assertEqual(self.log_tm.owner.id, self.contact2.id)
         
         # Verify Roster updated
         roster1 = Roster.query.filter_by(meeting_number=1, contact_id=self.contact1.id).first()

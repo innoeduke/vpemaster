@@ -14,7 +14,7 @@ def auth_sysadmin(client, app):
         # Ensure SysAdmin role
         role = AuthRole.get_by_name(Permissions.SYSADMIN)
         if not role:
-            role = AuthRole(name=Permissions.SYSADMIN)
+            role = AuthRole(name=Permissions.SYSADMIN, level=100)
             db.session.add(role)
             db.session.commit()
             
@@ -46,7 +46,7 @@ def auth_sysadmin(client, app):
             
         uc = UserClub.query.filter_by(user_id=user.id, club_id=club.id).first()
         if not uc:
-            uc = UserClub(user_id=user.id, club_id=club.id, contact_id=contact.id, club_role_id=role.id)
+            uc = UserClub(user_id=user.id, club_id=club.id, contact_id=contact.id, club_role_level=role.level)
             db.session.add(uc)
             db.session.commit()
             

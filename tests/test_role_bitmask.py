@@ -27,7 +27,7 @@ def test_role_bitmask_storage(app, db_session):
              
         vpe_role = AuthRole.get_by_name("VPE")
         if not vpe_role:
-             vpe_role = AuthRole(name="VPE", level=4)
+             vpe_role = AuthRole(name="VPE", level=64)
              db_session.add(vpe_role)
         
         db_session.commit()
@@ -35,7 +35,13 @@ def test_role_bitmask_storage(app, db_session):
         # Ensure levels are correct for test
         member_role.level = 1
         officer_role.level = 2
-        vpe_role.level = 4
+        vpe_role.level = 64
+        
+        # Also ensure any other roles in DB don't have None level which would break bitwise ops
+        other_roles = AuthRole.query.filter(AuthRole.level == None).all()
+        for r in other_roles:
+            r.level = 0
+            
         db_session.commit()
 
         # Create Club
@@ -49,14 +55,14 @@ def test_role_bitmask_storage(app, db_session):
         db_session.add(user)
         db_session.commit()
         
-        # Assign Multiple Roles: Member (1) + VPE (4) = 5
+        # Assign Multiple Roles: Member (1) + VPE (64) = 65
         role_sum = member_role.level + vpe_role.level
         user.set_club_role(club.id, role_sum)
         db_session.commit()
         
         # Verify Storage
         uc = UserClub.query.filter_by(user_id=user.id, club_id=club.id).first()
-        assert uc.club_role_level == 5
+        assert uc.club_role_level == 65
         
         # Verify Retrieval
         roles = user.get_roles_for_club(club.id)
@@ -76,13 +82,13 @@ def test_role_bitmask_storage(app, db_session):
         primary = uc.club_role
         assert primary.name == vpe_role.name
         
-        # Add another role: Officer (2) -> Level should be 7
+        # Add another role: Officer (2) -> Level should be 67
         new_sum = uc.club_role_level + officer_role.level
         user.set_club_role(club.id, new_sum)
         db_session.commit()
         
         uc.club_role_level # refresh
-        assert uc.club_role_level == 7
+        assert uc.club_role_level == 67
         roles = user.get_roles_for_club(club.id)
         assert len(roles) >= 3 # might contain 'User' implicitly
         assert officer_role.name in roles

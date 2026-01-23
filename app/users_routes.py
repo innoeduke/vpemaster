@@ -68,11 +68,13 @@ def _save_user_data(user=None, **kwargs):
     # 1. User selected an existing contact to link
     if contact_id and contact_id != 0 and not create_new_contact:
         # Verify contact exists AND strictly belongs to the target club to prevent cross-club leakage
+        # Check if contact exists AND strictly belongs to the target club to prevent cross-club leakage
         from .models import ContactClub
         is_in_club = ContactClub.query.filter_by(contact_id=contact_id, club_id=club_id).first()
         if is_in_club:
             contact = db.session.get(Contact, contact_id)
-            if contact and club_id:
+            if contact:
+                # Ensure UserClub linkage
                 from .models import UserClub
                 uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
                 if uc:

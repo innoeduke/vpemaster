@@ -8,6 +8,13 @@
   #roles-permissions .permissions-matrix-container {
     padding: 20px;
   }
+  /* Hide ID columns in settings tables */
+  #sessions-table th:nth-child(1), 
+  #sessions-table td:nth-child(1),
+  #roles-table th:nth-child(1),
+  #roles-table td:nth-child(1) {
+    display: none;
+  }
 </style>
 {% endblock %}
 
@@ -58,14 +65,15 @@
         <tr>
           <th class="sortable" data-column-index="0">ID</th>
           <th class="sortable" data-column-index="1">Title</th>
-          <th class="sortable" data-column-index="2">Role</th>
-          <th class="sortable" data-column-index="3">Role Type</th>
+          <th class="sortable" data-column-index="2">Meeting Role</th>
+          <th class="sortable" data-column-index="3">Default Owner</th>
           <th class="sortable" data-column-index="4">Min (mins)</th>
           <th class="sortable" data-column-index="5">Max (mins)</th>
           <th class="sortable" data-column-index="6">Section</th>
           <th class="sortable" data-column-index="7">Predefined</th>
           <th class="sortable" data-column-index="8">Project</th>
           <th class="sortable" data-column-index="9">Hidden</th>
+          <th data-column-index="10">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -75,7 +83,7 @@
           <td>{{ st.id }}</td>
           <td data-field="Title">{{ st.Title }}</td>
           <td data-field="role_id">{{ st.role.name if st.role else '' }}</td>
-          <td data-field="Role_Type">{{ st.role.type if st.role else '' }}</td>
+          <td data-field="Default_Owner">{{ st.Default_Owner or '' }}</td>
           <td data-field="Duration_Min">
             {{ st.Duration_Min if st.Duration_Min is not none else '' }}
           </td>
@@ -93,6 +101,11 @@
           </td>
           <td data-field="Is_Hidden">
             <input type="checkbox" name="is_hidden" {% if st.Is_Hidden %}checked{% endif %} disabled />
+          </td>
+          <td>
+             <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('settings_bp.delete_session_type', id=st.id) }}', 'session type')" title="Delete">
+                <i class="fas fa-trash-alt"></i>
+            </button>
           </td>
         </tr>
         {% endfor %}
@@ -127,8 +140,9 @@
           <th class="sortable" data-column-index="3">Type</th>
           <th class="sortable" data-column-index="4">Award Category</th>
           <th class="sortable" data-column-index="5">Needs Approval</th>
-          <th class="sortable" data-column-index="6">Is Distinct</th>
+          <th class="sortable" data-column-index="6">Has Single Owner</th>
           <th class="sortable" data-column-index="7">Is Member Only</th>
+          <th data-column-index="8">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -144,11 +158,16 @@
           <td data-field="needs_approval">
             <input type="checkbox" name="needs_approval" {% if role.needs_approval %}checked{% endif %} disabled />
           </td>
-          <td data-field="is_distinct">
-            <input type="checkbox" name="is_distinct" {% if role.is_distinct %}checked{% endif %} disabled />
+          <td data-field="has_single_owner">
+            <input type="checkbox" name="has_single_owner" {% if role.has_single_owner %}checked{% endif %} disabled />
           </td>
           <td data-field="is_member_only">
             <input type="checkbox" name="is_member_only" {% if role.is_member_only %}checked{% endif %} disabled />
+          </td>
+          <td>
+            <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('settings_bp.delete_role', id=role.id) }}', 'role')" title="Delete">
+              <i class="fas fa-trash-alt"></i>
+            </button>
           </td>
         </tr>
         {% endfor %}

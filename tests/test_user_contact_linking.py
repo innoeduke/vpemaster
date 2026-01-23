@@ -23,9 +23,15 @@ def test_app():
         db.create_all()
         # Seed roles
         if not AuthRole.query.filter_by(name='User').first():
-            db.session.add(AuthRole(name='User', description='User role'))
+            db.session.add(AuthRole(name='User', description='User role', level=1))
         if not AuthRole.query.filter_by(name='SysAdmin').first():
             db.session.add(AuthRole(name='SysAdmin', description='System Administrator', level=100))
+        
+        # Ensure ALL roles have levels for bitwise safety
+        for r in AuthRole.query.all():
+            if r.level is None:
+                r.level = 0
+            
         db.session.commit()
         yield app
         db.session.remove()
@@ -61,7 +67,7 @@ def admin_user(test_app):
         db.session.add(club)
         db.session.commit()
         
-        uc = UserClub(user_id=user.id, club_id=club.id, club_role_id=sysadmin_role.id, contact_id=contact.id)
+        uc = UserClub(user_id=user.id, club_id=club.id, club_role_level=sysadmin_role.level, contact_id=contact.id)
         db.session.add(uc)
         db.session.commit()
         
@@ -78,8 +84,12 @@ def test_link_existing_contact(test_app, test_client, admin_user):
         # Create an existing contact
         contact = Contact(Name='Existing Contact', Email='existing@test.com')
         db.session.add(contact)
-        db.session.commit()
+        db.session.flush()
         contact_id = contact.id
+        
+        # LINK it to the club so isolation check passes
+        db.session.add(ContactClub(contact_id=contact_id, club_id=club_id))
+        db.session.commit()
         
         # Ensure context has current club
         with test_client.session_transaction() as sess:
@@ -88,7 +98,7 @@ def test_link_existing_contact(test_app, test_client, admin_user):
         # POST to create user linked to this contact
         role = AuthRole.query.filter_by(name='User').first()
         
-        response = test_client.post('/user/form', data={
+        response = test_client.post(f'/user/form?club_id={club_id}', data={
             'username': 'linkeduser',
             'full_name': 'Existing Contact',
             'email': 'existing@test.com', # Should match
@@ -129,7 +139,7 @@ def test_create_new_contact_explicitly(test_app, test_client, admin_user):
             
         role = AuthRole.query.filter_by(name='User').first()
 
-        response = test_client.post('/user/form', data={
+        response = test_client.post(f'/user/form?club_id={club_id}', data={
             'username': 'newuser',
             'full_name': 'New User Contact',
             'email': 'new@test.com',
@@ -188,14 +198,13 @@ def test_user_multiple_clubs_linked_contacts(test_app):
             contact = db.session.get(Contact, uc.contact_id)
             assert contact is not None
             
-        # 7. Verify they share the same contact because of the same email
+        # 7. Verify they have DIFFERENT contacts because of isolation design
         c1_contact = user.get_contact(club1.id)
         c2_contact = user.get_contact(club2.id)
         
-        assert c1_contact.id == c2_contact.id
-        assert c1_contact.Name == 'User Club 2' # Most recently set name
-        
-        # 8. Test separate contacts with different emails
+        assert c1_contact.id != c2_contact.id
+        assert c1_contact.Name == 'User Club 1' # Should NOT be synced if isolated
+        assert c2_contact.Name == 'User Club 2'
         club3 = Club(club_no='333', club_name='Club 3')
         db.session.add(club3)
         db.session.commit()
@@ -205,7 +214,7 @@ def test_user_multiple_clubs_linked_contacts(test_app):
         
         assert contact3.id != c1_contact.id
         assert user.get_contact(club3.id).Name == 'Separate Contact'
-        assert user.get_contact(club1.id).Name == 'User Club 2' # Unchanged
+        assert user.get_contact(club1.id).Name == 'User Club 1' # Unchanged
 
         # 9. Ensure that calling ensure_contact again stays 1:1
         updated_c3 = user.ensure_contact(full_name='Updated Separate', email='other@test.com', club_id=club3.id)

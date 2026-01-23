@@ -426,11 +426,6 @@ class User(UserMixin, db.Model):
                  last_name=last_name or (source.last_name if source else None),
                  Email=email or self.email or (source.Email if source else None),
                  Phone_Number=phone or self.phone or (source.Phone_Number if source else None),
-                 Member_ID=source.Member_ID if source else None, 
-                 Completed_Paths=source.Completed_Paths if source else None,
-                 DTM=source.DTM if source else False,
-                 Bio=source.Bio if source else None,
-                 Avatar_URL=source.Avatar_URL if source else None,
                  Type='Member',
                  Date_Created=date.today()
              )

@@ -273,7 +273,7 @@ function toggleEditMode(config) {
           field === "Valid_for_Project" ||
           field == "Predefined" ||
           field == "needs_approval" ||
-          field == "is_distinct" ||
+          field == "has_single_owner" ||
           field == "is_member_only"
         ) {
           currentValue = cell.querySelector('input[type="checkbox"]').checked;
@@ -466,7 +466,7 @@ function isBooleanField(field) {
     field === "Valid_for_Project" ||
     field === "Predefined" ||
     field === "needs_approval" ||
-    field === "is_distinct" ||
+    field === "has_single_owner" ||
     field === "is_member_only"
   );
 }
@@ -655,9 +655,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- 3. Sortable & Filterable Table Setup ---
   setupTableSorting("sessions-table");
+  sortTableByColumn(document.getElementById("sessions-table"), 1, true);
   setupTableSorting("user-settings-table");
 
   setupTableSorting("roles-table");
+  sortTableByColumn(document.getElementById("roles-table"), 1, true);
 
   // B. Setup the ONE Global Filter
   setupGlobalFilter(
@@ -890,9 +892,10 @@ document.addEventListener("DOMContentLoaded", () => {
       : "";
 
     newRow.innerHTML = `
+      <td>${sessionData.id}</td>
       <td data-field="Title">${sessionData.Title || ""}</td>
-      <td data-field="Default_Owner">${sessionData.Default_Owner || ""}</td>
       <td data-field="role_id">${roleName}</td>
+      <td data-field="Default_Owner">${sessionData.Default_Owner || ""}</td>
       <td data-field="Duration_Min">${sessionData.Duration_Min || ""}</td>
       <td data-field="Duration_Max">${sessionData.Duration_Max || ""}</td>
       <td data-field="Is_Section">
@@ -910,6 +913,11 @@ document.addEventListener("DOMContentLoaded", () => {
       <td data-field="Is_Hidden">
         <input type="checkbox" ${sessionData.Is_Hidden ? "checked" : ""
       } disabled>
+      </td>
+      <td>
+        <button class="delete-btn icon-btn" onclick="openDeleteModal('/settings/sessions/delete/${sessionData.id}', 'session type')" title="Delete">
+            <i class="fas fa-trash-alt"></i>
+        </button>
       </td>
     `;
 

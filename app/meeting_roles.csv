@@ -1,4 +1,4 @@
-name,icon,type,award_category,needs_approval,is_distinct
+name,icon,type,award_category,needs_approval,has_single_owner
 Toastmaster,fa-microphone,standard,role-taker,1,1
 General Evaluator,fa-search,standard,role-taker,1,1
 Individual Evaluator,fa-pen-square,standard,evaluator,0,0

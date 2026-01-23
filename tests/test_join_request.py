@@ -7,23 +7,21 @@ def test_join_request_flow(client, app, default_club):
         from app import db
         # 1. Setup: Create another club and 2 users
         club1 = default_club
-        club2 = Club(club_name="Target Club", club_no="999999")
+        club2 = Club(club_name="Target Club", club_no="999888")
         db.session.add(club2)
         db.session.commit()
         
         # Admin User (in Club 1)
-        admin_user = User(username="admin_user", email="admin@test.com")
+        admin_user = User(username="admin_join", email="admin_join@test.com")
         admin_user.set_password("password")
         db.session.add(admin_user)
         db.session.commit()
         
         # Link admin to Club 1 as Admin
-        # Assuming role level bitmask. Let's just make them a Member for now, but Routes require login.
-        # We need to login as admin_user.
         db.session.add(UserClub(user_id=admin_user.id, club_id=club1.id, club_role_level=1))
         
         # Target User (in Club 2)
-        target_user = User(username="target_user", email="target@test.com", first_name="Target", last_name="User")
+        target_user = User(username="target_join", email="target_join@test.com", first_name="Target", last_name="User")
         target_user.set_password("password")
         db.session.add(target_user)
         db.session.commit()
@@ -37,7 +35,7 @@ def test_join_request_flow(client, app, default_club):
 
     # 2. Login as Admin
     with client:
-        login_resp = client.post('/login', data={'username': 'admin_user', 'password': 'password', 'club_names': club1_id}, follow_redirects=True)
+        login_resp = client.post('/login', data={'username': 'admin_join', 'password': 'password', 'club_names': club1_id}, follow_redirects=True)
         assert login_resp.status_code == 200
         if b'Invalid username or password' in login_resp.data:
             pytest.fail("Login failed")
@@ -64,7 +62,7 @@ def test_join_request_flow(client, app, default_club):
     with client:
         # Logout Admin first
         client.get('/logout', follow_redirects=True)
-        login_resp = client.post('/login', data={'username': 'target_user', 'password': 'password', 'club_names': club2.id}, follow_redirects=True)
+        login_resp = client.post('/login', data={'username': 'target_join', 'password': 'password', 'club_names': club2.id}, follow_redirects=True)
         assert login_resp.status_code == 200
         if b'Invalid username or password' in login_resp.data:
             pytest.fail("Target User Login failed")

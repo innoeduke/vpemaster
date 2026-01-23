@@ -97,7 +97,7 @@ class RouteAccessTestCase(unittest.TestCase):
         db.session.add(UserClub(
             user_id=self.staff_user.id,
             club_id=self.club.id,
-            club_role_id=staff_role.id,
+            club_role_level=staff_role.level,
             contact_id=self.staff_contact.id
         ))
         db.session.commit()
@@ -134,7 +134,7 @@ class RouteAccessTestCase(unittest.TestCase):
         db.session.add(UserClub(
             user_id=self.user_user.id,
             club_id=self.club.id,
-            club_role_id=user_role.id,
+            club_role_level=user_role.level,
             contact_id=self.user_contact.id
         ))
         db.session.commit()

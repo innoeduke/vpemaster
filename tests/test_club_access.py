@@ -39,7 +39,12 @@ def cleanup_test_data(app):
             # 2. Delete all records that reference test contacts
             if test_contact_ids:
                 from app.models import SessionLog, UserClub, Waitlist, Vote, Roster, Achievement, RosterRole
-                SessionLog.query.filter(SessionLog.Owner_ID.in_(test_contact_ids)).delete(synchronize_session=False)
+                # SessionLog cleanup handled by cascaded delete or manual cleanup 
+                # (Standard delete(synchronize_session=False) doesn't work well with M2M)
+                for log in SessionLog.query.all():
+                    if any(o.id in test_contact_ids for o in log.owners):
+                        db.session.delete(log)
+                db.session.flush()
                 Waitlist.query.filter(Waitlist.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
                 Vote.query.filter(Vote.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
                 
@@ -98,7 +103,7 @@ def test_sysadmin_access_any_club(app, client):
         db.session.flush()
         user.add_role(admin_role)
         # Grant SysAdmin role in user_clubs as well
-        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_id=admin_role.id))
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_level=admin_role.level))
         db.session.commit()
         
         # Test access to club1
@@ -152,7 +157,7 @@ def test_clubadmin_access_owned_club(app, client):
         db.session.flush()
         user.add_role(clubadmin_role)
         # Grant ClubAdmin role for club1 in user_clubs
-        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_id=clubadmin_role.id, contact_id=contact.id))
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_level=clubadmin_role.level, contact_id=contact.id))
         
         # Create ExComm for club1 with this user as VPE
         excomm = ExComm(club_id=club1.id, excomm_term='TEST_26H1', vpe_id=contact.id)
@@ -204,7 +209,7 @@ def test_clubadmin_denied_non_owned_club(app, client):
         db.session.flush()
         user.add_role(clubadmin_role)
         # Grant ClubAdmin role for club1 in user_clubs
-        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_id=clubadmin_role.id, contact_id=contact.id))
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_level=clubadmin_role.level, contact_id=contact.id))
         
         # Create ExComm for club1 only
         excomm = ExComm(club_id=club1.id, excomm_term='TEST_26H1', president_id=contact.id)
@@ -255,7 +260,7 @@ def test_regular_user_access_authorized_club(app, client):
         user.add_role(user_role)
         
         # Add membership to club1
-        db.session.add(UserClub(user_id=user.id, club_id=club1.id, contact_id=contact.id, club_role_id=user_role.id))
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, contact_id=contact.id, club_role_level=user_role.level))
         membership = ContactClub(
             contact_id=contact.id,
             club_id=club1.id
@@ -307,7 +312,7 @@ def test_regular_user_denied_unauthorized_club(app, client):
         user.add_role(user_role)
         
         # Add membership to club1 only
-        db.session.add(UserClub(user_id=user.id, club_id=club1.id, contact_id=contact.id, club_role_id=user_role.id))
+        db.session.add(UserClub(user_id=user.id, club_id=club1.id, contact_id=contact.id, club_role_level=user_role.level))
         membership = ContactClub(
             contact_id=contact.id,
             club_id=club1.id

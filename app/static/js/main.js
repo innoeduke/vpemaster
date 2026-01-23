@@ -557,4 +557,52 @@ function setupAccordions(container = document) {
 
 document.addEventListener("DOMContentLoaded", function () {
   setupAccordions();
+
+  // --- Global Delete Modal AJAX Handler ---
+  const deleteForm = document.getElementById('deleteForm');
+  if (deleteForm) {
+      deleteForm.addEventListener('submit', function(e) {
+          // If another handler already prevented default (e.g. specialized logic), skip
+          if (e.defaultPrevented) return;
+
+          e.preventDefault();
+          const form = e.target;
+          
+          fetch(form.action, {
+              method: "POST",
+              headers: {
+                  "X-Requested-With": "XMLHttpRequest",
+              },
+          })
+          .then((response) => {
+              // Handle redirects if any (though usually we expect JSON)
+              if (response.redirected) {
+                  if (typeof closeDeleteModal === 'function') closeDeleteModal();
+                  location.reload();
+                  return;
+              }
+              return response.json();
+          })
+          .then((data) => {
+              if (data) {
+                  if (data.success) {
+                      if (typeof closeDeleteModal === 'function') closeDeleteModal();
+                      
+                      // Handle specialized refresh if available, otherwise reload
+                      if (typeof refreshContactCache === 'function') {
+                          refreshContactCache();
+                      } else {
+                          location.reload();
+                      }
+                  } else {
+                      alert(data.message || "An error occurred while deleting the item.");
+                  }
+              }
+          })
+          .catch((error) => {
+              console.error("Delete Error:", error);
+              alert("An error occurred while deleting the item.");
+          });
+      });
+  }
 });

@@ -54,8 +54,11 @@ class TestAgendaComponent(unittest.TestCase):
             log.owner.Name = owner_name
             log.owner.Type = owner_type
             log.owner.DTM = owner_dtm
+            log.owner.credentials = credentials
+            log.owners = [log.owner]
         else:
             log.owner = None
+            log.owners = []
         
         # Mock session type
         st = Mock()
@@ -735,6 +738,8 @@ class TestPowerBIAgendaComponent(unittest.TestCase):
         log.owner.Name = "John Doe"
         log.owner.Type = "Member"
         log.owner.DTM = False
+        log.owner.credentials = "CC"
+        log.owners = [log.owner]
         
         st = Mock()
         st.id = 30

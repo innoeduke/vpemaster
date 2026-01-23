@@ -58,13 +58,13 @@ class TestSpeechLogicSummary(unittest.TestCase):
         ])
         
         # Add roles and session types with mandatory fields
-        tm_role = MeetingRole(name='Toastmaster', type='standard', needs_approval=False, is_distinct=True)
-        timer_role = MeetingRole(name='Timer', type='standard', needs_approval=False, is_distinct=True)
-        ah_role = MeetingRole(name='Ah-Counter', type='standard', needs_approval=False, is_distinct=True)
-        tme_role = MeetingRole(name='TME', type='standard', needs_approval=False, is_distinct=True)
-        tm_sm_role = MeetingRole(name='Topicsmaster', type='standard', needs_approval=False, is_distinct=True)
-        ts_role = MeetingRole(name='Topics Speaker', type='standard', needs_approval=False, is_distinct=True)
-        ge_role = MeetingRole(name='General Evaluator', type='standard', needs_approval=False, is_distinct=True)
+        tm_role = MeetingRole(name='Toastmaster', type='standard', needs_approval=False, has_single_owner=True)
+        timer_role = MeetingRole(name='Timer', type='standard', needs_approval=False, has_single_owner=True)
+        ah_role = MeetingRole(name='Ah-Counter', type='standard', needs_approval=False, has_single_owner=True)
+        tme_role = MeetingRole(name='TME', type='standard', needs_approval=False, has_single_owner=True)
+        tm_sm_role = MeetingRole(name='Topicsmaster', type='standard', needs_approval=False, has_single_owner=True)
+        ts_role = MeetingRole(name='Topics Speaker', type='standard', needs_approval=False, has_single_owner=True)
+        ge_role = MeetingRole(name='General Evaluator', type='standard', needs_approval=False, has_single_owner=True)
         db.session.add_all([tm_role, timer_role, ah_role, tme_role, tm_sm_role, ts_role, ge_role])
         db.session.commit()
 
@@ -93,7 +93,7 @@ class TestSpeechLogicSummary(unittest.TestCase):
         self.assertFalse(summary['1']['elective_completed'])
 
         # Case 2: One elective role completed (L1 need 1)
-        log1 = SessionLog(Meeting_Number=1, Type_ID=self.st_timer.id, Owner_ID=self.contact.id, Status='Completed', state='active', project_code='L1-E')
+        log1 = SessionLog(Meeting_Number=1, Type_ID=self.st_timer.id, owners=[self.contact], Status='Completed', state='active', project_code='L1-E')
         # Manually set attributes that normally come from joinedload or processing
         log1.session_type = self.st_timer
         log1.log_type = 'role'
@@ -107,7 +107,7 @@ class TestSpeechLogicSummary(unittest.TestCase):
         # Prevent auto-flush warning when creating transient logs
         with db.session.no_autoflush:
             # Case 1: One elective role completed (L4 need 2)
-            log1 = SessionLog(id=1, Meeting_Number=1, Type_ID=self.st_tm_sm.id, Owner_ID=self.contact.id, Status='Completed', state='active')
+            log1 = SessionLog(id=1, Meeting_Number=1, Type_ID=self.st_tm_sm.id, owners=[self.contact], Status='Completed', state='active')
             log1.session_type = self.st_tm_sm
             log1.log_type = 'role'
             log1.project = None
@@ -117,7 +117,7 @@ class TestSpeechLogicSummary(unittest.TestCase):
             self.assertFalse(summary['4']['elective_completed'])
 
             # Case 2: Two elective roles completed
-            log2 = SessionLog(id=2, Meeting_Number=1, Type_ID=self.st_ts.id, Owner_ID=self.contact.id, Status='Completed', state='active')
+            log2 = SessionLog(id=2, Meeting_Number=1, Type_ID=self.st_ts.id, owners=[self.contact], Status='Completed', state='active')
             log2.session_type = self.st_ts
             log2.log_type = 'role'
             log2.project = None
@@ -132,14 +132,14 @@ class TestSpeechLogicSummary(unittest.TestCase):
         db.session.commit()
         
         # Log 1: GE (should NOT match IE)
-        log_ge = SessionLog(id=10, Meeting_Number=1, Type_ID=self.st_ge.id, Owner_ID=self.contact.id, Status='Completed', state='active', project_code='PM2')
+        log_ge = SessionLog(id=10, Meeting_Number=1, Type_ID=self.st_ge.id, owners=[self.contact], Status='Completed', state='active', project_code='PM2')
         log_ge.session_type = self.st_ge
         log_ge.log_type = 'role'
         
         # Log 2: IE (should match IE)
         st_ie = SessionType(Title='Individual Evaluator', role_id=self.st_ge.role_id) # Reuse role_id for simplicity or create real one
-        log_ie = SessionLog(id=11, Meeting_Number=2, Type_ID=100, Owner_ID=self.contact.id, Status='Completed', state='active', project_code='PM2')
-        log_ie.session_type = SessionType(Title='Individual Evaluator', role=MeetingRole(name='Individual Evaluator', type='standard', needs_approval=False, is_distinct=True))
+        log_ie = SessionLog(id=11, Meeting_Number=2, Type_ID=100, owners=[self.contact], Status='Completed', state='active', project_code='PM2')
+        log_ie.session_type = SessionType(Title='Individual Evaluator', role=MeetingRole(name='Individual Evaluator', type='standard', needs_approval=False, has_single_owner=True))
         log_ie.log_type = 'role'
         
         summary = _calculate_completion_summary({'2': [log_ge, log_ie]}, {})
@@ -151,17 +151,17 @@ class TestSpeechLogicSummary(unittest.TestCase):
 
     def test_level5_required_roles(self):
         # L5 GE needs 2 counts
-        log1 = SessionLog(id=3, Meeting_Number=1, Type_ID=self.st_ge.id, Owner_ID=self.contact.id, Status='Completed', state='active')
+        log1 = SessionLog(id=3, Meeting_Number=1, Type_ID=self.st_ge.id, owners=[self.contact], Status='Completed', state='active')
         log1.session_type = self.st_ge
         log1.log_type = 'role'
         log1.project = None
         
-        log2 = SessionLog(id=4, Meeting_Number=2, Type_ID=self.st_ge.id, Owner_ID=self.contact.id, Status='Completed', state='active')
+        log2 = SessionLog(id=4, Meeting_Number=2, Type_ID=self.st_ge.id, owners=[self.contact], Status='Completed', state='active')
         log2.session_type = self.st_ge
         log2.log_type = 'role'
         log2.project = None
 
-        log3 = SessionLog(id=5, Meeting_Number=3, Type_ID=self.st_ge.id, Owner_ID=self.contact.id, Status='Completed', state='active')
+        log3 = SessionLog(id=5, Meeting_Number=3, Type_ID=self.st_ge.id, owners=[self.contact], Status='Completed', state='active')
         log3.session_type = self.st_ge
         log3.log_type = 'role'
         log3.project = None

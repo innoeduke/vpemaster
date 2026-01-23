@@ -11,6 +11,7 @@ from sqlalchemy import func
 from flask_login import current_user
 from .club_context import get_current_club_id
 
+from .services.role_service import RoleService
 from .utils import (
     get_session_voter_identifier,
     get_current_user_info,
@@ -71,7 +72,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
     for _, role_data in roles_dict.items():
         role_obj = role_data.get('role_obj')
         if not role_obj:
-            role_obj = MeetingRole.query.filter_by(name=role_data['role_key']).first()
+            role_obj = MeetingRole.query.filter_by(name=role_data['role']).first()
 
         role_data['icon'] = role_obj.icon if role_obj and role_obj.icon else "fa-question-circle"
         role_data['session_id'] = role_data['session_ids'][0]
@@ -145,10 +146,83 @@ def _get_roles_for_voting(selected_meeting_number, selected_meeting):
     Returns:
         list: Processed roles for voting
     """
+    if not selected_meeting:
+        return []
+        
     session_logs = SessionLog.fetch_for_meeting(selected_meeting_number, meeting_obj=selected_meeting)
     roles_dict = consolidate_session_logs(session_logs)
     enriched_roles = _enrich_role_data_for_voting(roles_dict, selected_meeting)
-    sorted_roles = _sort_roles_for_voting(enriched_roles)
+    
+    # Consolidate 'role-taker' category to one row per person
+    # 1. Separate role-takers from others
+    other_roles = [r for r in enriched_roles if r.get('award_category') != 'role-taker']
+    
+    # 2. Get all role takers for the meeting using RoleService
+    role_takers_map = RoleService.get_role_takers(selected_meeting_number, selected_meeting.club_id)
+    
+    # 3. Create consolidated rows for each person who took a 'role-taker' role
+    consolidated_role_takers = []
+    
+    # Determine winner info for role-taker award
+    voter_identifier = get_session_voter_identifier()
+    user_vote_id = None
+    if selected_meeting.status == 'running' and voter_identifier:
+        vote = Vote.query.filter_by(
+            meeting_number=selected_meeting_number,
+            voter_identifier=voter_identifier,
+            award_category='role-taker'
+        ).first()
+        if vote:
+            user_vote_id = vote.contact_id
+            
+    best_role_taker_id = selected_meeting.best_role_taker_id if selected_meeting.status == 'finished' else None
+
+    # Vote counts for role-takers (admins only)
+    vote_counts = {}
+    if is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting) and selected_meeting.status in ['running', 'finished']:
+        counts = db.session.query(Vote.contact_id, func.count(Vote.id)).filter(
+            Vote.meeting_number == selected_meeting_number,
+            Vote.award_category == 'role-taker'
+        ).group_by(Vote.contact_id).all()
+        for cid, count in counts:
+            vote_counts[cid] = count
+
+    for contact_id_str, roles in role_takers_map.items():
+        # Filter roles for this person that belong to the 'role-taker' award category
+        person_role_taker_roles = [r for r in roles if r.get('award_category') == 'role-taker']
+        
+        if not person_role_taker_roles:
+            continue
+            
+        contact_id = int(contact_id_str)
+        first_role = person_role_taker_roles[0]
+        
+        # Combine and deduplicate role names: "Timer, Ah-Counter"
+        role_names = []
+        for r in person_role_taker_roles:
+            if r['name'] not in role_names:
+                role_names.append(r['name'])
+        combined_role_names = ", ".join(role_names)
+        
+        # Build consolidated role-taker entry
+        role_entry = {
+            'role': combined_role_names,
+            'icon': 'fa-users', # Generic icon for consolidated roles
+            'session_id': first_role.get('session_log_id'), # Might be None
+            'owner_id': contact_id,
+            'owner_name': first_role.get('owner_name'),
+            'owner_avatar_url': first_role.get('owner_avatar_url'),
+            'award_category': 'role-taker',
+            'award_category_open': bool(not (user_vote_id if selected_meeting.status == 'running' else best_role_taker_id)),
+            'award_type': 'role-taker' if (user_vote_id == contact_id if selected_meeting.status == 'running' else best_role_taker_id == contact_id) else None,
+            'vote_count': vote_counts.get(contact_id, 0)
+        }
+        consolidated_role_takers.append(role_entry)
+
+    # Combine back
+    final_roles = other_roles + consolidated_role_takers
+    
+    sorted_roles = _sort_roles_for_voting(final_roles)
 
     # Filter to only show roles with award categories
     if selected_meeting.status in ['running', 'finished']:
@@ -170,8 +244,11 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
         dict: Context dictionary for template
     """
     # Show all recent meetings in the dropdown, even if voting is not yet available for some
+    is_guest = not user or (hasattr(user, 'primary_role_name') and user.primary_role_name == 'Guest')
+    limit_past = 8 if is_guest else None
+
     upcoming_meetings, default_meeting_num = get_meetings_by_status(
-        limit_past=8, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date, Meeting.status])
+        limit_past=limit_past, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date, Meeting.status])
 
     if not selected_meeting_number:
         selected_meeting_number = default_meeting_num or (
@@ -214,7 +291,10 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     is_manager = (contact and contact.id == selected_meeting.manager_id) if selected_meeting else False
     
     # 1. Guests can ONLY access 'running' meetings
-    if not current_user.is_authenticated:
+    is_guest = not current_user.is_authenticated or \
+               (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
+    
+    if is_guest:
         if selected_meeting.status != 'running':
             context['force_not_started'] = True
             context['selected_meeting'] = selected_meeting

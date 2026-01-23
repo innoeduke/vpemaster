@@ -79,13 +79,13 @@ class PermissionSystemTestCase(unittest.TestCase):
         db.session.add(UserClub(
             user_id=self.user_admin.id,
             club_id=self.club.id,
-            club_role_id=self.role_admin.id,
+            club_role_level=self.role_admin.level,
             contact_id=self.contact_admin.id
         ))
         db.session.add(UserClub(
             user_id=self.user_user.id,
             club_id=self.club.id,
-            club_role_id=self.role_user.id,
+            club_role_level=self.role_user.level,
             contact_id=self.contact_user.id
         ))
         db.session.commit()
@@ -122,7 +122,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         
         # Update user's club role to the special role
         user_club = UserClub.query.filter_by(user_id=self.user_user.id).first()
-        user_club.club_role_id = role_special.id
+        user_club.club_role_level = role_special.level
         db.session.commit()
         
         # Force reload
@@ -260,7 +260,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         db.session.add(UserClub(
             user_id=self.user_user.id,
             club_id=self.club.id,
-            club_role_id=role_admin.id,
+            club_role_level=role_admin.level,
             contact_id=self.contact_user.id
         ))
         db.session.commit()

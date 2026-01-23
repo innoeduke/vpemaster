@@ -44,11 +44,22 @@ def test_user_role_isolation(client, app, db_session):
             
         db_session.commit()
         
+        # Ensure level is set for ALL roles in DB to avoid NoneType bitwise error
+        for r in AuthRole.query.all():
+            if r.level is None:
+                r.level = 0
+        
+        # Ensure our target roles have specific levels for this test
+        sysadmin_role.level = 8
+        club_admin_role.level = 4
+        member_role.level = 1
+        db_session.commit()
+        
         # 3. Assign Roles: 
         # Club A -> ClubAdmin
         # Club B -> Member
-        user.set_club_role(club_a.id, club_admin_role.id)
-        user.set_club_role(club_b.id, member_role.id)
+        user.set_club_role(club_a.id, club_admin_role.level)
+        user.set_club_role(club_b.id, member_role.level)
         db_session.commit()
         
         # Create SysAdmin user to perform the edit
@@ -58,7 +69,7 @@ def test_user_role_isolation(client, app, db_session):
         db_session.commit()
         
         # Give admin SysAdmin role in Club A (effectively global/powerful for this test context or we mock is_authorized)
-        admin.set_club_role(club_a.id, sysadmin_role.id)
+        admin.set_club_role(club_a.id, sysadmin_role.level)
         db_session.commit()
         
         # Login as Admin
@@ -92,14 +103,13 @@ def test_user_role_isolation(client, app, db_session):
         response = client.post(f'/user/form/{user.id}', data=data, follow_redirects=True)
         assert response.status_code == 200
         
-        # 5. Verify Results
         # User should still be Member in Club B
         uc_b = UserClub.query.filter_by(user_id=user.id, club_id=club_b.id).first()
-        assert uc_b.club_role_id == member_role.id
+        assert uc_b.club_role_level == member_role.level
         
         # User should STILL be ClubAdmin in Club A (Unchanged)
         uc_a = UserClub.query.filter_by(user_id=user.id, club_id=club_a.id).first()
-        assert uc_a.club_role_id == club_admin_role.id
+        assert uc_a.club_role_level == club_admin_role.level
         
         print("\nTest passed: Club roles remained isolated.")
         
