@@ -88,11 +88,12 @@ class MeetingExportContext:
         if self._role_map is None:
             self._role_map = {}
             for log, st in self.logs:
-                if log.Owner_ID:
+                if log.owners:
                     role_name = st.Title
                     if st.role:
                         role_name = st.role.name
-                    self._role_map[log.Owner_ID] = role_name
+                    for owner in log.owners:
+                        self._role_map[owner.id] = role_name
         return self._role_map
 
     @property
@@ -109,9 +110,13 @@ class MeetingExportContext:
         speaker_types = {SessionTypeID.KEYNOTE_SPEECH, SessionTypeID.PREPARED_SPEECH, SessionTypeID.PRESENTATION, SessionTypeID.PANEL_DISCUSSION}
         
         for log, st in self.logs:
-            if not log.owner or not log.owner.Name: continue
+            if not log.owners: continue
             
-            name = log.owner.Name.strip()
+            # Use primary owner for export grouping if name needed
+            owner = log.owner
+            if not owner or not owner.Name: continue
+            
+            name = owner.Name.strip()
             # Don't add (Guest) suffix for participants board
             
             if st.id in speaker_types:

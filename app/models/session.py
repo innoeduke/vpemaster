@@ -23,6 +23,13 @@ class SessionType(db.Model):
     role = db.relationship('app.models.roster.MeetingRole', backref='session_types')
 
 
+
+# Association Table for Many-to-Many SessionLog <-> Contact
+session_log_owners = db.Table('session_log_owners',
+    db.Column('session_log_id', db.Integer, db.ForeignKey('Session_Logs.id'), primary_key=True),
+    db.Column('contact_id', db.Integer, db.ForeignKey('Contacts.id'), primary_key=True)
+)
+
 class SessionLog(db.Model):
     __tablename__ = 'Session_Logs'
     id = db.Column(db.Integer, primary_key=True)
@@ -33,8 +40,10 @@ class SessionLog(db.Model):
     Session_Title = db.Column(db.String(255))
     Type_ID = db.Column(db.Integer, db.ForeignKey(
         'Session_Types.id'), nullable=False)
-    Owner_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
-    credentials = db.Column(db.String(255), default='')
+    
+    # [DEPRECATED] Owner_ID and credentials removed in favor of owners relationship
+    # Owner_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    # credentials = db.Column(db.String(255), default='')
     Project_ID = db.Column(db.Integer, db.ForeignKey('Projects.id'))
     Start_Time = db.Column(db.Time)
     Duration_Min = db.Column(db.Integer, default=0)
@@ -48,7 +57,19 @@ class SessionLog(db.Model):
 
     meeting = db.relationship('Meeting', backref='session_logs')
     project = db.relationship('Project', backref='session_logs')
-    owner = db.relationship('Contact', backref='session_logs')
+    
+    # [DEPRECATED] Single Owner Relationship (Primary)
+    # owner = db.relationship('Contact', backref='session_logs', foreign_keys=[Owner_ID])
+    
+    @property
+    def owner(self):
+        """Helper for primary owner logic (backward compatibility)"""
+        return self.owners[0] if self.owners else None
+    
+    # Many-to-Many Owners Relationship
+    owners = db.relationship('Contact', secondary=session_log_owners, lazy='subquery',
+        backref=db.backref('shared_session_logs', lazy=True))
+
     session_type = db.relationship('SessionType', backref='session_logs')
 
     media = db.relationship('Media', backref='session_log',
@@ -92,9 +113,10 @@ class SessionLog(db.Model):
         else:
             # Determine base level from contact.credentials for consistency
             start_level = 1
-            if contact.credentials:
+            creds = contact.credentials
+            if creds:
                 # Match the current path abbreviation followed by a level number
-                match = re.match(rf"^{pathway_suffix}(\d+)$", contact.credentials.strip().upper())
+                match = re.match(rf"^{pathway_suffix}(\d+)$", creds.strip().upper())
                 if match:
                     level_achieved = int(match.group(1))
                     # If level L is completed, the current work is for level L+1 (capped at 5)
@@ -358,9 +380,9 @@ class SessionLog(db.Model):
         return True
 
     @classmethod
-    def set_owner(cls, target_log, new_owner_id):
+    def set_owners(cls, target_log, new_owner_ids):
         """
-        Sets the owner for a session log (and related logs if role is not distinct),
+        Sets the owners for a session log (and related logs if role is not distinct),
         updates credentials, and derives project codes.
         
         This method DOES NOT sync with Roster or clear Waitlists. 
@@ -368,7 +390,7 @@ class SessionLog(db.Model):
         
         Args:
             target_log: The SessionLog object to update
-            new_owner_id: ID of the new owner (or None to unassign)
+            new_owner_ids: List of IDs of the new owners (or empty list/None to unassign)
             
         Returns:
             list: List of updated SessionLog objects
@@ -378,6 +400,11 @@ class SessionLog(db.Model):
         from .project import Pathway, PathwayProject
         from ..utils import derive_credentials
         
+        if new_owner_ids is None:
+            new_owner_ids = []
+        if isinstance(new_owner_ids, int):
+            new_owner_ids = [new_owner_ids]
+            
         # 1. Identify all logs to update (handle is_distinct)
         session_type = target_log.session_type
         role_obj = session_type.role if session_type else None
@@ -387,7 +414,10 @@ class SessionLog(db.Model):
         if role_obj and not role_obj.is_distinct:
             # Find all logs for this role in this meeting
             target_role_id = role_obj.id
-            current_owner_id = target_log.Owner_ID
+            
+            # Since we support multiple owners, determining "same group" is trickier.
+            # Match logs that share at least one owner with target_log OR are all unassigned.
+            current_owner_ids = [o.id for o in target_log.owners]
             
             query = db.session.query(cls)\
                 .join(SessionType, cls.Type_ID == SessionType.id)\
@@ -395,44 +425,56 @@ class SessionLog(db.Model):
                 .filter(cls.Meeting_Number == target_log.Meeting_Number)\
                 .filter(MeetingRole.id == target_role_id)
             
-            if current_owner_id is None:
-                query = query.filter(cls.Owner_ID.is_(None))
+            if not current_owner_ids:
+                query = query.filter(~cls.owners.any())
             else:
-                query = query.filter(cls.Owner_ID == current_owner_id)
+                # Match logs that share the primary owner
+                query = query.filter(cls.owners.any(id=current_owner_ids[0]))
                 
             sessions_to_update = query.all()
 
         # 2. Prepare Data (Credentials, Project Code)
-        owner_contact = db.session.get(Contact, new_owner_id) if new_owner_id else None
-        new_credentials = derive_credentials(owner_contact)
+        # Fetch all owner contacts
+        owner_contacts = []
+        if new_owner_ids:
+            # Preserve order of IDs if possible, or just fetch all
+            owner_contacts = Contact.query.filter(Contact.id.in_(new_owner_ids)).all()
+            # Sort contacts to match input ID order for consistency in Primary Owner assignment
+            owner_contacts.sort(key=lambda c: new_owner_ids.index(c.id))
+
+        primary_owner = owner_contacts[0] if owner_contacts else None
+        new_credentials = derive_credentials(primary_owner) # Credentials derived from Primary Owner
 
         # 3. Update Logs
         for log in sessions_to_update:
-            log.Owner_ID = new_owner_id
-            log.credentials = new_credentials
+            # Update Owners Relationship
+            log.owners = owner_contacts
+            # log.Owner_ID = primary_owner.id if primary_owner else None
             
-            # Project Code Logic
+            # log.credentials = new_credentials
+            
+            # Project Code Logic (Based on Primary Owner)
             new_path_level = None
-            if owner_contact:
+            if primary_owner:
                 # Basic derivation
-                new_path_level = log.derive_project_code(owner_contact)
+                new_path_level = log.derive_project_code(primary_owner)
                 
                 # Auto-Resolution from Next_Project for Prepared Speeches
                 # This logic checks if the planned Next_Project matches strict criteria
-                if owner_contact.Next_Project and log.Type_ID == SessionTypeID.PREPARED_SPEECH:
-                    current_path_name = owner_contact.Current_Path
+                if primary_owner.Next_Project and log.Type_ID == SessionTypeID.PREPARED_SPEECH:
+                    current_path_name = primary_owner.Current_Path
                     if current_path_name:
                         pathway = Pathway.query.filter_by(name=current_path_name).first()
                         if pathway and pathway.abbr:
-                            if owner_contact.Next_Project.startswith(pathway.abbr):
-                                code_suffix = owner_contact.Next_Project[len(pathway.abbr):]
+                            if primary_owner.Next_Project.startswith(pathway.abbr):
+                                code_suffix = primary_owner.Next_Project[len(pathway.abbr):]
                                 pp = PathwayProject.query.filter_by(
                                     path_id=pathway.id,
                                     code=code_suffix
                                 ).first()
                                 if pp:
                                     log.Project_ID = pp.project_id
-                                    new_path_level = owner_contact.Next_Project
+                                    new_path_level = primary_owner.Next_Project
             
             log.project_code = new_path_level
 
@@ -457,7 +499,7 @@ class SessionLog(db.Model):
         query = db.session.query(cls)\
             .options(
                 joinedload(cls.session_type).joinedload(SessionType.role),
-                joinedload(cls.owner),
+                joinedload(cls.owners),
                 subqueryload(cls.waitlists).joinedload(Waitlist.contact)
             )\
             .join(SessionType, cls.Type_ID == SessionType.id)\

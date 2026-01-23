@@ -3,6 +3,10 @@
 
 {% block title %}Meeting Agenda{% endblock %}
 
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/agenda/agenda-view-owners.css') }}">
+{% endblock %}
+
 
 {% block content %}
 <div id="agenda-content"> {# Wrapper for edit-mode class #}
@@ -146,7 +150,6 @@
                     <th class="col-session-type">Session Type</th>
                     <th class="col-session-title">Session Title</th>
                     <th class="col-owner">Owner</th>
-                    <th class="col-credentials">Credentials</th>
                     <th class="col-duration-min">Min</th>
                     <th class="col-duration-max">Max</th>
                     <th class="actions-column">Actions</th>
@@ -164,12 +167,13 @@
                     data-meeting-seq="{{ log_dict.Meeting_Seq }}" data-start-time="{{ log_dict.Start_Time_str }}" {# Use
                     predefined title if available, otherwise fallback to log title #}
                     data-session-title="{{ log_dict.Session_Title if log_dict.Session_Title is not none else '' }}"
-                    data-type-id="{{ log_dict.Type_ID }}" data-owner-id="{{ log_dict.Owner_ID }}"
+                    data-type-id="{{ log_dict.Type_ID }}" data-owner-id="{{ log_dict.owners_data[0].id if log_dict.owners_data else '' }}"
                     data-credentials="{{ log_dict.Credentials if log_dict.Credentials is not none else '' }}"
                     data-duration-min="{{ log_dict.Duration_Min if log_dict.Duration_Min is not none else '' }}"
                     data-duration-max="{{ log_dict.Duration_Max if log_dict.Duration_Max is not none else '' }}"
                     data-status="{{ log_dict.status if log_dict.status else '' }}" data-role="{{ log_dict.role or '' }}"
                     data-project-code="{{ log_dict.project_code or '' }}" data-pathway="{{ log_dict.pathway or '' }}"
+                    data-owner-ids='{{ log_dict.owner_ids|tojson|safe }}'
                     class="{{ 'section-row' if log_dict.is_section else '' }} {{ 'hidden-row' if log_dict.is_hidden else '' }} {{ 'readonly-row' if log_dict.is_readonly|default(false) else '' }}">
 
                     {# --- Row Content using log_dict --- #}
@@ -231,26 +235,26 @@
                             {% endif %}
                         </div>
                     </td>
-                    <td class="non-edit-mode-cell">
+                    <td class="non-edit-mode-cell col-owner">
                         {# Use pre-fetched owner data from log_dict #}
-                        {% if log_dict.owner_name %}
-                        {{ log_dict.owner_name }}
-                        {% if log_dict.owner_dtm %}
-                        <sup class="dtm-superscript">DTM</sup>
-                        {% endif %}
-                        {# Show trophy for award winners #}
-                        {% if log_dict.award_type and log_dict.role not in ns.displayed_awards %}
-                        <span class="icon-btn icon-btn-voted" title="{{ log_dict.award_type }} Winner">
-                            <i class="fas fa-award"></i>
-                        </span>
-                        {% set ns.displayed_awards = ns.displayed_awards + [log_dict.role] %}
-                        {% endif %}
-                        <span class="owner-meta">
-                            {% if log_dict.Credentials %}
-                            <br />{{ log_dict.Credentials }}
+                        {% for owner_info in log_dict.owners_data %}
+                        <div class="owner-row">
+                            <span class="owner-name">{{ owner_info.name }}</span>
+                            
+                            {# Show credentials if not DTM #}
+                            {% if owner_info.credentials and owner_info.credentials != "DTM" %}
+                            <span class="owner-meta"> - {{ owner_info.credentials }}</span>
                             {% endif %}
-                        </span>
-                        {% endif %}
+
+                            {# Show trophy for award winners #}
+                            {% if loop.first and log_dict.award_type and log_dict.role not in ns.displayed_awards %}
+                            <span class="icon-btn icon-btn-voted" title="{{ log_dict.award_type }} Winner" style="margin-left: 4px;">
+                                <i class="fas fa-award"></i>
+                            </span>
+                            {% set ns.displayed_awards = ns.displayed_awards + [log_dict.role] %}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
                     </td>
                     <td class="non-edit-mode-cell">
                         {% if log_dict.Duration_Min and log_dict.Duration_Max %}{{ log_dict.Duration_Min }}'-{{

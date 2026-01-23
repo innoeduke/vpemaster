@@ -181,9 +181,8 @@ def get_dropdown_metadata():
     )
     
     # Speakers (contacts with logs)
-    speakers = db.session.query(Contact).join(
-        SessionLog, Contact.id == SessionLog.Owner_ID
-    ).distinct().order_by(Contact.Name).all()
+    speakers = db.session.query(Contact).join(SessionLog.owners)\
+        .distinct().order_by(Contact.Name).all()
     
     # All contacts (for impersonation dropdown)
     all_contacts = Contact.query.order_by(Contact.Name).all()
@@ -266,9 +265,9 @@ def update_next_project(contact):
     # 2. Find the first incomplete project from start_level onwards
     # Get all completed project IDs for this contact
     completed_project_ids = {
-        log.Project_ID for log in SessionLog.query.filter_by(
-            Owner_ID=contact.id, 
-            Status='Completed'
+        log.Project_ID for log in SessionLog.query.filter(
+            SessionLog.owners.any(id=contact.id), 
+            SessionLog.Status=='Completed'
         ).all() if log.Project_ID
     }
 
@@ -444,9 +443,8 @@ def derive_credentials(contact):
         return 'DTM'
     elif contact.Type == 'Guest':
         return "Guest"
-    elif contact.Type in ['Member', 'Officer']:
+    else:
         return contact.credentials or ''
-    return ''
 
 
 def is_valid_for_vote(request, meeting_number, voter_identifier):
@@ -698,7 +696,10 @@ def consolidate_session_logs(session_logs):
         role_obj = log.session_type.role
         role_name = role_obj.name.strip()
         role_id = role_obj.id
-        owner_id = log.Owner_ID
+        
+        # Consolidation key for primary display (uses first owner)
+        owner = log.owner
+        owner_id = owner.id if owner else None
         
         is_distinct = role_obj.is_distinct
 
@@ -860,7 +861,7 @@ def get_meeting_roles(club_id=None, meeting_number=None):
             .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
             .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
             .filter(SessionLog.Meeting_Number == meeting_number)\
-            .filter(SessionLog.Owner_ID.isnot(None))\
+            .filter(SessionLog.owners.any())\
             .all()
             
         # Ensure club_id is treated as int for comparison if possible
@@ -879,9 +880,10 @@ def get_meeting_roles(club_id=None, meeting_number=None):
         # We use STRING keys for the map to ensure consistency when cached/serialized
         roles_map = {}
         for log, role in logs:
-            c_id = str(log.Owner_ID)
-            if c_id not in roles_map:
-                roles_map[c_id] = []
+            for owner in log.owners:
+                c_id = str(owner.id)
+                if c_id not in roles_map:
+                    roles_map[c_id] = []
             
             role_data = {
                 'id': role.id,

@@ -1,0 +1,13 @@
+/* ========================================
+   Tools Desktop Styles
+   For screens >= 1025px
+   ======================================== */
+
+@media (min-width: 1025px) {
+
+	/* Larger max-width for tools on big screens */
+	.roster-container,
+	.lucky-draw-container {
+		max-width: 1400px;
+	}
+}

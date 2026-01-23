@@ -155,7 +155,7 @@ class Roster(db.Model):
             remaining_role_session = db.session.query(SessionLog.id)\
                 .join(SessionType, SessionLog.Type_ID == SessionType.id)\
                 .filter(SessionLog.Meeting_Number == meeting_number)\
-                .filter(SessionLog.Owner_ID == contact_id)\
+                .filter(SessionLog.owners.any(id=contact_id))\
                 .filter(SessionType.role_id == role_obj.id)\
                 .first()
             

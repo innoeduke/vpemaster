@@ -72,8 +72,8 @@ def show_contacts():
     # 2. Roles (SessionLog where SessionType is a Role)
     # We want to count distinct (Meeting, Role) pairs per user.
     distinct_roles = db.session.query(
-        SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id, MeetingRole.name
-    ).select_from(SessionLog).join(SessionType).join(MeetingRole)\
+        Contact.id, SessionLog.Meeting_Number, SessionType.role_id, MeetingRole.name
+    ).select_from(SessionLog).join(SessionLog.owners).join(SessionType).join(MeetingRole)\
      .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number).filter(
         SessionType.role_id.isnot(None),
         MeetingRole.type.in_(['standard', 'club-specific']),
@@ -480,8 +480,11 @@ def delete_contact(contact_id):
     # 3. Contact mentors (mentees of this contact)
     Contact.query.filter(Contact.Mentor_ID == contact_id).update({"Mentor_ID": None})
     
-    # 4. SessionLogs (Owner_ID)
-    SessionLog.query.filter_by(Owner_ID=contact_id).update({"Owner_ID": None})
+    # 4. SessionLogs (owners relationship)
+    # Find logs owned by this contact and remove them
+    logs_to_unassign = SessionLog.query.filter(SessionLog.owners.any(id=contact_id)).all()
+    for log in logs_to_unassign:
+        log.owners = [o for o in log.owners if o.id != contact_id]
 
     # 5. Votes (contact_id)
     Vote.query.filter_by(contact_id=contact_id).update({"contact_id": None})
@@ -594,8 +597,8 @@ def get_all_contacts_api():
 
     # 2. Role counts
     distinct_roles = db.session.query(
-        SessionLog.Owner_ID, SessionLog.Meeting_Number, SessionType.role_id, MeetingRole.name
-    ).select_from(SessionLog).join(SessionType).join(MeetingRole)\
+        Contact.id, SessionLog.Meeting_Number, SessionType.role_id, MeetingRole.name
+    ).select_from(SessionLog).join(SessionLog.owners).join(SessionType).join(MeetingRole)\
      .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number).filter(
         SessionType.role_id.isnot(None),
         MeetingRole.type.in_(['standard', 'club-specific']),

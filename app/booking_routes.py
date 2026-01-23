@@ -68,7 +68,7 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeti
     if contact and contact.Current_Path:
         three_meetings_ago = selected_meeting_number - 2
         recent_speaker_log = db.session.query(SessionLog.id).join(SessionType).join(MeetingRole, SessionType.role_id == MeetingRole.id)\
-            .filter(SessionLog.Owner_ID == current_user_contact_id)\
+            .filter(SessionLog.owners.any(id=current_user_contact_id))\
             .filter(MeetingRole.name == "Prepared Speaker")\
             .filter(SessionLog.Meeting_Number.between(three_meetings_ago, selected_meeting_number)).first()
 
@@ -183,7 +183,7 @@ def _get_user_bookings(current_user_contact_id):
     ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
      .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
      .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
-     .filter(SessionLog.Owner_ID == current_user_contact_id)\
+     .filter(SessionLog.owners.any(id=current_user_contact_id))\
      .filter(Meeting.Meeting_Date >= today)\
      .filter(MeetingRole.name != '', MeetingRole.name.isnot(None))\
      .filter(MeetingRole.type != 'officer')\
@@ -375,13 +375,13 @@ def book_or_assign_role():
             updated_logs = RoleService.assign_meeting_role(log, owner_id_to_set, is_admin=True)
             
             for session_log in updated_logs:
-                contact = db.session.get(Contact, session_log.Owner_ID) if session_log.Owner_ID else None
+                contact = session_log.owner # Using the new property
                 updated_sessions.append({
                     'session_id': session_log.id,
-                    'owner_id': session_log.Owner_ID,
+                    'owner_id': contact.id if contact else None,
                     'owner_name': contact.Name if contact else None,
                     'owner_avatar_url': contact.Avatar_URL if contact else None,
-                    'credentials': session_log.credentials
+                    'credentials': derive_credentials(contact) if contact else ''
                 })
             
             db.session.commit()
@@ -418,13 +418,13 @@ def book_or_assign_role():
                  sessions_to_report = SessionLog.query.filter_by(Meeting_Number=log.Meeting_Number, Type_ID=log.Type_ID).all()
             
             for session_log in sessions_to_report:
-                 contact = db.session.get(Contact, session_log.Owner_ID) if session_log.Owner_ID else None
+                 contact = session_log.owner
                  updated_sessions.append({
                     'session_id': session_log.id,
-                    'owner_id': session_log.Owner_ID,
+                    'owner_id': contact.id if contact else None,
                     'owner_name': contact.Name if contact else None,
                     'owner_avatar_url': contact.Avatar_URL if contact else None,
-                    'credentials': session_log.credentials
+                    'credentials': derive_credentials(contact) if contact else ''
                  })
 
             return jsonify(success=True, updated_sessions=updated_sessions)

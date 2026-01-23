@@ -128,7 +128,7 @@ def _fetch_logs_with_filters(filters):
         joinedload(SessionLog.media),
         joinedload(SessionLog.session_type).joinedload(SessionType.role),
         joinedload(SessionLog.meeting),
-        joinedload(SessionLog.owner),
+        joinedload(SessionLog.owners),
         joinedload(SessionLog.project)
     ).join(SessionLog.session_type).join(SessionType.role).join(SessionLog.meeting).filter(
         MeetingRole.name.isnot(None),
@@ -138,7 +138,8 @@ def _fetch_logs_with_filters(filters):
     )
     
     if filters['speaker_id']:
-        base_query = base_query.filter(SessionLog.Owner_ID == filters['speaker_id'])
+        # Filter by ANY owner
+        base_query = base_query.filter(SessionLog.owners.any(id=filters['speaker_id']))
     if filters['meeting_number']:
         base_query = base_query.filter(SessionLog.Meeting_Number == filters['meeting_number'])
     if filters['role']:
@@ -182,7 +183,8 @@ def _process_logs(all_logs, filters, pathway_cache):
         
         # Deduplicate roles
         if log_type == 'role' and not log.Project_ID:
-            role_key = (log.Meeting_Number, log.Owner_ID, log.session_type.role.name)
+            owner_id = log.owner.id if log.owners else None
+            role_key = (log.Meeting_Number, owner_id, log.session_type.role.name)
             if role_key in processed_roles:
                 continue
             processed_roles.add(role_key)
@@ -235,7 +237,7 @@ def _sort_and_consolidate(grouped_logs):
         for item in grouped_logs[level]:
             if item.log_type == 'role' and not item.Project_ID:
                 role_name = item.session_type.role.name if item.session_type and item.session_type.role else item.session_type.Title
-                owner_id = item.Owner_ID
+                owner_id = item.owner.id if item.owners else None
                 key = (owner_id, role_name)
                 
                 if key in role_group_map:
@@ -680,7 +682,7 @@ def show_project_view():
         
     query = db.session.query(SessionLog).join(SessionLog.meeting).filter(*filters).order_by(SessionLog.Meeting_Number.asc()).options(
         joinedload(SessionLog.project),
-        joinedload(SessionLog.owner)
+        joinedload(SessionLog.owners)
     )
     
     logs = query.all()
@@ -709,9 +711,16 @@ def show_project_view():
              project_data_map[pid]['status_counts'][status] = 0
         project_data_map[pid]['status_counts'][status] += 1
         
-        if log.owner:
-            project_data_map[pid]['owners'].append(log.owner)
+        if log.owners:
+            # Append all owners
+            project_data_map[pid]['owners'].extend(log.owners)
             
+    # Deduplicate owners list for display
+    for pid in project_data_map:
+        # Use set to dedup by ID, then sort by Name
+        unique_owners = {c.id: c for c in project_data_map[pid]['owners']}.values()
+        project_data_map[pid]['owners'] = sorted(list(unique_owners), key=lambda x: x.Name)
+
     # Convert to list and sort by count desc
     chart_data = sorted(
         project_data_map.values(), 
@@ -749,7 +758,8 @@ def get_speech_log_details(log_id):
     current_user_contact_id = contact.id if contact else None
 
     if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
-        if log.Owner_ID != current_user_contact_id:
+        current_owners = [o.id for o in log.owners]
+        if current_user_contact_id not in current_owners:
             return jsonify(success=False, message="Permission denied. You can only view details for your own speech logs."), 403
 
 
@@ -799,7 +809,7 @@ def update_speech_log(log_id):
     Updates a speech log with new data from the edit modal.
     """
     log = SessionLog.query.options(
-        joinedload(SessionLog.owner),
+        joinedload(SessionLog.owners),
         joinedload(SessionLog.session_type),
         joinedload(SessionLog.project)
     ).get_or_404(log_id)
@@ -811,7 +821,9 @@ def update_speech_log(log_id):
     current_user_contact_id = contact.id if contact else None
     
     if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
-        is_owner = (current_user_contact_id == log.Owner_ID)
+        # Check if user is ONE OF the owners
+        current_owners = [o.id for o in log.owners]
+        is_owner = (current_user_contact_id in current_owners)
         if not (is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and is_owner):
             return jsonify(success=False, message="Permission denied. You can only edit your own speech logs."), 403
 
@@ -836,12 +848,37 @@ def update_speech_log(log_id):
     # even if a "Series" (presentation-type path) was selected in the modal for project lookup.
     is_presentation = updated_project.is_presentation if updated_project else (log.project.is_presentation if log.project else False)
     
+
+    # Updated Owner Logic: Handle list of owners
+    from .services.role_service import RoleService
+    owner_ids = data.get('owner_ids', []) # Expected list of IDs
+    
+    # Backward compatibility: if single 'owner_id' provided and no 'owner_ids', use it
+    if not owner_ids and 'owner_id' in data:
+         val = data.get('owner_id')
+         if val:
+             owner_ids = [int(val)]
+
+    # Use RoleService to update owners (handles related logic if needed, though usually assign_meeting_role does more)
+    # But for speech log update modal, we often just update the Log itself.
+    # However, RoleService.assign_meeting_role is the comprehensive one.
+    # Let's use SessionLog.set_owners logic but accessible via RoleService or direct?
+    # Roster Sync might be needed if they change owners here.
+    # So RoleService is best.
+    if 'owner_ids' in data or 'owner_id' in data:
+        RoleService.assign_meeting_role(log, owner_ids, is_admin=is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL))
+
+    # Re-fetch log to ensure relations are updated
+    db.session.refresh(log)
+
     pathway_val = data.get('pathway')
+    primary_owner = log.owners[0] if log.owners else None
+    
     if is_presentation:
-        if log.owner and log.owner.Current_Path:
-            pathway_val = log.owner.Current_Path
-    elif not pathway_val and log.owner and log.owner.Current_Path:
-        pathway_val = log.owner.Current_Path
+        if primary_owner and primary_owner.Current_Path:
+            pathway_val = primary_owner.Current_Path
+    elif not pathway_val and primary_owner and primary_owner.Current_Path:
+        pathway_val = primary_owner.Current_Path
         
     if pathway_val:
         log.update_pathway(pathway_val)
@@ -895,7 +932,11 @@ def suspend_speech_log(log_id):
         pathway_cache = build_pathway_project_cache(project_ids=[log.Project_ID]) if log.Project_ID else {}
         display_level, _, _ = log.get_display_level_and_type(pathway_cache)
         
-        progress_html = _get_level_progress_html(log.Owner_ID, display_level)
+        progress_html = ""
+        if log.owners:
+             # Calculate for Primary Owner (or we could return map for all?)
+             # Frontend expects single HTML. Let's return for primary.
+             progress_html = _get_level_progress_html(log.owner.id, display_level)
         
         return jsonify(success=True, level=display_level, progress_html=progress_html)
     except Exception as e:
@@ -913,7 +954,8 @@ def complete_speech_log(log_id):
     current_user_contact_id = current_user.contact_id if current_user.is_authenticated else None
 
     if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
-        if log.Owner_ID != current_user_contact_id:
+        current_owners = [o.id for o in log.owners]
+        if current_user_contact_id not in current_owners:
             return jsonify(success=False, message="Permission denied."), 403
         # Also check if meeting is in the past for non-admins
         if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date >= datetime.today().date():
@@ -926,20 +968,18 @@ def complete_speech_log(log_id):
         db.session.commit()
         
         # Trigger metadata sync (including Next_Project calculation) after commit
-        if log.Owner_ID:
+        for owner in log.owners:
             from .utils import sync_contact_metadata
-            sync_contact_metadata(log.Owner_ID)
-            
-        if log.Owner_ID:
-            from .utils import sync_contact_metadata
-            sync_contact_metadata(log.Owner_ID)
+            sync_contact_metadata(owner.id)
             
         # Calculate new progress HTML
         display_level = 1
         pathway_cache = build_pathway_project_cache(project_ids=[log.Project_ID]) if log.Project_ID else {}
         display_level, _, _ = log.get_display_level_and_type(pathway_cache)
         
-        progress_html = _get_level_progress_html(log.Owner_ID, display_level)
+        progress_html = ""
+        if log.owners:
+            progress_html = _get_level_progress_html(log.owner.id, display_level)
             
         return jsonify(success=True, level=display_level, progress_html=progress_html)
     except Exception as e:

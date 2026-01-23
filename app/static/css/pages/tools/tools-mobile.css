@@ -1,0 +1,206 @@
+/* ========================================
+   Tools Mobile Styles
+   For screens <= 768px
+   ======================================== */
+
+@media (max-width: 768px) {
+
+	/* -- Font Adjustments -- */
+	.page-title {
+		font-size: 1.6rem;
+	}
+
+	.roster-container h1 {
+		font-size: 1.6rem;
+	}
+
+	.meeting-info {
+		font-size: 0.9rem;
+	}
+
+	#roster-meeting-filter {
+		font-size: 0.9rem !important;
+	}
+
+	/* -- Draw Controls Mobile -- */
+	.draw-controls {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 15px;
+	}
+
+	.draw-type-selector {
+		flex-direction: column;
+		gap: 8px;
+		align-items: stretch;
+	}
+
+	.draw-type-select {
+		width: 100%;
+	}
+
+	.draw-buttons {
+		width: 100%;
+		flex-direction: row;
+		justify-content: center;
+	}
+
+	.reset-button,
+	.draw-button {
+		width: 100%;
+	}
+
+	.winners-wall {
+		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		gap: 15px;
+		padding: 20px;
+	}
+
+	.winner-avatar {
+		width: 80px;
+		height: 80px;
+	}
+
+	.avatar-initials {
+		font-size: 2rem;
+	}
+
+	/* -- Roster Form Stack -- */
+	.roster-form-container {
+		padding: 15px;
+	}
+
+	.roster-container #roster-form {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.roster-container .form-group-inline {
+		width: 100%;
+	}
+
+	.roster-container .input-order,
+	.roster-container .input-type,
+	.roster-container .input-ticket,
+	.roster-container .input-name {
+		flex: none;
+		width: 100%;
+	}
+
+	.roster-container .form-buttons {
+		width: 100%;
+		margin-top: 10px;
+	}
+
+	.roster-container .form-buttons .btn {
+		flex: 1;
+	}
+
+	/* -- Roster Table (Card View) -- */
+	.roster-table-container {
+		overflow-x: hidden;
+		border: none;
+		box-shadow: none;
+		background: transparent;
+	}
+
+	.roster-container .table {
+		display: block;
+		width: 100%;
+		background: transparent;
+		border: none;
+	}
+
+	/* Hide Header */
+	.roster-container .table thead {
+		display: none;
+	}
+
+	.roster-container .table tbody {
+		display: block;
+		width: 100%;
+		border: none;
+	}
+
+	/* Flex Row Layout for Card */
+	.roster-container .table tbody tr {
+		display: flex;
+		align-items: center;
+		background: white;
+		margin-bottom: 10px;
+		border-radius: 8px;
+		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+		padding: 8px 5px;
+		border: 1px solid #eee;
+	}
+
+	.roster-container .table tbody td {
+		display: block;
+		border: none;
+		padding: 5px;
+		font-size: 0.8rem;
+	}
+
+	/* Order Column */
+	.roster-container .table tbody td:nth-child(1) {
+		order: 1;
+		width: auto;
+		min-width: 35px;
+		font-weight: bold;
+		color: #777;
+		text-align: center;
+		opacity: 0.7;
+		white-space: nowrap;
+	}
+
+	/* Ticket Column */
+	.roster-container .table tbody td:nth-child(3) {
+		order: 2;
+		width: 30px;
+		text-align: center;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+
+	/* Name Column */
+	.roster-container .table tbody td:nth-child(2) {
+		order: 3;
+		flex: 1;
+		font-weight: 600;
+		white-space: normal;
+		overflow: visible;
+		text-overflow: clip;
+		padding-left: 5px;
+	}
+
+	/* Actions Column */
+	.roster-container .table tbody .cell-actions {
+		order: 4;
+		width: auto;
+		display: flex;
+		gap: 3px;
+		margin-left: auto;
+	}
+
+	/* Hide ticket text on mobile */
+	.roster-container .roster-text {
+		display: none;
+	}
+
+	.roster-container .roster-icon {
+		margin-right: 0;
+		font-size: 1rem;
+	}
+
+	.roster-container .icon-btn {
+		padding: 4px;
+		font-size: 0.95rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.winners-wall {
+		grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+	}
+}

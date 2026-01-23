@@ -1,0 +1,22 @@
+/* ========================================
+   Speech Logs iPad Styles
+   For screens 769px - 1024px
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+	/* 2 Columns for iPad */
+	.logs-container {
+		column-count: 2;
+	}
+
+	.toolbar-spacer {
+		display: block;
+	}
+
+	.project-label {
+		width: 180px;
+		/* Reducing label width slightly for iPad */
+		font-size: 0.9em;
+	}
+}

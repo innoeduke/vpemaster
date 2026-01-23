@@ -1,0 +1,12 @@
+/* ========================================
+   Clubs iPad Styles
+   For screens 769px - 1024px
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+	/* Stack grid on restricted width screens */
+	.club-form-grid {
+		grid-template-columns: 1fr;
+	}
+}

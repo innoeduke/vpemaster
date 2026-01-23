@@ -1,0 +1,12 @@
+.col-owner .owner-row {
+	margin-bottom: 2px;
+}
+
+.col-owner .owner-row:last-child {
+	margin-bottom: 0;
+}
+
+.owner-meta {
+	font-size: 0.85em;
+	color: #666;
+}

@@ -1,0 +1,16 @@
+/* ========================================
+   Speech Logs Desktop Styles
+   For screens >= 1025px
+   ======================================== */
+
+@media (min-width: 1025px) {
+
+	/* Large Screen layout adjustments */
+	.logs-container {
+		column-count: 3;
+	}
+
+	.toolbar-spacer {
+		display: block;
+	}
+}

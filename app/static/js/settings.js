@@ -979,8 +979,11 @@ function renderPermissionsMatrix(data) {
 
   let currentCategory = "";
   permissions.forEach((p) => {
-    if (p.category !== currentCategory) {
-      currentCategory = p.category;
+    // Handle null/undefined category safely
+    const safeCategory = p.category || "General";
+    
+    if (safeCategory !== currentCategory) {
+      currentCategory = safeCategory;
       html += `
         <tr class="category-row">
           <td colspan="${roles.length + 1}"><strong>${currentCategory.toUpperCase()}</strong></td>

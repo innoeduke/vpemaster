@@ -1,0 +1,29 @@
+/* ========================================
+   Messages iPad Styles
+   For screens 769px - 1024px
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+	/* Slightly compact sidebar */
+	:root {
+		--msg-sidebar-width: 240px;
+	}
+
+	.msg-layout {
+		margin: 60px 15px 15px 15px;
+	}
+
+	.msg-sidebar {
+		padding: 1rem;
+	}
+
+	.msg-list-container {
+		padding: 1rem;
+	}
+
+	.msg-item {
+		padding: 1rem;
+		gap: 1rem;
+	}
+}

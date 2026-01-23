@@ -52,7 +52,7 @@ class Contact(db.Model):
         from .session import SessionLog
         
         query = db.session.query(SessionLog.pathway).filter(
-            SessionLog.Owner_ID == self.id,
+            SessionLog.owners.any(id=self.id),
             SessionLog.pathway.isnot(None),
             SessionLog.pathway != ''
         ).distinct().order_by(SessionLog.pathway)

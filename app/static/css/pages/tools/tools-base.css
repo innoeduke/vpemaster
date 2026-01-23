@@ -1,0 +1,791 @@
+/* =========================================
+   Tools Page Consolidated Styles
+   Contains styles for Tools Tabs, Lucky Draw, and Roster
+   ========================================= */
+
+/* -----------------------------------------
+   1. Tools Page Specific Styles (from tools.html)
+   ----------------------------------------- */
+.tools-tabs {
+	display: flex;
+	border-bottom: 1px solid #dee2e6;
+	margin-bottom: 20px;
+	padding-left: 20px;
+	background-color: transparent;
+}
+
+.tools-tab-item {
+	padding: 10px 20px;
+	cursor: pointer;
+	border: 1px solid transparent;
+	border-bottom: none;
+	margin-bottom: -1px;
+	border-radius: 5px 5px 0 0;
+	color: #495057;
+	font-weight: 500;
+	text-decoration: none;
+	transition: all 0.2s ease-in-out;
+}
+
+.tools-tab-item:hover {
+	border-color: #e9ecef #e9ecef #dee2e6;
+	background-color: rgba(255, 255, 255, 0.5);
+}
+
+.tools-tab-item.active {
+	background-color: #fff;
+	border-color: #dee2e6 #dee2e6 #fff;
+	color: #000;
+	font-weight: 600;
+	box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure tab content is cleanly separated */
+.tools-tab-content {
+	animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+	from {
+		opacity: 0;
+		transform: translateY(5px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* -----------------------------------------
+   2. Lucky Draw Styles
+   ----------------------------------------- */
+.lucky-draw-container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 20px 15px;
+}
+
+.page-title {
+	font-size: 2.5rem;
+	font-family: 'Montserrat', sans-serif;
+	color: #333;
+	margin-bottom: 20px;
+	text-align: center;
+}
+
+.meeting-info {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	font-size: 1.1rem;
+	color: #555;
+	margin-bottom: 30px;
+}
+
+.meeting-info i {
+	color: #772432;
+}
+
+.no-meeting-message {
+	text-align: center;
+	font-size: 1.2rem;
+	color: #6c757d;
+	margin-top: 50px;
+}
+
+/* Draw Controls */
+.draw-controls {
+	background: transparent;
+	border-radius: 0;
+	padding: 0;
+	box-shadow: none;
+	margin-bottom: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 20px;
+	flex-wrap: wrap;
+}
+
+.draw-type-selector {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.draw-type-selector label {
+	font-weight: 600;
+	color: #333;
+	font-size: 1rem;
+}
+
+.draw-type-select {
+	padding: 10px 16px;
+	font-size: 1rem;
+	border: 2px solid #e0e0e0;
+	border-radius: 8px;
+	background: white;
+	color: #333;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	min-width: 200px;
+}
+
+.draw-type-select:hover {
+	border-color: #772432;
+}
+
+.draw-type-select:focus {
+	outline: none;
+	border-color: #772432;
+	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
+}
+
+.draw-buttons {
+	display: flex;
+	gap: 12px;
+}
+
+.reset-button {
+	padding: 12px 28px !important;
+	font-size: 0.95rem !important;
+	font-weight: 600;
+	background: #6c757d;
+	border: none;
+	border-radius: 8px;
+	color: white;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+	white-space: nowrap;
+	height: auto !important;
+	line-height: normal !important;
+}
+
+.reset-button:hover {
+	background: #5a6268;
+	transform: translateY(-2px);
+	box-shadow: 0 4px 12px rgba(108, 117, 125, 0.4);
+}
+
+.reset-button:active {
+	transform: translateY(0);
+}
+
+.reset-button i {
+	margin-right: 6px;
+}
+
+.draw-button {
+	padding: 12px 36px !important;
+	font-size: 0.95rem !important;
+	font-weight: 700;
+	background: #772432;
+	border: none;
+	border-radius: 8px;
+	color: white;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	box-shadow: 0 3px 10px rgba(119, 36, 50, 0.3);
+	white-space: nowrap;
+	height: auto !important;
+	line-height: normal !important;
+}
+
+.draw-button:hover {
+	background: #8e2a3d;
+	transform: translateY(-2px);
+	box-shadow: 0 5px 15px rgba(119, 36, 50, 0.4);
+}
+
+.draw-button:active {
+	transform: translateY(0);
+}
+
+.draw-button i {
+	margin-right: 8px;
+}
+
+/* Winners Wall */
+.winners-wall {
+	min-height: 300px;
+	background: #f8f9fa;
+	border-radius: 12px;
+	padding: 30px;
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 20px;
+	align-content: start;
+}
+
+.wall-placeholder {
+	grid-column: 1 / -1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 60px 20px;
+	color: #adb5bd;
+}
+
+.wall-placeholder i {
+	font-size: 4rem;
+	margin-bottom: 15px;
+	opacity: 0.5;
+}
+
+.wall-placeholder p {
+	font-size: 1.1rem;
+	margin: 0;
+}
+
+/* Winner Tile */
+.winner-tile {
+	background: white;
+	border-radius: 12px;
+	padding: 20px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	position: relative;
+	transition: all 0.3s ease;
+}
+
+.winner-tile:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.winner-order-badge {
+	position: absolute;
+	top: 10px;
+	left: 10px;
+	background: #fff;
+	color: #772432;
+	font-weight: 800;
+	font-size: 1.3rem;
+	padding: 4px 10px;
+	border-radius: 6px;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+	font-family: 'Montserrat', sans-serif;
+	letter-spacing: -0.5px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.winner-order-badge i {
+	font-size: 1rem;
+}
+
+.winner-avatar {
+	width: 100px;
+	height: 100px;
+	border-radius: 50%;
+	overflow: hidden;
+	background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 3px solid #772432;
+}
+
+.winner-avatar img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.avatar-initials {
+	font-size: 2.5rem;
+	font-weight: 700;
+	color: #772432;
+	user-select: none;
+}
+
+.winner-name {
+	font-size: 1rem;
+	font-weight: 600;
+	color: #333;
+	text-align: center;
+	word-break: break-word;
+}
+
+/* Notification */
+.notification {
+	position: fixed;
+	top: 20px;
+	right: 20px;
+	padding: 15px 25px;
+	border-radius: 8px;
+	background: white;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	z-index: 1000;
+	opacity: 0;
+	transform: translateX(400px);
+	transition: all 0.3s ease;
+}
+
+.notification.show {
+	opacity: 1;
+	transform: translateX(0);
+}
+
+.notification-warning {
+	border-left: 4px solid #ffc107;
+	color: #856404;
+}
+
+.notification-info {
+	border-left: 4px solid #17a2b8;
+	color: #0c5460;
+}
+
+/* -----------------------------------------
+   3. Roster Page Styles
+   ----------------------------------------- */
+
+.roster-container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 20px 15px;
+}
+
+.roster-container .header-container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 30px;
+	flex-wrap: wrap;
+	gap: 20px;
+}
+
+.roster-container h1 {
+	font-size: 2.5rem;
+	font-family: 'Montserrat', sans-serif;
+	color: #333;
+	margin: 0;
+}
+
+/* Meeting Filter Styling (matching Lucky Draw controls) */
+.roster-container #meeting-filter,
+#roster-meeting-filter {
+	padding: 10px 16px;
+	font-size: 1rem;
+	border: 2px solid #e0e0e0;
+	border-radius: 8px;
+	background: white;
+	color: #333;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	min-width: 200px;
+}
+
+/* Specific override for Roster's header filter to look like text */
+#roster-meeting-filter {
+	border: none;
+	background: transparent;
+	padding: 0;
+	font-size: 1.1rem;
+	color: #555;
+	min-width: unset;
+	box-shadow: none;
+	text-align: center;
+	font-family: inherit;
+}
+
+.roster-container #meeting-filter:hover {
+	border-color: #772432;
+}
+
+#roster-meeting-filter:hover {
+	color: #772432;
+	background: transparent;
+}
+
+.roster-container #meeting-filter:focus {
+	outline: none;
+	border-color: #772432;
+	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
+}
+
+#roster-meeting-filter:focus {
+	outline: none;
+	border: none;
+	box-shadow: none;
+}
+
+/* Main Content Structure */
+.roster-main-content {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+}
+
+/* Roster Form - Inline Strip */
+.roster-form-container {
+	background: #f8f9fa;
+	border-radius: 12px;
+	padding: 20px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.roster-container .card {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+}
+
+.roster-container .card-body {
+	padding: 0;
+}
+
+.roster-container .card-title {
+	display: none;
+}
+
+.roster-container #roster-form {
+	display: flex;
+	align-items: flex-end;
+	gap: 15px;
+	flex-wrap: wrap;
+}
+
+/* Form Elements Styling */
+.roster-container .form-group-inline {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	flex: 1;
+	min-width: 150px;
+}
+
+.roster-container .form-group-inline label {
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #555;
+	margin: 0;
+	padding-left: 2px;
+}
+
+.roster-container .form-control {
+	padding: 8px 12px;
+	font-size: 0.95rem;
+	border: 1px solid #ced4da;
+	border-radius: 6px;
+	width: 100%;
+	height: 40px;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease-in-out;
+}
+
+.roster-container .form-control:focus {
+	border-color: #772432;
+	outline: 0;
+	box-shadow: 0 0 0 0.2rem rgba(119, 36, 50, 0.15);
+}
+
+/* Specific Widths for Inline Form */
+.roster-container .input-order {
+	flex: 0 0 70px;
+	min-width: 70px;
+}
+
+.roster-container .input-name {
+	flex: 2;
+	min-width: 250px;
+	position: relative;
+}
+
+/* Autocomplete suggestions specific to Roster */
+.roster-container .autocomplete-suggestions {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	width: 100%;
+	max-width: 400px;
+	background: white;
+	border: 1px solid #ddd;
+	border-top: none;
+	border-radius: 0 0 8px 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	z-index: 1000;
+	max-height: 250px;
+	overflow-y: auto;
+}
+
+.roster-container .autocomplete-suggestion {
+	padding: 10px 15px;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+
+.roster-container .autocomplete-suggestion:hover {
+	background: #f8f9fa;
+	color: #772432;
+}
+
+.roster-container .input-type {
+	flex: 1;
+	min-width: 140px;
+}
+
+.roster-container .input-ticket {
+	flex: 1;
+	min-width: 140px;
+}
+
+/* Buttons in Form */
+.roster-container .form-buttons {
+	display: flex;
+	gap: 10px;
+}
+
+.roster-container .btn {
+	padding: 8px 24px;
+	height: 44px;
+	font-weight: 700;
+	border-radius: 12px;
+	cursor: pointer;
+	border: none;
+	transition: all 0.2s;
+	font-size: 1rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	box-sizing: border-box;
+	box-shadow: 0 4px 6px rgba(119, 36, 50, 0.1);
+}
+
+.roster-container .btn-success {
+	background-color: #772432;
+	color: white;
+}
+
+.roster-container .btn-success:hover {
+	background-color: #8e2a3d;
+	transform: translateY(-1px);
+}
+
+.roster-container .btn-secondary {
+	background-color: #6c757d;
+	color: white;
+}
+
+/* Contact Input Group */
+.roster-container .contact-input-container {
+	display: flex;
+	gap: 0;
+}
+
+.roster-container .contact-input-container input {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.roster-container #add-contact-btn {
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+	background-color: #555;
+	color: white;
+	border: none;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	font-size: 1.2rem;
+}
+
+/* Roster Table */
+.roster-table-container {
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+	overflow: hidden;
+	padding: 0;
+}
+
+.roster-container .table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
+	border: 1px solid #999;
+}
+
+.roster-container .table thead th,
+.roster-container .table tbody td {
+	border: 1px solid #ddd;
+}
+
+.roster-container .table thead th {
+	background-color: #f8f9fa;
+	color: #333;
+	font-weight: 600;
+	padding: 15px;
+	text-align: left;
+	border-bottom: 2px solid #e9ecef;
+}
+
+.roster-container .table tbody td {
+	padding: 12px 15px;
+	vertical-align: middle;
+	border-bottom: 1px solid #f0f0f0;
+	color: #333;
+}
+
+.roster-container .table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+/* Table Columns */
+.roster-container .header-order {
+	width: 1%;
+	min-width: 60px;
+	text-align: center;
+}
+
+.roster-container .header-name {
+	width: auto;
+	min-width: 150px;
+}
+
+.roster-container .header-ticket {
+	width: 1%;
+	min-width: 100px;
+	white-space: nowrap;
+}
+
+.roster-container .header-roles {
+	width: auto;
+	min-width: 120px;
+}
+
+.roster-container .header-club {
+	width: auto;
+	min-width: 150px;
+}
+
+.roster-container .roster-header-actions {
+	width: 1%;
+	min-width: 100px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+/* Status Icons */
+.roster-container .roster-icon {
+	width: 24px;
+	text-align: center;
+	margin-right: 8px;
+	display: inline-block;
+}
+
+.roster-container .roster-color-officer {
+	color: #fd7e14;
+}
+
+.roster-container .roster-color-member {
+	color: #0dcaf0;
+}
+
+.roster-container .roster-color-guest {
+	color: #198754;
+}
+
+.roster-container .roster-color-unpaid {
+	color: #dc3545;
+}
+
+.roster-container .roster-color-online {
+	color: #6610f2;
+}
+
+.roster-container .roster-color-voucher {
+	color: #fd7e14;
+}
+
+.roster-container .roster-color-role {
+	color: #6c757d;
+}
+
+.roster-container .roster-color-guest-late {
+	color: #198754;
+}
+
+.roster-container .roster-color-member-late {
+	color: #0dcaf0;
+}
+
+.roster-container .cell-order {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.roster-container .cell-name {
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.roster-container .cell-ticket {
+	white-space: nowrap;
+}
+
+.roster-container .cell-actions {
+	white-space: nowrap;
+}
+
+.roster-container .roster-text {
+	font-size: 0.9em;
+	color: #666;
+}
+
+.roster-role-tag {
+	display: inline-block;
+	padding: 2px 8px;
+	background-color: #e9ecef;
+	color: #495057;
+	border-radius: 4px;
+	font-size: 0.85em;
+	font-weight: 500;
+	margin-right: 4px;
+	margin-bottom: 4px;
+	border: 1px solid #dee2e6;
+}
+
+/* Action Buttons */
+.roster-container .icon-btn {
+	background: none;
+	border: none;
+	color: #aaa;
+	cursor: pointer;
+	font-size: 1rem;
+	padding: 5px;
+	transition: all 0.2s;
+}
+
+.roster-container .icon-btn:disabled {
+	color: #eee;
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.roster-container .icon-btn:hover {
+	color: #772432;
+}
+
+.roster-container .icon-btn.edit-entry:hover {
+	color: #007bff;
+}
+
+.roster-container .icon-btn.cancel-entry:hover {
+	color: #dc3545;
+}
+
+.roster-container .icon-btn.delete-entry:hover {
+	color: #772432;
+}

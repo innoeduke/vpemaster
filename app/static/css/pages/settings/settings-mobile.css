@@ -1,0 +1,67 @@
+/* ========================================
+   Settings Mobile Styles
+   For screens <= 768px
+   ======================================== */
+
+@media (max-width: 768px) {
+
+	/* Mobile search bar - full width */
+	.global-search-bar {
+		width: 100%;
+		min-width: unset;
+	}
+
+	/* Settings header stacks on mobile */
+	.settings-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 10px;
+	}
+
+	/* Tab content compact padding */
+	.tab-content {
+		padding: 15px 8px;
+	}
+
+	/* Mobile table sizing */
+	.general-settings-table {
+		max-width: 100%;
+		font-size: 0.85em;
+	}
+
+	.general-settings-table th,
+	.general-settings-table td {
+		padding: 6px;
+	}
+
+	.tab-content table {
+		font-size: 0.8em;
+	}
+
+	.tab-content table th,
+	.tab-content table td {
+		padding: 6px 4px;
+	}
+
+	/* Achievement group header compact */
+	.achievement-group-header .group-header-cell {
+		padding: 8px 10px !important;
+		font-size: 0.95em;
+	}
+
+	.achievement-group-header .toggle-icon {
+		margin-right: 6px;
+	}
+
+	/* Form controls */
+	.form-control-sm {
+		font-size: 12px;
+		padding: 3px 5px;
+	}
+
+	/* Badge sizing */
+	.badge {
+		font-size: 0.7em;
+		padding: 0.3em 0.5em;
+	}
+}

@@ -1,0 +1,14 @@
+/* ========================================
+   Profile Desktop Styles
+   For screens >= 1025px
+   ======================================== */
+
+@media (min-width: 1025px) {
+
+	/* Minimal specific desktop overrides needed since base is desktop-first */
+	.form-table {
+		max-width: 900px;
+		/* Constrain width on large screens */
+		margin: 0 auto 20px auto;
+	}
+}

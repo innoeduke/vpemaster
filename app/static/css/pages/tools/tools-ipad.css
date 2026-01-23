@@ -1,0 +1,30 @@
+/* ========================================
+   Tools iPad Styles
+   For screens 769px - 1024px
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+	/* Adjust gaps for slightly tighter screens */
+	.roster-container #roster-form {
+		gap: 10px;
+	}
+
+	.roster-container .input-name {
+		min-width: 200px;
+	}
+
+	/* Hide items marked as desktop-only if any */
+	.desktop-only {
+		display: none !important;
+	}
+
+	.roster-container .form-buttons {
+		margin-left: auto;
+	}
+
+	/* Lucky Draw Grid Adjustments for iPad */
+	.winners-wall {
+		grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+	}
+}

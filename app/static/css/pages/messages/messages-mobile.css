@@ -1,0 +1,83 @@
+/* ========================================
+   Messages Mobile Styles
+   For screens <= 768px
+   ======================================== */
+
+@media (max-width: 768px) {
+	:root {
+		--msg-sidebar-width: 100%;
+	}
+
+	.btn-join {
+		padding: 8px 16px !important;
+		font-size: 0.9rem !important;
+		min-width: 100px !important;
+	}
+
+	.join-request-card {
+		padding: 10px;
+	}
+
+	.msg-layout {
+		flex-direction: column;
+		height: auto;
+		margin: 10px;
+		min-height: calc(100vh - 80px);
+	}
+
+	.msg-sidebar {
+		width: 100%;
+		flex-direction: row;
+		border-right: none;
+		border-bottom: 1px solid var(--msg-border);
+		padding: 1rem;
+		align-items: center;
+		gap: 1rem;
+		overflow-x: auto;
+		flex-shrink: 0;
+	}
+
+	.msg-compose-btn {
+		margin-bottom: 0;
+		padding: 8px 16px;
+	}
+
+	.msg-nav-item {
+		margin-bottom: 0;
+		white-space: nowrap;
+		padding: 6px 12px;
+		font-size: 0.9rem;
+	}
+
+	.msg-main {
+		flex: 1;
+		overflow-y: visible;
+		/* Let the body scroll if needed, or container */
+	}
+
+	.msg-list-container {
+		padding: 1rem;
+		max-height: 60vh;
+		/* Scrollable list area */
+		overflow-y: auto;
+	}
+
+	.custom-modal-header {
+		padding: 1rem;
+		align-items: flex-start;
+	}
+
+	.custom-modal-title {
+		text-align: left;
+		margin-right: 20px;
+		font-size: 1.1rem;
+		line-height: 1.4;
+	}
+
+	.custom-modal-close {
+		margin-left: 10px;
+		padding: 0 5px;
+		margin-right: -5px;
+		margin-top: 2px;
+	}
+}

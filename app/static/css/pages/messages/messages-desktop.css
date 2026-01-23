@@ -1,0 +1,12 @@
+/* ========================================
+   Messages Desktop Styles
+   For screens >= 1025px
+   ======================================== */
+
+@media (min-width: 1025px) {
+
+	/* Larger max-width for modals on desktop */
+	.custom-modal-content {
+		max-width: 800px;
+	}
+}

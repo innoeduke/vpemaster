@@ -1,0 +1,104 @@
+/* ========================================
+   Speech Logs Mobile Styles
+   For screens <= 768px
+   ======================================== */
+
+@media (max-width: 768px) {
+
+	/* 1 Column for Mobile */
+	.logs-container {
+		column-count: 1;
+	}
+
+	/* Filter Responsive Fixes */
+	.filters-container {
+		flex-direction: column;
+	}
+
+	#speech-logs-filter-form .filter-row,
+	#speech-logs-filter-form .search-group {
+		flex-direction: column;
+		width: 100%;
+	}
+
+	/* Toolbar Responsive Adjustments */
+	.speech-logs-toolbar {
+		align-items: stretch;
+	}
+
+	.toolbar-form {
+		max-width: 100%;
+		flex: 1 1 180px;
+	}
+
+	.view-mode-toggle {
+		flex: 1 1 100%;
+		width: 100%;
+		display: flex;
+		flex-direction: row;
+		align-items: stretch;
+		gap: 10px;
+	}
+
+	.view-mode-toggle .btn {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.toolbar-form .form-group,
+	.toolbar-form select {
+		width: 100%;
+	}
+
+	.toolbar-form select {
+		text-align: center;
+		text-align-last: center;
+		padding-left: 0.5rem;
+	}
+
+	/* Header adjustments */
+	.speech-log-header {
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.header-avatar {
+		margin-right: 0;
+		margin-bottom: 5px;
+	}
+
+	.header-info {
+		order: 2;
+	}
+
+	.header-actions {
+		position: static;
+		order: 1;
+		margin-top: 10px;
+		margin-bottom: 10px;
+	}
+
+	.header-avatar .avatar-placeholder,
+	.header-avatar .avatar-img {
+		width: 80px;
+		height: 80px;
+	}
+
+	/* Chart adjustments */
+	.chart-row {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 5px;
+	}
+
+	.project-label {
+		width: 100%;
+		text-align: left;
+		padding-right: 0;
+	}
+
+	.bar-wrapper {
+		width: 100%;
+	}
+}

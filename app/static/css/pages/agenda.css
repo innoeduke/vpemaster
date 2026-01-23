@@ -684,6 +684,62 @@
     white-space: nowrap;
 }
 
+/* --- Owner Tags Styles --- */
+.owners-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 4px;
+    min-height: 24px;
+    align-items: center;
+}
+
+.owner-tag {
+    display: inline-flex;
+    align-items: center;
+    background-color: #f0f2f5;
+    color: #444;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.6em;
+    gap: 6px;
+    border: 1px solid #ddd;
+    transition: all 0.2s;
+}
+
+.owner-tag:hover {
+    background-color: #e4e6e9;
+    border-color: #ccc;
+}
+
+.owner-tag .remove-tag {
+    cursor: pointer;
+    color: #999;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+}
+
+.owner-tag .remove-tag:hover {
+    color: #dc3545;
+}
+
+.owner-search-input {
+    border: 1px solid #ccc !important;
+    border-radius: 4px !important;
+    padding: 4px 8px !important;
+    font-size: 0.9em !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    height: 30px !important;
+}
+
+.owner-search-input:focus {
+    border-color: var(--primary-color) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1) !important;
+}
+
 .meeting-type-badge {
     display: block;
     width: fit-content;

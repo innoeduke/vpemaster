@@ -1,0 +1,675 @@
+/* ========================================
+   Speech Logs Base Styles
+   Core styles without media queries
+   ======================================== */
+
+.speech-logs-content {
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+.view-mode-toggle {
+	margin-bottom: 20px;
+	display: flex;
+	justify-content: flex-end;
+}
+
+.section-heading {
+	text-align: left;
+	margin-top: 30px;
+	margin-bottom: 20px;
+	color: #333;
+}
+
+/* Filter Form */
+#speech-logs-filter-form .filter-row {
+	display: flex;
+	width: 100%;
+	gap: 15px;
+	margin-bottom: 15px;
+}
+
+#speech-logs-filter-form .filter-row:first-child .form-group {
+	flex: 1 1 0;
+}
+
+#speech-logs-filter-form .filter-row:last-child {
+	align-items: center;
+	justify-content: space-between;
+}
+
+#speech-logs-filter-form .search-group {
+	display: flex;
+	gap: 15px;
+	flex-basis: calc(66.666% - 7.5px);
+}
+
+#speech-logs-filter-form .search-group .form-group {
+	flex: 1 1 0;
+}
+
+#speech-logs-filter-form .form-group select,
+#speech-logs-filter-form .form-group input[type="text"],
+#speech-logs-filter-form .form-group a.btn {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/* Level Headings */
+.level-heading {
+	text-align: left;
+	margin-top: 30px;
+	margin-bottom: 10px;
+	padding-bottom: 5px;
+	border-bottom: 3px solid #772432;
+	color: #004165;
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.level-heading.completed {
+	border-bottom-color: #28a745;
+	background: linear-gradient(to right, #f0fff4, #fff);
+	padding: 10px 15px;
+	border-radius: 6px;
+	border-left: 5px solid #28a745;
+}
+
+.level-completed-badge {
+	background-color: #28a745;
+	color: white;
+	font-size: 0.7em;
+	padding: 6px 15px;
+	border-radius: 50px;
+	font-weight: 600;
+	text-transform: uppercase;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	box-shadow: 0 3px 6px rgba(40, 167, 69, 0.2);
+	letter-spacing: 0.5px;
+	margin-left: 15px;
+}
+
+.level-completed-badge i {
+	font-size: 1.1em;
+}
+
+.caret-icon {
+	font-size: 0.8em;
+	transition: transform 0.3s ease;
+}
+
+/* Logs Container - Masonry Layout */
+.logs-container {
+	display: block;
+	column-count: 3;
+	column-gap: 20px;
+	max-width: 1400px;
+	margin: 20px auto;
+}
+
+/* Redesigned Speech Log Cards */
+.speech-log-entry,
+.role-log-entry {
+	break-inside: avoid;
+	display: inline-flex;
+	flex-direction: column;
+	width: 100%;
+	background-color: #fff;
+	border: 1px solid #e2e8f0;
+	border-left-width: 6px;
+	border-radius: 8px;
+	padding: 1rem;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+	position: relative;
+	transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out, background-color 0.2s ease-in-out;
+	margin-bottom: 20px;
+	box-sizing: border-box;
+	word-wrap: break-word;
+}
+
+.speech-log-entry .speech-title {
+	min-height: auto;
+}
+
+.speech-log-entry:hover,
+.role-log-entry:hover {
+	box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+	transform: translateY(-3px);
+}
+
+.card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 0.5rem;
+}
+
+.card-footer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-top: auto;
+}
+
+.status-info .btn-success {
+	font-size: 0.75em;
+	height: auto;
+	line-height: 1;
+	padding: 6px 10px;
+}
+
+.status-info .fa-check-circle {
+	font-size: 1.5em;
+	color: #28a745;
+}
+
+/* Role Log Entry Variant */
+.role-log-entry {
+	background-color: hsla(210, 80%, 98%, 1);
+	border-left-color: #4A90E2;
+}
+
+.role-log-entry .pathway-info {
+	display: none;
+}
+
+.role-log-entry .card-footer {
+	justify-content: flex-end;
+}
+
+.role-title {
+	font-family: 'Montserrat', sans-serif;
+	font-size: 1.4em;
+	font-weight: 700;
+	color: #2d3748;
+	margin-top: 0.5rem;
+	margin-bottom: 0.5rem;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	text-align: center;
+}
+
+.role-title i {
+	color: #4A90E2;
+	font-size: 1.5em;
+	margin-bottom: 4px;
+	gap: 0;
+}
+
+.role-log-entry .speaker-info {
+	text-align: center;
+	margin-bottom: 0.75rem;
+}
+
+.role-log-entry .card-footer {
+	margin-top: 0;
+	justify-content: flex-end;
+}
+
+.grouped-role-list {
+	margin-bottom: 10px;
+	max-height: 200px;
+	overflow-y: auto;
+	width: 100%;
+	flex: 0 0 auto;
+}
+
+.grouped-role-entry {
+	display: block !important;
+	height: auto;
+	padding: 0.75rem;
+}
+
+.grouped-role-entry .role-title {
+	margin-top: 0;
+	margin-bottom: 0.25rem;
+}
+
+.grouped-role-entry .speaker-info {
+	margin-bottom: 0.5rem;
+}
+
+.grouped-role-entry .meeting-info {
+	margin-bottom: 0px;
+	font-size: 0.85em;
+}
+
+/* Card Typography */
+.speech-log-entry,
+.role-log-entry,
+.speech-log-entry .project-info,
+.speech-log-entry .speaker-info,
+.role-log-entry .speaker-info {
+	font-family: sans-serif;
+}
+
+.meeting-info {
+	font-size: 0.75em;
+	color: #718096;
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.project-info {
+	font-size: 0.8em;
+	font-weight: 700;
+	margin-bottom: 0.25rem;
+}
+
+.speech-title {
+	font-family: 'Montserrat', serif;
+	font-size: 1.4em;
+	font-weight: 700;
+	color: #2d3748;
+	margin-bottom: 0.75rem;
+	flex-grow: 1;
+}
+
+.speaker-info {
+	font-size: 0.85em;
+	color: #718096;
+	text-align: right;
+	margin-bottom: 0.75rem;
+}
+
+.pathway-info {
+	font-family: sans-serif;
+	font-size: 0.75em;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	padding: 0;
+	background-color: transparent;
+	border-radius: 0;
+}
+
+/* Card Type Colors */
+.speech-log-entry.card-type-speech {
+	background-color: hsla(0, 75%, 98%, 1);
+	border-left-color: #E55353;
+}
+
+.speech-log-entry.card-type-speech .project-code,
+.speech-log-entry.card-type-speech .pathway-info {
+	color: #E55353;
+}
+
+.speech-log-entry.card-type-presentation {
+	background-color: hsla(35, 90%, 98%, 1);
+	border-left-color: #F5A623;
+}
+
+.speech-log-entry.card-type-presentation .project-code,
+.speech-log-entry.card-type-presentation .pathway-info {
+	color: #F5A623;
+}
+
+/* Path Colors */
+.speech-log-entry.dynamic-leadership {
+	border-left-color: #4A90E2;
+}
+
+.speech-log-entry.dynamic-leadership .project-code,
+.speech-log-entry.dynamic-leadership .pathway-info {
+	color: #4A90E2;
+}
+
+.speech-log-entry.engaging-humor {
+	border-left-color: #F5A623;
+}
+
+.speech-log-entry.engaging-humor .project-code,
+.speech-log-entry.engaging-humor .pathway-info {
+	color: #F5A623;
+}
+
+.speech-log-entry.motivational-strategies {
+	border-left-color: #F8E71C;
+}
+
+.speech-log-entry.motivational-strategies .project-code,
+.speech-log-entry.motivational-strategies .pathway-info {
+	color: #D9CB1A;
+}
+
+.speech-log-entry.persuasive-influence {
+	border-left-color: #50E3C2;
+}
+
+.speech-log-entry.persuasive-influence .project-code,
+.speech-log-entry.persuasive-influence .pathway-info {
+	color: #50E3C2;
+}
+
+.speech-log-entry.presentation-mastery {
+	border-left-color: #E55353;
+}
+
+.speech-log-entry.presentation-mastery .project-code,
+.speech-log-entry.presentation-mastery .pathway-info {
+	color: #E55353;
+}
+
+.speech-log-entry.visionary-communication {
+	border-left-color: #9013FE;
+}
+
+.speech-log-entry.visionary-communication .project-code,
+.speech-log-entry.visionary-communication .pathway-info {
+	color: #9013FE;
+}
+
+.section-divider {
+	margin: 30px 0;
+	border: 0;
+	border-top: 1px solid #eee;
+}
+
+.no-logs-message {
+	text-align: center;
+	margin-top: 20px;
+}
+
+.status-info .status-delivered {
+	color: #772432;
+	font-weight: bold;
+	font-size: 0.9em;
+}
+
+.status-info .btn-suspend {
+	color: #E55353;
+	font-size: 1.5em;
+	margin-right: 5px;
+}
+
+.status-info .status-booked {
+	font-size: 0.9em;
+	color: #666;
+}
+
+.card-actions .btn-play {
+	font-size: 1.1em;
+	color: #004165;
+	text-decoration: none;
+}
+
+/* Level Progress Summary */
+.level-progress-summary {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin: 10px 0 20px 0;
+	padding: 15px;
+	background-color: #f8fafc;
+	border-radius: 8px;
+	border: 1px solid #e2e8f0;
+}
+
+.summary-section {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 8px;
+	border-radius: 6px;
+	transition: all 0.3s ease;
+}
+
+.summary-section.completed {
+	background-color: #f0fff4;
+	border: 1px solid #c6f6d5;
+	box-shadow: inset 0 0 10px rgba(72, 187, 120, 0.05);
+}
+
+.section-label {
+	font-weight: 700;
+	font-size: 0.75em;
+	color: #718096;
+	min-width: 80px;
+	text-transform: uppercase;
+	padding-top: 6px;
+	transition: color 0.3s ease;
+}
+
+.section-label.completed {
+	color: #2f855a;
+}
+
+.items-grid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	flex: 1;
+}
+
+.progress-item {
+	display: flex;
+	align-items: center;
+	background-color: #fff;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	padding: 4px 10px;
+	font-size: 0.85em;
+	color: #4a5568;
+	transition: all 0.2s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.progress-item.completed {
+	background-color: #f0fff4;
+	border-color: #c6f6d5;
+}
+
+.progress-item .item-label {
+	font-weight: 600;
+}
+
+.item-dots {
+	display: flex;
+	gap: 4px;
+	margin-left: 8px;
+}
+
+.dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background-color: #edf2f7;
+	border: 1px solid #cbd5e0;
+}
+
+.dot.completed {
+	background-color: #48bb78;
+	border-color: #38a169;
+}
+
+.dot.in-progress {
+	background-color: #f6e05e;
+	border-color: #ecc94b;
+}
+
+.dot.pending {
+	background-color: #f7fafc;
+	border: 1px dashed #cbd5e0;
+}
+
+/* Speech Log Header */
+.speech-log-header {
+	display: flex;
+	align-items: center;
+	background-color: #fff;
+	padding: 20px;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	margin-bottom: 25px;
+	border-left: 5px solid #772432;
+	position: relative;
+}
+
+.header-actions {
+	position: absolute;
+	top: 20px;
+	right: 20px;
+}
+
+.header-avatar {
+	margin-right: 20px;
+}
+
+.header-avatar .avatar-placeholder,
+.header-avatar .avatar-img {
+	width: 150px;
+	height: 150px;
+	border-radius: 50%;
+}
+
+.header-avatar .avatar-img {
+	object-fit: cover;
+	border: 3px solid #772432;
+	box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.header-avatar .avatar-placeholder {
+	background-color: #eee;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 35px;
+	color: #999;
+	border: 3px solid #772432;
+}
+
+.header-info h2 {
+	margin: 0;
+	font-size: 1.8em;
+	color: #333;
+	font-family: 'Montserrat', sans-serif;
+}
+
+/* Toolbar Styles */
+.speech-logs-toolbar {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.toolbar-form {
+	margin: 0;
+	flex: 1 1 200px;
+	max-width: 400px;
+}
+
+.toolbar-form select {
+	font-family: 'Montserrat', sans-serif;
+}
+
+.pathway-selector-group {
+	margin: 0;
+	width: 100%;
+}
+
+.toolbar-spacer {
+	flex-grow: 1;
+	display: none;
+}
+
+/* Project View Styles */
+.project-view-container {
+	padding-top: 20px;
+}
+
+.chart-container {
+	background: #fff;
+	padding: 30px;
+	border-radius: 8px;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+	margin-top: 20px;
+	border: 1px solid #e2e8f0;
+}
+
+.chart-container h3 {
+	margin-top: 0;
+	margin-bottom: 30px;
+	color: #2d3748;
+	text-align: center;
+	border-bottom: 2px solid #edf2f7;
+	padding-bottom: 15px;
+}
+
+.chart-row {
+	display: flex;
+	align-items: center;
+	margin-bottom: 25px;
+}
+
+.project-label {
+	width: 250px;
+	font-weight: 600;
+	padding-right: 20px;
+	text-align: right;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	color: #4a5568;
+	font-size: 0.95em;
+}
+
+.bar-wrapper {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	position: relative;
+	height: 40px;
+}
+
+.bar-fill {
+	background-color: #4a90e2;
+	height: 28px;
+	border-radius: 14px;
+	display: flex;
+	align-items: center;
+	padding-right: 12px;
+	justify-content: flex-end;
+	color: white;
+	font-size: 0.85em;
+	min-width: 45px;
+	transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 2px 4px rgba(74, 144, 226, 0.3);
+}
+
+.bar-count {
+	font-weight: 700;
+}
+
+.avatar-stack {
+	display: flex;
+	align-items: center;
+	margin-left: 12px;
+}
+
+.avatar-item {
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	margin-left: -12px;
+	border: 2px solid #fff;
+	overflow: hidden;
+	background: #e2e8f0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	cursor: pointer;
+	transition: transform 0.2s, z-index 0.2s;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	z-index: 1;
+}

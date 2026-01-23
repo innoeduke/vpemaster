@@ -1,0 +1,27 @@
+/* ========================================
+   Settings Desktop Styles
+   For screens >= 1025px
+   ======================================== */
+
+@media (min-width: 1025px) {
+
+	/* Desktop search bar */
+	.global-search-bar {
+		width: 33.33%;
+		min-width: 350px;
+	}
+
+	/* Desktop table sizing */
+	.general-settings-table {
+		max-width: 800px;
+	}
+
+	.tab-content table {
+		font-size: 0.95em;
+	}
+
+	/* Settings header spacing */
+	.settings-header {
+		margin-bottom: 25px;
+	}
+}

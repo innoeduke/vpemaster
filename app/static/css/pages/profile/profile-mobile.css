@@ -1,0 +1,116 @@
+/* ========================================
+   Profile Mobile Styles
+   For screens <= 768px
+   ======================================== */
+
+@media (max-width: 768px) {
+
+	/* Stack form elements on mobile */
+	.form-table,
+	.form-table tbody {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 5px;
+		width: 100%;
+		border: none !important;
+	}
+
+	.form-table tbody {
+		display: contents;
+	}
+
+	.form-table tr {
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 100%;
+		/* Full width cards */
+		min-width: 140px;
+		box-sizing: border-box;
+		border: 1px solid #ddd !important;
+		border-radius: 4px;
+		padding: 12px;
+		background-color: #fff;
+		margin-bottom: 0px;
+	}
+
+	/* Highlight editable rows */
+	.form-table tr:has(input),
+	.form-table tr:has(select),
+	.form-table tr:has(textarea) {
+		background-color: #fffdec;
+		border-color: #ccc !important;
+	}
+
+	.form-table td {
+		border: none !important;
+		display: block;
+		width: 100% !important;
+		padding: 2px 0 !important;
+	}
+
+	.form-table td:first-child,
+	.form-table label,
+	.form-table strong {
+		width: 100%;
+		font-size: 14px;
+		color: #772432;
+		margin-bottom: 4px;
+		font-weight: 700;
+	}
+
+	/* Remove Input Borders on Mobile */
+	.form-table input[type="text"],
+	.form-table input[type="email"],
+	.form-table input[type="number"],
+	.form-table select,
+	.form-table textarea {
+		padding: 8px;
+		font-size: 16px;
+		cursor: pointer;
+	}
+
+	.form-table textarea {
+		min-height: 150px;
+		font-size: 1.1em;
+	}
+
+	.profile-avatar {
+		width: 120px;
+		height: 120px;
+	}
+
+	.tabs-container {
+		margin-top: 20px !important;
+		padding: 0 15px;
+		box-sizing: border-box;
+	}
+
+	.nav-tabs {
+		justify-content: space-between;
+		border-bottom: none !important;
+		flex-wrap: wrap;
+	}
+
+	.nav-item {
+		flex: 1 1 45%;
+		text-align: center;
+		padding: 10px 5px;
+		font-size: 14px;
+		border: 1px solid #eee;
+		border-radius: 4px;
+		margin-bottom: 5px;
+	}
+
+	.nav-item.active {
+		background-color: #f8f8f8;
+		border-color: #ddd;
+	}
+
+	.tab-content {
+		padding: 0 10px;
+	}
+
+	h2 {
+		font-size: 1.5rem;
+	}
+}

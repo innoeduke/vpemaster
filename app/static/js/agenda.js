@@ -101,7 +101,6 @@ document.addEventListener("DOMContentLoaded", () => {
     "Type_ID",
     "Session_Title",
     "Owner_ID",
-    "Credentials",
     "Duration_Min",
     "Duration_Max",
   ];
@@ -357,6 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
       row.dataset.sessionTitle = log.Session_Title !== null ? log.Session_Title : '';
       row.dataset.typeId = log.Type_ID;
       row.dataset.ownerId = log.Owner_ID;
+      row.dataset.ownerIds = JSON.stringify(log.owner_ids || []);
       row.dataset.credentials = log.Credentials !== null ? log.Credentials : '';
       row.dataset.durationMin = log.Duration_Min !== null ? log.Duration_Min : '';
       row.dataset.durationMax = log.Duration_Max !== null ? log.Duration_Max : '';
@@ -466,36 +466,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 3. Owner
         const tdOwner = document.createElement('td');
-        tdOwner.className = 'non-edit-mode-cell';
-        if (log.owner_name) {
-          tdOwner.appendChild(document.createTextNode(log.owner_name + ' '));
+        tdOwner.className = 'non-edit-mode-cell col-owner';
+        
+        const ownersData = log.owners_data || [];
+        ownersData.forEach((ownerInfo, index) => {
+          const ownerRow = document.createElement('div');
+          ownerRow.className = 'owner-row';
+          
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'owner-name';
+          nameSpan.textContent = ownerInfo.name;
+          ownerRow.appendChild(nameSpan);
 
-          if (log.owner_dtm) {
-            const sup = document.createElement('sup');
-            sup.className = 'dtm-superscript';
-            sup.textContent = 'DTM';
-            tdOwner.appendChild(sup);
+          if (ownerInfo.credentials && ownerInfo.credentials !== "DTM") {
+            const credSpan = document.createElement('span');
+            credSpan.className = 'owner-meta';
+            credSpan.textContent = ` - ${ownerInfo.credentials}`;
+            ownerRow.appendChild(credSpan);
           }
 
-          // Award Trophy
-          if (log.award_type && !displayedAwards.has(log.role)) {
+          // Award Trophy (usually for the first owner in a shared role)
+          if (index === 0 && log.award_type && !displayedAwards.has(log.role)) {
             const spanAward = document.createElement('span');
             spanAward.className = 'icon-btn icon-btn-voted';
             spanAward.title = log.award_type + ' Winner';
+            spanAward.style.marginLeft = '4px';
             spanAward.innerHTML = '<i class="fas fa-award"></i>';
-            tdOwner.appendChild(spanAward);
-
+            ownerRow.appendChild(spanAward);
             displayedAwards.add(log.role);
           }
-
-          // Credentials
-          if (log.Credentials) {
-            const spanMeta = document.createElement('span');
-            spanMeta.className = 'owner-meta';
-            spanMeta.innerHTML = '<br/>' + log.Credentials;
-            tdOwner.appendChild(spanMeta);
-          }
-        }
+          
+          tdOwner.appendChild(ownerRow);
+        });
         row.appendChild(tdOwner);
 
         // 4. Duration
@@ -713,7 +715,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (
               hiddenInput &&
               hiddenInput.type === "hidden" &&
-              hiddenInput.name === "owner_id"
+              (hiddenInput.name === "owner_id" || hiddenInput.name === "owner_ids")
             ) {
               hiddenInput.value = data.contact.id;
             }
@@ -789,9 +791,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const isMobileView = colNoHeader && window.getComputedStyle(colNoHeader).display === 'none';
 
       if (isMobileView) {
-        titleCell.colSpan = 6; // Spans the visible middle columns on mobile (9 total - gap of 2 hidden columns + 1 action column? No, 7 visible total: Title needs to fill 6)
+        titleCell.colSpan = 5; // Spans the visible middle columns on mobile (8 total - gap of 2 hidden columns + 1 action column? no, 7 visible total: header has 8, sequence is 1, actions is 1, title needs to fill 6? wait.)
       } else {
-        titleCell.colSpan = 7; // Spans the middle columns on desktop
+        titleCell.colSpan = 6; // Spans the middle columns on desktop
       }
 
       titleCell.classList.add("section-row");
@@ -813,7 +815,7 @@ document.addEventListener("DOMContentLoaded", () => {
               .toLowerCase()
               .replace(/_([a-z])/g, (g) => g[1].toUpperCase())
             ];
-        const cell = createEditableCell(field, value, false, typeId);
+        const cell = createEditableCell(field, value, false, typeId, originalData.ownerIds);
         if (index < 3) {
           // Check if it's one of the first three columns
           cell.classList.add("drag-handle");
@@ -870,7 +872,7 @@ document.addEventListener("DOMContentLoaded", () => {
         start_time: row.dataset.startTime,
         type_id: row.dataset.typeId,
         session_title: row.dataset.sessionTitle,
-        owner_id: row.dataset.ownerId,
+        owner_ids: JSON.parse(row.dataset.ownerIds || '[]'),
         credentials: row.dataset.credentials,
         duration_min: row.dataset.durationMin,
         duration_max: row.dataset.durationMax,
@@ -895,6 +897,11 @@ document.addEventListener("DOMContentLoaded", () => {
         session_title: sessionTitleValue,
       };
     }
+    
+    // Collect all owner IDs
+    const ownerIdInputs = row.querySelectorAll('input[name="owner_ids"]');
+    const ownerIds = Array.from(ownerIdInputs).map(input => input.value).filter(val => val !== "");
+
     return {
       id: row.dataset.id,
       meeting_number: row.dataset.meetingNumber,
@@ -902,7 +909,9 @@ document.addEventListener("DOMContentLoaded", () => {
       start_time: row.querySelector('[data-field="Start_Time"] input').value,
       type_id: row.querySelector('[data-field="Type_ID"] select').value,
       session_title: sessionTitleValue,
-      owner_id: row.querySelector('input[name="owner_id"]').value,
+      owner_ids: ownerIds,
+      // Backward compat (primary owner)
+      owner_id: ownerIds.length > 0 ? ownerIds[0] : "",
       credentials:
         row.querySelector('[data-field="Credentials"] input')?.value || null,
       duration_min:
@@ -1066,7 +1075,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (durationMaxInput.disabled) durationMaxInput.value = '';
     }
   }
-  function createEditableCell(field, value, isSection, typeId) {
+  function createEditableCell(field, value, isSection, typeId, ownerIdsJson) {
     const cell = document.createElement("td");
     cell.dataset.field = field;
 
@@ -1077,7 +1086,6 @@ document.addEventListener("DOMContentLoaded", () => {
       Type_ID: "col-session-type",
       Session_Title: "col-session-title",
       Owner_ID: "col-owner",
-      Credentials: "col-credentials",
       Duration_Min: "col-duration-min",
       Duration_Max: "col-duration-max",
     };
@@ -1118,9 +1126,24 @@ document.addEventListener("DOMContentLoaded", () => {
           )
         );
         break;
-      case "Owner_ID":
-        cell.appendChild(createOwnerInput(value));
-        break;
+    case "Owner_ID":
+      // Parse owner_ids from dataset if available
+      let ownerIds = [];
+      try {
+        if (ownerIdsJson) {
+          ownerIds = JSON.parse(ownerIdsJson);
+        }
+      } catch (e) {
+        console.error("Error parsing ownerIds", e);
+      }
+
+      // Fallback to single value if list is empty but single ID exists
+      if (ownerIds.length === 0 && value) {
+        ownerIds = [value];
+      }
+
+      cell.appendChild(createOwnerInput(ownerIds));
+      break;
       default:
         const defaultInput = document.createElement("input");
         defaultInput.type = "text";
@@ -1244,37 +1267,191 @@ document.addEventListener("DOMContentLoaded", () => {
     return input;
   }
 
-  function createOwnerInput(ownerId) {
+  function createOwnerInput(ownerIds) {
+    if (!Array.isArray(ownerIds)) ownerIds = ownerIds ? [ownerIds] : [];
+    
     const wrapper = document.createElement("div");
     wrapper.className = "owner-cell-wrapper";
+    wrapper.style.display = "flex";
+    wrapper.style.flexDirection = "column";
+    wrapper.style.gap = "4px";
 
-    const autocompleteContainer = document.createElement("div");
-    autocompleteContainer.className = "autocomplete-container";
+    const tagsContainer = document.createElement("div");
+    tagsContainer.className = "owners-tags-container";
+    
+    const hiddenInputsContainer = document.createElement("div");
+    hiddenInputsContainer.className = "hidden-owners-container";
 
+    // Internal state of selected owner IDs
+    let selectedIds = [...ownerIds];
+
+    const renderTags = () => {
+        tagsContainer.innerHTML = "";
+        hiddenInputsContainer.innerHTML = "";
+        
+        selectedIds.forEach(id => {
+            const contact = allContacts.find(c => c.id == id);
+            if (!contact) return;
+
+            const tag = document.createElement("div");
+            tag.className = "owner-tag";
+            tag.innerHTML = `<span>${contact.Name}</span>`;
+            
+            const removeBtn = document.createElement("span");
+            removeBtn.className = "remove-tag";
+            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+            removeBtn.onclick = (e) => {
+                e.stopPropagation();
+                selectedIds = selectedIds.filter(sid => sid != id);
+                renderTags();
+            };
+            
+            tag.appendChild(removeBtn);
+            tagsContainer.appendChild(tag);
+
+            // Add hidden input for form submission
+            const hidden = document.createElement("input");
+            hidden.type = "hidden";
+            hidden.name = "owner_ids";
+            hidden.value = id;
+            hiddenInputsContainer.appendChild(hidden);
+        });
+
+        // Sync primary owner data to row (for credentials/project)
+        const currentRow = wrapper.closest("tr");
+        if (currentRow) {
+            const primaryId = selectedIds[0];
+            const primaryContact = allContacts.find(c => c.id == primaryId);
+            
+            currentRow.dataset.ownerId = primaryId || "";
+            
+            const credentialsInput = currentRow.querySelector('[data-field="Credentials"] input');
+            if (credentialsInput) {
+                credentialsInput.value = primaryContact ? (primaryContact.Credentials || "") : "";
+                currentRow.dataset.credentials = credentialsInput.value;
+            }
+
+            if (primaryContact) {
+                updatePairedSession(currentRow, primaryContact);
+                
+                // Auto-update Project for Prepared Speeches (ID 30)
+                const typeSelect = currentRow.querySelector('[data-field="Type_ID"] select');
+                if (typeSelect && typeSelect.value == 30 && primaryContact.Next_Project && window.allProjects) {
+                    const nextProjCode = primaryContact.Next_Project;
+                    let foundProjId = null;
+                    for (const proj of window.allProjects) {
+                        if (proj.path_codes) {
+                            for (const [abbr, details] of Object.entries(proj.path_codes)) {
+                                if (abbr + details.code === nextProjCode) {
+                                    foundProjId = proj.id;
+                                    break;
+                                }
+                            }
+                        }
+                        if (foundProjId) break;
+                    }
+                    if (foundProjId) {
+                        currentRow.dataset.projectId = foundProjId;
+                    }
+                }
+            } else {
+                updatePairedSession(currentRow, null);
+                if (currentRow.dataset.typeId == 30) {
+                    currentRow.dataset.projectId = "";
+                }
+            }
+        }
+    };
+
+    const searchContainer = document.createElement("div");
+    searchContainer.className = "autocomplete-container";
+    
     const searchInput = document.createElement("input");
     searchInput.type = "text";
-    searchInput.placeholder = "Search...";
-    const contact = allContacts.find((c) => c.id == ownerId);
-    if (contact) searchInput.value = contact.Name;
+    searchInput.placeholder = "Search and add owner...";
+    searchInput.className = "owner-search-input";
 
-    const hiddenInput = document.createElement("input");
-    hiddenInput.type = "hidden";
-    hiddenInput.name = "owner_id";
-    hiddenInput.value = ownerId || "";
+    const tempHidden = document.createElement("input");
+    tempHidden.type = "hidden";
 
-    const addBtn = document.createElement("button");
-    addBtn.type = "button";
-    addBtn.innerHTML = '<i class="fas fa-plus"></i>';
-    addBtn.className = "btn btn-primary btn-sm";
-    addBtn.addEventListener("click", () => {
-      activeOwnerInput = searchInput;
-      window.openContactModal(); // Assuming this is a global function
-    });
+    // Custom autocomplete logic to add to tags and clear input
+    const setupOwnerAutocomplete = (input) => {
+        let currentFocus;
+        input.addEventListener("input", function () {
+            let container, item, val = this.value;
+            closeAllLists();
+            if (!val) return;
+            currentFocus = -1;
+            container = document.createElement("div");
+            container.setAttribute("class", "autocomplete-items");
+            this.parentNode.appendChild(container);
 
-    setupAutocomplete(searchInput, hiddenInput);
+            allContacts
+                .filter(c => c.Name.toUpperCase().includes(val.toUpperCase()))
+                .slice(0, 10) // Limit results
+                .forEach(contact => {
+                    item = document.createElement("div");
+                    item.innerHTML = `<strong>${contact.Name.substr(0, val.length)}</strong>${contact.Name.substr(val.length)}`;
+                    item.addEventListener("click", () => {
+                        if (!selectedIds.includes(contact.id.toString())) {
+                            selectedIds.push(contact.id.toString());
+                            renderTags();
+                        }
+                        input.value = "";
+                        input.focus();
+                        closeAllLists();
+                    });
+                    container.appendChild(item);
+                });
+        });
 
-    autocompleteContainer.append(searchInput, hiddenInput);
-    wrapper.append(autocompleteContainer, addBtn);
+        function closeAllLists(elmnt) {
+            const items = document.getElementsByClassName("autocomplete-items");
+            for (let i = 0; i < items.length; i++) {
+                if (elmnt != items[i] && elmnt != input) {
+                    items[i].parentNode.removeChild(items[i]);
+                }
+            }
+        }
+        document.addEventListener("click", (e) => closeAllLists(e.target));
+    };
+
+    setupOwnerAutocomplete(searchInput);
+    searchContainer.appendChild(searchInput);
+
+    // Picker button
+    const pickerBtn = document.createElement("button");
+    pickerBtn.type = "button";
+    pickerBtn.innerHTML = '<i class="fas fa-user-plus"></i>';
+    pickerBtn.className = "btn btn-primary btn-sm icon-btn";
+    pickerBtn.title = "Pick from Contact List";
+    pickerBtn.style.padding = "2px 8px";
+    pickerBtn.onclick = () => {
+        activeOwnerInput = searchInput; // So the modal knows where to "return" the value
+        // We need to override the default modal behavior to ADD instead of REPLACE
+        const oldOnContactSelect = window.onContactSelect;
+        window.onContactSelect = (contact) => {
+            if (!selectedIds.includes(contact.id.toString())) {
+                selectedIds.push(contact.id.toString());
+                renderTags();
+            }
+            searchInput.value = "";
+            searchInput.focus();
+            // Restore? Usually modal selection closes it.
+        };
+        window.openContactModal();
+    };
+
+    const inputRow = document.createElement("div");
+    inputRow.style.display = "flex";
+    inputRow.style.gap = "4px";
+    inputRow.append(searchContainer, pickerBtn);
+
+    wrapper.append(tagsContainer, inputRow, hiddenInputsContainer);
+    
+    // Initial render
+    renderTags();
+    
     return wrapper;
   }
 

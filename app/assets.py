@@ -26,7 +26,11 @@ css_all = Bundle(
     'css/pages/voting/voting-desktop.css',
     'css/pages/voting/voting-ipad.css',
     'css/pages/voting/voting-mobile.css',
-    'css/pages/clubs.css',
+    # Clubs CSS (modular structure)
+    'css/pages/clubs/clubs-base.css',
+    'css/pages/clubs/clubs-desktop.css',
+    'css/pages/clubs/clubs-ipad.css',
+    'css/pages/clubs/clubs-mobile.css',
     # Contacts CSS (modular structure)
     'css/pages/contacts/contacts-base.css',
     'css/pages/contacts/contacts-desktop.css',
@@ -34,11 +38,31 @@ css_all = Bundle(
     'css/pages/contacts/contacts-mobile.css',
     'css/pages/login.css',
     'css/pages/pathway_library.css',
-    'css/pages/tools.css',
-    'css/pages/settings.css',
-    'css/pages/messages.css',
-    'css/pages/speech_logs.css',
-    'css/pages/profile.css',
+    # Tools CSS (modular structure)
+    'css/pages/tools/tools-base.css',
+    'css/pages/tools/tools-desktop.css',
+    'css/pages/tools/tools-ipad.css',
+    'css/pages/tools/tools-mobile.css',
+    # Settings CSS (modular structure)
+    'css/pages/settings/settings-base.css',
+    'css/pages/settings/settings-desktop.css',
+    'css/pages/settings/settings-ipad.css',
+    'css/pages/settings/settings-mobile.css',
+    # Messages CSS (modular structure)
+    'css/pages/messages/messages-base.css',
+    'css/pages/messages/messages-desktop.css',
+    'css/pages/messages/messages-ipad.css',
+    'css/pages/messages/messages-mobile.css',
+    # Speech Logs CSS (modular structure)
+    'css/pages/speech_logs/speech_logs-base.css',
+    'css/pages/speech_logs/speech_logs-desktop.css',
+    'css/pages/speech_logs/speech_logs-ipad.css',
+    'css/pages/speech_logs/speech_logs-mobile.css',
+    # Profile CSS (modular structure)
+    'css/pages/profile/profile-base.css',
+    'css/pages/profile/profile-desktop.css',
+    'css/pages/profile/profile-ipad.css',
+    'css/pages/profile/profile-mobile.css',
     'css/core/responsive.css',
     filters='cssmin',
     output='css/packed.css'

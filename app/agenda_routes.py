@@ -38,8 +38,9 @@ def _get_agenda_logs(meeting_number):
                 SessionType.role),  # Eager load SessionType and Role
             orm.joinedload(SessionLog.meeting),      # Eager load Meeting
             orm.joinedload(SessionLog.project),      # Eager load Project
-            # Eager load Owner and associated User
-            orm.joinedload(SessionLog.owner),
+            orm.joinedload(SessionLog.project),      # Eager load Project
+            # Eager load Owners and associated User
+            orm.joinedload(SessionLog.owners),
             orm.joinedload(SessionLog.media)
     )
 
@@ -48,10 +49,14 @@ def _get_agenda_logs(meeting_number):
 
     # Order by sequence
     logs = query.order_by(SessionLog.Meeting_Seq.asc()).all()
-    owners = [log.owner for log in logs if log.owner]
-    if owners:
+    # Populate users for all owners (SessionLog.owners is a list)
+    all_owners = []
+    for log in logs:
+        all_owners.extend(log.owners)
+    
+    if all_owners:
         from .club_context import get_current_club_id
-        Contact.populate_users(owners, get_current_club_id())
+        Contact.populate_users(all_owners, get_current_club_id())
     return logs
 
 
@@ -60,7 +65,7 @@ def _get_project_speakers(meeting_number):
     if not meeting_number:
         return []
     speaker_logs = db.session.query(Contact.Name)\
-        .join(SessionLog, Contact.id == SessionLog.Owner_ID)\
+        .join(SessionLog.owners)\
         .join(SessionType, SessionLog.Type_ID == SessionType.id)\
         .filter(
             SessionLog.Meeting_Number == meeting_number,
@@ -90,12 +95,32 @@ def _create_or_update_session(item, meeting_number, seq):
     session_type = db.session.get(SessionType, type_id) if type_id else None
 
     # --- Owner ID Handling ---
+    # Enhanced to support owner_ids list
+    owner_ids = item.get('owner_ids', [])
     owner_id = safe_int(item.get('owner_id'))
-    # Filter out '0' if that was used as a placeholder for None
-    if owner_id == 0: 
-        owner_id = None
-        
-    owner_contact = db.session.get(Contact, owner_id) if owner_id else None
+    
+    # Backward compatibility: if owner_id present but owner_ids empty, use owner_id
+    if owner_id and not owner_ids:
+        # Filter out '0' if that was used as a placeholder
+        if owner_id != 0:
+            owner_ids = [owner_id]
+            
+    # Filter 0s and Nones from list
+    from flask import current_app
+    current_app.logger.info(f"LOG sync: received owner_ids={owner_ids} for item {item.get('id')}")
+    owner_ids = [safe_int(oid) for oid in owner_ids if safe_int(oid) and safe_int(oid) != 0]
+
+    # Fetch contacts
+    owner_contacts = []
+    if owner_ids:
+        owner_contacts = db.session.query(Contact).filter(Contact.id.in_(owner_ids)).all()
+        # Sort to preserve order of input if important, using dictionary
+        contacts_map = {c.id: c for c in owner_contacts}
+        owner_contacts = [contacts_map[oid] for oid in owner_ids if oid in contacts_map]
+
+    # Primary owner for legacy fields
+    owner_contact = owner_contacts[0] if owner_contacts else None
+    owner_id = owner_contact.id if owner_contact else None
 
     # --- Project ID and Status ---
     project_id = safe_int(item.get('project_id'))
@@ -120,16 +145,19 @@ def _create_or_update_session(item, meeting_number, seq):
         log_for_derivation = SessionLog(
             Project_ID=project_id,
             Type_ID=type_id,
-            Owner_ID=owner_id,
+            # owner is derived from owners initially if needed
             session_type=session_type,
             project=db.session.get(Project, project_id) if project_id else None
         )
+        if owner_contacts:
+            log_for_derivation.owners = owner_contacts
     else:
         log_for_derivation = db.session.get(SessionLog, item['id'])
         # Temporarily update for derivation
         log_for_derivation.Project_ID = project_id
         log_for_derivation.Type_ID = type_id
-        log_for_derivation.Owner_ID = owner_id
+        if owner_contacts:
+            log_for_derivation.owners = owner_contacts
         log_for_derivation.session_type = session_type
 
     project_code = log_for_derivation.derive_project_code(owner_contact)
@@ -177,8 +205,7 @@ def _create_or_update_session(item, meeting_number, seq):
             Meeting_Number=meeting_number,
             Meeting_Seq=seq,
             Type_ID=type_id,
-            Owner_ID=owner_id, # Set initially, but assign_role_owner will handle logic
-            credentials=credentials,
+            owners=owner_contacts, # Initialize relationship
             Duration_Min=duration_min,
             Duration_Max=duration_max,
             Project_ID=project_id,
@@ -195,7 +222,7 @@ def _create_or_update_session(item, meeting_number, seq):
         log = db.session.get(SessionLog, item['id'])
         if log:
             # Capture old state for roster sync
-            old_owner_id = log.Owner_ID
+            old_owner_id = log.owner.id if (log.owners and log.owner) else None
             old_role = log.session_type.role if log.session_type and log.session_type.role else None
             
             log.Meeting_Number = meeting_number
@@ -214,24 +241,44 @@ def _create_or_update_session(item, meeting_number, seq):
                 log.update_pathway(pathway_val)
 
     # Use shared assignment logic if owner changed or it's a new log with an owner
+    # For multi-owner, we check if the set of owners changed
     if log:
         new_role = session_type.role if session_type else None
         
+        # Compare sets of IDs
+        old_owner_ids_set = set(c.id for c in (log.owners or []))
+        new_owner_ids_set = set(owner.id for owner in owner_contacts)
+        
         role_changed = (old_role != new_role)
-        owner_changed = (old_owner_id != owner_id)
+        owner_changed = (old_owner_ids_set != new_owner_ids_set)
+        
+        from flask import current_app
+        current_app.logger.info(f"LOG {log.id}: role={old_role.name if old_role else 'None'} -> {new_role.name if new_role else 'None'} (changed={role_changed})")
+        current_app.logger.info(f"LOG {log.id}: owners={old_owner_ids_set} -> {new_owner_ids_set} (changed={owner_changed})")
         
         if role_changed or owner_changed:
             if item['id'] != 'new' and old_owner_id and old_role and role_changed:
                 # Force unassign from the OLD role if the type changed
+                # Logic for multi-owner unassign?
+                # Roster.sync expects single ID. We iterate in service.
+                # But here we just call for old primary? 
+                # Ideally RoleService should handle "Unassign from everything".
+                # For now, stick to old primary for backward compact unassign if simple role change.
                 Roster.sync_role_assignment(log.Meeting_Number, old_owner_id, old_role, 'unassign')
             
             # Update role type before calling assignment logic 
             log.Type_ID = type_id
-            RoleService.assign_meeting_role(log, owner_id, is_admin=True)
+            
+            # Call Service with LIST of IDs
+            RoleService.assign_meeting_role(log, [c.id for c in owner_contacts], is_admin=True)
         else:
-            # Ensure fields are set if NOT calling RoleService (which does this internally)
-            log.Owner_ID = owner_id
-            log.credentials = credentials
+            # Updates fields if no assignment logic triggered
+            # Ensure owners are set (though set_owners logic handles this usually)
+            if not owner_changed: # Should be same, but just in case
+                 pass
+            else:
+                 log.owners = owner_contacts
+                 
             log.project_code = project_code
 
 
@@ -333,7 +380,8 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
         session_type = log.session_type
         meeting = log.meeting
         project = log.project
-        owner = log.owner
+        owners = log.owners # List of owners
+        primary_owner = owners[0] if owners else None
         media = log.media
 
         # Determine project code if applicable
@@ -363,7 +411,7 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
             project_code_str = "TM1.0"
         elif project:  # Calculate code for any project, even if no owner
             # Use model's resolution logic which includes fallback
-            context_path = owner.Current_Path if (owner and owner.Current_Path) else None
+            context_path = primary_owner.Current_Path if (primary_owner and primary_owner.Current_Path) else None
             
             # OPTIMIZED: Use memory cache via Model Method
             pp, path_obj = Project.resolve_context_from_cache(log.Project_ID, context_path, pp_cache)
@@ -384,12 +432,17 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
         # --- Award Logic ---
         award_type = None
         # Simplified award check
-        if log.Owner_ID and session_type and session_type.role:
+        # Simplified award check
+        if log.owners and session_type and session_type.role:
             role_award_category = session_type.role.award_category
-            # Check if this role's award category and owner ID exist in the winners set
-            if role_award_category and (role_award_category, log.Owner_ID) in award_winners:
-                # Format for display (e.g., "Best Speaker")
-                award_type = role_award_category.replace('-', ' ').title()
+            
+            # Check if ANY owner is in the winners set
+            # winners set has (category, id)
+            if role_award_category:
+                 for own in log.owners:
+                     if (role_award_category, own.id) in award_winners:
+                         award_type = role_award_category.replace('-', ' ').title()
+                         break
 
         speaker_is_dtm = False
         if session_type and session_type.Title == 'Evaluation' and log.Session_Title:
@@ -405,8 +458,8 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
             'Start_Time_str': log.Start_Time.strftime('%H:%M') if log.Start_Time else '',
             'Session_Title': session_title_for_dict,
             'Type_ID': log.Type_ID,
-            'Owner_ID': log.Owner_ID,
-            'Credentials': derive_credentials(owner),
+            'Owner_ID': log.owner.id if log.owners else None,
+            'Credentials': derive_credentials(primary_owner),
             'Duration_Min': log.Duration_Min,
             'Duration_Max': log.Duration_Max,
             'Status': log.Status,
@@ -429,11 +482,15 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
             'pathway_code': pathway_code_for_dict,
             'level': level_for_dict,
             # Owner fields
-            'owner_name': owner.Name if owner else '',
-            'owner_dtm': owner.DTM if owner else False,
-            'owner_type': owner.Type if owner else '',
-            'owner_club': owner.get_primary_club().club_name if (owner and owner.get_primary_club()) else '',
-            'owner_completed_levels': owner.Completed_Paths if owner else '',
+            'owner_name': " & ".join([o.Name for o in owners]) if owners else (primary_owner.Name if primary_owner else ''),
+            # Detailed owner info for modals/logic (could return list)
+            'owner_ids': [o.id for o in owners],
+            'owners_data': [{'id': o.id, 'name': o.Name, 'dtm': o.DTM, 'club': o.get_primary_club().club_name if o.get_primary_club() else '', 'credentials': derive_credentials(o)} for o in owners],
+            
+            'owner_dtm': primary_owner.DTM if primary_owner else False,
+            'owner_type': primary_owner.Type if primary_owner else '',
+            'owner_club': primary_owner.get_primary_club().club_name if (primary_owner and primary_owner.get_primary_club()) else '',
+            'owner_completed_levels': primary_owner.Completed_Paths if primary_owner else '',
             'media_url': media.url if (show_media and media and media.url) else None,
             # Add award type if this specific role won the award
             'award_type': award_type,
@@ -1007,17 +1064,22 @@ def _generate_logs_from_template(meeting, template_file):
                             credentials = derive_credentials(officer_contact)
             
             # --- Create Log ---
+            # Fetch contact to assign as owner if needed
+            owner_contact = db.session.get(Contact, owner_id) if owner_id else None
+
             new_log = SessionLog(
                 Meeting_Number=meeting.Meeting_Number,
                 Meeting_Seq=seq,
                 Type_ID=type_id,
-                Owner_ID=owner_id,
-                credentials=credentials,
+                # Owner_ID and credentials removed
                 Duration_Min=duration_min,
                 Duration_Max=duration_max,
                 Session_Title=session_title_for_log,
                 Status='Booked'
             )
+            
+            if owner_contact:
+                new_log.owners = [owner_contact]
 
             # Calculate Start Time
             is_section = False

@@ -1,0 +1,117 @@
+/* ========================================
+   Settings iPad Styles
+   For screens 769px - 1024px (iPad Air: 820px)
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+	/* iPad search bar */
+	.global-search-bar {
+		width: 50%;
+		min-width: 280px;
+	}
+
+	/* iPad table sizing */
+	.general-settings-table {
+		max-width: 100%;
+	}
+
+	/* Wrap tables in scrollable container */
+	.tab-content {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.tab-content table {
+		font-size: 0.85em;
+		min-width: 800px;
+		/* Ensure table doesn't compress too much */
+	}
+
+	.tab-content table th,
+	.tab-content table td {
+		padding: 8px 6px;
+		white-space: nowrap;
+	}
+
+	/* Fix sortable header icon positioning */
+	.tab-content table th.sortable {
+		padding-right: 25px;
+		/* Make room for the sort icon */
+	}
+
+	/* Settings header - ensure buttons are visible */
+	.settings-header {
+		flex-wrap: wrap;
+		gap: 10px;
+	}
+
+	/* Ensure button groups are visible and accessible */
+	.settings-header .button-group {
+		display: flex !important;
+		flex-wrap: wrap;
+		gap: 8px;
+		min-width: auto !important;
+	}
+
+	.settings-header .btn {
+		font-size: 12px;
+		padding: 6px 10px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		line-height: normal;
+		/* Reset line-height */
+		height: auto;
+		/* Ensure height wraps content */
+	}
+
+	/* Tab content padding */
+	.tab-content {
+		padding: 15px 10px;
+	}
+
+	/* Achievement group header */
+	.achievement-group-header .group-header-cell {
+		padding: 10px 12px !important;
+		font-size: 1em;
+	}
+
+	/* Form controls */
+	.form-control-sm {
+		font-size: 13px;
+		padding: 3px 6px;
+	}
+
+	/* Make tables horizontally scrollable on iPad if needed */
+	.table-container {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	/* Action links must be visible */
+	.action-links {
+		display: flex !important;
+		gap: 5px;
+	}
+
+	/* Tabs for iPad */
+	.nav-tabs {
+		flex-wrap: wrap;
+		gap: 5px;
+	}
+
+	.nav-tabs .nav-item {
+		font-size: 0.85em;
+		padding: 8px 12px;
+	}
+
+	/* Permissions matrix for iPad */
+	.permissions-matrix-container {
+		overflow-x: auto;
+	}
+
+	#permissions-matrix table {
+		min-width: 600px;
+	}
+}

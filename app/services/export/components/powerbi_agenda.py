@@ -1,6 +1,7 @@
 from ..base import BaseExportComponent
 from ..formatter import ExportFormatter
 from app.constants import SessionTypeID
+from app.utils import derive_credentials
 
 
 class PowerBIAgendaComponent(BaseExportComponent):
@@ -43,23 +44,18 @@ class PowerBIAgendaComponent(BaseExportComponent):
                 else:
                     duration = f"[{log.Duration_Max}']"
             
-            # Owner logic with credentials and DTM
-            owner = ""
-            if log.owner:
-                owner = log.owner.Name
-                
-                # Add DTM superscript
-                if log.owner.DTM:
-                    owner += "ᴰᵀᴹ"
-                
-                # For DTM members, don't add credentials
-                # For guests, credential is "Guest"
-                # For others, use log.credentials
-                if not log.owner.DTM:
-                    if log.owner.Type == 'Guest':
-                        owner += " - Guest"
-                    elif log.credentials:
-                        owner += f" - {log.credentials}"
+            # Owner logic with multiple owners support
+            owner_parts = []
+            for o in log.owners:
+                o_str = o.Name
+                if o.DTM:
+                    o_str += "ᴰᵀᴹ"
+                else:
+                    creds = derive_credentials(o)
+                    if creds:
+                        o_str += f" - {creds}"
+                owner_parts.append(o_str)
+            owner = " & ".join(owner_parts)
                 
             ws.append([log.Meeting_Number, log.Start_Time.strftime('%H:%M') if log.Start_Time else "", title, duration, owner])
             if len(title) > 50:
