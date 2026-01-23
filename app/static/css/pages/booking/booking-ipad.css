@@ -1,0 +1,142 @@
+/* ========================================
+   Booking iPad Styles
+   For screens 769px - 1024px (iPad Air: 820px)
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+	/* Container adjustments for iPad */
+	.booking-container {
+		margin: 15px auto;
+		padding: 0 20px;
+	}
+
+	/* Table column widths for iPad */
+	.booking-table .role-cell,
+	.booking-table .role-header {
+		width: 30%;
+		min-width: 180px;
+	}
+
+	.booking-table .status-cell,
+	.booking-table .status-header {
+		width: 25%;
+	}
+
+	.booking-table .assign-cell,
+	.booking-table .assign-header {
+		width: 30%;
+	}
+
+	.booking-table .icon-cell,
+	.booking-table .action-header {
+		width: 15%;
+		text-align: center;
+	}
+
+	/* Table cell padding for iPad */
+	.booking-table th,
+	.booking-table td {
+		padding: 12px 10px;
+	}
+
+	/* Role avatar sizing for iPad */
+	.role-avatar {
+		width: 45px;
+		height: 45px;
+	}
+
+	.is-finished-meeting .role-avatar {
+		width: 55px;
+		height: 55px;
+	}
+
+	.role-avatar i.fa-user-circle {
+		font-size: 2.2em;
+	}
+
+	/* Owner display for iPad */
+	.owner-display {
+		font-size: 1.1em;
+	}
+
+	/* Filter container for iPad */
+	.booking-filter-container {
+		flex-direction: row;
+		padding: 15px 0;
+		gap: 15px;
+	}
+
+	.booking-filter-container .filter-left,
+	.booking-filter-container .filter-right {
+		width: auto;
+	}
+
+	.booking-filter-container #meeting-filter {
+		min-width: 200px;
+		font-size: 1em;
+	}
+
+	.booking-filter-container .btn,
+	.booking-filter-container .role-guide-link {
+		padding: 6px 12px;
+		font-size: 0.9rem;
+		min-height: 38px;
+	}
+
+	/* Accordion adjustments for iPad */
+	.accordion-header {
+		padding: 12px 15px;
+		font-size: 1.1em;
+	}
+
+	.accordion-item {
+		margin-bottom: 8px;
+	}
+
+	/* Action buttons for iPad */
+	.btn-book,
+	.btn-cancel,
+	.btn-join-waitlist,
+	.btn-leave-waitlist {
+		width: 110px;
+		font-size: 0.85em;
+	}
+
+	.booking-table .icon-cell .btn {
+		width: 110px;
+		font-size: 0.85em;
+	}
+
+	/* Admin assign select for iPad */
+	.booking-table .admin-assign-select {
+		font-size: 0.9em;
+		height: 36px;
+		margin: 0 5px;
+	}
+
+	.admin-assign-input {
+		font-size: 0.9em;
+		height: 36px;
+	}
+
+	/* Role cell adjustments */
+	.role-cell {
+		min-width: 180px;
+	}
+
+	.role-cell-content {
+		gap: 8px;
+	}
+
+	/* Timeline adjustments for iPad */
+	.timeline-event {
+		min-width: 100px;
+		margin: 0 10px;
+		font-size: 0.75em;
+	}
+
+	.horizontal-timeline::before {
+		top: 35px;
+	}
+}

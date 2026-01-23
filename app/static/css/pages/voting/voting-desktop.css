@@ -1,0 +1,33 @@
+/* ========================================
+   Voting Desktop Styles
+   For screens >= 1025px
+   ======================================== */
+
+@media (min-width: 1025px) {
+
+	/* Desktop-specific accordion adjustments */
+	.accordion-item {
+		padding: 25px;
+	}
+
+	.accordion-header {
+		font-size: 1.3em;
+	}
+
+	/* Wider vote bricks container */
+	.vote-bricks-container {
+		max-width: 200px;
+	}
+
+	/* Larger rating buttons for desktop */
+	.rating-btn {
+		padding: 14px 0;
+		font-size: 1.2em;
+	}
+
+	/* Meeting rating section with more padding */
+	.meeting-rating-section,
+	.feedback-section {
+		padding: 25px;
+	}
+}

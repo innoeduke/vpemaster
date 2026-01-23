@@ -73,46 +73,50 @@
             </div>
         </div>
         <div class="action-bar-right">
-            <div class="button-group" id="view-mode-buttons">
+            <div id="view-mode-buttons">
                 {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
-                {% if selected_meeting.status %}
-                <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}"
-                    title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
-                    <i
-                        class="fas fa-fw {% if selected_meeting.status == 'unpublished' %}fa-eye-slash{% elif selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>{{
-                    selected_meeting.status.replace('_', ' ').title() }}
-                </span>
-                {% endif %}
-                <button id="meeting-status-btn"
-                    class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'unpublished' %}btn-success{% else %}btn-primary{% endif %}"
-                    data-meeting-number="{{ selected_meeting.Meeting_Number }}"
-                    data-current-status="{{ selected_meeting.status }}" {% if selected_meeting.status=='cancelled'
-                    %}disabled{% endif %}>
-                    {% if selected_meeting.status == 'unpublished' %}
-                    Publish
-                    {% elif selected_meeting.status == 'not started' %}
-                    Start
-                    {% elif selected_meeting.status == 'running' %}
-                    Stop
-                    {% elif selected_meeting.status == 'finished' %}
-                    Delete
-                    {% elif selected_meeting.status == 'cancelled' %}
-                    Cancelled
-                    {% else %}
-                    {{ selected_meeting.status.replace('_', ' ').title() }}
+                <div class="button-group status-group">
+                    {% if selected_meeting.status %}
+                    <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}"
+                        title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
+                        <i
+                            class="fas fa-fw {% if selected_meeting.status == 'unpublished' %}fa-eye-slash{% elif selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>{{
+                        selected_meeting.status.replace('_', ' ').title() }}
+                    </span>
                     {% endif %}
-                </button>
+                    <button id="meeting-status-btn"
+                        class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'unpublished' %}btn-success{% else %}btn-primary{% endif %}"
+                        data-meeting-number="{{ selected_meeting.Meeting_Number }}"
+                        data-current-status="{{ selected_meeting.status }}" {% if selected_meeting.status=='cancelled'
+                        %}disabled{% endif %}>
+                        {% if selected_meeting.status == 'unpublished' %}
+                        Publish
+                        {% elif selected_meeting.status == 'not started' %}
+                        Start
+                        {% elif selected_meeting.status == 'running' %}
+                        Stop
+                        {% elif selected_meeting.status == 'finished' %}
+                        Delete
+                        {% elif selected_meeting.status == 'cancelled' %}
+                        Cancelled
+                        {% else %}
+                        {{ selected_meeting.status.replace('_', ' ').title() }}
+                        {% endif %}
+                    </button>
+                </div>
                 {% endif %}
 
-                {% if is_authorized(Permissions.AGENDA_EDIT) %}
-                <button id="create-btn" class="btn btn-success">New</button>
-                {% endif %}
+                <div class="button-group action-group">
+                    {% if is_authorized(Permissions.AGENDA_EDIT) %}
+                    <button id="create-btn" class="btn btn-success">New</button>
+                    {% endif %}
 
-                {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
-                <button id="edit-btn" class="btn btn-primary">Edit</button>
-                <button id="export-btn" class="btn btn-info action-icon-btn" title="Export to Excel"><i class="fas fa-file-excel"></i></button>
-                <button id="ppt-btn" class="btn btn-warning action-icon-btn" title="Download PPT"><i class="fas fa-file-powerpoint"></i></button>
-                {% endif %}
+                    {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
+                    <button id="edit-btn" class="btn btn-primary">Edit</button>
+                    <button id="export-btn" class="btn btn-info action-icon-btn" title="Export to Excel"><i class="fas fa-file-excel"></i></button>
+                    <button id="ppt-btn" class="btn btn-warning action-icon-btn" title="Download PPT"><i class="fas fa-file-powerpoint"></i></button>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>

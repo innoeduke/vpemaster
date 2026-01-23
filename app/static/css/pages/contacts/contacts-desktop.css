@@ -1,0 +1,40 @@
+/* ========================================
+   Contacts Desktop Styles
+   For screens >= 1025px
+   ======================================== */
+
+@media (min-width: 1025px) {
+
+	/* Desktop table layout - show all columns */
+	#contactsTable {
+		font-size: 0.95em;
+	}
+
+	#contactsTable th,
+	#contactsTable td {
+		padding: 12px 15px;
+	}
+
+	/* Ensure action column is visible on desktop */
+	#contactsTable th.action-header,
+	#contactsTable td:last-child {
+		display: table-cell !important;
+	}
+
+	.action-links {
+		display: flex;
+		gap: 8px;
+		justify-content: center;
+	}
+
+	/* Larger avatars for desktop */
+	.contact-avatar-small {
+		width: 36px;
+		height: 36px;
+	}
+
+	.contact-avatar-placeholder-small {
+		width: 36px;
+		height: 36px;
+	}
+}

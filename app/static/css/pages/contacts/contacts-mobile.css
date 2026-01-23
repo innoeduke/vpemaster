@@ -1,0 +1,96 @@
+/* ========================================
+   Contacts Mobile Styles
+   For screens <= 768px
+   ======================================== */
+
+@media (max-width: 768px) {
+
+	/* Contact Book Responsive Fixes */
+	.contact-action-bar,
+	.action-bar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.stats-container {
+		justify-content: center;
+		margin-bottom: 1rem;
+	}
+
+	.search-and-buttons {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.search-container {
+		flex: 1;
+		min-width: unset;
+		width: 100%;
+	}
+
+	.search-container input {
+		width: 100%;
+	}
+
+	.button-group {
+		width: 100%;
+		justify-content: center;
+	}
+
+	/* Hide Member ID Badge on Mobile */
+	.badge-member-id {
+		display: none;
+	}
+
+	/* Contacts Page Responsive Fixes */
+	.contact-table-container {
+		display: block;
+	}
+
+	#contactsTable {
+		display: block;
+		width: 100%;
+		margin: 0;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		font-size: 0.9em;
+	}
+
+	#contactsTable th:nth-child(1),
+	#contactsTable td:nth-child(1) {
+		min-width: 150px;
+	}
+
+	#contactsTable .action-links {
+		white-space: nowrap;
+	}
+
+	/* Mobile: Show Name(1), Participation(2). Hide others (3-9). */
+	#contactsTable th:nth-child(3),
+	#contactsTable td:nth-child(3),
+	#contactsTable th:nth-child(4),
+	#contactsTable td:nth-child(4),
+	#contactsTable th:nth-child(5),
+	#contactsTable td:nth-child(5),
+	#contactsTable th:nth-child(6),
+	#contactsTable td:nth-child(6),
+	#contactsTable th:nth-child(7),
+	#contactsTable td:nth-child(7),
+	#contactsTable th:nth-child(8),
+	#contactsTable td:nth-child(8),
+	#contactsTable th:nth-child(9),
+	#contactsTable td:nth-child(9) {
+		display: none;
+	}
+
+	/* Compact participation badges for mobile */
+	.participation-badge {
+		padding: 1px 4px;
+		font-size: 0.75em;
+	}
+
+	.participation-container {
+		flex-wrap: wrap;
+		gap: 3px;
+	}
+}

@@ -1,0 +1,631 @@
+/* ========================================
+   Booking Base Styles
+   Core styles without media queries
+   ======================================== */
+
+/* --- Accordion Styles --- */
+.award-accordion {
+	margin-top: 20px;
+}
+
+.accordion-item {
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	margin-bottom: 10px;
+}
+
+.accordion-header {
+	background-color: #f8f9fa;
+	color: #333;
+	cursor: pointer;
+	padding: 15px 20px;
+	width: 100%;
+	border: none;
+	text-align: left;
+	outline: none;
+	font-size: 1.2em;
+	font-weight: bold;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	transition: background-color 0.3s ease;
+}
+
+.accordion-header:hover {
+	background-color: #e9ecef;
+}
+
+.accordion-header.active {
+	background-color: #e0e0e0;
+}
+
+.accordion-header-right {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.accordion-header i {
+	transition: transform 0.3s ease;
+}
+
+.accordion-header.active i.fa-chevron-down {
+	transform: rotate(180deg);
+}
+
+.accordion-content {
+	padding: 0;
+	background-color: white;
+	max-height: 0;
+	overflow: hidden;
+	transition: max-height 0.3s ease-out;
+}
+
+.accordion-header.active+.accordion-content {
+	overflow: visible;
+}
+
+.accordion-content .booking-table {
+	box-shadow: none;
+	border-radius: 0;
+}
+
+/* --- Booking Container --- */
+.booking-container {
+	max-width: 900px;
+	margin: 20px auto;
+}
+
+.booking-container h1 {
+	text-align: center;
+	margin-bottom: 30px;
+}
+
+.booking-section-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	text-align: left;
+	margin: 15px 0;
+	font-size: 1.2em;
+	color: #333;
+	font-weight: 700;
+}
+
+/* --- Filter Container --- */
+.booking-filter-container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 15px 0;
+	gap: 20px;
+	flex-wrap: wrap;
+}
+
+.booking-filter-container .filter-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+	font-size: 1em;
+}
+
+.booking-filter-container .filter-right {
+	flex-grow: 1;
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
+}
+
+.booking-filter-container #meeting-filter {
+	font-size: 1.1em;
+	width: auto;
+	min-width: 250px;
+	background-color: transparent;
+	border: none;
+	padding: 0;
+	box-shadow: none;
+}
+
+.booking-filter-container .btn,
+.booking-filter-container .role-guide-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	font-weight: bold;
+	padding: 8px 15px;
+	height: auto;
+	min-height: 42px;
+	line-height: 1.5;
+	box-sizing: border-box;
+	font-size: 1rem;
+}
+
+/* --- Horizontal Timeline --- */
+.horizontal-timeline {
+	display: flex;
+	justify-content: flex-start;
+	position: relative;
+	padding-top: 20px;
+	overflow-x: auto;
+	padding-bottom: 15px;
+}
+
+.horizontal-timeline::before {
+	content: '';
+	position: absolute;
+	top: 38px;
+	left: 20px;
+	width: calc(100% - 40px);
+	height: 2px;
+	background-color: #e0e0e0;
+	z-index: 0;
+}
+
+.timeline-header {
+	font-size: 0.9em;
+	color: #555;
+	white-space: nowrap;
+}
+
+.timeline-header .meeting-number {
+	font-weight: bold;
+}
+
+.timeline-header .meeting-date {
+	font-weight: normal;
+	color: #888;
+	margin-left: 5px;
+	font-size: 0.8em;
+}
+
+.timeline-marker {
+	width: 0;
+	height: 0;
+	background-color: transparent;
+	border-radius: 0;
+	border: none;
+	border-left: 8px solid transparent;
+	border-right: 8px solid transparent;
+	border-bottom: 12px solid #772432;
+	margin: 2px 0 5px 0;
+}
+
+.timeline-roles-list {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	margin-top: 5px;
+}
+
+.timeline-role i {
+	color: #772432;
+}
+
+.timeline-event {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	position: relative;
+	z-index: 1;
+	text-align: center;
+	min-width: 120px;
+	margin: 0 15px;
+	border: 1px solid transparent;
+	border-radius: 4px;
+	padding: 0 10px;
+	font-size: 0.8em;
+}
+
+.timeline-event:hover {
+	background-color: #eef2f7;
+	border-color: #ccc;
+}
+
+.timeline-role {
+	cursor: default;
+	padding: 0;
+	transition: none;
+	background-color: transparent;
+}
+
+.timeline-role:hover {
+	background-color: transparent;
+}
+
+/* --- Booking Table --- */
+.booking-table {
+	width: 100%;
+	border-collapse: collapse;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	border: none;
+}
+
+.booking-table th,
+.booking-table td {
+	padding: 15px;
+	text-align: left;
+	border: none;
+	white-space: nowrap;
+	vertical-align: middle;
+}
+
+.booking-table tr {
+	border-bottom: 1px solid #ddd;
+}
+
+.booking-table th {
+	background-color: #f8f9fa;
+}
+
+.booking-table .owner-header {
+	text-align: center;
+}
+
+.booking-table tbody tr:last-child {
+	border-bottom: none;
+}
+
+/* --- Role Cell --- */
+.role-avatar {
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	overflow: hidden;
+	flex-shrink: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-color: #f0f0f0;
+	border: 1px solid #ddd;
+}
+
+.role-avatar img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.role-avatar i.fa-user-circle {
+	font-size: 1.8em;
+	color: #ccc;
+	line-height: 1;
+}
+
+.role-avatar.waitlist-avatar {
+	border: 2px solid #ffc700;
+	width: 28px;
+	height: 28px;
+	opacity: 0.8;
+}
+
+.is-finished-meeting .role-avatar {
+	width: 60px;
+	height: 60px;
+}
+
+.is-finished-meeting .role-avatar i.fa-user-circle {
+	font-size: 2.8em;
+}
+
+.role-cell {
+	font-family: 'Montserrat', sans-serif;
+	font-weight: bold;
+	min-width: 250px;
+}
+
+.role-cell i {
+	color: #772432;
+	flex-shrink: 0;
+}
+
+.role-cell-content {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	white-space: nowrap;
+	overflow: hidden;
+	width: 100%;
+}
+
+.role-cell-actions {
+	flex-shrink: 0;
+	margin-left: 10px;
+}
+
+.status-cell-content {
+	display: flex;
+	align-items: center;
+	gap: 5px;
+}
+
+/* --- Action Cell --- */
+.booking-table .btn {
+	padding: 5px 15px;
+	border-radius: 5px;
+	color: #fff;
+	border: none;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.owner-display {
+	font-family: 'Montserrat', sans-serif;
+	font-weight: normal;
+	font-size: 1em;
+	color: #333;
+	text-align: left;
+	width: 100%;
+	white-space: nowrap;
+	overflow: hidden;
+}
+
+.booking-table .icon-cell .btn {
+	width: 130px;
+	white-space: nowrap;
+	box-sizing: border-box;
+	justify-content: center;
+}
+
+.btn-book {
+	background-color: #28a745;
+}
+
+.btn-booked {
+	background-color: #e9ecef;
+	color: #6c757d;
+	cursor: not-allowed;
+}
+
+.btn-info {
+	background-color: #004165;
+}
+
+.icon-cell .icon-btn {
+	padding: 6px 10px;
+	flex-shrink: 0;
+}
+
+.assign-cell select {
+	color: #333;
+}
+
+.admin-assign-select.unassigned-role {
+	border-color: #28a745;
+	background-color: #e9f7ef;
+	font-weight: bold;
+}
+
+.booking-table .role-display-text {
+	display: flex;
+	flex-direction: column;
+	line-height: 1.2;
+	flex-grow: 1;
+	text-align: left;
+}
+
+.booking-table .speaker-for {
+	font-size: 0.75em;
+	font-weight: normal;
+	color: #555;
+}
+
+.booking-table .admin-assign-select {
+	font-family: 'Montserrat', sans-serif;
+	display: flex;
+	text-align: center;
+	flex-grow: 1;
+	font-size: 1em;
+	width: 100%;
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	background-color: #ffffff;
+	height: 38px;
+	padding: 5px 12px 5px 12px;
+	margin: 0 10px;
+	border: 1px solid #ccc;
+	border-radius: 8px;
+}
+
+/* --- Autocomplete Styles --- */
+.autocomplete-container {
+	position: relative;
+	width: 100%;
+	z-index: 1;
+}
+
+.autocomplete-container:focus-within {
+	z-index: 1001;
+}
+
+.admin-assign-input {
+	font-family: 'Montserrat', sans-serif;
+	display: flex;
+	text-align: center;
+	flex-grow: 1;
+	font-size: 1em;
+	width: 100%;
+	height: 38px;
+	padding: 5px 12px;
+	border: 1px solid #ccc;
+	border-radius: 8px;
+	background-color: #ffffff;
+	box-sizing: border-box;
+}
+
+.admin-assign-input.unassigned-role {
+	border-color: #28a745;
+	background-color: #e9f7ef;
+	font-weight: bold;
+}
+
+.autocomplete-results {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	min-width: 100%;
+	width: max-content;
+	z-index: 1000;
+	background: white;
+	border: 1px solid #ddd;
+	border-top: none;
+	border-radius: 0 0 8px 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	max-height: 250px;
+	overflow-y: auto;
+	display: none;
+}
+
+.autocomplete-results.active {
+	display: block;
+}
+
+.autocomplete-item {
+	padding: 10px 15px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	transition: background 0.2s;
+}
+
+.autocomplete-item:hover {
+	background: #f8f9fa;
+}
+
+.autocomplete-item.unassign-item {
+	color: #dc3545;
+	font-weight: bold;
+	border-bottom: 1px solid #eee;
+}
+
+.item-avatar {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	overflow: hidden;
+	background: #eee;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.item-avatar img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.item-name {
+	flex-grow: 1;
+	font-weight: 500;
+}
+
+.item-type {
+	font-size: 0.75em;
+	padding: 2px 6px;
+	border-radius: 4px;
+	text-transform: uppercase;
+}
+
+.item-type.member {
+	background: #e3f2fd;
+	color: #1976d2;
+}
+
+.item-type.guest {
+	background: #f1f8e9;
+	color: #388e3c;
+}
+
+/* --- Role Guide Container --- */
+.role-guide-container {
+	text-align: center;
+	margin-bottom: 30px;
+}
+
+.role-guide-container .btn-info {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	font-weight: bold;
+	padding: 8px 15px;
+	height: auto;
+	line-height: 1.5;
+}
+
+/* --- Waitlist Styles --- */
+.waitlist-info {
+	font-size: 0.8em;
+	color: #555;
+	margin-top: 5px;
+}
+
+.waitlist-info i {
+	margin-right: 5px;
+}
+
+.waitlist-users {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.waitlist-users li {
+	display: block;
+	margin-bottom: 2px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.btn-book,
+.btn-cancel,
+.btn-join-waitlist,
+.btn-leave-waitlist {
+	width: 130px;
+	box-sizing: border-box;
+	justify-content: center;
+}
+
+.btn-join-waitlist,
+.btn-leave-waitlist {
+	padding: 5px 15px;
+	border-radius: 5px;
+	border: none;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+}
+
+.btn-join-waitlist {
+	background-color: #ffc700;
+	color: #333;
+	font-weight: normal;
+}
+
+.btn-leave-waitlist {
+	background-color: #dc3545;
+	color: #fff;
+}
+
+/* --- Icon Button --- */
+.icon-btn {
+	display: inline-flex !important;
+	align-items: center;
+	justify-content: center;
+	padding: 6px 10px;
+}
+
+.status-cell-content {
+	display: flex;
+	align-items: center;
+}

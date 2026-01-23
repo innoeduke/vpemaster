@@ -1,0 +1,107 @@
+/* ========================================
+   Voting iPad Styles
+   For screens 769px - 1024px (iPad Air: 820px)
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+	/* Optimized accordion for iPad */
+	.accordion-item {
+		padding: 18px;
+		margin-top: 15px;
+	}
+
+	.accordion-header {
+		font-size: 1.15em;
+		padding: 8px 0;
+	}
+
+	.accordion-header-right {
+		gap: 10px;
+	}
+
+	/* Better touch targets for iPad */
+	.accordion-header .question-number {
+		width: 32px;
+		height: 32px;
+		font-size: 1em;
+	}
+
+	/* Vote bricks optimized for tablet */
+	.vote-bricks-container {
+		max-width: 150px;
+		gap: 3px;
+	}
+
+	.vote-brick {
+		width: 8px;
+		height: 16px;
+	}
+
+	/* Voted label adjustments */
+	.voted-label {
+		padding: 5px 10px;
+		font-size: 0.7em;
+	}
+
+	/* Rating section optimized for iPad */
+	.meeting-rating-section,
+	.feedback-section {
+		padding: 18px;
+	}
+
+	.rating-question {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 10px;
+	}
+
+	.rating-btn {
+		padding: 10px 0;
+		font-size: 1em;
+		min-width: 28px;
+	}
+
+	.rating-labels {
+		font-size: 0.85em;
+	}
+
+	/* Question styling for iPad */
+	.question-text {
+		font-size: 0.95em;
+	}
+
+	.question-number {
+		width: 28px;
+		height: 28px;
+		font-size: 1em;
+	}
+
+	/* Feedback input */
+	.feedback-input {
+		height: 100px;
+		font-size: 0.95em;
+	}
+
+	/* Voting instruction alert */
+	.voting-instruction-alert {
+		padding: 10px 15px;
+		font-size: 0.75em;
+	}
+
+	/* Owner display in table */
+	.booking-table .owner-display {
+		font-size: 1.2em;
+	}
+
+	/* Role avatar sizing */
+	.role-avatar {
+		width: 50px;
+		height: 50px;
+	}
+
+	.is-finished-meeting .role-avatar {
+		width: 55px;
+		height: 55px;
+	}
+}

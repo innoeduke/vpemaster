@@ -1,0 +1,96 @@
+/* ========================================
+   Contacts iPad Styles
+   For screens 769px - 1024px (iPad Air: 820px)
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+	/* iPad action bar layout */
+	.contact-action-bar {
+		flex-direction: row;
+		gap: 0.75rem;
+	}
+
+	.stats-container {
+		gap: 0.5rem;
+	}
+
+	.stat-item {
+		min-width: 80px;
+		padding: 0.4rem;
+	}
+
+	.stat-value {
+		font-size: 1rem;
+	}
+
+	.stat-label {
+		font-size: 0.7rem;
+	}
+
+	.search-and-buttons {
+		flex-direction: row;
+		gap: 0.5rem;
+	}
+
+	/* Table adjustments for iPad */
+	#contactsTable {
+		font-size: 0.85em;
+	}
+
+	#contactsTable th,
+	#contactsTable td {
+		padding: 10px 8px;
+	}
+
+	/* Hide some columns for iPad to fit better, but keep action column */
+	/* Hide: Phone(3), Club(4), Next Project(7) */
+	#contactsTable th:nth-child(3),
+	#contactsTable td:nth-child(3),
+	#contactsTable th:nth-child(4),
+	#contactsTable td:nth-child(4),
+	#contactsTable th:nth-child(7),
+	#contactsTable td:nth-child(7) {
+		display: none;
+	}
+
+	/* Ensure action column (9) is VISIBLE on iPad */
+	#contactsTable th.action-header,
+	#contactsTable th:nth-child(9),
+	#contactsTable td:nth-child(9) {
+		display: table-cell !important;
+	}
+
+	.action-links {
+		display: flex;
+		gap: 5px;
+		justify-content: center;
+	}
+
+	/* Smaller participation badges for iPad */
+	.participation-badge {
+		padding: 2px 4px;
+		font-size: 0.8em;
+	}
+
+	/* Compact path badges */
+	.badge-path {
+		padding: 1px 6px;
+		font-size: 0.75em;
+	}
+
+	/* Avatar sizing for iPad */
+	.contact-avatar-small {
+		width: 28px;
+		height: 28px;
+	}
+
+	.contact-avatar-placeholder-small {
+		width: 28px;
+		height: 28px;
+	}
+
+	.contact-name-cell {
+		gap: 8px;
+	}
+}

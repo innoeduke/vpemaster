@@ -1,0 +1,126 @@
+/* ========================================
+   Agenda iPad Styles
+   For screens 769px - 1024px (iPad Air: 820px)
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+	/* iPad container adjustments */
+	#agenda-content {
+		max-width: 95%;
+		padding: 0 15px;
+	}
+
+	/* iPad header layout - horizontal like desktop but smaller */
+	.agenda-header-container {
+		display: flex;
+		align-items: center;
+		gap: 15px;
+	}
+
+	.agenda-header-logo img {
+		max-width: 120px;
+	}
+
+	.agenda-header-info .meeting-title {
+		font-size: 2em;
+		margin: 20px 20px;
+	}
+
+	.agenda-header-info .subtitle {
+		margin: -15px 20px 15px;
+		font-size: 1.2em;
+	}
+
+	.agenda-header-info .club-info {
+		font-size: 0.85em;
+	}
+
+	/* Action bar for iPad */
+	.action-bar {
+		flex-direction: row;
+		gap: 15px;
+	}
+
+	.action-bar-left {
+		flex-direction: row;
+	}
+
+	.action-bar-right #view-mode-buttons {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: nowrap;
+		gap: 8px;
+		align-items: center;
+	}
+
+	/* Status group and action group inline */
+	.action-bar-right .status-group,
+	.action-bar-right .action-group {
+		display: flex;
+		flex-wrap: nowrap;
+		gap: 6px;
+		align-items: center;
+	}
+
+	.action-bar-right .button-group {
+		flex-wrap: nowrap;
+		gap: 6px;
+	}
+
+	.action-bar-right .btn {
+		font-size: 11px;
+		padding: 0 8px;
+		min-width: 55px;
+		height: 28px;
+		line-height: 28px;
+	}
+
+	.action-bar-right .meeting-status-display {
+		min-width: 100px;
+		font-size: 0.75em;
+		padding: 3px 6px;
+	}
+
+	/* Make icon buttons compact */
+	.action-bar-right .action-icon-btn {
+		min-width: 35px !important;
+		width: 35px;
+		padding: 0 !important;
+	}
+
+	/* WOD display for iPad */
+	.wod-display {
+		width: 130px;
+		height: 90px;
+	}
+
+	/* Edit mode buttons for iPad */
+	#edit-mode-buttons {
+		top: 60px;
+		gap: 8px;
+	}
+
+	#edit-mode-buttons .btn {
+		font-size: 12px;
+		padding: 0 10px;
+	}
+
+	/* Table adjustments for iPad */
+	#logs-table th,
+	#logs-table td {
+		font-size: 0.85em;
+		padding: 10px 8px;
+	}
+
+	/* Footnote for iPad */
+	.footnote {
+		font-size: 0.75em;
+	}
+
+	/* Meeting filter for iPad */
+	.action-bar-left #meeting-filter {
+		max-width: 250px;
+		font-size: 0.85em;
+	}
+}

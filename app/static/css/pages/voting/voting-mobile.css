@@ -1,0 +1,94 @@
+/* ========================================
+   Voting Mobile Styles
+   For screens <= 768px
+   ======================================== */
+
+@media (max-width: 768px) {
+	.accordion-content {
+		background-color: transparent;
+	}
+
+	/* Remove border from accordion container */
+	.accordion-item {
+		border: none;
+		padding: 15px;
+		margin-top: 15px;
+	}
+
+	.booking-table .winner-label {
+		display: none;
+	}
+
+	/* Vote bricks display horizontally below avatar */
+	.vote-bricks-container {
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: wrap;
+		gap: 2px;
+		width: 100%;
+		max-width: none;
+		margin-left: 0;
+		justify-content: flex-start;
+		align-items: center;
+	}
+
+	.vote-brick {
+		width: 6px;
+		height: 14px;
+		flex-shrink: 0;
+	}
+
+	.accordion-header-right {
+		font-size: 0.9em;
+		color: #333;
+	}
+
+	.voted-label {
+		font-size: 0.6em;
+	}
+
+	.rating-btn {
+		font-size: 0.85em;
+		padding: 8px 0;
+		min-width: 0;
+	}
+
+	.question-text {
+		font-size: 0.85em;
+	}
+
+	.question-number {
+		width: 24px;
+		height: 24px;
+		font-size: 0.9em;
+	}
+
+	/* Remove card styling on mobile */
+	.accordion-item,
+	.meeting-rating-section,
+	.feedback-section {
+		background-color: transparent;
+		box-shadow: none;
+		padding: 10px 0;
+		border-radius: 0;
+	}
+
+	/* Voting instruction alert compact */
+	.voting-instruction-alert {
+		padding: 10px 12px;
+		font-size: 0.75em;
+		gap: 8px;
+	}
+
+	/* Rating labels */
+	.rating-labels {
+		font-size: 0.8em;
+	}
+
+	/* Feedback input */
+	.feedback-input {
+		height: 100px;
+		padding: 12px;
+		font-size: 0.9em;
+	}
+}

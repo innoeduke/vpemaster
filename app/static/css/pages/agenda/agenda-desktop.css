@@ -1,0 +1,46 @@
+/* ========================================
+   Agenda Desktop Styles
+   For screens >= 1025px
+   ======================================== */
+
+@media (min-width: 1025px) {
+
+	/* Desktop-specific styles to keep buttons on one row */
+	.action-bar-right #view-mode-buttons {
+		display: flex;
+		flex-direction: row;
+		gap: 15px;
+		align-items: center;
+	}
+
+	.action-bar-right .button-group {
+		flex-wrap: nowrap;
+		gap: 8px;
+	}
+
+	.action-bar-right .btn {
+		font-size: 13px;
+		padding: 0 12px;
+		min-width: 70px;
+	}
+
+	.meeting-status-display {
+		min-width: 120px;
+		font-size: 0.85em;
+		padding: 4px 10px;
+	}
+
+	/* Larger meeting title for desktop */
+	.agenda-header-info .meeting-title {
+		font-size: 2.6em;
+	}
+
+	/* Desktop agenda header layout */
+	.agenda-header-container {
+		gap: 25px;
+	}
+
+	.agenda-header-logo img {
+		max-width: 160px;
+	}
+}
