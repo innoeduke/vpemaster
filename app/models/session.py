@@ -192,7 +192,7 @@ class SessionLog(db.Model):
 
         return None
 
-    def get_display_level_and_type(self, pathway_cache=None):
+    def get_display_level_and_type(self, pathway_cache=None, context_pathway_name=None):
         """
         Determine log type, display level, and project code for this session log.
         
@@ -223,6 +223,17 @@ class SessionLog(db.Model):
             pathway_abbr = None
             found_data = False
             
+            # Determine target pathway context
+            # Preference: 
+            # 1. log's own pathway field
+            # 2. explicit context passed in (e.g. from project view filter)
+            # 3. owner's current path
+            target_path_name = self.pathway
+            if not target_path_name:
+                target_path_name = context_pathway_name
+            if not target_path_name:
+                target_path_name = self.owner.Current_Path if self.owner else None
+
             # Priority 1: Lookup PathwayProject data (Canonical)
             if self.Project_ID:
                 found_via_cache = False
@@ -230,13 +241,12 @@ class SessionLog(db.Model):
                     # Use cached data if available
                     pp_data = pathway_cache[self.Project_ID]
                     if pp_data:
-                        # Find the BEST PathwayProject matching the user's context
-                        target_path = self.pathway or (self.owner.Current_Path if self.owner else None)
+                        # Find the BEST PathwayProject matching the context
                         first_pp = None
                         
-                        if target_path:
+                        if target_path_name:
                             for pp in pp_data.values():
-                                if pp.pathway and pp.pathway.name == target_path:
+                                if pp.pathway and pp.pathway.name == target_path_name:
                                     first_pp = pp
                                     break
                         
@@ -260,9 +270,6 @@ class SessionLog(db.Model):
                 
                 if not found_via_cache:
                     # No cache, query directly
-                    # Try to find match with log's own pathway first, then user's current path
-                    target_path_name = self.pathway or (self.owner.Current_Path if self.owner else None)
-                    
                     if target_path_name:
                         target_path = Pathway.query.filter_by(name=target_path_name).first()
                         if target_path:

@@ -64,7 +64,24 @@
 	<div class="chart-container">
 		<h3>Project Completion Metrics ({{ current_term.label }})</h3>
 
-		{% if chart_data %}
+		{% if max_count > 0 %}
+		<div class="chart-legend"
+			style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center;">
+			{% for level in [1, 2, 3, 4, 5] %}
+			<div class="legend-item" style="display: flex; align-items: center; gap: 6px; font-size: 0.9em;">
+				<div class="legend-color level-{{ level }}"
+					style="width: 12px; height: 12px; border-radius: 2px; background-color: var(--level-{{ level }}-color, #ccc);">
+				</div>
+				<span>Level {{ level }}</span>
+			</div>
+			{% endfor %}
+			<div class="legend-item" style="display: flex; align-items: center; gap: 6px; font-size: 0.9em;">
+				<div class="legend-color level-other"
+					style="width: 12px; height: 12px; border-radius: 2px; background-color: #9013FE;"></div>
+				<span>Other</span>
+			</div>
+		</div>
+
 		<div class="projects-chart">
 			{% for item in chart_data %}
 			<div class="chart-row">
@@ -72,26 +89,24 @@
 					{{ item.project_name }}
 				</div>
 				<div class="bar-wrapper">
-					<!-- 
-                        Max width logic: assume max possible count is something reasonable, 
-                        or relative to max in dataset. 
-                        Let's use relative to max in dataset for scaling.
-                    -->
-					{% set max_count = chart_data[0].count %}
-
-					<div class="stacked-bar-container" style="width: {{ (item.count / max_count) * 70 }}%;">
-						{% for status in ['Completed', 'Delivered', 'Booked'] %}
-						{% set s_count = item.status_counts.get(status, 0) %}
-						{% if s_count > 0 %}
-						{% set s_pct = (s_count / item.count) * 100 %}
-						<div class="bar-fill status-{{ status|lower }}" style="width: {{ s_pct }}%;"
-							title="{{ status }}: {{ s_count }}">
-							{% if s_pct > 15 %}
-							<span class="bar-count">{{ s_count }}</span>
+					<div class="stacked-bar-container" style="width: {{ (item.count / max_count) * 60 }}%;">
+						{% for level in [1, 2, 3, 4, 5, 'Other'] %}
+						{% set l_count = item.level_counts.get(level, 0) %}
+						{% if l_count > 0 %}
+						{% set l_pct = (l_count / item.count) * 100 %}
+						<div class="bar-fill level-{{ level|lower }}" style="width: {{ l_pct }}%;"
+							title="Level {{ level }}: {{ l_count }}">
+							{% if l_pct > 12 %}
+							<span class="bar-count">{{ l_count }}</span>
 							{% endif %}
 						</div>
 						{% endif %}
 						{% endfor %}
+					</div>
+
+					<div class="total-count"
+						style="font-weight: bold; margin-left: 10px; margin-right: 15px; min-width: 20px; text-align: right; color: #4a5568;">
+						{{ item.count }}
 					</div>
 
 					<div class="avatar-stack">
@@ -102,6 +117,7 @@
 							<img src="{{ url_for('static', filename=contact.Avatar_URL) }}" alt="{{ contact.Name }}"
 								class="avatar-img"
 								onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+							<div class="avatar-placeholder-small" style="display: none;">{{ contact.Name[0] }}</div>
 							{% else %}
 							<div class="avatar-placeholder-small">{{ contact.Name[0] }}</div>
 							{% endif %}

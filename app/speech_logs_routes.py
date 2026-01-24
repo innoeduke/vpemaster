@@ -699,15 +699,32 @@ def show_project_view():
         
     query = db.session.query(SessionLog).join(SessionLog.meeting).filter(*filters).order_by(SessionLog.Meeting_Number.asc()).options(
         joinedload(SessionLog.project),
-        joinedload(SessionLog.meeting)
+        joinedload(SessionLog.meeting),
+        joinedload(SessionLog.session_type).joinedload(SessionType.role)
     )
     
     logs = query.all()
     
     # Process into Chart Data
-    # Structure: { project_id: { 'project': ProjectObj, 'count': int, 'owners': [ContactObj] } }
+    # Structure: { project_id: { 'project': ProjectObj, 'count': int, 'owners': [ContactObj], 'level_counts': dict } }
     project_data_map = {}
     
+    # Pre-fetch pathway cache for efficient level determination
+    project_ids_for_cache = [log.Project_ID for log in logs if log.Project_ID]
+    pathway_cache = build_pathway_project_cache(project_ids=project_ids_for_cache)
+    
+    # Fetch all owners for these logs in one query to avoid N+1
+    log_ids = [log.id for log in logs]
+    owners_lookup = {}
+    if log_ids:
+        omr_entries = db.session.query(OwnerMeetingRoles, Contact).join(Contact).filter(
+            OwnerMeetingRoles.session_log_id.in_(log_ids)
+        ).all()
+        for omr, contact in omr_entries:
+            if omr.session_log_id not in owners_lookup:
+                owners_lookup[omr.session_log_id] = []
+            owners_lookup[omr.session_log_id].append(contact)
+
     for log in logs:
         if not log.project:
             continue
@@ -715,41 +732,62 @@ def show_project_view():
         pid = log.Project_ID
         if pid not in project_data_map:
             project_data_map[pid] = {
+                'id': pid,
                 'project_name': log.project.Project_Name,
                 'count': 0,
-                'status_counts': {'Completed': 0, 'Delivered': 0, 'Booked': 0},
+                'level_counts': {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 'Other': 0},
                 'owners': []
             }
         
         project_data_map[pid]['count'] += 1
         
-        status = log.Status if log.Status in ['Completed', 'Delivered', 'Booked'] else 'Booked' # Default to Booked or maybe 'Other'?
-        if status not in project_data_map[pid]['status_counts']:
-             project_data_map[pid]['status_counts'][status] = 0
-        project_data_map[pid]['status_counts'][status] += 1
+        # Get owners for this log
+        log_owners = owners_lookup.get(log.id, [])
+        primary_owner_path = log_owners[0].Current_Path if log_owners else None
         
-        if log.owners:
+        # Determine Level for this specific log instance
+        # Prefer selected pathway filter, then primary owner's path
+        context_path = selected_pathway_id or primary_owner_path
+        display_level, _, _ = log.get_display_level_and_type(pathway_cache, context_pathway_name=context_path)
+        
+        # Aggregation by Level
+        level_key = display_level
+        try:
+            level_key = int(display_level)
+            if level_key not in [1, 2, 3, 4, 5]:
+                level_key = 'Other'
+        except (ValueError, TypeError):
+             level_key = 'Other'
+             
+        project_data_map[pid]['level_counts'][level_key] += 1
+        
+        if log_owners:
             # Append all owners
-            project_data_map[pid]['owners'].extend(log.owners)
+            project_data_map[pid]['owners'].extend(log_owners)
             
-    # Deduplicate owners list for display
+    # Deduplicate owners list for display & Convert to list
+    chart_data = []
+    
     for pid in project_data_map:
         # Use set to dedup by ID, then sort by Name
         unique_owners = {c.id: c for c in project_data_map[pid]['owners']}.values()
         project_data_map[pid]['owners'] = sorted(list(unique_owners), key=lambda x: x.Name)
+        chart_data.append(project_data_map[pid])
 
-    # Convert to list and sort by count desc
-    chart_data = sorted(
-        project_data_map.values(), 
-        key=lambda x: x['count'], 
-        reverse=True
-    )
+    # Sort by count desc
+    chart_data.sort(key=lambda x: x['count'], reverse=True)
     
+    # Find global max for scaling
+    current_max_count = 0
+    if chart_data:
+        current_max_count = max(item['count'] for item in chart_data)
+
     return render_template(
         'project_view.html',
         terms=terms,
         current_term=current_term,
         chart_data=chart_data,
+        max_count=current_max_count,
         active_pathways=active_pathways,
         inactive_pathways=inactive_pathways,
         selected_pathway=selected_pathway_id
