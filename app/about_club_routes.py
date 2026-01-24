@@ -6,6 +6,7 @@ from .club_context import get_current_club_id, authorized_club_required
 from .models import User, Contact, AuthRole, PermissionAudit, ContactClub, Club, ExComm, UserClub
 from . import db
 from datetime import datetime
+from .utils import process_club_logo
 
 about_club_bp = Blueprint('about_club_bp', __name__)
 
@@ -202,16 +203,6 @@ def about_club_update():
                                 current_role = None
                                 # Grant the new role
                                 if uc.club_role_level:
-                                    # If they have existing roles (e.g. Member), add this new role to the bitmask
-                                    # But first, check if they already have *this* role or a conflicting one?
-                                    # Current logic seems to want to overwrite the "Staff" role specifically?
-                                    # Since ExComm is a specific role, we just add it to their existing roles.
-                                    # BUT, logic below (lines 204-210 originally) seemed to try to remove an old role?
-                                    
-                                    # Original logic: get current role, if it's 'Staff' but different ID (impossible if names unique), remove it?
-                                    # Actually, ExComm usually maps to specific Officer roles (President, VPE, etc.)
-                                    # Let's assume we ADD this new role level.
-                                    
                                     # Check if they already have this specific role level
                                     if not (uc.club_role_level & staff_role.level):
                                         uc.club_role_level |= staff_role.level
@@ -236,6 +227,43 @@ def about_club_update():
         
         return jsonify(success=True, message="Settings updated successfully")
     
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@about_club_bp.route('/about_club/upload_logo', methods=['POST'])
+@login_required
+@authorized_club_required
+def upload_club_logo():
+    """Handle club logo upload."""
+    if not is_authorized(Permissions.ABOUT_CLUB_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+    
+    try:
+        club_id = get_current_club_id()
+        club = db.session.get(Club, club_id)
+        if not club:
+            return jsonify(success=False, message="No club found"), 404
+
+        if 'logo' not in request.files:
+             return jsonify(success=False, message="No file part"), 400
+             
+        file = request.files['logo']
+        if file.filename == '':
+             return jsonify(success=False, message="No selected file"), 400
+
+        if file:
+            logo_url = process_club_logo(file, club.id)
+            if logo_url:
+                club.logo_url = logo_url
+                db.session.commit()
+                return jsonify(success=True, message="Logo updated successfully", logo_url=url_for('static', filename=logo_url))
+            else:
+                return jsonify(success=False, message="Error processing image"), 500
+                
+        return jsonify(success=False, message="Unknown error"), 500
+        
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500

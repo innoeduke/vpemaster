@@ -853,5 +853,43 @@ def process_avatar(file, contact_id):
         return None
 
 
+def process_club_logo(file, club_id):
+    """
+    Processes an uploaded club logo: crops/resizes to fit specific dimensions if needed, 
+    but generally keeps aspect ratio or squares it. For consistency with avatars (and assuming 
+    logos are often used in similar contexts like headers), we'll do a resize but maybe keep 
+    original aspect ratio or fit within a box. 
+    Let's go with a 'fit within 300x300' approach or similar to avatar but for clubs.
+    Actually, logos can be rectangular. Let's just resize to max width/height of 500px 
+    to save space, and convert to WebP.
+    """
+    from PIL import Image
+    from werkzeug.utils import secure_filename
+    import os
+
+    try:
+        img = Image.open(file)
+        
+        # Preservation of transparency (RGBA)
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGBA")
+        
+        # Resize if too large, maintaining aspect ratio
+        img.thumbnail((500, 500), Image.Resampling.LANCZOS)
+        
+        # Save file as WebP
+        filename = secure_filename(f"club_logo_{club_id}.webp")
+        # Store in a separate folder or same? Let's use uploads/club_logos
+        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'club_logos')
+        os.makedirs(upload_folder, exist_ok=True)
+        file_path = os.path.join(upload_folder, filename)
+        img.save(file_path, "WEBP", quality=85)
+        
+        return f"uploads/club_logos/{filename}"
+    except Exception as e:
+        print(f"Error processing logo for club {club_id}: {e}")
+        return None
+
+
 
 

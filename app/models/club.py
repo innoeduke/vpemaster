@@ -18,6 +18,7 @@ class Club(db.Model):
     meeting_time = db.Column(db.Time, nullable=True)
     contact_phone_number = db.Column(db.String(50), nullable=True)
     website = db.Column(db.String(255), nullable=True)
+    logo_url = db.Column(db.String(255), nullable=True)
     founded_date = db.Column(db.Date, nullable=True)
     current_excomm_id = db.Column(db.Integer, db.ForeignKey('excomm.id', use_alter=True, name='fk_club_current_excomm'), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -62,6 +63,7 @@ class Club(db.Model):
             'meeting_time': self.meeting_time.strftime('%H:%M') if self.meeting_time else None,
             'contact_phone_number': self.contact_phone_number,
             'website': self.website,
+            'logo_url': self.logo_url,
             'founded_date': self.founded_date.isoformat() if self.founded_date else None,
             'current_excomm_id': self.current_excomm_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,

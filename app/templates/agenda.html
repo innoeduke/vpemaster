@@ -12,7 +12,11 @@
 <div id="agenda-content"> {# Wrapper for edit-mode class #}
     <div class="agenda-header-container">
         <div class="agenda-header-logo">
-            <img src="{{ url_for('static', filename='images/SHLTMC-logo.webp') }}" alt="SHLTMC Logo">
+            {% if club and club.logo_url %}
+            <img src="{{ url_for('static', filename=club.logo_url) }}" alt="{{ club.club_name }} Logo">
+            {% else %}
+            <img src="{{ url_for('static', filename='images/SHLTMC-logo.webp') }}" alt="Default Club Logo">
+            {% endif %}
         </div>
 
         <div class="agenda-header-info">

@@ -210,6 +210,26 @@
                 </thead>
                 <tbody>
                     <tr>
+                        <td style="width: 40%;"><strong>Club Logo</strong></td>
+                        <td>
+                            <div id="club-logo-display">
+                                {% if club.logo_url %}
+                                <img id="current-club-logo" src="{{ url_for('static', filename=club.logo_url) }}" alt="Club Logo" style="max-height: 80px; border-radius: 4px;">
+                                {% else %}
+                                <span id="no-logo-text" class="text-muted">No logo</span>
+                                <img id="current-club-logo" src="" alt="Club Logo" style="max-height: 80px; border-radius: 4px; display: none;">
+                                {% endif %}
+                            </div>
+                            <div id="club-logo-edit" style="display: none; margin-top: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <input type="file" id="logo-upload-input" accept="image/*" class="form-control" style="width: auto; padding: 4px;">
+                                    <button id="logo-upload-btn" class="btn btn-sm btn-primary" type="button" style="display: none;">Upload</button>
+                                </div>
+                                <small class="text-muted">Max size 500x500px, WebP/PNG/JPG</small>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
                         <td style="width: 40%;"><strong>Club Number</strong></td>
                         <td data-field="club_no">{{ club.club_no }}</td>
                     </tr>
@@ -349,12 +369,81 @@
             cancelBtn.addEventListener('click', function () { disableEditing(); });
         }
 
+        // Logo Upload Logic
+        const logoInput = document.getElementById('logo-upload-input');
+        const logoBtn = document.getElementById('logo-upload-btn');
+        const currentLogo = document.getElementById('current-club-logo');
+        const noLogoText = document.getElementById('no-logo-text');
+
+        if (logoInput) {
+            logoInput.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    logoBtn.style.display = 'inline-block';
+                } else {
+                    logoBtn.style.display = 'none';
+                }
+            });
+        }
+
+        if (logoBtn) {
+            logoBtn.addEventListener('click', function() {
+                if (!logoInput.files || logoInput.files.length === 0) return;
+
+                const formData = new FormData();
+                formData.append('logo', logoInput.files[0]);
+
+                // Disable button and show spinner/text
+                const originalText = logoBtn.textContent;
+                logoBtn.textContent = 'Uploading...';
+                logoBtn.disabled = true;
+
+                fetch('{{ url_for("about_club_bp.upload_club_logo") }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        // Update image
+                        currentLogo.src = result.logo_url + '?t=' + new Date().getTime(); // force refresh
+                        currentLogo.style.display = 'block';
+                        if (noLogoText) noLogoText.style.display = 'none';
+                        
+                        // Reset input
+                        logoInput.value = '';
+                        logoBtn.style.display = 'none';
+                        
+                        // Show success message temporarily
+                        const successMsg = document.createElement('span');
+                        successMsg.textContent = ' Done!';
+                        successMsg.style.color = 'green';
+                        successMsg.style.marginLeft = '5px';
+                        logoBtn.parentNode.appendChild(successMsg);
+                        setTimeout(() => successMsg.remove(), 2000);
+                    } else {
+                        alert('Upload failed: ' + result.message);
+                    }
+                })
+                .catch(err => {
+                    console.error('Error uploading logo:', err);
+                    alert('Error uploading logo');
+                })
+                .finally(() => {
+                    logoBtn.textContent = originalText;
+                    logoBtn.disabled = false;
+                });
+            });
+        }
+
         function enableEditing() {
             isEditing = true;
             editBtn.textContent = 'Save';
             editBtn.classList.remove('btn-primary');
             editBtn.classList.add('btn-success');
             cancelBtn.style.display = 'inline-block';
+
+            const logoEditDiv = document.getElementById('club-logo-edit');
+            if (logoEditDiv) logoEditDiv.style.display = 'block';
 
             const cells = document.querySelectorAll('#about-club-content td[data-field]');
             cells.forEach(cell => {
@@ -442,6 +531,9 @@
             editBtn.classList.add('btn-primary');
             cancelBtn.style.display = 'none';
 
+            const logoEditDiv = document.getElementById('club-logo-edit');
+            if (logoEditDiv) logoEditDiv.style.display = 'none';
+
             const inputs = document.querySelectorAll('#about-club-content input[data-field], #about-club-content textarea[data-field]');
             inputs.forEach(input => {
                 const field = input.getAttribute('data-field');
@@ -481,6 +573,10 @@
                         editBtn.classList.remove('btn-success');
                         editBtn.classList.add('btn-primary');
                         cancelBtn.style.display = 'none';
+
+                        const logoEditDiv = document.getElementById('club-logo-edit');
+                        if (logoEditDiv) logoEditDiv.style.display = 'none';
+
                         originalValues = {};
                         editBtn.style.backgroundColor = '#28a745';
                         setTimeout(() => { editBtn.style.backgroundColor = ''; }, 1000);
