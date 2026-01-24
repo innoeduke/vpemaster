@@ -1737,7 +1737,7 @@ document.addEventListener("DOMContentLoaded", () => {
         editDetailsBtn.onclick = function () {
           const row = this.closest("tr");
           const logId = row.dataset.id;
-          const ownerId = row.querySelector('input[name="owner_id"]').value; // Use allContacts
+          const ownerId = row.dataset.ownerId; // Use allContacts
           const contact = allContacts.find((c) => c.id == ownerId);
           const currentPath = contact ? contact.Current_Path : null;
           const nextProject = contact ? contact.Next_Project : null;

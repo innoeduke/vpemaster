@@ -57,6 +57,27 @@
     <div class="guest-login">
       <a href="{{ url_for('agenda_bp.agenda') }}" id="guest-login-link" class="btn btn-secondary">Continue as Guest</a>
     </div>
+
+    <!-- Guest Club Selection Modal -->
+    <div id="guest-modal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Select a Club</h2>
+        </div>
+        <div class="modal-body">
+          <label for="guest-club-select" style="display:block; text-align:left; margin-bottom:8px; font-weight:600; color:#718096;">Choose a club to visit:</label>
+          <select id="guest-club-select" class="form-control" style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e0;">
+            {% for club in clubs %}
+            <option value="{{ club.id }}">{{ club.club_name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button id="cancel-guest" type="button" class="btn btn-secondary">Cancel</button>
+          <button id="confirm-guest" type="button" class="btn btn-primary">Continue</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -65,7 +86,42 @@
       const clubSelectorContainer = document.getElementById('club-selector-container');
       const clubSelector = document.getElementById('club_names');
       const guestLink = document.getElementById('guest-login-link');
+      const guestModal = document.getElementById('guest-modal');
+      const cancelGuestBtn = document.getElementById('cancel-guest');
+      const confirmGuestBtn = document.getElementById('confirm-guest');
+      const guestClubSelect = document.getElementById('guest-club-select');
       let lookupTimeout = null;
+
+      // Guest Modal Event Listeners
+      if (guestLink) {
+        guestLink.addEventListener('click', function(e) {
+          e.preventDefault();
+          guestModal.classList.add('active');
+        });
+      }
+
+      if (cancelGuestBtn) {
+        cancelGuestBtn.addEventListener('click', function() {
+          guestModal.classList.remove('active');
+        });
+      }
+
+      if (confirmGuestBtn) {
+        confirmGuestBtn.addEventListener('click', function() {
+          const clubId = guestClubSelect.value;
+          if (clubId) {
+            window.location.href = "{{ url_for('agenda_bp.agenda') }}?club_id=" + clubId;
+          }
+        });
+      }
+
+      if (guestModal) {
+        guestModal.addEventListener('click', function(e) {
+          if (e.target === guestModal) {
+            guestModal.classList.remove('active');
+          }
+        });
+      }
       
       const updateGuestLink = () => {
         const clubId = clubSelector.value;

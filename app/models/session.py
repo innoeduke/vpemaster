@@ -84,17 +84,27 @@ class SessionLog(db.Model):
     def owners(self):
         from .contact import Contact
         
-        # Safety checks for sessions without a role
-        if not self.session_type or not self.session_type.role:
-            return []
+    @property
+    def owners(self):
+        from .contact import Contact
+        
+        # Safety checks
         if not self.meeting:
             return []
             
+        # Determine target role and scope
+        target_role_id = 0
+        has_single_owner = True
+        
+        if self.session_type and self.session_type.role:
+            target_role_id = self.session_type.role_id
+            has_single_owner = self.session_type.role.has_single_owner
+            
         query = Contact.query.join(OwnerMeetingRoles).filter(
             OwnerMeetingRoles.meeting_id == self.meeting.id,
-            OwnerMeetingRoles.role_id == self.session_type.role_id
+            OwnerMeetingRoles.role_id == target_role_id
         )
-        if self.session_type.role.has_single_owner:
+        if has_single_owner:
              query = query.filter(OwnerMeetingRoles.session_log_id == self.id)
         else:
              # For shared roles, session_log_id is NULL
@@ -499,16 +509,23 @@ class SessionLog(db.Model):
             m = Meeting.query.filter_by(Meeting_Number=target_log.Meeting_Number).first()
             meeting_id = m.id if m else None
         
-        if role_obj and meeting_id:
-            role_id = role_obj.id
+        if meeting_id:
+            # Determine Role ID and Single Owner Status
+            # Default to 0 and Single Owner if no role associated
+            target_role_id = 0
+            is_single_owner = True
+            
+            if role_obj:
+                target_role_id = role_obj.id
+                is_single_owner = has_single_owner
             
             # Determine Deletion Criteria
             delete_query = OwnerMeetingRoles.query.filter(
                 OwnerMeetingRoles.meeting_id == meeting_id,
-                OwnerMeetingRoles.role_id == role_id
+                OwnerMeetingRoles.role_id == target_role_id
             )
             
-            if has_single_owner:
+            if is_single_owner:
                 delete_query = delete_query.filter(OwnerMeetingRoles.session_log_id == target_log.id)
             else:
                 delete_query = delete_query.filter(OwnerMeetingRoles.session_log_id == None)
@@ -527,9 +544,9 @@ class SessionLog(db.Model):
                 for cid in unique_owner_ids:
                     new_omr = OwnerMeetingRoles(
                         meeting_id=meeting_id,
-                        role_id=role_id,
+                        role_id=target_role_id,
                         contact_id=cid,
-                        session_log_id=target_log.id if has_single_owner else None
+                        session_log_id=target_log.id if is_single_owner else None
                     )
                     db.session.add(new_omr)
 
@@ -612,6 +629,12 @@ class SessionLog(db.Model):
     @classmethod
     def delete_for_meeting(cls, meeting_number):
         """Deletes all session logs for a specific meeting."""
+        # Fix: Delete OwnerMeetingRoles first to avoid FK constraint
+        from .meeting import Meeting
+        m = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+        if m:
+             OwnerMeetingRoles.query.filter_by(meeting_id=m.id).delete(synchronize_session=False)
+
         logs = cls.query.filter_by(Meeting_Number=meeting_number).all()
         for log in logs:
             if log.media:

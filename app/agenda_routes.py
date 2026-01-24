@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles
 from .constants import SessionTypeID, ProjectID, SPEECH_TYPES_WITH_PROJECT
 from .services.export import MeetingExportService
 from .services.export.context import MeetingExportContext
@@ -985,6 +985,10 @@ def _upsert_meeting_record(data, media_id):
 
 def _generate_logs_from_template(meeting, template_file):
     """Reads the CSV template and generates session logs."""
+    # Clear existing owners/roles first (to avoid FK constraints)
+    if meeting.id:
+        OwnerMeetingRoles.query.filter_by(meeting_id=meeting.id).delete(synchronize_session=False)
+
     # Clear existing logs
     SessionLog.query.filter_by(Meeting_Number=meeting.Meeting_Number).delete()
     
