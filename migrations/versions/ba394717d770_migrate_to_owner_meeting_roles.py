@@ -21,12 +21,8 @@ def upgrade():
     insp = sa.inspect(conn)
     columns = [c['name'] for c in insp.get_columns('meeting_roles')]
     
-    # 1. Rename is_distinct to has_single_owner
-    if 'is_distinct' in columns:
-        op.alter_column('meeting_roles', 'is_distinct', new_column_name='has_single_owner', existing_type=sa.Boolean, nullable=False)
-    elif 'has_single_owner' not in columns:
-        # Should not happen if models match, but maybe new col?
-        pass
+    # 1. (Handled by 90ce9be2b3f8)
+
 
     # 2. Create owner_meeting_roles table
     # Drop first if exists (to handle failed partial migrations)
@@ -126,13 +122,18 @@ def downgrade():
     conn = op.get_bind()
     
     # 1. Recreate session_log_owners
-    op.create_table('session_log_owners',
-        sa.Column('session_log_id', sa.Integer(), nullable=False),
-        sa.Column('contact_id', sa.Integer(), nullable=False),
-        sa.ForeignKeyConstraint(['contact_id'], ['Contacts.id'], name='fk_session_log_owners_contact_id'),
-        sa.ForeignKeyConstraint(['session_log_id'], ['Session_Logs.id'], name='fk_session_log_owners_session_log_id'),
-        sa.PrimaryKeyConstraint('session_log_id', 'contact_id')
-    )
+    insp = sa.inspect(conn)
+    if 'session_log_owners' not in insp.get_table_names():
+        op.create_table('session_log_owners',
+            sa.Column('session_log_id', sa.Integer(), nullable=False),
+            sa.Column('contact_id', sa.Integer(), nullable=False),
+            sa.ForeignKeyConstraint(['contact_id'], ['Contacts.id'], name='fk_session_log_owners_contact_id'),
+            sa.ForeignKeyConstraint(['session_log_id'], ['Session_Logs.id'], name='fk_session_log_owners_session_log_id'),
+            sa.PrimaryKeyConstraint('session_log_id', 'contact_id')
+        )
+    else:
+        # If it already exists (from a failed downgrade attempt), clear it to avoid Duplicate Entry errors
+        conn.execute(sa.text("DELETE FROM session_log_owners"))
     
     # 2. Migrate Data Back
     # Warning: Shared roles (session_log_id=NULL) will be harder to map back to specific session logs if distinct logic was lost.
@@ -185,10 +186,7 @@ def downgrade():
         )
 
     # 3. Drop owner_meeting_roles
-    op.drop_index(op.f('ix_owner_meeting_roles_role_id'), table_name='owner_meeting_roles')
-    op.drop_index(op.f('ix_owner_meeting_roles_meeting_id'), table_name='owner_meeting_roles')
-    op.drop_index(op.f('ix_owner_meeting_roles_contact_id'), table_name='owner_meeting_roles')
     op.drop_table('owner_meeting_roles')
 
-    # 4. Rename column back
-    op.alter_column('meeting_roles', 'has_single_owner', new_column_name='is_distinct', existing_type=sa.Boolean, nullable=False)
+    # 4. (Handled by 90ce9be2b3f8)
+
