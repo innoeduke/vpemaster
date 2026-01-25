@@ -13,6 +13,7 @@ const modalElements = {
   sessionType: document.getElementById("edit-session-type-title"),
   speechTitle: document.getElementById("edit-speech-title"),
   speechTitleLabel: document.querySelector('label[for="edit-speech-title"]'),
+  credential: document.getElementById("edit-credential"),
   mediaUrl: document.getElementById("edit-speech-media-url"),
 
   standardSelection: document.getElementById("standard-selection"),
@@ -123,11 +124,15 @@ async function openSpeechEditModal(
     resetModal(data.log, currentSessionType);
 
     const setupFunctions = {
-      Evaluation: setupEvaluatorModal,
+      "Evaluation": setupEvaluatorModal,
       "Panel Discussion": setupSpecialProjectModal,
       "Table Topics": setupSpecialProjectModal,
       "Keynote Speech": setupSpecialProjectModal,
-      default: setupSpeechModal,
+      "Pathway Speech": setupSpeechModal,
+      "Presentation": setupSpeechModal,
+      "Ice Breaker": setupSpeechModal, // Just in case
+      // Add other explicit speech types if known
+      default: setupRoleModal,
     };
     const setupFunction =
       setupFunctions[currentSessionType] || setupFunctions.default;
@@ -185,9 +190,14 @@ function resetModal(logData, sessionType) {
   modalElements.logId.value = logData.id;
   modalElements.title.textContent = `Edit ${sessionType} Details`;
   modalElements.speechTitle.value = logData.Session_Title || "";
+  modalElements.credential.value = logData.credential || "";
   modalElements.sessionType.value = sessionType;
   modalElements.mediaUrl.value = logData.Media_URL || "";
   modalElements.speechTitle.disabled = false;
+  modalElements.credential.disabled = false;
+  
+  // Reset visibility of Speech Title form group (might be hidden by role modal)
+  modalElements.speechTitle.closest('.form-group').style.display = 'block';
 
   if (modalElements.standardSelection)
     modalElements.standardSelection.style.display = "none";
@@ -289,6 +299,25 @@ function setupSpecialProjectModal(logData, { sessionType, workingPath }) {
       modalElements.pathwaySelectDropdown.value = "";
     }
   };
+}
+
+function setupRoleModal(logData, { sessionType }) {
+  modalElements.title.textContent = `Edit ${sessionType} Details`;
+  // Hide all speech-specific fields
+  modalElements.speechTitle.disabled = true; // Or hide parent
+  // Actually, for roles we might not even want "Speech Title".
+  // But logic resetModal enables it.
+  
+  // Hide Standard Fields
+  modalElements.standardSelection.style.display = "none";
+  modalElements.projectGroup.style.display = "none";
+  
+  // Also hide the Speech Title label/input row if possible, or just disable it?
+  // User screenshot shows "Ah-Counter Introduction" as title. 
+  // If we want to hide it completely:
+  modalElements.speechTitle.closest('.form-group').style.display = 'none';
+  
+  // Ensure credential is shown (resetModal handles enablement)
 }
 
 
@@ -494,6 +523,7 @@ function buildSavePayload() {
   const {
     sessionType,
     mediaUrl,
+    credential,
     isProjectChk,
     speechTitle,
     projectSelect,
@@ -505,6 +535,7 @@ function buildSavePayload() {
   const payload = {
     session_type_title: sessionType.value,
     media_url: mediaUrl.value || null,
+    credential: credential.value || null,
   };
   const isProject = isProjectChk?.checked || false;
 

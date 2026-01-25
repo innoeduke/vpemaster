@@ -1,5 +1,15 @@
 {
-  "roles": [
+  "meeting_roles": [
+    {
+      "id": 0,
+      "name": "No Role",
+      "icon": null,
+      "type": "system",
+      "award_category": null,
+      "needs_approval": false,
+      "has_single_owner": true,
+      "is_member_only": null
+    },
     {
       "id": 1,
       "name": "Toastmaster",
@@ -7,7 +17,7 @@
       "type": "standard",
       "award_category": "role-taker",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": true
     },
     {
@@ -17,7 +27,7 @@
       "type": "standard",
       "award_category": "role-taker",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -27,7 +37,7 @@
       "type": "standard",
       "award_category": "evaluator",
       "needs_approval": false,
-      "is_distinct": true,
+      "has_single_owner": true,
       "is_member_only": false
     },
     {
@@ -37,7 +47,7 @@
       "type": "standard",
       "award_category": "role-taker",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -47,7 +57,7 @@
       "type": "standard",
       "award_category": "role-taker",
       "needs_approval": false,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -57,7 +67,7 @@
       "type": "standard",
       "award_category": "role-taker",
       "needs_approval": false,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -67,7 +77,7 @@
       "type": "standard",
       "award_category": "role-taker",
       "needs_approval": false,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -77,7 +87,7 @@
       "type": "standard",
       "award_category": "speaker",
       "needs_approval": true,
-      "is_distinct": true,
+      "has_single_owner": true,
       "is_member_only": true
     },
     {
@@ -87,7 +97,7 @@
       "type": "standard",
       "award_category": "table-topic",
       "needs_approval": false,
-      "is_distinct": true,
+      "has_single_owner": true,
       "is_member_only": false
     },
     {
@@ -97,7 +107,7 @@
       "type": "club-specific",
       "award_category": "speaker",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -107,7 +117,7 @@
       "type": "club-specific",
       "award_category": "role-taker",
       "needs_approval": false,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -117,7 +127,7 @@
       "type": "club-specific",
       "award_category": "role-taker",
       "needs_approval": false,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -127,7 +137,7 @@
       "type": "club-specific",
       "award_category": "role-taker",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -137,7 +147,7 @@
       "type": "club-specific",
       "award_category": "role-taker",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -147,7 +157,7 @@
       "type": "club-specific",
       "award_category": "role-taker",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -157,7 +167,7 @@
       "type": "club-specific",
       "award_category": "role-taker",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -167,7 +177,7 @@
       "type": "club-specific",
       "award_category": "",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -177,7 +187,7 @@
       "type": "club-specific",
       "award_category": "role-taker",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -187,7 +197,7 @@
       "type": "club-specific",
       "award_category": "",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -197,7 +207,7 @@
       "type": "club-specific",
       "award_category": "",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -207,38 +217,8 @@
       "type": "club-specific",
       "award_category": "",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
-    },
-    {
-      "id": 23,
-      "name": "SAA",
-      "icon": "fa-door-open",
-      "type": "officer",
-      "award_category": "",
-      "needs_approval": false,
-      "is_distinct": false,
-      "is_member_only": true
-    },
-    {
-      "id": 24,
-      "name": "President",
-      "icon": "fa-gavel",
-      "type": "officer",
-      "award_category": "",
-      "needs_approval": false,
-      "is_distinct": false,
-      "is_member_only": true
-    },
-    {
-      "id": 25,
-      "name": "VPM",
-      "icon": "fa-handshake",
-      "type": "officer",
-      "award_category": "",
-      "needs_approval": false,
-      "is_distinct": false,
-      "is_member_only": true
     },
     {
       "id": 26,
@@ -247,7 +227,7 @@
       "type": "club-specific",
       "award_category": "role-taker",
       "needs_approval": true,
-      "is_distinct": false,
+      "has_single_owner": false,
       "is_member_only": false
     },
     {
@@ -257,7 +237,107 @@
       "type": "club-specific",
       "award_category": "role-taker",
       "needs_approval": false,
-      "is_distinct": false,
+      "has_single_owner": false,
+      "is_member_only": false
+    },
+    {
+      "id": 28,
+      "name": "Speaker",
+      "icon": "fa-microphone",
+      "type": "standard",
+      "award_category": "",
+      "needs_approval": false,
+      "has_single_owner": true,
+      "is_member_only": false
+    },
+    {
+      "id": 29,
+      "name": "TestDistinct",
+      "icon": null,
+      "type": "standard",
+      "award_category": null,
+      "needs_approval": false,
+      "has_single_owner": true,
+      "is_member_only": false
+    },
+    {
+      "id": 30,
+      "name": "TestShared",
+      "icon": null,
+      "type": "standard",
+      "award_category": null,
+      "needs_approval": false,
+      "has_single_owner": false,
+      "is_member_only": false
+    },
+    {
+      "id": 31,
+      "name": "SAA",
+      "icon": "",
+      "type": "officer",
+      "award_category": "",
+      "needs_approval": false,
+      "has_single_owner": false,
+      "is_member_only": false
+    },
+    {
+      "id": 32,
+      "name": "President",
+      "icon": "",
+      "type": "officer",
+      "award_category": "",
+      "needs_approval": false,
+      "has_single_owner": false,
+      "is_member_only": false
+    },
+    {
+      "id": 33,
+      "name": "VPE",
+      "icon": "",
+      "type": "officer",
+      "award_category": "",
+      "needs_approval": false,
+      "has_single_owner": false,
+      "is_member_only": false
+    },
+    {
+      "id": 34,
+      "name": "VPM",
+      "icon": "",
+      "type": "officer",
+      "award_category": "",
+      "needs_approval": false,
+      "has_single_owner": false,
+      "is_member_only": false
+    },
+    {
+      "id": 35,
+      "name": "VPPR",
+      "icon": "",
+      "type": "officer",
+      "award_category": "",
+      "needs_approval": false,
+      "has_single_owner": false,
+      "is_member_only": false
+    },
+    {
+      "id": 36,
+      "name": "Secretary",
+      "icon": "",
+      "type": "officer",
+      "award_category": "",
+      "needs_approval": false,
+      "has_single_owner": false,
+      "is_member_only": false
+    },
+    {
+      "id": 37,
+      "name": "Treasurer",
+      "icon": "",
+      "type": "officer",
+      "award_category": "",
+      "needs_approval": false,
+      "has_single_owner": false,
       "is_member_only": false
     }
   ],
@@ -1837,31 +1917,31 @@
     {
       "id": 1,
       "Title": "SAA Introduction",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 1,
-      "role_id": 23
+      "role_id": 31
     },
     {
       "id": 2,
       "Title": "President's Address",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 2,
-      "role_id": 24
+      "role_id": 32
     },
     {
       "id": 3,
       "Title": "Toastmaster of the Evening's Address",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -1873,7 +1953,7 @@
     {
       "id": 4,
       "Title": "Ah-Counter Introduction",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -1885,7 +1965,7 @@
     {
       "id": 5,
       "Title": "Grammarian Introduction",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -1897,7 +1977,7 @@
     {
       "id": 6,
       "Title": "Timer Introduction",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -1909,7 +1989,7 @@
     {
       "id": 7,
       "Title": "Table Topics",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -1921,7 +2001,7 @@
     {
       "id": 8,
       "Title": "Generic",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": false,
@@ -1933,19 +2013,19 @@
     {
       "id": 9,
       "Title": "New Member Induction",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 7,
-      "role_id": 25
+      "role_id": 11
     },
     {
       "id": 10,
       "Title": "New Guest Greetings",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -1957,7 +2037,7 @@
     {
       "id": 11,
       "Title": "Networking",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": false,
@@ -1969,7 +2049,7 @@
     {
       "id": 12,
       "Title": "General Evaluator's Address",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -1981,7 +2061,7 @@
     {
       "id": 13,
       "Title": "Ah-Counter Report",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -1993,7 +2073,7 @@
     {
       "id": 14,
       "Title": "Grammarian Report",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -2005,7 +2085,7 @@
     {
       "id": 15,
       "Title": "Timer Report",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -2017,7 +2097,7 @@
     {
       "id": 16,
       "Title": "General Evaluation Report",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -2029,7 +2109,7 @@
     {
       "id": 17,
       "Title": "Voting and Announcements",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -2041,19 +2121,19 @@
     {
       "id": 18,
       "Title": "Awards / Meeting Closing",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 2,
-      "role_id": 24
+      "role_id": 32
     },
     {
       "id": 20,
       "Title": "Keynote Speech",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": false,
@@ -2065,7 +2145,7 @@
     {
       "id": 30,
       "Title": "Prepared Speech",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": false,
@@ -2077,7 +2157,7 @@
     {
       "id": 31,
       "Title": "Evaluation",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": false,
@@ -2089,7 +2169,7 @@
     {
       "id": 32,
       "Title": "Section",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": true,
       "Is_Hidden": false,
       "Predefined": false,
@@ -2099,21 +2179,9 @@
       "role_id": null
     },
     {
-      "id": 34,
-      "Title": "Backup Speaker",
-      "Default_Owner": "",
-      "Is_Section": false,
-      "Is_Hidden": true,
-      "Predefined": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 5,
-      "Duration_Max": 7,
-      "role_id": null
-    },
-    {
       "id": 35,
       "Title": "Photography",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
       "Predefined": false,
@@ -2125,7 +2193,7 @@
     {
       "id": 36,
       "Title": "Topics Speech",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
       "Predefined": false,
@@ -2137,7 +2205,7 @@
     {
       "id": 37,
       "Title": "Introductory Mentor",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
       "Predefined": false,
@@ -2149,7 +2217,7 @@
     {
       "id": 38,
       "Title": "Club Mentor",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
       "Predefined": false,
@@ -2161,7 +2229,7 @@
     {
       "id": 40,
       "Title": "Debate",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
       "Predefined": false,
@@ -2173,7 +2241,7 @@
     {
       "id": 41,
       "Title": "Panelist",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
       "Predefined": false,
@@ -2185,7 +2253,7 @@
     {
       "id": 42,
       "Title": "Meeting Manager",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
       "Predefined": false,
@@ -2197,7 +2265,7 @@
     {
       "id": 44,
       "Title": "Panel Discussion",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": false,
@@ -2209,7 +2277,7 @@
     {
       "id": 45,
       "Title": "Club Election",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": true,
@@ -2221,7 +2289,7 @@
     {
       "id": 46,
       "Title": "Contest Chair Address",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": false,
@@ -2233,7 +2301,7 @@
     {
       "id": 47,
       "Title": "Ballot Counting",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
       "Predefined": false,
@@ -2245,13 +2313,37 @@
     {
       "id": 48,
       "Title": "Hidden Section",
-      "Default_Owner": "",
+      "Default_Owner": null,
       "Is_Section": true,
       "Is_Hidden": true,
       "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
+      "role_id": null
+    },
+    {
+      "id": 57,
+      "Title": "Member Roadmap",
+      "Default_Owner": null,
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": 3,
+      "role_id": 34
+    },
+    {
+      "id": 58,
+      "Title": "Backup Speaker",
+      "Default_Owner": "",
+      "Is_Section": false,
+      "Is_Hidden": true,
+      "Predefined": false,
+      "Valid_for_Project": false,
+      "Duration_Min": 5,
+      "Duration_Max": 7,
       "role_id": null
     }
   ],
@@ -4725,22 +4817,67 @@
       "created_at": "2026-01-15 07:42:37"
     },
     {
-      "id": 19,
+      "id": 25,
+      "name": "MEDIA_ACCESS",
+      "description": "Access to external media URLs",
+      "category": "agenda",
+      "resource": "agenda",
+      "action": null,
+      "created_at": "2026-01-22 05:52:17"
+    },
+    {
+      "id": 32,
       "name": "ABOUT_CLUB_VIEW",
       "description": "View club information and executive committee",
       "category": "club",
       "resource": "club",
       "action": "view",
-      "created_at": "2026-01-16 08:16:30"
+      "created_at": "2026-01-25 03:09:59"
     },
     {
-      "id": 20,
+      "id": 33,
       "name": "ABOUT_CLUB_EDIT",
       "description": "Edit club information and executive committee",
       "category": "club",
       "resource": "club",
       "action": "edit",
-      "created_at": "2026-01-16 08:16:30"
+      "created_at": "2026-01-25 03:09:59"
+    },
+    {
+      "id": 34,
+      "name": "ROSTER_EDIT",
+      "description": "Edit club roster",
+      "category": "club",
+      "resource": "roster",
+      "action": "edit",
+      "created_at": "2026-01-25 03:09:59"
+    },
+    {
+      "id": 35,
+      "name": "LUCKY_DRAW_VIEW",
+      "description": "View lucky draw",
+      "category": "club",
+      "resource": "lucky_draw",
+      "action": "view",
+      "created_at": "2026-01-25 03:09:59"
+    },
+    {
+      "id": 36,
+      "name": "LUCKY_DRAW_EDIT",
+      "description": "Edit lucky draw",
+      "category": "club",
+      "resource": "lucky_draw",
+      "action": "edit",
+      "created_at": "2026-01-25 03:09:59"
+    },
+    {
+      "id": 37,
+      "name": "CLUBS_MANAGE",
+      "description": "Manage all clubs features",
+      "category": "club",
+      "resource": "club",
+      "action": "manage",
+      "created_at": "2026-01-25 03:09:59"
     }
   ],
   "auth_roles": [
@@ -4771,188 +4908,50 @@
       "description": "Member role",
       "level": 1,
       "created_at": "2026-01-15 07:42:37"
+    },
+    {
+      "id": 5,
+      "name": "Guest",
+      "description": null,
+      "level": 0,
+      "created_at": "2026-01-16 13:55:24"
     }
   ],
   "role_permissions": [
     {
-      "id": 13,
+      "id": 62,
       "role_id": 1,
-      "permission_id": 1
+      "permission_id": 25
     },
     {
-      "id": 11,
+      "id": 78,
       "role_id": 1,
-      "permission_id": 2
+      "permission_id": 32
     },
     {
-      "id": 9,
+      "id": 82,
       "role_id": 1,
-      "permission_id": 3
+      "permission_id": 33
     },
     {
-      "id": 5,
+      "id": 86,
       "role_id": 1,
-      "permission_id": 4
+      "permission_id": 37
     },
     {
-      "id": 3,
-      "role_id": 1,
-      "permission_id": 5
-    },
-    {
-      "id": 14,
-      "role_id": 1,
-      "permission_id": 6
-    },
-    {
-      "id": 2,
-      "role_id": 1,
-      "permission_id": 7
-    },
-    {
-      "id": 12,
-      "role_id": 1,
-      "permission_id": 8
-    },
-    {
-      "id": 16,
-      "role_id": 1,
-      "permission_id": 9
-    },
-    {
-      "id": 17,
-      "role_id": 1,
-      "permission_id": 10
-    },
-    {
-      "id": 10,
-      "role_id": 1,
-      "permission_id": 11
-    },
-    {
-      "id": 7,
-      "role_id": 1,
-      "permission_id": 12
-    },
-    {
-      "id": 1,
-      "role_id": 1,
-      "permission_id": 13
-    },
-    {
-      "id": 15,
-      "role_id": 1,
-      "permission_id": 14
-    },
-    {
-      "id": 8,
-      "role_id": 1,
-      "permission_id": 15
-    },
-    {
-      "id": 6,
-      "role_id": 1,
-      "permission_id": 17
-    },
-    {
-      "id": 4,
-      "role_id": 1,
-      "permission_id": 18
-    },
-    {
-      "id": 44,
-      "role_id": 1,
-      "permission_id": 19
-    },
-    {
-      "id": 48,
-      "role_id": 1,
-      "permission_id": 20
-    },
-    {
-      "id": 26,
+      "id": 63,
       "role_id": 2,
-      "permission_id": 1
+      "permission_id": 25
     },
     {
-      "id": 20,
+      "id": 79,
       "role_id": 2,
-      "permission_id": 2
+      "permission_id": 32
     },
     {
-      "id": 18,
+      "id": 83,
       "role_id": 2,
-      "permission_id": 3
-    },
-    {
-      "id": 30,
-      "role_id": 2,
-      "permission_id": 4
-    },
-    {
-      "id": 27,
-      "role_id": 2,
-      "permission_id": 5
-    },
-    {
-      "id": 28,
-      "role_id": 2,
-      "permission_id": 6
-    },
-    {
-      "id": 25,
-      "role_id": 2,
-      "permission_id": 7
-    },
-    {
-      "id": 21,
-      "role_id": 2,
-      "permission_id": 8
-    },
-    {
-      "id": 31,
-      "role_id": 2,
-      "permission_id": 9
-    },
-    {
-      "id": 32,
-      "role_id": 2,
-      "permission_id": 10
-    },
-    {
-      "id": 19,
-      "role_id": 2,
-      "permission_id": 11
-    },
-    {
-      "id": 22,
-      "role_id": 2,
-      "permission_id": 13
-    },
-    {
-      "id": 24,
-      "role_id": 2,
-      "permission_id": 14
-    },
-    {
-      "id": 23,
-      "role_id": 2,
-      "permission_id": 15
-    },
-    {
-      "id": 29,
-      "role_id": 2,
-      "permission_id": 18
-    },
-    {
-      "id": 45,
-      "role_id": 2,
-      "permission_id": 19
-    },
-    {
-      "id": 49,
-      "role_id": 2,
-      "permission_id": 20
+      "permission_id": 33
     },
     {
       "id": 34,
@@ -4980,6 +4979,11 @@
       "permission_id": 10
     },
     {
+      "id": 68,
+      "role_id": 3,
+      "permission_id": 11
+    },
+    {
       "id": 39,
       "role_id": 3,
       "permission_id": 15
@@ -4990,9 +4994,14 @@
       "permission_id": 18
     },
     {
-      "id": 46,
+      "id": 64,
       "role_id": 3,
-      "permission_id": 19
+      "permission_id": 25
+    },
+    {
+      "id": 80,
+      "role_id": 3,
+      "permission_id": 32
     },
     {
       "id": 40,
@@ -5015,9 +5024,75 @@
       "permission_id": 16
     },
     {
-      "id": 47,
+      "id": 65,
       "role_id": 4,
-      "permission_id": 19
+      "permission_id": 25
+    },
+    {
+      "id": 81,
+      "role_id": 4,
+      "permission_id": 32
+    },
+    {
+      "id": 84,
+      "role_id": 5,
+      "permission_id": 4
+    },
+    {
+      "id": 85,
+      "role_id": 5,
+      "permission_id": 10
+    }
+  ],
+  "tickets": [
+    {
+      "id": 1,
+      "name": "Early-bird",
+      "price": 0.0,
+      "icon": null,
+      "color": null
+    },
+    {
+      "id": 2,
+      "name": "Cancelled",
+      "price": 0.0,
+      "icon": null,
+      "color": null
+    },
+    {
+      "id": 3,
+      "name": "Walk-in",
+      "price": 0.0,
+      "icon": null,
+      "color": null
+    },
+    {
+      "id": 4,
+      "name": "Officer",
+      "price": 0.0,
+      "icon": null,
+      "color": null
+    },
+    {
+      "id": 5,
+      "name": "Coupon",
+      "price": 0.0,
+      "icon": null,
+      "color": null
+    },
+    {
+      "id": 6,
+      "name": "Unpaid",
+      "price": 0.0,
+      "icon": null,
+      "color": null
+    },
+    {
+      "id": 7,
+      "name": "Role-taker",
+      "price": 0.0,
+      "icon": null,
+      "color": null
     }
   ]
 }

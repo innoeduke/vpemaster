@@ -157,6 +157,10 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     }
 
     input.addEventListener('focus', showResults);
+    input.addEventListener('click', () => {
+        input.value = '';
+        showResults();
+    });
     input.addEventListener('input', showResults);
     input.addEventListener('blur', hideResults);
 

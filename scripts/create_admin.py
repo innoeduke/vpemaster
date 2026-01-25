@@ -14,6 +14,12 @@ from app.models import User, Contact, Club, UserClub, ContactClub, AuthRole
 def create_admin(username, email, password, contact_name, club):
     """Create an admin user with associated contact."""
     
+    # Paranoid Input Cleaning (Apply immediately)
+    username = str(username).strip()
+    email = str(email).strip().lower() # Ensure email is lowercase
+    if contact_name:
+        contact_name = str(contact_name).strip()
+    
     # Check if user already exists
     existing_user = User.query.filter_by(username=username).first()
     if existing_user:
@@ -38,26 +44,34 @@ def create_admin(username, email, password, contact_name, club):
             click.echo("❌ Error: 'SysAdmin' role not found in database. Please run seed data first.", err=True)
             return
 
-        # Resolve Club
+        # Validate Club or Create Gossip
         club_obj = None
         if club:
             club_obj = Club.query.filter_by(club_name=club).first()
             if not club_obj:
-               click.echo(f"⚠️  Warning: Club '{club}' not found. Falling back to default.", err=True)
+               click.echo(f"⚠️  Warning: Club '{club}' not found. Falling back to default logic.", err=True)
         
         if not club_obj:
             club_obj = Club.query.first()
             
         if not club_obj:
-            click.echo("❌ Error: No clubs found in database. Please create a club first.", err=True)
-            return
+            # Create Gossip club if no clubs exist
+            click.echo("ℹ️ No clubs found. Creating default 'Gossip' club...", err=True)
+            from datetime import date
+            club_obj = Club(
+                club_name='Gossip',
+                club_no='000000',
+                district='00',
+                founded_date=date.today()
+            )
+            db.session.add(club_obj)
+            db.session.flush()
 
         # Generate a unique Member_ID for admin
         admin_count = User.query.join(User.roles).filter(AuthRole.name == 'SysAdmin').count()
         member_id = f"ADMIN{admin_count + 1:03d}"
         
         # Create contact first
-        # Fix: Removed 'Club' field as it's not in Contact model
         contact = Contact(
             Name=contact_name,
             Email=email, # Contact uses Capitalized Email
@@ -68,25 +82,26 @@ def create_admin(username, email, password, contact_name, club):
         db.session.add(contact)
         db.session.flush()  # Get the contact ID
         
+
         # Create admin user
-        # Fix: Removed 'contact_id' (now in UserClub) and fixed 'Email' to 'email'
         admin = User(
             username=username,
             email=email,
             status='active'
         )
+        
         admin.set_password(password)
-        admin.add_role(sysadmin_role)
+        # Note: admin.add_role(sysadmin_role) is unnecessary/ineffective as User.roles is view-only derived from UserClub
         db.session.add(admin)
         db.session.flush() # Get user ID
-
+        
         # Create UserClub linkage
         uc = UserClub(
             user_id=admin.id,
             club_id=club_obj.id,
             contact_id=contact.id,
             is_home=True,
-            club_role_level=0 # SysAdmin role is global via AuthRole
+            club_role_level=sysadmin_role.level # Assign SysAdmin level
         )
         db.session.add(uc)
 
@@ -100,7 +115,7 @@ def create_admin(username, email, password, contact_name, club):
         # Commit the transaction
         db.session.commit()
         
-        click.echo(f"✅ Admin user '{username}' created successfully!")
+        click.echo(f"✅ Admin user '{admin.username}' created successfully!")
         click.echo(f"   Email: {email}")
         click.echo(f"   Contact: {contact_name}")
         click.echo(f"   Member ID: {member_id}")

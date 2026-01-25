@@ -163,7 +163,11 @@ def create_app(config_class='config.Config'):
 
     # Register CLI commands
     from scripts.create_admin import create_admin
+    from scripts.import_data import import_data
+    from scripts.manage_metadata import metadata
     app.cli.add_command(create_admin)
+    app.cli.add_command(import_data)
+    app.cli.add_command(metadata)
 
     # 7. Return the configured app instance
     return app

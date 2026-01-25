@@ -43,6 +43,18 @@ def upgrade():
 
 
 def downgrade():
-    # Remove foreign key and column
-    op.drop_constraint('fk_session_logs_user', 'Session_Logs', type_='foreignkey')
-    op.drop_column('Session_Logs', 'user_id')
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    
+    sl_columns = [c['name'] for c in inspector.get_columns('Session_Logs')]
+    fks = inspector.get_foreign_keys('Session_Logs')
+    
+    # Identify all foreign keys that use user_id
+    user_id_fks = [fk['name'] for fk in fks if 'user_id' in fk.get('constrained_columns', [])]
+    
+    with op.batch_alter_table('Session_Logs', schema=None) as batch_op:
+        for fk_name in user_id_fks:
+            batch_op.drop_constraint(fk_name, type_='foreignkey')
+            
+        if 'user_id' in sl_columns:
+            batch_op.drop_column('user_id')
