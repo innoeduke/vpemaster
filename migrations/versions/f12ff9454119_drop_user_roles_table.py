@@ -19,13 +19,14 @@ depends_on = None
 def upgrade():
     # Add foreign key constraint to user_clubs.club_role_id if not exists
     with op.batch_alter_table('user_clubs', schema=None) as batch_op:
-        # Check if the constraint exists before adding
+        # Check if column and constraint exist before adding
         conn = op.get_bind()
         inspector = sa.inspect(conn)
+        columns = [c['name'] for c in inspector.get_columns('user_clubs')]
         fks = inspector.get_foreign_keys('user_clubs')
         fk_exists = any(fk['constrained_columns'] == ['club_role_id'] for fk in fks)
         
-        if not fk_exists:
+        if 'club_role_id' in columns and not fk_exists:
             batch_op.create_foreign_key(
                 'fk_user_clubs_club_role_id',
                 'auth_roles',
@@ -44,21 +45,28 @@ def upgrade():
 
 
 def downgrade():
-    # Recreate user_roles table
-    op.create_table(
-        'user_roles',
-        sa.Column('id', sa.Integer(), nullable=False),
-        sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('role_id', sa.Integer(), nullable=False),
-        sa.Column('assigned_at', sa.DateTime(), nullable=True),
-        sa.Column('assigned_by', sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['user_id'], ['Users.id'], ondelete='CASCADE'),
-        sa.ForeignKeyConstraint(['assigned_by'], ['Users.id'], ondelete='SET NULL'),
-        sa.PrimaryKeyConstraint('id'),
-        sa.UniqueConstraint('user_id', 'role_id', name='unique_user_role')
-    )
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    tables = inspector.get_table_names()
+    
+    if 'user_roles' not in tables:
+        # Recreate user_roles table
+        op.create_table(
+            'user_roles',
+            sa.Column('id', sa.Integer(), nullable=False),
+            sa.Column('user_id', sa.Integer(), nullable=False),
+            sa.Column('role_id', sa.Integer(), nullable=False),
+            sa.Column('assigned_at', sa.DateTime(), nullable=True),
+            sa.Column('assigned_by', sa.Integer(), nullable=True),
+            sa.ForeignKeyConstraint(['role_id'], ['auth_roles.id'], ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['user_id'], ['Users.id'], ondelete='CASCADE'),
+            sa.ForeignKeyConstraint(['assigned_by'], ['Users.id'], ondelete='SET NULL'),
+            sa.PrimaryKeyConstraint('id'),
+            sa.UniqueConstraint('user_id', 'role_id', name='unique_user_role')
+        )
     
     # Remove foreign key from user_clubs.club_role_id
     with op.batch_alter_table('user_clubs', schema=None) as batch_op:
-        batch_op.drop_constraint('fk_user_clubs_club_role_id', type_='foreignkey')
+        fks = inspector.get_foreign_keys('user_clubs')
+        if any(fk['name'] == 'fk_user_clubs_club_role_id' for fk in fks):
+            batch_op.drop_constraint('fk_user_clubs_club_role_id', type_='foreignkey')

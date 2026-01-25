@@ -554,3 +554,61 @@ class RoleService:
         cache.set(cache_key, role_takers)
         
         return role_takers
+    @staticmethod
+    def get_roles_for_contact(contact_id, club_id=None):
+        """
+        Retrieves all role duties assigned to a specific contact.
+        This includes both single-owner and shared roles across meetings.
+        This serves as the source of truth for a user's activity logs.
+        
+        Args:
+            contact_id: ID of the contact to query
+            club_id: Optional club ID to filter meetings
+            
+        Returns:
+            list: List of SessionLog objects, with context_owner attached.
+        """
+        from app.models import OwnerMeetingRoles, Meeting, MeetingRole, SessionLog, SessionType, Contact
+        
+        # 1. Query OwnerMeetingRoles entries for this contact
+        query = db.session.query(OwnerMeetingRoles, Meeting, MeetingRole, Contact)\
+            .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
+            .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+            .join(Contact, OwnerMeetingRoles.contact_id == Contact.id)\
+            .filter(OwnerMeetingRoles.contact_id == contact_id)
+            
+        if club_id:
+            query = query.filter(Meeting.club_id == club_id)
+            
+        results = query.order_by(Meeting.Meeting_Number.desc()).all()
+        
+        # 2. Map to SessionLogs
+        logs = []
+        for omr, meeting, role, contact in results:
+            log = None
+            if omr.session_log_id:
+                # Use query to allow eager loading of relationships
+                log = SessionLog.query.filter_by(id=omr.session_log_id).options(
+                    db.joinedload(SessionLog.meeting),
+                    db.joinedload(SessionLog.session_type).joinedload(SessionType.role),
+                    db.joinedload(SessionLog.project)
+                ).first()
+            else:
+                # Shared role: Find the relevant session log for this meeting/role type
+                log = SessionLog.query.join(SessionType).filter(
+                    SessionLog.Meeting_Number == meeting.Meeting_Number,
+                    SessionType.role_id == role.id
+                ).options(
+                    db.joinedload(SessionLog.meeting),
+                    db.joinedload(SessionLog.session_type).joinedload(SessionType.role),
+                    db.joinedload(SessionLog.project)
+                ).first()
+                
+            if log:
+                # Ensure the log knows its context-specific owner for display
+                log.context_owner = contact
+                # Attach credential from OwnerMeetingRole
+                log.context_credential = omr.credential
+                logs.append(log)
+                
+        return logs

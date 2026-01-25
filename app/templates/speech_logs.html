@@ -222,7 +222,7 @@
                     Meeting #{{ item.Meeting_Number }} | {{
                     item.meeting.Meeting_Date.strftime('%Y-%m-%d')
                     if item.meeting and item.meeting.Meeting_Date else 'N/A' }}
-                    {% if log.session_type.Valid_for_Project and is_authorized(current_user.id ==
+                    {% if is_authorized(current_user.contact_id ==
                     log.owner.id, Permissions.SPEECH_LOGS_EDIT_ALL) %}
                     <button class="icon-btn edit-log-btn"
                         onclick="openSpeechEditModal({{ item.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
@@ -274,7 +274,7 @@
                 "{{ log.Session_Title|replace('"', '') if log.Session_Title else 'N/A' }}"
             </div>
             <div class="speaker-info">
-                — {{ log.owner.Name if log.owner else 'N/A' }}
+                — {{ log.context_owner.Name if log.context_owner else (log.owner.Name if log.owner else 'N/A') }}
             </div>
             <div class="project-info">
                 {% set project_code = log.project_code or '' %}
@@ -340,7 +340,7 @@
                         <i class="fas fa-play-circle"></i>
                     </a>
                     {% endif %}
-                    {% if log.session_type.Valid_for_Project and is_authorized(current_user.contact_id in log.owners|map(attribute='id'),
+                    {% if is_authorized(current_user.contact_id in log.owners|map(attribute='id'),
                     Permissions.SPEECH_LOGS_EDIT_ALL) %}
                     <button class="icon-btn edit-log-btn"
                         onclick="openSpeechEditModal({{ log.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
@@ -354,7 +354,7 @@
                 {{ log.session_type.role.name if log.session_type.role else log.session_type.Title }}
             </div>
             <div class="speaker-info">
-                {{ log.owner.Name if log.owner else 'N/A' }}
+                {{ log.context_owner.Name if log.context_owner else (log.owner.Name if log.owner else 'N/A') }}
             </div>
             <div class="card-footer">
                 <div class="pathway-info">
