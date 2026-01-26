@@ -44,7 +44,12 @@
 			<div class="status-cell-content">
 				<div class="role-avatar" {% if role.owner_name %}title="{{ role.owner_name }}" {% endif %}>
 					{% if role.owner_avatar_url %}
-					<img src="{{ url_for('static', filename=role.owner_avatar_url) }}" alt="User Avatar">
+					{# Check if the URL is already a full path (legacy) or just a filename (new) #}
+					{% set avatar_path = role.owner_avatar_url %}
+					{% if '/' not in avatar_path %}
+						{% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+					{% endif %}
+					<img src="{{ url_for('static', filename=avatar_path) }}" alt="User Avatar">
 					{% else %}
 					<i class="fas fa-user-circle"></i>
 					{% endif %}

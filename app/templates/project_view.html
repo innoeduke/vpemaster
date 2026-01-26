@@ -114,7 +114,12 @@
 						<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member', speaker_id=contact.id) }}"
 							class="avatar-item" title="View {{ contact.Name }}'s logs">
 							{% if contact.Avatar_URL %}
-							<img src="{{ url_for('static', filename=contact.Avatar_URL) }}" alt="{{ contact.Name }}"
+							{# Check if the URL is already a full path (legacy) or just a filename (new) #}
+							{% set avatar_path = contact.Avatar_URL %}
+							{% if '/' not in avatar_path %}
+								{% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+							{% endif %}
+							<img src="{{ url_for('static', filename=avatar_path) }}" alt="{{ contact.Name }}"
 								class="avatar-img"
 								onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
 							<div class="avatar-placeholder-small" style="display: none;">{{ contact.Name[0] }}</div>

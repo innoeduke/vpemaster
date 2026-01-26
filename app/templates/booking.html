@@ -76,7 +76,11 @@
                 {% if role.has_single_owner %}
                 <div class="role-avatar {% if is_admin_view %}admin-avatar{% endif %}" {% if role.owner_name %}title="{{ role.owner_name }}" {% endif %} {% if is_admin_view and role.owner_id %}data-owner-id="{{ role.owner_id }}" data-session-id="{{ role.session_id }}"{% endif %}>
                     {% if role.owner_avatar_url %}
-                    <img src="{{ url_for('static', filename=role.owner_avatar_url) }}" alt="User Avatar">
+                    {% set avatar_path = role.owner_avatar_url %}
+                    {% if '/' not in avatar_path %}
+                        {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+                    {% endif %}
+                    <img src="{{ url_for('static', filename=avatar_path) }}" alt="User Avatar">
                     {% else %}
                     <i class="fas fa-user-circle"></i>
                     {% endif %}
@@ -92,7 +96,11 @@
                 {% for owner in role.all_owners %}
                 <div class="role-avatar {% if is_admin_view %}admin-avatar{% endif %}" title="{{ owner.name }}" {% if is_admin_view %}data-owner-id="{{ owner.id }}" data-session-id="{{ role.session_id }}"{% endif %}>
                     {% if owner.avatar_url %}
-                    <img src="{{ url_for('static', filename=owner.avatar_url) }}" alt="{{ owner.name }}">
+                    {% set avatar_path = owner.avatar_url %}
+                    {% if '/' not in avatar_path %}
+                        {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+                    {% endif %}
+                    <img src="{{ url_for('static', filename=avatar_path) }}" alt="{{ owner.name }}">
                     {% else %}
                     <i class="fas fa-user-circle"></i>
                     {% endif %}
@@ -114,7 +122,11 @@
                 {% for user in role.waitlist %}
                 <div class="role-avatar waitlist-avatar" title="{{ user.name }} (Waitlist)">
                     {% if user.avatar_url %}
-                    <img src="{{ url_for('static', filename=user.avatar_url) }}" alt="{{ user.name }}">
+                    {% set avatar_path = user.avatar_url %}
+                    {% if '/' not in avatar_path %}
+                        {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+                    {% endif %}
+                    <img src="{{ url_for('static', filename=avatar_path) }}" alt="{{ user.name }}">
                     {% else %}
                     <i class="fas fa-user-circle"></i>
                     {% endif %}
@@ -267,7 +279,7 @@
             id: {{ contact.id }},
             name: {{ contact.Name | tojson }},
             type: {{ contact.Type | tojson }},
-            avatar_url: {{ (url_for('static', filename=contact.Avatar_URL) if contact.Avatar_URL else None) | tojson }}
+            avatar_url: {{ (url_for('static', filename=(config.AVATAR_ROOT_DIR ~ '/' ~ contact.Avatar_URL if '/' not in contact.Avatar_URL else contact.Avatar_URL)) if contact.Avatar_URL else None) | tojson }}
         }{% if not loop.last %},{% endif %}
         {% endfor %}
     ];

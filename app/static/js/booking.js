@@ -66,7 +66,14 @@ document.addEventListener("DOMContentLoaded", function () {
         item.className = "autocomplete-item";
         item.innerHTML = `
           <div class="item-avatar">
-              ${contact.avatar_url ? `<img src="${contact.avatar_url}" alt="">` : `<i class="fas fa-user-circle"></i>`}
+              ${contact.avatar_url ? (() => {
+                let avatarPath = contact.avatar_url;
+                if (avatarPath.indexOf('/') === -1) {
+                  const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+                  avatarPath = `${root}/${avatarPath}`;
+                }
+                return `<img src="/static/${avatarPath}" alt="">`;
+              })() : `<i class="fas fa-user-circle"></i>`}
           </div>
           <div class="item-name">${contact.name}</div>
           <div class="item-type ${contact.type.toLowerCase()}">${contact.type}</div>
@@ -316,7 +323,12 @@ function updateSessionRow(sessionData) {
     }
 
     if (sessionData.owner_avatar_url) {
-      avatarContainer.innerHTML = `<img src="/static/${sessionData.owner_avatar_url}" alt="User Avatar">`;
+      let avatarPath = sessionData.owner_avatar_url;
+      if (avatarPath.indexOf('/') === -1) {
+        const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+        avatarPath = `${root}/${avatarPath}`;
+      }
+      avatarContainer.innerHTML = `<img src="/static/${avatarPath}" alt="User Avatar">`;
     } else {
       avatarContainer.innerHTML = '<i class="fas fa-user-circle"></i>';
     }
