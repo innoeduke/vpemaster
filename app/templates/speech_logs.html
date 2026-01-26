@@ -327,7 +327,7 @@
             </div>
         </div>
         {% else %}
-        <div class="role-log-entry" data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
+        <div class="role-log-entry" id="log-card-{{ log.id }}" data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
             <div class="card-header">
                 <div class="meeting-info">
                     Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if

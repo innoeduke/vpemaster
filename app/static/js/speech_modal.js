@@ -736,18 +736,24 @@ function updateSpeechLogCard(logId, updateResult, payload) {
   if (!card) return;
 
   if (payload.session_type_title !== "Individual Evaluator") {
-    card.querySelector(
-      ".speech-title"
-    ).innerText = `"${updateResult.session_title.replace(/"/g, "")}"`;
-    card.querySelector(".project-name").innerText =
-      updateResult.project_name || "N/A";
+    // Helper to safely set text content if element exists
+    const setSafeText = (selector, text) => {
+      const el = card.querySelector(selector);
+      if (el) el.innerText = text;
+    };
+
+    setSafeText(".speech-title", `"${updateResult.session_title.replace(/"/g, "")}"`);
+    setSafeText(".role-title", updateResult.session_title.replace(/"/g, "") + (updateResult.project_code ? ` (${updateResult.project_code})` : ""));
+    
+    setSafeText(".project-name", updateResult.project_name || "N/A");
+    
     let code = updateResult.project_code
       ? `(${updateResult.project_code})`
       : "";
     if (updateResult.project_id == ProjectID.GENERIC) code = "(TM1.0)";
-    card.querySelector(".project-code").innerText = code;
-    card.querySelector(".pathway-info").innerText =
-      updateResult.pathway || "N/A";
+    
+    setSafeText(".project-code", code);
+    setSafeText(".pathway-info", updateResult.pathway || "N/A");
   }
 
   let mediaLink = card.querySelector(".btn-play");
