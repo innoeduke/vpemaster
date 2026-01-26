@@ -5,7 +5,7 @@ from . import db
 from .models import Contact, SessionLog, Pathway, ContactClub, Meeting, Vote, ExComm, UserClub, Roster, SessionType, MeetingRole, OwnerMeetingRoles
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
-from .club_context import get_current_club_id
+from .club_context import get_current_club_id, authorized_club_required
 from flask_login import current_user
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
@@ -17,6 +17,7 @@ contacts_bp = Blueprint('contacts_bp', __name__)
 
 @contacts_bp.route('/contacts/search')
 @login_required
+@authorized_club_required
 def search_contacts_by_name():
     search_term = request.args.get('q', '')
     club_id = get_current_club_id()

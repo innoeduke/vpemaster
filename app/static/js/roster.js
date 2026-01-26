@@ -21,13 +21,20 @@ let suggestionsContainer = null;
 
 // Fetch contacts from the server
 async function fetchContacts() {
+  // Try to use pre-loaded contacts from the window object first
+  if (window.rosterContacts && Array.isArray(window.rosterContacts) && window.rosterContacts.length > 0) {
+    contacts = window.rosterContacts;
+    console.log("Using pre-loaded contacts for roster autocomplete.");
+    return;
+  }
+
   try {
     const response = await fetch('/contacts/search');
     if (!response.ok) throw new Error('Failed to fetch contacts.');
     contacts = await response.json();
   } catch (error) {
     console.error("Error fetching contacts:", error);
-    alert('Could not fetch contacts for autocomplete.');
+    // Non-blocking error: autocomplete just won't work
   }
 }
 
@@ -36,14 +43,33 @@ function showSuggestions(filteredContacts, elements) {
   if (!suggestionsContainer) {
     suggestionsContainer = document.createElement('div');
     suggestionsContainer.className = 'autocomplete-suggestions';
-    // Insert after the input field within the same parent
-    elements.contactNameInput.parentNode.appendChild(suggestionsContainer);
+    // Append to the relative parent (.input-name) for reliable absolute positioning
+    const parent = elements.contactNameInput.closest('.input-name');
+    if (parent) {
+      parent.appendChild(suggestionsContainer);
+    } else {
+      elements.contactNameInput.parentNode.appendChild(suggestionsContainer);
+    }
   }
+  
   suggestionsContainer.innerHTML = '';
   if (filteredContacts.length === 0) {
     suggestionsContainer.style.display = 'none';
     return;
   }
+
+  // Use absolute positioning relative to .input-name
+  suggestionsContainer.style.position = 'absolute';
+  // Position just below the input box (which is inside .contact-input-container)
+  suggestionsContainer.style.top = '100%';
+  suggestionsContainer.style.left = '0';
+  suggestionsContainer.style.width = '100%';
+  suggestionsContainer.style.zIndex = '1000';
+  suggestionsContainer.style.backgroundColor = '#fff';
+  suggestionsContainer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+  suggestionsContainer.style.maxHeight = '200px';
+  suggestionsContainer.style.overflowY = 'auto';
+
   filteredContacts.forEach(contact => {
     const div = document.createElement('div');
     div.className = 'autocomplete-suggestion';
@@ -55,13 +81,14 @@ function showSuggestions(filteredContacts, elements) {
       displayText += ` (${last4})`;
     }
     div.textContent = displayText;
-    div.dataset.contactId = contact.id;
-    div.dataset.contactType = contact.Type;
-    div.dataset.userRole = contact.UserRole;
-    div.addEventListener('click', () => {
+    
+    // Use mousedown instead of click to fire before input blur
+    div.addEventListener('mousedown', (e) => {
+      e.preventDefault(); // Prevent input blur from hiding suggestions
       selectContact(contact, elements);
       hideSuggestions();
     });
+    
     suggestionsContainer.appendChild(div);
   });
   suggestionsContainer.style.display = 'block';
@@ -119,7 +146,7 @@ function initializeRosterAutocomplete(elements) {
       hideSuggestions();
       return;
     }
-    const filteredContacts = contacts.filter(c => c.Name.toLowerCase().includes(query));
+    const filteredContacts = contacts.filter(c => c && c.Name && c.Name.toLowerCase().includes(query));
     showSuggestions(filteredContacts, elements);
   });
 

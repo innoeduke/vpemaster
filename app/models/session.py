@@ -544,16 +544,16 @@ class SessionLog(db.Model):
             m = Meeting.query.filter_by(Meeting_Number=target_log.Meeting_Number).first()
             meeting_id = m.id if m else None
         
+        # Determine Role ID and Single Owner Status
+        # Default to 0 and Single Owner if no role associated
+        target_role_id = 0
+        is_single_owner = True
+        
+        if role_obj:
+            target_role_id = role_obj.id
+            is_single_owner = has_single_owner
+
         if meeting_id:
-            # Determine Role ID and Single Owner Status
-            # Default to 0 and Single Owner if no role associated
-            target_role_id = 0
-            is_single_owner = True
-            
-            if role_obj:
-                target_role_id = role_obj.id
-                is_single_owner = has_single_owner
-            
             # Determine Deletion Criteria
             delete_query = OwnerMeetingRoles.query.filter(
                 OwnerMeetingRoles.meeting_id == meeting_id,
@@ -571,7 +571,7 @@ class SessionLog(db.Model):
         # 3. Insertion & Data Preparation
         primary_owner = None
         
-        if new_owner_ids:
+        if new_owner_ids and meeting_id:
             # Deduplicate owner_ids
             unique_owner_ids = list(dict.fromkeys(new_owner_ids))
             

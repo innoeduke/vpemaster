@@ -138,6 +138,7 @@ def tools():
         # Get all contacts for the dropdown menu, filtered by club
         contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
             .order_by(Contact.Name).all()
+        Contact.populate_users(contacts, club_id)
 
         all_pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
         for p in all_pathways:

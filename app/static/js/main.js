@@ -156,7 +156,13 @@ function openContactModal(contactId) {
         const avatarImg = document.getElementById("modal-avatar-img");
         const placeholder = document.getElementById("modal-avatar-placeholder");
         if (data.contact.Avatar_URL) {
-          avatarImg.src = `/static/${data.contact.Avatar_URL}`;
+          let avatarPath = data.contact.Avatar_URL;
+          // If just a filename, prepend root dir
+          if (avatarPath.indexOf('/') === -1) {
+            const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+            avatarPath = `${root}/${avatarPath}`;
+          }
+          avatarImg.src = `/static/${avatarPath}`;
           avatarImg.style.display = 'block';
           placeholder.style.display = 'none';
         } else {

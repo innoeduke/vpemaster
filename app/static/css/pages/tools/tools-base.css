@@ -385,26 +385,8 @@
 	min-width: 200px;
 }
 
-/* Specific override for Roster's header filter to look like text */
-#roster-meeting-filter {
-	border: none;
-	background: transparent;
-	padding: 0;
-	font-size: 1.1rem;
-	color: #555;
-	min-width: unset;
-	box-shadow: none;
-	text-align: center;
-	font-family: inherit;
-}
-
 .roster-container #meeting-filter:hover {
 	border-color: #772432;
-}
-
-#roster-meeting-filter:hover {
-	color: #772432;
-	background: transparent;
 }
 
 .roster-container #meeting-filter:focus {

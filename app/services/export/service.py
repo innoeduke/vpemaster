@@ -136,24 +136,58 @@ class MeetingExportService:
         if not avatar_map:
             return
 
+        # Prepare a normalized map for easier matching
+        normalized_map = {k.strip().lower(): v for k, v in avatar_map.items()}
+
         for slide in prs.slides:
             for shape in slide.shapes:
-                if shape.name in avatar_map:
-                    data = avatar_map[shape.name]
-                    avatar_url = data.Avatar_URL if hasattr(data, 'Avatar_URL') else None
+                shape_name_clean = (shape.name or "").strip().lower()
+                if shape_name_clean in normalized_map:
+                    data = normalized_map[shape_name_clean]
+                    # data can be None if unassigned
+                    avatar_url = data.Avatar_URL if data and hasattr(data, 'Avatar_URL') else None
                     
                     image_path = None
                     if avatar_url:
-                        image_path = os.path.join(current_app.static_folder, avatar_url)
+                        # 1. Clean the URL
+                        # Strip /static/ or static/ if present
+                        if avatar_url.startswith('/static/'):
+                            avatar_url = avatar_url[8:]
+                        elif avatar_url.startswith('static/'):
+                            avatar_url = avatar_url[7:]
+                        
+                        # 2. Handle simple filenames (no directory structure)
+                        # If it's just 'foo.jpg', prepend the default root
+                        if '/' not in avatar_url and '\\' not in avatar_url:
+                            root = current_app.config.get('AVATAR_ROOT_DIR', 'uploads/avatars')
+                            avatar_url = os.path.join(root, avatar_url)
+                        
+                        # 3. Resolve to absolute path
+                        rel_path = avatar_url.lstrip('/')
+                        image_path = os.path.join(current_app.static_folder, rel_path)
+                        
+                        # Verify existence
                         if not os.path.exists(image_path):
-                            image_path = None
+                            # Try one more fallback: maybe it's already in static but we prefixed it again?
+                            # Not likely with lstrip but let's be safe
+                            if not os.path.exists(image_path):
+                                image_path = None
                             
                     # Fallback to default avatar
                     if not image_path:
-                        image_path = os.path.join(current_app.static_folder, "default_avatar.jpg")
-                        if not os.path.exists(image_path):
-                            # If default missing, skip
-                            continue
+                        # Try a few common names for default avatar
+                        for default_name in ["default_avatar.jpg", "default_avatar.png", "avatar_default.jpg"]:
+                            temp_path = os.path.join(current_app.static_folder, default_name)
+                            if os.path.exists(temp_path):
+                                image_path = temp_path
+                                break
+                        
+                        # Last resort: try uploads/avatars/default.jpg if it exists
+                        if not image_path:
+                             root = current_app.config.get('AVATAR_ROOT_DIR', 'uploads/avatars')
+                             temp_path = os.path.join(current_app.static_folder, root, "default.jpg")
+                             if os.path.exists(temp_path):
+                                 image_path = temp_path
 
                     # Crop and fill
                     try:
@@ -390,7 +424,20 @@ class MeetingExportService:
 
         # Initialize and populate all placeholders
         replacements = MeetingExportService._initialize_placeholders(meeting)
-        avatar_map = {}
+        
+        # Pre-populate avatar_map with all standard placeholder prefixes as keys
+        # This ensures that even unassigned roles are visited by _replace_avatar_shapes
+        avatar_map = {
+            "saa_avatar": None, "welcome-officer_avatar": None, "president_avatar": None,
+            "vpm_avatar": None, "vpe_avatar": None, "vppr_avatar": None,
+            "treasurer_avatar": None, "secretary_avatar": None, "tme_avatar": None,
+            "timer_avatar": None, "ah-counter_avatar": None, "grammarian_avatar": None,
+            "topicsmaster_avatar": None, "ge_avatar": None, "photographer_avatar": None,
+            "keynote-speaker_avatar": None
+        }
+        for i in range(1, 7):
+            avatar_map[f"ps{i}_avatar"] = None
+            avatar_map[f"ie{i}_avatar"] = None
         
         MeetingExportService._populate_standard_roles(context, meeting, replacements, info_fmt, dur_fmt, avatar_map)
         MeetingExportService._populate_speakers(context, replacements, info_fmt, dur_fmt, avatar_map)

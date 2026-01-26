@@ -135,10 +135,16 @@
                     return;
                 }
 
-                list.innerHTML = data.messages.map(msg => `
+                list.innerHTML = data.messages.map(msg => {
+                    let avatarSrc = msg.avatar_url;
+                    if (avatarSrc && avatarSrc.indexOf('/') === -1) {
+                        const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+                        avatarSrc = `/static/${root}/${avatarSrc}`;
+                    }
+                    return `
                     <div class="msg-item ${!msg.read && tab === 'inbox' ? 'unread' : ''}" onclick="showDetail(${msg.id})">
-                        ${msg.avatar_url 
-                            ? `<img src="${msg.avatar_url}" class="msg-avatar" alt="Avatar">`
+                        ${avatarSrc 
+                            ? `<img src="${avatarSrc}" class="msg-avatar" alt="Avatar">`
                             : `<div class="msg-avatar-placeholder">${getInitials(tab === 'inbox' ? msg.sender : msg.recipient)}</div>`
                         }
                         <div class="msg-content">
@@ -150,7 +156,7 @@
                             <div class="msg-preview">${escapeHtml(msg.body)}</div>
                         </div>
                     </div>
-                `).join('');
+                `;}).join('');
             })
             .catch(error => {
                 console.error('Error loading messages:', error);
@@ -178,8 +184,13 @@
         document.getElementById('detail-sender').textContent = (isInbox ? 'From ' : 'To ') + otherParty;
         document.getElementById('detail-time').textContent = msg.timestamp;
         const avatarContainer = document.getElementById('detail-avatar');
-        avatarContainer.innerHTML = msg.avatar_url 
-            ? `<img src="${msg.avatar_url}" class="msg-avatar" alt="Avatar">`
+        let detailAvatarSrc = msg.avatar_url;
+        if (detailAvatarSrc && detailAvatarSrc.indexOf('/') === -1) {
+            const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+            detailAvatarSrc = `/static/${root}/${detailAvatarSrc}`;
+        }
+        avatarContainer.innerHTML = detailAvatarSrc 
+            ? `<img src="${detailAvatarSrc}" class="msg-avatar" alt="Avatar">`
             : `<div class="msg-avatar-placeholder">${getInitials(otherParty)}</div>`;
         
         // Handle Join Requests

@@ -75,7 +75,7 @@
                 {% for entry in roster_entries %}
                 <div class="roster-entry" data-order="{{ entry.order_number }}"
                     data-name="{{ entry.contact.Name if entry.contact else 'N/A' }}"
-                    data-avatar="{% if entry.contact and entry.contact.Avatar_URL %}{{ url_for('static', filename=entry.contact.Avatar_URL) }}{% endif %}"
+                    data-avatar="{% if entry.contact and entry.contact.Avatar_URL %}{% if '/' not in entry.contact.Avatar_URL %}{{ url_for('static', filename=config.AVATAR_ROOT_DIR ~ '/' ~ entry.contact.Avatar_URL) }}{% else %}{{ url_for('static', filename=entry.contact.Avatar_URL) }}{% endif %}{% endif %}"
                     data-type="{% if entry.contact_type %}{{ entry.contact_type }}{% elif entry.contact and entry.contact.user and entry.contact.user.has_role(Permissions.OFFICER) %}Officer{% elif entry.contact %}{{ entry.contact.Type }}{% else %}Guest{% endif %}"
                     data-ticket="{{ entry.ticket.name if entry.ticket else '' }}"
                     data-has-topics-role="{{ 'true' if RoleID.TOPICS_SPEAKER in entry.roles|map(attribute='id') else 'false' }}">
@@ -99,10 +99,9 @@
             <!-- Header matching Lucky Draw style -->
             <h1 class="page-title" style="margin-bottom: 10px;"><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
             
-            <div class="meeting-info" style="margin-bottom: 30px; margin-top: 5px;">
-                {{ render_meeting_filter(all_meetings, selected_meeting_num, label=None, data_format='object',
-                select_id='roster-meeting-filter', show_icon=False,
-                extra_style='background: transparent; border: none; box-shadow: none; padding: 0; color: #555;') }}
+            <div class="booking-filter-container" style="margin-bottom: 20px;">
+                {{ render_meeting_filter(all_meetings, selected_meeting_num, label='Meeting:', data_format='object',
+                select_id='roster-meeting-filter') }}
             </div>
     
             {% if selected_meeting %}
@@ -280,6 +279,20 @@
             {% endif %}
         </div>
         
+        <script>
+            // Pass contacts data from template to roster.js
+            window.rosterContacts = [
+                {% for c in contacts %}
+                {
+                    "id": {{ c.id }},
+                    "Name": {{ c.Name | tojson }},
+                    "Type": "{{ c.Type }}",
+                    "Phone_Number": "{{ c.Phone_Number or '' }}",
+                    "is_officer": {{ 'true' if c.user and c.user.has_role(Permissions.STAFF) else 'false' }}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ];
+        </script>
         <script src="{{ url_for('static', filename='js/roster.js') }}"></script>
     </div>
     {% endif %}
