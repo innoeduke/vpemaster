@@ -107,7 +107,12 @@
         <td>
           <div class="contact-name-cell">
             {% if contact.Avatar_URL %}
-            <img src="{{ url_for('static', filename=contact.Avatar_URL) }}" alt="Avatar" class="contact-avatar-small">
+            {# Check if the URL is already a full path (legacy) or just a filename (new) #}
+            {% set avatar_path = contact.Avatar_URL %}
+            {% if '/' not in avatar_path %}
+              {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+            {% endif %}
+            <img src="{{ url_for('static', filename=avatar_path) }}" alt="Avatar" class="contact-avatar-small">
             {% else %}
             <div class="contact-avatar-placeholder-small">
               <i class="fas fa-user"></i>
@@ -240,6 +245,7 @@
   // Global variables for contacts.js
   var canViewAllLogs = {{ 'true' if can_view_all_logs else 'false' }};
   var hasEditPermission = {{ 'true' if is_authorized(Permissions.CONTACT_BOOK_EDIT) else 'false' }};
+  var avatarRootDir = "{{ config.AVATAR_ROOT_DIR }}";
 </script>
 <script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
 

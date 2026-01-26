@@ -149,10 +149,18 @@ function createContactRow(contact) {
   row.innerHTML = `
     <td>
       <div class="contact-name-cell">
-        ${contact.Avatar_URL 
-          ? `<img src="/static/${contact.Avatar_URL}" alt="Avatar" class="contact-avatar-small">`
-          : `<div class="contact-avatar-placeholder-small"><i class="fas fa-user"></i></div>`
-        }
+        ${(() => {
+          if (!contact.Avatar_URL) {
+            return `<div class="contact-avatar-placeholder-small"><i class="fas fa-user"></i></div>`;
+          }
+          let avatarPath = contact.Avatar_URL;
+          // If just a filename, prepend root dir
+          if (avatarPath.indexOf('/') === -1) {
+            const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+            avatarPath = `${root}/${avatarPath}`;
+          }
+          return `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small">`;
+        })()}
         <div class="contact-name-info ${canViewAllLogs ? 'clickable-name' : ''}" 
              ${canViewAllLogs ? `onclick="window.location.href='/speech_logs?speaker_id=${contact.id}&view_mode=member'" title="View ${contact.Name}'s speech logs"` : ''}>
           ${contact.Name}

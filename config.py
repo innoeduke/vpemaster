@@ -41,6 +41,8 @@ class Config:
     DEFAULT_ROLE_ICON = "fa-question-circle"
 
     # Email configuration
+    AVATAR_ROOT_DIR = 'uploads/avatars'
+
     MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.googlemail.com')
     MAIL_PORT = int(os.getenv('MAIL_PORT', 587))
     MAIL_USE_TLS = os.getenv('MAIL_USE_TLS', 'true').lower() in ['true', 'on', '1']

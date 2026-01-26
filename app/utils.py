@@ -842,12 +842,17 @@ def process_avatar(file, contact_id):
         
         # Save file as WebP
         filename = secure_filename(f"avatar_{contact_id}.webp")
-        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'profile_photos')
+        
+        # Use configured root directory
+        root_dir = current_app.config.get('AVATAR_ROOT_DIR', 'uploads/avatars')
+        upload_folder = os.path.join(current_app.root_path, 'static', root_dir)
+        
         os.makedirs(upload_folder, exist_ok=True)
         file_path = os.path.join(upload_folder, filename)
         img.save(file_path, "WEBP", quality=80)
         
-        return f"uploads/profile_photos/{filename}"
+        # Return only filename as requested
+        return filename
     except Exception as e:
         print(f"Error processing avatar for contact {contact_id}: {e}")
         return None
