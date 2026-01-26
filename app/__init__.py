@@ -165,11 +165,10 @@ def create_app(config_class='config.Config'):
     from scripts.create_admin import create_admin
     from scripts.import_data import import_data
     from scripts.manage_metadata import metadata
+    from scripts.cleanup_data import cleanup_data
     app.cli.add_command(create_admin)
     app.cli.add_command(import_data)
     app.cli.add_command(metadata)
-
-    from scripts.cleanup_data import cleanup_data
     app.cli.add_command(cleanup_data)
 
     # 7. Return the configured app instance
