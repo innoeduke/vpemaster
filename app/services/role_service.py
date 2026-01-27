@@ -1,6 +1,5 @@
 from app import db
 from app.models import SessionLog, SessionType, Waitlist, Roster, MeetingRole, Contact, Meeting, OwnerMeetingRoles
-from app.constants import SessionTypeID
 from datetime import datetime, timezone
 from sqlalchemy import or_
 

@@ -90,3 +90,55 @@ def test_data_import_service_club_id(app):
         # Verify role mapping worked
         toastmaster_role = MeetingRole.query.filter_by(name="Toastmaster", club_id=club.id).first()
         assert st.role_id == toastmaster_role.id
+
+def test_duplicate_names_in_different_clubs(app):
+    with app.app_context():
+        club1 = Club(club_no="C1", club_name="Club 1")
+        club2 = Club(club_no="C2", club_name="Club 2")
+        db.session.add(club1)
+        db.session.add(club2)
+        db.session.flush()
+
+        # Should be allowed in different clubs
+        role1 = MeetingRole(name="SameName", type="standard", club_id=club1.id, needs_approval=False, has_single_owner=False)
+        role2 = MeetingRole(name="SameName", type="standard", club_id=club2.id, needs_approval=False, has_single_owner=False)
+        db.session.add(role1)
+        db.session.add(role2)
+        
+        st1 = SessionType(Title="SameTitle", club_id=club1.id)
+        st2 = SessionType(Title="SameTitle", club_id=club2.id)
+        db.session.add(st1)
+        db.session.add(st2)
+        
+        db.session.commit()
+
+        assert MeetingRole.query.filter_by(name="SameName").count() == 2
+        assert SessionType.query.filter_by(Title="SameTitle").count() == 2
+
+def test_duplicate_names_in_same_club_fails(app):
+    with app.app_context():
+        club1 = Club(club_no="C3", club_name="Club 3")
+        db.session.add(club1)
+        db.session.flush()
+
+        role1 = MeetingRole(name="Unique", type="standard", club_id=club1.id, needs_approval=False, has_single_owner=False)
+        db.session.add(role1)
+        db.session.commit()
+
+        # Adding same name to same club should trigger integrity error or unique constraint
+        import sqlalchemy
+        with pytest.raises(sqlalchemy.exc.IntegrityError):
+            role2 = MeetingRole(name="Unique", type="standard", club_id=club1.id, needs_approval=False, has_single_owner=False)
+            db.session.add(role2)
+            db.session.commit()
+        db.session.rollback()
+
+        st1 = SessionType(Title="UniqueSession", club_id=club1.id)
+        db.session.add(st1)
+        db.session.commit()
+
+        with pytest.raises(sqlalchemy.exc.IntegrityError):
+            st2 = SessionType(Title="UniqueSession", club_id=club1.id)
+            db.session.add(st2)
+            db.session.commit()
+        db.session.rollback()

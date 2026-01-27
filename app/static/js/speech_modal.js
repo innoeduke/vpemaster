@@ -129,8 +129,8 @@ async function openSpeechEditModal(
       "Table Topics": setupSpecialProjectModal,
       "Keynote Speech": setupSpecialProjectModal,
       "Pathway Speech": setupSpeechModal,
+      "Prepared Speech": setupSpeechModal,
       "Presentation": setupSpeechModal,
-      "Ice Breaker": setupSpeechModal, // Just in case
       // Add other explicit speech types if known
       default: setupRoleModal,
     };
@@ -689,7 +689,7 @@ function updateAgendaRow(logId, updateResult, payload) {
   );
   if (viewTitleCell) {
     let title =
-      sessionType === "Pathway Speech" && updateResult.project_id != ProjectID.GENERIC
+      (sessionType === "Pathway Speech" || sessionType === "Prepared Speech") && updateResult.project_id != ProjectID.GENERIC
         ? `"${updateResult.session_title.replace(/"/g, "")}"`
         : updateResult.session_title;
     let code = updateResult.project_code

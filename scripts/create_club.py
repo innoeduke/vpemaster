@@ -10,8 +10,9 @@ import os
 @click.command('create-club')
 @click.option('--club-no', required=True, help='The club number (unique ID)')
 @click.option('--club-name', required=True, help='The full name of the club')
+@click.option('--skip-seed', is_flag=True, default=False, help='Skip seeding initial data (roles/types)')
 @with_appcontext
-def create_club(club_no, club_name):
+def create_club(club_no, club_name, skip_seed):
     """
     Creates a new club with the given club number and name.
     """
@@ -27,7 +28,10 @@ def create_club(club_no, club_name):
         db.session.flush()  # Get new_club.id
         
         # Import Initial Data
-        import_initial_data(new_club)
+        if not skip_seed:
+            import_initial_data(new_club)
+        else:
+            click.echo("Skipping initial data seeding.")
         
         db.session.commit()
         click.echo(f"Successfully created club: {club_name} (No: {club_no})")

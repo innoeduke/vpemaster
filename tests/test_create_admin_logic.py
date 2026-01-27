@@ -34,7 +34,7 @@ class CreateAdminLogicTestCase(unittest.TestCase):
         db.session.commit()
         
         # Run command
-        result = self.runner.invoke(args=['create-admin', '--username', 'sysadmin', '--email', 'sysadmin@test.com', '--password', 'password', '--password', 'password', '--club', 'Test Club'])
+        result = self.runner.invoke(args=['create-admin', '--username', 'sysadmin', '--email', 'sysadmin@test.com', '--password', 'password', '--password', 'password', '--club-no', '111111'])
         
         # Check output
         print(f"COMMAND OUTPUT:\n{result.output}")

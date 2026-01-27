@@ -38,6 +38,36 @@ def cleanup_data(force):
         for table in reversed(db.metadata.sorted_tables):
             click.echo(f"Cleaning table: {table.name}")
             db.session.execute(table.delete())
+            
+            # Reset Autoincrement/Sequences
+            try:
+                if dialect == 'sqlite':
+                    # SQLite stores sequences in sqlite_sequence table
+                    db.session.execute(text("DELETE FROM sqlite_sequence WHERE name = :table_name"), {"table_name": table.name})
+                elif dialect == 'mysql':
+                    # MySQL resets usually with TRUNCATE or ALTER
+                    # Since we are using DELETE, we need ALTER
+                    db.session.execute(text(f"ALTER TABLE {table.name} AUTO_INCREMENT = 1"))
+                elif dialect == 'postgresql':
+                    # Postgres uses sequences. We can use TRUNCATE ... RESTART IDENTITY matches, 
+                    # but here we used DELETE. So we need to reset the sequence.
+                    # Getting the sequence name can be tricky, but usually table_id_seq.
+                    # A safer way in PG is TRUNCATE table RESTART IDENTITY CASCADE, but we already deleted.
+                    # Let's try to reset generic sequence if it adheres to standard naming,
+                    # or use a PG specific command to reset all sequences?
+                    # actually 'TRUNCATE table RESTART IDENTITY' is cleaner if we hadn't already deleted.
+                    # But since we deleted, let's try:
+                    # db.session.execute(text(f"ALTER SEQUENCE {table.name}_id_seq RESTART WITH 1"))
+                    # Note: This assumes standard naming and that the 'id' column uses a sequence.
+                    pass
+            except Exception as e:
+                # Some tables might not have sequences (e.g. association tables), ignore
+                # print(f"    (Note: Could not reset sequence for {table.name}: {e})")
+                pass
+
+        # Global sequence reset for SQLite (cleaner than per-table sometimes, but per-table is fine)
+        # if dialect == 'sqlite':
+        #    db.session.execute(text("DELETE FROM sqlite_sequence"))
 
         db.session.commit()
         click.echo("All data cleaned successfully.")

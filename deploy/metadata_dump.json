@@ -8,7 +8,8 @@
       "award_category": "role-taker",
       "needs_approval": true,
       "has_single_owner": false,
-      "is_member_only": true
+      "is_member_only": true,
+      "club_id": 1
     },
     {
       "id": 2,
@@ -18,7 +19,8 @@
       "award_category": "role-taker",
       "needs_approval": true,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 3,
@@ -28,7 +30,8 @@
       "award_category": "evaluator",
       "needs_approval": false,
       "has_single_owner": true,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 4,
@@ -38,7 +41,8 @@
       "award_category": "role-taker",
       "needs_approval": true,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 5,
@@ -48,7 +52,8 @@
       "award_category": "role-taker",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 6,
@@ -58,7 +63,8 @@
       "award_category": "role-taker",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 7,
@@ -68,7 +74,8 @@
       "award_category": "role-taker",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 8,
@@ -78,7 +85,8 @@
       "award_category": "speaker",
       "needs_approval": true,
       "has_single_owner": true,
-      "is_member_only": true
+      "is_member_only": true,
+      "club_id": 1
     },
     {
       "id": 9,
@@ -88,177 +96,52 @@
       "award_category": "table-topic",
       "needs_approval": false,
       "has_single_owner": true,
-      "is_member_only": false
-    },
-    {
-      "id": 10,
-      "name": "Keynote Speaker",
-      "icon": "fa-star",
-      "type": "club-specific",
-      "award_category": "speaker",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 11,
-      "name": "Welcome Officer",
-      "icon": "fa-smile",
-      "type": "club-specific",
-      "award_category": "role-taker",
-      "needs_approval": false,
-      "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 12,
-      "name": "Photographer",
-      "icon": "fa-camera",
-      "type": "club-specific",
-      "award_category": "role-taker",
-      "needs_approval": false,
-      "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 14,
-      "name": "Meeting Manager",
-      "icon": "fa-clipboard-list",
-      "type": "club-specific",
-      "award_category": "role-taker",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 15,
       "name": "Election Chair",
       "icon": "fa-vote-yea",
-      "type": "club-specific",
+      "type": "standard",
       "award_category": "role-taker",
       "needs_approval": true,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 16,
       "name": "Chief Contest Judge",
       "icon": "fa-gavel",
-      "type": "club-specific",
+      "type": "standard",
       "award_category": "role-taker",
       "needs_approval": true,
       "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 17,
-      "name": "Moderator",
-      "icon": "fa-gavel",
-      "type": "club-specific",
-      "award_category": "role-taker",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 18,
-      "name": "Panelist",
-      "icon": "fa-users",
-      "type": "club-specific",
-      "award_category": "",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 19,
-      "name": "Debate Host",
-      "icon": "fa-comments",
-      "type": "club-specific",
-      "award_category": "role-taker",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 20,
-      "name": "Debater",
-      "icon": "fa-balance-scale",
-      "type": "club-specific",
-      "award_category": "",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 21,
-      "name": "Club Mentor",
-      "icon": "fa-graduation-cap",
-      "type": "club-specific",
-      "award_category": "",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 22,
-      "name": "Introductory Mentor",
-      "icon": "fa-seedling",
-      "type": "club-specific",
-      "award_category": "",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 26,
       "name": "Contest Chair",
       "icon": "fa-microphone",
-      "type": "club-specific",
+      "type": "standard",
       "award_category": "role-taker",
       "needs_approval": true,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 27,
       "name": "Ballot Counter",
       "icon": "fa-calculator",
-      "type": "club-specific",
+      "type": "standard",
       "award_category": "role-taker",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 28,
-      "name": "Speaker",
-      "icon": "fa-microphone",
-      "type": "standard",
-      "award_category": "",
-      "needs_approval": false,
-      "has_single_owner": true,
-      "is_member_only": false
-    },
-    {
-      "id": 29,
-      "name": "TestDistinct",
-      "icon": null,
-      "type": "standard",
-      "award_category": null,
-      "needs_approval": false,
-      "has_single_owner": true,
-      "is_member_only": false
-    },
-    {
-      "id": 30,
-      "name": "TestShared",
-      "icon": null,
-      "type": "standard",
-      "award_category": null,
-      "needs_approval": false,
-      "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 31,
@@ -268,17 +151,19 @@
       "award_category": "",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 32,
       "name": "President",
-      "icon": "",
+      "icon": "fa-gavel",
       "type": "officer",
       "award_category": "",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 33,
@@ -288,7 +173,8 @@
       "award_category": "",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 34,
@@ -298,7 +184,8 @@
       "award_category": "",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 35,
@@ -308,7 +195,8 @@
       "award_category": "",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 36,
@@ -318,7 +206,8 @@
       "award_category": "",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     },
     {
       "id": 37,
@@ -328,17 +217,8 @@
       "award_category": "",
       "needs_approval": false,
       "has_single_owner": false,
-      "is_member_only": false
-    },
-    {
-      "id": 42,
-      "name": "No Role",
-      "icon": null,
-      "type": "system",
-      "award_category": null,
-      "needs_approval": false,
-      "has_single_owner": true,
-      "is_member_only": false
+      "is_member_only": false,
+      "club_id": 1
     }
   ],
   "pathways": [
@@ -1915,64 +1795,37 @@
   ],
   "session_types": [
     {
-      "id": 1,
-      "Title": "SAA Introduction",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 1,
-      "role_id": 31
-    },
-    {
-      "id": 2,
-      "Title": "President's Address",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 2,
-      "role_id": 32
-    },
-    {
-      "id": 3,
-      "Title": "Toastmaster of the Evening's Address",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 2,
-      "role_id": 1
-    },
-    {
       "id": 4,
-      "Title": "Ah-Counter Introduction",
+      "Title": "Ah-Counter Session",
       "Is_Section": false,
       "Is_Hidden": false,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 1,
-      "role_id": 7
+      "role_id": 7,
+      "club_id": 1
     },
     {
       "id": 5,
-      "Title": "Grammarian Introduction",
+      "Title": "Grammarian Session",
       "Is_Section": false,
       "Is_Hidden": false,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 2,
-      "role_id": 5
+      "role_id": 5,
+      "club_id": 1
     },
     {
       "id": 6,
-      "Title": "Timer Introduction",
+      "Title": "Timer Session",
       "Is_Section": false,
       "Is_Hidden": false,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 1,
-      "role_id": 6
+      "role_id": 6,
+      "club_id": 1
     },
     {
       "id": 7,
@@ -1982,7 +1835,8 @@
       "Valid_for_Project": true,
       "Duration_Min": 0,
       "Duration_Max": 25,
-      "role_id": 4
+      "role_id": 4,
+      "club_id": 1
     },
     {
       "id": 8,
@@ -1991,118 +1845,20 @@
       "Is_Hidden": false,
       "Valid_for_Project": false,
       "Duration_Min": 0,
-      "Duration_Max": 7,
-      "role_id": null
-    },
-    {
-      "id": 9,
-      "Title": "New Member Induction",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 7,
-      "role_id": 34
-    },
-    {
-      "id": 10,
-      "Title": "New Guest Greetings",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 5,
-      "role_id": 11
-    },
-    {
-      "id": 11,
-      "Title": "Networking",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 10,
-      "role_id": null
-    },
-    {
-      "id": 12,
-      "Title": "General Evaluator's Address",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 1,
-      "role_id": 2
-    },
-    {
-      "id": 13,
-      "Title": "Ah-Counter Report",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 1,
-      "role_id": 7
-    },
-    {
-      "id": 14,
-      "Title": "Grammarian Report",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 2,
-      "role_id": 5
-    },
-    {
-      "id": 15,
-      "Title": "Timer Report",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 1,
-      "role_id": 6
+      "Duration_Max": 0,
+      "role_id": null,
+      "club_id": 1
     },
     {
       "id": 16,
-      "Title": "General Evaluation Report",
+      "Title": "General Evaluator Session",
       "Is_Section": false,
       "Is_Hidden": false,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 3,
-      "role_id": 2
-    },
-    {
-      "id": 17,
-      "Title": "Voting and Announcements",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 3,
-      "role_id": 1
-    },
-    {
-      "id": 18,
-      "Title": "Awards / Meeting Closing",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 0,
-      "Duration_Max": 2,
-      "role_id": 32
-    },
-    {
-      "id": 20,
-      "Title": "Keynote Speech",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": true,
-      "Duration_Min": 0,
-      "Duration_Max": 23,
-      "role_id": 10
+      "role_id": 2,
+      "club_id": 1
     },
     {
       "id": 30,
@@ -2112,7 +1868,8 @@
       "Valid_for_Project": true,
       "Duration_Min": 5,
       "Duration_Max": 7,
-      "role_id": 8
+      "role_id": 8,
+      "club_id": 1
     },
     {
       "id": 31,
@@ -2122,7 +1879,8 @@
       "Valid_for_Project": true,
       "Duration_Min": 2,
       "Duration_Max": 3,
-      "role_id": 3
+      "role_id": 3,
+      "club_id": 1
     },
     {
       "id": 32,
@@ -2132,17 +1890,8 @@
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
-      "role_id": null
-    },
-    {
-      "id": 35,
-      "Title": "Photography",
-      "Is_Section": false,
-      "Is_Hidden": true,
-      "Valid_for_Project": false,
-      "Duration_Min": null,
-      "Duration_Max": null,
-      "role_id": 12
+      "role_id": null,
+      "club_id": 1
     },
     {
       "id": 36,
@@ -2152,47 +1901,8 @@
       "Valid_for_Project": false,
       "Duration_Min": 2,
       "Duration_Max": 3,
-      "role_id": 9
-    },
-    {
-      "id": 37,
-      "Title": "Introductory Mentor",
-      "Is_Section": false,
-      "Is_Hidden": true,
-      "Valid_for_Project": false,
-      "Duration_Min": null,
-      "Duration_Max": null,
-      "role_id": 22
-    },
-    {
-      "id": 38,
-      "Title": "Club Mentor",
-      "Is_Section": false,
-      "Is_Hidden": true,
-      "Valid_for_Project": false,
-      "Duration_Min": null,
-      "Duration_Max": null,
-      "role_id": 21
-    },
-    {
-      "id": 40,
-      "Title": "Debate",
-      "Is_Section": false,
-      "Is_Hidden": true,
-      "Valid_for_Project": false,
-      "Duration_Min": null,
-      "Duration_Max": null,
-      "role_id": 19
-    },
-    {
-      "id": 41,
-      "Title": "Panelist",
-      "Is_Section": false,
-      "Is_Hidden": true,
-      "Valid_for_Project": false,
-      "Duration_Min": null,
-      "Duration_Max": null,
-      "role_id": 18
+      "role_id": 9,
+      "club_id": 1
     },
     {
       "id": 42,
@@ -2202,97 +1912,19 @@
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
-      "role_id": 14
+      "role_id": null,
+      "club_id": 1
     },
     {
-      "id": 44,
-      "Title": "Panel Discussion",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": true,
-      "Duration_Min": 0,
-      "Duration_Max": 40,
-      "role_id": 17
-    },
-    {
-      "id": 45,
-      "Title": "Club Election",
+      "id": 64,
+      "Title": "Toastmaster Session",
       "Is_Section": false,
       "Is_Hidden": false,
       "Valid_for_Project": false,
       "Duration_Min": 0,
-      "Duration_Max": 60,
-      "role_id": 15
-    },
-    {
-      "id": 46,
-      "Title": "Contest Chair Address",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": 1,
-      "Duration_Max": 5,
-      "role_id": 26
-    },
-    {
-      "id": 47,
-      "Title": "Ballot Counting",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": null,
       "Duration_Max": 2,
-      "role_id": 27
-    },
-    {
-      "id": 48,
-      "Title": "Hidden Section",
-      "Is_Section": true,
-      "Is_Hidden": true,
-      "Valid_for_Project": false,
-      "Duration_Min": null,
-      "Duration_Max": null,
-      "role_id": null
-    },
-    {
-      "id": 57,
-      "Title": "Member Roadmap",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": null,
-      "Duration_Max": 3,
-      "role_id": 34
-    },
-    {
-      "id": 58,
-      "Title": "Backup Speaker",
-      "Is_Section": false,
-      "Is_Hidden": true,
-      "Valid_for_Project": false,
-      "Duration_Min": 5,
-      "Duration_Max": 7,
-      "role_id": null
-    },
-    {
-      "id": 59,
-      "Title": "Contest Results Announcement",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": false,
-      "Duration_Min": null,
-      "Duration_Max": null,
-      "role_id": 16
-    },
-    {
-      "id": 60,
-      "Title": "Test Session",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": true,
-      "Duration_Min": 5,
-      "Duration_Max": 7,
-      "role_id": null
+      "role_id": 1,
+      "club_id": 1
     }
   ],
   "pathway_projects": [

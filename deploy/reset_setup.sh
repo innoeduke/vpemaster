@@ -17,6 +17,7 @@ fi
 
 # 1. Cleanup all existing data
 echo "🧹 Cleaning up existing data..."
+# Note: cleanup-data also resets autoincrement sequences to ensured fresh IDs
 flask cleanup-data --force
 
 if [ $? -ne 0 ]; then
@@ -24,7 +25,18 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 2. Restore metadata (This ensures core records like meeting roles, etc. are present)
+# 2. Create supporting club (Required for Global Metadata)
+echo "🏢 Creating 'Technical Support' club (Club 1)..."
+# Use 000001 as specified by user. This MUST be the first club to get ID=1.
+# Use --skip-seed to avoid creating default roles that conflict with metadata restore
+flask create-club --club-no "000001" --club-name "Technical Support" --skip-seed
+
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to create Technical Support club. Aborting."
+    exit 1
+fi
+
+# 3. Restore metadata (Depends on Club 1 existing)
 echo "🧩 Restoring core metadata..."
 flask metadata restore
 
@@ -33,7 +45,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 3. Handle migrations (Run any pending upgrades)
+# 4. Handle migrations (Run any pending upgrades - though usually done before setup)
 echo "🏗️  Running migrations..."
 flask db upgrade
 
@@ -41,11 +53,6 @@ if [ $? -ne 0 ]; then
     echo "❌ Failed to run migrations. Aborting."
     exit 1
 fi
-
-# 4. Create supporting club
-echo "🏢 Creating 'Technical Support' club..."
-# Use 000001 as specified by user
-flask create-club --club-no "000001" --club-name "Technical Support"
 
 # 5. Create sysadmin user
 echo "👤 Creating 'sysadmin' user..."

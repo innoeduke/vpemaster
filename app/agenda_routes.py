@@ -5,7 +5,7 @@ from flask_login import current_user
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles
-from .constants import SessionTypeID, ProjectID, SPEECH_TYPES_WITH_PROJECT
+from .constants import ProjectID, SPEECH_TYPES_WITH_PROJECT
 from .services.export import MeetingExportService
 from .services.export.context import MeetingExportContext
 from . import db
@@ -317,7 +317,8 @@ def _recalculate_start_times(meetings_to_update):
             duration_to_add = int(log.Duration_Max or 0)
             break_minutes = 1
             # For "Multiple shots" style (ge_mode=1), add an extra minute break after each evaluation
-            if log.Type_ID == SessionTypeID.EVALUATION and meeting.ge_mode == 1:
+            EVAL_ID = SessionType.get_id_by_title('Evaluation', meeting.club_id)
+            if log.Type_ID == EVAL_ID and meeting.ge_mode == 1:
                 break_minutes += 1
             dt_current_time = datetime.combine(
                 meeting.Meeting_Date, current_time)
@@ -515,11 +516,15 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
         topics_speaker_indices = []
         tt_session_index = -1
 
+        club_id = selected_meeting.club_id
+        TOPICS_SPEECH_ID = SessionType.get_id_by_title('Topics Speech', club_id)
+        TABLE_TOPICS_ID = SessionType.get_id_by_title('Table Topics', club_id)
+        
         for i, log in enumerate(logs_data):
-            if log['Type_ID'] == SessionTypeID.TOPICS_SPEECH:  # Topics Speaker
+            if log['Type_ID'] == TOPICS_SPEECH_ID:  # Topics Speaker
                 topics_speaker_sessions.append(log)
                 topics_speaker_indices.append(i)
-            if log['Type_ID'] == SessionTypeID.TABLE_TOPICS:
+            if log['Type_ID'] == TABLE_TOPICS_ID:
                 tt_session_index = i
 
         if topics_speaker_sessions and tt_session_index != -1:
@@ -705,9 +710,9 @@ def get_all_data_for_modals():
 A single endpoint to fetch all data needed for the agenda modals.
     This is called once by the frontend after the initial page load.
     """
-    # Session Types
-    session_types = SessionType.query.options(orm.joinedload(
-        SessionType.role)).order_by(SessionType.Title.asc()).all()
+    # Session Types - Filtered by club
+    club_id = get_current_club_id()
+    session_types = SessionType.get_all_for_club(club_id)
     session_types_data = [
         {
             "id": s.id, "Title": s.Title, "Is_Section": s.Is_Section,
@@ -751,9 +756,8 @@ A single endpoint to fetch all data needed for the agenda modals.
         } for p in projects
     ]
 
-    # Meeting Roles (Constructed from DB for backward compatibility with frontend keys)
-    # We use name.upper().replace(' ', '_') to match the legacy Config.ROLES keys where possible.
-    roles_from_db = MeetingRole.query.all()
+    # Meeting Roles - Filtered by club
+    roles_from_db = MeetingRole.query.filter_by(club_id=club_id).all()
     meeting_roles_data = {}
     for r in roles_from_db:
         formatted_key = r.name.upper().replace(' ', '_').replace('-', '_')
@@ -1008,6 +1012,10 @@ def _generate_logs_from_template(meeting, template_file):
             # Build officer mapping from ExComm model
             excomm_officers = excomm.get_officers()  # Returns dict like {'President': Contact, 'VPE': Contact, ...}
 
+            # Load all available session types for this club (Local + Global)
+    all_session_types = SessionType.get_all_for_club(club_id)
+    session_types_map = {st.Title: st for st in all_session_types}
+
     with open(template_path, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
         next(reader, None)  # Skip Header Row
@@ -1030,18 +1038,24 @@ def _generate_logs_from_template(meeting, template_file):
             owner_val = get_col(3)
             min_val = get_col(4)
             max_val = get_col(5)
+            
+            # Resolve common IDs for the club
+            GENERIC_ID = SessionType.get_id_by_title('Generic', club_id)
+            GE_REPORT_ID = SessionType.get_id_by_title('General Evaluation Report', club_id)
+            EVALUATION_ID = SessionType.get_id_by_title('Evaluation', club_id)
 
             # --- Resolve Session Type ---
             session_type = None
-            type_id = 8  # Default to 'Custom Session' (ID 8)
+            type_id = GENERIC_ID
             if type_val:
-                session_type = SessionType.query.filter_by(Title=type_val).first()
+                # Use lookup map instead of direct query to support inheritance
+                session_type = session_types_map.get(type_val)
                 if session_type:
                     type_id = session_type.id
             
             # --- Resolve Session Title ---
-            session_title_for_log = title_val
-            if not session_title_for_log and session_type and session_type.Predefined:
+            session_title_for_log = title_val or type_val
+            if not title_val and session_type:
                     session_title_for_log = session_type.Title
 
             # --- Resolve Durations ---
@@ -1057,21 +1071,24 @@ def _generate_logs_from_template(meeting, template_file):
                 duration_max = session_type.Duration_Max
 
             # Special Logic for GE styles
-            if type_id == 16:  # General Evaluation Report
+            if type_id == GE_REPORT_ID:  # General Evaluation Report
                 if meeting.ge_mode == 1: # Distributed
                     duration_max = 3
                 else:  # 0: Traditional
                     duration_max = 5
             
             break_minutes = 1
-            if type_id == SessionTypeID.EVALUATION and meeting.ge_mode == 1:  # Individual Evaluation
+            if type_id == EVALUATION_ID and meeting.ge_mode == 1:  # Individual Evaluation
                 break_minutes += 1
 
             # --- Resolve Owner ---
             owner_id = None
             credentials = ''
             if owner_val:
-                owner = Contact.query.filter_by(Name=owner_val).first()
+                owner = Contact.query.join(ContactClub).filter(
+                    Contact.Name == owner_val, 
+                    ContactClub.club_id == club_id
+                ).first()
                 if owner:
                     owner_id = owner.id
                     credentials = derive_credentials(owner)
@@ -1256,9 +1273,11 @@ def update_logs():
 
         if new_mode is not None:
             # Update the duration for the GE Report session if it exists
+            club_id = get_current_club_id()
+            GE_REPORT_ID = SessionType.get_id_by_title('General Evaluation Report', club_id)
             for item in agenda_data:
-                # CORRECTED ID: General Evaluation Report is 16
-                if str(item.get('type_id')) == '16':
+                # Use name comparison as fallback if ID doesn't match
+                if str(item.get('type_id')) == str(GE_REPORT_ID):
                     if new_mode == 1:
                         item['duration_max'] = 3
                     else:  # 0

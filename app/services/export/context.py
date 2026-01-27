@@ -1,6 +1,6 @@
 from sqlalchemy import orm
 from ...models import db, Meeting, SessionLog, SessionType, Vote, Contact, Pathway
-from ...constants import SessionTypeID
+from ...models import db, Meeting, SessionLog, SessionType, Vote, Contact, Pathway
 
 
 class MeetingExportContext:
@@ -107,7 +107,6 @@ class MeetingExportContext:
             "Role Takers": set()
         }
         
-        speaker_types = {SessionTypeID.KEYNOTE_SPEECH, SessionTypeID.PREPARED_SPEECH, SessionTypeID.PRESENTATION, SessionTypeID.PANEL_DISCUSSION}
         
         for log, st in self.logs:
             if not log.owners: continue
@@ -119,11 +118,11 @@ class MeetingExportContext:
             name = owner.Name.strip()
             # Don't add (Guest) suffix for participants board
             
-            if st.id in speaker_types:
+            if st.Title in {"Keynote Speech", "Prepared Speech", "Presentation", "Panel Discussion"}:
                 groups["Prepared Speakers"].add(name)
-            elif st.id == SessionTypeID.EVALUATION:
+            elif st.Title == "Evaluation":
                 groups["Individual Evaluators"].add(name)
-            elif st.id == SessionTypeID.TOPICS_SPEECH:
+            elif st.Title == "Topics Speech":
                 groups["Table Topics Speakers"].add(name)
             elif not st.Is_Section and not st.Is_Hidden:
                 if st.role and st.role.type == 'officer': continue

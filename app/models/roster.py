@@ -22,6 +22,30 @@ class MeetingRole(db.Model):
         db.UniqueConstraint('name', 'club_id', name='uq_meeting_role_name_club'),
     )
 
+    @classmethod
+    def get_all_for_club(cls, club_id):
+        """
+        Fetch all meeting roles for a club, merging Global and Local items.
+        Local items override Global items with the same name.
+        Returns a list of MeetingRole objects.
+        """
+        from ..constants import GLOBAL_CLUB_ID
+        
+        # Fetch Global items
+        global_roles = cls.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
+        
+        # Fetch Local items
+        local_roles = []
+        if club_id and club_id != GLOBAL_CLUB_ID:
+            local_roles = cls.query.filter_by(club_id=club_id).all()
+            
+        # Merge: Local overwrites Global by name
+        merged = {r.name: r for r in global_roles}
+        for r in local_roles:
+            merged[r.name] = r
+            
+        return sorted(list(merged.values()), key=lambda x: x.name)
+
 
 class RosterRole(db.Model):
     """Junction table for many-to-many relationship between Roster and Role"""

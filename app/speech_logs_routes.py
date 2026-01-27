@@ -318,7 +318,10 @@ def _process_logs(all_logs, filters, pathway_cache):
         # Deduplicate roles
         if log_type == 'role' and not log.Project_ID:
             owner_id = log.context_owner.id if log.context_owner else (log.owner.id if log.owners else None)
-            dedup_key = (log.Meeting_Number, owner_id, log.session_type.role.name)
+            
+            role_name = log.session_type.role.name if log.session_type and log.session_type.role else log.session_type.Title
+            dedup_key = (log.Meeting_Number, owner_id, role_name)
+            
             if dedup_key in processed_roles:
                 continue
             processed_roles.add(dedup_key)

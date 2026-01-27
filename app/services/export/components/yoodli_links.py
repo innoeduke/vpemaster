@@ -1,6 +1,6 @@
 from ..base import BaseExportComponent
 from ..formatter import ExportFormatter
-from ....constants import SessionTypeID
+
 
 
 class YoodliLinksComponent(BaseExportComponent):
@@ -19,7 +19,7 @@ class YoodliLinksComponent(BaseExportComponent):
         for log, st in context.logs:
             if log.Project_ID:
                 speakers.append(log)
-            if st.id == SessionTypeID.EVALUATION:
+            if st.Title == "Evaluation":
                 # Evaluation Session_Title contains the speaker's name
                 speaker_name = log.Session_Title
                 if speaker_name:

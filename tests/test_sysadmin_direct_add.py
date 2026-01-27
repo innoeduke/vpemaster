@@ -23,12 +23,12 @@ def test_sysadmin_direct_add(client, app, default_club):
         club1 = default_club
         
         # SysAdmin User
-        sysadmin = User(username="sysadmin_test", email="sysadmin_test@test.com")
+        sysadmin = User(username="sysadmin_direct_test", email="sysadmin_direct_test@test.com")
         sysadmin.set_password("password")
         db.session.add(sysadmin)
         
         # Target User (already in system)
-        target_user = User(username="target_user", email="target_user@test.com", first_name="Target", last_name="User")
+        target_user = User(username="target_direct_user", email="target_direct_user@test.com", first_name="Target", last_name="User")
         target_user.set_password("password")
         db.session.add(target_user)
         db.session.commit()
@@ -43,7 +43,7 @@ def test_sysadmin_direct_add(client, app, default_club):
 
     # 2. Login as SysAdmin
     with client:
-        login_resp = client.post('/login', data={'username': 'sysadmin_test', 'password': 'password', 'club_id': club1_id}, follow_redirects=True)
+        login_resp = client.post('/login', data={'username': 'sysadmin_direct_test', 'password': 'password', 'club_id': club1_id}, follow_redirects=True)
         assert login_resp.status_code == 200
         
         # 3. Request Join (should be direct add)
@@ -75,12 +75,12 @@ def test_non_sysadmin_still_invites(client, app, default_club):
         club1 = default_club
         
         # Regular ClubAdmin
-        club_admin = User(username="club_admin_test", email="club_admin_test@test.com")
+        club_admin = User(username="club_admin_direct_test", email="club_admin_direct_test@test.com")
         club_admin.set_password("password")
         db.session.add(club_admin)
         
         # Target User
-        target_user = User(username="target_user_2", email="target_user_2@test.com")
+        target_user = User(username="target_direct_user_2", email="target_direct_user_2@test.com")
         target_user.set_password("password")
         db.session.add(target_user)
         db.session.commit()
@@ -95,7 +95,7 @@ def test_non_sysadmin_still_invites(client, app, default_club):
 
     # 2. Login as ClubAdmin
     with client:
-        client.post('/login', data={'username': 'club_admin_test', 'password': 'password', 'club_id': club1_id})
+        client.post('/login', data={'username': 'club_admin_direct_test', 'password': 'password', 'club_id': club1_id})
         
         # 3. Request Join (should be invitation)
         response = client.post('/user/request_join', json={

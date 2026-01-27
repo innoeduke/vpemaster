@@ -142,6 +142,12 @@ def test_contact_search_includes_phone(client, app, default_club):
         db.session.commit()
         user_id = u.id
 
+        # Add user to club to satisfy @authorized_club_required
+        from app.models import UserClub
+        uc = UserClub(user_id=u.id, club_id=default_club.id, club_role_level=1)
+        db.session.add(uc)
+        db.session.commit()
+
     with client.session_transaction() as sess:
         sess['_user_id'] = str(user_id)
         sess['current_club_id'] = default_club.id

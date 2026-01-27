@@ -1,0 +1,13 @@
+id,Title,Is_Section,Is_Hidden,Valid_for_Project,Duration_Min,Duration_Max,role_id
+4,Ah-Counter Session,False,False,False,0,1,7
+5,Grammarian Session,False,False,False,0,2,5
+6,Timer Session,False,False,False,0,1,6
+7,Table Topics,False,False,True,0,25,4
+8,Generic,False,False,False,0,0,
+16,General Evaluation Report,False,False,False,0,3,2
+30,Prepared Speech,False,False,True,5,7,8
+31,Evaluation,False,False,True,2,3,3
+32,Section,True,False,False,,,
+36,Topics Speech,False,True,False,2,3,9
+42,Meeting Manager,False,True,False,,,
+64,Toastmaster's Address,False,False,False,0,2,1

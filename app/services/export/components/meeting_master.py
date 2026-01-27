@@ -16,7 +16,6 @@ class MeetingMasterComponent(BaseExportComponent):
         ws.append(headers)
         ExportFormatter.apply_header_style(ws, ws.max_row)
         
-        from ....constants import SessionTypeID
         from ....models import ExComm
         from ....club_context import get_current_club_id
         
@@ -31,7 +30,7 @@ class MeetingMasterComponent(BaseExportComponent):
         # Find keynote speaker from session logs
         keynote_speaker = ""
         for log, st in context.logs:
-            if st.id == SessionTypeID.KEYNOTE_SPEECH and log.owner:
+            if st.Title == "Keynote Speech" and log.owner:
                 keynote_speaker = log.owner.Name
                 break
         

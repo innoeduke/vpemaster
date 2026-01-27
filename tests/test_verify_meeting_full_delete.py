@@ -43,9 +43,11 @@ class TestMeetingDeletion(unittest.TestCase):
         from app.auth.permissions import Permissions
         
         perm = Permission(name=Permissions.ABOUT_CLUB_VIEW, description="View Club")
+        perm_agenda = Permission(name=Permissions.AGENDA_VIEW, description="View Agenda")
         role = Role(name='Guest', description='Guest')
         role.permissions.append(perm)
-        db.session.add_all([perm, role])
+        role.permissions.append(perm_agenda)
+        db.session.add_all([perm, perm_agenda, role])
         db.session.commit()
         
         self.contact = Contact(Name="Delete Test User")

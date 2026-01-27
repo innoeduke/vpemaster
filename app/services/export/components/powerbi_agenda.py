@@ -1,6 +1,5 @@
 from ..base import BaseExportComponent
 from ..formatter import ExportFormatter
-from app.constants import SessionTypeID
 from app.utils import derive_credentials
 
 
@@ -18,10 +17,10 @@ class PowerBIAgendaComponent(BaseExportComponent):
                 continue
                 
             # Title logic
-            if st.id == SessionTypeID.EVALUATION and log.Session_Title:
+            if st.Title == "Evaluation" and log.Session_Title:
                 # Evaluation title: "Evaluation for <speaker>"
                 title = f"Evaluation for {log.Session_Title}"
-            elif st.id == SessionTypeID.KEYNOTE_SPEECH and log.Session_Title:
+            elif st.Title == "Keynote Speech" and log.Session_Title:
                 # Keynote speech: use title as-is without quotes, but strip any existing quotes
                 title = log.Session_Title.replace('"', '').replace("'", "")
             elif st.Valid_for_Project and log.id in context.speech_details and log.Session_Title:

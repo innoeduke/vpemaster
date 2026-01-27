@@ -6,6 +6,7 @@ from .auth.permissions import Permissions
 from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
 from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, PermissionAudit, ContactClub, Club, ExComm, UserClub
+from .constants import GLOBAL_CLUB_ID
 import json
 from . import db
 import os
@@ -29,10 +30,35 @@ def settings():
     # Get current club context
     club_id = get_current_club_id()
     
-    # Session types and meeting roles are global (shared across clubs)
-    session_types = SessionType.query.order_by(SessionType.Title.asc()).all()
-    roles_query = MeetingRole.query.order_by(MeetingRole.name.asc()).all()
-    roles = [{'id': role.id, 'name': role.name} for role in roles_query]
+    # Fetch Global items separately
+    global_session_types = SessionType.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
+    global_roles = MeetingRole.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
+
+    # Fetch Local items separately (if not global club)
+    local_session_types = []
+    local_roles_query = []
+    
+    if club_id and club_id != GLOBAL_CLUB_ID:
+        local_session_types = SessionType.query.filter_by(club_id=club_id).all()
+        local_roles_query = MeetingRole.query.filter_by(club_id=club_id).all()
+    elif club_id == GLOBAL_CLUB_ID:
+        # If we are in the Global Club, "local" lists are empty, or effectively the same as global?
+        # Actually, if we are editing Global Club, we treat them as "local" to this club for editing purposes.
+        # But per requirements, we want to separate. 
+        # If I am Global Admin managing Club 1, I should see them in the "Club Specific" or just one list.
+        # Let's treat Club 1 items as "Global" list, and Local list is empty.
+        # AND we make the Global list editable for Club 1.
+        pass
+
+    # For backward compatibility with existing template (merged list), 
+    # we might still need 'session_types' and 'roles_query' IF we were not updating the template.
+    # But we ARE updating the template.
+    # However, 'roles' (list of dicts) might be used elsewhere or for dropdowns?
+    # The 'roles' var in this function is passed to template. 
+    # Let's keep 'roles_query' as the MERGED list for dropdowns if needed, or just for safety.
+    # Actually, let's reconstruct the merged list for the 'roles' json variable used in JS keys.
+    merged_roles = MeetingRole.get_all_for_club(club_id)
+    roles = [{'id': role.id, 'name': role.name} for role in merged_roles]
     
     # Users: Filter by club membership
     if club_id:
@@ -57,9 +83,19 @@ def settings():
     else:
         achievements = Achievement.query.join(Contact).order_by(Contact.Name.asc(), Achievement.issue_date.desc()).all()
 
-    return render_template('settings.html', session_types=session_types, all_users=all_users, 
-                          roles=roles, roles_query=roles_query, 
-                          achievements=achievements, club_id=club_id)
+    return render_template('settings.html', 
+                          global_session_types=global_session_types,
+                          local_session_types=local_session_types,
+                          global_roles=global_roles,
+                          local_roles=local_roles_query,
+                          all_users=all_users, 
+                          roles=roles, 
+                          # We still pass merged lists if the template needs them for something else, 
+                          # but mostly we rely on the split lists now.
+                          # Actually, let's just make sure we don't break anything.
+                          # The original template used 'session_types' and 'roles_query'.
+                          # We will replace usages in template.
+                          achievements=achievements, club_id=club_id, GLOBAL_CLUB_ID=GLOBAL_CLUB_ID)
 
 
 @settings_bp.route('/settings/sessions/add', methods=['POST'])
@@ -74,10 +110,13 @@ def add_session_type():
         if not title:
             return jsonify(success=False, message="Title is required"), 400
 
-        # Check if title already exists
-        existing_session = SessionType.query.filter_by(Title=title).first()
+        # Get current club context
+        club_id = get_current_club_id()
+
+        # Check if title already exists in this club
+        existing_session = SessionType.query.filter_by(Title=title, club_id=club_id).first()
         if existing_session:
-            return jsonify(success=False, message="Session type with this title already exists"), 400
+            return jsonify(success=False, message="Session type with this title already exists in this club"), 400
 
         # Validate numeric input
         duration_min_str = request.form.get('duration_min', '').strip()
@@ -114,7 +153,8 @@ def add_session_type():
             Duration_Max=duration_max,
             Is_Section='is_section' in request.form,
             Valid_for_Project='valid_for_project' in request.form,
-            Is_Hidden='is_hidden' in request.form
+            Is_Hidden='is_hidden' in request.form,
+            club_id=club_id
         )
         db.session.add(new_session)
         db.session.commit()
@@ -152,10 +192,11 @@ def update_session_types():
     if not data:
         return jsonify(success=False, message="No data received"), 400
 
+    club_id = get_current_club_id()
     try:
         for item in data:
             session_type = db.session.get(SessionType, item['id'])
-            if session_type:
+            if session_type and session_type.club_id == club_id:
                 session_type.Title = item.get('Title')
                 role_id_str = item.get('role_id')
                 session_type.role_id = int(
@@ -186,9 +227,16 @@ def delete_session_type(id):
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
 
+    club_id = get_current_club_id()
     try:
         session_type = db.session.get(SessionType, id)
-        if session_type:
+        
+        # Security: Prevent deletion of Global items by non-sysadmin (or if enforce strict overrides)
+        # Even SysAdmin shouldn't delete Global items from a specific club context unless they are managing Club 1 directly.
+        if session_type.club_id == GLOBAL_CLUB_ID and club_id != GLOBAL_CLUB_ID:
+            return jsonify(success=False, message="Cannot delete a Global session type. You can create a local override instead."), 403
+
+        if session_type and (session_type.club_id == club_id or club_id == GLOBAL_CLUB_ID):
             # Check if used in SessionLogs
             from .models import SessionLog
             usage_count = SessionLog.query.filter_by(Type_ID=id).count()
@@ -199,7 +247,7 @@ def delete_session_type(id):
             db.session.commit()
             return jsonify(success=True, message="Session type deleted successfully.")
         else:
-            return jsonify(success=False, message="Session type not found"), 404
+            return jsonify(success=False, message="Session type not found or permission denied"), 404
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
@@ -211,15 +259,24 @@ def add_role():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
+    club_id = get_current_club_id()
+    
+    # Check if role name already exists in this club
+    trimmed_name = request.form.get('name', '').strip()
+    if MeetingRole.query.filter_by(name=trimmed_name, club_id=club_id).first():
+        flash(f'Role with name "{trimmed_name}" already exists in this club.', 'danger')
+        return redirect(url_for('settings_bp.settings', _anchor='agenda-settings'))
+
     try:
         new_role = MeetingRole(
-            name=request.form.get('name'),
+            name=trimmed_name,
             icon=request.form.get('icon'),
             type=request.form.get('type'),
             award_category=request.form.get('award_category'),
             needs_approval='needs_approval' in request.form,
             has_single_owner='has_single_owner' in request.form,
-            is_member_only='is_member_only' in request.form
+            is_member_only='is_member_only' in request.form,
+            club_id=club_id
         )
         db.session.add(new_role)
         db.session.commit()
@@ -241,10 +298,11 @@ def update_roles():
     if not data:
         return jsonify(success=False, message="No data received"), 400
 
+    club_id = get_current_club_id()
     try:
         for item in data:
             role = db.session.get(MeetingRole, item['id'])
-            if role:
+            if role and role.club_id == club_id:
                 role.name = item.get('name')
                 role.icon = item.get('icon')
                 role.type = item.get('type')
@@ -266,14 +324,19 @@ def delete_role(id):
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
 
+    club_id = get_current_club_id()
     try:
         role = db.session.get(MeetingRole, id)
-        if role:
+        
+        if role.club_id == GLOBAL_CLUB_ID and club_id != GLOBAL_CLUB_ID:
+             return jsonify(success=False, message="Cannot delete a Global role."), 403
+
+        if role and (role.club_id == club_id or club_id == GLOBAL_CLUB_ID):
             db.session.delete(role)
             db.session.commit()
             return jsonify(success=True, message="Role deleted successfully.")
         else:
-            return jsonify(success=False, message="Role not found"), 404
+            return jsonify(success=False, message="Role not found or permission denied"), 404
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
@@ -302,18 +365,47 @@ def import_roles():
                 file.stream.read().decode("utf-8-sig"), newline=None)
             reader = csv.DictReader(stream)
 
+            club_id = get_current_club_id()
+             
+            # Pre-fetch Global Roles for duplicate checking
+            global_roles = MeetingRole.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
+            global_role_names = {r.name for r in global_roles}
+
             for row in reader:
                 role_name = row.get('name')
-                if role_name and not MeetingRole.query.filter_by(name=role_name).first():
+                role_type = row.get('type')
+                
+                # Rule 1: If type is 'standard' and it exists in Global list, SKIP it.
+                # This assumes we want to use the Global definition, not a local copy.
+                if role_type == 'standard' and role_name in global_role_names:
+                    continue
+
+                # Check if it already exists LOCALLY
+                if role_name and not MeetingRole.query.filter_by(name=role_name, club_id=club_id).first():
+                    
+                    # Rule 2: Force type to 'club-specific' for all imported roles
+                    # (Unless it's the Global Club itself importing? The requirement didn't specify exception)
+                    # "for all roles imported, set their types to 'club specific'"
+                    # If I am Club 1 Admin importing, maybe I WANT standard?
+                    # The request context likely implies "Normal Club importing from a list".
+                    # But to be safe, if club_id == GLOBAL_CLUB_ID, we might want to respect CSV?
+                    # User request: "while importing data... set their types to 'club specific'".
+                    # I will apply this to non-global clubs.
+                    
+                    final_type = 'club-specific'
+                    if club_id == GLOBAL_CLUB_ID:
+                        final_type = role_type # Respect CSV for Global Club
+                    
                     new_role = MeetingRole(
                         name=role_name,
                         icon=row.get('icon'),
-                        type=row.get('type'),
+                        type=final_type,
                         award_category=row.get('award_category'),
                         needs_approval=row.get(
                             'needs_approval', '0').strip() == '1',
                         has_single_owner=row.get('has_single_owner', '0').strip() == '1',
-                        is_member_only=row.get('is_member_only', '0').strip() == '1'
+                        is_member_only=row.get('is_member_only', '0').strip() == '1',
+                        club_id=club_id
                     )
                     db.session.add(new_role)
 

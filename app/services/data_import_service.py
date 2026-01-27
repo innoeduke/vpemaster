@@ -12,7 +12,6 @@ from app.models.ticket import Ticket
 from app.models.media import Media
 from app.models.achievement import Achievement
 from app.models.voting import Vote
-from app.constants import SessionTypeID
 from datetime import datetime
 import os
 
@@ -27,6 +26,8 @@ class DataImportService:
         self.media_map = {}    # Source Media ID -> Target Media Obj
         self.meeting_map = {}  # Source Meeting Number -> Target Meeting Obj
         self.session_type_map = {} # Source Type ID -> Target Type ID
+        self.source_type_role_map = {} # Source Type ID -> Source Role ID
+        self.generic_type_id = None # Cached Generic Type ID
 
     def resolve_club(self):
         """Resolves club_no to club_id."""
@@ -147,88 +148,190 @@ class DataImportService:
 
 
     def import_session_types(self, types_data):
-        print(f"Importing session types mapping...")
+        print(f"Importing session types mapping (Map-Only)...")
         for row in types_data:
             # Schema: id, Title, DefaultOwner, DurMin, DurMax, IsSection, Predef, ValidProj, IsHidden, RoleID
             source_id = row[0]
             title = row[1]
+            role_id_source = row[9] if len(row) > 9 else None
             
-            existing = SessionType.query.filter_by(Title=title, club_id=self.club_id).first()
+            # Save mapping for roles processing later
+            if role_id_source and role_id_source != 'NULL':
+                self.source_type_role_map[source_id] = role_id_source
+            
+            # Look up GLOBALLY or LOCALLY?
+            # User wants to use "metadata" which implies Global/Standard items.
+            # But might be local overrides? 
+            # Logic: Try Local first, then Global?
+            # But `SessionType` query normally is just all? 
+            # We strictly want to find the ID that corresponds to this Title.
+            
+            # Simple fallback lookup:
+            # Check current club override OR global
+            # We can use the helper method `SessionType.get_all_for_club` logic? 
+            # No, we need ID.
+            
+            # Direct query:
+            existing = None
+            
+            # 1. Try Role-Based Match First (Robust against Title changes)
+            if role_id_source and role_id_source != 'NULL':
+                 target_role_id = self.role_map.get(role_id_source)
+                 if target_role_id:
+                      # Find session types with this role in target
+                      candidates = SessionType.query.filter_by(role_id=target_role_id).all()
+                      
+                      from app.constants import GLOBAL_CLUB_ID
+                      
+                      # Filter candidates
+                      local_candidates = [c for c in candidates if c.club_id == self.club_id]
+                      global_candidates = [c for c in candidates if c.club_id == GLOBAL_CLUB_ID]
+                      
+                      if len(local_candidates) == 1:
+                           existing = local_candidates[0]
+                      elif len(local_candidates) == 0 and len(global_candidates) == 1:
+                           existing = global_candidates[0]
+                      else:
+                           # Ambiguous (multiple types with same role) -> Disambiguate by Title
+                           valid_candidates = local_candidates + global_candidates
+                           match = next((c for c in valid_candidates if c.Title == title), None)
+                           if match:
+                                existing = match
+
+            # 2. Fallback to Title-Based Match (if Role Match failed, ambiguous, or no role)
+            if not existing:
+                existing = SessionType.query.filter_by(Title=title, club_id=self.club_id).first()
+            
+            if not existing:
+                # Fallback to Global
+                from app.constants import GLOBAL_CLUB_ID
+                existing = SessionType.query.filter_by(Title=title, club_id=GLOBAL_CLUB_ID).first()
+                
             if existing:
                 self.session_type_map[source_id] = existing.id
-                # Update role_id if missing or changed (Sync logic)
-                mapped_role_id = self.role_map.get(row[9]) if hasattr(self, 'role_map') else None
-                if mapped_role_id and existing.role_id != mapped_role_id:
-                    print(f"Updating role_id for {title} (Club: {self.club_id}) from {existing.role_id} to {mapped_role_id}")
-                    existing.role_id = mapped_role_id
-                    db.session.add(existing)
-                    db.session.flush()
             else:
-                 # Create new if needed
-                 new_type = SessionType(
-                     Title=title,
-                     Duration_Min=row[3],
-                     Duration_Max=row[4],
-                     Is_Section=bool(row[5]),
-                     Valid_for_Project=bool(row[7]),
-                     Is_Hidden=bool(row[8]),
-                     role_id=self.role_map.get(row[9]) if hasattr(self, 'role_map') else None,
-                     club_id=self.club_id
-                 )
-                 db.session.add(new_type)
-                 db.session.flush()
-                 self.session_type_map[source_id] = new_type.id
-        db.session.commit()
+                 # Creation Logic for Local Clubs
+                 from app.constants import GLOBAL_CLUB_ID
+                 if self.club_id != GLOBAL_CLUB_ID:
+                      print(f"Creating missing Session Type '{title}' for Club {self.club_id}")
+                      
+                      # Resolve role_id
+                      target_role_id = None
+                      if role_id_source and role_id_source != 'NULL':
+                           target_role_id = self.role_map.get(role_id_source)
+                           if not target_role_id:
+                                print(f"WARNING: Role ID {role_id_source} for Session Type '{title}' not found in map. Proceeding without role link.")
+
+                      new_st = SessionType(
+                          Title=title,
+                          Is_Section=bool(row[5]) if len(row) > 5 else False,
+                          Is_Hidden=bool(row[8]) if len(row) > 8 else False,
+                          Valid_for_Project=bool(row[7]) if len(row) > 7 else False,
+                          Duration_Min=int(row[3]) if len(row) > 3 and str(row[3]).isdigit() else 0,
+                          Duration_Max=int(row[4]) if len(row) > 4 and str(row[4]).isdigit() else 0,
+                          role_id=target_role_id,
+                          club_id=self.club_id
+                      )
+                      db.session.add(new_st)
+                      db.session.flush()
+                      self.session_type_map[source_id] = new_st.id
+                 else:
+                      print(f"WARNING: Session Type '{title}' (Source ID {source_id}) not found in target DB. Log import may fail.")
+        
+        # db.session.commit() # No changes needed
 
     def import_meeting_roles(self, roles_data):
-        print(f"Importing meeting roles definitions...")
+        print(f"Importing meeting roles definitions (Map-Only)...")
         # Source Schema (deduced): id, Name, Icon, Category, Type, count_comp, evaluable, unique
-        # Target Schema (MeetingRole): id, name, icon, unique_per_meeting, count_for_competent, is_evaluable, role_group?
+        
+        self.role_map = {} # SourceID -> TargetID
         
         for row in roles_data:
             source_id = row[0]
             name = row[1]
             
-            existing = MeetingRole.query.filter_by(name=name, club_id=self.club_id).first()
-            if not existing:
-                # Map indices safely
-                def get_idx(i, default=None): return row[i] if len(row) > i else default
+            # Lookup
+            # Try exact match first
+            target = MeetingRole.query.filter_by(name=name, club_id=self.club_id).first()
+            if not target:
+                 from app.constants import GLOBAL_CLUB_ID
+                 target = MeetingRole.query.filter_by(name=name, club_id=GLOBAL_CLUB_ID).first()
+            
+            # Try Aliases/Normalization
+            if not target:
+                 # Handle Officer Role Variations like "Sergeant at Arms" -> "SAA"
+                 normalized_name = name.lower().replace(" ", "").replace("-", "")
+                 if "sergeant" in normalized_name and "arms" in normalized_name:
+                     # Check for Standard SAA
+                     target = MeetingRole.query.filter(
+                         MeetingRole.club_id == GLOBAL_CLUB_ID,
+                         MeetingRole.name.ilike("%SAA%")
+                     ).first()
+                     if not target:
+                          # Fallback to full name check if SAA abbr not used
+                          target = MeetingRole.query.filter(
+                             MeetingRole.club_id == GLOBAL_CLUB_ID,
+                             MeetingRole.name.ilike("%Sergeant%")
+                          ).first()
+
+            if not target:
+                # If not found, try normalization/alias match
+                from app.utils import normalize_role_name, get_role_aliases
                 
-                new_role = MeetingRole(
-                    name=name,
-                    icon=get_idx(2),
-                    award_category=get_idx(3),
-                    type=get_idx(4) or 'standard',
-                    needs_approval=bool(get_idx(5, False)),
-                    has_single_owner=bool(get_idx(6, False)),
-                    club_id=self.club_id
-                )
-                db.session.add(new_role)
-                db.session.flush()
-                # We assume ID sync isn't strictly required if we map by Name later
-                # But for SessionType link, we need the ID.
-                # If IDs don't match, we need a map.
-                # But let's rely on string matching 'Name' in session_types?
-                # No, Session_Types has RoleID (Int).
-                # So we must map Source RoleID -> Target RoleID
+                normalized_source = normalize_role_name(name)
+                aliases = get_role_aliases()
+                
+                # Check if source name is an alias for a target role
+                # Requires iterating potential targets or reverse lookup.
+                # Easier: Get all roles and check against them.
+                from sqlalchemy import or_
+                all_roles = MeetingRole.query.filter(
+                    or_(MeetingRole.club_id == self.club_id, MeetingRole.club_id == GLOBAL_CLUB_ID)
+                ).all()
+                
+                for r in all_roles:
+                    norm_target = normalize_role_name(r.name)
+                    if norm_target == normalized_source:
+                        target = r
+                        break
+                    # Check aliases: source might be alias ("Sergeant at Arms") for target ("SAA")
+                    # aliases dict maps Alias -> Canonical (e.g. "sergeant at arms" -> "saa")
+                    if aliases.get(normalized_source) == norm_target:
+                         target = r
+                         break
             
-            # Since we can't easily map arbitrary source IDs to Target IDs without a map
-            # We skip complex logic and assume source logic relies on DB IDs match if we force them?
-            # No, standard is Map.
-            # But here `import_session_types` reads `row[9]` (RoleID).
-            # We need to know which Target ID that source `row[9]` maps to.
-            # So we need `self.role_map`.
-            
-        # Simplified: Just create map using names?
-        # Source RoleID X -> Name 'Toastmaster' -> Target Role Y.
-        self.role_map = {} # SourceID -> TargetID
-        for row in roles_data:
-             s_id = row[0]
-             name = row[1]
-             target = MeetingRole.query.filter_by(name=name, club_id=self.club_id).first()
-             if target:
-                 self.role_map[s_id] = target.id
-        
+            if target:
+                self.role_map[source_id] = target.id
+            else:
+                # Role not found in Global or Local.
+                # Check if we should CREATE it.
+                from app.constants import GLOBAL_CLUB_ID
+                
+                if self.club_id == GLOBAL_CLUB_ID:
+                    print(f"Skipping creation of role '{name}' in Global Club (1).")
+                    continue
+                
+                # Check Source Type (Index 3 based on metadata.sql: id, name, icon, type, ...)
+                source_type = row[3] if len(row) > 3 else ''
+                
+                if source_type in ['club-specific', 'club specific']:
+                   print(f"Creating new club-specific role '{name}' for Club {self.club_id}.")
+                   new_role = MeetingRole(
+                       name=name,
+                       icon=row[2] if len(row) > 2 else None,
+                       type='club-specific',
+                       award_category=row[4] if len(row) > 4 else None,
+                       needs_approval=bool(row[5]) if len(row) > 5 else False,
+                       has_single_owner=bool(row[6]) if len(row) > 6 else False,
+                       is_member_only=bool(row[7]) if len(row) > 7 else False,
+                       club_id=self.club_id
+                   )
+                   db.session.add(new_role)
+                   db.session.flush()
+                   self.role_map[source_id] = new_role.id
+                else:
+                   print(f"WARNING: Role '{name}' (Type: {source_type}) not found and not club-specific. Skipping.")
+
         print(f"Mapped {len(self.role_map)} meeting roles for Club {self.club_id}.")
 
 
@@ -485,15 +588,54 @@ class DataImportService:
             # We assume SessionTypes IDs match or we rely on them.
             type_id = self.session_type_map.get(row[2])
             if not type_id:
-                # Fallback: if not in map, assume existing (dangerous but original behavior)
-                type_id = row[2]
-                # Better: Check DB?
-                # If we skipped importing types, map is empty.
-                # But we should rely on map if provided.
-                # If map has entries, use it. If empty, maybe assume identity?
-                if self.session_type_map:
-                     print(f"WARNING: Type ID {row[2]} not found in map. Skipping log {row}.")
-                     continue
+                # Fallback: Check if we can map by Role ID
+                source_type_id = row[2]
+                source_role_id = self.source_type_role_map.get(source_type_id)
+                
+                found_fallback = False
+                if source_role_id:
+                    target_role_id = self.role_map.get(source_role_id)
+                    if target_role_id:
+                        # Find ANY session type in target that has this role
+                        # Priority: Local Club -> Global
+                        from app.constants import GLOBAL_CLUB_ID
+                        
+                        # Local
+                        fallback_st = SessionType.query.filter_by(role_id=target_role_id, club_id=self.club_id).first()
+                        if not fallback_st:
+                            # Global
+                            fallback_st = SessionType.query.filter_by(role_id=target_role_id, club_id=GLOBAL_CLUB_ID).first()
+                            
+                        if fallback_st:
+                            type_id = fallback_st.id
+                            # Success fallback
+                            found_fallback = True
+
+                if not found_fallback:
+                    # Final Fallback: Generic
+                    if not self.generic_type_id:
+                        # Try to find "Generic" session type
+                        # Priority: Local -> Global
+                        from app.constants import GLOBAL_CLUB_ID
+                        
+                        gen = SessionType.query.filter_by(Title="Generic", club_id=self.club_id).first()
+                        if not gen:
+                             gen = SessionType.query.filter_by(Title="Generic", club_id=GLOBAL_CLUB_ID).first()
+                        
+                        if gen:
+                            self.generic_type_id = gen.id
+                    
+                    if self.generic_type_id:
+                         type_id = self.generic_type_id
+                         # Success fallback
+                         found_fallback = True
+                    
+                if not found_fallback:
+                    # Fallback: if not in map, assume existing (dangerous but original behavior)
+                    type_id = row[2]
+                    if self.session_type_map:
+                         print(f"WARNING: Type ID {row[2]} not found in map and fallback failed. Skipping log {row}.")
+                         continue
             
             # Resolve Owner BEFORE log deduplication
             source_owner_id = row[3]
@@ -531,7 +673,7 @@ class DataImportService:
             is_prepared_speech = False
             session_type = db.session.get(SessionType, type_id)
             if session_type:
-                 is_prepared_speech = (session_type.id == SessionTypeID.PREPARED_SPEECH) or (session_type.Title == 'Presentation')
+                 is_prepared_speech = (session_type.Title == 'Prepared Speech') or (session_type.Title == 'Presentation')
             
             project_id = row[10]
             should_import_metadata = (project_id is not None) or is_prepared_speech
@@ -566,38 +708,43 @@ class DataImportService:
                         uc.user.member_no = target_contact.Member_ID
                 
                 # Check / Create OwnerMeetingRoles
-                if st and st.role_id:
-                    # Determine if single owner
-                    is_single_owner = st.role.has_single_owner if st.role else True
+                if target_contact:
+                     # Default logic for Generic or Role-based
+                     role_id = st.role_id if st else None
+                     has_role = (role_id is not None)
+                     
+                     # Determine if single owner
+                     # If no role, strictly single owner (Generic)
+                     is_single_owner = st.role.has_single_owner if (st and st.role) else True
+                     
+                     # Search existing
+                     query = OwnerMeetingRoles.query.filter_by(
+                          meeting_id=meeting_obj.id,
+                          role_id=role_id
+                     )
+                     
+                     target_log_id = target_log.id if is_single_owner else None
+                     if is_single_owner:
+                         query = query.filter_by(session_log_id=target_log_id)
+                     else:
+                         query = query.filter(OwnerMeetingRoles.session_log_id == None)
+                         
+                     omr = query.filter_by(contact_id=target_contact.id).first()
+                     
+                     if not omr:
+                         omr = OwnerMeetingRoles(
+                             meeting_id=meeting_obj.id,
+                             role_id=role_id,
+                             contact_id=target_contact.id,
+                             session_log_id=target_log_id
+                         )
                     
-                    # Check owner link
-                    query = OwnerMeetingRoles.query.filter_by(
-                         meeting_id=meeting_obj.id,
-                         role_id=st.role_id
-                    )
-                    
-                    target_log_id = target_log.id if is_single_owner else None
-                    if is_single_owner:
-                        query = query.filter_by(session_log_id=target_log_id)
-                    else:
-                        query = query.filter(OwnerMeetingRoles.session_log_id == None)
-                        
-                    omr = query.filter_by(contact_id=target_contact.id).first()
-                    
-                    if not omr:
-                        omr = OwnerMeetingRoles(
-                            meeting_id=meeting_obj.id,
-                            role_id=st.role_id,
-                            contact_id=target_contact.id,
-                            session_log_id=target_log_id
-                        )
-                    
-                    # Update credential if available and missing? Or always overwrite from source?
-                    # Source is backup, so we trust it.
-                    if source_credential:
-                        omr.credential = source_credential
-                        
-                    db.session.add(omr)
+                     # Update credential if available and missing? Or always overwrite from source?
+                     # Source is backup, so we trust it.
+                     if source_credential:
+                         omr.credential = source_credential
+                         
+                     db.session.add(omr)
 
         db.session.commit()
         print(f"Imported {count} session logs.")

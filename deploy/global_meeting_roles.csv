@@ -1,0 +1,21 @@
+id,name,icon,type,award_category,needs_approval,has_single_owner,is_member_only
+1,Toastmaster,fa-microphone,standard,role-taker,True,False,True
+2,General Evaluator,fa-search,standard,role-taker,True,False,False
+3,Individual Evaluator,fa-pen-square,standard,evaluator,False,True,False
+4,Topicsmaster,fa-comments,standard,role-taker,True,False,False
+5,Grammarian,fa-book,standard,role-taker,False,False,False
+6,Timer,fa-stopwatch,standard,role-taker,False,False,False
+7,Ah-Counter,fa-calculator,standard,role-taker,False,False,False
+8,Prepared Speaker,fa-user-tie,standard,speaker,True,True,True
+9,Topics Speaker,fa-comment,standard,table-topic,False,True,False
+15,Election Chair,fa-vote-yea,standard,role-taker,True,False,False
+16,Chief Contest Judge,fa-gavel,standard,role-taker,True,False,False
+26,Contest Chair,fa-microphone,standard,role-taker,True,False,False
+27,Ballot Counter,fa-calculator,standard,role-taker,False,False,False
+31,SAA,,officer,,False,False,False
+32,President,fa-gavel,officer,,False,False,False
+33,VPE,,officer,,False,False,False
+34,VPM,,officer,,False,False,False
+35,VPPR,,officer,,False,False,False
+36,Secretary,,officer,,False,False,False
+37,Treasurer,,officer,,False,False,False

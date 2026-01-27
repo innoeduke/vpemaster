@@ -4,7 +4,7 @@ from sqlalchemy.dialects import mysql
 from sqlalchemy.orm import joinedload, subqueryload
 
 from .base import db
-from ..constants import ProjectID, SessionTypeID
+from ..constants import ProjectID
 
 
 class SessionType(db.Model):
@@ -25,6 +25,56 @@ class SessionType(db.Model):
     __table_args__ = (
         db.UniqueConstraint('Title', 'club_id', name='uq_session_type_title_club'),
     )
+
+    @classmethod
+    def get_id_by_title(cls, title, club_id):
+        """
+        Helper to get ID by Title and Club.
+        Checks Local club first, then Global (Club 1).
+        """
+        from ..constants import GLOBAL_CLUB_ID
+        
+        # 1. Local check
+        if club_id:
+            st = cls.query.filter_by(Title=title, club_id=club_id).first()
+            if st:
+                return st.id
+        
+        # 2. Global check
+        st_global = cls.query.filter_by(Title=title, club_id=GLOBAL_CLUB_ID).first()
+        return st_global.id if st_global else None
+
+    @classmethod
+    def get_ids_for_club(cls, club_id):
+        """Returns a dict mapping Title to id for the given club (merging Global + Local)."""
+        types = cls.get_all_for_club(club_id)
+        return {t.Title: t.id for t in types}
+
+    @classmethod
+    def get_all_for_club(cls, club_id):
+        """
+        Fetch all session types for a club, merging Global and Local items.
+        Local items override Global items with the same Title.
+        Returns a list of SessionType objects.
+        """
+        from ..constants import GLOBAL_CLUB_ID
+        
+        # Fetch Global items
+        global_types = cls.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
+        
+        # Fetch Local items (if club_id is provided and distinct from global)
+        local_types = []
+        if club_id and club_id != GLOBAL_CLUB_ID:
+            local_types = cls.query.filter_by(club_id=club_id).all()
+            
+        # Merge: Local overwrites Global by Title
+        # Use a dict keyed by Title to handle the merge/override
+        merged = {t.Title: t for t in global_types}
+        for t in local_types:
+            merged[t.Title] = t
+            
+        # Return merged values sorted by Title (or ID, but Title seems standard)
+        return sorted(list(merged.values()), key=lambda x: x.Title)
 
 
 
@@ -614,7 +664,7 @@ class SessionLog(db.Model):
             
             # Project Code Logic (Based on Primary Owner)
             # Only update if it is a Project or Prepared Speech
-            is_prepared = (log.Type_ID == SessionTypeID.PREPARED_SPEECH) or \
+            is_prepared = (log.session_type and log.session_type.Title == 'Prepared Speech') or \
                           (log.session_type and log.session_type.Title == 'Presentation')
             
             if primary_owner and (log.Project_ID or is_prepared):

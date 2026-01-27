@@ -60,9 +60,9 @@ class TestAgendaComponent(unittest.TestCase):
             log.owner = None
             log.owners = []
         
-        # Mock session type
         st = Mock()
         st.id = session_type_id
+        # Use provided session_title if it looks like a session type title we care about
         st.Title = "Session Type Title"
         st.Is_Section = is_section
         st.Is_Hidden = is_hidden
@@ -451,6 +451,7 @@ class TestAgendaComponent(unittest.TestCase):
             session_type_id=31,  # EVALUATION
             session_title="John Doe"  # Speaker name stored in Session_Title
         )
+        st.Title = "Evaluation"
         
         context = Mock()
         context.logs = [(log, st)]
@@ -495,6 +496,7 @@ class TestAgendaComponent(unittest.TestCase):
             session_type_id=20,  # KEYNOTE_SPEECH
             session_title='The "Best" Keynote Ever'
         )
+        st.Title = "Keynote Speech"
         
         context = Mock()
         context.logs = [(log, st)]

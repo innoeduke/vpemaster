@@ -105,7 +105,9 @@ def get_role_aliases():
         'toastmaster': 'tme',
         'ge': 'generalevaluator',
         'generalevaluator': 'ge',
-        'evaluator': 'individualevaluator'
+        'evaluator': 'individualevaluator',
+        'sergeantatarms': 'saa',
+        'saa': 'sergeantatarms'
     }
 
 
@@ -139,9 +141,12 @@ def get_dropdown_metadata():
         grouped_pathways[ptype].append(p.name)
     
     # Roles
-    available_roles = MeetingRole.query.filter(
-        MeetingRole.type.in_(['standard', 'club-specific'])
-    ).order_by(MeetingRole.name).all()
+    # Use get_current_club_id() to ensure we get the correct context-aware roles
+    current_club_id = get_current_club_id()
+    available_roles = MeetingRole.get_all_for_club(current_club_id)
+    
+    # Filter for standard/club-specific if needed, though get_all_for_club returns objects
+    available_roles = [r for r in available_roles if r.type in ['standard', 'club-specific']]
     
     grouped_roles = {}
     for r in available_roles:

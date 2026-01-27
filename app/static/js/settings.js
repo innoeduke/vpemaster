@@ -313,47 +313,75 @@ function setupGlobalFilter(searchInputId, searchClearId, tabNavSelector) {
     );
     if (!activeTab) return;
 
-    const table = activeTab.querySelector("table");
-    if (!table) return;
+    const tables = activeTab.querySelectorAll("table");
+    if (!tables || tables.length === 0) return;
 
-    const tbody = table.querySelector("tbody");
-    if (!tbody) return;
+    tables.forEach(table => {
+      const tbody = table.querySelector("tbody");
+      if (!tbody) return;
 
-    const rows = tbody.querySelectorAll("tr");
-    rows.forEach((row) => {
-      let rowText = "";
-      row.querySelectorAll("td").forEach((cell) => {
-        if (cell.querySelector('input[type="checkbox"]')) {
-          rowText +=
-            (cell.querySelector('input[type="checkbox"]').checked
-              ? "TRUE"
-              : "FALSE") + " ";
-        } else {
-          rowText += cell.textContent.toUpperCase() + " ";
-        }
+      const rows = tbody.querySelectorAll("tr");
+      rows.forEach((row) => {
+        let rowText = "";
+        row.querySelectorAll("td").forEach((cell) => {
+          if (cell.querySelector('input[type="checkbox"]')) {
+            rowText +=
+              (cell.querySelector('input[type="checkbox"]').checked
+                ? "TRUE"
+                : "FALSE") + " ";
+          } else {
+            rowText += cell.textContent.toUpperCase() + " ";
+          }
+        });
+
+        row.setAttribute('data-search-hidden', rowText.includes(filter) ? 'false' : 'true');
       });
 
-      row.setAttribute('data-search-hidden', rowText.includes(filter) ? 'false' : 'true');
+      // Update visibility (paginated or not)
+      // Note: Paginator logic assumes one paginator per tab ID? 
+      // "window.activePaginators[activeTabId]" - this suggests one paginator per tab.
+      // If we have two tables, logic is complex. 
+      // But typically these tables are not paginated or we need separate paginators?
+      // existing code: "if (window.activePaginators) { ... }"
+      // The code implies one paginator per 'activeTabId'.
+      // If Global table is small (it is), maybe it's not paginated.
+      // Local table might be paginated.
+      // If we filter, we simply hide rows based on 'data-search-hidden'.
+      // If paginator exists, it manages display based on that attribute.
+      // If no paginator, we must manually toggle display.
+      
+      const tabId = activeTab.id;
+      let hasPaginator = false;
+      if (window.activePaginators && window.activePaginators[tabId]) {
+         // This assumes the paginator controls THE table. Which one?
+         // The paginator class takes 'tableId'. 
+         // If we have multiple tables, we probably only paginate the main one (Club Specific)?
+         // Or none?
+         // Let's assume simplest case: Standard filtering visibility apply to non-paginated tables too.
+         
+         // If this specific table has a paginator attached, use it.
+         // But we don't know easily.
+         // Fallback: Just update display if NO paginator attached to this specific table?
+         // Actually, let's keep it simple: Update display for all rows. 
+         // If paginator is active, it calls 'update()' which re-checks 'data-search-hidden'.
+         // So we just need to trigger paginator update ONCE after processing all rows?
+      }
+
+      // Simple immediate visibility update for safety (overridden by paginator if active)
+      rows.forEach(row => {
+        const shouldHide = row.getAttribute('data-search-hidden') === 'true';
+        row.style.display = shouldHide ? "none" : "";
+      });
     });
 
-    // Notify paginator if active
+    // Notify paginator if active (assuming it manages the 'main' table)
     if (window.activePaginators) {
       const activeTabId = activeTab.id;
       const paginator = window.activePaginators[activeTabId];
       if (paginator) {
         paginator.currentPage = 1;
         paginator.update();
-      } else {
-        // Fallback for non-paginated tables in a paginated state
-        rows.forEach(row => {
-          row.style.display = row.getAttribute('data-search-hidden') === 'true' ? "none" : "";
-        });
       }
-    } else {
-      // Fallback for non-paginated setup
-      rows.forEach(row => {
-        row.style.display = row.getAttribute('data-search-hidden') === 'true' ? "none" : "";
-      });
     }
   };
 
@@ -652,10 +680,19 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- 3. Sortable & Filterable Table Setup ---
+  setupTableSorting("global-sessions-table");
+  if (document.getElementById("global-sessions-table")) {
+    sortTableByColumn(document.getElementById("global-sessions-table"), 1, true);
+  }
   setupTableSorting("sessions-table");
   sortTableByColumn(document.getElementById("sessions-table"), 1, true);
+  
   setupTableSorting("user-settings-table");
 
+  setupTableSorting("global-roles-table");
+  if (document.getElementById("global-roles-table")) {
+    sortTableByColumn(document.getElementById("global-roles-table"), 1, true);
+  }
   setupTableSorting("roles-table");
   sortTableByColumn(document.getElementById("roles-table"), 1, true);
 

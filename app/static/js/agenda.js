@@ -394,7 +394,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (log.session_type_title === 'Evaluation') {
           displayTitle = 'Evaluator for ' + cleanedTitle;
-        } else if (['Pathway Speech', 'Presentation'].includes(log.session_type_title) || log.Project_ID) {
+        } else if (['Pathway Speech', 'Prepared Speech', 'Presentation'].includes(log.session_type_title) || log.Project_ID) {
           displayTitle = '"' + cleanedTitle + '"';
         } else {
           displayTitle = cleanedTitle;
@@ -526,7 +526,7 @@ document.addEventListener("DOMContentLoaded", () => {
       meetingNumber: meetingFilter.value,
       projectId: "",
       status: "Booked",
-      typeId: "",
+      typeId: allSessionTypes.find(st => st.Is_Section)?.id || "",
       sessionTitle: "",
       ownerId: "",
       durationMin: "",
