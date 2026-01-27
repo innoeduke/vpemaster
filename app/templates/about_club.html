@@ -378,6 +378,14 @@
         if (logoInput) {
             logoInput.addEventListener('change', function() {
                 if (this.files && this.files.length > 0) {
+                    const file = this.files[0];
+                    const maxSize = 5 * 1024 * 1024; // 5MB
+                    if (file.size > maxSize) {
+                        alert('File is too large. Max size is 5MB.');
+                        this.value = ''; // Clear the input
+                        logoBtn.style.display = 'none';
+                        return;
+                    }
                     logoBtn.style.display = 'inline-block';
                 } else {
                     logoBtn.style.display = 'none';

@@ -51,7 +51,7 @@
       {% if is_own_profile %}
       <div class="upload-btn-wrapper">
         <button class="btn-upload">Change Photo</button>
-        <input type="file" name="profile_photo" accept="image/*" onchange="this.form.submit()" />
+        <input type="file" name="profile_photo" accept="image/*" onchange="validateAvatar(this)" />
       </div>
       {% endif %}
     </div>
@@ -179,6 +179,19 @@
 {% endif %}
 
 <script>
+  function validateAvatar(input) {
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        alert('File is too large. Max size is 5MB.');
+        input.value = ''; // Clear the input
+        return;
+      }
+      input.form.submit();
+    }
+  }
+
   function openTab(evt, tabName) {
     var i, tabcontent, tablinks;
 

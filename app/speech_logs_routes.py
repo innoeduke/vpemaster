@@ -192,6 +192,9 @@ def _fetch_logs_with_filters(filters):
     if filters['speaker_id'] and filters['speaker_id'] != -1:
         logs = RoleService.get_roles_for_contact(filters['speaker_id'], club_id=current_club_id)
         
+        # Filter out officer roles (SAA, President, etc.)
+        logs = [l for l in logs if not (l.session_type and l.session_type.role and l.session_type.role.type == 'officer')]
+
         # Apply remaining filters (meeting_number, role) manually
         if filters['meeting_number']:
             logs = [l for l in logs if str(l.Meeting_Number) == str(filters['meeting_number'])]

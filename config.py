@@ -21,6 +21,9 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {'pool_recycle': 280}
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # Good practice
 
+    # Upload settings
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB limit
+
     # Cache settings
     CACHE_TYPE = 'SimpleCache'
     CACHE_DEFAULT_TIMEOUT = 300
