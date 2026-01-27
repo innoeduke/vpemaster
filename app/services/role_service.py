@@ -522,7 +522,7 @@ class RoleService:
         # Query OwnerMeetingRoles joined with Meeting and MeetingRole
         query = db.session.query(OwnerMeetingRoles, MeetingRole, Contact)\
             .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
-            .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+            .outerjoin(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
             .join(Contact, OwnerMeetingRoles.contact_id == Contact.id)\
             .filter(Meeting.Meeting_Number == meeting_number)
         
@@ -536,10 +536,10 @@ class RoleService:
         for omr, role, contact in results:
             c_id = str(contact.id)
             role_data = {
-                'id': role.id,
-                'name': role.name,
-                'icon': role.icon,
-                'award_category': role.award_category.strip() if role.award_category else "",
+                'id': role.id if role else None,
+                'name': role.name if role else "N/A",
+                'icon': role.icon if role else None,
+                'award_category': role.award_category.strip() if role and role.award_category else "",
                 'session_log_id': omr.session_log_id,
                 'owner_name': contact.Name,
                 'owner_avatar_url': contact.Avatar_URL
@@ -573,7 +573,7 @@ class RoleService:
         # 1. Query OwnerMeetingRoles entries for this contact
         query = db.session.query(OwnerMeetingRoles, Meeting, MeetingRole, Contact)\
             .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
-            .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+            .outerjoin(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
             .join(Contact, OwnerMeetingRoles.contact_id == Contact.id)\
             .filter(OwnerMeetingRoles.contact_id == contact_id)
             
@@ -593,7 +593,7 @@ class RoleService:
                     db.joinedload(SessionLog.session_type).joinedload(SessionType.role),
                     db.joinedload(SessionLog.project)
                 ).first()
-            else:
+            elif role:
                 # Shared role: Find the relevant session log for this meeting/role type
                 log = SessionLog.query.join(SessionType).filter(
                     SessionLog.Meeting_Number == meeting.Meeting_Number,

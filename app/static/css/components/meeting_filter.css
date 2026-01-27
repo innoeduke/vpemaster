@@ -48,7 +48,7 @@
 	background: transparent;
 	outline: none;
 	width: 100%;
-	font-size: 1em;
+	font-size: clamp(0.9rem, 1.5vw, 1rem);
 	font-weight: 600;
 	color: #333;
 	padding: 0;
@@ -64,7 +64,9 @@
 	position: absolute;
 	top: calc(100% + 5px);
 	left: 0;
-	right: 0;
+	min-width: 100%;
+	width: max-content;
+	max-width: 100vw;
 	background: white;
 	border-radius: 12px;
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
@@ -97,6 +99,7 @@
 	cursor: pointer;
 	transition: all 0.2s ease;
 	gap: 12px;
+	white-space: nowrap;
 }
 
 .autocomplete-result-item:hover {
@@ -109,30 +112,34 @@
 }
 
 .autocomplete-result-item .status-icon {
-	font-size: 1.1em;
+	font-size: clamp(0.9rem, 1.5vw, 1.1rem);
 	width: 24px;
 	display: flex;
 	justify-content: center;
+	flex-shrink: 0;
 }
 
 .autocomplete-result-item .meeting-num {
 	font-weight: 700;
 	color: #772432;
-	min-width: 45px;
+	min-width: fit-content;
+	font-size: clamp(0.85rem, 1.4vw, 1rem);
+	flex-shrink: 0;
 }
 
 .autocomplete-result-item .meeting-date {
 	flex-grow: 1;
-	font-size: 0.95em;
+	font-size: clamp(0.8rem, 1.3vw, 0.95rem);
 	color: #555;
 }
 
 .autocomplete-result-item .status-tag {
-	font-size: 0.75em;
+	font-size: clamp(0.65rem, 1.1vw, 0.75rem);
 	padding: 2px 8px;
 	border-radius: 10px;
 	font-weight: 600;
 	text-transform: uppercase;
+	flex-shrink: 0;
 }
 
 .status-tag.status-unpublished {

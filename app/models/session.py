@@ -31,7 +31,7 @@ class OwnerMeetingRoles(db.Model):
     __tablename__ = 'owner_meeting_roles'
     id = db.Column(db.Integer, primary_key=True)
     meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), index=True)
-    role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), index=True)
+    role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), nullable=True, index=True)
     contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), index=True)
     # session_log_id is only populated if role.has_single_owner is True
     session_log_id = db.Column(db.Integer, db.ForeignKey('Session_Logs.id'), nullable=True, index=False)
@@ -94,7 +94,7 @@ class SessionLog(db.Model):
             return []
             
         # Determine target role and scope
-        target_role_id = 0
+        target_role_id = None
         has_single_owner = True
         
         if self.session_type and self.session_type.role:
@@ -545,8 +545,8 @@ class SessionLog(db.Model):
             meeting_id = m.id if m else None
         
         # Determine Role ID and Single Owner Status
-        # Default to 0 and Single Owner if no role associated
-        target_role_id = 0
+        # Default to None and Single Owner if no role associated
+        target_role_id = None
         is_single_owner = True
         
         if role_obj:
