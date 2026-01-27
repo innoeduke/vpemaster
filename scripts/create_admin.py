@@ -9,9 +9,9 @@ from app.models import User, Contact, Club, UserClub, ContactClub, AuthRole
 @click.option('--email', prompt=True, help='Admin email')
 @click.option('--password', prompt=True, hide_input=True, confirmation_prompt=True, help='Admin password')
 @click.option('--contact-name', default=None, help='Contact name (defaults to username)')
-@click.option('--club', default='', help='Club name (defaults to "")')
+@click.option('--club-no', default='000001', help='Club number (defaults to "000001")')
 @with_appcontext
-def create_admin(username, email, password, contact_name, club):
+def create_admin(username, email, password, contact_name, club_no):
     """Create an admin user with associated contact."""
     
     # Paranoid Input Cleaning (Apply immediately)
@@ -46,10 +46,10 @@ def create_admin(username, email, password, contact_name, club):
 
         # Validate Club or Create Gossip
         club_obj = None
-        if club:
-            club_obj = Club.query.filter_by(club_name=club).first()
+        if club_no:
+            club_obj = Club.query.filter_by(club_no=club_no).first()
             if not club_obj:
-               click.echo(f"⚠️  Warning: Club '{club}' not found. Falling back to default logic.", err=True)
+               click.echo(f"⚠️  Warning: Club with number '{club_no}' not found. Falling back to default logic.", err=True)
         
         if not club_obj:
             club_obj = Club.query.first()

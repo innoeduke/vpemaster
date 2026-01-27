@@ -166,10 +166,12 @@ def create_app(config_class='config.Config'):
     from scripts.import_data import import_data
     from scripts.manage_metadata import metadata
     from scripts.cleanup_data import cleanup_data
+    from scripts.create_club import create_club
     app.cli.add_command(create_admin)
     app.cli.add_command(import_data)
     app.cli.add_command(metadata)
     app.cli.add_command(cleanup_data)
+    app.cli.add_command(create_club)
 
     # 7. Return the configured app instance
     return app
