@@ -38,6 +38,17 @@ def get_or_set_default_club():
     club_id = get_current_club_id()
     
     if not club_id:
+        # 0. Check request arguments (e.g., from redirection query param)
+        from flask import request
+        url_club_id = request.args.get('club_id')
+        if url_club_id:
+            try:
+                club_id = int(url_club_id)
+                set_current_club_id(club_id)
+                return club_id
+            except (ValueError, TypeError):
+                pass
+
         # Try to get user's primary/home club
         from flask_login import current_user
         if current_user.is_authenticated:
@@ -189,9 +200,9 @@ def authorized_club_required(f):
             abort(403)
             
         else:
-            # Anonymous guests: check if they have general club view permission
+            # Anonymous guests: check if they have general agenda view permission
             # (The 'Guest' role in DB should typically have this)
-            if hasattr(current_user, 'can') and not current_user.can(Permissions.ABOUT_CLUB_VIEW):
+            if hasattr(current_user, 'can') and not current_user.can(Permissions.AGENDA_VIEW):
                 from flask import redirect, url_for
                 return redirect(url_for('auth_bp.login'))
             elif not hasattr(current_user, 'can'):

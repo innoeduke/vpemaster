@@ -127,7 +127,7 @@ def login():
             flash('Invalid username or password.', 'error')
             return redirect(url_for('auth_bp.login'))
             
-    clubs = Club.query.all()
+    clubs = Club.query.filter(Club.club_no != '000001').all()
     return render_template('login.html', clubs=clubs)
 
 # Logout route

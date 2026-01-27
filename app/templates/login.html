@@ -18,7 +18,7 @@
 <body>
   <div class="login-container">
     <img src="{{ url_for('static', filename='images/SHLTMC-logo.webp') }}" alt="SHLTMC Logo"
-      style="width: 300px; margin-bottom: 20px" />
+      class="login-logo" />
     <h1>Meeting Manager</h1>
     {% with messages = get_flashed_messages(with_categories=true) %} {% if
     messages %}
@@ -65,8 +65,8 @@
           <h2>Select a Club</h2>
         </div>
         <div class="modal-body">
-          <label for="guest-club-select" style="display:block; text-align:left; margin-bottom:8px; font-weight:600; color:#718096;">Choose a club to visit:</label>
-          <select id="guest-club-select" class="form-control" style="width:100%; padding:10px; border-radius:6px; border:1px solid #cbd5e0;">
+          <label for="guest-club-select" class="modal-label">Choose a club to visit:</label>
+          <select id="guest-club-select" class="form-control modal-select">
             {% for club in clubs %}
             <option value="{{ club.id }}">{{ club.club_name }}</option>
             {% endfor %}
