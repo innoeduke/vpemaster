@@ -199,8 +199,6 @@
                             {% elif log_dict.session_type_title in ['Pathway Speech', 'Presentation'] or
                             log_dict.Project_ID %}
                             {% set display_title = '"' ~ cleaned_title ~ '"' %}
-                            {% elif log_dict.predefined %}
-                            {% set display_title = log_dict.session_type_title %}
                             {% else %}
                             {% set display_title = cleaned_title %}
                             {% endif %}

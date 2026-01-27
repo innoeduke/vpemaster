@@ -10,17 +10,21 @@ from ..constants import ProjectID, SessionTypeID
 class SessionType(db.Model):
     __tablename__ = 'Session_Types'
     id = db.Column(db.Integer, primary_key=True)
-    Title = db.Column(db.String(255), nullable=False, unique=True)
-    Default_Owner = db.Column(db.String(255))
+    Title = db.Column(db.String(255), nullable=False)
     Is_Section = db.Column(db.Boolean, default=False)
     Is_Hidden = db.Column(db.Boolean, default=False)
-    Predefined = db.Column(db.Boolean, default=True)
     Valid_for_Project = db.Column(db.Boolean, default=False)
     Duration_Min = db.Column(db.Integer)
     Duration_Max = db.Column(db.Integer)
     role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), nullable=True)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True, index=True)
 
     role = db.relationship('app.models.roster.MeetingRole', backref='session_types')
+    club = db.relationship('Club', backref='session_types')
+
+    __table_args__ = (
+        db.UniqueConstraint('Title', 'club_id', name='uq_session_type_title_club'),
+    )
 
 
 

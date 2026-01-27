@@ -43,9 +43,9 @@ if [ $? -ne 0 ]; then
 fi
 
 # 4. Create supporting club
-echo "🏢 Creating 'supporting club'..."
+echo "🏢 Creating 'Technical Support' club..."
 # Use 000001 as specified by user
-flask create-club --club-no "000001" --club-name "supporting club"
+flask create-club --club-no "000001" --club-name "Technical Support"
 
 # 5. Create sysadmin user
 echo "👤 Creating 'sysadmin' user..."

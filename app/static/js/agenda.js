@@ -396,8 +396,6 @@ document.addEventListener("DOMContentLoaded", () => {
           displayTitle = 'Evaluator for ' + cleanedTitle;
         } else if (['Pathway Speech', 'Presentation'].includes(log.session_type_title) || log.Project_ID) {
           displayTitle = '"' + cleanedTitle + '"';
-        } else if (log.predefined) {
-          displayTitle = log.session_type_title;
         } else {
           displayTitle = cleanedTitle;
         }

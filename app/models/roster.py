@@ -14,6 +14,13 @@ class MeetingRole(db.Model):
     needs_approval = db.Column(db.Boolean, nullable=False)
     has_single_owner = db.Column(db.Boolean, nullable=False)
     is_member_only = db.Column(db.Boolean, default=False)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True, index=True)
+
+    club = db.relationship('Club', backref='meeting_roles')
+
+    __table_args__ = (
+        db.UniqueConstraint('name', 'club_id', name='uq_meeting_role_name_club'),
+    )
 
 
 class RosterRole(db.Model):

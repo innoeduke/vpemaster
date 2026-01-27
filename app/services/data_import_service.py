@@ -153,29 +153,27 @@ class DataImportService:
             source_id = row[0]
             title = row[1]
             
-            existing = SessionType.query.filter_by(Title=title).first()
+            existing = SessionType.query.filter_by(Title=title, club_id=self.club_id).first()
             if existing:
                 self.session_type_map[source_id] = existing.id
                 # Update role_id if missing or changed (Sync logic)
                 mapped_role_id = self.role_map.get(row[9]) if hasattr(self, 'role_map') else None
                 if mapped_role_id and existing.role_id != mapped_role_id:
-                    print(f"Updating role_id for {title} from {existing.role_id} to {mapped_role_id}")
+                    print(f"Updating role_id for {title} (Club: {self.club_id}) from {existing.role_id} to {mapped_role_id}")
                     existing.role_id = mapped_role_id
                     db.session.add(existing)
                     db.session.flush()
             else:
-                 # Create new if needed (Optional, usually predefined)
-                 # Converting Source Schema to Target
+                 # Create new if needed
                  new_type = SessionType(
                      Title=title,
-                     Default_Owner=row[2],
                      Duration_Min=row[3],
                      Duration_Max=row[4],
                      Is_Section=bool(row[5]),
-                     Predefined=bool(row[6]),
                      Valid_for_Project=bool(row[7]),
                      Is_Hidden=bool(row[8]),
-                     role_id=self.role_map.get(row[9]) if hasattr(self, 'role_map') else None
+                     role_id=self.role_map.get(row[9]) if hasattr(self, 'role_map') else None,
+                     club_id=self.club_id
                  )
                  db.session.add(new_type)
                  db.session.flush()
@@ -191,14 +189,19 @@ class DataImportService:
             source_id = row[0]
             name = row[1]
             
-            existing = MeetingRole.query.filter_by(name=name).first()
+            existing = MeetingRole.query.filter_by(name=name, club_id=self.club_id).first()
             if not existing:
+                # Map indices safely
+                def get_idx(i, default=None): return row[i] if len(row) > i else default
+                
                 new_role = MeetingRole(
                     name=name,
-                    icon=row[2],
-                    # Map other fields if possible
-                    # Assuming basic string/bool mapping
-                    # Target might not match 1:1, but Name is key.
+                    icon=get_idx(2),
+                    award_category=get_idx(3),
+                    type=get_idx(4) or 'standard',
+                    needs_approval=bool(get_idx(5, False)),
+                    has_single_owner=bool(get_idx(6, False)),
+                    club_id=self.club_id
                 )
                 db.session.add(new_role)
                 db.session.flush()
@@ -222,11 +225,11 @@ class DataImportService:
         for row in roles_data:
              s_id = row[0]
              name = row[1]
-             target = MeetingRole.query.filter_by(name=name).first()
+             target = MeetingRole.query.filter_by(name=name, club_id=self.club_id).first()
              if target:
                  self.role_map[s_id] = target.id
         
-        print(f"Mapped {len(self.role_map)} meeting roles.")
+        print(f"Mapped {len(self.role_map)} meeting roles for Club {self.club_id}.")
 
 
         
@@ -323,10 +326,13 @@ class DataImportService:
         # Process deferred mentors
         print(f"Processing {len(mentor_updates)} mentor links...")
         for contact, m_ref in mentor_updates:
-            # Try to find mentor by Member_ID (which we mapped from col 9)
-            # Or Name?
-            # m_ref is like 'PN-02745573'. 
-            mentor = Contact.query.filter_by(Member_ID=m_ref).first()
+            # m_ref is the source ID (int) or legacy Member_ID (str)
+            mentor = self.contact_map.get(m_ref)
+            
+            # Fallback for legacy string-based member IDs
+            if not mentor and isinstance(m_ref, str):
+                mentor = Contact.query.filter_by(Member_ID=m_ref).first()
+                
             if mentor:
                 contact.Mentor_ID = mentor.id
                 db.session.add(contact)

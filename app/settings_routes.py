@@ -109,13 +109,10 @@ def add_session_type():
 
         new_session = SessionType(
             Title=title,
-            Default_Owner=request.form.get(
-                'default_owner', '').strip() or None,
             role_id=role_id,
             Duration_Min=duration_min,
             Duration_Max=duration_max,
             Is_Section='is_section' in request.form,
-            Predefined='predefined' in request.form,
             Valid_for_Project='valid_for_project' in request.form,
             Is_Hidden='is_hidden' in request.form
         )
@@ -126,12 +123,10 @@ def add_session_type():
         new_session_data = {
             'id': new_session.id,
             'Title': new_session.Title,
-            'Default_Owner': new_session.Default_Owner,
             'role_id': new_session.role_id,
             'Duration_Min': new_session.Duration_Min,
             'Duration_Max': new_session.Duration_Max,
             'Is_Section': new_session.Is_Section,
-            'Predefined': new_session.Predefined,
             'Valid_for_Project': new_session.Valid_for_Project,
             'Is_Hidden': new_session.Is_Hidden
         }
@@ -162,12 +157,10 @@ def update_session_types():
             session_type = db.session.get(SessionType, item['id'])
             if session_type:
                 session_type.Title = item.get('Title')
-                session_type.Default_Owner = item.get('Default_Owner')
                 role_id_str = item.get('role_id')
                 session_type.role_id = int(
                     role_id_str) if role_id_str else None
                 session_type.Is_Section = item.get('Is_Section', False)
-                session_type.Predefined = item.get('Predefined', False)
                 session_type.Valid_for_Project = item.get(
                     'Valid_for_Project', False)
                 session_type.Is_Hidden = item.get('Is_Hidden', False)

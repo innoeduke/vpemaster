@@ -1,0 +1,31 @@
+id,name,icon,type,award_category,needs_approval,has_single_owner,is_member_only
+1,Toastmaster,fa-microphone,standard,role-taker,1,0,1
+2,General Evaluator,fa-search,standard,role-taker,1,0,0
+3,Individual Evaluator,fa-pen-square,standard,evaluator,0,1,0
+4,Topicsmaster,fa-comments,standard,role-taker,1,0,0
+5,Grammarian,fa-book,standard,role-taker,0,0,0
+6,Timer,fa-stopwatch,standard,role-taker,0,0,0
+7,Ah-Counter,fa-calculator,standard,role-taker,0,0,0
+8,Prepared Speaker,fa-user-tie,standard,speaker,1,1,1
+9,Topics Speaker,fa-comment,standard,table-topic,0,1,0
+10,Keynote Speaker,fa-star,club-specific,speaker,1,0,0
+11,Welcome Officer,fa-smile,club-specific,role-taker,0,0,0
+12,Photographer,fa-camera,club-specific,role-taker,0,0,0
+14,Meeting Manager,fa-clipboard-list,club-specific,role-taker,1,0,0
+15,Election Chair,fa-vote-yea,club-specific,role-taker,1,0,0
+16,Chief Contest Judge,fa-gavel,club-specific,role-taker,1,0,0
+17,Moderator,fa-gavel,club-specific,role-taker,1,0,0
+18,Panelist,fa-users,club-specific,,1,0,0
+19,Debate Host,fa-comments,club-specific,role-taker,1,0,0
+20,Debater,fa-balance-scale,club-specific,,1,0,0
+21,Club Mentor,fa-graduation-cap,club-specific,,1,0,0
+22,Introductory Mentor,fa-seedling,club-specific,,1,0,0
+26,Contest Chair,fa-microphone,club-specific,role-taker,1,0,0
+27,Ballot Counter,fa-calculator,club-specific,role-taker,0,0,0
+31,SAA,,officer,,0,0,0
+32,President,,officer,,0,0,0
+33,VPE,,officer,,0,0,0
+34,VPM,,officer,,0,0,0
+35,VPPR,,officer,,0,0,0
+36,Secretary,,officer,,0,0,0
+37,Treasurer,,officer,,0,0,0

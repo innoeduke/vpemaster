@@ -1,0 +1,28 @@
+id,Title,Is_Section,Is_Hidden,Valid_for_Project,Duration_Min,Duration_Max,role_id
+,Generic,0,0,0,0,0,
+,Section,1,0,0,,,
+,Opening,0,0,0,0,1,31
+,Toastmaster's Address,0,0,0,0,2,1
+,Ah-Counter Introduction,0,0,0,0,1,7
+,Grammarian Introduction,0,0,0,0,2,5
+,Timer Introduction,0,0,0,0,1,6
+,Table Topics,0,0,1,0,25,4
+,New Member Induction,0,0,0,0,7,34
+,Guest Talk,0,0,0,0,5,11
+,Networking,0,0,0,0,10,
+,General Evaluator's Address,0,0,0,0,1,2
+,Ah-Counter Report,0,0,0,0,1,7
+,Grammarian Report,0,0,0,0,2,5
+,Timer Report,0,0,0,0,1,6
+,General Evaluation Report,0,0,0,0,3,2
+,Voting / Announcements,0,0,0,0,3,1
+,Closing,0,0,0,0,2,32
+,Keynote Speech,0,0,1,0,23,10
+,Prepared Speech,0,0,1,5,7,8
+,Evaluation,0,0,1,2,3,3
+,Topics Speech,0,1,0,2,3,9
+,Panel Discussion,0,0,1,0,40,17
+,Contest Chair Address,0,0,0,1,5,26
+,Ballot Counting,0,0,0,,2,27
+,Result Announcement,0,0,0,,5,16
+,Member Roadmap,0,0,0,,3,34

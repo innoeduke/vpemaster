@@ -271,7 +271,6 @@ function toggleEditMode(config) {
         if (
           field.startsWith("Is_") ||
           field === "Valid_for_Project" ||
-          field == "Predefined" ||
           field == "needs_approval" ||
           field == "has_single_owner" ||
           field == "is_member_only"
@@ -464,7 +463,6 @@ function isBooleanField(field) {
   return (
     field.startsWith("Is_") ||
     field === "Valid_for_Project" ||
-    field === "Predefined" ||
     field === "needs_approval" ||
     field === "has_single_owner" ||
     field === "is_member_only"

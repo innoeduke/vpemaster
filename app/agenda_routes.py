@@ -478,7 +478,6 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
             # SessionType fields
             'is_section': session_type.Is_Section if session_type else False,
             'session_type_title': session_type.Title if session_type else 'Unknown Type',
-            'predefined': session_type.Predefined if session_type else False,
             'is_hidden': session_type.Is_Hidden if session_type else False,
             'role': session_type.role.name if session_type and session_type.role else '',
             'valid_for_project': session_type.Valid_for_Project if session_type else False,
@@ -712,7 +711,7 @@ A single endpoint to fetch all data needed for the agenda modals.
     session_types_data = [
         {
             "id": s.id, "Title": s.Title, "Is_Section": s.Is_Section,
-            "Valid_for_Project": s.Valid_for_Project, "Predefined": s.Predefined,
+            "Valid_for_Project": s.Valid_for_Project,
             "Role": s.role.name if s.role else '', "Role_Group": s.role.type if s.role else '',
             "Duration_Min": s.Duration_Min, "Duration_Max": s.Duration_Max
         } for s in session_types

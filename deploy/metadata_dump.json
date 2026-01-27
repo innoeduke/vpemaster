@@ -1,16 +1,6 @@
 {
   "meeting_roles": [
     {
-      "id": 0,
-      "name": "No Role",
-      "icon": null,
-      "type": "system",
-      "award_category": null,
-      "needs_approval": false,
-      "has_single_owner": true,
-      "is_member_only": null
-    },
-    {
       "id": 1,
       "name": "Toastmaster",
       "icon": "fa-microphone",
@@ -338,6 +328,16 @@
       "award_category": "",
       "needs_approval": false,
       "has_single_owner": false,
+      "is_member_only": false
+    },
+    {
+      "id": 42,
+      "name": "No Role",
+      "icon": null,
+      "type": "system",
+      "award_category": null,
+      "needs_approval": false,
+      "has_single_owner": true,
       "is_member_only": false
     }
   ],
@@ -1917,10 +1917,8 @@
     {
       "id": 1,
       "Title": "SAA Introduction",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 1,
@@ -1929,10 +1927,8 @@
     {
       "id": 2,
       "Title": "President's Address",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 2,
@@ -1941,10 +1937,8 @@
     {
       "id": 3,
       "Title": "Toastmaster of the Evening's Address",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 2,
@@ -1953,10 +1947,8 @@
     {
       "id": 4,
       "Title": "Ah-Counter Introduction",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 1,
@@ -1965,10 +1957,8 @@
     {
       "id": 5,
       "Title": "Grammarian Introduction",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 2,
@@ -1977,10 +1967,8 @@
     {
       "id": 6,
       "Title": "Timer Introduction",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 1,
@@ -1989,10 +1977,8 @@
     {
       "id": 7,
       "Title": "Table Topics",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": true,
       "Duration_Min": 0,
       "Duration_Max": 25,
@@ -2001,10 +1987,8 @@
     {
       "id": 8,
       "Title": "Generic",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 7,
@@ -2013,22 +1997,18 @@
     {
       "id": 9,
       "Title": "New Member Induction",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 7,
-      "role_id": 11
+      "role_id": 34
     },
     {
       "id": 10,
       "Title": "New Guest Greetings",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 5,
@@ -2037,10 +2017,8 @@
     {
       "id": 11,
       "Title": "Networking",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 10,
@@ -2049,10 +2027,8 @@
     {
       "id": 12,
       "Title": "General Evaluator's Address",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 1,
@@ -2061,10 +2037,8 @@
     {
       "id": 13,
       "Title": "Ah-Counter Report",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 1,
@@ -2073,10 +2047,8 @@
     {
       "id": 14,
       "Title": "Grammarian Report",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 2,
@@ -2085,10 +2057,8 @@
     {
       "id": 15,
       "Title": "Timer Report",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 1,
@@ -2097,10 +2067,8 @@
     {
       "id": 16,
       "Title": "General Evaluation Report",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 3,
@@ -2109,10 +2077,8 @@
     {
       "id": 17,
       "Title": "Voting and Announcements",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 3,
@@ -2121,10 +2087,8 @@
     {
       "id": 18,
       "Title": "Awards / Meeting Closing",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 2,
@@ -2133,10 +2097,8 @@
     {
       "id": 20,
       "Title": "Keynote Speech",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": false,
       "Valid_for_Project": true,
       "Duration_Min": 0,
       "Duration_Max": 23,
@@ -2145,10 +2107,8 @@
     {
       "id": 30,
       "Title": "Prepared Speech",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": false,
       "Valid_for_Project": true,
       "Duration_Min": 5,
       "Duration_Max": 7,
@@ -2157,10 +2117,8 @@
     {
       "id": 31,
       "Title": "Evaluation",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": false,
       "Valid_for_Project": true,
       "Duration_Min": 2,
       "Duration_Max": 3,
@@ -2169,10 +2127,8 @@
     {
       "id": 32,
       "Title": "Section",
-      "Default_Owner": null,
       "Is_Section": true,
       "Is_Hidden": false,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
@@ -2181,10 +2137,8 @@
     {
       "id": 35,
       "Title": "Photography",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
@@ -2193,10 +2147,8 @@
     {
       "id": 36,
       "Title": "Topics Speech",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": 2,
       "Duration_Max": 3,
@@ -2205,10 +2157,8 @@
     {
       "id": 37,
       "Title": "Introductory Mentor",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
@@ -2217,10 +2167,8 @@
     {
       "id": 38,
       "Title": "Club Mentor",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
@@ -2229,10 +2177,8 @@
     {
       "id": 40,
       "Title": "Debate",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
@@ -2241,10 +2187,8 @@
     {
       "id": 41,
       "Title": "Panelist",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
@@ -2253,10 +2197,8 @@
     {
       "id": 42,
       "Title": "Meeting Manager",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": true,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
@@ -2265,10 +2207,8 @@
     {
       "id": 44,
       "Title": "Panel Discussion",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": false,
       "Valid_for_Project": true,
       "Duration_Min": 0,
       "Duration_Max": 40,
@@ -2277,10 +2217,8 @@
     {
       "id": 45,
       "Title": "Club Election",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": true,
       "Valid_for_Project": false,
       "Duration_Min": 0,
       "Duration_Max": 60,
@@ -2289,10 +2227,8 @@
     {
       "id": 46,
       "Title": "Contest Chair Address",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": 1,
       "Duration_Max": 5,
@@ -2301,10 +2237,8 @@
     {
       "id": 47,
       "Title": "Ballot Counting",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": 2,
@@ -2313,10 +2247,8 @@
     {
       "id": 48,
       "Title": "Hidden Section",
-      "Default_Owner": null,
       "Is_Section": true,
       "Is_Hidden": true,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": null,
@@ -2325,10 +2257,8 @@
     {
       "id": 57,
       "Title": "Member Roadmap",
-      "Default_Owner": null,
       "Is_Section": false,
       "Is_Hidden": false,
-      "Predefined": false,
       "Valid_for_Project": false,
       "Duration_Min": null,
       "Duration_Max": 3,
@@ -2337,11 +2267,29 @@
     {
       "id": 58,
       "Title": "Backup Speaker",
-      "Default_Owner": "",
       "Is_Section": false,
       "Is_Hidden": true,
-      "Predefined": false,
       "Valid_for_Project": false,
+      "Duration_Min": 5,
+      "Duration_Max": 7,
+      "role_id": null
+    },
+    {
+      "id": 59,
+      "Title": "Contest Results Announcement",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": 16
+    },
+    {
+      "id": 60,
+      "Title": "Test Session",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Valid_for_Project": true,
       "Duration_Min": 5,
       "Duration_Max": 7,
       "role_id": null
@@ -5090,6 +5038,13 @@
     {
       "id": 7,
       "name": "Role-taker",
+      "price": 0.0,
+      "icon": null,
+      "color": null
+    },
+    {
+      "id": 8,
+      "name": "Member",
       "price": 0.0,
       "icon": null,
       "color": null

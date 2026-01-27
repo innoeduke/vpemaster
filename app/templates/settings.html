@@ -66,14 +66,12 @@
           <th class="sortable" data-column-index="0">ID</th>
           <th class="sortable" data-column-index="1">Title</th>
           <th class="sortable" data-column-index="2">Meeting Role</th>
-          <th class="sortable" data-column-index="3">Default Owner</th>
-          <th class="sortable" data-column-index="4">Min (mins)</th>
-          <th class="sortable" data-column-index="5">Max (mins)</th>
-          <th class="sortable" data-column-index="6">Section</th>
-          <th class="sortable" data-column-index="7">Predefined</th>
-          <th class="sortable" data-column-index="8">Project</th>
-          <th class="sortable" data-column-index="9">Hidden</th>
-          <th data-column-index="10">Actions</th>
+          <th class="sortable" data-column-index="3">Min (mins)</th>
+          <th class="sortable" data-column-index="4">Max (mins)</th>
+          <th class="sortable" data-column-index="5">Section</th>
+          <th class="sortable" data-column-index="6">Project</th>
+          <th class="sortable" data-column-index="7">Hidden</th>
+          <th data-column-index="8">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -83,7 +81,6 @@
           <td>{{ st.id }}</td>
           <td data-field="Title">{{ st.Title }}</td>
           <td data-field="role_id">{{ st.role.name if st.role else '' }}</td>
-          <td data-field="Default_Owner">{{ st.Default_Owner or '' }}</td>
           <td data-field="Duration_Min">
             {{ st.Duration_Min if st.Duration_Min is not none else '' }}
           </td>
@@ -92,9 +89,6 @@
           </td>
           <td data-field="Is_Section">
             <input type="checkbox" name="is_section" {% if st.Is_Section %}checked{% endif %} disabled />
-          </td>
-          <td data-field="Predefined">
-            <input type="checkbox" name="predefined" {% if st.Predefined%}checked{% endif %} disabled />
           </td>
           <td data-field="Valid_for_Project">
             <input type="checkbox" name="valid_for_project" {% if st.Valid_for_Project %}checked{% endif %} disabled />

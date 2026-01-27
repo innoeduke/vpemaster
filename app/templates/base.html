@@ -16,6 +16,10 @@
   <link rel="preconnect" href="https://gstatic.loli.net" crossorigin />
   <link href="{{ url_for('static', filename='vendor/css/fonts.css') }}" rel="stylesheet" />
   <link href="{{ url_for('static', filename='vendor/css/indie-flower.css') }}" rel="stylesheet" />
+  <script>
+    // Global configuration
+    const avatarRootDir = "{{ config.AVATAR_ROOT_DIR }}";
+  </script>
 </head>
 
 <body>
@@ -188,9 +192,6 @@
   {% block scripts %}{% endblock %}
 
   <script>
-    // Global configuration
-    const avatarRootDir = "{{ config.AVATAR_ROOT_DIR }}";
-
     // --- Navigation and Profile Menu Logic ---
     const navPane = document.getElementById("nav-pane");
     const mobileNavToggle = document.getElementById("mobile-nav-toggle");

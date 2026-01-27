@@ -562,6 +562,18 @@ def request_join():
     if UserClub.query.filter_by(user_id=target_user_id, club_id=club_id).first():
         return jsonify({'success': False, 'error': 'User is already a member'}), 400
 
+    # If SysAdmin, add directly
+    from .auth.utils import is_authorized
+    from .auth.permissions import Permissions
+    
+    if is_authorized(Permissions.SYSADMIN):
+        # Ensure contact and linkage exists
+        target_user.ensure_contact(club_id=club_id)
+        # Set default role (User/Member)
+        target_user.set_club_role(club_id, 1)
+        db.session.commit()
+        return jsonify({'success': True, 'direct_add': True})
+
     # Create Message with special tag
     msg = Message(
         sender_id=current_user.id,

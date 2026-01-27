@@ -245,7 +245,6 @@
   // Global variables for contacts.js
   var canViewAllLogs = {{ 'true' if can_view_all_logs else 'false' }};
   var hasEditPermission = {{ 'true' if is_authorized(Permissions.CONTACT_BOOK_EDIT) else 'false' }};
-  var avatarRootDir = "{{ config.AVATAR_ROOT_DIR }}";
 </script>
 <script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
 
