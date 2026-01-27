@@ -84,6 +84,11 @@ def restore(file):
     
     # Ensure tables exist
     db.create_all()
+    
+    # Stamp the database to the current head to avoid running old migrations
+    # that might reference obsolete table names.
+    import flask_migrate
+    flask_migrate.stamp()
 
     # Map keys to Models
     model_map = {

@@ -7,6 +7,14 @@ echo "----------------------------------------------------------"
 echo "🚀 DATABASE RESET AND SETUP STARTED"
 echo "----------------------------------------------------------"
 
+# 0. Detect and activate virtual environment
+if [ -d "venv" ]; then
+    echo "🐍 Activating virtual environment..."
+    source venv/bin/activate
+else
+    echo "⚠️  No 'venv' directory found. Proceeding with system python/flask."
+fi
+
 # 1. Cleanup all existing data
 echo "🧹 Cleaning up existing data..."
 flask cleanup-data --force
@@ -41,6 +49,7 @@ flask create-club --club-no "000001" --club-name "supporting club"
 
 # 5. Create sysadmin user
 echo "👤 Creating 'sysadmin' user..."
+# Using --club-no as specified by user
 flask create-admin --username "sysadmin" --email "admin@vpemaster.com" --password "sysadmin" --contact-name "System Admin" --club-no "000001"
 
 # 6. Create Shanghai Leadership Toastmasters club
