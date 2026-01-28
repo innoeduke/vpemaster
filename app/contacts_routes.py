@@ -49,6 +49,31 @@ def show_contacts():
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
+    from .utils import get_terms, get_active_term, get_date_ranges_for_terms
+    terms = get_terms()
+    
+    # Multi-select support
+    selected_term_ids = request.args.getlist('term')
+    
+    current_term = get_active_term(terms)
+    
+    if not selected_term_ids:
+        # Default to current term
+        if current_term:
+            selected_term_ids = [current_term['id']]
+        elif terms:
+            selected_term_ids = [terms[0]['id']]
+            
+    date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
+    
+    # Flag to distinguish between "User didn't filter" (show all? or default?) 
+    # and "User filtered but found nothing" (show nothing).
+    should_filter = bool(selected_term_ids)
+
+
+    
+
+
     club_id = get_current_club_id()
     contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
         .options(joinedload(Contact.mentor))\
@@ -57,30 +82,47 @@ def show_contacts():
     # Batch populate primary clubs to avoid N+1 queries in template
     Contact.populate_primary_clubs(contacts)
     
+    # Helper to build date filter
+    from sqlalchemy import or_,  and_, false
+    def apply_date_filter(query, date_column):
+        if not date_ranges:
+            if should_filter:
+                 # User wanted to filter, but ranges are empty -> Match Nothing
+                 return query.filter(false())
+            else:
+                 # No filter applied (shouldn't happen with current default logic, but safe fallback)
+                 return query
+                 
+        conditions = [date_column.between(start, end) for start, end in date_ranges]
+        return query.filter(or_(*conditions))
+
     # 1. Attendance (Roster)
     # Count how many times each contact appears in Roster
     
-    six_months_ago = date.today() - timedelta(days=180)
-    attendance_counts = db.session.query(
+    roster_query = db.session.query(
         Roster.contact_id, func.count(Roster.id)
     ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
         Roster.contact_id.isnot(None),
-        Meeting.club_id == club_id,
-        Meeting.Meeting_Date >= six_months_ago
-    ).group_by(Roster.contact_id).all()
+        Meeting.club_id == club_id
+    )
+    
+    roster_query = apply_date_filter(roster_query, Meeting.Meeting_Date)
+    attendance_counts = roster_query.group_by(Roster.contact_id).all()
     attendance_map = {c_id: count for c_id, count in attendance_counts}
 
     # 2. Roles (SessionLog where SessionType is a Role)
     # We want to count distinct (Meeting, Role) pairs per user.
-    distinct_roles = db.session.query(
+    roles_query = db.session.query(
         OwnerMeetingRoles.contact_id, Meeting.Meeting_Number, OwnerMeetingRoles.role_id, MeetingRole.name
     ).join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
      .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
      .filter(
         MeetingRole.type.in_(['standard', 'club-specific']),
-        Meeting.club_id == club_id,
-        Meeting.Meeting_Date >= six_months_ago
-    ).distinct().all()
+        Meeting.club_id == club_id
+    )
+    
+    roles_query = apply_date_filter(roles_query, Meeting.Meeting_Date)
+    distinct_roles = roles_query.distinct().all()
 
     role_map = {}
     
@@ -102,13 +144,14 @@ def show_contacts():
     
     # helper to get counts for a specific field
     def get_award_counts(field):
-        return db.session.query(
+        q = db.session.query(
             getattr(Meeting, field), func.count(Meeting.id)
         ).filter(
             getattr(Meeting, field).isnot(None),
-            Meeting.club_id == club_id,
-            Meeting.Meeting_Date >= six_months_ago
-        ).group_by(getattr(Meeting, field)).all()
+            Meeting.club_id == club_id
+        )
+        q = apply_date_filter(q, Meeting.Meeting_Date)
+        return q.group_by(getattr(Meeting, field)).all()
 
     award_map = {}
     best_tt_map = {} # Track Best Table Topic separately
@@ -169,15 +212,54 @@ def show_contacts():
     ).order_by(Contact.Name.asc()).all()
 
     can_view_all_logs = is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL)
-    
+
+    # Prepare JSON data for client-side JS to avoid double-fetch and use correct filters
+    contacts_json_data = []
+    for c in contacts:
+        # Use attached attributes if available (populated above), else defaults
+        role_c = getattr(c, 'role_count', 0)
+        tt_c = getattr(c, 'tt_count', 0)
+        att_c = getattr(c, 'attendance_count', 0)
+        award_c = getattr(c, 'award_count', 0)
+        is_qual = getattr(c, 'is_qualified', False)
+        
+        primary_club = c.get_primary_club()
+        
+        contacts_json_data.append({
+            'id': c.id,
+            'Name': c.Name,
+            'Type': c.Type,
+            'Phone_Number': c.Phone_Number if c.Phone_Number else '-',
+            'Club': primary_club.club_name if primary_club else '-',
+            'Completed_Paths': c.Completed_Paths if c.Completed_Paths else '-',
+            'credentials': c.credentials if c.credentials else '-',
+            'Next_Project': c.Next_Project if c.Next_Project else '-',
+            'Mentor': c.mentor.Name if c.mentor else '-',
+            'Member_ID': c.Member_ID,
+            'DTM': c.DTM,
+            'Avatar_URL': c.Avatar_URL,
+            'role_count': role_c,
+            'tt_count': tt_c,
+            'attendance_count': att_c,
+            'award_count': award_c,
+            'is_qualified': is_qual,
+            'has_user': c.user is not None,
+            # 'user_role': ... (Not strictly needed for the table display, can add if needed)
+            # 'is_officer': ...
+        })
+
     return render_template('contacts.html', 
-                           contacts=contacts, 
+                           contacts=contacts,
+                           contacts_json_data=contacts_json_data,
                            pathways=pathways,
                            total_contacts=total_contacts, 
                            type_counts=type_counts,
                            contact_types=sorted_types,
                            mentor_candidates=mentor_candidates,
-                           can_view_all_logs=can_view_all_logs)
+                           can_view_all_logs=can_view_all_logs,
+                           terms=terms,
+                           selected_term_ids=selected_term_ids,
+                           current_term=current_term)
 
 
 @contacts_bp.route('/contact/form', methods=['GET', 'POST'])

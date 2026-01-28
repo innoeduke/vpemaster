@@ -22,11 +22,11 @@
 		<div class="filter-row" style="align-items: center;">
 			<div class="form-group" style="display: flex; align-items: center; margin-bottom: 0;">
 				<label for="term-select"
-					style="margin-right: 15px; font-weight: bold; font-size: 1.1em; white-space: nowrap;">Term:</label>
+					style="margin-right: 15px; font-weight: bold; font-size: 1.1em; white-space: nowrap;">Term <small>(CMD+Click for multiple)</small>:</label>
 				<select name="term" id="term-select" onchange="this.form.submit()" class="form-control"
-					style="font-size: 1.1em; flex: 1;">
+					style="font-size: 1.1em; flex: 1; height: auto;" multiple size="1">
 					{% for term in terms %}
-					<option value="{{ term.id }}" {% if current_term and current_term.id==term.id %}selected{% endif %}>
+					<option value="{{ term.id }}" {% if selected_term_ids and term.id in selected_term_ids %}selected{% endif %}>
 						{{ term.label }}
 					</option>
 					{% endfor %}
@@ -62,7 +62,15 @@
 	</form>
 
 	<div class="chart-container">
-		<h3>Project Completion Metrics ({{ current_term.label }})</h3>
+		<h3>Project Completion Metrics 
+            {% if selected_term_ids|length > 1 %}
+                ({{ selected_term_ids|length }} terms selected)
+            {% else %}
+               {% for term in terms if term.id in selected_term_ids %}
+                   ({{ term.label }})
+               {% endfor %}
+            {% endif %}
+        </h3>
 
 		{% if max_count > 0 %}
 		<div class="chart-legend"

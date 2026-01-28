@@ -33,6 +33,115 @@
 <h1><i class="fas fa-book"></i> Contacts</h1>
 
 <div class="contact-action-bar">
+  <!-- Term Filter for Metrics -->
+  <form method="GET" action="{{ url_for('contacts_bp.show_contacts') }}" id="contacts-term-filter-form" style="margin-right: 20px; flex: 1; max-width: 400px;">
+      <div class="form-group" style="display: flex; align-items: center; margin-bottom: 0;">
+          <label style="margin-right: 10px; font-weight: bold; white-space: nowrap;">Club Term:</label>
+          
+          <div class="custom-dropdown" id="term-dropdown-container" style="position: relative; flex: 1;">
+              <button type="button" id="term-dropdown-btn" class="form-control" style="text-align: left; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; height: auto; padding: 6px 12px;" onclick="toggleTermDropdown(event)">
+                  <span id="term-btn-text">
+                    {% if selected_term_ids %}
+                        {{ selected_term_ids|length }} selected
+                    {% else %}
+                        0 selected
+                    {% endif %}
+                  </span>
+                  <i class="fas fa-caret-down"></i>
+              </button>
+              
+              <div id="term-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 400px; overflow-y: auto; z-index: 1000; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+                  
+                  <label style="display: block; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #eee; font-weight: bold; margin-bottom: 5px;">
+                      <input type="checkbox" id="term-select-all" onchange="toggleAllTerms(this)" style="margin-right: 8px; vertical-align: middle;" {% if terms and selected_term_ids|length == terms|length %}checked{% endif %}> 
+                      Select / Deselect All
+                  </label>
+                  
+                  {% for term in terms %}
+                  <label style="display: block; padding: 5px 10px; cursor: pointer; font-weight: normal; margin-bottom: 0;">
+                      <input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox" onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{% endif %} style="margin-right: 8px; vertical-align: middle;">
+                      {{ term.label }}
+                  </label>
+                  {% endfor %}
+              </div>
+          </div>
+      </div>
+  </form>
+
+  <script>
+    // Initialize state on load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateTermSelection(true); // true = skip UI update just count? No, update all state.
+    });
+
+    function toggleTermDropdown(event) {
+        event.stopPropagation();
+        event.preventDefault(); // Prevent accidental submission if button type wrong
+        const menu = document.getElementById('term-dropdown-menu');
+        if (menu.style.display === 'none') {
+            menu.style.display = 'block';
+        } else {
+            closeDropdownAndSubmit();
+        }
+    }
+
+    function toggleAllTerms(source) {
+        const checkboxes = document.querySelectorAll('.term-checkbox');
+        checkboxes.forEach(cb => cb.checked = source.checked);
+        updateTermSelection();
+    }
+
+    function updateTermSelection() {
+        const checkboxes = document.querySelectorAll('.term-checkbox');
+        const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const totalCount = checkboxes.length;
+        
+        // Update Count Text
+        const btnText = document.getElementById('term-btn-text');
+        btnText.textContent = selectedCount + " selected";
+        
+        // Update Select All Checkbox State
+        const selectAll = document.getElementById('term-select-all');
+        // If all are selected, check "Select All"
+        if (selectedCount === totalCount && totalCount > 0) {
+            selectAll.checked = true;
+            selectAll.indeterminate = false;
+        } else if (selectedCount === 0) {
+            selectAll.checked = false;
+            selectAll.indeterminate = false;
+        } else {
+            // Partial selection
+            selectAll.checked = false;
+            // selectAll.indeterminate = true; // Optional: nicer UI
+        }
+    }
+
+    function closeDropdownAndSubmit() {
+        const menu = document.getElementById('term-dropdown-menu');
+        menu.style.display = 'none';
+        
+        // Check if we need to submit (simple comparison could trigger only on change, 
+        // but explicit requirements say "wait for users... only by then close". 
+        // Submitting every time on close is safe.)
+        document.getElementById('contacts-term-filter-form').submit();
+    }
+
+    // Close on click outside
+    document.addEventListener('click', function(event) {
+        const container = document.getElementById('term-dropdown-container');
+        const menu = document.getElementById('term-dropdown-menu');
+        
+        if (menu.style.display === 'block' && !container.contains(event.target)) {
+            closeDropdownAndSubmit();
+        }
+    });
+    
+    // Prevent clicks inside menu from closing it
+    document.getElementById('term-dropdown-menu').addEventListener('click', function(event) {
+        event.stopPropagation();
+    });
+  </script>
+
   <div class="stats-container">
     <div class="stat-item">
       <div class="stat-value" style="color: #007bff">{{ total_contacts }}</div>
@@ -245,6 +354,7 @@
   // Global variables for contacts.js
   var canViewAllLogs = {{ 'true' if can_view_all_logs else 'false' }};
   var hasEditPermission = {{ 'true' if is_authorized(Permissions.CONTACT_BOOK_EDIT) else 'false' }};
+  var INITIAL_CONTACTS = {{ contacts_json_data|tojson }};
 </script>
 <script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
 

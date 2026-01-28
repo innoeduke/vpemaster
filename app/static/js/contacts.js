@@ -16,6 +16,13 @@ let sortDirection = 'desc';
  * Fetches all contacts from the API and caches them
  */
 async function fetchAndCacheContacts() {
+  // Use server-injected data if available (first load), to respect server-side filters
+  if (typeof INITIAL_CONTACTS !== 'undefined' && INITIAL_CONTACTS) {
+    allContactsCache = INITIAL_CONTACTS;
+    INITIAL_CONTACTS = null; // Consume once so subsequent refreshes fetch from API
+    return allContactsCache;
+  }
+
   try {
     const response = await fetch('/api/contacts/all');
     if (!response.ok) {

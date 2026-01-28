@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-BACKUP_FILE="instance/backup/backup_20260125.sql"
+BACKUP_FILE="instance/backup/backup_20260128.sql"
 
 echo "----------------------------------------------------------"
 echo "🚀 DATABASE RESET AND SETUP STARTED"

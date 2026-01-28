@@ -900,6 +900,77 @@ def process_club_logo(file, club_id):
         print(f"Error processing logo for club {club_id}: {e}")
         return None
 
+def get_terms():
+    """
+    Generate a list of half-year terms (e.g. '2025 Jan-Jun', '2025 Jul-Dec').
+    Returns a list of dicts: {'label': str, 'start': str(YYYY-MM-DD), 'end': str(YYYY-MM-DD), 'id': str}
+    Goes back 5 years and forward 1 year from today.
+    """
+    from datetime import datetime
+    today = datetime.today()
+    current_year = today.year
+    terms = []
+    
+    # Generate terms from 5 years ago to next year
+    for year in range(current_year - 5, current_year + 2):
+        # Jan-Jun
+        terms.append({
+            'label': f"{year} Jan-Jun",
+            'id': f"{year}_1",
+            'start': f"{year}-01-01",
+            'end': f"{year}-06-30"
+        })
+        # Jul-Dec
+        terms.append({
+            'label': f"{year} Jul-Dec",
+            'id': f"{year}_2",
+            'start': f"{year}-07-01",
+            'end': f"{year}-12-31"
+        })
+    
+    # Sort descending
+    terms.sort(key=lambda x: x['start'], reverse=True)
+    return terms
+
+
+def get_active_term(terms):
+    """
+    Find the term corresponding to today's date.
+    """
+    from datetime import datetime
+    today_str = datetime.today().strftime('%Y-%m-%d')
+    for term in terms:
+        if term['start'] <= today_str <= term['end']:
+            return term
+    return terms[0] if terms else None
+
+def get_date_ranges_for_terms(term_ids, all_terms):
+    """
+    Get a list of (start_date, end_date) tuples for the specified term IDs.
+    
+    Args:
+        term_ids (list): List of term IDs (e.g. ['2025_1', '2025_2'])
+        all_terms (list): List of all available term dictionaries
+        
+    Returns:
+        list: List of (start_date, end_date) tuples as date objects
+    """
+    from datetime import datetime
+    ranges = []
+    term_map = {t['id']: t for t in all_terms}
+    
+    for tid in term_ids:
+        if tid in term_map:
+            s_str = term_map[tid]['start']
+            e_str = term_map[tid]['end']
+            # Convert strings to date objects
+            s_date = datetime.strptime(s_str, '%Y-%m-%d').date()
+            e_date = datetime.strptime(e_str, '%Y-%m-%d').date()
+            ranges.append((s_date, e_date))
+            
+    return ranges
+
+
 
 
 

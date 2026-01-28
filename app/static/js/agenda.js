@@ -1171,21 +1171,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const select = document.createElement("select");
     select.add(new Option("-- Select Session Type --", ""));
 
-    // Get all type IDs that are already used in the current meeting
-    const usedTypeIds = new Set();
-    tableBody.querySelectorAll("tr").forEach((row) => {
-      const typeId = row.dataset.typeId;
-      if (typeId && typeId !== selectedValue) {
-        // Don't include the current row
-        usedTypeIds.add(parseInt(typeId));
-      }
-    });
-
-    // Filter out session types that are already in the agenda (but keep the currently selected one)
-    // Filter out session types that are already in the agenda (but keep the currently selected one)
-    const availableTypes = allSessionTypes.filter(
-       (type) => !usedTypeIds.has(type.id)
-    );
+    // Allow duplicate session types (User Request: "Ballot Counting" needs to appear twice)
+    const availableTypes = [...allSessionTypes];
 
     const sections = availableTypes.filter(t => t.Is_Section);
     

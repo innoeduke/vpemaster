@@ -648,47 +648,7 @@ def _get_level_progress_html(user_id, level, pathway_id=None):
     return render_template('partials/_level_progress.html', summary=summary)
 
 
-def _get_terms():
-    """
-    Generate a list of half-year terms (e.g. '2025 Jan-Jun', '2025 Jul-Dec').
-    Returns a list of dicts: {'label': str, 'start': str(YYYY-MM-DD), 'end': str(YYYY-MM-DD), 'id': str}
-    Goes back 5 years and forward 1 year from today.
-    """
-    today = datetime.today()
-    current_year = today.year
-    terms = []
-    
-    # Generate terms from 5 years ago to next year
-    for year in range(current_year - 5, current_year + 2):
-        # Jan-Jun
-        terms.append({
-            'label': f"{year} Jan-Jun",
-            'id': f"{year}_1",
-            'start': f"{year}-01-01",
-            'end': f"{year}-06-30"
-        })
-        # Jul-Dec
-        terms.append({
-            'label': f"{year} Jul-Dec",
-            'id': f"{year}_2",
-            'start': f"{year}-07-01",
-            'end': f"{year}-12-31"
-        })
-    
-    # Sort descending
-    terms.sort(key=lambda x: x['start'], reverse=True)
-    return terms
 
-
-def _get_active_term(terms):
-    """
-    Find the term corresponding to today's date.
-    """
-    today_str = datetime.today().strftime('%Y-%m-%d')
-    for term in terms:
-        if term['start'] <= today_str <= term['end']:
-            return term
-    return terms[0] if terms else None
 
 
 
@@ -776,15 +736,13 @@ def show_project_view():
     """
     if not is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL):
         # Or redirect to member view if not admin? 
-        # For now, let's assume this is an admin-specific view or general view but showing all projects.
-        # If regular user accesses, maybe show only their stats? 
-        # The requirement implies Admin View replacement, so let's check admin permission.
-        pass # Allow access, but maybe filter content if needed? 
-             # Implementation plan says "Admin View" features.
+        pass 
              
-    terms = _get_terms()
+    from .utils import get_terms, get_active_term, get_date_ranges_for_terms
+             
+    terms = get_terms()
     # Get dropdown data for filter
-    # Get dropdown data for filter
+    
     # User requested: show pathways.path (name) with pathway.type=pathway, separated by status
     pathways_query = db.session.query(Pathway.name, Pathway.status).filter(Pathway.type == 'pathway').order_by(Pathway.name).all()
     
@@ -797,30 +755,43 @@ def show_project_view():
         else:
             inactive_pathways.append(name)
     
-    selected_term_id = request.args.get('term')
+    # Multi-select support for terms
+    selected_term_ids = request.args.getlist('term')
+    
+    current_term = get_active_term(terms)
+    
+    if not selected_term_ids:
+        # Default to current term if available, else first one
+        if current_term:
+            selected_term_ids = [current_term['id']]
+        elif terms:
+            selected_term_ids = [terms[0]['id']]
+            
+    # Calculate date ranges for all selected terms
+    date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
+    should_filter_date = bool(selected_term_ids)
+    
     selected_pathway_id = request.args.get('pathway')
     
-    current_term = None
-    if selected_term_id:
-        current_term = next((t for t in terms if t['id'] == selected_term_id), None)
-    
-    if not current_term:
-        current_term = _get_active_term(terms)
-        
     from .club_context import get_current_club_id
     current_club_id = get_current_club_id()
     
-    # Query Data
-    # We want count of sessions per project within the date range
-    start_date = current_term['start']
-    end_date = current_term['end']
-    
+    # Query Data: Count sessions per project matching ANY of the date ranges
+    # Standard filters
     filters = [
         SessionLog.Project_ID.isnot(None),
         SessionLog.Project_ID != ProjectID.GENERIC,
-        Meeting.club_id == current_club_id,
-        Meeting.Meeting_Date.between(start_date, end_date)
+        Meeting.club_id == current_club_id
     ]
+    
+    # Date Range Filter (OR condition)
+    from sqlalchemy import or_, false
+    if date_ranges:
+        date_conditions = [Meeting.Meeting_Date.between(start, end) for start, end in date_ranges]
+        filters.append(or_(*date_conditions))
+    elif should_filter_date:
+        # User selected terms but no valid ranges found -> Match Nothing
+        filters.append(false())
     
     if selected_pathway_id:
         filters.append(SessionLog.pathway == selected_pathway_id)
@@ -842,16 +813,8 @@ def show_project_view():
     pathway_cache = build_pathway_project_cache(project_ids=project_ids_for_cache)
     
     # Fetch all owners for these logs in one query to avoid N+1
-    log_ids = [log.id for log in logs]
-    owners_lookup = {}
-    if log_ids:
-        omr_entries = db.session.query(OwnerMeetingRoles, Contact).join(Contact).filter(
-            OwnerMeetingRoles.session_log_id.in_(log_ids)
-        ).all()
-        for omr, contact in omr_entries:
-            if omr.session_log_id not in owners_lookup:
-                owners_lookup[omr.session_log_id] = []
-            owners_lookup[omr.session_log_id].append(contact)
+    # Use helper utility that attempts to attach owners for both types of roles (single vs shared)
+    _attach_owners(logs)
 
     for log in logs:
         if not log.project:
@@ -869,8 +832,8 @@ def show_project_view():
         
         project_data_map[pid]['count'] += 1
         
-        # Get owners for this log
-        log_owners = owners_lookup.get(log.id, [])
+        # Get owners for this log (now attached by _attach_owners)
+        log_owners = log.owners
         primary_owner_path = log_owners[0].Current_Path if log_owners else None
         
         # Determine Level for this specific log instance
@@ -913,7 +876,8 @@ def show_project_view():
     return render_template(
         'project_view.html',
         terms=terms,
-        current_term=current_term,
+        current_term=current_term, # Kept for backward compat or display title
+        selected_term_ids=selected_term_ids, # Pass selected IDs list
         chart_data=chart_data,
         max_count=current_max_count,
         active_pathways=active_pathways,
