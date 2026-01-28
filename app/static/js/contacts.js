@@ -24,7 +24,7 @@ async function fetchAndCacheContacts() {
   }
 
   try {
-    const response = await fetch('/api/contacts/all');
+    const response = await fetch('/api/contacts/all?t=' + new Date().getTime());
     if (!response.ok) {
       throw new Error('Failed to fetch contacts');
     }
@@ -172,7 +172,7 @@ function createContactRow(contact) {
              ${canViewAllLogs ? `onclick="window.location.href='/speech_logs?speaker_id=${contact.id}&view_mode=member'" title="View ${contact.Name}'s speech logs"` : ''}>
           ${contact.Name}
           ${contact.DTM ? '<sup class="dtm-superscript">DTM</sup>' : ''}
-          ${contact.Member_ID ? `<span class="badge-member-id" style="margin-left: 5px; font-size: 0.8em; vertical-align: text-top; background-color: rgb(231, 231, 228); border-radius: 5px; padding: 2px 5px;">${contact.Member_ID}</span>` : ''}
+          ${contact.Member_ID && contact.Type !== 'Guest' ? `<span class="badge-member-id" style="margin-left: 5px; font-size: 0.8em; vertical-align: text-top; background-color: rgb(231, 231, 228); border-radius: 5px; padding: 2px 5px;">${contact.Member_ID}</span>` : ''}
         </div>
       </div>
     </td>

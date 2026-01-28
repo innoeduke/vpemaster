@@ -726,17 +726,48 @@
 	color: #666;
 }
 
-.roster-role-tag {
+.roster-container .roster-role-tag {
 	display: inline-block;
-	padding: 2px 8px;
-	background-color: #e9ecef;
-	color: #495057;
-	border-radius: 4px;
-	font-size: 0.85em;
-	font-weight: 500;
+	padding: 2px 10px;
+	border-radius: 50px !important;
+	font-size: 0.75em !important;
+	font-weight: 600;
 	margin-right: 4px;
 	margin-bottom: 4px;
-	border: 1px solid #dee2e6;
+	white-space: nowrap;
+	border: none;
+	line-height: 1.4;
+}
+
+/* Role Category Colors - Solid Pill Style matching badge-path */
+.roster-container .roster-role-tag.role-speaker {
+	background-color: #3b82f6;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-evaluator {
+	background-color: #10b981;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-table-topic {
+	background-color: #f59e0b;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-role-taker {
+	background-color: #8b5cf6;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-officer {
+	background-color: #772432;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-other {
+	background-color: #6b7280;
+	color: white;
 }
 
 /* Action Buttons */
@@ -770,4 +801,143 @@
 
 .roster-container .icon-btn.delete-entry:hover {
 	color: #772432;
+}
+
+/* Ticket Badge Styling - Fixed gray background, colored icon */
+.ticket-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background-color: #eef1f3;
+	/* Light gray/slate background */
+	color: #495057;
+	/* Dark gray text for readability */
+	padding: 6px 14px;
+	border-radius: 50px;
+	/* Fully rounded pills */
+	font-size: 0.9rem;
+	font-weight: 600;
+	transition: all 0.2s ease;
+	border: 1px solid #dee2e6;
+	/* Subtle border */
+	white-space: nowrap;
+}
+
+.ticket-badge i {
+	font-size: 1.1rem;
+	/* Slightly larger icon */
+}
+
+.ticket-badge:hover {
+	background-color: #e9ecef;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	transform: translateY(-1px);
+}
+
+/* -----------------------------------------
+   4. Specific Roster Role Colors
+   ----------------------------------------- */
+
+/* Timer - Rose/Red */
+.roster-container .roster-role-tag.role-timer {
+	background-color: #e11d48;
+	color: white;
+}
+
+/* Ballot/Vote Counter - Indigo */
+.roster-container .roster-role-tag.role-vote-counter,
+.roster-container .roster-role-tag.role-ballot-counter {
+	background-color: #6366f1;
+	color: white;
+}
+
+/* Ah-Counter - Amber */
+.roster-container .roster-role-tag.role-ah-counter {
+	background-color: #d97706;
+	color: white;
+}
+
+/* Grammarian - Teal */
+.roster-container .roster-role-tag.role-grammarian {
+	background-color: #0d9488;
+	color: white;
+}
+
+/* General Evaluator - Emerald */
+.roster-container .roster-role-tag.role-general-evaluator {
+	background-color: #059669;
+	color: white;
+}
+
+/* Toastmaster of the Evening - Pink */
+.roster-container .roster-role-tag.role-toastmaster-of-the-evening,
+.roster-container .roster-role-tag.role-tme {
+	background-color: #db2777;
+	color: white;
+}
+
+/* Contest Chair - Violet */
+.roster-container .roster-role-tag.role-contest-chair {
+	background-color: #7c3aed;
+	color: white;
+}
+
+/* Chief Judge - Red */
+.roster-container .roster-role-tag.role-chief-contest-judge,
+.roster-container .roster-role-tag.role-chief-judge,
+.roster-container .roster-role-tag.role-judge {
+	background-color: #dc2626;
+	color: white;
+}
+
+/* SAA - Orange */
+.roster-container .roster-role-tag.role-saa,
+.roster-container .roster-role-tag.role-sergeant-at-arms,
+.roster-container .roster-role-tag.role-contest-saa {
+	background-color: #ea580c;
+	color: white;
+}
+
+/* Photographer - Sky Blue */
+.roster-container .roster-role-tag.role-photographer {
+	background-color: #0ea5e9;
+	color: white;
+}
+
+/* Zoom/Tech Master - Blue */
+.roster-container .roster-role-tag.role-zoom-master,
+.roster-container .roster-role-tag.role-tech-host {
+	background-color: #2563eb;
+	color: white;
+}
+
+/* Candidate - Lime */
+.roster-container .roster-role-tag.role-candidate {
+	background-color: #65a30d;
+	color: white;
+}
+/* Ticket Badge Styling - Fixed gray background, colored icon */
+.ticket-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #eef1f3; /* Light gray/slate background */
+    color: #495057; /* Dark gray text for readability */
+    padding: 6px 14px;
+    border-radius: 50px; /* Fully rounded pills */
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    border: 1px solid #dee2e6; /* Subtle border */
+    white-space: nowrap;
+}
+
+.ticket-badge i {
+    font-size: 1.1rem; /* Slightly larger icon */
+}
+
+.ticket-badge:hover {
+    background-color: #e9ecef;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transform: translateY(-1px);
 }

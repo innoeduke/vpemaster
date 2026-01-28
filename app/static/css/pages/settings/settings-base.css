@@ -175,6 +175,129 @@
 	border-radius: 0.25rem;
 }
 
+.tab-content .roster-role-tag {
+	display: inline-block;
+	padding: 2px 10px;
+	border-radius: 50px !important;
+	font-size: 0.75em !important;
+	font-weight: 600;
+	margin-right: 4px;
+	margin-bottom: 4px;
+	white-space: nowrap;
+	border: none;
+	line-height: 1.4;
+}
+
+/* Role Category Colors - Sophisticated Solid Pill Palette */
+.tab-content .roster-role-tag {
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.tab-content .roster-role-tag.role-speaker {
+	background-color: #3b82f6;
+	/* Azure Blue */
+	color: white;
+}
+
+.tab-content .roster-role-tag.role-evaluator {
+	background-color: #10b981;
+	/* Emerald Green */
+	color: white;
+}
+
+.tab-content .roster-role-tag.role-table-topic {
+	background-color: #f59e0b;
+	/* Amber */
+	color: white;
+}
+
+.tab-content .roster-role-tag.role-role-taker {
+	background-color: #8b5cf6;
+	/* Violet */
+	color: white;
+}
+
+/* Administrative Roles - Differentiated */
+.tab-content .roster-role-tag.role-sysadmin {
+	background-color: #7c3aed;
+	/* Vivid Purple */
+	color: white;
+}
+
+.tab-content .roster-role-tag.role-clubadmin {
+	background-color: #ea580c;
+	/* Vibrant Orange */
+	color: white;
+}
+
+.tab-content .roster-role-tag.role-staff {
+	background-color: #0ea5e9;
+	/* Light Blue */
+	color: white;
+}
+
+.tab-content .roster-role-tag.role-user {
+	background-color: #22c55e;
+	/* Green */
+	color: white;
+}
+
+.tab-content .roster-role-tag.role-other {
+	background-color: #6b7280;
+	/* Neutral Gray */
+	color: white;
+}
+
+/* Pathway Badge Styles */
+.tab-content .badge-path {
+	background-color: #004165;
+	color: white;
+	padding: 2px 10px;
+	border-radius: 50px;
+	font-size: 0.75em;
+	font-weight: 600;
+	display: inline-block;
+	margin: 2px;
+	white-space: nowrap;
+}
+
+.tab-content .badge-path.path-dl {
+	background-color: #EF4444;
+}
+
+.tab-content .badge-path.path-eh {
+	background-color: #F59E0B;
+}
+
+.tab-content .badge-path.path-ms {
+	background-color: #10B981;
+}
+
+.tab-content .badge-path.path-pi {
+	background-color: #3B82F6;
+}
+
+.tab-content .badge-path.path-pm {
+	background-color: #8B5CF6;
+}
+
+.tab-content .badge-path.path-vc {
+	background-color: #EC4899;
+}
+
+.tab-content .badge-path.path-dt {
+	background-color: #772432;
+}
+
+/* Legacy Paths */
+.tab-content .badge-path.path-ec,
+.tab-content .badge-path.path-ip,
+.tab-content .badge-path.path-ld,
+.tab-content .badge-path.path-sr,
+.tab-content .badge-path.path-tc {
+	background-color: #a0aec0;
+}
+
 .bg-info {
 	background-color: #0dcaf0 !important;
 }
@@ -195,4 +318,76 @@
 
 .text-dark {
 	color: #000 !important;
+}
+
+/* --- Icon Matrix Selection --- */
+.icon-matrix-container {
+	border: 1px solid #d1d9e0;
+	border-radius: 8px;
+	background: #f8f9fa;
+	padding: 15px;
+	max-height: 300px;
+	min-height: 120px;
+	overflow-y: auto;
+	width: 100%;
+	box-sizing: border-box;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.icon-group-title {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: #6c757d;
+	margin: 20px 0 10px 0;
+	padding-bottom: 5px;
+	border-bottom: 2px solid #dee2e6;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.icon-group-title:first-child {
+	margin-top: 0;
+}
+
+.icon-matrix {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+	gap: 12px;
+}
+
+.icon-item {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 48px;
+	height: 48px;
+	border: 1px solid #dee2e6;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	font-size: 1.5rem;
+	color: #495057;
+	background-color: #fff;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+
+.icon-item:hover {
+	background-color: #e7f1ff;
+	color: #004165;
+	border-color: #004165;
+	transform: translateY(-3px);
+	box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.icon-item.active {
+	background-color: #004165;
+	color: #fff;
+	border-color: #004165;
+	box-shadow: 0 4px 15px rgba(0, 65, 101, 0.3);
+	transform: scale(1.1);
+	z-index: 1;
+}
+
+.icon-item i {
+	pointer-events: none;
 }

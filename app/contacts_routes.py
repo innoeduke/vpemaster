@@ -363,8 +363,13 @@ def contact_form(contact_id=None):
             if 'dtm' in request.form:
                 contact.DTM = 'dtm' in request.form
             
-            # Auto-populate Name if blank
-            contact.update_name_from_parts()
+            # Auto-populate Name from parts if they exist
+            # Force update using form data to ensure persistence
+            name_parts = [p for p in [first_name, last_name] if p]
+            if name_parts:
+                contact.Name = " ".join(name_parts)
+            else:
+                contact.update_name_from_parts(overwrite=True)
             
             # Validate Name is not empty
             if not contact.Name:
@@ -419,8 +424,8 @@ def contact_form(contact_id=None):
                 Current_Path=request.form.get('current_path') if contact_type in ['Member', 'Officer'] else None
             )
             
-            # Auto-populate Name if blank
-            new_contact.update_name_from_parts()
+            # Auto-populate Name from parts if they exist
+            new_contact.update_name_from_parts(overwrite=True)
             
             # Validate Name is not empty
             if not new_contact.Name:

@@ -196,6 +196,160 @@
         box-shadow: 0 6px 15px rgba(119, 36, 50, 0.3);
     }
 
+    /* Mobile Responsive Card View - Compact */
+    @media (max-width: 768px) {
+        .clubs-container {
+            padding: 10px;
+        }
+
+        .clubs-header {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .clubs-header h1 {
+            font-size: 1.5rem; /* Reduced */
+        }
+
+        .btn-create {
+            width: 100%;
+            justify-content: center;
+            padding: 10px; /* Reduced */
+            font-size: 0.9em;
+        }
+
+        /* COMPLETELY remove wrapper styles */
+        .club-list-card,
+        .table-responsive,
+        .table {
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        .table-responsive {
+            overflow: visible !important;
+        }
+
+        .table thead {
+            display: none;
+        }
+
+        .table tbody {
+            display: block;
+            border: none !important;
+        }
+
+        /* The Card */
+        .table tr {
+            display: grid;
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto auto auto auto;
+            background: white;
+            border-radius: 8px; /* Slightly tighter radius */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); /* Lighter shadow */
+            margin-bottom: 16px; /* Reduced margin */
+            border: 1px solid #eef2f7;
+            overflow: visible !important; /* Fix clipping */
+            position: relative;
+        }
+
+        .table td {
+            padding: 8px 12px; /* Reduced padding */
+            border: none;
+            display: block;
+        }
+
+        /* 1. Club No - Row 1 */
+        .table td:nth-child(1) {
+            grid-column: 1 / -1;
+            grid-row: 1 / 2;
+            padding-bottom: 2px;
+        }
+        
+        .club-no {
+            font-size: 0.75rem; /* Smaller */
+            padding: 3px 6px;
+        }
+
+        /* 2. Club Name - Row 2 */
+        .table td:nth-child(2) {
+            grid-column: 1 / -1;
+            grid-row: 2 / 3;
+            padding-top: 2px;
+            padding-bottom: 10px;
+        }
+
+        .club-name {
+            font-size: 1.1rem; /* Smaller */
+            font-weight: 700;
+        }
+        
+        .club-meta {
+            margin-top: 4px;
+            font-size: 0.8em;
+        }
+
+        /* 3. Org Info - Row 3 */
+        .table td:nth-child(3) {
+            grid-column: 1 / -1;
+            grid-row: 3 / 4;
+            border-top: 1px solid #f0f2f5 !important;
+            color: #666;
+            padding-top: 8px;
+            padding-bottom: 4px;
+            font-size: 0.85em; /* Smaller */
+        }
+
+        /* 4. Schedule - Row 4 */
+        .table td:nth-child(4) {
+             grid-column: 1 / -1;
+             grid-row: 4 / 5;
+             padding-top: 4px;
+             padding-bottom: 12px;
+             font-size: 0.85em;
+        }
+
+        .schedule-item i {
+            width: 12px;
+        }
+
+        /* 5. Actions - Footer Row */
+        .table td:nth-child(5) {
+            grid-column: 1 / -1;
+            grid-row: 5 / 6;
+            background-color: #f8f9fa;
+            border-top: 1px solid #eef2f7 !important;
+            padding: 10px 12px; /* Reduced padding */
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+        }
+
+        .action-btn {
+            width: 36px; /* Reduced from 44px */
+            height: 36px;
+            font-size: 1rem;
+            background: white;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border-radius: 6px;
+            margin: 0; /* Validate no margins causing overflow */
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            display: block !important;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -203,11 +357,134 @@
 <div class="clubs-container">
     <div class="clubs-header">
         <h1>Club Management</h1>
-        <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary btn-create">
-            <i class="fas fa-plus"></i>
-            Create New Club
-        </a>
+        <div class="header-actions">
+            <!-- Search Form -->
+            <form method="GET" action="{{ url_for('clubs_bp.list_clubs') }}" id="searchForm" class="search-form">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" name="q" class="form-control search-input" 
+                           placeholder="Search Club No or Name..." 
+                           value="{{ search_query }}" 
+                           autocomplete="off"
+                           onfocus="this.select()">
+                    {% if search_query %}
+                    <a href="{{ url_for('clubs_bp.list_clubs') }}" class="clear-search" title="Clear Search">
+                        <i class="fas fa-times"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+            <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary btn-create">
+                <i class="fas fa-plus"></i>
+                Create New Club
+            </a>
+        </div>
     </div>
+    
+    <style>
+        /* Header Actions Layout */
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        /* Search styling */
+        .search-form {
+            display: inline-block;
+        }
+
+        .search-container {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-input {
+            padding-left: 35px;
+            padding-right: 30px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            height: 42px; /* Match button height approx */
+            transition: all 0.2s;
+        }
+
+        .search-input:focus {
+            box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
+            border-color: #004165;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #adb5bd;
+            pointer-events: none;
+        }
+
+        .clear-search {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #adb5bd;
+            text-decoration: none;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-search:hover {
+            color: #666;
+        }
+
+        /* Desktop Fix: clean top border for first row */
+        @media (min-width: 769px) {
+            .table-responsive .table tbody tr:first-child td {
+                border-top: none;
+            }
+        }
+        
+        /* Mobile Search Adjustment */
+        @media (max-width: 768px) {
+            .header-actions {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+            
+            .search-form, .search-container {
+                width: 100%;
+            }
+
+            /* Adjust header items alignment from previous steps if needed */
+            .clubs-header {
+                align-items: stretch; /* Allow full width children */
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.querySelector('.search-input');
+            let timeout = null;
+
+            // Auto-submit on typing with debounce
+            searchInput.addEventListener('input', function() {
+                clearTimeout(timeout);
+                timeout = setTimeout(function() {
+                    document.getElementById('searchForm').submit();
+                }, 500); // 500ms delay
+            });
+            
+            // Focus input if searching (optional UX improvement)
+            {% if search_query %}
+            searchInput.focus();
+            {% endif %}
+        });
+    </script>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}

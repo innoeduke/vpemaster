@@ -1,94 +1,61 @@
 <div id="addSessionModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal('addSessionModal')">&times;</span>
-    <h1>Add New Session Type</h1>
+    <h1 id="session-modal-title">Add New Session Type</h1>
     <form
       id="addSessionForm"
       action="{{ url_for('settings_bp.add_session_type') }}"
       method="POST"
     >
-      <table class="form-table">
-        <tr>
-          <td><label for="title">Title:</label></td>
-          <td><input type="text" id="title" name="title" required /></td>
-        </tr>
-        <tr>
-          <td><label for="role_id">Role:</label></td>
-          <td>
-            <select id="role_id" name="role_id">
-              <option value="">None</option>
-              {% for role in roles %}
-              <option value="{{ role.id }}">{{ role.name }}</option>
-              {% endfor %}
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td><label for="duration_min">Min Duration:</label></td>
-          <td><input type="number" id="duration_min" name="duration_min" /></td>
-        </tr>
-        <tr>
-          <td><label for="duration_max">Max Duration:</label></td>
-          <td><input type="number" id="duration_max" name="duration_max" /></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="text-align: center; padding-top: 15px">
-            <label
-              for="is_section"
-              style="display: inline-block; margin-right: 15px"
-              >Is Section:</label
-            >
-            <input
-              type="checkbox"
-              id="is_section"
-              name="is_section"
-              style="transform: scale(1.2)"
-            />
+      <input type="hidden" id="session_id_input" name="id" value="">
 
-            />
-          </td>
-        </tr>
-        <tr>
-          <td colspan="2" style="text-align: center; padding-top: 15px">
-            <label
-              for="valid_for_project"
-              style="display: inline-block; margin-right: 15px"
-              >For Project:</label
-            >
-            <input
-              type="checkbox"
-              id="valid_for_project"
-              name="valid_for_project"
-              style="transform: scale(1.2)"
-            />
+      <div class="form-group">
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title" required class="form-control" placeholder="e.g. Speech Section" />
+      </div>
 
-            <label
-              for="is_hidden"
-              style="
-                display: inline-block;
-                margin-left: 30px;
-                margin-right: 15px;
-              "
-              >Is Hidden:</label
-            >
-            <input
-              type="checkbox"
-              id="is_hidden"
-              name="is_hidden"
-              style="transform: scale(1.2)"
-            />
-          </td>
-        </tr>
-      </table>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save</button>
-        <button
-          type="button"
-          class="btn btn-danger"
-          onclick="closeModal('addSessionModal')"
-        >
-          Cancel
-        </button>
+      <div class="form-group">
+        <label for="role_id">Role:</label>
+        <select id="role_id" name="role_id">
+          <option value="">None</option>
+          {% for role in roles %}
+          <option value="{{ role.id }}">{{ role.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="modal-form-row">
+        <div class="form-group" style="flex: 1;">
+          <label for="duration_min">Min Duration:</label>
+          <input type="number" id="duration_min" name="duration_min" placeholder="mins" />
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label for="duration_max">Max Duration:</label>
+          <input type="number" id="duration_max" name="duration_max" placeholder="mins" />
+        </div>
+      </div>
+
+      <div style="margin: 30px 0; display: flex; gap: 40px; flex-wrap: wrap; justify-content: center;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: normal;">
+          <input type="checkbox" id="is_section" name="is_section" class="scaled-checkbox" />
+          <span>Is Section</span>
+        </label>
+
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: normal;">
+          <input type="checkbox" id="valid_for_project" name="valid_for_project" class="scaled-checkbox" />
+          <span>For Project</span>
+        </label>
+
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: normal;">
+          <input type="checkbox" id="is_hidden" name="is_hidden" class="scaled-checkbox" />
+          <span>Is Hidden</span>
+        </label>
+      </div>
+
+      <div class="form-actions" style="margin-top: 40px;">
+        <button type="button" class="btn btn-danger" onclick="closeModal('addSessionModal')">Cancel</button>
+        <button type="submit" id="session-modal-submit" class="btn btn-primary">Save Session Type</button>
+
       </div>
     </form>
   </div>

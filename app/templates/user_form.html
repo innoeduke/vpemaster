@@ -60,7 +60,8 @@
                         <input type="checkbox" name="roles" value="{{ r.id }}" {% if r.id in user_role_ids
                             %}checked{% endif %} style="margin-right: 8px;">
                         {% endif %}
-                        <span>{{ r.name }}</span>
+                        {% set role_class = 'role-officer' if r.name in ['ClubAdmin', 'SysAdmin', 'Staff'] else 'role-other' %}
+                        <span class="roster-role-tag {{ role_class }}">{{ r.name }}</span>
                     </label>
                     {% endfor %}
                 </div>

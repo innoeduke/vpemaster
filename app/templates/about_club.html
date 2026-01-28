@@ -329,7 +329,7 @@
                     </tr>
                     {% for role, name in excomm_team.members.items() %}
                     <tr>
-                        <td><strong>{{ role }}</strong></td>
+                        <td><span class="roster-role-tag role-officer" style="margin-bottom: 0;">{{ role }}</span></td>
                         <td data-field="excomm_{{ role.lower() }}" data-role="{{ role }}">{{ name }}</td>
                     </tr>
                     {% endfor %}

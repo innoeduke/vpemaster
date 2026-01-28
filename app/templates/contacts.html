@@ -234,7 +234,7 @@
               {% if contact.DTM %}
               <sup class="dtm-superscript">DTM</sup>
               {% endif %}
-              {% if contact.Member_ID %}
+              {% if contact.Member_ID and contact.Type != 'Guest' %}
               <span class="badge-member-id"
                 style="margin-left: 5px; font-size: 0.8em; vertical-align: text-top; background-color: rgb(231, 231, 228); border-radius: 5px; padding: 2px 5px;">{{
                 contact.Member_ID }}</span>

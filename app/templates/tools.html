@@ -5,7 +5,8 @@
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-mobile.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -206,11 +207,8 @@
                                         {% set icon_class = 'fa-ticket-alt' %}
                                     {% endif %}
 
-                                    <span class="roster-icon" style="color: {{ icon_color }};">
-                                        <i class="fas {{ icon_class }}" title="{{ entry.ticket.name if entry.ticket else '' }}"></i>
-                                    </span>
-    
-                                    <span class="roster-text">
+                                    <span class="ticket-badge">
+                                        <i class="fas {{ icon_class }}" style="color: {{ icon_color }};" title="{{ entry.ticket.name if entry.ticket else '' }}"></i>
                                         {{ entry.ticket.name.split('(')[0].strip() if entry.ticket else '' }}
                                     </span>
                                 <td class="cell-roles desktop-only">
@@ -219,7 +217,11 @@
                                     {% if roles %}
                                         <div class="roster-roles">
                                         {% for role in roles %}
-                                            <span class="roster-role-tag roster-text">{{ role['name'] }}</span>
+                                            {% set role_class = 'role-' ~ role['award_category'] if role['award_category'] else 'role-other' %}
+                                            {% if role['type'] == 'officer' %}
+                                                {% set role_class = 'role-officer' %}
+                                            {% endif %}
+                                            <span class="roster-role-tag roster-text {{ role_class }} role-{{ role['name']|lower|replace(' ', '-')|replace('/', '-') }}">{{ role['name'] }}</span>
                                         {% endfor %}
                                         </div>
                                     {% endif %}

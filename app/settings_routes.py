@@ -58,7 +58,7 @@ def settings():
     # Let's keep 'roles_query' as the MERGED list for dropdowns if needed, or just for safety.
     # Actually, let's reconstruct the merged list for the 'roles' json variable used in JS keys.
     merged_roles = MeetingRole.get_all_for_club(club_id)
-    roles = [{'id': role.id, 'name': role.name} for role in merged_roles]
+    roles = [{'id': role.id, 'name': role.name, 'award_category': role.award_category, 'type': role.type} for role in merged_roles]
     
     # Users: Filter by club membership
     if club_id:
@@ -112,10 +112,21 @@ def add_session_type():
 
         # Get current club context
         club_id = get_current_club_id()
+        
+        # Check if we are updating or adding
+        session_id = request.form.get('id')
+        session_type = None
+        if session_id:
+            session_type = db.session.get(SessionType, session_id)
+            if not session_type or session_type.club_id != club_id:
+                 return jsonify(success=False, message="Session type not found or permission denied"), 404
 
-        # Check if title already exists in this club
-        existing_session = SessionType.query.filter_by(Title=title, club_id=club_id).first()
-        if existing_session:
+        # Check if title already exists in this club (excluding ourselves if updating)
+        query = SessionType.query.filter_by(Title=title, club_id=club_id)
+        if session_type:
+            query = query.filter(SessionType.id != session_type.id)
+        
+        if query.first():
             return jsonify(success=False, message="Session type with this title already exists in this club"), 400
 
         # Validate numeric input
@@ -129,57 +140,72 @@ def add_session_type():
             if not duration_min_str.isdigit():
                 return jsonify(success=False, message="Duration min must be a positive integer"), 400
             duration_min = int(duration_min_str)
-            if duration_min < 1 or duration_min > 480:  # 8-hour limit
-                return jsonify(success=False, message="Duration min must be between 1 and 480 minutes"), 400
+            if duration_min < 0 or duration_min > 480:  # 8-hour limit, allow 0
+                return jsonify(success=False, message="Duration min must be between 0 and 480 minutes"), 400
 
         if duration_max_str:
             if not duration_max_str.isdigit():
                 return jsonify(success=False, message="Duration max must be a positive integer"), 400
             duration_max = int(duration_max_str)
-            if duration_max < 1 or duration_max > 480:
-                return jsonify(success=False, message="Duration max must be between 1 and 480 minutes"), 400
+            if duration_max < 0 or duration_max > 480:
+                return jsonify(success=False, message="Duration max must be between 0 and 480 minutes"), 400
 
         # Validate duration logic
-        if duration_min and duration_max and duration_min > duration_max:
+        if duration_min is not None and duration_max is not None and duration_min > duration_max:
             return jsonify(success=False, message="Duration min cannot be greater than duration max"), 400
 
         role_id_str = request.form.get('role_id', '').strip()
         role_id = int(role_id_str) if role_id_str else None
 
-        new_session = SessionType(
-            Title=title,
-            role_id=role_id,
-            Duration_Min=duration_min,
-            Duration_Max=duration_max,
-            Is_Section='is_section' in request.form,
-            Valid_for_Project='valid_for_project' in request.form,
-            Is_Hidden='is_hidden' in request.form,
-            club_id=club_id
-        )
-        db.session.add(new_session)
+        if session_type:
+            # Update existing
+            session_type.Title = title
+            session_type.role_id = role_id
+            session_type.Duration_Min = duration_min
+            session_type.Duration_Max = duration_max
+            session_type.Is_Section = 'is_section' in request.form
+            session_type.Valid_for_Project = 'valid_for_project' in request.form
+            session_type.Is_Hidden = 'is_hidden' in request.form
+            msg = "Session type updated successfully"
+        else:
+            # Create new
+            session_type = SessionType(
+                Title=title,
+                role_id=role_id,
+                Duration_Min=duration_min,
+                Duration_Max=duration_max,
+                Is_Section='is_section' in request.form,
+                Valid_for_Project='valid_for_project' in request.form,
+                Is_Hidden='is_hidden' in request.form,
+                club_id=club_id
+            )
+            db.session.add(session_type)
+            msg = "Session type added successfully"
+
         db.session.commit()
 
-        # Return the new session object so the frontend can add it to the table
-        new_session_data = {
-            'id': new_session.id,
-            'Title': new_session.Title,
-            'role_id': new_session.role_id,
-            'Duration_Min': new_session.Duration_Min,
-            'Duration_Max': new_session.Duration_Max,
-            'Is_Section': new_session.Is_Section,
-            'Valid_for_Project': new_session.Valid_for_Project,
-            'Is_Hidden': new_session.Is_Hidden
+        # Return the session object so the frontend can add/update it in the table
+        session_data = {
+            'id': session_type.id,
+            'Title': session_type.Title,
+            'role_id': session_type.role_id,
+            'Duration_Min': session_type.Duration_Min,
+            'Duration_Max': session_type.Duration_Max,
+            'Is_Section': session_type.Is_Section,
+            'Valid_for_Project': session_type.Valid_for_Project,
+            'Is_Hidden': session_type.Is_Hidden
         }
-        return jsonify(success=True, message="Session type added successfully", new_session=new_session_data)
+        return jsonify(success=True, message=msg, new_session=session_data)
 
     except ValueError as e:
         db.session.rollback()
-        current_app.logger.error(f"Value error adding session type: {str(e)}")
+        current_app.logger.error(f"Value error processing session type: {str(e)}")
         return jsonify(success=False, message="Invalid input data"), 400
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error adding session type: {str(e)}")
+        current_app.logger.error(f"Error processing session type: {str(e)}")
         return jsonify(success=False, message="Internal server error"), 500
+
 
 
 @settings_bp.route('/settings/sessions/update', methods=['POST'])
@@ -257,35 +283,74 @@ def delete_session_type(id):
 @login_required
 def add_role():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
-        return redirect(url_for('agenda_bp.agenda'))
+        return jsonify(success=False, message="Permission denied"), 403
 
     club_id = get_current_club_id()
-    
-    # Check if role name already exists in this club
     trimmed_name = request.form.get('name', '').strip()
-    if MeetingRole.query.filter_by(name=trimmed_name, club_id=club_id).first():
-        flash(f'Role with name "{trimmed_name}" already exists in this club.', 'danger')
-        return redirect(url_for('settings_bp.settings', _anchor='agenda-settings'))
+    if not trimmed_name:
+         return jsonify(success=False, message="Role name is required"), 400
+
+    # Check if we are updating or adding
+    role_id = request.form.get('id')
+    role = None
+    if role_id:
+        role = db.session.get(MeetingRole, role_id)
+        if not role or role.club_id != club_id:
+            return jsonify(success=False, message="Role not found or permission denied"), 404
+
+    # Check if role name already exists in this club
+    query = MeetingRole.query.filter_by(name=trimmed_name, club_id=club_id)
+    if role:
+        query = query.filter(MeetingRole.id != role.id)
+    
+    if query.first():
+        return jsonify(success=False, message=f'Role with name "{trimmed_name}" already exists in this club.'), 400
 
     try:
-        new_role = MeetingRole(
-            name=trimmed_name,
-            icon=request.form.get('icon'),
-            type=request.form.get('type'),
-            award_category=request.form.get('award_category'),
-            needs_approval='needs_approval' in request.form,
-            has_single_owner='has_single_owner' in request.form,
-            is_member_only='is_member_only' in request.form,
-            club_id=club_id
-        )
-        db.session.add(new_role)
+        if role:
+            # Update existing
+            role.name = trimmed_name
+            role.icon = request.form.get('icon')
+            role.type = request.form.get('type')
+            role.award_category = request.form.get('award_category')
+            role.needs_approval = 'needs_approval' in request.form
+            role.has_single_owner = 'has_single_owner' in request.form
+            role.is_member_only = 'is_member_only' in request.form
+            msg = "Role updated successfully"
+        else:
+            # Create new
+            role = MeetingRole(
+                name=trimmed_name,
+                icon=request.form.get('icon'),
+                type=request.form.get('type'),
+                award_category=request.form.get('award_category'),
+                needs_approval='needs_approval' in request.form,
+                has_single_owner='has_single_owner' in request.form,
+                is_member_only='is_member_only' in request.form,
+                club_id=club_id
+            )
+            db.session.add(role)
+            msg = "Role added successfully"
+        
         db.session.commit()
-        flash('Role added successfully.', 'success')
+
+        # Return the role object so the frontend can add/update it in the table
+        role_data = {
+            'id': role.id,
+            'name': role.name,
+            'icon': role.icon,
+            'type': role.type,
+            'award_category': role.award_category,
+            'needs_approval': role.needs_approval,
+            'has_single_owner': role.has_single_owner,
+            'is_member_only': role.is_member_only
+        }
+        return jsonify(success=True, message=msg, new_role=role_data)
     except Exception as e:
         db.session.rollback()
-        flash(f'An error occurred: {e}', 'danger')
+        current_app.logger.error(f"Error processing role: {str(e)}")
+        return jsonify(success=False, message=f'An error occurred: {e}'), 500
 
-    return redirect(url_for('settings_bp.settings', _anchor='agenda-settings'))
 
 
 @settings_bp.route('/settings/roles/update', methods=['POST'])
@@ -342,83 +407,7 @@ def delete_role(id):
         return jsonify(success=False, message=str(e)), 500
 
 
-@settings_bp.route('/settings/roles/import', methods=['POST'])
-@login_required
-def import_roles():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
-        return redirect(url_for('agenda_bp.agenda'))
 
-    if 'file' not in request.files:
-        flash('No file part', 'danger')
-        return redirect(url_for('settings_bp.settings', _anchor='agenda-settings'))
-
-    file = request.files['file']
-
-    if file.filename == '':
-        flash('No selected file', 'danger')
-        return redirect(url_for('settings_bp.settings', _anchor='agenda-settings'))
-
-    if file and file.filename.endswith('.csv'):
-        try:
-            # Read the file in-memory using utf-8-sig to handle BOM
-            stream = io.StringIO(
-                file.stream.read().decode("utf-8-sig"), newline=None)
-            reader = csv.DictReader(stream)
-
-            club_id = get_current_club_id()
-             
-            # Pre-fetch Global Roles for duplicate checking
-            global_roles = MeetingRole.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
-            global_role_names = {r.name for r in global_roles}
-
-            for row in reader:
-                role_name = row.get('name')
-                role_type = row.get('type')
-                
-                # Rule 1: If type is 'standard' and it exists in Global list, SKIP it.
-                # This assumes we want to use the Global definition, not a local copy.
-                if role_type == 'standard' and role_name in global_role_names:
-                    continue
-
-                # Check if it already exists LOCALLY
-                if role_name and not MeetingRole.query.filter_by(name=role_name, club_id=club_id).first():
-                    
-                    # Rule 2: Force type to 'club-specific' for all imported roles
-                    # (Unless it's the Global Club itself importing? The requirement didn't specify exception)
-                    # "for all roles imported, set their types to 'club specific'"
-                    # If I am Club 1 Admin importing, maybe I WANT standard?
-                    # The request context likely implies "Normal Club importing from a list".
-                    # But to be safe, if club_id == GLOBAL_CLUB_ID, we might want to respect CSV?
-                    # User request: "while importing data... set their types to 'club specific'".
-                    # I will apply this to non-global clubs.
-                    
-                    final_type = 'club-specific'
-                    if club_id == GLOBAL_CLUB_ID:
-                        final_type = role_type # Respect CSV for Global Club
-                    
-                    new_role = MeetingRole(
-                        name=role_name,
-                        icon=row.get('icon'),
-                        type=final_type,
-                        award_category=row.get('award_category'),
-                        needs_approval=row.get(
-                            'needs_approval', '0').strip() == '1',
-                        has_single_owner=row.get('has_single_owner', '0').strip() == '1',
-                        is_member_only=row.get('is_member_only', '0').strip() == '1',
-                        club_id=club_id
-                    )
-                    db.session.add(new_role)
-
-            db.session.commit()
-            flash('Roles have been successfully imported.', 'success')
-
-        except Exception as e:
-            db.session.rollback()
-            flash(f'An error occurred: {e}', 'danger')
-    else:
-        flash('Invalid file format. Please upload a .csv file.', 'danger')
-
-    return redirect(url_for('settings_bp.settings', _anchor='agenda-settings'))
 
 
 

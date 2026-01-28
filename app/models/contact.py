@@ -33,7 +33,7 @@ class Contact(db.Model):
     user_club_records = db.relationship('UserClub', cascade='all, delete-orphan', back_populates='contact', foreign_keys='UserClub.contact_id')
     club_memberships = db.relationship('ContactClub', cascade='all, delete-orphan', back_populates='contact')
     
-    def update_name_from_parts(self, overwrite=False):
+    def update_name_from_parts(self, overwrite=True):
         """Auto-populate Name from first_name and last_name."""
         if (overwrite or not self.Name) and (self.first_name or self.last_name):
             parts = []

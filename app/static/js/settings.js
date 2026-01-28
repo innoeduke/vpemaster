@@ -1,4 +1,54 @@
 // static/js/settings.js
+const ICON_LIST = [
+  { group: "Core Roles", icons: [
+    { value: "fa-microphone", label: "Microphone (Speaker/TM)" },
+    { value: "fa-stopwatch", label: "Stopwatch (Timer)" },
+    { value: "fa-pen-to-square", label: "Pen & Square (Evaluator)" },
+    { value: "fa-book", label: "Book (Grammarian)" },
+    { value: "fa-calculator", label: "Calculator (Ah-Counter/Vote)" },
+    { value: "fa-comments", label: "Comments (Topicsmaster)" },
+    { value: "fa-comment", label: "Comment (Topics Speaker)" },
+    { value: "fa-magnifying-glass", label: "Magnifying Glass (Gen. Eval)" },
+    { value: "fa-user-tie", label: "User Tie (Prepared Speaker)" },
+    { value: "fa-lightbulb", label: "Lightbulb (Table Topics)" }
+  ]},
+  { group: "Officers & Leadership", icons: [
+    { value: "fa-gavel", label: "Gavel (President/Judge)" },
+    { value: "fa-crown", label: "Crown (President)" },
+    { value: "fa-graduation-cap", label: "Graduation Cap (VPE)" },
+    { value: "fa-users-gear", label: "Users Gear (VPE/VPM)" },
+    { value: "fa-users", label: "Users (VPM)" },
+    { value: "fa-bullhorn", label: "Bullhorn (VPPR)" },
+    { value: "fa-newspaper", label: "Newspaper (VPPR)" },
+    { value: "fa-coins", label: "Coins (Treasurer)" },
+    { value: "fa-pen-nib", label: "Pen Nib (Secretary)" },
+    { value: "fa-briefcase", label: "Briefcase (SAA)" }
+  ]},
+  { group: "Other Roles", icons: [
+    { value: "fa-handshake", label: "Handshake (Greeter)" },
+    { value: "fa-handshake-angle", label: "Handshake Angle (Mentor)" },
+    { value: "fa-hand-holding-heart", label: "Hand Holding Heart (Greeter)" },
+    { value: "fa-face-smile", label: "Smile Face (Greeter)" },
+    { value: "fa-face-laugh-squint", label: "Laugh Face (Joke Master)" },
+    { value: "fa-masks-theater", label: "Masks (Joke/Story)" },
+    { value: "fa-desktop", label: "Desktop (Zoom Master)" },
+    { value: "fa-video", label: "Video (Zoom Master)" },
+    { value: "fa-puzzle-piece", label: "Puzzle Piece" },
+    { value: "fa-microphone-lines", label: "Microphone Lines" },
+    { value: "fa-link", label: "Link" },
+    { value: "fa-gear", label: "Gear" },
+    { value: "fa-trophy", label: "Trophy" },
+    { value: "fa-medal", label: "Medal" },
+    { value: "fa-star", label: "Star" },
+    { value: "fa-heart", label: "Heart" },
+    { value: "fa-flag", label: "Flag" },
+    { value: "fa-circle-info", label: "Info" },
+    { value: "fa-circle-question", label: "Question" },
+    { value: "fa-cake-candles", label: "Celebration" },
+    { value: "fa-mug-hot", label: "Coffee/Break" },
+    { value: "fa-music", label: "Music" }
+  ]}
+];
 
 /**
  * Handles switching tabs on the settings page.
@@ -48,6 +98,79 @@ function openTab(evt, tabName) {
       paginator.update();
     }
   }
+}
+
+/**
+ * Initializes the icon matrix in the role modal.
+ */
+function initIconMatrix() {
+  const container = document.getElementById("icon-matrix-container");
+  const hiddenInput = document.getElementById("icon");
+  
+  if (!container) {
+    console.error("icon-matrix-container not found");
+    return;
+  }
+  if (!hiddenInput) {
+    console.error("hidden icon input not found");
+    return;
+  }
+
+  console.log("ICON_LIST:", typeof ICON_LIST, ICON_LIST);
+  console.log("Initializing icon matrix with", ICON_LIST.length, "groups");
+
+  // Clear existing content except the hidden input
+  Array.from(container.children).forEach(child => {
+    if (child.id !== "icon") child.remove();
+  });
+
+  // 1. Add "None" Option
+  const noneTitle = document.createElement("div");
+  noneTitle.className = "icon-group-title";
+  noneTitle.textContent = "Standard";
+  container.appendChild(noneTitle);
+
+  const noneGrid = document.createElement("div");
+  noneGrid.className = "icon-matrix";
+  
+  const noneItem = document.createElement("div");
+  noneItem.className = "icon-item active";
+  noneItem.dataset.value = "";
+  noneItem.title = "None";
+  noneItem.innerHTML = `<i class="fas fa-ban"></i>`;
+  noneItem.addEventListener("click", () => {
+    container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
+    noneItem.classList.add("active");
+    hiddenInput.value = "";
+  });
+  noneGrid.appendChild(noneItem);
+  container.appendChild(noneGrid);
+
+  // 2. Add Grouped Icons
+  ICON_LIST.forEach((group) => {
+    const title = document.createElement("div");
+    title.className = "icon-group-title";
+    title.textContent = group.group;
+    container.appendChild(title);
+
+    const grid = document.createElement("div");
+    grid.className = "icon-matrix";
+    group.icons.forEach((icon) => {
+      const item = document.createElement("div");
+      item.className = "icon-item";
+      item.dataset.value = icon.value;
+      item.title = icon.label;
+      item.innerHTML = `<i class="fas ${icon.value}"></i>`;
+      
+      item.addEventListener("click", () => {
+        container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
+        item.classList.add("active");
+        hiddenInput.value = icon.value;
+      });
+      grid.appendChild(item);
+    });
+    container.appendChild(grid);
+  });
 }
 
 /**
@@ -652,6 +775,8 @@ function sortTableByColumn(table, column, asc = true) {
  */
 document.addEventListener("DOMContentLoaded", () => {
   const urlParams = new URLSearchParams(window.location.search);
+
+
   const defaultTab = urlParams.get("default_tab");
   const savedTab = localStorage.getItem("settings_active_tab");
 
@@ -668,8 +793,57 @@ document.addEventListener("DOMContentLoaded", () => {
   window.closeModal = closeModal;
 
   // --- 2. Modal Logic ---
-  setupModal("add-session-btn", "addSessionModal");
-  setupModal("add-role-btn", "addRoleModal");
+  // Initialize icon matrix for role modal
+  initIconMatrix();
+
+  const addSessionBtn = document.getElementById("add-session-btn");
+  if (addSessionBtn) {
+    addSessionBtn.addEventListener("click", () => {
+      const modal = document.getElementById("addSessionModal");
+      const title = document.getElementById("session-modal-title");
+      const submitBtn = document.getElementById("session-modal-submit");
+      const form = document.getElementById("addSessionForm");
+      
+      if (modal && title && submitBtn && form) {
+        title.textContent = "Add New Session Type";
+        submitBtn.textContent = "Save Session Type";
+        form.reset();
+        document.getElementById("session_id_input").value = "";
+        modal.style.display = "flex";
+      }
+    });
+  }
+
+  const addRoleBtn = document.getElementById("add-role-btn");
+  if (addRoleBtn) {
+    addRoleBtn.addEventListener("click", () => {
+
+      const modal = document.getElementById("addRoleModal");
+      const title = document.getElementById("role-modal-title");
+      const submitBtn = document.getElementById("role-modal-submit");
+      const form = document.getElementById("addRoleForm");
+
+      if (modal && title && submitBtn && form) {
+        title.textContent = "Add New Role";
+        submitBtn.textContent = "Save Role";
+        form.reset();
+        document.getElementById("role_id_input").value = "";
+
+        // Reset matrix selection to "None"
+        const container = document.getElementById("icon-matrix-container");
+        if (container) {
+            container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
+            const noneItem = container.querySelector('.icon-item[data-value=""]');
+            if (noneItem) noneItem.classList.add("active");
+            const hiddenInput = document.getElementById("icon");
+            if (hiddenInput) hiddenInput.value = "";
+        }
+        modal.style.display = "flex";
+      }
+    });
+  }
+
+
 
 
   // Generic modal close-on-click-outside logic
@@ -706,134 +880,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- 4. Inline-Editable Table Setup ---
 
   // 4a. Session Types
-  setupInlineEdit({
-    editBtnId: "edit-sessions-btn",
-    cancelBtnId: "cancel-sessions-btn",
-    tableId: "sessions-table",
-    saveUrl: "/settings/sessions/update",
-    createEditor: (cell, field, currentValue) => {
-      if (isBooleanField(field)) {
-        cell.querySelector('input[type="checkbox"]').disabled = false;
-      } else if (field === "role_id") {
-        const select = document.createElement("select");
-        select.className = "form-control-sm";
-        select.appendChild(new Option("None", ""));
+  // Legacy Inline Editing removed in favor of modal editing.
 
-        ROLES_DATA.forEach((role) => {
-          const option = new Option(role.name, role.id);
-          if (role.name === currentValue) option.selected = true;
-          select.appendChild(option);
-        });
-
-        cell.textContent = "";
-        cell.appendChild(select);
-      } else {
-        const input = document.createElement("input");
-        input.type = field.includes("Duration") ? "number" : "text";
-        input.value = currentValue;
-        input.className = "form-control-sm";
-        cell.textContent = "";
-        cell.appendChild(input);
-      }
-    },
-    restoreCell: (cell, field, originalValue) => {
-      if (isBooleanField(field)) {
-        cell.innerHTML = renderCheckbox(originalValue);
-      } else {
-        cell.textContent = originalValue;
-      }
-    },
-    getCellValue: (cell, field) => {
-      if (isBooleanField(field)) {
-        return cell.querySelector('input[type="checkbox"]').checked;
-      } else if (field === "role_id") {
-        return cell.querySelector("select").value;
-      } else {
-        return cell.querySelector("input").value;
-      }
-    },
-    updateCell: (cell, field, value) => {
-      if (isBooleanField(field)) {
-        cell.innerHTML = renderCheckbox(value);
-      } else if (field === "role_id") {
-        const selectedRole = ROLES_DATA.find((role) => role.id == value);
-        cell.textContent = selectedRole ? selectedRole.name : "";
-      } else {
-        cell.textContent = value;
-      }
-    },
-  });
-
-
-
-
-
-  // 4d. Roles
-  setupInlineEdit({
-    editBtnId: "edit-roles-btn",
-    cancelBtnId: "cancel-roles-btn",
-    tableId: "roles-table",
-    saveUrl: "/settings/roles/update",
-    createEditor: (cell, field, currentValue) => {
-      if (isBooleanField(field)) {
-        cell.querySelector('input[type="checkbox"]').disabled = false;
-      } else if (field === "type") {
-        const select = document.createElement("select");
-        select.className = "form-control-sm";
-        ["standard", "club-specific", "officer", "not-role"].forEach((opt) => {
-          const option = new Option(opt, opt);
-          if (opt === currentValue) option.selected = true;
-          select.appendChild(option);
-        });
-        cell.textContent = "";
-        cell.appendChild(select);
-      } else if (field === "award_category") {
-        const select = document.createElement("select");
-        select.className = "form-control-sm";
-        select.appendChild(new Option("none", ""));
-        ["speaker", "evaluator", "role-taker", "table-topic"].forEach((opt) => {
-          const option = new Option(opt, opt);
-          if (opt === currentValue) option.selected = true;
-          select.appendChild(option);
-        });
-        cell.textContent = "";
-        cell.appendChild(select);
-      } else {
-        const input = document.createElement("input");
-        input.type = "text";
-        input.value = currentValue;
-        input.className = "form-control-sm";
-        cell.textContent = "";
-        cell.appendChild(input);
-      }
-    },
-    restoreCell: (cell, field, originalValue) => {
-      if (isBooleanField(field)) {
-        cell.innerHTML = renderCheckbox(originalValue);
-      } else if (field === "icon") {
-        cell.innerHTML = `<i class="fas ${originalValue}"></i> ${originalValue}`;
-      } else {
-        cell.textContent = originalValue;
-      }
-    },
-    getCellValue: (cell, field) => {
-      if (isBooleanField(field)) {
-        return cell.querySelector('input[type="checkbox"]').checked;
-      } else {
-        const input = cell.querySelector("input, select");
-        return input ? input.value : "";
-      }
-    },
-    updateCell: (cell, field, value) => {
-      if (isBooleanField(field)) {
-        cell.innerHTML = renderCheckbox(value);
-      } else if (field === "icon") {
-        cell.innerHTML = `<i class="fas ${value}"></i> ${value}`;
-      } else {
-        cell.textContent = value;
-      }
-    },
-  });
 
   // --- 5. Bulk Import Logic ---
   const bulkImportForm = document.getElementById("bulk-import-form");
@@ -850,25 +898,51 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const importRolesForm = document.getElementById("import-roles-form");
-  const importRolesFile = document.getElementById("import-roles-file");
-  const importRolesBtn = document.getElementById("import-roles-btn");
 
-  if (importRolesForm && importRolesFile && importRolesBtn) {
-    importRolesBtn.addEventListener("click", () => {
-      importRolesFile.click();
-    });
 
-    importRolesFile.addEventListener("change", () => {
-      importRolesForm.submit();
-    });
-  }
-
-  // --- 6. AJAX Form Submission for "Add Session Type" ---
+  // --- 6. AJAX Form Submission for Modals ---
   const addSessionForm = document.getElementById("addSessionForm");
   if (addSessionForm) {
     addSessionForm.addEventListener("submit", function (event) {
-      event.preventDefault(); // Prevent the default form submission
+      event.preventDefault();
+
+      const formData = new FormData(this);
+      const url = this.action;
+      const isUpdate = document.getElementById("session_id_input").value !== "";
+
+      fetch(url, {
+        method: "POST",
+        body: formData,
+      })
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((err) => {
+              throw new Error(err.message || `HTTP error! status: ${response.status}`);
+            });
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.success) {
+            addSessionRowToTable(data.new_session);
+            closeModal("addSessionModal");
+            this.reset();
+            showNotification(data.message, "success");
+          } else {
+            showNotification(data.message, "error");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          showNotification(`An error occurred: ${error.message}`, "error");
+        });
+    });
+  }
+
+  const addRoleForm = document.getElementById("addRoleForm");
+  if (addRoleForm) {
+    addRoleForm.addEventListener("submit", function (event) {
+      event.preventDefault();
 
       const formData = new FormData(this);
       const url = this.action;
@@ -879,28 +953,27 @@ document.addEventListener("DOMContentLoaded", () => {
       })
         .then((response) => {
           if (!response.ok) {
-            // Try to get error message from JSON response
             return response.json().then((err) => {
-              throw new Error(
-                err.message || `HTTP error! status: ${response.status}`
-              );
+              throw new Error(err.message || `HTTP error! status: ${response.status}`);
             });
           }
           return response.json();
         })
         .then((data) => {
           if (data.success) {
-            // Add the new row to the table
-            addSessionRowToTable(data.new_session);
-
-            // Close modal and reset form
-            closeModal("addSessionModal");
+            addRoleRowToTable(data.new_role);
+            closeModal("addRoleModal");
             this.reset();
-
-            // Show success notification
-            showNotification("Session type added successfully!", "success");
+            showNotification(data.message, "success");
+            
+            // Update ROLES_DATA for session role dropdown
+            const existingIndex = ROLES_DATA.findIndex(r => r.id == data.new_role.id);
+            if (existingIndex !== -1) {
+              ROLES_DATA[existingIndex] = { id: data.new_role.id, name: data.new_role.name };
+            } else {
+              ROLES_DATA.push({ id: data.new_role.id, name: data.new_role.name });
+            }
           } else {
-            // Show error from server
             showNotification(data.message, "error");
           }
         })
@@ -912,69 +985,142 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   /**
-   * Dynamically adds a new session type row to the sessions table.
-   * @param {object} sessionData - The data for the new session from the server.
+   * Dynamically adds or updates a session type row.
    */
   function addSessionRowToTable(sessionData) {
     const tableBody = document.querySelector("#sessions-table tbody");
     if (!tableBody) return;
 
-    const newRow = tableBody.insertRow();
-    newRow.dataset.id = sessionData.id;
+    let row = tableBody.querySelector(`tr[data-id="${sessionData.id}"]`);
+    const isNew = !row;
+    if (isNew) {
+        row = tableBody.insertRow();
+        row.dataset.id = sessionData.id;
+    }
 
-    const roleName = sessionData.role_id
-      ? ROLES_DATA.find((r) => r.id == sessionData.role_id)?.name || ""
-      : "";
+    const roleObj = sessionData.role_id
+      ? ROLES_DATA.find((r) => r.id == sessionData.role_id)
+      : null;
+    const roleName = roleObj ? roleObj.name : "";
+    
+    let roleClass = roleObj ? (roleObj.award_category ? `role-${roleObj.award_category}` : 'role-other') : 'role-other';
+    if (roleObj && roleObj.type === 'officer') {
+        roleClass = 'role-officer';
+    }
 
-    newRow.innerHTML = `
+    const roleBadgeHtml = roleName ? `<span class="roster-role-tag ${roleClass}">${roleName}</span>` : "";
+
+    
+    row.innerHTML = `
       <td>${sessionData.id}</td>
       <td data-field="Title">${sessionData.Title || ""}</td>
-      <td data-field="role_id">${roleName}</td>
-      <td data-field="Default_Owner">${sessionData.Default_Owner || ""}</td>
-      <td data-field="Duration_Min">${sessionData.Duration_Min || ""}</td>
-      <td data-field="Duration_Max">${sessionData.Duration_Max || ""}</td>
+      <td data-field="role_id" data-role-id="${sessionData.role_id || ''}">${roleBadgeHtml}</td>
+      <td data-field="Duration_Min">${sessionData.Duration_Min !== null ? sessionData.Duration_Min : ""}</td>
+
+      <td data-field="Duration_Max">${sessionData.Duration_Max !== null ? sessionData.Duration_Max : ""}</td>
       <td data-field="Is_Section">
-        <input type="checkbox" ${sessionData.Is_Section ? "checked" : ""
-      } disabled>
-      </td>
-      <td data-field="Predefined">
-        <input type="checkbox" ${sessionData.Predefined ? "checked" : ""
-      } disabled>
+        <input type="checkbox" ${sessionData.Is_Section ? "checked" : ""} disabled>
       </td>
       <td data-field="Valid_for_Project">
-        <input type="checkbox" ${sessionData.Valid_for_Project ? "checked" : ""
-      } disabled>
+        <input type="checkbox" ${sessionData.Valid_for_Project ? "checked" : ""} disabled>
       </td>
       <td data-field="Is_Hidden">
-        <input type="checkbox" ${sessionData.Is_Hidden ? "checked" : ""
-      } disabled>
+        <input type="checkbox" ${sessionData.Is_Hidden ? "checked" : ""} disabled>
       </td>
       <td>
-        <button class="delete-btn icon-btn" onclick="openDeleteModal('/settings/sessions/delete/${sessionData.id}', 'session type')" title="Delete">
+        <div class="action-links">
+          <button class="edit-btn icon-btn" onclick="openEditSessionModal('${sessionData.id}')" title="Edit">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="delete-btn icon-btn" onclick="openDeleteModal('/settings/sessions/delete/${sessionData.id}', 'session type')" title="Delete">
             <i class="fas fa-trash-alt"></i>
-        </button>
+          </button>
+        </div>
       </td>
     `;
 
-    // Re-apply sorting if a sort order is active
-    const activeSortHeader = document.querySelector(
-      "#sessions-table th[data-sort-dir]"
-    );
-    if (activeSortHeader) {
-      const table = document.getElementById("sessions-table");
-      const columnIndex = parseInt(activeSortHeader.dataset.columnIndex, 10);
-      const sortDir = activeSortHeader.dataset.sortDir;
-      sortTableByColumn(table, columnIndex, sortDir === "asc");
-    }
+    if (isNew) {
+      // Re-apply sorting if a sort order is active
+      const activeSortHeader = document.querySelector("#sessions-table th[data-sort-dir]");
+      if (activeSortHeader) {
+        const table = document.getElementById("sessions-table");
+        const columnIndex = parseInt(activeSortHeader.dataset.columnIndex, 10);
+        const sortDir = activeSortHeader.dataset.sortDir;
+        sortTableByColumn(table, columnIndex, sortDir === "asc");
+      }
 
-    // Re-apply filter if a filter is active
-    const searchInput = document.getElementById("global-settings-search");
-    if (searchInput && searchInput.value) {
-      const filter = searchInput.value.toUpperCase().trim();
-      const rowText = newRow.textContent.toUpperCase();
-      newRow.style.display = rowText.includes(filter) ? "" : "none";
+      // Re-apply filter if a filter is active
+      const searchInput = document.getElementById("global-settings-search");
+      if (searchInput && searchInput.value) {
+        const filter = searchInput.value.toUpperCase().trim();
+        const rowText = row.textContent.toUpperCase();
+        row.style.display = rowText.includes(filter) ? "" : "none";
+      }
     }
   }
+
+  /**
+   * Dynamically adds or updates a role row.
+   */
+  function addRoleRowToTable(roleData) {
+    const tableBody = document.querySelector("#roles-table tbody");
+    if (!tableBody) return;
+
+    let row = tableBody.querySelector(`tr[data-id="${roleData.id}"]`);
+    const isNew = !row;
+    if (isNew) {
+        row = tableBody.insertRow();
+        row.dataset.id = roleData.id;
+    }
+
+    row.innerHTML = `
+      <td>${roleData.id}</td>
+      <td data-field="name">
+        <span class="roster-role-tag ${roleData.type === 'officer' ? 'role-officer' : (roleData.award_category ? `role-${roleData.award_category}` : 'role-other')}">${roleData.name}</span>
+      </td>
+      <td data-field="icon">
+        <i class="fas ${roleData.icon}"></i> ${roleData.icon}
+      </td>
+      <td data-field="type">${roleData.type}</td>
+      <td data-field="award_category">${roleData.award_category}</td>
+      <td data-field="needs_approval">
+        <input type="checkbox" ${roleData.needs_approval ? "checked" : ""} disabled />
+      </td>
+      <td data-field="has_single_owner">
+        <input type="checkbox" ${roleData.has_single_owner ? "checked" : ""} disabled />
+      </td>
+      <td data-field="is_member_only">
+        <input type="checkbox" ${roleData.is_member_only ? "checked" : ""} disabled />
+      </td>
+      <td>
+        <div class="action-links">
+          <button class="edit-btn icon-btn" onclick="openEditRoleModal('${roleData.id}')" title="Edit">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="delete-btn icon-btn" onclick="openDeleteModal('/settings/roles/delete/${roleData.id}', 'role')" title="Delete">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+      </td>
+    `;
+
+    if (isNew) {
+      const activeSortHeader = document.querySelector("#roles-table th[data-sort-dir]");
+      if (activeSortHeader) {
+        const table = document.getElementById("roles-table");
+        const columnIndex = parseInt(activeSortHeader.dataset.columnIndex, 10);
+        const sortDir = activeSortHeader.dataset.sortDir;
+        sortTableByColumn(table, columnIndex, sortDir === "asc");
+      }
+      const searchInput = document.getElementById("global-settings-search");
+      if (searchInput && searchInput.value) {
+        const filter = searchInput.value.toUpperCase().trim();
+        const rowText = row.textContent.toUpperCase();
+        row.style.display = rowText.includes(filter) ? "" : "none";
+      }
+    }
+  }
+
 });
 
 // --- 7. Permission Management & Audit Log ---
@@ -1194,19 +1340,115 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 /**
- * Toggles a member's achievement group expanded/collapsed state
+ * Opens the role modal in edit mode and populates it with data from the table row.
  */
-function toggleAchievementGroup(contactId) {
-  const header = document.querySelector(`.achievement-group-header[data-id="group-${contactId}"]`);
-  if (!header) return;
+function openEditRoleModal(roleId) {
+    const row = document.querySelector(`#roles-table tr[data-id="${roleId}"]`);
+    if (!row) return;
 
-  header.classList.toggle('expanded');
-  
-  // Update the paginator to show/hide the rows
-  if (window.activePaginators && window.activePaginators['achievements']) {
-    window.activePaginators['achievements'].update();
+    const modal = document.getElementById("addRoleModal");
+    const title = document.getElementById("role-modal-title");
+    const submitBtn = document.getElementById("role-modal-submit");
+    const form = document.getElementById("addRoleForm");
+    
+    if (!modal || !title || !submitBtn || !form) return;
+
+    // Set modal to edit mode
+    title.textContent = "Edit Role";
+    submitBtn.textContent = "Update Role";
+    document.getElementById("role_id_input").value = roleId;
+
+    // Populate fields
+    form.name.value = row.querySelector('[data-field="name"]').textContent.trim();
+    form.type.value = row.querySelector('[data-field="type"]').textContent.trim();
+    form.award_category.value = row.querySelector('[data-field="award_category"]').textContent.trim();
+    
+    form.needs_approval.checked = row.querySelector('[data-field="needs_approval"] input').checked;
+    form.has_single_owner.checked = row.querySelector('[data-field="has_single_owner"] input').checked;
+    form.is_member_only.checked = row.querySelector('[data-field="is_member_only"] input').checked;
+
+    // Icon handling
+    const rawIconText = row.querySelector('[data-field="icon"]').textContent.trim();
+    const iconValue = rawIconText.split(/\s+/).pop() || "";
+    const container = document.getElementById("icon-matrix-container");
+    if (container) {
+        container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
+        const item = container.querySelector(`.icon-item[data-value="${iconValue}"]`);
+        if (item) item.classList.add("active");
+        document.getElementById("icon").value = iconValue;
+    }
+
+    modal.style.display = "flex";
+}
+
+/**
+ * Opens the session modal in edit mode and populates it with data from the table row.
+ */
+function openEditSessionModal(sessionId) {
+    const row = document.querySelector(`#sessions-table tr[data-id="${sessionId}"]`);
+    if (!row) return;
+
+    const modal = document.getElementById("addSessionModal");
+    const title = document.getElementById("session-modal-title");
+    const submitBtn = document.getElementById("session-modal-submit");
+    const form = document.getElementById("addSessionForm");
+
+    if (!modal || !title || !submitBtn || !form) return;
+
+    // Set modal to edit mode
+    title.textContent = "Edit Session Type";
+    submitBtn.textContent = "Update Session Type";
+    document.getElementById("session_id_input").value = sessionId;
+
+    // Populate fields
+    form.title.value = row.querySelector('[data-field="Title"]').textContent.trim();
+    form.role_id.value = row.querySelector('[data-field="role_id"]').dataset.roleId || "";
+    form.duration_min.value = row.querySelector('[data-field="Duration_Min"]').textContent.trim();
+    form.duration_max.value = row.querySelector('[data-field="Duration_Max"]').textContent.trim();
+    
+    form.is_section.checked = row.querySelector('[data-field="Is_Section"] input').checked;
+    form.valid_for_project.checked = row.querySelector('[data-field="Valid_for_Project"] input').checked;
+    form.is_hidden.checked = row.querySelector('[data-field="Is_Hidden"] input').checked;
+
+    modal.style.display = "flex";
+}
+
+
+/**
+ * Toggles the visibility of an achievement group.
+ */
+function toggleAchievementGroup(groupId) {
+  const parentId = `group-${groupId}`;
+  const rows = document.querySelectorAll(`tr[data-parent-id="${parentId}"]`);
+  const header = document.querySelector(`tr[data-id="${parentId}"]`);
+  const icon = header ? header.querySelector(".toggle-icon") : null;
+
+  let isExpanding = false;
+
+  rows.forEach((row) => {
+    if (row.style.display === "none") {
+      row.style.display = "table-row";
+      isExpanding = true;
+    } else {
+      row.style.display = "none";
+      isExpanding = false;
+    }
+  });
+
+  if (icon) {
+    if (isExpanding) {
+      icon.classList.remove("fa-chevron-right");
+      icon.classList.add("fa-chevron-down");
+    } else {
+      icon.classList.remove("fa-chevron-down");
+      icon.classList.add("fa-chevron-right");
+    }
   }
 }
 
 // Export to window for inline onclick
+
+window.openEditRoleModal = openEditRoleModal;
+window.openEditSessionModal = openEditSessionModal;
 window.toggleAchievementGroup = toggleAchievementGroup;
+

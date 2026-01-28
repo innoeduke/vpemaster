@@ -97,7 +97,14 @@
       </tr>
       <tr>
         <td><label>Role</label></td>
-        <td>{{ user.primary_role_name }}</td>
+        <td>
+            {% set role = user.primary_role %}
+            {% set role_class = 'role-' ~ role.award_category if (role and role.award_category) else 'role-other' %}
+            {% if role and role.type == 'officer' %}
+                {% set role_class = 'role-officer' %}
+            {% endif %}
+            <span class="roster-role-tag {{ role_class }}">{{ user.primary_role_name }}</span>
+        </td>
       </tr>
       {% if user.contact %}
       <tr>

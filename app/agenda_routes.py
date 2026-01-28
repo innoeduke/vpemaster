@@ -311,19 +311,19 @@ def _recalculate_start_times(meetings_to_update):
             .order_by(SessionLog.Meeting_Seq.asc()).all()
 
         for log, is_section, is_hidden in logs_to_update:
-            # If the session is a section header OR if it's hidden, set its time to None and continue.
-            # Use log.hidden if available, otherwise fallback to session_type.is_hidden
-            # Note: The query above joins SessionType which has Is_Hidden. 
-            # We strictly want to use the log's valid hidden state if it overrides.
-            actual_hidden = log.hidden if log.hidden is not None else is_hidden
-            
-            if is_section or actual_hidden:
+            # Calculate duration first
+            duration_val = int(log.Duration_Max or 0)
+
+            # If the session is a section header OR if its duration is 0,
+            # set its time to None and continue (skip time accumulation).
+            # This replaces the old "is_hidden" check.
+            if is_section or duration_val == 0:
                 log.Start_Time = None
                 continue
 
             # The rest of the logic only runs for visible, non-section items.
             log.Start_Time = current_time
-            duration_to_add = int(log.Duration_Max or 0)
+            duration_to_add = duration_val
             break_minutes = 1
             # For "Multiple shots" style (ge_mode=1), add an extra minute break after each evaluation
             EVAL_ID = SessionType.get_id_by_title('Evaluation', meeting.club_id)

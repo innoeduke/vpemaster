@@ -3,7 +3,7 @@
     {
       "id": 1,
       "name": "Toastmaster",
-      "icon": "fa-microphone",
+      "icon": "fa-user-tie",
       "type": "standard",
       "award_category": "role-taker",
       "needs_approval": true,
@@ -25,7 +25,7 @@
     {
       "id": 3,
       "name": "Individual Evaluator",
-      "icon": "fa-pen-square",
+      "icon": "fa-pen-to-square",
       "type": "standard",
       "award_category": "evaluator",
       "needs_approval": false,
@@ -36,7 +36,7 @@
     {
       "id": 4,
       "name": "Topicsmaster",
-      "icon": "fa-comments",
+      "icon": "fa-lightbulb",
       "type": "standard",
       "award_category": "role-taker",
       "needs_approval": true,
@@ -80,7 +80,7 @@
     {
       "id": 8,
       "name": "Prepared Speaker",
-      "icon": "fa-user-tie",
+      "icon": "fa-microphone",
       "type": "standard",
       "award_category": "speaker",
       "needs_approval": true,
@@ -124,7 +124,7 @@
     {
       "id": 26,
       "name": "Contest Chair",
-      "icon": "fa-microphone",
+      "icon": "fa-crown",
       "type": "standard",
       "award_category": "role-taker",
       "needs_approval": true,
@@ -146,7 +146,7 @@
     {
       "id": 31,
       "name": "SAA",
-      "icon": "",
+      "icon": "fa-briefcase",
       "type": "officer",
       "award_category": "",
       "needs_approval": false,
@@ -168,7 +168,7 @@
     {
       "id": 33,
       "name": "VPE",
-      "icon": "",
+      "icon": "fa-graduation-cap",
       "type": "officer",
       "award_category": "",
       "needs_approval": false,
@@ -179,7 +179,7 @@
     {
       "id": 34,
       "name": "VPM",
-      "icon": "",
+      "icon": "fa-users",
       "type": "officer",
       "award_category": "",
       "needs_approval": false,
@@ -190,7 +190,7 @@
     {
       "id": 35,
       "name": "VPPR",
-      "icon": "",
+      "icon": "fa-bullhorn",
       "type": "officer",
       "award_category": "",
       "needs_approval": false,
@@ -201,7 +201,7 @@
     {
       "id": 36,
       "name": "Secretary",
-      "icon": "",
+      "icon": "fa-pen-nib",
       "type": "officer",
       "award_category": "",
       "needs_approval": false,
@@ -212,7 +212,7 @@
     {
       "id": 37,
       "name": "Treasurer",
-      "icon": "",
+      "icon": "fa-coins",
       "type": "officer",
       "award_category": "",
       "needs_approval": false,
@@ -4629,57 +4629,57 @@
       "id": 1,
       "name": "Early-bird",
       "price": 0.0,
-      "icon": null,
-      "color": null
+      "icon": "fa-dove",
+      "color": "#20c997"
     },
     {
       "id": 2,
       "name": "Cancelled",
       "price": 0.0,
-      "icon": null,
-      "color": null
+      "icon": "fa-ban",
+      "color": "#dc3545"
     },
     {
       "id": 3,
       "name": "Walk-in",
       "price": 0.0,
-      "icon": null,
-      "color": null
+      "icon": "fa-walking",
+      "color": "#ffc107"
     },
     {
       "id": 4,
       "name": "Officer",
       "price": 0.0,
-      "icon": null,
-      "color": null
+      "icon": "fa-user-shield",
+      "color": "#fd7e14"
     },
     {
       "id": 5,
       "name": "Coupon",
       "price": 0.0,
-      "icon": null,
-      "color": null
+      "icon": "fa-tag",
+      "color": "#6f42c1"
     },
     {
       "id": 6,
       "name": "Unpaid",
       "price": 0.0,
-      "icon": null,
-      "color": null
+      "icon": "fa-exclamation-circle",
+      "color": "#dc3545"
     },
     {
       "id": 7,
       "name": "Role-taker",
       "price": 0.0,
-      "icon": null,
-      "color": null
+      "icon": "fa-microphone",
+      "color": "#0d6efd"
     },
     {
       "id": 8,
       "name": "Member",
       "price": 0.0,
-      "icon": null,
-      "color": null
+      "icon": "fa-id-card",
+      "color": "#0dcaf0"
     }
   ]
 }

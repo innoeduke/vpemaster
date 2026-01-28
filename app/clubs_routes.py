@@ -17,10 +17,23 @@ def list_clubs():
     
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 12, type=int)
-    pagination = Club.query.order_by(Club.club_no).paginate(page=page, per_page=per_page, error_out=False)
+    search_query = request.args.get('q', '').strip()
+    
+    clubs_query = Club.query
+    
+    if search_query:
+        from sqlalchemy import or_
+        clubs_query = clubs_query.filter(
+            or_(
+                Club.club_no.ilike(f'%{search_query}%'),
+                Club.club_name.ilike(f'%{search_query}%')
+            )
+        )
+    
+    pagination = clubs_query.order_by(Club.club_no).paginate(page=page, per_page=per_page, error_out=False)
     clubs = pagination.items
     
-    return render_template('clubs.html', clubs=clubs, pagination=pagination)
+    return render_template('clubs.html', clubs=clubs, pagination=pagination, search_query=search_query)
 
 @clubs_bp.route('/clubs/new', methods=['GET', 'POST'])
 @login_required

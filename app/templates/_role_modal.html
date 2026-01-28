@@ -1,59 +1,70 @@
 <div id="addRoleModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal('addRoleModal')">&times;</span>
-    <h1>Add New Role</h1>
-    <form action="{{ url_for('settings_bp.add_role') }}" method="POST">
-      <table class="form-table">
-        <tr>
-          <td><label for="name">Name:</label></td>
-          <td><input type="text" id="name" name="name" required /></td>
-        </tr>
-        <tr>
-          <td><label for="icon">Icon:</label></td>
-          <td><input type="text" id="icon" name="icon" /></td>
-        </tr>
-        <tr>
-          <td><label for="type">Type:</label></td>
-          <td>
-            <select id="type" name="type" required>
-              <option value="standard">standard</option>
-              <option value="club-specific">club-specific</option>
-              <option value="officer">officer</option>
-              <option value="not-role">not-role</option>
-            </select>
-          </td>
-        </tr>
-        <tr>
-          <td><label for="award_category">Award Category:</label></td>
-          <td><input type="text" id="award_category" name="award_category" /></td>
-        </tr>
-        <tr>
-          <td colspan="2" style="padding-top: 15px">
-            <div
-              style="display: flex; flex-wrap: nowrap; gap: 20px; justify-content: center; align-items: center; width: 100%;">
-              <label style="display: flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 0.9em;">
-                <span style="font-weight: normal;">Needs Approval:</span>
-                <input type="checkbox" id="needs_approval" name="needs_approval" style="transform: scale(1.1)" />
-              </label>
+    <h1 id="role-modal-title">Add New Role</h1>
+    <form id="addRoleForm" action="{{ url_for('settings_bp.add_role') }}" method="POST">
+      <input type="hidden" id="role_id_input" name="id" value="">
 
-              <label style="display: flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 0.9em;">
-                <span style="font-weight: normal;">Has Single Owner:</span>
-                <input type="checkbox" id="has_single_owner" name="has_single_owner" style="transform: scale(1.1)" />
-              </label>
+      
+      <div class="form-group">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required class="form-control" />
+      </div>
 
-              <label style="display: flex; align-items: center; gap: 5px; white-space: nowrap; font-size: 0.9em;">
-                <span style="font-weight: normal;">Member Only:</span>
-                <input type="checkbox" id="is_member_only" name="is_member_only" style="transform: scale(1.1)" />
-              </label>
-            </div>
-          </td>
-        </tr>
-      </table>
-      <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save Role</button>
-        <button type="button" class="btn btn-danger" onclick="closeModal('addRoleModal')">
-          Cancel
-        </button>
+      <div class="form-group">
+        <label>Icon Selection:</label>
+        <div class="icon-matrix-container" id="icon-matrix-container">
+          <input type="hidden" id="icon" name="icon" value="">
+          <div class="icon-matrix" id="icon-matrix">
+              <!-- Icons populated by JS -->
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-form-row">
+        <div class="form-group" style="flex: 1;">
+          <label for="type">Type:</label>
+          <select id="type" name="type" required>
+            <option value="standard">standard</option>
+            <option value="club-specific">club-specific</option>
+            <option value="officer">officer</option>
+            <option value="not-role">not-role</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="award_category">Award Category:</label>
+        <select id="award_category" name="award_category">
+          <option value="">None</option>
+          <option value="speaker">Speaker</option>
+          <option value="evaluator">Evaluator</option>
+          <option value="table-topic">Table Topic Speaker</option>
+          <option value="role-taker">Role-taker</option>
+        </select>
+      </div>
+
+      <div style="margin: 30px 0; display: flex; gap: 40px; flex-wrap: wrap; justify-content: center;">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: normal;">
+          <input type="checkbox" id="needs_approval" name="needs_approval" class="scaled-checkbox" />
+          <span>Needs Approval</span>
+        </label>
+
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: normal;">
+          <input type="checkbox" id="has_single_owner" name="has_single_owner" class="scaled-checkbox" />
+          <span>Has Single Owner</span>
+        </label>
+
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: normal;">
+          <input type="checkbox" id="is_member_only" name="is_member_only" class="scaled-checkbox" />
+          <span>Member Only</span>
+        </label>
+      </div>
+
+      <div class="form-actions" style="margin-top: 40px;">
+        <button type="button" class="btn btn-danger" onclick="closeModal('addRoleModal')">Cancel</button>
+        <button type="submit" id="role-modal-submit" class="btn btn-primary">Save Role</button>
+
       </div>
     </form>
   </div>

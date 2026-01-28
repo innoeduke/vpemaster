@@ -133,27 +133,54 @@ class User(UserMixin, db.Model):
     def get_roles_for_club(self, club_id):
         """Get all roles for this user in a specific club context."""
         from .user_club import UserClub
+        from .role import Role
         from ..auth.permissions import Permissions
+        from ..club_context import get_current_club_id
         
-        roles_list = []
+        roles_data = []
         
+        # Helper to get category for auth roles
+        def get_auth_role_category(name):
+            if name == Permissions.SYSADMIN: return 'sysadmin'
+            if name == Permissions.CLUBADMIN: return 'clubadmin'
+            if name in (Permissions.STAFF, 'Officer'): return 'staff'
+            if name == Permissions.USER: return 'user'
+            return 'other'
+
         # 1. Global SysAdmin check: SysAdmins are admins everywhere
         if self.is_sysadmin:
-            roles_list.append(Permissions.SYSADMIN)
+            roles_data.append({
+                'name': Permissions.SYSADMIN,
+                'type': 'officer',
+                'award_category': 'officer'
+            })
             
         # 2. Club-specific roles
-        uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
+        current_club_id = get_current_club_id()
+        if (not club_id or club_id == current_club_id) and hasattr(self, '_current_user_club'):
+            uc = self._current_user_club
+        else:
+            uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
+
         if uc:
             # Base 'User' role for any membership
-            if Permissions.USER not in roles_list:
-                roles_list.append(Permissions.USER)
+            if not any(r['name'] == Permissions.USER for r in roles_data):
+                roles_data.append({
+                    'name': Permissions.USER,
+                    'type': 'standard',
+                    'award_category': 'user'
+                })
                 
             if uc.roles:
                 for r in uc.roles:
-                    if r.name not in roles_list:
-                        roles_list.append(r.name)
+                    if not any(rd['name'] == r.name for rd in roles_data):
+                        roles_data.append({
+                            'name': r.name,
+                            'type': 'officer' if r.name in (Permissions.CLUBADMIN, Permissions.STAFF) else 'standard',
+                            'award_category': get_auth_role_category(r.name)
+                        })
         
-        return sorted(roles_list)
+        return sorted(roles_data, key=lambda x: x['name'])
 
     # Permission system methods
     
@@ -249,8 +276,19 @@ class User(UserMixin, db.Model):
     def get_user_club(self, club_id):
         """Get the UserClub record for a specific club."""
         from .user_club import UserClub
+        from ..club_context import get_current_club_id
+        
+        if not club_id:
+            club_id = get_current_club_id()
+            
         if not club_id:
             return None
+            
+        # Optimization: Use cached record if available for the current club
+        current_club_id = get_current_club_id()
+        if club_id == current_club_id and hasattr(self, '_current_user_club'):
+            return self._current_user_club
+            
         return UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
 
     def get_contact(self, club_id=None):
@@ -356,12 +394,13 @@ class User(UserMixin, db.Model):
             UserClub.club_id == club_id
         ).options(db.joinedload(UserClub.contact)).all()
         
-        # Map user_id to contact
-        contact_map = {uc.user_id: uc.contact for uc in ucs}
+        # Map user_id to UserClub
+        uc_map = {uc.user_id: uc for uc in ucs}
         
-        # Set a transient attribute on users
+        # Set transient attributes on users
         for user in users:
-            user._current_contact = contact_map.get(user.id)
+            user._current_user_club = uc_map.get(user.id)
+            user._current_contact = user._current_user_club.contact if user._current_user_club else None
 
     def ensure_contact(self, full_name=None, first_name=None, last_name=None, email=None, phone=None, club_id=None):
         """

@@ -538,7 +538,8 @@ class RoleService:
                 'id': role.id if role else None,
                 'name': role.name if role else "N/A",
                 'icon': role.icon if role else None,
-                'award_category': role.award_category.strip() if role and role.award_category else "",
+                'type': role.type if role else "standard",
+                'award_category': role.award_category.strip() if role and role.award_category else "role-taker",
                 'session_log_id': omr.session_log_id,
                 'owner_name': contact.Name,
                 'owner_avatar_url': contact.Avatar_URL
