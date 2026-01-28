@@ -107,6 +107,7 @@ class SessionLog(db.Model):
     Session_Title = db.Column(db.String(255))
     Type_ID = db.Column(db.Integer, db.ForeignKey(
         'Session_Types.id'), nullable=False)
+    hidden = db.Column(db.Boolean, default=False)
     
     # [DEPRECATED] Owner_ID and credentials removed in favor of owners relationship
     # Owner_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'))

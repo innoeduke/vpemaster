@@ -146,7 +146,7 @@
                     <th><i class="fas fa-clock"></i></th>
                     <th><i class="fas fa-file-alt"></i> Session</th>
                     <th><i class="fas fa-user"></i> Owner</th>
-                    <th><i class="fas fa-hourglass-half"></i> Min'</th>
+                    <th class="col-view-duration-header"><i class="fas fa-hourglass-half"></i> Min'</th>
                 </tr>
                 <tr class="edit-mode-header" style="display: none;">
                     <th class="col-no">No</th>
@@ -262,7 +262,7 @@
                         </div>
                         {% endfor %}
                     </td>
-                    <td class="non-edit-mode-cell">
+                    <td class="non-edit-mode-cell col-view-duration">
                         {% if log_dict.Duration_Min and log_dict.Duration_Max %}{{ log_dict.Duration_Min }}'-{{
                         log_dict.Duration_Max }}'
                         {% elif log_dict.Duration_Max %}{{ log_dict.Duration_Max }}'

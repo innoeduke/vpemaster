@@ -55,44 +55,6 @@
 
   <div id="sessions" class="tab-content">
     
-    <!-- GLOBAL SESSION TYPES -->
-    {% if club_id != GLOBAL_CLUB_ID %}
-    <div class="settings-header">
-      <h2>Global Session Types (Standard)</h2>
-      <!-- No add button for global items here -->
-    </div>
-    <table id="global-sessions-table" class="readonly-table">
-      <thead>
-        <tr>
-          <th class="sortable" data-column-index="0">ID</th>
-          <th class="sortable" data-column-index="1">Title</th>
-          <th class="sortable" data-column-index="2">Meeting Role</th>
-          <th class="sortable" data-column-index="3">Min (mins)</th>
-          <th class="sortable" data-column-index="4">Max (mins)</th>
-          <th class="sortable" data-column-index="5">Section</th>
-          <th class="sortable" data-column-index="6">Project</th>
-          <th class="sortable" data-column-index="7">Hidden</th>
-          <!-- No Actions column for Global items -->
-        </tr>
-      </thead>
-      <tbody>
-        {% for st in global_session_types %}
-        <tr data-id="{{ st.id }}" class="{% if st.Is_Section %}session-section{% endif %} {% if st.Is_Hidden %}session-hidden{% endif %}">
-          <td>{{ st.id }}</td>
-          <td>{{ st.Title }}</td>
-          <td>{{ st.role.name if st.role else '' }}</td>
-          <td>{{ st.Duration_Min if st.Duration_Min is not none else '' }}</td>
-          <td>{{ st.Duration_Max if st.Duration_Max is not none else '' }}</td>
-          <td><input type="checkbox" {% if st.Is_Section %}checked{% endif %} disabled /></td>
-          <td><input type="checkbox" {% if st.Valid_for_Project %}checked{% endif %} disabled /></td>
-          <td><input type="checkbox" {% if st.Is_Hidden %}checked{% endif %} disabled /></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-    <hr>
-    {% endif %}
-
     <!-- CLUB SPECIFIC / OR SINGLE TABLE FOR GLOBAL ADMIN -->
     <div class="settings-header">
       <h2>
@@ -152,47 +114,47 @@
         {% endfor %}
       </tbody>
     </table>
-  </div>
 
-  <div id="agenda-settings" class="tab-content">
-  
-    <!-- GLOBAL ROLES -->
+    <!-- GLOBAL SESSION TYPES -->
     {% if club_id != GLOBAL_CLUB_ID %}
-    <div class="settings-header">
-      <h2>Global Meeting Roles (Standard)</h2>
+    <div class="settings-header" style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+      <h2>Global Session Types (Standard)</h2>
+      <!-- No add button for global items here -->
     </div>
-    <table id="global-roles-table" class="readonly-table">
+    <table id="global-sessions-table" class="readonly-table">
       <thead>
         <tr>
           <th class="sortable" data-column-index="0">ID</th>
-          <th class="sortable" data-column-index="1">Name</th>
-          <th class="sortable" data-column-index="2">Icon</th>
-          <th class="sortable" data-column-index="3">Type</th>
-          <th class="sortable" data-column-index="4">Award Category</th>
-          <th class="sortable" data-column-index="5">Needs Approval</th>
-          <th class="sortable" data-column-index="6">Has Single Owner</th>
-          <th class="sortable" data-column-index="7">Is Member Only</th>
-          <!-- No actions -->
+          <th class="sortable" data-column-index="1">Title</th>
+          <th class="sortable" data-column-index="2">Meeting Role</th>
+          <th class="sortable" data-column-index="3">Min (mins)</th>
+          <th class="sortable" data-column-index="4">Max (mins)</th>
+          <th class="sortable" data-column-index="5">Section</th>
+          <th class="sortable" data-column-index="6">Project</th>
+          <th class="sortable" data-column-index="7">Hidden</th>
+          <!-- No Actions column for Global items -->
         </tr>
       </thead>
       <tbody>
-        {% for role in global_roles %}
-        <tr data-id="{{ role.id }}">
-          <td>{{ role.id }}</td>
-          <td>{{ role.name }}</td>
-          <td><i class="fas {{ role.icon }}"></i> {{ role.icon }}</td>
-          <td>{{ role.type }}</td>
-          <td>{{ role.award_category }}</td>
-          <td><input type="checkbox" {% if role.needs_approval %}checked{% endif %} disabled /></td>
-          <td><input type="checkbox" {% if role.has_single_owner %}checked{% endif %} disabled /></td>
-          <td><input type="checkbox" {% if role.is_member_only %}checked{% endif %} disabled /></td>
+        {% for st in global_session_types %}
+        <tr data-id="{{ st.id }}" class="{% if st.Is_Section %}session-section{% endif %} {% if st.Is_Hidden %}session-hidden{% endif %}">
+          <td>{{ st.id }}</td>
+          <td>{{ st.Title }}</td>
+          <td>{{ st.role.name if st.role else '' }}</td>
+          <td>{{ st.Duration_Min if st.Duration_Min is not none else '' }}</td>
+          <td>{{ st.Duration_Max if st.Duration_Max is not none else '' }}</td>
+          <td><input type="checkbox" {% if st.Is_Section %}checked{% endif %} disabled /></td>
+          <td><input type="checkbox" {% if st.Valid_for_Project %}checked{% endif %} disabled /></td>
+          <td><input type="checkbox" {% if st.Is_Hidden %}checked{% endif %} disabled /></td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    <hr>
     {% endif %}
+  </div>
 
+  <div id="agenda-settings" class="tab-content">
+  
     <!-- CLUB SPECIFIC ROLES -->
     <div class="settings-header">
       <h2>
@@ -256,6 +218,42 @@
         {% endfor %}
       </tbody>
     </table>
+
+    <!-- GLOBAL ROLES -->
+    {% if club_id != GLOBAL_CLUB_ID %}
+    <div class="settings-header" style="margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;">
+      <h2>Global Meeting Roles (Standard)</h2>
+    </div>
+    <table id="global-roles-table" class="readonly-table">
+      <thead>
+        <tr>
+          <th class="sortable" data-column-index="0">ID</th>
+          <th class="sortable" data-column-index="1">Name</th>
+          <th class="sortable" data-column-index="2">Icon</th>
+          <th class="sortable" data-column-index="3">Type</th>
+          <th class="sortable" data-column-index="4">Award Category</th>
+          <th class="sortable" data-column-index="5">Needs Approval</th>
+          <th class="sortable" data-column-index="6">Has Single Owner</th>
+          <th class="sortable" data-column-index="7">Is Member Only</th>
+          <!-- No actions -->
+        </tr>
+      </thead>
+      <tbody>
+        {% for role in global_roles %}
+        <tr data-id="{{ role.id }}">
+          <td>{{ role.id }}</td>
+          <td>{{ role.name }}</td>
+          <td><i class="fas {{ role.icon }}"></i> {{ role.icon }}</td>
+          <td>{{ role.type }}</td>
+          <td>{{ role.award_category }}</td>
+          <td><input type="checkbox" {% if role.needs_approval %}checked{% endif %} disabled /></td>
+          <td><input type="checkbox" {% if role.has_single_owner %}checked{% endif %} disabled /></td>
+          <td><input type="checkbox" {% if role.is_member_only %}checked{% endif %} disabled /></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
   </div>
 
   <div id="user-settings" class="tab-content">

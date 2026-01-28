@@ -5,7 +5,7 @@ from flask_login import current_user
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles
-from .constants import ProjectID, SPEECH_TYPES_WITH_PROJECT
+from .constants import ProjectID, SPEECH_TYPES_WITH_PROJECT, GLOBAL_CLUB_ID
 from .services.export import MeetingExportService
 from .services.export.context import MeetingExportContext
 from . import db
@@ -213,7 +213,8 @@ def _create_or_update_session(item, meeting_number, seq, updated_role_groups=Non
             Session_Title=session_title,
             Status=status,
             project_code=project_code,
-            pathway=pathway_val
+            pathway=pathway_val,
+            hidden=item.get('is_hidden', session_type.Is_Hidden if session_type else False)
         )
         db.session.add(new_log)
         # Flush to get the log.id before calling RoleService
@@ -240,6 +241,9 @@ def _create_or_update_session(item, meeting_number, seq, updated_role_groups=Non
             log.Status = status
             if session_title is not None:
                 log.Session_Title = session_title
+                
+            if 'is_hidden' in item:
+                log.hidden = item['is_hidden']
             
             # Use log.update_pathway for consistent sync logic
             if pathway_val:
@@ -308,7 +312,12 @@ def _recalculate_start_times(meetings_to_update):
 
         for log, is_section, is_hidden in logs_to_update:
             # If the session is a section header OR if it's hidden, set its time to None and continue.
-            if is_section or is_hidden:
+            # Use log.hidden if available, otherwise fallback to session_type.is_hidden
+            # Note: The query above joins SessionType which has Is_Hidden. 
+            # We strictly want to use the log's valid hidden state if it overrides.
+            actual_hidden = log.hidden if log.hidden is not None else is_hidden
+            
+            if is_section or actual_hidden:
                 log.Start_Time = None
                 continue
 
@@ -479,7 +488,7 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
             # SessionType fields
             'is_section': session_type.Is_Section if session_type else False,
             'session_type_title': session_type.Title if session_type else 'Unknown Type',
-            'is_hidden': session_type.Is_Hidden if session_type else False,
+            'is_hidden': log.hidden if log.hidden is not None else (session_type.Is_Hidden if session_type else False),
             'role': session_type.role.name if session_type and session_type.role else '',
             'valid_for_project': session_type.Valid_for_Project if session_type else False,
             'pathway': log.pathway, # Explicitly pass current pathway for modal/save sync
@@ -718,7 +727,8 @@ A single endpoint to fetch all data needed for the agenda modals.
             "id": s.id, "Title": s.Title, "Is_Section": s.Is_Section,
             "Valid_for_Project": s.Valid_for_Project,
             "Role": s.role.name if s.role else '', "Role_Group": s.role.type if s.role else '',
-            "Duration_Min": s.Duration_Min, "Duration_Max": s.Duration_Max
+            "Duration_Min": s.Duration_Min, "Duration_Max": s.Duration_Max,
+            "club_id": s.club_id
         } for s in session_types
     ]
     club_id = get_current_club_id()
@@ -798,7 +808,8 @@ A single endpoint to fetch all data needed for the agenda modals.
             'KEYNOTE_SPEAKER_PROJECT': ProjectID.KEYNOTE_SPEAKER_PROJECT,
             'MODERATOR_PROJECT': ProjectID.MODERATOR_PROJECT,
             'EVALUATION_PROJECTS': ProjectID.EVALUATION_PROJECTS
-        }
+        },
+        'global_club_id': GLOBAL_CLUB_ID
     })
 
 

@@ -390,25 +390,41 @@
 	text-align: center;
 }
 
-.section-row .actions-column {
+/* Standardize Actions Column for ALL rows (Section and Standard) */
+/* Standardize Actions Column for ALL data rows (Section and Standard) */
+/* Targeted 'td' specifically to avoid breaking the 'th' header layout */
+/* Standardize Actions Column for ALL data rows */
+td.actions-column {
+	/* Ensure table cell behavior is maintained (padding handled by base table styles) */
+	padding: 8px;
+	/* Maintain standard padding */
+}
+
+/* Flex layout applied to inner wrapper to avoid td display issues */
+.actions-wrapper {
 	display: flex;
 	justify-content: center;
-	gap: 8px;
+	align-items: center;
+	gap: 2px;
+	width: 100%;
+	height: 100%;
 }
 
-.add-session-btn {
+/* Specific overrides for section row */
+.section-row .actions-column {
+	font-size: 1rem;
+	/* Reset font size for icons to match standard rows */
+}
+
+/* Ensure all icons in section row are white */
+.section-row .icon-btn {
 	color: white !important;
-	font-size: 1.1em !important;
+	opacity: 1;
+	/* Ensure visible */
 	transition: transform 0.2s ease, opacity 0.2s ease;
-	padding: 5px;
 }
 
-.section-row .delete-btn {
-	color: white !important;
-}
-
-.add-session-btn:hover,
-.section-row .delete-btn:hover {
+.section-row .icon-btn:hover {
 	transform: scale(1.2);
 	opacity: 0.8;
 }
@@ -472,7 +488,7 @@
 
 /* Column Widths for Edit Mode */
 #logs-table .edit-mode-header th:nth-child(1) {
-	width: 4%;
+	width: 6%;
 }
 
 #logs-table .edit-mode-header th:nth-child(2) {
@@ -484,11 +500,11 @@
 }
 
 #logs-table .edit-mode-header th:nth-child(4) {
-	width: 35%;
+	width: 31%;
 }
 
 #logs-table .edit-mode-header th:nth-child(5) {
-	width: 20%;
+	width: 19%;
 }
 
 #logs-table .edit-mode-header th:nth-child(6) {
@@ -500,7 +516,7 @@
 }
 
 #logs-table .edit-mode-header th:nth-child(8) {
-	width: 5%;
+	width: 8%;
 }
 
 .table-container {
@@ -584,6 +600,12 @@
 	display: flex;
 	align-items: center;
 	gap: 5px;
+}
+
+/* Force center alignment for Duration column in View Mode */
+#logs-table .col-view-duration,
+#logs-table .col-view-duration-header {
+	text-align: center !important;
 }
 
 .table-container .autocomplete-container {
@@ -802,6 +824,26 @@
 	align-items: center;
 	justify-content: center;
 	min-width: 80px;
+}
+
+/* Enforce fixed size for icon buttons to ensure vertical alignment */
+.icon-btn {
+	width: 32px;
+	height: 32px;
+	min-width: 32px !important;
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Helper for hidden state visibility toggle (faded instead of bordered/secondary) */
+.toggle-visibility-btn.is-hidden-state {
+	opacity: 0.5;
+}
+
+.toggle-visibility-btn.is-hidden-state:hover {
+	opacity: 1;
 }
 
 /* --- Custom Confirmation Modal --- */

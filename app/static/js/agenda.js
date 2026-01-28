@@ -23,6 +23,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ".meeting-status-display"
   );
 
+  // Global identifier for classification
+  let GLOBAL_CLUB_ID = 1; // Default fallback, will be updated from API
+
   let projectSpeakers = JSON.parse(tableContainer.dataset.projectSpeakers);
 
   let allSessionTypes = [];
@@ -73,7 +76,9 @@ document.addEventListener("DOMContentLoaded", () => {
         allContacts = data.contacts;
         allProjects = data.projects;
         allMeetingTypes = data.meeting_types;
+        allMeetingTypes = data.meeting_types;
         allMeetingRoles = data.meeting_roles;
+        GLOBAL_CLUB_ID = data.global_club_id || 1; // Update from server response
 
         // Make data available globally for speech_modal.js, which expects them as globals
         window.allProjects = allProjects;
@@ -774,6 +779,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const sessionType = allSessionTypes.find((st) => st.id == typeId); // Find session type object
     const hasRole =
       sessionType && sessionType.Role && sessionType.Role.trim() !== ""; // Check if it has a role
+    const isHidden = originalData.isHidden === "true"; // Parse hidden state
 
     if (originalData.isSection === "true") {
       const seqCell = createEditableCell("Meeting_Seq", seq, true, null);
@@ -801,7 +807,7 @@ document.addEventListener("DOMContentLoaded", () => {
       row.append(
         seqCell,
         titleCell,
-        createActionsCell(originalData.id, typeId, hasRole)
+        createActionsCell(originalData.id, typeId, hasRole, isHidden)
       );
     } else {
       fieldsOrder.forEach((field, index) => {
@@ -820,7 +826,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         row.appendChild(cell);
       });
-      row.appendChild(createActionsCell(originalData.id, typeId, hasRole));
+      row.appendChild(createActionsCell(originalData.id, typeId, hasRole, isHidden));
     }
   }
 
@@ -861,6 +867,7 @@ document.addEventListener("DOMContentLoaded", () => {
           meeting_seq: row.dataset.meetingSeq,
           type_id: row.dataset.typeId,
           session_title: row.dataset.sessionTitle,
+          is_hidden: row.dataset.isHidden === "true",
         };
       }
       return {
@@ -877,6 +884,7 @@ document.addEventListener("DOMContentLoaded", () => {
         project_id: row.dataset.projectId,
         status: row.dataset.status,
         project_code: row.dataset.projectCode || "",
+        is_hidden: row.dataset.isHidden === "true",
       };
     }
 
@@ -893,6 +901,7 @@ document.addEventListener("DOMContentLoaded", () => {
         meeting_seq: seqInput ? seqInput.value : "",
         type_id: row.dataset.typeId,
         session_title: sessionTitleValue,
+        is_hidden: row.dataset.isHidden === "true",
       };
     }
     
@@ -919,7 +928,9 @@ document.addEventListener("DOMContentLoaded", () => {
       project_id: row.dataset.projectId,
       status: row.dataset.status,
       project_code: row.dataset.projectCode || "",
+      project_code: row.dataset.projectCode || "",
       pathway: row.dataset.pathway || "",
+      is_hidden: row.dataset.isHidden === "true", // Include hidden status in save data
     };
   }
 
@@ -1171,35 +1182,45 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Filter out session types that are already in the agenda (but keep the currently selected one)
-    const sections = allSessionTypes.filter(
-      (type) => type.Is_Section && !usedTypeIds.has(type.id)
+    // Filter out session types that are already in the agenda (but keep the currently selected one)
+    const availableTypes = allSessionTypes.filter(
+       (type) => !usedTypeIds.has(type.id)
     );
-    const predefined = allSessionTypes.filter(
-      (type) => !type.Is_Section && type.Predefined && !usedTypeIds.has(type.id)
+
+    const sections = availableTypes.filter(t => t.Is_Section);
+    
+    // Group Non-Section types into Standard and Club Specific
+    const standard = availableTypes.filter(
+      (type) => !type.Is_Section && type.club_id === GLOBAL_CLUB_ID
     );
-    const custom = allSessionTypes.filter(
-      (type) => !type.Is_Section && !type.Predefined
+    const clubSpecific = availableTypes.filter(
+      (type) => !type.Is_Section && type.club_id !== GLOBAL_CLUB_ID
     );
 
     const createOptGroup = (label, types) => {
       const optgroup = document.createElement("optgroup");
       optgroup.label = label;
       // Sort types alphabetically within the group
-      types.sort((a, b) => a.id - b.id);
+      types.sort((a, b) => a.Title.localeCompare(b.Title));
       types.forEach((type) => {
         optgroup.appendChild(new Option(type.Title, type.id));
       });
       return optgroup;
     };
 
-    if (custom.length > 0) {
-      select.appendChild(createOptGroup("--- Custom & Roles ---", custom));
+    // 1. Club Specific (Local) - Show first for visibility
+    if (clubSpecific.length > 0) {
+      select.appendChild(createOptGroup("--- Club Specific Sessions ---", clubSpecific));
     }
-    if (predefined.length > 0) {
+    
+    // 2. Standard (Global)
+    if (standard.length > 0) {
       select.appendChild(
-        createOptGroup("--- Predefined Sessions ---", predefined)
+        createOptGroup("--- Standard Sessions ---", standard)
       );
     }
+    
+    // 3. Section Headers
     if (sections.length > 0) {
       select.appendChild(createOptGroup("--- Section Headers ---", sections));
     }
@@ -1693,9 +1714,40 @@ document.addEventListener("DOMContentLoaded", () => {
     document.addEventListener("click", (e) => closeAllLists(e.target));
   }
 
-  function createActionsCell(logId, typeId, hasRole) {
+  function createActionsCell(logId, typeId, hasRole, isHidden) {
     const cell = document.createElement("td");
     cell.className = "actions-column";
+    
+    // Create a wrapper for flex layout to avoid breaking table cell borders
+    const wrapper = document.createElement("div");
+    wrapper.className = "actions-wrapper";
+
+    // --- Visibility Toggle Button (Created but not appended yet) ---
+    const toggleBtn = document.createElement("button");
+    toggleBtn.innerHTML = isHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+    // Use 'is-hidden-state' class for visual cue (opacity) instead of btn-secondary (border/bg)
+    toggleBtn.className = isHidden ? "icon-btn toggle-visibility-btn is-hidden-state" : "icon-btn toggle-visibility-btn";
+    toggleBtn.type = "button";
+    toggleBtn.title = isHidden ? "Show in Agenda" : "Hide in Agenda";
+    
+    toggleBtn.onclick = function() {
+        const row = this.closest("tr");
+        const currentHidden = row.dataset.isHidden === "true";
+        const newHidden = !currentHidden;
+        
+        // Update dataset
+        row.dataset.isHidden = String(newHidden);
+        
+        // Update styling immediately
+        row.classList.toggle("hidden-row", newHidden);
+        
+        // Update Icon
+        this.innerHTML = newHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+        // Toggle opacity class
+        this.className = newHidden ? "icon-btn toggle-visibility-btn is-hidden-state" : "icon-btn toggle-visibility-btn";
+        this.title = newHidden ? "Show in Agenda" : "Hide in Agenda";
+    };
+    // ----------------------------
 
     const sessionType = allSessionTypes.find((st) => st.id == typeId);
     const rolesToHideFor = [
@@ -1713,6 +1765,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const isSection = sessionType && sessionType.Is_Section;
 
+    // 1. Add/Edit Button (First Position)
     if (isSection) {
       const addSessionBtn = document.createElement("button");
       addSessionBtn.innerHTML = '<i class="fas fa-plus-circle"></i>';
@@ -1722,7 +1775,7 @@ document.addEventListener("DOMContentLoaded", () => {
       addSessionBtn.onclick = function () {
         addSessionToSection(this.closest("tr"));
       };
-      cell.append(addSessionBtn);
+      wrapper.append(addSessionBtn);
     } else {
       // The consolidated edit button for non-section rows
       const editDetailsBtn = document.createElement("button");
@@ -1768,18 +1821,33 @@ document.addEventListener("DOMContentLoaded", () => {
         };
       }
 
-      // Only append the edit button if it's needed
+      // Only append the edit button if it's needed, otherwise append a placeholder
       if (shouldShowProjectButton || shouldShowRoleButton) {
-        cell.append(editDetailsBtn);
+        wrapper.append(editDetailsBtn);
+      } else {
+        // Create placeholder to maintain alignment
+        const placeholder = document.createElement("button");
+        placeholder.className = "icon-btn"; // Use same class for consistent box-model
+        placeholder.style.visibility = "hidden";
+        placeholder.style.pointerEvents = "none";
+        // Add the icon so it takes up the exact same width
+        placeholder.innerHTML = '<i class="fas fa-edit"></i>';
+        wrapper.append(placeholder);
       }
     }
 
+    // 2. Toggle Visibility Button (Second Position)
+    wrapper.appendChild(toggleBtn);
+
+    // 3. Delete Button (Third Position)
     const deleteBtn = document.createElement("button");
     deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
     deleteBtn.className = "delete-btn icon-btn";
     deleteBtn.type = "button";
 
-    cell.append(deleteBtn);
+    wrapper.append(deleteBtn);
+    
+    cell.appendChild(wrapper);
     return cell;
   }
 
