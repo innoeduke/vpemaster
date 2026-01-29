@@ -32,7 +32,6 @@
         <p>You have no upcoming roles booked.</p>
         {% endif %}
     </div>
-    <h3 class="booking-section-header">Booking Roles</h3>
     {% endif %}
     <div class="booking-filter-container">
         {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
@@ -251,13 +250,11 @@
     {# ============================================= #}
 
     {% if selected_meeting.status == 'finished' or (selected_meeting.status == 'running' and not is_admin_view) %}
-    <p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Booking for Meeting #{{
-        selected_meeting_number }} is closed.</p>
-    <div style="text-align: center; margin-top: 20px;">
-        <p>Please visit the <a
+    <p>Booking for Meeting #{{
+        selected_meeting_number }} is closed.
+        Please visit the <a
                 href="{{ url_for('voting_bp.voting', selected_meeting_number=selected_meeting_number) }}">Voting
                 page</a> to cast your votes.</p>
-    </div>
     {% else %}
     {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
     current_user_contact_id) }}
