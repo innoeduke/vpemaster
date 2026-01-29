@@ -131,6 +131,42 @@ def default_contact(app):
 
 
 @pytest.fixture(scope='function')
+def user1(app):
+    """Create a user with ID 1."""
+    from app.models import db, User
+    with app.app_context():
+        user = User.query.get(1)
+        if not user:
+            user = User(id=1, username='user1', email='user1@example.com')
+            user.set_password('password')
+            db.session.add(user)
+            db.session.commit()
+            db.session.refresh(user)
+        return user
+
+@pytest.fixture(scope='function')
+def seeded_permissions(app):
+    """Seed permissions into the database."""
+    from app.models import db, Permission
+    from app.auth.permissions import Permissions
+    
+    with app.app_context():
+        # Get all constants from Permissions class
+        perms = []
+        for attr in dir(Permissions):
+            if attr.isupper() and not attr.startswith('_'):
+                name = getattr(Permissions, attr)
+                if attr in ['SYSADMIN', 'CLUBADMIN', 'STAFF', 'USER']:
+                    continue
+                if not Permission.query.filter_by(name=name).first():
+                    perms.append(Permission(name=name, category='test'))
+        
+        if perms:
+            db.session.add_all(perms)
+            db.session.commit()
+    yield
+
+@pytest.fixture(scope='function')
 def default_contact_club(app, default_contact, default_club):
     """Get or create a default ContactClub association for testing."""
     from app.models import db, ContactClub

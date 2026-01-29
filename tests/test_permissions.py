@@ -98,15 +98,9 @@ import pytest
 from app.models import Permission
 from app.auth.permissions import Permissions
 
-@pytest.fixture
-def app():
-    from app import create_app
-    # Use the DEVELOPMENT config to hit the real DB (or test DB if configured in env)
-    # If we really want to check the "migration result", we should use the dev config.
-    app = create_app() 
-    return app
 
-def test_verify_all_permissions_exist_in_db(app):
+
+def test_verify_all_permissions_exist_in_db(app, seeded_permissions):
     """
     Verify that all permissions defined in code constants exist in the database.
     This test expects the database to be migrated and seeded.

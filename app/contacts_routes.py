@@ -244,6 +244,7 @@ def show_contacts():
             'award_count': award_c,
             'is_qualified': is_qual,
             'has_user': c.user is not None,
+            'is_connected': c.is_connected
             # 'user_role': ... (Not strictly needed for the table display, can add if needed)
             # 'is_officer': ...
         })
@@ -759,7 +760,21 @@ def get_all_contacts_api():
             'is_qualified': check_membership_qualification(tt, best_tt, other_roles),
             'has_user': c.user is not None,
             'user_role': c.user.primary_role_name if c.user else None,
-            'is_officer': c.user.has_role(Permissions.STAFF) if c.user else False
+            'is_officer': c.user.has_role(Permissions.STAFF) if c.user else False,
+            'is_connected': c.is_connected
         })
 
     return jsonify(contacts_data)
+
+
+@contacts_bp.route('/contact/toggle_connection/<int:contact_id>', methods=['POST'])
+@login_required
+def toggle_contact_connection(contact_id):
+    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+    
+    contact = Contact.query.get_or_404(contact_id)
+    contact.is_connected = not contact.is_connected
+    db.session.commit()
+    
+    return jsonify(success=True, is_connected=contact.is_connected)

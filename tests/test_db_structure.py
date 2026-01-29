@@ -4,17 +4,6 @@ from sqlalchemy import inspect
 from app import create_app, db
 
 @pytest.fixture
-def app():
-    app = create_app('config.Config')
-    app.config.update({
-        "TESTING": True,
-        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:"
-    })
-    
-    with app.app_context():
-        yield app
-
-@pytest.fixture
 def inspector(app):
     with app.app_context():
         # Ensure models are loaded

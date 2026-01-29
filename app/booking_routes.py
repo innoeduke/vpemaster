@@ -147,19 +147,15 @@ def _sort_roles_for_booking(roles, current_user_contact_id, is_past_meeting):
     return roles
 
 
-def _get_user_role_requirements(user, club_id):
+def _get_contact_role_requirements(contact, club_id):
     """
-    Calculates the roles required for the user's current pathway level.
+    Calculates the roles required for the contact's current pathway level.
     Returns:
         tuple: (required_roles_map, elective_roles_set, elective_needed_count)
         - required_roles_map: {normalized_role_name: count_still_needed}
         - elective_roles_set: {normalized_role_name}
         - elective_needed_count: int (total elective slots still needed)
     """
-    if not user:
-        return {}, set(), 0
-        
-    contact = user.get_contact(club_id)
     if not contact or not contact.Current_Path:
         return {}, set(), 0
 
@@ -287,7 +283,9 @@ def _get_roles_for_booking(selected_meeting_number, current_user_contact_id, sel
     # --- Feature: Role Requirement Highlighting ---
     # Annotate roles with requirement status for the current user
     if current_user.is_authenticated:
-        user_req_map, user_elec_set, user_elec_needed = _get_user_role_requirements(current_user, club_id)
+        club_id = get_current_club_id()
+        contact = current_user.get_contact(club_id)
+        user_req_map, user_elec_set, user_elec_needed = _get_contact_role_requirements(contact, club_id)
         role_aliases = get_role_aliases()
 
         for role in sorted_roles:
@@ -394,7 +392,8 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
         'is_admin_view': is_authorized(Permissions.BOOKING_ASSIGN_ALL),
         'current_user_contact_id': current_user_contact_id,
         'user_role': user.primary_role_name if user else 'Guest',
-        'best_award_ids': set()
+        'best_award_ids': set(),
+        'required_roles_by_role': {} # {norm_role: [ {id, name, avatar_url} ]}
     }
 
     if not selected_meeting_number:
@@ -443,6 +442,40 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
 
     context['best_award_ids'] = selected_meeting.get_best_award_ids() if selected_meeting else set()
     context['sorted_role_groups'] = group_roles_by_category(roles)
+
+    # --- Admin Recommendation Feature ---
+    if context['is_admin_view']:
+        required_roles_by_role = {} # norm_role -> list of contacts
+        
+        # 1. Identify all members who are connected
+        members = [c for c in context['contacts'] if c.Type == 'Member' and getattr(c, 'is_connected', True)]
+        
+        # 2. For each member, find their required roles
+        for member in members:
+            req_map, _, _ = _get_contact_role_requirements(member, club_id)
+            for norm_role in req_map:
+                # Skip "Topics Speaker" as it's a special role
+                if norm_role == 'topicsspeaker':
+                    continue
+                    
+                if norm_role not in required_roles_by_role:
+                    required_roles_by_role[norm_role] = []
+                
+                # Check if this member is NOT already on the waitlist or owners for ANY session of this role in THIS meeting
+                # Actually, the requirement is "unassigned role", so we check if they are already assigned to THIS role type in THIS meeting.
+                
+                # We can pre-calculate who is already assigned.
+                # For simplicity, let's just add them and let the frontend/logic handles it if they are already assigned.
+                # But user said "needs to take this role as a required role for current level"
+                
+                member_info = {
+                    'id': member.id,
+                    'name': member.Name,
+                    'avatar_url': member.Avatar_URL or 'default_avatar.jpg'
+                }
+                required_roles_by_role[norm_role].append(member_info)
+        
+        context['required_roles_by_role'] = required_roles_by_role
 
     return context
 

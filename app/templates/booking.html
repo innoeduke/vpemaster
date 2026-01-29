@@ -66,7 +66,7 @@
                 <div class="role-display-text">
                     {% if role.role_level_status %}
                     <span class="role-badge {{ role.role_level_status }}" title="{{ 'Required' if role.role_level_status == 'required' else 'Elective' }} for your current level">
-                        {{ 'Req' if role.role_level_status == 'required' else 'Elec' }}
+                        {{ 'Required' if role.role_level_status == 'required' else 'Elective' }}
                     </span>
                     {% endif %}
                     <span>{{ role.role }}</span>
@@ -159,17 +159,17 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="input-group">
-                <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}" data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
-                    <input type="text" class="admin-assign-input {% if not role.owner_id %}unassigned-role{% endif %}"
-                        placeholder="--- Select ---"
-                        value="{% if role.owner_id %}{{ role.owner_name }}{% endif %}"
-                        data-current-id="{{ role.owner_id or 0 }}"
-                        autocomplete="off">
-                    <div class="autocomplete-results"></div>
+                <div class="input-group">
+                    <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}" data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
+                        <input type="text" class="admin-assign-input {% if not role.owner_id %}unassigned-role{% endif %}"
+                            placeholder="--- Select ---"
+                            value="{% if role.owner_id %}{{ role.owner_name }}{% endif %}"
+                            data-current-id="{{ role.owner_id or 0 }}"
+                            data-norm-role="{{ role.role|lower|replace(' ', '') }}"
+                            autocomplete="off">
+                        <div class="autocomplete-results"></div>
+                    </div>
                 </div>
-                {# For single owner, the reset button is in the icon-cell #}
-            </div>
             {% endif %}
             {% else %}
             {% if role.owner_id %}
@@ -239,6 +239,28 @@
         </td>
         {% endif %}
     </tr>
+    {# Admin Recommendation Row - appears below the main row #}
+    {% if is_admin_view %}
+    {% set norm_role = role.role|lower|replace(' ', '') %}
+    <tr class="recommendation-row" data-session-id="{{ role.session_id }}" {% if role.owner_id or not required_roles_by_role[norm_role] %}style="display:none;"{% endif %}>
+        <td colspan="4">
+            <div class="recommended-members-container" data-session-id="{{ role.session_id }}">
+                <div class="recommended-label"><i class="fas fa-magic"></i> Recommended (Required for current level):</div>
+                <div class="recommendation-badges">
+                    {% for member in required_roles_by_role[norm_role] %}
+                    <div class="recommendation-badge" 
+                         data-contact-id="{{ member.id }}" 
+                         data-contact-name="{{ member.name }}"
+                         title="{{ member.name }}">
+                        <img src="{{ url_for('static', filename=(config.AVATAR_ROOT_DIR ~ '/' ~ member.avatar_url if '/' not in member.avatar_url else member.avatar_url)) }}" alt="{{ member.name }}">
+                        <span class="badge-name">{{ member.name }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </td>
+    </tr>
+    {% endif %}
     {% endmacro %}
 
     {# Macro to render role tables with accordion #}

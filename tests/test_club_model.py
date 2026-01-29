@@ -4,14 +4,14 @@ from app.models import Club, ExComm, Contact
 from app import db
 
 
-def test_club_model_exists(app):
+def test_club_model_exists(app, default_club):
     """Test that Club model can be queried."""
     with app.app_context():
         club = Club.query.first()
         assert club is not None, "Club should exist in database"
 
 
-def test_club_model_fields(app):
+def test_club_model_fields(app, default_club):
     """Test that Club model has all required fields."""
     with app.app_context():
         club = Club.query.first()
@@ -33,7 +33,7 @@ def test_club_model_fields(app):
         assert hasattr(club, 'current_excomm_id')
 
 
-def test_club_to_dict(app):
+def test_club_to_dict(app, default_club):
     """Test Club model to_dict method."""
     with app.app_context():
         club = Club.query.first()
@@ -109,7 +109,7 @@ def test_excomm_get_officer_by_role(app, default_excomm):
             assert isinstance(vpe, Contact)
 
 
-def test_club_excomm_relationship(app):
+def test_club_excomm_relationship(app, default_club, default_excomm):
     """Test relationship between Club and ExComm."""
     with app.app_context():
         club = Club.query.first()

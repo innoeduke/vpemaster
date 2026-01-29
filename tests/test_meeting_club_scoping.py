@@ -12,6 +12,11 @@ import csv
 
 def test_meeting_creation_club_scoping(app):
     with app.app_context():
+        # Consumes ID 1 (Global) so Club 1 and Club 2 are truly local
+        dummy = Club(club_no="DUMMY", club_name="Global")
+        db.session.add(dummy)
+        db.session.commit()
+
         # 1. Setup two clubs with their own definitions
         club1 = Club(club_no="CLUB1", club_name="Club 1")
         club2 = Club(club_no="CLUB2", club_name="Club 2")
@@ -21,10 +26,11 @@ def test_meeting_creation_club_scoping(app):
 
         # Add a custom session type to Club 1
         st1 = SessionType(Title="Club1Only", club_id=club1.id)
+        db.session.add(st1)
+        
         # Add Generic types to both
         g1 = SessionType(Title="Generic", club_id=club1.id)
         g2 = SessionType(Title="Generic", club_id=club2.id)
-        db.session.add(st1)
         db.session.add(g1)
         db.session.add(g2)
         

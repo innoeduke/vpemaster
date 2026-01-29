@@ -59,7 +59,9 @@
                   
                   {% for term in terms %}
                   <label style="display: block; padding: 5px 10px; cursor: pointer; font-weight: normal; margin-bottom: 0;">
-                      <input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox" onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{% endif %} style="margin-right: 8px; vertical-align: middle;">
+                      <input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox" 
+                             data-label="{{ term.label }}" data-start="{{ term.start }}" data-end="{{ term.end }}"
+                             onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{% endif %} style="margin-right: 8px; vertical-align: middle;">
                       {{ term.label }}
                   </label>
                   {% endfor %}
@@ -93,16 +95,79 @@
 
     function updateTermSelection() {
         const checkboxes = document.querySelectorAll('.term-checkbox');
-        const selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+        const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
+        const selectedCount = selectedCheckboxes.length;
         const totalCount = checkboxes.length;
         
-        // Update Count Text
+        // Update Count/Range Text
         const btnText = document.getElementById('term-btn-text');
-        btnText.textContent = selectedCount + " selected";
+        
+        if (selectedCount === totalCount && totalCount > 0) {
+            btnText.textContent = "All Terms";
+        } else if (selectedCount === 0) {
+            btnText.textContent = "0 selected";
+        } else {
+            // Logic to combine adjacent terms
+            // 1. Sort by start date
+            selectedCheckboxes.sort((a, b) => a.dataset.start.localeCompare(b.dataset.start));
+            
+            const ranges = [];
+            if (selectedCheckboxes.length > 0) {
+                let currentRange = {
+                    startLabel: selectedCheckboxes[0].dataset.label.split(' ')[1], // e.g. "Jan-Jun"
+                    startYear: selectedCheckboxes[0].dataset.label.split(' ')[0],
+                    endLabel: selectedCheckboxes[0].dataset.label.split(' ')[1],
+                    endYear: selectedCheckboxes[0].dataset.label.split(' ')[0],
+                    fullStart: selectedCheckboxes[0].dataset.start,
+                    fullEnd: selectedCheckboxes[0].dataset.end,
+                    count: 1
+                };
+                
+                for (let i = 1; i < selectedCheckboxes.length; i++) {
+                    const next = selectedCheckboxes[i];
+                    const prevEnd = new Date(currentRange.fullEnd);
+                    const nextStart = new Date(next.dataset.start);
+                    
+                    // Check if adjacent: next start is within 1 day of prev end
+                    const diffTime = Math.abs(nextStart - prevEnd);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays <= 2) { // 1 day gap (e.g. Jun 30 to Jul 01)
+                        currentRange.endLabel = next.dataset.label.split(' ')[1];
+                        currentRange.endYear = next.dataset.label.split(' ')[0];
+                        currentRange.fullEnd = next.dataset.end;
+                        currentRange.count++;
+                    } else {
+                        ranges.push(formatRange(currentRange));
+                        currentRange = {
+                            startLabel: next.dataset.label.split(' ')[1],
+                            startYear: next.dataset.label.split(' ')[0],
+                            endLabel: next.dataset.label.split(' ')[1],
+                            endYear: next.dataset.label.split(' ')[0],
+                            fullStart: next.dataset.start,
+                            fullEnd: next.dataset.end,
+                            count: 1
+                        };
+                    }
+                }
+                ranges.push(formatRange(currentRange));
+            }
+            
+            btnText.textContent = ranges.join(', ');
+        }
+        
+        // Helper to format a single range
+        function formatRange(range) {
+            if (range.count === 1) {
+                return `${range.startYear} ${range.startLabel}`;
+            }
+            const s = range.startLabel.split('-')[0]; // "Jan"
+            const e = range.endLabel.split('-')[1];   // "Dec"
+            return `${range.startYear} ${s} - ${range.endYear} ${e}`;
+        }
         
         // Update Select All Checkbox State
         const selectAll = document.getElementById('term-select-all');
-        // If all are selected, check "Select All"
         if (selectedCount === totalCount && totalCount > 0) {
             selectAll.checked = true;
             selectAll.indeterminate = false;
@@ -110,9 +175,7 @@
             selectAll.checked = false;
             selectAll.indeterminate = false;
         } else {
-            // Partial selection
             selectAll.checked = false;
-            // selectAll.indeterminate = true; // Optional: nicer UI
         }
     }
 
@@ -285,6 +348,10 @@
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
         <td>
           <div class="action-links">
+            <button class="icon-btn toggle-connection-btn" onclick="toggleConnection({{ contact.id }})" title="{{ 'Connected' if contact.is_connected else 'Disconnected' }}">
+              <i class="fas {{ 'fa-toggle-on' if contact.is_connected else 'fa-toggle-off' }}" style="color: {{ '#28a745' if contact.is_connected else '#6c757d' }}"></i>
+            </button>
+
             <button class="icon-btn" onclick="openContactModal({{ contact.id }})" title="Edit">
               <i class="fas fa-edit"></i>
             </button>

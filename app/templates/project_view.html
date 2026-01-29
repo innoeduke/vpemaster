@@ -20,18 +20,40 @@
 	<form method="GET" action="{{ url_for('speech_logs_bp.show_project_view') }}" class="filters-container"
 		id="speech-logs-filter-form">
 		<div class="filter-row" style="align-items: center;">
-			<div class="form-group" style="display: flex; align-items: center; margin-bottom: 0;">
-				<label for="term-select"
-					style="margin-right: 15px; font-weight: bold; font-size: 1.1em; white-space: nowrap;">Term <small>(CMD+Click for multiple)</small>:</label>
-				<select name="term" id="term-select" onchange="this.form.submit()" class="form-control"
-					style="font-size: 1.1em; flex: 1; height: auto;" multiple size="1">
-					{% for term in terms %}
-					<option value="{{ term.id }}" {% if selected_term_ids and term.id in selected_term_ids %}selected{% endif %}>
-						{{ term.label }}
-					</option>
-					{% endfor %}
-				</select>
-			</div>
+ 			<div class="form-group" style="display: flex; align-items: center; margin-bottom: 0; flex: 1;">
+ 				<label for="term-select"
+ 					style="margin-right: 15px; font-weight: bold; font-size: 1.1em; white-space: nowrap;">Club Terms:</label>
+ 				
+ 				<div class="custom-dropdown" id="term-dropdown-container" style="position: relative; flex: 1;">
+ 					<button type="button" id="term-dropdown-btn" class="form-control" style="text-align: left; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; height: auto; padding: 6px 12px; font-size: 1.1em;" onclick="toggleTermDropdown(event)">
+ 						<span id="term-btn-text">
+ 							{% if selected_term_ids %}
+ 								{{ selected_term_ids|length }} selected
+ 							{% else %}
+ 								0 selected
+ 							{% endif %}
+ 						</span>
+ 						<i class="fas fa-caret-down"></i>
+ 					</button>
+ 					
+ 					<div id="term-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 400px; overflow-y: auto; z-index: 1000; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
+ 						
+ 						<label style="display: block; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #eee; font-weight: bold; margin-bottom: 5px; font-size: 0.9em;">
+ 							<input type="checkbox" id="term-select-all" onchange="toggleAllTerms(this)" style="margin-right: 8px; vertical-align: middle;" {% if terms and selected_term_ids|length == terms|length %}checked{% endif %}> 
+ 							Select / Deselect All
+ 						</label>
+ 						
+ 						{% for term in terms %}
+ 						<label style="display: block; padding: 5px 10px; cursor: pointer; font-weight: normal; margin-bottom: 0; font-size: 0.9em;">
+ 							<input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox" 
+ 								   data-label="{{ term.label }}" data-start="{{ term.start }}" data-end="{{ term.end }}"
+ 								   onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{% endif %} style="margin-right: 8px; vertical-align: middle;">
+ 							{{ term.label }}
+ 						</label>
+ 						{% endfor %}
+ 					</div>
+ 				</div>
+ 			</div>
 			<div class="form-group" style="display: flex; align-items: center; margin-bottom: 0;">
 				<label for="pathway-select"
 					style="margin-right: 15px; font-weight: bold; font-size: 1.1em; white-space: nowrap;">Pathway:</label>
@@ -62,15 +84,16 @@
 	</form>
 
 	<div class="chart-container">
-		<h3>Project Completion Metrics 
-            {% if selected_term_ids|length > 1 %}
-                ({{ selected_term_ids|length }} terms selected)
-            {% else %}
-               {% for term in terms if term.id in selected_term_ids %}
-                   ({{ term.label }})
-               {% endfor %}
-            {% endif %}
-        </h3>
+ 		<h3 id="project-metrics-header">Project Completion Metrics 
+ 			{% if terms and selected_term_ids %}
+ 				{% set selected_count = selected_term_ids|length %}
+ 				{% if selected_count == terms|length %}
+ 					(All Terms)
+ 				{% else %}
+ 					<span id="header-term-text">({% for tid in selected_term_ids %}{% for term in terms %}{% if term.id == tid %}{{ term.label }}{% endif %}{% endfor %}{% if not loop.last %}, {% endif %}{% endfor %})</span>
+ 				{% endif %}
+ 			{% endif %}
+         </h3>
 
 		{% if max_count > 0 %}
 		<div class="chart-legend"
@@ -146,4 +169,141 @@
 		{% endif %}
 	</div>
 </div>
-{% endblock %}
+ 
+ <script>
+     // Initialize state on load
+     document.addEventListener('DOMContentLoaded', function() {
+         updateTermSelection(true); 
+     });
+ 
+     function toggleTermDropdown(event) {
+         event.stopPropagation();
+         event.preventDefault(); 
+         const menu = document.getElementById('term-dropdown-menu');
+         if (menu && menu.style.display === 'none') {
+             menu.style.display = 'block';
+         } else if (menu) {
+             closeDropdownAndSubmit();
+         }
+     }
+ 
+     function toggleAllTerms(source) {
+         const checkboxes = document.querySelectorAll('.term-checkbox');
+         checkboxes.forEach(cb => cb.checked = source.checked);
+         updateTermSelection();
+     }
+ 
+     function updateTermSelection(isInitial = false) {
+         const checkboxes = document.querySelectorAll('.term-checkbox');
+         const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
+         const selectedCount = selectedCheckboxes.length;
+         const totalCount = checkboxes.length;
+         
+         // Update Count/Range Text
+         const btnText = document.getElementById('term-btn-text');
+         let displayStr = "";
+         
+         if (selectedCount === totalCount && totalCount > 0) {
+             displayStr = "All Terms";
+         } else if (selectedCount === 0) {
+             displayStr = "0 selected";
+         } else {
+             // Logic to combine adjacent terms
+             selectedCheckboxes.sort((a, b) => a.dataset.start.localeCompare(b.dataset.start));
+             
+             const ranges = [];
+             if (selectedCheckboxes.length > 0) {
+                 let currentRange = {
+                     startLabel: selectedCheckboxes[0].dataset.label.split(' ')[1],
+                     startYear: selectedCheckboxes[0].dataset.label.split(' ')[0],
+                     endLabel: selectedCheckboxes[0].dataset.label.split(' ')[1],
+                     endYear: selectedCheckboxes[0].dataset.label.split(' ')[0],
+                     fullStart: selectedCheckboxes[0].dataset.start,
+                     fullEnd: selectedCheckboxes[0].dataset.end,
+                     count: 1
+                 };
+                 
+                 for (let i = 1; i < selectedCheckboxes.length; i++) {
+                     const next = selectedCheckboxes[i];
+                     const prevEnd = new Date(currentRange.fullEnd);
+                     const nextStart = new Date(next.dataset.start);
+                     const diffDays = Math.ceil(Math.abs(nextStart - prevEnd) / (1000 * 60 * 60 * 24));
+                     
+                     if (diffDays <= 2) {
+                         currentRange.endLabel = next.dataset.label.split(' ')[1];
+                         currentRange.endYear = next.dataset.label.split(' ')[0];
+                         currentRange.fullEnd = next.dataset.end;
+                         currentRange.count++;
+                     } else {
+                         ranges.push(formatRange(currentRange));
+                         currentRange = {
+                             startLabel: next.dataset.label.split(' ')[1],
+                             startYear: next.dataset.label.split(' ')[0],
+                             endLabel: next.dataset.label.split(' ')[1],
+                             endYear: next.dataset.label.split(' ')[0],
+                             fullStart: next.dataset.start,
+                             fullEnd: next.dataset.end,
+                             count: 1
+                         };
+                     }
+                 }
+                 ranges.push(formatRange(currentRange));
+             }
+             displayStr = ranges.join(', ');
+         }
+         
+         if (btnText) btnText.textContent = displayStr;
+         
+         // Also update header title if it's the initial load
+         if (isInitial) {
+             const header = document.getElementById('project-metrics-header');
+             if (header) {
+                 if (selectedCount === totalCount && totalCount > 0) {
+                     header.innerHTML = `Project Completion Metrics (All Terms)`;
+                 } else if (selectedCount > 0) {
+                     header.innerHTML = `Project Completion Metrics (${displayStr})`;
+                 }
+             }
+         }
+ 
+         function formatRange(range) {
+             if (range.count === 1) return `${range.startYear} ${range.startLabel}`;
+             return `${range.startYear} ${range.startLabel.split('-')[0]} - ${range.endYear} ${range.endLabel.split('-')[1]}`;
+         }
+         
+         const selectAll = document.getElementById('term-select-all');
+         if (selectAll) {
+             if (selectedCount === totalCount && totalCount > 0) {
+                 selectAll.checked = true;
+                 selectAll.indeterminate = false;
+             } else if (selectedCount === 0) {
+                 selectAll.checked = false;
+                 selectAll.indeterminate = false;
+             } else {
+                 selectAll.checked = false;
+             }
+         }
+     }
+ 
+     function closeDropdownAndSubmit() {
+         const menu = document.getElementById('term-dropdown-menu');
+         if (menu) menu.style.display = 'none';
+         document.getElementById('speech-logs-filter-form').submit();
+     }
+ 
+     document.addEventListener('click', function(event) {
+         const container = document.getElementById('term-dropdown-container');
+         const menu = document.getElementById('term-dropdown-menu');
+         if (container && menu && menu.style.display === 'block' && !container.contains(event.target)) {
+             closeDropdownAndSubmit();
+         }
+     });
+     
+     const menu = document.getElementById('term-dropdown-menu');
+     if (menu) {
+         menu.addEventListener('click', function(event) {
+             event.stopPropagation();
+         });
+     }
+ </script>
+ {% endblock %}

@@ -23,6 +23,7 @@ class Contact(db.Model):
     Next_Project = db.Column(db.String(100), nullable=True)
     credentials = db.Column(db.String(10), nullable=True)
     Avatar_URL = db.Column(db.String(255), nullable=True)
+    is_connected = db.Column(db.Boolean, default=True)
 
     mentor = db.relationship('Contact', remote_side=[id], foreign_keys=[Mentor_ID], backref='mentees')
     

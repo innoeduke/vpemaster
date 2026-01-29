@@ -21,6 +21,7 @@
 	margin-bottom: 20px;
 	display: flex;
 	justify-content: flex-end;
+	gap: 10px;
 }
 
 .section-heading {
@@ -763,7 +764,9 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-}/* Participation Badges - Copied from contacts-base.css */
+}
+
+/* Participation Badges - Copied from contacts-base.css */
 .badge-path {
 	background-color: #004165;
 	color: white;

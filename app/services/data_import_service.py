@@ -391,7 +391,8 @@ class DataImportService:
                     Current_Path=get_idx(12),
                     Next_Project=get_idx(13),
                     credentials=get_idx(14),
-                    Avatar_URL=os.path.basename(get_idx(15)) if get_idx(15) and get_idx(15) != 'NULL' else None
+                    Avatar_URL=os.path.basename(get_idx(15)) if get_idx(15) and get_idx(15) != 'NULL' else None,
+                    is_connected=bool(get_idx(16)) if len(row) > 16 else True
                 )
                 db.session.add(target_contact)
                 db.session.flush()

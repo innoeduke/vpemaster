@@ -43,6 +43,28 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     });
 
+    // Handle clicks on recommendation badges
+    document.addEventListener("click", function (e) {
+        const badge = e.target.closest(".recommendation-badge");
+        if (badge) {
+            const container = badge.closest(".recommended-members-container");
+            const sessionId = container.dataset.sessionId;
+            const contactId = badge.dataset.contactId;
+            const contactName = badge.dataset.contactName;
+            
+            // Find the input for this session
+            const inputRow = document.querySelector(`tr[data-session-id="${sessionId}"]:not(.recommendation-row)`);
+            if (inputRow) {
+                const input = inputRow.querySelector(".admin-assign-input");
+                const results = inputRow.querySelector(".autocomplete-results");
+                
+                if (input && results) {
+                    selectContact(sessionId, contactId, contactName, input, results);
+                }
+            }
+        }
+    });
+
     // Close results when clicking outside
     document.addEventListener("mousedown", function (e) {
       if (!e.target.closest(".autocomplete-container")) {
@@ -343,6 +365,16 @@ function updateSessionRow(sessionData) {
     const roleActions = row.querySelector(".role-cell-actions");
     if (roleActions) {
       roleActions.innerHTML = "";
+    }
+  }
+
+  // Update Admin Recommendation Badges Visibility
+  const recommendationRow = document.querySelector(`.recommendation-row[data-session-id="${sessionData.session_id}"]`);
+  if (recommendationRow) {
+    if (sessionData.owner_id && sessionData.owner_id != 0) {
+      recommendationRow.style.display = "none";
+    } else {
+      recommendationRow.style.display = "";
     }
   }
 }

@@ -49,7 +49,7 @@ def test_contact_form_joinedload_bug(client, app, default_club):
         # We also expect 'user_clubs' to be populated because we set up UserClub
         assert len(json_data['user_clubs']) > 0
 
-def test_contact_update_no_flash_on_ajax(client, app, default_club):
+def test_contact_update_no_flash_on_ajax(client, app, default_club, user1):
     """Verify that an AJAX update does NOT produce a flash message."""
     with app.app_context():
         import uuid
@@ -59,9 +59,10 @@ def test_contact_update_no_flash_on_ajax(client, app, default_club):
         db.session.add(c)
         db.session.commit()
         contact_id = c.id
+        user_id = user1.id
 
     with client.session_transaction() as sess:
-        sess['_user_id'] = '1'
+        sess['_user_id'] = str(user_id)
         sess['current_club_id'] = default_club.id
         sess['_fresh'] = True
 
@@ -84,7 +85,7 @@ def test_contact_update_no_flash_on_ajax(client, app, default_club):
             flashes = sess.get('_flashes', [])
             assert not any(f[1] == 'Contact updated successfully!' for f in flashes)
 
-def test_contact_update_has_flash_on_standard_request(client, app, default_club):
+def test_contact_update_has_flash_on_standard_request(client, app, default_club, user1):
     """Verify that a standard (non-AJAX) update STILL produces a flash message."""
     with app.app_context():
         import uuid
@@ -96,7 +97,7 @@ def test_contact_update_has_flash_on_standard_request(client, app, default_club)
         contact_id = c.id
 
     with client.session_transaction() as sess:
-        sess['_user_id'] = '1'
+        sess['_user_id'] = str(user1.id)
         sess['current_club_id'] = default_club.id
         sess['_fresh'] = True
 
