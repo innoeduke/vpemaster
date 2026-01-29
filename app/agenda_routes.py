@@ -397,6 +397,11 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
         for s in speakers:
             speaker_dtm_cache[s.Name] = s.DTM
 
+        if evaluator_speaker_names:
+            speakers = Contact.query.filter(Contact.Name.in_(evaluator_speaker_names)).all()
+        for s in speakers:
+            speaker_dtm_cache[s.Name] = s.DTM
+
     for log in raw_session_logs:
         session_type = log.session_type
         meeting = log.meeting
@@ -559,6 +564,8 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
             logs_data[final_insert_index:final_insert_index] = topics_speaker_sessions
     
     return logs_data, selected_meeting
+
+
 
 
 # --- Main Route ---

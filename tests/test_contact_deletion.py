@@ -11,6 +11,15 @@ def test_create_and_delete_guest_contact(client, app, default_club):
     unique_id = str(uuid.uuid4())[:8]
     unique_name = f'Test Guest {unique_id}'
 
+    # 0. Create User for Login
+    from app.models import User
+    with app.app_context():
+        if not User.query.get(1):
+            user = User(id=1, email='test@example.com', username='testuser')
+            user.set_password('password')
+            db.session.add(user)
+            db.session.commit()
+
     # 1. Setup Session
     with client.session_transaction() as sess:
         sess['_user_id'] = '1'
@@ -24,7 +33,7 @@ def test_create_and_delete_guest_contact(client, app, default_club):
             '/contact/form',
             data={
                 'first_name': 'Test',
-                'last_name': 'Guest',
+                'last_name': f'Guest {unique_id}',
                 'name': unique_name,
                 'type': 'Guest',
                 'email': f'testguest_{unique_id}@example.com'
@@ -32,6 +41,10 @@ def test_create_and_delete_guest_contact(client, app, default_club):
             follow_redirects=True
         )
         assert create_resp.status_code == 200
+        # Check for success message to ensure creation actually happened
+        if b'Contact added successfully' not in create_resp.data:
+            print(f"Creation failed. Response: {create_resp.data}")
+        assert b'Contact added successfully' in create_resp.data
         
         # Verify contact exists in DB
         with app.app_context():
@@ -60,7 +73,17 @@ def test_delete_guest_contact_with_references(client, app, default_club):
     import uuid
     unique_id = str(uuid.uuid4())[:8]
     unique_name = f'Reference Guest {unique_id}'
+    unique_name = f'Reference Guest {unique_id}'
     voter_id = f'voter_{unique_id}'
+
+    # 0. Create User for Login
+    from app.models import User
+    with app.app_context():
+        if not User.query.get(1):
+            user = User(id=1, email='test@example.com', username='testuser')
+            user.set_password('password')
+            db.session.add(user)
+            db.session.commit()
 
     with app.app_context():
         # 1. Manually create a Guest Contact and references

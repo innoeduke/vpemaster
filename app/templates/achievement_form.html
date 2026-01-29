@@ -6,19 +6,16 @@
     <form method="POST" id="achievementForm">
         <table class="form-table">
             <tr>
-                <td><label for="contact_search">Member: <span class="required-field">*</span></label></td>
+                <td><label for="achievement_contact_search">Member: <span class="required-field">*</span></label></td>
                 <td>
-                    <input type="text" id="contact_search" 
-                           class="form-control interaction-field" 
-                           placeholder="Search Member..." 
-                           value="{{ achievement.contact.Name if achievement and achievement.contact else '' }}"
-                           required autocomplete="off">
-                    <datalist id="contacts-list">
-                        {% for contact in contacts %}
-                        <option data-id="{{ contact.id }}" data-member-id="{{ contact.Member_ID or '' }}" data-current-path="{{ contact.Current_Path or '' }}" value="{{ contact.Name }}"></option>
-                        {% endfor %}
-                    </datalist>
-                    <input type="hidden" name="contact_id" id="contact_id" value="{{ achievement.contact_id if achievement else '' }}">
+                    <div class="autocomplete-container">
+                        <input type="text" id="achievement_contact_search" 
+                               class="owner-search-input" 
+                               placeholder="Search Member..." 
+                               value="{{ achievement.contact.Name if achievement and achievement.contact else '' }}"
+                               required autocomplete="off">
+                        <input type="hidden" name="contact_id" id="contact_id" value="{{ achievement.contact_id if achievement else '' }}">
+                    </div>
                 </td>
             </tr>
             <tr>
@@ -70,81 +67,123 @@
     </form>
 
     <script>
+        // Pass contacts to JS
+        const allContacts = [
+            {% for contact in contacts %}
+            {
+                id: "{{ contact.id }}",
+                name: "{{ contact.Name }}",
+                member_id: "{{ contact.Member_ID or '' }}",
+                current_path: "{{ contact.Current_Path or '' }}"
+            },
+            {% endfor %}
+        ];
+
         document.addEventListener('DOMContentLoaded', function() {
-            const searchInput = document.getElementById('contact_search');
+            const searchInput = document.getElementById('achievement_contact_search');
             const contactIdInput = document.getElementById('contact_id');
             const memberIdInput = document.getElementById('member_id');
-            const pathNameInput = document.getElementById('path_name'); // Get Path Name Select
-            const achievementTypeSelect = document.getElementById('achievement_type');
+            const pathNameInput = document.getElementById('path_name');
             const levelInput = document.getElementById('level');
-            const dataList = document.getElementById('contacts-list');
 
-            // Map name -> id, member_id, current_path for quick lookup
-            const contactMap = {};
-            const allContacts = [];
-            const originalOptions = Array.from(dataList.options);
+            /* --- Custom Autocomplete Logic --- */
+            let currentFocus;
             
-            originalOptions.forEach(opt => {
-                const contactData = {
-                    name: opt.value,
-                    id: opt.getAttribute('data-id'),
-                    memberId: opt.getAttribute('data-member-id'),
-                    currentPath: opt.getAttribute('data-current-path')
-                };
-                contactMap[opt.value] = contactData;
-                allContacts.push(contactData);
+            searchInput.addEventListener("input", function(e) {
+                let val = this.value;
+                closeAllLists();
+                if (!val) {
+                    // Optional: Clear fields if input is empty?
+                    return;
+                }
+                currentFocus = -1;
+                
+                // Create container for items
+                let a = document.createElement("div");
+                a.setAttribute("id", this.id + "autocomplete-list");
+                a.setAttribute("class", "autocomplete-items");
+                // Append to the autocomplete container (parent of input)
+                this.parentNode.appendChild(a);
+                
+                // Filter matches
+                let matches = allContacts.filter(c => c.name.toUpperCase().includes(val.toUpperCase())).slice(0, 10);
+                
+                for (let i = 0; i < matches.length; i++) {
+                    let contact = matches[i];
+                    let b = document.createElement("div");
+                    // Highlight match: bold the matching substring (simple implementation)
+                    let name = contact.name;
+                    let matchIndex = name.toUpperCase().indexOf(val.toUpperCase());
+                    if (matchIndex >= 0) {
+                         b.innerHTML = name.substr(0, matchIndex) + "<strong>" + name.substr(matchIndex, val.length) + "</strong>" + name.substr(matchIndex + val.length);
+                    } else {
+                        b.innerHTML = name;
+                    }
+                    
+                    b.innerHTML += `<input type='hidden' value='${contact.name}'>`;
+                    
+                    b.addEventListener("click", function(e) {
+                         searchInput.value = contact.name;
+                         contactIdInput.value = contact.id;
+                         memberIdInput.value = contact.member_id;
+                         if (contact.current_path && pathNameInput) {
+                             pathNameInput.value = contact.current_path;
+                         }
+                         closeAllLists();
+                    });
+                    a.appendChild(b);
+                }
             });
-
-            // Function to toggle datalist logic
-            function toggleDatalist(input) {
-                if (input.value.length >= 1) {
-                    input.setAttribute('list', 'contacts-list');
-                } else {
-                    input.removeAttribute('list');
+            
+            // Key navigation
+            searchInput.addEventListener("keydown", function(e) {
+                let x = document.getElementById(this.id + "autocomplete-list");
+                if (x) x = x.getElementsByTagName("div");
+                if (e.keyCode == 40) { // Down
+                    currentFocus++;
+                    addActive(x);
+                } else if (e.keyCode == 38) { // Up
+                    currentFocus--;
+                    addActive(x);
+                } else if (e.keyCode == 13) { // Enter
+                    e.preventDefault();
+                    if (currentFocus > -1) {
+                        if (x) x[currentFocus].click();
+                    }
+                }
+            });
+            
+            function addActive(x) {
+                if (!x) return false;
+                removeActive(x);
+                if (currentFocus >= x.length) currentFocus = 0;
+                if (currentFocus < 0) currentFocus = (x.length - 1);
+                x[currentFocus].classList.add("autocomplete-active");
+            }
+            
+            function removeActive(x) {
+                for (let i = 0; i < x.length; i++) {
+                    x[i].classList.remove("autocomplete-active");
                 }
             }
             
-            // Initialize
-            toggleDatalist(searchInput);
-
-            searchInput.addEventListener('focus', function() {
-                toggleDatalist(this);
-            });
-
-            searchInput.addEventListener('input', function() {
-                const val = this.value;
-                toggleDatalist(this);
-                
-                // Limit results in datalist to 8
-                const searchTerm = val.toLowerCase();
-                const matches = allContacts
-                    .filter(c => c.name.toLowerCase().includes(searchTerm))
-                    .slice(0, 8);
-                
-                dataList.innerHTML = '';
-                matches.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.name;
-                    opt.setAttribute('data-id', c.id);
-                    opt.setAttribute('data-member-id', c.memberId);
-                    opt.setAttribute('data-current-path', c.currentPath);
-                    dataList.appendChild(opt);
-                });
-
-                const contact = contactMap[val];
-                if (contact) {
-                    contactIdInput.value = contact.id;
-                    memberIdInput.value = contact.memberId;
-                    
-                    // Auto-populate path if available and valid
-                    if (contact.currentPath && pathNameInput) {
-                        pathNameInput.value = contact.currentPath;
+            function closeAllLists(elmnt) {
+                let x = document.getElementsByClassName("autocomplete-items");
+                for (let i = 0; i < x.length; i++) {
+                    if (elmnt != x[i] && elmnt != searchInput) {
+                        x[i].parentNode.removeChild(x[i]);
                     }
-                } else {
-                    contactIdInput.value = '';
-                    memberIdInput.value = '';
                 }
+            }
+            
+            document.addEventListener("click", function (e) {
+                closeAllLists(e.target);
             });
+            /* -------------------------------- */
+
+            // Prevent form submission if contact is not selected properly
+            // Note: The custom autocomplete fills contactIdInput, so we just check that.
+
 
             // Prevent form submission if contact is not selected properly
             document.getElementById('achievementForm').addEventListener('submit', function(e) {

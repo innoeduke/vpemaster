@@ -585,6 +585,9 @@ def delete_contact(contact_id):
     ExComm.query.filter(ExComm.saa_id == contact_id).update({"saa_id": None})
     ExComm.query.filter(ExComm.ipp_id == contact_id).update({"ipp_id": None})
     
+    # 7. ContactClub (memberships) - Explicitly delete to prevent FK issues if cascade fails
+    ContactClub.query.filter_by(contact_id=contact_id).delete(synchronize_session=False)
+
     db.session.delete(contact)
     db.session.commit()
     flash('Contact deleted successfully!', 'success')

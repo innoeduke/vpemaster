@@ -763,4 +763,52 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
+}/* Participation Badges - Copied from contacts-base.css */
+.badge-path {
+	background-color: #004165;
+	color: white;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 0.8em;
+	font-weight: 500;
+	display: inline-block;
+	margin: 2px;
+	white-space: nowrap;
+}
+
+.badge-path.path-dl {
+	background-color: #EF4444;
+}
+
+.badge-path.path-eh {
+	background-color: #F59E0B;
+}
+
+.badge-path.path-ms {
+	background-color: #10B981;
+}
+
+.badge-path.path-pi {
+	background-color: #3B82F6;
+}
+
+.badge-path.path-pm {
+	background-color: #8B5CF6;
+}
+
+.badge-path.path-vc {
+	background-color: #EC4899;
+}
+
+.badge-path.path-dt {
+	background-color: #772432;
+}
+
+/* Legacy Paths (Dark Gray) */
+.badge-path.path-ec,
+.badge-path.path-ip,
+.badge-path.path-ld,
+.badge-path.path-sr,
+.badge-path.path-tc {
+	background-color: #a0aec0 !important;
 }

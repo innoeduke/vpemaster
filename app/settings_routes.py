@@ -406,7 +406,78 @@ def delete_role(id):
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
 
+@settings_bp.route('/settings/roles/import', methods=['POST'])
+@login_required
+def import_roles():
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
 
+    if 'file' not in request.files:
+        return jsonify(success=False, message="No file part"), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify(success=False, message="No selected file"), 400
+
+    if not file.filename.endswith('.csv'):
+        return jsonify(success=False, message="File must be a CSV"), 400
+
+    try:
+        # Read CSV
+        stream = io.StringIO(file.stream.read().decode("UTF8"), newline=None)
+        reader = csv.DictReader(stream)
+        
+        # Prepare data for DataImportService
+        # Expected Schema: id, Name, Icon, Type, AwardCategory, needs_approval, has_single_owner, is_member_only
+        # We generate dummy IDs for the list.
+        roles_data = []
+        dummy_id = 0
+        for row in reader:
+            dummy_id += 1
+            # Map CSV columns to Service Schema
+            # Default fallbacks handled here
+            name = row.get('name', '').strip()
+            if not name: continue
+            
+            icon = row.get('icon', 'fa-question')
+            # Force all imported roles to be 'club-specific' if they are created locally.
+            # DataImportService will still link to Global if a name match is found (ignoring this type).
+            # But if no match is found, this ensures the new local role is created validly.
+            rtype = 'club-specific'
+            award = row.get('award_category', 'other')
+            needs_app = row.get('needs_approval', 'false').lower() == 'true'
+            single_own = row.get('has_single_owner', 'false').lower() == 'true'
+            mem_only = row.get('is_member_only', 'false').lower() == 'true'
+            
+            roles_data.append((
+                dummy_id,
+                name,
+                icon,
+                rtype,
+                award,
+                needs_app,
+                single_own,
+                mem_only
+            ))
+            
+        current_club_id = get_current_club_id()
+        club = db.session.get(Club, current_club_id)
+        
+        from .services.data_import_service import DataImportService
+        service = DataImportService(club.club_no)
+        service.resolve_club() # Should resolve to current_club_id
+        
+        # Override club_id just to be safe (if club_no logic is tricky in Service)
+        service.club_id = current_club_id
+        
+        service.import_meeting_roles(roles_data)
+        
+        db.session.commit()
+        return jsonify(success=True, message=f"Imported {len(roles_data)} roles successfully (duplicates skipped).")
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
 
 
 

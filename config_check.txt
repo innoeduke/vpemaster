@@ -1,0 +1,58 @@
+--- LEVEL 1 REQUIREMENTS ---
+Role: Topics Speaker, Type: required, Count: 1
+Role: Individual Evaluator, Type: required, Count: 1
+Role: Timer, Type: elective, Count: 1
+Role: Ah-Counter, Type: elective, Count: 1
+Role: Elective Pool, Type: elective, Count: 1
+
+--- LEVEL 2 REQUIREMENTS ---
+Role: Grammarian, Type: required, Count: 1
+Role: Topicsmaster, Type: required, Count: 1
+Role: Individual Evaluator, Type: required, Count: 1
+Role: TME, Type: elective, Count: 1
+Role: Timer, Type: elective, Count: 1
+Role: Ah-Counter, Type: elective, Count: 1
+Role: Elective Pool, Type: elective, Count: 1
+
+--- ROLE ALIASES ---
+topicmaster -> topicsmaster
+topicsmaster -> topicmaster
+tme -> toastmaster
+toastmaster -> tme
+ge -> generalevaluator
+generalevaluator -> ge
+evaluator -> individualevaluator
+sergeantatarms -> saa
+saa -> sergeantatarms
+
+--- ALL ROLES ---
+Toastmaster
+General Evaluator
+Individual Evaluator
+Topicsmaster
+Grammarian
+Timer
+Ah-Counter
+Prepared Speaker
+Topics Speaker
+Election Chair
+Chief Contest Judge
+Contest Chair
+Ballot Counter
+SAA
+President
+VPE
+VPM
+VPPR
+Secretary
+Treasurer
+Keynote Speaker
+Welcome Officer
+Photographer
+Meeting Manager
+Moderator
+Panelist
+Debate Host
+Debater
+Club Mentor
+Introductory Mentor

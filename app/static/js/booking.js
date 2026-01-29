@@ -164,6 +164,42 @@ document.addEventListener("DOMContentLoaded", function () {
  // End of DOMContentLoaded listener
 
 
+function resetRole(btn, sessionId) {
+  let input;
+  const row = btn.closest('tr');
+  const targetId = btn.dataset.targetOwnerId;
+
+  if (targetId) {
+      // Multi-owner: Find the specific input for this owner
+      // We look for an input that has data-current-id matching the targetId
+      const inputs = row.querySelectorAll('.admin-assign-input');
+      for (let i = 0; i < inputs.length; i++) {
+          if (inputs[i].dataset.currentId === targetId) {
+              input = inputs[i];
+              break;
+          }
+      }
+  } else {
+      // Single-owner: Find the only input
+      input = row.querySelector('.admin-assign-input');
+  }
+
+  if (!input) {
+      console.error("Input not found for reset button", { targetId, sessionId });
+      return;
+  }
+  
+  if (!input.dataset.currentId || input.dataset.currentId === "0") {
+      return; // Already unassigned
+  }
+
+  // Set previousId so the backend knows which user to remove (important for shared roles)
+  input.dataset.previousId = input.dataset.currentId;
+
+  // Direct unassign without confirmation
+  assignRole(sessionId, 0, input);
+}
+
 function bookOrCancelRole(sessionId, action, roleLabel) {
   fetch("/booking/book", {
     method: "POST",
@@ -232,39 +268,14 @@ function assignRole(sessionId, contactId, selectElement) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        if (data.updated_sessions) {
+        if (contactId === 0 || contactId === "0") {
+          window.location.reload(true);
+        } else if (data.updated_sessions) {
           data.updated_sessions.forEach(session => {
             updateSessionRow(session);
           });
         } else {
-          if (contactId === "0") {
-            const row = document.querySelector(
-              `tr[data-session-id="${sessionId}"]`
-            );
-            if (row) {
-              // Clear ALL owner inputs (for shared roles with multiple owners)
-              const inputElements = row.querySelectorAll(".admin-assign-input");
-              inputElements.forEach(inputElement => {
-                inputElement.value = "";
-                inputElement.dataset.currentId = "0";
-                inputElement.classList.add("unassigned-role");
-              });
-
-              const roleActions = row.querySelector(".role-cell-actions");
-              if (roleActions) {
-                roleActions.innerHTML = "";
-              }
-              
-              // Also clear avatars for shared roles
-              const avatarsContainer = row.querySelector(".status-cell-content");
-              if (avatarsContainer) {
-                const avatars = avatarsContainer.querySelectorAll(".role-avatar:not(.waitlist-avatar)");
-                avatars.forEach(avatar => avatar.remove());
-              }
-            }
-          } else {
-            window.location.reload();
-          }
+          window.location.reload(true);
         }
       } else {
         showFlashMessage(data.message, "error", selectElement); // Display message inline if possible

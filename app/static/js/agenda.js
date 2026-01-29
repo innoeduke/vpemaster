@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
       editBtn.addEventListener("click", () => toggleEditMode(true));
     }
     if (saveBtn) {
-      saveBtn.addEventListener("click", saveChanges);
+      saveBtn.addEventListener("click", () => saveChanges(false));
     }
     if (cancelButton) {
       cancelButton.addEventListener("click", () => {
@@ -180,7 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const saveDetailsBtn = document.getElementById("save-meeting-details-btn");
     if (saveDetailsBtn) {
-      saveDetailsBtn.addEventListener("click", saveChanges);
+      saveDetailsBtn.addEventListener("click", () => saveChanges(true));
     }
 
     const createMeetingForm = document.getElementById("create-meeting-form");
@@ -248,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function saveChanges() {
+  function saveChanges(shouldReload = false) {
     let invalidRowFound = false;
     const allRows = tableBody.querySelectorAll("tr");
 
@@ -310,6 +310,12 @@ document.addEventListener("DOMContentLoaded", () => {
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
+          // If forced reload is requested (e.g., from Meeting Details modal), do it now
+          if (shouldReload) {
+            window.location.reload();
+            return;
+          }
+
           // Update global data
           if (data.project_speakers) {
             projectSpeakers = data.project_speakers;

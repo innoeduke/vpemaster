@@ -18,7 +18,9 @@ def app():
     # Use in-memory SQLite for tests by default to ensure clean state and speed
     class TestConfig(Config):
         TESTING = True
-        SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL', 'sqlite:///:memory:')
+        import tempfile
+        db_fd, db_path = tempfile.mkstemp()
+        SQLALCHEMY_DATABASE_URI = f'sqlite:///{db_path}'
         WTF_CSRF_ENABLED = False
         PRESERVE_CONTEXT_ON_EXCEPTION = False
 
@@ -45,6 +47,16 @@ def cleanup_test_artifacts():
         except OSError:
             pass
 
+
+@pytest.fixture(scope='function', autouse=True)
+def clean_db(app):
+    """Clean database between tests."""
+    with app.app_context():
+        from app import db
+        # Drop all tables and recreate them to ensure a clean slate
+        db.drop_all()
+        db.create_all()
+    yield
 
 @pytest.fixture(scope='function')
 def client(app):

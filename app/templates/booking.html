@@ -64,6 +64,11 @@
             <div class="role-cell-content">
                 <i class="fas {{ role.icon }}"></i>
                 <div class="role-display-text">
+                    {% if role.role_level_status %}
+                    <span class="role-badge {{ role.role_level_status }}" title="{{ 'Required' if role.role_level_status == 'required' else 'Elective' }} for your current level">
+                        {{ 'Req' if role.role_level_status == 'required' else 'Elec' }}
+                    </span>
+                    {% endif %}
                     <span>{{ role.role }}</span>
                     {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
                 </div>
@@ -154,13 +159,16 @@
                 {% endfor %}
             </div>
             {% else %}
-            <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}" data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
-                <input type="text" class="admin-assign-input {% if not role.owner_id %}unassigned-role{% endif %}"
-                    placeholder="--- Select ---"
-                    value="{% if role.owner_id %}{{ role.owner_name }}{% endif %}"
-                    data-current-id="{{ role.owner_id or 0 }}"
-                    autocomplete="off">
-                <div class="autocomplete-results"></div>
+            <div class="input-group">
+                <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}" data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
+                    <input type="text" class="admin-assign-input {% if not role.owner_id %}unassigned-role{% endif %}"
+                        placeholder="--- Select ---"
+                        value="{% if role.owner_id %}{{ role.owner_name }}{% endif %}"
+                        data-current-id="{{ role.owner_id or 0 }}"
+                        autocomplete="off">
+                    <div class="autocomplete-results"></div>
+                </div>
+                {# For single owner, the reset button is in the icon-cell #}
             </div>
             {% endif %}
             {% else %}
@@ -206,6 +214,27 @@
                 {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="Approve top of waitlist"
                     onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role }}')"><i
                         class="fas fa-user-check"></i></button>{% endif %}
+
+                {# Reset Buttons #}
+                <div class="reset-icon-container">
+                    {% if role.all_owners is defined and role.all_owners|length > 0 %}
+                    {# Multi-Owner: Stack of buttons #}
+                    {% for owner in role.all_owners %}
+                    <button class="icon-btn btn-reset-role" onclick="resetRole(this, '{{ role.session_id }}')" 
+                        title="Unassign {{ owner.name }}" 
+                        data-target-owner-id="{{ owner.id }}"
+                        style="color: #dc3545; {% if not owner.id %}visibility: hidden;{% endif %}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    {% endfor %}
+                    {% else %}
+                    {# Single-Owner #}
+                    <button class="icon-btn btn-reset-role" onclick="resetRole(this, '{{ role.session_id }}')" title="Unassign" 
+                        style="color: #dc3545; {% if not role.owner_id %}display:none;{% endif %}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    {% endif %}
+                </div>
             </div>
         </td>
         {% endif %}

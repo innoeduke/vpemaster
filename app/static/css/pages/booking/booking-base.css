@@ -441,6 +441,30 @@
 	font-weight: bold;
 }
 
+
+/* --- Role Badges --- */
+.role-badge {
+	display: inline-block;
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-size: 0.75em;
+	font-weight: bold;
+	text-transform: uppercase;
+	color: white;
+	margin-right: 5px;
+	vertical-align: middle;
+	align-self: flex-start;
+	/* Prevent stretching in flex column */
+}
+
+.role-badge.required {
+	background-color: #dc3545;
+}
+
+.role-badge.elective {
+	background-color: #17a2b8;
+}
+
 .booking-table .role-display-text {
 	display: flex;
 	flex-direction: column;
@@ -686,4 +710,59 @@
 .status-cell-content {
 	display: flex;
 	align-items: center;
+}
+
+/* --- Input Group & Reset Button --- */
+.input-group {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	gap: 8px;
+}
+
+.input-group .autocomplete-container {
+	flex-grow: 1;
+	width: auto;
+	/* Allow it to shrink/grow */
+}
+
+.btn-reset-role {
+	background: none;
+	border: none;
+	color: #dc3545;
+	cursor: pointer;
+	padding: 0 5px;
+	font-size: 1.1em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 30px;
+	height: 38px;
+	/* Match input height */
+	border-radius: 4px;
+	transition: background-color 0.2s;
+}
+
+.btn-reset-role:hover {
+	background-color: #ffeef0;
+	color: #bd2130;
+}
+
+.reset-icon-container {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	/* Match name stack gap */
+	align-items: center;
+	/* Center horizontally in the cell */
+	justify-content: center;
+	width: 100%;
+}
+
+.reset-icon-container .btn-reset-role {
+	padding: 0;
+	margin: 0;
+	height: 38px;
+	/* Match input height */
+	width: 30px;
 }

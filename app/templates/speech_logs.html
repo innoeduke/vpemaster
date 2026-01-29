@@ -22,6 +22,24 @@
         </div>
         <div class="header-info">
             <h2>{{ viewed_contact.Name }}'s Activity Logs</h2>
+            <div style="font-size: 0.9em; color: #666; margin-top: 4px;">
+                {% if viewed_contact.Completed_Paths %}
+                <div style="margin-bottom: 4px;">
+                    {% for path in viewed_contact.Completed_Paths.split('/') %}
+                    {% set path_trimmed = path.strip() %}
+                    {% set path_abbr = path_trimmed[:2]|lower %}
+                    <span class="badge-path path-{{ path_abbr }}">{{ path_trimmed }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if viewed_contact.credentials %}
+                <span style="font-weight: bold;">{{ viewed_contact.credentials }}</span>
+                {% endif %}
+                {% if viewed_contact.credentials and viewed_contact.Next_Project %} | {% endif %}
+                {% if viewed_contact.Next_Project %}
+                Next Project: {{ viewed_contact.Next_Project }}
+                {% endif %}
+            </div>
         </div>
         <div class="header-actions">
             {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}

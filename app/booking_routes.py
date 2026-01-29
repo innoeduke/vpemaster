@@ -6,8 +6,9 @@ from .auth.permissions import Permissions
 from flask_login import current_user
 from flask import Blueprint, render_template, request, session, jsonify, current_app, redirect, url_for
 from .club_context import get_current_club_id
-from .utils import get_current_user_info, group_roles_by_category, get_meetings_by_status, derive_credentials
-from .models import SessionLog, SessionType, Contact, Meeting, Waitlist, MeetingRole, OwnerMeetingRoles, ContactClub
+from .utils import get_current_user_info, group_roles_by_category, get_meetings_by_status, derive_credentials, normalize_role_name, get_role_aliases
+from .models import SessionLog, SessionType, Contact, Meeting, Waitlist, MeetingRole, OwnerMeetingRoles, ContactClub, LevelRole
+from sqlalchemy import func
 
 from .services.role_service import RoleService
 from . import db
@@ -146,6 +147,122 @@ def _sort_roles_for_booking(roles, current_user_contact_id, is_past_meeting):
     return roles
 
 
+def _get_user_role_requirements(user, club_id):
+    """
+    Calculates the roles required for the user's current pathway level.
+    Returns:
+        tuple: (required_roles_map, elective_roles_set, elective_needed_count)
+        - required_roles_map: {normalized_role_name: count_still_needed}
+        - elective_roles_set: {normalized_role_name}
+        - elective_needed_count: int (total elective slots still needed)
+    """
+    if not user:
+        return {}, set(), 0
+        
+    contact = user.get_contact(club_id)
+    if not contact or not contact.Current_Path:
+        return {}, set(), 0
+
+    # 1. Determine Active Level
+    # Use Contact.get_completed_levels which checks Achievements
+    completed_levels = contact.get_completed_levels(contact.Current_Path)
+    
+    # Logic: First missing level is active. If 1..5 all done, then 5 (or done).
+    active_level = 1
+    for l in range(1, 6):
+        if l not in completed_levels:
+            active_level = l
+            break
+            
+    # Loop to find the first incomplete level (Auto-Advance)
+    # If a level is satisfied, move to next. Limit to Level 5.
+    
+    # Pre-fetch role aliases once
+    role_aliases = get_role_aliases()
+    
+    # 3. Fetch User's Completed Roles (Global)
+    # Query: Count completed sessions for this user, from any finished meeting
+    # We join OwnerMeetingRoles directly to OwnerMeetingRoles.id (Source of Truth)
+    completed_counts = {}
+    
+    rows = db.session.query(MeetingRole.name, func.count(OwnerMeetingRoles.id))\
+        .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
+        .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+        .filter(
+            OwnerMeetingRoles.contact_id == contact.id,
+            Meeting.status == 'finished'
+        ).group_by(MeetingRole.name).all()
+
+    for r_name, count in rows:
+        completed_counts[normalize_role_name(r_name)] = count
+
+    # Start Main Loop
+    
+    final_required_map = {}
+    final_elective_set = set()
+    final_elective_needed = 0
+    
+    # We start at calculated active_level (based on awards), but if it's done, we move up.
+    for lvl in range(active_level, 6):
+        # Fetch reqs for this level
+        level_reqs = LevelRole.query.filter_by(level=lvl).all()
+        if not level_reqs:
+             # No requirements defined for this level? Should not happen if data is good.
+             continue
+             
+        # Calculate needs for this level
+        temp_required_map = {}
+        temp_elective_set = set()
+        
+        elective_quota = 1 if lvl <= 3 else 2
+        elective_fulfilled_count = 0
+        
+        for req in level_reqs:
+            norm_req_role = normalize_role_name(req.role)
+            
+            # Skip 'Elective Pool' placeholder
+            if norm_req_role == 'electivepool':
+                 if req.count_required > 0:
+                     elective_quota = req.count_required
+                 continue
+                 
+            if req.type == 'required':
+                my_count = completed_counts.get(norm_req_role, 0)
+                # Check aliases
+                for alias, target in role_aliases.items():
+                    if target == norm_req_role:
+                        my_count += completed_counts.get(alias, 0)
+                
+                remaining = max(0, req.count_required - my_count)
+                if remaining > 0:
+                    temp_required_map[norm_req_role] = remaining
+                    
+            elif req.type == 'elective':
+                temp_elective_set.add(norm_req_role)
+                my_count = completed_counts.get(norm_req_role, 0)
+                # Check aliases
+                for alias, target in role_aliases.items():
+                    if target == norm_req_role:
+                        my_count += completed_counts.get(alias, 0)
+                
+                elective_fulfilled_count += my_count
+
+        temp_elective_needed = max(0, elective_quota - elective_fulfilled_count)
+        
+        # Check if this level is satisfied
+        if not temp_required_map and temp_elective_needed == 0:
+             # Level satisfied! Try next level.
+             continue
+        else:
+             # Found our working level
+             final_required_map = temp_required_map
+             final_elective_set = temp_elective_set
+             final_elective_needed = temp_elective_needed
+             break
+             
+    return final_required_map, final_elective_set, final_elective_needed
+
+
 def _get_roles_for_booking(selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting):
     """Helper function to get and process roles for the booking page."""
     club_id = get_current_club_id()
@@ -167,6 +284,33 @@ def _get_roles_for_booking(selected_meeting_number, current_user_contact_id, sel
             if role['role'] != "Topics Speaker"
         ]
 
+    # --- Feature: Role Requirement Highlighting ---
+    # Annotate roles with requirement status for the current user
+    if current_user.is_authenticated:
+        user_req_map, user_elec_set, user_elec_needed = _get_user_role_requirements(current_user, club_id)
+        role_aliases = get_role_aliases()
+
+        for role in sorted_roles:
+            norm_role = normalize_role_name(role['role'])
+            
+            # 1. Required Role?
+            if norm_role in user_req_map:
+                role['role_level_status'] = 'required'
+            # Check aliases
+            elif any(alias in user_req_map and role_aliases.get(norm_role) == alias for alias in user_req_map):
+                role['role_level_status'] = 'required'
+                
+            # 2. Elective Role?
+            elif user_elec_needed > 0:
+                is_elective = False
+                if norm_role in user_elec_set:
+                    is_elective = True
+                elif any(alias in user_elec_set and role_aliases.get(norm_role) == alias for alias in user_elec_set):
+                    is_elective = True
+                
+                if is_elective:
+                    role['role_level_status'] = 'elective'
+    
     return sorted_roles
 
 

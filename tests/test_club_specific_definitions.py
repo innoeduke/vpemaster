@@ -8,6 +8,24 @@ from scripts.create_club import import_initial_data
 
 def test_club_specific_definitions(app):
     with app.app_context():
+        # 0. Create Global Club and Seed Data (Required for new import logic)
+        from app.constants import GLOBAL_CLUB_ID
+        global_club = Club(id=GLOBAL_CLUB_ID, club_no="Global", club_name="Global Club")
+        db.session.add(global_club)
+        db.session.flush() # Ensure ID is set
+        
+        # Seed Global Roles
+        r1 = MeetingRole(name="Toastmaster", type="standard", club_id=GLOBAL_CLUB_ID, needs_approval=True, has_single_owner=False, is_member_only=True)
+        r2 = MeetingRole(name="General Evaluator", type="standard", club_id=GLOBAL_CLUB_ID, needs_approval=True, has_single_owner=False, is_member_only=False)
+        db.session.add_all([r1, r2])
+        db.session.flush()
+        
+        # Seed Global Session Types
+        st1 = SessionType(Title="Toastmaster Session", role_id=r1.id, club_id=GLOBAL_CLUB_ID)
+        st2 = SessionType(Title="GE Session", role_id=r2.id, club_id=GLOBAL_CLUB_ID)
+        db.session.add_all([st1, st2])
+        db.session.commit()
+
         # 1. Create two clubs
         club1 = Club(club_no="TEST01", club_name="Test Club 1")
         club2 = Club(club_no="TEST02", club_name="Test Club 2")
@@ -56,7 +74,7 @@ def test_club_specific_definitions(app):
 def test_data_import_service_club_id(app):
     with app.app_context():
         # Create a club
-        club = Club(club_no="IMPORT01", club_name="Import Club")
+        club = Club(id=999, club_no="IMPORT01", club_name="Import Club")
         db.session.add(club)
         db.session.commit()
 
@@ -65,15 +83,15 @@ def test_data_import_service_club_id(app):
         
         # Mock role data
         roles_data = [
-            (1, "Toastmaster", "icon", "type", "cat", 1, 0, 1),
-            (2, "General Evaluator", "icon", "type", "cat", 1, 0, 0)
+            (1, "Custom Role 1", "icon", "club-specific", "cat", 1, 0, 1),
+            (2, "Custom Role 2", "icon", "club-specific", "cat", 1, 0, 0)
         ]
         service.import_meeting_roles(roles_data)
         
         # Verify roles are linked to the club
         roles = MeetingRole.query.filter_by(club_id=club.id).all()
         assert len(roles) == 2
-        assert {r.name for r in roles} == {"Toastmaster", "General Evaluator"}
+        assert {r.name for r in roles} == {"Custom Role 1", "Custom Role 2"}
 
         # Mock session type data (RoleID 1 maps to Toastmaster)
         types_data = [
@@ -88,8 +106,8 @@ def test_data_import_service_club_id(app):
         assert st.club_id == club.id
         
         # Verify role mapping worked
-        toastmaster_role = MeetingRole.query.filter_by(name="Toastmaster", club_id=club.id).first()
-        assert st.role_id == toastmaster_role.id
+        custom_role_1 = MeetingRole.query.filter_by(name="Custom Role 1", club_id=club.id).first()
+        assert st.role_id == custom_role_1.id
 
 def test_duplicate_names_in_different_clubs(app):
     with app.app_context():

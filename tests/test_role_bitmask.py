@@ -66,9 +66,10 @@ def test_role_bitmask_storage(app, db_session):
         
         # Verify Retrieval
         roles = user.get_roles_for_club(club.id)
-        assert member_role.name in roles
-        assert vpe_role.name in roles
-        assert officer_role.name not in roles
+        role_names = [r['name'] for r in roles]
+        assert member_role.name in role_names
+        assert vpe_role.name in role_names
+        assert officer_role.name not in role_names
         
         # Verify object Roles property
         uc_roles = [r.name for r in uc.roles]
@@ -90,8 +91,9 @@ def test_role_bitmask_storage(app, db_session):
         uc.club_role_level # refresh
         assert uc.club_role_level == 67
         roles = user.get_roles_for_club(club.id)
+        role_names = [r['name'] for r in roles]
         assert len(roles) >= 3 # might contain 'User' implicitly
-        assert officer_role.name in roles
+        assert officer_role.name in role_names
         
         print("Bitmask role storage verification passed.")
         

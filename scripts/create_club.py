@@ -43,50 +43,45 @@ def create_club(club_no, club_name, skip_seed):
 
 def import_initial_data(club):
     """Imports initial session types and meeting roles from CSV files."""
-    base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    roles_csv = os.path.join(base_path, 'deploy', 'meeting_roles_new.csv')
-    types_csv = os.path.join(base_path, 'deploy', 'session_types_new.csv')
+    from app.constants import GLOBAL_CLUB_ID
+    
+    click.echo(f"Seeding data for {club.club_name} from Global Club (ID {GLOBAL_CLUB_ID})...")
+    
+    # 1. Copy Meeting Roles
+    global_roles = MeetingRole.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
+    role_map = {} # Global Role ID -> New Role ID
+    
+    for gr in global_roles:
+        new_role = MeetingRole(
+            name=gr.name,
+            icon=gr.icon,
+            type=gr.type, 
+            award_category=gr.award_category,
+            needs_approval=gr.needs_approval,
+            has_single_owner=gr.has_single_owner,
+            is_member_only=gr.is_member_only,
+            club_id=club.id
+        )
+        db.session.add(new_role)
+        db.session.flush()
+        role_map[gr.id] = new_role.id
+        
+    click.echo(f"Copied {len(global_roles)} meeting roles.")
 
-    role_map = {} # Source CSV ID -> Target DB ID
-
-    # 1. Import Meeting Roles
-    if os.path.exists(roles_csv):
-        with open(roles_csv, mode='r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                role = MeetingRole(
-                    name=row['name'],
-                    icon=row['icon'],
-                    type=row['type'],
-                    award_category=row.get('award_category'),
-                    needs_approval=bool(int(row['needs_approval'] or 0)),
-                    has_single_owner=bool(int(row['has_single_owner'] or 0)),
-                    is_member_only=bool(int(row['is_member_only'] or 0)),
-                    club_id=club.id
-                )
-                db.session.add(role)
-                db.session.flush()
-                role_map[row['id']] = role.id
-        click.echo(f"Imported initial meeting roles for club {club.club_name}")
-    else:
-        click.echo(f"Warning: Meeting roles CSV not found at {roles_csv}")
-
-    # 2. Import Session Types
-    if os.path.exists(types_csv):
-        with open(types_csv, mode='r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                st = SessionType(
-                    Title=row['Title'],
-                    Is_Section=bool(int(row['Is_Section'] or 0)),
-                    Is_Hidden=bool(int(row['Is_Hidden'] or 0)),
-                    Valid_for_Project=bool(int(row['Valid_for_Project'] or 0)),
-                    Duration_Min=int(row['Duration_Min']) if row['Duration_Min'] else None,
-                    Duration_Max=int(row['Duration_Max']) if row['Duration_Max'] else None,
-                    role_id=role_map.get(row['role_id']),
-                    club_id=club.id
-                )
-                db.session.add(st)
-        click.echo(f"Imported initial session types for club {club.club_name}")
-    else:
-        click.echo(f"Warning: Session types CSV not found at {types_csv}")
+    # 2. Copy Session Types
+    global_types = SessionType.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
+    
+    for gt in global_types:
+        new_st = SessionType(
+            Title=gt.Title,
+            Is_Section=gt.Is_Section,
+            Is_Hidden=gt.Is_Hidden,
+            Valid_for_Project=gt.Valid_for_Project,
+            Duration_Min=gt.Duration_Min,
+            Duration_Max=gt.Duration_Max,
+            role_id=role_map.get(gt.role_id), # Map to new role ID
+            club_id=club.id
+        )
+        db.session.add(new_st)
+    
+    click.echo(f"Copied {len(global_types)} session types.")
