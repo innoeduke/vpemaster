@@ -223,15 +223,15 @@
                     <button class="icon-btn btn-reset-role" onclick="resetRole(this, '{{ role.session_id }}')" 
                         title="Unassign {{ owner.name }}" 
                         data-target-owner-id="{{ owner.id }}"
-                        style="color: #dc3545; {% if not owner.id %}visibility: hidden;{% endif %}">
-                        <i class="fas fa-times"></i>
+                        style="color: #6c757d; {% if not owner.id %}visibility: hidden;{% endif %}">
+                        <i class="fas fa-undo"></i>
                     </button>
                     {% endfor %}
                     {% else %}
                     {# Single-Owner #}
                     <button class="icon-btn btn-reset-role" onclick="resetRole(this, '{{ role.session_id }}')" title="Unassign" 
-                        style="color: #dc3545; {% if not role.owner_id %}display:none;{% endif %}">
-                        <i class="fas fa-times"></i>
+                        style="color: #6c757d; {% if not role.owner_id %}display:none;{% endif %}">
+                        <i class="fas fa-undo"></i>
                     </button>
                     {% endif %}
                 </div>

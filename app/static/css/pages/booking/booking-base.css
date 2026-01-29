@@ -729,7 +729,7 @@
 .btn-reset-role {
 	background: none;
 	border: none;
-	color: #dc3545;
+	color: #6c757d;
 	cursor: pointer;
 	padding: 0 5px;
 	font-size: 1.1em;
@@ -744,8 +744,8 @@
 }
 
 .btn-reset-role:hover {
-	background-color: #ffeef0;
-	color: #bd2130;
+	background-color: #f8f9fa;
+	color: #343a40;
 }
 
 .reset-icon-container {
