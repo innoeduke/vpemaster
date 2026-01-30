@@ -172,3 +172,4 @@ class LevelRole(db.Model):
     role = db.Column(db.String(255), nullable=False)
     type = db.Column(db.String(50), nullable=False)
     count_required = db.Column(db.Integer, nullable=False, default=0)
+    band = db.Column(db.Integer, nullable=True)

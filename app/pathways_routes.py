@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, jsonify, session
 from . import db
-from .models import Project, Pathway, PathwayProject
+from .models import Project, Pathway, PathwayProject, LevelRole
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
@@ -110,3 +110,59 @@ def update_project(project_id):
         Requirements=project.Requirements,
         Resources=project.Resources
     )
+
+@pathways_bp.route('/path_progress')
+@login_required
+def path_progress():
+    # Fetch all level roles
+    level_roles = LevelRole.query.all()
+
+    # Data structure:
+    # rows: levels (sorted)
+    # columns: bands (sorted)
+    # cell data: list of roles
+
+    # 1. Identify all unique bands and levels
+    bands = set()
+    levels = set()
+    
+    # 2. Group roles by (level, band)
+    # matrix structure: { level_id: { band_id: [role_obj, ...], ... }, ... }
+    matrix = {}
+
+    for lr in level_roles:
+        lvl = lr.level
+        bnd = lr.band if lr.band is not None else 0 # Handle None band if any, though schema says nullable
+        
+        levels.add(lvl)
+        bands.add(bnd)
+
+        if lvl not in matrix:
+            matrix[lvl] = {}
+        
+        if bnd not in matrix[lvl]:
+            matrix[lvl][bnd] = []
+            
+        matrix[lvl][bnd].append(lr)
+
+    # Convert sets to sorted lists
+    sorted_levels = sorted(list(levels))
+    sorted_bands = sorted(list(bands))
+
+    # Prepare data for template
+    # We want to iterate rows (levels) and then columns (bands)
+    # data_rows = [ (level_id, [ (band_id, [roles]), ... ]), ... ]
+    
+    data_rows = []
+    for lvl in sorted_levels:
+        row_bands = []
+        for bnd in sorted_bands:
+            roles = matrix.get(lvl, {}).get(bnd, [])
+            # Sort roles if needed, maybe by id or name
+            roles.sort(key=lambda x: x.role) 
+            row_bands.append({'band': bnd, 'roles': roles})
+        data_rows.append({'level': lvl, 'bands': row_bands})
+
+    return render_template('path_progress.html', 
+                           bands=sorted_bands, 
+                           data_rows=data_rows)

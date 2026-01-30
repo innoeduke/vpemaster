@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Path Progress{% endblock %}
+
+{% block head_extra %}
+<style>
+    .path-progress-container {
+        padding: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .progress-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .progress-table tr {
+        border-bottom: 1px solid #eee;
+    }
+
+    .progress-table tr:last-child {
+        border-bottom: none;
+    }
+
+    .progress-table td {
+        padding: 15px;
+        vertical-align: top;
+    }
+
+    .level-cell {
+        font-weight: bold;
+        background-color: #fafafa;
+        width: 80px;
+        text-align: center;
+        border-right: 1px solid #eee;
+        font-size: 1.1em;
+        color: #555;
+    }
+
+    .band-cell {
+        /* Distribute bands evenly if possible, or just let them take space */
+    }
+
+    .role-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        margin: 4px;
+        background-color: #e3f2fd;
+        color: #1565c0;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        border: 1px solid #bbdefb;
+        white-space: nowrap;
+    }
+
+    /* Optional: Alternating row colors or hover effects if desired */
+    .progress-table tr:hover {
+        background-color: #fcfcfc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="path-progress-container">
+    <h2>Path Progress Matrix</h2>
+    
+    <table class="progress-table">
+        <tbody>
+            {% for row in data_rows %}
+            <tr>
+                <td class="level-cell">
+                    Level {{ row.level }}
+                </td>
+                
+                {% for band_data in row.bands %}
+                <td class="band-cell">
+                    {% for role in band_data.roles %}
+                        <span class="role-badge">{{ role.role }}</span>
+                    {% endfor %}
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -5,6 +5,18 @@ document.addEventListener("DOMContentLoaded", function () {
     ".speech-log-entry, .role-log-entry",
     ".meeting-info"
   );
+
+  const meetingFilter = document.getElementById('meeting-filter');
+  if (meetingFilter) {
+      meetingFilter.addEventListener('change', function() {
+          const meetingNumber = this.value;
+          const url = new URL(window.location.href);
+          url.searchParams.set('meeting_number', meetingNumber);
+          // Ensure we stay in admin (Meeting) view when filtering by meeting
+          url.searchParams.set('view_mode', 'admin');
+          window.location.href = url.toString();
+      });
+  }
   if (document.getElementById("speaker-search")) {
     setupSearch(
       "speaker-search",

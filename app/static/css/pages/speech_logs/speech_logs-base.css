@@ -815,3 +815,23 @@
 .badge-path.path-tc {
 	background-color: #a0aec0 !important;
 }
+
+/* Category Heading for Meeting View */
+.category-heading {
+	width: 100%;
+	margin-top: 30px;
+	margin-bottom: 0;
+	font-size: 1.2rem;
+	font-weight: 600;
+	color: #4b5563;
+	border-bottom: 2px solid #e5e7eb;
+	padding: 10px 0;
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.category-heading:first-of-type {
+	margin-top: 0;
+}

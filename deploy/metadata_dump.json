@@ -1454,343 +1454,392 @@
       "level": 1,
       "role": "Topics Speaker",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 1
     },
     {
       "id": 2,
       "level": 1,
       "role": "Individual Evaluator",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 2
     },
     {
       "id": 3,
       "level": 1,
       "role": "Timer",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 4,
       "level": 1,
       "role": "Ah-Counter",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 5,
       "level": 2,
       "role": "Grammarian",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 3
     },
     {
       "id": 6,
       "level": 2,
       "role": "Topicsmaster",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 1
     },
     {
       "id": 7,
       "level": 2,
       "role": "Individual Evaluator",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 2
     },
     {
       "id": 8,
       "level": 2,
       "role": "TME",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 9,
       "level": 2,
       "role": "Timer",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 10,
       "level": 2,
       "role": "Ah-Counter",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 11,
       "level": 3,
       "role": "TME",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 1
     },
     {
       "id": 12,
       "level": 3,
       "role": "Individual Evaluator",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 2
     },
     {
       "id": 13,
       "level": 3,
       "role": "Topicsmaster",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 14,
       "level": 3,
       "role": "Topics Speaker",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 15,
       "level": 3,
       "role": "Introductory Mentor",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 16,
       "level": 4,
       "role": "TME",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 3
     },
     {
       "id": 17,
       "level": 4,
       "role": "GE",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 3
     },
     {
       "id": 18,
       "level": 4,
       "role": "Individual Evaluator",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 2
     },
     {
       "id": 19,
       "level": 4,
       "role": "Topicsmaster",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 20,
       "level": 4,
       "role": "Topics Speaker",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 21,
       "level": 4,
       "role": "Photographer",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 22,
       "level": 4,
       "role": "Welcome Officer",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 23,
       "level": 4,
       "role": "Meeting Manager",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 24,
       "level": 4,
       "role": "Debater",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 25,
       "level": 4,
       "role": "Panelist",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 26,
       "level": 5,
       "role": "TME",
       "type": "required",
-      "count_required": 2
+      "count_required": 2,
+      "band": 1
     },
     {
       "id": 27,
       "level": 5,
       "role": "GE",
       "type": "required",
-      "count_required": 2
+      "count_required": 2,
+      "band": 3
     },
     {
       "id": 28,
       "level": 5,
       "role": "Individual Evaluator",
       "type": "required",
-      "count_required": 2
+      "count_required": 2,
+      "band": 2
     },
     {
       "id": 29,
       "level": 5,
       "role": "Topicsmaster",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 30,
       "level": 5,
       "role": "Topics Speaker",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 31,
       "level": 5,
       "role": "Timer",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 32,
       "level": 5,
       "role": "Ah-Counter",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 33,
       "level": 5,
       "role": "Grammarian",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 34,
       "level": 5,
       "role": "Photographer",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 35,
       "level": 5,
       "role": "Club Mentor",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 36,
       "level": 5,
       "role": "Welcome Officer",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 37,
       "level": 5,
       "role": "Meeting Manager",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 38,
       "level": 5,
       "role": "Debater",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 39,
       "level": 5,
       "role": "Panelist",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 64,
       "level": 3,
       "role": "Successful Club Series",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 5
     },
     {
       "id": 65,
       "level": 4,
       "role": "Successful Club Series",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 5
     },
     {
       "id": 66,
       "level": 4,
       "role": "Better Speaker Series",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 6
     },
     {
       "id": 67,
       "level": 5,
       "role": "Successful Club Series",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 5
     },
     {
       "id": 68,
       "level": 5,
       "role": "Leadership Excellence Series",
       "type": "required",
-      "count_required": 1
+      "count_required": 1,
+      "band": 6
     },
     {
       "id": 69,
       "level": 1,
       "role": "Elective Pool",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 70,
       "level": 2,
       "role": "Elective Pool",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 71,
       "level": 3,
       "role": "Elective Pool",
       "type": "elective",
-      "count_required": 1
+      "count_required": 1,
+      "band": 4
     },
     {
       "id": 72,
       "level": 4,
       "role": "Elective Pool",
       "type": "elective",
-      "count_required": 2
+      "count_required": 2,
+      "band": 4
     },
     {
       "id": 73,
       "level": 5,
       "role": "Elective Pool",
       "type": "elective",
-      "count_required": 2
+      "count_required": 2,
+      "band": 4
     }
   ],
   "session_types": [

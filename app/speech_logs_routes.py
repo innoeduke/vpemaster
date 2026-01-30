@@ -10,7 +10,8 @@ from .utils import (
     build_pathway_project_cache, 
     normalize_role_name, 
     get_role_aliases,
-    get_dropdown_metadata
+    get_dropdown_metadata,
+    get_meetings_by_status
 )
 from sqlalchemy import distinct, or_
 from sqlalchemy.orm import joinedload
@@ -236,10 +237,10 @@ def _fetch_logs_with_filters(filters):
     return base_query.order_by(SessionLog.Meeting_Number.desc()).all()
 
 
-def _process_logs(all_logs, filters, pathway_cache):
+def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
     """
-    Process logs: determine type/level, apply filters, group by level.
-    Returns: dict of grouped logs {level: [logs]}
+    Process logs: determine type/level, apply filters, group by level or category.
+    Returns: dict of grouped logs {group_key: [logs]}
     """
     grouped_logs = {}
     processed_roles = set()
@@ -340,9 +341,23 @@ def _process_logs(all_logs, filters, pathway_cache):
             continue
         
         # Add to group
-        if display_level not in grouped_logs:
-            grouped_logs[display_level] = []
-        grouped_logs[display_level].append(log)
+        if view_mode == 'admin':
+            # Group by Award Category for Meeting View
+            category = 'Other'
+            if log.session_type and log.session_type.role and log.session_type.role.award_category:
+                category = log.session_type.role.award_category
+            elif log.log_type == 'speech' or log.log_type == 'presentation':
+                 # Fallback for speeches if role category is missing (though Prepared Speaker usually has it)
+                 category = 'speaker'
+            
+            group_key = category
+        else:
+            # Group by Level for Member View
+            group_key = display_level
+
+        if group_key not in grouped_logs:
+            grouped_logs[group_key] = []
+        grouped_logs[group_key].append(log)
     
     return grouped_logs
 
@@ -358,20 +373,33 @@ def _sort_and_consolidate(grouped_logs):
         priority = 1 if log.log_type == 'speech' else 3
         return (priority, -log.Meeting_Number)
     
-    def get_group_sort_key(level_key):
+    def get_group_sort_key(group_key):
+        # Priority for categories in Meeting View
+        category_priority = {
+            'speaker': 1,
+            'evaluator': 2,
+            'table-topic': 3,
+            'role-taker': 4,
+            'Other': 99
+        }
+        
+        if group_key in category_priority:
+            return (category_priority.get(group_key, 99), group_key)
+            
+        # Fallback to Level sorting for Member View
         try:
-            return (0, -int(level_key))
+            return (0, -int(group_key))
         except (ValueError, TypeError):
-            return (1, level_key)
+            return (1, group_key)
     
-    for level in grouped_logs:
-        grouped_logs[level].sort(key=get_activity_sort_key)
+    for group_key in grouped_logs:
+        grouped_logs[group_key].sort(key=get_activity_sort_key)
         
         # Consolidate role logs
         consolidated_group = []
         role_group_map = {}
         
-        for item in grouped_logs[level]:
+        for item in grouped_logs[group_key]:
             if item.log_type == 'role' and not item.Project_ID:
                 role_name = item.session_type.role.name if item.session_type and item.session_type.role else item.session_type.Title
                 owner_id = item.context_owner.id if item.context_owner else (item.owner.id if item.owners else None)
@@ -402,7 +430,7 @@ def _sort_and_consolidate(grouped_logs):
             else:
                 final_list.append(item)
         
-        grouped_logs[level] = final_list
+        grouped_logs[group_key] = final_list
     
     # Sort groups
     sorted_grouped_logs = dict(
@@ -669,10 +697,20 @@ def show_speech_logs():
     
     # 2. Get viewed contact
     viewed_contact = _get_viewed_contact(filters['speaker_id'])
-    
+
     # 3. Get pathway information
     pathway_info = _get_pathway_info(viewed_contact, request.args.get('pathway'), filters)
     filters['pathway'] = pathway_info['selected_pathway']
+    
+    # NEW: Get meetings for the filter (allow past meetings)
+    upcoming_meetings, default_meeting_num = get_meetings_by_status(
+        limit_past=None, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date, Meeting.status])
+    
+    selected_meeting_number = filters.get('meeting_number')
+    if not selected_meeting_number:
+        selected_meeting_number = default_meeting_num or (
+            upcoming_meetings[0][0] if upcoming_meetings else None)
+        filters['meeting_number'] = selected_meeting_number
     
     # 4. Get dropdown metadata (using utils)
     dropdown_data = get_dropdown_metadata()
@@ -686,7 +724,7 @@ def show_speech_logs():
     pathway_cache = build_pathway_project_cache(project_ids=project_ids)
     
     # 7. Process logs
-    grouped_logs = _process_logs(all_logs, filters, pathway_cache)
+    grouped_logs = _process_logs(all_logs, filters, pathway_cache, view_mode=view_mode)
     sorted_grouped_logs = _sort_and_consolidate(grouped_logs)
     
     # 8. Calculate completion summary
@@ -723,7 +761,9 @@ def show_speech_logs():
         viewed_contact=viewed_contact,
         member_pathways=pathway_info['member_pathways'],
         active_level=active_level,
-        ProjectID=ProjectID
+        ProjectID=ProjectID,
+        upcoming_meetings=upcoming_meetings,
+        selected_meeting_number=selected_meeting_number
     )
 
 
