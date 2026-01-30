@@ -253,7 +253,7 @@
 
                             {# Show trophy for award winners #}
                             {% if loop.first and log_dict.award_type and log_dict.role not in ns.displayed_awards %}
-                            <span class="icon-btn icon-btn-voted" title="{{ log_dict.award_type }} Winner" style="margin-left: 4px;">
+                            <span class="award-badge" title="{{ log_dict.award_type }} Winner" style="margin-left: 4px;">
                                 <i class="fas fa-award"></i>
                             </span>
                             {% set ns.displayed_awards = ns.displayed_awards + [log_dict.role] %}

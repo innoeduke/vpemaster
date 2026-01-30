@@ -660,6 +660,10 @@ def _calculate_completion_summary(grouped_logs, pp_mapping):
                         
                         if is_role_match:
                             satisfied = True
+                        elif actual_role_name == 'club-specific' or (log.session_type and log.session_type.role and log.session_type.role.type == 'club-specific'):
+                            # Special handling for Club Specific* virtual role
+                            if norm_target == normalize_role_name('Club Specific*'):
+                                satisfied = True
                         elif lr.role.lower() == 'speech' and hasattr(log, 'log_type') and (log.log_type == 'speech' or log.log_type == 'presentation'):
                             if log.log_type == 'presentation' or pp_mapping.get(log.Project_ID) == 'required' or not pp_mapping:
                                 satisfied = True

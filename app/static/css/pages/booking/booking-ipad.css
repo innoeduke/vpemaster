@@ -61,24 +61,27 @@
 	}
 
 	/* Filter container for iPad */
-	.booking-filter-container {
+	.filters-container.premium {
+		padding: 15px;
+	}
+
+	.filter-row-premium {
 		flex-direction: row;
-		padding: 15px 0;
 		gap: 15px;
 	}
 
-	.booking-filter-container .filter-left,
-	.booking-filter-container .filter-right {
+	.filter-row-premium .filter-left,
+	.filter-row-premium .filter-right {
 		width: auto;
 	}
 
-	.booking-filter-container #meeting-filter {
+	.filters-container.premium #meeting-filter {
 		min-width: 200px;
 		font-size: 1em;
 	}
 
-	.booking-filter-container .btn,
-	.booking-filter-container .role-guide-link {
+	.filters-container.premium .btn,
+	.filters-container.premium .role-guide-link {
 		padding: 6px 12px;
 		font-size: 0.9rem;
 		min-height: 38px;

@@ -35,3 +35,159 @@
     background-color: #5bc0de;
     /* Bootstrap Info Blue */
 }
+
+/* --- Professional Agenda Table Styles --- */
+#logs-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin-top: 20px;
+    border: 1px solid #cbd5e0;
+    /* Stronger outer frame */
+    border-radius: 12px;
+    /* Softer corners */
+    overflow: hidden;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    /* More prominent shadow */
+    background-color: #ffffff;
+}
+
+#logs-table thead th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    padding: 14px 16px;
+    border-bottom: 2px solid #e2e8f0;
+    text-align: left;
+}
+
+#logs-table tbody td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    color: #1e293b;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    font-family: 'Montserrat', sans-serif;
+    /* Applied Montserrat to sessions */
+}
+
+/* Thinner Vertical Borders */
+#logs-table th:not(:last-child),
+#logs-table td:not(:last-child) {
+    border-right: 1px solid #f1f5f9;
+}
+
+#logs-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Row Hover and Banding Effect */
+#logs-table tbody tr:not(.section-row):nth-child(even) {
+    background-color: #fcfcfc;
+}
+
+#logs-table tbody tr:not(.section-row):hover {
+    background-color: #f8fafc;
+    transition: background-color 0.2s ease;
+}
+
+/* Column Specific Alignments */
+#logs-table th:first-child,
+#logs-table td:first-child {
+    padding: 0 4px;
+    text-align: center;
+}
+
+#logs-table th.col-view-duration-header,
+#logs-table td.col-view-duration {
+    text-align: center !important;
+}
+
+/* Section Row Overrides */
+.section-row {
+    background-color: #772432 !important;
+    /* Retain color theme */
+    color: #ffffff !important;
+    font-family: 'Montserrat', sans-serif !important;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.section-row td {
+    padding: 10px 16px !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    border-bottom: none !important;
+    border-right: none !important;
+    /* Remove vertical borders in section row */
+    color: #ffffff !important;
+    /* Ensure white text for contrast */
+}
+
+/* Icon Styles in Header */
+#logs-table thead th i {
+    margin-right: 6px;
+    color: #94a3b8;
+    font-size: 0.9em;
+}
+
+/* Owner Styles Polish */
+.owner-name {
+    font-weight: 00;
+    color: #1e293b;
+}
+
+.dtm-superscript {
+    color: #772432;
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+/* Award Badge Polish */
+.award-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #772432;
+    font-size: 0.9em;
+    vertical-align: middle;
+}
+
+/* Links Polish */
+.speech-tooltip-wrapper a:not(.project-code-link) {
+    background-color: transparent !important;
+    padding: 0 !important;
+    color: #2563eb !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    border-radius: 0 !important;
+}
+
+.speech-tooltip-wrapper a:not(.project-code-link):hover {
+    text-decoration: underline !important;
+    color: #1d4ed8 !important;
+}
+
+.project-code-link {
+    background-color: #f1f5f9 !important;
+    color: #64748b !important;
+    border: 1px solid #e2e8f0 !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+}
+
+/* Ensure shadow is visible and not clipped */
+.table-container {
+    margin-top: 10px !important;
+}
+
+/* Align action bar with table edges */
+.action-bar {
+    padding: 0 15px !important;
+    box-sizing: border-box !important;
+}

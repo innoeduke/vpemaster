@@ -157,7 +157,7 @@ def profile(contact_id=None):
     """
     is_own_profile = True
     if contact_id and contact_id != current_user.contact_id:
-        if not current_user.has_role(Permissions.STAFF):
+        if not current_user.has_permission(Permissions.PROFILE_VIEW):
             flash('Unauthorized access.', 'error')
             return redirect(url_for('auth_bp.profile'))
         
@@ -182,8 +182,10 @@ def profile(contact_id=None):
         user = current_user
 
     if request.method == 'POST':
-        if not is_own_profile:
-            flash('You cannot modify someone else\'s profile.', 'error')
+        # Check if user can edit this profile
+        can_edit = is_own_profile or current_user.has_permission(Permissions.PROFILE_EDIT)
+        if not can_edit:
+            flash('You do not have permission to modify this profile.', 'error')
             return redirect(url_for('auth_bp.profile', contact_id=contact_id))
 
         action = request.form.get('action')

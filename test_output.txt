@@ -1,0 +1,12 @@
+./Users/wmu/miniconda3/envs/vpemaster/lib/python3.13/site-packages/flask_login/login_manager.py:488: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  expires = datetime.utcnow() + duration
+/Users/wmu/miniconda3/envs/vpemaster/lib/python3.13/site-packages/flask_sqlalchemy/query.py:30: LegacyAPIWarning: The Query.get() method is considered legacy as of the 1.x series of SQLAlchemy and becomes a legacy construct in 2.0. The method is now available as Session.get() (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  rv = self.get(ident)
+...
+----------------------------------------------------------------------
+Ran 4 tests in 5.395s
+
+OK
+
+Admin roles: ['ClubAdmin', 'User']
+Admin permissions: {'PROFILE_EDIT', 'PROFILE_OWN', 'PROFILE_VIEW'}

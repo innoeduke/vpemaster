@@ -33,21 +33,23 @@
         {% endif %}
     </div>
     {% endif %}
-    <div class="booking-filter-container">
-        {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
-        render_outer_container=False) }}
-        <div class="filter-right">
-            {#
-            {% if is_admin_view %}
-            <button class="btn btn-primary" onclick="syncTally()">
-                <i class="fas fa-sync"></i> Sync to Tally
-            </button>
-            {% endif %}
-            #}
-            <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}" target="_blank"
-                class="btn btn-info role-guide-link">
-                <i class="fas fa-book-open"></i> View Role Guide
-            </a>
+    <div class="filters-container premium">
+        <div class="filter-row-premium">
+            {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
+            render_outer_container=False) }}
+            <div class="filter-right">
+                {#
+                {% if is_admin_view %}
+                <button class="btn btn-primary" onclick="syncTally()">
+                    <i class="fas fa-sync"></i> Sync to Tally
+                </button>
+                {% endif %}
+                #}
+                <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}" target="_blank"
+                    class="btn btn-info role-guide-link">
+                    <i class="fas fa-book-open"></i> View Role Guide
+                </a>
+            </div>
         </div>
     </div>
 

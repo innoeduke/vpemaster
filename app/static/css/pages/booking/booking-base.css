@@ -93,16 +93,26 @@
 }
 
 /* --- Filter Container --- */
-.booking-filter-container {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	padding: 15px 0;
-	gap: 20px;
-	flex-wrap: wrap;
+.filters-container.premium {
+	background-color: #fff;
+	padding: 15px 20px;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	margin-bottom: 25px;
+	border: 1px solid #e2e8f0;
 }
 
-.booking-filter-container .filter-left {
+.filter-row-premium {
+	display: flex;
+	align-items: center;
+	padding: 0;
+	gap: 20px;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	width: 100%;
+}
+
+.filter-row-premium .filter-left {
 	display: flex;
 	align-items: center;
 	gap: 10px;
@@ -110,14 +120,13 @@
 	font-size: 1em;
 }
 
-.booking-filter-container .filter-right {
-	flex-grow: 1;
+.filter-row-premium .filter-right {
 	display: flex;
 	justify-content: flex-end;
 	gap: 10px;
 }
 
-.booking-filter-container #meeting-filter {
+.filters-container.premium #meeting-filter {
 	font-size: 1.1em;
 	width: auto;
 	min-width: 250px;
@@ -127,19 +136,21 @@
 	box-shadow: none;
 }
 
-.booking-filter-container .btn,
-.booking-filter-container .role-guide-link {
+.filters-container.premium .btn,
+.filters-container.premium .role-guide-link {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 10px;
 	font-weight: bold;
-	padding: 8px 15px;
-	height: auto;
-	min-height: 42px;
-	line-height: 1.5;
+	padding: 0 16px;
+	height: 40px;
+	min-height: 40px;
+	line-height: normal;
 	box-sizing: border-box;
-	font-size: 1rem;
+	font-size: 14.5px;
+	width: auto;
+	font-family: 'Montserrat', sans-serif;
 }
 
 /* --- Horizontal Timeline --- */

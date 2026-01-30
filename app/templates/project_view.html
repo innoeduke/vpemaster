@@ -9,83 +9,35 @@
 		id="speech-logs-filter-form">
 		<div class="filter-row-premium">
 			<div class="filters-set">
-				<div class="form-group filter-group-premium">
-					<label for="term-select" class="label-premium label-filter">Club Terms:</label>
-					
-					<div class="custom-dropdown relative-pos flex-1" id="term-dropdown-container">
-						<button type="button" id="term-dropdown-btn" class="form-control dropdown-premium-btn" onclick="toggleTermDropdown(event)">
-							<span id="term-btn-text">
-								{% if selected_term_ids %}
-									{{ selected_term_ids|length }} selected
-								{% else %}
-									0 selected
-								{% endif %}
-							</span>
-							<i class="fas fa-caret-down"></i>
-						</button>
-						
-						<div id="term-dropdown-menu" class="dropdown-premium-menu">
-							
-							<label class="dropdown-header-premium">
-								<input type="checkbox" id="term-select-all" onchange="toggleAllTerms(this)" class="dropdown-checkbox" {% if terms and selected_term_ids|length == terms|length %}checked{% endif %}> 
-								Select / Deselect All
-							</label>
-							
-							{% for term in terms %}
-							<label class="dropdown-item-label">
-								<input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox dropdown-checkbox" 
-									   data-label="{{ term.label }}" data-start="{{ term.start }}" data-end="{{ term.end }}"
-									   onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{% endif %}>
-								{{ term.label }}
-							</label>
-							{% endfor %}
-						</div>
-					</div>
+				<div class="form-group filter-group-premium flex-1">
+					<label for="term" class="label-premium label-filter">Club Terms:</label>
+					<select name="term" id="term" multiple>
+						{% for term in terms %}
+						<option value="{{ term.id }}" {% if selected_term_ids and term.id in selected_term_ids %}selected{% endif %}>
+							{{ term.label }}
+						</option>
+						{% endfor %}
+					</select>
 				</div>
-				<div class="form-group filter-group-premium">
-					<label for="pathway-input" class="label-premium label-filter">Pathways:</label>
-					
-					<div class="custom-dropdown relative-pos flex-1" id="pathway-dropdown-container">
-						<input type="hidden" name="pathway" id="pathway-input" value="{{ selected_pathway }}">
+				<div class="form-group filter-group-premium flex-1">
+					<label for="pathway" class="label-premium label-filter">Pathways:</label>
+					<select name="pathway" id="pathway" onchange="this.form.submit()">
+						<option value="" {% if not selected_pathway %}selected{% endif %}>All Pathways</option>
 						
-						<button type="button" id="pathway-dropdown-btn" class="form-control dropdown-premium-btn" onclick="togglePathwayDropdown(event)">
-							<span id="pathway-btn-text">
-								{{ selected_pathway if selected_pathway else 'All Pathways' }}
-							</span>
-							<i class="fas fa-caret-down"></i>
-						</button>
-						
-						<div id="pathway-dropdown-menu" class="dropdown-premium-menu">
-							<div class="dropdown-item-label" onclick="selectPathway('')">
-								<div class="flex-center-gap" style="gap: 8px;">
-									<i class="fas fa-check" style="visibility: {{ 'visible' if not selected_pathway else 'hidden' }}; width: 12px;"></i>
-									<span>All Pathways</span>
-								</div>
-							</div>
-							
-							<div class="dropdown-header-premium" style="cursor: default; background-color: #f7fafc; color: #718096; font-size: 0.75em;">Active</div>
+						<optgroup label="Active">
 							{% for p in active_pathways %}
-							<div class="dropdown-item-label" onclick="selectPathway('{{ p }}')">
-								<div class="flex-center-gap" style="gap: 8px;">
-									<i class="fas fa-check" style="visibility: {{ 'visible' if selected_pathway == p else 'hidden' }}; width: 12px;"></i>
-									<span>{{ p }}</span>
-								</div>
-							</div>
+							<option value="{{ p }}" {% if selected_pathway == p %}selected{% endif %}>{{ p }}</option>
 							{% endfor %}
+						</optgroup>
 
-							{% if inactive_pathways %}
-							<div class="dropdown-header-premium" style="cursor: default; background-color: #f7fafc; color: #718096; font-size: 0.75em;">Legacy</div>
+						{% if inactive_pathways %}
+						<optgroup label="Legacy">
 							{% for p in inactive_pathways %}
-							<div class="dropdown-item-label" onclick="selectPathway('{{ p }}')">
-								<div class="flex-center-gap" style="gap: 8px;">
-									<i class="fas fa-check" style="visibility: {{ 'visible' if selected_pathway == p else 'hidden' }}; width: 12px;"></i>
-									<span>{{ p }}</span>
-								</div>
-							</div>
+							<option value="{{ p }}" {% if selected_pathway == p %}selected{% endif %}>{{ p }}</option>
 							{% endfor %}
-							{% endif %}
-						</div>
-					</div>
+						</optgroup>
+						{% endif %}
+					</select>
 				</div>
 			</div>
 			<div class="view-mode-toggle">
@@ -188,179 +140,26 @@
 
 {% block speech_log_scripts %}
  {{ super() }}
+ <script src="{{ url_for('static', filename='js/components/custom_select_adapter.js') }}"></script>
  <script>
-     // Initialize state on load
      document.addEventListener('DOMContentLoaded', function() {
-         updateTermSelection(true); 
-     });
- 
-     function toggleTermDropdown(event) {
-         closePathwayDropdown();
-         event.stopPropagation();
-         event.preventDefault(); 
-         const menu = document.getElementById('term-dropdown-menu');
-         // Check if currently visible (assuming default is hidden)
-         if (menu && menu.style.display !== 'block') {
-             menu.style.display = 'block';
-         } else if (menu) {
-             closeDropdownAndSubmit();
-         }
-     }
-     
-     function togglePathwayDropdown(event) {
-         if (typeof closeDropdownAndSubmit === 'function') {
-             // Close term dropdown if open, but don't submit yet
-             const termMenu = document.getElementById('term-dropdown-menu');
-             if (termMenu) termMenu.style.display = 'none';
-         }
-         
-         event.stopPropagation();
-         event.preventDefault(); 
-         const menu = document.getElementById('pathway-dropdown-menu');
-         
-         if (menu && menu.style.display !== 'block') {
-             menu.style.display = 'block';
-         } else if (menu) {
-             menu.style.display = 'none';
-         }
-     }
-     
-     function selectPathway(value) {
-         document.getElementById('pathway-input').value = value;
-         document.getElementById('speech-logs-filter-form').submit();
-     }
-     
-     function closePathwayDropdown() {
-         const menu = document.getElementById('pathway-dropdown-menu');
-         if (menu) menu.style.display = 'none';
-     }
+         const tSelect = document.getElementById('term');
+         const pSelect = document.getElementById('pathway');
+         const form = document.getElementById('speech-logs-filter-form');
 
-     function toggleAllTerms(source) {
-         const checkboxes = document.querySelectorAll('.term-checkbox');
-         checkboxes.forEach(cb => cb.checked = source.checked);
-         updateTermSelection();
-     }
- 
-     function updateTermSelection(isInitial = false) {
-         const checkboxes = document.querySelectorAll('.term-checkbox');
-         const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
-         const selectedCount = selectedCheckboxes.length;
-         const totalCount = checkboxes.length;
-         
-         // Update Count/Range Text
-         const btnText = document.getElementById('term-btn-text');
-         let displayStr = "";
-         
-         if (selectedCount === totalCount && totalCount > 0) {
-             displayStr = "All Terms";
-         } else if (selectedCount === 0) {
-             displayStr = "0 selected";
-         } else {
-             // Logic to combine adjacent terms
-             selectedCheckboxes.sort((a, b) => a.dataset.start.localeCompare(b.dataset.start));
-             
-             const ranges = [];
-             if (selectedCheckboxes.length > 0) {
-                 let currentRange = {
-                     startLabel: selectedCheckboxes[0].dataset.label.split(' ')[1],
-                     startYear: selectedCheckboxes[0].dataset.label.split(' ')[0],
-                     endLabel: selectedCheckboxes[0].dataset.label.split(' ')[1],
-                     endYear: selectedCheckboxes[0].dataset.label.split(' ')[0],
-                     fullStart: selectedCheckboxes[0].dataset.start,
-                     fullEnd: selectedCheckboxes[0].dataset.end,
-                     count: 1
-                 };
-                 
-                 for (let i = 1; i < selectedCheckboxes.length; i++) {
-                     const next = selectedCheckboxes[i];
-                     const prevEnd = new Date(currentRange.fullEnd);
-                     const nextStart = new Date(next.dataset.start);
-                     const diffDays = Math.ceil(Math.abs(nextStart - prevEnd) / (1000 * 60 * 60 * 24));
-                     
-                     if (diffDays <= 2) {
-                         currentRange.endLabel = next.dataset.label.split(' ')[1];
-                         currentRange.endYear = next.dataset.label.split(' ')[0];
-                         currentRange.fullEnd = next.dataset.end;
-                         currentRange.count++;
-                     } else {
-                         ranges.push(formatRange(currentRange));
-                         currentRange = {
-                             startLabel: next.dataset.label.split(' ')[1],
-                             startYear: next.dataset.label.split(' ')[0],
-                             endLabel: next.dataset.label.split(' ')[1],
-                             endYear: next.dataset.label.split(' ')[0],
-                             fullStart: next.dataset.start,
-                             fullEnd: next.dataset.end,
-                             count: 1
-                         };
-                     }
-                 }
-                 ranges.push(formatRange(currentRange));
-             }
-             displayStr = ranges.join(', ');
+         if (tSelect) {
+             const tAdapter = new CustomSelectAdapter(tSelect);
+             const originalClose = tAdapter.close.bind(tAdapter);
+             tAdapter.close = function() {
+                 const wasOpen = this.isOpen;
+                 originalClose();
+                 if (wasOpen) form.submit();
+             };
          }
          
-         if (btnText) btnText.textContent = displayStr;
-         
-         // Also update header title if it's the initial load
-         if (isInitial) {
-             const header = document.getElementById('project-metrics-header');
-             if (header) {
-                 if (selectedCount === totalCount && totalCount > 0) {
-                     header.innerHTML = `Project Completion Metrics (All Terms)`;
-                 } else if (selectedCount > 0) {
-                     header.innerHTML = `Project Completion Metrics (${displayStr})`;
-                 }
-             }
-         }
- 
-         function formatRange(range) {
-             if (range.count === 1) return `${range.startYear} ${range.startLabel}`;
-             return `${range.startYear} ${range.startLabel.split('-')[0]} - ${range.endYear} ${range.endLabel.split('-')[1]}`;
-         }
-         
-         const selectAll = document.getElementById('term-select-all');
-         if (selectAll) {
-             if (selectedCount === totalCount && totalCount > 0) {
-                 selectAll.checked = true;
-                 selectAll.indeterminate = false;
-             } else if (selectedCount === 0) {
-                 selectAll.checked = false;
-                 selectAll.indeterminate = false;
-             } else {
-                 selectAll.checked = false;
-                 selectAll.indeterminate = true;
-             }
-         }
-     }
- 
-     function closeDropdownAndSubmit() {
-         const menu = document.getElementById('term-dropdown-menu');
-         if (menu) menu.style.display = 'none';
-         document.getElementById('speech-logs-filter-form').submit();
-     }
- 
-     document.addEventListener('click', function(event) {
-         const termContainer = document.getElementById('term-dropdown-container');
-         const termMenu = document.getElementById('term-dropdown-menu');
-         
-         if (termContainer && termMenu && termMenu.style.display === 'block' && !termContainer.contains(event.target)) {
-             closeDropdownAndSubmit();
-         }
-         
-         const pathwayContainer = document.getElementById('pathway-dropdown-container');
-         const pathwayMenu = document.getElementById('pathway-dropdown-menu');
-         
-         if (pathwayContainer && pathwayMenu && pathwayMenu.style.display === 'block' && !pathwayContainer.contains(event.target)) {
-             closePathwayDropdown();
+         if (pSelect) {
+             new CustomSelectAdapter(pSelect);
          }
      });
-     
-     const termMenu = document.getElementById('term-dropdown-menu');
-     if (termMenu) {
-         termMenu.addEventListener('click', function(event) {
-             event.stopPropagation();
-         });
-     }
  </script>
 {% endblock %}

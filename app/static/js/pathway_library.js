@@ -6,12 +6,15 @@ function updatePathCodes(project) {
     const code =
       project && project.path_codes ? project.path_codes[pathAbbr] : null;
 
+    // Use .badge-text span if available (new structure), fallback to span (old structure/desktop)
+    const valueSpan = box.querySelector(".badge-text span") || box.querySelector("span");
+
     if (code) {
-      box.style.display = "block";
-      box.querySelector("span").textContent = code;
+      box.style.display = ""; // Remove inline style to let CSS (display: flex) take over
+      if (valueSpan) valueSpan.textContent = code;
     } else {
       box.style.display = "none";
-      box.querySelector("span").textContent = "";
+      if (valueSpan) valueSpan.textContent = "";
     }
   });
 }
@@ -47,7 +50,12 @@ function toggleEditView() {
 
   if (isEditing) {
     editButton.innerHTML = '<i class="fas fa-check"></i>';
-    cancelButton.style.display = "inline-block";
+    // Remove the inline style to let CSS (display: inline-flex) take over, allowing proper alignment
+    cancelButton.style.display = ""; 
+    // Fallback: if CSS isn't applied for some reason, force inline-flex
+    if (getComputedStyle(cancelButton).display === 'none') {
+        cancelButton.style.display = "inline-flex";
+    }
 
     pTags.forEach((p) => (p.style.display = "none"));
     textareas.forEach((textarea) => {
@@ -62,7 +70,8 @@ function toggleEditView() {
     });
   } else {
     editButton.innerHTML = '<i class="fas fa-edit"></i>';
-    cancelButton.style.display = "none";
+    // Restore the strict hiding with !important
+    cancelButton.style.setProperty('display', 'none', 'important');
     pTags.forEach((p) => (p.style.display = "block"));
     textareas.forEach((textarea) => (textarea.style.display = "none"));
     displayProjectDetails();
@@ -353,4 +362,10 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   displayProjectDetails();
+
+  // Initialize Custom Select Adapters
+  // These will automatically sync with the native selects and handle updates via MutationObserver
+  if (pathSelect) new CustomSelectAdapter(pathSelect);
+  if (levelSelect) new CustomSelectAdapter(levelSelect);
+  if (projectSelect) new CustomSelectAdapter(projectSelect);
 });

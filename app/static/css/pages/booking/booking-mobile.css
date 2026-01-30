@@ -73,23 +73,27 @@
 	}
 
 	/* Filter container mobile layout */
-	.booking-filter-container {
-		flex-direction: column;
-		align-items: center;
-		padding: 20px 0;
+	.filters-container.premium {
+		padding: 15px;
 	}
 
-	.booking-filter-container .filter-left,
-	.booking-filter-container .filter-right {
+	.filter-row-premium {
+		flex-direction: column;
+		align-items: center;
+		gap: 15px;
+	}
+
+	.filter-row-premium .filter-left,
+	.filter-row-premium .filter-right {
 		width: 100%;
 		justify-content: center;
 	}
 
-	.booking-filter-container .filter-right {
+	.filter-row-premium .filter-right {
 		gap: 10px;
 	}
 
-	.booking-filter-container .filter-right .btn {
+	.filter-row-premium .filter-right .btn {
 		flex: 1;
 		justify-content: center;
 		white-space: nowrap;
@@ -97,7 +101,7 @@
 		padding: 8px 10px;
 	}
 
-	.booking-filter-container .role-guide-link {
+	.filters-container.premium .role-guide-link {
 		width: auto !important;
 		flex: 1;
 		box-sizing: border-box;

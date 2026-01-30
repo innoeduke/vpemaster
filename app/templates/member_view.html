@@ -19,38 +19,42 @@
             {% endif %}
         </div>
         <div class="header-info">
-            <h2>{{ viewed_contact.Name }}</h2>
-            <div class="header-info-details">
-                {% if viewed_contact.Completed_Paths %}
-                <div class="header-badges-row">
-                    {% for path in viewed_contact.Completed_Paths.split('/') %}
-                    {% set path_trimmed = path.strip() %}
-                    {% set path_abbr = path_trimmed[:2]|lower %}
-                    <span class="badge-path path-{{ path_abbr }}">{{ path_trimmed }}</span>
-                    {% endfor %}
-                </div>
-                {% endif %}
+            <div class="name-credential">
+                <h2>{{ viewed_contact.Name }}</h2>
                 {% if viewed_contact.credentials %}
                 <span class="credential-text">{{ viewed_contact.credentials }}</span>
                 {% endif %}
-                {% if viewed_contact.credentials and viewed_contact.Next_Project %} | {% endif %}
-                {% if viewed_contact.Next_Project %}
-                Next Project: {{ viewed_contact.Next_Project }}
+            </div>
+            
+            {% if viewed_contact.Next_Project %}
+            <div class="next-project-line">
+                Next Project: <span class="next-project-code">{{ viewed_contact.Next_Project }}</span>
+            </div>
+            {% endif %}
+
+            {% if viewed_contact.Completed_Paths %}
+            <div class="header-badges-row">
+                {% for path in viewed_contact.Completed_Paths.split('/') %}
+                {% set path_trimmed = path.strip() %}
+                {% set path_abbr = path_trimmed[:2]|lower %}
+                <span class="badge-path path-{{ path_abbr }}">{{ path_trimmed }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="header-profile-action">
+                {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+                <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn-view-control btn-profile-small"
+                    title="View Profile">
+                    <i class="fas fa-id-card"></i> Profile
+                </a>
+                {% elif current_user.contact_id == viewed_contact.id %}
+                <a href="{{ url_for('auth_bp.profile') }}" class="btn-view-control btn-profile-small"
+                    title="My Profile">
+                    <i class="fas fa-user-circle"></i> Profile
+                </a>
                 {% endif %}
             </div>
-        </div>
-        <div class="header-right">
-            {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
-            <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn-view-control btn-profile-view"
-                title="View Profile">
-                <i class="fas fa-id-card"></i> Profile
-            </a>
-            {% elif current_user.contact_id == viewed_contact.id %}
-            <a href="{{ url_for('auth_bp.profile') }}" class="btn-view-control btn-profile-view"
-                title="My Profile">
-                <i class="fas fa-user-circle"></i> Profile
-            </a>
-            {% endif %}
         </div>
     </div>
     {% endif %}
@@ -68,39 +72,12 @@
 
                     <div class="form-group pathway-selector-group filter-group-premium">
                         <label class="label-premium label-filter">Pathways:</label>
-                        
-						<div class="custom-dropdown relative-pos" id="pathway-dropdown-container">
-							<input type="hidden" name="pathway" id="pathway-input" value="{{ selected_filters.pathway or 'all' }}">
-							
-							<button type="button" id="pathway-dropdown-btn" class="form-control dropdown-premium-btn" onclick="togglePathwayDropdown(event)">
-								<span id="pathway-btn-text">
-									{% if selected_filters.pathway and selected_filters.pathway != 'all' %}
-										{{ selected_filters.pathway }}
-									{% else %}
-										All My Pathways
-									{% endif %}
-								</span>
-								<i class="fas fa-caret-down"></i>
-							</button>
-							
-							<div id="pathway-dropdown-menu" class="dropdown-premium-menu">
-								<div class="dropdown-item-label" onclick="selectPathway('all')">
-									<div class="flex-center-gap" style="gap: 8px;">
-										<i class="fas fa-check" style="visibility: {{ 'visible' if not selected_filters.pathway or selected_filters.pathway == 'all' else 'hidden' }}; width: 12px;"></i>
-										<span>All My Pathways</span>
-									</div>
-								</div>
-								
-								{% for p_name in member_pathways %}
-								<div class="dropdown-item-label" onclick="selectPathway('{{ p_name }}')">
-									<div class="flex-center-gap" style="gap: 8px;">
-										<i class="fas fa-check" style="visibility: {{ 'visible' if selected_filters.pathway == p_name else 'hidden' }}; width: 12px;"></i>
-										<span>{{ p_name }}</span>
-									</div>
-								</div>
-								{% endfor %}
-							</div>
-						</div>
+                        <select name="pathway" id="pathway" onchange="this.form.submit()">
+                            <option value="all" {% if not selected_filters.pathway or selected_filters.pathway == 'all' %}selected{% endif %}>All My Pathways</option>
+                            {% for p_name in member_pathways %}
+                            <option value="{{ p_name }}" {% if selected_filters.pathway == p_name %}selected{% endif %}>{{ p_name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </form>
             </div>
@@ -219,40 +196,11 @@
 
 {% block speech_log_scripts %}
 {{ super() }}
+<script src="{{ url_for('static', filename='js/components/custom_select_adapter.js') }}"></script>
 <script>
-    function togglePathwayDropdown(event) {
-        event.stopPropagation();
-        event.preventDefault();
-        const menu = document.getElementById('pathway-dropdown-menu');
-        if (menu) {
-            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
-        }
-    }
-
-    function selectPathway(value) {
-        document.getElementById('pathway-input').value = value;
-        document.getElementById('speech-logs-filter-form').submit();
-    }
-
-    function closePathwayDropdown() {
-        const menu = document.getElementById('pathway-dropdown-menu');
-        if (menu) menu.style.display = 'none';
-    }
-
-    document.addEventListener('click', function(event) {
-        const container = document.getElementById('pathway-dropdown-container');
-        const menu = document.getElementById('pathway-dropdown-menu');
-        
-        if (container && menu && menu.style.display === 'block' && !container.contains(event.target)) {
-            closePathwayDropdown();
-        }
+    document.addEventListener("DOMContentLoaded", function() {
+        const pSelect = document.getElementById('pathway');
+        if (pSelect) new CustomSelectAdapter(pSelect);
     });
-
-    const menu = document.getElementById('pathway-dropdown-menu');
-    if (menu) {
-        menu.addEventListener('click', function(event) {
-            event.stopPropagation();
-        });
-    }
 </script>
 {% endblock %}

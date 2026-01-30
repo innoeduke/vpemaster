@@ -22,7 +22,7 @@
 
 	/* Make the Owner column wider on mobile */
 	.edit-mode-active #logs-table .col-owner {
-		width: 30% !important;
+		width: 30%;
 		min-width: 120px;
 	}
 
@@ -92,8 +92,8 @@
 	}
 
 	.action-bar-left #meeting-filter {
-		max-width: 100% !important;
-		width: auto !important;
+		max-width: 100%;
+		width: auto;
 		min-width: 200px;
 	}
 
@@ -249,19 +249,174 @@
 	.action-bar-right .action-group #ppt-btn {
 		flex: 0 0 auto;
 		width: 50px;
-		min-width: 50px !important;
-		padding: 0 !important;
+		min-width: 50px;
+		padding: 0;
 	}
 
 	/* Reduce font size in agenda table for mobile */
 	.edit-mode-active #logs-table th,
 	.edit-mode-active #logs-table td {
-		font-size: 0.8em;
+		font-size: 0.75em;
 	}
 
-	#logs-table th,
-	#logs-table td {
-		font-size: 0.9em;
+	/* Hide hidden sessions on mobile - Increased specificity to override grid */
+	#logs-table tbody tr.hidden-row,
+	#logs-table tr.hidden-row {
+		display: none !important;
+	}
+
+	/* Force table elements to block to ensure grid layout on rows works correctly */
+	#logs-table,
+	#logs-table thead,
+	#logs-table tbody {
+		display: block !important;
+		width: 100% !important;
+	}
+
+	#logs-table thead tr.non-edit-mode-header {
+		display: grid !important;
+		grid-template-columns: 70px 1fr 70px;
+		/* Recalibrated widths */
+		width: 100%;
+	}
+
+	#logs-table thead tr.non-edit-mode-header th {
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+		padding: 6px 4px !important;
+		min-width: 0;
+	}
+
+	#logs-table thead tr.non-edit-mode-header th:nth-child(2) {
+		justify-content: flex-start !important;
+		padding-left: 8px !important;
+	}
+
+	#logs-table thead tr.non-edit-mode-header th:nth-child(3) {
+		display: none !important;
+	}
+
+	/* Explicitly exclude .hidden-row and .section-row from the main 3-column grid */
+	#logs-table tbody tr:not(.section-row):not(.hidden-row) {
+		display: grid !important;
+		grid-template-columns: 70px 1fr 70px;
+		grid-template-rows: auto auto !important;
+		width: 100%;
+		border-bottom: 1px solid #f1f5f9;
+	}
+
+	#logs-table thead th,
+	#logs-table tbody td {
+		font-size: 0.75rem !important;
+		padding: 6px !important;
+		border: none !important;
+		min-width: 0;
+	}
+
+	/* Time Column (Child 1) */
+	#logs-table tbody tr:not(.section-row) td:nth-child(1) {
+		grid-column: 1 !important;
+		display: flex !important;
+		align-items: flex-start !important;
+		justify-content: center;
+		border-right: 1px solid #f1f5f9 !important;
+		font-weight: 500;
+		padding: 8px 4px !important;
+	}
+
+	/* Session Cell (Child 2) */
+	#logs-table tbody tr:not(.section-row) td:nth-child(2) {
+		grid-column: 2 !important;
+		padding: 8px !important;
+		font-weight: 700;
+		font-size: 0.85rem !important;
+		line-height: 1.2 !important;
+	}
+
+	/* Owner Cell (Child 3) */
+	#logs-table tbody tr:not(.section-row) td:nth-child(3) {
+		grid-column: 2 !important;
+		padding: 0px 8px 8px 8px !important;
+		border-top: none !important;
+		line-height: 1.2 !important;
+	}
+
+	/* Duration Column (Child 4) */
+	#logs-table tbody tr:not(.section-row) td:nth-child(4) {
+		grid-column: 3 !important;
+		display: flex !important;
+		align-items: flex-start !important;
+		justify-content: center;
+		border-left: 1px solid #f1f5f9 !important;
+		text-align: center !important;
+		font-weight: 500;
+		padding: 8px 2px !important;
+		box-sizing: border-box !important;
+	}
+
+	/* Banded Colors for Grid Rows */
+	#logs-table tbody tr:not(.section-row):nth-child(even) {
+		background-color: #fcfcfc !important;
+	}
+
+	/* Section Row Overrides for Grid */
+	#logs-table tbody tr.section-row {
+		display: grid !important;
+		grid-template-columns: 1fr;
+		width: 100%;
+	}
+
+	#logs-table tbody tr.section-row td {
+		grid-column: 1 !important;
+		width: 100%;
+		padding: 6px 12px !important;
+	}
+
+	.owner-row {
+		display: flex !important;
+		align-items: center !important;
+		flex-wrap: nowrap !important;
+		gap: 6px !important;
+		margin-top: 0 !important;
+		/* Reduced from 4px to eliminate gap */
+	}
+
+	.owner-name {
+		font-size: 0.8rem !important;
+		color: #334155 !important;
+		display: inline-block !important;
+		white-space: normal !important;
+		word-break: break-word;
+	}
+
+	.owner-meta {
+		font-size: 0.65rem !important;
+		color: #64748b !important;
+		display: inline-block !important;
+		white-space: normal !important;
+		word-break: break-word;
+	}
+
+	.award-badge {
+		font-size: 0.8em !important;
+		margin-left: 0 !important;
+		/* Gap handles spacing */
+	}
+
+	.role-badge {
+		padding: 1px 4px;
+		font-size: 0.55rem;
+	}
+
+	/* Ensure shadow is visible and not clipped */
+	.table-container {
+		padding: 10px 5px 30px 5px !important;
+	}
+
+	/* Align action bar padding on mobile */
+	.action-bar {
+		padding: 0 5px !important;
 	}
 
 	/* Footnote scaling for mobile */

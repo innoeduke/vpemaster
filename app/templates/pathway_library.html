@@ -41,40 +41,40 @@
     <div class="project-header">
       <h2 id="project-name"></h2>
       <div class="button-group">
-        <a id="download-project-btn" class="icon-btn" title="Download Evaluation" style="display: none" target="_blank">
-          <i class="fas fa-download"></i>
-        </a>
         {% if is_authorized(Permissions.PATHWAY_LIB_EDIT) %}
-        <button id="cancel-project-btn" class="icon-btn" style="display: none" title="Cancel">
+        <button id="cancel-project-btn" class="icon-btn" style="display: none !important" title="Cancel">
           <i class="fas fa-times"></i>
         </button>
         <button id="edit-project-btn" class="icon-btn" title="Edit">
           <i class="fas fa-edit"></i>
         </button>
         {% endif %}
+        <a id="download-project-btn" class="icon-btn" title="Download Evaluation" style="display: none" target="_blank">
+          <i class="fas fa-download"></i>
+        </a>
       </div>
     </div>
     <div class="path-codes">
       <div class="path-code-box path-dl btn-sm" id="dl-code" data-path="DL">
-        <i class="fas fa-chart-line"></i> DL: <span></span>
+        <i class="fas fa-chart-line"></i> <span class="badge-text">DL: <span></span></span>
       </div>
       <div class="path-code-box path-eh btn-sm" id="eh-code" data-path="EH">
-        <i class="fas fa-laugh"></i> EH: <span></span>
+        <i class="fas fa-laugh"></i> <span class="badge-text">EH: <span></span></span>
       </div>
       <div class="path-code-box path-ms btn-sm" id="ms-code" data-path="MS">
-        <i class="fas fa-fire"></i> MS: <span></span>
+        <i class="fas fa-fire"></i> <span class="badge-text">MS: <span></span></span>
       </div>
       <div class="path-code-box path-pi btn-sm" id="pi-code" data-path="PI">
-        <i class="fas fa-handshake"></i> PI: <span></span>
+        <i class="fas fa-handshake"></i> <span class="badge-text">PI: <span></span></span>
       </div>
       <div class="path-code-box path-pm btn-sm" id="pm-code" data-path="PM">
-        <i class="fas fa-chalkboard-teacher"></i> PM: <span></span>
+        <i class="fas fa-chalkboard-teacher"></i> <span class="badge-text">PM: <span></span></span>
       </div>
       <div class="path-code-box path-vc btn-sm" id="vc-code" data-path="VC">
-        <i class="fas fa-lightbulb"></i> VC: <span></span>
+        <i class="fas fa-lightbulb"></i> <span class="badge-text">VC: <span></span></span>
       </div>
       <div class="path-code-box path-dtm btn-sm" id="dtm-code" data-path="DTM">
-        <i class="fas fa-trophy"></i> DTM: <span></span>
+        <i class="fas fa-trophy"></i> <span class="badge-text">DTM: <span></span></span>
       </div>
     </div>
     <br />
@@ -108,5 +108,6 @@
 <script>
   const pathways = {{ pathways| tojson }};
 </script>
+<script src="{{ url_for('static', filename='js/components/custom_select_adapter.js') }}"></script>
 <script src="{{ url_for('static', filename='js/pathway_library.js') }}"></script>
 {% endblock %}

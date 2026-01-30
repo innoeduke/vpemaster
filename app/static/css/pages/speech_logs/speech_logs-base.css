@@ -159,8 +159,9 @@
 .filters-set {
 	display: flex;
 	align-items: center;
-	gap: 40px;
+	gap: 20px;
 	flex-grow: 0;
+	flex-wrap: wrap;
 }
 
 .flex-center-gap {
@@ -194,7 +195,46 @@
 }
 
 .credential-text {
-	font-weight: bold;
+	font-weight: 500;
+	color: #64748b;
+	font-size: 0.9em;
+	margin-left: 10px;
+}
+
+.name-credential {
+	display: flex;
+	align-items: baseline;
+	margin-bottom: 8px;
+}
+
+.next-project-line {
+	font-size: 14px;
+	color: #64748b;
+	margin-bottom: 8px;
+	font-weight: 500;
+}
+
+.next-project-code {
+	color: #334155;
+	font-weight: 700;
+}
+
+.header-profile-action {
+	margin-top: 10px;
+}
+
+.btn-profile-small {
+	height: 32px !important;
+	padding: 0 12px !important;
+	font-size: 12.5px !important;
+	background: linear-gradient(135deg, #f59e0b, #d97706);
+	color: white !important;
+	border: none;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.btn-profile-small i {
+	font-size: 1.1em;
 }
 
 /* Custom Dropdown & Range Styles */
@@ -869,6 +909,9 @@
 
 .header-info {
 	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
 }
 
 .header-actions {
@@ -949,7 +992,7 @@
 
 /* Project View Styles */
 .project-view-container {
-	padding-top: 20px;
+	/* Removed padding-top to align header with other views */
 }
 
 .chart-container {

@@ -1124,6 +1124,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // --- 7. Permission Management & Audit Log ---
+let originalPermissions = {}; // role_id -> [perm_id, ...]
 
 /**
  * Fetches and renders the permission matrix.
@@ -1152,7 +1153,12 @@ function loadPermissionsMatrix() {
 
 function renderPermissionsMatrix(data) {
   const container = document.getElementById("permissions-matrix");
+  const saveBtn = document.getElementById("save-permissions-btn");
   const { roles, permissions, role_perms } = data;
+
+  // Store original state
+  originalPermissions = JSON.parse(JSON.stringify(role_perms));
+  if (saveBtn) saveBtn.disabled = true;
 
   let html = `
     <div class="table-responsive">
@@ -1203,6 +1209,44 @@ function renderPermissionsMatrix(data) {
   `;
 
   container.innerHTML = html;
+
+  // Add change listener for dirty checking
+  container.addEventListener("change", () => {
+    const currentPermissions = {};
+    const roleIds = new Set();
+    container.querySelectorAll(".perm-checkbox").forEach((cb) => {
+      roleIds.add(cb.dataset.roleId);
+    });
+
+    roleIds.forEach((rid) => {
+      const checkedPerms = Array.from(
+        container.querySelectorAll(`.perm-checkbox[data-role-id="${rid}"]:checked`)
+      ).map((cb) => parseInt(cb.dataset.permId));
+      currentPermissions[rid] = checkedPerms.sort();
+    });
+
+    // Compare with original
+    let isDirty = false;
+    const sortedOriginalKeys = Object.keys(originalPermissions).sort();
+    const sortedCurrentKeys = Object.keys(currentPermissions).sort();
+
+    if (JSON.stringify(sortedOriginalKeys) !== JSON.stringify(sortedCurrentKeys)) {
+      isDirty = true;
+    } else {
+      for (const rid of sortedOriginalKeys) {
+        const orig = (originalPermissions[rid] || []).slice().sort();
+        const curr = (currentPermissions[rid] || []).slice().sort();
+        if (JSON.stringify(orig) !== JSON.stringify(curr)) {
+          isDirty = true;
+          break;
+        }
+      }
+    }
+
+    if (saveBtn) {
+      saveBtn.disabled = !isDirty;
+    }
+  });
 }
 
 /**
@@ -1234,12 +1278,32 @@ function savePermissions() {
     .then((r) => r.json())
     .then((data) => {
       if (data.success) {
-        showNotification("Permissions updated successfully!", "success");
+        // Update original state to current state
+        originalPermissions = {};
+        payload.forEach(item => {
+          originalPermissions[item.role_id] = item.permission_ids.sort();
+        });
+        
+        const saveBtn = document.getElementById("save-permissions-btn");
+        if (saveBtn) saveBtn.disabled = true;
+        
+        // Success message removed per requirement
       } else {
         showNotification(data.message, "error");
       }
     })
     .catch((e) => showNotification(e.message, "error"));
+}
+
+/**
+ * Formats a technical action string (e.g. UPDATE_ROLE_PERMS) into human-readable text.
+ */
+function formatActionString(action) {
+  if (!action) return "";
+  return action
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 }
 
 /**
@@ -1258,7 +1322,7 @@ function loadAuditLog() {
         <tr>
           <td class="small">${log.timestamp}</td>
           <td>${log.admin_name}</td>
-          <td><span class="badge bg-secondary">${log.action}</span></td>
+          <td>${formatActionString(log.action)}</td>
           <td><small>${log.target_type}:</small> ${log.target_name}</td>
           <td class="small">${log.changes}</td>
         </tr>

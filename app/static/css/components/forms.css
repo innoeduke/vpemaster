@@ -18,6 +18,14 @@
     vertical-align: middle;
 }
 
+.btn:disabled {
+    background-color: #e0e0e0 !important;
+    color: #999 !important;
+    cursor: not-allowed !important;
+    opacity: 0.7 !important;
+    box-shadow: none !important;
+}
+
 /* Modifier classes for button colors */
 .btn-primary {
     background-color: #772432;
