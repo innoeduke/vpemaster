@@ -61,6 +61,8 @@
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
+		padding: 15px;
+		margin-bottom: 15px;
 	}
 
 	.header-avatar {
@@ -69,20 +71,40 @@
 	}
 
 	.header-info {
+		order: 1;
+		margin-bottom: 10px;
+	}
+
+	.header-info h2 {
+		font-size: 1.5em;
+		margin-bottom: 5px;
+	}
+
+	.header-right {
 		order: 2;
+		width: 100%;
+		align-items: center;
+		gap: 15px;
+	}
+
+	.level-heading,
+	.category-heading {
+		font-size: 1.1em;
+		padding: 8px 12px;
 	}
 
 	.header-actions {
 		position: static;
-		order: 1;
-		margin-top: 10px;
-		margin-bottom: 10px;
+		margin-top: 0;
+		margin-bottom: 0;
+		justify-content: center;
+		width: 100%;
 	}
 
 	.header-avatar .avatar-placeholder,
 	.header-avatar .avatar-img {
-		width: 80px;
-		height: 80px;
+		width: 200px;
+		height: 200px;
 	}
 
 	/* Chart adjustments */
@@ -100,5 +122,10 @@
 
 	.bar-wrapper {
 		width: 100%;
+	}
+
+	/* Hide Path Progress Matrix on Mobile */
+	.path-progress-container {
+		display: none;
 	}
 }

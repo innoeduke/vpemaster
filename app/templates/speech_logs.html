@@ -21,7 +21,7 @@
             {% endif %}
         </div>
         <div class="header-info">
-            <h2>{{ viewed_contact.Name }}'s Activity Logs</h2>
+            <h2>{{ viewed_contact.Name }}</h2>
             <div style="font-size: 0.9em; color: #666; margin-top: 4px;">
                 {% if viewed_contact.Completed_Paths %}
                 <div style="margin-bottom: 4px;">
@@ -41,67 +41,125 @@
                 {% endif %}
             </div>
         </div>
-        <div class="header-actions">
-            {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
-            <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn btn-info btn-sm"
-                style="color: white;" title="View Profile">
-                <i class="fas fa-id-card"></i> Profile
-            </a>
-            {% elif current_user.contact_id == viewed_contact.id %}
-            <a href="{{ url_for('auth_bp.profile') }}" class="btn btn-info btn-sm" style="color: white;"
-                title="My Profile">
-                <i class="fas fa-user-circle"></i> Profile
-            </a>
-            {% endif %}
+        <div class="header-right">
+            <div class="header-actions">
+                {% if can_view_all %}
+                <div class="view-mode-toggle">
+                    {% if view_mode == 'admin' %}
+                    <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn btn-info btn-sm">
+                        <i class="fas fa-user"></i> Member View
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}"
+                        class="btn btn-primary btn-sm">
+                        <i class="fas fa-user-shield"></i> Meeting View
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-chart-bar"></i> Project View
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+                <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn btn-info btn-sm"
+                    style="color: white;" title="View Profile">
+                    <i class="fas fa-id-card"></i> Profile
+                </a>
+                {% elif current_user.contact_id == viewed_contact.id %}
+                <a href="{{ url_for('auth_bp.profile') }}" class="btn btn-info btn-sm" style="color: white;"
+                    title="My Profile">
+                    <i class="fas fa-user-circle"></i> Profile
+                </a>
+                {% endif %}
+            </div>
+
+            <div class="speech-logs-toolbar">
+                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="toolbar-form">
+                    <input type="hidden" name="view_mode" value="{{ view_mode }}">
+                    {% if request.args.get('speaker_id') %}
+                    <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
+                    {% endif %}
+
+                    <div class="form-group pathway-selector-group">
+                        <select name="pathway" onchange="this.form.submit()" class="form-control">
+                            <option value="all">All My Pathways</option>
+                            {% for p_name in member_pathways %}
+                            <option value="{{ p_name }}" {% if selected_filters.pathway==p_name %}selected{% endif %}>{{
+                                p_name
+                                }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
     {% endif %}
+    {% if not is_member_view %}
     <div class="speech-logs-toolbar">
-        {% if is_member_view %}
-        <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="toolbar-form">
-            <input type="hidden" name="view_mode" value="{{ view_mode }}">
-            {% if request.args.get('speaker_id') %}
-            <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
-            {% endif %}
-
-            <div class="form-group pathway-selector-group">
-                <select name="pathway" onchange="this.form.submit()" class="form-control">
-                    <option value="all">All My Pathways</option>
-                    {% for p_name in member_pathways %}
-                    <option value="{{ p_name }}" {% if selected_filters.pathway==p_name %}selected{% endif %}>{{
-                        p_name
-                        }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </form>
-        {% else %}
         <div class="toolbar-spacer">
              {% if view_mode == 'admin' %}
                 {% from "components/meeting_filter.html" import render_meeting_filter %}
                 {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, base_url=None, label="Meeting:", render_outer_container=False) }}
              {% endif %}
         </div> <!-- Spacer or Meeting Filter for Meeting View -->
-        {% endif %}
-
-        {% if can_view_all %}
-        <div class="view-mode-toggle">
-            {% if view_mode == 'admin' %}
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn btn-info btn-sm">
-                <i class="fas fa-user"></i> Member View
-            </a>
-            {% else %}
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}"
-                class="btn btn-primary btn-sm">
-                <i class="fas fa-user-shield"></i> Meeting View
-            </a>
-            {% endif %}
-            <a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn btn-success btn-sm">
-                <i class="fas fa-chart-bar"></i> Project View
-            </a>
-        </div>
-        {% endif %}
     </div>
+    {% endif %}
+
+    {% if is_member_view and progress_data_rows %}
+    <div class="path-progress-container">
+        <h2>Path Roadmap</h2>
+        
+        <table class="progress-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th colspan="3">Required Roles</th>
+                    <th>Elective Roles</th>
+                    <th colspan="2">Education Series</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in progress_data_rows %}
+                <tr>
+                    <td class="level-cell {% if row.level|int in completed_levels %}completed{% endif %}">
+                        Level {{ row.level }}
+                        {% if row.level|int in completed_levels %}
+                        <div class="level-check"><i class="fas fa-check-circle"></i></div>
+                        {% endif %}
+                    </td>
+                    
+                    {% for band_data in row.bands %}
+                    <td class="band-cell">
+                        {% if band_data.is_elective and row.extra_roles %}
+                        <div class="extra-roles-badge" 
+                             data-role="Additional Role"
+                             data-history="{{ row.extra_roles|tojson|forceescape }}"
+                             onclick="showRoleHistory(this)">more</div>
+                        {% endif %}
+                        {% for role in band_data.roles %}
+                            <div class="role-badge {% if role.completion_data and role.completion_data.count >= role.completion_data.required %}completed{% endif %}"
+                                 data-role="{{ role.role }}"
+                                 data-history="{{ role.completion_data.history_items|tojson|forceescape if role.completion_data and role.completion_data.history_items else '[]' }}">
+                                <span class="role-name">{{ role.role }}</span>
+                                {% if role.completion_data and role.completion_data.requirement_items %}
+                                <div class="item-dots">
+                                    {% for item in role.completion_data.requirement_items %}
+                                    <span class="dot {{ item.status }}" title="{{ item.name }}"></span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
 
     {# Macro to render any log card #}
@@ -334,6 +392,21 @@
 </div>
 
 {% include '_speech_edit_modal.html' %}
+
+<!-- Role History Modal -->
+<div id="roleHistoryModal" class="history-modal">
+    <div class="history-modal-content">
+        <div class="history-modal-header">
+            <h3 id="historyRoleName">Role History</h3>
+            <span class="close-history" onclick="closeHistoryModal()">&times;</span>
+        </div>
+        <div id="historyList" class="history-list">
+            <!-- Content will be populated by JS -->
+        </div>
+    </div>
+</div>
+
+
 
 
 

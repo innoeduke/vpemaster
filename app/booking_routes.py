@@ -160,25 +160,17 @@ def _get_contact_role_requirements(contact, club_id):
         return {}, set(), 0
 
     # 1. Determine Active Level
-    # Use Contact.get_completed_levels which checks Achievements
     completed_levels = contact.get_completed_levels(contact.Current_Path)
     
-    # Logic: First missing level is active. If 1..5 all done, then 5 (or done).
     active_level = 1
     for l in range(1, 6):
         if l not in completed_levels:
             active_level = l
             break
             
-    # Loop to find the first incomplete level (Auto-Advance)
-    # If a level is satisfied, move to next. Limit to Level 5.
-    
-    # Pre-fetch role aliases once
     role_aliases = get_role_aliases()
     
     # 3. Fetch User's Completed Roles (Global)
-    # Query: Count completed sessions for this user, from any finished meeting
-    # We join OwnerMeetingRoles directly to OwnerMeetingRoles.id (Source of Truth)
     completed_counts = {}
     
     rows = db.session.query(MeetingRole.name, func.count(OwnerMeetingRoles.id))\
@@ -192,65 +184,67 @@ def _get_contact_role_requirements(contact, club_id):
     for r_name, count in rows:
         completed_counts[normalize_role_name(r_name)] = count
 
-    # Start Main Loop
-    
     final_required_map = {}
     final_elective_set = set()
     final_elective_needed = 0
     
-    # We start at calculated active_level (based on awards), but if it's done, we move up.
     for lvl in range(active_level, 6):
-        # Fetch reqs for this level
-        level_reqs = LevelRole.query.filter_by(level=lvl).all()
+        level_reqs = LevelRole.query.filter_by(level=lvl).order_by(LevelRole.band).all()
         if not level_reqs:
-             # No requirements defined for this level? Should not happen if data is good.
              continue
              
-        # Calculate needs for this level
+        # Group by band
+        reqs_by_band = {}
+        for lr in level_reqs:
+            if lr.role.strip().lower() == 'elective pool':
+                continue
+            b = lr.band if lr.band is not None else 0
+            if b not in reqs_by_band:
+                reqs_by_band[b] = []
+            reqs_by_band[b].append(lr)
+
         temp_required_map = {}
         temp_elective_set = set()
+        temp_elective_needed = 0
         
-        elective_quota = 1 if lvl <= 3 else 2
-        elective_fulfilled_count = 0
-        
-        for req in level_reqs:
-            norm_req_role = normalize_role_name(req.role)
-            
-            # Skip 'Elective Pool' placeholder
-            if norm_req_role == 'electivepool':
-                 if req.count_required > 0:
-                     elective_quota = req.count_required
-                 continue
-                 
-            if req.type == 'required':
-                my_count = completed_counts.get(norm_req_role, 0)
-                # Check aliases
-                for alias, target in role_aliases.items():
-                    if target == norm_req_role:
-                        my_count += completed_counts.get(alias, 0)
-                
-                remaining = max(0, req.count_required - my_count)
-                if remaining > 0:
-                    temp_required_map[norm_req_role] = remaining
-                    
-            elif req.type == 'elective':
-                temp_elective_set.add(norm_req_role)
-                my_count = completed_counts.get(norm_req_role, 0)
-                # Check aliases
-                for alias, target in role_aliases.items():
-                    if target == norm_req_role:
-                        my_count += completed_counts.get(alias, 0)
-                
-                elective_fulfilled_count += my_count
+        level_has_pending = False
 
-        temp_elective_needed = max(0, elective_quota - elective_fulfilled_count)
-        
-        # Check if this level is satisfied
-        if not temp_required_map and temp_elective_needed == 0:
-             # Level satisfied! Try next level.
+        for b, band_reqs in reqs_by_band.items():
+            is_elective_band = all(lr.type == 'elective' for lr in band_reqs)
+            
+            if is_elective_band:
+                band_quota = 1 if lvl <= 4 else 2
+                band_fulfilled = 0
+                for lr in band_reqs:
+                    norm_role = normalize_role_name(lr.role)
+                    temp_elective_set.add(norm_role)
+                    
+                    my_count = completed_counts.get(norm_role, 0)
+                    for alias, target in role_aliases.items():
+                        if target == norm_role:
+                            my_count += completed_counts.get(alias, 0)
+                    band_fulfilled += my_count
+                
+                needed = max(0, band_quota - band_fulfilled)
+                if needed > 0:
+                    temp_elective_needed += needed
+                    level_has_pending = True
+            else:
+                for lr in band_reqs:
+                    norm_role = normalize_role_name(lr.role)
+                    my_count = completed_counts.get(norm_role, 0)
+                    for alias, target in role_aliases.items():
+                        if target == norm_role:
+                            my_count += completed_counts.get(alias, 0)
+                    
+                    remaining = max(0, lr.count_required - my_count)
+                    if remaining > 0:
+                        temp_required_map[norm_role] = remaining
+                        level_has_pending = True
+
+        if not level_has_pending:
              continue
         else:
-             # Found our working level
              final_required_map = temp_required_map
              final_elective_set = temp_elective_set
              final_elective_needed = temp_elective_needed

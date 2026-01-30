@@ -38,7 +38,70 @@ document.addEventListener("DOMContentLoaded", function () {
       if (clearBtn) clearBtn.style.display = "block";
     }
   }
+
+  // Add click listeners to role badges
+  document.querySelectorAll('.role-badge').forEach(badge => {
+    badge.addEventListener('click', function() {
+        showRoleHistory(this);
+    });
+  });
+
+  // Close modal when clicking outside
+  window.addEventListener('click', function(event) {
+    const modal = document.getElementById('roleHistoryModal');
+    if (event.target == modal) {
+        closeHistoryModal();
+    }
+  });
 });
+
+
+
+function showRoleHistory(badge) {
+    const roleName = badge.dataset.role;
+    const historyData = JSON.parse(badge.dataset.history || '[]');
+    
+    const modal = document.getElementById('roleHistoryModal');
+    const roleNameEl = document.getElementById('historyRoleName');
+    const historyListEl = document.getElementById('historyList');
+    
+    roleNameEl.innerText = `${roleName} History`;
+    historyListEl.innerHTML = '';
+    
+    // Filter only completed items (some might be pending)
+    const completedHistory = historyData.filter(item => item.status === 'completed');
+    
+    if (completedHistory.length === 0) {
+        historyListEl.innerHTML = '<div class="history-empty">No completed history found for this role.</div>';
+    } else {
+        completedHistory.forEach(item => {
+            const historyItem = document.createElement('div');
+            historyItem.className = 'history-item';
+            
+            const roleInfo = item.role_name ? `<span class="history-role-tag">${item.role_name}</span>` : '';
+            
+            const projectInfo = item.project_code 
+                ? `<div class="history-project"><span class="history-project-code">${item.project_code}</span> ${item.name.replace(item.project_code, '').trim()}</div>`
+                : `<div class="history-project">${item.name}</div>`;
+                
+            historyItem.innerHTML = `
+                <div class="history-item-top">
+                    <span class="history-meeting-num">Meeting #${item.meeting_number} ${roleInfo}</span>
+                    <span class="history-date">${item.meeting_date}</span>
+                </div>
+                ${projectInfo}
+            `;
+            historyListEl.appendChild(historyItem);
+        });
+    }
+    
+    modal.style.display = 'flex';
+}
+
+function closeHistoryModal() {
+    const modal = document.getElementById('roleHistoryModal');
+    if (modal) modal.style.display = 'none';
+}
 
 
 

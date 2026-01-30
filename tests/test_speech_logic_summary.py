@@ -71,7 +71,7 @@ class TestSpeechLogicSummary(unittest.TestCase):
         self.st_tm = SessionType(Title='Toastmaster', role_id=tm_role.id)
         self.st_timer = SessionType(Title='Timer', role_id=timer_role.id)
         self.st_ah = SessionType(Title='Ah-Counter', role_id=ah_role.id)
-        self.st_tme = SessionType(Title='TME', role_id=tme_role.id)
+        self.st_tme = SessionType(Title='Toastmaster', role_id=tme_role.id)
         self.st_tm_sm = SessionType(Title='Topicsmaster', role_id=tm_sm_role.id)
         self.st_ts = SessionType(Title='Topics Speaker', role_id=ts_role.id)
         self.st_ge = SessionType(Title='General Evaluator', role_id=ge_role.id)
