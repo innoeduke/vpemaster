@@ -1,0 +1,229 @@
+{% macro render_custom_select(options, selected_value, label='', select_id='custom-select', is_disabled=False, placeholder='Select...', extra_classes='') %}
+
+{% set ns = namespace(selected_text='', selected_icon='', selected_color='') %}
+{% for opt in options %}
+    {% if opt is string %}
+        {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_icon = '' %}{% set opt_color = '' %}
+    {% elif opt is iterable and opt is not string and opt is not mapping %}
+        {% set opt_val = opt[0] %}{% set opt_text = opt[1] %}{% set opt_icon = opt[2] if opt|length > 2 else '' %}{% set opt_color = opt[3] if opt|length > 3 else '' %}
+    {% elif opt is mapping %}
+        {% set opt_val = opt.value if opt.value is defined else (opt.id if opt.id is defined else opt.name) %}
+        {% set opt_text = opt.text if opt.text is defined else (opt.name if opt.name is defined else opt_val) %}
+        {% set opt_icon = opt.icon if opt.icon is defined else '' %}
+        {% set opt_color = opt.color if opt.color is defined else '' %}
+    {% else %}
+        {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_icon = '' %}{% set opt_color = '' %}
+    {% endif %}
+
+    {% if selected_value|string == opt_val|string %}
+        {% set ns.selected_text = opt_text %}
+        {% set ns.selected_icon = opt_icon %}
+        {% set ns.selected_color = opt_color %}
+    {% endif %}
+{% endfor %}
+
+<div class="custom-select-wrapper {{ extra_classes }}">
+    {% if label %}
+    <label for="{{ select_id }}-trigger">{{ label }}</label>
+    {% endif %}
+
+    <div class="meeting-autocomplete-container" id="{{ select_id }}-container">
+        <div class="custom-select-trigger" id="{{ select_id }}-trigger" 
+             tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox"
+             aria-controls="{{ select_id }}-results"
+             style="cursor: pointer; display: flex; align-items: center; {% if is_disabled %}opacity: 0.6; pointer-events: none;{% endif %}">
+            <div class="selected-content" style="display: flex; align-items: center; gap: 8px; flex-grow: 1; overflow: hidden;">
+                {% if ns.selected_icon %}
+                <i class="{{ ns.selected_icon }} select-item-icon" {% if ns.selected_color %}style="color: {{ ns.selected_color }};"{% endif %}></i>
+                {% endif %}
+                <span class="selected-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    {{ ns.selected_text if ns.selected_text else placeholder }}
+                </span>
+            </div>
+            <i class="fas fa-chevron-down dropdown-icon" style="margin-left: 5px; font-size: 0.8rem;"></i>
+        </div>
+        
+        <div id="{{ select_id }}-results" class="autocomplete-results-dropdown" style="display: none;" role="listbox">
+            {% for opt in options %}
+                {% if opt is string %}
+                    {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_icon = '' %}{% set opt_color = '' %}
+                {% elif opt is iterable and opt is not string and opt is not mapping %}
+                    {% set opt_val = opt[0] %}{% set opt_text = opt[1] %}{% set opt_icon = opt[2] if opt|length > 2 else '' %}{% set opt_color = opt[3] if opt|length > 3 else '' %}
+                {% elif opt is mapping %}
+                    {% set opt_val = opt.value if opt.value is defined else (opt.id if opt.id is defined else opt.name) %}
+                    {% set opt_text = opt.text if opt.text is defined else (opt.name if opt.name is defined else opt_val) %}
+                    {% set opt_icon = opt.icon if opt.icon is defined else '' %}
+                    {% set opt_color = opt.color if opt.color is defined else '' %}
+                {% else %}
+                    {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_icon = '' %}{% set opt_color = '' %}
+                {% endif %}
+                <div class="autocomplete-result-item {{ 'selected' if selected_value|string == opt_val|string else '' }}" 
+                     data-value="{{ opt_val }}" data-text="{{ opt_text }}" data-icon="{{ opt_icon }}" data-color="{{ opt_color }}" role="option"
+                     aria-selected="{{ 'true' if selected_value|string == opt_val|string else 'false' }}">
+                    {% if opt_icon %}
+                    <i class="{{ opt_icon }} result-item-icon" style="margin-right: 8px; width: 16px; text-align: center; {% if opt_color %}color: {{ opt_color }};{% endif %}"></i>
+                    {% endif %}
+                    <span>{{ opt_text }}</span>
+                </div>
+            {% endfor %}
+        </div>
+
+        {# Hidden real select to maintain compatibility with existing JS #}
+        <select id="{{ select_id }}" name="{{ select_id }}" style="display: none;" {% if is_disabled %}disabled{% endif %}>
+            <option value="">{{ placeholder }}</option>
+            {% for opt in options %}
+                {% if opt is string %}
+                    {% set opt_val = opt %}{% set opt_text = opt %}
+                {% elif opt is iterable and opt is not string and opt is not mapping %}
+                    {% set opt_val = opt[0] %}{% set opt_text = opt[1] %}
+                {% elif opt is mapping %}
+                    {% set opt_val = opt.value if opt.value is defined else (opt.id if opt.id is defined else opt.name) %}
+                    {% set opt_text = opt.text if opt.text is defined else (opt.name if opt.name is defined else opt_val) %}
+                {% else %}
+                    {% set opt_val = opt %}{% set opt_text = opt %}
+                {% endif %}
+                <option value="{{ opt_val }}" {% if selected_value|string == opt_val|string %}selected{% endif %}>{{ opt_text }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+
+<script>
+(function() {
+    const container = document.getElementById('{{ select_id }}-container');
+    const trigger = document.getElementById('{{ select_id }}-trigger');
+    const results = document.getElementById('{{ select_id }}-results');
+    const realSelect = document.getElementById('{{ select_id }}');
+    const items = results.querySelectorAll('.autocomplete-result-item');
+    const selectedTextSpan = trigger.querySelector('.selected-text');
+
+    if (!trigger || !results || !realSelect) return;
+
+    function toggleResults() {
+        if (results.style.display === 'none') {
+            showResults();
+        } else {
+            hideResults();
+        }
+    }
+
+    function showResults() {
+        results.style.display = 'block';
+        trigger.classList.add('active');
+        trigger.setAttribute('aria-expanded', 'true');
+        updateHighlight();
+    }
+
+    function hideResults() {
+        results.style.display = 'none';
+        trigger.classList.remove('active');
+        trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    function updateHighlight() {
+        items.forEach(item => {
+            const isSelected = item.dataset.value === realSelect.value;
+            item.classList.toggle('selected', isSelected);
+            item.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+        });
+    }
+
+    function selectItem(item) {
+        const value = item.dataset.value;
+        const text = item.dataset.text;
+        const icon = item.dataset.icon;
+        const color = item.dataset.color;
+        
+        selectedTextSpan.textContent = text;
+        const triggerContent = trigger.querySelector('.selected-content');
+        let iconElement = triggerContent.querySelector('.select-item-icon');
+        
+        if (icon) {
+            if (!iconElement) {
+                iconElement = document.createElement('i');
+                iconElement.className = icon + ' select-item-icon';
+                triggerContent.insertBefore(iconElement, selectedTextSpan);
+            } else {
+                iconElement.className = icon + ' select-item-icon';
+            }
+            if (color) iconElement.style.color = color;
+            else iconElement.style.removeProperty('color');
+        } else if (iconElement) {
+            iconElement.remove();
+        }
+
+        realSelect.value = value;
+        
+        // Trigger change event for any listeners (like roster.js)
+        realSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        hideResults();
+    }
+
+    trigger.addEventListener('click', (e) => {
+        toggleResults();
+    });
+
+    trigger.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleResults();
+        } else if (e.key === 'Escape' || e.key === 'Tab') {
+            hideResults();
+        }
+    });
+
+    items.forEach(item => {
+        item.addEventListener('click', (e) => {
+            selectItem(item);
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!container.contains(e.target)) {
+            hideResults();
+        }
+    });
+
+    // Handle losing focus (tabbing away)
+    container.addEventListener('focusout', (e) => {
+        // Delay check to allow focus to settle
+        setTimeout(() => {
+            if (!container.contains(document.activeElement)) {
+                hideResults();
+            }
+        }, 50);
+    });
+
+    // Handle external changes to the hidden select (sync back to visible UI)
+    realSelect.addEventListener('change', (e) => {
+        const currentOption = Array.from(items).find(i => i.dataset.value === realSelect.value);
+        const triggerContent = trigger.querySelector('.selected-content');
+        let iconElement = triggerContent.querySelector('.select-item-icon');
+
+        if (currentOption) {
+            selectedTextSpan.textContent = currentOption.dataset.text;
+            const icon = currentOption.dataset.icon;
+            const color = currentOption.dataset.color;
+            if (icon) {
+                if (!iconElement) {
+                    iconElement = document.createElement('i');
+                    iconElement.className = icon + ' select-item-icon';
+                    triggerContent.insertBefore(iconElement, selectedTextSpan);
+                } else {
+                    iconElement.className = icon + ' select-item-icon';
+                }
+                if (color) iconElement.style.color = color;
+                else iconElement.style.removeProperty('color');
+            } else if (iconElement) {
+                iconElement.remove();
+            }
+        } else if (!realSelect.value) {
+            selectedTextSpan.textContent = '{{ placeholder }}';
+            if (iconElement) iconElement.remove();
+        }
+        updateHighlight();
+    });
+})();
+</script>
+{% endmacro %}

@@ -7,7 +7,6 @@
 
 	/* --- General Adjustments --- */
 	.page-title {
-		font-size: 1.5rem;
 		margin-bottom: 15px;
 	}
 
@@ -183,5 +182,30 @@
 	/* Override base forced borders */
 	.roster-container .table tbody td {
 		border-bottom: none !important;
+	}
+
+	/* --- Buttons --- */
+	.roster-form-container .btn-success {
+		background-color: #e9f7ef !important;
+		color: #082e14 !important;
+		border: 2px solid #28a745 !important;
+		font-weight: 600;
+	}
+
+	.roster-form-container .btn-secondary {
+		background-color: #f2f2f2 !important;
+		color: #333 !important;
+		border: 2px solid #ced4da !important;
+		font-weight: 600;
+	}
+
+	#add-contact-btn {
+		width: 40px !important;
+		height: 40px !important;
+		padding: 0 !important;
+		display: flex !important;
+		align-items: center;
+		justify-content: center;
+		border-radius: 6px !important;
 	}
 }

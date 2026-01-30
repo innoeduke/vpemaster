@@ -40,19 +40,19 @@
 		border-bottom-right-radius: 8px;
 	}
 
-	.btn-book,
-	.btn-cancel,
-	.btn-join-waitlist,
-	.btn-leave-waitlist {
-		width: 100px;
-		font-size: 0.75em;
+	.booking-table .btn-book,
+	.booking-table .btn-cancel,
+	.booking-table .btn-join-waitlist,
+	.booking-table .btn-leave-waitlist {
+		width: 120px;
+		font-size: 0.8em;
 		margin-right: 10px;
 	}
 
 	.booking-table .admin-assign-select {
 		font-size: 0.7em;
-		flex-grow: 0;
-		width: 150px;
+		flex-grow: 1;
+		width: 100%;
 	}
 
 	.role-avatar {
@@ -126,11 +126,10 @@
 	/* Grid layout for table rows */
 	.booking-table tr {
 		display: grid;
-		grid-template-columns: 1fr minmax(120px, auto) 1fr;
-		grid-template-rows: auto auto;
+		grid-template-columns: 120px 1fr 70px;
 		grid-template-areas:
 			"role role icons"
-			"waitlist waitlist action";
+			"waitlist action action";
 		margin-bottom: 20px;
 		border: 2px solid #ddd;
 		border-radius: 8px;
@@ -157,19 +156,35 @@
 		min-width: 0;
 	}
 
+	.booking-table .role-display-text span {
+		font-size: 0.9em;
+	}
+
 	.booking-table .status-cell {
 		grid-area: waitlist;
 		font-size: 0.9em;
+		width: 120px;
+		min-width: 120px;
+		overflow: hidden;
 	}
 
 	/* Allow avatars to display side by side on mobile */
 	.booking-table .status-cell .status-cell-content {
 		display: flex;
 		flex-direction: row;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		align-items: center;
 		gap: 8px;
-		min-width: 140px;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		/* Hide scrollbar for Firefox */
+		max-width: 100%;
+	}
+
+	.booking-table .status-cell .status-cell-content::-webkit-scrollbar {
+		display: none;
+		/* Hide scrollbar for Chrome, Safari, and Opera */
 	}
 
 	.booking-table .owner-display {
@@ -187,6 +202,25 @@
 	.booking-table .icon-cell {
 		grid-area: icons;
 		justify-content: flex-end;
+		align-items: center;
+		/* Better vertical centering with text */
+		padding: 0;
+		min-width: 70px;
+	}
+
+	.booking-table .icon-cell .button-group {
+		display: flex;
+		flex-direction: row;
+		gap: 4px;
+		justify-content: flex-end;
+		align-items: center;
+	}
+
+	.booking-table .icon-cell .reset-icon-container {
+		display: flex;
+		flex-direction: row;
+		gap: 4px;
+		width: auto;
 	}
 
 	.booking-table .icon-cell .btn {
@@ -247,5 +281,22 @@
 	.recommended-label {
 		font-size: 0.75rem;
 		/* Slightly smaller for mobile */
+	}
+
+	.admin-assign-input {
+		font-size: 0.8em;
+		height: 30px;
+		padding: 2px 8px;
+		border-radius: 6px;
+	}
+
+	.btn-reset-role {
+		height: 30px !important;
+		width: 24px !important;
+		font-size: 0.8em !important;
+	}
+
+	.multi-owner-inputs {
+		gap: 6px;
 	}
 }

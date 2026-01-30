@@ -184,3 +184,104 @@
 .autocomplete-results-dropdown::-webkit-scrollbar-thumb:hover {
 	background: #ccc;
 }
+
+/* --- Mobile Responsiveness --- */
+@media (max-width: 768px) {
+	.meeting-autocomplete-container {
+		max-width: 100%;
+	}
+
+	.autocomplete-search-input {
+		font-size: 0.85rem;
+	}
+
+	.autocomplete-result-item {
+		padding: 8px 10px;
+		gap: 8px;
+	}
+
+	.autocomplete-result-item .status-icon {
+		font-size: 0.9rem;
+		width: 20px;
+	}
+
+	.autocomplete-result-item .meeting-num {
+		font-size: 0.85rem;
+	}
+
+	.autocomplete-result-item .meeting-date {
+		font-size: 0.8rem;
+	}
+
+	.autocomplete-result-item .status-tag {
+		font-size: 0.7rem;
+		padding: 1px 6px;
+	}
+}
+
+/* --- Generic Custom Select Styles --- */
+.custom-select-wrapper {
+	width: 100%;
+}
+
+.custom-select-wrapper label {
+	display: block;
+	margin-bottom: 0px;
+	font-weight: 600;
+	color: #555;
+	font-size: 0.85rem;
+}
+
+.custom-select-trigger {
+	background: white !important;
+	border: 1px solid #ced4da !important;
+	border-radius: 6px !important;
+	height: 40px !important;
+	min-height: 40px !important;
+	box-sizing: border-box !important;
+	padding: 8px 12px !important;
+	font-size: 0.95rem !important;
+	font-family: 'Inter', sans-serif !important;
+	display: flex !important;
+	align-items: center !important;
+}
+
+.custom-select-trigger:focus,
+.custom-select-trigger.active {
+	border-color: #772432 !important;
+	outline: none;
+	box-shadow: 0 0 0 0.2rem rgba(119, 36, 50, 0.15) !important;
+}
+
+.custom-select-trigger .selected-text {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	font-weight: 400;
+	color: #333;
+}
+
+.custom-select-trigger .dropdown-icon {
+	transition: transform 0.3s ease;
+	color: #666;
+}
+
+.custom-select-trigger.active .dropdown-icon {
+	transform: rotate(180deg);
+}
+
+@media (max-width: 768px) {
+
+	.custom-select-trigger,
+	.custom-select-trigger .selected-text,
+	.autocomplete-results-dropdown .autocomplete-result-item {
+		font-size: 0.85rem !important;
+	}
+}
+
+.custom-select-wrapper .autocomplete-result-item.selected {
+	background: #f0f7ff;
+	border-left: 4px solid #772432;
+	font-weight: 700;
+	color: #772432;
+}

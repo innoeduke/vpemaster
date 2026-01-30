@@ -77,8 +77,8 @@
 }
 
 .booking-container h1 {
-	text-align: center;
-	margin-bottom: 30px;
+	color: #333;
+	margin-bottom: 20px;
 }
 
 .booking-section-header {
@@ -371,6 +371,13 @@
 	width: 100%;
 }
 
+.role-cell-inner {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+}
+
 .role-cell-actions {
 	flex-shrink: 0;
 	margin-left: 10px;
@@ -385,20 +392,34 @@
 /* --- Action Cell --- */
 .booking-table .btn {
 	padding: 8px 15px;
-	border-radius: 5px;
-	color: #fff;
+	border-radius: 6px;
+	color: white;
+	background-color: #6c757d;
 	border: none;
 	cursor: pointer;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	font-family: 'Montserrat', sans-serif;
-	font-weight: normal;
+	font-weight: bold;
 	font-size: 0.9rem;
 	width: 130px;
 	height: 38px;
 	box-sizing: border-box;
 	white-space: nowrap;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+	transition: all 0.2s ease;
+}
+
+.booking-table .btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+	filter: brightness(1.1);
+}
+
+.booking-table .btn:active {
+	transform: translateY(1px);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .owner-display {
@@ -412,15 +433,23 @@
 	overflow: hidden;
 }
 
+.icon-cell .button-group {
+	display: flex;
+	flex-direction: row;
+	gap: 5px;
+	align-items: center;
+	justify-content: center;
+}
+
 .booking-table .icon-cell .btn {
-	width: 130px;
+	width: auto;
 	white-space: nowrap;
 	box-sizing: border-box;
 	justify-content: center;
 }
 
-.btn-book {
-	background-color: #28a745;
+.booking-table .btn-book {
+	background-color: #10b981;
 }
 
 .btn-booked {
@@ -458,11 +487,9 @@
 	font-weight: bold;
 	text-transform: uppercase;
 	color: white;
-	margin-right: 5px;
 	vertical-align: middle;
 	align-self: flex-start;
 	white-space: nowrap;
-	/* Prevent stretching in flex column */
 }
 
 .role-badge.required {
@@ -670,20 +697,17 @@
 	text-overflow: ellipsis;
 }
 
-.btn-join-waitlist {
-	background-color: #ffc700;
-	color: #333;
-	font-weight: normal;
+.booking-table .btn-join-waitlist {
+	background-color: #f59e0b;
 }
 
-.btn-leave-waitlist {
-	background-color: #dc3545;
-	color: #fff;
+.booking-table .btn-leave-waitlist {
+	background-color: #d75757;
 }
 
+.booking-table .btn-cancel,
 .assign-cell .btn-cancel {
-	background-color: #e9ecef;
-	color: #495057;
+	background-color: #6c757d;
 }
 
 /* --- Icon Button --- */
@@ -737,13 +761,10 @@
 
 .reset-icon-container {
 	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	/* Match name stack gap */
+	flex-direction: row;
+	gap: 5px;
 	align-items: center;
-	/* Center horizontally in the cell */
 	justify-content: center;
-	width: 100%;
 }
 
 .reset-icon-container .btn-reset-role {
@@ -751,7 +772,6 @@
 	margin: 0;
 	height: 38px;
 	/* Match input height */
-	width: 30px;
 }
 
 /* --- Admin Recommendation Badges --- */

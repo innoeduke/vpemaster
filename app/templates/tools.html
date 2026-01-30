@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "components/meeting_filter.html" import render_meeting_filter %}
+{% from "components/custom_select.html" import render_custom_select %}
 
 {% block title %}Tools{% endblock %}
 
@@ -100,14 +101,11 @@
             <!-- Header matching Lucky Draw style -->
             <h1 class="page-title" style="margin-bottom: 10px;"><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
             
-            <div class="booking-filter-container" style="margin-bottom: 20px;">
-                {{ render_meeting_filter(all_meetings, selected_meeting_num, label='Meeting:', data_format='object',
-                select_id='roster-meeting-filter') }}
-            </div>
+            {{ render_meeting_filter(all_meetings, selected_meeting_num, label='', data_format='object',
+                select_id='roster-meeting-filter', extra_style="margin-bottom: 5px;") }}
     
             {% if selected_meeting %}
             <div class="roster-main-content">
-                
                 <!-- Top: Add/Update Form (Inline) -->
                 <div class="roster-form-container">
                     <div class="card">
@@ -133,24 +131,18 @@
                                         </button>
                                     </div>
                                 </div>
-    
                                 <div class="form-group-inline input-type">
-                                    <label for="contact_type">Contact Type</label>
-                                    <select class="form-control" id="contact_type" required>
-                                        <option value="">Select...</option>
-                                        <option value="Guest">Guest</option>
-                                        <option value="Member">Member</option>
-                                        <option value="Officer">Officer</option>
-                                    </select>
+                                    <label for="contact_type-trigger">Contact Type</label>
+                                    {{ render_custom_select(["Guest", "Member", "Officer"], "", label='', select_id='contact_type', placeholder='Select...') }}
                                 </div>
-    
                                 <div class="form-group-inline input-ticket">
-                                    <label for="ticket">Ticket</label>
-                                    <select class="form-control" id="ticket" required>
-                                        {% for t in tickets %}
-                                        <option value="{{ t.name }}">{{ t.name }}</option>
-                                        {% endfor %}
-                                    </select>
+                                    <label for="ticket-trigger">Ticket</label>
+                                    {% set ticket_opts = [] %}
+                                    {% for t in tickets %}
+                                        {% set t_icon = t.icon if t.icon else 'fa-ticket-alt' %}
+                                        {% set _ = ticket_opts.append({'value': t.name, 'text': t.name, 'icon': 'fas ' ~ t_icon, 'color': t.color}) %}
+                                    {% endfor %}
+                                    {{ render_custom_select(ticket_opts, "", label='', select_id='ticket', placeholder='Select...') }}
                                 </div>
     
                                 <div class="form-buttons">

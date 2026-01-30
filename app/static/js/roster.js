@@ -132,7 +132,7 @@ function selectContact(contact, elements) {
 
   // Trigger change handler to set ticket and order number
   if (elements.contactTypeSelect.value) {
-    elements.contactTypeSelect.dispatchEvent(new Event('change'));
+    elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
   }
 }
 
@@ -217,6 +217,7 @@ function initializeContactTypeHandler(elements) {
       // If NOT special, or if it WAS Officer (and we are no longer Officer type), reset to default.
       if (!specialTickets.includes(currentTicket) || currentTicket === "Officer") {
           elements.ticketSelect.value = defaultTicket;
+          elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
     }
 
@@ -243,6 +244,9 @@ function resetRosterForm(elements) {
   elements.contactNameInput.value = "";
   elements.contactIdInput.value = "";
   elements.contactTypeSelect.value = "";
+  elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+  elements.ticketSelect.value = "";
+  elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
   if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = "none";
 
   // Default to regular order
@@ -272,7 +276,12 @@ function populateRosterEditForm(rosterId, elements) {
       if (entry.contact_type) {
         elements.contactTypeSelect.value = entry.contact_type;
         // This dispatch will handle correctly updating the order number if it was null
-        elements.contactTypeSelect.dispatchEvent(new Event('change'));
+        elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      
+      // Also sync ticket dropdown
+      if (elements.ticketSelect.value) {
+        elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
 
       elements.formTitle.textContent = 'Edit Entry';

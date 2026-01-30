@@ -187,39 +187,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 function resetRole(btn, sessionId) {
-  let input;
   const row = btn.closest('tr');
-  const targetId = btn.dataset.targetOwnerId;
-
-  if (targetId) {
-      // Multi-owner: Find the specific input for this owner
-      // We look for an input that has data-current-id matching the targetId
-      const inputs = row.querySelectorAll('.admin-assign-input');
-      for (let i = 0; i < inputs.length; i++) {
-          if (inputs[i].dataset.currentId === targetId) {
-              input = inputs[i];
-              break;
-          }
-      }
-  } else {
-      // Single-owner: Find the only input
-      input = row.querySelector('.admin-assign-input');
-  }
+  const input = row.querySelector('.admin-assign-input');
 
   if (!input) {
-      console.error("Input not found for reset button", { targetId, sessionId });
+      console.error("Input not found for reset button", { sessionId });
       return;
   }
   
   if (!input.dataset.currentId || input.dataset.currentId === "0") {
-      return; // Already unassigned
+      // Check for multi-owner inputs
+      const multiInputs = row.querySelectorAll('.admin-assign-input');
+      if (multiInputs.length > 0) {
+          // If any input has a value, proceed with unassign
+          const hasAssigned = Array.from(multiInputs).some(inp => inp.dataset.currentId && inp.dataset.currentId !== "0");
+          if (!hasAssigned) return;
+      } else {
+          return; // Already unassigned
+      }
   }
 
-  // Set previousId so the backend knows which user to remove (important for shared roles)
-  input.dataset.previousId = input.dataset.currentId;
-
-  // Direct unassign without confirmation
-  assignRole(sessionId, 0, input);
+  // To unassign ALL owners, we pass contactId=0 and no previousValue/previousId
+  // The backend handle 'assign' with contact_id=0 as "clear all" if no previous_contact_id is sent.
+  assignRole(sessionId, 0, null);
 }
 
 function bookOrCancelRole(sessionId, action, roleLabel) {
