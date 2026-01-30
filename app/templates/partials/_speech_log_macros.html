@@ -1,0 +1,163 @@
+{# Macro to render any log card #}
+{% macro render_log_card(log, role_icons, is_authorized, Permissions, current_user, today_date, is_member_view, ProjectID) %}
+    {% if log.log_type == 'grouped_role' %}
+    <div class="role-log-entry grouped-role-entry"
+        data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
+        <div class="card-header">
+            <div class="meeting-info">
+                Multiple Entries ({{ log.logs|length }})
+            </div>
+            <div class="card-actions">
+            </div>
+        </div>
+        <div class="role-title">
+            <i class="fas {{ role_icons.get(log.session_type.role.name if log.session_type.role else '', 'fa-question-circle') }}"></i>
+            {{ log.role_name }}
+        </div>
+        <div class="speaker-info">
+            {{ log.owner.Name if log.owner else 'N/A' }}
+        </div>
+
+        <div class="grouped-role-list" style="margin-bottom:10px; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+            {% for item in log.logs %}
+            <div class="meeting-info"
+                style="padding: 0; text-align: center; position: relative; line-height: 1.2; width: 100%;">
+                Meeting #{{ item.Meeting_Number }} | {{
+                item.meeting.Meeting_Date.strftime('%Y-%m-%d')
+                if item.meeting and item.meeting.Meeting_Date else 'N/A' }}
+                {% if is_authorized(current_user.contact_id ==
+                log.owner.id, Permissions.SPEECH_LOGS_EDIT_ALL) %}
+                <button class="icon-btn edit-log-btn"
+                    onclick="openSpeechEditModal({{ item.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
+                    title="Edit" style="font-size: 0.8em; margin-left: 8px; padding: 0;"><i
+                        class="fas fa-edit"></i></button>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="card-footer">
+            <div class="pathway-info">
+                {{ log.display_pathway if log.display_pathway else 'N/A' }}
+            </div>
+            <div class="status-info">
+                <i class="fas fa-check-circle" title="Completed"></i>
+            </div>
+        </div>
+    </div>
+
+    {% elif log.log_type == 'speech' or log.log_type == 'presentation' %}
+    {% set card_type_class = 'card-type-speech' %}
+    {% if log.log_type == 'presentation' %}
+    {% set card_type_class = 'card-type-presentation' %}
+    {% endif %}
+
+    <div class="speech-log-entry {{ card_type_class }}" id="log-card-{{ log.id }}"
+        data-session-type-title="{{ log.session_type.Title if log.session_type else 'Pathway Speech' }}">
+        <div class="card-header">
+            <div class="meeting-info">
+                Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if
+                log.meeting
+                and log.meeting.Meeting_Date else 'N/A' }}
+            </div>
+            <div class="card-actions">
+                {% if log.media %}
+                <a href="{{ log.media.url }}" target="_blank" class="icon-btn btn-play" title="Watch Speech">
+                    <i class="fas fa-play-circle"></i>
+                </a>
+                {% endif %}
+                {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
+                <button class="icon-btn edit-log-btn"
+                    onclick="openSpeechEditModal({{ log.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
+                    title="Edit"><i class="fas fa-edit"></i></button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="speech-title">
+            "{{ log.Session_Title|replace('"', '') if log.Session_Title else 'N/A' }}"
+        </div>
+        <div class="speaker-info">
+            — {{ log.context_owner.Name if log.context_owner else (log.owner.Name if log.owner else 'N/A') }}
+        </div>
+        <div class="project-info">
+            {% set project_code = log.project_code or '' %}
+            {% if log.session_type and log.session_type.Title == 'Presentation' %}
+            <span class="project-name">{{ log.project.Project_Name if log.project else 'N/A' }}</span>
+            {% set p_code = '' %}
+            <span class="project-code">{{ p_code }}</span>
+            {% else %}
+            <span class="project-code">{{ (project_code + ' > ') if project_code else '' }}</span>
+            <span class="project-name">{{ log.project.Project_Name if log.project else 'N/A' }}</span>
+            {% endif %}
+        </div>
+        <div class="card-footer">
+            <div class="pathway-info">
+                {% if log.session_type and log.session_type.Title == 'Presentation' %}
+                {{ log.presentation_series if log.presentation_series else 'N/A' }}
+                {% else %}
+                {{ log.display_pathway if log.display_pathway else 'N/A' }}
+                {% endif %}
+            </div>
+            <div class="status-info">
+                {% if log.Status == 'Completed' %}
+                    <i class="fas fa-check-circle" title="Completed"></i>
+                {% elif log.Status == 'Delivered' %}
+                    {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
+                        <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                    {% else %}
+                        <span class="status-delivered">Delivered</span>
+                    {% endif %}
+                {% else %} {# Booked or Null #}
+                    {% if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date < today_date %}
+                        {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
+                            <button onclick="suspendSpeechLog(this, {{ log.id }})" class="icon-btn btn-suspend" title="Suspend"><i class="fas fa-pause-circle"></i></button>
+                        {% endif %}
+                        <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                    {% else %}
+                        <span class="status-booked">Booked</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="role-log-entry" id="log-card-{{ log.id }}" data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
+        <div class="card-header">
+            <div class="meeting-info">
+                Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if
+                log.meeting
+                and log.meeting.Meeting_Date else 'N/A' }}
+            </div>
+            <div class="card-actions">
+                {% if log.media %}
+                <a href="{{ log.media.url }}" target="_blank" class="icon-btn btn-play" title="Watch Media">
+                    <i class="fas fa-play-circle"></i>
+                </a>
+                {% endif %}
+                {% if is_authorized(current_user.contact_id in log.owners|map(attribute='id'),
+                Permissions.SPEECH_LOGS_EDIT_ALL) %}
+                <button class="icon-btn edit-log-btn"
+                    onclick="openSpeechEditModal({{ log.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
+                    title="Edit"><i class="fas fa-edit"></i></button>
+                {% endif %}
+            </div>
+        </div>
+        <div class="role-title">
+            <i
+                class="fas {{ role_icons.get(log.session_type.role.name if log.session_type.role else '', 'fa-question-circle') }}"></i>
+            {{ log.session_type.role.name if log.session_type.role else log.session_type.Title }}
+        </div>
+        <div class="speaker-info">
+            {{ log.context_owner.Name if log.context_owner else (log.owner.Name if log.owner else 'N/A') }}
+        </div>
+        <div class="card-footer">
+            <div class="pathway-info">
+                {{ log.display_pathway if log.display_pathway else 'N/A' }}
+            </div>
+            <div class="status-info">
+                <i class="fas fa-check-circle" title="Completed"></i>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+{% endmacro %}

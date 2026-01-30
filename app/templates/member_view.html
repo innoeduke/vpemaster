@@ -1,0 +1,258 @@
+{% extends "speech_logs.html" %}
+{% from "partials/_speech_log_macros.html" import render_log_card %}
+
+{% block speech_view_title %}Speech Logs - {{ viewed_contact.Name if viewed_contact else 'Member View' }}{% endblock %}
+
+{% block speech_log_header %}
+    {% if viewed_contact %}
+    <div class="speech-log-header">
+        <div class="header-avatar">
+            {% if viewed_contact.Avatar_URL %}
+            {% set avatar_path = viewed_contact.Avatar_URL %}
+            {% if '/' not in avatar_path %}
+                {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+            {% endif %}
+            <img src="{{ url_for('static', filename=avatar_path) }}" alt="{{ viewed_contact.Name }}"
+                class="avatar-img">
+            {% else %}
+            <div class="avatar-placeholder"><i class="fas fa-user"></i></div>
+            {% endif %}
+        </div>
+        <div class="header-info">
+            <h2>{{ viewed_contact.Name }}</h2>
+            <div class="header-info-details">
+                {% if viewed_contact.Completed_Paths %}
+                <div class="header-badges-row">
+                    {% for path in viewed_contact.Completed_Paths.split('/') %}
+                    {% set path_trimmed = path.strip() %}
+                    {% set path_abbr = path_trimmed[:2]|lower %}
+                    <span class="badge-path path-{{ path_abbr }}">{{ path_trimmed }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if viewed_contact.credentials %}
+                <span class="credential-text">{{ viewed_contact.credentials }}</span>
+                {% endif %}
+                {% if viewed_contact.credentials and viewed_contact.Next_Project %} | {% endif %}
+                {% if viewed_contact.Next_Project %}
+                Next Project: {{ viewed_contact.Next_Project }}
+                {% endif %}
+            </div>
+        </div>
+        <div class="header-right">
+            {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+            <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn-view-control btn-profile-view"
+                title="View Profile">
+                <i class="fas fa-id-card"></i> Profile
+            </a>
+            {% elif current_user.contact_id == viewed_contact.id %}
+            <a href="{{ url_for('auth_bp.profile') }}" class="btn-view-control btn-profile-view"
+                title="My Profile">
+                <i class="fas fa-user-circle"></i> Profile
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block speech_log_toolbar %}
+    <div class="filters-container">
+        <div class="filter-row-premium">
+            <div class="filter-group-premium">
+                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="speech-logs-filter-form">
+                    <input type="hidden" name="view_mode" value="{{ view_mode }}">
+                    {% if request.args.get('speaker_id') %}
+                    <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
+                    {% endif %}
+
+                    <div class="form-group pathway-selector-group filter-group-premium">
+                        <label class="label-premium label-filter">Pathways:</label>
+                        
+						<div class="custom-dropdown relative-pos" id="pathway-dropdown-container">
+							<input type="hidden" name="pathway" id="pathway-input" value="{{ selected_filters.pathway or 'all' }}">
+							
+							<button type="button" id="pathway-dropdown-btn" class="form-control dropdown-premium-btn" onclick="togglePathwayDropdown(event)">
+								<span id="pathway-btn-text">
+									{% if selected_filters.pathway and selected_filters.pathway != 'all' %}
+										{{ selected_filters.pathway }}
+									{% else %}
+										All My Pathways
+									{% endif %}
+								</span>
+								<i class="fas fa-caret-down"></i>
+							</button>
+							
+							<div id="pathway-dropdown-menu" class="dropdown-premium-menu">
+								<div class="dropdown-item-label" onclick="selectPathway('all')">
+									<div class="flex-center-gap" style="gap: 8px;">
+										<i class="fas fa-check" style="visibility: {{ 'visible' if not selected_filters.pathway or selected_filters.pathway == 'all' else 'hidden' }}; width: 12px;"></i>
+										<span>All My Pathways</span>
+									</div>
+								</div>
+								
+								{% for p_name in member_pathways %}
+								<div class="dropdown-item-label" onclick="selectPathway('{{ p_name }}')">
+									<div class="flex-center-gap" style="gap: 8px;">
+										<i class="fas fa-check" style="visibility: {{ 'visible' if selected_filters.pathway == p_name else 'hidden' }}; width: 12px;"></i>
+										<span>{{ p_name }}</span>
+									</div>
+								</div>
+								{% endfor %}
+							</div>
+						</div>
+                    </div>
+                </form>
+            </div>
+
+			<div class="view-mode-toggle">
+				<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn-view-control btn-member-view active" onclick="return false;">
+					<i class="fas fa-user-circle"></i> Member
+				</a>
+				{% if can_view_all %}
+				<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}"
+					class="btn-view-control btn-meeting-view">
+					<i class="fas fa-users"></i> Meeting
+				</a>
+				<a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn-view-control btn-project-view">
+					<i class="fas fa-chart-line"></i> Project
+				</a>
+				{% endif %}
+			</div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block speech_log_progress %}
+    {% if progress_data_rows %}
+    <div class="path-progress-container">
+        <h2>Path Roadmap</h2>
+        
+        <table class="progress-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th colspan="3">Required Roles</th>
+                    <th>Elective Roles</th>
+                    <th colspan="2">Education Series</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in progress_data_rows %}
+                <tr>
+                    <td class="level-cell {% if row.level|int in completed_levels %}completed{% endif %}">
+                        Level {{ row.level }}
+                        {% if row.level|int in completed_levels %}
+                        <div class="level-check"><i class="fas fa-check-circle"></i></div>
+                        {% endif %}
+                    </td>
+                    
+                    {% for band_data in row.bands %}
+                    <td class="band-cell">
+                        {% if band_data.is_elective and row.extra_roles %}
+                        <div class="extra-roles-badge" 
+                             data-role="Additional Role"
+                             data-history="{{ row.extra_roles|tojson|forceescape }}"
+                             onclick="showRoleHistory(this)">more</div>
+                        {% endif %}
+                        {% for role in band_data.roles %}
+                            <div class="role-badge {% if role.completion_data and role.completion_data.count >= role.completion_data.required %}completed{% endif %}"
+                                 data-role="{{ role.role }}"
+                                 data-history="{{ role.completion_data.history_items|tojson|forceescape if role.completion_data and role.completion_data.history_items else '[]' }}">
+                                <span class="role-name">{{ role.role }}</span>
+                                {% if role.completion_data and role.completion_data.requirement_items %}
+                                <div class="item-dots">
+                                    {% for item in role.completion_data.requirement_items %}
+                                    <span class="dot {{ item.status }}" title="{{ item.name }}"></span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+{% endblock %}
+
+{% block speech_log_main %}
+    {% if grouped_logs %}
+        {% for level, logs in grouped_logs.items() %}
+        <h2 class="level-heading {% if level|int in completed_levels %}completed{% endif %}"
+            onclick="toggleLevel('{{ level }}')">
+            <div class="flex-center-gap">
+                Level {{ level }}
+                {% if level|int in completed_levels %}
+                <div class="level-completed-badge">
+                    <i class="fas fa-trophy"></i> Completed
+                </div>
+                {% endif %}
+            </div>
+            {% set is_completed = (level|int in completed_levels) %}
+            {% set is_expanded = not is_completed %}
+            <i class="fas {% if is_expanded %}fa-chevron-down{% else %}fa-chevron-right{% endif %} caret-icon"
+                id="caret-{{ level }}"></i>
+        </h2>
+
+        <div class="level-progress-summary" id="progress-{{ level }}"
+            style="display: {% if is_expanded %}flex{% else %}none{% endif %};">
+            {% set summary = completion_summary.get(level|string) %}
+            {% include 'partials/_level_progress.html' %}
+        </div>
+
+        <div class="logs-container" id="logs-{{ level }}"
+            style="display: {% if is_expanded %}grid{% else %}none{% endif %};">
+
+            {% for log in logs %}
+                {{ render_log_card(log, role_icons, is_authorized, Permissions, current_user, today_date, True, ProjectID) }}
+            {% endfor %}
+        </div>
+        {% endfor %}
+    {% else %}
+        <p class="no-logs-message">No activities found matching your criteria.</p>
+    {% endif %}
+{% endblock %}
+
+{% block speech_log_scripts %}
+{{ super() }}
+<script>
+    function togglePathwayDropdown(event) {
+        event.stopPropagation();
+        event.preventDefault();
+        const menu = document.getElementById('pathway-dropdown-menu');
+        if (menu) {
+            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+        }
+    }
+
+    function selectPathway(value) {
+        document.getElementById('pathway-input').value = value;
+        document.getElementById('speech-logs-filter-form').submit();
+    }
+
+    function closePathwayDropdown() {
+        const menu = document.getElementById('pathway-dropdown-menu');
+        if (menu) menu.style.display = 'none';
+    }
+
+    document.addEventListener('click', function(event) {
+        const container = document.getElementById('pathway-dropdown-container');
+        const menu = document.getElementById('pathway-dropdown-menu');
+        
+        if (container && menu && menu.style.display === 'block' && !container.contains(event.target)) {
+            closePathwayDropdown();
+        }
+    });
+
+    const menu = document.getElementById('pathway-dropdown-menu');
+    if (menu) {
+        menu.addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+    }
+</script>
+{% endblock %}

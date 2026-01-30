@@ -33,7 +33,7 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     <label for="{{ select_id }}-search">{{ label }}</label>
     {% endif %}
 
-    <div class="meeting-autocomplete-container" id="{{ select_id }}-autocomplete-container" style="{{ 'flex-grow: 1;' if not label else '' }}">
+    <div class="meeting-autocomplete-container" id="{{ select_id }}-autocomplete-container" style="min-width: 260px; {{ 'flex-grow: 1;' if not label else '' }}">
         <div class="search-input-wrapper">
             {% if show_icon %}
             <i class="fas fa-search search-icon"></i>
@@ -41,7 +41,7 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
             <input type="text" id="{{ select_id }}-search" class="autocomplete-search-input" 
                    placeholder="Search meeting..." value="{{ ns.selected_text }}"
                    autocomplete="off" {% if is_disabled %}disabled{% endif %}>
-            <i class="fas fa-chevron-down dropdown-icon"></i>
+            <i class="fas fa-caret-down dropdown-icon"></i>
         </div>
         
         <div id="{{ select_id }}-results" class="autocomplete-results-dropdown" style="display: none;">

@@ -1,0 +1,57 @@
+{% extends "speech_logs.html" %}
+{% from "partials/_speech_log_macros.html" import render_log_card %}
+
+{% block speech_view_title %}Meeting View - Meeting #{{ selected_meeting_number or 'N/A' }}{% endblock %}
+
+{% block speech_log_toolbar %}
+    <div class="filters-container">
+        <div class="filter-row-premium">
+            <div class="filter-group-premium">
+                 <label class="label-premium label-filter">Select Meeting:</label>
+                 {% from "components/meeting_filter.html" import render_meeting_filter %}
+                 {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, base_url=None, label="", render_outer_container=False) }}
+            </div>
+            
+            <div class="view-mode-toggle">
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn-view-control btn-member-view">
+                    <i class="fas fa-user-circle"></i> Member
+                </a>
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}" class="btn-view-control btn-meeting-view active" onclick="return false;">
+                    <i class="fas fa-users"></i> Meeting
+                </a>
+                <a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn-view-control btn-project-view">
+                    <i class="fas fa-chart-line"></i> Project
+                </a>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block speech_log_main %}
+    {% if grouped_logs %}
+        <div class="meeting-view-container">
+            {% for category, logs in grouped_logs.items() %}
+                {% set category_title = category %}
+                {% if category == 'speaker' %}{% set category_title = 'Speeches & Presentations' %}
+                {% elif category == 'evaluator' %}{% set category_title = 'Evaluations' %}
+                {% elif category == 'table-topic' %}{% set category_title = 'Table Topics' %}
+                {% elif category == 'role-taker' %}{% set category_title = 'Meeting Roles' %}
+                {% elif category == 'Other' or category == 'none' %}{% set category_title = 'Other Roles' %}
+                {% endif %}
+                
+                <h2 class="category-heading" onclick="toggleLevel('{{ category }}')">
+                    {{ category_title }}
+                    <i class="fas fa-chevron-down caret-icon" id="caret-{{ category }}"></i>
+                </h2>
+                
+                <div class="logs-container" id="logs-{{ category }}">
+                {% for log in logs %}
+                    {{ render_log_card(log, role_icons, is_authorized, Permissions, current_user, today_date, False, ProjectID) }}
+                {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="no-logs-message">No activities found matching your criteria.</p>
+    {% endif %}
+{% endblock %}

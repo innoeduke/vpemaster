@@ -959,6 +959,25 @@ def show_speech_logs():
     grouped_logs = _process_logs(all_logs, filters, pathway_cache, view_mode=view_mode)
     sorted_grouped_logs = _sort_and_consolidate(grouped_logs)
     
+    # 7.1 Filter for display in Member View: Only show logs linked to non-generic projects
+    if is_member_view:
+        filtered_logs = {}
+        for group, logs in sorted_grouped_logs.items():
+            group_filtered = []
+            for log in logs:
+                # Get Project_ID from SessionLog object or dictionary
+                pid = getattr(log, 'Project_ID', None)
+                if pid is None and isinstance(log, dict):
+                    pid = log.get('Project_ID')
+                
+                # Only include if it has a real project linked
+                if pid and pid != ProjectID.GENERIC:
+                    group_filtered.append(log)
+            
+            if group_filtered:
+                filtered_logs[group] = group_filtered
+        sorted_grouped_logs = filtered_logs
+    
     # 8. Calculate completion summary
     speaker_user = _get_speaker_user(viewed_contact, is_member_view)
     pp_mapping = _get_pathway_project_mapping(speaker_user, filters['pathway'])
@@ -979,8 +998,9 @@ def show_speech_logs():
         progress_data_rows = _get_path_progress_data(completion_summary)
 
     # 12. Render template
+    template_name = 'member_view.html' if is_member_view else 'meeting_view.html'
     return render_template(
-        'speech_logs.html',
+        template_name,
         grouped_logs=sorted_grouped_logs,
         roles=dropdown_data['roles'],
         role_icons=role_icons,

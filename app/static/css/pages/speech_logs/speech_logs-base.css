@@ -4,12 +4,18 @@
    ======================================== */
 
 :root {
-	--level-1-color: #dcfce7;
-	--level-2-color: #86efac;
-	--level-3-color: #22c55e;
-	--level-4-color: #15803d;
-	--level-5-color: #14532d;
-	--level-other-color: #94a3b8;
+	--level-1-color: #ff5252;
+	/* Red */
+	--level-2-color: #ff9800;
+	/* Orange */
+	--level-3-color: #ffeb3b;
+	/* Yellow */
+	--level-4-color: #4caf50;
+	/* Green */
+	--level-5-color: #2196f3;
+	/* Blue */
+	--level-other-color: #9c27b0;
+	/* Purple */
 }
 
 .speech-logs-content {
@@ -20,7 +26,101 @@
 .view-mode-toggle {
 	display: flex;
 	justify-content: flex-end;
-	gap: 10px;
+	gap: 12px;
+}
+
+/* Premium View Control Buttons */
+/* Premium View Control Buttons */
+.btn-view-control {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	height: 40px;
+	padding: 0 16px;
+	border-radius: 50px;
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 600;
+	font-size: 14.5px;
+	text-decoration: none;
+	transition: all 0.2s ease-in-out;
+	border: 2px solid transparent;
+	/* Prepare for outline */
+	cursor: pointer;
+	box-shadow: none;
+	/* No shadow for default outline state */
+	color: #64748b;
+	/* Default neutral color */
+	background: #fff;
+	box-sizing: border-box;
+}
+
+.btn-view-control i {
+	font-size: 1.1em;
+}
+
+.btn-view-control:hover {
+	transform: translateY(-1px);
+	background-color: #f8fafc;
+}
+
+/* Active State - Solid & Shadow */
+.btn-view-control.active {
+	color: white !important;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+	transform: translateY(0);
+	border-color: transparent !important;
+	/* Hide border in filled state */
+}
+
+/* Specific Button Colors - Outline (Default) & Solid (Active) */
+
+/* Member View - Blue */
+.btn-member-view {
+	color: #0284c7;
+	border-color: #0284c7;
+}
+
+.btn-member-view:hover {
+	background-color: #f0f9ff;
+}
+
+.btn-member-view.active {
+	background: linear-gradient(135deg, #0ea5e9, #0284c7);
+}
+
+/* Meeting View - Purple */
+.btn-meeting-view {
+	color: #4f46e5;
+	border-color: #4f46e5;
+}
+
+.btn-meeting-view:hover {
+	background-color: #eef2ff;
+}
+
+.btn-meeting-view.active {
+	background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+/* Project View - Green */
+.btn-project-view {
+	color: #059669;
+	border-color: #059669;
+}
+
+.btn-project-view:hover {
+	background-color: #ecfdf5;
+}
+
+.btn-project-view.active {
+	background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.btn-profile-view {
+	background: linear-gradient(135deg, #f59e0b, #d97706);
+	color: white !important;
+	border: none;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .section-heading {
@@ -30,12 +130,197 @@
 	color: #333;
 }
 
-/* Filter Form */
+/* Filter Form & Unified Layout Components */
+.filters-container {
+	background-color: #fff;
+	padding: 15px 20px;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	margin-bottom: 25px;
+	border: 1px solid #e2e8f0;
+}
+
+.filter-row-premium {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	width: 100%;
+}
+
+.filter-group-premium {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	flex-grow: 0;
+}
+
+.filters-set {
+	display: flex;
+	align-items: center;
+	gap: 40px;
+	flex-grow: 0;
+}
+
+.flex-center-gap {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+}
+
+.label-premium {
+	font-weight: 700;
+	font-size: 14.5px;
+	white-space: nowrap;
+	margin: 0;
+	color: #2d3748;
+	font-family: 'Montserrat', sans-serif;
+}
+
+.label-filter {
+	margin-right: 15px;
+}
+
+/* Header Specific Styles */
+.header-info-details {
+	font-size: 0.9em;
+	color: #666;
+	margin-top: 4px;
+}
+
+.header-badges-row {
+	margin-bottom: 4px;
+}
+
+.credential-text {
+	font-weight: bold;
+}
+
+/* Custom Dropdown & Range Styles */
+.dropdown-premium-btn {
+	text-align: left;
+	background: #fff;
+	cursor: pointer;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	height: 40px;
+	padding: 0 16px;
+	font-size: 14.5px;
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 500;
+	border-radius: 8px;
+	border: 1px solid #cbd5e0;
+	box-sizing: border-box;
+	white-space: nowrap;
+	gap: 15px;
+}
+
+.dropdown-premium-menu {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	min-width: 100%;
+	width: max-content;
+	background: #fff;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	max-height: 400px;
+	overflow-y: auto;
+	z-index: 1000;
+	padding: 5px;
+	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-header-premium {
+	display: block;
+	padding: 8px 10px;
+	cursor: pointer;
+	border-bottom: 1px solid #eee;
+	font-weight: bold;
+	margin-bottom: 5px;
+	font-size: 0.75em;
+	white-space: nowrap;
+}
+
+.dropdown-item-label {
+	display: block;
+	padding: 5px 10px;
+	cursor: pointer;
+	font-weight: normal;
+	margin-bottom: 0;
+	font-size: 0.9em;
+	white-space: nowrap;
+}
+
+.dropdown-checkbox {
+	margin-right: 8px;
+	vertical-align: middle;
+}
+
+/* Project Chart Enhancements */
+.chart-legend-premium {
+	display: flex;
+	gap: 15px;
+	margin-bottom: 20px;
+	flex-wrap: wrap;
+	justify-content: center;
+}
+
+.projects-chart {
+	margin-top: 20px;
+}
+
+.legend-item-premium {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.9em;
+}
+
+.total-count-label {
+	font-weight: bold;
+	margin-left: 10px;
+	margin-right: 15px;
+	min-width: 20px;
+	text-align: right;
+	color: #4a5568;
+}
+
+.filters-container .search-input-wrapper {
+	height: 40px;
+	box-sizing: border-box;
+	padding: 0 16px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	background: #fff;
+	border: 1px solid #cbd5e0;
+}
+
+.filters-container .autocomplete-search-input {
+	font-size: 14.5px;
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 500;
+	border: none;
+	height: 100%;
+	width: 100%;
+	outline: none;
+	color: #2d3748;
+}
+
+.filters-container .search-input-wrapper .search-icon,
+.filters-container .search-input-wrapper .dropdown-icon {
+	font-size: 14.5px;
+}
+
 #speech-logs-filter-form .filter-row {
 	display: flex;
 	width: 100%;
 	gap: 15px;
-	margin-bottom: 15px;
+	margin-bottom: 0;
 }
 
 #speech-logs-filter-form .filter-row:first-child .form-group {
@@ -59,9 +344,14 @@
 
 #speech-logs-filter-form .form-group select,
 #speech-logs-filter-form .form-group input[type="text"],
-#speech-logs-filter-form .form-group a.btn {
+#speech-logs-filter-form .form-group a.btn,
+.filters-container .btn {
 	width: 100%;
 	box-sizing: border-box;
+	height: 40px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 /* Level Headings */
@@ -113,11 +403,19 @@
 
 /* Logs Container - Masonry Layout */
 .logs-container {
-	display: block;
-	column-count: 3;
-	column-gap: 20px;
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 20px;
+	align-items: start;
 	max-width: 1400px;
 	margin: 20px auto;
+}
+
+/* 2 Columns for iPads/Tablets */
+@media (max-width: 1024px) {
+	.logs-container {
+		grid-template-columns: repeat(2, 1fr);
+	}
 }
 
 /* Redesigned Speech Log Cards */
@@ -244,9 +542,48 @@
 	margin-bottom: 0.5rem;
 }
 
-.grouped-role-entry .meeting-info {
-	margin-bottom: 0px;
-	font-size: 0.85em;
+.flex-1 {
+	flex: 1;
+}
+
+.relative-pos {
+	position: relative;
+}
+
+.legend-box {
+	width: 12px;
+	height: 12px;
+	border-radius: 2px;
+}
+
+.select-premium {
+	height: 40px;
+	font-size: 14.5px;
+	font-family: 'Montserrat', sans-serif;
+	font-weight: 500;
+	border-radius: 8px;
+	border: 1px solid #cbd5e0;
+	padding: 0 40px 0 16px;
+	flex: 1;
+	box-sizing: border-box;
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	background-color: #fff;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 512'%3E%3Cpath fill='%234a5568' d='M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z'%3E%3C/path%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	background-size: 10px;
+}
+
+.select-premium:focus {
+	outline: none;
+	border-color: #3182ce;
+	box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+.display-none {
+	display: none;
 }
 
 /* Card Typography */
@@ -542,6 +879,7 @@
 
 .header-avatar {
 	margin-right: 20px;
+	text-align: center;
 }
 
 .header-avatar .avatar-placeholder,

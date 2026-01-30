@@ -1,399 +1,26 @@
 {% extends "base.html" %}
 
-{% block title %}Speech Logs{% endblock %}
-
+{% block title %}
+    {% block speech_view_title %}Speech Logs{% endblock %}
+{% endblock %}
 
 {% block content %}
-<div class="speech-logs-content">
-    {% if is_member_view and viewed_contact %}
-    <div class="speech-log-header">
-        <div class="header-avatar" style="text-align: center;">
-            {% if viewed_contact.Avatar_URL %}
-            {# Check if the URL is already a full path (legacy) or just a filename (new) #}
-            {% set avatar_path = viewed_contact.Avatar_URL %}
-            {% if '/' not in avatar_path %}
-                {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
-            {% endif %}
-            <img src="{{ url_for('static', filename=avatar_path) }}" alt="{{ viewed_contact.Name }}"
-                class="avatar-img">
-            {% else %}
-            <div class="avatar-placeholder"><i class="fas fa-user"></i></div>
-            {% endif %}
-        </div>
-        <div class="header-info">
-            <h2>{{ viewed_contact.Name }}</h2>
-            <div style="font-size: 0.9em; color: #666; margin-top: 4px;">
-                {% if viewed_contact.Completed_Paths %}
-                <div style="margin-bottom: 4px;">
-                    {% for path in viewed_contact.Completed_Paths.split('/') %}
-                    {% set path_trimmed = path.strip() %}
-                    {% set path_abbr = path_trimmed[:2]|lower %}
-                    <span class="badge-path path-{{ path_abbr }}">{{ path_trimmed }}</span>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% if viewed_contact.credentials %}
-                <span style="font-weight: bold;">{{ viewed_contact.credentials }}</span>
-                {% endif %}
-                {% if viewed_contact.credentials and viewed_contact.Next_Project %} | {% endif %}
-                {% if viewed_contact.Next_Project %}
-                Next Project: {{ viewed_contact.Next_Project }}
-                {% endif %}
-            </div>
-        </div>
-        <div class="header-right">
-            <div class="header-actions">
-                {% if can_view_all %}
-                <div class="view-mode-toggle">
-                    {% if view_mode == 'admin' %}
-                    <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn btn-info btn-sm">
-                        <i class="fas fa-user"></i> Member View
-                    </a>
-                    {% else %}
-                    <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}"
-                        class="btn btn-primary btn-sm">
-                        <i class="fas fa-user-shield"></i> Meeting View
-                    </a>
-                    {% endif %}
-                    <a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn btn-success btn-sm">
-                        <i class="fas fa-chart-bar"></i> Project View
-                    </a>
-                </div>
-                {% endif %}
-
-                {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
-                <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn btn-info btn-sm"
-                    style="color: white;" title="View Profile">
-                    <i class="fas fa-id-card"></i> Profile
-                </a>
-                {% elif current_user.contact_id == viewed_contact.id %}
-                <a href="{{ url_for('auth_bp.profile') }}" class="btn btn-info btn-sm" style="color: white;"
-                    title="My Profile">
-                    <i class="fas fa-user-circle"></i> Profile
-                </a>
-                {% endif %}
-            </div>
-
-            <div class="speech-logs-toolbar">
-                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" class="toolbar-form">
-                    <input type="hidden" name="view_mode" value="{{ view_mode }}">
-                    {% if request.args.get('speaker_id') %}
-                    <input type="hidden" name="speaker_id" value="{{ request.args.get('speaker_id') }}">
-                    {% endif %}
-
-                    <div class="form-group pathway-selector-group">
-                        <select name="pathway" onchange="this.form.submit()" class="form-control">
-                            <option value="all">All My Pathways</option>
-                            {% for p_name in member_pathways %}
-                            <option value="{{ p_name }}" {% if selected_filters.pathway==p_name %}selected{% endif %}>{{
-                                p_name
-                                }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </form>
-            </div>
-        </div>
+<div class="speech-logs-content {% block content_class %}{% endblock %}">
+    <h1><i class="fas fa-school"></i> Educational Activities</h1></br>
+    
+    {% block speech_log_header %}{% endblock %}
+    {% block speech_log_toolbar %}{% endblock %}
+    {% block speech_log_progress %}{% endblock %}
+    
+    <div class="speech-log-main-content">
+        {% block speech_log_main %}{% endblock %}
     </div>
-    {% endif %}
-    {% if not is_member_view %}
-    <div class="speech-logs-toolbar">
-        <div class="toolbar-spacer">
-             {% if view_mode == 'admin' %}
-                {% from "components/meeting_filter.html" import render_meeting_filter %}
-                {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, base_url=None, label="Meeting:", render_outer_container=False) }}
-             {% endif %}
-        </div> <!-- Spacer or Meeting Filter for Meeting View -->
-    </div>
-    {% endif %}
-
-    {% if is_member_view and progress_data_rows %}
-    <div class="path-progress-container">
-        <h2>Path Roadmap</h2>
-        
-        <table class="progress-table">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th colspan="3">Required Roles</th>
-                    <th>Elective Roles</th>
-                    <th colspan="2">Education Series</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in progress_data_rows %}
-                <tr>
-                    <td class="level-cell {% if row.level|int in completed_levels %}completed{% endif %}">
-                        Level {{ row.level }}
-                        {% if row.level|int in completed_levels %}
-                        <div class="level-check"><i class="fas fa-check-circle"></i></div>
-                        {% endif %}
-                    </td>
-                    
-                    {% for band_data in row.bands %}
-                    <td class="band-cell">
-                        {% if band_data.is_elective and row.extra_roles %}
-                        <div class="extra-roles-badge" 
-                             data-role="Additional Role"
-                             data-history="{{ row.extra_roles|tojson|forceescape }}"
-                             onclick="showRoleHistory(this)">more</div>
-                        {% endif %}
-                        {% for role in band_data.roles %}
-                            <div class="role-badge {% if role.completion_data and role.completion_data.count >= role.completion_data.required %}completed{% endif %}"
-                                 data-role="{{ role.role }}"
-                                 data-history="{{ role.completion_data.history_items|tojson|forceescape if role.completion_data and role.completion_data.history_items else '[]' }}">
-                                <span class="role-name">{{ role.role }}</span>
-                                {% if role.completion_data and role.completion_data.requirement_items %}
-                                <div class="item-dots">
-                                    {% for item in role.completion_data.requirement_items %}
-                                    <span class="dot {{ item.status }}" title="{{ item.name }}"></span>
-                                    {% endfor %}
-                                </div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                    </td>
-                    {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
-
-
-    {# Macro to render any log card #}
-    {% macro render_log_card(log, role_icons, is_authorized, Permissions, current_user, today_date, is_member_view) %}
-        {% if log.log_type == 'grouped_role' %}
-        <div class="role-log-entry grouped-role-entry"
-            data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
-            <div class="card-header">
-                <div class="meeting-info">
-                    Multiple Entries ({{ log.logs|length }})
-                </div>
-                <div class="card-actions">
-                </div>
-            </div>
-            <div class="role-title">
-                <i class="fas {{ role_icons.get(log.session_type.role.name if log.session_type.role else '', 'fa-question-circle') }}"></i>
-                {{ log.role_name }}
-            </div>
-            <div class="speaker-info">
-                {{ log.owner.Name if log.owner else 'N/A' }}
-            </div>
-
-            <div class="grouped-role-list" style="margin-bottom:10px; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
-                {% for item in log.logs %}
-                <div class="meeting-info"
-                    style="padding: 0; text-align: center; position: relative; line-height: 1.2; width: 100%;">
-                    Meeting #{{ item.Meeting_Number }} | {{
-                    item.meeting.Meeting_Date.strftime('%Y-%m-%d')
-                    if item.meeting and item.meeting.Meeting_Date else 'N/A' }}
-                    {% if is_authorized(current_user.contact_id ==
-                    log.owner.id, Permissions.SPEECH_LOGS_EDIT_ALL) %}
-                    <button class="icon-btn edit-log-btn"
-                        onclick="openSpeechEditModal({{ item.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
-                        title="Edit" style="font-size: 0.8em; margin-left: 8px; padding: 0;"><i
-                            class="fas fa-edit"></i></button>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="card-footer">
-                <div class="pathway-info">
-                    {{ log.display_pathway if log.display_pathway else 'N/A' }}
-                </div>
-                <div class="status-info">
-                    <i class="fas fa-check-circle" title="Completed"></i>
-                </div>
-            </div>
-        </div>
-
-        {% elif log.log_type == 'speech' or log.log_type == 'presentation' %}
-        {% set card_type_class = 'card-type-speech' %}
-        {% if log.log_type == 'presentation' %}
-        {% set card_type_class = 'card-type-presentation' %}
-        {% endif %}
-
-        <div class="speech-log-entry {{ card_type_class }}" id="log-card-{{ log.id }}"
-            data-session-type-title="{{ log.session_type.Title if log.session_type else 'Pathway Speech' }}">
-            <div class="card-header">
-                <div class="meeting-info">
-                    Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if
-                    log.meeting
-                    and log.meeting.Meeting_Date else 'N/A' }}
-                </div>
-                <div class="card-actions">
-                    {% if log.media %}
-                    <a href="{{ log.media.url }}" target="_blank" class="icon-btn btn-play" title="Watch Speech">
-                        <i class="fas fa-play-circle"></i>
-                    </a>
-                    {% endif %}
-                    {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
-                    <button class="icon-btn edit-log-btn"
-                        onclick="openSpeechEditModal({{ log.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
-                        title="Edit"><i class="fas fa-edit"></i></button>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="speech-title">
-                "{{ log.Session_Title|replace('"', '') if log.Session_Title else 'N/A' }}"
-            </div>
-            <div class="speaker-info">
-                — {{ log.context_owner.Name if log.context_owner else (log.owner.Name if log.owner else 'N/A') }}
-            </div>
-            <div class="project-info">
-                {% set project_code = log.project_code or '' %}
-                {% if log.session_type and log.session_type.Title == 'Presentation' %}
-                <span class="project-name">{{ log.project.Project_Name if log.project else 'N/A' }}</span>
-                {% set p_code = '' %}
-                <span class="project-code">{{ p_code }}</span>
-                {% else %}
-                <span class="project-code">{{ (project_code + ' > ') if project_code else '' }}</span>
-                <span class="project-name">{{ log.project.Project_Name if log.project else 'N/A' }}</span>
-                {% endif %}
-            </div>
-            <div class="card-footer">
-                <div class="pathway-info">
-                    {% if log.session_type and log.session_type.Title == 'Presentation' %}
-                    {{ log.presentation_series if log.presentation_series else 'N/A' }}
-                    {% else %}
-                    {{ log.display_pathway if log.display_pathway else 'N/A' }}
-                    {% endif %}
-                </div>
-                <div class="status-info">
-                    {% if log.Status == 'Completed' %}
-                        <i class="fas fa-check-circle" title="Completed"></i>
-                    {% elif log.Status == 'Delivered' %}
-                        {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
-                            <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
-                        {% else %}
-                            <span class="status-delivered">Delivered</span>
-                        {% endif %}
-                    {% else %} {# Booked or Null #}
-                        {% if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date < today_date %}
-                            {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
-                                <button onclick="suspendSpeechLog(this, {{ log.id }})" class="icon-btn btn-suspend" title="Suspend"><i class="fas fa-pause-circle"></i></button>
-                            {% endif %}
-                            <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
-                        {% else %}
-                            <span class="status-booked">Booked</span>
-                        {% endif %}
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        {% else %}
-        <div class="role-log-entry" id="log-card-{{ log.id }}" data-session-type-title="{{ log.session_type.Title if log.session_type else '' }}">
-            <div class="card-header">
-                <div class="meeting-info">
-                    Meeting #{{ log.Meeting_Number }} | {{ log.meeting.Meeting_Date.strftime('%Y-%m-%d') if
-                    log.meeting
-                    and log.meeting.Meeting_Date else 'N/A' }}
-                </div>
-                <div class="card-actions">
-                    {% if log.media %}
-                    <a href="{{ log.media.url }}" target="_blank" class="icon-btn btn-play" title="Watch Media">
-                        <i class="fas fa-play-circle"></i>
-                    </a>
-                    {% endif %}
-                    {% if is_authorized(current_user.contact_id in log.owners|map(attribute='id'),
-                    Permissions.SPEECH_LOGS_EDIT_ALL) %}
-                    <button class="icon-btn edit-log-btn"
-                        onclick="openSpeechEditModal({{ log.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
-                        title="Edit"><i class="fas fa-edit"></i></button>
-                    {% endif %}
-                </div>
-            </div>
-            <div class="role-title">
-                <i
-                    class="fas {{ role_icons.get(log.session_type.role.name if log.session_type.role else '', 'fa-question-circle') }}"></i>
-                {{ log.session_type.role.name if log.session_type.role else log.session_type.Title }}
-            </div>
-            <div class="speaker-info">
-                {{ log.context_owner.Name if log.context_owner else (log.owner.Name if log.owner else 'N/A') }}
-            </div>
-            <div class="card-footer">
-                <div class="pathway-info">
-                    {{ log.display_pathway if log.display_pathway else 'N/A' }}
-                </div>
-                <div class="status-info">
-                    <i class="fas fa-check-circle" title="Completed"></i>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-    {% endmacro %}
-
-    {% if grouped_logs %}
-    {% if view_mode == 'admin' %}
-        {# Category-based view for Meeting View #}
-        <div class="meeting-view-container">
-            {% for category, logs in grouped_logs.items() %}
-                {% set category_title = category %}
-                {% if category == 'speaker' %}{% set category_title = 'Speeches & Presentations' %}
-                {% elif category == 'evaluator' %}{% set category_title = 'Evaluations' %}
-                {% elif category == 'table-topic' %}{% set category_title = 'Table Topics' %}
-                {% elif category == 'role-taker' %}{% set category_title = 'Meeting Roles' %}
-                {% elif category == 'Other' or category == 'none' %}{% set category_title = 'Other Roles' %}
-                {% endif %}
-                
-                <h2 class="category-heading" onclick="toggleLevel('{{ category }}')">
-                    {{ category_title }}
-                    <i class="fas fa-chevron-down caret-icon" id="caret-{{ category }}"></i>
-                </h2>
-                
-                <div class="logs-container" id="logs-{{ category }}" style="display: block;">
-                {% for log in logs %}
-                    {{ render_log_card(log, role_icons, is_authorized, Permissions, current_user, today_date, is_member_view) }}
-                {% endfor %}
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-    {% for level, logs in grouped_logs.items() %}
-    <h2 class="level-heading {% if level|int in completed_levels %}completed{% endif %}"
-        onclick="toggleLevel('{{ level }}')">
-        <div style="display: flex; align-items: center;">
-            Level {{ level }}
-            {% if level|int in completed_levels %}
-            <div class="level-completed-badge">
-                <i class="fas fa-trophy"></i> Completed
-            </div>
-            {% endif %}
-        </div>
-        {% set is_completed = (level|int in completed_levels) %}
-        {% set is_expanded = not is_completed %}
-        <i class="fas {% if is_expanded %}fa-chevron-down{% else %}fa-chevron-right{% endif %} caret-icon"
-            id="caret-{{ level }}"></i>
-    </h2>
-
-    {% if is_member_view %}
-    <div class="level-progress-summary" id="progress-{{ level }}"
-        style="display: {% if is_expanded %}flex{% else %}none{% endif %};">
-        {% set summary = completion_summary.get(level|string) %}
-        {% include 'partials/_level_progress.html' %}
-    </div>
-    {% endif %}
-
-    <div class="logs-container" id="logs-{{ level }}"
-        style="display: {% if is_expanded %}block{% else %}none{% endif %};">
-
-        {% for log in logs %}
-            {{ render_log_card(log, role_icons, is_authorized, Permissions, current_user, today_date, is_member_view) }}
-        {% endfor %}
-    </div>
-    {% endfor %}
-    {% endif %}
-    {% else %}
-    <p class="no-logs-message">No activities found matching your criteria.</p>
-    {% endif %}
 </div>
 
 {% include '_speech_edit_modal.html' %}
 
-<!-- Role History Modal -->
+{% block speech_log_modals %}
+<!-- Role History Modal (Shared) -->
 <div id="roleHistoryModal" class="history-modal">
     <div class="history-modal-content">
         <div class="history-modal-header">
@@ -405,49 +32,53 @@
         </div>
     </div>
 </div>
-
-
-
-
+{% endblock %}
 
 <script>
-    // Pass Python data to global JS variables
-    var allProjects = {{ projects| tojson | safe }};
-    var pathwayMap = {{ pathway_mapping| tojson | safe }};
-    var groupedPathways = {{ pathways| tojson | safe }};
+    // Pass Python data to global JS variables (Shared Metadata)
+    var allProjects = {{ projects| tojson | safe if projects else '[]' }};
+    var pathwayMap = {{ pathway_mapping| tojson | safe if pathway_mapping else '{}' }};
+    var groupedPathways = {{ pathways| tojson | safe if pathways else '{}' }};
     var ProjectID = {
-        GENERIC: {{ ProjectID.GENERIC | tojson | safe }},
-    TOPICSMASTER_PROJECT: {{ ProjectID.TOPICSMASTER_PROJECT | tojson | safe }},
-    KEYNOTE_SPEAKER_PROJECT: {{ ProjectID.KEYNOTE_SPEAKER_PROJECT | tojson | safe }},
-    MODERATOR_PROJECT: {{ ProjectID.MODERATOR_PROJECT | tojson | safe }},
-    EVALUATION_PROJECTS: {{ ProjectID.EVALUATION_PROJECTS | tojson | safe }}
+        GENERIC: {{ ProjectID.GENERIC | tojson | safe if ProjectID else 'null' }},
+        TOPICSMASTER_PROJECT: {{ ProjectID.TOPICSMASTER_PROJECT | tojson | safe if ProjectID else 'null' }},
+        KEYNOTE_SPEAKER_PROJECT: {{ ProjectID.KEYNOTE_SPEAKER_PROJECT | tojson | safe if ProjectID else 'null' }},
+        MODERATOR_PROJECT: {{ ProjectID.MODERATOR_PROJECT | tojson | safe if ProjectID else 'null' }},
+        EVALUATION_PROJECTS: {{ ProjectID.EVALUATION_PROJECTS | tojson | safe if ProjectID else 'null' }}
     };
-
 </script>
 
 <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
-<script src="{{ url_for('static', filename='js/search.js') }}"></script> {# Include search if needed #}
+<script src="{{ url_for('static', filename='js/search.js') }}"></script>
 <script src="{{ url_for('static', filename='js/speech_logs.js') }}"></script>
+
+{% block speech_log_scripts %}
 <script>
     function toggleLevel(level) {
         const logsContainer = document.getElementById('logs-' + level);
         const progressSummary = document.getElementById('progress-' + level);
         const caret = document.getElementById('caret-' + level);
 
-        const isHidden = logsContainer.style.display === 'none';
+        const isHidden = !logsContainer || logsContainer.style.display === 'none';
 
-        if (isHidden) {
-            logsContainer.style.display = 'block';
-            if (progressSummary) progressSummary.style.display = 'flex';
-            caret.classList.remove('fa-chevron-right');
-            caret.classList.add('fa-chevron-down');
-        } else {
-            logsContainer.style.display = 'none';
-            if (progressSummary) progressSummary.style.display = 'none';
-            caret.classList.remove('fa-chevron-down');
-            caret.classList.add('fa-chevron-right');
+        if (logsContainer) {
+            if (isHidden) {
+                logsContainer.style.display = 'grid';
+                if (progressSummary) progressSummary.style.display = 'flex';
+                if (caret) {
+                    caret.classList.remove('fa-chevron-right');
+                    caret.classList.add('fa-chevron-down');
+                }
+            } else {
+                logsContainer.style.display = 'none';
+                if (progressSummary) progressSummary.style.display = 'none';
+                if (caret) {
+                    caret.classList.remove('fa-chevron-down');
+                    caret.classList.add('fa-chevron-right');
+                }
+            }
         }
     }
 </script>
-
+{% endblock %}
 {% endblock %}

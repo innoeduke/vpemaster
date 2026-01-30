@@ -1,88 +1,110 @@
-{% extends "base.html" %}
+{% extends "speech_logs.html" %}
 
-{% block title %}Project View{% endblock %}
+{% block speech_view_title %}Project View{% endblock %}
 
-{% block content %}
-<div class="speech-logs-content project-view-container">
-	<div class="speech-logs-toolbar">
-		<div class="toolbar-spacer"></div>
-		<div class="view-mode-toggle">
-			<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn btn-info btn-sm">
-				<i class="fas fa-user"></i> Member View
-			</a>
-			<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}"
-				class="btn btn-primary btn-sm">
-				<i class="fas fa-users-cog"></i> Admin View
-			</a>
-		</div>
-	</div>
+{% block content_class %}project-view-container{% endblock %}
 
+{% block speech_log_toolbar %}
 	<form method="GET" action="{{ url_for('speech_logs_bp.show_project_view') }}" class="filters-container"
 		id="speech-logs-filter-form">
-		<div class="filter-row" style="align-items: center;">
- 			<div class="form-group" style="display: flex; align-items: center; margin-bottom: 0; flex: 1;">
- 				<label for="term-select"
- 					style="margin-right: 15px; font-weight: bold; font-size: 1.1em; white-space: nowrap;">Club Terms:</label>
- 				
- 				<div class="custom-dropdown" id="term-dropdown-container" style="position: relative; flex: 1;">
- 					<button type="button" id="term-dropdown-btn" class="form-control" style="text-align: left; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; height: auto; padding: 6px 12px; font-size: 1.1em;" onclick="toggleTermDropdown(event)">
- 						<span id="term-btn-text">
- 							{% if selected_term_ids %}
- 								{{ selected_term_ids|length }} selected
- 							{% else %}
- 								0 selected
- 							{% endif %}
- 						</span>
- 						<i class="fas fa-caret-down"></i>
- 					</button>
- 					
- 					<div id="term-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 400px; overflow-y: auto; z-index: 1000; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
- 						
- 						<label style="display: block; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #eee; font-weight: bold; margin-bottom: 5px; font-size: 0.9em;">
- 							<input type="checkbox" id="term-select-all" onchange="toggleAllTerms(this)" style="margin-right: 8px; vertical-align: middle;" {% if terms and selected_term_ids|length == terms|length %}checked{% endif %}> 
- 							Select / Deselect All
- 						</label>
- 						
- 						{% for term in terms %}
- 						<label style="display: block; padding: 5px 10px; cursor: pointer; font-weight: normal; margin-bottom: 0; font-size: 0.9em;">
- 							<input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox" 
- 								   data-label="{{ term.label }}" data-start="{{ term.start }}" data-end="{{ term.end }}"
- 								   onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{% endif %} style="margin-right: 8px; vertical-align: middle;">
- 							{{ term.label }}
- 						</label>
- 						{% endfor %}
- 					</div>
- 				</div>
- 			</div>
-			<div class="form-group" style="display: flex; align-items: center; margin-bottom: 0;">
-				<label for="pathway-select"
-					style="margin-right: 15px; font-weight: bold; font-size: 1.1em; white-space: nowrap;">Pathway:</label>
-				<select name="pathway" id="pathway-select" onchange="this.form.submit()" class="form-control"
-					style="font-size: 1.1em; flex: 1;">
-					<option value="">All Pathways</option>
+		<div class="filter-row-premium">
+			<div class="filters-set">
+				<div class="form-group filter-group-premium">
+					<label for="term-select" class="label-premium label-filter">Club Terms:</label>
+					
+					<div class="custom-dropdown relative-pos flex-1" id="term-dropdown-container">
+						<button type="button" id="term-dropdown-btn" class="form-control dropdown-premium-btn" onclick="toggleTermDropdown(event)">
+							<span id="term-btn-text">
+								{% if selected_term_ids %}
+									{{ selected_term_ids|length }} selected
+								{% else %}
+									0 selected
+								{% endif %}
+							</span>
+							<i class="fas fa-caret-down"></i>
+						</button>
+						
+						<div id="term-dropdown-menu" class="dropdown-premium-menu">
+							
+							<label class="dropdown-header-premium">
+								<input type="checkbox" id="term-select-all" onchange="toggleAllTerms(this)" class="dropdown-checkbox" {% if terms and selected_term_ids|length == terms|length %}checked{% endif %}> 
+								Select / Deselect All
+							</label>
+							
+							{% for term in terms %}
+							<label class="dropdown-item-label">
+								<input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox dropdown-checkbox" 
+									   data-label="{{ term.label }}" data-start="{{ term.start }}" data-end="{{ term.end }}"
+									   onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{% endif %}>
+								{{ term.label }}
+							</label>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+				<div class="form-group filter-group-premium">
+					<label for="pathway-input" class="label-premium label-filter">Pathways:</label>
+					
+					<div class="custom-dropdown relative-pos flex-1" id="pathway-dropdown-container">
+						<input type="hidden" name="pathway" id="pathway-input" value="{{ selected_pathway }}">
+						
+						<button type="button" id="pathway-dropdown-btn" class="form-control dropdown-premium-btn" onclick="togglePathwayDropdown(event)">
+							<span id="pathway-btn-text">
+								{{ selected_pathway if selected_pathway else 'All Pathways' }}
+							</span>
+							<i class="fas fa-caret-down"></i>
+						</button>
+						
+						<div id="pathway-dropdown-menu" class="dropdown-premium-menu">
+							<div class="dropdown-item-label" onclick="selectPathway('')">
+								<div class="flex-center-gap" style="gap: 8px;">
+									<i class="fas fa-check" style="visibility: {{ 'visible' if not selected_pathway else 'hidden' }}; width: 12px;"></i>
+									<span>All Pathways</span>
+								</div>
+							</div>
+							
+							<div class="dropdown-header-premium" style="cursor: default; background-color: #f7fafc; color: #718096; font-size: 0.75em;">Active</div>
+							{% for p in active_pathways %}
+							<div class="dropdown-item-label" onclick="selectPathway('{{ p }}')">
+								<div class="flex-center-gap" style="gap: 8px;">
+									<i class="fas fa-check" style="visibility: {{ 'visible' if selected_pathway == p else 'hidden' }}; width: 12px;"></i>
+									<span>{{ p }}</span>
+								</div>
+							</div>
+							{% endfor %}
 
-					<optgroup label="Active">
-						{% for p in active_pathways %}
-						<option value="{{ p }}" {% if selected_pathway==p %}selected{% endif %}>
-							{{ p }}
-						</option>
-						{% endfor %}
-					</optgroup>
-
-					{% if inactive_pathways %}
-					<optgroup label="Inactive">
-						{% for p in inactive_pathways %}
-						<option value="{{ p }}" {% if selected_pathway==p %}selected{% endif %}>
-							{{ p }}
-						</option>
-						{% endfor %}
-					</optgroup>
-					{% endif %}
-				</select>
+							{% if inactive_pathways %}
+							<div class="dropdown-header-premium" style="cursor: default; background-color: #f7fafc; color: #718096; font-size: 0.75em;">Legacy</div>
+							{% for p in inactive_pathways %}
+							<div class="dropdown-item-label" onclick="selectPathway('{{ p }}')">
+								<div class="flex-center-gap" style="gap: 8px;">
+									<i class="fas fa-check" style="visibility: {{ 'visible' if selected_pathway == p else 'hidden' }}; width: 12px;"></i>
+									<span>{{ p }}</span>
+								</div>
+							</div>
+							{% endfor %}
+							{% endif %}
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="view-mode-toggle">
+				<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn-view-control btn-member-view">
+					<i class="fas fa-user-circle"></i> Member
+				</a>
+				<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}"
+					class="btn-view-control btn-meeting-view">
+					<i class="fas fa-users"></i> Meeting
+				</a>
+				<a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn-view-control btn-project-view active" onclick="return false;">
+					<i class="fas fa-chart-line"></i> Project
+				</a>
 			</div>
 		</div>
 	</form>
+{% endblock %}
 
+{% block speech_log_main %}
 	<div class="chart-container">
  		<h3 id="project-metrics-header">Project Completion Metrics 
  			{% if terms and selected_term_ids %}
@@ -96,21 +118,16 @@
          </h3>
 
 		{% if max_count > 0 %}
-		<div class="chart-legend"
-			style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center;">
+		<div class="chart-legend-premium">
 			{% for level in [1, 2, 3, 4, 5] %}
-			<div class="legend-item" style="display: flex; align-items: center; gap: 6px; font-size: 0.9em;">
-				<div class="legend-color level-{{ level }}"
-					style="width: 12px; height: 12px; border-radius: 2px; background-color: var(--level-{{ level }}-color, #ccc);">
+			<div class="legend-item-premium">
+				<div class="legend-color level-{{ level }} legend-box"
+					style="background-color: var(--level-{{ level }}-color, #ccc);">
 				</div>
 				<span>Level {{ level }}</span>
 			</div>
 			{% endfor %}
-			<div class="legend-item" style="display: flex; align-items: center; gap: 6px; font-size: 0.9em;">
-				<div class="legend-color level-other"
-					style="width: 12px; height: 12px; border-radius: 2px; background-color: #9013FE;"></div>
-				<span>Other</span>
-			</div>
+
 		</div>
 
 		<div class="projects-chart">
@@ -135,8 +152,7 @@
 						{% endfor %}
 					</div>
 
-					<div class="total-count"
-						style="font-weight: bold; margin-left: 10px; margin-right: 15px; min-width: 20px; text-align: right; color: #4a5568;">
+					<div class="total-count-label">
 						{{ item.count }}
 					</div>
 
@@ -153,7 +169,7 @@
 							<img src="{{ url_for('static', filename=avatar_path) }}" alt="{{ contact.Name }}"
 								class="avatar-img"
 								onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-							<div class="avatar-placeholder-small" style="display: none;">{{ contact.Name[0] }}</div>
+							<div class="avatar-placeholder-small display-none">{{ contact.Name[0] }}</div>
 							{% else %}
 							<div class="avatar-placeholder-small">{{ contact.Name[0] }}</div>
 							{% endif %}
@@ -168,8 +184,10 @@
 		<p class="no-logs-message">No project completions found for this term.</p>
 		{% endif %}
 	</div>
-</div>
- 
+{% endblock %}
+
+{% block speech_log_scripts %}
+ {{ super() }}
  <script>
      // Initialize state on load
      document.addEventListener('DOMContentLoaded', function() {
@@ -177,16 +195,46 @@
      });
  
      function toggleTermDropdown(event) {
+         closePathwayDropdown();
          event.stopPropagation();
          event.preventDefault(); 
          const menu = document.getElementById('term-dropdown-menu');
-         if (menu && menu.style.display === 'none') {
+         // Check if currently visible (assuming default is hidden)
+         if (menu && menu.style.display !== 'block') {
              menu.style.display = 'block';
          } else if (menu) {
              closeDropdownAndSubmit();
          }
      }
- 
+     
+     function togglePathwayDropdown(event) {
+         if (typeof closeDropdownAndSubmit === 'function') {
+             // Close term dropdown if open, but don't submit yet
+             const termMenu = document.getElementById('term-dropdown-menu');
+             if (termMenu) termMenu.style.display = 'none';
+         }
+         
+         event.stopPropagation();
+         event.preventDefault(); 
+         const menu = document.getElementById('pathway-dropdown-menu');
+         
+         if (menu && menu.style.display !== 'block') {
+             menu.style.display = 'block';
+         } else if (menu) {
+             menu.style.display = 'none';
+         }
+     }
+     
+     function selectPathway(value) {
+         document.getElementById('pathway-input').value = value;
+         document.getElementById('speech-logs-filter-form').submit();
+     }
+     
+     function closePathwayDropdown() {
+         const menu = document.getElementById('pathway-dropdown-menu');
+         if (menu) menu.style.display = 'none';
+     }
+
      function toggleAllTerms(source) {
          const checkboxes = document.querySelectorAll('.term-checkbox');
          checkboxes.forEach(cb => cb.checked = source.checked);
@@ -281,6 +329,7 @@
                  selectAll.indeterminate = false;
              } else {
                  selectAll.checked = false;
+                 selectAll.indeterminate = true;
              }
          }
      }
@@ -292,18 +341,26 @@
      }
  
      document.addEventListener('click', function(event) {
-         const container = document.getElementById('term-dropdown-container');
-         const menu = document.getElementById('term-dropdown-menu');
-         if (container && menu && menu.style.display === 'block' && !container.contains(event.target)) {
+         const termContainer = document.getElementById('term-dropdown-container');
+         const termMenu = document.getElementById('term-dropdown-menu');
+         
+         if (termContainer && termMenu && termMenu.style.display === 'block' && !termContainer.contains(event.target)) {
              closeDropdownAndSubmit();
+         }
+         
+         const pathwayContainer = document.getElementById('pathway-dropdown-container');
+         const pathwayMenu = document.getElementById('pathway-dropdown-menu');
+         
+         if (pathwayContainer && pathwayMenu && pathwayMenu.style.display === 'block' && !pathwayContainer.contains(event.target)) {
+             closePathwayDropdown();
          }
      });
      
-     const menu = document.getElementById('term-dropdown-menu');
-     if (menu) {
-         menu.addEventListener('click', function(event) {
+     const termMenu = document.getElementById('term-dropdown-menu');
+     if (termMenu) {
+         termMenu.addEventListener('click', function(event) {
              event.stopPropagation();
          });
      }
  </script>
- {% endblock %}
+{% endblock %}

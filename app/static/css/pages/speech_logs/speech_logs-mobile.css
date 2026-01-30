@@ -7,18 +7,90 @@
 
 	/* 1 Column for Mobile */
 	.logs-container {
-		column-count: 1;
+		grid-template-columns: 1fr;
 	}
 
 	/* Filter Responsive Fixes */
 	.filters-container {
 		flex-direction: column;
+		padding: 10px 12px;
+		/* Reduce padding on mobile */
+	}
+
+	/* Premium Filter Row - Stack Vertically */
+	.filter-row-premium {
+		flex-direction: column;
+		width: 100%;
+		gap: 10px;
+	}
+
+	.filter-group-premium {
+		width: 100%;
+		flex-direction: column;
+		/* Stack label and input */
+		align-items: flex-start;
+		gap: 5px;
+	}
+
+	/* Override min-width for meeting filter on mobile */
+	.meeting-autocomplete-container {
+		min-width: 0 !important;
+		width: 100% !important;
+	}
+
+	/* Ensure labels are visible but small */
+	.label-premium {
+		font-size: 13px !important;
+		margin-bottom: 2px;
+	}
+
+	/* Dropdown Alignment on Mobile */
+	/* Align to right edge to prevent overflow to the right */
+	.dropdown-premium-menu {
+		right: 0 !important;
+		left: auto !important;
+		min-width: 100%;
+		width: max-content;
+		/* Restore auto-width */
+	}
+
+	/* Restore nowrap for premium look, as requested */
+	.dropdown-item-label,
+	.dropdown-header-premium {
+		white-space: nowrap !important;
+	}
+
+	/* Reduce Legend Size on Mobile */
+	.chart-legend-premium {
+		gap: 8px !important;
+		margin-bottom: 10px !important;
+	}
+
+	.legend-item-premium {
+		font-size: 11px !important;
+		gap: 4px !important;
+	}
+
+	.legend-box {
+		width: 10px !important;
+		height: 10px !important;
+		border-radius: 2px !important;
 	}
 
 	#speech-logs-filter-form .filter-row,
 	#speech-logs-filter-form .search-group {
 		flex-direction: column;
 		width: 100%;
+	}
+
+	/* Reduce size of standard controls on mobile */
+	.custom-dropdown,
+	.dropdown-premium-btn,
+	.filters-container .search-input-wrapper {
+		width: 100% !important;
+		height: 36px !important;
+		font-size: 13px !important;
+		justify-content: space-between !important;
 	}
 
 	/* Toolbar Responsive Adjustments */
@@ -37,12 +109,21 @@
 		display: flex;
 		flex-direction: row;
 		align-items: stretch;
-		gap: 10px;
+		gap: 5px;
 	}
 
-	.view-mode-toggle .btn {
+	.view-mode-toggle .btn-view-control {
 		flex: 1;
 		min-width: 0;
+		font-size: 12px !important;
+		padding: 0 4px !important;
+		height: 36px !important;
+		justify-content: center;
+	}
+
+	.view-mode-toggle .btn-view-control i {
+		font-size: 1.1em;
+		margin-right: 4px;
 	}
 
 	.toolbar-form .form-group,
