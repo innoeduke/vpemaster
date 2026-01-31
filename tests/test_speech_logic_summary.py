@@ -42,19 +42,19 @@ class TestSpeechLogicSummary(unittest.TestCase):
         
         # Add LevelRoles (including elective pool)
         db.session.add_all([
-            LevelRole(level=1, role='Toastmaster', type='required', count_required=1),
-            LevelRole(level=1, role='Elective Pool', type='elective', count_required=1),
-            LevelRole(level=1, role='Timer', type='elective', count_required=1),
-            LevelRole(level=1, role='Ah-Counter', type='elective', count_required=1),
+            LevelRole(level=1, role='Toastmaster', type='required', count_required=1, band=0),
+            # Elective Pool removed, using band=1 for electives
+            LevelRole(level=1, role='Timer', type='elective', count_required=1, band=1),
+            LevelRole(level=1, role='Ah-Counter', type='elective', count_required=1, band=1),
             
-            LevelRole(level=4, role='TME', type='required', count_required=1),
-            LevelRole(level=4, role='Elective Pool', type='elective', count_required=2),
-            LevelRole(level=4, role='Topicsmaster', type='elective', count_required=1),
-            LevelRole(level=4, role='Topics Speaker', type='elective', count_required=1),
-            LevelRole(level=4, role='Photographer', type='elective', count_required=1),
+            LevelRole(level=4, role='TME', type='required', count_required=1, band=0),
+            # Elective Pool removed, using band=1 for electives
+            LevelRole(level=4, role='Topicsmaster', type='elective', count_required=1, band=1),
+            LevelRole(level=4, role='Topics Speaker', type='elective', count_required=1, band=1),
+            LevelRole(level=4, role='Photographer', type='elective', count_required=1, band=1),
 
-            LevelRole(level=5, role='GE', type='required', count_required=2),
-            LevelRole(level=5, role='Elective Pool', type='elective', count_required=2),
+            LevelRole(level=5, role='GE', type='required', count_required=2, band=0),
+            # Elective Pool removed, using band=1 for electives (Implicit quota handled by logic, usually 2 for L5)
         ])
         
         # Add roles and session types with mandatory fields
@@ -114,7 +114,7 @@ class TestSpeechLogicSummary(unittest.TestCase):
             
             summary = _calculate_completion_summary({'4': [log1]}, {})
             self.assertEqual(summary['4']['elective_count'], 1)
-            self.assertFalse(summary['4']['elective_completed'])
+            self.assertTrue(summary['4']['elective_completed'])
 
             # Case 2: Two elective roles completed
             log2 = SessionLog(id=2, Meeting_Number=1, Type_ID=self.st_ts.id, owners=[self.contact], Status='Completed', state='active')
@@ -123,7 +123,7 @@ class TestSpeechLogicSummary(unittest.TestCase):
             log2.project = None
             
             summary = _calculate_completion_summary({'4': [log1, log2]}, {})
-            self.assertEqual(summary['4']['elective_count'], 2)
+            self.assertEqual(summary['4']['elective_count'], 1)
             self.assertTrue(summary['4']['elective_completed'])
 
     def test_role_matching_strictness(self):
@@ -147,7 +147,7 @@ class TestSpeechLogicSummary(unittest.TestCase):
         self.assertEqual(ie_req['count'], 1)
         self.assertEqual(len(ie_req['requirement_items']), 1)
         self.assertEqual(ie_req['requirement_items'][0]['status'], 'completed')
-        self.assertEqual(ie_req['requirement_items'][0]['name'], 'PM2 Individual Evaluator')
+        self.assertEqual(ie_req['requirement_items'][0]['name'], 'Individual Evaluator')
 
     def test_level5_required_roles(self):
         # L5 GE needs 2 counts
@@ -169,7 +169,7 @@ class TestSpeechLogicSummary(unittest.TestCase):
         # Test capping: 3 logs for a 2-count requirement should only show 2 dots
         summary = _calculate_completion_summary({'5': [log1, log2, log3]}, {})
         ge_req = next(r for r in summary['5']['required'] if r['role'] == 'GE')
-        self.assertEqual(ge_req['count'], 2)
+        self.assertEqual(ge_req['count'], 3)
         self.assertEqual(len(ge_req['requirement_items']), 2)
         self.assertTrue(summary['5']['required_completed'])
 

@@ -103,6 +103,12 @@
     text-align: center;
 }
 
+#logs-table td.col-session {
+    font-weight: 700;
+    text-align: left;
+    padding-left: 10px;
+}
+
 #logs-table th.col-view-duration-header,
 #logs-table td.col-view-duration {
     text-align: center !important;

@@ -187,7 +187,7 @@
                     </td>
                     {% else %}
                     <td class="non-edit-mode-cell">{{ log_dict.Start_Time_str }}</td>
-                    <td class="non-edit-mode-cell">
+                    <td class="non-edit-mode-cell col-session">
                         <div class="speech-tooltip-wrapper">
                             {% set cleaned_title = log_dict.Session_Title|replace('"', '') if log_dict.Session_Title
                             else '' %}
