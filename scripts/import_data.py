@@ -3,7 +3,6 @@ import click
 from flask.cli import with_appcontext
 from app.services.backup_parser import SQLBackupParser
 from app.services.data_import_service import DataImportService
-from scripts.fix_home_club import fix_home_clubs
 
 @click.command('import-data')
 @click.option('--file', required=True, help='Path to SQL backup file')
@@ -74,8 +73,9 @@ def import_data(file, club_no):
         if 'votes' in data:
             service.import_votes(data['votes'])
             
+            
         print("Running post-import fixes...")
-        fix_home_clubs()
+        service.run_fix_home_clubs()
             
         print("Import completed successfully.")
         
@@ -83,3 +83,10 @@ def import_data(file, club_no):
         print(f"Error during import: {e}")
         import traceback
         traceback.print_exc()
+
+@click.command('fix-home-club')
+@with_appcontext
+def fix_home_club_command():
+    """Fixes home club issues for all users."""
+    print("Starting home club fix...")
+    DataImportService.run_fix_home_clubs()

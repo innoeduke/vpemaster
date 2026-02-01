@@ -219,15 +219,15 @@ def request_home(club_id):
     if uc.is_home:
         return jsonify({'success': False, 'error': 'This is already your home club.'}), 400
 
+    # If the user IS a club admin, approve immediately
+    from app.auth.permissions import Permissions
+    if current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, club_id):
+        current_user.set_home_club(club_id)
+        return jsonify({'success': True, 'message': f'{club.club_name} has been set as your home club.'})
+
     # Identify Club Admins
     # We find users who have the SETTINGS_EDIT_ALL permission in this club
-    from app.models import User, AuthRole
-    from app.auth.permissions import Permissions
-    
-    # Get roles that have SETTINGS_EDIT_ALL
-    # This loop logic is a bit manual, ideally we query simpler
-    # But finding users with a permission via query is complex due to bitmask
-    # Instead, let's look for known generic admin roles or rely on looping members
+    from app.models import User
     
     # 1. Get all members
     members = User.query.join(UserClub).filter(UserClub.club_id == club_id).all()
@@ -238,7 +238,7 @@ def request_home(club_id):
             admins.append(m)
             
     if not admins:
-        return jsonify({'success': False, 'error': 'No club admins found to approve your request.'}), 400
+        return jsonify({'success': False, 'error': f'No club admin was found for {club.club_name} to approve your request. Please contact your club leadership.'}), 400
         
     # Send Message to each Admin
     from app.models import Message

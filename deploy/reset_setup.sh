@@ -61,7 +61,7 @@ flask create-admin --username "sysadmin" --email "admin@vpemaster.com" --passwor
 
 # 6. Create Shanghai Leadership Toastmasters club
 echo "🏢 Creating 'Shanghai Leadership Toastmasters'..."
-flask create-club --club-no "00868941" --club-name "Shanghai Leadership Toastmasters" --skip-seed
+flask create-club --club-no "00868941" --club-name "Shanghai Leadership Toastmasters Club" --skip-seed
 
 # 7. Import data
 echo "📥 Importing data from $BACKUP_FILE..."

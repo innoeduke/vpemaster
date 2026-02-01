@@ -18,7 +18,10 @@ depends_on = None
 
 def upgrade():
     # Drop guests table
-    op.drop_table('guests')
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    if 'guests' in inspector.get_table_names():
+        op.drop_table('guests')
 
 
 def downgrade():

@@ -12,6 +12,7 @@ from app.models.media import Media
 from app.models.achievement import Achievement
 from app.models.voting import Vote
 from datetime import datetime
+from sqlalchemy import func
 import os
 
 class DataImportService:
@@ -911,4 +912,69 @@ class DataImportService:
                 
         db.session.commit()
         print(f"Imported {count} votes.")
+
+    @staticmethod
+    def run_fix_home_clubs():
+        print("Checking for users with multiple home clubs...")
+        
+        # Find users with multiple home clubs
+        subquery = db.session.query(
+            UserClub.user_id,
+            func.count(UserClub.club_id).label('home_count')
+        ).filter(
+            UserClub.is_home == True
+        ).group_by(
+            UserClub.user_id
+        ).having(
+            func.count(UserClub.club_id) > 1
+        ).all()
+        
+        if not subquery:
+            print("✅ No users with multiple home clubs found.")
+        else:
+            print(f"Found {len(subquery)} user(s) with multiple home clubs. Fixing...")
+            for user_id, count in subquery:
+                print(f"  - User ID {user_id} has {count} home clubs.")
+                # Get all home club records for this user, ordered by updated_at desc (keep most recent)
+                ucs = UserClub.query.filter_by(
+                    user_id=user_id, 
+                    is_home=True
+                ).order_by(
+                    UserClub.updated_at.desc(), 
+                    UserClub.id.desc()
+                ).all()
+                
+                # Keep the first one, unset the rest
+                keep_uc = ucs[0]
+                print(f"    - Keeping Club ID {keep_uc.club_id} as home.")
+                
+                for remove_uc in ucs[1:]:
+                    print(f"    - Removing Club ID {remove_uc.club_id} from home.")
+                    remove_uc.is_home = False
+
+        # NEW LOGIC: Ensure users with strictly one club have it as home
+        print("Checking for users with exactly one club but no home set...")
+        single_club_users = db.session.query(
+            UserClub.user_id
+        ).group_by(
+            UserClub.user_id
+        ).having(
+            func.count(UserClub.club_id) == 1
+        ).all()
+        
+        fixed_count = 0
+        for (user_id,) in single_club_users:
+            uc = UserClub.query.filter_by(user_id=user_id).first()
+            if uc and not uc.is_home:
+                print(f"  - User {user_id} has one club ({uc.club_id}) but is_home=False. Fixing.")
+                uc.is_home = True
+                fixed_count += 1
+                
+        if fixed_count == 0:
+            print("✅ All single-club users already have home set.")
+        else:
+            print(f"✅ Fixed {fixed_count} single-club users.")
+
+        db.session.commit()
+        print("✅ Fix complete.")
 

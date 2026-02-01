@@ -21,21 +21,41 @@ def upgrade():
     conn = op.get_bind()
     from sqlalchemy.engine.reflection import Inspector
     inspector = Inspector.from_engine(conn)
-    indexes = [i['name'] for i in inspector.get_indexes('Session_Types')]
+    
+    # Session_Types checks
+    st_cols = [c['name'] for c in inspector.get_columns('Session_Types')]
+    st_ixs = [i['name'] for i in inspector.get_indexes('Session_Types')]
+    st_fks = [fk['name'] for fk in inspector.get_foreign_keys('Session_Types')]
+    st_uqs = [uq['name'] for uq in inspector.get_unique_constraints('Session_Types')]
 
     with op.batch_alter_table('Session_Types', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('club_id', sa.Integer(), nullable=True))
-        if 'uq_Session_Types_Title' in indexes:
+        if 'club_id' not in st_cols:
+            batch_op.add_column(sa.Column('club_id', sa.Integer(), nullable=True))
+        if 'uq_Session_Types_Title' in st_ixs:
             batch_op.drop_index(batch_op.f('uq_Session_Types_Title'))
-        batch_op.create_index(batch_op.f('ix_Session_Types_club_id'), ['club_id'], unique=False)
-        batch_op.create_unique_constraint('uq_session_type_title_club', ['Title', 'club_id'])
-        batch_op.create_foreign_key(batch_op.f('fk_Session_Types_club_id_clubs'), 'clubs', ['club_id'], ['id'])
+        if 'ix_Session_Types_club_id' not in st_ixs:
+            batch_op.create_index(batch_op.f('ix_Session_Types_club_id'), ['club_id'], unique=False)
+        if 'uq_session_type_title_club' not in st_uqs:
+            batch_op.create_unique_constraint('uq_session_type_title_club', ['Title', 'club_id'])
+        fk_name = batch_op.f('fk_Session_Types_club_id_clubs')
+        if not any(fk['name'] == fk_name for fk in inspector.get_foreign_keys('Session_Types')):
+            batch_op.create_foreign_key(fk_name, 'clubs', ['club_id'], ['id'])
+
+    # meeting_roles checks
+    mr_cols = [c['name'] for c in inspector.get_columns('meeting_roles')]
+    mr_ixs = [i['name'] for i in inspector.get_indexes('meeting_roles')]
+    mr_uqs = [uq['name'] for uq in inspector.get_unique_constraints('meeting_roles')]
 
     with op.batch_alter_table('meeting_roles', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('club_id', sa.Integer(), nullable=True))
-        batch_op.create_index(batch_op.f('ix_meeting_roles_club_id'), ['club_id'], unique=False)
-        batch_op.create_unique_constraint('uq_meeting_role_name_club', ['name', 'club_id'])
-        batch_op.create_foreign_key(batch_op.f('fk_meeting_roles_club_id_clubs'), 'clubs', ['club_id'], ['id'])
+        if 'club_id' not in mr_cols:
+            batch_op.add_column(sa.Column('club_id', sa.Integer(), nullable=True))
+        if 'ix_meeting_roles_club_id' not in mr_ixs:
+            batch_op.create_index(batch_op.f('ix_meeting_roles_club_id'), ['club_id'], unique=False)
+        if 'uq_meeting_role_name_club' not in mr_uqs:
+            batch_op.create_unique_constraint('uq_meeting_role_name_club', ['name', 'club_id'])
+        fk_name = batch_op.f('fk_meeting_roles_club_id_clubs')
+        if not any(fk['name'] == fk_name for fk in inspector.get_foreign_keys('meeting_roles')):
+            batch_op.create_foreign_key(fk_name, 'clubs', ['club_id'], ['id'])
 
     # ### end Alembic commands ###
 

@@ -281,33 +281,39 @@
 <div class="about-club-container">
     <div class="settings-header">
         <h1>About Our Club</h1>
-        {% if is_authorized(Permissions.ABOUT_CLUB_EDIT) %}
-        <div class="button-group">
-            <button id="cancel-club-btn" class="btn btn-danger" style="display: none">Cancel</button>
-            <button id="edit-club-btn" class="btn btn-primary">Edit</button>
-        </div>
-        {% endif %}
-        
-        <!-- Home Club Request Button -->
-        {% if current_user.is_authenticated and club %}
-            {% set ns = namespace(is_member=false, is_home=false) %}
-            {% for m in current_user.club_memberships %}
-                {% if m.club_id == club.id %}
-                    {% set ns.is_member = true %}
-                    {% if m.is_home %}
-                        {% set ns.is_home = true %}
-                    {% endif %}
-                {% endif %}
-            {% endfor %}
-            
-            {% if ns.is_member and not ns.is_home %}
-            <div class="button-group" style="margin-left: 10px;">
-                <button id="request-home-btn" class="btn btn-outline-primary" style="border-color: #004165; color: #004165;" onclick="requestHomeClub({{ club.id }})">
-                    <i class="fas fa-home"></i> Set as Home Club
+        <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
+            {% if is_authorized(Permissions.ABOUT_CLUB_EDIT) %}
+            <div class="button-group">
+                <button id="cancel-club-btn" class="btn btn-danger" style="display: none">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button id="edit-club-btn" class="btn btn-primary" style="background-color: #004165; border-color: #004165;">
+                    <i class="fas fa-edit"></i> Edit
                 </button>
             </div>
             {% endif %}
-        {% endif %}
+            
+            <!-- Home Club Request Button -->
+            {% if current_user.is_authenticated and club %}
+                {% set ns = namespace(is_member=false, is_home=false) %}
+                {% for m in current_user.club_memberships %}
+                    {% if m.club_id == club.id %}
+                        {% set ns.is_member = true %}
+                        {% if m.is_home %}
+                            {% set ns.is_home = true %}
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                
+                {% if ns.is_member and not ns.is_home %}
+                <div class="button-group">
+                    <button id="request-home-btn" class="btn btn-outline-primary" style="border-color: #004165; color: #004165; background-color: transparent;" onclick="requestHomeClub({{ club.id }})">
+                        <i class="fas fa-home"></i> Set as Home Club
+                    </button>
+                </div>
+                {% endif %}
+            {% endif %}
+        </div>
     </div>
 
     {% if club %}

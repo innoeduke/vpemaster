@@ -163,7 +163,7 @@ def create_app(config_class='config.Config'):
 
     # Register CLI commands
     from scripts.create_admin import create_admin
-    from scripts.import_data import import_data
+    from scripts.import_data import import_data, fix_home_club_command
     from scripts.manage_metadata import metadata
     from scripts.cleanup_data import cleanup_data
     from scripts.create_club import create_club
@@ -172,6 +172,7 @@ def create_app(config_class='config.Config'):
     app.cli.add_command(metadata)
     app.cli.add_command(cleanup_data)
     app.cli.add_command(create_club)
+    app.cli.add_command(fix_home_club_command)
 
     # 7. Return the configured app instance
     return app

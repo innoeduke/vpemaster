@@ -4418,15 +4418,6 @@
       "resource": "club",
       "action": "manage",
       "created_at": "2026-01-25 03:09:59"
-    },
-    {
-      "id": 38,
-      "name": "RESET_PASSWORD_CLUB",
-      "description": "Permission for RESET_PASSWORD_CLUB",
-      "category": null,
-      "resource": null,
-      "action": null,
-      "created_at": "2026-02-01 16:45:14"
     }
   ],
   "auth_roles": [
@@ -4468,41 +4459,6 @@
   ],
   "role_permissions": [
     {
-      "id": 101,
-      "role_id": 1,
-      "permission_id": 1
-    },
-    {
-      "id": 99,
-      "role_id": 1,
-      "permission_id": 5
-    },
-    {
-      "id": 93,
-      "role_id": 1,
-      "permission_id": 11
-    },
-    {
-      "id": 87,
-      "role_id": 1,
-      "permission_id": 12
-    },
-    {
-      "id": 89,
-      "role_id": 1,
-      "permission_id": 13
-    },
-    {
-      "id": 95,
-      "role_id": 1,
-      "permission_id": 14
-    },
-    {
-      "id": 97,
-      "role_id": 1,
-      "permission_id": 15
-    },
-    {
       "id": 62,
       "role_id": 1,
       "permission_id": 25
@@ -4518,54 +4474,9 @@
       "permission_id": 33
     },
     {
-      "id": 91,
-      "role_id": 1,
-      "permission_id": 34
-    },
-    {
       "id": 86,
       "role_id": 1,
       "permission_id": 37
-    },
-    {
-      "id": 103,
-      "role_id": 1,
-      "permission_id": 38
-    },
-    {
-      "id": 102,
-      "role_id": 2,
-      "permission_id": 1
-    },
-    {
-      "id": 100,
-      "role_id": 2,
-      "permission_id": 5
-    },
-    {
-      "id": 94,
-      "role_id": 2,
-      "permission_id": 11
-    },
-    {
-      "id": 88,
-      "role_id": 2,
-      "permission_id": 12
-    },
-    {
-      "id": 90,
-      "role_id": 2,
-      "permission_id": 13
-    },
-    {
-      "id": 96,
-      "role_id": 2,
-      "permission_id": 14
-    },
-    {
-      "id": 98,
-      "role_id": 2,
-      "permission_id": 15
     },
     {
       "id": 63,
@@ -4581,16 +4492,6 @@
       "id": 83,
       "role_id": 2,
       "permission_id": 33
-    },
-    {
-      "id": 92,
-      "role_id": 2,
-      "permission_id": 34
-    },
-    {
-      "id": 104,
-      "role_id": 2,
-      "permission_id": 38
     },
     {
       "id": 34,
