@@ -134,8 +134,14 @@ def test_save_user_data_sync(test_app):
         db.session.commit()
 
         # Create user via _save_user_data
-        from unittest.mock import patch
-        with patch('app.users_routes.is_authorized', return_value=True):
+        from unittest.mock import patch, MagicMock
+        mock_user = MagicMock()
+        mock_user.is_authenticated = True
+        mock_user.id = 999
+        mock_user.has_club_permission.return_value = True
+
+        with patch('app.users_routes.is_authorized', return_value=True), \
+             patch('app.users_routes.current_user', mock_user):
             user = _save_user_data(
                 username='flowuser',
                 first_name='Flow',
@@ -158,7 +164,15 @@ def test_save_user_data_sync(test_app):
         # We need to re-fetch or ensure target is in session
         from unittest.mock import patch
         user = db.session.get(User, user_id)
-        with patch('app.users_routes.is_authorized', return_value=True):
+        
+        # Mock current user for the update check
+        mock_user = MagicMock()
+        mock_user.is_authenticated = True
+        mock_user.id = 999
+        mock_user.has_club_permission.return_value = True
+
+        with patch('app.users_routes.is_authorized', return_value=True), \
+             patch('app.users_routes.current_user', mock_user):
             _save_user_data(
                 user=user,
                 first_name='UpdatedFlow',
@@ -229,7 +243,14 @@ def test_club_admin_restriction(test_app):
         db.session.commit()
 
         # 1. Simulate ClubAdmin (is_authorized returns False for SYSADMIN)
-        with patch('app.users_routes.is_authorized', return_value=False):
+        from unittest.mock import MagicMock
+        mock_user = MagicMock()
+        mock_user.is_authenticated = True
+        mock_user.id = 888 
+        mock_user.has_club_permission.return_value = False # Not home club admin
+
+        with patch('app.users_routes.is_authorized', return_value=False), \
+             patch('app.users_routes.current_user', mock_user):
             _save_user_data(
                 user=user,
                 first_name='AttemptedUpdate',
@@ -243,7 +264,12 @@ def test_club_admin_restriction(test_app):
             assert user.email == 'limited@example.com'
 
         # 2. Simulate SysAdmin (is_authorized returns True)
-        with patch('app.users_routes.is_authorized', return_value=True):
+        mock_sysadmin = MagicMock()
+        mock_sysadmin.is_authenticated = True
+        mock_sysadmin.id = 777
+        
+        with patch('app.users_routes.is_authorized', return_value=True), \
+             patch('app.users_routes.current_user', mock_sysadmin):
             _save_user_data(
                 user=user,
                 first_name='SysAdminUpdate',

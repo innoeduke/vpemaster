@@ -234,6 +234,28 @@
       "has_single_owner": false,
       "is_member_only": false,
       "club_id": 1
+    },
+    {
+      "id": 52,
+      "name": "Club Mentor",
+      "icon": "fa-graduation-cap",
+      "type": "standard",
+      "award_category": "",
+      "needs_approval": true,
+      "has_single_owner": false,
+      "is_member_only": false,
+      "club_id": 1
+    },
+    {
+      "id": 53,
+      "name": "Introductory Mentor",
+      "icon": "fa-hand-holding-heart",
+      "type": "standard",
+      "award_category": "",
+      "needs_approval": true,
+      "has_single_owner": false,
+      "is_member_only": false,
+      "club_id": 1
     }
   ],
   "pathways": [

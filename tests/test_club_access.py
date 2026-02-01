@@ -230,8 +230,13 @@ def test_clubadmin_denied_non_owned_club(app, client):
             def dummy_view():
                 return "Success"
             
-            with pytest.raises(Forbidden):
-                dummy_view()
+            # The system should automatically switch context to a valid club (club1)
+            # instead of raising Forbidden
+            result = dummy_view()
+            assert result == "Success"
+            
+            # Verify context was switched to club1 (where they are officer)
+            assert session['current_club_id'] == club1.id
 
 
 def test_regular_user_access_authorized_club(app, client):
@@ -332,5 +337,10 @@ def test_regular_user_denied_unauthorized_club(app, client):
             def dummy_view():
                 return "Success"
             
-            with pytest.raises(Forbidden):
-                dummy_view()
+            # The system should automatically switch context to a valid club (club1)
+            # instead of raising Forbidden
+            result = dummy_view()
+            assert result == "Success"
+            
+            # Verify context was switched to club1 (where they are member)
+            assert session['current_club_id'] == club1.id

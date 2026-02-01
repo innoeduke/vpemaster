@@ -18,6 +18,14 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
     # Target permission to check
     target_perm = permission if permission else user_role_or_permission
     
+    # Resolve club_id from context early to avoid UnboundLocalError
+    club_id = kwargs.get('club_id')
+    meeting = kwargs.get('meeting')
+    if not club_id and meeting:
+        club_id = meeting.club_id
+    if not club_id:
+        club_id = session.get('current_club_id')
+    
     if not current_user.is_authenticated:
         # Both Authenticated and Anonymous users now have has_permission() method
         if hasattr(current_user, 'has_permission'):
@@ -34,14 +42,6 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
 
     # 2. ClubAdmin Override: Full access to owned clubs (except strictly SysAdmin-only features)
     if target_perm != Permissions.SYSADMIN:
-        # Resolve club_id from context
-        club_id = kwargs.get('club_id')
-        meeting = kwargs.get('meeting')
-        if not club_id and meeting:
-            club_id = meeting.club_id
-        if not club_id:
-            club_id = session.get('current_club_id')
-        
         # Use helper method on User model
         if hasattr(current_user, 'is_club_admin') and current_user.is_club_admin(club_id):
             return True

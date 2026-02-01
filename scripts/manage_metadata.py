@@ -38,21 +38,32 @@ def backup(file):
     # Create directory if it doesn't exist
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
-    # Rotation: Rename existing file if it exists
+    # Rotation: Move existing file to instance/backup if it exists
     if os.path.exists(output_file):
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d")
         
-        # Split extension properly
-        base, ext = os.path.splitext(output_file)
-        rotated_file = f"{base}_{timestamp}{ext}"
+        # Define backup directory
+        backup_dir = os.path.join(project_root, 'instance', 'backup')
+        os.makedirs(backup_dir, exist_ok=True)
+
+        # Get filename
+        filename = os.path.basename(output_file)
         
-        # Ensure we don't overwrite an existing rotated file (append counter if needed? or just overwrite?)
-        # Requirement: "rename the old metadata_dump.json to metadata_dump_<current_date>.json"
-        # Simplest: Overwrite if exists, or just do it.
+        # Step 1: Move to instance/backup (keeping original name temporarily)
+        dest_path = os.path.join(backup_dir, filename)
+        
         try:
-             os.rename(output_file, rotated_file)
-             print(f"Rotated existing backup to: {rotated_file}")
+             # Move first
+             os.rename(output_file, dest_path)
+             
+             # Step 2: Rename with timestamp
+             base, ext = os.path.splitext(filename)
+             rotated_filename = f"{base}_{timestamp}{ext}"
+             rotated_file_path = os.path.join(backup_dir, rotated_filename)
+             
+             os.rename(dest_path, rotated_file_path)
+             print(f"Moved existing backup to: {rotated_file_path}")
         except OSError as e:
              print(f"Warning: Failed to rotate backup file: {e}")
 

@@ -806,7 +806,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       if (modal && title && submitBtn && form) {
         title.textContent = "Add New Session Type";
-        submitBtn.textContent = "Save Session Type";
+        submitBtn.textContent = "Save";
         form.reset();
         document.getElementById("session_id_input").value = "";
         modal.style.display = "flex";
@@ -825,7 +825,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (modal && title && submitBtn && form) {
         title.textContent = "Add New Role";
-        submitBtn.textContent = "Save Role";
+        submitBtn.textContent = "Save";
         form.reset();
         document.getElementById("role_id_input").value = "";
 
@@ -945,7 +945,7 @@ document.addEventListener("DOMContentLoaded", () => {
             addSessionRowToTable(data.new_session);
             closeModal("addSessionModal");
             this.reset();
-            showNotification(data.message, "success");
+            // showNotification(data.message, "success");
           } else {
             showNotification(data.message, "error");
           }
@@ -982,7 +982,7 @@ document.addEventListener("DOMContentLoaded", () => {
             addRoleRowToTable(data.new_role);
             closeModal("addRoleModal");
             this.reset();
-            showNotification(data.message, "success");
+            // showNotification(data.message, "success");
             
             // Update ROLES_DATA for session role dropdown
             const existingIndex = ROLES_DATA.findIndex(r => r.id == data.new_role.id);
@@ -1437,7 +1437,7 @@ function openEditRoleModal(roleId) {
 
     // Set modal to edit mode
     title.textContent = "Edit Role";
-    submitBtn.textContent = "Update Role";
+    submitBtn.textContent = "Save";
     document.getElementById("role_id_input").value = roleId;
 
     // Populate fields
@@ -1493,7 +1493,7 @@ function openEditSessionModal(sessionId) {
 
     // Set modal to edit mode
     title.textContent = "Edit Session Type";
-    submitBtn.textContent = "Update Session Type";
+    submitBtn.textContent = "Save";
     document.getElementById("session_id_input").value = sessionId;
 
     // Populate fields

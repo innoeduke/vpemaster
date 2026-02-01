@@ -116,6 +116,11 @@ def add_session_type():
             if not session_type or session_type.club_id != club_id:
                  return jsonify(success=False, message="Session type not found or permission denied"), 404
 
+        # Get and validate title
+        title = request.form.get('title', '').strip()
+        if not title:
+            return jsonify(success=False, message="Title is required"), 400
+
         # Check if title already exists in this club (excluding ourselves if updating)
         query = SessionType.query.filter_by(Title=title, club_id=club_id)
         if session_type:
