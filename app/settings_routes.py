@@ -393,15 +393,36 @@ def delete_role(id):
     try:
         role = db.session.get(MeetingRole, id)
         
+        if not role:
+             return jsonify(success=False, message="Role not found"), 404
+
         if role.club_id == GLOBAL_CLUB_ID and club_id != GLOBAL_CLUB_ID:
              return jsonify(success=False, message="Cannot delete a Global role."), 403
 
         if role and (role.club_id == club_id or club_id == GLOBAL_CLUB_ID):
+            # Check usage in OwnerMeetingRoles (Meeting Assignments)
+            from .models import OwnerMeetingRoles, SessionType
+            from .models.roster import RosterRole
+            
+            usage_omr = OwnerMeetingRoles.query.filter_by(role_id=id).count()
+            if usage_omr > 0:
+                return jsonify(success=False, message=f"Cannot delete role '{role.name}' because it is assigned to {usage_omr} meeting(s). Please unassign it first."), 400
+
+            # Check usage in SessionTypes
+            usage_st = SessionType.query.filter_by(role_id=id).count()
+            if usage_st > 0:
+                return jsonify(success=False, message=f"Cannot delete role '{role.name}' because it is used by {usage_st} session type(s). Please update the session types first."), 400
+
+            # Check usage in Roster
+            usage_roster = RosterRole.query.filter_by(role_id=id).count()
+            if usage_roster > 0:
+                return jsonify(success=False, message=f"Cannot delete role '{role.name}' because it is used in {usage_roster} roster entry/entries. Please clear the rosters first."), 400
+
             db.session.delete(role)
             db.session.commit()
             return jsonify(success=True, message="Role deleted successfully.")
         else:
-            return jsonify(success=False, message="Role not found or permission denied"), 404
+            return jsonify(success=False, message="Permission denied"), 403
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500

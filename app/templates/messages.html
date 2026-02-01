@@ -62,7 +62,7 @@
         </div>
         <div class="custom-modal-footer">
             <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-primary" onclick="replyToMessage()">
+                <button class="btn btn-success" onclick="replyToMessage()">
                     <i class="fas fa-reply"></i> Reply
                 </button>
                 <button class="btn btn-danger" onclick="deleteCurrentMessage()">
@@ -193,14 +193,20 @@
             ? `<img src="${detailAvatarSrc}" class="msg-avatar" alt="Avatar">`
             : `<div class="msg-avatar-placeholder">${getInitials(otherParty)}</div>`;
         
+
         // Handle Join Requests
         const requestMatch = msg.body.match(/\[CLUB_ID:(\d+)\]/);
+        // Handle Home Club Requests
+        const homeRequestMatch = msg.body.match(/\[HOME_CLUB_REQUEST:(\d+):(\d+)\]/);
         
         // Clear previous actions if any (though we reset textContent below so simpler)
         
         let displayBody = msg.body;
         if (requestMatch) {
             displayBody = displayBody.replace(requestMatch[0], '');
+        }
+        if (homeRequestMatch) {
+            displayBody = displayBody.replace(homeRequestMatch[0], '');
         }
 
         const bodyEl = document.getElementById('detail-body');
@@ -235,6 +241,23 @@
                             <i class="fas fa-check"></i> Accept
                         </button>
                         <button onclick="respondToJoinRequest(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>
+                </div>
+            `;
+            bodyEl.insertAdjacentHTML('beforeend', actionsHtml);
+        }
+        
+        if (homeRequestMatch && isInbox) {
+             const actionsHtml = `
+                <div class="message-actions join-request-card">
+                    <h3 class="join-request-title" style="color: #2c5282; border-left: 4px solid #4299e1;">Home Club Request</h3>
+                    <div class="join-request-actions">
+                        <button onclick="respondToHomeRequest(${msg.id}, 'approve')" class="btn btn-join btn-join-accept">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button onclick="respondToHomeRequest(${msg.id}, 'reject')" class="btn btn-join btn-join-reject">
                             <i class="fas fa-times"></i> Reject
                         </button>
                     </div>
@@ -380,6 +403,55 @@
                 closeMessageDetailModal();
                 loadMessages(currentTab);
             } else {
+                showToast(data.error || 'Action failed', 'error');
+                btn.innerHTML = originalText;
+                if (container) {
+                     container.querySelectorAll('button').forEach(b => b.disabled = false);
+                } else {
+                     btn.disabled = false;
+                }
+            }
+        })
+        .catch(err => {
+            showToast('Error processing request', 'error');
+            btn.innerHTML = originalText;
+            if (container) {
+                 container.querySelectorAll('button').forEach(b => b.disabled = false);
+            } else {
+                 btn.disabled = false;
+            }
+        });
+    }
+
+    function respondToHomeRequest(messageId, action) {
+        const btn = event.target.closest('button');
+        const container = btn.closest('.message-actions');
+        if (container) {
+            container.querySelectorAll('button').forEach(b => b.disabled = true);
+        } else {
+             btn.disabled = true;
+        }
+        
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+        fetch('/clubs/respond_home_request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message_id: messageId,
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showToast(action === 'approve' ? 'Request Approved.' : 'Request Rejected.', 'success');
+                closeMessageDetailModal();
+                loadMessages(currentTab);
+            } else {
+                // Should show error even if it's 200 OK with success=False (silent ignore case)
+                // But specifically for UI feedback, we can show what happened.
                 showToast(data.error || 'Action failed', 'error');
                 btn.innerHTML = originalText;
                 if (container) {

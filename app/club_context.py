@@ -37,6 +37,40 @@ def get_or_set_default_club():
     
     club_id = get_current_club_id()
     
+    # If club_id is set in session, VALIDATE it for the current authenticated user
+    if club_id:
+        from flask_login import current_user
+        if current_user.is_authenticated:
+            # SysAdmin bypass
+            from app.models import AuthRole, UserClub
+            from app.auth.permissions import Permissions
+            
+            # Check if user is sysadmin (has role in ANY club)
+            # This logic mimics authorized_club_required but simpler for context setting
+            is_sysadmin = False
+            # Check specific membership
+            user_club = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
+            
+            if user_club:
+                pass
+            else:
+                # Not a member. Check if they are a SysAdmin (allows access to any club)
+                is_sysadmin = False
+                sys_role = AuthRole.get_by_name(Permissions.SYSADMIN)
+                
+                if sys_role:
+                    # Check if they have sysadmin role in ANY club
+                    all_ucs = UserClub.query.filter_by(user_id=current_user.id).all()
+                    for uc in all_ucs:
+                        if (uc.club_role_level & sys_role.level) == sys_role.level:
+                            is_sysadmin = True
+                            break
+                
+                if not is_sysadmin:
+                    # Invalid context for this user! Clear it.
+                    club_id = None
+                    session.pop('current_club_id', None)
+
     if not club_id:
         # 0. Check request arguments (e.g., from redirection query param)
         from flask import request

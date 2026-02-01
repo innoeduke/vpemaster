@@ -216,6 +216,32 @@ class User(UserMixin, db.Model):
             return True
             
         return permission_name in self.get_permissions()
+
+    def has_club_permission(self, permission_name, club_id):
+        """
+        Check if user has a specific permission within the context of a specific club.
+        True if:
+        1. User is SysAdmin (global)
+        2. User has a role in this club that grants the permission
+        """
+        if self.is_sysadmin:
+            return True
+            
+        if not club_id:
+            return False
+            
+        # Get UserClub record for this club
+        uc = self.get_user_club(club_id)
+        if not uc:
+            return False
+            
+        # Check permissions of roles assigned in this club
+        # uc.roles returns Role objects based on the bitmask
+        for role in uc.roles:
+            if role.has_permission(permission_name):
+                return True
+                
+        return False
     
     def has_role(self, role_name):
         """Check if user has a specific role."""
@@ -491,10 +517,14 @@ class User(UserMixin, db.Model):
 
         # 3. Ensure UserClub linkage
         if not uc:
+             # Check if this is the first club for the user
+             is_first_club = UserClub.query.filter_by(user_id=self.id).count() == 0
+             
              uc = UserClub(
                  user_id=self.id,
                  club_id=club_id,
-                 contact_id=contact.id
+                 contact_id=contact.id,
+                 is_home=is_first_club
              )
              db.session.add(uc)
         else:
@@ -530,10 +560,14 @@ class User(UserMixin, db.Model):
         if existing_uc:
             existing_uc.club_role_level = role_level
         else:
+            # Check if this is the first club for the user
+            is_first_club = UserClub.query.filter_by(user_id=self.id).count() == 0
+            
             new_uc = UserClub(
                 user_id=self.id,
                 club_id=club_id,
-                club_role_level=role_level
+                club_role_level=role_level,
+                is_home=is_first_club
             )
             # contact_id will be set by UserClub.__init__ or ensure_contact
             db.session.add(new_uc)

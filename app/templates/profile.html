@@ -106,6 +106,16 @@
             <span class="roster-role-tag {{ role_class }}">{{ user.primary_role_name }}</span>
         </td>
       </tr>
+      <tr>
+        <td><label>Home Club</label></td>
+        <td>
+          {% if user.home_club %}
+            {{ user.home_club.club_name }}
+          {% else %}
+            <span class="text-muted">None</span>
+          {% endif %}
+        </td>
+      </tr>
       {% if user.contact %}
       <tr>
         <td><label>Member ID</label></td>

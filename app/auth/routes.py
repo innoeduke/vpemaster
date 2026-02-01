@@ -135,6 +135,7 @@ def login():
 @login_required
 def logout():
     session.pop('force_password_reset', None)
+    session.pop('current_club_id', None)
     logout_user()
     return redirect(url_for('auth_bp.login'))
 
@@ -183,14 +184,25 @@ def profile(contact_id=None):
 
     if request.method == 'POST':
         # Check if user can edit this profile
-        can_edit = is_own_profile or current_user.has_permission(Permissions.PROFILE_EDIT)
-        if not can_edit:
-            flash('You do not have permission to modify this profile.', 'error')
-            return redirect(url_for('auth_bp.profile', contact_id=contact_id))
+        # Permission Check for Update Profile
+        can_edit_profile = is_own_profile or current_user.has_permission(Permissions.PROFILE_EDIT)
+        
+        # Permission Check for Reset Password
+        can_reset_password = False
+        if is_own_profile:
+            can_reset_password = True
+        elif user.home_club and current_user.has_club_permission(Permissions.RESET_PASSWORD_CLUB, user.home_club.id):
+             can_reset_password = True
+        elif current_user.is_sysadmin: # Explicit check though has_club_permission covers it, solely for clarity/fallback
+             can_reset_password = True
 
         action = request.form.get('action')
 
         if action == 'update_profile':
+            if not can_edit_profile:
+                 flash('You do not have permission to modify this profile.', 'error')
+                 return redirect(url_for('auth_bp.profile', contact_id=contact_id))
+
             user.first_name = request.form.get('first_name')
             user.last_name = request.form.get('last_name')
             user.email = request.form.get('email')
@@ -216,6 +228,10 @@ def profile(contact_id=None):
             return redirect(url_for('auth_bp.profile'))
 
         elif action == 'reset_password':
+            if not can_reset_password:
+                flash('You do not have permission to reset this user\'s password.', 'error')
+                return redirect(url_for('auth_bp.profile', contact_id=contact_id))
+                
             new_password = request.form.get('new_password', '').strip()
             confirm_password = request.form.get('confirm_password', '').strip()
 

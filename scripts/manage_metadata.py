@@ -6,7 +6,7 @@ from app import db
 from app.constants import GLOBAL_CLUB_ID  # Import GLOBAL_CLUB_ID
 from app.models import (
     LevelRole, Pathway, PathwayProject, Project, MeetingRole, 
-    SessionType, Permission, AuthRole, RolePermission, Ticket
+    SessionType, Permission, AuthRole, RolePermission, Ticket, Club
 )
 
 @click.group()
@@ -38,11 +38,30 @@ def backup(file):
     # Create directory if it doesn't exist
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
+    # Rotation: Rename existing file if it exists
+    if os.path.exists(output_file):
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y%m%d")
+        
+        # Split extension properly
+        base, ext = os.path.splitext(output_file)
+        rotated_file = f"{base}_{timestamp}{ext}"
+        
+        # Ensure we don't overwrite an existing rotated file (append counter if needed? or just overwrite?)
+        # Requirement: "rename the old metadata_dump.json to metadata_dump_<current_date>.json"
+        # Simplest: Overwrite if exists, or just do it.
+        try:
+             os.rename(output_file, rotated_file)
+             print(f"Rotated existing backup to: {rotated_file}")
+        except OSError as e:
+             print(f"Warning: Failed to rotate backup file: {e}")
+
     # Filter for Global Club ID (and None/Null just in case legacy items persist)
     # Using sqlalchemy 'or_' or simply checking if club_id in [1, None]
     from sqlalchemy import or_
 
     data = {
+        "clubs": [to_dict(c) for c in Club.query.all()],
         "meeting_roles": [to_dict(r) for r in MeetingRole.query.filter(or_(MeetingRole.club_id == GLOBAL_CLUB_ID, MeetingRole.club_id.is_(None))).all()],
         "pathways": [to_dict(p) for p in Pathway.query.all()],
         "projects": [to_dict(p) for p in Project.query.all()],
@@ -95,6 +114,7 @@ def restore(file):
 
     # Map keys to Models
     model_map = {
+        "clubs": Club,
         "meeting_roles": MeetingRole,
         "pathways": Pathway,
         "projects": Project,
@@ -114,6 +134,7 @@ def restore(file):
     total_records = 0
     
     restore_order = [
+         "clubs", # Restored first as other tables depend on club_id
          "meeting_roles", "pathways", "projects", "session_types", "permissions", "tickets", # Base tables
          "pathway_projects", "level_roles", "auth_roles", "role_permissions" # Dependent tables (roughly)
     ]

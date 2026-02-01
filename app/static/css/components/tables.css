@@ -70,6 +70,7 @@ th.sortable[data-sort-dir="desc"]::after {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .action-links>.btn-primary,

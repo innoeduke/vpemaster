@@ -1,25 +1,4 @@
 {
-  "clubs": [
-    {
-      "id": 1,
-      "club_no": "000001",
-      "club_name": "Technical Support",
-      "short_name": null,
-      "district": null,
-      "division": null,
-      "area": null,
-      "club_address": null,
-      "meeting_date": null,
-      "meeting_time": null,
-      "contact_phone_number": null,
-      "website": null,
-      "logo_url": null,
-      "founded_date": null,
-      "current_excomm_id": null,
-      "created_at": "2026-02-01 14:54:34",
-      "updated_at": "2026-02-01 14:54:34"
-    }
-  ],
   "meeting_roles": [
     {
       "id": 1,
@@ -117,6 +96,50 @@
       "award_category": "table-topic",
       "needs_approval": false,
       "has_single_owner": true,
+      "is_member_only": false,
+      "club_id": 1
+    },
+    {
+      "id": 15,
+      "name": "Election Chair",
+      "icon": "fa-vote-yea",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "has_single_owner": false,
+      "is_member_only": false,
+      "club_id": 1
+    },
+    {
+      "id": 16,
+      "name": "Chief Contest Judge",
+      "icon": "fa-gavel",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "has_single_owner": false,
+      "is_member_only": false,
+      "club_id": 1
+    },
+    {
+      "id": 26,
+      "name": "Contest Chair",
+      "icon": "fa-crown",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "has_single_owner": false,
+      "is_member_only": false,
+      "club_id": 1
+    },
+    {
+      "id": 27,
+      "name": "Ballot Counter",
+      "icon": "fa-calculator",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": false,
+      "has_single_owner": false,
       "is_member_only": false,
       "club_id": 1
     },

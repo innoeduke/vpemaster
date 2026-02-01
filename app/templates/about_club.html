@@ -182,6 +182,98 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         margin-top: 2px;
     }
+
+    /* Premium Modal Styles */
+    .premium-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(5px);
+        z-index: 9999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .premium-modal-overlay.active {
+        opacity: 1;
+    }
+
+    .premium-modal {
+        background: #fff;
+        border-radius: 16px;
+        width: 90%;
+        max-width: 450px;
+        padding: 0;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transform: translateY(20px);
+        transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        overflow: hidden;
+    }
+    
+    .premium-modal-overlay.active .premium-modal {
+        transform: translateY(0);
+    }
+
+    .premium-modal-header {
+        background: linear-gradient(135deg, #004165, #006989);
+        color: white;
+        padding: 20px 25px;
+        font-weight: 700;
+        font-size: 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .premium-modal-body {
+        padding: 25px;
+        color: #333;
+        font-family: 'Open Sans', sans-serif;
+        line-height: 1.6;
+    }
+
+    .premium-modal-footer {
+        padding: 15px 25px 25px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+    }
+
+    .btn-premium-cancel {
+        background-color: #f1f3f5;
+        color: #495057;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.2s;
+    }
+
+    .btn-premium-cancel:hover {
+        background-color: #e9ecef;
+    }
+
+    .btn-premium-confirm {
+        background: linear-gradient(135deg, #004165, #006989);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        box-shadow: 0 4px 6px rgba(0, 65, 101, 0.2);
+        transition: all 0.2s;
+    }
+
+    .btn-premium-confirm:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px rgba(0, 65, 101, 0.25);
+    }
 </style>
 {% endblock %}
 
@@ -194,6 +286,27 @@
             <button id="cancel-club-btn" class="btn btn-danger" style="display: none">Cancel</button>
             <button id="edit-club-btn" class="btn btn-primary">Edit</button>
         </div>
+        {% endif %}
+        
+        <!-- Home Club Request Button -->
+        {% if current_user.is_authenticated and club %}
+            {% set ns = namespace(is_member=false, is_home=false) %}
+            {% for m in current_user.club_memberships %}
+                {% if m.club_id == club.id %}
+                    {% set ns.is_member = true %}
+                    {% if m.is_home %}
+                        {% set ns.is_home = true %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            
+            {% if ns.is_member and not ns.is_home %}
+            <div class="button-group" style="margin-left: 10px;">
+                <button id="request-home-btn" class="btn btn-outline-primary" style="border-color: #004165; color: #004165;" onclick="requestHomeClub({{ club.id }})">
+                    <i class="fas fa-home"></i> Set as Home Club
+                </button>
+            </div>
+            {% endif %}
         {% endif %}
     </div>
 
@@ -343,6 +456,27 @@
         No club information found.
     </div>
     {% endif %}
+</div>
+
+<!-- Premium Custom Modal -->
+<div id="premium-confirm-modal" class="premium-modal-overlay">
+    <div class="premium-modal">
+        <div class="premium-modal-header">
+            <span>Set Home Club</span>
+            <button class="btn-premium-cancel" style="background:none; color:white; padding:0; font-size:1.5rem;" onclick="closePremiumModal()">&times;</button>
+        </div>
+        <div class="premium-modal-body">
+            <p style="margin-bottom: 15px; font-size: 1.1rem; color: #004165; font-weight: 600;">
+                <i class="fas fa-info-circle" style="margin-right: 8px;"></i>Confirm Home Club Selection
+            </p>
+            <p>Active "Home Club" status determines which club's permissions and defaults apply to you most often.</p>
+            <p>Do you want to request to set <strong>{{ club.club_name }}</strong> as your Home Club?</p>
+        </div>
+        <div class="premium-modal-footer">
+            <button class="btn-premium-cancel" onclick="closePremiumModal()">Cancel</button>
+            <button id="modal-confirm-btn" class="btn-premium-confirm">Yes, Confirm</button>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -593,5 +727,123 @@
                 .catch(error => { console.error('Error:', error); });
         }
     });
+
+
+
+    const modalOverlay = document.getElementById('premium-confirm-modal');
+    const confirmBtn = document.getElementById('modal-confirm-btn');
+    let targetClubId = null;
+
+    function openPremiumModal(clubId) {
+        targetClubId = clubId;
+        modalOverlay.style.display = 'flex';
+        // Trigger reflow for animation
+        void modalOverlay.offsetWidth;
+        modalOverlay.classList.add('active');
+    }
+
+    function closePremiumModal() {
+        modalOverlay.classList.remove('active');
+        setTimeout(() => {
+            modalOverlay.style.display = 'none';
+        }, 300); // Wait for transition
+    }
+
+    // Attach event listener to confirm button
+    if (confirmBtn) {
+        confirmBtn.addEventListener('click', function() {
+            if (targetClubId) {
+                performRequestHomeClub(targetClubId);
+                closePremiumModal();
+            }
+        });
+    }
+
+    // Close on outside click
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) {
+                closePremiumModal();
+            }
+        });
+    }
+
+    function requestHomeClub(clubId) {
+        openPremiumModal(clubId);
+    }
+    
+    function performRequestHomeClub(clubId) {
+        const btn = document.getElementById('request-home-btn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        btn.disabled = true;
+        
+        fetch(`/clubs/${clubId}/request_home`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success modal or toast (optional, plain alert for now inside success flow)
+                // For a premium feel, maybe replace the button text permanently or show a nice toast
+                // Using alert for now as per original logic but nicer button state
+                btn.innerHTML = '<i class="fas fa-check"></i> Request Sent';
+                // Maybe replace with success message in UI instead of alert?
+                // Create a temporary toast
+                showToast('Request sent successfully to Club Admins!', 'success');
+            } else {
+                showToast('Error: ' + (data.error || 'Unknown error'), 'error');
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            showToast('Error sending request.', 'error');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+
+    function showToast(message, type) {
+        // Simple toast implementation
+        const toast = document.createElement('div');
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.right = '20px';
+        toast.style.padding = '12px 24px';
+        toast.style.borderRadius = '8px';
+        toast.style.color = 'white';
+        toast.style.fontWeight = '600';
+        toast.style.zIndex = '10000';
+        toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        toast.style.transform = 'translateY(100px)';
+        toast.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+        if (type === 'success') {
+            toast.style.backgroundColor = '#28a745';
+        } else {
+            toast.style.backgroundColor = '#dc3545';
+        }
+
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => {
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+
+        // Remove after 3s
+        setTimeout(() => {
+            toast.style.transform = 'translateY(100px)';
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }, 3000);
+    }
 </script>
 {% endblock %}

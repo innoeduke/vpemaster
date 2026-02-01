@@ -199,3 +199,169 @@ def delete_club(club_id):
         flash(f'Error deleting club: {str(e)}', 'danger')
         
     return redirect(url_for('clubs_bp.list_clubs'))
+@clubs_bp.route('/clubs/<int:club_id>/request_home', methods=['POST'])
+@login_required
+def request_home(club_id):
+    """
+    Handles a user's request to set this club as their home club.
+    Sends a message to Club Admins.
+    """
+    club = db.session.get(Club, club_id)
+    if not club:
+        return jsonify({'success': False, 'error': 'Club not found'}), 404
+        
+    # Check if user is a member
+    from app.models import UserClub
+    uc = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
+    if not uc:
+        return jsonify({'success': False, 'error': 'You must be a member of the club to request it as home.'}), 400
+        
+    if uc.is_home:
+        return jsonify({'success': False, 'error': 'This is already your home club.'}), 400
+
+    # Identify Club Admins
+    # We find users who have the SETTINGS_EDIT_ALL permission in this club
+    from app.models import User, AuthRole
+    from app.auth.permissions import Permissions
+    
+    # Get roles that have SETTINGS_EDIT_ALL
+    # This loop logic is a bit manual, ideally we query simpler
+    # But finding users with a permission via query is complex due to bitmask
+    # Instead, let's look for known generic admin roles or rely on looping members
+    
+    # 1. Get all members
+    members = User.query.join(UserClub).filter(UserClub.club_id == club_id).all()
+    
+    admins = []
+    for m in members:
+        if m.has_club_permission(Permissions.SETTINGS_EDIT_ALL, club_id):
+            admins.append(m)
+            
+    if not admins:
+        return jsonify({'success': False, 'error': 'No club admins found to approve your request.'}), 400
+        
+    # Send Message to each Admin
+    from app.models import Message
+    count = 0
+    for admin in admins:
+        # Prevent duplicates if user spams? 
+        # Optional: check if pending request exists (hard via message body parsing, so maybe skip)
+        
+        msg = Message(
+            sender_id=current_user.id,
+            recipient_id=admin.id,
+            subject=f"Request to set Home Club: {club.club_name}",
+            body=f"User {current_user.display_name} requested to set {club.club_name} as their home club.\n\n[HOME_CLUB_REQUEST:{current_user.id}:{club_id}]"
+        )
+        db.session.add(msg)
+        count += 1
+        
+    db.session.commit()
+    return jsonify({'success': True, 'message': f'Request sent to {count} admins.'})
+
+
+@clubs_bp.route('/clubs/respond_home_request', methods=['POST'])
+@login_required
+def respond_home_request():
+    """
+    Handles admin response (approve/reject) to a home club request.
+    Payload: { message_id, action }
+    """
+    data = request.json
+    message_id = data.get('message_id')
+    action = data.get('action')
+    
+    from app.models import Message
+    msg = db.session.get(Message, message_id)
+    if not msg:
+        return jsonify({'success': False, 'error': 'Message not found'}), 404
+
+    # Extract info from tags
+    import re
+    match = re.search(r'\[HOME_CLUB_REQUEST:(\d+):(\d+)\]', msg.body)
+    if not match:
+        return jsonify({'success': False, 'error': 'Invalid request format'}), 400
+        
+    requestor_id = int(match.group(1))
+    target_club_id = int(match.group(2))
+    
+    # SECURITY CHECK: Verifying Admin Permission
+    if not current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, target_club_id):
+        # Silent failure as requested
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 200
+        
+    from app.models import User, UserClub, Club
+    requestor = db.session.get(User, requestor_id)
+    target_club = db.session.get(Club, target_club_id)
+    
+    if not requestor or not target_club:
+         return jsonify({'success': False, 'error': 'User or Club no longer exists'}), 404
+         
+    response_subject = f"Home Club Request: {target_club.club_name}"
+    
+    if action == 'approve':
+        # 1. Update Home Club
+        
+        # Check if already home club
+        existing_home_uc = UserClub.query.filter_by(user_id=requestor_id, club_id=target_club_id, is_home=True).first()
+        if existing_home_uc:
+            msg.read = True
+            msg.body = msg.body.replace(match.group(0), f"\n\n[Responded: ALREADY APPROVED]")
+            db.session.commit()
+            return jsonify({'success': False, 'error': f'{target_club.club_name} is already the Home Club for this user.'}), 400
+
+        # Get previous home club for notification
+        # Get previous home club for notification
+        old_home_uc = UserClub.query.filter_by(user_id=requestor_id, is_home=True).first()
+        old_home_club = old_home_uc.club if old_home_uc else None
+        
+        # Perform Update
+        requestor.set_home_club(target_club_id)
+        
+        # 2. Notify User
+        user_msg = Message(
+            sender_id=current_user.id, # Admin
+            recipient_id=requestor_id,
+            subject=response_subject,
+            body=f"Your request to set **{target_club.club_name}** as your home club has been **APPROVED**."
+        )
+        db.session.add(user_msg)
+        
+        # 3. Notify Old Admin (if applicable and different club)
+        if old_home_club and old_home_club.id != target_club_id:
+            # Find admins of old club
+            # For simplicity, finding one or broadcasting? Logic says "the clubadmin".
+            # Let's broadcast to all admins found.
+            old_members = User.query.join(UserClub).filter(UserClub.club_id == old_home_club.id).all()
+            for m in old_members:
+                if m.has_club_permission(Permissions.SETTINGS_EDIT_ALL, old_home_club.id):
+                    admin_msg = Message(
+                        sender_id=current_user.id,
+                        recipient_id=m.id,
+                        subject=f"User Changed Home Club: {requestor.display_name}",
+                        body=f"User {requestor.display_name} has changed their home club from {old_home_club.club_name} to {target_club.club_name}."
+                    )
+                    db.session.add(admin_msg)
+                    
+        # Update original message
+        msg.body = msg.body.replace(match.group(0), f"\n\n[Responded: APPROVED]")
+        
+    elif action == 'reject':
+        # Notify User
+        user_msg = Message(
+            sender_id=current_user.id,
+            recipient_id=requestor_id,
+            subject=response_subject,
+            body=f"Your request to set **{target_club.club_name}** as your home club was **REJECTED**."
+        )
+        db.session.add(user_msg)
+        
+        # Update original message
+        msg.body = msg.body.replace(match.group(0), f"\n\n[Responded: REJECTED]")
+    else:
+        return jsonify({'success': False, 'error': 'Invalid action'}), 400
+        
+    msg.read = True
+    db.session.commit()
+    
+    return jsonify({'success': True})
