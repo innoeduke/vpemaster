@@ -21,7 +21,7 @@
   <div class="nav-tabs">
     <button class="nav-item active" onclick="openTab(event, 'basic-info')" id="tab-basic-info">Basic
       Information</button>
-    {% if is_own_profile %}
+    {% if is_own_profile or can_reset_password %}
     <button class="nav-item" onclick="openTab(event, 'reset-password')" id="tab-reset-password">Reset Password</button>
     {% endif %}
   </div>
@@ -163,12 +163,13 @@
   </form>
 </div>
 
-{% if is_own_profile %}
+{% if is_own_profile or can_reset_password %}
 <div id="reset-password" class="tab-content" style="display: none;">
   <h2 style="text-align: center; margin-top: 20px; margin-bottom: 20px">
     Reset Password
   </h2>
-  <form method="POST" action="{{ url_for('auth_bp.profile', tab='password') }}"
+  
+  <form method="POST" action="{% if is_own_profile %}{{ url_for('auth_bp.profile', tab='password') }}{% else %}{{ url_for('auth_bp.profile', contact_id=user.contact.id, tab='password') }}{% endif %}"
     style="max-width: 700px; margin: 0 auto">
     <input type="hidden" name="action" value="reset_password" />
     <table class="form-table">
@@ -188,8 +189,13 @@
         </td>
       </tr>
     </table>
-    <div class="form-actions" style="margin-top: 10px">
-      <button type="submit" class="btn btn-primary">Update Password</button>
+    <div class="form-actions" style="margin-top: 10px; display: flex; align-items: center; justify-content: flex-start; gap: 10px;">
+      {% if not is_own_profile and can_reset_password %}
+      <button type="submit" name="admin_reset" value="true" class="btn btn-warning" formnovalidate onclick="return confirm('Are you sure you want to reset the password to \'toastmasters\'?');">
+          Reset to "toastmasters"
+      </button>
+      {% endif %}
+      <button type="submit" class="btn btn-primary">Save</button>
     </div>
   </form>
 </div>

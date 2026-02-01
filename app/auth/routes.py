@@ -106,7 +106,7 @@ def login():
             login_user(user, remember=True)
             
             # Check for default password
-            if password == 'leadership':
+            if password in ['leadership', 'toastmasters']:
                 session['force_password_reset'] = True
                 flash('Please change your default password immediately.', 'error')
                 return redirect(url_for('auth_bp.profile', tab='password'))
@@ -158,43 +158,52 @@ def profile(contact_id=None):
     """
     is_own_profile = True
     if contact_id and contact_id != current_user.contact_id:
-        if not current_user.has_permission(Permissions.PROFILE_VIEW):
-            flash('Unauthorized access.', 'error')
-            return redirect(url_for('auth_bp.profile'))
-        
         from ..models import Contact
         contact = Contact.query.get_or_404(contact_id)
         # Handle cases where contact might not have a user account
         if contact.user:
             user = contact.user
         else:
-            # Create a mock user object to satisfy the template's needs if possible, 
-            # or just pass the contact info. For now, let's assume they have accounts 
-            # as these are journals. If not, we still show the contact info.
             class MockUser:
                 def __init__(self, contact):
                     self.contact = contact
                     self.username = "No Account"
                     self.email = contact.Email
                     self.Role = contact.Type
+                    self.home_club = None
+                    self.member_no = contact.Member_ID
             user = MockUser(contact)
+            
         is_own_profile = False
+
+        # Permission Check for Viewing Other Profiles
+        can_view = False
+        if current_user.has_permission(Permissions.PROFILE_VIEW):
+            can_view = True
+        elif user.home_club and current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, user.home_club.id):
+             can_view = True
+        elif current_user.is_sysadmin:
+             can_view = True
+             
+        if not can_view:
+            flash('Unauthorized access.', 'error')
+            return redirect(url_for('auth_bp.profile'))
     else:
         user = current_user
+
+    # Permission Check for Reset Password
+    can_reset_password = False
+    if is_own_profile:
+        can_reset_password = True
+    elif user.home_club and current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, user.home_club.id):
+        can_reset_password = True
+    elif current_user.is_sysadmin: 
+        can_reset_password = True
 
     if request.method == 'POST':
         # Check if user can edit this profile
         # Permission Check for Update Profile
         can_edit_profile = is_own_profile or current_user.has_permission(Permissions.PROFILE_EDIT)
-        
-        # Permission Check for Reset Password
-        can_reset_password = False
-        if is_own_profile:
-            can_reset_password = True
-        elif user.home_club and current_user.has_club_permission(Permissions.RESET_PASSWORD_CLUB, user.home_club.id):
-             can_reset_password = True
-        elif current_user.is_sysadmin: # Explicit check though has_club_permission covers it, solely for clarity/fallback
-             can_reset_password = True
 
         action = request.form.get('action')
 
@@ -231,6 +240,14 @@ def profile(contact_id=None):
             if not can_reset_password:
                 flash('You do not have permission to reset this user\'s password.', 'error')
                 return redirect(url_for('auth_bp.profile', contact_id=contact_id))
+            
+            # Check for admin-initiated quick reset to default
+            is_admin_reset = request.form.get('admin_reset') == 'true'
+            if is_admin_reset and not is_own_profile:
+                user.set_password('toastmasters')
+                db.session.commit()
+                flash(f'Password for {user.username} has been reset to "toastmasters".', 'success')
+                return redirect(url_for('auth_bp.profile', contact_id=contact_id))
                 
             new_password = request.form.get('new_password', '').strip()
             confirm_password = request.form.get('confirm_password', '').strip()
@@ -257,7 +274,7 @@ def profile(contact_id=None):
                     flash('Your password has been updated successfully! Please log in with your new password.', 'success')
                     logout_user() # Logout ensuring clean state
                     return redirect(url_for('auth_bp.login'))
-    return render_template('profile.html', user=user, is_own_profile=is_own_profile)
+    return render_template('profile.html', user=user, is_own_profile=is_own_profile, can_reset_password=can_reset_password)
 
 
 @auth_bp.route('/reset_password', methods=['GET', 'POST'])

@@ -70,7 +70,7 @@
 
         <tr class="tr-full-width">
             <td><label for="password">Password:</label></td>
-            <td><input type="password" id="password" name="password" placeholder="{{ 'Leave blank to keep current' if user else 'Enter password' }}" {% if user and not current_user_is_sysadmin %}disabled{% endif %}>
+            <td><input type="password" id="password" name="password" placeholder="{{ 'Leave blank to keep current' if user else 'Enter password' }}" {% if user and not current_user_is_sysadmin and not is_home_club_admin %}disabled{% endif %}>
             </td>
         </tr>
     </table>

@@ -838,6 +838,24 @@ document.addEventListener("DOMContentLoaded", () => {
             const hiddenInput = document.getElementById("icon");
             if (hiddenInput) hiddenInput.value = "";
         }
+
+        // Logic for Type selector based on Club ID
+        const typeSelect = document.getElementById("type");
+        if (typeof CURRENT_CLUB_ID !== 'undefined' && CURRENT_CLUB_ID !== 1) {
+             if (typeSelect) {
+                 // Hide the parent form-group or the closest container
+                 const container = typeSelect.closest('.form-group') || typeSelect.parentElement;
+                 if (container) container.style.display = 'none';
+                 typeSelect.value = 'club-specific'; 
+             }
+        } else {
+             // Ensure it is visible for Club 1
+             if (typeSelect) {
+                 const container = typeSelect.closest('.form-group') || typeSelect.parentElement;
+                 if (container) container.style.display = 'block'; // Restore visibility
+             }
+        }
+        
         modal.style.display = "flex";
       }
     });
@@ -1426,6 +1444,20 @@ function openEditRoleModal(roleId) {
     form.name.value = row.querySelector('[data-field="name"]').textContent.trim();
     form.type.value = row.querySelector('[data-field="type"]').textContent.trim();
     form.award_category.value = row.querySelector('[data-field="award_category"]').textContent.trim();
+    
+    // Logic for Type selector visibility based on Club ID
+    const typeSelect = form.type;
+    if (typeof CURRENT_CLUB_ID !== 'undefined' && CURRENT_CLUB_ID !== 1) {
+         if (typeSelect) {
+             const container = typeSelect.closest('.form-group') || typeSelect.parentElement;
+             if (container) container.style.display = 'none';
+         }
+    } else {
+         if (typeSelect) {
+             const container = typeSelect.closest('.form-group') || typeSelect.parentElement;
+             if (container) container.style.display = 'block';
+         }
+    }
     
     form.needs_approval.checked = row.querySelector('[data-field="needs_approval"] input').checked;
     form.has_single_owner.checked = row.querySelector('[data-field="has_single_owner"] input').checked;

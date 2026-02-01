@@ -32,19 +32,27 @@ def _save_user_data(user=None, **kwargs):
             created_at=date.today(),
             status='active'
         )
-        password = kwargs.get('password') or 'leadership'
+        password = kwargs.get('password') or 'toastmasters'
         user.set_password(password)
         db.session.add(user)
     else:
-        # Existing User - Only allow SysAdmin to update these fields
+        # Existing User
+        # Calculate permissions
+        is_home_club_admin = False
+        if current_user.is_authenticated and user.home_club:
+            is_home_club_admin = current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, user.home_club.id)
+
         if is_sysadmin:
             if kwargs.get('username'):
                 user.username = kwargs.get('username')
+            if kwargs.get('status'):
+                user.status = kwargs.get('status')
+        
+        # Password update allowed for SysAdmin OR Home Club Admin
+        if is_sysadmin or is_home_club_admin:
             password = kwargs.get('password')
             if password:
                 user.set_password(password)
-            if kwargs.get('status'):
-                user.status = kwargs.get('status')
     
     # Update names - Only if NEW or current_user is SysAdmin
     if is_new or is_sysadmin:
@@ -254,11 +262,22 @@ def user_form(user_id):
         if club:
             club_name = club.club_name
 
+    # Check if current user is admin of the target user's home club
+    is_home_club_admin = False
+    if user and user.home_club and current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, user.home_club.id):
+        is_home_club_admin = True
+    
+    # Also allow if creating new user in a club where they are admin
+    if not user and club_id and current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, club_id):
+         # If creating new user, they can edit everything anyway because user is None
+         pass
+
     return render_template('user_form.html', user=user, user_contact=user_contact, source_contact=source_contact, 
                            contacts=member_contacts, mentor_contacts=mentor_contacts, pathways=pathways, 
                            all_auth_roles=filtered_roles, user_role_ids=user_role_ids, 
                            club_id=club_id, club_name=club_name, is_edit_self=is_edit_self,
-                           current_user_is_sysadmin=current_user_is_sysadmin)
+                           current_user_is_sysadmin=current_user_is_sysadmin,
+                           is_home_club_admin=is_home_club_admin)
 
 
 @users_bp.route('/user/check_duplicates', methods=['POST'])
@@ -520,7 +539,7 @@ def bulk_import_users():
                 username=username,
                 email=email,
                 role_level=role_level,
-                password='leadership'
+                password='toastmasters'
             )
             success_count += 1
 

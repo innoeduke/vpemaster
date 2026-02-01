@@ -104,15 +104,10 @@ def add_session_type():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
 
-    try:
-        # Input validation and cleaning
-        title = request.form.get('title', '').strip()
-        if not title:
-            return jsonify(success=False, message="Title is required"), 400
-
-        # Get current club context
-        club_id = get_current_club_id()
+    # Get current club context
+    club_id = get_current_club_id()
         
+    try:
         # Check if we are updating or adding
         session_id = request.form.get('id')
         session_type = None
@@ -213,11 +208,6 @@ def add_session_type():
 def update_session_types():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
-
-    data = request.get_json()
-    if not data:
-        return jsonify(success=False, message="No data received"), 400
-
     club_id = get_current_club_id()
     try:
         for item in data:
@@ -252,7 +242,6 @@ def update_session_types():
 def delete_session_type(id):
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
-
     club_id = get_current_club_id()
     try:
         session_type = db.session.get(SessionType, id)
@@ -284,7 +273,6 @@ def delete_session_type(id):
 def add_role():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
-
     club_id = get_current_club_id()
     trimmed_name = request.form.get('name', '').strip()
     if not trimmed_name:
@@ -358,11 +346,6 @@ def add_role():
 def update_roles():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
-
-    data = request.get_json()
-    if not data:
-        return jsonify(success=False, message="No data received"), 400
-
     club_id = get_current_club_id()
     try:
         for item in data:
@@ -388,7 +371,6 @@ def update_roles():
 def delete_role(id):
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
-
     club_id = get_current_club_id()
     try:
         role = db.session.get(MeetingRole, id)
@@ -432,6 +414,7 @@ def delete_role(id):
 def import_roles():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
+    club_id = get_current_club_id()
 
     if 'file' not in request.files:
         return jsonify(success=False, message="No file part"), 400
@@ -512,6 +495,8 @@ def import_roles():
 def get_permissions_matrix():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
+    # club_id is implicitly used by is_authorized but if needed:
+    # club_id = get_current_club_id()
 
     # Exclude SysAdmin and ClubAdmin from the permissions matrix
     roles = AuthRole.query.filter(
@@ -544,6 +529,7 @@ def get_permissions_matrix():
 def update_permission_matrix():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
+    # club_id = get_current_club_id()
 
     data = request.get_json()
     if not data:
@@ -594,6 +580,7 @@ def update_permission_matrix():
 def get_audit_log():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
+    # club_id = get_current_club_id()
 
     logs = PermissionAudit.query.order_by(PermissionAudit.timestamp.desc()).limit(100).all()
     return jsonify([l.to_dict() for l in logs])
@@ -603,6 +590,7 @@ def get_audit_log():
 def update_user_roles():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
+    # club_id = get_current_club_id()
 
     data = request.get_json() # {user_id: X, role_ids: [Y, Z]}
     user_id = data.get('user_id')

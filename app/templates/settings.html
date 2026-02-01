@@ -600,6 +600,7 @@
 
 <script>
   var ROLES_DATA = {{ roles| tojson }};
+  const CURRENT_CLUB_ID = {{ club_id }};
 </script>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>

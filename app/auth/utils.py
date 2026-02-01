@@ -58,6 +58,18 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
 
     # 4. Standard permission check via has_permission()
     # (Checks global roles assigned in user_roles table if no club override matches)
+    
+    # ENHANCEMENT: Auto-detect club context for standard checks
+    if not club_id:
+        from app.club_context import get_current_club_id
+        club_id = get_current_club_id()
+
+    if club_id:
+        # Check permissions specifically within this club
+        if hasattr(current_user, 'has_club_permission'):
+            return current_user.has_club_permission(target_perm, club_id)
+            
+    # Fallback to global checks (or aggregated permissions) if no club context
     if hasattr(current_user, 'has_permission'):
         return current_user.has_permission(target_perm)
     
