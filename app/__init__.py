@@ -162,11 +162,11 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(about_club_bp)
 
     # Register CLI commands
-    from scripts.create_admin import create_admin
-    from scripts.import_data import import_data, fix_home_club_command
-    from scripts.manage_metadata import metadata
-    from scripts.cleanup_data import cleanup_data
-    from scripts.create_club import create_club
+    from app.commands.create_admin import create_admin
+    from app.commands.import_data import import_data, fix_home_club_command
+    from app.commands.manage_metadata import metadata
+    from app.commands.cleanup_data import cleanup_data
+    from app.commands.create_club import create_club
     app.cli.add_command(create_admin)
     app.cli.add_command(import_data)
     app.cli.add_command(metadata)

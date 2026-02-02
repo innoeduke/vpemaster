@@ -6,7 +6,7 @@ from app import db
 from app.constants import GLOBAL_CLUB_ID  # Import GLOBAL_CLUB_ID
 from app.models import (
     LevelRole, Pathway, PathwayProject, Project, MeetingRole, 
-    SessionType, Permission, AuthRole, RolePermission, Ticket, Club
+    SessionType, Permission, AuthRole, RolePermission, Ticket, Club, ExComm
 )
 
 @click.group()
@@ -30,9 +30,10 @@ def backup(file):
     """
     Export metadata tables to JSON.
     For MeetingRole and SessionType, EXCEPT ONLY Club 1 (Global) items.
+    Now includes excomm table (but not officers).
     """
     # Helper to get absolute path
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     output_file = os.path.join(project_root, file)
     
     # Create directory if it doesn't exist
@@ -67,12 +68,12 @@ def backup(file):
         except OSError as e:
              print(f"Warning: Failed to rotate backup file: {e}")
 
-    # Filter for Global Club ID (and None/Null just in case legacy items persist)
-    # Using sqlalchemy 'or_' or simply checking if club_id in [1, None]
+    # Filter for Global Club ID where applicable
     from sqlalchemy import or_
 
     data = {
         "clubs": [to_dict(c) for c in Club.query.all()],
+        "excomm": [to_dict(e) for e in ExComm.query.all()],
         "meeting_roles": [to_dict(r) for r in MeetingRole.query.filter(or_(MeetingRole.club_id == GLOBAL_CLUB_ID, MeetingRole.club_id.is_(None))).all()],
         "pathways": [to_dict(p) for p in Pathway.query.all()],
         "projects": [to_dict(p) for p in Project.query.all()],
@@ -109,7 +110,7 @@ def restore(file):
     This uses db.session.merge() to upsert records based on Primary Key.
     Discards MeetingRole and SessionType records not belonging to Club 1 (Global).
     """
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     input_file = os.path.join(project_root, file)
 
     if not os.path.exists(input_file):
@@ -126,6 +127,7 @@ def restore(file):
     # Map keys to Models
     model_map = {
         "clubs": Club,
+        "excomm": ExComm,
         "meeting_roles": MeetingRole,
         "pathways": Pathway,
         "projects": Project,
@@ -144,16 +146,29 @@ def restore(file):
 
     total_records = 0
     
+    # Restore Order
+    # 1. Clubs (First pass, no Excomm linking)
+    # 2. Base tables (Excomm is base relative to others, but depends on Club)
+    # 3. Tables with dependencies
+    # 4. Clubs (Second pass, link Excomm)
+    
     restore_order = [
-         "clubs", # Restored first as other tables depend on club_id
-         "meeting_roles", "pathways", "projects", "session_types", "permissions", "tickets", # Base tables
-         "pathway_projects", "level_roles", "auth_roles", "role_permissions" # Dependent tables (roughly)
+         "clubs", # Handled specially
+         "excomm", # After clubs
+         "meeting_roles", "pathways", "projects", "session_types", "permissions", "tickets", 
+         "pathway_projects", "level_roles", "auth_roles", "role_permissions"
     ]
     
-    all_keys = list(data.keys())
-    for k in all_keys:
+    # Add any extra tables found in dump but not explicit in order
+    for k in data.keys():
         if k not in restore_order and k in model_map:
             restore_order.append(k)
+            
+    # Append clubs again for 2nd pass
+    restore_order.append("clubs")
+
+    # Track processing
+    clubs_first_pass_done = False
 
     for table_name in restore_order:
         if table_name not in data:
@@ -161,26 +176,52 @@ def restore(file):
             
         model = model_map.get(table_name)
         if not model:
-            print(f"Warning: Unknown table {table_name} in dump file.")
-            continue
-            
+             continue
+             
         items = data[table_name]
         count = 0
         skipped = 0
-        for item in items:
-            # Filter logic: If restoring roles/types, discard if not Club 1 or None
-            if table_name in ["meeting_roles", "session_types"]:
-                c_id = item.get('club_id')
-                if c_id not in [GLOBAL_CLUB_ID, None]:
-                    skipped += 1
-                    continue
-            
-            instance = model(**item)
-            db.session.merge(instance)
-            count += 1
+        
+        # Special handling for Clubs 2-pass restore
+        if table_name == "clubs":
+            if not clubs_first_pass_done:
+                print(f"  > Processing {table_name} (Pass 1 - Unset ExComm)...")
+                for item in items:
+                    # Create copy and unset current_excomm_id to avoid FK issues
+                    i = item.copy()
+                    i['current_excomm_id'] = None
+                    instance = model(**i)
+                    db.session.merge(instance)
+                    count += 1
+                clubs_first_pass_done = True
+            else:
+                print(f"  > Processing {table_name} (Pass 2 - Link ExComm)...")
+                for item in items:
+                    # Only merge if it has excomm_id (optimization)
+                    if item.get('current_excomm_id'):
+                        instance = model(**item)
+                        db.session.merge(instance)
+                        count += 1
+                # If no excomm links, count is 0, which is fine
+        else:
+            for item in items:
+                # Filter logic: If restoring roles/types, discard if not Club 1 or None
+                if table_name in ["meeting_roles", "session_types"]:
+                    c_id = item.get('club_id')
+                    if c_id not in [GLOBAL_CLUB_ID, None]:
+                        skipped += 1
+                        continue
+                
+                instance = model(**item)
+                db.session.merge(instance)
+                count += 1
         
         db.session.commit()
-        total_records += count
+        if table_name != "clubs" or (table_name == "clubs" and clubs_first_pass_done):
+             # Only add to total once or split logic? Just summation is fine.
+             if table_name != "clubs":
+                 total_records += count
+                 
         msg = f"  ✓ {table_name:20s} - {count:4d} records merged"
         if skipped > 0:
             msg += f" ({skipped} skipped - non-global)"

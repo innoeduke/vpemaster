@@ -46,7 +46,7 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import LevelRole, Pathway, PathwayProject, Project, MeetingRole, SessionType, Permission, AuthRole, RolePermission, Ticket
+from app.models import LevelRole, Pathway, PathwayProject, Project, MeetingRole, SessionType, Permission, AuthRole, RolePermission, Ticket, ExComm
 
 def to_dict(model_instance):
     """Convert a SQLAlchemy model instance to a dictionary."""
@@ -59,14 +59,13 @@ def to_dict(model_instance):
 
 def export_metadata():
     """
-    Export all 10 metadata tables to JSON.
+    Export 11 metadata tables to JSON.
     
-    This exports ONLY metadata tables (reference/configuration data).
-    Business data tables (15 tables) are NOT exported by this script.
+    This exports metadata tables including ExComm (but not officers).
     """
     app = create_app()
     with app.app_context():
-        # Export all 10 metadata tables
+        # Export all 11 metadata tables
         data = {
             "meeting_roles": [to_dict(r) for r in MeetingRole.query.all()],
             "pathways": [to_dict(p) for p in Pathway.query.all()],
@@ -77,7 +76,8 @@ def export_metadata():
             "permissions": [to_dict(p) for p in Permission.query.all()],
             "auth_roles": [to_dict(r) for r in AuthRole.query.all()],
             "role_permissions": [to_dict(rp) for rp in RolePermission.query.all()],
-            "tickets": [to_dict(t) for t in Ticket.query.all()]
+            "tickets": [to_dict(t) for t in Ticket.query.all()],
+            "excomm": [to_dict(e) for e in ExComm.query.all()]
         }
         
         output_file = os.path.join(os.path.dirname(__file__), 'metadata_dump.json')

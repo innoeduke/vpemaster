@@ -4,7 +4,7 @@ from app.models.club import Club
 from app.models.roster import MeetingRole
 from app.models.session import SessionType
 from app.services.data_import_service import DataImportService
-from scripts.create_club import import_initial_data
+from app.commands.create_club import import_initial_data
 
 def test_club_specific_definitions(app):
     with app.app_context():
