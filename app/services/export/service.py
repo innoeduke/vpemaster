@@ -283,9 +283,7 @@ class MeetingExportService:
             populate_role(role_p, title_p, "{{" + prefix + "_info}}", "{{" + prefix + "_duration}}")
         
         # Fallback to ExComm for missing info
-        excomm = meeting.club.current_excomm if meeting.club else None
-        if not excomm:
-            excomm = ExComm.query.filter_by(club_id=meeting.club_id).order_by(ExComm.id.desc()).first()
+        excomm = meeting.get_excomm()
         if excomm:
             officers = excomm.get_officers()
             role_to_prefix = {

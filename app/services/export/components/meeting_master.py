@@ -16,16 +16,12 @@ class MeetingMasterComponent(BaseExportComponent):
         ws.append(headers)
         ExportFormatter.apply_header_style(ws, ws.max_row)
         
-        from ....models import ExComm
-        from ....club_context import get_current_club_id
-        
         # Get ExComm info from database
         excomm_string = ''
-        club_id = get_current_club_id()
-        if club_id:
-            excomm = ExComm.query.filter_by(club_id=club_id).order_by(ExComm.id.desc()).first()
-            if excomm:
-                excomm_string = f'{excomm.excomm_term} "{excomm.excomm_name}"'.strip()
+        meeting = context.meeting
+        excomm = meeting.get_excomm()
+        if excomm:
+            excomm_string = f'{excomm.excomm_term} "{excomm.excomm_name}"'.strip()
         
         # Find keynote speaker from session logs
         keynote_speaker = ""

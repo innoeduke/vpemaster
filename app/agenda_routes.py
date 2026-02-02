@@ -87,7 +87,12 @@ def safe_int(val):
 def _create_or_update_session(item, meeting_number, seq, updated_role_groups=None):
     meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
     if not meeting:
-        new_meeting = Meeting(Meeting_Number=meeting_number)
+        from .club_context import get_current_club_id
+        new_meeting = Meeting(
+            Meeting_Number=meeting_number,
+            club_id=get_current_club_id()
+        )
+        new_meeting.sync_excomm()
         db.session.add(new_meeting)
         db.session.flush()  # Flush to get meeting ID if needed, though not strictly required here
         meeting = new_meeting
@@ -960,6 +965,7 @@ def _upsert_meeting_record(data, media_id):
             status='unpublished',
             club_id=get_current_club_id()
         )
+        meeting.sync_excomm()
         db.session.add(meeting)
     else:
         meeting.Meeting_Date = data['meeting_date']
@@ -972,6 +978,7 @@ def _upsert_meeting_record(data, media_id):
         meeting.media_id = media_id
         if meeting.status is None:
             meeting.status = 'unpublished'
+        meeting.sync_excomm()
 
     if is_new:
         # Auto-add Staff to Roster

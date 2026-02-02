@@ -20,7 +20,7 @@
 
 	.booking-table .status-cell,
 	.booking-table .status-header {
-		width: 25%;
+		width: 20%;
 	}
 
 	.booking-table .assign-cell,
@@ -30,7 +30,7 @@
 
 	.booking-table .icon-cell,
 	.booking-table .action-header {
-		width: 15%;
+		width: 20%;
 		text-align: center;
 	}
 

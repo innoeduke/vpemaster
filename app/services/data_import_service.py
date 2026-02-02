@@ -596,6 +596,7 @@ class DataImportService:
                 # ge_mode=row[16], nps=row[17]
             )
             db.session.add(new_meeting)
+            new_meeting.sync_excomm()
             db.session.flush()
             self.meeting_map[meeting_no] = new_meeting
             count += 1

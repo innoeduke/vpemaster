@@ -197,3 +197,9 @@
     padding: 0 15px !important;
     box-sizing: border-box !important;
 }
+
+/* Autocomplete Dropup */
+.autocomplete-items {
+    top: auto !important;
+    bottom: 100% !important;
+}

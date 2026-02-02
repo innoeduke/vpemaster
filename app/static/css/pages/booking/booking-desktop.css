@@ -8,13 +8,13 @@
 	/* Desktop Table Layout - Column widths */
 	.booking-table .role-cell,
 	.booking-table .role-header {
-		width: 35%;
+		width: 33%;
 		min-width: 250px;
 	}
 
 	.booking-table .status-cell,
 	.booking-table .status-header {
-		width: 30%;
+		width: 27%;
 	}
 
 	.booking-table .assign-cell,
@@ -24,7 +24,7 @@
 
 	.booking-table .icon-cell,
 	.booking-table .action-header {
-		width: 10%;
+		width: 15%;
 		text-align: center;
 	}
 

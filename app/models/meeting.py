@@ -52,6 +52,41 @@ class Meeting(db.Model):
     best_role_taker = db.relationship(
         'Contact', foreign_keys=[best_role_taker_id])
     media = db.relationship('Media', foreign_keys=[media_id])
+    
+    def sync_excomm(self, force=False):
+        """
+        Synchronizes the excomm_id for the meeting.
+        """
+        if not self.excomm_id or force:
+            excomm = self.get_excomm()
+            if excomm:
+                self.excomm_id = excomm.id
+                return True
+        return False
+
+    def get_excomm(self):
+        """
+        Resolves the correct ExComm for this meeting.
+        Priority:
+        1. Linked excomm_id
+        2. Date-based resolution
+        3. Most recent as fallback
+        """
+        if self.excomm:
+            return self.excomm
+        
+        from .excomm import ExComm
+        if self.Meeting_Date:
+            excomm = ExComm.query.filter(
+                ExComm.club_id == self.club_id,
+                ExComm.start_date <= self.Meeting_Date,
+                ExComm.end_date >= self.Meeting_Date
+            ).first()
+            if excomm:
+                return excomm
+                
+        # Final fallback: most recent
+        return ExComm.query.filter_by(club_id=self.club_id).order_by(ExComm.id.desc()).first()
 
     def get_best_award_ids(self):
         """

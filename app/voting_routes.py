@@ -226,7 +226,10 @@ def _get_roles_for_voting(selected_meeting_number, selected_meeting):
 
     # Filter to only show roles with award categories
     if selected_meeting.status in ['running', 'finished']:
-        sorted_roles = [role for role in sorted_roles if role.get('award_category') and role.get('award_category') != 'none']
+        sorted_roles = [
+            role for role in sorted_roles 
+            if role.get('award_category') and role.get('award_category') not in ['none', '', 'None']
+        ]
 
     return sorted_roles
 

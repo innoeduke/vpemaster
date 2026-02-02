@@ -533,13 +533,16 @@ class RoleService:
         # Build map: contact_id -> [roles]
         role_takers = {}
         for omr, role, contact in results:
+            if not role:
+                continue
+            
             c_id = str(contact.id)
             role_data = {
-                'id': role.id if role else None,
-                'name': role.name if role else "N/A",
-                'icon': role.icon if role else None,
-                'type': role.type if role else "standard",
-                'award_category': role.award_category.strip() if role and role.award_category else "role-taker",
+                'id': role.id,
+                'name': role.name,
+                'icon': role.icon,
+                'type': role.type,
+                'award_category': role.award_category.strip() if role.award_category else "role-taker",
                 'session_log_id': omr.session_log_id,
                 'owner_name': contact.Name,
                 'owner_avatar_url': contact.Avatar_URL

@@ -131,25 +131,25 @@
 }
 
 .owner-search-input {
-    border: 1px solid #ccc !important;
-    border-radius: 4px !important;
-    padding: 8px 12px !important;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 8px 12px;
     /* Slightly larger padding than agenda for form consistency */
-    font-size: 0.9em !important;
-    width: 100% !important;
-    box-sizing: border-box !important;
+    font-size: 0.9em;
+    width: 100%;
+    box-sizing: border-box;
     /* height: 30px !important; Remove fixed height to match other form inputs if needed */
-    background-color: #ffffff !important;
-    color: #333333 !important;
+    background-color: #ffffff;
+    color: #333333;
 }
 
 .owner-search-input:focus {
-    border-color: #337ab7 !important;
+    border-color: #337ab7;
     /* Primary color approximation */
-    outline: none !important;
-    box-shadow: 0 0 0 2px rgba(51, 122, 183, 0.1) !important;
-    background-color: #ffffff !important;
-    color: #333333 !important;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(51, 122, 183, 0.1);
+    background-color: #ffffff;
+    color: #333333;
 }
 
 /* Override WebKit Autofill for owner-search-input */
@@ -157,8 +157,8 @@
 .owner-search-input:-webkit-autofill:hover,
 .owner-search-input:-webkit-autofill:focus,
 .owner-search-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
-    -webkit-text-fill-color: #333333 !important;
+    -webkit-box-shadow: 0 0 0 30px #ffffff inset;
+    -webkit-text-fill-color: #333333;
     transition: background-color 5000s ease-in-out 0s;
 }
 
@@ -168,8 +168,8 @@
     border-bottom: none;
     border-top: none;
     z-index: 99;
-    top: 100% !important;
-    bottom: auto !important;
+    top: 100%;
+    bottom: auto;
     left: 0;
     right: 0;
     width: 100%;

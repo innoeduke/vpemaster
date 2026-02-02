@@ -30,77 +30,79 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     style="display: flex; align-items: center; gap: 0.5rem; {{ extra_style }}">
     {% endif %}
     
-    <button id="{{ select_id }}-prev" type="button" class="nav-btn prev-meeting" title="Previous Meeting" style="background: none; border: none; cursor: pointer; color: inherit; font-size: 1.2em; padding: 5px;">
-        <i class="fas fa-chevron-left"></i>
-    </button>
+    <div class="filter-controls-inner" style="display: flex; align-items: center; flex-wrap: nowrap; gap: 4px; flex: 1;">
+        <button id="{{ select_id }}-prev" type="button" class="nav-btn prev-meeting" title="Previous Meeting" style="background: none; border: none; cursor: pointer; color: #772413; font-size: 2em; padding: 2px; flex-shrink: 0; line-height: 1;">
+            <i class="fas fa-caret-left"></i>
+        </button>
 
-    {% if label %}
-    <label for="{{ select_id }}-search" style="margin-right: 0.5rem;">{{ label }}</label>
-    {% endif %}
+        {% if label %}
+        <label for="{{ select_id }}-search" style="margin-right: 0.5rem; white-space: nowrap;">{{ label }}</label>
+        {% endif %}
 
-    <div class="meeting-autocomplete-container" id="{{ select_id }}-autocomplete-container" style="min-width: 260px; {{ 'flex-grow: 1;' if not label else '' }}">
-        <div class="search-input-wrapper">
-            {% if show_icon %}
-            <i class="fas fa-search search-icon"></i>
-            {% endif %}
-            <input type="text" id="{{ select_id }}-search" class="autocomplete-search-input" 
-                   placeholder="Search meeting..." value="{{ ns.selected_text }}"
-                   autocomplete="off" {% if is_disabled %}disabled{% endif %}>
-            <i class="fas fa-caret-down dropdown-icon"></i>
-        </div>
-        
-        <div id="{{ select_id }}-results" class="autocomplete-results-dropdown" style="display: none;">
-            {% for item in meetings %}
-                {% if data_format == 'tuple' %}
-                    {% set num = item[0] %}
-                    {% set date = item[1] %}
-                    {% set status = item[2] if item|length > 2 else none %}
-                {% else %}
-                    {% set num = item.Meeting_Number %}
-                    {% set date = item.Meeting_Date %}
-                    {% set status = item.status if item.status else none %}
+        <div class="meeting-autocomplete-container" id="{{ select_id }}-autocomplete-container" style="min-width: 0; flex-grow: 1;">
+            <div class="search-input-wrapper">
+                {% if show_icon %}
+                <i class="fas fa-search search-icon"></i>
                 {% endif %}
-
-                {% set status_icon = '' %}
-                {% set status_label = '' %}
-                {% if status == 'unpublished' %}
-                    {% set status_icon = '🔒' %}{% set status_label = 'Unpublished' %}
-                {% elif status == 'not started' %}
-                    {% set status_icon = '▶️' %}{% set status_label = 'Not Started' %}
-                {% elif status == 'running' %}
-                    {% set status_icon = '🔴' %}{% set status_label = 'Running' %}
-                {% elif status == 'finished' %}
-                    {% set status_icon = '✅' %}{% set status_label = 'Finished' %}
-                {% elif status == 'cancelled' %}
-                    {% set status_icon = '🚫' %}{% set status_label = 'Cancelled' %}
-                {% endif %}
-                
-                {% set item_text = '#' ~ num ~ ' - ' ~ (date.strftime('%B %d, %Y') if date else 'No Date') %}
-                
-                <div class="autocomplete-result-item" data-value="{{ num }}" data-text="{{ item_text }}">
-                    <span class="status-icon" title="{{ status_label }}">{{ status_icon }}</span>
-                    <span class="meeting-num">#{{ num }}</span>
-                    <span class="meeting-date">{{ date.strftime('%b %d, %Y') if date else 'No Date' }}</span>
-                    {% if status_label %}
-                    <span class="status-tag status-{{ status|replace(' ', '-') }}">{{ status_label }}</span>
+                <input type="text" id="{{ select_id }}-search" class="autocomplete-search-input" 
+                       placeholder="Search meeting..." value="{{ ns.selected_text }}"
+                       autocomplete="off" {% if is_disabled %}disabled{% endif %}>
+                <i class="fas fa-caret-down dropdown-icon"></i>
+            </div>
+            
+            <div id="{{ select_id }}-results" class="autocomplete-results-dropdown" style="display: none;">
+                {% for item in meetings %}
+                    {% if data_format == 'tuple' %}
+                        {% set num = item[0] %}
+                        {% set date = item[1] %}
+                        {% set status = item[2] if item|length > 2 else none %}
+                    {% else %}
+                        {% set num = item.Meeting_Number %}
+                        {% set date = item.Meeting_Date %}
+                        {% set status = item.status if item.status else none %}
                     {% endif %}
-                </div>
-            {% endfor %}
+
+                    {% set status_icon = '' %}
+                    {% set status_label = '' %}
+                    {% if status == 'unpublished' %}
+                        {% set status_icon = '🔒' %}{% set status_label = 'Unpublished' %}
+                    {% elif status == 'not started' %}
+                        {% set status_icon = '▶️' %}{% set status_label = 'Not Started' %}
+                    {% elif status == 'running' %}
+                        {% set status_icon = '🔴' %}{% set status_label = 'Running' %}
+                    {% elif status == 'finished' %}
+                        {% set status_icon = '✅' %}{% set status_label = 'Finished' %}
+                    {% elif status == 'cancelled' %}
+                        {% set status_icon = '🚫' %}{% set status_label = 'Cancelled' %}
+                    {% endif %}
+                    
+                    {% set item_text = '#' ~ num ~ ' - ' ~ (date.strftime('%B %d, %Y') if date else 'No Date') %}
+                    
+                    <div class="autocomplete-result-item" data-value="{{ num }}" data-text="{{ item_text }}">
+                        <span class="status-icon" title="{{ status_label }}">{{ status_icon }}</span>
+                        <span class="meeting-num">#{{ num }}</span>
+                        <span class="meeting-date">{{ date.strftime('%b %d, %Y') if date else 'No Date' }}</span>
+                        {% if status_label %}
+                        <span class="status-tag status-{{ status|replace(' ', '-') }}">{{ status_label }}</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+
+            {# Hidden real select to maintain compatibility with existing JS #}
+            <select id="{{ select_id }}" {% if base_url %}onchange="window.location.href = '{{ base_url }}/' + this.value;"
+                {% endif %} style="display: none;" {% if is_disabled %}disabled{% endif %}>
+                {% for item in meetings %}
+                    {% if data_format == 'tuple' %}{% set num = item[0] %}{% else %}{% set num = item.Meeting_Number %}{% endif %}
+                    <option value="{{ num }}" {% if ns.selected_value|string == num|string %}selected{% endif %}>{{ num }}</option>
+                {% endfor %}
+            </select>
         </div>
 
-        {# Hidden real select to maintain compatibility with existing JS #}
-        <select id="{{ select_id }}" {% if base_url %}onchange="window.location.href = '{{ base_url }}/' + this.value;"
-            {% endif %} style="display: none;" {% if is_disabled %}disabled{% endif %}>
-            {% for item in meetings %}
-                {% if data_format == 'tuple' %}{% set num = item[0] %}{% else %}{% set num = item.Meeting_Number %}{% endif %}
-                <option value="{{ num }}" {% if ns.selected_value|string == num|string %}selected{% endif %}>{{ num }}</option>
-            {% endfor %}
-        </select>
+        <button id="{{ select_id }}-next" type="button" class="nav-btn next-meeting" title="Next Meeting" style="background: none; border: none; cursor: pointer; color: #772413; font-size: 2em; padding: 2px; flex-shrink: 0; line-height: 1;">
+            <i class="fas fa-caret-right"></i>
+        </button>
     </div>
-
-    <button id="{{ select_id }}-next" type="button" class="nav-btn next-meeting" title="Next Meeting" style="background: none; border: none; cursor: pointer; color: inherit; font-size: 1.2em; padding: 5px;">
-        <i class="fas fa-chevron-right"></i>
-    </button>
 
     {% if render_outer_container %}
 </div>

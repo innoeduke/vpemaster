@@ -234,8 +234,8 @@
     </tr>
     {# Admin Recommendation Row - appears below the main row #}
     {% if is_admin_view %}
-    {% set norm_role = role.role|lower|replace(' ', '') %}
-    <tr class="recommendation-row" data-session-id="{{ role.session_id }}" {% if role.owner_id or not required_roles_by_role[norm_role] %}style="display:none;"{% endif %}>
+    {% set norm_role = role.role|lower|replace(' ', '')|replace('-', '') %}
+    <tr class="recommendation-row" data-session-id="{{ role.session_id }}" {% if role.owner_id or (role.all_owners is defined and role.all_owners|length > 0) or not required_roles_by_role[norm_role] %}style="display:none;"{% endif %}>
         <td colspan="4">
             <div class="recommended-members-container" data-session-id="{{ role.session_id }}">
                 <div class="recommended-label"><i class="fas fa-magic"></i> Recommended (Required for current level):</div>

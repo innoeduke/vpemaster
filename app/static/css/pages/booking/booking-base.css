@@ -106,7 +106,7 @@
 	align-items: center;
 	padding: 0;
 	gap: 20px;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	justify-content: space-between;
 	width: 100%;
 }
@@ -470,6 +470,10 @@
 
 .btn-info {
 	background-color: #004165;
+}
+
+.icon-cell {
+	text-align: center;
 }
 
 .icon-cell .icon-btn {
