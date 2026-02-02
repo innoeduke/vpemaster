@@ -13,4 +13,5 @@ WARP.md
 .coverage
 .coverage.*
 htmlcov/
-.
+.gemini/
+.vscode/

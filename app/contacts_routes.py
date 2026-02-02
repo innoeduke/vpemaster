@@ -362,8 +362,7 @@ def contact_form(contact_id=None):
             # Manual overrides for completed paths and DTM if present in form
             if 'completed_paths' in request.form:
                 contact.Completed_Paths = request.form.get('completed_paths')
-            if 'dtm' in request.form:
-                contact.DTM = 'dtm' in request.form
+            contact.DTM = 'dtm' in request.form
             
             # Auto-populate Name from parts if they exist
             # Force update using form data to ensure persistence
@@ -423,6 +422,7 @@ def contact_form(contact_id=None):
                 Bio=bio,
                 Member_ID=member_id,
                 Mentor_ID=mentor_id,
+                DTM='dtm' in request.form,
                 Current_Path=request.form.get('current_path') if contact_type in ['Member', 'Officer'] else None
             )
             
@@ -670,6 +670,7 @@ def create_contact_api():
             Name=data['name'],
             Email=data.get('email') or None,
             Type=contact_type,
+            DTM=data.get('dtm', False),
             Date_Created=date.today(),
             Phone_Number=data.get('phone') or None
         )
