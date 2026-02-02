@@ -38,9 +38,11 @@ class Meeting(db.Model):
                        default='unpublished', nullable=False)
     nps = db.Column(db.Float, nullable=True)
     manager_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    excomm_id = db.Column(db.Integer, db.ForeignKey('excomm.id'), nullable=True, index=True)
 
     manager = db.relationship('Contact', foreign_keys=[manager_id], backref='managed_meetings')
     club = db.relationship('Club', foreign_keys=[club_id], back_populates='meetings')
+    excomm = db.relationship('ExComm', backref='meetings')
 
     best_table_topic_speaker = db.relationship(
         'Contact', foreign_keys=[best_table_topic_id])

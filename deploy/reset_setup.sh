@@ -25,7 +25,16 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 2. Create supporting club (Required for Global Metadata)
+# 2. Handle migrations (Run any pending upgrades to ensure schema exists)
+echo "🏗️  Running migrations..."
+flask db upgrade
+
+if [ $? -ne 0 ]; then
+    echo "❌ Failed to run migrations. Aborting."
+    exit 1
+fi
+
+# 3. Create supporting club (Required for Global Metadata)
 echo "🏢 Creating 'Technical Support' club (Club 1)..."
 # Use 000001 as specified by user. This MUST be the first club to get ID=1.
 # Use --skip-seed to avoid creating default roles that conflict with metadata restore
@@ -36,21 +45,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 3. Restore metadata (Depends on Club 1 existing)
+# 4. Restore metadata (Depends on Club 1 existing)
 echo "🧩 Restoring core metadata..."
 flask metadata restore
 
 if [ $? -ne 0 ]; then
     echo "❌ Failed to restore metadata. Aborting."
-    exit 1
-fi
-
-# 4. Handle migrations (Run any pending upgrades - though usually done before setup)
-echo "🏗️  Running migrations..."
-flask db upgrade
-
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to run migrations. Aborting."
     exit 1
 fi
 

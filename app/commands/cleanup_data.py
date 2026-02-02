@@ -35,7 +35,15 @@ def cleanup_data(force):
             db.session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
 
         # Iterate over all tables and delete contents
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        existing_tables = inspector.get_table_names()
+
         for table in reversed(db.metadata.sorted_tables):
+            if table.name not in existing_tables:
+                # click.echo(f"Skipping missing table: {table.name}")
+                continue
+                
             click.echo(f"Cleaning table: {table.name}")
             db.session.execute(table.delete())
             

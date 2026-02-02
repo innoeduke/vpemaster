@@ -6,7 +6,7 @@ from app import db
 from app.constants import GLOBAL_CLUB_ID  # Import GLOBAL_CLUB_ID
 from app.models import (
     LevelRole, Pathway, PathwayProject, Project, MeetingRole, 
-    SessionType, Permission, AuthRole, RolePermission, Ticket, Club, ExComm, ExcommOfficer
+    SessionType, Permission, AuthRole, RolePermission, Ticket, Club, ExComm
 )
 
 @click.group()
@@ -74,7 +74,6 @@ def backup(file):
     data = {
         "clubs": [to_dict(c) for c in Club.query.all()],
         "excomm": [to_dict(e) for e in ExComm.query.all()],
-        "excomm_officers": [to_dict(eo) for eo in ExcommOfficer.query.all()],
         "meeting_roles": [to_dict(r) for r in MeetingRole.query.filter(or_(MeetingRole.club_id == GLOBAL_CLUB_ID, MeetingRole.club_id.is_(None))).all()],
         "pathways": [to_dict(p) for p in Pathway.query.all()],
         "projects": [to_dict(p) for p in Project.query.all()],
@@ -129,7 +128,6 @@ def restore(file):
     model_map = {
         "clubs": Club,
         "excomm": ExComm,
-        "excomm_officers": ExcommOfficer,
         "meeting_roles": MeetingRole,
         "pathways": Pathway,
         "projects": Project,
@@ -158,8 +156,7 @@ def restore(file):
          "clubs", # Handled specially
          "excomm", # After clubs
          "meeting_roles", "pathways", "projects", "session_types", "permissions", "tickets", 
-         "pathway_projects", "level_roles", "auth_roles", "role_permissions",
-         "excomm_officers" # Depends on Excomm and Roles. Also Contacts (Business data?)
+         "pathway_projects", "level_roles", "auth_roles", "role_permissions"
     ]
     
     # Add any extra tables found in dump but not explicit in order

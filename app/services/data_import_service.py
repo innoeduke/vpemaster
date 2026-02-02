@@ -556,12 +556,29 @@ class DataImportService:
                 continue
             
             # Create
-                
-            # Create
+            meeting_date = self._parse_date(row[2])
+            
+            # Resolve excomm_id if possible
+            excomm_id = None
+            if len(row) > 18 and row[18] and row[18] != 'NULL':
+                # Try from backup first (if it's a newer backup)
+                excomm_id = row[18]
+            
+            if not excomm_id and meeting_date and self.club_id:
+                # Resolve from DB based on dates
+                from app.models.excomm import ExComm
+                excomm = ExComm.query.filter(
+                    ExComm.club_id == self.club_id,
+                    ExComm.start_date <= meeting_date,
+                    ExComm.end_date >= meeting_date
+                ).first()
+                if excomm:
+                    excomm_id = excomm.id
+
             new_meeting = Meeting(
                 Meeting_Number=meeting_no,
                 club_id=self.club_id,
-                Meeting_Date=self._parse_date(row[2]),
+                Meeting_Date=meeting_date,
                 Meeting_Template=row[3],
                 WOD=row[4],
                 best_table_topic_id=self._map_contact(row[5]),
@@ -569,15 +586,13 @@ class DataImportService:
                 best_speaker_id=self._map_contact(row[7]),
                 best_role_taker_id=self._map_contact(row[8]),
                 Start_Time=self._parse_time(row[9]),
-                # Media handled later? Or now if map exists? We import media later? No, usually Media table first?
-                # Circular dependency. We can update media_id later or import media first.
-                # Let's assume Media is imported FIRST.
                 media_id=self.media_map.get(row[10]) if row[10] else None,
                 Meeting_Title=row[11],
                 type=row[12],
                 Subtitle=row[13],
                 status=row[14] or 'unpublished',
                 manager_id=self._map_contact(row[15]),
+                excomm_id=excomm_id
                 # ge_mode=row[16], nps=row[17]
             )
             db.session.add(new_meeting)
