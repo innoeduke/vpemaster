@@ -134,22 +134,49 @@ class DataImportService:
                      excomm_term=term,
                      start_date=self._parse_date(row[3]),
                      end_date=self._parse_date(row[4]),
-                     excomm_name=row[5],
-                     president_id=self._map_contact(row[6]),
-                     vpe_id=self._map_contact(row[7]),
-                     vpm_id=self._map_contact(row[8]),
-                     vppr_id=self._map_contact(row[9]),
-                     secretary_id=self._map_contact(row[10]),
-                     treasurer_id=self._map_contact(row[11]),
-                     saa_id=self._map_contact(row[12]),
-                     ipp_id=self._map_contact(row[13])
+                     excomm_name=row[5]
                  )
                  db.session.add(new_exc)
+                 db.session.flush() # flush to get ID
+                 
+                 # Map officers
+                 # Row indices: 6=Pres, 7=VPE, 8=VPM, 9=VPPR, 10=Sec, 11=Treas, 12=SAA, 13=IPP
+                 officer_map = {
+                     'President': row[6],
+                     'VPE': row[7],
+                     'VPM': row[8],
+                     'VPPR': row[9],
+                     'Secretary': row[10],
+                     'Treasurer': row[11],
+                     'SAA': row[12],
+                     'IPP': row[13]
+                 }
+                 
+                 from app.models.excomm_officer import ExcommOfficer
+                 from app.models.roster import MeetingRole
+                 from app.constants import GLOBAL_CLUB_ID
+                 
+                 for role_name, contact_source in officer_map.items():
+                     contact_id = self._map_contact(contact_source)
+                     if contact_id:
+                         # Find role ID
+                         # Try Global first for standard roles
+                         role = MeetingRole.query.filter_by(name=role_name, club_id=GLOBAL_CLUB_ID).first()
+                         if not role:
+                             # Try local (unlikely for standard roles but safe to check)
+                             role = MeetingRole.query.filter_by(name=role_name, club_id=self.club_id).first()
+                             
+                         if role:
+                             officer = ExcommOfficer(
+                                 excomm_id=new_exc.id,
+                                 contact_id=contact_id,
+                                 meeting_role_id=role.id
+                             )
+                             db.session.add(officer)
+                                 
                  count += 1
         db.session.commit()
         print(f"Imported {count} excomm entries.")
-
-
 
     def import_session_types(self, types_data):
         print(f"Importing session types mapping...")
@@ -335,6 +362,7 @@ class DataImportService:
                 self.role_map[source_id] = new_role.id
         
         print(f"Mapped {len(self.role_map)} meeting roles.")
+    
     def import_contacts(self, contacts_data):
         """
         Imports contacts.
@@ -442,7 +470,6 @@ class DataImportService:
         db.session.commit()
         
         print(f"Imported {count} new contacts.")
-
 
     def import_users(self, users_data):
         """
