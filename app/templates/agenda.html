@@ -40,11 +40,11 @@
                 {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
                 {% endif %}
             </h1>
-            <p class="subtitle view-mode">
                 {% if selected_meeting.Subtitle %}
-                {{ selected_meeting.Subtitle }}
+                <p class="subtitle view-mode">
+                    {{ selected_meeting.Subtitle }}
+                </p>
                 {% endif %}
-            </p>
         </div>
     </div>
 
@@ -69,14 +69,14 @@
     <div class="action-bar">
         <div class="action-bar-left">
             <div class="action-bar-left-content" style="display: flex; flex-direction: column; gap: 5px;">
-                {% if meeting_numbers %}
-                {{ render_meeting_filter(meeting_numbers|sort(reverse=True), selected_meeting.Meeting_Number if
-                selected_meeting else none, is_disabled=is_editing) }}
-                {% endif %}
                 {% if selected_meeting and selected_meeting.manager %}
                 <div class="meeting-manager-display" style="color: #555;">
                     Manager: {{ selected_meeting.manager.Name }}
                 </div>
+                {% endif %}
+                {% if meeting_numbers %}
+                {{ render_meeting_filter(meeting_numbers|sort(reverse=True), selected_meeting.Meeting_Number if
+                selected_meeting else none, is_disabled=is_editing) }}
                 {% endif %}
             </div>
         </div>

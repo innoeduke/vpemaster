@@ -1,7 +1,7 @@
 """Tests for multi-club access control decorator."""
 import pytest
 from flask import session
-from app.models import db, Club, Contact, ContactClub, User, AuthRole, Permission, ExComm, UserClub
+from app.models import db, Club, Contact, ContactClub, User, AuthRole, Permission, ExComm, UserClub, MeetingRole, ExcommOfficer
 
 
 @pytest.fixture(scope='session', autouse=True)
@@ -23,18 +23,9 @@ def cleanup_test_data(app):
             
             # 1. Delete ExComm records that reference test contacts
             if test_contact_ids:
-                ExComm.query.filter(
-                    db.or_(
-                        ExComm.president_id.in_(test_contact_ids),
-                        ExComm.vpe_id.in_(test_contact_ids),
-                        ExComm.vpm_id.in_(test_contact_ids),
-                        ExComm.vppr_id.in_(test_contact_ids),
-                        ExComm.secretary_id.in_(test_contact_ids),
-                        ExComm.treasurer_id.in_(test_contact_ids),
-                        ExComm.saa_id.in_(test_contact_ids),
-                        ExComm.ipp_id.in_(test_contact_ids)
-                    )
-                ).delete(synchronize_session=False)
+                # Note: Cascade delete on ExcommOfficer should handle the association table
+                # We just need to find ExComms that might be related via legacy means or direct cleanup
+                pass
             
             # 2. Delete all records that reference test contacts
             if test_contact_ids:
@@ -160,9 +151,21 @@ def test_clubadmin_access_owned_club(app, client):
         db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_level=clubadmin_role.level, contact_id=contact.id))
         
         # Create ExComm for club1 with this user as VPE
-        excomm = ExComm(club_id=club1.id, excomm_term='TEST_26H1', vpe_id=contact.id)
+        excomm = ExComm(club_id=club1.id, excomm_term='TEST_26H1')
         db.session.add(excomm)
         db.session.flush()
+        
+        # Create VPE role if it doesn't exist
+        vpe_role = MeetingRole.query.filter_by(name='VPE', club_id=None).first()
+        if not vpe_role:
+            vpe_role = MeetingRole(name='VPE', type='Officer', needs_approval=False, has_single_owner=True)
+            db.session.add(vpe_role)
+            db.session.flush()
+            
+        # Assign VPE role via ExcommOfficer
+        officer = ExcommOfficer(excomm_id=excomm.id, contact_id=contact.id, meeting_role_id=vpe_role.id)
+        db.session.add(officer)
+        
         club1.current_excomm_id = excomm.id
         db.session.commit()
         
@@ -212,9 +215,21 @@ def test_clubadmin_denied_non_owned_club(app, client):
         db.session.add(UserClub(user_id=user.id, club_id=club1.id, club_role_level=clubadmin_role.level, contact_id=contact.id))
         
         # Create ExComm for club1 only
-        excomm = ExComm(club_id=club1.id, excomm_term='TEST_26H1', president_id=contact.id)
+        excomm = ExComm(club_id=club1.id, excomm_term='TEST_26H1')
         db.session.add(excomm)
         db.session.flush()
+        
+        # Create President role if it doesn't exist
+        pres_role = MeetingRole.query.filter_by(name='President', club_id=None).first()
+        if not pres_role:
+            pres_role = MeetingRole(name='President', type='Officer', needs_approval=False, has_single_owner=True)
+            db.session.add(pres_role)
+            db.session.flush()
+            
+        # Assign President role via ExcommOfficer
+        officer = ExcommOfficer(excomm_id=excomm.id, contact_id=contact.id, meeting_role_id=pres_role.id)
+        db.session.add(officer)
+
         club1.current_excomm_id = excomm.id
         db.session.commit()
         

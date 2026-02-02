@@ -237,6 +237,48 @@ def get_project_code(project_id, context_path_name=None):
     return project.get_code(context_path_name)
 
 
+
+def get_level_project_requirements():
+    """
+    Returns a dictionary defining the project code requirements for each level.
+    Structure:
+    {
+        level (int): {
+            'required_codes': [list of codes],
+            'elective_count': int,
+            'elective_codes_start_with': [list of prefixes]
+        }
+    }
+    """
+    return {
+        1: {
+            'required_codes': ['1.1', '1.2', '1.3', '1.4.1', '1.4.2', '1.4.3'],
+            'elective_count': 0,
+            'elective_codes_start_with': []
+        },
+        2: {
+            'required_codes': ['2.1', '2.2', '2.3'],
+            'elective_count': 0,
+            'elective_codes_start_with': []
+        },
+        3: {
+            'required_codes': ['3.1'],  # Only 3.1 is explicitly required
+            'elective_count': 2,        # Requires 2 electives
+            'elective_codes_start_with': ['3.2', '3.3', '3.4', '3.5', '3.6', '3.7', '3.8', '3.9'] # Any coding starting with these
+        },
+        4: {
+            'required_codes': ['4.1'],
+            'elective_count': 1,
+            'elective_codes_start_with': ['4.2', '4.3', '4.4', '4.5', '4.6', '4.7', '4.8', '4.9']
+        },
+        5: {
+            'required_codes': ['5.1', '5.3'], # 5.1 and 5.3 (Reflect Your Path) are required
+            'elective_count': 1,
+            'elective_codes_start_with': ['5.2', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9']
+        }
+    }
+
+
 def update_next_project(contact):
     """
     Recalculates the Next_Project for a contact based on their Current_Path,

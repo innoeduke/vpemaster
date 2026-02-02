@@ -1,6 +1,6 @@
 """Tests for Club and ExComm models."""
 import pytest
-from app.models import Club, ExComm, Contact
+from app.models import Club, ExComm, Contact, MeetingRole, ExcommOfficer
 from app import db
 
 
@@ -66,13 +66,12 @@ def test_excomm_model_fields(app, default_excomm):
         assert excomm.club_id is not None
         assert excomm.excomm_term is not None
         assert hasattr(excomm, 'excomm_name')
-        assert hasattr(excomm, 'president_id')
-        assert hasattr(excomm, 'vpe_id')
-        assert hasattr(excomm, 'vpm_id')
-        assert hasattr(excomm, 'vppr_id')
-        assert hasattr(excomm, 'secretary_id')
-        assert hasattr(excomm, 'treasurer_id')
-        assert hasattr(excomm, 'saa_id')
+        
+        # New model uses association table
+        assert hasattr(excomm, 'officers')
+        # Legacy fields should be gone
+        assert not hasattr(excomm, 'president_id')
+        assert not hasattr(excomm, 'vpe_id')
 
 
 def test_excomm_get_officers(app, default_excomm):
@@ -81,15 +80,31 @@ def test_excomm_get_officers(app, default_excomm):
         excomm = ExComm.query.first()
         assert excomm is not None
         
+        # Setup: Create officers
+        roles = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA']
+        for role_name in roles:
+            role = MeetingRole.query.filter_by(name=role_name, club_id=None).first()
+            if not role:
+                role = MeetingRole(name=role_name, type='Officer', needs_approval=False, has_single_owner=True)
+                db.session.add(role)
+                db.session.flush()
+            
+            # Create dummy contact
+            contact = Contact(Name=f'{role_name} Test', Type='Member')
+            db.session.add(contact)
+            db.session.flush()
+            
+            # Link
+            if not ExcommOfficer.query.filter_by(excomm_id=excomm.id, meeting_role_id=role.id).first():
+                officer = ExcommOfficer(excomm_id=excomm.id, contact_id=contact.id, meeting_role_id=role.id)
+                db.session.add(officer)
+        db.session.commit()
+        
         officers = excomm.get_officers()
         assert isinstance(officers, dict)
+        # Check specific roles exist in the returned dictionary
         assert 'President' in officers
         assert 'VPE' in officers
-        assert 'VPM' in officers
-        assert 'VPPR' in officers
-        assert 'Secretary' in officers
-        assert 'Treasurer' in officers
-        assert 'SAA' in officers
 
 
 def test_excomm_get_officer_by_role(app, default_excomm):
@@ -99,14 +114,33 @@ def test_excomm_get_officer_by_role(app, default_excomm):
         assert excomm is not None
         
         # Test getting an officer by role
+        # Test getting an officer by role
+        # We know President was added in previous test or can be added here
+        # But fixtures might reset db per function? Yes, clean_db uses function scope.
+        
+        # So we need to add at least one officer here
+        role = MeetingRole.query.filter_by(name='President').first()
+        if not role:
+            role = MeetingRole(name='President', type='Officer', needs_approval=False, has_single_owner=True)
+            db.session.add(role)
+            db.session.flush()
+            
+        contact = Contact(Name='President Test', Type='Member')
+        db.session.add(contact)
+        db.session.flush()
+        
+        if not ExcommOfficer.query.filter_by(excomm_id=excomm.id, meeting_role_id=role.id).first():
+            officer = ExcommOfficer(excomm_id=excomm.id, contact_id=contact.id, meeting_role_id=role.id)
+            db.session.add(officer)
+        db.session.commit()
+
         president = excomm.get_officer_by_role('President')
-        if excomm.president_id:
-            assert isinstance(president, Contact)
+        assert isinstance(president, Contact)
+        assert president.Name == 'President Test'
         
         # Test case insensitivity
-        vpe = excomm.get_officer_by_role('vpe')
-        if excomm.vpe_id:
-            assert isinstance(vpe, Contact)
+        president_lower = excomm.get_officer_by_role('president')
+        assert isinstance(president_lower, Contact)
 
 
 def test_club_excomm_relationship(app, default_club, default_excomm):

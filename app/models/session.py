@@ -240,7 +240,8 @@ class SessionLog(db.Model):
         else:
             # Determine base level from context credential (snapshot) or current credential
             start_level = 1
-            creds = context_credential if context_credential else (contact.credentials if contact else None)
+            creds = context_credential if context_credential is not None else (contact.credentials if contact else None)
+
             
             if creds:
                 # Match the current path abbreviation followed by a level number

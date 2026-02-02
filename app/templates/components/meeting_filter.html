@@ -1,4 +1,4 @@
-{% macro render_meeting_filter(meetings, selected_id, base_url='', label='Meeting:', data_format='tuple',
+{% macro render_meeting_filter(meetings, selected_id, base_url='', label='', data_format='tuple',
 extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False, render_outer_container=True, show_icon=True) %}
 
 {% set ns = namespace(selected_text='', selected_value='') %}
@@ -27,10 +27,15 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
 
 {% if render_outer_container %}
 <div class="{{ 'inline-filter-group' if label else 'booking-filter-container' }} {{ extra_classes }}"
-    style="{{ extra_style }}">
+    style="display: flex; align-items: center; gap: 0.5rem; {{ extra_style }}">
     {% endif %}
+    
+    <button id="{{ select_id }}-prev" type="button" class="nav-btn prev-meeting" title="Previous Meeting" style="background: none; border: none; cursor: pointer; color: inherit; font-size: 1.2em; padding: 5px;">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+
     {% if label %}
-    <label for="{{ select_id }}-search">{{ label }}</label>
+    <label for="{{ select_id }}-search" style="margin-right: 0.5rem;">{{ label }}</label>
     {% endif %}
 
     <div class="meeting-autocomplete-container" id="{{ select_id }}-autocomplete-container" style="min-width: 260px; {{ 'flex-grow: 1;' if not label else '' }}">
@@ -93,6 +98,10 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
         </select>
     </div>
 
+    <button id="{{ select_id }}-next" type="button" class="nav-btn next-meeting" title="Next Meeting" style="background: none; border: none; cursor: pointer; color: inherit; font-size: 1.2em; padding: 5px;">
+        <i class="fas fa-chevron-right"></i>
+    </button>
+
     {% if render_outer_container %}
 </div>
 {% endif %}
@@ -104,6 +113,8 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     const results = document.getElementById('{{ select_id }}-results');
     const realSelect = document.getElementById('{{ select_id }}');
     const items = results.querySelectorAll('.autocomplete-result-item');
+    const prevBtn = document.getElementById('{{ select_id }}-prev');
+    const nextBtn = document.getElementById('{{ select_id }}-next');
     let highlightedIndex = -1;
 
     if (!input || !results || !realSelect) return;
@@ -154,6 +165,41 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
         realSelect.dispatchEvent(new Event('change'));
         
         hideResults();
+        updateBtnState();
+    }
+
+    function updateBtnState() {
+        if (prevBtn) prevBtn.disabled = realSelect.selectedIndex <= 0;
+        if (nextBtn) nextBtn.disabled = realSelect.selectedIndex >= realSelect.options.length - 1;
+        
+        // Optional: Add visual opacity for disabled state
+        if (prevBtn) prevBtn.style.opacity = prevBtn.disabled ? '0.3' : '1';
+        if (nextBtn) nextBtn.style.opacity = nextBtn.disabled ? '0.3' : '1';
+    }
+
+    // Initialize button states
+    updateBtnState();
+
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            const currentIndex = realSelect.selectedIndex;
+            if (currentIndex > 0) {
+                const prevOption = realSelect.options[currentIndex - 1];
+                const prevItem = results.querySelector(`.autocomplete-result-item[data-value="${prevOption.value}"]`);
+                if (prevItem) selectItem(prevItem);
+            }
+        });
+    }
+
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            const currentIndex = realSelect.selectedIndex;
+            if (currentIndex < realSelect.options.length - 1) {
+                const nextOption = realSelect.options[currentIndex + 1];
+                const nextItem = results.querySelector(`.autocomplete-result-item[data-value="${nextOption.value}"]`);
+                if (nextItem) selectItem(nextItem);
+            }
+        });
     }
 
     input.addEventListener('focus', showResults);
