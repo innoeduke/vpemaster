@@ -225,10 +225,10 @@
     </div>
     {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
     <div class="button-group">
-      <button class="btn btn-primary" onclick="openContactModal()">
-        Add Guest
+      <button class="btn btn-success" onclick="openContactModal()">
+        Add New 
       </button>
-      <button class="btn btn-info" onclick="window.location.href='{{ url_for('roster_bp.roster') }}'">
+      <button class="btn btn-primary" onclick="window.location.href='{{ url_for('roster_bp.roster') }}'">
         Open Roster
       </button>
     </div>

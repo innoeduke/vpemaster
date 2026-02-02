@@ -1,17 +1,17 @@
 <div id="addRoleModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal('addRoleModal')">&times;</span>
-    <h1 id="role-modal-title">Add New Role</h1>
+    <h2 id="role-modal-title">Add New Role</h2>
     <form id="addRoleForm" action="{{ url_for('settings_bp.add_role') }}" method="POST">
       <input type="hidden" id="role_id_input" name="id" value="">
 
       
-      <div class="form-group">
+      <div class="form-group compact-form">
         <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required class="form-control" />
+        <input type="text" id="name" name="name" required class="form-control" placeholder="e.g. Toastmaster" />
       </div>
 
-      <div class="form-group">
+      <div class="form-group compact-form">
         <label>Icon Selection:</label>
         <div class="icon-matrix-container" id="icon-matrix-container">
           <input type="hidden" id="icon" name="icon" value="">
@@ -21,45 +21,69 @@
         </div>
       </div>
 
-      <div class="modal-form-row">
-        <div class="form-group" style="flex: 1;">
-          <label for="type">Type:</label>
-          <select id="type" name="type" required>
-            <option value="standard">standard</option>
-            <option value="club-specific">club-specific</option>
-            <option value="officer">officer</option>
-            <option value="not-role">not-role</option>
-          </select>
+      <fieldset class="modal-frame">
+        <legend>Type:</legend>
+        <div class="radio-group" id="type-radio-group">
+          <label class="radio-item">
+            <input type="radio" name="type" value="standard" required>
+            <span>Standard</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="type" value="club-specific">
+            <span>Club Specific</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="type" value="officer">
+            <span>Officer</span>
+          </label>
         </div>
-      </div>
+      </fieldset>
 
-      <div class="form-group">
-        <label for="award_category">Award Category:</label>
-        <select id="award_category" name="award_category">
-          <option value="">None</option>
-          <option value="speaker">Speaker</option>
-          <option value="evaluator">Evaluator</option>
-          <option value="table-topic">Table Topic Speaker</option>
-          <option value="role-taker">Role-taker</option>
-        </select>
-      </div>
+      <fieldset class="modal-frame">
+        <legend>Award Category:</legend>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="award_category" value="" checked>
+            <span>None</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="award_category" value="speaker">
+            <span>Speaker</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="award_category" value="evaluator">
+            <span>Evaluator</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="award_category" value="table-topic">
+            <span>Table Topic</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="award_category" value="role-taker">
+            <span>Role-taker</span>
+          </label>
+        </div>
+      </fieldset>
 
-      <div style="margin: 30px 0; display: flex; gap: 20px; flex-wrap: nowrap; justify-content: center;">
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; font-size: 0.9em;">
-          <input type="checkbox" id="needs_approval" name="needs_approval" class="scaled-checkbox" />
-          <span>Needs Approval</span>
-        </label>
+      <fieldset class="modal-frame">
+        <legend>Others:</legend>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="checkbox" id="needs_approval" name="needs_approval">
+            <span>Needs Approval</span>
+          </label>
 
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; font-size: 0.9em;">
-          <input type="checkbox" id="has_single_owner" name="has_single_owner" class="scaled-checkbox" />
-          <span>Has Single Owner</span>
-        </label>
+          <label class="radio-item">
+            <input type="checkbox" id="has_single_owner" name="has_single_owner">
+            <span>Single Owner Only</span>
+          </label>
 
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 700; font-size: 0.9em;">
-          <input type="checkbox" id="is_member_only" name="is_member_only" class="scaled-checkbox" />
-          <span>Member Only</span>
-        </label>
-      </div>
+          <label class="radio-item">
+            <input type="checkbox" id="is_member_only" name="is_member_only">
+            <span>Member Only</span>
+          </label>
+        </div>
+      </fieldset>
 
       <div class="form-actions" style="margin-top: 40px;">
         <button type="button" class="btn btn-danger" onclick="closeModal('addRoleModal')">Cancel</button>

@@ -2,7 +2,7 @@
 {% block title %}{{ 'Edit' if achievement else 'Add' }} Achievement{% endblock %}
 
 {% block content %}
-    <h1>{{ 'Edit' if achievement else 'Add' }} Achievement</h1>
+    <h2>{{ 'Edit' if achievement else 'Add' }} Achievement</h2>
     <form method="POST" id="achievementForm">
         <table class="form-table">
             <tr>
@@ -61,7 +61,7 @@
         </table>
         
         <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="submit" class="btn btn-success">Save</button>
             <a href="{{ url_for('settings_bp.settings', default_tab='achievements') }}" class="btn btn-danger">Cancel</a>
         </div>
     </form>

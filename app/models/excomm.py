@@ -31,22 +31,11 @@ class ExComm(db.Model):
         Returns:
             dict: {role_name: Contact object or None}
         """
-        # Initialize with standard roles as None
-        officers = {
-            'President': None,
-            'VPE': None,
-            'VPM': None,
-            'VPPR': None,
-            'Secretary': None,
-            'Treasurer': None,
-            'SAA': None,
-            'IPP': None
-        }
+        officers = {}
         
         # Populate from association table
         for officer_link in self.officers:
             role_name = officer_link.meeting_role.name
-            # Handle standard roles and any others dynamically if needed
             officers[role_name] = officer_link.contact
             
         return officers
@@ -61,26 +50,25 @@ class ExComm(db.Model):
         Returns:
             Contact or None: Contact object for the officer, or None if not found
         """
+        officers = self.get_officers()
         role_name_lower = role_name.lower()
-        for officer_link in self.officers:
-            if officer_link.meeting_role.name.lower() == role_name_lower:
-                return officer_link.contact
+        
+        for r_name, contact in officers.items():
+            if r_name.lower() == role_name_lower:
+                return contact
         return None
     
     def to_dict(self):
         """Convert excomm to dictionary for JSON serialization."""
         officers_dict = {}
-        # Pre-populate standard roles to ensure structure consistency if expected by frontend
-        standard_roles = ['president', 'vpe', 'vpm', 'vppr', 'secretary', 'treasurer', 'saa', 'ipp']
-        for role in standard_roles:
-            officers_dict[role] = {'id': None, 'name': None}
+        officers = self.get_officers()
             
-        for officer_link in self.officers:
-            role_key = officer_link.meeting_role.name.lower()
-            officers_dict[role_key] = {
-                'id': officer_link.contact_id,
-                'name': officer_link.contact.Name
-            }
+        for role_name, contact in officers.items():
+            if contact:
+                officers_dict[role_name.lower()] = {
+                    'id': contact.id,
+                    'name': contact.Name
+                }
 
         return {
             'id': self.id,

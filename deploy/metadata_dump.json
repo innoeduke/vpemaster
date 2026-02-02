@@ -27,16 +27,16 @@
       "district": "85",
       "division": "K",
       "area": "1",
-      "club_address": "Room 504, Jia Ning International Building, 500 Yan An West Road\r\n\u4e0a\u6d77\u5e02\u957f\u5b81\u533a\u5ef6\u5b89\u897f\u8def500\u53f7\u5609\u5b81\u56fd\u9645\u5927\u53a6504\u5ba4",
+      "club_address": "Room 504, Jia Ning International Building, 500 Yan An West Road\n\u4e0a\u6d77\u5e02\u957f\u5b81\u533a\u5ef6\u5b89\u897f\u8def500\u53f7\u5609\u5b81\u56fd\u9645\u5927\u53a6504\u5ba4",
       "meeting_date": "Every Wednesday",
       "meeting_time": "18:55:00",
-      "contact_phone_number": "",
+      "contact_phone_number": null,
       "website": "https://leadership.tmclub.net",
       "logo_url": null,
       "founded_date": "2007-06-20",
-      "current_excomm_id": null,
+      "current_excomm_id": 1,
       "created_at": "2026-02-01 16:23:24",
-      "updated_at": "2026-02-01 16:28:05"
+      "updated_at": "2026-02-02 04:00:25"
     },
     {
       "id": 3,
@@ -56,6 +56,32 @@
       "current_excomm_id": null,
       "created_at": "2026-02-01 16:25:49",
       "updated_at": "2026-02-01 16:29:41"
+    }
+  ],
+  "excomm": [
+    {
+      "id": 1,
+      "club_id": 2,
+      "excomm_term": "26H1",
+      "start_date": null,
+      "end_date": null,
+      "excomm_name": "Memory Makers",
+      "created_at": "2026-02-02 03:49:03",
+      "updated_at": "2026-02-02 04:00:25"
+    }
+  ],
+  "excomm_officers": [
+    {
+      "id": 1,
+      "excomm_id": 1,
+      "contact_id": 51,
+      "meeting_role_id": 32
+    },
+    {
+      "id": 2,
+      "excomm_id": 1,
+      "contact_id": 87,
+      "meeting_role_id": 33
     }
   ],
   "meeting_roles": [

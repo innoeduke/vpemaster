@@ -40,7 +40,10 @@
 	font-size: clamp(1.8em, 5vw, 2.6em);
 	font-weight: 700;
 	color: #333;
-	margin: 30px 40px;
+	margin-top: 30px;
+	margin-left: 40px;
+	margin-right: 40px;
+	margin-bottom: 10px;
 	line-height: 1.2;
 }
 

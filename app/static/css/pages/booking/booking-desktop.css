@@ -43,4 +43,8 @@
 	.booking-filter-container {
 		gap: 25px;
 	}
+
+	.accordion-item {
+		background-color: white;
+	}
 }

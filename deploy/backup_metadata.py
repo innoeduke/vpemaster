@@ -46,8 +46,10 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import LevelRole, Pathway, PathwayProject, Project, MeetingRole, SessionType, Permission, AuthRole, RolePermission, Ticket, ExComm
-
+from app.models import (
+    LevelRole, Pathway, PathwayProject, Project, MeetingRole, 
+    SessionType, Permission, AuthRole, RolePermission, Ticket, Club, ExComm, ExcommOfficer
+)
 def to_dict(model_instance):
     """Convert a SQLAlchemy model instance to a dictionary."""
     d = {}
@@ -77,7 +79,8 @@ def export_metadata():
             "auth_roles": [to_dict(r) for r in AuthRole.query.all()],
             "role_permissions": [to_dict(rp) for rp in RolePermission.query.all()],
             "tickets": [to_dict(t) for t in Ticket.query.all()],
-            "excomm": [to_dict(e) for e in ExComm.query.all()]
+            "excomm": [to_dict(e) for e in ExComm.query.all()],
+            "excomm_officers": [to_dict(eo) for eo in ExcommOfficer.query.all()]
         }
         
         output_file = os.path.join(os.path.dirname(__file__), 'metadata_dump.json')

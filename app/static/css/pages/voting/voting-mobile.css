@@ -64,9 +64,7 @@
 	}
 
 	/* Remove card styling on mobile */
-	.accordion-item,
-	.meeting-rating-section,
-	.feedback-section {
+	.accordion-item {
 		background-color: transparent;
 		box-shadow: none;
 		padding: 10px 0;

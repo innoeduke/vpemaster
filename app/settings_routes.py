@@ -5,7 +5,7 @@ from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
-from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, PermissionAudit, ContactClub, Club, ExComm, UserClub
+from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, PermissionAudit, ContactClub, Club, ExComm, UserClub, ExcommOfficer
 from .constants import GLOBAL_CLUB_ID
 import json
 from . import db
@@ -42,21 +42,8 @@ def settings():
         local_session_types = SessionType.query.filter_by(club_id=club_id).all()
         local_roles_query = MeetingRole.query.filter_by(club_id=club_id).all()
     elif club_id == GLOBAL_CLUB_ID:
-        # If we are in the Global Club, "local" lists are empty, or effectively the same as global?
-        # Actually, if we are editing Global Club, we treat them as "local" to this club for editing purposes.
-        # But per requirements, we want to separate. 
-        # If I am Global Admin managing Club 1, I should see them in the "Club Specific" or just one list.
-        # Let's treat Club 1 items as "Global" list, and Local list is empty.
-        # AND we make the Global list editable for Club 1.
         pass
 
-    # For backward compatibility with existing template (merged list), 
-    # we might still need 'session_types' and 'roles_query' IF we were not updating the template.
-    # But we ARE updating the template.
-    # However, 'roles' (list of dicts) might be used elsewhere or for dropdowns?
-    # The 'roles' var in this function is passed to template. 
-    # Let's keep 'roles_query' as the MERGED list for dropdowns if needed, or just for safety.
-    # Actually, let's reconstruct the merged list for the 'roles' json variable used in JS keys.
     merged_roles = MeetingRole.get_all_for_club(club_id)
     roles = [{'id': role.id, 'name': role.name, 'award_category': role.award_category, 'type': role.type} for role in merged_roles]
     
@@ -83,6 +70,32 @@ def settings():
     else:
         achievements = Achievement.query.join(Contact).order_by(Contact.Name.asc(), Achievement.issue_date.desc()).all()
 
+    
+    # Excomm History: Fetch for the current club
+    # Optimize to load officers, role, and contact eagerly
+    excomm_history = []
+    officer_roles = []
+    if club_id:
+        excomm_query = ExComm.query.filter_by(club_id=club_id).order_by(ExComm.start_date.desc())
+        
+        # Eager load the officers relationship, and then the contact and meeting_role within that
+        excomm_query = excomm_query.options(
+            db.joinedload(ExComm.officers).joinedload(ExcommOfficer.contact),
+            db.joinedload(ExComm.officers).joinedload(ExcommOfficer.meeting_role)
+        )
+        
+        excomm_history = excomm_query.all()
+        
+        
+        # Fetch all roles (Global + Local) and filter for 'officer' type
+        all_roles = MeetingRole.get_all_for_club(club_id)
+        officer_roles = [r for r in all_roles if r.type == 'officer']
+        
+        # Fallback: if no officer roles found (unlikely if Global is set up), try standard names match on what we have
+        if not officer_roles:
+            standard_officers = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'IPP']
+            officer_roles = [r for r in all_roles if r.name in standard_officers]
+
     return render_template('settings.html', 
                           global_session_types=global_session_types,
                           local_session_types=local_session_types,
@@ -90,12 +103,131 @@ def settings():
                           local_roles=local_roles_query,
                           all_users=all_users, 
                           roles=roles, 
-                          # We still pass merged lists if the template needs them for something else, 
-                          # but mostly we rely on the split lists now.
-                          # Actually, let's just make sure we don't break anything.
-                          # The original template used 'session_types' and 'roles_query'.
-                          # We will replace usages in template.
-                          achievements=achievements, club_id=club_id, GLOBAL_CLUB_ID=GLOBAL_CLUB_ID)
+                          achievements=achievements, 
+                          excomm_history=excomm_history,
+                          officer_roles=officer_roles,
+                          club_id=club_id, 
+                          GLOBAL_CLUB_ID=GLOBAL_CLUB_ID)
+
+
+@settings_bp.route('/settings/excomm/add', methods=['POST'])
+@login_required
+@authorized_club_required
+def add_excomm():
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+    
+    club_id = get_current_club_id()
+    data = request.json
+    
+    try:
+        start_date_str = data.get('start_date')
+        end_date_str = data.get('end_date')
+        
+        excomm = ExComm(
+            club_id=club_id,
+            excomm_term=data.get('term'),
+            excomm_name=data.get('name'),
+            start_date=datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None,
+            end_date=datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
+        )
+        db.session.add(excomm)
+        db.session.flush() # Get ID
+        
+        # Handle Officers
+        officers_data = data.get('officers', {}) # {role_id: contact_id}
+        from .models import ExcommOfficer
+        
+        for role_id, contact_id in officers_data.items():
+            if contact_id:
+                db.session.add(ExcommOfficer(
+                    excomm_id=excomm.id,
+                    contact_id=int(contact_id),
+                    meeting_role_id=int(role_id)
+                ))
+                
+        db.session.commit()
+        return jsonify(success=True, message="Excomm team added successfully")
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+@settings_bp.route('/settings/excomm/update', methods=['POST'])
+@login_required
+@authorized_club_required
+def update_excomm():
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+    
+    club_id = get_current_club_id()
+    data = request.json
+    excomm_id = data.get('id')
+    
+    try:
+        excomm = db.session.get(ExComm, excomm_id)
+        if not excomm or excomm.club_id != club_id:
+            return jsonify(success=False, message="Excomm not found"), 404
+            
+        start_date_str = data.get('start_date')
+        end_date_str = data.get('end_date')
+        
+        excomm.excomm_term = data.get('term')
+        excomm.excomm_name = data.get('name')
+        excomm.start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else None
+        excomm.end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else None
+        
+        # Update Officers
+        # Simple strategy: Delete all existing and re-add (or sync)
+        # To be safe and clean, let's sync.
+        from .models import ExcommOfficer
+        
+        # Remove existing officers
+        ExcommOfficer.query.filter_by(excomm_id=excomm.id).delete()
+        
+        officers_data = data.get('officers', {}) # {role_id: contact_id}
+        for role_id, contact_id in officers_data.items():
+            if contact_id: # Only add if a contact is selected
+                db.session.add(ExcommOfficer(
+                    excomm_id=excomm.id,
+                    contact_id=int(contact_id),
+                    meeting_role_id=int(role_id)
+                ))
+        
+        db.session.commit()
+        return jsonify(success=True, message="Excomm team updated successfully")
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+@settings_bp.route('/settings/excomm/delete/<int:id>', methods=['POST'])
+@login_required
+@authorized_club_required
+def delete_excomm(id):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+    
+    club_id = get_current_club_id()
+    
+    try:
+        excomm = db.session.get(ExComm, id)
+        if not excomm or excomm.club_id != club_id:
+            return jsonify(success=False, message="Excomm not found"), 404
+            
+        # Check if it's the current one for the club and unset it?
+        club = db.session.get(Club, club_id)
+        if club.current_excomm_id == excomm.id:
+            club.current_excomm_id = None
+            
+        db.session.delete(excomm)
+        db.session.commit()
+        return jsonify(success=True, message="Excomm team deleted successfully")
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
 
 
 @settings_bp.route('/settings/sessions/add', methods=['POST'])

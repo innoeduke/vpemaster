@@ -16,7 +16,9 @@
   #global-sessions-table th:nth-child(1),
   #global-sessions-table td:nth-child(1),
   #global-roles-table th:nth-child(1),
-  #global-roles-table td:nth-child(1) {
+  #global-roles-table td:nth-child(1),
+  #excomm-table th:nth-child(1),
+  #excomm-table td:nth-child(1) {
     display: none;
   }
 
@@ -46,7 +48,11 @@
       Users</button>
     <button class="nav-item" onclick="openTab(event, 'achievements')">
       Achievements
-    </button><button class="nav-item active" onclick="openTab(event, 'agenda-settings')">
+    </button>
+    <button class="nav-item" onclick="openTab(event, 'excomm-settings')">
+      Excomm
+    </button>
+    <button class="nav-item active" onclick="openTab(event, 'agenda-settings')">
       Roles 
     </button>
     <button class="nav-item" onclick="openTab(event, 'sessions')">
@@ -58,6 +64,70 @@
     <button class="nav-item" onclick="openTab(event, 'audit-log')">
       Audit Log
     </button>
+    
+  </div>
+
+  <div id="excomm-settings" class="tab-content">
+    <div class="settings-header">
+      <h2>Excomm Management</h2>
+      <div class="button-group">
+        <button id="add-excomm-btn" class="btn btn-success" onclick="openExcommModal()">
+          <i class="fas fa-plus"></i> Add New
+        </button>
+      </div>
+    </div>
+    <div class="table-container">
+      <table id="excomm-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Term</th>
+            <th>Team Name</th>
+            <!-- Dynamic Officer Columns -->
+            {% for role in officer_roles %}
+              <th>{{ role.name }}</th>
+            {% endfor %}
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for exc in excomm_history %}
+            <tr data-id="{{ exc.id }}" data-start="{{ exc.start_date }}" data-end="{{ exc.end_date }}">
+              <td>{{ exc.id }}</td>
+              <td>
+                {{ exc.excomm_term }}
+                {% if exc.club.current_excomm_id == exc.id %}
+                  <span class="badge bg-success ms-2">Current</span>
+                {% endif %}
+              </td>
+              <td>{{ exc.excomm_name or '' }}</td>
+              
+              {% set officers = exc.get_officers() %}
+              {% for role in officer_roles %}
+                <td data-role-id="{{ role.id }}" data-contact-id="{{ officers.get(role.name).id if officers.get(role.name) else '' }}">
+                  {% if officers.get(role.name) %}
+                    {{ officers.get(role.name).Name }}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+              {% endfor %}
+              
+              <td>
+                <div class="action-links">
+                  <button class="edit-btn icon-btn" onclick="openEditExcommModal(this)" title="Edit">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="delete-btn icon-btn" onclick="openDeleteModal('/settings/excomm/delete/{{ exc.id }}', 'Excomm Team')" title="Delete">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div id="sessions" class="tab-content">
@@ -70,9 +140,6 @@
       <div class="button-group">
         <button id="add-session-btn" class="btn btn-success" style="flex-grow: 0;">Add New</button>
       </div>
-
-
-
     </div>
     <table id="sessions-table">
       <thead>
@@ -183,7 +250,6 @@
   </div>
 
   <div id="agenda-settings" class="tab-content">
-  
     <!-- CLUB SPECIFIC ROLES -->
     <div class="settings-header">
       <h2>
@@ -204,8 +270,8 @@
           <th class="sortable" data-column-index="3">Type</th>
           <th class="sortable" data-column-index="4">Award Category</th>
           <th class="sortable" data-column-index="5">Needs Approval</th>
-          <th class="sortable" data-column-index="6">Has Single Owner</th>
-          <th class="sortable" data-column-index="7">Is Member Only</th>
+          <th class="sortable" data-column-index="6">Single Owner Only</th>
+          <th class="sortable" data-column-index="7">Member Only</th>
           <th data-column-index="8">Actions</th>
         </tr>
       </thead>
@@ -265,8 +331,8 @@
           <th class="sortable" data-column-index="3">Type</th>
           <th class="sortable" data-column-index="4">Award Category</th>
           <th class="sortable" data-column-index="5">Needs Approval</th>
-          <th class="sortable" data-column-index="6">Has Single Owner</th>
-          <th class="sortable" data-column-index="7">Is Member Only</th>
+          <th class="sortable" data-column-index="6">Single Owner Only</th>
+          <th class="sortable" data-column-index="7">Member Only</th>
           <!-- No actions -->
         </tr>
       </thead>
@@ -298,7 +364,7 @@
     <div class="settings-header">
       <h2>User Management</h2>
       <div class="button-group">
-        <a href="{{ url_for('users_bp.user_form') }}" class="btn btn-success" style="flex-grow: 0;">Add New User</a>
+        <a href="{{ url_for('users_bp.user_form') }}" class="btn btn-success" style="flex-grow: 0;">Add New</a>
         <form action="{{ url_for('users_bp.bulk_import_users') }}" method="post" enctype="multipart/form-data"
           id="bulk-import-form">
           <input type="file" name="file" id="bulk-import-file" />
@@ -333,12 +399,31 @@
             {% endif %}
           </td>
           <td>
+            {% set role_priority = {
+              'sysadmin': 100,
+              'clubadmin': 90,
+              'staff': 80,
+              'other': 50,
+              'user': 10
+            } %}
+            {% set ns = namespace(best_role=none, max_prio=-1) %}
+            
             {% for role in user.get_roles_for_club(club_id) if role.name != 'Guest' %}
-            {% set role_class = 'role-' ~ role.award_category if role.award_category else 'role-other' %}
-            <span class="roster-role-tag {{ role_class }}">{{ role.name }}</span>
-            {% else %}
-            <em class="text-muted">No Role</em>
+              {% set category = role.award_category if role.award_category else 'other' %}
+              {% set prio = role_priority.get(category, 50) %}
+              {% if prio > ns.max_prio %}
+                {% set ns.max_prio = prio %}
+                {% set ns.best_role = role %}
+              {% endif %}
             {% endfor %}
+            
+            {% if ns.best_role %}
+              {% set role = ns.best_role %}
+              {% set role_class = 'role-' ~ role.award_category if role.award_category else 'role-other' %}
+              <span class="roster-role-tag {{ role_class }}">{{ role.name }}</span>
+            {% else %}
+              <em class="text-muted">No Role</em>
+            {% endif %}
           </td>
           <td>{{ user.email if user.email else '' }}</td>
           <td>
@@ -404,14 +489,13 @@
     </div>
   </div>
 
-
   <div id="achievements" class="tab-content">
     <div class="settings-header">
       <h2>Achievement Tracking</h2>
       <div class="button-group">
         {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
         <a href="{{ url_for('achievements_bp.achievement_form') }}" class="btn btn-success">
-          Add Achievement
+          Add New 
         </a>
         {% endif %}
       </div>
@@ -419,20 +503,6 @@
 
     <div class="table-container">
       <table class="table table-striped" id="achievementsTable">
-        <thead>
-          <tr>
-            <th></th> <!-- Toggle column -->
-            <th>Date</th>
-            <th>Member ID</th>
-            <th>Type</th>
-            <th>Path</th>
-            <th>Level</th>
-            <th>Notes</th>
-            {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
-            <th>Actions</th>
-            {% endif %}
-          </tr>
-        </thead>
         <tbody>
           {% for group in achievements|groupby('contact_id') %}
           {% set contact = group.list[0].contact %}
@@ -444,18 +514,31 @@
               {% set level_count = group.list|selectattr('achievement_type', 'equalto', 'level-completion')|list|length %}
               {% set program_count = group.list|selectattr('achievement_type', 'equalto', 'program-completion')|list|length %}
               {% if path_count > 0 %}
-              <span class="badge bg-primary ms-2">{{ path_count }} Paths</span>
+              <span class="badge bg-primary ms-2">{{ path_count }} {{ 'Path' if path_count == 1 else 'Paths' }}</span>
               {% endif %}
               {% if level_count > 0 %}
-              <span class="badge bg-success ms-2">{{ level_count }} Levels</span>
+              <span class="badge bg-success ms-2">{{ level_count }} {{ 'Level' if level_count == 1 else 'Levels' }}</span>
               {% endif %}
               {% if program_count > 0 %}
-              <span class="badge bg-warning text-dark ms-2">{{ program_count }} Programs</span>
+              <span class="badge bg-warning text-dark ms-2">{{ program_count }} {{ 'Program' if program_count == 1 else 'Programs' }}</span>
               {% endif %}
               {% if path_count == 0 and level_count == 0 and program_count == 0 %}
-              <span class="badge bg-info text-dark ms-2">{{ group.list|length }} Achievements</span>
+              <span class="badge bg-info text-dark ms-2">{{ group.list|length }} {{ 'Achievement' if group.list|length == 1 else 'Achievements' }}</span>
               {% endif %}
             </td>
+          </tr>
+          <!-- Group Header Row (Hidden by default, toggled with group) -->
+          <tr class="achievement-row header-row" data-parent-id="group-{{ group.grouper }}" style="display: none; background-color: #f8f9fa;">
+            <th></th> <!-- Alignment for toggle column -->
+            <th>Date</th>
+            <th>Member ID</th>
+            <th>Type</th>
+            <th>Path</th>
+            <th>Level</th>
+            <th>Notes</th>
+            {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
+            <th>Actions</th>
+            {% endif %}
           </tr>
           {% for achievement in group.list %}
           <tr class="achievement-row" data-parent-id="group-{{ group.grouper }}" style="display: none;">
@@ -535,7 +618,7 @@
   <div class="settings-header">
     <h2>Roles & Permissions</h2>
     <div class="button-group">
-      <button id="save-permissions-btn" class="btn btn-primary" title="Save changes to role permissions" disabled>
+      <button id="save-permissions-btn" class="btn btn-success" title="Save changes to role permissions" disabled>
         <i class="fas fa-save"></i> Save Changes
       </button>
     </div>
@@ -598,12 +681,72 @@
   </div>
 </div>
 
+<!-- Excomm Modal -->
+<div id="excomm-modal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeExcommModal()">&times;</span>
+    <h2 id="excomm-modal-title">Add/Edit Excomm Team</h2>
+    <form id="excomm-form">
+      <input type="hidden" id="excomm-id" name="id">
+      
+      <div class="form-group compact-form">
+        <label for="excomm-term">Term:</label>
+        <input type="text" id="excomm-term" name="term" required class="form-control" placeholder="e.g. 26H1">
+      </div>
+      
+      <div class="form-group compact-form">
+        <label for="excomm-name">Team Name:</label>
+        <input type="text" id="excomm-name" name="name" class="form-control" placeholder="e.g. The Dream Team">
+      </div>
+      
+      <fieldset class="modal-frame">
+        <legend>Duration:</legend>
+        <div class="form-group-row" style="display: flex; gap: 15px;">
+          <div class="form-group compact-form" style="flex: 1;">
+            <label for="excomm-start">Start Date:</label>
+            <input type="date" id="excomm-start" name="start_date" required class="form-control">
+          </div>
+          <div class="form-group compact-form" style="flex: 1;">
+            <label for="excomm-end">End Date:</label>
+            <input type="date" id="excomm-end" name="end_date" required class="form-control">
+          </div>
+        </div>
+      </fieldset>
+      
+      <fieldset class="modal-frame">
+        <legend>Officers:</legend>
+        <div class="officer-fields-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+          {% for role in officer_roles %}
+            <div class="form-group compact-form">
+              <label for="officer-role-{{ role.id }}">{{ role.name }}:</label>
+              <select id="officer-role-{{ role.id }}" name="officer_{{ role.id }}" class="officer-select form-control">
+                <option value="">-- Select Member --</option>
+                {% for user in all_users %}
+                  {% if user.contact %}
+                    <option value="{{ user.contact.id }}">{{ user.contact.Name }}</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+          {% endfor %}
+        </div>
+      </fieldset>
+
+      <div class="modal-buttons">
+        <button type="button" class="btn btn-secondary" onclick="closeExcommModal()">Cancel</button>
+        <button type="submit" class="btn btn-success">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
   var ROLES_DATA = {{ roles| tojson }};
   const CURRENT_CLUB_ID = {{ club_id }};
 </script>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/settings_excomm.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     // Check if mobile (width < 768px matches typical tablet/mobile breakpoint)

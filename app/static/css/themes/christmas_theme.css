@@ -18,7 +18,6 @@ body {
 
 /* Common container background and styling */
 .main-content>div:not(.profile-container):not(.orientation-warning),
-.main-content>h1,
 .main-content>form,
 .filters-container,
 .project-details-container,

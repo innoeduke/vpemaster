@@ -9,7 +9,7 @@
         <i class="fas fa-info-circle"></i> Roles and Contact linkage will be applied to: <strong>{{ club_name }}</strong>
     </div>
     {% endif %}
-    <h1>{{ 'Edit User' if user else 'Add New User' }}</h1>
+    <h2>{{ 'Edit User' if user else 'Add New User' }}</h2>
 <form method="POST"
     action="{{ url_for('users_bp.user_form', user_id=user.id) if user else url_for('users_bp.user_form') }}">
     <input type="hidden" name="contact_id" value="{{ source_contact.id if source_contact else (user_contact.id if user_contact else '') }}">

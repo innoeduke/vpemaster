@@ -2,25 +2,28 @@
 
 /* --- Base Overrides --- */
 body {
-    background-color: #2a0a3a; /* Deep dark purple */
-    color: #e0e0e0; /* Light gray text */
+    background-color: #2a0a3a;
+    /* Deep dark purple */
+    color: #e0e0e0;
+    /* Light gray text */
 }
 
 /* Common container background and styling */
-.main-content > div:not(.profile-container):not(.orientation-warning),
-.main-content > h1,
-.main-content > form,
+.main-content>div:not(.profile-container):not(.orientation-warning),
+.main-content>form,
 .filters-container,
 .project-details-container,
 .settings-container,
 .login-form,
 .modal-content {
-    background-color: #3e1a4e; /* Darker purple */
+    background-color: #3e1a4e;
+    /* Darker purple */
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
     margin-bottom: 20px;
-    border: 1px solid #5a2e6a; /* Mid purple border */
+    border: 1px solid #5a2e6a;
+    /* Mid purple border */
 }
 
 /* Light text for headings, labels, specific elements */
@@ -29,8 +32,10 @@ body {
 .main-content h3,
 .modal-content h1,
 label,
-.nav-pane, /* Includes nav text */
-.profile-trigger, /* Includes profile text & icons */
+.nav-pane,
+/* Includes nav text */
+.profile-trigger,
+/* Includes profile text & icons */
 .profile-trigger i,
 input[type="text"],
 input[type="email"],
@@ -41,72 +46,158 @@ input[type="time"],
 select,
 textarea,
 .autocomplete-items div,
-.booking-filter-container i, /* Calendar icon */
+.booking-filter-container i,
+/* Calendar icon */
 #meeting-date-display,
 .action-bar-left .inline-filter-group label,
 .assign-controls select,
-.tab-btn { /* Inactive tab buttons */
+.tab-btn {
+    /* Inactive tab buttons */
     color: #f0f0f0;
 }
 
 /* Lighter text for table cells, timeline text, completed roles text */
-td, th,
+td,
+th,
 .timeline-header,
 .timeline-header .meeting-date,
 .timeline-role,
-.completed-roles-container, /* Includes "No completed..." text */
+.completed-roles-container,
+/* Includes "No completed..." text */
 .completed-roles-list li {
     color: #e0e0e0;
 }
 
 /* --- Navigation --- */
 .nav-pane {
-    background-color: #5a2e6a; /* Mid purple */
-    box-shadow: 2px 0 8px rgba(0,0,0,0.5);
+    background-color: #5a2e6a;
+    /* Mid purple */
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.5);
 }
 
 .nav-pane ul li.active a,
 .nav-pane ul li a:hover {
-    background-color: #8c4c9e; /* Lighter purple */
+    background-color: #8c4c9e;
+    /* Lighter purple */
 }
 
 /* --- Profile Dropdown --- */
 .profile-trigger {
-    background-color: #4a2a5a; /* Darker Mid purple */
+    background-color: #4a2a5a;
+    /* Darker Mid purple */
     border: 1px solid #6a3e7a;
 }
+
 .profile-trigger:hover {
     background-color: #6a3e7a;
 }
 
 /* --- Buttons --- */
-.btn-primary { background-color: #ff8c00; color: #2a0a3a; font-weight: bold; }
-.btn-primary:hover { background-color: #ff6a00; color: #fff; }
-.btn-danger { background-color: #a04000; color: white; }
-.btn-danger:hover { background-color: #7a3000; }
-.btn-info { background-color: #8c4c9e; color: white; }
-.btn-info:hover { background-color: #5a2e6a; }
-.btn-success { background-color: #ff6a00; color: #2a0a3a; font-weight: bold; }
-.btn-success:hover { background-color: #ff8c00; color: #fff; }
-.btn-secondary { background-color: #4a2a5a; color: #f0f0f0; border: 1px solid #6a3e7a; }
-.btn-secondary:hover { background-color: #6a3e7a; }
-.btn-book { background-color: #ff8c00; color: #2a0a3a; font-weight: bold; }
-.btn-book:hover { background-color: #ff6a00; color: #fff; }
-.btn-cancel { background-color: #a04000; color: white; }
-.btn-cancel:hover { background-color: #7a3000; }
-.btn-booked { background-color: #5a2e6a; color: #aaa; cursor: not-allowed; border: 1px solid #8c4c9e; }
+.btn-primary {
+    background-color: #ff8c00;
+    color: #2a0a3a;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background-color: #ff6a00;
+    color: #fff;
+}
+
+.btn-danger {
+    background-color: #a04000;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #7a3000;
+}
+
+.btn-info {
+    background-color: #8c4c9e;
+    color: white;
+}
+
+.btn-info:hover {
+    background-color: #5a2e6a;
+}
+
+.btn-success {
+    background-color: #ff6a00;
+    color: #2a0a3a;
+    font-weight: bold;
+}
+
+.btn-success:hover {
+    background-color: #ff8c00;
+    color: #fff;
+}
+
+.btn-secondary {
+    background-color: #4a2a5a;
+    color: #f0f0f0;
+    border: 1px solid #6a3e7a;
+}
+
+.btn-secondary:hover {
+    background-color: #6a3e7a;
+}
+
+.btn-book {
+    background-color: #ff8c00;
+    color: #2a0a3a;
+    font-weight: bold;
+}
+
+.btn-book:hover {
+    background-color: #ff6a00;
+    color: #fff;
+}
+
+.btn-cancel {
+    background-color: #a04000;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background-color: #7a3000;
+}
+
+.btn-booked {
+    background-color: #5a2e6a;
+    color: #aaa;
+    cursor: not-allowed;
+    border: 1px solid #8c4c9e;
+}
 
 /* --- Tables --- */
-th, .booking-table th { /* Combined general and specific table headers */
-    background-color: #5a2e6a; /* Mid purple */
-    border: 1px solid #8c4c9e; /* Lighter purple border */
+th,
+.booking-table th {
+    /* Combined general and specific table headers */
+    background-color: #5a2e6a;
+    /* Mid purple */
+    border: 1px solid #8c4c9e;
+    /* Lighter purple border */
 }
+
 td {
-    border: 1px solid #4a2a5a; /* Darker Mid purple border */
+    border: 1px solid #4a2a5a;
+    /* Darker Mid purple border */
 }
-tbody tr:nth-child(even) { background-color: #4a2a5a; } /* Darker Mid purple */
-tbody tr:nth-child(odd) { background-color: #3e1a4e; } /* Darker purple */
-tbody tr:hover { background-color: #6a3e7a; }
+
+tbody tr:nth-child(even) {
+    background-color: #4a2a5a;
+}
+
+/* Darker Mid purple */
+tbody tr:nth-child(odd) {
+    background-color: #3e1a4e;
+}
+
+/* Darker purple */
+tbody tr:hover {
+    background-color: #6a3e7a;
+}
 
 /* --- Form Inputs --- */
 input[type="text"],
@@ -117,13 +208,17 @@ input[type="date"],
 input[type="time"],
 select,
 textarea {
-    border: 1px solid #8c4c9e; /* Lighter purple border */
+    border: 1px solid #8c4c9e;
+    /* Lighter purple border */
     border-radius: 4px;
-    background-color: #5a2e6a; /* Mid purple background */
+    background-color: #5a2e6a;
+    /* Mid purple background */
     margin-bottom: 10px;
     padding: 5px 8px;
 }
-select { /* Dropdown arrow styling */
+
+select {
+    /* Dropdown arrow styling */
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
@@ -132,51 +227,94 @@ select { /* Dropdown arrow styling */
     background-position: right 0.7em top 50%, 0 0;
     background-size: 0.65em auto, 100%;
 }
+
 /* Autocomplete items */
 .autocomplete-items div {
     padding: 10px;
     cursor: pointer;
-    background-color: #5a2e6a; /* Mid purple */
-    border-bottom: 1px solid #8c4c9e; /* Lighter purple border */
+    background-color: #5a2e6a;
+    /* Mid purple */
+    border-bottom: 1px solid #8c4c9e;
+    /* Lighter purple border */
 }
+
 .autocomplete-items div:hover {
-    background-color: #8c4c9e; /* Lighter purple */
+    background-color: #8c4c9e;
+    /* Lighter purple */
 }
 
 /* --- Alert Box --- */
 .alert-closable.alert-danger {
-    color: #ffecb3; /* Light orange/yellow text */
+    color: #ffecb3;
+    /* Light orange/yellow text */
     background-color: #6a3e7a;
-    border-color: #a04000; /* Dark orange border */
+    border-color: #a04000;
+    /* Dark orange border */
 }
+
 .alert-icon {
     font-size: 1.2em;
     padding-top: 2px;
     flex-shrink: 0;
 }
-.alert-icon i { color: #ff8c00; /* Bright orange */ }
-.close-alert { opacity: 0.6; color: #ffecb3; }
-.close-alert:hover { opacity: 0.9; }
+
+.alert-icon i {
+    color: #ff8c00;
+    /* Bright orange */
+}
+
+.close-alert {
+    opacity: 0.6;
+    color: #ffecb3;
+}
+
+.close-alert:hover {
+    opacity: 0.9;
+}
 
 /* --- Booking Page Specifics --- */
 .timeline-marker {
-    width: 0; height: 0; background-color: transparent; border-radius: 0; border: none; /* Reset dot styles */
-    border-left: 8px solid transparent; border-right: 8px solid transparent; /* Triangle shape */
-    border-bottom: 12px solid #ff8c00; /* Orange triangle */
-    margin: 2px 0 5px 0; /* Position on line */
+    width: 0;
+    height: 0;
+    background-color: transparent;
+    border-radius: 0;
+    border: none;
+    /* Reset dot styles */
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    /* Triangle shape */
+    border-bottom: 12px solid #ff8c00;
+    /* Orange triangle */
+    margin: 2px 0 5px 0;
+    /* Position on line */
 }
+
 .timeline-role i,
 .booking-table .role-cell i,
 .completed-roles-list i {
-    color: #ff8c00; /* Orange icons */
+    color: #ff8c00;
+    /* Orange icons */
 }
+
 .completed-roles-list li {
-    border-bottom: 1px solid #6a3e7a; /* Lighter purple border */
+    border-bottom: 1px solid #6a3e7a;
+    /* Lighter purple border */
 }
-.completed-roles-section-header h3 { color: #f0f0f0; }
-body .completed-roles-section-header .form-group label { color: #ccc; }
-.completed-roles-list .meeting-ref { color: #bbb; }
-#meeting-filter { /* Pill shape & centering */
+
+.completed-roles-section-header h3 {
+    color: #f0f0f0;
+}
+
+body .completed-roles-section-header .form-group label {
+    color: #ccc;
+}
+
+.completed-roles-list .meeting-ref {
+    color: #bbb;
+}
+
+#meeting-filter {
+    /* Pill shape & centering */
     width: auto;
     min-width: 100px;
     text-align-last: center;
@@ -185,19 +323,56 @@ body .completed-roles-section-header .form-group label { color: #ccc; }
     padding-left: 25px;
     padding-right: 25px;
 }
-.booking-table { box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-.booking-table .role-cell { font-weight: bold; color: #f5f5f5; }
-.booking-table .speaker-for { color: #ccc; }
-.owner-available { color: #a7d7ae; background-color: #3e1a4e; border: 1px solid #a7d7ae; }
-.admin-assign-select.unassigned-role { border-color: #ff8c00; background-color: #6a3e7a; font-weight: bold; }
+
+.booking-table {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.booking-table .role-cell {
+    font-weight: bold;
+    color: #f5f5f5;
+}
+
+.booking-table .speaker-for {
+    color: #ccc;
+}
+
+.owner-available {
+    color: #a7d7ae;
+    background-color: #3e1a4e;
+    border: 1px solid #a7d7ae;
+}
+
+.admin-assign-select.unassigned-role {
+    border-color: #ff8c00;
+    background-color: #6a3e7a;
+    font-weight: bold;
+}
 
 /* --- Modals --- */
-.modal-content { border: 1px solid #8c4c9e; }
-.modal .close { color: #aaa; }
+.modal-content {
+    border: 1px solid #8c4c9e;
+}
+
+.modal .close {
+    color: #aaa;
+}
+
 .modal .close:hover,
-.modal .close:focus { color: #f0f0f0; }
+.modal .close:focus {
+    color: #f0f0f0;
+}
 
 /* --- Settings Tabs --- */
-.tab-nav { border-bottom: 1px solid #5a2e6a; }
-.tab-btn:hover { background-color: #5a2e6a; }
-.tab-btn.active { border-bottom-color: #ff8c00; color: #ff8c00; }
+.tab-nav {
+    border-bottom: 1px solid #5a2e6a;
+}
+
+.tab-btn:hover {
+    background-color: #5a2e6a;
+}
+
+.tab-btn.active {
+    border-bottom-color: #ff8c00;
+    color: #ff8c00;
+}

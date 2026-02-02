@@ -3,7 +3,7 @@ from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
-from .models import User, Contact, AuthRole, PermissionAudit, ContactClub, Club, ExComm, UserClub
+from .models import User, Contact, AuthRole, PermissionAudit, ContactClub, Club, ExComm, UserClub, ExcommOfficer, MeetingRole
 from . import db
 from datetime import datetime
 from .utils import process_club_logo
@@ -36,18 +36,21 @@ def about_club():
     if club and club.current_excomm_id:
         excomm = ExComm.query.get(club.current_excomm_id)
         if excomm:
+            # Use get_officers() which returns {role_name: Contact}
+            active_officers = excomm.get_officers()
+            
             excomm_team = {
                 'name': excomm.excomm_name or '',
                 'term': excomm.excomm_term or '',
                 'members': {
-                    'President': excomm.president.Name if excomm.president else '',
-                    'VPE': excomm.vpe.Name if excomm.vpe else '',
-                    'VPM': excomm.vpm.Name if excomm.vpm else '',
-                    'VPPR': excomm.vppr.Name if excomm.vppr else '',
-                    'Secretary': excomm.secretary.Name if excomm.secretary else '',
-                    'Treasurer': excomm.treasurer.Name if excomm.treasurer else '',
-                    'SAA': excomm.saa.Name if excomm.saa else '',
-                    'IPP': excomm.ipp.Name if excomm.ipp else ''
+                    'President': active_officers['President'].Name if active_officers.get('President') else '',
+                    'VPE': active_officers['VPE'].Name if active_officers.get('VPE') else '',
+                    'VPM': active_officers['VPM'].Name if active_officers.get('VPM') else '',
+                    'VPPR': active_officers['VPPR'].Name if active_officers.get('VPPR') else '',
+                    'Secretary': active_officers['Secretary'].Name if active_officers.get('Secretary') else '',
+                    'Treasurer': active_officers['Treasurer'].Name if active_officers.get('Treasurer') else '',
+                    'SAA': active_officers['SAA'].Name if active_officers.get('SAA') else '',
+                    'IPP': active_officers['IPP'].Name if active_officers.get('IPP') else ''
                 }
             }
 
@@ -131,7 +134,6 @@ def about_club_update():
         if has_excomm_data:
             if not excomm:
                 # Create a new ExComm record if none exists
-                # Determine a default term if not provided (e.g., current year + H1/H2)
                 now = datetime.now()
                 default_term = f"{now.year % 100}{'H1' if now.month <= 6 else 'H2'}"
                 
@@ -149,29 +151,53 @@ def about_club_update():
                 excomm.excomm_term = data['excomm_term']
 
             # Update ExComm Officers
-            officer_roles = {
-                'excomm_president': 'president_id',
-                'excomm_vpe': 'vpe_id',
-                'excomm_vpm': 'vpm_id',
-                'excomm_vppr': 'vppr_id',
-                'excomm_secretary': 'secretary_id',
-                'excomm_treasurer': 'treasurer_id',
-                'excomm_saa': 'saa_id',
-                'excomm_ipp': 'ipp_id'
+            db_role_map = {
+                'excomm_president': 'President',
+                'excomm_vpe': 'VPE',
+                'excomm_vpm': 'VPM',
+                'excomm_vppr': 'VPPR',
+                'excomm_secretary': 'Secretary',
+                'excomm_treasurer': 'Treasurer',
+                'excomm_saa': 'SAA',
+                'excomm_ipp': 'IPP'
             }
 
-            for field, model_attr in officer_roles.items():
+            for field, role_name in db_role_map.items():
                 if field in data:
-                    officer_name = data[field]
-                    if not officer_name:
-                        setattr(excomm, model_attr, None)
-                    else:
-                        contact = Contact.query.filter_by(Name=officer_name).first()
+                    contact_name = data[field]
+                    
+                    # Find MeetingRole object for this role
+                    # We look up globally or for this club if overriding is supported,
+                    # but typically ExComm roles are standard.
+                    role_obj = MeetingRole.query.filter_by(name=role_name).first()
+                    
+                    # If this role doesn't exist in DB, skip it (shouldn't happen for std roles)
+                    if not role_obj:
+                        continue
+
+                    # Look for existing ExcommOfficer entry
+                    officer_entry = ExcommOfficer.query.filter_by(
+                        excomm_id=excomm.id,
+                        meeting_role_id=role_obj.id
+                    ).first()
+
+                    if contact_name:
+                        contact = Contact.query.filter_by(Name=contact_name).first()
                         if contact:
-                            setattr(excomm, model_attr, contact.id)
-                        else:
-                            # If contact not found, maybe ignore or set to None
-                            setattr(excomm, model_attr, None)
+                            if officer_entry:
+                                officer_entry.contact_id = contact.id
+                            else:
+                                new_officer = ExcommOfficer(
+                                    excomm_id=excomm.id,
+                                    contact_id=contact.id,
+                                    meeting_role_id=role_obj.id
+                                )
+                                db.session.add(new_officer)
+                    else:
+                        # Clear the officer if name is empty
+                        if officer_entry:
+                            db.session.delete(officer_entry)
+
 
         club.updated_at = datetime.utcnow()
         if excomm:
@@ -183,12 +209,16 @@ def about_club_update():
                 if staff_role:
                     # Collect unique contact IDs from current excomm officers
                     officer_contact_ids = set()
-                    officer_positions = ['president_id', 'vpe_id', 'vpm_id', 'vppr_id', 
-                                      'secretary_id', 'treasurer_id', 'saa_id', 'ipp_id']
-                    for attr in officer_positions:
-                        cid = getattr(excomm, attr)
-                        if cid:
-                            officer_contact_ids.add(cid)
+                    
+                    # Reload officers to get latest state from DB session
+                    # Since we modified the session but haven't committed, 
+                    # we must rely on what we just did or flush.
+                    # Simplest is to flush and re-query ExcommOfficer table for this excomm
+                    db.session.flush()
+                    
+                    current_officers = ExcommOfficer.query.filter_by(excomm_id=excomm.id).all()
+                    for officer in current_officers:
+                        officer_contact_ids.add(officer.contact_id)
                     
                     if officer_contact_ids:
                         # Find UserClub records for these contacts in this club
@@ -199,11 +229,8 @@ def about_club_update():
                         
                         for uc in ucs:
                             if uc.user_id:
-                                # Check if user needs the Staff role (has no role or lower role than Staff)
-                                current_role = None
-                                # Grant the new role
+                                # Check if user needs the Staff role
                                 if uc.club_role_level:
-                                    # Check if they already have this specific role level
                                     if not (uc.club_role_level & staff_role.level):
                                         uc.club_role_level |= staff_role.level
                                 else:
@@ -267,3 +294,4 @@ def upload_club_logo():
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
+

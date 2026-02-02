@@ -3,7 +3,7 @@
 {% block title %}{{ 'Edit Contact' if contact else 'Add Guest' }}{% endblock %}
 
 {% block content %}
-<h1>{{ 'Edit Contact' if contact else 'Add Guest' }}</h1>
+<h2>{{ 'Edit Contact' if contact else 'Add Guest' }}</h2>
 <form method="POST"
     action="{{ url_for('contacts_bp.contact_form', contact_id=contact.id) if contact else url_for('contacts_bp.contact_form') }}">
     <table class="form-table">
@@ -45,7 +45,7 @@
         </tr>
     </table>
     <div class="form-actions">
-        <button type="submit" class="btn btn-primary">Save</button>
+        <button type="submit" class="btn btn-success">Save</button>
         <a href="{{ url_for('contacts_bp.show_contacts') }}" class="btn btn-danger">Cancel</a>
     </div>
 </form>

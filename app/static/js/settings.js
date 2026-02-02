@@ -840,20 +840,39 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         // Logic for Type selector based on Club ID
-        const typeSelect = document.getElementById("type");
-        if (typeof CURRENT_CLUB_ID !== 'undefined' && CURRENT_CLUB_ID !== 1) {
-             if (typeSelect) {
-                 // Hide the parent form-group or the closest container
-                 const container = typeSelect.closest('.form-group') || typeSelect.parentElement;
-                 if (container) container.style.display = 'none';
-                 typeSelect.value = 'club-specific'; 
-             }
-        } else {
-             // Ensure it is visible for Club 1
-             if (typeSelect) {
-                 const container = typeSelect.closest('.form-group') || typeSelect.parentElement;
-                 if (container) container.style.display = 'block'; // Restore visibility
-             }
+        const typeRadios = document.querySelectorAll('input[name="type"]');
+        if (typeof CURRENT_CLUB_ID !== 'undefined') {
+            typeRadios.forEach(radio => {
+                const label = radio.parentElement;
+                if (!label) return;
+                
+                if (CURRENT_CLUB_ID === 1) {
+                    // Club 1: Hide "club-specific", show others
+                    if (radio.value === 'club-specific') {
+                        label.style.display = 'none';
+                    } else {
+                        label.style.display = 'flex';
+                    }
+                } else {
+                    // Other clubs: Hide "Standard" option (value="standard")
+                    // Show all others.
+                    if (radio.value === 'standard') {
+                        label.style.display = 'none';
+                    } else {
+                        label.style.display = 'flex';
+                    }
+                }
+            });
+            
+            // Set default selection based on visibility
+            // For non-club 1, fail safe to 'club-specific' if not editing
+            if (CURRENT_CLUB_ID !== 1) {
+                const clubSpecific = document.querySelector('input[name="type"][value="club-specific"]');
+                if (clubSpecific) clubSpecific.checked = true;
+            } else {
+                const standard = document.querySelector('input[name="type"][value="standard"]');
+                if (standard) standard.checked = true;
+            }
         }
         
         modal.style.display = "flex";
@@ -1442,21 +1461,49 @@ function openEditRoleModal(roleId) {
 
     // Populate fields
     form.name.value = row.querySelector('[data-field="name"]').textContent.trim();
-    form.type.value = row.querySelector('[data-field="type"]').textContent.trim();
-    form.award_category.value = row.querySelector('[data-field="award_category"]').textContent.trim();
+    // Populate fields
+    form.name.value = row.querySelector('[data-field="name"]').textContent.trim();
     
-    // Logic for Type selector visibility based on Club ID
-    const typeSelect = form.type;
-    if (typeof CURRENT_CLUB_ID !== 'undefined' && CURRENT_CLUB_ID !== 1) {
-         if (typeSelect) {
-             const container = typeSelect.closest('.form-group') || typeSelect.parentElement;
-             if (container) container.style.display = 'none';
-         }
-    } else {
-         if (typeSelect) {
-             const container = typeSelect.closest('.form-group') || typeSelect.parentElement;
-             if (container) container.style.display = 'block';
-         }
+    // Type Radio Population
+    const typeValue = row.querySelector('[data-field="type"]').textContent.trim();
+    const typeRadio = form.querySelector(`input[name="type"][value="${typeValue}"]`);
+    if (typeRadio) typeRadio.checked = true;
+
+    // Award Category Radio Population
+    const categoryValue = row.querySelector('[data-field="award_category"]').textContent.trim();
+    const categoryRadio = form.querySelector(`input[name="award_category"][value="${categoryValue}"]`);
+    if (categoryRadio) {
+        categoryRadio.checked = true;
+    } else if (categoryValue === "" || categoryValue === "None") {
+         const noneRadio = form.querySelector(`input[name="award_category"][value=""]`);
+         if (noneRadio) noneRadio.checked = true;
+    }
+    
+    // Logic for Type selector visibility based on Club ID when EDITING
+    // Consistent with Add logic:
+    // Club 1: All visible
+    // Other: Hide "standard", show others
+    const typeRadios = form.querySelectorAll('input[name="type"]');
+    if (typeof CURRENT_CLUB_ID !== 'undefined') {
+        typeRadios.forEach(radio => {
+            const label = radio.parentElement;
+            if (!label) return;
+            
+            if (CURRENT_CLUB_ID === 1) {
+                 // Club 1: Hide "club-specific", show others
+                 if (radio.value === 'club-specific') {
+                     label.style.display = 'none';
+                 } else {
+                     label.style.display = 'flex';
+                 }
+            } else {
+                 if (radio.value === 'standard') {
+                     label.style.display = 'none';
+                 } else {
+                     label.style.display = 'flex';
+                 }
+            }
+        });
     }
     
     form.needs_approval.checked = row.querySelector('[data-field="needs_approval"] input').checked;

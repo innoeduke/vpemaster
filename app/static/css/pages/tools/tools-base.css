@@ -67,7 +67,6 @@
 .page-title {
 	font-family: 'Montserrat', sans-serif;
 	color: #333;
-	margin-bottom: 20px;
 	text-align: center;
 }
 
@@ -364,7 +363,6 @@
 .roster-container h1 {
 	font-family: 'Montserrat', sans-serif;
 	color: #333;
-	margin: 0;
 }
 
 /* Meeting Filter Styling (matching Lucky Draw controls) */
