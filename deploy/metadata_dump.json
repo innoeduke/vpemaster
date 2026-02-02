@@ -63,25 +63,61 @@
       "id": 1,
       "club_id": 2,
       "excomm_term": "26H1",
-      "start_date": null,
-      "end_date": null,
+      "start_date": "2026-01-01",
+      "end_date": "2026-06-30",
       "excomm_name": "Memory Makers",
       "created_at": "2026-02-02 03:49:03",
-      "updated_at": "2026-02-02 04:00:25"
-    }
-  ],
-  "excomm_officers": [
-    {
-      "id": 1,
-      "excomm_id": 1,
-      "contact_id": 51,
-      "meeting_role_id": 32
+      "updated_at": "2026-02-02 04:25:35"
     },
     {
-      "id": 2,
-      "excomm_id": 1,
-      "contact_id": 87,
-      "meeting_role_id": 33
+      "id": 3,
+      "club_id": 2,
+      "excomm_term": "23H2",
+      "start_date": "2023-07-01",
+      "end_date": "2023-12-31",
+      "excomm_name": "UNITE",
+      "created_at": "2026-02-02 06:48:54",
+      "updated_at": "2026-02-02 06:48:54"
+    },
+    {
+      "id": 4,
+      "club_id": 2,
+      "excomm_term": "24H1",
+      "start_date": "2024-01-01",
+      "end_date": "2024-06-30",
+      "excomm_name": "ELEVATE",
+      "created_at": "2026-02-02 06:49:15",
+      "updated_at": "2026-02-02 06:49:15"
+    },
+    {
+      "id": 5,
+      "club_id": 2,
+      "excomm_term": "24H2",
+      "start_date": "2024-07-01",
+      "end_date": "2024-12-31",
+      "excomm_name": "LEAD",
+      "created_at": "2026-02-02 06:49:35",
+      "updated_at": "2026-02-02 06:49:35"
+    },
+    {
+      "id": 6,
+      "club_id": 2,
+      "excomm_term": "25H1",
+      "start_date": "2025-01-01",
+      "end_date": "2025-06-30",
+      "excomm_name": "INAT",
+      "created_at": "2026-02-02 06:49:57",
+      "updated_at": "2026-02-02 06:51:03"
+    },
+    {
+      "id": 7,
+      "club_id": 2,
+      "excomm_term": "25H2",
+      "start_date": "2025-07-01",
+      "end_date": "2025-12-31",
+      "excomm_name": "LUMIN",
+      "created_at": "2026-02-02 06:50:35",
+      "updated_at": "2026-02-02 06:50:35"
     }
   ],
   "meeting_roles": [
@@ -277,6 +313,17 @@
       "name": "Introductory Mentor",
       "icon": "fa-hand-holding-heart",
       "type": "standard",
+      "award_category": "",
+      "needs_approval": true,
+      "has_single_owner": false,
+      "is_member_only": false,
+      "club_id": 1
+    },
+    {
+      "id": 66,
+      "name": "IPP",
+      "icon": "fa-handshake-angle",
+      "type": "officer",
       "award_category": "",
       "needs_approval": true,
       "has_single_owner": false,

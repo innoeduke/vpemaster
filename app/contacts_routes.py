@@ -244,7 +244,8 @@ def show_contacts():
             'award_count': award_c,
             'is_qualified': is_qual,
             'has_user': c.user is not None,
-            'is_connected': c.is_connected
+            'is_connected': c.is_connected,
+            'Date_Created': c.Date_Created.strftime('%Y-%m-%d') if c.Date_Created else '-'
             # 'user_role': ... (Not strictly needed for the table display, can add if needed)
             # 'is_officer': ...
         })
@@ -551,7 +552,10 @@ def contact_form(contact_id=None):
 def delete_contact(contact_id):
     contact = Contact.query.get_or_404(contact_id)
     if contact.Type != 'Guest':
-        flash("Only Guest contacts can be deleted directly. Members and Officers must be managed through their user accounts.", 'error')
+        msg = "Only Guest contacts can be deleted directly. Members and Officers must be managed through their user accounts."
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify(success=False, message=msg), 403
+        flash(msg, 'error')
         return redirect(url_for('contacts_bp.show_contacts'))
 
     # Nullify references that don't have cascades
@@ -569,30 +573,66 @@ def delete_contact(contact_id):
     # 3. Contact mentors (mentees of this contact)
     Contact.query.filter(Contact.Mentor_ID == contact_id).update({"Mentor_ID": None})
     
-    # 4. SessionLogs (owners relationship)
-    # Replaced with OwnerMeetingRoles cleanup
+    # 4. SessionLogs (owners relationship) via OwnerMeetingRoles
     OwnerMeetingRoles.query.filter_by(contact_id=contact_id).delete(synchronize_session=False)
 
     # 5. Votes (contact_id)
     Vote.query.filter_by(contact_id=contact_id).update({"contact_id": None})
 
-    # 6. ExComm (officer positions)
-    ExComm.query.filter(ExComm.president_id == contact_id).update({"president_id": None})
-    ExComm.query.filter(ExComm.vpe_id == contact_id).update({"vpe_id": None})
-    ExComm.query.filter(ExComm.vpm_id == contact_id).update({"vpm_id": None})
-    ExComm.query.filter(ExComm.vppr_id == contact_id).update({"vppr_id": None})
-    ExComm.query.filter(ExComm.secretary_id == contact_id).update({"secretary_id": None})
-    ExComm.query.filter(ExComm.treasurer_id == contact_id).update({"treasurer_id": None})
-    ExComm.query.filter(ExComm.saa_id == contact_id).update({"saa_id": None})
-    ExComm.query.filter(ExComm.ipp_id == contact_id).update({"ipp_id": None})
-    
-    # 7. ContactClub (memberships) - Explicitly delete to prevent FK issues if cascade fails
-    ContactClub.query.filter_by(contact_id=contact_id).delete(synchronize_session=False)
+    # 6. ExComm (officer positions via association table)
+    from .models.excomm_officer import ExcommOfficer
+    ExcommOfficer.query.filter_by(contact_id=contact_id).delete(synchronize_session=False)
 
     db.session.delete(contact)
     db.session.commit()
-    flash('Contact deleted successfully!', 'success')
+    
+    msg = 'Contact deleted successfully!'
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify(success=True, message=msg)
+    
+    flash(msg, 'success')
     return redirect(url_for('contacts_bp.show_contacts'))
+
+
+@contacts_bp.route('/contacts/merge', methods=['POST'])
+@login_required
+@authorized_club_required
+def merge_contacts_route():
+    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+        
+    data = request.get_json()
+    contact_ids = data.get('contact_ids', [])
+    
+    if len(contact_ids) < 2:
+        return jsonify(success=False, message="At least two contacts are required for merging."), 400
+        
+    contacts = Contact.query.filter(Contact.id.in_(contact_ids)).all()
+    if len(contacts) != len(contact_ids):
+        return jsonify(success=False, message="One or more contacts not found."), 404
+        
+    # Primary Selection Logic: 
+    # 1. If any contact is a Member (or non-Guest), the oldest one is primary.
+    # 2. If all contacts are Guests, the oldest Guest is primary.
+    
+    def get_sort_key(c):
+        # Type priority: 0 for anything non-Guest, 1 for Guest
+        type_priority = 0 if c.Type != 'Guest' else 1
+        # Older dates (smaller) should come first
+        created_date = c.Date_Created or date.max
+        return (type_priority, created_date, c.id)
+        
+    sorted_contacts = sorted(contacts, key=get_sort_key)
+    primary = sorted_contacts[0]
+    secondary_ids = [c.id for c in sorted_contacts[1:]]
+    
+    try:
+        Contact.merge_contacts(primary.id, secondary_ids)
+        return jsonify(success=True, message=f"Merged into {primary.Name}.", primary_id=primary.id)
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error merging contacts: {str(e)}")
+        return jsonify(success=False, message="An internal error occurred during merging."), 500
 
 
 @contacts_bp.route('/api/contact', methods=['POST'])
@@ -761,7 +801,8 @@ def get_all_contacts_api():
             'has_user': c.user is not None,
             'user_role': c.user.primary_role_name if c.user else None,
             'is_officer': c.user.has_role(Permissions.STAFF) if c.user else False,
-            'is_connected': c.is_connected
+            'is_connected': c.is_connected,
+            'Date_Created': c.Date_Created.strftime('%Y-%m-%d') if c.Date_Created else '-'
         })
 
     return jsonify(contacts_data)

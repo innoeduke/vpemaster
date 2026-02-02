@@ -100,9 +100,23 @@ def test_delete_guest_contact_with_references(client, app, default_club):
         vote = Vote(meeting_number=1, voter_identifier=voter_id, contact_id=contact_id)
         db.session.add(vote)
         
-        # Create an ExComm where the contact is an officer
-        excomm = ExComm(club_id=default_club.id, excomm_term=f'26H_{unique_id}', president_id=contact_id)
+        # Create an ExComm association via ExcommOfficer
+        from app.models.roster import MeetingRole
+        from app.models.excomm_officer import ExcommOfficer
+        
+        # Ensure a role exists for the test
+        role = MeetingRole.query.filter_by(name='President').first()
+        if not role:
+            role = MeetingRole(name='President', type='officer', needs_approval=True, has_single_owner=True)
+            db.session.add(role)
+            db.session.flush()
+
+        excomm = ExComm(club_id=default_club.id, excomm_term=f'26H_{unique_id}')
         db.session.add(excomm)
+        db.session.flush()
+
+        officer_link = ExcommOfficer(excomm_id=excomm.id, contact_id=contact_id, meeting_role_id=role.id)
+        db.session.add(officer_link)
         db.session.commit()
 
     # 2. Setup Session
@@ -128,6 +142,7 @@ def test_delete_guest_contact_with_references(client, app, default_club):
             vote = Vote.query.filter_by(voter_identifier=voter_id).first()
             assert vote.contact_id is None
             
-            # ExComm reference should be NULL
-            excomm = ExComm.query.filter_by(club_id=default_club.id, excomm_term=f'26H_{unique_id}').first()
-            assert excomm.president_id is None
+            # ExComm reference should be gone from association table
+            from app.models.excomm_officer import ExcommOfficer
+            officer_link = ExcommOfficer.query.filter_by(contact_id=contact_id).first()
+            assert officer_link is None

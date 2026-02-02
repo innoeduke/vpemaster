@@ -1,0 +1,47 @@
+<div id="mergeContactModal" class="modal" style="z-index: 1005;">
+  <div class="modal-content" style="max-width: 600px; border-radius: 12px; overflow: hidden; padding: 0;">
+    <div style="background: #f39c12; color: white; padding: 20px; position: relative;">
+        <h2 style="margin: 0; font-size: 1.5rem;"><i class="fas fa-random"></i> Confirm Contact Merge</h2>
+        <span class="close" onclick="closeMergeModal()" style="color: white; position: absolute; right: 20px; top: 15px; font-size: 1.8rem;">&times;</span>
+    </div>
+    
+    <div style="padding: 25px;">
+        <div id="mergeSummary" style="font-size: 1.1rem; color: #444; margin-bottom: 20px; line-height: 1.4;">
+            <p>You are about to merge <span id="mergeCount" style="font-weight: bold;"></span> contacts.</p>
+        </div>
+        
+        <div class="merge-primary" style="background: #fff8eb; padding: 20px; border-radius: 10px; border: 1px solid #ffeeba; margin-bottom: 20px;">
+            <div style="display: flex; align-items: flex-start; gap: 15px;">
+                <div style="background: #f39c12; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <div>
+                    <h3 style="margin: 0 0 5px 0; color: #856404; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.5px;">Primary Contact (Keep)</h3>
+                    <div id="primaryContactDetails" style="color: #444; font-size: 1.3rem; font-weight: bold; margin-bottom: 5px;"></div>
+                    <div id="primaryContactMeta" style="color: #666; font-size: 0.9rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="merge-secondary" style="margin-bottom: 25px;">
+            <h3 style="margin: 0 0 10px 0; color: #666; font-size: 1rem;">Secondary Contacts (Will be merged and deleted)</h3>
+            <ul id="secondaryContactsList" style="margin: 0; padding-left: 20px; color: #777; font-size: 0.95rem; max-height: 150px; overflow-y: auto; border: 1px solid #eee; border-radius: 8px; padding: 10px 10px 10px 25px;">
+            </ul>
+        </div>
+        
+        <div style="background: #fff3f3; color: #721c24; padding: 15px; border-radius: 8px; border: 1px solid #f5c6cb; margin-bottom: 25px; font-size: 0.9rem; display: flex; align-items: flex-start; gap: 10px;">
+            <i class="fas fa-exclamation-triangle" style="margin-top: 3px;"></i> 
+            <div>
+                <strong>Warning:</strong> All related data (roster records, workshop roles, achievements, etc.) will be moved to the primary contact. This action <strong>cannot be undone</strong>.
+            </div>
+        </div>
+        
+        <div class="form-actions" style="display: flex; justify-content: flex-end; gap: 12px;">
+            <button type="button" class="btn btn-secondary" onclick="closeMergeModal()" style="padding: 10px 20px; display: flex; align-items: center; justify-content: center;">Cancel</button>
+            <button type="button" id="confirmMergeBtn" class="btn btn-warning" style="padding: 10px 25px; font-weight: bold; background: #f39c12; border-color: #f39c12; color: white; display: flex; align-items: center; gap: 8px;">
+                 <i class="fas fa-check-circle"></i> Confirm Merge
+            </button>
+        </div>
+    </div>
+  </div>
+</div>

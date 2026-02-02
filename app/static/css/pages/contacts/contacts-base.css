@@ -220,24 +220,41 @@
 }
 
 /* --- Specific View Styles --- */
-/* GUEST VIEW: Hide Club(4), Paths(5), Creds(6), Next(7), Mentor(8) */
-.guest-view th:nth-child(4),
-.guest-view td:nth-child(4),
-.guest-view th:nth-child(5),
-.guest-view td:nth-child(5),
-.guest-view th:nth-child(6),
-.guest-view td:nth-child(6),
-.guest-view th:nth-child(7),
-.guest-view td:nth-child(7),
-.guest-view th:nth-child(8),
-.guest-view td:nth-child(8) {
+/* GUEST VIEW: Hide Club, Paths, Creds, Next, Mentor */
+.guest-view .col-club,
+.guest-view .col-paths,
+.guest-view .col-creds,
+.guest-view .col-next,
+.guest-view .col-mentor {
 	display: none;
 }
 
-/* MEMBER VIEW: Hide Phone(3), Club(4) */
-.member-view th:nth-child(3),
-.member-view td:nth-child(3),
-.member-view th:nth-child(4),
-.member-view td:nth-child(4) {
+/* MEMBER VIEW: Hide Phone, Date Created, Club */
+.member-view .col-phone,
+.member-view .col-date,
+.member-view .col-club {
 	display: none;
+}
+
+/* Checkbox Column Styling */
+.col-checkbox {
+	width: 40px;
+	padding-left: 0 !important;
+	padding-right: 0 !important;
+}
+
+.checkbox-header {
+	width: 40px;
+}
+
+#mergeContactsBtn {
+	margin-left: 5px;
+	font-weight: 600;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	transition: all 0.2s ease;
+}
+
+#mergeContactsBtn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
 }

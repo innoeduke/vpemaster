@@ -228,6 +228,9 @@
       <button class="btn btn-success" onclick="openContactModal()">
         Add New 
       </button>
+      <button id="mergeContactsBtn" class="btn btn-warning" onclick="handleMergeClick()" style="display: none;" title="Select at least 2 contacts to merge">
+        Merge
+      </button>
       <button class="btn btn-primary" onclick="window.location.href='{{ url_for('roster_bp.roster') }}'">
         Open Roster
       </button>
@@ -257,26 +260,33 @@
   <table id="contactsTable" style="display: none;">
     <thead>
       <tr>
-        <th class="sortable" data-column-index="0" data-sort-type="string">Name</th>
-        <th class="sortable" data-column-index="1" data-sort-type="string">
-          Participation
-          <i class="fas fa-info-circle info-icon" title="Metrics are based on meetings in the current club from the last 6 months."></i>
-        </th>
-        <th class="sortable" data-column-index="2" data-sort-type="string">Phone Number</th>
-        <th class="sortable" data-column-index="3" data-sort-type="string">Club</th>
-        <th class="sortable" data-column-index="4" data-sort-type="string">Completed Paths</th>
-        <th class="sortable" data-column-index="5" data-sort-type="string">Credentials</th>
-        <th class="sortable" data-column-index="6" data-sort-type="string">Next Project</th>
-        <th class="sortable" data-column-index="7" data-sort-type="string">Mentor</th>
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
-        <th class="action-header" data-column-index="8">Actions</th>
+        <th class="checkbox-header" style="width: 40px; text-align: center;"><input type="checkbox" id="selectAllContacts" onclick="toggleSelectAll(this)"></th>
+        {% endif %}
+        <th class="sortable col-name" data-column-index="0" data-sort-type="string">Name</th>
+        <th class="sortable col-part" data-column-index="1" data-sort-type="string">
+          Participation
+          <i class="fas fa-info-circle info-icon" title="Qualification criteria: 4+ Roles, 1+ Best TT, 2+ Other Roles (within term)"></i>
+        </th>
+        <th class="sortable col-phone" data-column-index="2" data-sort-type="string">Phone</th>
+        <th class="sortable col-date" data-column-index="3" data-sort-type="date">Date Created</th>
+        <th class="sortable col-club" data-column-index="4" data-sort-type="string">Club</th>
+        <th class="sortable col-paths" data-column-index="5" data-sort-type="string">Completed Paths</th>
+        <th class="sortable col-creds" data-column-index="6" data-sort-type="string">Credentials</th>
+        <th class="sortable col-next" data-column-index="7" data-sort-type="string">Next Project</th>
+        <th class="sortable col-mentor" data-column-index="8" data-sort-type="string">Mentor</th>
+        {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+        <th class="action-header col-actions" data-column-index="9">Actions</th>
         {% endif %}
       </tr>
     </thead>
     <tbody>
       {% for contact in contacts %}
-      <tr data-type="{{ contact.Type }}">
-        <td>
+      <tr data-type="{{ contact.Type }}" data-contact-id="{{ contact.id }}">
+        {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+        <td class="col-checkbox" style="text-align: center;"><input type="checkbox" class="contact-select-checkbox" data-id="{{ contact.id }}" onchange="updateMergeButtonState()"></td>
+        {% endif %}
+        <td class="col-name">
           <div class="contact-name-cell">
             {% if contact.Avatar_URL %}
             {# Check if the URL is already a full path (legacy) or just a filename (new) #}
@@ -305,62 +315,59 @@
             </div>
           </div>
         </td>
-        <td
-          data-sort="{{ '1' if contact.is_qualified else '0' }}_{{ '%03d'|format(contact.role_count) }}_{{ '%03d'|format(contact.tt_count) }}_{{ '%03d'|format(contact.attendance_count) }}_{{ '%03d'|format(contact.award_count) }}">
+        {% set sort_value = ('1' if contact.is_qualified else '0') ~ '_' ~ '%03d'|format(contact.role_count) ~ '_' ~ '%03d'|format(contact.tt_count) ~ '_' ~ '%03d'|format(contact.attendance_count) ~ '_' ~ '%03d'|format(contact.award_count) %}
+        <td class="col-part" data-sort="{{ sort_value }}">
           <div class="participation-container">
             {% if contact.is_qualified %}
             <i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>
             {% endif %}
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Roles Taken"
-              class="participation-badge badge-roles">
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Roles Taken" class="participation-badge badge-roles">
               <i class="fas fa-user-tag"></i> {{ contact.role_count }}
             </a>
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Topic Speeches"
-              class="participation-badge badge-tt">
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Topic Speeches" class="participation-badge badge-tt">
               <i class="fas fa-comment"></i> {{ contact.tt_count }}
             </a>
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Attendance"
-              class="participation-badge badge-attendance">
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Attendance" class="participation-badge badge-attendance">
               <i class="fas fa-calendar-check"></i> {{ contact.attendance_count }}
             </a>
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Awards Won"
-              class="participation-badge badge-awards">
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Awards Won" class="participation-badge badge-awards">
               <i class="fas fa-trophy"></i> {{ contact.award_count }}
             </a>
           </div>
         </td>
-        <td>{{ contact.Phone_Number if contact.Phone_Number else '-' }}</td>
-        <td>{{ contact.get_primary_club().club_name if contact.get_primary_club() else '-' }}</td>
-        <td>
-          {% if contact.Completed_Paths %}
-            {% for path in contact.Completed_Paths.split('/') %}
-              {% set path_trimmed = path.strip() %}
-              {% set path_abbr = path_trimmed[:2]|lower %}
-              <span class="badge-path path-{{ path_abbr }}">{{ path_trimmed }}</span>
-            {% endfor %}
+        <td class="col-phone">{{ contact.Phone_Number if contact.Phone_Number else '-' }}</td>
+        <td class="col-date">{{ contact.Date_Created.strftime('%Y-%m-%d') if contact.Date_Created else '-' }}</td>
+        {% set primary_club = contact.get_primary_club() %}
+        <td class="col-club">{{ primary_club.club_name if primary_club else '-' }}</td>
+        <td class="col-paths">
+          {% if contact.Completed_Paths and contact.Completed_Paths != '-' %}
+          {% set paths = contact.Completed_Paths.split('/') %}
+          {% for p in paths %}
+          {% set p = p.strip() %}
+          {% set abbr = p[:2]|lower %}
+          <span class="badge-path path-{{ abbr }}">{{ p }}</span>
+          {% endfor %}
           {% else %}
-            -
+          -
           {% endif %}
         </td>
-        <td>{{ contact.credentials if contact.credentials else '-' }}</td>
-        <td>{{ contact.Next_Project if contact.Next_Project else '-' }}</td>
-        <td>{{ contact.mentor.Name if contact.mentor else '-' }}</td>
+        <td class="col-creds">{{ contact.credentials if contact.credentials else '-' }}</td>
+        <td class="col-next">{{ contact.Next_Project if contact.Next_Project else '-' }}</td>
+        <td class="col-mentor">{{ contact.mentor.Name if contact.mentor else '-' }}</td>
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
-        <td>
+        <td class="col-actions">
           <div class="action-links">
             <button class="icon-btn toggle-connection-btn" onclick="toggleConnection({{ contact.id }})" title="{{ 'Connected' if contact.is_connected else 'Disconnected' }}">
               <i class="fas {{ 'fa-toggle-on' if contact.is_connected else 'fa-toggle-off' }}" style="color: {{ '#28a745' if contact.is_connected else '#6c757d' }}"></i>
             </button>
-
             <button class="icon-btn" onclick="openContactModal({{ contact.id }})" title="Edit">
               <i class="fas fa-edit"></i>
             </button>
-
-            <button class="delete-btn icon-btn"
-              onclick="openDeleteModal('{{ url_for('contacts_bp.delete_contact',contact_id=contact.id) }}', 'contact')"
-              title="Delete">
+            {% if contact.Type == 'Guest' %}
+            <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('contacts_bp.delete_contact', contact_id=contact.id) }}', 'contact')" title="Delete">
               <i class="fas fa-trash-alt"></i>
             </button>
+            {% endif %}
           </div>
         </td>
         {% endif %}
@@ -410,6 +417,7 @@
 
 {% include '_contact_modal.html' %}
 {% include '_duplicate_modal.html' %}
+{% include '_merge_modal.html' %}
 <script>
   var MENTOR_CANDIDATES = [
     {% for m in mentor_candidates %}

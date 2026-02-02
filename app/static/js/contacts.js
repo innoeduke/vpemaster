@@ -11,6 +11,7 @@ let currentPage = 1;
 let pageSize = 25;
 let sortColumnIndex = 1; // Participation
 let sortDirection = 'desc';
+let selectedContactIds = new Set(); // Globally tracked selected IDs
 
 /**
  * Fetches all contacts from the API and caches them
@@ -69,6 +70,7 @@ function applyFilters() {
       const searchableText = [
         contact.Name,
         contact.Phone_Number,
+        contact.Date_Created,
         contact.Club,
         contact.Completed_Paths,
         contact.credentials,
@@ -100,11 +102,12 @@ function getContactSortValue(contact, index) {
       // Participation: [Role Count]_[Qualified]_[TT Count]_[Attendance]_[Awards]
       return `${String(contact.role_count || 0).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count || 0).padStart(3, '0')}_${String(contact.attendance_count || 0).padStart(3, '0')}_${String(contact.award_count || 0).padStart(3, '0')}`;
     case 2: return (contact.Phone_Number || '').toLowerCase();
-    case 3: return (contact.Club || '').toLowerCase();
-    case 4: return (contact.Completed_Paths || '').toLowerCase();
-    case 5: return (contact.credentials || '').toLowerCase();
-    case 6: return (contact.Next_Project || '').toLowerCase();
-    case 7: return (contact.Mentor || '').toLowerCase();
+    case 3: return (contact.Date_Created || '').toLowerCase();
+    case 4: return (contact.Club || '').toLowerCase();
+    case 5: return (contact.Completed_Paths || '').toLowerCase();
+    case 6: return (contact.credentials || '').toLowerCase();
+    case 7: return (contact.Next_Project || '').toLowerCase();
+    case 8: return (contact.Mentor || '').toLowerCase();
     default: return '';
   }
 }
@@ -149,12 +152,19 @@ function renderContactsPage() {
 function createContactRow(contact) {
   const row = document.createElement('tr');
   row.dataset.type = contact.Type;
+  row.dataset.contactId = contact.id;
 
   // Build participation sort value
   const sortValue = `${String(contact.role_count).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count).padStart(3, '0')}_${String(contact.attendance_count).padStart(3, '0')}_${String(contact.award_count).padStart(3, '0')}`;
 
-  row.innerHTML = `
-    <td>
+  let html = '';
+  if (hasEditPermission) {
+    const isChecked = selectedContactIds.has(contact.id) ? 'checked' : '';
+    html += `<td style="text-align: center;"><input type="checkbox" class="contact-select-checkbox" data-id="${contact.id}" ${isChecked} onchange="handleCheckboxChange(this)"></td>`;
+  }
+
+  html += `
+    <td class="col-name">
       <div class="contact-name-cell">
         ${(() => {
           if (!contact.Avatar_URL) {
@@ -176,7 +186,7 @@ function createContactRow(contact) {
         </div>
       </div>
     </td>
-    <td data-sort="${sortValue}">
+    <td class="col-part" data-sort="${sortValue}">
       <div class="participation-container">
         ${contact.is_qualified ? '<i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>' : ''}
         <a href="/speech_logs?speaker_id=${contact.id}" title="Roles Taken" class="participation-badge badge-roles">
@@ -193,9 +203,10 @@ function createContactRow(contact) {
         </a>
       </div>
     </td>
-    <td>${contact.Phone_Number}</td>
-    <td>${contact.Club}</td>
-    <td>
+    <td class="col-phone">${contact.Phone_Number}</td>
+    <td class="col-date">${contact.Date_Created}</td>
+    <td class="col-club">${contact.Club}</td>
+    <td class="col-paths">
       ${contact.Completed_Paths && contact.Completed_Paths !== '-' 
         ? contact.Completed_Paths.split('/').map(path => {
             const p = path.trim();
@@ -204,11 +215,11 @@ function createContactRow(contact) {
           }).join(' ')
         : '-'}
     </td>
-    <td>${contact.credentials}</td>
-    <td>${contact.Next_Project}</td>
-    <td>${contact.Mentor}</td>
+    <td class="col-creds">${contact.credentials}</td>
+    <td class="col-next">${contact.Next_Project}</td>
+    <td class="col-mentor">${contact.Mentor}</td>
     ${hasEditPermission ? `
-    <td>
+    <td class="col-actions">
       <div class="action-links">
         <button class="icon-btn toggle-connection-btn" onclick="toggleConnection(${contact.id})" title="${contact.is_connected ? 'Connected' : 'Disconnected'}">
           <i class="fas ${contact.is_connected ? 'fa-toggle-on' : 'fa-toggle-off'}" style="color: ${contact.is_connected ? '#28a745' : '#6c757d'}"></i>
@@ -226,6 +237,7 @@ function createContactRow(contact) {
     ` : ''}
   `;
 
+  row.innerHTML = html;
   return row;
 }
 
@@ -597,5 +609,160 @@ function setupContactsTableSorting() {
   }
 }
 
-// Make refreshContactCache available globally for modal callbacks
+
+/**
+ * Handles individual checkbox changes
+ */
+function handleCheckboxChange(checkbox) {
+  const id = parseInt(checkbox.dataset.id);
+  if (checkbox.checked) {
+    selectedContactIds.add(id);
+  } else {
+    selectedContactIds.delete(id);
+  }
+  updateMergeButtonState();
+}
+
+/**
+ * Toggles selection of all contacts on the current page
+ */
+function toggleSelectAll(source) {
+  const checkboxes = document.querySelectorAll('.contact-select-checkbox');
+  checkboxes.forEach(cb => {
+    cb.checked = source.checked;
+    const id = parseInt(cb.dataset.id);
+    if (source.checked) {
+      selectedContactIds.add(id);
+    } else {
+      selectedContactIds.delete(id);
+    }
+  });
+  updateMergeButtonState();
+}
+
+/**
+ * Updates the visibility/state of the Merge button based on selection
+ */
+function updateMergeButtonState() {
+  const mergeBtn = document.getElementById('mergeContactsBtn');
+  
+  if (mergeBtn) {
+    if (selectedContactIds.size >= 2) {
+      mergeBtn.style.display = 'inline-block';
+    } else {
+      mergeBtn.style.display = 'none';
+    }
+  }
+
+  // Update "Select All" state for current page
+  const selectAll = document.getElementById('selectAllContacts');
+  const pageCheckboxes = document.querySelectorAll('.contact-select-checkbox');
+  if (selectAll && pageCheckboxes.length > 0) {
+    // Check if all currently visible checkboxes are in the selected set
+    const allSelected = Array.from(pageCheckboxes).every(cb => selectedContactIds.has(parseInt(cb.dataset.id)));
+    selectAll.checked = allSelected;
+  }
+}
+
+/**
+ * Handles the click on Merge button - shows custom premium modal
+ */
+function handleMergeClick() {
+  const contactIds = Array.from(selectedContactIds);
+  
+  if (contactIds.length < 2) return;
+
+  // Find contact names for confirmation (might be in cache even if not on page)
+  // Logic: We might need to fetch if not in cache, but simplified: assume cache has needed
+  // In a real paginated API scenario without full cache, we'd fetch details.
+  // Here allContactsCache has everything.
+  const selectedContacts = allContactsCache.filter(c => selectedContactIds.has(c.id));
+  
+  // Logic to identify primary (Oldest Member > Oldest Guest)
+  function getSortKey(c) {
+    const typePriority = (c.Type !== 'Guest') ? 0 : 1;
+    const createdDate = (c.Date_Created && c.Date_Created !== '-') ? c.Date_Created : '9999-99-99';
+    return `${typePriority}_${createdDate}_${String(c.id).padStart(10, '0')}`;
+  }
+  
+  const sortedSelected = [...selectedContacts].sort((a, b) => getSortKey(a).localeCompare(getSortKey(b)));
+  const primary = sortedSelected[0];
+  const others = sortedSelected.slice(1);
+
+  // Populate Custom Modal
+  const modal = document.getElementById('mergeContactModal');
+  const countSpan = document.getElementById('mergeCount');
+  const primaryDetails = document.getElementById('primaryContactDetails');
+  const primaryMeta = document.getElementById('primaryContactMeta');
+  const secondaryList = document.getElementById('secondaryContactsList');
+  const confirmBtn = document.getElementById('confirmMergeBtn');
+
+  if (countSpan) countSpan.textContent = selectedContacts.length;
+  if (primaryDetails) primaryDetails.textContent = primary.Name;
+  if (primaryMeta) primaryMeta.textContent = `${primary.Type} • Created: ${primary.Date_Created}`;
+  
+  if (secondaryList) {
+    secondaryList.innerHTML = others.map(c => `<li><strong>${c.Name}</strong> (${c.Type})</li>`).join('');
+  }
+
+  // Setup Confirm Button with once listener
+  confirmBtn.onclick = async () => {
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging...';
+    
+    try {
+      const response = await fetch('/contacts/merge', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ contact_ids: contactIds })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        closeMergeModal();
+        // Reset "Select All" and global selection
+        const selectAll = document.getElementById('selectAllContacts');
+        if (selectAll) selectAll.checked = false;
+        selectedContactIds.clear();
+        
+        await refreshContactCache();
+      } else {
+        alert('Error merging contacts: ' + (data.message || 'Unknown error'));
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Merge';
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('An error occurred during communication with the server.');
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Merge';
+    }
+  };
+
+  modal.style.display = 'block';
+}
+
+/**
+ * Closes the merge confirmation modal
+ */
+function closeMergeModal() {
+  const modal = document.getElementById('mergeContactModal');
+  if (modal) modal.style.display = 'none';
+  
+  const confirmBtn = document.getElementById('confirmMergeBtn');
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Merge';
+  }
+}
+
+// Make functions available globally 
+window.toggleSelectAll = toggleSelectAll;
+window.handleCheckboxChange = handleCheckboxChange;
+window.updateMergeButtonState = updateMergeButtonState;
+window.handleMergeClick = handleMergeClick;
+window.closeMergeModal = closeMergeModal;
 window.refreshContactCache = refreshContactCache;

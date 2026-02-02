@@ -211,3 +211,97 @@ class Contact(db.Model):
         club_ids = [cc.club_id for cc in ContactClub.query.filter_by(contact_id=self.id).all()]
         return Club.query.filter(Club.id.in_(club_ids)).all() if club_ids else []
 
+    @classmethod
+    def merge_contacts(cls, primary_id, secondary_ids):
+        """
+        Merges secondary contacts into primary contact.
+        Consolidates related records and deletes secondary contacts.
+        """
+        from .meeting import Meeting
+        from .roster import Roster, Waitlist
+        from .session import OwnerMeetingRoles
+        from .excomm_officer import ExcommOfficer
+        from .contact_club import ContactClub
+        from .voting import Vote
+        from .achievement import Achievement
+        from .user_club import UserClub
+
+        # 1. Handle Junction Table Duplicates first (ContactClub, UserClub)
+        # For ContactClub:
+        for sid in secondary_ids:
+            s_memberships = ContactClub.query.filter_by(contact_id=sid).all()
+            for sm in s_memberships:
+                # If primary already has a record for this club, delete the secondary's record
+                exists = ContactClub.query.filter_by(contact_id=primary_id, club_id=sm.club_id).first()
+                if exists:
+                    db.session.delete(sm)
+                else:
+                    # Otherwise move it to primary
+                    sm.contact_id = primary_id
+        
+        # For UserClub:
+        for sid in secondary_ids:
+            s_uclubs = UserClub.query.filter_by(contact_id=sid).all()
+            for suc in s_uclubs:
+                # If primary already has a linkage in this club, delete the secondary's record
+                # (A contact should generally only be linked to one user per club)
+                exists = UserClub.query.filter_by(contact_id=primary_id, club_id=suc.club_id).first()
+                if exists:
+                    db.session.delete(suc)
+                else:
+                    suc.contact_id = primary_id
+
+        # 2. Bulk update other related models
+        # Roster
+        Roster.query.filter(Roster.contact_id.in_(secondary_ids)).update(
+            {Roster.contact_id: primary_id}, synchronize_session=False
+        )
+        # Waitlist
+        Waitlist.query.filter(Waitlist.contact_id.in_(secondary_ids)).update(
+            {Waitlist.contact_id: primary_id}, synchronize_session=False
+        )
+        # OwnerMeetingRoles (Session Ownership)
+        OwnerMeetingRoles.query.filter(OwnerMeetingRoles.contact_id.in_(secondary_ids)).update(
+            {OwnerMeetingRoles.contact_id: primary_id}, synchronize_session=False
+        )
+        # ExcommOfficer
+        ExcommOfficer.query.filter(ExcommOfficer.contact_id.in_(secondary_ids)).update(
+            {ExcommOfficer.contact_id: primary_id}, synchronize_session=False
+        )
+        # Vote
+        Vote.query.filter(Vote.contact_id.in_(secondary_ids)).update(
+            {Vote.contact_id: primary_id}, synchronize_session=False
+        )
+        # Achievement
+        Achievement.query.filter(Achievement.contact_id.in_(secondary_ids)).update(
+            {Achievement.contact_id: primary_id}, synchronize_session=False
+        )
+        
+        # Update Meeting awards and manager
+        Meeting.query.filter(Meeting.best_table_topic_id.in_(secondary_ids)).update(
+            {Meeting.best_table_topic_id: primary_id}, synchronize_session=False
+        )
+        Meeting.query.filter(Meeting.best_evaluator_id.in_(secondary_ids)).update(
+            {Meeting.best_evaluator_id: primary_id}, synchronize_session=False
+        )
+        Meeting.query.filter(Meeting.best_speaker_id.in_(secondary_ids)).update(
+            {Meeting.best_speaker_id: primary_id}, synchronize_session=False
+        )
+        Meeting.query.filter(Meeting.best_role_taker_id.in_(secondary_ids)).update(
+            {Meeting.best_role_taker_id: primary_id}, synchronize_session=False
+        )
+        Meeting.query.filter(Meeting.manager_id.in_(secondary_ids)).update(
+            {Meeting.manager_id: primary_id}, synchronize_session=False
+        )
+        
+        # Update Mentor_ID in Contact table itself (Self-referential)
+        cls.query.filter(cls.Mentor_ID.in_(secondary_ids)).update(
+            {cls.Mentor_ID: primary_id}, synchronize_session=False
+        )
+
+        # 3. Delete secondary contacts
+        # Cascade will handle any remaining orphans if missed, but we've updated most.
+        cls.query.filter(cls.id.in_(secondary_ids)).delete(synchronize_session=False)
+
+        db.session.commit()
+

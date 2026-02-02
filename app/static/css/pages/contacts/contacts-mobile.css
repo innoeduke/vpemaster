@@ -65,7 +65,7 @@
 		white-space: nowrap;
 	}
 
-	/* Mobile: Show Name(1), Participation(2). Hide others (3-9). */
+	/* Mobile: Show Name(1), Participation(2). Hide others (3-10). */
 	#contactsTable th:nth-child(3),
 	#contactsTable td:nth-child(3),
 	#contactsTable th:nth-child(4),
@@ -79,7 +79,9 @@
 	#contactsTable th:nth-child(8),
 	#contactsTable td:nth-child(8),
 	#contactsTable th:nth-child(9),
-	#contactsTable td:nth-child(9) {
+	#contactsTable td:nth-child(9),
+	#contactsTable th:nth-child(10),
+	#contactsTable td:nth-child(10) {
 		display: none;
 	}
 

@@ -44,20 +44,22 @@
 	}
 
 	/* Hide some columns for iPad to fit better, but keep action column */
-	/* Hide: Phone(3), Club(4), Next Project(7) */
+	/* Hide: Phone(3), Date Created(4), Club(5), Next Project(8) */
 	#contactsTable th:nth-child(3),
 	#contactsTable td:nth-child(3),
 	#contactsTable th:nth-child(4),
 	#contactsTable td:nth-child(4),
-	#contactsTable th:nth-child(7),
-	#contactsTable td:nth-child(7) {
+	#contactsTable th:nth-child(5),
+	#contactsTable td:nth-child(5),
+	#contactsTable th:nth-child(8),
+	#contactsTable td:nth-child(8) {
 		display: none;
 	}
 
-	/* Ensure action column (9) is VISIBLE on iPad */
+	/* Ensure action column (10) is VISIBLE on iPad */
 	#contactsTable th.action-header,
-	#contactsTable th:nth-child(9),
-	#contactsTable td:nth-child(9) {
+	#contactsTable th:nth-child(10),
+	#contactsTable td:nth-child(10) {
 		display: table-cell !important;
 	}
 
