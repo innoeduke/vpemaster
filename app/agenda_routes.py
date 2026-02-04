@@ -315,14 +315,16 @@ def _recalculate_start_times(meetings_to_update):
             .filter(SessionLog.Meeting_Number == meeting.Meeting_Number)\
             .order_by(SessionLog.Meeting_Seq.asc()).all()
 
-        for log, is_section, is_hidden in logs_to_update:
+        for log, is_section, is_hidden_type in logs_to_update:
             # Calculate duration first
             duration_val = int(log.Duration_Max or 0)
+            
+            # Determine if session is hidden (snapshot override or type default)
+            is_hidden = log.hidden if log.hidden is not None else is_hidden_type
 
-            # If the session is a section header OR if its duration is 0,
+            # If the session is a section header OR hidden OR its duration is 0,
             # set its time to None and continue (skip time accumulation).
-            # This replaces the old "is_hidden" check.
-            if is_section or duration_val == 0:
+            if is_section or is_hidden or duration_val == 0:
                 log.Start_Time = None
                 continue
 

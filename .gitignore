@@ -16,3 +16,4 @@ htmlcov/
 .gemini/
 .vscode/
 .pytest_cache/
+logs/

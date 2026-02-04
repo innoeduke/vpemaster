@@ -11,7 +11,9 @@ function cacheElements() {
     contactNameInput: document.getElementById("contact_name"),
     contactIdInput: document.getElementById("contact_id"),
     contactTypeSelect: document.getElementById("contact_type"),
-    ticketSelect: document.getElementById("ticket")
+    ticketSelect: document.getElementById("ticket"),
+    submitBtn: document.getElementById("submit-roster"),
+    formContainer: document.querySelector(".roster-form-container")
   };
 }
 
@@ -195,43 +197,45 @@ function calculateNextOrder(isOfficer, tableBody) {
 function initializeContactTypeHandler(elements) {
   if (!elements.contactTypeSelect) return;
 
-  elements.contactTypeSelect.addEventListener("change", function () {
-    const isOfficer = this.value === "Officer";
-    if (isOfficer) {
-      elements.ticketSelect.value = "Officer";
-    } else {
-      // Don't overwrite complex tickets (like Online/Voucher) if they already have one
-      const currentTicket = elements.ticketSelect.value;
-      
-      // Determine default ticket based on type (Member gets Member price, others get Guest price)
-      // Note: "Guest" is default if type is unknown or not Member
-      const defaultTicket = (elements.contactTypeSelect.value === 'Member') 
-                            ? "Early-bird (Member)" 
-                            : "Early-bird (Guest)";
+  elements.contactTypeSelect.addEventListener("change", function (e) {
+    if (e.target !== elements.contactTypeSelect) return;
 
-      // List of special tickets that shouldn't be overwritten automatically
-      const specialTickets = ["Online", "Voucher", "Unpaid", "Walk-in (Guest)", "Walk-in (Member)", "Role-taker", "Officer"];
-      
-      // Check if current ticket is one of the special ones. 
-      // We also check against the "Officer" value specifically because previously it forced Officer ticket.
-      // If NOT special, or if it WAS Officer (and we are no longer Officer type), reset to default.
-      if (!specialTickets.includes(currentTicket) || currentTicket === "Officer") {
-          elements.ticketSelect.value = defaultTicket;
-          elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    const contactType = this.value;
+    const currentTicket = elements.ticketSelect.value;
+    
+    // A "default" ticket is one that is empty, "Early-bird", or "Officer"
+    const isDefaultTicket = !currentTicket || currentTicket === "Early-bird" || currentTicket === "Officer";
+
+    console.log(`[Roster] Contact type -> ${contactType}. Ticket was: ${currentTicket || 'empty'} (isDefault: ${isDefaultTicket})`);
+
+    if (isDefaultTicket) {
+      const newDefault = (contactType === "Officer") ? "Officer" : "Early-bird";
+      if (currentTicket !== newDefault) {
+        console.log(`[Roster] Auto-defaulting ticket to: ${newDefault}`);
+        elements.ticketSelect.value = newDefault;
+        // Triggering change event so custom_select UI updates
+        elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
+    } else {
+      console.log(`[Roster] Preserving manual ticket selection: ${currentTicket}`);
     }
 
-    // Processing logic for order number:
-    // Update if: 
-    // 1. It's empty (None)
-    // 2. We are switching ranges (Regular to Officer or vice-versa)
+    // Update order number if necessary
+    const isOfficer = contactType === "Officer";
     const currentOrder = parseInt(elements.orderNumberInput.value, 10);
     const orderIsNone = isNaN(currentOrder);
     const rangeMismatch = isOfficer ? (currentOrder < 1000) : (currentOrder >= 1000);
 
     if (orderIsNone || rangeMismatch) {
       elements.orderNumberInput.value = calculateNextOrder(isOfficer, elements.tableBody);
+      console.log(`[Roster] Updated order number to: ${elements.orderNumberInput.value}`);
     }
+  });
+
+  // Track manual ticket changes for debugging
+  elements.ticketSelect.addEventListener("change", function (e) {
+    if (e.target !== elements.ticketSelect) return;
+    console.log(`[Roster] Ticket value is now: ${this.value}`);
   });
 }
 
@@ -248,6 +252,10 @@ function resetRosterForm(elements) {
   elements.ticketSelect.value = "";
   elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
   if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = "none";
+  if (elements.rosterForm) elements.rosterForm.classList.remove("editing-mode");
+  if (elements.submitBtn) {
+    elements.submitBtn.innerHTML = '<i class="fas fa-save"></i> Register';
+  }
 
   // Default to regular order
   elements.orderNumberInput.value = calculateNextOrder(false, elements.tableBody);
@@ -286,11 +294,15 @@ function populateRosterEditForm(rosterId, elements) {
 
       elements.formTitle.textContent = 'Edit Entry';
       if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = 'inline-block';
+      if (elements.rosterForm) elements.rosterForm.classList.add("editing-mode");
+      if (elements.submitBtn) {
+        elements.submitBtn.innerHTML = '<i class="fas fa-check"></i> Save';
+      }
       elements.rosterForm.scrollIntoView({ behavior: 'smooth' });
     })
     .catch(error => {
       console.error('Error fetching entry for edit:', error);
-      alert('Error fetching entry for edit: ' + error.message);
+      showNotification('Error fetching entry for edit: ' + error.message, 'error');
     });
 }
 
@@ -318,6 +330,20 @@ function initializeFormHandlers(elements) {
         ticket: elements.ticketSelect.value,
       };
 
+      // Validation
+      if (!formData.contact_id) {
+        showNotification("Please select a name from the suggestions or add a new guest.", "warning");
+        return;
+      }
+      if (!formData.contact_type) {
+        showNotification("Please select a Contact Type.", "warning");
+        return;
+      }
+      if (!formData.ticket) {
+        showNotification("Please select a Ticket type.", "warning");
+        return;
+      }
+
       fetch(url, {
         method: method,
         headers: { "Content-Type": "application/json" },
@@ -332,7 +358,7 @@ function initializeFormHandlers(elements) {
         })
         .catch((error) => {
           console.error("Error:", error);
-          alert(`An error occurred while saving the entry: ${error.message}`);
+          showNotification(`An error occurred: ${error.message}`, "error");
         });
     });
   }
@@ -461,13 +487,13 @@ function handleContactFormSubmit(event) {
         if (data.duplicate_contact) {
           showDuplicateModal(data.message, data.duplicate_contact);
         } else {
-          alert(data.message || "An error occurred while saving the contact.");
+          showNotification(data.message || "An error occurred while saving the contact.", "error");
         }
       }
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert("An error occurred while saving the contact.");
+      showNotification("An error occurred while saving the contact.", "error");
     });
 }
 

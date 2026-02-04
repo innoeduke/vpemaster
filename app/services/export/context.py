@@ -124,7 +124,7 @@ class MeetingExportContext:
                 groups["Individual Evaluators"].add(name)
             elif st.Title == "Topics Speech":
                 groups["Table Topics Speakers"].add(name)
-            elif not st.Is_Section and not st.Is_Hidden:
+            elif not st.Is_Section and not (log.hidden if log.hidden is not None else st.Is_Hidden):
                 if st.role and st.role.type == 'officer': continue
                 # Use role.name for role name, not session type title
                 role_name = st.role.name if st.role else st.Title

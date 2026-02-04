@@ -18,7 +18,8 @@ class AgendaComponent(BaseExportComponent):
         
         for log, st in context.logs:
             # Skip hidden sessions
-            if st.Is_Hidden:
+            is_hidden = log.hidden if log.hidden is not None else st.Is_Hidden
+            if is_hidden:
                 continue
             
             # Add blank line before section sessions

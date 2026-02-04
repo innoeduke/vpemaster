@@ -24,13 +24,14 @@
 
 <div class="custom-select-wrapper {{ extra_classes }}">
     {% if label %}
-    <label for="{{ select_id }}-trigger">{{ label }}</label>
+    <label id="{{ select_id }}-label">{{ label }}</label>
     {% endif %}
 
     <div class="meeting-autocomplete-container" id="{{ select_id }}-container">
         <div class="custom-select-trigger" id="{{ select_id }}-trigger" 
              tabindex="0" role="combobox" aria-expanded="false" aria-haspopup="listbox"
              aria-controls="{{ select_id }}-results"
+             {% if label %}aria-labelledby="{{ select_id }}-label"{% endif %}
              style="cursor: pointer; display: flex; align-items: center; {% if is_disabled %}opacity: 0.6; pointer-events: none;{% endif %}">
             <div class="selected-content" style="display: flex; align-items: center; gap: 8px; flex-grow: 1; overflow: hidden;">
                 {% if ns.selected_icon %}
@@ -174,7 +175,9 @@
     });
 
     items.forEach(item => {
-        item.addEventListener('click', (e) => {
+        item.addEventListener('mousedown', (e) => {
+            e.preventDefault(); // Prevent focus loss before selection
+            console.log(`[CustomSelect] Mousedown on: ${item.dataset.value}`);
             selectItem(item);
         });
     });

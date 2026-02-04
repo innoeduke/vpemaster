@@ -109,6 +109,11 @@ def tools():
             if not selected_meeting_num and meeting_numbers:
                 selected_meeting_num = meeting_numbers[0]
 
+        # Get all contacts for the dropdown menu, filtered by club
+        contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
+            .order_by(Contact.Name).all()
+        Contact.populate_users(contacts, club_id)
+
         if selected_meeting_num:
             query = Meeting.query.filter(Meeting.Meeting_Number == selected_meeting_num)
             if club_id:
@@ -123,6 +128,41 @@ def tools():
                 .order_by(Roster.order_number.asc())\
                 .all()
             
+            # Auto-sync officers to roster
+            club_officers = [c for c in contacts if c.user and c.user.has_role(Permissions.STAFF)]
+            roster_contact_ids = {r.contact_id for r in roster_entries if r.contact_id}
+            missing_officers = [o for o in club_officers if o.id not in roster_contact_ids]
+            
+            if missing_officers:
+                officer_ticket = Ticket.query.filter_by(name='Officer').first()
+                officer_orders = [r.order_number for r in roster_entries if r.order_number and r.order_number >= 1000]
+                next_off_order = max(officer_orders) + 1 if officer_orders else 1000
+                
+                for off in missing_officers:
+                    new_off_entry = Roster(
+                        meeting_number=selected_meeting_num,
+                        contact_id=off.id,
+                        contact_type='Officer',
+                        order_number=next_off_order,
+                        ticket_id=officer_ticket.id if officer_ticket else None
+                    )
+                    db.session.add(new_off_entry)
+                    next_off_order += 1
+                
+                try:
+                    db.session.commit()
+                    # Re-fetch roster entries
+                    roster_entries = Roster.query\
+                        .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
+                        .outerjoin(Contact, Roster.contact_id == Contact.id)\
+                        .filter(Roster.meeting_number == selected_meeting_num)\
+                        .order_by(Roster.order_number.asc())\
+                        .all()
+                except Exception as e:
+                    db.session.rollback()
+                    # Log error but don't break the page
+                    print(f"Error syncing officers: {e}")
+
             # Populate booked roles from SessionLogs using the helper
             roles_map = RoleService.get_role_takers(selected_meeting_num, club_id)
             # We pass roles_map directly to template to avoid transient attribute loss on SQLAlchemy objects
@@ -134,11 +174,6 @@ def tools():
                 next_unallocated_entry = type('obj', (object,), {'order_number': max_order + 1})()
             else:
                 next_unallocated_entry = type('obj', (object,), {'order_number': 1})()
-
-        # Get all contacts for the dropdown menu, filtered by club
-        contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
-            .order_by(Contact.Name).all()
-        Contact.populate_users(contacts, club_id)
 
         all_pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
         for p in all_pathways:

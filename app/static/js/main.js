@@ -612,3 +612,25 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 });
+
+/**
+ * Show a premium-style notification
+ * @param {string} message The message to display
+ * @param {string} type The type of notification ('info', 'warning', 'success', 'error')
+ */
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
