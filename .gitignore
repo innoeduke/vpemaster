@@ -15,3 +15,4 @@ WARP.md
 htmlcov/
 .gemini/
 .vscode/
+.pytest_cache/
