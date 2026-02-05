@@ -1388,14 +1388,27 @@ def _tally_votes_and_set_winners(meeting):
             if hasattr(meeting, award_attr):
                 setattr(meeting, award_attr, winner_id)
 
-    # Calculate NPS (Average of non-blank scores)
-    nps_avg = db.session.query(func.avg(Vote.score)).filter(
+    # Calculate Standard NPS: (Promoters - Detractors) / Total * 100
+    # Promoters: 9-10, Detractors: 1-6, Passives: 7-8 (0s are excluded)
+    scores = db.session.query(Vote.score).filter(
         Vote.meeting_number == meeting.Meeting_Number,
-        Vote.score.isnot(None)
-    ).scalar()
+        Vote.question == "How likely are you to recommend this meeting to a friend or colleague?",
+        Vote.score.isnot(None),
+        Vote.score > 0
+    ).all()
 
-    if nps_avg is not None:
-        meeting.nps = float(nps_avg)
+
+    
+    if scores:
+        scores_list = [s[0] for s in scores]
+        total = len(scores_list)
+        promoters = sum(1 for s in scores_list if s >= 9)
+        detractors = sum(1 for s in scores_list if s <= 6)
+        nps = (promoters - detractors) / total * 100
+        meeting.nps = float(nps)
+    else:
+        meeting.nps = 0.0
+
 
 
 @agenda_bp.route('/agenda/status/<int:meeting_number>', methods=['POST'])

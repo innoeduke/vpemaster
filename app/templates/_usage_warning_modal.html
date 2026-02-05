@@ -1,0 +1,97 @@
+<div id="usageWarningModal" class="modal usage-warning-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2><i class="fas fa-exclamation-triangle"></i> Deletion Blocked</h2>
+            <span class="close" onclick="closeUsageWarningModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="usageWarningMessage"></p>
+            <div class="usage-list-container">
+                <table id="usageWarningTable" class="premium-table">
+                    <thead>
+                        <tr>
+                            <th>Meeting</th>
+                            <th>Session Title</th>
+                            <th>Owner</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usageWarningBody">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="usage-footer">Please reassign or delete these logs before deleting the session type.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-danger" id="deleteAllLogsBtn" onclick="deleteAllBlockingLogs()">
+                <i class="fas fa-trash-alt"></i> Delete ALL
+            </button>
+            <button type="button" class="btn btn-secondary" onclick="closeUsageWarningModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentSessionTypeId = null;
+
+function closeUsageWarningModal() {
+    const modal = document.getElementById('usageWarningModal');
+    if (modal) modal.style.display = 'none';
+    currentSessionTypeId = null;
+}
+
+function showUsageWarningModal(message, logs, sessionTypeId) {
+    const modal = document.getElementById('usageWarningModal');
+    const msgEl = document.getElementById('usageWarningMessage');
+    const tbody = document.getElementById('usageWarningBody');
+    
+    if (!modal || !msgEl || !tbody) return;
+    
+    currentSessionTypeId = sessionTypeId;
+    msgEl.textContent = message;
+    tbody.innerHTML = '';
+    
+    logs.forEach(log => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><a href="/agenda?meeting_number=${log.meeting_number}" class="usage-meeting-link" target="_blank">#${log.meeting_number}</a></td>
+            <td>${log.session_title}</td>
+            <td><span class="usage-owner">${log.owner_name || 'Unassigned'}</span></td>
+        `;
+        tbody.appendChild(tr);
+    });
+    
+    modal.style.display = 'flex';
+}
+
+function deleteAllBlockingLogs() {
+    if (!currentSessionTypeId) {
+        alert('Session type ID not found.');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to delete ALL session logs of this type? This action cannot be undone.')) {
+        return;
+    }
+    
+    fetch(`/settings/sessions/delete-logs/${currentSessionTypeId}`, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            closeUsageWarningModal();
+            location.reload();
+        } else {
+            alert(data.message || 'An error occurred while deleting the logs.');
+        }
+    })
+    .catch(error => {
+        console.error('Delete logs error:', error);
+        alert('An error occurred while deleting the logs.');
+    });
+}
+</script>

@@ -3,9 +3,16 @@
 
 {% block title %}Voting{% endblock %}
 
+{% block header_title %}Voting Form{% endblock %}
+
 {% block content %}
 <div class="booking-container">
-	<h1><i class="fas fa-vote-yea"></i> Voting Form</h1>
+	<div class="page-title-row">
+		<h1><i class="fas fa-vote-yea"></i> Voting Form</h1>
+		<a href="{{ url_for('voting_bp.voting_nps') }}" class="icon-btn trend-btn" title="NPS Trend">
+			<i class="fas fa-chart-line"></i>
+		</a>
+	</div>
 	<div class="booking-filter-container">
 		{{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
 		base_url='/voting', render_outer_container=False) }}

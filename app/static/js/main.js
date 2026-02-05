@@ -336,7 +336,6 @@ function previewAvatar(input) {
 document.addEventListener("DOMContentLoaded", function () {
   const navPane = document.getElementById("nav-pane");
   const navOverlay = document.getElementById("nav-overlay");
-  const mobileNavToggle = document.getElementById("mobile-nav-toggle");
 
   // Function to close the nav
   function closeNav() {
@@ -601,7 +600,12 @@ document.addEventListener("DOMContentLoaded", function () {
                           location.reload();
                       }
                   } else {
-                      alert(data.message || "An error occurred while deleting the item.");
+                      if (data.logs && typeof showUsageWarningModal === 'function') {
+                          if (typeof closeDeleteModal === 'function') closeDeleteModal();
+                          showUsageWarningModal(data.message, data.logs, data.session_type_id);
+                      } else {
+                          alert(data.message || "An error occurred while deleting the item.");
+                      }
                   }
               }
           })

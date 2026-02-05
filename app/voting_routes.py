@@ -523,3 +523,92 @@ def vote_for_award():
         db.session.rollback()
         current_app.logger.error(f"Error processing vote: {e}")
         return jsonify(success=False, message="An internal error occurred."), 500
+
+
+@voting_bp.route('/voting/nps', methods=['GET'])
+@login_required
+def voting_nps():
+    """NPS bar chart page showing Net Promoter Scores for all meetings."""
+    club_id = get_current_club_id()
+    
+    # Fetch all finished meetings
+    query = Meeting.query.filter(Meeting.status == 'finished')
+    if club_id:
+        query = query.filter(Meeting.club_id == club_id)
+    meetings = query.order_by(Meeting.Meeting_Number.asc()).all()
+    
+    # Prepare data for the chart
+    meeting_numbers = [m.Meeting_Number for m in meetings]
+    meeting_dates = [m.Meeting_Date.strftime('%Y-%m-%d') if m.Meeting_Date else '' for m in meetings]
+    
+    # Get all NPS votes for these meetings in one go to be efficient
+    meeting_numbers_list = [m.Meeting_Number for m in meetings]
+    all_votes = db.session.query(Vote.meeting_number, Vote.score).filter(
+        Vote.meeting_number.in_(meeting_numbers_list),
+        Vote.question == "How likely are you to recommend this meeting to a friend or colleague?",
+        Vote.score.isnot(None),
+        Vote.score > 0
+    ).all()
+
+
+    
+    # Group votes by meeting
+    votes_by_meeting = {}
+    for mtg_num, score in all_votes:
+        if mtg_num not in votes_by_meeting:
+            votes_by_meeting[mtg_num] = []
+        votes_by_meeting[mtg_num].append(score)
+    
+    # Calculate true NPS for each meeting
+    full_data = []
+    for m in meetings:
+        scores = votes_by_meeting.get(m.Meeting_Number, [])
+        if scores:
+            total = len(scores)
+            promoters = sum(1 for s in scores if s >= 9)
+            detractors = sum(1 for s in scores if s >= 1 and s <= 6)
+            nps = (promoters - detractors) / total * 100
+            score = round(nps, 1)
+            det_pct = round(detractors / total * 100, 1)
+            count = total
+        else:
+            # Fallback for stored value (if no raw votes, we don't know detailed breakdown)
+            score = m.nps if m.nps is not None else 0
+            det_pct = 0
+            count = 0
+            
+        full_data.append({
+            'number': m.Meeting_Number,
+            'score': score,
+            'det_pct': det_pct,
+            'count': count,
+            'date': m.Meeting_Date.strftime('%Y-%m-%d') if m.Meeting_Date else ''
+        })
+    
+    # Find the first non-zero score index
+    first_nonzero_idx = 0
+    for i, data in enumerate(full_data):
+        if data['score'] != 0 or data['count'] > 0:
+            first_nonzero_idx = i
+            break
+            
+    # Slice the data from the first non-zero meeting
+    filtered_data = full_data[first_nonzero_idx:]
+    
+    meeting_numbers = [d['number'] for d in filtered_data]
+    nps_scores = [d['score'] for d in filtered_data]
+    detractor_percentages = [d['det_pct'] for d in filtered_data]
+    vote_counts = [d['count'] for d in filtered_data]
+    meeting_dates = [d['date'] for d in filtered_data]
+    
+    return render_template('voting_nps.html',
+                           meeting_numbers=meeting_numbers,
+                           nps_scores=nps_scores,
+                           detractor_percentages=detractor_percentages,
+                           vote_counts=vote_counts,
+                           meeting_dates=meeting_dates)
+
+
+
+
+

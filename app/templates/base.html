@@ -24,9 +24,6 @@
 
 <body>
   <div class="container-wrapper">
-    <div class="mobile-header" id="mobile-header">
-      <a href="#" class="nav-toggle" id="mobile-nav-toggle"><i class="fas fa-bars"></i></a>
-    </div>
 
     <div class="nav-pane" id="nav-pane">
       <div class="beta-badge">Beta</div>
@@ -133,29 +130,39 @@
 
     <div id="nav-overlay"></div>
 
-    <div class="main-content" id="main-content">
-      {% if current_user.is_authenticated %}
-      <div class="profile-container">
-        <div class="profile-trigger" id="profile-trigger">
-          <i class="fas fa-user-circle"></i>
-          <span>{{ current_user.contact.Name if current_user.contact else current_user.username }}</span>
-          <span class="badge badge-unread" id="unread-messages-count-trigger">0</span>
-          <i class="fas fa-caret-down"></i>
-        </div>
-        <div class="profile-menu" id="profile-menu">
-          <a href="{{ url_for('auth_bp.profile') }}"><i class="fas fa-user-edit"></i> User Profile</a>
-          <a href="{{ url_for('messages.messages') }}">
+    <header class="page-header" id="page-header">
+      <div class="header-left">
+        <a href="#" class="nav-toggle" id="mobile-nav-toggle"><i class="fas fa-bars"></i></a>
+        <h1 class="header-title">{% block header_title %}{% endblock %}</h1>
+      </div>
+      <div class="header-right">
+        {% if current_user.is_authenticated %}
+        <div class="profile-container">
+          <div class="profile-trigger" id="profile-trigger">
+            <i class="fas fa-user-circle"></i>
+            <span>{{ current_user.contact.Name if current_user.contact else current_user.username }}</span>
+            <span class="badge badge-unread" id="unread-messages-count-trigger">0</span>
+            <i class="fas fa-caret-down"></i>
+          </div>
+          <div class="profile-menu" id="profile-menu">
+            <a href="{{ url_for('auth_bp.profile') }}"><i class="fas fa-user-edit"></i> User Profile</a>
+            <a href="{{ url_for('messages.messages') }}">
               <i class="fas fa-envelope"></i> Inbox
               <span class="badge badge-unread" id="unread-messages-count-profile">0</span>
-          </a>
-          {% if is_authorized(Permissions.ABOUT_CLUB_VIEW) %}
-          <a href="{{ url_for('about_club_bp.about_club') }}"><i class="fas fa-info-circle"></i> About Club</a>
-          {% endif %}
-          <div class="menu-divider"></div>
-          <a href="{{ url_for('auth_bp.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </a>
+            {% if is_authorized(Permissions.ABOUT_CLUB_VIEW) %}
+            <a href="{{ url_for('about_club_bp.about_club') }}"><i class="fas fa-info-circle"></i> About Club</a>
+            {% endif %}
+            <div class="menu-divider"></div>
+            <a href="{{ url_for('auth_bp.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+          </div>
         </div>
+        {% endif %}
       </div>
-      {% endif %}
+    </header>
+
+    <div class="main-content" id="main-content">
+      <!-- Profile container moved to page-header -->
 
       {% block flash_messages %}
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -186,6 +193,7 @@
   </div>
 
   {% include '_delete_modal.html' %}
+  {% include '_usage_warning_modal.html' %}
   <script src="{{ url_for('static', filename='vendor/js/Sortable.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script src="{{ url_for('static', filename='js/search.js') }}"></script>

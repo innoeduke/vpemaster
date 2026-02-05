@@ -171,19 +171,60 @@
     background-color: #575757;
 }
 
-/* Profile Dropdown */
-.profile-container {
+/* Page Header (Unified) */
+.page-header {
     position: fixed;
-    top: 15px;
-    right: 25px;
+    top: 0;
+    right: 0;
+    left: 60px;
+    /* PC default: offset by collapsed nav */
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+    z-index: 1001;
+    background-color: transparent;
+    /* Transparent on PC/iPad by default */
+    transition: left 0.3s ease-in-out;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    /* Align to the right */
+    flex: 0 0 auto;
+    /* Keep fixed size */
+}
+
+.header-title {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+    display: none;
+    /* Hidden on PC by default, can be used for breadcrumbs */
+}
+
+/* Profile Dropdown (Desktop Layout) */
+.profile-container {
+    position: relative;
     z-index: 1002;
+    margin-left: auto;
+    /* Absolute right alignment within flex */
 }
 
 .profile-trigger {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 5px 10px;
+    padding: 8px 16px;
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 20px;
