@@ -211,6 +211,54 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
     }
 
 
+def _get_pathway_date_range(contact, pathway_name):
+    """
+    Determine the valid date range for a pathway based on achievement history.
+    Returns: (start_date, end_date)
+    - start_date: Day AFTER previous path completion (or min date)
+    - end_date: Path completion date (or max date if current)
+    """
+    if not contact or not pathway_name or pathway_name == 'all':
+        return None, None
+        
+    # Get all path completions sorted by date
+    achievements = Achievement.query.filter_by(
+        contact_id=contact.id,
+        achievement_type='path-completion'
+    ).order_by(Achievement.issue_date).all()
+    
+    # Identify segments
+    start_date = datetime.min.date()
+    end_date = None
+    
+    found_path = False
+    
+    for ach in achievements:
+        if ach.path_name == pathway_name:
+            end_date = ach.issue_date
+            found_path = True
+            break
+        # If we haven't found our path yet, this achievement marks the END of a previous segment,
+        # so our path must start AFTER this.
+        start_date = ach.issue_date # We'll start checking from day after usually, but inclusive logic is safer if same day switch
+    
+    # Refine start_date logic: strictly speaking, roles for a new path 
+    # shouldn't overlap with the *completion* event of the old one, but 
+    # in practice, same-day transition is possible. 
+    # Let's keep it inclusive of the boundary for now or add 1 day if precise.
+    
+    if found_path:
+        return start_date, end_date
+    
+    # If not found in COMPLETED paths, check if it is the CURRENT path
+    if contact.Current_Path == pathway_name:
+        return start_date, datetime.max.date()
+        
+    # If neither completed nor current, it's not a valid active segment for generic roles
+    return None, None
+
+
+
 
 
 
@@ -366,6 +414,21 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
     grouped_logs = {}
     processed_roles = set()
     
+    # Calculate date range for the selected pathway filter
+    p_filter = filters.get('pathway')
+    path_start_date, path_end_date = None, None
+    
+    # We need a context contact for this. If filtering by speaker, use that.
+    # Otherwise, we might rely on individual log owners (complex).
+    # Assuming member view focus primarily:
+    context_contact_id = filters.get('speaker_id')
+    context_contact = None
+    if context_contact_id and context_contact_id != -1:
+        context_contact = _get_viewed_contact(context_contact_id)
+        
+    if context_contact and p_filter and p_filter != 'all':
+        path_start_date, path_end_date = _get_pathway_date_range(context_contact, p_filter)
+
     for log in all_logs:
         # Determine the best owner for display in this context if not already set by RoleService
         if not getattr(log, 'context_owner', None):
@@ -469,6 +532,22 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
             log_type=log_type
         ):
             continue
+            
+        # Additional Date-Based Filter for Generic Roles
+        # If it's a generic role (no project ID) and we have a pathway filter active
+        if log_type == 'role' and not log.Project_ID and filters['pathway'] and filters['pathway'] != 'all':
+            # Strict mode: If date range is None (path not found/valid), hide generic roles
+            if path_start_date is None and path_end_date is None:
+                 continue
+                 
+            # Check meeting date against range
+            if log.meeting and log.meeting.Meeting_Date:
+                m_date = log.meeting.Meeting_Date
+                # Ensure date comparison works (convert to date if needed, though simple comparison usually works for date/datetime)
+                # m_date is typically datetime.date in Model
+                
+                if not (path_start_date <= m_date <= path_end_date):
+                    continue
         
         # Special check for speeches without project
         if filters['pathway'] and log_type == 'speech' and not log.Project_ID:

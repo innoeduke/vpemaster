@@ -32,12 +32,6 @@ class CustomSelectAdapter {
         this.container.className = 'custom-dropdown relative-pos';
         this.container.id = `${this.select.id}-custom-container`;
         
-        // Add focusout listener to close when tabbing away
-        this.container.addEventListener('focusout', (e) => {
-            if (!this.container.contains(e.relatedTarget)) {
-                this.close();
-            }
-        });
         
         // Create trigger button
         this.trigger = document.createElement('button');
@@ -178,6 +172,7 @@ class CustomSelectAdapter {
         if (this.select.value !== value) {
             this.select.value = value;
             this.select.dispatchEvent(new Event('change', { bubbles: true }));
+        } else {
         }
         this.updateUI();
     }
@@ -294,6 +289,11 @@ class CustomSelectAdapter {
     }
 
     open() {
+        // Dispatch event to close other dropdowns
+        document.dispatchEvent(new CustomEvent('custom-dropdown-open', { 
+            detail: { instance: this } 
+        }));
+
         this.menu.style.display = 'block';
         this.isOpen = true;
         setTimeout(() => document.addEventListener('click', this.handleOutsideClick), 0);
@@ -313,11 +313,19 @@ class CustomSelectAdapter {
 
     setupListeners() {
         this.trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
             this.toggle();
         });
 
         this.select.addEventListener('change', () => {
              this.updateUI();
+        });
+
+        // Listen for other dropdowns opening
+        document.addEventListener('custom-dropdown-open', (e) => {
+            if (e.detail.instance !== this && this.isOpen) {
+                this.close();
+            }
         });
     }
 

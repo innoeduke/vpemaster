@@ -111,8 +111,10 @@
                     {% if log.meeting and log.meeting.Meeting_Date and log.meeting.Meeting_Date < today_date %}
                         {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
                             <button onclick="suspendSpeechLog(this, {{ log.id }})" class="icon-btn btn-suspend" title="Suspend"><i class="fas fa-pause-circle"></i></button>
+                            <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
+                        {% else %}
+                            <span class="status-booked">Booked</span>
                         {% endif %}
-                        <button onclick="completeSpeechLog(this, {{ log.id }})" class="btn btn-success btn-sm">Complete</button>
                     {% else %}
                         <span class="status-booked">Booked</span>
                     {% endif %}

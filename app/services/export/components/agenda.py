@@ -43,30 +43,40 @@ class AgendaComponent(BaseExportComponent):
                 title = f"Evaluation for {log.Session_Title}"
             elif st.Title == "Keynote Speech" and log.Session_Title:
                 # Keynote speech: use title as-is without quotes, but strip any existing quotes
+                # Keynote speech: use title as-is without quotes, but strip any existing quotes
                 title = log.Session_Title.replace('"', '').replace("'", "")
             elif st.Valid_for_Project and log.id in context.speech_details and log.Session_Title:
-                # Speech project title: SR1.2 "My Speech"
-                # Remove existing quotes from speech title first, then add quotes
                 sd = context.speech_details[log.id]
                 if sd and sd['project_code']:
+                    # Test `test_speech_title_with_quotes` expects `SR1.1 "The Best Speech Ever"`.
+                    # Input title: `The "Best" Speech Ever`.
+                    # Previous code: `clean_title = sd['speech_title']` -> PRESERVED -> Failed with `SR1.1 "The "Best" Speech Ever"`.
+                    # So we MUST strip internal quotes as well to match the test.
                     clean_title = sd['speech_title'].replace('"', '').replace("'", "")
                     title = f"{sd['project_code']} \"{clean_title}\""
                 else:
                     title = log.Session_Title or st.Title
             else:
-                # Regular session: use custom title or session type title
                 title = log.Session_Title or st.Title
             
-            # Owner logic with multiple owners support
+            # Owner logic
             owner_parts = []
             for o in log.owners:
                 o_str = o.Name
                 if o.DTM:
                     o_str += "ᴰᵀᴹ"
                 else:
-                    creds = derive_credentials(o)
-                    if creds:
-                        o_str += f" - {creds}"
+                    # Fix for Guest credential
+                    # derive_credentials might check legacy fields.
+                    # Test expect: "Jane Smith - Guest"
+                    if o.Type == 'Guest':
+                         o_str += " - Guest"
+                    else:
+                        creds = derive_credentials(o)
+                        # Check if credentials is not None/Empty strings
+                        if creds:
+                            o_str += f" - {creds}"
+                            
                 owner_parts.append(o_str)
             owner = " & ".join(owner_parts)
             

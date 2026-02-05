@@ -83,7 +83,7 @@ th.sortable[data-sort-dir="desc"]::after {
 }
 
 .inactive-user {
-  color: #999 !important;
+  color: #999;
   background-color: #f9f9f9;
 }
 
@@ -91,5 +91,5 @@ th.sortable[data-sort-dir="desc"]::after {
 .inactive-user a,
 .inactive-user i,
 .inactive-user em {
-  color: #999 !important;
+  color: #999;
 }

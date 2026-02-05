@@ -5,6 +5,12 @@ function updatePathCodes(project) {
     const pathAbbr = box.dataset.path;
     const code =
       project && project.path_codes ? project.path_codes[pathAbbr] : null;
+    
+    // Configure marked options
+    marked.use({
+      breaks: true,
+      gfm: true
+    });
 
     // Use .badge-text span if available (new structure), fallback to span (old structure/desktop)
     const valueSpan = box.querySelector(".badge-text span") || box.querySelector("span");
@@ -20,19 +26,19 @@ function updatePathCodes(project) {
 }
 
 function clearPathCodes() {
-  document
-    .querySelectorAll(".path-code-box span")
-    .forEach((span) => (span.textContent = ""));
-  document
-    .querySelectorAll(".path-code-box")
-    .forEach((box) => (box.style.display = "none"));
+  document.querySelectorAll(".path-code-box").forEach((box) => {
+    // Use .badge-text span if available (new structure), fallback to span (old structure/desktop)
+    const valueSpan = box.querySelector(".badge-text span") || box.querySelector("span");
+    if (valueSpan) valueSpan.textContent = "";
+    box.style.display = "none";
+  });
 }
 
 function toggleEditView() {
   const editButton = document.getElementById("edit-project-btn");
   const cancelButton = document.getElementById("cancel-project-btn");
-  const pTags = document.querySelectorAll(
-    "#project-details .project-section p"
+  const contentDivs = document.querySelectorAll(
+    "#project-details .project-section .markdown-content"
   );
   const textareas = document.querySelectorAll(
     "#project-details .project-section textarea"
@@ -57,7 +63,7 @@ function toggleEditView() {
         cancelButton.style.display = "inline-flex";
     }
 
-    pTags.forEach((p) => (p.style.display = "none"));
+    contentDivs.forEach((div) => (div.style.display = "none"));
     textareas.forEach((textarea) => {
       const fieldName = textarea.id.replace("edit-", "");
       if (currentProject) {
@@ -72,11 +78,12 @@ function toggleEditView() {
     editButton.innerHTML = '<i class="fas fa-edit"></i>';
     // Restore the strict hiding with !important
     cancelButton.style.setProperty('display', 'none', 'important');
-    pTags.forEach((p) => (p.style.display = "block"));
+    contentDivs.forEach((div) => (div.style.display = "block"));
     textareas.forEach((textarea) => (textarea.style.display = "none"));
     displayProjectDetails();
   }
 }
+
 
 function displayProjectDetails() {
   const pathSelect = document.getElementById("path");
@@ -84,13 +91,15 @@ function displayProjectDetails() {
   const projectDetails = document.getElementById("project-details");
 
   const selectedPathway = pathways.find((p) => p.abbr === pathSelect.value);
-  const projectId = parseInt(projectSelect.value, 10);
-  const project = selectedPathway
+  const projectVal = projectSelect ? projectSelect.value : "";
+  const projectId = projectVal ? parseInt(projectVal, 10) : null;
+  const project = (selectedPathway && projectId !== null)
     ? selectedPathway.projects.find((p) => p.id === projectId)
     : null;
 
+
   if (project) {
-    const toHtml = (str) => (str || "").replace(/\n/g, "<br>");
+    const toHtml = (str) => DOMPurify.sanitize(marked.parse(str || ""));
 
     document.getElementById("project-name").textContent =
       project.Project_Name || "";
@@ -153,20 +162,14 @@ function updateLevelOptions(selectedPathway) {
   }
 
   // Restore selection if valid, otherwise default to All Levels or Level 1 if implied
-  // For standard pathways, we usually want to start at Level 1, but for filtered views maybe All?
-  // The existing logic tried to preserve selection. context matters.
-  // If the previously selected level exists in the new list, keep it.
   const options = Array.from(levelSelect.options).map(o => o.value);
   if (options.includes(currentSelection)) {
     levelSelect.value = currentSelection;
-  } else if (sortedLevels && sortedLevels.length > 0) {
-    // If previous selection invalid (e.g. switched from Path A Lvl 5 to Path B with only Lvl 3), 
-    // maybe default to first available level or "All"? 
-    // Let's default to "All" (empty) to show everything, or the first available?
-    // Standard behavior usually implies showing Level 1 first.
-    // Let's stick to "All Levels" as default reset.
+  } else {
     levelSelect.value = "";
   }
+  // Dispatch change event to notify CustomSelectAdapter (MutationObserver might be too slow for immediate UI sync)
+  levelSelect.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function filterProjects() {
@@ -201,6 +204,8 @@ function filterProjects() {
       projectSelect.appendChild(option);
     });
   }
+  // Dispatch change event to notify CustomSelectAdapter
+  projectSelect.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function saveProjectChanges() {
@@ -268,11 +273,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (event && (event.target === pathSelect || event.target.classList.contains('path-code-box'))) {
       const selectedPathway = pathways.find((p) => p.abbr === pathSelect.value);
       updateLevelOptions(selectedPathway);
-      // Default to "All Levels" (value "") or specific logic? 
-      // If we want to mimic old behavior of defaulting to "1":
-      // if (selectedPathway && selectedPathway.projects.some(p => p.level === 1)) {
-      //    levelSelect.value = "1";
-      // }
     }
 
     filterProjects();
@@ -291,7 +291,8 @@ document.addEventListener("DOMContentLoaded", function () {
     box.addEventListener("click", function () {
       if (pathSelect) {
         pathSelect.value = this.dataset.path;
-        handleFilterChange();
+        // Manually dispatch change event to trigger handleFilterChange and update CustomSelectAdapter
+        pathSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
     });
   });

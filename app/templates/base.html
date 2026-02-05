@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>Meeting Manager - {% block title %}{% endblock %}</title>
+  <title>Memory Maker - {% block title %}{% endblock %}</title>
   <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
   {% assets "css_all" %}
   <link rel="stylesheet" href="{{ ASSET_URL }}">
@@ -34,7 +34,7 @@
         <a href="#" class="nav-toggle" id="pc-nav-toggle">
           <i class="fas fa-bars"></i>
         </a>
-        <h2 class="nav-title">Meeting Manager</h2>
+        <h2 class="nav-title">Memory Maker</h2>
       </div>
       <ul class="nav-links">
         {% if is_authorized(Permissions.AGENDA_VIEW) %}

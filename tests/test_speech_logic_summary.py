@@ -1,9 +1,11 @@
 import unittest
 import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from app import create_app, db
+import app
+print(f"DEBUG: app type: {type(app)}")
+print(f"DEBUG: app file: {getattr(app, '__file__', 'no file')}")
+print(f"DEBUG: app path: {getattr(app, '__path__', 'no path')}")
 from app.models import LevelRole, SessionLog, Contact, Meeting, SessionType, MeetingRole, Project
+from app import create_app, db
 from app.speech_logs_routes import _calculate_completion_summary
 from datetime import date
 

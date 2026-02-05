@@ -19,11 +19,11 @@
 }
 
 .btn:disabled {
-    background-color: #e0e0e0 !important;
-    color: #999 !important;
-    cursor: not-allowed !important;
-    opacity: 0.7 !important;
-    box-shadow: none !important;
+    background-color: #e0e0e0;
+    color: #999;
+    cursor: not-allowed;
+    opacity: 0.7;
+    box-shadow: none;
 }
 
 /* Modifier classes for button colors */
@@ -323,7 +323,7 @@ label.required::after {
     white-space: nowrap;
     vertical-align: baseline;
     border-radius: 4px;
-    color: #fff !important;
+    color: #fff;
     margin-top: 8px;
     text-transform: uppercase;
     letter-spacing: 0.05em;

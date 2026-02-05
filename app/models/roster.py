@@ -156,7 +156,7 @@ class Roster(db.Model):
                 if is_officer:
                     ticket_name = "Officer"
                 elif contact.Type == 'Member':
-                    ticket_name = "Early-bird"
+                    ticket_name = "Early-bird (Member)"
 
                 ticket_obj = Ticket.query.filter_by(name=ticket_name).first()
                 # Fallback to Role-taker if not found, though DB should have it
