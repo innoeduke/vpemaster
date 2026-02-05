@@ -222,6 +222,9 @@
 /* --- Generic Custom Select Styles --- */
 .custom-select-wrapper {
 	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
 }
 
 .custom-select-wrapper label {

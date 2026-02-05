@@ -549,8 +549,10 @@ class RoleService:
             }
             if c_id not in role_takers:
                 role_takers[c_id] = []
-            # Avoid duplicates
-            if role_data not in role_takers[c_id]:
+            
+            # Avoid duplicate role display (e.g. multiple "Topics Speaker" slots)
+            # Checked by unique role ID per contact
+            if not any(r['id'] == role.id for r in role_takers[c_id]):
                 role_takers[c_id].append(role_data)
         
         # Cache the result

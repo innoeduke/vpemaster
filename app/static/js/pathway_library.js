@@ -73,6 +73,7 @@ function toggleEditView() {
           ] || "";
       }
       textarea.style.display = "block";
+      adjustTextareaHeight(textarea);
     });
   } else {
     editButton.innerHTML = '<i class="fas fa-edit"></i>';
@@ -81,6 +82,19 @@ function toggleEditView() {
     contentDivs.forEach((div) => (div.style.display = "block"));
     textareas.forEach((textarea) => (textarea.style.display = "none"));
     displayProjectDetails();
+  }
+}
+
+function adjustTextareaHeight(textarea) {
+  let n = 3;
+  textarea.rows = n;
+  
+  // Logic: while content overflows visible area, increase rows by 3
+  // clientHeight includes padding but not border. scrollHeight includes padding.
+  // We want scrollHeight <= clientHeight
+  while (textarea.scrollHeight > textarea.clientHeight && n < 100) {
+    n += 3;
+    textarea.rows = n;
   }
 }
 
@@ -315,7 +329,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   textareas.forEach((textarea) => {
     textarea.addEventListener("input", function (event) {
-      // No-op
+      adjustTextareaHeight(this);
     });
   });
 
