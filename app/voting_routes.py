@@ -609,6 +609,46 @@ def voting_nps():
                            meeting_dates=meeting_dates)
 
 
+@voting_bp.route('/voting/nps/comments/<int:meeting_number>', methods=['GET'])
+@login_required
+def get_nps_comments(meeting_number):
+    """Get NPS comments for a specific meeting."""
+    club_id = get_current_club_id()
+    
+    # Verify the meeting exists and belongs to the current club
+    meeting_query = Meeting.query.filter_by(Meeting_Number=meeting_number)
+    if club_id:
+        meeting_query = meeting_query.filter(Meeting.club_id == club_id)
+    meeting = meeting_query.first()
+    
+    if not meeting:
+        return jsonify({'comments': [], 'meeting_date': ''})
+    
+    # Get all NPS-related comments for this meeting
+    comments = db.session.query(Vote.comments).filter(
+        Vote.meeting_number == meeting_number,
+        Vote.question == "How likely are you to recommend this meeting to a friend or colleague?",
+        Vote.comments.isnot(None),
+        Vote.comments != ''
+    ).all()
+    
+    # Also get general feedback comments
+    feedback_comments = db.session.query(Vote.comments).filter(
+        Vote.meeting_number == meeting_number,
+        Vote.question == "More feedback/comments",
+        Vote.comments.isnot(None),
+        Vote.comments != ''
+    ).all()
+    
+    all_comments = [c[0] for c in comments] + [c[0] for c in feedback_comments]
+    meeting_date = meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting.Meeting_Date else ''
+    
+    return jsonify({
+        'comments': all_comments,
+        'meeting_date': meeting_date
+    })
+
+
 
 
 

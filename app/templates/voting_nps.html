@@ -21,6 +21,22 @@
 
 	<div class="nps-container">
 	<h2 class="chart-title-main">NPS Trend - User Feedback and Satisfaction</h2>
+	
+	<div class="nps-legend">
+		<div class="legend-item">
+			<span class="legend-color positive"></span>
+			<span>NPS</span>
+		</div>
+		<div class="legend-item">
+			<span class="legend-color negative"></span>
+			<span>Detractors %</span>
+		</div>
+		<div class="legend-item">
+			<span class="legend-line"></span>
+			<span>Votes</span>
+		</div>
+	</div>
+	
 	<div class="chart-container-root">
 		<div class="axis-title-fixed top" id="axisTitleTop">Vote Count</div>
 		<div class="axis-title-fixed bottom" id="axisTitleBottom">Meeting Number</div>
@@ -39,18 +55,19 @@
 		</div>
 	</div>
 
-	<div class="nps-legend">
-		<div class="legend-item">
-			<span class="legend-color positive"></span>
-			<span>NPS</span>
-		</div>
-		<div class="legend-item">
-			<span class="legend-color negative"></span>
-			<span>Detractors %</span>
-		</div>
-		<div class="legend-item">
-			<span class="legend-line"></span>
-			<span>Votes</span>
+	<!-- Comments Container (Desktop/iPad only) -->
+	<div class="nps-comments-container" id="npsCommentsContainer" style="display: none;">
+		<div class="comments-card">
+			<div class="comments-header">
+				<div class="comments-title">
+					<i class="fas fa-comments"></i>
+					<span>Feedback from Meeting <strong id="commentsMeetingNumber"></strong></span>
+				</div>
+				<span class="comments-date" id="commentsMeetingDate"></span>
+			</div>
+			<div class="comments-list" id="commentsList">
+				<!-- Comments will be inserted here -->
+			</div>
 		</div>
 	</div>
 </div>
@@ -166,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					afterTitle: (context) => meetingDates[context[0].dataIndex] || '',
 					label: (context) => {
 						const idx = context.dataIndex;
-						if (context.datasetIndex === 0) return `Valid Votes: ${voteCounts[idx]}`;
+						if (context.datasetIndex === 0) return `Votes: ${voteCounts[idx]}`;
 						if (context.datasetIndex === 1) return `NPS: ${npsScores[idx].toFixed(1)}`;
 						return `Detractors: ${detractorPercentages[idx].toFixed(1)}%`;
 					}
@@ -296,9 +313,81 @@ document.addEventListener('DOMContentLoaded', function() {
 				y: { ...desktopScales.y, title: { display: false }, ticks: { display: false }, grid: { display: false }, afterFit: (axis) => { axis.width = 1; } },
 				y1: { ...desktopScales.y1, title: { display: false }, ticks: { display: false }, grid: { display: false }, afterFit: (axis) => { axis.width = 1; } },
 				x: { ...desktopScales.x, title: { display: false }, grid: { display: false }, ticks: { padding: 12 } }
-			}
+			},
+			// Click handler for bar clicks (Desktop/iPad only)
+			onClick: !isMobile ? function(event, elements) {
+				if (elements.length === 0) return;
+				
+				const clickedElement = elements[0];
+				const dataIndex = clickedElement.index;
+				const meetingNumber = meetingNumbers[dataIndex];
+				
+				// Fetch and display comments
+				fetchAndDisplayComments(meetingNumber);
+			} : undefined
 		}
 	});
+
+	// Function to fetch and display comments (Desktop/iPad only)
+	function fetchAndDisplayComments(meetingNumber) {
+		if (isMobile) return;
+		
+		const container = document.getElementById('npsCommentsContainer');
+		const commentsList = document.getElementById('commentsList');
+		const meetingNumEl = document.getElementById('commentsMeetingNumber');
+		const meetingDateEl = document.getElementById('commentsMeetingDate');
+		
+		// Show loading state
+		container.style.display = 'block';
+		commentsList.innerHTML = '<div class="comment-loading"><i class="fas fa-spinner fa-spin"></i> Loading feedback...</div>';
+		meetingNumEl.textContent = '#' + meetingNumber;
+		meetingDateEl.textContent = '';
+		
+		// Scroll to comments section
+		setTimeout(() => {
+			container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}, 100);
+		
+		fetch(`/voting/nps/comments/${meetingNumber}`)
+			.then(response => response.json())
+			.then(data => {
+				meetingDateEl.textContent = data.meeting_date || '';
+				
+				if (data.comments && data.comments.length > 0) {
+					commentsList.innerHTML = data.comments.map((comment, index) => `
+						<div class="comment-card" style="animation-delay: ${index * 0.05}s">
+							<div class="comment-icon">
+								<i class="fas fa-quote-left"></i>
+							</div>
+							<div class="comment-text">${escapeHtml(comment)}</div>
+						</div>
+					`).join('');
+				} else {
+					commentsList.innerHTML = `
+						<div class="no-comments">
+							<i class="fas fa-comment-slash"></i>
+							<p>No feedback comments for this meeting</p>
+						</div>
+					`;
+				}
+			})
+			.catch(error => {
+				console.error('Error fetching comments:', error);
+				commentsList.innerHTML = `
+					<div class="no-comments error">
+						<i class="fas fa-exclamation-triangle"></i>
+						<p>Failed to load comments</p>
+					</div>
+				`;
+			});
+	}
+	
+	// Helper function to escape HTML
+	function escapeHtml(text) {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
 
 	// Sync scroll to most recent
 	setTimeout(() => {
