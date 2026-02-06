@@ -99,7 +99,14 @@
     <div id="roster-content" class="tools-tab-content">
         <div class="roster-container">
             <!-- Header matching Lucky Draw style -->
-            <h1 class="page-title"><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
+            <div class="page-title-row">
+                <h1 class="page-title"><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
+                {% if has_roster_access %}
+                <a href="{{ url_for('tools_bp.roster_participation_trend') }}" class="icon-btn trend-btn" title="View Participation Trend">
+                    <i class="fas fa-chart-line"></i>
+                </a>
+                {% endif %}
+            </div>
             
             {{ render_meeting_filter(all_meetings, selected_meeting_num, label='', data_format='object',
                 select_id='roster-meeting-filter', extra_style="margin-bottom: 5px;") }}
@@ -132,22 +139,20 @@
                                     </div>
                                 </div>
                                 <div class="form-group-inline input-type">
-                                    <label for="contact_type-trigger">Contact Type</label>
-                                    {{ render_custom_select(["Guest", "Member", "Officer"], "", label='', select_id='contact_type', placeholder='Select...') }}
+                                    {{ render_custom_select(["Guest", "Member", "Officer"], "", label='Contact Type', select_id='contact_type', placeholder='Select...') }}
                                 </div>
                                 <div class="form-group-inline input-ticket">
-                                    <label for="ticket-trigger">Ticket</label>
                                     {% set ticket_opts = [] %}
                                     {% for t in tickets %}
                                         {% set t_icon = t.icon if t.icon else 'fa-ticket-alt' %}
                                         {% set _ = ticket_opts.append({'value': t.name, 'text': t.name, 'icon': 'fas ' ~ t_icon, 'color': t.color}) %}
                                     {% endfor %}
-                                    {{ render_custom_select(ticket_opts, "", label='', select_id='ticket', placeholder='Select...') }}
+                                    {{ render_custom_select(ticket_opts, "", label='Ticket', select_id='ticket', placeholder='Select...') }}
                                 </div>
     
                                 <div class="form-buttons">
-                                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Register</button>
-                                    <button type="button" class="btn btn-secondary" id="cancel-edit" style="display: none;">Cancel</button>
+                                    <button type="submit" id="submit-roster" class="btn btn-success"><i class="fas fa-save"></i> Register</button>
+                                    <button type="button" class="btn btn-secondary" id="cancel-edit" style="display: none;"><i class="fas fa-times"></i> Cancel</button>
                                 </div>
                             </form>
                         </div>

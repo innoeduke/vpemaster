@@ -1,0 +1,13 @@
+/* ========================================
+   Pathway Library Desktop Styles
+   For screens >= 1025px
+   ======================================== */
+
+@media (min-width: 1025px) {
+
+   /* Reduce container width to match agenda (900px) */
+   #pathway-library-container {
+      max-width: 900px;
+      margin: 0 auto;
+   }
+}

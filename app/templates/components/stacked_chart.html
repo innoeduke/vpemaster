@@ -1,0 +1,82 @@
+{#
+  Stacked Chart Component Macro
+  
+  A reusable macro for rendering stacked bar charts with optional line overlay.
+  
+  Parameters:
+    - chart_id: Unique ID for the chart canvas (required)
+    - page_title: h1 page title text
+    - chart_title: h2 chart subtitle text
+    - back_url: URL for the back button
+    - back_title: Title/tooltip for back button
+    - legend_items: List of dicts with {label, color, type: 'bar'|'line'}
+    - axis_labels: Dict with {left, right, bottom, top (optional)}
+#}
+
+{% macro render_chart_container(chart_id, page_title, chart_title, back_url, back_title, legend_items, axis_labels) %}
+<div class="page-title-row">
+	<h1><i class="fas fa-chart-bar"></i> {{ page_title }}</h1>
+	<a href="{{ back_url }}" class="icon-btn trend-btn" title="{{ back_title }}">
+		<i class="fas fa-arrow-left"></i>
+	</a>
+</div>
+
+<div class="stacked-chart-container">
+	<h2 class="chart-title-main">{{ chart_title }}</h2>
+	
+	<div class="chart-legend">
+		{% for item in legend_items %}
+		<div class="legend-item">
+			{% if item.type == 'line' %}
+			<span class="legend-line" style="{% if item.color %}background-color: {{ item.color }};{% endif %}"></span>
+			{% else %}
+			<span class="legend-color" style="background-color: {{ item.color }}; border: 1px solid {{ item.border_color or item.color }};"></span>
+			{% endif %}
+			<span>{{ item.label }}</span>
+		</div>
+		{% endfor %}
+	</div>
+	
+	<div class="chart-container-root">
+		{% if axis_labels.top %}
+		<div class="axis-title-fixed top" id="axisTitleTop">{{ axis_labels.top }}</div>
+		{% endif %}
+		<div class="axis-title-fixed bottom" id="axisTitleBottom">{{ axis_labels.bottom }}</div>
+		<div class="axis-title-fixed left" id="axisTitleLeft">{{ axis_labels.left }}</div>
+		{% if axis_labels.right %}
+		<div class="axis-title-fixed right" id="axisTitleRight">{{ axis_labels.right }}</div>
+		{% endif %}
+		
+		<div class="chart-wrapper-outer">
+			<div class="fixed-axes-container">
+				<canvas id="axisChart"></canvas>
+			</div>
+			<div class="chart-scroll-area">
+				<div class="chart-inner-container" id="chartInnerContainer">
+					<canvas id="{{ chart_id }}"></canvas>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	{{ caller() if caller }}
+</div>
+{% endmacro %}
+
+{# Macro for optional comments section (like NPS feedback) #}
+{% macro render_comments_section(container_id, meeting_num_id, meeting_date_id, comments_list_id) %}
+<div class="chart-comments-container" id="{{ container_id }}" style="display: none;">
+	<div class="comments-card">
+		<div class="comments-header">
+			<div class="comments-title">
+				<i class="fas fa-comments"></i>
+				<span>Feedback from Meeting <strong id="{{ meeting_num_id }}"></strong></span>
+			</div>
+			<span class="comments-date" id="{{ meeting_date_id }}"></span>
+		</div>
+		<div class="comments-list" id="{{ comments_list_id }}">
+			<!-- Comments will be inserted here -->
+		</div>
+	</div>
+</div>
+{% endmacro %}

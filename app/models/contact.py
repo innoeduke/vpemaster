@@ -49,12 +49,14 @@ class Contact(db.Model):
         Get distinct pathways for this contact from their session logs.
         Returns list of pathway names ordered alphabetically.
         """
-        from sqlalchemy import distinct
+        from sqlalchemy import distinct, union
         from .session import SessionLog, SessionType, OwnerMeetingRoles
         from .meeting import Meeting
         from .roster import MeetingRole
+        from .achievement import Achievement
         
-        query = db.session.query(SessionLog.pathway)\
+        # 1. Get pathways from SessionLog (ONLY if Project_ID is set = Real Progress)
+        q_logs = db.session.query(SessionLog.pathway)\
             .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id)\
             .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
@@ -71,9 +73,24 @@ class Contact(db.Model):
                     )
                 ),
                 SessionLog.pathway.isnot(None),
-                SessionLog.pathway != ''
-            ).distinct().order_by(SessionLog.pathway)
-        return [r[0] for r in query.all()]
+                SessionLog.pathway != '',
+                SessionLog.Project_ID.isnot(None) # <--- CRITICAL FIX: Only real projects count
+            ).distinct()
+            
+        # 2. Get pathways from Achievements (Completed Levels/Paths)
+        q_ach = db.session.query(Achievement.path_name)\
+            .filter(
+                Achievement.contact_id == self.id,
+                Achievement.path_name.isnot(None),
+                Achievement.path_name != ''
+            ).distinct()
+            
+        # 3. Union results
+        final_query = q_logs.union(q_ach)
+        
+        results = [r[0] for r in final_query.all()]
+        results.sort()
+        return results
 
 
     def get_completed_levels(self, pathway_name):

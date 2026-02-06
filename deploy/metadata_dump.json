@@ -32,11 +32,11 @@
       "meeting_time": "18:55:00",
       "contact_phone_number": null,
       "website": "https://leadership.tmclub.net",
-      "logo_url": null,
+      "logo_url": "uploads/club_logos/club_logo_2.webp",
       "founded_date": "2007-06-20",
       "current_excomm_id": 1,
       "created_at": "2026-02-01 16:23:24",
-      "updated_at": "2026-02-02 04:00:25"
+      "updated_at": "2026-02-04 05:58:00"
     },
     {
       "id": 3,
@@ -67,7 +67,7 @@
       "end_date": "2026-06-30",
       "excomm_name": "Memory Makers",
       "created_at": "2026-02-02 03:49:03",
-      "updated_at": "2026-02-02 04:25:35"
+      "updated_at": "2026-02-04 05:58:00"
     },
     {
       "id": 3,
@@ -329,6 +329,28 @@
       "has_single_owner": false,
       "is_member_only": false,
       "club_id": 1
+    },
+    {
+      "id": 68,
+      "name": "Timer",
+      "icon": null,
+      "type": "standard",
+      "award_category": null,
+      "needs_approval": false,
+      "has_single_owner": true,
+      "is_member_only": false,
+      "club_id": null
+    },
+    {
+      "id": 69,
+      "name": "Generic Timer",
+      "icon": null,
+      "type": "standard",
+      "award_category": null,
+      "needs_approval": false,
+      "has_single_owner": true,
+      "is_member_only": false,
+      "club_id": null
     }
   ],
   "pathways": [
@@ -385,7 +407,7 @@
       "id": 8,
       "name": "Generic",
       "abbr": "TM",
-      "type": "dummy",
+      "type": "others",
       "status": "active"
     },
     {
@@ -459,7 +481,7 @@
       "Format": "Prepared Speech",
       "Duration_Min": 4,
       "Duration_Max": 6,
-      "Introduction": "Ice Breaker (required)\nBEGINNING\nThis project marks the beginning of your Toastmasters journey. It is your opportunity to introduce yourself to the group and share something about yourself.\nCULMINATION\nThis project culminates in you giving a 4- to 6-minute speech, the first one that all Toastmasters present to their clubs.\nAs you work through this project, you will learn how to recognize skills you already have, build upon those skills to foster confidence, and identify areas for improvement.\nYou will learn to distinguish the basic elements of speech structure and utilize rehearsal techniques that balance preparation and spontaneity.",
+      "Introduction": "Ice Breaker (required)\n\n#### BEGINNING\nThis project marks the beginning of your Toastmasters journey. It is your opportunity to introduce yourself to the group and share something about yourself.\n\n#### CULMINATION\nThis project culminates in you giving a 4- to 6-minute speech, the first one that all Toastmasters present to their clubs.\n\nAs you work through this project, you will learn how to recognize skills you already have, build upon those skills to foster confidence, and identify areas for improvement.\n\nYou will learn to distinguish the basic elements of speech structure and utilize rehearsal techniques that balance preparation and spontaneity.",
       "Overview": "Write and deliver a speech about any topic to introduce yourself to your club. Your speech may be humorous, informational, or any other style that appeals to you.",
       "Purpose": "The purpose of this project is to introduce yourself to the club and learn the basic structure of a public speech.",
       "Requirements": "None.",
@@ -1980,6 +2002,28 @@
       "Duration_Max": 2,
       "role_id": 1,
       "club_id": 1
+    },
+    {
+      "id": 81,
+      "Title": "Timer",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": 68,
+      "club_id": null
+    },
+    {
+      "id": 82,
+      "Title": "Generic Timer",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Valid_for_Project": false,
+      "Duration_Min": null,
+      "Duration_Max": null,
+      "role_id": 69,
+      "club_id": null
     }
   ],
   "pathway_projects": [
@@ -4788,10 +4832,10 @@
     },
     {
       "id": 2,
-      "name": "Cancelled",
+      "name": "Role-taker",
       "price": 0.0,
-      "icon": "fa-ban",
-      "color": "#dc3545"
+      "icon": "fa-microphone",
+      "color": "#0d6efd"
     },
     {
       "id": 3,
@@ -4809,7 +4853,7 @@
     },
     {
       "id": 5,
-      "name": "Coupon",
+      "name": "Voucher",
       "price": 0.0,
       "icon": "fa-tag",
       "color": "#6f42c1"
@@ -4823,17 +4867,10 @@
     },
     {
       "id": 7,
-      "name": "Role-taker",
+      "name": "Cancelled",
       "price": 0.0,
-      "icon": "fa-microphone",
-      "color": "#0d6efd"
-    },
-    {
-      "id": 8,
-      "name": "Member",
-      "price": 0.0,
-      "icon": "fa-id-card",
-      "color": "#0dcaf0"
+      "icon": "fa-ban",
+      "color": "#dc3545"
     }
   ]
 }

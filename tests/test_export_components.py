@@ -60,6 +60,9 @@ class TestAgendaComponent(unittest.TestCase):
             log.owner = None
             log.owners = []
         
+        # Explicitly set hidden to None/False to avoid Mock object evaluation
+        log.hidden = None
+        
         st = Mock()
         st.id = session_type_id
         # Use provided session_title if it looks like a session type title we care about

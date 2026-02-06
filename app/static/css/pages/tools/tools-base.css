@@ -64,6 +64,40 @@
 	padding: 20px 15px;
 }
 
+/* --- Page Title Row with Icon Button --- */
+.page-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
+.page-title-row .page-title {
+	margin: 0;
+	text-align: left;
+}
+
+.trend-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: 50%;
+	background-color: #f8f9fa;
+	color: #772432;
+	text-decoration: none;
+	transition: all 0.2s ease;
+	border: 1px solid #dee2e6;
+	font-size: 1.1em;
+}
+
+.trend-btn:hover {
+	background-color: #772432;
+	color: white;
+	border-color: #772432;
+}
+
 .page-title {
 	font-family: 'Montserrat', sans-serif;
 	color: #333;
@@ -429,8 +463,16 @@
 	display: flex;
 	align-items: flex-end;
 	gap: 15px;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
+	/* Prevent wrapping on desktop to avoid overlaps */
 	width: 100%;
+}
+
+@media (max-width: 1024px) {
+	.roster-container #roster-form {
+		flex-wrap: wrap;
+		/* Allow wrapping on tablets and mobile */
+	}
 }
 
 /* Form Elements Styling */
@@ -474,6 +516,25 @@
 	box-shadow: 0 0 0 0.2rem rgba(119, 36, 50, 0.15);
 }
 
+/* Edit Mode Highlighting - High Specificity to avoid overrides */
+#roster-form.editing-mode .form-control,
+#roster-form.editing-mode .custom-select-trigger {
+	background-color: #fff9c4 !important;
+	/* Single color indicating Edit Mode */
+	border-color: #fdd835 !important;
+}
+
+/* Vertical Button Alignment Fix */
+.roster-container .btn {
+	line-height: 1;
+	border: none !important;
+	/* Ensure no border difference causing alignment shift */
+}
+
+.roster-container .btn i {
+	vertical-align: middle;
+}
+
 /* Specific Widths for Inline Form */
 .roster-container .input-order {
 	flex: 0 0 70px;
@@ -481,8 +542,9 @@
 }
 
 .roster-container .input-name {
-	flex: 2;
-	min-width: 250px;
+	flex: 3;
+	/* Give name more space on desktop */
+	min-width: 200px;
 	position: relative;
 }
 
@@ -517,11 +579,15 @@
 .roster-container .input-type {
 	flex: 1;
 	min-width: 140px;
+	flex-shrink: 0;
+	/* Prevent from becoming too small */
 }
 
 .roster-container .input-ticket {
 	flex: 1;
-	min-width: 140px;
+	min-width: 160px;
+	/* Bit more space for ticket types */
+	flex-shrink: 0;
 }
 
 /* Buttons in Form */

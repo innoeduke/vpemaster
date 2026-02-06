@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% from "components/stacked_chart.html" import render_chart_container, render_comments_section %}
+
+{% block title %}NPS Trend{% endblock %}
+
+{% block header_title %}NPS Trend{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-desktop.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-ipad.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-mobile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="booking-container">
+	{% set legend_items = [
+		{'label': 'NPS', 'color': 'rgba(40, 167, 69, 0.7)', 'border_color': 'rgba(40, 167, 69, 1)', 'type': 'bar'},
+		{'label': 'Detractors %', 'color': 'rgba(220, 53, 69, 0.7)', 'border_color': 'rgba(220, 53, 69, 1)', 'type': 'bar'},
+		{'label': 'Votes', 'color': '#ccc', 'type': 'line'}
+	] %}
+	{% set axis_labels = {'left': 'Score / Percentage', 'right': 'Vote Count', 'bottom': 'Meeting Number'} %}
+	
+	{% call render_chart_container('npsChart', 'NPS Trend', 'User Feedback and Satisfaction', url_for('voting_bp.voting'), 'Back to Voting', legend_items, axis_labels) %}
+		{{ render_comments_section('npsCommentsContainer', 'commentsMeetingNumber', 'commentsMeetingDate', 'commentsList') }}
+	{% endcall %}
+</div>
+
+<script>
+Chart.register(ChartDataLabels);
+
+document.addEventListener('DOMContentLoaded', function() {
+	const meetingNumbers = {{ meeting_numbers | tojson }};
+	const npsScores = {{ nps_scores | tojson }};
+	const detractorPercentages = {{ detractor_percentages | tojson }};
+	const voteCounts = {{ vote_counts | tojson }};
+	const meetingDates = {{ meeting_dates | tojson }};
+	const labels = meetingNumbers.map((num, idx) => `#${num}`);
+	
+	// Color bars based on positive/negative values
+	const backgroundColors = npsScores.map(score => 
+		score >= 0 ? 'rgba(40, 167, 69, 0.7)' : 'rgba(220, 53, 69, 0.7)'
+	);
+	const borderColors = npsScores.map(score => 
+		score >= 0 ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)'
+	);
+	
+	const isMobile = window.innerWidth < 768;
+	const scrollArea = document.querySelector('.chart-scroll-area');
+	const innerContainer = document.getElementById('chartInnerContainer');
+	
+	// Fixed dimensions for bars
+	const barThickness = 30;
+	const barGap = 20;
+	const minDimensionPerBar = barThickness + barGap;
+	const totalRequiredDimension = labels.length * minDimensionPerBar + 80;
+
+	if (isMobile) {
+		innerContainer.style.height = `${totalRequiredDimension}px`;
+		innerContainer.style.width = '100%';
+	} else {
+		innerContainer.style.width = `${totalRequiredDimension}px`;
+		innerContainer.style.height = '100%';
+	}
+
+	// Calculate common scale bounds to sync both charts
+	const maxVoteCount = Math.max(...voteCounts, 5);
+	const suggestedMaxVote = maxVoteCount + (maxVoteCount * 0.1);
+
+	// Shared scale configuration (Desktop)
+	const desktopScales = {
+		y: {
+			type: 'linear',
+			position: 'left',
+			beginAtZero: true,
+			min: 0,
+			max: 100, // Strictly 0-100 for percentage/score
+			title: { display: true, text: 'Score / Percentage', font: { weight: 'bold' } },
+			grid: { color: 'rgba(0, 0, 0, 0.05)' }
+		},
+		y1: {
+			type: 'linear',
+			position: 'right',
+			beginAtZero: true,
+			min: 0,
+			suggestedMax: suggestedMaxVote,
+			title: { display: true, text: 'Vote Count', font: { weight: 'bold' } },
+			grid: { drawOnChartArea: false }
+		},
+		x: {
+			title: { display: true, text: 'Meeting Number', font: { weight: 'bold' } },
+			grid: { display: false },
+			ticks: { padding: 12 } // Prevent baseline overlap
+		}
+	};
+
+	// Shared scale configuration (Mobile)
+	const mobileScales = {
+		x: {
+			type: 'linear',
+			position: 'bottom',
+			beginAtZero: true,
+			min: 0,
+			max: 100,
+			title: { display: true, text: 'Score / Percentage', font: { weight: 'bold' } }
+		},
+		x1: {
+			type: 'linear',
+			position: 'top',
+			beginAtZero: true,
+			min: 0,
+			suggestedMax: suggestedMaxVote,
+			title: { display: true, text: 'Vote Count', font: { weight: 'bold' } }
+		},
+		y: {
+			type: 'category',
+			position: 'left',
+			title: { display: true, text: 'Meeting', font: { weight: 'bold' } },
+			grid: { display: false } // Disable horizontal grid lines on mobile
+		}
+	};
+
+	const commonOptions = {
+		responsive: true,
+		maintainAspectRatio: false,
+		indexAxis: isMobile ? 'y' : 'x',
+		plugins: {
+			legend: { display: false },
+			title: { display: false }, // Moved to HTML
+			datalabels: { display: false }, // Default off, enabled per dataset
+			tooltip: {
+				mode: 'index',
+				intersect: false,
+				callbacks: {
+					title: (context) => `Meeting #${meetingNumbers[context[0].dataIndex]}`,
+					afterTitle: (context) => meetingDates[context[0].dataIndex] || '',
+					label: (context) => {
+						const idx = context.dataIndex;
+						if (context.datasetIndex === 0) return `Votes: ${voteCounts[idx]}`;
+						if (context.datasetIndex === 1) return `NPS: ${npsScores[idx].toFixed(1)}`;
+						return `Detractors: ${detractorPercentages[idx].toFixed(1)}%`;
+					}
+				}
+			}
+		}
+	};
+
+	// Update HTML Axis Titles based on orientation
+	const titleTop = document.getElementById('axisTitleTop');
+	const titleBottom = document.getElementById('axisTitleBottom');
+	const titleLeft = document.getElementById('axisTitleLeft');
+	const titleRight = document.getElementById('axisTitleRight');
+
+	if (isMobile) {
+		if (titleTop) titleTop.innerText = 'Vote Count';
+		titleBottom.innerText = 'Score / Percentage';
+	} else {
+		if (titleTop) titleTop.style.display = 'none';
+		titleBottom.innerText = 'Meeting Number';
+	}
+
+	// 1. AXIS CHART (Fixed Background)
+	new Chart(document.getElementById('axisChart').getContext('2d'), {
+		type: 'bar',
+		data: {
+			labels: labels, // Need labels to calculate axis space correctly
+			datasets: [
+				{ data: npsScores, hidden: true },
+				{ data: detractorPercentages, hidden: true, yAxisID: isMobile ? 'x' : 'y' },
+				{ data: voteCounts, hidden: true, yAxisID: isMobile ? 'x1' : 'y1' }
+			]
+		},
+		options: {
+			...commonOptions,
+			plugins: { ...commonOptions.plugins, tooltip: { enabled: false } },
+			scales: isMobile ? {
+				x: { ...mobileScales.x, title: { display: false } }, 
+				x1: { ...mobileScales.x1, title: { display: false } },
+				y: { ...mobileScales.y, display: false }
+			} : {
+				y: { ...desktopScales.y, title: { display: false }, afterFit: (axis) => { axis.width = 60; } },
+				y1: { ...desktopScales.y1, title: { display: false }, afterFit: (axis) => { axis.width = 60; } },
+				x: { ...desktopScales.x, display: false } // Hide fixed X-axis on desktop
+			}
+		}
+	});
+
+	// 2. DATA CHART (Scrollable Foreground)
+	new Chart(document.getElementById('npsChart').getContext('2d'), {
+		type: 'bar',
+		data: {
+			labels: labels,
+			datasets: [
+				{
+					type: 'line',
+					label: 'Votes',
+					data: voteCounts,
+					xAxisID: isMobile ? 'x1' : 'x',
+					yAxisID: isMobile ? 'y' : 'y1',
+					borderColor: '#ccc',
+					backgroundColor: 'rgba(204, 204, 204, 0.1)',
+					borderWidth: 2,
+					pointBackgroundColor: isMobile ? '#ccc' : '#ffffff',
+					pointRadius: isMobile ? 3 : 4,
+					pointBorderWidth: isMobile ? 0 : 2,
+					tension: 0.3,
+					datalabels: { display: false },
+					order: 1
+				},
+				{
+					label: 'NPS Score',
+					data: npsScores,
+					xAxisID: isMobile ? 'x' : 'x',
+					yAxisID: isMobile ? 'y' : 'y',
+					backgroundColor: backgroundColors,
+					borderColor: borderColors,
+					borderWidth: 1,
+					stack: 'nps_stack',
+					barThickness: barThickness,
+					datalabels: {
+						anchor: 'center',
+						align: 'center',
+						formatter: Math.round,
+						font: { weight: 'bold', size: isMobile ? 9 : 10 },
+						color: (ctx) => ctx.dataset.data[ctx.dataIndex] >= 0 ? '#155724' : '#721c24',
+						display: (ctx) => Math.abs(ctx.dataset.data[ctx.dataIndex]) > (isMobile ? 5 : 10)
+					},
+					order: 2
+				},
+				{
+					label: 'Detractors %',
+					data: detractorPercentages,
+					xAxisID: isMobile ? 'x' : 'x',
+					yAxisID: isMobile ? 'y' : 'y',
+					backgroundColor: 'rgba(220, 53, 69, 0.4)',
+					borderColor: 'rgba(220, 53, 69, 0.8)',
+					borderWidth: 1,
+					stack: 'nps_stack',
+					barThickness: barThickness,
+					datalabels: {
+						anchor: 'end',
+						align: isMobile ? 'right' : 'top',
+						formatter: (v) => v > 0 ? Math.round(v) + '%' : '',
+						font: { weight: 'bold', size: isMobile ? 9 : 10 },
+						color: '#dc3545',
+						offset: 4, // Increased offset for better visibility
+						display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0
+					},
+					order: 3
+				}
+			]
+		},
+		options: {
+			...commonOptions,
+			plugins: {
+				...commonOptions.plugins,
+				datalabels: {
+					display: (ctx) => ctx.datasetIndex > 0
+				}
+			},
+			scales: isMobile ? {
+				x: { ...mobileScales.x, display: false }, // Completely hide to avoid double scale
+				x1: { ...mobileScales.x1, display: false },
+				y: { ...mobileScales.y, title: { display: false }, grid: { display: false }, ticks: { padding: 5, autoSkip: false } }
+			} : {
+				y: { ...desktopScales.y, title: { display: false }, ticks: { display: false }, grid: { display: false }, afterFit: (axis) => { axis.width = 1; } },
+				y1: { ...desktopScales.y1, title: { display: false }, ticks: { display: false }, grid: { display: false }, afterFit: (axis) => { axis.width = 1; } },
+				x: { ...desktopScales.x, title: { display: false }, grid: { display: false }, ticks: { padding: 12 } }
+			},
+			// Click handler for bar clicks (Desktop/iPad only)
+			onClick: !isMobile ? function(event, elements) {
+				if (elements.length === 0) return;
+				
+				const clickedElement = elements[0];
+				const dataIndex = clickedElement.index;
+				const meetingNumber = meetingNumbers[dataIndex];
+				
+				// Fetch and display comments
+				fetchAndDisplayComments(meetingNumber);
+			} : undefined
+		}
+	});
+
+	// Function to fetch and display comments (Desktop/iPad only)
+	function fetchAndDisplayComments(meetingNumber) {
+		if (isMobile) return;
+		
+		const container = document.getElementById('npsCommentsContainer');
+		const commentsList = document.getElementById('commentsList');
+		const meetingNumEl = document.getElementById('commentsMeetingNumber');
+		const meetingDateEl = document.getElementById('commentsMeetingDate');
+		
+		// Show loading state
+		container.style.display = 'block';
+		commentsList.innerHTML = '<div class="comment-loading"><i class="fas fa-spinner fa-spin"></i> Loading feedback...</div>';
+		meetingNumEl.textContent = '#' + meetingNumber;
+		meetingDateEl.textContent = '';
+		
+		// Scroll to comments section
+		setTimeout(() => {
+			container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+		}, 100);
+		
+		fetch(`/voting/nps/comments/${meetingNumber}`)
+			.then(response => response.json())
+			.then(data => {
+				meetingDateEl.textContent = data.meeting_date || '';
+				
+				if (data.comments && data.comments.length > 0) {
+					commentsList.innerHTML = data.comments.map((comment, index) => `
+						<div class="comment-card" style="animation-delay: ${index * 0.05}s">
+							<div class="comment-icon">
+								<i class="fas fa-quote-left"></i>
+							</div>
+							<div class="comment-text">${escapeHtml(comment)}</div>
+						</div>
+					`).join('');
+				} else {
+					commentsList.innerHTML = `
+						<div class="no-comments">
+							<i class="fas fa-comment-slash"></i>
+							<p>No feedback comments for this meeting</p>
+						</div>
+					`;
+				}
+			})
+			.catch(error => {
+				console.error('Error fetching comments:', error);
+				commentsList.innerHTML = `
+					<div class="no-comments error">
+						<i class="fas fa-exclamation-triangle"></i>
+						<p>Failed to load comments</p>
+					</div>
+				`;
+			});
+	}
+	
+	// Helper function to escape HTML
+	function escapeHtml(text) {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
+
+	// Sync scroll to most recent
+	setTimeout(() => {
+		if (isMobile) scrollArea.scrollTop = scrollArea.scrollHeight;
+		else scrollArea.scrollLeft = scrollArea.scrollWidth;
+	}, 150);
+});
+</script>
+
+
+
+{% endblock %}

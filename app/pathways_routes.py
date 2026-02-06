@@ -74,11 +74,16 @@ def pathway_library():
             }
             pathway_dict['projects'].append(project_dict)
             
-        ptype = pathway.type or "Other"
-        if ptype not in grouped_pathways:
-            grouped_pathways[ptype] = []
-        grouped_pathways[ptype].append(pathway_dict)
-        pathways_data.append(pathway_dict)
+        ptype = pathway.type
+        if ptype and ptype.lower() != 'others':
+            label = ptype.upper()
+            if label not in grouped_pathways:
+                grouped_pathways[label] = []
+            grouped_pathways[label].append(pathway_dict)
+            pathways_data.append(pathway_dict)
+
+    # Sort grouped_pathways by keys (labels) ascending
+    grouped_pathways = dict(sorted(grouped_pathways.items()))
 
     return render_template('pathway_library.html', grouped_pathways=grouped_pathways, pathways=pathways_data) 
 

@@ -8,7 +8,7 @@
 const modalElements = {
   modal: document.getElementById("speechEditModal"),
   form: document.getElementById("speechEditForm"),
-  title: document.querySelector("#speechEditModal h1"),
+  title: document.querySelector("#speechEditModal h2"),
   logId: document.getElementById("edit-log-id"),
   sessionType: document.getElementById("edit-session-type-title"),
   speechTitle: document.getElementById("edit-speech-title"),

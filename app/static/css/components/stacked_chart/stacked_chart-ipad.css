@@ -1,0 +1,18 @@
+/* ========================================
+   Stacked Chart Component - iPad Styles
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+	.stacked-chart-container {
+		padding: 15px;
+	}
+
+	.chart-container-root {
+		height: 500px;
+	}
+
+	.chart-legend {
+		gap: 20px;
+		font-size: 0.85em;
+	}
+}

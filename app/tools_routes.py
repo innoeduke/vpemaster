@@ -109,6 +109,11 @@ def tools():
             if not selected_meeting_num and meeting_numbers:
                 selected_meeting_num = meeting_numbers[0]
 
+        # Get all contacts for the dropdown menu, filtered by club
+        contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
+            .order_by(Contact.Name).all()
+        Contact.populate_users(contacts, club_id)
+
         if selected_meeting_num:
             query = Meeting.query.filter(Meeting.Meeting_Number == selected_meeting_num)
             if club_id:
@@ -123,6 +128,41 @@ def tools():
                 .order_by(Roster.order_number.asc())\
                 .all()
             
+            # Auto-sync officers to roster
+            club_officers = [c for c in contacts if c.user and c.user.has_role(Permissions.STAFF)]
+            roster_contact_ids = {r.contact_id for r in roster_entries if r.contact_id}
+            missing_officers = [o for o in club_officers if o.id not in roster_contact_ids]
+            
+            if missing_officers:
+                officer_ticket = Ticket.query.filter_by(name='Officer').first()
+                officer_orders = [r.order_number for r in roster_entries if r.order_number and r.order_number >= 1000]
+                next_off_order = max(officer_orders) + 1 if officer_orders else 1000
+                
+                for off in missing_officers:
+                    new_off_entry = Roster(
+                        meeting_number=selected_meeting_num,
+                        contact_id=off.id,
+                        contact_type='Officer',
+                        order_number=next_off_order,
+                        ticket_id=officer_ticket.id if officer_ticket else None
+                    )
+                    db.session.add(new_off_entry)
+                    next_off_order += 1
+                
+                try:
+                    db.session.commit()
+                    # Re-fetch roster entries
+                    roster_entries = Roster.query\
+                        .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
+                        .outerjoin(Contact, Roster.contact_id == Contact.id)\
+                        .filter(Roster.meeting_number == selected_meeting_num)\
+                        .order_by(Roster.order_number.asc())\
+                        .all()
+                except Exception as e:
+                    db.session.rollback()
+                    # Log error but don't break the page
+                    print(f"Error syncing officers: {e}")
+
             # Populate booked roles from SessionLogs using the helper
             roles_map = RoleService.get_role_takers(selected_meeting_num, club_id)
             # We pass roles_map directly to template to avoid transient attribute loss on SQLAlchemy objects
@@ -134,11 +174,6 @@ def tools():
                 next_unallocated_entry = type('obj', (object,), {'order_number': max_order + 1})()
             else:
                 next_unallocated_entry = type('obj', (object,), {'order_number': 1})()
-
-        # Get all contacts for the dropdown menu, filtered by club
-        contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
-            .order_by(Contact.Name).all()
-        Contact.populate_users(contacts, club_id)
 
         all_pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
         for p in all_pathways:
@@ -173,6 +208,88 @@ def tools():
         tickets=tickets,
         tickets_map=tickets_map
     )
+
+
+@tools_bp.route('/roster/participation-trend', methods=['GET'])
+@login_required
+@authorized_club_required
+def roster_participation_trend():
+    """Stacked bar chart showing participation trend by ticket type over meetings."""
+    from sqlalchemy import func
+    
+    club_id = get_current_club_id()
+    
+    # Get all tickets for legend colors
+    all_tickets = Ticket.query.order_by(Ticket.id).all()
+    ticket_map = {t.id: t for t in all_tickets}
+    
+    # Fetch meetings with roster data
+    query = Meeting.query.filter(Meeting.status == 'finished')
+    if club_id:
+        query = query.filter(Meeting.club_id == club_id)
+    meetings = query.order_by(Meeting.Meeting_Number.asc()).all()
+    meeting_numbers = [m.Meeting_Number for m in meetings]
+    meeting_dates = [m.Meeting_Date.strftime('%Y-%m-%d') if m.Meeting_Date else '' for m in meetings]
+    
+    # Aggregate roster counts by meeting and ticket
+    # Exclude 'Cancelled' ticket type
+    cancelled_ticket = Ticket.query.filter_by(name='Cancelled').first()
+    cancelled_ticket_id = cancelled_ticket.id if cancelled_ticket else -1
+    
+    counts_query = db.session.query(
+        Roster.meeting_number,
+        Roster.ticket_id,
+        func.count(Roster.id).label('count')
+    ).filter(
+        Roster.meeting_number.in_(meeting_numbers),
+        Roster.ticket_id != cancelled_ticket_id
+    ).group_by(
+        Roster.meeting_number,
+        Roster.ticket_id
+    ).all()
+    
+    # Organize counts: {meeting_number: {ticket_id: count}}
+    counts_by_meeting = {}
+    for mtg_num, ticket_id, count in counts_query:
+        if mtg_num not in counts_by_meeting:
+            counts_by_meeting[mtg_num] = {}
+        counts_by_meeting[mtg_num][ticket_id] = count
+    
+    # Find first meeting with data
+    first_data_idx = 0
+    for i, mtg_num in enumerate(meeting_numbers):
+        if mtg_num in counts_by_meeting and counts_by_meeting[mtg_num]:
+            first_data_idx = i
+            break
+    
+    # Filter to meetings with data
+    filtered_meeting_numbers = meeting_numbers[first_data_idx:]
+    filtered_meeting_dates = meeting_dates[first_data_idx:]
+    
+    # Build datasets - one per ticket type (excluding Cancelled)
+    datasets = []
+    for ticket in all_tickets:
+        if ticket.name == 'Cancelled':
+            continue
+        
+        data = []
+        for mtg_num in filtered_meeting_numbers:
+            count = counts_by_meeting.get(mtg_num, {}).get(ticket.id, 0)
+            data.append(count)
+        
+        # Only include tickets that have some data
+        if sum(data) > 0:
+            datasets.append({
+                'label': ticket.name,
+                'data': data,
+                'color': ticket.color or '#6c757d',
+                'icon': ticket.icon or 'fa-ticket-alt'
+            })
+    
+    return render_template('roster_participation_trend.html',
+                           meeting_numbers=filtered_meeting_numbers,
+                           meeting_dates=filtered_meeting_dates,
+                           datasets=datasets)
 
 # --- API Endpoints (Moved from roster_routes.py) ---
 

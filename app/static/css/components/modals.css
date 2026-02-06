@@ -229,3 +229,107 @@
     overflow: hidden;
     transition: max-height 0.2s ease-out;
 }
+
+/* --- Usage Warning Modal --- */
+.usage-warning-modal .modal-content {
+    max-width: 700px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.usage-warning-modal .modal-header {
+    background-color: #f8f9fa;
+    padding: 20px 30px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.usage-warning-modal .modal-header h2 {
+    margin: 0;
+    color: #dc3545;
+    font-size: 1.5rem;
+}
+
+.usage-warning-modal .modal-header h2 i {
+    margin-right: 10px;
+}
+
+.usage-warning-modal .modal-body {
+    padding: 30px;
+}
+
+.usage-warning-modal #usageWarningMessage {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    color: #495057;
+}
+
+.usage-warning-modal .usage-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.usage-warning-modal .premium-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.usage-warning-modal .premium-table th {
+    background-color: #f1f3f5;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.usage-warning-modal .premium-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    color: #212529;
+}
+
+.usage-warning-modal .premium-table tr:last-child td {
+    border-bottom: none;
+}
+
+.usage-warning-modal .usage-owner {
+    font-weight: 500;
+    color: #004165;
+}
+
+.usage-warning-modal .usage-footer {
+    font-style: italic;
+    color: #6c757d;
+    margin-top: 10px;
+}
+
+.usage-warning-modal .modal-footer {
+    padding: 20px 30px;
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.usage-warning-modal .usage-meeting-link {
+    color: #004165;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    display: inline-block;
+}
+
+.usage-warning-modal .usage-meeting-link:hover {
+    color: #dc3545;
+    transform: scale(1.1);
+}

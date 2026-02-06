@@ -9,11 +9,11 @@
 }
 
 .login-container h1 {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 2.5rem;
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    color: #1a202c;
+    font-family: 'Great Vibes', cursive;
+    color: #772432;
+    font-size: 4rem;
+    letter-spacing: 0.02em;
+    font-weight: 400;
 }
 
 h1,
@@ -282,7 +282,7 @@ h6 {
     }
 
     .login-container h1 {
-        font-size: 1.75rem;
+        font-size: 3rem;
         margin-bottom: 20px;
         text-align: center;
     }

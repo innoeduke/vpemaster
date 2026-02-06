@@ -1,0 +1,125 @@
+/* ========================================
+   Pathway Library iPad Styles
+   For screens 769px - 1024px
+   ======================================== */
+
+@media (min-width: 769px) and (max-width: 1024px) {
+
+	/* --- Pathway Library Responsive Fixes --- */
+	#pathway-library-container .filters-container {
+		flex-direction: row;
+		justify-content: center;
+		align-items: flex-end;
+		gap: 25px;
+	}
+
+	.filters-container .form-group {
+		flex: 1;
+		min-width: 0;
+	}
+
+	/* Optimizing Project Header for Mobile/Tablet */
+	.project-header {
+		flex-direction: column;
+		/* Stack vertically */
+		align-items: flex-start;
+		gap: 5px;
+		/* Reduce gap since items are stacked */
+	}
+
+	.project-header .button-group {
+		order: -1;
+		/* Move above title */
+		width: 100%;
+		display: flex;
+		justify-content: flex-end;
+		/* Align right */
+		gap: 10px;
+		margin-bottom: 0px;
+	}
+
+	.project-header h2 {
+		width: 100%;
+		margin-bottom: 5px;
+		font-size: 1.5em;
+		line-height: 1.2;
+	}
+
+	/* Path Codes Grid Optimization */
+	.path-codes {
+		display: flex;
+		flex-wrap: nowrap;
+		/* Enforce single row */
+		gap: 4px;
+		justify-content: space-between;
+		overflow-x: auto;
+		/* Allow scroll if needed on very small screens */
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: 2px;
+	}
+
+	.path-code-box {
+		flex: 1;
+		flex-direction: column;
+		/* Icon top, text bottom */
+		justify-content: center;
+		align-items: center;
+		min-width: 0;
+		padding: 8px 2px;
+		font-size: 10px;
+		gap: 2px;
+		border-radius: 6px;
+	}
+
+	.path-code-box i {
+		margin-right: 0;
+		font-size: 14px;
+		margin-bottom: 0;
+	}
+
+	.path-code-box .badge-text {
+		font-size: 10px;
+		line-height: 1.2;
+		text-align: center;
+		white-space: normal;
+		/* Allow wrapping */
+		word-wrap: break-word;
+		overflow-wrap: break-word;
+		max-width: 100%;
+	}
+
+	#pathway-library-container .custom-dropdown,
+	#pathway-library-container .custom-dropdown .dropdown-premium-btn {
+		width: 100%;
+	}
+
+	/* Mobile/Tablet Menu - Ensure it overlays correctly */
+	#pathway-library-container .filters-container .custom-dropdown .dropdown-premium-menu {
+		position: absolute;
+		top: 100%;
+		left: 0;
+		width: 100%;
+		z-index: 1000;
+		background: #fff;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+		margin-top: 5px;
+		display: none;
+		/* JS will toggle this */
+	}
+
+	#pathway-library-container .filters-container select {
+		display: none;
+	}
+
+	#pathway-library-container .custom-dropdown .dropdown-premium-menu .dropdown-item-label,
+	#pathway-library-container .custom-dropdown .btn-text,
+	#pathway-library-container .custom-dropdown .dropdown-item-label span,
+	#pathway-library-container .custom-dropdown .dropdown-header-premium {
+		font-size: 13px;
+		white-space: normal;
+		line-height: 1.4;
+		word-wrap: break-word;
+	}
+}

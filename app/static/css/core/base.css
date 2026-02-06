@@ -48,6 +48,10 @@ h6,
         margin-left: 250px;
         width: calc(100% - 250px);
     }
+
+    .nav-pane.expanded~.page-header {
+        left: 250px;
+    }
 }
 
 h1 {

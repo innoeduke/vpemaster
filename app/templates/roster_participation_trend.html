@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% from "components/stacked_chart.html" import render_chart_container %}
+
+{% block title %}Participation Trend{% endblock %}
+
+{% block header_title %}Participation Trend{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-desktop.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-ipad.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-mobile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="booking-container">
+	{% set legend_items = [] %}
+	{% for ds in datasets %}
+		{% set _ = legend_items.append({'label': ds.label, 'color': ds.color, 'type': 'bar'}) %}
+	{% endfor %}
+	{% set axis_labels = {'left': 'Participants', 'bottom': 'Meeting Number'} %}
+	
+	{{ render_chart_container('participationChart', 'Participation Trend', 'Meeting Participation by Ticket Type', url_for('tools_bp.tools', tab='roster'), 'Back to Roster', legend_items, axis_labels) }}
+</div>
+
+<script>
+Chart.register(ChartDataLabels);
+
+document.addEventListener('DOMContentLoaded', function() {
+	const meetingNumbers = {{ meeting_numbers | tojson }};
+	const meetingDates = {{ meeting_dates | tojson }};
+	const datasetsRaw = {{ datasets | tojson }};
+	const labels = meetingNumbers.map(num => `#${num}`);
+	
+	const isMobile = window.innerWidth < 768;
+	const scrollArea = document.querySelector('.chart-scroll-area');
+	const innerContainer = document.getElementById('chartInnerContainer');
+	
+	// Fixed dimensions for bars
+	const barThickness = 30;
+	const barGap = 20;
+	const minDimensionPerBar = barThickness + barGap;
+	const totalRequiredDimension = labels.length * minDimensionPerBar + 80;
+
+	if (isMobile) {
+		innerContainer.style.height = `${totalRequiredDimension}px`;
+		innerContainer.style.width = '100%';
+	} else {
+		innerContainer.style.width = `${totalRequiredDimension}px`;
+		innerContainer.style.height = '100%';
+	}
+
+	// Calculate max participant count for scale
+	let maxParticipants = 0;
+	for (const ds of datasetsRaw) {
+		for (const val of ds.data) {
+			maxParticipants = Math.max(maxParticipants, val);
+		}
+	}
+	// Calculate total per meeting for stacked bars
+	const totalPerMeeting = meetingNumbers.map((_, idx) => {
+		return datasetsRaw.reduce((sum, ds) => sum + (ds.data[idx] || 0), 0);
+	});
+	const maxStackedTotal = Math.max(...totalPerMeeting, 10);
+	const suggestedMax = Math.ceil(maxStackedTotal * 1.1);
+
+	// Shared scale configuration (Desktop)
+	const desktopScales = {
+		y: {
+			type: 'linear',
+			position: 'left',
+			beginAtZero: true,
+			min: 0,
+			suggestedMax: suggestedMax,
+			title: { display: true, text: 'Participants', font: { weight: 'bold' } },
+			grid: { color: 'rgba(0, 0, 0, 0.05)' },
+			stacked: true
+		},
+		x: {
+			title: { display: true, text: 'Meeting Number', font: { weight: 'bold' } },
+			grid: { display: false },
+			ticks: { padding: 12 },
+			stacked: true
+		}
+	};
+
+	// Shared scale configuration (Mobile)
+	const mobileScales = {
+		x: {
+			type: 'linear',
+			position: 'bottom',
+			beginAtZero: true,
+			min: 0,
+			suggestedMax: suggestedMax,
+			title: { display: true, text: 'Participants', font: { weight: 'bold' } },
+			stacked: true
+		},
+		y: {
+			type: 'category',
+			position: 'left',
+			title: { display: true, text: 'Meeting', font: { weight: 'bold' } },
+			grid: { display: false },
+			stacked: true
+		}
+	};
+
+	const commonOptions = {
+		responsive: true,
+		maintainAspectRatio: false,
+		indexAxis: isMobile ? 'y' : 'x',
+		plugins: {
+			legend: { display: false },
+			title: { display: false },
+			tooltip: {
+				mode: 'index',
+				intersect: false,
+				callbacks: {
+					title: (context) => `Meeting #${meetingNumbers[context[0].dataIndex]}`,
+					afterTitle: (context) => meetingDates[context[0].dataIndex] || '',
+					footer: (context) => {
+						const idx = context[0].dataIndex;
+						const total = datasetsRaw.reduce((sum, ds) => sum + (ds.data[idx] || 0), 0);
+						return `Total: ${total}`;
+					}
+				}
+			}
+		}
+	};
+
+	// Update HTML Axis Titles based on orientation
+	const titleTop = document.getElementById('axisTitleTop');
+	const titleBottom = document.getElementById('axisTitleBottom');
+	const titleLeft = document.getElementById('axisTitleLeft');
+
+	if (isMobile) {
+		if (titleTop) titleTop.style.display = 'none';
+		titleBottom.innerText = 'Participants';
+	} else {
+		if (titleTop) titleTop.style.display = 'none';
+		titleBottom.innerText = 'Meeting Number';
+	}
+
+	// Build Chart.js datasets
+	// Add datalabel to the last dataset (topmost bar) to show total
+	const chartDatasets = datasetsRaw.map((ds, idx) => {
+		const isLast = idx === datasetsRaw.length - 1;
+		return {
+			label: ds.label,
+			data: ds.data,
+			backgroundColor: ds.color,
+			borderColor: ds.color,
+			borderWidth: 1,
+			stack: 'participation_stack',
+			barThickness: barThickness,
+			order: idx + 1,
+			datalabels: isLast ? {
+				anchor: isMobile ? 'end' : 'end',
+				align: isMobile ? 'right' : 'top',
+				formatter: (value, ctx) => {
+					// Calculate total for this bar
+					const idx = ctx.dataIndex;
+					const total = datasetsRaw.reduce((sum, d) => sum + (d.data[idx] || 0), 0);
+					return total;
+				},
+				font: { weight: 'bold', size: isMobile ? 10 : 11 },
+				color: '#333',
+				offset: 4
+			} : { display: false }
+		};
+	});
+
+	// 1. AXIS CHART (Fixed Background)
+	const axisDatasets = chartDatasets.map(ds => ({
+		...ds,
+		hidden: true
+	}));
+	
+	new Chart(document.getElementById('axisChart').getContext('2d'), {
+		type: 'bar',
+		data: {
+			labels: labels,
+			datasets: axisDatasets
+		},
+		options: {
+			...commonOptions,
+			plugins: { ...commonOptions.plugins, tooltip: { enabled: false } },
+			scales: isMobile ? {
+				x: { ...mobileScales.x, title: { display: false } },
+				y: { ...mobileScales.y, display: false }
+			} : {
+				y: { ...desktopScales.y, title: { display: false }, afterFit: (axis) => { axis.width = 60; } },
+				x: { ...desktopScales.x, display: false }
+			}
+		}
+	});
+
+	// 2. DATA CHART (Scrollable Foreground)
+	new Chart(document.getElementById('participationChart').getContext('2d'), {
+		type: 'bar',
+		data: {
+			labels: labels,
+			datasets: chartDatasets
+		},
+		options: {
+			...commonOptions,
+			scales: isMobile ? {
+				x: { ...mobileScales.x, display: false },
+				y: { ...mobileScales.y, title: { display: false }, grid: { display: false }, ticks: { padding: 5, autoSkip: false } }
+			} : {
+				y: { ...desktopScales.y, title: { display: false }, ticks: { display: false }, grid: { display: false }, afterFit: (axis) => { axis.width = 1; } },
+				x: { ...desktopScales.x, title: { display: false }, grid: { display: false }, ticks: { padding: 12 } }
+			}
+		}
+	});
+
+	// Sync scroll to most recent
+	setTimeout(() => {
+		if (isMobile) scrollArea.scrollTop = scrollArea.scrollHeight;
+		else scrollArea.scrollLeft = scrollArea.scrollWidth;
+	}, 150);
+});
+</script>
+
+{% endblock %}

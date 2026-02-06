@@ -3,9 +3,18 @@
 
 {% block title %}Voting{% endblock %}
 
+{% block header_title %}Voting Form{% endblock %}
+
 {% block content %}
 <div class="booking-container">
-	<h1><i class="fas fa-vote-yea"></i> Voting Form</h1>
+	<div class="page-title-row">
+		<h1><i class="fas fa-vote-yea"></i> Voting Form</h1>
+		{% if is_admin_view %}
+		<a href="{{ url_for('voting_bp.voting_nps') }}" class="icon-btn trend-btn" title="NPS Trend">
+			<i class="fas fa-chart-line"></i>
+		</a>
+		{% endif %}
+	</div>
 	<div class="booking-filter-container">
 		{{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
 		base_url='/voting', render_outer_container=False) }}
@@ -107,7 +116,7 @@
 
 	{# Macro to render role tables with accordion #}
 	{% macro render_role_tables(roles, sorted_role_groups, status, is_admin_view, selected_meeting_number, user_role,
-	has_voted, can_track_progress) %}
+	has_voted, can_track_progress, question_ns) %}
 
 	{% set use_accordion = (status in ['running']) or (status == 'finished' and is_admin_view) %}
 	{% set default_open = False %}
@@ -134,9 +143,8 @@
 				class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }} {{ 'disabled' if voting_disabled else '' }}"
 				{% if voting_disabled %}disabled title="Not enough candidates to vote" {% endif %}>
 				<div class="header-left" style="display: flex; align-items: center; gap: 15px;">
-					{% if meta.num %}
-					<div class="question-number">{{ meta.num }}</div>
-					{% endif %}
+					{% set question_ns.count = question_ns.count + 1 %}
+					<div class="question-number">{{ question_ns.count }}</div>
 					<span class="question-text">{{ meta.title }}</span>
 				</div>
 				<div class="accordion-header-right">
@@ -205,13 +213,15 @@
 		<p>Your votes have been submitted.</p>
 	</div>
 	{% else %}
+	{% set question_ns = namespace(count=0) %}
 	{{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view,
-	selected_meeting_number, user_role, has_voted, can_track_progress) }}
+	selected_meeting_number, user_role, has_voted, can_track_progress, question_ns) }}
 
 	{% if selected_meeting.status == 'running' %}
 	<div class="meeting-rating-section">
 		<div class="rating-question" style="justify-content: flex-start; gap: 15px;">
-			<div class="question-number">5</div>
+			{% set question_ns.count = question_ns.count + 1 %}
+			<div class="question-number">{{ question_ns.count }}</div>
 			<div class="question-text">How likely are you to recommend this meeting to a friend or colleague?</div>
 		</div>
 		<div class="rating-scale">
@@ -229,7 +239,8 @@
 
 	<div class="feedback-section">
 		<div class="feedback-question">
-			<div class="question-number">6</div>
+			{% set question_ns.count = question_ns.count + 1 %}
+			<div class="question-number">{{ question_ns.count }}</div>
 			<div class="question-text">Meeting Feedback / Comments</div>
 		</div>
 		<div class="feedback-input-container">

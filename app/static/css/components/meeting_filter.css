@@ -222,6 +222,9 @@
 /* --- Generic Custom Select Styles --- */
 .custom-select-wrapper {
 	width: 100%;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
 }
 
 .custom-select-wrapper label {
@@ -233,24 +236,24 @@
 }
 
 .custom-select-trigger {
-	background: white !important;
-	border: 1px solid #ced4da !important;
-	border-radius: 6px !important;
-	height: 40px !important;
-	min-height: 40px !important;
-	box-sizing: border-box !important;
-	padding: 8px 12px !important;
-	font-size: 0.95rem !important;
-	font-family: 'Inter', sans-serif !important;
-	display: flex !important;
-	align-items: center !important;
+	background: white;
+	border: 1px solid #ced4da;
+	border-radius: 6px;
+	height: 40px;
+	min-height: 40px;
+	box-sizing: border-box;
+	padding: 8px 12px;
+	font-size: 0.95rem;
+	font-family: 'Inter', sans-serif;
+	display: flex;
+	align-items: center;
 }
 
 .custom-select-trigger:focus,
 .custom-select-trigger.active {
-	border-color: #772432 !important;
+	border-color: #772432;
 	outline: none;
-	box-shadow: 0 0 0 0.2rem rgba(119, 36, 50, 0.15) !important;
+	box-shadow: 0 0 0 0.2rem rgba(119, 36, 50, 0.15);
 }
 
 .custom-select-trigger .selected-text {
@@ -275,7 +278,7 @@
 	.custom-select-trigger,
 	.custom-select-trigger .selected-text,
 	.autocomplete-results-dropdown .autocomplete-result-item {
-		font-size: 0.85rem !important;
+		font-size: 0.85rem;
 	}
 }
 

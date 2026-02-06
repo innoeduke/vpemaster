@@ -95,28 +95,88 @@
         display: none;
     }
 
-    /* The mobile header is always visible and fixed at the top */
-    .mobile-header {
-        position: fixed;
-        top: 0;
+    /* The page header for mobile/tablet (both get solid #333 background) */
+    .page-header {
         left: 0;
         width: 100%;
-        height: 60px;
         background-color: #333;
         color: white;
-        display: flex;
-        align-items: center;
-        padding: 0 15px;
-        box-sizing: border-box;
+        padding: 0 25px;
+        /* Consistent margin for both edges */
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        z-index: 1001;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-sizing: border-box;
+        z-index: 1005;
+        /* Increased to stay above chart overlays */
+        height: 60px;
     }
 
-    .mobile-header .nav-toggle {
+    .header-left {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        /* Allow left side to take remaining space */
+        min-width: 0;
+        /* Allow title to shrink if needed */
+        position: relative;
+        z-index: 2;
+        /* Above header-right */
+    }
+
+    .header-right {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        /* Profile stays fixed size */
+        justify-content: flex-end;
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Explicit profile container configuration for mobile/tablet */
+    .profile-container {
+        position: relative;
+        z-index: 1002;
+        margin-left: auto !important;
+        display: flex;
+    }
+
+    .page-header .nav-toggle {
+        display: block;
         font-size: 1.5rem;
         cursor: pointer;
         color: white;
         text-decoration: none;
+        flex-shrink: 0;
+    }
+
+    .header-title {
+        display: block;
+        color: white;
+        margin: 0 0 0 15px;
+        font-size: 1.1rem;
+        text-align: left !important;
+        /* Force override of global h1 centering */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .profile-trigger {
+        background-color: rgba(255, 255, 255, 0.15);
+        /* More distinct background */
+        border-color: rgba(255, 255, 255, 0.25);
+        color: white;
+        padding: 8px 16px;
+        /* Increased internal padding for breathing room */
+        border-radius: 20px;
+    }
+
+    .profile-trigger i,
+    .profile-trigger span {
+        color: white;
     }
 
     /* The nav pane itself is now a slide-in menu */
@@ -184,5 +244,17 @@
 
     h3 {
         font-size: 1.2rem;
+    }
+}
+
+/* PC/Desktop specific overrides for page-header */
+@media (min-width: 993px) {
+    .page-header .nav-toggle {
+        display: none;
+    }
+
+    .page-header {
+        background-color: transparent;
+        box-shadow: none;
     }
 }

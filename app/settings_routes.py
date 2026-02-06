@@ -391,9 +391,22 @@ def delete_session_type(id):
         if session_type and (session_type.club_id == club_id or club_id == GLOBAL_CLUB_ID):
             # Check if used in SessionLogs
             from .models import SessionLog
-            usage_count = SessionLog.query.filter_by(Type_ID=id).count()
-            if usage_count > 0:
-                return jsonify(success=False, message=f"Cannot delete session type '{session_type.Title}' because it is in use by {usage_count} session log(s). Please reassign or delete the logs first."), 400
+            logs = SessionLog.query.filter_by(Type_ID=id).all()
+            if logs:
+                log_data = []
+                for log in logs:
+                    owner_names = ", ".join([contact.Name for contact in log.owners])
+                    log_data.append({
+                        'meeting_number': log.Meeting_Number,
+                        'session_title': log.Session_Title or session_type.Title,
+                        'owner_name': owner_names
+                    })
+                return jsonify(
+                    success=False, 
+                    message=f"Cannot delete session type '{session_type.Title}' because it is in use by {len(logs)} session log(s). Please reassign or delete the logs first.",
+                    logs=log_data,
+                    session_type_id=id
+                ), 400
             
             db.session.delete(session_type)
             db.session.commit()
@@ -402,6 +415,49 @@ def delete_session_type(id):
             return jsonify(success=False, message="Session type not found or permission denied"), 404
     except Exception as e:
         db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/settings/sessions/delete-logs/<int:id>', methods=['POST'])
+@login_required
+def delete_session_type_logs(id):
+    """Delete all session logs associated with a session type."""
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+    club_id = get_current_club_id()
+    try:
+        session_type = db.session.get(SessionType, id)
+        
+        if not session_type:
+            return jsonify(success=False, message="Session type not found"), 404
+        
+        # Security check
+        if session_type.club_id == GLOBAL_CLUB_ID and club_id != GLOBAL_CLUB_ID:
+            return jsonify(success=False, message="Cannot modify logs for a Global session type from this club."), 403
+
+        if session_type.club_id != club_id and club_id != GLOBAL_CLUB_ID:
+            return jsonify(success=False, message="Permission denied"), 403
+        
+        from .models import SessionLog
+        from .models.session import OwnerMeetingRoles
+        
+        logs = SessionLog.query.filter_by(Type_ID=id).all()
+        count = len(logs)
+        
+        for log in logs:
+            # Delete associated OwnerMeetingRoles
+            OwnerMeetingRoles.query.filter_by(session_log_id=log.id).delete(synchronize_session=False)
+            # Delete media if present
+            if log.media:
+                db.session.delete(log.media)
+            db.session.delete(log)
+        
+        db.session.commit()
+        return jsonify(success=True, message=f"Deleted {count} session log(s) successfully.")
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting session logs: {str(e)}")
         return jsonify(success=False, message=str(e)), 500
 
 
