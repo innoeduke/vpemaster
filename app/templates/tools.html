@@ -99,7 +99,14 @@
     <div id="roster-content" class="tools-tab-content">
         <div class="roster-container">
             <!-- Header matching Lucky Draw style -->
-            <h1 class="page-title"><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
+            <div class="page-title-row">
+                <h1 class="page-title"><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
+                {% if has_roster_access %}
+                <a href="{{ url_for('tools_bp.roster_participation_trend') }}" class="icon-btn trend-btn" title="View Participation Trend">
+                    <i class="fas fa-chart-line"></i>
+                </a>
+                {% endif %}
+            </div>
             
             {{ render_meeting_filter(all_meetings, selected_meeting_num, label='', data_format='object',
                 select_id='roster-meeting-filter', extra_style="margin-bottom: 5px;") }}

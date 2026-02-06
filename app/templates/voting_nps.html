@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "components/stacked_chart.html" import render_chart_container, render_comments_section %}
 
 {% block title %}NPS Trend{% endblock %}
 
@@ -7,70 +8,24 @@
 {% block head_extra %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/voting_nps.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-desktop.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-ipad.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-mobile.css') }}">
 {% endblock %}
 
 {% block content %}
 <div class="booking-container">
-	<div class="page-title-row">
-		<h1><i class="fas fa-chart-line"></i> NPS Trend</h1>
-		<a href="{{ url_for('voting_bp.voting') }}" class="icon-btn trend-btn" title="Back to Voting">
-			<i class="fas fa-arrow-left"></i>
-		</a>
-	</div>
-
-	<div class="nps-container">
-	<h2 class="chart-title-main">NPS Trend - User Feedback and Satisfaction</h2>
+	{% set legend_items = [
+		{'label': 'NPS', 'color': 'rgba(40, 167, 69, 0.7)', 'border_color': 'rgba(40, 167, 69, 1)', 'type': 'bar'},
+		{'label': 'Detractors %', 'color': 'rgba(220, 53, 69, 0.7)', 'border_color': 'rgba(220, 53, 69, 1)', 'type': 'bar'},
+		{'label': 'Votes', 'color': '#ccc', 'type': 'line'}
+	] %}
+	{% set axis_labels = {'left': 'Score / Percentage', 'right': 'Vote Count', 'bottom': 'Meeting Number'} %}
 	
-	<div class="nps-legend">
-		<div class="legend-item">
-			<span class="legend-color positive"></span>
-			<span>NPS</span>
-		</div>
-		<div class="legend-item">
-			<span class="legend-color negative"></span>
-			<span>Detractors %</span>
-		</div>
-		<div class="legend-item">
-			<span class="legend-line"></span>
-			<span>Votes</span>
-		</div>
-	</div>
-	
-	<div class="chart-container-root">
-		<div class="axis-title-fixed top" id="axisTitleTop">Vote Count</div>
-		<div class="axis-title-fixed bottom" id="axisTitleBottom">Meeting Number</div>
-		<div class="axis-title-fixed left" id="axisTitleLeft">Score / Percentage</div>
-		<div class="axis-title-fixed right" id="axisTitleRight">Vote Count</div>
-		
-		<div class="chart-wrapper-outer">
-			<div class="fixed-axes-container">
-				<canvas id="axisChart"></canvas>
-			</div>
-			<div class="chart-scroll-area">
-				<div class="chart-inner-container" id="chartInnerContainer">
-					<canvas id="npsChart"></canvas>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Comments Container (Desktop/iPad only) -->
-	<div class="nps-comments-container" id="npsCommentsContainer" style="display: none;">
-		<div class="comments-card">
-			<div class="comments-header">
-				<div class="comments-title">
-					<i class="fas fa-comments"></i>
-					<span>Feedback from Meeting <strong id="commentsMeetingNumber"></strong></span>
-				</div>
-				<span class="comments-date" id="commentsMeetingDate"></span>
-			</div>
-			<div class="comments-list" id="commentsList">
-				<!-- Comments will be inserted here -->
-			</div>
-		</div>
-	</div>
-</div>
+	{% call render_chart_container('npsChart', 'NPS Trend', 'User Feedback and Satisfaction', url_for('voting_bp.voting'), 'Back to Voting', legend_items, axis_labels) %}
+		{{ render_comments_section('npsCommentsContainer', 'commentsMeetingNumber', 'commentsMeetingDate', 'commentsList') }}
+	{% endcall %}
 </div>
 
 <script>
@@ -199,10 +154,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	const titleRight = document.getElementById('axisTitleRight');
 
 	if (isMobile) {
-		titleTop.innerText = 'Vote Count';
+		if (titleTop) titleTop.innerText = 'Vote Count';
 		titleBottom.innerText = 'Score / Percentage';
 	} else {
-		titleTop.style.display = 'none';
+		if (titleTop) titleTop.style.display = 'none';
 		titleBottom.innerText = 'Meeting Number';
 	}
 

@@ -22,7 +22,7 @@
         <div class="agenda-header-info">
             <p class="club-info">
                 {% if club %}
-                Club No.{{ club.club_no }} | Area {{ club.area or '?' }} | Division {{ club.division or '?' }} | {{
+                Club No.{{ club.club_no }} | Area {{ club.area or '?' }}, Division {{ club.division or '?' }}, D{{ club.district or '?' }} | {{
                 club.club_name }}
                 {% else %}
                 Club No.868941 | Area K1 | Division K | Shanghai Leadership Toastmasters Club

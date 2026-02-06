@@ -209,6 +209,88 @@ def tools():
         tickets_map=tickets_map
     )
 
+
+@tools_bp.route('/roster/participation-trend', methods=['GET'])
+@login_required
+@authorized_club_required
+def roster_participation_trend():
+    """Stacked bar chart showing participation trend by ticket type over meetings."""
+    from sqlalchemy import func
+    
+    club_id = get_current_club_id()
+    
+    # Get all tickets for legend colors
+    all_tickets = Ticket.query.order_by(Ticket.id).all()
+    ticket_map = {t.id: t for t in all_tickets}
+    
+    # Fetch meetings with roster data
+    query = Meeting.query.filter(Meeting.status == 'finished')
+    if club_id:
+        query = query.filter(Meeting.club_id == club_id)
+    meetings = query.order_by(Meeting.Meeting_Number.asc()).all()
+    meeting_numbers = [m.Meeting_Number for m in meetings]
+    meeting_dates = [m.Meeting_Date.strftime('%Y-%m-%d') if m.Meeting_Date else '' for m in meetings]
+    
+    # Aggregate roster counts by meeting and ticket
+    # Exclude 'Cancelled' ticket type
+    cancelled_ticket = Ticket.query.filter_by(name='Cancelled').first()
+    cancelled_ticket_id = cancelled_ticket.id if cancelled_ticket else -1
+    
+    counts_query = db.session.query(
+        Roster.meeting_number,
+        Roster.ticket_id,
+        func.count(Roster.id).label('count')
+    ).filter(
+        Roster.meeting_number.in_(meeting_numbers),
+        Roster.ticket_id != cancelled_ticket_id
+    ).group_by(
+        Roster.meeting_number,
+        Roster.ticket_id
+    ).all()
+    
+    # Organize counts: {meeting_number: {ticket_id: count}}
+    counts_by_meeting = {}
+    for mtg_num, ticket_id, count in counts_query:
+        if mtg_num not in counts_by_meeting:
+            counts_by_meeting[mtg_num] = {}
+        counts_by_meeting[mtg_num][ticket_id] = count
+    
+    # Find first meeting with data
+    first_data_idx = 0
+    for i, mtg_num in enumerate(meeting_numbers):
+        if mtg_num in counts_by_meeting and counts_by_meeting[mtg_num]:
+            first_data_idx = i
+            break
+    
+    # Filter to meetings with data
+    filtered_meeting_numbers = meeting_numbers[first_data_idx:]
+    filtered_meeting_dates = meeting_dates[first_data_idx:]
+    
+    # Build datasets - one per ticket type (excluding Cancelled)
+    datasets = []
+    for ticket in all_tickets:
+        if ticket.name == 'Cancelled':
+            continue
+        
+        data = []
+        for mtg_num in filtered_meeting_numbers:
+            count = counts_by_meeting.get(mtg_num, {}).get(ticket.id, 0)
+            data.append(count)
+        
+        # Only include tickets that have some data
+        if sum(data) > 0:
+            datasets.append({
+                'label': ticket.name,
+                'data': data,
+                'color': ticket.color or '#6c757d',
+                'icon': ticket.icon or 'fa-ticket-alt'
+            })
+    
+    return render_template('roster_participation_trend.html',
+                           meeting_numbers=filtered_meeting_numbers,
+                           meeting_dates=filtered_meeting_dates,
+                           datasets=datasets)
+
 # --- API Endpoints (Moved from roster_routes.py) ---
 
 @tools_bp.route('/api/roster', methods=['POST'])

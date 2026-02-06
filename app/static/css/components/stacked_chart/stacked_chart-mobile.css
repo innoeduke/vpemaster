@@ -1,0 +1,77 @@
+/* ========================================
+   Stacked Chart Component - Mobile Styles
+   ======================================== */
+
+@media (max-width: 768px) {
+	.stacked-chart-container {
+		padding: 15px 0;
+	}
+
+	.chart-container-root {
+		padding: 10px;
+		height: 65vh;
+		grid-template-areas:
+			". title-top ."
+			"chart chart chart"
+			". title-bottom .";
+		grid-template-columns: 1fr;
+		grid-template-rows: auto 1fr auto;
+		gap: 5px;
+	}
+
+	.axis-title-fixed.left,
+	.axis-title-fixed.right {
+		display: none;
+	}
+
+	.axis-title-fixed.bottom,
+	.axis-title-fixed.top {
+		justify-content: center;
+		text-align: center;
+	}
+
+	.chart-scroll-area {
+		overflow-x: hidden;
+		overflow-y: auto;
+		margin: 35px 0;
+	}
+
+	.chart-title-main {
+		font-size: 1.1rem;
+		margin-bottom: 10px;
+	}
+
+	.chart-legend {
+		flex-direction: row;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 8px 12px;
+		font-size: 0.75em;
+		padding: 0 10px;
+		margin-top: 10px;
+		margin-bottom: 15px;
+	}
+
+	.legend-item {
+		flex-shrink: 0;
+	}
+
+	.legend-line::after {
+		background-color: #ccc;
+		border: none;
+		width: 6px;
+		height: 6px;
+	}
+
+	/* Smaller back button on mobile */
+	.page-title-row .trend-btn {
+		width: 32px;
+		height: 32px;
+		font-size: 0.9em;
+	}
+
+	/* Hide comments container on mobile */
+	.chart-comments-container {
+		display: none !important;
+	}
+}
