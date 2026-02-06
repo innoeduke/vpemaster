@@ -156,6 +156,11 @@ def profile(contact_id=None):
     """
     Displays a user's profile page and handles password reset.
     """
+    # Guest Check: Block all guests from accessing profiles
+    if current_user.primary_role_name == 'Guest':
+        flash('Guests do not have access to user profiles.', 'error')
+        return redirect(url_for('main_bp.index'))
+
     is_own_profile = True
     if contact_id and contact_id != current_user.contact_id:
         from ..models import Contact
@@ -172,18 +177,17 @@ def profile(contact_id=None):
                     self.Role = contact.Type
                     self.home_club = None
                     self.member_no = contact.Member_ID
+                    self.primary_role_name = contact.Type or "User"
+                @property
+                def primary_role(self):
+                    return None
             user = MockUser(contact)
             
         is_own_profile = False
 
         # Permission Check for Viewing Other Profiles
-        can_view = False
-        if current_user.has_permission(Permissions.PROFILE_VIEW):
-            can_view = True
-        elif user.home_club and current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, user.home_club.id):
-             can_view = True
-        elif current_user.is_sysadmin:
-             can_view = True
+        # Users (Members) can view other profiles, but guests cannot (handled above)
+        can_view = True # Since Guest is already blocked, anyone else can view
              
         if not can_view:
             flash('Unauthorized access.', 'error')
@@ -191,20 +195,19 @@ def profile(contact_id=None):
     else:
         user = current_user
 
+    # Permission Check for Update Profile
+    # Only the user himself/herself and clubadmin (for that club) or sysadmin can edit
+    can_edit_profile = is_own_profile
+    if not can_edit_profile:
+        if current_user.is_sysadmin:
+            can_edit_profile = True
+        elif user.home_club and current_user.is_club_admin(user.home_club.id):
+            can_edit_profile = True
+    
     # Permission Check for Reset Password
-    can_reset_password = False
-    if is_own_profile:
-        can_reset_password = True
-    elif user.home_club and current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, user.home_club.id):
-        can_reset_password = True
-    elif current_user.is_sysadmin: 
-        can_reset_password = True
+    can_reset_password = can_edit_profile
 
     if request.method == 'POST':
-        # Check if user can edit this profile
-        # Permission Check for Update Profile
-        can_edit_profile = is_own_profile or current_user.has_permission(Permissions.PROFILE_EDIT)
-
         action = request.form.get('action')
 
         if action == 'update_profile':
@@ -274,7 +277,7 @@ def profile(contact_id=None):
                     flash('Your password has been updated successfully! Please log in with your new password.', 'success')
                     logout_user() # Logout ensuring clean state
                     return redirect(url_for('auth_bp.login'))
-    return render_template('profile.html', user=user, is_own_profile=is_own_profile, can_reset_password=can_reset_password)
+    return render_template('profile.html', user=user, is_own_profile=is_own_profile, can_reset_password=can_reset_password, can_edit_profile=can_edit_profile)
 
 
 @auth_bp.route('/reset_password', methods=['GET', 'POST'])

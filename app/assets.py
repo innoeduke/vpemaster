@@ -66,8 +66,6 @@ css_all = Bundle(
     'css/pages/speech_logs/speech_logs-mobile.css',
     # Profile CSS (modular structure)
     'css/pages/profile/profile-base.css',
-    'css/pages/profile/profile-desktop.css',
-    'css/pages/profile/profile-ipad.css',
     'css/pages/profile/profile-mobile.css',
     'css/core/responsive.css',
     filters='cssmin',

@@ -17,9 +17,9 @@
 {% block content %}
 <div class="booking-container">
 	{% set legend_items = [
-		{'label': 'NPS', 'color': 'rgba(0, 65, 101, 0.8)', 'border_color': 'rgba(0, 65, 101, 1)', 'type': 'bar'},
-		{'label': 'Detractors %', 'color': 'rgba(211, 158, 0, 0.6)', 'border_color': 'rgba(211, 158, 0, 1)', 'type': 'bar'},
-		{'label': 'Votes', 'color': '#ccc', 'type': 'line'}
+		{'label': 'Votes', 'color': '#772432', 'type': 'line'},
+		{'label': 'NPS', 'color': 'rgba(0, 65, 101, 0.8)', 'border_color': '#ffffff', 'type': 'bar'},
+		{'label': 'Detractors %', 'color': 'rgba(211, 158, 0, 0.6)', 'border_color': '#ffffff', 'type': 'bar'}
 	] %}
 	{% set axis_labels = {'left': 'Score / Percentage', 'right': 'Vote Count', 'bottom': 'Meeting Number'} %}
 	
@@ -52,10 +52,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	const innerContainer = document.getElementById('chartInnerContainer');
 	
 	// Fixed dimensions for bars
-	const barThickness = 30;
-	const barGap = 20;
+	const barThickness = 32;
+	const barGap = 18;
 	const minDimensionPerBar = barThickness + barGap;
-	const totalRequiredDimension = labels.length * minDimensionPerBar + 80;
+	const totalRequiredDimension = labels.length * minDimensionPerBar + 100;
 
 	if (isMobile) {
 		innerContainer.style.height = `${totalRequiredDimension}px`;
@@ -133,13 +133,26 @@ document.addEventListener('DOMContentLoaded', function() {
 			tooltip: {
 				mode: 'index',
 				intersect: false,
+				backgroundColor: 'rgba(255, 255, 255, 0.95)',
+				titleColor: '#1a1a1b',
+				titleFont: { size: 14, weight: 'bold', family: "'Montserrat', sans-serif" },
+				bodyColor: '#4d4d4e',
+				bodyFont: { size: 13, family: "'Open Sans', sans-serif" },
+				footerColor: '#1a1a1b',
+				footerFont: { size: 13, weight: 'bold' },
+				padding: 12,
+				cornerRadius: 12,
+				borderColor: 'rgba(0, 0, 0, 0.1)',
+				borderWidth: 1,
+				boxPadding: 6,
+				usePointStyle: true,
 				callbacks: {
 					title: (context) => `Meeting #${meetingNumbers[context[0].dataIndex]}`,
 					afterTitle: (context) => meetingDates[context[0].dataIndex] || '',
 					label: (context) => {
 						const idx = context.dataIndex;
-						if (context.datasetIndex === 0) return `Votes: ${voteCounts[idx]}`;
-						if (context.datasetIndex === 1) return `NPS: ${npsScores[idx].toFixed(1)}`;
+						if (context.dataset.label === 'Votes') return `Votes: ${voteCounts[idx]}`;
+						if (context.dataset.label === 'NPS Score') return `NPS: ${npsScores[idx].toFixed(1)}`;
 						return `Detractors: ${detractorPercentages[idx].toFixed(1)}%`;
 					}
 				}
@@ -199,10 +212,10 @@ document.addEventListener('DOMContentLoaded', function() {
 					data: voteCounts,
 					xAxisID: isMobile ? 'x1' : 'x',
 					yAxisID: isMobile ? 'y' : 'y1',
-					borderColor: '#ccc',
-					backgroundColor: 'rgba(204, 204, 204, 0.1)',
+					borderColor: '#772432',
+					backgroundColor: 'rgba(119, 36, 50, 0.05)',
 					borderWidth: 2,
-					pointBackgroundColor: isMobile ? '#ccc' : '#ffffff',
+					pointBackgroundColor: isMobile ? '#772432' : '#ffffff',
 					pointRadius: isMobile ? 3 : 4,
 					pointBorderWidth: isMobile ? 0 : 2,
 					tension: 0.3,
@@ -215,15 +228,17 @@ document.addEventListener('DOMContentLoaded', function() {
 					xAxisID: isMobile ? 'x' : 'x',
 					yAxisID: isMobile ? 'y' : 'y',
 					backgroundColor: backgroundColors,
-					borderColor: borderColors,
-					borderWidth: 1,
+					borderColor: '#ffffff',
+					borderWidth: 2,
+					borderRadius: 6,
+					borderSkipped: false,
 					stack: 'nps_stack',
 					barThickness: barThickness,
 					datalabels: {
 						anchor: 'center',
 						align: 'center',
 						formatter: Math.round,
-						font: { weight: 'bold', size: isMobile ? 9 : 10 },
+						font: { weight: 'bold', size: isMobile ? 10 : 11, family: "'Montserrat', sans-serif" },
 						color: '#ffffff', // White text for better contrast on maroon
 						display: (ctx) => Math.abs(ctx.dataset.data[ctx.dataIndex]) > (isMobile ? 5 : 10)
 					},
@@ -235,17 +250,19 @@ document.addEventListener('DOMContentLoaded', function() {
 					xAxisID: isMobile ? 'x' : 'x',
 					yAxisID: isMobile ? 'y' : 'y',
 					backgroundColor: 'rgba(211, 158, 0, 0.4)',
-					borderColor: 'rgba(211, 158, 0, 0.8)',
-					borderWidth: 1,
+					borderColor: '#ffffff',
+					borderWidth: 2,
+					borderRadius: 6,
+					borderSkipped: 'bottom',
 					stack: 'nps_stack',
 					barThickness: barThickness,
 					datalabels: {
 						anchor: 'end',
 						align: isMobile ? 'right' : 'top',
 						formatter: (v) => v > 0 ? Math.round(v) + '%' : '',
-						font: { weight: 'bold', size: isMobile ? 9 : 10 },
+						font: { weight: 'bold', size: isMobile ? 10 : 11, family: "'Montserrat', sans-serif" },
 						color: '#d39e00', // Amber for detractors text
-						offset: 4, // Increased offset for better visibility
+						offset: 6, // Increased offset for better visibility
 						display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0
 					},
 					order: 3

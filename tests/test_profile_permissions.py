@@ -39,13 +39,14 @@ class ProfilePermissionsTestCase(unittest.TestCase):
         db.session.add_all([self.p_own, self.p_view, self.p_edit])
         
         # 2. Create roles
-        self.role_admin = AuthRole(name="ClubAdmin", level=4)
-        self.role_staff = AuthRole(name="Staff", level=2)
-        self.role_user = AuthRole(name="User", level=1)
-        db.session.add_all([self.role_admin, self.role_staff, self.role_user])
+        self.role_admin = AuthRole(name="ClubAdmin", level=8) # Increased levels to separate roles
+        self.role_staff = AuthRole(name="Staff", level=4)
+        self.role_user = AuthRole(name="User", level=2)
+        self.role_guest = AuthRole(name="Guest", level=1)
+        db.session.add_all([self.role_admin, self.role_staff, self.role_user, self.role_guest])
         db.session.flush()
         
-        # 3. Assign permissions to roles
+        # 3. Assign permissions to roles (optional now as we check by role name/logic)
         self.role_admin.permissions.extend([self.p_own, self.p_view, self.p_edit])
         self.role_staff.permissions.extend([self.p_own, self.p_view])
         self.role_user.permissions.extend([self.p_own])
@@ -61,7 +62,8 @@ class ProfilePermissionsTestCase(unittest.TestCase):
             "ClubAdmin": self.role_admin,
             "Staff": self.role_staff,
             "User": self.role_user,
-            "OtherUser": self.role_user
+            "OtherUser": self.role_user,
+            "Guest": self.role_guest
         }
         for role_name, role_obj in role_map.items():
             contact = Contact(Name=f"{role_name} Name", Email=f"{role_name.lower()}@test.com")
@@ -73,14 +75,13 @@ class ProfilePermissionsTestCase(unittest.TestCase):
             db.session.add(user)
             db.session.flush()
             
-            # Combine role level with User level (1) to ensure they have base user permissions if needed
-            # though in this test we check roles specifically.
-            level = role_obj.level | self.role_user.level
+            # Use specific role level
             db.session.add(UserClub(
                 user_id=user.id,
                 club_id=self.club.id,
-                club_role_level=level,
-                contact_id=contact.id
+                club_role_level=role_obj.level,
+                contact_id=contact.id,
+                is_home=True # Set as home club for testing
             ))
             self.users[role_name] = user
             
@@ -108,6 +109,14 @@ class ProfilePermissionsTestCase(unittest.TestCase):
         self.assertFalse(self.users["User"].has_permission(Permissions.PROFILE_VIEW))
         self.assertFalse(self.users["User"].has_permission(Permissions.PROFILE_EDIT))
 
+    def test_profile_access_guest(self):
+        """Test guest access to profiles - Denied."""
+        self.login("Guest")
+        
+        # Cannot view own profile
+        resp = self.client.get('/profile', follow_redirects=True)
+        self.assertIn(b'Guests do not have access to user profiles.', resp.data)
+
     def test_profile_access_user(self):
         """Test standard user access to profiles."""
         self.login("User")
@@ -116,14 +125,14 @@ class ProfilePermissionsTestCase(unittest.TestCase):
         resp = self.client.get('/profile')
         self.assertEqual(resp.status_code, 200)
         
-        # Cannot view others' profiles
+        # Can view others' profiles (Requirement: others users can view)
         other_id = self.users["OtherUser"].get_contact().id
-        resp = self.client.get(f'/profile/{other_id}', follow_redirects=True)
-        self.assertIn(b'Unauthorized access.', resp.data)
+        resp = self.client.get(f'/profile/{other_id}')
+        self.assertEqual(resp.status_code, 200)
 
         # Cannot edit others' profiles
         resp = self.client.post(f'/profile/{other_id}', data={'action': 'update_profile'}, follow_redirects=True)
-        self.assertIn(b'Unauthorized access.', resp.data) # Caught by GET check first if redirects
+        self.assertIn(b'You do not have permission to modify this profile.', resp.data)
 
     def test_profile_access_staff(self):
         """Test staff member access to profiles."""

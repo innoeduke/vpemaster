@@ -39,10 +39,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	const innerContainer = document.getElementById('chartInnerContainer');
 	
 	// Fixed dimensions for bars
-	const barThickness = 30;
-	const barGap = 20;
+	const barThickness = 32;
+	const barGap = 18;
 	const minDimensionPerBar = barThickness + barGap;
-	const totalRequiredDimension = labels.length * minDimensionPerBar + 80;
+	const totalRequiredDimension = labels.length * minDimensionPerBar + 100;
 
 	if (isMobile) {
 		innerContainer.style.height = `${totalRequiredDimension}px`;
@@ -116,6 +116,19 @@ document.addEventListener('DOMContentLoaded', function() {
 			tooltip: {
 				mode: 'index',
 				intersect: false,
+				backgroundColor: 'rgba(255, 255, 255, 0.95)',
+				titleColor: '#1a1a1b',
+				titleFont: { size: 14, weight: 'bold', family: "'Montserrat', sans-serif" },
+				bodyColor: '#4d4d4e',
+				bodyFont: { size: 13, family: "'Open Sans', sans-serif" },
+				footerColor: '#1a1a1b',
+				footerFont: { size: 13, weight: 'bold' },
+				padding: 12,
+				cornerRadius: 12,
+				borderColor: 'rgba(0, 0, 0, 0.1)',
+				borderWidth: 1,
+				boxPadding: 6,
+				usePointStyle: true,
 				callbacks: {
 					title: (context) => `Meeting #${meetingNumbers[context[0].dataIndex]}`,
 					afterTitle: (context) => meetingDates[context[0].dataIndex] || '',
@@ -150,13 +163,15 @@ document.addEventListener('DOMContentLoaded', function() {
 			label: ds.label,
 			data: ds.data,
 			backgroundColor: ds.color,
-			borderColor: ds.color,
-			borderWidth: 1,
+			borderColor: '#ffffff',
+			borderWidth: 2,
+			borderRadius: 6,
+			borderSkipped: idx === 0 ? false : 'bottom',
 			stack: 'participation_stack',
 			barThickness: barThickness,
 			order: idx + 1,
 			datalabels: isLast ? {
-				anchor: isMobile ? 'end' : 'end',
+				anchor: 'end',
 				align: isMobile ? 'right' : 'top',
 				formatter: (value, ctx) => {
 					// Calculate total for this bar
@@ -164,9 +179,9 @@ document.addEventListener('DOMContentLoaded', function() {
 					const total = datasetsRaw.reduce((sum, d) => sum + (d.data[idx] || 0), 0);
 					return total;
 				},
-				font: { weight: 'bold', size: isMobile ? 10 : 11 },
-				color: '#333',
-				offset: 4
+				font: { weight: 'bold', size: isMobile ? 11 : 12, family: "'Montserrat', sans-serif" },
+				color: '#1a1a1b',
+				offset: 6
 			} : { display: false }
 		};
 	});

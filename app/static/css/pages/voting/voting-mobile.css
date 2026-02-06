@@ -4,12 +4,12 @@
    ======================================== */
 
 @media (max-width: 768px) {
-	.accordion-content {
+	.award-accordion .accordion-content {
 		background-color: transparent;
 	}
 
 	/* Remove border from accordion container */
-	.accordion-item {
+	.award-accordion .accordion-item {
 		border: none;
 		padding: 15px;
 		margin-top: 15px;
@@ -38,7 +38,7 @@
 		flex-shrink: 0;
 	}
 
-	.accordion-header-right {
+	.award-accordion .accordion-header-right {
 		font-size: 0.9em;
 		color: #333;
 	}
@@ -57,14 +57,15 @@
 		font-size: 0.85em;
 	}
 
-	.question-number {
-		width: 24px;
-		height: 24px;
-		font-size: 0.9em;
+	.award-accordion .accordion-header .question-text,
+	.section-title {
+		font-size: 1.1em;
 	}
 
+
 	/* Remove card styling on mobile */
-	.accordion-item {
+	.award-accordion .accordion-item,
+	.voting-section {
 		background-color: transparent;
 		box-shadow: none;
 		padding: 10px 0;

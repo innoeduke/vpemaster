@@ -31,7 +31,7 @@
   <h2 style="text-align: center; margin-top: 20px; margin-bottom: 20px">
     Basic Information
   </h2>
-  <form method="POST" action="{{ url_for('auth_bp.profile') }}" enctype="multipart/form-data"
+  <form id="profile-form" method="POST" action="{{ url_for('auth_bp.profile') }}" enctype="multipart/form-data"
     style="max-width: 700px; margin: 0 auto">
     <div class="profile-avatar-container">
       <div id="avatar-placeholder" class="avatar-placeholder"
@@ -48,116 +48,145 @@
         onerror="this.style.display='none'; document.getElementById('avatar-placeholder').style.display='flex';">
       {% endif %}
 
-      {% if is_own_profile %}
-      <div class="upload-btn-wrapper">
-        <button class="btn-upload">Change Photo</button>
-        <input type="file" name="profile_photo" accept="image/*" onchange="validateAvatar(this)" />
+      {% if can_edit_profile %}
+      <div class="avatar-upload-section">
+        <label for="profile_photo_input" class="btn-upload">Change Photo</label>
+        <input type="file" id="profile_photo_input" name="profile_photo" accept="image/*" 
+               onchange="validateAvatar(this)" style="display: none;" />
       </div>
       {% endif %}
     </div>
 
     <input type="hidden" name="action" value="update_profile" />
-    <table class="form-table">
-      <tr>
-        <td><label for="first_name">First Name:</label></td>
-        <td>
-          <input type="text" id="first_name" name="first_name" value="{{ user.first_name if user.first_name else '' }}"
-            {% if not is_own_profile %}disabled{% endif %} />
-        </td>
-      </tr>
-      <tr>
-        <td><label for="last_name">Last Name:</label></td>
-        <td>
-          <input type="text" id="last_name" name="last_name" value="{{ user.last_name if user.last_name else '' }}"
-            {% if not is_own_profile %}disabled{% endif %} />
-        </td>
-      </tr>
-      <tr class="tr-full-width">
-        <td><label>Username</label></td>
-        <td>
-          {{ user.username }} {% if user.contact and user.contact.DTM %}
-          <sup class="dtm-superscript">DTM</sup>
-          {% endif %}
-        </td>
-      </tr>
-      <tr>
-        <td><label for="email">Email:</label></td>
-        <td>
-          <input type="email" id="email" name="email" value="{{ user.email if user.email else '' }}"
-            autocomplete="email" {% if not is_own_profile %}disabled{% endif %} />
-        </td>
-      </tr>
-      <tr>
-        <td><label for="phone_number">Phone Number:</label></td>
-        <td>
-          <input type="text" id="phone_number" name="phone_number"
-            value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}" autocomplete="tel" {% if not
-            is_own_profile %}disabled{% endif %} />
-        </td>
-      </tr>
-      <tr>
-        <td><label>Role</label></td>
-        <td>
-            {% set role = user.primary_role %}
-            {% set role_class = 'role-' ~ role.award_category if (role and role.award_category) else 'role-other' %}
-            {% if role and role.type == 'officer' %}
-                {% set role_class = 'role-officer' %}
-            {% endif %}
-            <span class="roster-role-tag {{ role_class }}">{{ user.primary_role_name }}</span>
-        </td>
-      </tr>
-      <tr>
-        <td><label>Home Club</label></td>
-        <td>
-          {% if user.home_club %}
-            {{ user.home_club.club_name }}
-          {% else %}
-            <span class="text-muted">None</span>
-          {% endif %}
-        </td>
-      </tr>
+    
+    <div class="profile-form">
+      <!-- Section 1: Basic Information -->
+      <div class="profile-section">
+        <h3 class="section-title">Basic Information</h3>
+        <!-- Username & Role - side by side at top -->
+        <div class="field-row-pair">
+          <div class="field-row">
+            <span class="field-label">Username</span>
+            <span class="field-value">
+              {{ user.username }}
+              {% if user.contact and user.contact.DTM %}<sup class="dtm-superscript">DTM</sup>{% endif %}
+            </span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Role</span>
+            <span class="field-value">
+              {% set role = user.primary_role %}
+              {% set role_class = 'role-' ~ role.award_category if (role and role.award_category) else 'role-other' %}
+              {% if role and role.type == 'officer' %}{% set role_class = 'role-officer' %}{% endif %}
+              <span class="roster-role-tag {{ role_class }}">{{ user.primary_role_name }}</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Name row - side by side -->
+        <div class="field-row-pair">
+          <div class="field-row editable">
+            <span class="field-label">First Name</span>
+            <div class="field-input-wrapper">
+              <input type="text" id="first_name" name="first_name" class="field-input"
+                value="{{ user.first_name if user.first_name else '' }}"
+                {% if not can_edit_profile %}disabled{% endif %} />
+            </div>
+          </div>
+          <div class="field-row editable">
+            <span class="field-label">Last Name</span>
+            <div class="field-input-wrapper">
+              <input type="text" id="last_name" name="last_name" class="field-input"
+                value="{{ user.last_name if user.last_name else '' }}"
+                {% if not can_edit_profile %}disabled{% endif %} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Contact Information -->
+      <div class="profile-section">
+        <h3 class="section-title">Contact Information</h3>
+        <!-- Email - full width -->
+        <div class="field-row editable">
+          <span class="field-label">Email</span>
+          <div class="field-input-wrapper">
+            <input type="email" id="email" name="email" class="field-input"
+              value="{{ user.email if user.email else '' }}"
+              autocomplete="email" {% if not can_edit_profile %}disabled{% endif %} />
+          </div>
+        </div>
+
+        <!-- Phone - full width -->
+        <div class="field-row editable">
+          <span class="field-label">Phone</span>
+          <div class="field-input-wrapper">
+            <input type="text" id="phone_number" name="phone_number" class="field-input"
+              value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}"
+              autocomplete="tel" {% if not can_edit_profile %}disabled{% endif %} />
+          </div>
+        </div>
+      </div>
+
       {% if user.contact %}
-      <tr>
-        <td><label>Member ID</label></td>
-        <td>{{ user.contact.Member_ID if user.contact.Member_ID else '' }}</td>
-      </tr>
-      <tr>
-        <td><label>Current Path</label></td>
-        <td>{{ user.contact.Current_Path if user.contact.Current_Path else '' }}</td>
-      </tr>
-      <tr>
-        <td><label>Credential:</label></td>
-        <td>{{ user.contact.credentials if user.contact.credentials else '' }}</td>
-      </tr>
-      <tr>
-        <td><strong>Next Project:</strong></td>
-        <td>{{ user.contact.Next_Project if user.contact.Next_Project else '' }}</td>
-      </tr>
-      <tr>
-        <td><label>Mentor:</label></td>
-        <td>{{ user.contact.mentor.Name if user.contact.mentor else '' }}</td>
-      </tr>
-      <tr>
-        <td><label for="bio">Bio:</label></td>
-        <td>
-          <textarea id="bio" name="bio" rows="4" autocomplete="off" {% if not is_own_profile %}disabled{% endif
-            %}>{{ user.contact.Bio if user.contact.Bio else '' }}</textarea>
-        </td>
-      </tr>
+      <!-- Section 3: Toastmasters -->
+      <div class="profile-section">
+        <h3 class="section-title">Toastmasters</h3>
+        <!-- Home Club -->
+        <div class="field-row">
+          <span class="field-label">Home Club</span>
+          <span class="field-value">
+            {% if user.home_club %}{{ user.home_club.club_name }}{% else %}<span class="text-muted">None</span>{% endif %}
+          </span>
+        </div>
+
+        <!-- Member ID & Mentor - side by side -->
+        <div class="field-row-pair">
+          <div class="field-row">
+            <span class="field-label">Member ID</span>
+            <span class="field-value">{{ user.contact.Member_ID if user.contact.Member_ID else '' }}</span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Mentor</span>
+            <span class="field-value">{{ user.contact.mentor.Name if user.contact.mentor else '' }}</span>
+          </div>
+        </div>
+
+        <!-- Credential & Next Project - side by side -->
+        <div class="field-row-pair">
+          <div class="field-row">
+            <span class="field-label">Credential</span>
+            <span class="field-value">{{ user.contact.credentials if user.contact.credentials else '' }}</span>
+          </div>
+          <div class="field-row">
+            <span class="field-label">Next Project</span>
+            <span class="field-value">{{ user.contact.Next_Project if user.contact.Next_Project else '' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: About Me -->
+      <div class="profile-section">
+        <h3 class="section-title">About Me</h3>
+        <!-- Bio -->
+        <div class="field-row editable bio-row">
+          <div class="field-input-wrapper">
+            <textarea id="bio" name="bio" class="field-textarea" rows="4"
+              {% if not can_edit_profile %}disabled{% endif %}>{{ user.contact.Bio if user.contact.Bio else '' }}</textarea>
+          </div>
+        </div>
+      </div>
       {% else %}
-      <tr>
-        <td colspan="2" style="text-align: center">
+      <div class="profile-section">
+        <div class="field-row">
           <em>This user account is not linked to a contact record.</em>
-        </td>
-      </tr>
+        </div>
+      </div>
       {% endif %}
-    </table>
-    <p class="note" style="text-align: center; margin-top: 10px;">
-      For any education related questions, please contact the Vice President Education (VPE).
-    </p>
-    {% if is_own_profile %}
+    </div>
+    {% if can_edit_profile %}
     <div class="form-actions" style="margin-top: 10px">
-      <button type="submit" class="btn btn-primary">Update Profile</button>
+      <button type="submit" id="update-profile-btn" class="btn btn-primary" disabled>Update Profile</button>
     </div>
     {% endif %}
   </form>
@@ -172,23 +201,25 @@
   <form method="POST" action="{% if is_own_profile %}{{ url_for('auth_bp.profile', tab='password') }}{% else %}{{ url_for('auth_bp.profile', contact_id=user.contact.id, tab='password') }}{% endif %}"
     style="max-width: 700px; margin: 0 auto">
     <input type="hidden" name="action" value="reset_password" />
-    <table class="form-table">
-      <tr>
-        <td><label for="new_password">New Password:</label></td>
-        <td>
-          <input type="password" id="new_password" name="new_password" autocomplete="new-password" required
-            minlength="8" />
-          <small class="note">Minimum 8 characters.</small>
-        </td>
-      </tr>
-      <tr>
-        <td><label for="confirm_password">Confirm Password:</label></td>
-        <td>
-          <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required
-            minlength="8" />
-        </td>
-      </tr>
-    </table>
+    <div class="profile-form">
+      <div class="profile-section">
+        <div class="field-row editable vertical-value">
+          <label for="new_password" class="field-label">New Password</label>
+          <div class="field-input-wrapper">
+            <input type="password" id="new_password" name="new_password" class="field-input" 
+                   autocomplete="new-password" required minlength="8" />
+            <span class="note">Minimum 8 characters.</span>
+          </div>
+        </div>
+        <div class="field-row editable vertical-value">
+          <label for="confirm_password" class="field-label">Confirm Password</label>
+          <div class="field-input-wrapper">
+            <input type="password" id="confirm_password" name="confirm_password" class="field-input" 
+                   autocomplete="new-password" required minlength="8" />
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="form-actions" style="margin-top: 10px; display: flex; align-items: center; justify-content: flex-start; gap: 10px;">
       {% if not is_own_profile and can_reset_password %}
       <button type="submit" name="admin_reset" value="true" class="btn btn-warning" formnovalidate onclick="return confirm('Are you sure you want to reset the password to \'toastmasters\'?');">
@@ -256,11 +287,29 @@
 
     if (tab === 'password') {
       openTab(null, 'reset-password');
-    } else {
-      // Default to basic info if not specified (already open by default HTML, but ensure class matches)
-      // Ensure correct state
-      // openTab(null, 'basic-info'); // This might double-trigger, let's just leave it or force it.
-      // Actually, the HTML defaults to Basic Info visible. If 'password', we switch.
+    }
+    
+    // Track changes for Update Profile button
+    const profileForm = document.getElementById('profile-form');
+    const updateBtn = document.getElementById('update-profile-btn');
+    
+    if (profileForm && updateBtn) {
+      profileForm.addEventListener('input', function() {
+        updateBtn.disabled = false;
+      });
+      
+      // Also handle change for selects or other elements if necessary
+      profileForm.addEventListener('change', function() {
+        updateBtn.disabled = false;
+      });
+
+      profileForm.addEventListener('submit', function() {
+        // Set a tiny timeout to ensure the form actually submits before disabling
+        // This provides the "reset to initial state" feel before page reload
+        setTimeout(() => {
+          updateBtn.disabled = true;
+        }, 50);
+      });
     }
   });
 </script>

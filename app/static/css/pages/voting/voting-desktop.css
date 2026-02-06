@@ -6,11 +6,13 @@
 @media (min-width: 1025px) {
 
 	/* Desktop-specific accordion adjustments */
-	.accordion-item {
+	.award-accordion .accordion-item,
+	.voting-section {
 		padding: 25px;
 	}
 
-	.accordion-header {
+	.award-accordion .accordion-header .question-text,
+	.section-title {
 		font-size: 1.3em;
 	}
 
@@ -23,11 +25,5 @@
 	.rating-btn {
 		padding: 14px 0;
 		font-size: 1.2em;
-	}
-
-	/* Meeting rating section with more padding */
-	.meeting-rating-section,
-	.feedback-section {
-		padding: 25px;
 	}
 }

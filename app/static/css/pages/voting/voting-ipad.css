@@ -6,26 +6,21 @@
 @media (min-width: 769px) and (max-width: 1024px) {
 
 	/* Optimized accordion for iPad */
-	.accordion-item {
+	.award-accordion .accordion-item {
 		padding: 18px;
 		margin-top: 15px;
 	}
 
-	.accordion-header {
+	.award-accordion .accordion-header .question-text,
+	.section-title {
 		font-size: 1.15em;
-		padding: 8px 0;
 	}
 
-	.accordion-header-right {
+	.award-accordion .accordion-header-right {
 		gap: 10px;
 	}
 
 	/* Better touch targets for iPad */
-	.accordion-header .question-number {
-		width: 32px;
-		height: 32px;
-		font-size: 1em;
-	}
 
 	/* Vote bricks optimized for tablet */
 	.vote-bricks-container {
@@ -44,9 +39,7 @@
 		font-size: 0.7em;
 	}
 
-	/* Rating section optimized for iPad */
-	.meeting-rating-section,
-	.feedback-section {
+	.voting-section {
 		padding: 18px;
 	}
 
@@ -71,11 +64,6 @@
 		font-size: 0.95em;
 	}
 
-	.question-number {
-		width: 28px;
-		height: 28px;
-		font-size: 1em;
-	}
 
 	/* Feedback input */
 	.feedback-input {

@@ -1,73 +1,48 @@
 /* ========================================
-   Profile Base Styles
-   Core styles without media queries
+   Profile Base Styles - Refined & Compact
    ======================================== */
 
-/* Profile Avatar Styling */
 .profile-avatar-container {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	margin-bottom: 30px;
+	margin: 20px 0 40px;
 }
 
 .profile-avatar {
-	width: 150px;
-	height: 150px;
+	width: 120px;
+	height: 120px;
 	border-radius: 50%;
 	object-fit: cover;
 	border: 3px solid #772432;
-	/* Toastmasters Red */
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-	background-color: #eee;
-	transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.profile-avatar:hover {
-	transform: scale(1.05);
-	box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	background-color: #f8f8f8;
 }
 
 .avatar-placeholder {
-	width: 150px;
-	height: 150px;
+	width: 120px;
+	height: 120px;
 	border-radius: 50%;
-	background-color: #ddd;
+	background-color: #f0f0f0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	font-size: 60px;
-	color: #999;
+	font-size: 48px;
+	color: #ccc;
 	border: 3px solid #772432;
-	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-}
-
-.upload-btn-wrapper {
-	position: relative;
-	overflow: hidden;
-	display: inline-block;
-	margin-top: 15px;
-}
-
-.upload-btn-wrapper input[type=file] {
-	font-size: 100px;
-	position: absolute;
-	left: 0;
-	top: 0;
-	opacity: 0;
-	cursor: pointer;
 }
 
 .btn-upload {
-	border: 2px solid #772432;
+	margin-top: 25px;
+	border: 1px solid #772432;
 	color: #772432;
 	background-color: white;
-	padding: 8px 20px;
+	padding: 6px 16px;
 	border-radius: 20px;
-	font-size: 14px;
-	font-weight: bold;
+	font-size: 13px;
+	font-weight: 600;
 	cursor: pointer;
-	transition: all 0.3s ease;
+	transition: all 0.2s ease;
 }
 
 .btn-upload:hover {
@@ -75,83 +50,263 @@
 	color: white;
 }
 
-/* --- General Form & Tab Styles --- */
-.form-table {
-	width: 100%;
-	border-collapse: collapse;
-	margin-bottom: 20px;
-	border: 1px solid #999;
+/* --- Form Structure --- */
+.profile-form {
+	max-width: 800px;
+	margin: 0 auto;
 }
 
-.form-table td {
-	padding: 12px 10px;
-	vertical-align: middle;
-	border: 1px solid #ddd;
+/* Sections as cards */
+.profile-section {
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 12px;
+	margin-bottom: 25px;
+	overflow: hidden;
 }
 
-.form-table td:first-child,
-.form-table label,
-.form-table strong {
-	width: 30%;
-	font-weight: 600;
-	color: #444;
-	font-family: 'Montserrat', sans-serif;
-	font-size: 16px;
-}
-
-/* Basic Input Styling */
-.form-table input[type="text"],
-.form-table input[type="email"],
-.form-table input[type="password"],
-.form-table input[type="number"],
-.form-table select,
-.form-table textarea {
-	width: 100%;
-	padding: 8px 12px;
-	border: 1px solid #ccc;
-	border-radius: 4px;
-	box-sizing: border-box;
+.section-title {
 	font-size: 14px;
-	transition: border-color 0.3s;
+	font-weight: 700;
+	color: #772432;
+	background: #fafafa;
+	padding: 12px 15px;
+	margin: 0;
+	border-bottom: 1px solid #e0e0e0;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
 }
 
-.form-table input:focus,
-.form-table select:focus,
-.form-table textarea:focus {
-	border-color: #772432;
+.field-row {
+	display: flex;
+	align-items: center;
+	padding: 0;
+	border-bottom: 1px solid #eee;
+	flex: 1;
+	min-width: 0;
+}
+
+.field-row-pair {
+	display: flex;
+	gap: 0;
+	border-bottom: 1px solid #eee;
+	padding: 0;
+}
+
+.field-row-pair .field-row {
+	border-bottom: none;
+}
+
+.field-row:last-child,
+.field-row-pair:last-child {
+	border-bottom: none;
+}
+
+.field-row.editable .field-label {
+	color: #772432;
+}
+
+.field-label {
+	font-size: 13px;
+	color: #444;
+	font-weight: 700;
+	width: 140px;
+	background: #fcfcfc;
+	padding: 12px 15px;
+	border-right: 1px solid #e0e0e0;
+	white-space: nowrap;
+	flex-shrink: 0;
+	align-self: stretch;
+	display: flex;
+	align-items: center;
+}
+
+.field-value {
+	padding: 8px 15px;
+	flex: 1;
+	font-size: 15px;
+	font-weight: 700;
+	color: #333;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.field-input-wrapper {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.field-input,
+.field-textarea {
+	width: calc(100% - 30px);
+	font-size: 15px;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	background: #fff;
+	box-sizing: border-box;
+	transition: all 0.2s ease;
+}
+
+.field-input {
+	margin: 10px 15px;
+	height: 44px;
+	padding: 0 15px;
+}
+
+.profile-section .field-textarea {
+	margin: 0;
+	min-height: 120px;
+	padding: 12px;
+	resize: vertical;
+}
+
+.field-input:focus,
+.field-textarea:focus {
 	outline: none;
+	border-color: #772432;
+	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
 }
 
-/* Tabs Styling */
-.tabs-container {
+.field-row .note {
+	display: block;
+	font-size: 11px;
+	color: #888;
+	margin: 0 15px 12px;
+	width: calc(100% - 30px);
+	font-style: italic;
+}
+
+/* Ensure input and note stack vertically in the value area */
+.field-row.vertical-value {
+	align-items: flex-start;
+}
+
+.field-row.vertical-value .field-input-wrapper {
+	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+.bio-row {
+	flex-direction: column;
+	align-items: stretch;
+	border-bottom: none;
+}
+
+.bio-row .field-input-wrapper {
 	width: 100%;
 }
 
+/* --- Tabs --- */
 .nav-tabs {
 	display: flex;
-	justify-content: flex-start;
-	border-bottom: 1px solid #ddd;
-	margin-bottom: 20px;
-	gap: 10px;
+	border-bottom: 1px solid #eee;
+	margin-bottom: 30px;
 }
 
 .nav-item {
-	background: none;
-	border: none;
-	padding: 10px 20px;
-	font-size: 16px;
-	color: #666;
+	padding: 12px 24px;
+	font-size: 15px;
+	color: #888;
 	cursor: pointer;
-	border-bottom: 3px solid transparent;
-	transition: all 0.3s ease;
-}
-
-.nav-item:hover {
-	color: #772432;
+	border-bottom: 2px solid transparent;
+	background: none;
+	border-top: none;
+	border-left: none;
+	border-right: none;
+	font-weight: 500;
 }
 
 .nav-item.active {
 	color: #772432;
 	border-bottom-color: #772432;
-	font-weight: bold;
+	font-weight: 700;
+}
+
+/* --- Global Button Refinement --- */
+.btn {
+	padding: 10px 24px;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: 14px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	border: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 100px;
+}
+
+.btn-primary,
+.btn-success {
+	background-color: #772432;
+	color: white;
+}
+
+.btn-primary:hover,
+.btn-success:hover {
+	background-color: #5a1b26;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-success {
+	background-color: #4CAF50;
+}
+
+.btn-success:hover {
+	background-color: #43A047;
+}
+
+.btn-warning {
+	background-color: #ff9800;
+	color: white;
+}
+
+.btn-warning:hover {
+	background-color: #f57c00;
+}
+
+.avatar-upload-section {
+	margin-top: 20px;
+}
+
+/* --- Responsive Layout (Merged iPad & Desktop) --- */
+@media (min-width: 769px) {
+	.profile-section .field-label {
+		padding: 14px 15px;
+		font-size: 14px;
+	}
+
+	.profile-section .field-input {
+		min-height: 40px;
+		font-size: 15px;
+		margin: 12px 10px;
+		width: calc(100% - 20px);
+	}
+
+	.profile-section .field-textarea {
+		padding: 12px;
+		margin: 12px 10px;
+		width: calc(100% - 20px);
+		min-height: 120px;
+	}
+
+	.profile-section .field-value {
+		font-size: 15px;
+		padding-left: 20px;
+	}
+
+	.nav-item {
+		padding: 10px 20px;
+		font-size: 15px;
+	}
+
+	.field-row .note {
+		margin: 0 10px 12px;
+		width: calc(100% - 20px);
+	}
 }

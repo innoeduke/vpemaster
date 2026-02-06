@@ -47,7 +47,7 @@
 	margin-top: 20px;
 }
 
-.accordion-item {
+.award-accordion .accordion-item {
 	padding: 20px;
 	border-radius: 8px;
 	margin-top: 20px;
@@ -56,59 +56,60 @@
 	overflow: visible;
 }
 
-.accordion-header {
+.award-accordion .accordion-header {
 	background-color: transparent;
 	color: #333;
+	font-weight: bold;
+	font-family: 'Montserrat', sans-serif;
+	transition: opacity 0.2s ease;
 	cursor: pointer;
 	padding: 5px 0;
 	width: 100%;
 	text-align: left;
 	outline: none;
-	font-size: 1.2em;
-	font-weight: bold;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	transition: opacity 0.2s ease;
+	font-size: inherit;
 }
 
-.accordion-header:hover {
+.award-accordion .accordion-header:hover {
 	background-color: transparent;
 	opacity: 0.8;
 }
 
-.accordion-header.disabled {
+.award-accordion .accordion-header.disabled {
 	cursor: pointer;
 }
 
-.accordion-header.disabled .question-text {
+.award-accordion .accordion-header.disabled .question-text {
 	color: #999;
 }
 
-.accordion-header.disabled .question-number {
+.award-accordion .accordion-header.disabled .question-number {
 	background-color: #ccc;
 }
 
-.accordion-header.active {
+.award-accordion .accordion-header.active {
 	background-color: transparent;
 	margin-bottom: 15px;
 }
 
-.accordion-header-right {
+.award-accordion .accordion-header-right {
 	display: flex;
 	align-items: center;
 	gap: 12px;
 }
 
-.accordion-header i {
+.award-accordion .accordion-header i {
 	transition: transform 0.3s ease;
 }
 
-.accordion-header.active i.fa-chevron-down {
+.award-accordion .accordion-header.active i.fa-chevron-down {
 	transform: rotate(180deg);
 }
 
-.accordion-content {
+.award-accordion .accordion-content {
 	padding: 0;
 	background-color: white;
 	max-height: 0;
@@ -116,7 +117,7 @@
 	transition: max-height 0.3s ease-out;
 }
 
-.accordion-content .booking-table {
+.award-accordion .accordion-content .booking-table {
 	box-shadow: none;
 	border-radius: 0;
 }
@@ -187,9 +188,8 @@
 	font-size: 1em;
 }
 
-/* --- Meeting Rating Section --- */
-.meeting-rating-section,
-.feedback-section {
+/* --- Unified Voting Section (for NPS and Feedback) --- */
+.voting-section {
 	padding: 20px;
 	border-radius: 8px;
 	margin-top: 20px;
@@ -197,12 +197,25 @@
 	background-color: white;
 }
 
+.section-header {
+	display: flex;
+	align-items: center;
+	gap: 15px;
+	margin-bottom: 15px;
+}
+
+.section-title {
+	background-color: transparent;
+	color: #333;
+	font-weight: bold;
+	font-family: 'Montserrat', sans-serif;
+}
+
+
+
 .rating-question {
 	margin-bottom: 15px;
 	color: #333;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
 }
 
 .rating-question i {
@@ -268,7 +281,9 @@
 	margin-bottom: 15px;
 }
 
-.question-number {
+/* Standardize question numbers for all sections using specific chained selectors */
+.award-accordion .question-number,
+.voting-section .question-number {
 	background-color: #772432;
 	color: white;
 	width: 30px;
@@ -278,7 +293,8 @@
 	align-items: center;
 	border-radius: 4px;
 	font-weight: bold;
-	font-size: 1.1em;
+	font-size: 16px;
+	font-family: 'Montserrat', sans-serif;
 	flex-shrink: 0;
 }
 
@@ -289,8 +305,14 @@
 	font-family: 'Montserrat', sans-serif;
 }
 
-.accordion-header .question-text {
+.award-accordion .accordion-header .question-text {
 	font-weight: bold;
+}
+
+/* Unified font-size for both accordion headers and section titles */
+.award-accordion .accordion-header .question-text,
+.section-title {
+	font-size: 1.2em;
 }
 
 .feedback-input-container {

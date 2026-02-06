@@ -218,34 +218,41 @@
 	selected_meeting_number, user_role, has_voted, can_track_progress, question_ns) }}
 
 	{% if selected_meeting.status == 'running' %}
-	<div class="meeting-rating-section">
-		<div class="rating-question" style="justify-content: flex-start; gap: 15px;">
+	<div class="voting-section">
+		<div class="section-header">
 			{% set question_ns.count = question_ns.count + 1 %}
 			<div class="question-number">{{ question_ns.count }}</div>
-			<div class="question-text">How likely are you to recommend this meeting to a friend or colleague?</div>
+			<div class="section-title">Net Promoter Score</div>
 		</div>
-		<div class="rating-scale">
-			{% for i in range(11) %}
-			<button type="button" class="rating-btn" data-score="{{ i }}" {% if has_voted %}disabled
-				style="cursor: default;" {% else %}onclick="handleRatingClick(this)" {% endif %}>{{ i
-				}}</button>
-			{% endfor %}
-		</div>
-		<div class="rating-labels">
-			<span>Not at all likely</span>
-			<span>Extremely likely</span>
+		<div class="section-content">
+			<div class="rating-question">
+				<div class="question-text">How likely are you to recommend this meeting to a friend or colleague?</div>
+			</div>
+			<div class="rating-scale">
+				{% for i in range(11) %}
+				<button type="button" class="rating-btn" data-score="{{ i }}" {% if has_voted %}disabled
+					style="cursor: default;" {% else %}onclick="handleRatingClick(this)" {% endif %}>{{ i
+					}}</button>
+				{% endfor %}
+			</div>
+			<div class="rating-labels">
+				<span>Not at all likely</span>
+				<span>Extremely likely</span>
+			</div>
 		</div>
 	</div>
 
-	<div class="feedback-section">
-		<div class="feedback-question">
+	<div class="voting-section">
+		<div class="section-header">
 			{% set question_ns.count = question_ns.count + 1 %}
 			<div class="question-number">{{ question_ns.count }}</div>
-			<div class="question-text">Meeting Feedback / Comments</div>
+			<div class="section-title">Meeting Feedback / Comments</div>
 		</div>
-		<div class="feedback-input-container">
-			<textarea id="feedback-input" class="feedback-input" placeholder="Enter your answer" rows="4" {% if
-				has_voted %}disabled{% else %}oninput="handleFeedbackInput(this)" {% endif %}></textarea>
+		<div class="section-content">
+			<div class="feedback-input-container">
+				<textarea id="feedback-input" class="feedback-input" placeholder="Enter your answer" rows="4" {% if
+					has_voted %}disabled{% else %}oninput="handleFeedbackInput(this)" {% endif %}></textarea>
+			</div>
 		</div>
 	</div>
 	{% endif %}
