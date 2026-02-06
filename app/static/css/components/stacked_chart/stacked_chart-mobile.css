@@ -41,15 +41,27 @@
 		margin-bottom: 10px;
 	}
 
+	.chart-header {
+		padding: 10px 15px;
+		font-size: 0.85rem;
+		border-radius: 8px;
+		margin-bottom: 15px;
+		gap: 8px;
+	}
+
+	.chart-header i {
+		font-size: 1em;
+	}
+
 	.chart-legend {
-		flex-direction: row;
-		flex-wrap: wrap;
+		display: grid;
+		grid-template-columns: repeat(3, auto);
 		justify-content: center;
-		gap: 8px 12px;
+		gap: 8px 20px;
 		font-size: 0.75em;
 		padding: 0 10px;
 		margin-top: 10px;
-		margin-bottom: 15px;
+		margin-bottom: 20px;
 	}
 
 	.legend-item {
@@ -63,15 +75,8 @@
 		height: 6px;
 	}
 
-	/* Smaller back button on mobile */
-	.page-title-row .trend-btn {
-		width: 32px;
-		height: 32px;
-		font-size: 0.9em;
-	}
-
 	/* Hide comments container on mobile */
 	.chart-comments-container {
-		display: none !important;
+		display: none;
 	}
 }

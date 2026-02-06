@@ -17,13 +17,13 @@
 {% block content %}
 <div class="booking-container">
 	{% set legend_items = [
-		{'label': 'NPS', 'color': 'rgba(40, 167, 69, 0.7)', 'border_color': 'rgba(40, 167, 69, 1)', 'type': 'bar'},
-		{'label': 'Detractors %', 'color': 'rgba(220, 53, 69, 0.7)', 'border_color': 'rgba(220, 53, 69, 1)', 'type': 'bar'},
+		{'label': 'NPS', 'color': 'rgba(0, 65, 101, 0.8)', 'border_color': 'rgba(0, 65, 101, 1)', 'type': 'bar'},
+		{'label': 'Detractors %', 'color': 'rgba(211, 158, 0, 0.6)', 'border_color': 'rgba(211, 158, 0, 1)', 'type': 'bar'},
 		{'label': 'Votes', 'color': '#ccc', 'type': 'line'}
 	] %}
 	{% set axis_labels = {'left': 'Score / Percentage', 'right': 'Vote Count', 'bottom': 'Meeting Number'} %}
 	
-	{% call render_chart_container('npsChart', 'NPS Trend', 'User Feedback and Satisfaction', url_for('voting_bp.voting'), 'Back to Voting', legend_items, axis_labels) %}
+	{% call render_chart_container('npsChart', 'NPS Trend', 'User Feedback and Satisfaction', url_for('voting_bp.voting'), 'Back to Voting', legend_items, axis_labels, question='How likely are you to recommend this meeting to a friend or colleague?') %}
 		{{ render_comments_section('npsCommentsContainer', 'commentsMeetingNumber', 'commentsMeetingDate', 'commentsList') }}
 	{% endcall %}
 </div>
@@ -39,12 +39,12 @@ document.addEventListener('DOMContentLoaded', function() {
 	const meetingDates = {{ meeting_dates | tojson }};
 	const labels = meetingNumbers.map((num, idx) => `#${num}`);
 	
-	// Color bars based on positive/negative values
+	// Color bars with vibrant Loyal Blue and Maroon (#004165 and #772432)
 	const backgroundColors = npsScores.map(score => 
-		score >= 0 ? 'rgba(40, 167, 69, 0.7)' : 'rgba(220, 53, 69, 0.7)'
+		score >= 0 ? 'rgba(0, 65, 101, 0.8)' : 'rgba(119, 36, 50, 0.8)'
 	);
 	const borderColors = npsScores.map(score => 
-		score >= 0 ? 'rgba(40, 167, 69, 1)' : 'rgba(220, 53, 69, 1)'
+		score >= 0 ? 'rgba(0, 65, 101, 1)' : 'rgba(119, 36, 50, 1)'
 	);
 	
 	const isMobile = window.innerWidth < 768;
@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
 						align: 'center',
 						formatter: Math.round,
 						font: { weight: 'bold', size: isMobile ? 9 : 10 },
-						color: (ctx) => ctx.dataset.data[ctx.dataIndex] >= 0 ? '#155724' : '#721c24',
+						color: '#ffffff', // White text for better contrast on maroon
 						display: (ctx) => Math.abs(ctx.dataset.data[ctx.dataIndex]) > (isMobile ? 5 : 10)
 					},
 					order: 2
@@ -234,8 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
 					data: detractorPercentages,
 					xAxisID: isMobile ? 'x' : 'x',
 					yAxisID: isMobile ? 'y' : 'y',
-					backgroundColor: 'rgba(220, 53, 69, 0.4)',
-					borderColor: 'rgba(220, 53, 69, 0.8)',
+					backgroundColor: 'rgba(211, 158, 0, 0.4)',
+					borderColor: 'rgba(211, 158, 0, 0.8)',
 					borderWidth: 1,
 					stack: 'nps_stack',
 					barThickness: barThickness,
@@ -244,7 +244,7 @@ document.addEventListener('DOMContentLoaded', function() {
 						align: isMobile ? 'right' : 'top',
 						formatter: (v) => v > 0 ? Math.round(v) + '%' : '',
 						font: { weight: 'bold', size: isMobile ? 9 : 10 },
-						color: '#dc3545',
+						color: '#d39e00', // Amber for detractors text
 						offset: 4, // Increased offset for better visibility
 						display: (ctx) => ctx.dataset.data[ctx.dataIndex] > 0
 					},

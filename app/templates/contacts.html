@@ -265,8 +265,7 @@
         {% endif %}
         <th class="sortable col-name" data-column-index="0" data-sort-type="string">Name</th>
         <th class="sortable col-part" data-column-index="1" data-sort-type="string">
-          Participation
-          <i class="fas fa-info-circle info-icon" title="Qualification criteria: 4+ Topic Speeches, 1+ Best TT Award, 2+ Other Roles (Lifetime, Guests only)"></i>
+          Metrics
         </th>
         <th class="sortable col-phone" data-column-index="2" data-sort-type="string">Phone</th>
         <th class="sortable col-date" data-column-index="3" data-sort-type="date">Date Created</th>
@@ -276,7 +275,7 @@
         <th class="sortable col-next" data-column-index="7" data-sort-type="string">Next Project</th>
         <th class="sortable col-mentor" data-column-index="8" data-sort-type="string">Mentor</th>
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
-        <th class="action-header col-actions" data-column-index="9">Actions</th>
+        <th class="action-header col-actions" data-column-index="9"></th>
         {% endif %}
       </tr>
     </thead>
@@ -360,7 +359,7 @@
             <button class="icon-btn toggle-connection-btn" onclick="toggleConnection({{ contact.id }})" title="{{ 'Connected' if contact.is_connected else 'Disconnected' }}">
               <i class="fas {{ 'fa-toggle-on' if contact.is_connected else 'fa-toggle-off' }}" style="color: {{ '#28a745' if contact.is_connected else '#6c757d' }}"></i>
             </button>
-            <button class="icon-btn" onclick="openContactModal({{ contact.id }})" title="Edit">
+            <button class="icon-btn edit-contact-btn" onclick="openContactModal({{ contact.id }})" title="Edit">
               <i class="fas fa-edit"></i>
             </button>
             {% if contact.Type == 'Guest' %}

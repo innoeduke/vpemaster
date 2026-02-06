@@ -13,15 +13,22 @@
     - axis_labels: Dict with {left, right, bottom, top (optional)}
 #}
 
-{% macro render_chart_container(chart_id, page_title, chart_title, back_url, back_title, legend_items, axis_labels) %}
+{% macro render_chart_container(chart_id, page_title, chart_title, back_url, back_title, legend_items, axis_labels, question=None) %}
 <div class="page-title-row">
 	<h1><i class="fas fa-chart-bar"></i> {{ page_title }}</h1>
-	<a href="{{ back_url }}" class="icon-btn trend-btn" title="{{ back_title }}">
+	<a href="{{ back_url }}" class="back-btn" title="{{ back_title }}">
 		<i class="fas fa-arrow-left"></i>
 	</a>
 </div>
 
 <div class="stacked-chart-container">
+	{% if question %}
+	<div class="chart-header">
+		<i class="fas fa-question-circle"></i>
+		<span>{{ question }}</span>
+	</div>
+	{% endif %}
+	
 	<h2 class="chart-title-main">{{ chart_title }}</h2>
 	
 	<div class="chart-legend">

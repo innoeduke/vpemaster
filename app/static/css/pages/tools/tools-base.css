@@ -77,27 +77,6 @@
 	text-align: left;
 }
 
-.trend-btn {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 40px;
-	height: 40px;
-	border-radius: 50%;
-	background-color: #f8f9fa;
-	color: #772432;
-	text-decoration: none;
-	transition: all 0.2s ease;
-	border: 1px solid #dee2e6;
-	font-size: 1.1em;
-}
-
-.trend-btn:hover {
-	background-color: #772432;
-	color: white;
-	border-color: #772432;
-}
-
 .page-title {
 	font-family: 'Montserrat', sans-serif;
 	color: #333;

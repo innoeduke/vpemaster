@@ -258,3 +258,21 @@
 	transform: translateY(-1px);
 	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
 }
+
+/* Compact Actions Column */
+#contactsTable .col-actions {
+	width: 70px;
+	min-width: 70px;
+	padding: 8px 4px;
+	text-align: center;
+}
+
+#contactsTable .action-links {
+	gap: 4px;
+	justify-content: center;
+	flex-wrap: nowrap;
+}
+
+#contactsTable .icon-btn {
+	padding: 2px;
+}

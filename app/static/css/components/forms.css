@@ -138,7 +138,7 @@
     font-size: 0.9em;
     width: 100%;
     box-sizing: border-box;
-    /* height: 30px !important; Remove fixed height to match other form inputs if needed */
+    /* height: 30px; Remove fixed height to match other form inputs if needed */
     background-color: #ffffff;
     color: #333333;
 }

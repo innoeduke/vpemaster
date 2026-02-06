@@ -56,32 +56,42 @@
 		font-size: 0.9em;
 	}
 
-	#contactsTable th:nth-child(1),
-	#contactsTable td:nth-child(1) {
-		min-width: 150px;
+	/* Column widths and visibility on mobile */
+	#contactsTable .col-checkbox,
+	#contactsTable .checkbox-header {
+		width: 40px !important;
+		min-width: 40px !important;
+		padding: 0 !important;
+	}
+
+	#contactsTable .col-name {
+		min-width: 140px;
+	}
+
+	#contactsTable .col-part {
+		width: 80px !important;
+		min-width: 80px !important;
+	}
+
+	#contactsTable .col-actions {
+		width: 50px !important;
+		min-width: 50px !important;
+		padding: 8px 0 !important;
 	}
 
 	#contactsTable .action-links {
 		white-space: nowrap;
+		justify-content: center;
 	}
 
-	/* Mobile: Show Name(1), Participation(2). Hide others (3-10). */
-	#contactsTable th:nth-child(3),
-	#contactsTable td:nth-child(3),
-	#contactsTable th:nth-child(4),
-	#contactsTable td:nth-child(4),
-	#contactsTable th:nth-child(5),
-	#contactsTable td:nth-child(5),
-	#contactsTable th:nth-child(6),
-	#contactsTable td:nth-child(6),
-	#contactsTable th:nth-child(7),
-	#contactsTable td:nth-child(7),
-	#contactsTable th:nth-child(8),
-	#contactsTable td:nth-child(8),
-	#contactsTable th:nth-child(9),
-	#contactsTable td:nth-child(9),
-	#contactsTable th:nth-child(10),
-	#contactsTable td:nth-child(10) {
+	/* Mobile: Show Checkbox, Name, Participation, Actions. Hide others. */
+	#contactsTable .col-phone,
+	#contactsTable .col-date,
+	#contactsTable .col-club,
+	#contactsTable .col-paths,
+	#contactsTable .col-creds,
+	#contactsTable .col-next,
+	#contactsTable .col-mentor {
 		display: none;
 	}
 
@@ -94,5 +104,11 @@
 	.participation-container {
 		flex-wrap: wrap;
 		gap: 3px;
+	}
+
+	/* Hide specific action icons for Guests on Mobile */
+	tr[data-type="Guest"] .toggle-connection-btn,
+	tr[data-type="Guest"] .edit-contact-btn {
+		display: none !important;
 	}
 }

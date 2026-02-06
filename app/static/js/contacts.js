@@ -160,7 +160,7 @@ function createContactRow(contact) {
   let html = '';
   if (hasEditPermission) {
     const isChecked = selectedContactIds.has(contact.id) ? 'checked' : '';
-    html += `<td style="text-align: center;"><input type="checkbox" class="contact-select-checkbox" data-id="${contact.id}" ${isChecked} onchange="handleCheckboxChange(this)"></td>`;
+    html += `<td class="col-checkbox" style="text-align: center;"><input type="checkbox" class="contact-select-checkbox" data-id="${contact.id}" ${isChecked} onchange="handleCheckboxChange(this)"></td>`;
   }
 
   html += `
@@ -224,7 +224,7 @@ function createContactRow(contact) {
         <button class="icon-btn toggle-connection-btn" onclick="toggleConnection(${contact.id})" title="${contact.is_connected ? 'Connected' : 'Disconnected'}">
           <i class="fas ${contact.is_connected ? 'fa-toggle-on' : 'fa-toggle-off'}" style="color: ${contact.is_connected ? '#28a745' : '#6c757d'}"></i>
         </button>
-        <button class="icon-btn" onclick="openContactModal(${contact.id})" title="Edit">
+        <button class="icon-btn edit-contact-btn" onclick="openContactModal(${contact.id})" title="Edit">
           <i class="fas fa-edit"></i>
         </button>
         ${contact.Type === 'Guest' ? `

@@ -26,6 +26,25 @@
 	gap: 5px;
 }
 
+.chart-header {
+	background: #772432;
+	color: #ffffff;
+	padding: 15px 20px;
+	border-radius: 12px;
+	font-family: 'Montserrat', sans-serif;
+	font-size: 1.1rem;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 20px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.chart-header i {
+	font-size: 1.2rem;
+}
+
 .chart-title-main {
 	text-align: center;
 	font-family: 'Montserrat', sans-serif;
@@ -113,10 +132,10 @@
 	display: flex;
 	justify-content: center;
 	gap: 30px;
-	margin-bottom: 15px;
+	margin-bottom: 20px;
 	font-family: 'Montserrat', sans-serif;
 	font-size: 0.9em;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 }
 
 .legend-item {
@@ -151,26 +170,6 @@
 	border-radius: 50%;
 }
 
-/* Back Button */
-.back-btn {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 40px;
-	height: 40px;
-	border-radius: 50%;
-	background-color: #f8f9fa;
-	color: #555;
-	text-decoration: none;
-	transition: all 0.2s ease;
-	border: 1px solid #dee2e6;
-}
-
-.back-btn:hover {
-	background-color: #772432;
-	color: white;
-	border-color: #772432;
-}
 
 /* Comments Section (for NPS-like feedback) */
 .chart-comments-container {

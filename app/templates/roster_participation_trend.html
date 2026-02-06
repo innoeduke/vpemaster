@@ -22,7 +22,7 @@
 	{% endfor %}
 	{% set axis_labels = {'left': 'Participants', 'bottom': 'Meeting Number'} %}
 	
-	{{ render_chart_container('participationChart', 'Participation Trend', 'Meeting Participation by Ticket Type', url_for('tools_bp.tools', tab='roster'), 'Back to Roster', legend_items, axis_labels) }}
+	{{ render_chart_container('participationChart', 'Roster', 'Participants by Ticket Type', url_for('tools_bp.tools', tab='roster'), 'Back to Roster', legend_items, axis_labels) }}
 </div>
 
 <script>

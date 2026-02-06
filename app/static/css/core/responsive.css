@@ -139,7 +139,7 @@
     .profile-container {
         position: relative;
         z-index: 1002;
-        margin-left: auto !important;
+        margin-left: auto;
         display: flex;
     }
 
@@ -157,7 +157,7 @@
         color: white;
         margin: 0 0 0 15px;
         font-size: 1.1rem;
-        text-align: left !important;
+        text-align: left;
         /* Force override of global h1 centering */
         white-space: nowrap;
         overflow: hidden;

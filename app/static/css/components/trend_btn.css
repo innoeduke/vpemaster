@@ -1,0 +1,37 @@
+/* ========================================
+   Trend Button Component
+   Used for navigation to trend charts
+   ======================================== */
+
+.trend-btn,
+.back-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background-color: #f8f9fa;
+	color: #772432;
+	text-decoration: none;
+	transition: all 0.2s ease;
+	border: 1px solid #dee2e6;
+}
+
+.trend-btn:hover,
+.back-btn:hover {
+	background-color: #772432;
+	color: white;
+	border-color: #772432;
+}
+
+/* Mobile specific adjustment for better fit */
+@media (max-width: 768px) {
+
+	.back-btn,
+	.trend-btn {
+		width: 32px;
+		height: 32px;
+		font-size: 0.9em;
+	}
+}
