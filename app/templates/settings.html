@@ -718,15 +718,11 @@
         <div class="officer-fields-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
           {% for role in officer_roles %}
             <div class="form-group compact-form">
-              <label for="officer-role-{{ role.id }}">{{ role.name }}:</label>
-              <select id="officer-role-{{ role.id }}" name="officer_{{ role.id }}" class="officer-select form-control">
-                <option value="">-- Select Member --</option>
-                {% for user in all_users %}
-                  {% if user.contact %}
-                    <option value="{{ user.contact.id }}">{{ user.contact.Name }}</option>
-                  {% endif %}
-                {% endfor %}
-              </select>
+              <label for="officer-search-{{ role.id }}">{{ role.name }}:</label>
+              <div class="autocomplete-container" style="position: relative;">
+                <input type="text" id="officer-search-{{ role.id }}" class="form-control officer-search-input" placeholder="Search member...">
+                <input type="hidden" id="officer-role-{{ role.id }}" name="officer_{{ role.id }}" class="officer-select">
+              </div>
             </div>
           {% endfor %}
         </div>
@@ -741,11 +737,13 @@
 </div>
 
 <script>
-  var ROLES_DATA = {{ roles| tojson }};
-  const CURRENT_CLUB_ID = {{ club_id }};
+    var ROLES_DATA = {{ roles| tojson }};
+    const ALL_CONTACTS = {{ all_contacts| tojson }};
+    const CURRENT_CLUB_ID = {{ club_id }};
 </script>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
 <script src="{{ url_for('static', filename='js/settings_excomm.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {

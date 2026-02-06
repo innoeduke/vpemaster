@@ -2,6 +2,8 @@ function openExcommModal() {
     document.getElementById('excomm-form').reset();
     document.getElementById('excomm-id').value = '';
     document.getElementById('excomm-modal-title').textContent = 'Add New Excomm Team';
+    document.querySelectorAll('.officer-select').forEach(input => input.value = '');
+    document.querySelectorAll('.officer-search-input').forEach(input => input.value = '');
     document.getElementById('excomm-modal').style.display = 'block';
 }
 
@@ -46,8 +48,10 @@ function openEditExcommModal(btn) {
     // <td data-role-id="..." data-contact-id="...">
     
     const officerSelects = document.querySelectorAll('.officer-select');
+    const officerSearchInputs = document.querySelectorAll('.officer-search-input');
     // Clear all first
     officerSelects.forEach(select => select.value = "");
+    officerSearchInputs.forEach(input => input.value = "");
     
     // The officer cells start at index 3
     // But easier is to query all TDs in this row with data-role-id
@@ -56,11 +60,16 @@ function openEditExcommModal(btn) {
     officerCells.forEach(cell => {
         const roleId = cell.dataset.roleId;
         const contactId = cell.dataset.contactId;
+        const contactName = cell.textContent.trim();
         
         if (roleId && contactId) {
-            const select = document.getElementById(`officer-role-${roleId}`);
-            if (select) {
-                select.value = contactId;
+            const hidden = document.getElementById(`officer-role-${roleId}`);
+            const search = document.getElementById(`officer-search-${roleId}`);
+            if (hidden) {
+                hidden.value = contactId;
+            }
+            if (search) {
+                search.value = contactName;
             }
         }
     });
@@ -118,6 +127,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+
+    // Initialize Autocomplete for Officer Search
+    const officerSearchInputs = document.querySelectorAll('.officer-search-input');
+    officerSearchInputs.forEach(input => {
+        const roleId = input.id.split('-')[2];
+        const hidden = document.getElementById(`officer-role-${roleId}`);
+        if (hidden && typeof initAutocomplete === 'function' && typeof ALL_CONTACTS !== 'undefined') {
+            initAutocomplete(input, hidden, ALL_CONTACTS);
+        }
+    });
 });
 
 // Helper if not in global scope (settings.js might have it, but standard fetch usage)

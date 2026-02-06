@@ -96,12 +96,24 @@ def settings():
             standard_officers = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'IPP']
             officer_roles = [r for r in all_roles if r.name in standard_officers]
 
+    # All Contacts: For autocomplete search
+    all_contacts_data = []
+    if club_id:
+        all_contacts = Contact.query.join(ContactClub).filter(
+            ContactClub.club_id == club_id
+        ).order_by(Contact.Name.asc()).all()
+    else:
+        all_contacts = Contact.query.order_by(Contact.Name.asc()).all()
+    
+    all_contacts_data = [{"id": c.id, "Name": c.Name} for c in all_contacts]
+
     return render_template('settings.html', 
                           global_session_types=global_session_types,
                           local_session_types=local_session_types,
                           global_roles=global_roles,
                           local_roles=local_roles_query,
                           all_users=all_users, 
+                          all_contacts=all_contacts_data,
                           roles=roles, 
                           achievements=achievements, 
                           excomm_history=excomm_history,

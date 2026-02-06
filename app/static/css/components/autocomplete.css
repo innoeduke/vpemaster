@@ -21,7 +21,8 @@
     background-color: #f0f0f0;
 }
 
-.autocomplete-suggestion.selected {
+.autocomplete-suggestion.selected,
+.autocomplete-suggestion.autocomplete-active {
     background-color: #007bff;
     color: #fff;
 }
