@@ -48,7 +48,7 @@
         </div>
     </div>
 
-    {% if selected_meeting and selected_meeting.WOD %}
+    {% if selected_meeting and selected_meeting.WOD and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
     <div class="wod-display">
         <div class="envelope-flap"></div>
         <div class="letter">
@@ -118,6 +118,14 @@
                     <button id="edit-btn" class="btn btn-primary">Edit</button>
                     <button id="export-btn" class="btn btn-info action-icon-btn" title="Export to Excel"><i class="fas fa-file-excel"></i></button>
                     <button id="ppt-btn" class="btn btn-warning action-icon-btn" title="Download PPT"><i class="fas fa-file-powerpoint"></i></button>
+                    {% elif selected_meeting and selected_meeting.WOD %}
+                    <div class="wod-display action-bar-wod">
+                        <div class="envelope-flap"></div>
+                        <div class="letter">
+                            <span style="font-weight: 600; font-size: 0.7em; color:#555;">Word of the Day:</span>
+                            <span>"{{ selected_meeting.WOD }}"</span>
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
             </div>

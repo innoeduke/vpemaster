@@ -211,12 +211,12 @@
 }
 
 /* Legacy Paths (Dark Gray) */
-.badge-path.path-ec,
-.badge-path.path-ip,
-.badge-path.path-ld,
-.badge-path.path-sr,
-.badge-path.path-tc {
-	background-color: #a0aec0 !important;
+.participation-container .badge-path.path-ec,
+.participation-container .badge-path.path-ip,
+.participation-container .badge-path.path-ld,
+.participation-container .badge-path.path-sr,
+.participation-container .badge-path.path-tc {
+	background-color: #a0aec0;
 }
 
 /* --- Specific View Styles --- */
@@ -237,10 +237,10 @@
 }
 
 /* Checkbox Column Styling */
-.col-checkbox {
+#contactsTable .col-checkbox {
 	width: 40px;
-	padding-left: 0 !important;
-	padding-right: 0 !important;
+	padding-left: 0;
+	padding-right: 0;
 }
 
 .checkbox-header {

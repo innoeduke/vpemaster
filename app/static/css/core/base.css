@@ -38,6 +38,13 @@ h6,
     /* Add this to create a positioning context */
 }
 
+@media (min-width: 769px) {
+    .main-content {
+        padding-left: 5%;
+        padding-right: 5%;
+    }
+}
+
 .alert-content {
     font-family: 'Montserrat', sans-serif;
 }

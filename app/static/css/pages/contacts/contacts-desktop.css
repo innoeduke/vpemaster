@@ -16,9 +16,9 @@
 	}
 
 	/* Ensure action column is visible on desktop */
-	#contactsTable th.action-header,
-	#contactsTable td:last-child {
-		display: table-cell !important;
+	table#contactsTable th.col-actions,
+	table#contactsTable td.col-actions {
+		display: table-cell;
 	}
 
 	.action-links {

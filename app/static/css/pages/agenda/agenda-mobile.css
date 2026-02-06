@@ -49,6 +49,7 @@
 	.club-info {
 		grid-row: 1;
 		text-align: center;
+		font-size: 0.75em;
 	}
 
 	.agenda-header-logo {

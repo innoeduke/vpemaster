@@ -12,6 +12,7 @@ from app import create_app, db
 from app.models.meeting import Meeting
 from app.models.contact import Contact
 from app.models.voting import Vote
+from app.models.session import SessionLog, SessionType, OwnerMeetingRoles
 
 def load_voting_data(file_path):
     app = create_app()
@@ -47,6 +48,15 @@ def load_voting_data(file_path):
         # Questions for NPS and Feedback (matching app/voting_routes.py)
         NPS_QUESTION = "How likely are you to recommend this meeting to a friend or colleague?"
         FEEDBACK_QUESTION = "More feedback/comments"
+
+        # Track potential Table Topics speakers per meeting
+        # {meeting_number: set(contact_id)}
+        table_topic_speakers = {}
+
+        # Look up SessionType for "Topics Speech"
+        topics_speech_st = SessionType.query.filter_by(Title='Topics Speech').first()
+        if not topics_speech_st:
+            print("Error: 'Topics Speech' SessionType not found. Cannot add sessions.")
 
         print("Processing rows...")
         row_count = 0
@@ -113,6 +123,12 @@ def load_voting_data(file_path):
                     db.session.add(vote)
                     vote_count += 1
 
+                    # Track potential Table Topics speaker
+                    if category == 'table-topic':
+                        if meeting_number not in table_topic_speakers:
+                            table_topic_speakers[meeting_number] = set()
+                        table_topic_speakers[meeting_number].add(contact_id)
+
             # NPS Score
             try:
                 score_val = int(score) if score is not None and str(score).strip() != '' else 0
@@ -143,6 +159,60 @@ def load_voting_data(file_path):
 
         db.session.commit()
         print(f"Imported {row_count} rows ({vote_count} vote records).")
+
+        # Process Table Topics speakers
+        if topics_speech_st:
+            print(f"Ensuring 'Topic Speech' sessions for {len(table_topic_speakers)} meetings...")
+            sessions_added = 0
+            for meeting_number, contact_ids in table_topic_speakers.items():
+                meeting_obj = meetings_to_update.get(meeting_number)
+                if not meeting_obj:
+                    meeting_obj = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+                
+                if not meeting_obj:
+                    continue
+
+                # Find max sequence to append
+                max_seq = db.session.query(func.max(SessionLog.Meeting_Seq)).filter_by(Meeting_Number=meeting_number).scalar() or 0
+                
+                for contact_id in contact_ids:
+                    # Check if session already exists for this contact in this meeting
+                    # We look for a SessionLog of type 'Topics Speech' where this contact is an owner
+                    existing_session = db.session.query(SessionLog).join(OwnerMeetingRoles).filter(
+                        SessionLog.Meeting_Number == meeting_number,
+                        SessionLog.Type_ID == topics_speech_st.id,
+                        OwnerMeetingRoles.contact_id == contact_id
+                    ).first()
+
+                    if not existing_session:
+                        # Create new session
+                        max_seq += 1
+                        new_session = SessionLog(
+                            Meeting_Number=meeting_number,
+                            Meeting_Seq=max_seq,
+                            Session_Title="Topic Speech",
+                            Type_ID=topics_speech_st.id,
+                            hidden=True, # Set to hidden as requested
+                            Duration_Min=topics_speech_st.Duration_Min or 1,
+                            Duration_Max=topics_speech_st.Duration_Max or 2,
+                            Status='active'
+                        )
+                        db.session.add(new_session)
+                        db.session.flush() # Get session ID
+
+                        # Assign owner
+                        omr = OwnerMeetingRoles(
+                            meeting_id=meeting_obj.id,
+                            role_id=topics_speech_st.role_id,
+                            contact_id=contact_id,
+                            session_log_id=new_session.id
+                        )
+                        db.session.add(omr)
+                        sessions_added += 1
+            
+            db.session.commit()
+            print(f"Added {sessions_added} 'Topic Speech' sessions.")
+
         print(f"Updating winners and NPS for {len(meetings_to_update)} meetings...")
 
         # Update meeting winners and NPS

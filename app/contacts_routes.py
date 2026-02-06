@@ -99,6 +99,56 @@ def show_contacts():
     # 1. Attendance (Roster)
     # Count how many times each contact appears in Roster
     
+    # --- LIFETIME METRICS FOR QUALIFICATION (GOLD STAR) ---
+    # According to user: Gold star is shown for guests only, ignores date filters, and queries entire dataset.
+    
+    # 1. Lifetime Attendance
+    lifetime_attendance_counts = db.session.query(
+        Roster.contact_id, func.count(Roster.id)
+    ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
+        Roster.contact_id.isnot(None),
+        Meeting.club_id == club_id
+    ).group_by(Roster.contact_id).all()
+    lifetime_attendance_map = {c_id: count for c_id, count in lifetime_attendance_counts}
+
+    # 2. Lifetime Roles
+    lifetime_roles_query = db.session.query(
+        OwnerMeetingRoles.contact_id, Meeting.Meeting_Number, OwnerMeetingRoles.role_id, MeetingRole.name
+    ).join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
+     .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+     .filter(
+        MeetingRole.type.in_(['standard', 'club-specific']),
+        Meeting.club_id == club_id
+    )
+    lifetime_distinct_roles = lifetime_roles_query.distinct().all()
+
+    lifetime_role_map = {}
+    lifetime_tt_count = {}
+    lifetime_other_role_count = {}
+
+    for owner_id, _, _, role_name in lifetime_distinct_roles:
+        lifetime_role_map[owner_id] = lifetime_role_map.get(owner_id, 0) + 1
+        r_name = role_name.strip() if role_name else ""
+        if r_name == "Topics Speaker":
+            lifetime_tt_count[owner_id] = lifetime_tt_count.get(owner_id, 0) + 1
+        else:
+            lifetime_other_role_count[owner_id] = lifetime_other_role_count.get(owner_id, 0) + 1
+
+    # 3. Lifetime Awards
+    lifetime_best_tt_map = {}
+    for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
+        q = db.session.query(
+            getattr(Meeting, field), func.count(Meeting.id)
+        ).filter(
+            getattr(Meeting, field).isnot(None),
+            Meeting.club_id == club_id
+        )
+        counts = q.group_by(getattr(Meeting, field)).all()
+        if field == 'best_table_topic_id':
+            for c_id, count in counts:
+                lifetime_best_tt_map[c_id] = count
+
+    # --- TERM-FILTERED METRICS FOR DISPLAY BADGES ---
     roster_query = db.session.query(
         Roster.contact_id, func.count(Roster.id)
     ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
@@ -110,8 +160,6 @@ def show_contacts():
     attendance_counts = roster_query.group_by(Roster.contact_id).all()
     attendance_map = {c_id: count for c_id, count in attendance_counts}
 
-    # 2. Roles (SessionLog where SessionType is a Role)
-    # We want to count distinct (Meeting, Role) pairs per user.
     roles_query = db.session.query(
         OwnerMeetingRoles.contact_id, Meeting.Meeting_Number, OwnerMeetingRoles.role_id, MeetingRole.name
     ).join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
@@ -125,24 +173,15 @@ def show_contacts():
     distinct_roles = roles_query.distinct().all()
 
     role_map = {}
-    
-    # Track granular counts for "Star Guest" logic
-    # Criteria: 4+ Topics Speaker, 1+ Best Table Topic, 2+ Other Roles
     contact_tt_count = {}
-    contact_other_role_count = {}
+    # contact_other_role_count = {} # Not strictly needed for display but can keep if logic requires
 
     for owner_id, _, _, role_name in distinct_roles:
         role_map[owner_id] = role_map.get(owner_id, 0) + 1
-        
         r_name = role_name.strip() if role_name else ""
         if r_name == "Topics Speaker":
             contact_tt_count[owner_id] = contact_tt_count.get(owner_id, 0) + 1
-        else:
-            contact_other_role_count[owner_id] = contact_other_role_count.get(owner_id, 0) + 1
 
-    # 3. Awards (Meeting Best X)
-    
-    # helper to get counts for a specific field
     def get_award_counts(field):
         q = db.session.query(
             getattr(Meeting, field), func.count(Meeting.id)
@@ -154,37 +193,36 @@ def show_contacts():
         return q.group_by(getattr(Meeting, field)).all()
 
     award_map = {}
-    best_tt_map = {} # Track Best Table Topic separately
-
     for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
         counts = get_award_counts(field)
         for c_id, count in counts:
             award_map[c_id] = award_map.get(c_id, 0) + count
-            if field == 'best_table_topic_id':
-                best_tt_map[c_id] = count
 
-    def check_membership_qualification(tt_count, best_tt_count, other_role_count):
+    def check_membership_qualification(contact_type, tt_count, best_tt_count, other_role_count):
         """
         Determines if a guest meets the membership criteria:
-        - 4+ Table Topic Speaker roles
-        - 1+ Best Table Topic award
-        - 2+ Other roles
+        - Must be a Guest
+        - 4+ Table Topic Speaker roles (Lifetime)
+        - 1+ Best Table Topic award (Lifetime)
+        - 2+ Other roles (Lifetime)
         """
+        if contact_type != 'Guest':
+            return False
         return (tt_count >= 4 and best_tt_count >= 1 and other_role_count >= 2)
 
     # Attach to contacts
     for c in contacts:
+        # Display metrics (Filtered)
         c.attendance_count = attendance_map.get(c.id, 0)
         c.role_count = role_map.get(c.id, 0)
         c.award_count = award_map.get(c.id, 0)
+        c.tt_count = contact_tt_count.get(c.id, 0)
         
-        # Calculate Qualification Status
-        tt = contact_tt_count.get(c.id, 0)
-        best_tt = best_tt_map.get(c.id, 0)
-        other_roles = contact_other_role_count.get(c.id, 0)
-        
-        c.tt_count = tt  # Expose for frontend display
-        c.is_qualified = check_membership_qualification(tt, best_tt, other_roles)
+        # Qualification (Lifetime)
+        l_tt = lifetime_tt_count.get(c.id, 0)
+        l_best_tt = lifetime_best_tt_map.get(c.id, 0)
+        l_other = lifetime_other_role_count.get(c.id, 0)
+        c.is_qualified = check_membership_qualification(c.Type, l_tt, l_best_tt, l_other)
 
     # Sort contacts by role_count desc by default
     contacts.sort(key=lambda c: (c.role_count, c.is_qualified, c.tt_count), reverse=True)
@@ -249,6 +287,7 @@ def show_contacts():
             # 'user_role': ... (Not strictly needed for the table display, can add if needed)
             # 'is_officer': ...
         })
+
 
     return render_template('contacts.html', 
                            contacts=contacts,
@@ -714,15 +753,13 @@ def get_all_contacts_api():
         .order_by(Contact.Name.asc()).all()
     Contact.populate_users(contacts, club_id)
     
-    # Calculate participation metrics (same logic as show_contacts)
-    six_months_ago = date.today() - timedelta(days=180)
+    # Calculate participation metrics (Lifetime for API)
     # 1. Attendance counts
     attendance_counts = db.session.query(
         Roster.contact_id, func.count(Roster.id)
     ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
         Roster.contact_id.isnot(None),
-        Meeting.club_id == club_id,
-        Meeting.Meeting_Date >= six_months_ago
+        Meeting.club_id == club_id
     ).group_by(Roster.contact_id).all()
     attendance_map = {c_id: count for c_id, count in attendance_counts}
 
@@ -733,8 +770,7 @@ def get_all_contacts_api():
      .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
      .filter(
         MeetingRole.type.in_(['standard', 'club-specific']),
-        Meeting.club_id == club_id,
-        Meeting.Meeting_Date >= six_months_ago
+        Meeting.club_id == club_id
     ).distinct().all()
 
     role_map = {}
@@ -758,15 +794,16 @@ def get_all_contacts_api():
             getattr(Meeting, field), func.count(Meeting.id)
         ).filter(
             getattr(Meeting, field).isnot(None),
-            Meeting.club_id == club_id,
-            Meeting.Meeting_Date >= six_months_ago
+            Meeting.club_id == club_id
         ).group_by(getattr(Meeting, field)).all()
         for c_id, count in counts:
             award_map[c_id] = award_map.get(c_id, 0) + count
             if field == 'best_table_topic_id':
                 best_tt_map[c_id] = count
 
-    def check_membership_qualification(tt_count, best_tt_count, other_role_count):
+    def check_membership_qualification(contact_type, tt_count, best_tt_count, other_role_count):
+        if contact_type != 'Guest':
+            return False
         return (tt_count >= 4 and best_tt_count >= 1 and other_role_count >= 2)
 
     # Batch populate primary clubs to avoid N+1 queries in the loop below
@@ -798,7 +835,7 @@ def get_all_contacts_api():
             'tt_count': tt,
             'attendance_count': attendance_map.get(c.id, 0),
             'award_count': award_map.get(c.id, 0),
-            'is_qualified': check_membership_qualification(tt, best_tt, other_roles),
+            'is_qualified': check_membership_qualification(c.Type, tt, best_tt, other_roles),
             'has_user': c.user is not None,
             'user_role': c.user.primary_role_name if c.user else None,
             'is_officer': c.user.has_role(Permissions.STAFF) if c.user else False,

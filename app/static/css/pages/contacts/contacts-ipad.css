@@ -56,11 +56,10 @@
 		display: none;
 	}
 
-	/* Ensure action column (10) is VISIBLE on iPad */
-	#contactsTable th.action-header,
-	#contactsTable th:nth-child(10),
-	#contactsTable td:nth-child(10) {
-		display: table-cell !important;
+	/* Ensure action column is VISIBLE on iPad */
+	table#contactsTable th.col-actions,
+	table#contactsTable td.col-actions {
+		display: table-cell;
 	}
 
 	.action-links {
