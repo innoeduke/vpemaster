@@ -1,0 +1,279 @@
+{% extends "base.html" %}
+
+{% block title %}Planner{% endblock %}
+
+{% block header_title %}My Planner{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/planner.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="planner-container">
+    <div class="planner-header">
+        <h2>Speech & Role Plans</h2>
+        <button class="btn btn-success" id="add-plan-btn">
+            <i class="fas fa-plus"></i> New Plan
+        </button>
+    </div>
+
+    <div class="planner-card">
+        <div class="planner-table-container">
+            <table class="planner-table">
+                <thead>
+                    <tr>
+                        <th>Meeting</th>
+                        <th>Role</th>
+                        <th>Project</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="planner-tbody">
+                    {% for plan in plans %}
+                    <tr data-id="{{ plan.id }}" 
+                        data-meeting="{{ plan.meeting_number or '' }}"
+                        data-role="{{ plan.meeting_role_id or '' }}"
+                        data-project="{{ plan.project_id or '' }}"
+                        data-status="{{ plan.status }}"
+                        data-notes="{{ plan.notes or '' }}">
+                        <td>#{{ plan.meeting_number or 'N/A' }}</td>
+                        <td>{{ plan.role.name if plan.role else 'N/A' }}</td>
+                        <td>{{ plan.project.Project_Name if plan.project else 'N/A' }}</td>
+                        <td>
+                            <span class="status-badge status-{{ plan.status }}">
+                                {{ plan.status|capitalize }}
+                            </span>
+                        </td>
+                        <td>{{ plan.notes or '' }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-icon btn-edit" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn-icon btn-delete" title="Delete" onclick="deletePlan({{ plan.id }})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" style="text-align: center;">No plans yet. Start by adding one!</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Plan Modal -->
+<div id="planModal" class="planner-modal">
+    <div class="planner-modal-content">
+        <span class="planner-close-modal" onclick="closeModal()">&times;</span>
+        <div class="planner-modal-header">
+            <h3>Plan Detail</h3>
+        </div>
+        <form id="planForm">
+            <input type="hidden" id="plan-id">
+            <div class="planner-form-group">
+                <label for="meeting_number">Meeting</label>
+                <select id="meeting_number" class="planner-form-control" required>
+                    <option value="">Select Meeting</option>
+                    {% for meeting in meetings %}
+                    <option value="{{ meeting.Meeting_Number }}">#{{ meeting.Meeting_Number }} &nbsp; {{ meeting.Meeting_Date.strftime('%b %d, %Y') if meeting.Meeting_Date else 'N/A' }}</option>
+                    {% endfor %}
+                </select>
+                <div id="meeting-date-row" class="meeting-info-row" style="display: none;">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span id="meeting-date-display"></span>
+                </div>
+            </div>
+            <div class="planner-form-group">
+                <label for="meeting_role_id">Meeting Role</label>
+                <select id="meeting_role_id" class="planner-form-control" required>
+                    <option value="">Select Role</option>
+                    <!-- Populated dynamically -->
+                </select>
+            </div>
+            <div id="project-group" class="planner-form-group" style="display: none;">
+                <label for="project_id">Project</label>
+                <select id="project_id" class="planner-form-control">
+                    <option value="">Select Project</option>
+                    {% for project in projects %}
+                    <option value="{{ project.id }}" data-format="{{ project.Format }}">{{ project.Project_Name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="planner-form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" class="planner-form-control" rows="3"></textarea>
+            </div>
+            <div class="planner-modal-footer">
+                <button type="button" class="planner-btn planner-btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="planner-btn planner-btn-primary">Save Plan</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const modal = document.getElementById('planModal');
+    const form = document.getElementById('planForm');
+    const addBtn = document.getElementById('add-plan-btn');
+    const meetingSelect = document.getElementById('meeting_number');
+    const roleSelect = document.getElementById('meeting_role_id');
+    const projectGroup = document.getElementById('project-group');
+    const projectIdSelect = document.getElementById('project_id');
+    const dateDisplay = document.getElementById('meeting-date-display');
+    const dateRow = document.getElementById('meeting-date-row');
+
+    let currentMeetingRoles = [];
+
+    addBtn.onclick = () => {
+        form.reset();
+        document.getElementById('plan-id').value = '';
+        projectGroup.style.display = 'none';
+        dateRow.style.display = 'none';
+        roleSelect.innerHTML = '<option value="">Select Role</option>';
+        modal.style.display = 'flex';
+    };
+
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    meetingSelect.onchange = async () => {
+        const meetingNumber = meetingSelect.value;
+        if (!meetingNumber) {
+            roleSelect.innerHTML = '<option value="">Select Role</option>';
+            dateRow.style.display = 'none';
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/meeting/${meetingNumber}`);
+            const data = await response.json();
+            
+            dateDisplay.innerText = `Meeting Date: ${data.date}`;
+            dateRow.style.display = 'flex';
+            currentMeetingRoles = data.roles;
+            
+            roleSelect.innerHTML = '<option value="">Select Role</option>';
+            data.roles.forEach(role => {
+                const opt = document.createElement('option');
+                opt.value = role.id;
+                opt.innerText = role.name;
+                opt.dataset.validProject = role.valid_for_project;
+                opt.dataset.isSpeech = role.is_prepared_speech;
+                roleSelect.appendChild(opt);
+            });
+        } catch (error) {
+            console.error('Error fetching meeting info:', error);
+        }
+    };
+
+    roleSelect.onchange = () => {
+        const selectedRole = currentMeetingRoles.find(r => r.id == roleSelect.value);
+        if (selectedRole && selectedRole.valid_for_project) {
+            projectGroup.style.display = 'block';
+            projectIdSelect.required = true;
+            
+            const expectedFormat = selectedRole.expected_format;
+            
+            // Filter projects by format
+            Array.from(projectIdSelect.options).forEach(opt => {
+                if (opt.value === "") return;
+                
+                const projectFormat = opt.dataset.format;
+                if (expectedFormat) {
+                    opt.style.display = (projectFormat === expectedFormat) ? 'block' : 'none';
+                } else {
+                    // Fallback to showing everything if we don't know the mapping
+                    opt.style.display = 'block';
+                }
+            });
+        } else {
+            projectGroup.style.display = 'none';
+            projectIdSelect.value = '';
+            projectIdSelect.required = false;
+        }
+    };
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const planId = document.getElementById('plan-id').value;
+        const data = {
+            meeting_number: document.getElementById('meeting_number').value || null,
+            meeting_role_id: document.getElementById('meeting_role_id').value || null,
+            project_id: document.getElementById('project_id').value || null,
+            notes: document.getElementById('notes').value
+        };
+
+        const method = planId ? 'PUT' : 'POST';
+        const url = planId ? `/api/planner/${planId}` : '/api/planner';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to save plan');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    };
+
+    async function deletePlan(id) {
+        if (!confirm('Are you sure you want to delete this plan?')) return;
+
+        try {
+            const response = await fetch(`/api/planner/${id}`, { method: 'DELETE' });
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to delete plan');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    }
+
+    // Edit logic
+    document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.onclick = async function() {
+            const tr = this.closest('tr');
+            form.reset();
+            
+            const meetingNum = tr.dataset.meeting;
+            const roleId = tr.dataset.role;
+            const projectId = tr.dataset.project;
+            
+            document.getElementById('plan-id').value = tr.dataset.id;
+            document.getElementById('meeting_number').value = meetingNum;
+            document.getElementById('notes').value = tr.dataset.notes;
+            
+            // Trigger meeting change to load roles
+            await meetingSelect.onchange();
+            document.getElementById('meeting_role_id').value = roleId;
+            
+            // Trigger role change to show/hide project group
+            roleSelect.onchange();
+            document.getElementById('project_id').value = projectId;
+            
+            modal.style.display = 'flex';
+        };
+    });
+</script>
+{% endblock %}

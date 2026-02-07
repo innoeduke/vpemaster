@@ -3,12 +3,12 @@ const ICON_LIST = [
   { group: "Core Roles", icons: [
     { value: "fa-microphone", label: "Microphone (Speaker/TM)" },
     { value: "fa-stopwatch", label: "Stopwatch (Timer)" },
-    { value: "fa-pen-to-square", label: "Pen & Square (Evaluator)" },
+    { value: "fa-edit", label: "Edit (Evaluator)" },
     { value: "fa-book", label: "Book (Grammarian)" },
     { value: "fa-calculator", label: "Calculator (Ah-Counter/Vote)" },
     { value: "fa-comments", label: "Comments (Topicsmaster)" },
     { value: "fa-comment", label: "Comment (Topics Speaker)" },
-    { value: "fa-magnifying-glass", label: "Magnifying Glass (Gen. Eval)" },
+    { value: "fa-search", label: "Search (Gen. Eval)" },
     { value: "fa-user-tie", label: "User Tie (Prepared Speaker)" },
     { value: "fa-lightbulb", label: "Lightbulb (Table Topics)" }
   ]},
@@ -16,37 +16,67 @@ const ICON_LIST = [
     { value: "fa-gavel", label: "Gavel (President/Judge)" },
     { value: "fa-crown", label: "Crown (President)" },
     { value: "fa-graduation-cap", label: "Graduation Cap (VPE)" },
-    { value: "fa-users-gear", label: "Users Gear (VPE/VPM)" },
+    { value: "fa-users-cog", label: "Users Cog (VPE/VPM)" },
     { value: "fa-users", label: "Users (VPM)" },
     { value: "fa-bullhorn", label: "Bullhorn (VPPR)" },
     { value: "fa-newspaper", label: "Newspaper (VPPR)" },
     { value: "fa-coins", label: "Coins (Treasurer)" },
     { value: "fa-pen-nib", label: "Pen Nib (Secretary)" },
-    { value: "fa-briefcase", label: "Briefcase (SAA)" }
+    { value: "fa-briefcase", label: "Briefcase (SAA)" },
+    { value: "fa-landmark", label: "Landmark" },
+    { value: "fa-university", label: "University/Building" }
   ]},
-  { group: "Other Roles", icons: [
+  { group: "Communication & Tools", icons: [
     { value: "fa-handshake", label: "Handshake (Greeter)" },
     { value: "fa-handshake-angle", label: "Handshake Angle (Mentor)" },
     { value: "fa-hand-holding-heart", label: "Hand Holding Heart (Greeter)" },
-    { value: "fa-face-smile", label: "Smile Face (Greeter)" },
-    { value: "fa-face-laugh-squint", label: "Laugh Face (Joke Master)" },
-    { value: "fa-masks-theater", label: "Masks (Joke/Story)" },
+    { value: "fa-chalkboard", label: "Chalkboard (Mentor/Trainer)" },
     { value: "fa-desktop", label: "Desktop (Zoom Master)" },
-    { value: "fa-video", label: "Video (Zoom Master)" },
+    { value: "fa-laptop", label: "Laptop" },
+    { value: "fa-video", label: "Video" },
+    { value: "fa-headphones", label: "Headphones" },
+    { value: "fa-podcast", label: "Podcast" },
+    { value: "fa-microphone-alt", label: "Microphone Alt" },
+    { value: "fa-volume-up", label: "Volume" },
+    { value: "fa-bullseye", label: "Bullseye (Goals)" },
     { value: "fa-puzzle-piece", label: "Puzzle Piece" },
-    { value: "fa-microphone-lines", label: "Microphone Lines" },
     { value: "fa-link", label: "Link" },
-    { value: "fa-gear", label: "Gear" },
+    { value: "fa-cog", label: "Gear" },
+    { value: "fa-wrench", label: "Wrench" },
+    { value: "fa-hammer", label: "Hammer" }
+  ]},
+  { group: "Achievements & Symbols", icons: [
     { value: "fa-trophy", label: "Trophy" },
     { value: "fa-medal", label: "Medal" },
+    { value: "fa-award", label: "Award" },
+    { value: "fa-certificate", label: "Certificate" },
     { value: "fa-star", label: "Star" },
     { value: "fa-heart", label: "Heart" },
     { value: "fa-flag", label: "Flag" },
-    { value: "fa-circle-info", label: "Info" },
-    { value: "fa-circle-question", label: "Question" },
-    { value: "fa-cake-candles", label: "Celebration" },
+    { value: "fa-check-double", label: "Check Double" },
+    { value: "fa-info-circle", label: "Info" },
+    { value: "fa-question-circle", label: "Question" },
+    { value: "fa-bolt", label: "Bolt" },
+    { value: "fa-rocket", label: "Rocket" },
+    { value: "fa-key", label: "Key" },
+    { value: "fa-chart-line", label: "Chart Line" },
+    { value: "fa-chart-pie", label: "Chart Pie" }
+  ]},
+  { group: "Social & Fun", icons: [
+    { value: "fa-smile", label: "Smile Face" },
+    { value: "fa-laugh-squint", label: "Laugh Face" },
+    { value: "fa-grin-stars", label: "Grin Stars" },
+    { value: "fa-masks-theater", label: "Masks (Joke/Story)" },
+    { value: "fa-birthday-cake", label: "Celebration" },
     { value: "fa-mug-hot", label: "Coffee/Break" },
-    { value: "fa-music", label: "Music" }
+    { value: "fa-music", label: "Music" },
+    { value: "fa-camera", label: "Camera" },
+    { value: "fa-palette", label: "Palette" },
+    { value: "fa-globe-americas", label: "Earth" },
+    { value: "fa-globe", label: "Globe" },
+    { value: "fa-sun", label: "Sun" },
+    { value: "fa-moon", label: "Moon" },
+    { value: "fa-leaf", label: "Leaf" }
   ]}
 ];
 
@@ -116,37 +146,12 @@ function initIconMatrix() {
     return;
   }
 
-  console.log("ICON_LIST:", typeof ICON_LIST, ICON_LIST);
-  console.log("Initializing icon matrix with", ICON_LIST.length, "groups");
-
   // Clear existing content except the hidden input
   Array.from(container.children).forEach(child => {
     if (child.id !== "icon") child.remove();
   });
 
-  // 1. Add "None" Option
-  const noneTitle = document.createElement("div");
-  noneTitle.className = "icon-group-title";
-  noneTitle.textContent = "Standard";
-  container.appendChild(noneTitle);
-
-  const noneGrid = document.createElement("div");
-  noneGrid.className = "icon-matrix";
-  
-  const noneItem = document.createElement("div");
-  noneItem.className = "icon-item active";
-  noneItem.dataset.value = "";
-  noneItem.title = "None";
-  noneItem.innerHTML = `<i class="fas fa-ban"></i>`;
-  noneItem.addEventListener("click", () => {
-    container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
-    noneItem.classList.add("active");
-    hiddenInput.value = "";
-  });
-  noneGrid.appendChild(noneItem);
-  container.appendChild(noneGrid);
-
-  // 2. Add Grouped Icons
+  // Add Grouped Icons
   ICON_LIST.forEach((group) => {
     const title = document.createElement("div");
     title.className = "icon-group-title";
@@ -155,6 +160,22 @@ function initIconMatrix() {
 
     const grid = document.createElement("div");
     grid.className = "icon-matrix";
+
+    // If this is the "Core Roles" group, prepend "None" option
+    if (group.group === "Core Roles") {
+      const noneItem = document.createElement("div");
+      noneItem.className = "icon-item active";
+      noneItem.dataset.value = "";
+      noneItem.title = "None";
+      noneItem.innerHTML = `<i class="fas fa-ban"></i>`;
+      noneItem.addEventListener("click", () => {
+        container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
+        noneItem.classList.add("active");
+        hiddenInput.value = "";
+      });
+      grid.appendChild(noneItem);
+    }
+
     group.icons.forEach((icon) => {
       const item = document.createElement("div");
       item.className = "icon-item";

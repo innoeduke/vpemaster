@@ -602,7 +602,9 @@ document.addEventListener("DOMContentLoaded", function () {
                   } else {
                       if (data.logs && typeof showUsageWarningModal === 'function') {
                           if (typeof closeDeleteModal === 'function') closeDeleteModal();
-                          showUsageWarningModal(data.message, data.logs, data.session_type_id);
+                          const usageId = data.id || data.session_type_id;
+                          const usageType = data.type || 'session';
+                          showUsageWarningModal(data.message, data.logs, usageId, usageType);
                       } else {
                           alert(data.message || "An error occurred while deleting the item.");
                       }

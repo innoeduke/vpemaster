@@ -78,6 +78,14 @@
           </a>
         </li>
         {% endif %}
+        {% if is_authorized(Permissions.PLANNER_VIEW) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('planner_bp') %}active{% endif %}">
+          <a href="{{ url_for('planner_bp.planner') }}">
+            <i class="fas fa-calendar-check nav-icon"></i>
+            <span>Planner</span>
+          </a>
+        </li>
+        {% endif %}
         {% if is_authorized(Permissions.PATHWAY_LIB_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
           <a href="{{ url_for('pathways_bp.pathway_library') }}">

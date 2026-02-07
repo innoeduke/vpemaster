@@ -136,6 +136,7 @@ def create_app(config_class='config.Config'):
         from .achievements_routes import achievements_bp
         from .roster_routes import roster_bp
         from .lucky_draw_routes import lucky_draw_bp
+        from .planner_routes import planner_bp
 
         # Import models so SQLAlchemy knows about them
         from . import models
@@ -158,6 +159,7 @@ def create_app(config_class='config.Config'):
         app.register_blueprint(achievements_bp)
         from .messages_routes import messages_bp
         app.register_blueprint(messages_bp)
+        app.register_blueprint(planner_bp)
         from .about_club_routes import about_club_bp
         app.register_blueprint(about_club_bp)
 
@@ -168,6 +170,7 @@ def create_app(config_class='config.Config'):
     from app.commands.cleanup_data import cleanup_data
     from app.commands.create_club import create_club
     from app.commands.pack_unpack import pack, unpack
+    from app.commands.init_planner_permissions import init_planner_permissions
 
     app.cli.add_command(create_admin)
     app.cli.add_command(import_data)
@@ -177,6 +180,7 @@ def create_app(config_class='config.Config'):
     app.cli.add_command(fix_home_club_command)
     app.cli.add_command(pack)
     app.cli.add_command(unpack)
+    app.cli.add_command(init_planner_permissions)
 
 
     # 7. Return the configured app instance

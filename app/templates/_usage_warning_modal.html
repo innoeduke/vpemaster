@@ -32,24 +32,34 @@
 </div>
 
 <script>
-let currentSessionTypeId = null;
+let currentUsageId = null;
+let currentUsageType = null;
 
 function closeUsageWarningModal() {
     const modal = document.getElementById('usageWarningModal');
     if (modal) modal.style.display = 'none';
-    currentSessionTypeId = null;
+    currentUsageId = null;
+    currentUsageType = null;
 }
 
-function showUsageWarningModal(message, logs, sessionTypeId) {
+function showUsageWarningModal(message, logs, id, type) {
     const modal = document.getElementById('usageWarningModal');
     const msgEl = document.getElementById('usageWarningMessage');
     const tbody = document.getElementById('usageWarningBody');
+    const footerLabel = document.querySelector('.usage-footer');
     
     if (!modal || !msgEl || !tbody) return;
     
-    currentSessionTypeId = sessionTypeId;
+    currentUsageId = id;
+    currentUsageType = type || 'session';
     msgEl.textContent = message;
     tbody.innerHTML = '';
+    
+    if (footerLabel) {
+        footerLabel.textContent = currentUsageType === 'session' 
+            ? "Please reassign or delete these logs before deleting the session type."
+            : "Please reassign or unassign these roles before deleting the role.";
+    }
     
     logs.forEach(log => {
         const tr = document.createElement('tr');
@@ -65,16 +75,24 @@ function showUsageWarningModal(message, logs, sessionTypeId) {
 }
 
 function deleteAllBlockingLogs() {
-    if (!currentSessionTypeId) {
-        alert('Session type ID not found.');
+    if (!currentUsageId) {
+        alert('ID not found.');
         return;
     }
     
-    if (!confirm('Are you sure you want to delete ALL session logs of this type? This action cannot be undone.')) {
+    const confirmMsg = currentUsageType === 'session'
+        ? 'Are you sure you want to delete ALL session logs of this type? This action cannot be undone.'
+        : 'Are you sure you want to clear ALL meeting assignments for this role? This will unassign the role from all meetings listed below.';
+    
+    if (!confirm(confirmMsg)) {
         return;
     }
     
-    fetch(`/settings/sessions/delete-logs/${currentSessionTypeId}`, {
+    const endpoint = currentUsageType === 'session'
+        ? `/settings/sessions/delete-logs/${currentUsageId}`
+        : `/settings/roles/delete-logs/${currentUsageId}`;
+    
+    fetch(endpoint, {
         method: 'POST',
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
@@ -86,12 +104,12 @@ function deleteAllBlockingLogs() {
             closeUsageWarningModal();
             location.reload();
         } else {
-            alert(data.message || 'An error occurred while deleting the logs.');
+            alert(data.message || 'An error occurred while clearing the usage.');
         }
     })
     .catch(error => {
-        console.error('Delete logs error:', error);
-        alert('An error occurred while deleting the logs.');
+        console.error('Usage clearing error:', error);
+        alert('An error occurred while clearing the usage.');
     });
 }
 </script>

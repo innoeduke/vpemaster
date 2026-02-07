@@ -67,6 +67,8 @@ css_all = Bundle(
     # Profile CSS (modular structure)
     'css/pages/profile/profile-base.css',
     'css/pages/profile/profile-mobile.css',
+    # Planner CSS
+    'css/pages/planner.css',
     'css/core/responsive.css',
     filters='cssmin',
     output='css/packed.css'

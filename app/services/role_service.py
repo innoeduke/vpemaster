@@ -5,6 +5,32 @@ from sqlalchemy import or_
 
 class RoleService:
     @staticmethod
+    def get_expected_format_for_session(session_title):
+        """Returns the Project.Format associated with a given SessionType.Title."""
+        if not session_title:
+            return None
+            
+        # Handle common aliases if they still exist, otherwise direct match
+        # Pathway Speech is often a generic term used in the app that maps to Prepared Speech
+        if session_title == 'Pathway Speech':
+            return 'Prepared Speech'
+            
+        return session_title
+
+    @staticmethod
+    def get_sessions_for_project_format(project_format):
+        """Returns a list of SessionType.Titles associated with a given Project.Format."""
+        if not project_format:
+            return []
+            
+        # Basic inverse mapping
+        sessions = [project_format]
+        if project_format == 'Prepared Speech':
+            sessions.append('Pathway Speech')
+            
+        return sessions
+
+    @staticmethod
     def assign_meeting_role(session_log, contact_ids, is_admin=False, replace_contact_id=None):
         """
         Assigns contact(s) to a session log (and related logs if role is not distinct).
@@ -421,9 +447,12 @@ class RoleService:
                     'owner_avatar_url': owner.Avatar_URL if owner else None,
                     'session_id': log.id,
                     'icon': role_obj.icon,
+                    'type': role_obj.type,
                     'is_member_only': role_obj.is_member_only,
                     'needs_approval': role_obj.needs_approval,
                     'award_category': role_obj.award_category,
+                    'valid_for_project': log.session_type.Valid_for_Project if log.session_type else False,
+                    'session_title': log.session_type.Title if log.session_type else None,
                     'has_single_owner': True,
                     'speaker_name': log.Session_Title.strip() if role_obj.name.strip() == "Individual Evaluator" and log.Session_Title else None,
                     'waitlist': [
@@ -476,9 +505,12 @@ class RoleService:
                     ],
                     'session_id': first_log.id,
                     'icon': role_obj.icon,
+                    'type': role_obj.type,
                     'is_member_only': role_obj.is_member_only,
                     'needs_approval': role_obj.needs_approval,
                     'award_category': role_obj.award_category,
+                    'valid_for_project': first_log.session_type.Valid_for_Project if first_log.session_type else False,
+                    'session_title': first_log.session_type.Title if first_log.session_type else None,
                     'has_single_owner': False,
                     'waitlist': consolidated_waitlist
                 })

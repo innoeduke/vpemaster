@@ -110,6 +110,58 @@ class Contact(db.Model):
         ).all()
         return {a.level for a in achievements if a.level}
     
+    def get_completed_project_ids(self):
+        """
+        Returns a set of Project IDs that this contact has completed.
+        """
+        from .session import SessionLog, SessionType, OwnerMeetingRoles
+        from .roster import MeetingRole
+        from .meeting import Meeting
+        
+        completed_project_ids = db.session.query(SessionLog.Project_ID)\
+            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+            .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+            .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
+            .filter(
+                db.exists().where(
+                    db.and_(
+                        OwnerMeetingRoles.contact_id == self.id,
+                        OwnerMeetingRoles.meeting_id == Meeting.id,
+                        OwnerMeetingRoles.role_id == MeetingRole.id,
+                        db.or_(
+                            OwnerMeetingRoles.session_log_id == SessionLog.id,
+                            OwnerMeetingRoles.session_log_id.is_(None)
+                        )
+                    )
+                ),
+                Meeting.status == 'finished',
+                SessionLog.Project_ID.isnot(None)
+            ).all()
+        
+        return {pid[0] for pid in completed_project_ids}
+
+    def get_available_projects(self):
+        """
+        Returns a list of Project objects in the contact's current pathway 
+        that have not been completed yet.
+        """
+        if not self.Current_Path:
+            return []
+            
+        from .project import Project, Pathway, PathwayProject
+        pathway = Pathway.query.filter((Pathway.name == self.Current_Path) | (Pathway.abbr == self.Current_Path)).first()
+        if not pathway:
+            return []
+            
+        # Get all projects in this pathway
+        projects_in_path = Project.query.join(PathwayProject).filter(PathwayProject.path_id == pathway.id).all()
+        
+        # Get completed project IDs
+        completed_ids = self.get_completed_project_ids()
+        
+        # Filter out completed ones
+        return [p for p in projects_in_path if p.id not in completed_ids]
+
     def get_primary_club(self):
         """Get the primary club for this contact."""
         # Optimization: Check if batch-populated

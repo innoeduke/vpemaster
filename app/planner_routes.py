@@ -1,0 +1,118 @@
+from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
+from flask_login import current_user, login_required
+from .models import db, Planner, MeetingRole, Project, Club, Meeting, SessionType, SessionLog
+from .auth.permissions import Permissions, permission_required
+from .club_context import get_current_club_id
+from datetime import datetime
+from .constants import ProjectID
+
+planner_bp = Blueprint('planner_bp', __name__)
+
+@planner_bp.route('/planner')
+@login_required
+@permission_required(Permissions.PLANNER_VIEW)
+def planner():
+    club_id = get_current_club_id()
+    
+    # 1. Fetch user's plans
+    plans = Planner.query.filter_by(user_id=current_user.id, club_id=club_id).order_by(Planner.meeting_number).all()
+    
+    # 2. Fetch unpublished meetings for the dropdown
+    unpublished_meetings = Meeting.query.filter_by(club_id=club_id, status='unpublished').order_by(Meeting.Meeting_Number).all()
+    
+    # 3. Fetch filtered projects based on user pathway and completion
+    contact = current_user.get_contact(club_id)
+    on_path_projects = contact.get_available_projects() if contact else []
+
+    return render_template('planner.html', 
+                         plans=plans, 
+                         meetings=unpublished_meetings,
+                         projects=on_path_projects,
+                         header_title="Planner")
+
+@planner_bp.route('/api/meeting/<int:meeting_number>')
+@login_required
+def get_meeting_info(meeting_number):
+    club_id = get_current_club_id()
+    meeting = Meeting.query.filter_by(club_id=club_id, Meeting_Number=meeting_number).first_or_404()
+    
+    # Use RoleService to get consolidated roles for this meeting
+    from .services.role_service import RoleService
+    meeting_roles = RoleService.get_meeting_roles(meeting_number, club_id)
+    
+    unique_roles = {}
+    for r in meeting_roles:
+        # Exclude permanent officer roles (VPE, VPM, etc.)
+        if r.get('type') == 'officer':
+            continue
+            
+        role_id = r['role_id']
+        role_name = r['role']
+        
+        if role_id not in unique_roles:
+            session_title = r.get('session_title')
+            unique_roles[role_id] = {
+                'id': role_id,
+                'name': role_name,
+                'valid_for_project': r.get('valid_for_project', False),
+                'session_title': session_title,
+                'expected_format': RoleService.get_expected_format_for_session(session_title)
+            }
+    
+    # Sort roles by name alphabetically
+    sorted_roles = sorted(unique_roles.values(), key=lambda x: x['name'])
+    
+    return jsonify({
+        'date': meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting.Meeting_Date else 'N/A',
+        'roles': sorted_roles
+    })
+
+@planner_bp.route('/api/planner', methods=['POST'])
+@login_required
+@permission_required(Permissions.PLANNER_EDIT)
+def create_plan():
+    data = request.get_json()
+    club_id = get_current_club_id()
+    
+    new_plan = Planner(
+        meeting_number=data.get('meeting_number'),
+        meeting_role_id=data.get('meeting_role_id'),
+        project_id=data.get('project_id'),
+        status='draft', # Default to draft as requested
+        notes=data.get('notes'),
+        user_id=current_user.id,
+        club_id=club_id
+    )
+    
+    db.session.add(new_plan)
+    db.session.commit()
+    
+    return jsonify({'id': new_plan.id, 'message': 'Plan created successfully'}), 201
+
+@planner_bp.route('/api/planner/<int:plan_id>', methods=['PUT'])
+@login_required
+@permission_required(Permissions.PLANNER_EDIT)
+def update_plan(plan_id):
+    plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
+    data = request.get_json()
+    
+    if 'meeting_number' in data:
+        plan.meeting_number = data['meeting_number']
+    if 'meeting_role_id' in data:
+        plan.meeting_role_id = data['meeting_role_id']
+    if 'project_id' in data:
+        plan.project_id = data['project_id']
+    if 'notes' in data:
+        plan.notes = data['notes']
+    
+    db.session.commit()
+    return jsonify({'message': 'Plan updated successfully'})
+
+@planner_bp.route('/api/planner/<int:plan_id>', methods=['DELETE'])
+@login_required
+@permission_required(Permissions.PLANNER_EDIT)
+def delete_plan(plan_id):
+    plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
+    db.session.delete(plan)
+    db.session.commit()
+    return jsonify({'message': 'Plan deleted successfully'})

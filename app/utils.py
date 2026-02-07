@@ -314,21 +314,7 @@ def update_next_project(contact):
     
     # 2. Find the first incomplete project from start_level onwards
     # Get all completed project IDs for this contact
-    completed_project_ids = {
-        log.Project_ID for log in SessionLog.query.join(SessionType).join(MeetingRole, SessionType.role_id == MeetingRole.id).join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number).filter(
-            db.exists().where(
-                db.and_(
-                    OwnerMeetingRoles.contact_id == contact.id,
-                    OwnerMeetingRoles.meeting_id == Meeting.id,
-                    OwnerMeetingRoles.role_id == MeetingRole.id,
-                    db.or_(
-                        OwnerMeetingRoles.session_log_id == SessionLog.id,
-                        OwnerMeetingRoles.session_log_id.is_(None)
-                    )
-                )
-            )
-        ).filter(SessionLog.Status=='Completed').all() if log.Project_ID
-    }
+    completed_project_ids = contact.get_completed_project_ids()
 
     for level in range(start_level, 6):
         # Query PathwayProject for this path and level, ordered by code.

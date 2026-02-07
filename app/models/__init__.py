@@ -19,6 +19,7 @@ from .media import Media
 from .achievement import Achievement
 from .message import Message
 from .ticket import Ticket
+from .planner import Planner
 
 # Import permission system models
 from .permission import Permission
@@ -77,4 +78,5 @@ __all__ = [
     'ExcommOfficer',
     'UserClub',
     'OwnerMeetingRoles',
+    'Planner',
 ]

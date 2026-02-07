@@ -417,7 +417,8 @@ def delete_session_type(id):
                     success=False, 
                     message=f"Cannot delete session type '{session_type.Title}' because it is in use by {len(logs)} session log(s). Please reassign or delete the logs first.",
                     logs=log_data,
-                    session_type_id=id
+                    id=id,
+                    type='session'
                 ), 400
             
             db.session.delete(session_type)
@@ -470,6 +471,46 @@ def delete_session_type_logs(id):
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error deleting session logs: {str(e)}")
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/settings/roles/delete-logs/<int:id>', methods=['POST'])
+@login_required
+def delete_role_logs(id):
+    """Delete all meeting assignments (OwnerMeetingRoles) for a role."""
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+    club_id = get_current_club_id()
+    try:
+        role = db.session.get(MeetingRole, id)
+        if not role:
+            return jsonify(success=False, message="Role not found"), 404
+        
+        if role.club_id == GLOBAL_CLUB_ID and club_id != GLOBAL_CLUB_ID:
+            return jsonify(success=False, message="Cannot modify assignments for a Global role from this club."), 403
+
+        if role.club_id != club_id and club_id != GLOBAL_CLUB_ID:
+             return jsonify(success=False, message="Permission denied"), 403
+        
+        from .models import OwnerMeetingRoles
+        from .models.meeting import Meeting
+        
+        query = OwnerMeetingRoles.query.filter_by(role_id=id)
+        if club_id != GLOBAL_CLUB_ID:
+            query = query.join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id).filter(Meeting.club_id == club_id)
+            
+        assignments = query.all()
+        count = len(assignments)
+        
+        for record in assignments:
+            db.session.delete(record)
+        
+        db.session.commit()
+        return jsonify(success=True, message=f"Cleared {count} meeting assignment(s) successfully.")
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting role logs: {str(e)}")
         return jsonify(success=False, message=str(e)), 500
 
 
@@ -591,9 +632,26 @@ def delete_role(id):
             from .models import OwnerMeetingRoles, SessionType
             from .models.roster import RosterRole
             
-            usage_omr = OwnerMeetingRoles.query.filter_by(role_id=id).count()
-            if usage_omr > 0:
-                return jsonify(success=False, message=f"Cannot delete role '{role.name}' because it is assigned to {usage_omr} meeting(s). Please unassign it first."), 400
+            usage_omrs = OwnerMeetingRoles.query.filter_by(role_id=id).all()
+            if usage_omrs:
+                log_data = []
+                for omr in usage_omrs:
+                    title = role.name
+                    if omr.session_log:
+                        title = omr.session_log.Session_Title or omr.session_log.session_type.Title
+                    
+                    log_data.append({
+                        'meeting_number': omr.meeting.Meeting_Number,
+                        'session_title': title,
+                        'owner_name': omr.contact.Name if omr.contact else 'Unassigned'
+                    })
+                return jsonify(
+                    success=False, 
+                    message=f"Cannot delete role '{role.name}' because it is assigned to {len(usage_omrs)} meeting(s). Please reassign or unassign the role first.",
+                    logs=log_data,
+                    id=id,
+                    type='role'
+                ), 400
 
             # Check usage in SessionTypes
             usage_st = SessionType.query.filter_by(role_id=id).count()
