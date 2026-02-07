@@ -533,7 +533,7 @@ class RoleService:
         # Build map: contact_id -> [roles]
         role_takers = {}
         for omr, role, contact in results:
-            if not role:
+            if not role or role.type == 'officer':
                 continue
             
             c_id = str(contact.id)

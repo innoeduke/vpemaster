@@ -224,7 +224,7 @@ def roster_participation_trend():
     ticket_map = {t.id: t for t in all_tickets}
     
     # Fetch meetings with roster data
-    query = Meeting.query.filter(Meeting.status == 'finished')
+    query = Meeting.query.filter(Meeting.status == 'finished', Meeting.Meeting_Number >= 951)
     if club_id:
         query = query.filter(Meeting.club_id == club_id)
     meetings = query.order_by(Meeting.Meeting_Number.asc()).all()
@@ -255,16 +255,9 @@ def roster_participation_trend():
             counts_by_meeting[mtg_num] = {}
         counts_by_meeting[mtg_num][ticket_id] = count
     
-    # Find first meeting with data
-    first_data_idx = 0
-    for i, mtg_num in enumerate(meeting_numbers):
-        if mtg_num in counts_by_meeting and counts_by_meeting[mtg_num]:
-            first_data_idx = i
-            break
-    
-    # Filter to meetings with data
-    filtered_meeting_numbers = meeting_numbers[first_data_idx:]
-    filtered_meeting_dates = meeting_dates[first_data_idx:]
+    # Use meetings starting from the filter
+    filtered_meeting_numbers = meeting_numbers
+    filtered_meeting_dates = meeting_dates
     
     # Build datasets - one per ticket type (excluding Cancelled)
     datasets = []

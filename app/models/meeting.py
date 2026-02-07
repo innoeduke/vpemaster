@@ -86,7 +86,7 @@ class Meeting(db.Model):
                 return excomm
                 
         # Final fallback: most recent
-        return ExComm.query.filter_by(club_id=self.club_id).order_by(ExComm.id.desc()).first()
+        return ExComm.query.filter_by(club_id=self.club_id).order_by(ExComm.start_date.desc()).first()
 
     def get_best_award_ids(self):
         """

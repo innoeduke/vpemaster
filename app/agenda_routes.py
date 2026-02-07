@@ -1032,8 +1032,8 @@ def _generate_logs_from_template(meeting, template_file):
     excomm_officers = {}
     
     if club_id:
-        # Get the most recent ExComm record for this club
-        excomm = ExComm.query.filter_by(club_id=club_id).order_by(ExComm.id.desc()).first()
+        # Resolve the correct ExComm team for this meeting's date
+        excomm = meeting.get_excomm()
         
         if excomm:
             # Build officer mapping from ExComm model

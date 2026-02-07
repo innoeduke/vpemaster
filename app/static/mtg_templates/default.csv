@@ -1,11 +1,11 @@
 Type,Title,Role,Owner,Duration_Min,Duration_Max
 Section,OPENING,,,0,
-SAA Introduction,,SAA,,0,1
-President's Address,,President,,0,2
-Toastmaster Session,,Toastmaster,,0,2
-Ah-Counter Session,,Ah-Counter,,0,1
-Grammarian Session,,Grammarian,,0,2
-Timer Session,,Timer,,0,1
+Generic,SAA Introduction,SAA,,0,1
+Generic,President's Address,President,,0,2
+Toastmaster Session,Toastmaster's Address,Toastmaster,,0,2
+Ah-Counter Session,Ah-Counter Introduction,Ah-Counter,,0,1
+Grammarian Session,Grammarian Introduction,Grammarian,,0,2
+Timer Session,Timer Introduction,Timer,,0,1
 Section,FEATURED SESSION,,,0,
 Keynote Speech,Keynote Speech,Keynote Speaker,,0,23
 Table Topics,,Topicsmaster,,0,25
@@ -21,10 +21,10 @@ General Evaluator Session,,General Evaluator,,0,1
 Evaluation,Speaker 1,Individual Evaluator,,2,3
 Evaluation,Speaker 2,Individual Evaluator,,2,3
 Evaluation,Speaker 3,Individual Evaluator,,2,3
-Ah-Counter Session,,Ah-Counter,,0,1
-Grammarian Session,,Grammarian,,0,2
-Timer Session,,Timer,,0,1
-General Evaluator Session,,General Evaluator,,0,5
+Ah-Counter Session,Ah-Counter Report,Ah-Counter,,0,1
+Grammarian Session,Grammarian Report,Grammarian,,0,2
+Timer Session,Timer Report,Timer,,0,1
+General Evaluator Session,General Evaluator Report,General Evaluator,,0,5
 Section,AWARDS & CLOSING,,,0,
 Toastmaster Session,Voting and Announcements,Toastmaster,,0,3
 President's Address,Awards / Meeting Closing,President,,0,2
