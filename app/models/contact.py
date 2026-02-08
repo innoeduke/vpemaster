@@ -145,6 +145,14 @@ class Contact(db.Model):
         Returns a list of Project objects in the contact's current pathway 
         that have not been completed yet.
         """
+        projects = self.get_pathway_projects_with_status()
+        return [p for p in projects if not p.is_completed]
+
+    def get_pathway_projects_with_status(self):
+        """
+        Returns a list of Project objects in the contact's current pathway 
+        with level, code, and completion status attached.
+        """
         if not self.Current_Path:
             return []
             
@@ -153,14 +161,26 @@ class Contact(db.Model):
         if not pathway:
             return []
             
-        # Get all projects in this pathway
-        projects_in_path = Project.query.join(PathwayProject).filter(PathwayProject.path_id == pathway.id).all()
+        # Get all projects in this pathway with level and code
+        projects_with_meta = db.session.query(Project, PathwayProject.level, PathwayProject.code, Pathway.abbr)\
+            .join(PathwayProject, Project.id == PathwayProject.project_id)\
+            .join(Pathway, PathwayProject.path_id == Pathway.id)\
+            .filter(PathwayProject.path_id == pathway.id)\
+            .order_by(PathwayProject.level, PathwayProject.code)\
+            .all()
         
         # Get completed project IDs
         completed_ids = self.get_completed_project_ids()
         
-        # Filter out completed ones
-        return [p for p in projects_in_path if p.id not in completed_ids]
+        results = []
+        for p, level, code, abbr in projects_with_meta:
+            p.level = level
+            # Construct standard code: [Abbr][Code]
+            p.full_code = f"{abbr}{code}" if abbr else code
+            p.is_completed = p.id in completed_ids
+            results.append(p)
+            
+        return results
 
     def get_primary_club(self):
         """Get the primary club for this contact."""

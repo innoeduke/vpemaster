@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% from "components/meeting_filter.html" import render_meeting_filter %}
+{% from "components/custom_select.html" import render_custom_select %}
+
+{% block title %}Roster{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/roster/roster-base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/roster/roster-mobile.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="roster-container">
+        <!-- Header matching Lucky Draw style -->
+        <div class="page-title-row">
+            <h1 class="page-title"><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
+            <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="trend-btn" title="View Participation Trend">
+                <i class="fas fa-chart-line"></i>
+            </a>
+        </div>
+        
+        {{ render_meeting_filter(all_meetings, selected_meeting_num, label='', data_format='object',
+            select_id='roster-meeting-filter', extra_style="margin-bottom: 5px;") }}
+
+        {% if selected_meeting %}
+        <div class="roster-main-content">
+            <!-- Top: Add/Update Form (Inline) -->
+            <div class="roster-form-container">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="roster-form">
+                            <input type="hidden" id="entry-id" value="">
+                            <h3 class="card-title" id="form-title" style="display:none;">Add Entry</h3> <!-- Hidden title -->
+
+                            <div class="form-group-inline input-order">
+                                <label for="order_number">Order#</label>
+                                <input type="number" class="form-control" id="order_number" value="{{ next_unallocated_entry.order_number if next_unallocated_entry else 1 }}" required>
+                            </div>
+
+                            <div class="form-group-inline input-name" style="position: relative;">
+                                <label for="contact_name">Name</label>
+                                <div class="contact-input-container">
+                                    <input type="text" class="form-control" id="contact_name"
+                                        placeholder="Member/Guest name" autocomplete="off" required>
+                                    <input type="hidden" id="contact_id">
+                                    <button class="btn btn-secondary" type="button" id="add-contact-btn"
+                                        title="Add New Guest" onclick="openContactModalWithReferer()">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group-inline input-type">
+                                {{ render_custom_select(["Guest", "Member", "Officer"], "", label='Contact Type', select_id='contact_type', placeholder='Select...') }}
+                            </div>
+                            <div class="form-group-inline input-ticket">
+                                {% set ticket_opts = [] %}
+                                {% for t in tickets %}
+                                    {% set t_icon = t.icon if t.icon else 'fa-ticket-alt' %}
+                                    {% set _ = ticket_opts.append({'value': t.name, 'text': t.name, 'icon': 'fas ' ~ t_icon, 'color': t.color}) %}
+                                {% endfor %}
+                                {{ render_custom_select(ticket_opts, "", label='Ticket', select_id='ticket', placeholder='Select...') }}
+                            </div>
+
+                            <div class="form-buttons">
+                                <button type="submit" id="submit-roster" class="btn btn-success"><i class="fas fa-save"></i> Register</button>
+                                <button type="button" class="btn btn-secondary" id="cancel-edit" style="display: none;"><i class="fas fa-times"></i> Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom: Roster Table -->
+            <div class="roster-table-container">
+                <table class="table table-striped" id="rosterTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable header-order" data-column-index="0">Order</th>
+                            <th class="sortable header-name" data-column-index="1">Name</th>
+                            <th class="sortable header-ticket" data-column-index="2">Ticket</th>
+                            <th class="header-roles desktop-only">Roles</th>
+                            <th class="header-club desktop-only">Home Club</th>
+                            <th class="roster-header-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in roster_entries %}
+                        <tr data-entry-id="{{ entry.id }}" data-order="{{ entry.order_number }}"
+                            data-contact-id="{{ entry.contact_id or '' }}" data-ticket="{{ entry.ticket.name if entry.ticket else '' }}">
+                            <td class="cell-order">{{ entry.order_number if entry.order_number is not none else '' }}</td>
+                            <td class="cell-name">
+                                {{ entry.contact.Name if entry.contact else 'N/A' }}
+                                {% if entry.contact_type %}
+                                {% set c_type = entry.contact_type %}
+                                {% elif entry.contact %}
+                                {% if entry.contact.user and entry.contact.user.has_role(Permissions.STAFF) %}
+                                {% set c_type = 'Officer' %}
+                                {% else %}
+                                {% set c_type = entry.contact.Type %}
+                                {% endif %}
+                                {% else %}
+                                {% set c_type = 'Guest' %}
+                                {% endif %}
+                            </td>
+                            <td class="cell-ticket">
+                                {% set ticket_info = entry.ticket %}
+                                
+                                {# Determine dynamic color: Priority to Ticket Color #}
+                                {% if ticket_info %}
+                                    {% set icon_color = ticket_info.color or '#6c757d' %}
+                                    {% set icon_class = ticket_info.icon or 'fa-ticket-alt' %}
+                                {% else %}
+                                    {# Fallback if ticket name doesn't match DB (shouldn't happen with strict sync) #}
+                                    {% set icon_color = '#6c757d' %} 
+                                    {% set icon_class = 'fa-ticket-alt' %}
+                                {% endif %}
+
+                                <span class="ticket-badge">
+                                    <i class="fas {{ icon_class }}" style="color: {{ icon_color }};" title="{{ entry.ticket.name if entry.ticket else '' }}"></i>
+                                    {{ entry.ticket.name.split('(')[0].strip() if entry.ticket else '' }}
+                                </span>
+                            </td>
+                            <td class="cell-roles desktop-only">
+                                {% set contact_key = entry.contact_id | string %}
+                                {% set roles = roles_map.get(contact_key, []) %}
+                                {% if roles %}
+                                    <div class="roster-roles">
+                                    {% for role in roles %}
+                                        {% set role_class = 'role-' ~ role['award_category'] if role['award_category'] else 'role-other' %}
+                                        {% if role['type'] == 'officer' %}
+                                            {% set role_class = 'role-officer' %}
+                                        {% endif %}
+                                        <span class="roster-role-tag roster-text {{ role_class }} role-{{ role['name']|lower|replace(' ', '-')|replace('/', '-') }}">{{ role['name'] }}</span>
+                                    {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td class="cell-club desktop-only">
+                                <span class="roster-text">
+                                    {{ entry.contact.get_primary_club().club_name if entry.contact and entry.contact.get_primary_club() else '' }}
+                                </span>
+                            </td>
+                            <td class="cell-actions">
+                                <button class="{% if entry.ticket and entry.ticket.name != 'Cancelled' %}icon-btn{% endif %} edit-entry"
+                                    data-id="{{ entry.id }}" 
+                                    title="{{ 'Uncancel to edit' if entry.ticket and entry.ticket.name == 'Cancelled' else 'Edit' }}" 
+                                    {% if entry.ticket and entry.ticket.name == 'Cancelled' %}disabled{% endif %}>
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if entry.ticket and entry.ticket.name == 'Cancelled' %}
+                                <button class="icon-btn restore-entry"
+                                    data-id="{{ entry.id }}" title="Restore">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                {% else %}
+                                <button class="icon-btn cancel-entry"
+                                    data-id="{{ entry.id }}" title="Cancel">
+                                    <i class="fas fa-ban"></i>
+                                </button>
+                                {% endif %}
+                                <button class="icon-btn delete-entry" data-id="{{ entry.id }}" title="Delete">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        {# If no entries, display 15 blank rows #}
+                        {% if not roster_entries %}
+                        {% for i in range(1, 16) %}
+                        <tr>
+                            <td>{{ i }}</td>
+                            <td class="cell-name"></td>
+                            <td></td>
+                            <td class="desktop-only"></td>
+                            <td class="desktop-only"></td>
+                            <td></td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% include '_contact_modal.html' %}
+        {% include '_duplicate_modal.html' %}
+        {% else %}
+        <p class="text-center mt-5" style="color: #6c757d; font-size: 1.2rem;">Please select a meeting to view or manage roster entries.</p>
+        {% endif %}
+    </div>
+    
+    <script>
+        // Pass contacts data from template to roster.js
+        window.rosterContacts = [
+            {% for c in contacts %}
+            {
+                "id": {{ c.id }},
+                "Name": {{ c.Name | tojson }},
+                "Type": "{{ c.Type }}",
+                "Phone_Number": "{{ c.Phone_Number or '' }}",
+                "is_officer": {{ 'true' if c.user and c.user.has_role(Permissions.STAFF) else 'false' }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+    </script>
+    <script src="{{ url_for('static', filename='js/roster.js') }}"></script>
+</div>
+{% endblock %}

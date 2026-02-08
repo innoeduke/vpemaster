@@ -11,8 +11,7 @@ from flask_login import current_user
 pathways_bp = Blueprint('pathways_bp', __name__)
 
 
-@pathways_bp.route('/pathway_library')
-def pathway_library():
+def get_pathway_library_data():
     pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
     
     # pre-fetch all pathway projects to create a lookup
@@ -49,11 +48,6 @@ def pathway_library():
             'projects': []
         }
         
-        # specific projects for this pathway from cache
-        # sort by level then code? Original code didn't sort explicitly but relied on DB insertion order or default? 
-        # Let's trust the order we appended or sort if needed. 
-        # Usually level is important.
-        
         projs = pp_by_path.get(pathway.id, [])
         # Optional: Sort by level for better display
         projs.sort(key=lambda x: (x[0].level if x[0].level else 99, x[0].code))
@@ -84,8 +78,30 @@ def pathway_library():
 
     # Sort grouped_pathways by keys (labels) ascending
     grouped_pathways = dict(sorted(grouped_pathways.items()))
+    
+    return {
+        'grouped_pathways': grouped_pathways,
+        'pathways': pathways_data
+    }
 
-    return render_template('pathway_library.html', grouped_pathways=grouped_pathways, pathways=pathways_data) 
+@pathways_bp.route('/pathway_library')
+@login_required
+def pathway_library():
+    if not is_authorized(Permissions.PATHWAY_LIB_VIEW):
+        return redirect(url_for('agenda_bp.agenda'))
+
+    has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
+    has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
+    
+    data = get_pathway_library_data()
+    return render_template(
+        'pathway_library.html', 
+        **data,
+        active_tab='pathway_library',
+        has_lucky_draw_access=has_lucky_draw_access,
+        has_pathways_access=has_pathways_access,
+        Permissions=Permissions
+    )
 
 
 @pathways_bp.route('/pathway_library/update_project/<int:project_id>', methods=['POST'])

@@ -98,12 +98,25 @@
                     <!-- Populated dynamically -->
                 </select>
             </div>
+            <div id="project-checkbox-group" class="planner-form-group" style="display: none; margin-bottom: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    Project <input type="checkbox" id="has_project_chk">
+                </label>
+            </div>
             <div id="project-group" class="planner-form-group" style="display: none;">
-                <label for="project_id">Project</label>
                 <select id="project_id" class="planner-form-control">
                     <option value="">Select Project</option>
-                    {% for project in projects %}
-                    <option value="{{ project.id }}" data-format="{{ project.Format }}">{{ project.Project_Name }}</option>
+                    {% for level, projs in grouped_projects %}
+                    <optgroup label="Level {{ level }}">
+                        {% for project in projs %}
+                        <option value="{{ project.id }}" 
+                                data-format="{{ project.Format }}"
+                                data-code="{{ project.full_code }}"
+                                class="{% if project.is_completed %}project-completed{% endif %}">
+                            {% if project.is_completed %}✓ {% endif %}{{ project.Project_Name }}
+                        </option>
+                        {% endfor %}
+                    </optgroup>
                     {% endfor %}
                 </select>
             </div>
@@ -132,6 +145,8 @@
     const projectIdSelect = document.getElementById('project_id');
     const dateDisplay = document.getElementById('meeting-date-display');
     const dateRow = document.getElementById('meeting-date-row');
+    const projectChkGroup = document.getElementById('project-checkbox-group');
+    const projectChk = document.getElementById('has_project_chk');
 
     let currentMeetingRoles = [];
 
@@ -139,6 +154,8 @@
         form.reset();
         document.getElementById('plan-id').value = '';
         projectGroup.style.display = 'none';
+        projectChkGroup.style.display = 'none';
+        projectChk.checked = false;
         dateRow.style.display = 'none';
         roleSelect.innerHTML = '<option value="">Select Role</option>';
         modal.style.display = 'flex';
@@ -148,10 +165,144 @@
         modal.style.display = 'none';
     }
 
+    class CustomSelect {
+        constructor(selectId, options = {}) {
+            this.select = document.getElementById(selectId);
+            this.options = options;
+            this.container = document.createElement('div');
+            this.container.className = 'custom-select-container';
+            this.trigger = document.createElement('div');
+            this.trigger.className = 'custom-select-trigger';
+            this.optionsList = document.createElement('div');
+            this.optionsList.className = 'custom-select-options';
+            
+            this.setup();
+        }
+
+        setup() {
+            this.select.hide = true;
+            this.select.style.display = 'none';
+            this.select.parentNode.insertBefore(this.container, this.select.nextSibling);
+            this.container.appendChild(this.trigger);
+            this.container.appendChild(this.optionsList);
+            
+            this.updateTrigger();
+            this.renderOptions();
+            
+            this.trigger.onclick = (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.custom-select-container').forEach(c => {
+                    if (c !== this.container) c.classList.remove('open');
+                });
+                this.container.classList.toggle('open');
+            };
+            
+            document.addEventListener('click', () => {
+                this.container.classList.remove('open');
+            });
+        }
+
+        updateTrigger() {
+            const selectedOpt = this.select.options[this.select.selectedIndex];
+            this.trigger.innerText = selectedOpt ? selectedOpt.text : 'Select...';
+        }
+
+        renderOptions() {
+            this.optionsList.innerHTML = '';
+            
+            const groups = this.select.getElementsByTagName('optgroup');
+            if (groups.length > 0) {
+                Array.from(groups).forEach(group => {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'custom-option-group';
+                    groupDiv.innerText = group.label;
+                    groupDiv.dataset.groupLabel = group.label;
+                    this.optionsList.appendChild(groupDiv);
+                    
+                    Array.from(group.getElementsByTagName('option')).forEach(opt => {
+                        this.createOption(opt);
+                    });
+                });
+            } else {
+                Array.from(this.select.options).forEach(opt => {
+                    this.createOption(opt);
+                });
+            }
+        }
+
+        createOption(opt) {
+            const optDiv = document.createElement('div');
+            optDiv.className = 'custom-option';
+            if (opt.className) optDiv.className += ' ' + opt.className;
+            if (opt.selected) optDiv.className += ' selected';
+            
+            // Check for data-code to bold it
+            const code = opt.dataset.code;
+            if (code) {
+                const checkmark = opt.text.startsWith('✓ ') ? '✓ ' : '';
+                const name = opt.text.replace('✓ ', '');
+                optDiv.innerHTML = `${checkmark}<span class="project-code">${code}</span> ${name}`;
+            } else {
+                optDiv.innerText = opt.text;
+            }
+            
+            optDiv.dataset.value = opt.value;
+            
+            optDiv.onclick = () => {
+                this.select.value = opt.value;
+                this.select.dispatchEvent(new Event('change'));
+                this.updateTrigger();
+                this.container.classList.remove('open');
+                this.renderOptions(); // Update selected state
+            };
+            
+            this.optionsList.appendChild(optDiv);
+        }
+
+        refresh() {
+            this.updateTrigger();
+            this.renderOptions();
+            this.updateVisibility();
+        }
+
+        updateVisibility() {
+            const optDivs = this.optionsList.querySelectorAll('.custom-option');
+            const groupDivs = this.optionsList.querySelectorAll('.custom-option-group');
+            
+            groupDivs.forEach(g => g.style.display = 'none');
+            
+            optDivs.forEach(div => {
+                const originalOpt = Array.from(this.select.options).find(o => o.value == div.dataset.value);
+                if (originalOpt) {
+                    const isVisible = originalOpt.style.display !== 'none';
+                    div.style.display = isVisible ? 'block' : 'none';
+                    
+                    if (isVisible && originalOpt.parentElement.tagName === 'OPTGROUP') {
+                        const groupLabel = originalOpt.parentElement.label;
+                        const groupDiv = Array.from(groupDivs).find(g => g.dataset.groupLabel === groupLabel);
+                        if (groupDiv) groupDiv.style.display = 'block';
+                    }
+                }
+            });
+        }
+
+        setValue(val) {
+            this.select.value = val;
+            this.refresh();
+        }
+    }
+
+    const customMeetingSelect = new CustomSelect('meeting_number');
+    const customRoleSelect = new CustomSelect('meeting_role_id');
+    const customProjectSelect = new CustomSelect('project_id');
+
     meetingSelect.onchange = async () => {
         const meetingNumber = meetingSelect.value;
+        customMeetingSelect.updateTrigger();
+        
         if (!meetingNumber) {
             roleSelect.innerHTML = '<option value="">Select Role</option>';
+            customRoleSelect.refresh();
             dateRow.style.display = 'none';
             return;
         }
@@ -170,40 +321,73 @@
                 opt.value = role.id;
                 opt.innerText = role.name;
                 opt.dataset.validProject = role.valid_for_project;
-                opt.dataset.isSpeech = role.is_prepared_speech;
                 roleSelect.appendChild(opt);
             });
+            customRoleSelect.refresh();
         } catch (error) {
             console.error('Error fetching meeting info:', error);
         }
     };
 
-    roleSelect.onchange = () => {
+    function updateProjectVisibility() {
         const selectedRole = currentMeetingRoles.find(r => r.id == roleSelect.value);
         if (selectedRole && selectedRole.valid_for_project) {
-            projectGroup.style.display = 'block';
-            projectIdSelect.required = true;
+            projectChkGroup.style.display = 'block';
             
-            const expectedFormat = selectedRole.expected_format;
-            
-            // Filter projects by format
-            Array.from(projectIdSelect.options).forEach(opt => {
-                if (opt.value === "") return;
+            if (projectChk.checked) {
+                projectGroup.style.display = 'block';
+                projectIdSelect.required = true;
                 
-                const projectFormat = opt.dataset.format;
-                if (expectedFormat) {
-                    opt.style.display = (projectFormat === expectedFormat) ? 'block' : 'none';
-                } else {
-                    // Fallback to showing everything if we don't know the mapping
-                    opt.style.display = 'block';
+                const expectedFormat = selectedRole.expected_format;
+                let visibleCount = 0;
+                let lastVisibleValue = '';
+
+                // Filter projects by format
+                Array.from(projectIdSelect.options).forEach(opt => {
+                    if (opt.value === "") return;
+                    
+                    const projectFormat = opt.dataset.format;
+                    let isVisible = false;
+                    
+                    if (expectedFormat) {
+                        isVisible = (projectFormat === expectedFormat);
+                    } else {
+                        isVisible = true;
+                    }
+                    
+                    opt.style.display = isVisible ? 'block' : 'none';
+                    if (isVisible) {
+                        visibleCount++;
+                        lastVisibleValue = opt.value;
+                    }
+                });
+
+                customProjectSelect.refresh();
+
+                // Auto-selection logic: if only one project is visible, select it
+                if (visibleCount === 1 && !projectIdSelect.value) {
+                    customProjectSelect.setValue(lastVisibleValue);
+                    projectIdSelect.dispatchEvent(new Event('change'));
                 }
-            });
+            } else {
+                projectGroup.style.display = 'none';
+                customProjectSelect.setValue('');
+                projectIdSelect.required = false;
+            }
         } else {
+            projectChkGroup.style.display = 'none';
             projectGroup.style.display = 'none';
-            projectIdSelect.value = '';
+            projectChk.checked = false;
+            customProjectSelect.setValue('');
             projectIdSelect.required = false;
         }
+    }
+
+    roleSelect.onchange = () => {
+        projectChk.checked = false;
+        updateProjectVisibility();
     };
+    projectChk.onchange = updateProjectVisibility;
 
     form.onsubmit = async (e) => {
         e.preventDefault();
@@ -261,16 +445,19 @@
             const projectId = tr.dataset.project;
             
             document.getElementById('plan-id').value = tr.dataset.id;
-            document.getElementById('meeting_number').value = meetingNum;
+            customMeetingSelect.setValue(meetingNum);
             document.getElementById('notes').value = tr.dataset.notes;
             
             // Trigger meeting change to load roles
             await meetingSelect.onchange();
-            document.getElementById('meeting_role_id').value = roleId;
+            customRoleSelect.setValue(roleId);
             
-            // Trigger role change to show/hide project group
-            roleSelect.onchange();
-            document.getElementById('project_id').value = projectId;
+            // Set project checkbox based on existing project
+            projectChk.checked = !!projectId;
+            
+            // Trigger role change logic
+            updateProjectVisibility();
+            customProjectSelect.setValue(projectId);
             
             modal.style.display = 'flex';
         };

@@ -2,10 +2,23 @@
 
 {% block title %}Pathway Library{% endblock %}
 
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-desktop.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-ipad.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-mobile.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/pathway_library/pathway_library-base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/pathway_library/pathway_library-desktop.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/pathway_library/pathway_library-ipad.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/pathway_library/pathway_library-mobile.css') }}">
+{% endblock %}
 
 {% block content %}
-<div id="pathway-library-container">
-  <h1><i class="fas fa-landmark"></i> Pathway Library</h1>
+<div class="container-fluid mt-4">
+  {% include 'tools/_tabs.html' %}
+  
+  <div id="pathway-library-container">
+    <h1><i class="fas fa-landmark"></i> Pathway Library</h1>
 
   <div class="filters-container">
     <div class="form-group">

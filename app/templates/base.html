@@ -24,7 +24,6 @@
 
 <body>
   <div class="container-wrapper">
-
     <div class="nav-pane" id="nav-pane">
       <div class="beta-badge">Beta</div>
       <div class="nav-header">
@@ -50,6 +49,14 @@
           </a>
         </li>
         {% endif %}
+        {% if is_authorized(Permissions.ROSTER_VIEW) %}
+            <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}active{% endif %}">
+                <a href="{{ url_for('roster_bp.roster') }}">
+                    <i class="fas fa-clipboard-list nav-icon"></i>
+                    <span>Roster</span>
+                </a>
+            </li>
+        {% endif %}
         {% if has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('voting_bp') %}active{% endif %}">
           <a href="{{ url_for('voting_bp.voting') }}">
@@ -58,18 +65,7 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
-          <a href="{{ url_for('contacts_bp.show_contacts') }}">
-            <i class="fas fa-book nav-icon"></i>
-            <span>Contacts</span>
-          </a>
-        </li>
-        {% endif %}
-
-        <li class="{% if request.endpoint and request.endpoint.startswith('messages') %}active{% endif %}" style="display: none;">
-          <!-- Moved to profile menu -->
-        </li>
+        <li class="nav-divider"></li>
         {% if is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
           <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
@@ -86,22 +82,23 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.PATHWAY_LIB_VIEW) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('pathways_bp') %}active{% endif %}">
-          <a href="{{ url_for('pathways_bp.pathway_library') }}">
-            <i class="fas fa-landmark nav-icon"></i>
-            <span>Pathway Library</span>
+        {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
+          <a href="{{ url_for('contacts_bp.show_contacts') }}">
+            <i class="fas fa-book nav-icon"></i>
+            <span>Contacts</span>
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.ROSTER_VIEW) or is_authorized(Permissions.LUCKY_DRAW_VIEW) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('tools_bp') %}active{% endif %}">
-          <a href="{{ url_for('tools_bp.tools') }}">
-            <i class="fas fa-tools nav-icon"></i>
-            <span>Tools</span>
-          </a>
-        </li>
+        {% if is_authorized(Permissions.LUCKY_DRAW_VIEW) or is_authorized(Permissions.PATHWAY_LIB_VIEW) %}
+            <li class="{% if request.endpoint and (request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp')) %}active{% endif %}">
+                <a href="{{ url_for('tools_bp.tools') }}">
+                    <i class="fas fa-tools nav-icon"></i>
+                    <span>Tools</span>
+                </a>
+            </li>
         {% endif %}
+        <li class="nav-divider"></li>
         {% if current_user.is_authenticated and current_user.primary_role_name == 'SysAdmin' %}
         <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
           <a href="{{ url_for('clubs_bp.list_clubs') }}">

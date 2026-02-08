@@ -20,14 +20,25 @@ def planner():
     # 2. Fetch unpublished meetings for the dropdown
     unpublished_meetings = Meeting.query.filter_by(club_id=club_id, status='unpublished').order_by(Meeting.Meeting_Number).all()
     
-    # 3. Fetch filtered projects based on user pathway and completion
+    # 3. Fetch projects grouped by level
     contact = current_user.get_contact(club_id)
-    on_path_projects = contact.get_available_projects() if contact else []
+    projects_by_level = {}
+    if contact:
+        projects = contact.get_pathway_projects_with_status()
+        for p in projects:
+            level = p.level or 1
+            if level not in projects_by_level:
+                projects_by_level[level] = []
+            projects_by_level[level].append(p)
+            
+    # Sort levels and create grouped list for template
+    sorted_levels = sorted(projects_by_level.keys())
+    grouped_projects = [(level, projects_by_level[level]) for level in sorted_levels]
 
     return render_template('planner.html', 
                          plans=plans, 
                          meetings=unpublished_meetings,
-                         projects=on_path_projects,
+                         grouped_projects=grouped_projects,
                          header_title="Planner")
 
 @planner_bp.route('/api/meeting/<int:meeting_number>')

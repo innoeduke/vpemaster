@@ -1,0 +1,177 @@
+/* ========================================
+   Roster Mobile Styles
+   For screens <= 768px
+   ======================================== */
+
+@media (max-width: 768px) {
+
+	.roster-container {
+		padding: 10px;
+	}
+
+	#roster-meeting-filter {
+		width: 100% !important;
+		box-sizing: border-box;
+	}
+
+	.roster-form-container {
+		padding: 15px;
+	}
+
+	.roster-container #roster-form {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.roster-container .form-group-inline {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.roster-container .form-buttons {
+		width: 100%;
+		margin-top: 5px;
+	}
+
+	.roster-container .btn {
+		width: 100%;
+	}
+
+	/* --- Roster Table -> Card Layout --- */
+	.roster-table-container {
+		background: transparent;
+		box-shadow: none;
+		border: none;
+	}
+
+	.roster-container .table,
+	.roster-container .table thead,
+	.roster-container .table tbody,
+	.roster-container .table th,
+	.roster-container .table td,
+	.roster-container .table tr {
+		display: block;
+		border: none !important;
+	}
+
+	/* Hide Table Header */
+	.roster-container .table thead tr {
+		position: absolute;
+		top: -9999px;
+		left: -9999px;
+	}
+
+	/* Card Style for Rows */
+	.roster-container .table tbody tr {
+		background: #fff;
+		border-radius: 12px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+		margin-bottom: 15px;
+		position: relative;
+		padding: 15px;
+		display: grid;
+		grid-template-columns: 40px 1fr auto;
+		grid-template-rows: auto auto;
+		gap: 8px 12px;
+		align-items: center;
+	}
+
+	/* Remove default table borders */
+	.roster-container .table tbody td {
+		border: none;
+		padding: 0;
+		text-align: left;
+		display: block;
+		width: auto;
+	}
+
+	/* 1. Order Number (Top Left) */
+	.roster-container .cell-order {
+		grid-column: 1 / 2;
+		grid-row: 1 / 3;
+		font-size: 1rem;
+		font-weight: 700;
+		color: #adb5bd;
+		text-align: center;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 100%;
+		padding-right: 10px !important;
+	}
+
+	/* 2. Name (Top Middle) */
+	.roster-container .cell-name {
+		grid-column: 2 / 3;
+		grid-row: 1 / 2;
+		font-size: 0.95rem;
+		color: #333;
+		white-space: normal;
+		line-height: 1.3;
+	}
+
+	/* 3. Ticket Badge (Bottom Middle) */
+	.roster-container .cell-ticket {
+		grid-column: 2 / 3;
+		grid-row: 2 / 3;
+	}
+
+	.ticket-badge {
+		font-size: 0.75rem;
+		padding: 3px 8px;
+		display: inline-flex;
+		width: auto;
+	}
+
+	/* 4. Actions (Top Right) */
+	.roster-container .cell-actions {
+		grid-column: 3 / 4;
+		grid-row: 1 / 3;
+		display: flex;
+		flex-direction: column;
+		gap: 5px;
+		justify-content: center;
+	}
+
+	.roster-container .icon-btn {
+		width: 36px;
+		height: 36px;
+		background: #f8f9fa;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #555;
+	}
+
+	/* Hide Desktop-Only Columns */
+	.desktop-only,
+	.roster-container .header-roles,
+	.roster-container .header-club,
+	.roster-container .cell-roles,
+	.roster-container .cell-club {
+		display: none !important;
+	}
+
+	/* Fix empty blank rows */
+	.roster-container .table tbody tr:empty {
+		display: none;
+	}
+
+	/* Override base forced borders */
+	.roster-container .table tbody td {
+		border-bottom: none !important;
+	}
+
+	/* --- Buttons --- */
+	#add-contact-btn {
+		width: 40px !important;
+		height: 40px !important;
+		padding: 0 !important;
+		display: flex !important;
+		align-items: center;
+		justify-content: center;
+		border-radius: 6px !important;
+	}
+}

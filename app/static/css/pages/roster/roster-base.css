@@ -1,0 +1,602 @@
+/* =========================================
+   Roster Page Styles
+   ========================================= */
+
+.roster-container {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 20px 15px;
+}
+
+.roster-container .header-container {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 30px;
+	flex-wrap: wrap;
+	gap: 20px;
+}
+
+.roster-container h1 {
+	font-family: 'Montserrat', sans-serif;
+	color: #333;
+}
+
+.page-title-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
+.page-title {
+	margin: 0;
+	text-align: left;
+	font-family: 'Montserrat', sans-serif;
+	color: #333;
+}
+
+/* Meeting Filter Styling */
+.roster-container #meeting-filter,
+#roster-meeting-filter {
+	padding: 10px 16px;
+	font-size: 1rem;
+	border: 2px solid #e0e0e0;
+	border-radius: 8px;
+	background: white;
+	color: #333;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	min-width: 200px;
+}
+
+.roster-container #meeting-filter:hover {
+	border-color: #772432;
+}
+
+.roster-container #meeting-filter:focus {
+	outline: none;
+	border-color: #772432;
+	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
+}
+
+#roster-meeting-filter:focus {
+	outline: none;
+	border: none;
+	box-shadow: none;
+}
+
+/* Main Content Structure */
+.roster-main-content {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+}
+
+/* Roster Form - Inline Strip */
+.roster-form-container {
+	background: #f8f9fa;
+	border-radius: 12px;
+	padding: 20px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.roster-container .card {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+}
+
+.roster-container .card-body {
+	padding: 0;
+}
+
+.roster-container .card-title {
+	display: none;
+}
+
+.roster-container #roster-form {
+	display: flex;
+	align-items: flex-end;
+	gap: 15px;
+	flex-wrap: nowrap;
+	width: 100%;
+}
+
+@media (max-width: 1024px) {
+	.roster-container #roster-form {
+		flex-wrap: wrap;
+	}
+}
+
+/* Form Elements Styling */
+.roster-container .form-group-inline {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	flex: 1;
+	min-width: 150px;
+}
+
+.roster-container .form-group-inline.input-order {
+	flex: 0 0 80px;
+	min-width: 80px;
+}
+
+.roster-container .form-group-inline label {
+	font-size: 0.85rem;
+	font-weight: 600;
+	color: #555;
+	margin: 0;
+	padding-left: 2px;
+}
+
+.roster-container .form-control {
+	padding: 8px 12px;
+	font-size: 0.8rem;
+	font-family: 'Montserrat', sans-serif !important;
+	font-weight: 400;
+	border: 1px solid #ced4da;
+	border-radius: 6px;
+	width: 100%;
+	height: 40px;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease-in-out;
+}
+
+.roster-container .form-control:focus {
+	border-color: #772432;
+	outline: 0;
+	box-shadow: 0 0 0 0.2rem rgba(119, 36, 50, 0.15);
+}
+
+/* Edit Mode Highlighting */
+#roster-form.editing-mode .form-control,
+#roster-form.editing-mode .custom-select-trigger {
+	background-color: #fff9c4 !important;
+	border-color: #fdd835 !important;
+}
+
+/* Vertical Button Alignment Fix */
+.roster-container .btn {
+	line-height: 1;
+	border: none !important;
+}
+
+.roster-container .btn i {
+	vertical-align: middle;
+}
+
+/* Specific Widths for Inline Form */
+.roster-container .input-order {
+	flex: 0 0 70px;
+	min-width: 70px;
+}
+
+.roster-container .input-name {
+	flex: 3;
+	min-width: 200px;
+	position: relative;
+}
+
+/* Autocomplete suggestions specific to Roster */
+.roster-container .autocomplete-suggestions {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	width: 100%;
+	max-width: 400px;
+	background: white;
+	border: 1px solid #ddd;
+	border-top: none;
+	border-radius: 0 0 8px 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	z-index: 1000;
+	max-height: 250px;
+	overflow-y: auto;
+}
+
+.roster-container .autocomplete-suggestion {
+	padding: 10px 15px;
+	cursor: pointer;
+	transition: background 0.2s;
+}
+
+.roster-container .autocomplete-suggestion:hover {
+	background: #f8f9fa;
+	color: #772432;
+}
+
+.roster-container .input-type {
+	flex: 1;
+	min-width: 140px;
+	flex-shrink: 0;
+}
+
+.roster-container .input-ticket {
+	flex: 1;
+	min-width: 160px;
+	flex-shrink: 0;
+}
+
+/* Buttons in Form */
+.roster-container .form-buttons {
+	display: flex;
+	gap: 10px;
+	height: 40px;
+}
+
+.roster-container .form-buttons .btn {
+	height: 100%;
+	padding: 8px 20px;
+}
+
+.roster-container .btn {
+	padding: 8px 24px;
+	height: 44px;
+	font-weight: 700;
+	border-radius: 12px;
+	cursor: pointer;
+	border: none;
+	transition: all 0.2s;
+	font-size: 1rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	box-sizing: border-box;
+	box-shadow: 0 4px 6px rgba(119, 36, 50, 0.1);
+}
+
+.roster-container .btn-success {
+	background-color: #772432;
+	color: white;
+}
+
+.roster-container .btn-success:hover {
+	background-color: #8e2a3d;
+	transform: translateY(-1px);
+}
+
+.roster-container .btn-secondary {
+	background-color: #6c757d;
+	color: white;
+}
+
+/* Contact Input Group */
+.roster-container .contact-input-container {
+	display: flex;
+	gap: 0;
+}
+
+.roster-container .contact-input-container input {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.roster-container #add-contact-btn {
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+	background-color: #555;
+	color: white;
+	border: none;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	font-size: 1.2rem;
+}
+
+/* Roster Table */
+.roster-table-container {
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+	overflow: hidden;
+	padding: 0;
+}
+
+.roster-container .table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
+	border: 1px solid #999;
+}
+
+.roster-container .table thead th,
+.roster-container .table tbody td {
+	border: 1px solid #ddd;
+}
+
+.roster-container .table thead th {
+	background-color: #f8f9fa;
+	color: #333;
+	font-weight: 600;
+	padding: 15px;
+	text-align: left;
+	border-bottom: 2px solid #e9ecef;
+}
+
+.roster-container .table tbody td {
+	padding: 12px 15px;
+	vertical-align: middle;
+	border-bottom: 1px solid #f0f0f0;
+	color: #333;
+}
+
+.roster-container .table tbody tr:last-child td {
+	border-bottom: none;
+}
+
+/* Table Columns */
+.roster-container .header-order {
+	width: 1%;
+	min-width: 60px;
+	text-align: center;
+}
+
+.roster-container .header-name {
+	width: auto;
+	min-width: 150px;
+}
+
+.roster-container .header-ticket {
+	width: 1%;
+	min-width: 100px;
+	white-space: nowrap;
+}
+
+.roster-container .header-roles {
+	width: auto;
+	min-width: 120px;
+}
+
+.roster-container .header-club {
+	width: auto;
+	min-width: 150px;
+}
+
+.roster-container .roster-header-actions {
+	width: 1%;
+	min-width: 100px;
+	text-align: center;
+	white-space: nowrap;
+}
+
+/* Status Icons */
+.roster-container .roster-icon {
+	width: 24px;
+	text-align: center;
+	margin-right: 8px;
+	display: inline-block;
+}
+
+.roster-container .roster-color-officer {
+	color: #fd7e14;
+}
+
+.roster-container .roster-color-member {
+	color: #0dcaf0;
+}
+
+.roster-container .roster-color-guest {
+	color: #198754;
+}
+
+.roster-container .roster-color-unpaid {
+	color: #dc3545;
+}
+
+.roster-container .roster-color-online {
+	color: #6610f2;
+}
+
+.roster-container .roster-color-voucher {
+	color: #fd7e14;
+}
+
+.roster-container .roster-color-role {
+	color: #6c757d;
+}
+
+.roster-container .roster-color-guest-late {
+	color: #198754;
+}
+
+.roster-container .roster-color-member-late {
+	color: #0dcaf0;
+}
+
+.roster-container .cell-order {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.roster-container .cell-name {
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.roster-container .cell-ticket {
+	white-space: nowrap;
+}
+
+.roster-container .cell-actions {
+	white-space: nowrap;
+}
+
+.roster-container .roster-text {
+	font-size: 0.9em;
+	color: #666;
+}
+
+.roster-container .roster-role-tag {
+	display: inline-block;
+	padding: 2px 10px;
+	border-radius: 50px !important;
+	font-size: 0.75em !important;
+	font-weight: 600;
+	margin-right: 4px;
+	margin-bottom: 4px;
+	white-space: nowrap;
+	border: none;
+	line-height: 1.4;
+}
+
+/* Role Category Colors */
+.roster-container .roster-role-tag.role-speaker {
+	background-color: #3b82f6;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-evaluator {
+	background-color: #10b981;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-table-topic {
+	background-color: #f59e0b;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-role-taker {
+	background-color: #8b5cf6;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-officer {
+	background-color: #772432;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-other {
+	background-color: #6b7280;
+	color: white;
+}
+
+/* Action Buttons */
+.roster-container .icon-btn {
+	background: none;
+	border: none;
+	color: #aaa;
+	cursor: pointer;
+	font-size: 1rem;
+	padding: 5px;
+	transition: all 0.2s;
+}
+
+.roster-container .icon-btn:disabled {
+	color: #eee;
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.roster-container .icon-btn:hover {
+	color: #772432;
+}
+
+.roster-container .icon-btn.edit-entry:hover {
+	color: #007bff;
+}
+
+.roster-container .icon-btn.cancel-entry:hover {
+	color: #dc3545;
+}
+
+.roster-container .icon-btn.delete-entry:hover {
+	color: #772432;
+}
+
+/* Ticket Badge Styling */
+.ticket-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background-color: #eef1f3;
+	color: #495057;
+	padding: 6px 14px;
+	border-radius: 50px;
+	font-size: 0.9rem;
+	font-weight: 600;
+	transition: all 0.2s ease;
+	border: 1px solid #dee2e6;
+	white-space: nowrap;
+}
+
+.ticket-badge i {
+	font-size: 1.1rem;
+}
+
+.ticket-badge:hover {
+	background-color: #e9ecef;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	transform: translateY(-1px);
+}
+
+/* Specific Role Colors */
+.roster-container .roster-role-tag.role-timer {
+	background-color: #e11d48;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-vote-counter,
+.roster-container .roster-role-tag.role-ballot-counter {
+	background-color: #6366f1;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-ah-counter {
+	background-color: #d97706;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-grammarian {
+	background-color: #0d9488;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-general-evaluator {
+	background-color: #059669;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-toastmaster-of-the-evening,
+.roster-container .roster-role-tag.role-tme {
+	background-color: #db2777;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-contest-chair {
+	background-color: #7c3aed;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-chief-contest-judge,
+.roster-container .roster-role-tag.role-chief-judge,
+.roster-container .roster-role-tag.role-judge {
+	background-color: #dc2626;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-saa,
+.roster-container .roster-role-tag.role-sergeant-at-arms,
+.roster-container .roster-role-tag.role-contest-saa {
+	background-color: #ea580c;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-photographer {
+	background-color: #0ea5e9;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-zoom-master,
+.roster-container .roster-role-tag.role-tech-host {
+	background-color: #2563eb;
+	color: white;
+}
+
+.roster-container .roster-role-tag.role-candidate {
+	background-color: #65a30d;
+	color: white;
+}

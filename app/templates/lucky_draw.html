@@ -3,12 +3,16 @@
 {% block title %}Lucky Draw{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}">
-<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/lucky_draw.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-desktop.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-ipad.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-mobile.css') }}">
 {% endblock %}
 
 {% block content %}
 <div class="container-fluid mt-4">
+    {% include 'tools/_tabs.html' %}
+    
     <div class="lucky-draw-container">
         <h1 class="page-title"><i class="fas fa-gift"></i> Lucky Draw</h1>
 

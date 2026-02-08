@@ -171,6 +171,16 @@
     background-color: #575757;
 }
 
+.nav-pane ul li.nav-divider {
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.15);
+    margin: 10px 15px;
+}
+
+.nav-pane:not(.expanded) ul li.nav-divider {
+    margin: 10px 10px;
+}
+
 /* Page Header (Unified) */
 .page-header {
     position: fixed;

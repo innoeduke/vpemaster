@@ -164,7 +164,7 @@ function initializeMeetingFilter(elements) {
   if (!elements.meetingFilter) return;
 
   elements.meetingFilter.addEventListener("change", () => {
-    window.location.href = `/tools?tab=roster&meeting_number=${elements.meetingFilter.value}`;
+    window.location.href = `/roster?meeting_number=${elements.meetingFilter.value}`;
   });
 }
 
@@ -263,7 +263,7 @@ function resetRosterForm(elements) {
 
 // Populate form with data for editing
 function populateRosterEditForm(rosterId, elements) {
-  fetch(`/tools/api/roster/${rosterId}`)
+  fetch(`/roster/api/entry/${rosterId}`)
     .then(response => {
       if (!response.ok) {
         throw new Error('Failed to fetch entry details.');
@@ -318,8 +318,8 @@ function initializeFormHandlers(elements) {
 
       const entryId = elements.entryIdInput.value;
       const url = entryId
-        ? `/tools/api/roster/${entryId}`
-        : "/tools/api/roster";
+        ? `/roster/api/entry/${entryId}`
+        : "/roster/api/entry";
       const method = entryId ? "PUT" : "POST";
 
       const formData = {
@@ -407,7 +407,7 @@ function initializeTableInteractions(elements) {
       e.preventDefault();
       const entryId = restoreButton.dataset.id;
       if (confirm("Are you sure you want to restore this roster entry?")) {
-        fetch(`/tools/api/roster/${entryId}/restore`, { method: "POST" })
+        fetch(`/roster/api/entry/${entryId}/restore`, { method: "POST" })
           .then((response) =>
             response.json().then((data) => ({ ok: response.ok, data }))
           )
@@ -426,7 +426,7 @@ function initializeTableInteractions(elements) {
       e.preventDefault();
       const entryId = cancelButton.dataset.id;
       if (confirm("Are you sure you want to cancel this roster entry?")) {
-        fetch(`/tools/api/roster/${entryId}`, { method: "DELETE" })
+        fetch(`/roster/api/entry/${entryId}`, { method: "DELETE" })
           .then((response) =>
             response.json().then((data) => ({ ok: response.ok, data }))
           )
@@ -445,7 +445,7 @@ function initializeTableInteractions(elements) {
       e.preventDefault();
       const entryId = deleteButton.dataset.id;
       if (confirm("Are you sure you want to permanently DELETE this roster entry? This cannot be undone.")) {
-        fetch(`/tools/api/roster/${entryId}?hard_delete=true`, { method: "DELETE" })
+        fetch(`/roster/api/entry/${entryId}?hard_delete=true`, { method: "DELETE" })
           .then((response) =>
             response.json().then((data) => ({ ok: response.ok, data }))
           )

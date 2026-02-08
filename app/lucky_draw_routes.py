@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
+from .club_context import authorized_club_required
 from .models import Roster, Meeting, Contact, Ticket
 from .constants import RoleID
 from . import db
@@ -10,9 +11,13 @@ lucky_draw_bp = Blueprint('lucky_draw_bp', __name__)
 
 @lucky_draw_bp.route('/', methods=['GET'])
 @login_required
+@authorized_club_required
 def lucky_draw():
     if not is_authorized(Permissions.LUCKY_DRAW_VIEW):
         return redirect(url_for('agenda_bp.agenda'))
+    
+    has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
+    has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
 
     # Get current meeting (next upcoming or most recent)
     today = db.func.current_date()
@@ -46,5 +51,9 @@ def lucky_draw():
         'lucky_draw.html',
         current_meeting=current_meeting,
         roster_entries=roster_entries,
-        RoleID=RoleID
+        RoleID=RoleID,
+        active_tab='luckydraw',
+        has_lucky_draw_access=has_lucky_draw_access,
+        has_pathways_access=has_pathways_access,
+        Permissions=Permissions
     )

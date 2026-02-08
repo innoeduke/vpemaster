@@ -23,6 +23,13 @@ def search_contacts_by_name():
     club_id = get_current_club_id()
     query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)
     
+    # Permission filtering
+    if not is_authorized(Permissions.CONTACT_BOOK_VIEW):
+        if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW):
+            query = query.filter(Contact.Type == 'Member')
+        else:
+            return jsonify([]), 403
+    
     if search_term:
         contacts = query.filter(Contact.Name.ilike(f'%{search_term}%')).all()
     else:
@@ -45,7 +52,11 @@ def search_contacts_by_name():
 @contacts_bp.route('/contacts')
 @login_required
 def show_contacts():
-    if not is_authorized(Permissions.CONTACT_BOOK_VIEW):
+    # Regular users only see Members; Staff and above see all.
+    can_view_all = is_authorized(Permissions.CONTACT_BOOK_VIEW)
+    can_view_members = is_authorized(Permissions.CONTACTS_MEMBERS_VIEW)
+
+    if not can_view_all and not can_view_members:
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -75,8 +86,13 @@ def show_contacts():
 
 
     club_id = get_current_club_id()
-    contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
-        .options(joinedload(Contact.mentor))\
+    query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)
+    
+    # Permission filtering
+    if not can_view_all:
+        query = query.filter(Contact.Type == 'Member')
+        
+    contacts = query.options(joinedload(Contact.mentor))\
         .order_by(Contact.Name.asc()).all()
     Contact.populate_users(contacts, club_id)
     # Batch populate primary clubs to avoid N+1 queries in template
@@ -743,13 +759,19 @@ def create_contact_api():
 @login_required
 def get_all_contacts_api():
     """API endpoint to fetch all contacts for client-side caching."""
-    if not is_authorized(Permissions.CONTACT_BOOK_VIEW):
+    can_view_all = is_authorized(Permissions.CONTACT_BOOK_VIEW)
+    can_view_members = is_authorized(Permissions.CONTACTS_MEMBERS_VIEW)
+
+    if not can_view_all and not can_view_members:
         return jsonify({'error': 'Permission denied'}), 403
 
-    
     club_id = get_current_club_id()
-    contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
-        .options(joinedload(Contact.mentor),)\
+    query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)
+    
+    if not can_view_all:
+        query = query.filter(Contact.Type == 'Member')
+        
+    contacts = query.options(joinedload(Contact.mentor),)\
         .order_by(Contact.Name.asc()).all()
     Contact.populate_users(contacts, club_id)
     

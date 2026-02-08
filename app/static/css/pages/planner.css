@@ -207,6 +207,7 @@
 	transition: all 0.2s ease;
 	outline: none;
 	box-sizing: border-box;
+	font-family: 'Montserrat', sans-serif;
 }
 
 .planner-form-control:focus {
@@ -279,4 +280,134 @@
 	.planner-modal-content {
 		padding: 1.5rem;
 	}
+}
+
+.project-completed {
+	color: #28a745;
+	font-weight: 500;
+}
+
+optgroup {
+	font-weight: 700;
+	color: #004165;
+	background: #f8f9fa;
+}
+
+optgroup option {
+	font-weight: normal;
+	color: #333;
+	background: #fff;
+}
+
+/* Custom Select Styles */
+.custom-select-container {
+	position: relative;
+	width: 100%;
+	font-family: 'Montserrat', sans-serif;
+}
+
+.custom-select-trigger {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0.75rem 1rem;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 1rem;
+	color: #333;
+	transition: all 0.2s ease;
+}
+
+.custom-select-trigger:after {
+	content: '\f078';
+	font-family: 'Font Awesome 5 Free';
+	font-weight: 900;
+	font-size: 0.8rem;
+	color: #888;
+}
+
+.custom-select-container.open .custom-select-trigger {
+	border-color: #004165;
+	box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
+}
+
+.custom-select-container.open .custom-select-trigger:after {
+	content: '\f077';
+}
+
+.custom-select-options {
+	position: absolute;
+	top: calc(100% + 5px);
+	left: 0;
+	width: 100%;
+	max-height: 300px;
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+	border: 1px solid #eee;
+	z-index: 2100;
+	overflow-y: auto;
+	display: none;
+	animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.custom-select-container.open .custom-select-options {
+	display: block;
+}
+
+.custom-option-group {
+	padding: 0.5rem 1rem;
+	font-weight: 700;
+	font-size: 0.8rem;
+	color: #888;
+	text-transform: uppercase;
+	background: #f8f9fa;
+	letter-spacing: 0.5px;
+}
+
+.custom-option {
+	padding: 0.75rem 1rem;
+	cursor: pointer;
+	transition: background 0.2s;
+	font-size: 0.95rem;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.custom-option:hover {
+	background: #f0f7ff;
+}
+
+.custom-option.selected {
+	background: #e9ecef;
+	color: #004165;
+	font-weight: 600;
+}
+
+.custom-option.project-completed {
+	color: #28a745;
+}
+
+.custom-option .project-code {
+	font-weight: 700;
+	min-width: 50px;
+}
+
+.custom-option.disabled {
+	display: none;
 }
