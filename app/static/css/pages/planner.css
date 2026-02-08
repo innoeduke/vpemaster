@@ -320,7 +320,8 @@ optgroup option {
 	transition: all 0.2s ease;
 }
 
-.custom-select-trigger:after {
+.planner-container .custom-select-trigger:after,
+.planner-modal .custom-select-trigger:after {
 	content: '\f078';
 	font-family: 'Font Awesome 5 Free';
 	font-weight: 900;

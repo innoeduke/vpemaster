@@ -251,11 +251,10 @@ def get_roster_entry(entry_id):
 
     if entry.contact:
         contact_name = entry.contact.Name
-        if not contact_type:
-            if entry.contact.user and entry.contact.user.has_role(Permissions.STAFF):
-                contact_type = 'Officer'
-            else:
-                contact_type = entry.contact.Type
+        if entry.contact.user and entry.contact.user.has_role(Permissions.STAFF):
+            contact_type = 'Officer'
+        elif not contact_type:
+            contact_type = entry.contact.Type
 
     return jsonify({
         'id': entry.id,

@@ -105,12 +105,28 @@ function hideSuggestions() {
 
 // Select a contact from autocomplete
 function selectContact(contact, elements) {
-  // Check if contact already exists in the roster table for this meeting
-  const existingRow = elements.tableBody.querySelector(`tr[data-contact-id="${contact.id}"]`);
+  if (!contact) return;
   
+  console.log(`[Roster] Selecting contact: ${contact.Name} (ID: ${contact.id}, is_officer: ${contact.is_officer})`);
+
+  // Check if contact already exists in the roster table for this meeting
+  // Try ID first, then fallback to Name if ID is missing or not found
+  let existingRow = contact.id ? elements.tableBody.querySelector(`tr[data-contact-id="${contact.id}"]`) : null;
+  
+  if (!existingRow) {
+    existingRow = Array.from(elements.tableBody.querySelectorAll('tr')).find(tr => {
+      const nameCell = tr.querySelector('.cell-name');
+      return nameCell && nameCell.textContent.trim().toLowerCase() === contact.Name.toLowerCase();
+    });
+  }
+
   if (existingRow) {
     const entryId = existingRow.dataset.entryId;
-    populateRosterEditForm(entryId, elements);
+    // Avoid re-populating if we're already editing this entry
+    if (elements.entryIdInput.value !== entryId) {
+      console.log(`[Roster] Found existing roster entry ${entryId} for ${contact.Name}. Loading for editing.`);
+      populateRosterEditForm(entryId, elements);
+    }
     return;
   }
 
@@ -119,13 +135,14 @@ function selectContact(contact, elements) {
     elements.entryIdInput.value = "";
     elements.formTitle.textContent = "Add Entry";
     if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = "none";
+    if (elements.rosterForm) elements.rosterForm.classList.remove("editing-mode");
   }
 
   elements.contactNameInput.value = contact.Name;
   elements.contactIdInput.value = contact.id;
 
   // Default logic for new entry
-  const isOfficer = contact.is_officer;
+  const isOfficer = contact.is_officer === true || contact.is_officer === "true" || contact.Type === "Officer";
   if (isOfficer) {
     elements.contactTypeSelect.value = "Officer";
   } else if (contact.Type) {
@@ -146,10 +163,30 @@ function initializeRosterAutocomplete(elements) {
     const query = elements.contactNameInput.value.toLowerCase();
     if (query.length < 1) {
       hideSuggestions();
+      elements.contactIdInput.value = ""; // Clear ID if input is empty
       return;
     }
     const filteredContacts = contacts.filter(c => c && c.Name && c.Name.toLowerCase().includes(query));
     showSuggestions(filteredContacts, elements);
+    
+    // Auto-resolve ID if exact match is typed
+    const exactMatch = contacts.find(c => c.Name.toLowerCase() === query);
+    if (exactMatch) {
+        elements.contactIdInput.value = exactMatch.id;
+    } else {
+        elements.contactIdInput.value = "";
+    }
+  });
+
+  // Handle blur/change for exact match resolution (auto-loading existing)
+  elements.contactNameInput.addEventListener('change', () => {
+    const val = elements.contactNameInput.value.trim().toLowerCase();
+    if (!val) return;
+    
+    const exactMatch = contacts.find(c => c.Name.toLowerCase() === val);
+    if (exactMatch) {
+        selectContact(exactMatch, elements);
+    }
   });
 
   document.addEventListener('click', (e) => {
@@ -203,8 +240,8 @@ function initializeContactTypeHandler(elements) {
     const contactType = this.value;
     const currentTicket = elements.ticketSelect.value;
     
-    // A "default" ticket is one that is empty, "Early-bird", or "Officer"
-    const isDefaultTicket = !currentTicket || currentTicket === "Early-bird" || currentTicket === "Officer";
+    // A "default" ticket is one that is empty, "Early-bird", "Role-taker", or "Officer"
+    const isDefaultTicket = !currentTicket || currentTicket === "Early-bird" || currentTicket === "Role-taker" || currentTicket === "Officer";
 
     console.log(`[Roster] Contact type -> ${contactType}. Ticket was: ${currentTicket || 'empty'} (isDefault: ${isDefaultTicket})`);
 
@@ -283,6 +320,12 @@ function populateRosterEditForm(rosterId, elements) {
 
       if (entry.contact_type) {
         elements.contactTypeSelect.value = entry.contact_type;
+        
+        // Force ticket to Officer if type is Officer (fix for existing data)
+        if (entry.contact_type === 'Officer') {
+            elements.ticketSelect.value = 'Officer';
+        }
+
         // This dispatch will handle correctly updating the order number if it was null
         elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }

@@ -19,4 +19,20 @@
 		/* Reducing label width slightly for iPad */
 		font-size: 0.9em;
 	}
+
+	.progress-table .level-cell {
+		font-size: 0.9em;
+		padding: 8px 10px;
+	}
+
+	.progress-table th,
+	.progress-table td {
+		padding: 10px 8px;
+		font-size: 0.75rem;
+	}
+
+	.progress-table .speech-column {
+		width: 8%;
+		min-width: 60px;
+	}
 }

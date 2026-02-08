@@ -880,7 +880,8 @@
 	border: 1px solid #cbd5e0;
 }
 
-.dot.completed {
+.dot.completed,
+.role-badge.completed .dot {
 	background-color: #48bb78;
 	border-color: #38a169;
 }
@@ -1000,10 +1001,6 @@
 }
 
 /* Project View Styles */
-.project-view-container {
-	/* Removed padding-top to align header with other views */
-}
-
 .chart-container {
 	background: #fff;
 	padding: 30px;
@@ -1319,8 +1316,19 @@
 	position: relative;
 }
 
+.progress-table .speech-column {
+	width: 15%;
+	min-width: 120px;
+	border-right: 1px solid #e2e8f0;
+}
+
 .progress-table td:nth-child(5) {
 	border-left: 1px solid #e2e8f0;
+	border-right: 1px solid #e2e8f0;
+}
+
+/* Elective Roles Column */
+.progress-table td:nth-child(6) {
 	border-right: 1px solid #e2e8f0;
 }
 

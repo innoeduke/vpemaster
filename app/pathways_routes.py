@@ -85,7 +85,6 @@ def get_pathway_library_data():
     }
 
 @pathways_bp.route('/pathway_library')
-@login_required
 def pathway_library():
     if not is_authorized(Permissions.PATHWAY_LIB_VIEW):
         return redirect(url_for('agenda_bp.agenda'))

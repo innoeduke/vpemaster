@@ -201,7 +201,7 @@
                 "Name": {{ c.Name | tojson }},
                 "Type": "{{ c.Type }}",
                 "Phone_Number": "{{ c.Phone_Number or '' }}",
-                "is_officer": {{ 'true' if c.user and c.user.has_role(Permissions.STAFF) else 'false' }}
+                "is_officer": {{ (c.user is not none and c.user.has_role(Permissions.STAFF)) | lower }}
             }{% if not loop.last %},{% endif %}
             {% endfor %}
         ];

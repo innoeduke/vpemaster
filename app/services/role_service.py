@@ -583,8 +583,8 @@ class RoleService:
                 role_takers[c_id] = []
             
             # Avoid duplicate role display (e.g. multiple "Topics Speaker" slots)
-            # Checked by unique role ID per contact
-            if not any(r['id'] == role.id for r in role_takers[c_id]):
+            # Use role NAME for deduplication to handle overlapping global/local definitions
+            if not any(r['name'] == role.name for r in role_takers[c_id]):
                 role_takers[c_id].append(role_data)
         
         # Cache the result

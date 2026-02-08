@@ -109,6 +109,7 @@
             <thead>
                 <tr>
                     <th></th>
+                    <th>Speeches</th>
                     <th colspan="3">Required Roles</th>
                     <th>Elective Roles</th>
                     <th colspan="2">Education Series</th>
@@ -124,6 +125,22 @@
                         {% endif %}
                     </td>
                     
+                    <td class="band-cell speech-column">
+                        {% for speech in row.speeches %}
+                            <div class="role-badge speech-badge {% if speech.status == 'completed' %}completed{% endif %}"
+                                 data-role="{{ speech.project_code }}"
+                                 data-history="{{ speech.history_items|tojson|forceescape }}">
+                                <span class="role-name">{{ speech.project_code }}</span>
+                                {% if speech.requirement_items %}
+                                <div class="item-dots">
+                                    {% for item in speech.requirement_items %}
+                                    <span class="dot {{ item.status }}" title="{{ item.name }}"></span>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </td>
                     {% for band_data in row.bands %}
                     <td class="band-cell">
                         {% if band_data.is_elective and row.extra_roles %}

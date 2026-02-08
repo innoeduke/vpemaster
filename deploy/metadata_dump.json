@@ -331,6 +331,39 @@
       "club_id": 1
     },
     {
+      "id": 70,
+      "name": "Meeting Manager",
+      "icon": "fa-flag",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "has_single_owner": false,
+      "is_member_only": false,
+      "club_id": 1
+    },
+    {
+      "id": 71,
+      "name": "Moderator",
+      "icon": "fa-users",
+      "type": "standard",
+      "award_category": "role-taker",
+      "needs_approval": true,
+      "has_single_owner": false,
+      "is_member_only": false,
+      "club_id": 1
+    },
+    {
+      "id": 72,
+      "name": "Keynote Speaker",
+      "icon": "fa-microphone-alt",
+      "type": "standard",
+      "award_category": "speaker",
+      "needs_approval": true,
+      "has_single_owner": false,
+      "is_member_only": false,
+      "club_id": 1
+    },
+    {
       "id": 68,
       "name": "Timer",
       "icon": null,
@@ -586,7 +619,7 @@
     {
       "id": 10,
       "Project_Name": "Active Listening",
-      "Format": "Table Topic",
+      "Format": "Table Topics",
       "Duration_Min": 20,
       "Duration_Max": 30,
       "Introduction": "Active Listening (elective)\nThis project covers the difference between hearing and listening, and steps for exploring the ways listening helps build strong, lasting connections.",
@@ -2001,6 +2034,17 @@
       "Duration_Min": 0,
       "Duration_Max": 2,
       "role_id": 1,
+      "club_id": 1
+    },
+    {
+      "id": 83,
+      "Title": "Presentation",
+      "Is_Section": false,
+      "Is_Hidden": false,
+      "Valid_for_Project": true,
+      "Duration_Min": 10,
+      "Duration_Max": 15,
+      "role_id": 8,
       "club_id": 1
     },
     {
@@ -4566,6 +4610,33 @@
       "resource": null,
       "action": null,
       "created_at": "2026-02-01 16:45:14"
+    },
+    {
+      "id": 39,
+      "name": "PLANNER_VIEW",
+      "description": "Allow viewing own planner entries",
+      "category": "planner",
+      "resource": "planner",
+      "action": "view",
+      "created_at": "2026-02-07 04:59:53"
+    },
+    {
+      "id": 40,
+      "name": "PLANNER_EDIT",
+      "description": "Allow creating/editing own planner entries",
+      "category": "planner",
+      "resource": "planner",
+      "action": "edit",
+      "created_at": "2026-02-07 04:59:53"
+    },
+    {
+      "id": 41,
+      "name": "CONTACTS_MEMBERS_VIEW",
+      "description": "Permission to view only member contacts",
+      "category": "contacts",
+      "resource": "contact_book",
+      "action": "view_members",
+      "created_at": "2026-02-08 16:33:23"
     }
   ],
   "auth_roles": [
@@ -4672,6 +4743,21 @@
       "permission_id": 38
     },
     {
+      "id": 112,
+      "role_id": 1,
+      "permission_id": 39
+    },
+    {
+      "id": 111,
+      "role_id": 1,
+      "permission_id": 40
+    },
+    {
+      "id": 113,
+      "role_id": 1,
+      "permission_id": 41
+    },
+    {
       "id": 102,
       "role_id": 2,
       "permission_id": 1
@@ -4732,6 +4818,21 @@
       "permission_id": 38
     },
     {
+      "id": 110,
+      "role_id": 2,
+      "permission_id": 39
+    },
+    {
+      "id": 109,
+      "role_id": 2,
+      "permission_id": 40
+    },
+    {
+      "id": 114,
+      "role_id": 2,
+      "permission_id": 41
+    },
+    {
       "id": 34,
       "role_id": 3,
       "permission_id": 2
@@ -4782,6 +4883,26 @@
       "permission_id": 32
     },
     {
+      "id": 117,
+      "role_id": 3,
+      "permission_id": 35
+    },
+    {
+      "id": 108,
+      "role_id": 3,
+      "permission_id": 39
+    },
+    {
+      "id": 107,
+      "role_id": 3,
+      "permission_id": 40
+    },
+    {
+      "id": 115,
+      "role_id": 3,
+      "permission_id": 41
+    },
+    {
       "id": 40,
       "role_id": 4,
       "permission_id": 4
@@ -4810,6 +4931,21 @@
       "id": 81,
       "role_id": 4,
       "permission_id": 32
+    },
+    {
+      "id": 106,
+      "role_id": 4,
+      "permission_id": 39
+    },
+    {
+      "id": 105,
+      "role_id": 4,
+      "permission_id": 40
+    },
+    {
+      "id": 116,
+      "role_id": 4,
+      "permission_id": 41
     },
     {
       "id": 84,

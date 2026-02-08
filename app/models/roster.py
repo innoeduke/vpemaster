@@ -168,14 +168,14 @@ class Roster(db.Model):
                     contact_id=contact_id,
                     order_number=new_order,
                     ticket_id=ticket_obj.id if ticket_obj else None,
-                    contact_type=contact.Type
+                    contact_type='Officer' if is_officer else contact.Type
                 )
                 db.session.add(roster_entry)
             else:
                 return
         else:
             # Update fields except order_number and ticket (per user request)
-            roster_entry.contact_type = contact.Type
+            roster_entry.contact_type = 'Officer' if is_officer else contact.Type
         
         if action == 'assign':
             # Add role if not already assigned

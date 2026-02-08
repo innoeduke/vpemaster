@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Add click listeners to role badges
-  document.querySelectorAll('.role-badge').forEach(badge => {
+  document.querySelectorAll('.role-badge, .speech-badge').forEach(badge => {
     badge.addEventListener('click', function() {
         showRoleHistory(this);
     });
@@ -80,16 +80,41 @@ function showRoleHistory(badge) {
             
             const roleInfo = item.role_name ? `<span class="history-role-tag">${item.role_name}</span>` : '';
             
-            const projectInfo = item.project_code 
-                ? `<div class="history-project"><span class="history-project-code">${item.project_code}</span> ${item.name.replace(item.project_code, '').trim()}</div>`
-                : `<div class="history-project">${item.name}</div>`;
-                
+            // Determine full project code (use backend provided if available, else fallback)
+            // Backend now provides 'project_code' as the full code (e.g. EH1.2)
+            const fullCode = item.project_code || item.name.split(' ')[0];
+            
+            // Build Title HTML
+            let titleHtml = '';
+            if (item.speech_title) {
+                if (item.media_url) {
+                     titleHtml = `<div class="history-title" style="font-weight: bold;"><a href="${item.media_url}" target="_blank" class="history-media-link"><i class="fas fa-play-circle"></i> ${item.speech_title}</a></div>`;
+                } else {
+                     titleHtml = `<div class="history-title" style="font-weight: bold;">${item.speech_title}</div>`;
+                }
+            } else {
+                // Fallback if no title but we have a name (legacy)
+                titleHtml = `<div class="history-title" style="font-weight: bold;">${item.name.replace(fullCode, '').trim()}</div>`;
+            }
+
+            // Build Evaluator HTML
+            let evaluatorHtml = '';
+            if (item.evaluator) {
+                evaluatorHtml = `<div class="history-evaluator" style="color: #64748b;">Evaluated by: ${item.evaluator}</div>`;
+            }
+
             historyItem.innerHTML = `
                 <div class="history-item-top">
                     <span class="history-meeting-num">Meeting #${item.meeting_number} ${roleInfo}</span>
                     <span class="history-date">${item.meeting_date}</span>
                 </div>
-                ${projectInfo}
+                <div class="history-project-content" style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+                    ${titleHtml}
+                    <div class="history-project-code" style="font-weight: 600; color: #2563eb; display: flex; align-items: center; gap: 6px;">
+                        ${fullCode} <span style="color: #64748b; font-weight: normal; margin-left: 8px;">${item.project_name || ''}</span>
+                    </div>
+                    ${evaluatorHtml}
+                </div>
             `;
             historyListEl.appendChild(historyItem);
         });

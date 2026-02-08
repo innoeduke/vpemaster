@@ -13,4 +13,16 @@
 	.toolbar-spacer {
 		display: block;
 	}
+
+	.speech-logs-content {
+		max-width: 1400px;
+	}
+
+	.progress-table .level-cell {
+		width: 100px;
+	}
+
+	.progress-table .speech-column {
+		width: 18%;
+	}
 }

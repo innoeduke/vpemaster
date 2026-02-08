@@ -15,15 +15,13 @@ from .pathways_routes import get_pathway_library_data
 tools_bp = Blueprint('tools_bp', __name__)
 
 @tools_bp.route('/', methods=['GET'])
-@login_required
-@authorized_club_required
 def tools():
     has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
     has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
 
-    if has_lucky_draw_access:
-        return redirect(url_for('lucky_draw_bp.lucky_draw'))
-    elif has_pathways_access:
+    if has_pathways_access:
         return redirect(url_for('pathways_bp.pathway_library'))
+    elif has_lucky_draw_access:
+        return redirect(url_for('lucky_draw_bp.lucky_draw'))
     
     return redirect(url_for('agenda_bp.agenda'))

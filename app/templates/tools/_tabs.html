@@ -1,12 +1,12 @@
 <div class="tools-tabs">
-    {% if has_lucky_draw_access %}
-    <a href="{{ url_for('lucky_draw_bp.lucky_draw') }}" class="tools-tab-item {% if active_tab == 'luckydraw' %}active{% endif %}">
-        <i class="fas fa-gift"></i> Lucky Draw
-    </a>
-    {% endif %}
     {% if has_pathways_access %}
     <a href="{{ url_for('pathways_bp.pathway_library') }}" class="tools-tab-item {% if active_tab == 'pathway_library' %}active{% endif %}">
         <i class="fas fa-landmark"></i> Pathway Library
+    </a>
+    {% endif %}
+    {% if has_lucky_draw_access %}
+    <a href="{{ url_for('lucky_draw_bp.lucky_draw') }}" class="tools-tab-item {% if active_tab == 'luckydraw' %}active{% endif %}">
+        <i class="fas fa-gift"></i> Lucky Draw
     </a>
     {% endif %}
 </div>
