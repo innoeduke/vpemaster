@@ -68,51 +68,61 @@ function showRoleHistory(badge) {
     roleNameEl.innerText = `${roleName} History`;
     historyListEl.innerHTML = '';
     
-    // Filter only completed items (some might be pending)
-    const completedHistory = historyData.filter(item => item.status === 'completed');
+    // Filter items to show in history (completed, booked, or waitlist)
+    const displayHistory = historyData.filter(item => ['completed', 'booked', 'waitlist'].includes(item.status));
     
-    if (completedHistory.length === 0) {
-        historyListEl.innerHTML = '<div class="history-empty">No completed history found for this role.</div>';
+    if (displayHistory.length === 0) {
+        historyListEl.innerHTML = '<div class="history-empty">No activity found for this role.</div>';
     } else {
-        completedHistory.forEach(item => {
+        displayHistory.forEach(item => {
             const historyItem = document.createElement('div');
             historyItem.className = 'history-item';
             
             const roleInfo = item.role_name ? `<span class="history-role-tag">${item.role_name}</span>` : '';
             
-            // Determine full project code (use backend provided if available, else fallback)
-            // Backend now provides 'project_code' as the full code (e.g. EH1.2)
-            const fullCode = item.project_code || item.name.split(' ')[0];
-            
-            // Build Title HTML
-            let titleHtml = '';
-            if (item.speech_title) {
-                if (item.media_url) {
-                     titleHtml = `<div class="history-title" style="font-weight: bold;"><a href="${item.media_url}" target="_blank" class="history-media-link"><i class="fas fa-play-circle"></i> ${item.speech_title}</a></div>`;
-                } else {
-                     titleHtml = `<div class="history-title" style="font-weight: bold;">${item.speech_title}</div>`;
-                }
-            } else {
-                // Fallback if no title but we have a name (legacy)
-                titleHtml = `<div class="history-title" style="font-weight: bold;">${item.name.replace(fullCode, '').trim()}</div>`;
+            // Add status tag for booked/waitlist
+            let statusTag = '';
+            if (item.status === 'booked') {
+                statusTag = '<span class="history-status-tag badge-status-booked">BOOKED</span>';
+            } else if (item.status === 'waitlist') {
+                statusTag = '<span class="history-status-tag badge-status-waitlist">WAITLIST</span>';
             }
+
+            // Determine full project code (use backend provided if available)
+            const fullCode = item.project_code || "";
+            let displayTitle = item.speech_title || item.name;
+
+            // Clean up display title if it duplicates the code
+            if (!item.speech_title && fullCode && displayTitle.startsWith(fullCode)) {
+                displayTitle = displayTitle.replace(fullCode, '').trim();
+            }
+            if (!displayTitle) displayTitle = 'Project Details';
+            
+            // Build Title HTML with media link if available
+            const titleContent = item.media_url ? 
+                `<a href="${item.media_url}" target="_blank" class="history-media-link"><i class="fas fa-play-circle"></i> ${displayTitle}</a>` : 
+                displayTitle;
 
             // Build Evaluator HTML
             let evaluatorHtml = '';
             if (item.evaluator) {
-                evaluatorHtml = `<div class="history-evaluator" style="color: #64748b;">Evaluated by: ${item.evaluator}</div>`;
+                evaluatorHtml = `<div class="history-evaluator">Evaluated by: ${item.evaluator}</div>`;
             }
 
             historyItem.innerHTML = `
-                <div class="history-item-top">
-                    <span class="history-meeting-num">Meeting #${item.meeting_number} ${roleInfo}</span>
+                <div class="history-item-top" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center;">
+                        <span class="history-meeting-num">Meeting #${item.meeting_number} ${roleInfo}</span>
+                        ${statusTag}
+                    </div>
                     <span class="history-date">${item.meeting_date}</span>
                 </div>
-                <div class="history-project-content" style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;">
-                    ${titleHtml}
-                    <div class="history-project-code" style="font-weight: 600; color: #2563eb; display: flex; align-items: center; gap: 6px;">
-                        ${fullCode} <span style="color: #64748b; font-weight: normal; margin-left: 8px;">${item.project_name || ''}</span>
-                    </div>
+                <div class="history-project-content" style="margin-top: 10px; display: flex; flex-direction: column; gap: 4px;">
+                    <div class="history-title" style="font-size: 1.1em;">${titleContent}</div>
+                    ${fullCode || item.project_name ? `
+                    <div class="history-project-code" style="font-size: 0.9em; color: ${fullCode ? '#2563eb' : '#64748b'};">
+                        ${fullCode} <span class="history-project-name">${item.project_name || ''}</span>
+                    </div>` : ''}
                     ${evaluatorHtml}
                 </div>
             `;

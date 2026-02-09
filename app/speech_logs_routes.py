@@ -781,7 +781,7 @@ def _process_band_requirements(level_str, band_reqs, logs_for_level, used_log_id
         # Sort role_details
         role_details.sort(key=lambda x: _status_priority(x['status']))
 
-        history_items = [d for d in role_details if d['status'] == 'completed']
+        history_items = [d for d in role_details if d['status'] in ('completed', 'booked', 'waitlist')]
         
         requirement_items = []
         for i in range(min(len(role_details), lr.count_required)):
@@ -794,7 +794,7 @@ def _process_band_requirements(level_str, band_reqs, logs_for_level, used_log_id
             badge_status = role_details[0]['status']
 
         if is_elective_band:
-            if role_count > 0:
+            if len(role_details) > 0:
                 item_data = {
                     'role': lr.role,
                     'count': role_count,
@@ -1061,9 +1061,19 @@ def _collect_extra_roles(logs_for_level, used_log_ids):
             role_display = (log.session_type.role.name if log.session_type and log.session_type.role 
                             else (log.session_type.Title if log.session_type else "Activity")).strip()
 
+            is_waitlist = getattr(log, 'is_waitlist', False)
+            meeting_finished = log.meeting and log.meeting.status == 'finished'
+            status = 'pending'
+            if log.Status == 'Completed' or (not is_waitlist and meeting_finished):
+                status = 'completed'
+            elif is_waitlist:
+                status = 'waitlist'
+            else:
+                status = 'booked'
+
             extra_roles.append({
                 'name': item_name_with_code,
-                'status': 'completed',
+                'status': status,
                 'meeting_number': log.Meeting_Number,
                 'meeting_date': log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A',
                 'project_code': display_code,
@@ -1224,9 +1234,19 @@ def _calculate_completion_summary(grouped_logs, pp_mapping, selected_pathway_nam
                             
                             item_name_with_code = f"{display_code} {item_name}" if display_code else item_name
                             
+                            is_waitlist = getattr(log, 'is_waitlist', False)
+                            meeting_finished = log.meeting and log.meeting.status == 'finished'
+                            status = 'pending'
+                            if log.Status == 'Completed' or (not is_waitlist and meeting_finished):
+                                status = 'completed'
+                            elif is_waitlist:
+                                status = 'waitlist'
+                            else:
+                                status = 'booked'
+
                             extra_roles.append({
                                 'name': item_name_with_code,
-                                'status': 'completed',
+                                'status': status,
                                 'meeting_number': log.Meeting_Number,
                                 'meeting_date': log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A',
                                 'project_code': display_code,

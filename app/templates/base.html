@@ -65,7 +65,7 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) %}
+        {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
           <a href="{{ url_for('contacts_bp.show_contacts') }}">
             <i class="fas fa-book nav-icon"></i>
