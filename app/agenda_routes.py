@@ -1065,6 +1065,7 @@ def _generate_logs_from_template(meeting, template_file):
             owner_val = get_col(3)
             min_val = get_col(4)
             max_val = get_col(5)
+            hidden_val = get_col(6)  # Optional Hidden flag
             
             # Resolve common IDs for the club
             GENERIC_ID = SessionType.get_id_by_title('Generic', club_id)
@@ -1137,6 +1138,9 @@ def _generate_logs_from_template(meeting, template_file):
             # Fetch contact to assign as owner if needed
             owner_contact = db.session.get(Contact, owner_id) if owner_id else None
 
+            # Determine if session is hidden based on template column
+            is_hidden = hidden_val and hidden_val.lower() == 'true'
+
             new_log = SessionLog(
                 Meeting_Number=meeting.Meeting_Number,
                 Meeting_Seq=seq,
@@ -1145,7 +1149,8 @@ def _generate_logs_from_template(meeting, template_file):
                 Duration_Min=duration_min,
                 Duration_Max=duration_max,
                 Session_Title=session_title_for_log,
-                Status='Booked'
+                Status='Booked',
+                hidden=is_hidden
             )
             
             # Calculate Start Time

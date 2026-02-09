@@ -163,6 +163,7 @@ class PathwayProject(db.Model):
     type = db.Column(db.Enum('elective', 'required', 'other', name='pathway_project_type_enum'), nullable=False)
 
     pathway = db.relationship('Pathway', backref='pathway_projects')
+    project = db.relationship('Project', backref='pathway_projects')
 
 
 class LevelRole(db.Model):

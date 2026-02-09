@@ -519,10 +519,18 @@ class SessionLog(db.Model):
                 return False
             
             # If log has no pathway:
-            # - Speeches must belong to the selected pathway → reject
+            # - Speeches must belong to the selected pathway OR be compatible with it
             # - Roles are generic → accept
             if not current_log_path and log_type == 'speech':
-                return False
+                 # Check if the project is valid for the requested pathway
+                 is_valid = False
+                 if self.project:
+                     for pp in self.project.pathway_projects:
+                         if pp.pathway and pp.pathway.name == pathway:
+                             is_valid = True
+                             break
+                 if not is_valid:
+                     return False
         
         # Status filter
         if status:

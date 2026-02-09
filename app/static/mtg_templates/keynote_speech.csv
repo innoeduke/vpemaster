@@ -1,4 +1,4 @@
-Type,Title,Role,Owner,Duration_Min,Duration_Max
+Type,Title,Role,Owner,Duration_Min,Duration_Max,Hidden
 Section,OPENING,,,0,
 Generic,SAA Introduction,SAA,,0,1
 Generic,President's Address,President,,0,2
@@ -28,6 +28,9 @@ General Evaluator Session,General Evaluator Report,General Evaluator,,0,5
 Section,AWARDS & CLOSING,,,0,
 Toastmaster Session,Voting and Announcements,Toastmaster,,0,3
 President's Address,Awards / Meeting Closing,President,,0,2
-Section,ADDITIONAL ROLES,,,0,
-Topics Speech,Topics Speech,Topics Speaker,,1,2
+Section,MORE MEETGING ROLES,,,0,
 Photography,Photographer,Photographer,,0,
+Topics Speech,Topics Speech,Topics Speaker,,,0,true
+Topics Speech,Topics Speech,Topics Speaker,,,0,true
+Topics Speech,Topics Speech,Topics Speaker,,,0,true
+Topics Speech,Topics Speech,Topics Speaker,,,0,true

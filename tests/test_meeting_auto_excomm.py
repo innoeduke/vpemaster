@@ -110,7 +110,7 @@ def test_data_import_service_updates_excomm(app, default_club):
         service.club_id = default_club.id
         # meeting_no, title, date, template, wod, tt, eval, spk, rt, start, media, title, type, sub, status, manager, ge, nps, excomm...
         meetings_data = [
-            [0, 500, '2024-05-01', 'default.csv', '', None, None, None, None, '19:00:00', None, 'Title', 'Keynote Speech', '', 'unpublished', None]
+            [0, 500, '2024-05-01', 'keynote_speech.csv', '', None, None, None, None, '19:00:00', None, 'Title', 'Keynote Speech', '', 'unpublished', None]
         ]
         service.import_meetings(meetings_data)
         

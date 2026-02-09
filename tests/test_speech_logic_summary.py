@@ -446,5 +446,57 @@ class TestSpeechLogicSummary(unittest.TestCase):
         self.assertEqual(history['media_url'], 'http://video.link')
         self.assertEqual(history['evaluator'], 'Eval Person')
 
+        self.assertEqual(history['evaluator'], 'Eval Person')
+
+    def test_speech_without_explicit_pathway(self):
+        """Verify speech logs without explicit pathway but valid project are included."""
+        from app.models import PathwayProject, Project, MeetingRole, SessionType, Pathway
+        
+        # 1. Setup Pathway and Project
+        # Use existing 'Innovative Planning' from setUp or create new
+        ip_path = Pathway.query.filter_by(name='Innovative Planning').first()
+        if not ip_path:
+            ip_path = Pathway(name='Innovative Planning', abbr='IP', type='pathway')
+            db.session.add(ip_path)
+            db.session.commit()
+            
+        p1 = Project(Project_Name='Generic Project', Format='Prepared Speech')
+        db.session.add(p1)
+        db.session.commit()
+        
+        # Link Project to Pathway
+        pp1 = PathwayProject(path_id=ip_path.id, project_id=p1.id, code='1.1', level=1, type='required')
+        db.session.add(pp1)
+        db.session.commit()
+        
+        # 2. Level Role
+        lr1 = LevelRole(level=1, role='Toastmaster', type='required', count_required=1, band=0)
+        db.session.add(lr1)
+        db.session.commit()
+        
+        # 3. Log Speech WITHOUT 'pathway' attribute set
+        r_spk = MeetingRole.query.filter_by(name='Speaker').first() or MeetingRole(name='Speaker', type='standard', needs_approval=False, has_single_owner=True)
+        db.session.add(r_spk)
+        db.session.commit()
+        st_spk = SessionType.query.filter_by(role_id=r_spk.id).first() or SessionType(Title='Prepared Speech', role_id=r_spk.id)
+        db.session.add(st_spk)
+        db.session.commit()
+        
+        log = SessionLog(id=70, Meeting_Number=6, Type_ID=st_spk.id, owners=[self.contact],
+                            Status='Completed', Project_ID=p1.id, state='active')
+        log.project = p1 # Ensure relationship
+        log.meeting = self.meeting
+        log.session_type = st_spk
+        log.pathway = None # EXPLICITLY NONE
+        
+        # 4. Run Summary
+        # Should be included because project is linked to 'Innovative Planning'
+        summary = _calculate_completion_summary({'1': [log]}, {}, selected_pathway_name='Innovative Planning')
+        speeches = summary['1'].get('speeches', [])
+        
+        self.assertEqual(len(speeches), 1)
+        self.assertEqual(speeches[0]['project_code'], '1.1')
+        self.assertEqual(speeches[0]['status'], 'completed')
+
 if __name__ == '__main__':
     unittest.main()

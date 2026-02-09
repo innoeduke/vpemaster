@@ -1,22 +1,51 @@
 """Meeting model."""
+import os
 from sqlalchemy.dialects import mysql
 from .base import db
+
+
+def generate_type_to_template():
+    """
+    Dynamically generate the TYPE_TO_TEMPLATE mapping by listing CSV files
+    in the mtg_templates folder and converting filenames to title case.
+    
+    Returns:
+        dict: Mapping of theme names to template filenames.
+              e.g., {'Keynote Speech': 'keynote_speech.csv', ...}
+    """
+    templates_dir = os.path.join(
+        os.path.dirname(__file__), '..', 'static', 'mtg_templates'
+    )
+    
+    type_to_template = {}
+    
+    try:
+        for filename in os.listdir(templates_dir):
+            if filename.endswith('.csv') and not filename.startswith('.'):
+                # Convert filename to theme name: 'keynote_speech.csv' -> 'Keynote Speech'
+                theme_name = filename[:-4].replace('_', ' ').title()
+                type_to_template[theme_name] = filename
+    except OSError:
+        # Fallback to static mapping if directory cannot be read
+        type_to_template = {
+            'Keynote Speech': 'keynote_speech.csv',
+            'Speech Marathon': 'speech_marathon.csv',
+            'Speech Contest': 'speech_contest.csv',
+            'Panel Discussion': 'panel_discussion.csv',
+            'Debate': 'debate.csv',
+            'Pecha Kucha': 'pecha_kucha.csv',
+            'Gavel Passing': 'gavel_passing.csv',
+            'Club Election': 'club_election.csv'
+        }
+    
+    return type_to_template
 
 
 class Meeting(db.Model):
     __tablename__ = 'Meetings'
     
-    # Meeting Type Mapping to Template Files
-    TYPE_TO_TEMPLATE = {
-        'Keynote Speech': 'default.csv',
-        'Speech Marathon': 'speech_marathon.csv',
-        'Speech Contest': 'speech_contest.csv',
-        'Panel Discussion': 'panel_discussion.csv',
-        'Debate': 'debate.csv',
-        'Pecha Kucha': 'pecha_kucha.csv',
-        'Gavel Passing': 'gavel_passing.csv',
-        'Club Election': 'club_election.csv'
-    }
+    # Meeting Type Mapping to Template Files (dynamically generated)
+    TYPE_TO_TEMPLATE = generate_type_to_template()
 
     id = db.Column(db.Integer, primary_key=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False, index=True)
