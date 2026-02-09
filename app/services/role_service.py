@@ -1,5 +1,5 @@
 from app import db
-from app.models import SessionLog, SessionType, Waitlist, Roster, MeetingRole, Contact, Meeting, OwnerMeetingRoles
+from app.models import SessionLog, SessionType, Waitlist, Roster, MeetingRole, Contact, Meeting, OwnerMeetingRoles, Planner
 from datetime import datetime, timezone
 from sqlalchemy import or_
 
@@ -115,6 +115,10 @@ class RoleService:
         # Invalidate Cache
         RoleService._clear_meeting_cache(session_log.Meeting_Number)
                 
+        # Sync Planner Statuses
+        if role_obj:
+            RoleService.sync_planner_statuses(session_log.Meeting_Number, role_obj.id)
+
         return updated_logs
 
     @staticmethod
@@ -261,6 +265,11 @@ class RoleService:
             # Invalidate Cache
             RoleService._clear_meeting_cache(session_log.Meeting_Number)
             
+            # Sync Planner Statuses
+            session_type = session_log.session_type
+            if session_type and session_type.role_id:
+                RoleService.sync_planner_statuses(session_log.Meeting_Number, session_type.role_id)
+
             return True, "Added to waitlist."
         return True, "Already on waitlist." # Treated as success
 
@@ -279,6 +288,11 @@ class RoleService:
         # Invalidate Cache
         RoleService._clear_meeting_cache(session_log.Meeting_Number)
              
+        # Sync Planner Statuses
+        session_type = session_log.session_type
+        if session_type and session_type.role_id:
+            RoleService.sync_planner_statuses(session_log.Meeting_Number, session_type.role_id)
+
         return True, "Removed from waitlist."
 
     @staticmethod
@@ -345,6 +359,60 @@ class RoleService:
             .first()
             
         return existing is not None
+
+    @staticmethod
+    def sync_planner_statuses(meeting_number, role_id):
+        """
+        Synchronizes Planner statuses for a specific meeting and role 
+        based on current Owners and Waitlists.
+        """
+        # Find all Planner entries for this meeting and role
+        plans = Planner.query.filter_by(meeting_number=meeting_number, meeting_role_id=role_id).all()
+        if not plans:
+            return
+
+        # Get current state for this role in the meeting
+        # 1. Get all owners
+        owners_query = db.session.query(OwnerMeetingRoles.contact_id)\
+            .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
+            .filter(Meeting.Meeting_Number == meeting_number, OwnerMeetingRoles.role_id == role_id)\
+            .all()
+        owner_ids = {r[0] for r in owners_query}
+
+        # 2. Get all waitlisted users
+        # We need to find session logs for this role in this meeting
+        session_logs = SessionLog.query.join(SessionType)\
+            .filter(SessionLog.Meeting_Number == meeting_number, SessionType.role_id == role_id)\
+            .all()
+        session_log_ids = [sl.id for sl in session_logs]
+        
+        waitlist_query = db.session.query(Waitlist.contact_id)\
+            .filter(Waitlist.session_log_id.in_(session_log_ids))\
+            .all()
+        waitlist_ids = {r[0] for r in waitlist_query}
+
+        # 3. Update plans
+        for plan in plans:
+            # We only sync 'draft', 'booked', and 'waitlist' statuses.
+            # 'completed' or 'obsolete' are terminal statuses set when meeting finishes.
+            if plan.status not in ['draft', 'booked', 'waitlist']:
+                continue
+
+            contact = plan.user.get_contact(plan.club_id)
+            c_id = contact.id if contact else None
+            if not c_id:
+                continue
+
+            if c_id in owner_ids:
+                plan.status = 'booked'
+            elif c_id in waitlist_ids:
+                plan.status = 'waitlist'
+            else:
+                # If they were booked/waitlisted but no longer are, revert to draft
+                if plan.status in ['booked', 'waitlist']:
+                    plan.status = 'draft'
+        
+        db.session.commit()
 
     @staticmethod
     def _get_related_session_ids(session_log):
@@ -619,6 +687,18 @@ class RoleService:
             
         results = query.order_by(Meeting.Meeting_Number.desc()).all()
         
+        # Pull Planner entries to get project preferences for this user
+        from app.models import Planner, User, Project
+        planner_map = {} # (meeting_number, role_id) -> project_id
+        if contact_id:
+            contact = db.session.get(Contact, contact_id)
+            if contact and contact.user_id:
+                p_query = Planner.query.filter_by(user_id=contact.user_id)
+                if club_id:
+                    p_query = p_query.filter_by(club_id=club_id)
+                p_entries = p_query.all()
+                planner_map = {(pe.meeting_number, pe.meeting_role_id): pe.project_id for pe in p_entries if pe.meeting_number and pe.meeting_role_id}
+        
         # 2. Map to SessionLogs
         logs = []
         for omr, meeting, role, contact in results:
@@ -646,6 +726,67 @@ class RoleService:
                 log.context_owner = contact
                 # Attach credential from OwnerMeetingRole
                 log.context_credential = omr.credential
+
+                # OVERRIDE: Use project from Planner if available for this specific user
+                role_id = role.id if role else (log.session_type.role_id if log.session_type else None)
+                p_id = planner_map.get((log.Meeting_Number, role_id))
+                if p_id:
+                    log.Project_ID = p_id
+                    log.project = db.session.get(Project, p_id)
+                
                 logs.append(log)
                 
+        return logs
+    @staticmethod
+    def get_waitlist_for_contact(contact_id, club_id=None):
+        """
+        Retrieves all roles for which a specific contact is on the waitlist.
+        
+        Args:
+            contact_id: ID of the contact to query
+            club_id: Optional club ID to filter meetings
+            
+        Returns:
+            list: List of SessionLog objects, with context_owner attached and is_waitlist flag.
+        """
+        from app.models import Waitlist, SessionLog, SessionType, Meeting, Contact
+        
+        # 1. Query Waitlist entries for this contact
+        query = db.session.query(SessionLog).join(Waitlist).filter(
+            Waitlist.contact_id == contact_id
+        )
+        
+        if club_id:
+            query = query.join(Meeting).filter(Meeting.club_id == club_id)
+            
+        logs = query.options(
+            db.joinedload(SessionLog.meeting),
+            db.joinedload(SessionLog.session_type).joinedload(SessionType.role),
+            db.joinedload(SessionLog.project)
+        ).all()
+        
+        # Pull Planner entries to get project preferences for this user
+        from app.models import Planner, Project
+        planner_map = {} # (meeting_number, role_id) -> project_id
+        contact = db.session.get(Contact, contact_id)
+        if contact and contact.user_id:
+            p_query = Planner.query.filter_by(user_id=contact.user_id)
+            if club_id:
+                p_query = p_query.filter_by(club_id=club_id)
+            p_entries = p_query.all()
+            planner_map = {(pe.meeting_number, pe.meeting_role_id): pe.project_id for pe in p_entries if pe.meeting_number and pe.meeting_role_id}
+
+        # 2. Attach context
+        contact = db.session.get(Contact, contact_id)
+        for log in logs:
+            log.context_owner = contact
+            log.is_waitlist = True
+            
+            # OVERRIDE: Use project from Planner if available for this waitlisted user
+            role_id = log.session_type.role_id if log.session_type else None
+            p_id = planner_map.get((log.Meeting_Number, role_id))
+            if p_id:
+                log.Project_ID = p_id
+                log.project = db.session.get(Project, p_id)
+            
         return logs

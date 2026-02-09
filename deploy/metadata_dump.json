@@ -331,39 +331,6 @@
       "club_id": 1
     },
     {
-      "id": 70,
-      "name": "Meeting Manager",
-      "icon": "fa-flag",
-      "type": "standard",
-      "award_category": "role-taker",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false,
-      "club_id": 1
-    },
-    {
-      "id": 71,
-      "name": "Moderator",
-      "icon": "fa-users",
-      "type": "standard",
-      "award_category": "role-taker",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false,
-      "club_id": 1
-    },
-    {
-      "id": 72,
-      "name": "Keynote Speaker",
-      "icon": "fa-microphone-alt",
-      "type": "standard",
-      "award_category": "speaker",
-      "needs_approval": true,
-      "has_single_owner": false,
-      "is_member_only": false,
-      "club_id": 1
-    },
-    {
       "id": 68,
       "name": "Timer",
       "icon": null,
@@ -619,7 +586,7 @@
     {
       "id": 10,
       "Project_Name": "Active Listening",
-      "Format": "Table Topics",
+      "Format": "Table Topic",
       "Duration_Min": 20,
       "Duration_Max": 30,
       "Introduction": "Active Listening (elective)\nThis project covers the difference between hearing and listening, and steps for exploring the ways listening helps build strong, lasting connections.",
@@ -2037,17 +2004,6 @@
       "club_id": 1
     },
     {
-      "id": 83,
-      "Title": "Presentation",
-      "Is_Section": false,
-      "Is_Hidden": false,
-      "Valid_for_Project": true,
-      "Duration_Min": 10,
-      "Duration_Max": 15,
-      "role_id": 8,
-      "club_id": 1
-    },
-    {
       "id": 81,
       "Title": "Timer",
       "Is_Section": false,
@@ -2203,7 +2159,7 @@
       "id": 17,
       "path_id": 1,
       "project_id": 22,
-      "code": "3.2",
+      "code": "3.2.1",
       "level": 3,
       "type": "elective"
     },
@@ -2211,7 +2167,7 @@
       "id": 18,
       "path_id": 1,
       "project_id": 23,
-      "code": "3.2",
+      "code": "3.2.2",
       "level": 3,
       "type": "elective"
     },
@@ -2307,7 +2263,7 @@
       "id": 30,
       "path_id": 1,
       "project_id": 40,
-      "code": "4.2",
+      "code": "4.2.1",
       "level": 4,
       "type": "elective"
     },
@@ -2315,7 +2271,7 @@
       "id": 31,
       "path_id": 1,
       "project_id": 41,
-      "code": "4.2",
+      "code": "4.2.2",
       "level": 4,
       "type": "elective"
     },
@@ -2347,7 +2303,7 @@
       "id": 35,
       "path_id": 1,
       "project_id": 48,
-      "code": "5.2",
+      "code": "5.2.1",
       "level": 5,
       "type": "elective"
     },
@@ -2355,7 +2311,7 @@
       "id": 36,
       "path_id": 1,
       "project_id": 49,
-      "code": "5.2",
+      "code": "5.2.2",
       "level": 5,
       "type": "elective"
     },
@@ -2531,7 +2487,7 @@
       "id": 58,
       "path_id": 2,
       "project_id": 22,
-      "code": "3.2",
+      "code": "3.2.1",
       "level": 3,
       "type": "elective"
     },
@@ -2539,7 +2495,7 @@
       "id": 59,
       "path_id": 2,
       "project_id": 23,
-      "code": "3.2",
+      "code": "3.2.2",
       "level": 3,
       "type": "elective"
     },
@@ -2643,7 +2599,7 @@
       "id": 72,
       "path_id": 2,
       "project_id": 40,
-      "code": "4.2",
+      "code": "4.2.1",
       "level": 4,
       "type": "elective"
     },
@@ -2651,7 +2607,7 @@
       "id": 73,
       "path_id": 2,
       "project_id": 41,
-      "code": "4.2",
+      "code": "4.2.2",
       "level": 4,
       "type": "elective"
     },
@@ -2691,7 +2647,7 @@
       "id": 78,
       "path_id": 2,
       "project_id": 48,
-      "code": "5.2",
+      "code": "5.2.1",
       "level": 5,
       "type": "elective"
     },
@@ -2699,7 +2655,7 @@
       "id": 79,
       "path_id": 2,
       "project_id": 49,
-      "code": "5.2",
+      "code": "5.2.2",
       "level": 5,
       "type": "elective"
     },
@@ -2875,7 +2831,7 @@
       "id": 101,
       "path_id": 3,
       "project_id": 22,
-      "code": "3.2",
+      "code": "3.2.1",
       "level": 3,
       "type": "elective"
     },
@@ -2883,7 +2839,7 @@
       "id": 102,
       "path_id": 3,
       "project_id": 23,
-      "code": "3.2",
+      "code": "3.2.2",
       "level": 3,
       "type": "elective"
     },
@@ -2987,7 +2943,7 @@
       "id": 115,
       "path_id": 3,
       "project_id": 40,
-      "code": "4.2",
+      "code": "4.2.1",
       "level": 4,
       "type": "elective"
     },
@@ -2995,7 +2951,7 @@
       "id": 116,
       "path_id": 3,
       "project_id": 41,
-      "code": "4.2",
+      "code": "4.2.2",
       "level": 4,
       "type": "elective"
     },
@@ -3027,7 +2983,7 @@
       "id": 120,
       "path_id": 3,
       "project_id": 48,
-      "code": "5.2",
+      "code": "5.2.1",
       "level": 5,
       "type": "elective"
     },
@@ -3035,7 +2991,7 @@
       "id": 121,
       "path_id": 3,
       "project_id": 49,
-      "code": "5.2",
+      "code": "5.2.2",
       "level": 5,
       "type": "elective"
     },
@@ -3219,7 +3175,7 @@
       "id": 144,
       "path_id": 4,
       "project_id": 22,
-      "code": "3.2",
+      "code": "3.2.1",
       "level": 3,
       "type": "elective"
     },
@@ -3227,7 +3183,7 @@
       "id": 145,
       "path_id": 4,
       "project_id": 23,
-      "code": "3.2",
+      "code": "3.2.2",
       "level": 3,
       "type": "elective"
     },
@@ -3323,7 +3279,7 @@
       "id": 157,
       "path_id": 4,
       "project_id": 40,
-      "code": "4.2",
+      "code": "4.2.1",
       "level": 4,
       "type": "elective"
     },
@@ -3331,7 +3287,7 @@
       "id": 158,
       "path_id": 4,
       "project_id": 41,
-      "code": "4.2",
+      "code": "4.2.2",
       "level": 4,
       "type": "elective"
     },
@@ -3363,7 +3319,7 @@
       "id": 162,
       "path_id": 4,
       "project_id": 48,
-      "code": "5.1",
+      "code": "5.1.1",
       "level": 5,
       "type": "required"
     },
@@ -3371,7 +3327,7 @@
       "id": 163,
       "path_id": 4,
       "project_id": 49,
-      "code": "5.1",
+      "code": "5.1.2",
       "level": 5,
       "type": "required"
     },
@@ -3547,7 +3503,7 @@
       "id": 185,
       "path_id": 5,
       "project_id": 22,
-      "code": "3.2",
+      "code": "3.2.1",
       "level": 3,
       "type": "elective"
     },
@@ -3555,7 +3511,7 @@
       "id": 186,
       "path_id": 5,
       "project_id": 23,
-      "code": "3.2",
+      "code": "3.2.2",
       "level": 3,
       "type": "elective"
     },
@@ -3651,7 +3607,7 @@
       "id": 198,
       "path_id": 5,
       "project_id": 40,
-      "code": "4.2",
+      "code": "4.2.1",
       "level": 4,
       "type": "elective"
     },
@@ -3659,7 +3615,7 @@
       "id": 199,
       "path_id": 5,
       "project_id": 41,
-      "code": "4.2",
+      "code": "4.2.2",
       "level": 4,
       "type": "elective"
     },
@@ -3683,7 +3639,7 @@
       "id": 202,
       "path_id": 5,
       "project_id": 48,
-      "code": "5.2",
+      "code": "5.2.1",
       "level": 5,
       "type": "elective"
     },
@@ -3691,7 +3647,7 @@
       "id": 203,
       "path_id": 5,
       "project_id": 49,
-      "code": "5.2",
+      "code": "5.2.2",
       "level": 5,
       "type": "elective"
     },
@@ -3875,7 +3831,7 @@
       "id": 226,
       "path_id": 6,
       "project_id": 22,
-      "code": "3.2",
+      "code": "3.2.1",
       "level": 3,
       "type": "elective"
     },
@@ -3883,7 +3839,7 @@
       "id": 227,
       "path_id": 6,
       "project_id": 23,
-      "code": "3.2",
+      "code": "3.2.2",
       "level": 3,
       "type": "elective"
     },
@@ -3979,7 +3935,7 @@
       "id": 239,
       "path_id": 6,
       "project_id": 40,
-      "code": "4.2",
+      "code": "4.2.1",
       "level": 4,
       "type": "elective"
     },
@@ -3987,7 +3943,7 @@
       "id": 240,
       "path_id": 6,
       "project_id": 41,
-      "code": "4.2",
+      "code": "4.2.2",
       "level": 4,
       "type": "elective"
     },
@@ -4035,7 +3991,7 @@
       "id": 246,
       "path_id": 6,
       "project_id": 48,
-      "code": "5.2",
+      "code": "5.2.1",
       "level": 5,
       "type": "elective"
     },
@@ -4043,7 +3999,7 @@
       "id": 247,
       "path_id": 6,
       "project_id": 49,
-      "code": "5.2",
+      "code": "5.2.2",
       "level": 5,
       "type": "elective"
     },
@@ -4618,7 +4574,7 @@
       "category": "planner",
       "resource": "planner",
       "action": "view",
-      "created_at": "2026-02-07 04:59:53"
+      "created_at": "2026-02-09 03:39:23"
     },
     {
       "id": 40,
@@ -4627,16 +4583,7 @@
       "category": "planner",
       "resource": "planner",
       "action": "edit",
-      "created_at": "2026-02-07 04:59:53"
-    },
-    {
-      "id": 41,
-      "name": "CONTACTS_MEMBERS_VIEW",
-      "description": "Permission to view only member contacts",
-      "category": "contacts",
-      "resource": "contact_book",
-      "action": "view_members",
-      "created_at": "2026-02-08 16:33:23"
+      "created_at": "2026-02-09 03:39:23"
     }
   ],
   "auth_roles": [
@@ -4743,19 +4690,14 @@
       "permission_id": 38
     },
     {
-      "id": 112,
+      "id": 111,
       "role_id": 1,
       "permission_id": 39
     },
     {
-      "id": 111,
+      "id": 112,
       "role_id": 1,
       "permission_id": 40
-    },
-    {
-      "id": 113,
-      "role_id": 1,
-      "permission_id": 41
     },
     {
       "id": 102,
@@ -4818,19 +4760,14 @@
       "permission_id": 38
     },
     {
-      "id": 110,
+      "id": 109,
       "role_id": 2,
       "permission_id": 39
     },
     {
-      "id": 109,
+      "id": 110,
       "role_id": 2,
       "permission_id": 40
-    },
-    {
-      "id": 114,
-      "role_id": 2,
-      "permission_id": 41
     },
     {
       "id": 34,
@@ -4883,24 +4820,14 @@
       "permission_id": 32
     },
     {
-      "id": 117,
-      "role_id": 3,
-      "permission_id": 35
-    },
-    {
-      "id": 108,
+      "id": 107,
       "role_id": 3,
       "permission_id": 39
     },
     {
-      "id": 107,
+      "id": 108,
       "role_id": 3,
       "permission_id": 40
-    },
-    {
-      "id": 115,
-      "role_id": 3,
-      "permission_id": 41
     },
     {
       "id": 40,
@@ -4933,19 +4860,14 @@
       "permission_id": 32
     },
     {
-      "id": 106,
+      "id": 105,
       "role_id": 4,
       "permission_id": 39
     },
     {
-      "id": 105,
+      "id": 106,
       "role_id": 4,
       "permission_id": 40
-    },
-    {
-      "id": 116,
-      "role_id": 4,
-      "permission_id": 41
     },
     {
       "id": 84,

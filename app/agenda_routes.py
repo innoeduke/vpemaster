@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles, Planner, Waitlist
 from .constants import ProjectID, SPEECH_TYPES_WITH_PROJECT, GLOBAL_CLUB_ID
 from .services.export import MeetingExportService
 from .services.export.context import MeetingExportContext
@@ -1441,6 +1441,19 @@ def update_meeting_status(meeting_number):
         new_status = 'finished'
         # Tally votes when meeting finishes
         _tally_votes_and_set_winners(meeting)
+
+        # Clean up waitlist entries for this meeting
+        Waitlist.delete_for_meeting(meeting_number)
+
+        # Sync Planner Statuses: Transition to terminal states
+        plans = Planner.query.filter_by(meeting_number=meeting_number).all()
+        for plan in plans:
+            if plan.status == 'booked':
+                plan.status = 'completed'
+            elif plan.status == 'waitlist':
+                plan.status = 'obsolete'
+            # 'draft' stays 'draft' - user can move it to another meeting later
+
     elif current_status == 'finished':
         # Full deletion flow as requested
         try:

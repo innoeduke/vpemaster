@@ -35,4 +35,8 @@
 		width: 8%;
 		min-width: 60px;
 	}
+
+	.member-view-mode .speech-log-main-content {
+		display: none;
+	}
 }

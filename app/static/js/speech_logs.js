@@ -196,3 +196,139 @@ function suspendSpeechLog(button, logId) {
       alert("An error occurred while suspending the status.");
     });
 }
+
+// Mobile/iPad Table Adjustments
+function adjustTableForIpad() {
+    const isIpad = window.innerWidth >= 768 && window.innerWidth <= 1024;
+    const table = document.querySelector('.progress-table');
+    
+    if (!table) return;
+
+    // Reset standard layout if not iPad
+    if (!isIpad) {
+        // Restore headers
+        const headers = table.querySelectorAll('th');
+        if (headers.length === 5) { // If currently modified
+            // This is a bit complex to revert generic "restore", so simpler is to reload 
+            // or we track state. For now, let's just implement the transformation.
+            // A full revert would require storing original state or reloading.
+            // Given the complexity of DOM manipulation, a reload on orientation change/resize across breakpoints is safer,
+            // or we assume users rarely resize desktop <-> iPad dynamically.
+            // Let's implement a robust check.
+            return; 
+        }
+        return;
+    }
+
+    // Check if already adjusted
+    const headers = table.querySelectorAll('thead th');
+    if (headers.length === 5) return; // Already 5 columns (Speeches, Required, Elective, Edu)
+
+    // 1. Merge Header Columns
+    // Original: [Empty], [Speeches], [Required x3], [Elective], [Edu x2] -> 8 columns (technically 1 empty + 1 speech + 3 req + 1 elec + 2 edu = 8 ths usually, but check HTML)
+    // Actually HTML has: <th></th>, <th>Speeches</th>, <th colspan="3">Required Roles</th>, <th>Elective Roles</th>, <th colspan="2">Education Series</th>
+    
+    // We want: [Empty], [Speeches], [Required (colspan 1)], [Elective (colspan 2)], [Edu (colspan 1)]
+    
+    const headerRow = table.querySelector('thead tr');
+    if (headerRow) {
+        // Required Roles: Change colspan 3 -> 1
+        const reqHeader = headerRow.querySelector('th:nth-child(3)'); // It's the 3rd TH element
+        if (reqHeader) reqHeader.setAttribute('colspan', '1');
+        
+        // Elective Roles: Change colspan 1 -> 2
+        const elecHeader = headerRow.querySelector('th:nth-child(4)');
+        if (elecHeader) elecHeader.setAttribute('colspan', '2');
+        
+        // Edu Series: Change colspan 2 -> 1
+        const eduHeader = headerRow.querySelector('th:nth-child(5)');
+        if (eduHeader) eduHeader.setAttribute('colspan', '1');
+    }
+
+    // 2. Process Body Rows
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        // Cells: 0=Level, 1=Speeches, 2,3,4=Required, 5=Elective, 6,7=Edu (Total 8 tds)
+        const cells = Array.from(row.children);
+        if (cells.length < 8) return;
+
+        // --- Merge Required Roles (Cells 2, 3, 4) ---
+        // Create container for stacked badges
+        const reqContainer = document.createElement('div');
+        reqContainer.style.display = 'flex';
+        reqContainer.style.flexDirection = 'column';
+        reqContainer.style.gap = '4px';
+        reqContainer.style.width = '100%';
+
+        // Extract contents from cells 2, 3, 4
+        [cells[2], cells[3], cells[4]].forEach(cell => {
+            while (cell.firstChild) {
+                // If it's a badge, reset margins for stacking
+                if (cell.firstChild.classList && cell.firstChild.classList.contains('role-badge')) {
+                     cell.firstChild.style.margin = '2px 0';
+                     cell.firstChild.style.width = '100%';
+                     cell.firstChild.style.boxSizing = 'border-box';
+                     // Ensure inner content is centered
+                     cell.firstChild.style.justifyContent = 'center';
+                }
+                reqContainer.appendChild(cell.firstChild);
+            }
+        });
+
+        // Clear cell 2 and append container
+        cells[2].innerHTML = '';
+        cells[2].appendChild(reqContainer);
+        // Hide cells 3 & 4
+        cells[3].style.display = 'none';
+        cells[4].style.display = 'none';
+
+        // --- Expand Elective Roles (Cell 5) ---
+        cells[5].setAttribute('colspan', '2');
+        cells[5].style.width = 'auto'; // Reset width restriction
+        // Style for side-by-side badges
+        // We need to apply flex wrap to the cell content? 
+        // Usually badges are inline-block or flex items. 
+        // Let's force proper layout for multiple items.
+        // Identify badges and set width to ~48%
+        const elecBadges = cells[5].querySelectorAll('.role-badge');
+        elecBadges.forEach(badge => {
+            badge.style.width = 'calc(50% - 6px)'; // 2 per row with gap
+            badge.style.margin = '3px';
+            badge.style.display = 'inline-flex';
+            badge.style.justifyContent = 'center';
+        });
+
+
+        // --- Merge Edu Series (Cells 6, 7) ---
+        // Stack horizontally (default block flow might wrap, let's ensure single row or clean wrap)
+        const eduContainer = document.createElement('div');
+        eduContainer.style.display = 'flex';
+        eduContainer.style.flexWrap = 'wrap';
+        eduContainer.style.gap = '4px';
+        eduContainer.style.justifyContent = 'center';
+
+        [cells[6], cells[7]].forEach(cell => {
+             while (cell.firstChild) {
+                 if (cell.firstChild.classList && cell.firstChild.classList.contains('role-badge')) {
+                     cell.firstChild.style.width = '100%'; // Full width in their new container? 
+                     // User said "stack badges in a single row". 
+                     // If we merge 2 cols into 1, effectively they become siblings.
+                     // "remove colspan... stack badges in a single row" -> Horizontal stacking?
+                     cell.firstChild.style.margin = '2px';
+                 }
+                eduContainer.appendChild(cell.firstChild);
+            }
+        });
+
+        cells[6].innerHTML = '';
+        cells[6].appendChild(eduContainer);
+        cells[7].style.display = 'none';
+    });
+}
+
+// Run adjustment on load and resize
+window.addEventListener('load', adjustTableForIpad);
+window.addEventListener('resize', function() {
+    // Simple debounce or check
+    adjustTableForIpad();
+});

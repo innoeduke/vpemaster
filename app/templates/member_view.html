@@ -1,4 +1,7 @@
 {% extends "speech_logs.html" %}
+
+{% block content_class %}member-view-mode{% endblock %}
+
 {% from "partials/_speech_log_macros.html" import render_log_card %}
 
 {% block speech_view_title %}Speech Logs - {{ viewed_contact.Name if viewed_contact else 'Member View' }}{% endblock %}
@@ -83,6 +86,7 @@
             </div>
 
 			<div class="view-mode-toggle">
+
 				<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn-view-control btn-member-view active" onclick="return false;">
 					<i class="fas fa-user-circle"></i> Member
 				</a>
@@ -98,13 +102,43 @@
 			</div>
         </div>
     </div>
+    
+    {% if is_member_view %}
+        {% include 'partials/_planner_modal.html' %}
+    {% endif %}
 {% endblock %}
+
 
 {% block speech_log_progress %}
     {% if progress_data_rows %}
     <div class="path-progress-container">
-        <h2>Path Roadmap</h2>
+        <div class="roadmap-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
+            <h2 style="margin-bottom: 0;">Path Roadmap</h2>
+            <button class="btn btn-success" id="add-plan-btn" style="padding: 6px 12px; font-size: 0.9em;">
+                <i class="fas fa-plus"></i> New Plan
+            </button>
+        </div>
+
         
+        <div class="roadmap-legend">
+            <div class="legend-item">
+                <span class="dot completed"></span>
+                <span class="legend-label">Completed</span>
+            </div>
+            <div class="legend-item">
+                <span class="dot booked"></span>
+                <span class="legend-label">Booked</span>
+            </div>
+            <div class="legend-item">
+                <span class="dot waitlist"></span>
+                <span class="legend-label">Waitlist</span>
+            </div>
+            <div class="legend-item">
+                <span class="dot pending"></span>
+                <span class="legend-label">Not Started</span>
+            </div>
+        </div>
+
         <table class="progress-table">
             <thead>
                 <tr>
@@ -127,7 +161,7 @@
                     
                     <td class="band-cell speech-column">
                         {% for speech in row.speeches %}
-                            <div class="role-badge speech-badge {% if speech.status == 'completed' %}completed{% endif %}"
+                            <div class="role-badge speech-badge {{ speech.status }}"
                                  data-role="{{ speech.project_code }}"
                                  data-history="{{ speech.history_items|tojson|forceescape }}">
                                 <span class="role-name">{{ speech.project_code }}</span>
@@ -150,7 +184,7 @@
                              onclick="showRoleHistory(this)">more</div>
                         {% endif %}
                         {% for role in band_data.roles %}
-                            <div class="role-badge {% if role.completion_data and role.completion_data.count >= role.completion_data.required %}completed{% endif %}"
+                            <div class="role-badge {{ role.completion_data.status if role.completion_data else 'pending' }}"
                                  data-role="{{ role.role }}"
                                  data-history="{{ role.completion_data.history_items|tojson|forceescape if role.completion_data and role.completion_data.history_items else '[]' }}">
                                 <span class="role-name">{{ role.role }}</span>
@@ -214,10 +248,25 @@
 {% block speech_log_scripts %}
 {{ super() }}
 <script src="{{ url_for('static', filename='js/components/custom_select_adapter.js') }}"></script>
+<script src="{{ url_for('static', filename='js/planner_modal.js') }}"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const pSelect = document.getElementById('pathway');
         if (pSelect) new CustomSelectAdapter(pSelect);
+        
+        const addBtn = document.getElementById('add-plan-btn');
+        if (addBtn) {
+            addBtn.onclick = () => {
+                // Initialize modal if not already via auto-run in planner_modal.js (it runs on DOMContentLoaded)
+                // But we need to open it
+                if (typeof openPlanModal === 'function') {
+                    openPlanModal();
+                } else {
+                    console.error('openPlanModal function not found');
+                }
+            };
+        }
     });
 </script>
 {% endblock %}
+

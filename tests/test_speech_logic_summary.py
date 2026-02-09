@@ -283,26 +283,21 @@ class TestSpeechLogicSummary(unittest.TestCase):
         
         speeches = summary['3'].get('speeches', [])
         
-        # Should have exactly ONE speech entry for the electives (consolidated badge)
-        self.assertEqual(len(speeches), 1)
+        # Should have exactly TWO speech entries for the electives (individual badges) plus any placeholders
+        # Wait, if only 1 is done, it should have 1 actual badge + 1 placeholder
+        self.assertEqual(len(speeches), elective_count_needed)
         
-        badge = speeches[0]
-        self.assertEqual(badge['project_code'], '3.2')
-        # Status should be pending because 1 out of 2 are done
-        self.assertEqual(badge['status'], 'pending')
+        # First badge: Completed
+        # Find the badge that corresponds to the completed project
+        badge = next((b for b in speeches if b['status'] == 'completed'), None)
+        self.assertIsNotNone(badge)
+        self.assertIn('Storytelling', badge['history_items'][0]['name'])
         
-        # Verify requirement items (dots)
-        req_items = badge['requirement_items']
-        self.assertEqual(len(req_items), elective_count_needed) # Should be 2
-        
-        # First dot: Completed
-        self.assertEqual(req_items[0]['status'], 'completed')
-        self.assertIn('Storytelling', req_items[0]['name'])
-        
-        # Second dot: Pending
+        # Second badge: Pending
         if elective_count_needed > 1:
-            self.assertEqual(req_items[1]['status'], 'pending')
-            self.assertEqual(req_items[1]['name'], 'Pending Elective')
+            badge2 = next((b for b in speeches if b['status'] == 'pending'), None)
+            self.assertIsNotNone(badge2)
+            self.assertEqual(badge2['requirement_items'][0]['name'], 'Pending Elective')
             
         # Verify history items
         self.assertEqual(len(badge['history_items']), 1)
@@ -390,8 +385,11 @@ class TestSpeechLogicSummary(unittest.TestCase):
         db.session.add(p1)
         db.session.commit()
         
-        # Link to pathway
-        vc_path = self.st_tm.role.contacts[0].pathway_obj # Assuming setup created a pathway
+        # Create and link value to pathway
+        from app.models import Pathway
+        vc_path = Pathway(name='Visionary Communication', abbr='VC', type='pathway')
+        db.session.add(vc_path)
+        db.session.commit()
         # Logic relies on valid PathwayProject for code derivation
         pp1 = PathwayProject(path_id=vc_path.id, project_id=p1.id, code='1.1', level=1, type='required')
         db.session.add(pp1)
@@ -421,14 +419,18 @@ class TestSpeechLogicSummary(unittest.TestCase):
         
         # 4. Log Evaluator 1 (Another User)
         # We need another contact for evaluator
-        evaluator_contact = Contact(Name="Eval Person", Primary_Email="eval@test.com")
+        evaluator_contact = Contact(Name="Eval Person", Email="eval@test.com")
         db.session.add(evaluator_contact)
         db.session.commit()
         
-        log_e1 = SessionLog(id=61, Meeting_Number=5, Type_ID=st_eval1.id, owners=[evaluator_contact],
+        log_e1 = SessionLog(id=61, Meeting_Number=5, Type_ID=st_eval1.id, 
                             Status='Completed', state='active')
         log_e1.meeting = self.meeting
         log_e1.session_type = st_eval1
+        db.session.add(log_e1)
+        db.session.flush() # Ensure ID is available and object is tracked
+        log_e1.owners = [evaluator_contact] # Set owners AFTER adding to session
+        db.session.commit()
         
         # 5. Run Summary
         summary = _calculate_completion_summary({'1': [log_s1]}, {}, selected_pathway_name='Visionary Communication')

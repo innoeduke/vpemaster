@@ -891,6 +891,16 @@
 	border-color: #ecc94b;
 }
 
+.dot.booked {
+	background-color: #2196f3;
+	border-color: #1e88e5;
+}
+
+.dot.waitlist {
+	background-color: #f6e05e;
+	border-color: #fbc02d;
+}
+
 .dot.pending {
 	background-color: #f7fafc;
 	border: 1px dashed #cbd5e0;
@@ -1323,9 +1333,9 @@
 }
 
 .progress-table td:nth-child(5) {
-	border-left: 1px solid #e2e8f0;
 	border-right: 1px solid #e2e8f0;
 }
+
 
 /* Elective Roles Column */
 .progress-table td:nth-child(6) {
@@ -1361,6 +1371,16 @@
 	border-color: #c6f6d5;
 }
 
+.progress-table .role-badge.booked {
+	background-color: #f0f9ff;
+	border-color: #bae6fd;
+}
+
+.progress-table .role-badge.waitlist {
+	background-color: #fffbeb;
+	border-color: #fef3c7;
+}
+
 .progress-table .role-badge .item-dots {
 	margin-left: 0;
 }
@@ -1391,6 +1411,34 @@
 	position: relative;
 	max-height: 80vh;
 	overflow-y: auto;
+}
+
+
+
+/* Roadmap Legend */
+.roadmap-legend {
+	display: flex;
+	justify-content: flex-start;
+	gap: 20px;
+	margin-bottom: 15px;
+	flex-wrap: wrap;
+}
+
+.legend-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.85em;
+	color: #4a5568;
+}
+
+.legend-item .dot {
+	width: 10px;
+	height: 10px;
+}
+
+.legend-label {
+	font-weight: 500;
 }
 
 .history-modal-header {

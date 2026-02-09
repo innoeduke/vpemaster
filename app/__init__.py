@@ -170,7 +170,6 @@ def create_app(config_class='config.Config'):
     from app.commands.cleanup_data import cleanup_data
     from app.commands.create_club import create_club
     from app.commands.pack_unpack import pack, unpack
-    from app.commands.init_planner_permissions import init_planner_permissions
 
     app.cli.add_command(create_admin)
     app.cli.add_command(import_data)
@@ -180,7 +179,6 @@ def create_app(config_class='config.Config'):
     app.cli.add_command(fix_home_club_command)
     app.cli.add_command(pack)
     app.cli.add_command(unpack)
-    app.cli.add_command(init_planner_permissions)
 
 
     # 7. Return the configured app instance

@@ -65,7 +65,14 @@
           </a>
         </li>
         {% endif %}
-        <li class="nav-divider"></li>
+        {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
+          <a href="{{ url_for('contacts_bp.show_contacts') }}">
+            <i class="fas fa-book nav-icon"></i>
+            <span>Contacts</span>
+          </a>
+        </li>
+        {% endif %}<li class="nav-divider"></li>
         {% if is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
           <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
@@ -74,19 +81,11 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.PLANNER_VIEW) %}
+        {% if current_user.is_authenticated %}
         <li class="{% if request.endpoint and request.endpoint.startswith('planner_bp') %}active{% endif %}">
           <a href="{{ url_for('planner_bp.planner') }}">
             <i class="fas fa-calendar-check nav-icon"></i>
             <span>Planner</span>
-          </a>
-        </li>
-        {% endif %}
-        {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
-          <a href="{{ url_for('contacts_bp.show_contacts') }}">
-            <i class="fas fa-book nav-icon"></i>
-            <span>Contacts</span>
           </a>
         </li>
         {% endif %}

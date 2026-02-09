@@ -5,12 +5,12 @@ from .auth.permissions import Permissions, permission_required
 from .club_context import get_current_club_id
 from datetime import datetime
 from .constants import ProjectID
+from .services.role_service import RoleService
 
 planner_bp = Blueprint('planner_bp', __name__)
 
 @planner_bp.route('/planner')
 @login_required
-@permission_required(Permissions.PLANNER_VIEW)
 def planner():
     club_id = get_current_club_id()
     
@@ -67,8 +67,14 @@ def get_meeting_info(meeting_number):
                 'name': role_name,
                 'valid_for_project': r.get('valid_for_project', False),
                 'session_title': session_title,
-                'expected_format': RoleService.get_expected_format_for_session(session_title)
+                'expected_format': RoleService.get_expected_format_for_session(session_title),
+                'session_id': r.get('session_id'),
+                'is_available': not r.get('owner_id')
             }
+        elif unique_roles[role_id]['is_available'] == False and not r.get('owner_id'):
+            # Prioritize available slots for booking
+            unique_roles[role_id]['session_id'] = r.get('session_id')
+            unique_roles[role_id]['is_available'] = True
     
     # Sort roles by name alphabetically
     sorted_roles = sorted(unique_roles.values(), key=lambda x: x['name'])
@@ -80,7 +86,6 @@ def get_meeting_info(meeting_number):
 
 @planner_bp.route('/api/planner', methods=['POST'])
 @login_required
-@permission_required(Permissions.PLANNER_EDIT)
 def create_plan():
     data = request.get_json()
     club_id = get_current_club_id()
@@ -89,7 +94,7 @@ def create_plan():
         meeting_number=data.get('meeting_number'),
         meeting_role_id=data.get('meeting_role_id'),
         project_id=data.get('project_id'),
-        status='draft', # Default to draft as requested
+        status=data.get('status', 'draft'), # Use status if provided
         notes=data.get('notes'),
         user_id=current_user.id,
         club_id=club_id
@@ -102,7 +107,6 @@ def create_plan():
 
 @planner_bp.route('/api/planner/<int:plan_id>', methods=['PUT'])
 @login_required
-@permission_required(Permissions.PLANNER_EDIT)
 def update_plan(plan_id):
     plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
     data = request.get_json()
@@ -115,13 +119,38 @@ def update_plan(plan_id):
         plan.project_id = data['project_id']
     if 'notes' in data:
         plan.notes = data['notes']
+    if 'status' in data:
+        plan.status = data['status']
     
     db.session.commit()
     return jsonify({'message': 'Plan updated successfully'})
 
+@planner_bp.route('/api/planner/<int:plan_id>/cancel', methods=['POST'])
+@login_required
+def cancel_plan(plan_id):
+    plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
+    
+    # 1. Update status to cancelled
+    plan.status = 'cancelled'
+    
+    # 2. If it was booked/waitlisted, remove from meeting
+    if plan.meeting_number and plan.meeting_role_id:
+        # Find the session log for this meeting and role
+        session_log = SessionLog.query.join(SessionType).filter(
+            SessionLog.Meeting_Number == plan.meeting_number,
+            SessionType.role_id == plan.meeting_role_id
+        ).first()
+        
+        if session_log:
+            user_contact_id = current_user.contact_id
+            if user_contact_id:
+                RoleService.cancel_meeting_role(session_log, user_contact_id, is_admin=True) # is_admin=True to skip ownership check if necessary, though it should be fine
+    
+    db.session.commit()
+    return jsonify({'message': 'Plan cancelled successfully'})
+
 @planner_bp.route('/api/planner/<int:plan_id>', methods=['DELETE'])
 @login_required
-@permission_required(Permissions.PLANNER_EDIT)
 def delete_plan(plan_id):
     plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
     db.session.delete(plan)

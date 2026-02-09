@@ -52,9 +52,11 @@
                                 <button class="btn-icon btn-edit" title="Edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn-icon btn-delete" title="Delete" onclick="deletePlan({{ plan.id }})">
-                                    <i class="fas fa-trash"></i>
+                                {% if plan.status not in ['completed', 'cancelled', 'obsolete'] %}
+                                <button class="btn-icon btn-cancel" title="Cancel Plan" onclick="cancelPlan({{ plan.id }})">
+                                    <i class="fas fa-times-circle"></i>
                                 </button>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>
@@ -126,7 +128,8 @@
             </div>
             <div class="planner-modal-footer">
                 <button type="button" class="planner-btn planner-btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" class="planner-btn planner-btn-primary">Save Plan</button>
+                <button type="button" id="book-btn" class="planner-btn planner-btn-success" style="display: none;" onclick="bookPlan()">Book</button>
+                <button type="submit" class="planner-btn planner-btn-primary">Save Draft</button>
             </div>
         </form>
     </div>
@@ -147,6 +150,7 @@
     const dateRow = document.getElementById('meeting-date-row');
     const projectChkGroup = document.getElementById('project-checkbox-group');
     const projectChk = document.getElementById('has_project_chk');
+    const bookBtn = document.getElementById('book-btn');
 
     let currentMeetingRoles = [];
 
@@ -157,6 +161,7 @@
         projectChkGroup.style.display = 'none';
         projectChk.checked = false;
         dateRow.style.display = 'none';
+        bookBtn.style.display = 'none';
         roleSelect.innerHTML = '<option value="">Select Role</option>';
         modal.style.display = 'flex';
     };
@@ -288,6 +293,7 @@
 
         setValue(val) {
             this.select.value = val;
+            this.select.dispatchEvent(new Event('change'));
             this.refresh();
         }
     }
@@ -296,7 +302,7 @@
     const customRoleSelect = new CustomSelect('meeting_role_id');
     const customProjectSelect = new CustomSelect('project_id');
 
-    meetingSelect.onchange = async () => {
+    async function loadMeetingRoles() {
         const meetingNumber = meetingSelect.value;
         customMeetingSelect.updateTrigger();
         
@@ -304,6 +310,7 @@
             roleSelect.innerHTML = '<option value="">Select Role</option>';
             customRoleSelect.refresh();
             dateRow.style.display = 'none';
+            bookBtn.style.display = 'none';
             return;
         }
 
@@ -321,13 +328,30 @@
                 opt.value = role.id;
                 opt.innerText = role.name;
                 opt.dataset.validProject = role.valid_for_project;
+                opt.dataset.sessionId = role.session_id;
+                opt.dataset.available = role.is_available;
                 roleSelect.appendChild(opt);
             });
             customRoleSelect.refresh();
+
+            // After loading roles, if one is already selected (e.g. during edit), update Book button
+            updateBookButtonVisibility();
         } catch (error) {
             console.error('Error fetching meeting info:', error);
         }
-    };
+    }
+
+    function updateBookButtonVisibility() {
+        const selectedOpt = roleSelect.options[roleSelect.selectedIndex];
+        if (selectedOpt && selectedOpt.value) {
+            bookBtn.style.display = 'inline-block';
+            bookBtn.innerText = 'Book'; // Always show 'Book' per user preference
+        } else {
+            bookBtn.style.display = 'none';
+        }
+    }
+
+    meetingSelect.addEventListener('change', loadMeetingRoles);
 
     function updateProjectVisibility() {
         const selectedRole = currentMeetingRoles.find(r => r.id == roleSelect.value);
@@ -383,20 +407,23 @@
         }
     }
 
-    roleSelect.onchange = () => {
+    roleSelect.addEventListener('change', () => {
         projectChk.checked = false;
         updateProjectVisibility();
-    };
-    projectChk.onchange = updateProjectVisibility;
+        updateBookButtonVisibility();
+    });
 
-    form.onsubmit = async (e) => {
-        e.preventDefault();
+    projectChk.addEventListener('change', updateProjectVisibility);
+
+    form.addEventListener('submit', async (e) => {
+        if (e) e.preventDefault();
         const planId = document.getElementById('plan-id').value;
         const data = {
             meeting_number: document.getElementById('meeting_number').value || null,
             meeting_role_id: document.getElementById('meeting_role_id').value || null,
             project_id: document.getElementById('project_id').value || null,
-            notes: document.getElementById('notes').value
+            notes: document.getElementById('notes').value,
+            status: 'draft'
         };
 
         const method = planId ? 'PUT' : 'POST';
@@ -410,14 +437,89 @@
             });
 
             if (response.ok) {
+                if (!e) return true; // Internal call from bookPlan
                 location.reload();
             } else {
-                alert('Failed to save plan');
+                alert('Failed to save draft');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            return false;
+        }
+    });
+
+    async function bookPlan() {
+        const selectedOpt = roleSelect.options[roleSelect.selectedIndex];
+        const sessionId = selectedOpt ? selectedOpt.dataset.sessionId : null;
+
+        if (!sessionId) {
+            alert('Cannot book: No session slot found for this role.');
+            return;
+        }
+
+        // All bookings from planner join the waitlist first
+        const action = 'join_waitlist';
+
+        try {
+            // 1. Perform Booking (Join Waitlist)
+            const response = await fetch('/booking/book', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    session_id: sessionId,
+                    action: action
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                // Planner status is always 'waitlist' after initial booking request
+                const status = 'waitlist';
+
+                // 2. Update Plan status and save
+                const planId = document.getElementById('plan-id').value;
+                const data = {
+                    meeting_number: document.getElementById('meeting_number').value || null,
+                    meeting_role_id: document.getElementById('meeting_role_id').value || null,
+                    project_id: document.getElementById('project_id').value || null,
+                    notes: document.getElementById('notes').value,
+                    status: status
+                };
+
+                const method = planId ? 'PUT' : 'POST';
+                const url = planId ? `/api/planner/${planId}` : '/api/planner';
+
+                await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                location.reload();
+            } else {
+                alert(result.message || 'Booking failed');
+            }
+        } catch (error) {
+            console.error('Error during booking:', error);
+            alert('An error occurred during booking');
+        }
+    }
+
+    async function cancelPlan(id) {
+        if (!confirm('Are you sure you want to cancel this plan? This will also remove you from the meeting if you have already booked or joined the waitlist.')) return;
+
+        try {
+            const response = await fetch(`/api/planner/${id}/cancel`, { method: 'POST' });
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Failed to cancel plan');
             }
         } catch (error) {
             console.error('Error:', error);
         }
-    };
+    }
 
     async function deletePlan(id) {
         if (!confirm('Are you sure you want to delete this plan?')) return;
@@ -449,7 +551,7 @@
             document.getElementById('notes').value = tr.dataset.notes;
             
             // Trigger meeting change to load roles
-            await meetingSelect.onchange();
+            await loadMeetingRoles();
             customRoleSelect.setValue(roleId);
             
             // Set project checkbox based on existing project

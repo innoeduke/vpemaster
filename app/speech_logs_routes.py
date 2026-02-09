@@ -366,8 +366,13 @@ def _fetch_logs_with_filters(filters):
     
     # NEW logic: If filtering by speaker, use RoleService as source of truth for their duties
     if filters['speaker_id'] and filters['speaker_id'] != -1:
+        # Fetch directly assigned roles (booked or completed)
         logs = RoleService.get_roles_for_contact(filters['speaker_id'], club_id=None)
         
+        # Fetch roles the user is waitlisted for
+        waitlist_logs = RoleService.get_waitlist_for_contact(filters['speaker_id'], club_id=None)
+        logs.extend(waitlist_logs)
+
         # Filter out officer roles (SAA, President, etc.)
         logs = [l for l in logs if not (l.session_type and l.session_type.role and l.session_type.role.type == 'officer')]
 
@@ -660,6 +665,414 @@ def _sort_and_consolidate(grouped_logs):
     return sorted_grouped_logs
 
 
+def _status_priority(s):
+    """Priority: completed < booked < waitlist < pending"""
+    return {'completed': 0, 'booked': 1, 'waitlist': 2, 'pending': 3}.get(s, 4)
+
+
+def _process_band_requirements(level_str, band_reqs, logs_for_level, used_log_ids, pp_mapping, role_aliases, summary):
+    """
+    Process requirements for a specific band of roles.
+    Updates the level summary dictionary in place.
+    """
+    # Determine group type
+    is_elective_band = all(lr.type == 'elective' for lr in band_reqs)
+    
+    band_completions = 0
+    band_quota = 0
+    
+    # Band Quota Logic
+    if is_elective_band:
+        lvl = int(level_str)
+        band_quota = 1 if lvl <= 4 else 2
+        summary['elective_required'] += band_quota
+    else:
+        band_quota = sum(lr.count_required for lr in band_reqs)
+
+    # For each role in the band
+    for lr in band_reqs:
+        role_count = 0
+        role_details = []
+        
+        for entry in logs_for_level:
+            items_to_process = entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]
+            
+            for log in items_to_process:
+                if log.id in used_log_ids:
+                    continue
+                
+                satisfied = False
+                
+                # Descriptive logic for project and session
+                has_real_project = log.Project_ID and log.Project_ID != ProjectID.GENERIC
+                project_name = log.project.Project_Name if log.project else None
+                session_title = log.Session_Title
+                
+                # Determine name for history/tooltip
+                if project_name and session_title:
+                    item_name = f"{project_name} ({session_title})"
+                elif project_name:
+                    item_name = project_name
+                elif session_title:
+                    item_name = session_title
+                else:
+                    item_name = log.session_type.Title if log.session_type else "Activity"
+                
+                # Determine if we show the project code
+                display_code = log.project_code if hasattr(log, 'project_code') else None
+                if display_code:
+                    match = re.match(r"^[A-Z]+\d+$", display_code)
+                    if match and not has_real_project:
+                        display_code = None
+                
+                item_name_with_code = f"{display_code} {item_name}" if display_code else item_name
+                
+                actual_role_name = (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "")).strip().lower()
+                target_role_name = lr.role.strip().lower()
+                
+                norm_actual = normalize_role_name(actual_role_name)
+                norm_target = normalize_role_name(target_role_name)
+                
+                is_role_match = (norm_actual == norm_target)
+                if not is_role_match and role_aliases.get(norm_actual) == norm_target:
+                    is_role_match = True
+                
+                if is_role_match:
+                    satisfied = True
+                elif actual_role_name == 'club-specific' or (log.session_type and log.session_type.role and log.session_type.role.type == 'club-specific'):
+                    if norm_target == normalize_role_name('Club Specific*'):
+                        satisfied = True
+                elif lr.role.lower() == 'speech' and hasattr(log, 'log_type') and (log.log_type == 'speech' or log.log_type == 'presentation'):
+                    if log.log_type == 'presentation' or pp_mapping.get(log.Project_ID) == 'required' or not pp_mapping:
+                        satisfied = True
+                elif hasattr(log, 'presentation_series') and log.presentation_series:
+                    if normalize_role_name(log.presentation_series.lower()) == norm_target:
+                        satisfied = True
+                elif lr.role.lower() == 'elective project' and hasattr(log, 'log_type') and log.log_type == 'speech':
+                    if pp_mapping.get(log.Project_ID) == 'elective':
+                        satisfied = True
+            
+                if satisfied:
+                    # Determine status
+                    is_waitlist = getattr(log, 'is_waitlist', False)
+                    meeting_finished = log.meeting and log.meeting.status == 'finished'
+                    
+                    status = 'pending'
+                    if log.Status == 'Completed' or (not is_waitlist and meeting_finished):
+                        status = 'completed'
+                        role_count += 1
+                    elif is_waitlist:
+                        status = 'waitlist'
+                    else:
+                        status = 'booked'
+
+                    role_details.append({
+                        'name': item_name_with_code, 
+                        'status': status,
+                        'meeting_number': log.Meeting_Number,
+                        'meeting_date': log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A',
+                        'project_code': display_code,
+                        'role_name': (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "Activity")).strip()
+                    })
+                    used_log_ids.add(log.id)
+        
+        band_completions += min(role_count, lr.count_required)
+        
+        # Sort role_details
+        role_details.sort(key=lambda x: _status_priority(x['status']))
+
+        history_items = [d for d in role_details if d['status'] == 'completed']
+        
+        requirement_items = []
+        for i in range(min(len(role_details), lr.count_required)):
+            requirement_items.append(role_details[i])
+        
+        badge_status = 'pending'
+        if role_count >= lr.count_required:
+            badge_status = 'completed'
+        elif len(role_details) > 0:
+            badge_status = role_details[0]['status']
+
+        if is_elective_band:
+            if role_count > 0:
+                item_data = {
+                    'role': lr.role,
+                    'count': role_count,
+                    'required': lr.count_required,
+                    'requirement_items': requirement_items,
+                    'history_items': history_items,
+                    'status': badge_status
+                }
+                summary['elective'].append(item_data)
+        else:
+            pending_needed = max(0, lr.count_required - len(requirement_items))
+            for i in range(pending_needed):
+                requirement_items.append({'name': f"Pending {lr.role}", 'status': 'pending'})
+            
+            item_data = {
+                'role': lr.role,
+                'count': role_count,
+                'required': lr.count_required,
+                'requirement_items': requirement_items,
+                'history_items': history_items,
+                'status': badge_status
+            }
+            summary['required'].append(item_data)
+            summary['required_count'] += min(role_count, lr.count_required)
+            summary['required_total'] += lr.count_required
+            if role_count < lr.count_required:
+                summary['required_completed'] = False
+
+    if is_elective_band:
+        summary['elective_count'] += min(band_completions, band_quota)
+        if summary['elective_count'] < summary['elective_required']:
+            summary['elective_completed'] = False
+
+
+def _get_project_groups_for_level(level_int, path_id):
+    """
+    Fetch and group PathwayProjects for a given level.
+    Groups by Major Code (e.g., 1.4) AND Project ID adjacency.
+    """
+    all_path_projects = PathwayProject.query.filter_by(
+        path_id=path_id,
+        level=level_int
+    ).order_by(PathwayProject.code, PathwayProject.project_id).all() if path_id else []
+    
+    badge_groups = []
+    current_group = []
+    current_major = None
+    
+    for pp in all_path_projects:
+        match = re.match(r"(\d+\.\d+)(\.\d+)?", pp.code)
+        major_code = match.group(1) if match else pp.code
+        
+        is_new_group = False
+        if not current_group:
+            is_new_group = True
+        elif pp.type == 'elective':
+             is_new_group = True
+        elif major_code != current_major:
+            is_new_group = True
+        elif pp.project_id != current_group[-1].project_id + 1:
+            is_new_group = True
+        
+        if is_new_group:
+            if current_group:
+                badge_groups.append((current_major, current_group[0].type, current_group))
+            current_group = [pp]
+            current_major = major_code
+        else:
+            current_group.append(pp)
+    
+    if current_group:
+        badge_groups.append((current_major, current_group[0].type, current_group))
+        
+    return badge_groups
+
+def _build_evaluator_map(logs_for_level):
+    """Build a map of (meeting_number, speaker_suffix) -> evaluator_name."""
+    relevant_meetings = set(log.Meeting_Number for entry in logs_for_level 
+                          for log in (entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]))
+    evaluator_map = {}
+    if relevant_meetings:
+        eval_logs = db.session.query(SessionLog).join(SessionType).join(MeetingRole).filter(
+            SessionLog.Meeting_Number.in_(relevant_meetings),
+            MeetingRole.name.like('%Evaluator%')
+        ).options(joinedload(SessionLog.session_type).joinedload(SessionType.role)).all()
+        _attach_owners(eval_logs)
+        for el in eval_logs:
+            role_name = el.session_type.role.name
+            match = re.search(r'Evaluator\s*(\d+)', role_name, re.IGNORECASE)
+            suffix = match.group(1) if match else "1"
+            owner_name = el.owner.Name if el.owner else "TBA"
+            evaluator_map[(el.Meeting_Number, suffix)] = owner_name
+    return evaluator_map
+
+def _process_badge_group(major_code, p_type, rps, logs_for_level, evaluator_map, used_log_ids):
+    """
+    Process a single badge group (list of PathwayProjects).
+    Returns (speech_data, all_completed, has_activity)
+    """
+    speech_data = {
+        'project_id': rps[0].project_id if len(rps) == 1 else None,
+        'project_code': major_code,
+        'status': 'pending',
+        'requirement_items': [],
+        'history_items': []
+    }
+    
+    all_completed = True
+    has_activity = False
+    
+    for rp in rps:
+        req_item = {'name': f"Project {rp.code}", 'status': 'pending'}
+        rp_completed = False
+        
+        for entry in logs_for_level:
+            items = entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]
+            for log in items:
+                # Allow using a log even if it is in used_log_ids, IF the log's Project_ID matches the requirement's project_id
+                # This covers cases like 1.4.3 (Individual Evaluator) which is both a role and a project
+                is_exact_project_match = (log.Project_ID == rp.project_id)
+                if log.id in used_log_ids and not is_exact_project_match:
+                    continue
+                    
+                if log.Project_ID == rp.project_id:
+                    has_activity = True
+                    has_real_project = log.Project_ID and log.Project_ID != ProjectID.GENERIC
+                    project_name = log.project.Project_Name if log.project else None
+                    session_title = log.Session_Title
+                    
+                    if project_name and session_title:
+                        item_name = f"{project_name} ({session_title})"
+                    elif project_name:
+                        item_name = project_name
+                    elif session_title:
+                        item_name = session_title
+                    else:
+                        item_name = log.session_type.Title if log.session_type else "Activity"
+                    
+                    display_code = log.project_code if hasattr(log, 'project_code') else None
+                    if display_code:
+                        match_code = re.match(r"^[A-Z]+\d+$", display_code)
+                        if match_code and not has_real_project:
+                            display_code = None
+                    
+                    item_name_with_code = f"{display_code} {item_name}" if display_code else item_name
+                    
+                    role_name = log.session_type.role.name if log.session_type and log.session_type.role else ""
+                    match_speaker = re.search(r'Speaker\s*(\d+)', role_name, re.IGNORECASE)
+                    speaker_suffix = match_speaker.group(1) if match_speaker else "1"
+                    evaluator_name = evaluator_map.get((log.Meeting_Number, speaker_suffix))
+                    
+                    is_waitlist = getattr(log, 'is_waitlist', False)
+                    meeting_finished = log.meeting and log.meeting.status == 'finished'
+                    
+                    status = 'pending'
+                    if log.Status == 'Completed' or (not is_waitlist and meeting_finished):
+                        status = 'completed'
+                        rp_completed = True
+                    elif is_waitlist:
+                        status = 'waitlist'
+                    else:
+                        status = 'booked'
+
+                    history_item = {
+                        'name': item_name_with_code,
+                        'status': status,
+                        'meeting_number': log.Meeting_Number,
+                        'meeting_date': log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A',
+                        'project_code': display_code,
+                        'role_name': role_name.strip(),
+                        'project_name': project_name,
+                        'speech_title': session_title,
+                        'evaluator': evaluator_name,
+                        'media_url': log.media.url if log.media else None
+                    }
+                    
+                    speech_data['history_items'].append(history_item)
+                    
+                    if _status_priority(status) < _status_priority(req_item['status']):
+                        req_item['status'] = status
+                    
+                    used_log_ids.add(log.id)
+        
+        if not rp_completed:
+            all_completed = False
+        
+        speech_data['requirement_items'].append(req_item)
+    
+    if all_completed and len(speech_data['requirement_items']) > 0:
+            speech_data['status'] = 'completed'
+            
+    return speech_data, all_completed, has_activity
+
+def _finalize_elective_badges(elective_badges, level_int):
+    """Sort electives and add placeholders if needed."""
+    level_reqs = get_level_project_requirements().get(level_int, {})
+    needed = level_reqs.get('elective_count', 0)
+    
+    elective_badges.sort(key=lambda x: _status_priority(x['status']))
+    
+    final_electives = elective_badges[:needed]
+    if len(final_electives) < needed:
+        for _ in range(needed - len(final_electives)):
+            final_electives.append({
+                'project_code': f"{level_int}.X",
+                'status': 'pending',
+                'requirement_items': [{'name': 'Pending Elective', 'status': 'pending'}],
+                'history_items': []
+            })
+    return final_electives
+
+
+def _collect_extra_roles(logs_for_level, used_log_ids):
+    """Collect roles/speeches that were not used for any requirement."""
+    extra_roles = []
+    
+    # Process each entry in the logs
+    # logs_for_level is a list of Log Objects OR Dictionaries (grouped roles)
+    # We need to handle both
+    
+    normalized_logs = []
+    for entry in logs_for_level:
+        if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role':
+            normalized_logs.extend(entry['logs'])
+        else:
+            normalized_logs.append(entry)
+            
+    for log in normalized_logs:
+        if log.id in used_log_ids:
+            continue
+            
+        # Exclude prepared speeches from "extra roles" as requested
+        if log.project and log.project.is_prepared_speech:
+            continue
+
+        # Check if it's a role or completed
+        # Simplify status check
+        is_completed = (log.Status == 'Completed')
+        is_role = (hasattr(log, 'log_type') and log.log_type == 'role')
+        
+        if is_completed or is_role:
+             # Descriptive logic
+            has_real_project = log.Project_ID and log.Project_ID != ProjectID.GENERIC
+            project_name = log.project.Project_Name if log.project else None
+            session_title = log.Session_Title
+            
+            if project_name and session_title:
+                item_name = f"{project_name} ({session_title})"
+            elif project_name:
+                item_name = project_name
+            elif session_title:
+                item_name = session_title
+            else:
+                item_name = log.session_type.Title if log.session_type else "Activity"
+            
+            display_code = log.project_code if hasattr(log, 'project_code') else None
+            if display_code:
+                match = re.match(r"^[A-Z]+\d+$", display_code)
+                if match and not has_real_project:
+                    display_code = None
+            
+            item_name_with_code = f"{display_code} {item_name}" if display_code else item_name
+            
+            role_display = (log.session_type.role.name if log.session_type and log.session_type.role 
+                            else (log.session_type.Title if log.session_type else "Activity")).strip()
+
+            extra_roles.append({
+                'name': item_name_with_code,
+                'status': 'completed',
+                'meeting_number': log.Meeting_Number,
+                'meeting_date': log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A',
+                'project_code': display_code,
+                'role_name': role_display
+            })
+            
+    return extra_roles
+
+
 def _calculate_completion_summary(grouped_logs, pp_mapping, selected_pathway_name=None):
     """
     Calculate completion summary against LevelRole requirements.
@@ -672,6 +1085,10 @@ def _calculate_completion_summary(grouped_logs, pp_mapping, selected_pathway_nam
         completion_summary = {}
         used_log_ids = set()
         role_aliases = get_role_aliases()
+        
+        # Helper for status priority
+        def status_priority(s):
+            return {'completed': 0, 'booked': 1, 'waitlist': 2, 'pending': 3}.get(s, 4)
 
         # Group requirements by (level, band)
         reqs_by_band = {}
@@ -723,436 +1140,48 @@ def _calculate_completion_summary(grouped_logs, pp_mapping, selected_pathway_nam
         for lvl, band in sorted_keys:
             level_str = str(lvl)
             band_reqs = reqs_by_band[(lvl, band)]
-            
-            # Determine group type (if any role is required, the band is treated as required)
-            is_elective_band = all(lr.type == 'elective' for lr in band_reqs)
-            
-            band_completions = 0
-            band_required_total = 0
-            requirement_items = []
-            
-            # If it's an elective band, the total requirement is often shared (e.g. "Do 2 of these 10")
-            # Current fallback logic: 1 for L1-4, 2 for L5
-            if is_elective_band:
-                # We assume a shared quota for the band if it's elective
-                band_quota = 1 if lvl <= 4 else 2
-                completion_summary[level_str]['elective_required'] += band_quota
-            else:
-                # Required roles usually have their own individual counts
-                band_quota = sum(lr.count_required for lr in band_reqs)
-            
             logs_for_level = grouped_logs.get(level_str, [])
-
-            # For each role in the band, find completions
-            for lr in band_reqs:
-                role_count = 0
-                role_details = []
-                
-                for entry in logs_for_level:
-
-                    items_to_process = entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]
-                    
-                    for log in items_to_process:
-                        if log.id in used_log_ids:
-                            continue
-                        
-                        satisfied = False
-                        
-                        # Descriptive logic for project and session
-                        has_real_project = log.Project_ID and log.Project_ID != ProjectID.GENERIC
-                        project_name = log.project.Project_Name if log.project else None
-                        session_title = log.Session_Title
-                        
-                        # Determine name for history/tooltip
-                        if project_name and session_title:
-                            item_name = f"{project_name} ({session_title})"
-                        elif project_name:
-                            item_name = project_name
-                        elif session_title:
-                            item_name = session_title
-                        else:
-                            item_name = log.session_type.Title if log.session_type else "Activity"
-                        
-                        # Determine if we show the project code (Hide credential-like fallbacks)
-                        display_code = log.project_code if hasattr(log, 'project_code') else None
-                        if display_code:
-                            # Hide if it's just Path+Level (e.g. PM3) AND there's no real project linked
-                            # Use regex matching defined in utils but for simplicity check pattern here
-                            match = re.match(r"^[A-Z]+\d+$", display_code)
-                            if match and not has_real_project:
-                                display_code = None
-                        
-                        # If we have a code to show, prepend it to the name for non-js usage (tooltips)
-                        if display_code:
-                            item_name_with_code = f"{display_code} {item_name}"
-                        else:
-                            item_name_with_code = item_name
-                        
-                        actual_role_name = (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "")).strip().lower()
-                        target_role_name = lr.role.strip().lower()
-                        
-                        norm_actual = normalize_role_name(actual_role_name)
-                        norm_target = normalize_role_name(target_role_name)
-                        
-                        is_role_match = (norm_actual == norm_target)
-                        if not is_role_match and role_aliases.get(norm_actual) == norm_target:
-                            is_role_match = True
-                        
-                        if is_role_match:
-                            satisfied = True
-                        elif actual_role_name == 'club-specific' or (log.session_type and log.session_type.role and log.session_type.role.type == 'club-specific'):
-                            # Special handling for Club Specific* virtual role
-                            if norm_target == normalize_role_name('Club Specific*'):
-                                satisfied = True
-                        elif lr.role.lower() == 'speech' and hasattr(log, 'log_type') and (log.log_type == 'speech' or log.log_type == 'presentation'):
-                            if log.log_type == 'presentation' or pp_mapping.get(log.Project_ID) == 'required' or not pp_mapping:
-                                satisfied = True
-                        elif hasattr(log, 'presentation_series') and log.presentation_series:
-                            if normalize_role_name(log.presentation_series.lower()) == norm_target:
-                                satisfied = True
-                        elif lr.role.lower() == 'elective project' and hasattr(log, 'log_type') and log.log_type == 'speech':
-                            if pp_mapping.get(log.Project_ID) == 'elective':
-                                satisfied = True
-                    
-                        if satisfied:
-                            if log.Status == 'Completed' or (hasattr(log, 'log_type') and log.log_type == 'role'):
-                                role_count += 1
-                                role_details.append({
-                                    'name': item_name_with_code, 
-                                    'status': 'completed',
-                                    'meeting_number': log.Meeting_Number,
-                                    'meeting_date': log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A',
-                                    'project_code': display_code,
-                                    'role_name': (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "Activity")).strip()
-                                })
-                                used_log_ids.add(log.id)
-                
-                band_completions += min(role_count, lr.count_required)
-                
-                # Separate display dots (requirement_items) from full history (history_items)
-                history_items = [d for d in role_details if d['status'] == 'completed']
-                
-                # Construct exactly lr.count_required dots for the UI
-                requirement_items = []
-                for i in range(min(role_count, lr.count_required)):
-                    requirement_items.append(role_details[i])
-                
-                # For Electives, we show the roles as individual items but they contribute to the band total
-                # For Required, we show them normally.
-                if is_elective_band:
-                    # In an elective band, we don't show "Pending" for each role, 
-                    # but we show which ones ARE completed.
-                    if role_count > 0:
-                        item_data = {
-                            'role': lr.role,
-                            'count': role_count,
-                            'required': lr.count_required,
-                            'requirement_items': requirement_items,
-                            'history_items': history_items
-                        }
-                        completion_summary[level_str]['elective'].append(item_data)
-                else:
-                    # Required role handling (w/ pending)
-                    pending_needed = max(0, lr.count_required - role_count)
-                    for i in range(pending_needed):
-                        requirement_items.append({'name': f"Pending {lr.role}", 'status': 'pending'})
-                    
-                    item_data = {
-                        'role': lr.role,
-                        'count': role_count,
-                        'required': lr.count_required,
-                        'requirement_items': requirement_items,
-                        'history_items': history_items
-                    }
-                    completion_summary[level_str]['required'].append(item_data)
-                    completion_summary[level_str]['required_count'] += min(role_count, lr.count_required)
-                    completion_summary[level_str]['required_total'] += lr.count_required
-                    if role_count < lr.count_required:
-                        completion_summary[level_str]['required_completed'] = False
-
-            if is_elective_band:
-                completion_summary[level_str]['elective_count'] += min(band_completions, band_quota)
-                if completion_summary[level_str]['elective_count'] < completion_summary[level_str]['elective_required']:
-                    completion_summary[level_str]['elective_completed'] = False
             
-        # NEW Part: Match required speeches for each level
+            _process_band_requirements(
+                level_str, 
+                band_reqs, 
+                logs_for_level, 
+                used_log_ids, 
+                pp_mapping, 
+                role_aliases, 
+                completion_summary[level_str]
+            )
+            
+        # NEW Part: Unified logic for speech badges (Required and Elective)
         for lvl_str, summary in completion_summary.items():
             lvl_int = int(lvl_str)
-            req_projects = speeches_by_level.get(lvl_int, [])
+            path_id = pathway_obj.id if pathway_obj else None
+            
+            # 1. Group PathwayProjects into "Badge Groups"
+            badge_groups = _get_project_groups_for_level(lvl_int, path_id)
+
+            # 2. Process each badge group
             logs_for_level = grouped_logs.get(lvl_str, [])
-            
-            # Group required projects by base code (e.g. 1.4.1 -> 1.4)
-            grouped_reqs = {}
-            for rp in req_projects:
-                # Determine base code
-                # If X.Y.Z -> key is X.Y
-                # If X.Y -> key is X.Y
-                match = re.match(r"(\d+\.\d+)(\.\d+)?", rp.code)
-                base_code = match.group(1) if match else rp.code
-                
-                if base_code not in grouped_reqs:
-                    grouped_reqs[base_code] = []
-                grouped_reqs[base_code].append(rp)
-            
-            # Sort groups by base code
-            sorted_base_codes = sorted(grouped_reqs.keys(), key=lambda x: [int(part) for part in x.split('.') if part.isdigit()])
-            
-            for base_code in sorted_base_codes:
-                rps = grouped_reqs[base_code]
-                
-                # Consolidated Badge Data
-                speech_data = {
-                    'project_id': rps[0].project_id if len(rps) == 1 else None, # Use first ID if single, else distinct
-                    'project_code': base_code,
-                    'status': 'pending', # Will be updated
-                    'requirement_items': [],
-                'history_items': []
-                }
-                
-                all_completed = True
-                
-                # Build Evaluator Map for this level's meetings
-                # Mapping: (Meeting_Number, Speaker_Node_Index) -> Evaluator Name
-                # Assumption: Speaker 1 -> Evaluator 1, etc.
-                # Since we don't have direct linkage, we match by Meeting and Role Suffix Number if present
-                # Or just map all evaluators in order?
-                # Safer: Map "Evaluator N" to "Speaker N"
-                
-                # First, gather all logs for relevant meetings to find evaluators
-                relevant_meetings = set(log.Meeting_Number for entry in logs_for_level 
-                                      for log in (entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]))
-                
-                evaluator_map = {} # Key: (Meeting_Number, Speaker_Role_Name_Number) -> Evaluator Name
-                
-                # Fetch all potential evaluator logs for these meetings
-                # Optimization: This query might be expensive inside the loop. 
-                # Ideally should be done once per request or passed in.
-                # Given current structure, we'll do a targeted query.
-                if relevant_meetings:
-                    # Find SessionTypes that are evaluations
-                    # Assuming they contain "Evaluator" in role name
-                    eval_logs = db.session.query(SessionLog).join(SessionType).join(MeetingRole).filter(
-                        SessionLog.Meeting_Number.in_(relevant_meetings),
-                        MeetingRole.name.like('%Evaluator%')
-                    ).options(joinedload(SessionLog.session_type).joinedload(SessionType.role)).all()
-                    
-                    _attach_owners(eval_logs)
-                    
-                    for el in eval_logs:
-                        role_name = el.session_type.role.name
-                        # Extract number if present (e.g. "Evaluator 2" -> "2")
-                        match = re.search(r'Evaluator\s*(\d+)', role_name, re.IGNORECASE)
-                        suffix = match.group(1) if match else "1" # Default to 1 if just "Evaluator"
-                        
-                        owner_name = el.owner.Name if el.owner else "TBA"
-                        key = (el.Meeting_Number, suffix)
-                        evaluator_map[key] = owner_name
+            evaluator_map = _build_evaluator_map(logs_for_level)
 
-                for rp in rps:
-                    req_item = {'name': f"Project {rp.code}", 'status': 'pending'}
-                    rp_completed = False
-                    
-                    # Check logs for matches for this specific sub-project
-                    for entry in logs_for_level:
-                        items = entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]
-                        for log in items:
-                            if log.Project_ID == rp.project_id:
-                                # Found a match
-                                has_real_project = log.Project_ID and log.Project_ID != ProjectID.GENERIC
-                                project_name = log.project.Project_Name if log.project else None
-                                session_title = log.Session_Title
-                                
-                                # Construct consolidated Item Name (Legacy fallback)
-                                if project_name and session_title:
-                                    item_name = f"{project_name} ({session_title})"
-                                elif project_name:
-                                    item_name = project_name
-                                elif session_title:
-                                    item_name = session_title
-                                else:
-                                    item_name = log.session_type.Title if log.session_type else "Activity"
-                                
-                                # Determine Display Code
-                                display_code = log.project_code if hasattr(log, 'project_code') else None
-                                if display_code:
-                                    match_code = re.match(r"^[A-Z]+\d+$", display_code)
-                                    if match_code and not has_real_project:
-                                        display_code = None
-                                
-                                item_name_with_code = f"{display_code} {item_name}" if display_code else item_name
-                                
-                                # Lookup Evaluator
-                                role_name = log.session_type.role.name if log.session_type and log.session_type.role else ""
-                                match_speaker = re.search(r'Speaker\s*(\d+)', role_name, re.IGNORECASE)
-                                speaker_suffix = match_speaker.group(1) if match_speaker else "1"
-                                evaluator_name = evaluator_map.get((log.Meeting_Number, speaker_suffix))
-                                
-                                # Construct History Item
-                                history_item = {
-                                    'name': item_name_with_code, # Legacy display
-                                    'status': 'completed' if log.Status == 'Completed' else 'pending',
-                                    'meeting_number': log.Meeting_Number,
-                                    'meeting_date': log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A',
-                                    'project_code': display_code, # e.g. "EH1.2"
-                                    'role_name': role_name.strip(),
-                                    
-                                    # NEW Fields
-                                    'project_name': project_name,
-                                    'speech_title': session_title,
-                                    'evaluator': evaluator_name,
-                                    'media_url': log.media.url if log.media else None
-                                }
-                                
-                                speech_data['history_items'].append(history_item)
-                                if log.Status == 'Completed':
-                                    rp_completed = True
-                                    req_item['status'] = 'completed'
-                                
-                                used_log_ids.add(log.id)
-                    
-                    if not rp_completed:
-                        all_completed = False
-                    
-                    speech_data['requirement_items'].append(req_item)
-                
-                if all_completed and len(speech_data['requirement_items']) > 0:
-                     speech_data['status'] = 'completed'
-                
-                # Sort speeches by project code to ensure 5.1, 5.2, 5.3 order
-                # (This sort happens within the group which is 1 item usually, need to verify main list sort)
-                summary['speeches'].append(speech_data)
+            # Containers for results
+            required_badges = []
+            elective_badges = []
             
-            # NEW Part: Match elective speeches
-            # Get requirement count for this level
-            level_reqs = get_level_project_requirements().get(lvl_int, {})
-            elective_needed = level_reqs.get('elective_count', 0)
+            for major_code, p_type, rps in badge_groups:
+                speech_data, all_completed, has_activity = _process_badge_group(
+                    major_code, p_type, rps, logs_for_level, evaluator_map, used_log_ids
+                )
+                
+                if p_type == 'required':
+                    required_badges.append(speech_data)
+                elif has_activity:
+                    elective_badges.append(speech_data)
             
-            if elective_needed > 0:
-                # Level 3 -> 3.2, Level 4 -> 4.2, Level 5 -> 5.2
-                elective_badge_code = f"{lvl_int}.2"
-                
-                # Get all elective projects for this level
-                elective_projects = PathwayProject.query.filter_by(
-                    path_id=pathway_obj.id,
-                    level=lvl_int,
-                    type='elective'
-                ).all() if pathway_obj else []
-                
-                # Optimization: create a set of elective project IDs
-                elective_pids = {ep.project_id: ep for ep in elective_projects}
-                
-                matched_elective_logs = []
-                
-                for entry in logs_for_level:
-                    items = entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]
-                    for log in items:
-                        if log.id in used_log_ids:
-                            continue
-                            
-                        if log.Project_ID in elective_pids and log.Status == 'Completed':
-                             matched_elective_logs.append(log)
-                             used_log_ids.add(log.id)
-                
-                # Build the consolidated speech data
-                history_items = []
-                requirement_items = []
-                completed_count = 0
-                
-                # Process completed electives
-                for log in matched_elective_logs:
-                    rp = elective_pids[log.Project_ID]
-                    completed_count += 1
-                    
-                    # History Item Construction
-                    has_real_project = log.Project_ID and log.Project_ID != ProjectID.GENERIC
-                    project_name = log.project.Project_Name if log.project else None
-                    session_title = log.Session_Title
-                    
-                    if project_name and session_title:
-                        item_name = f"{project_name} ({session_title})"
-                    elif project_name:
-                        item_name = project_name
-                    elif session_title:
-                        item_name = session_title
-                    else:
-                        item_name = log.session_type.Title if log.session_type else "Activity"
-                    
-                    display_code = log.project_code if hasattr(log, 'project_code') else None
-                    if display_code:
-                        match = re.match(r"^[A-Z]+\d+$", display_code)
-                        if match and not has_real_project:
-                            display_code = None
-                    
-                    item_name_with_code = f"{display_code} {item_name}" if display_code else item_name
-
-                    history_item = {
-                        'name': item_name_with_code,
-                        'status': 'completed',
-                        'meeting_number': log.Meeting_Number,
-                        'meeting_date': log.meeting.Meeting_Date.strftime('%Y-%m-%d') if log.meeting and log.meeting.Meeting_Date else 'N/A',
-                        'project_code': display_code,
-                        'role_name': (log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else "Activity")).strip()
-                    }
-                    history_items.append(history_item)
-                    
-                    # Requirement Item (Dot)
-                    # Use the actual completed project code/name for the dot tooltip
-                    requirement_items.append({'name': f"{rp.code} {project_name or 'Elective'}", 'status': 'completed'})
-
-                # Add Placeholders for remaining
-                remaining = max(0, elective_needed - completed_count)
-                for _ in range(remaining):
-                    requirement_items.append({'name': "Pending Elective", 'status': 'pending'})
-                
-                # If we have more completed than needed, we still show them in history, 
-                # but maybe we only show dots for the required amount? 
-                # Current logic above appends a dot for EVERY completed one. 
-                # If completed > needed, we might have too many dots. 
-                # Let's cap the dots to max(elective_needed, completed_count) essentially, 
-                # but usually we want to show exactly elective_needed dots if strict.
-                # However, if user did extra electives, showing extra dots is fine or we just show the first N.
-                # Let's stick to showing status for all completed ones + pending ones up to quota.
-                # Actually, strictly speaking, badge dots usually represent the SLOTS.
-                # So if needed=2, we should have 2 dots. 
-                # If completed=3, we probably just mark the 2 slots as completed.
-                # But to see which ones, the history modal is better.
-                # Let's truncate `requirement_items` to `elective_needed` length?
-                # But what if they did 3?
-                # User request: "3.2 should have two dots representing two required electives"
-                # So we should enforce exactly `elective_needed` dots.
-                
-                final_req_items = requirement_items[:elective_needed]
-                # If we have fewer completed than needed, the loop above added pending ones.
-                # If we have more completed, `requirement_items` has all completed ones.
-                # We need to make sure we have exactly `elective_needed` items if possible, 
-                # or at least not confuse the UI.
-                # Case: Needed 2. Completed 1. -> [Comp, Pend] -> Length 2. OK.
-                # Case: Needed 2. Completed 3. -> [Comp, Comp, Comp]. -> Length 3. 
-                # Maybe strictly keep only needed count?
-                if len(final_req_items) < elective_needed:
-                     # Should not happen given logic above (completed + remaining = max(completed, needed))
-                     # Wait, remaining = max(0, needed - completed).
-                     # So if completed < needed: count = completed + (needed - completed) = needed.
-                     # If completed > needed: count = completed.
-                     pass
-                
-                # Force strictly `elective_needed` dots?
-                # "two dots representing two required electives"
-                # Yes, let's slice it.
-                display_req_items = requirement_items[:elective_needed]
-                
-                # Consolidated Badge Data
-                speech_data = {
-                    'project_id': None, # Generic
-                    'project_code': elective_badge_code,
-                    'status': 'completed' if completed_count >= elective_needed else 'pending',
-                    'requirement_items': display_req_items,
-                    'history_items': history_items
-                }
-                
-                summary['speeches'].append(speech_data)
+            # 3. Handle Elective Counts and Placeholders
+            final_electives = _finalize_elective_badges(elective_badges, lvl_int)
             
-            # Sort speeches by project code to ensure 5.1, 5.2, 5.3 order
+            summary['speeches'] = required_badges + final_electives
             summary['speeches'].sort(key=lambda x: x.get('project_code') or '')
             
         # Final pass: Collect Extra Roles (those not used for any requirement)
@@ -1426,11 +1455,39 @@ def show_speech_logs():
     if is_member_view:
         progress_data_rows = _get_path_progress_data(completion_summary)
 
+    # NEW: Fetch data for Planner Modal (Unpublished Meetings & User Projects)
+    # Only needed for member view or if we want the button available generally
+    planner_meetings = []
+    planner_projects = []
+    
+    if is_member_view:
+        # Fetch unpublished meetings
+        from .club_context import get_current_club_id
+        club_id = get_current_club_id()
+        planner_meetings = Meeting.query.filter_by(club_id=club_id, status='unpublished').order_by(Meeting.Meeting_Number).all()
+        
+        # Fetch projects grouped by level
+        contact = current_user.get_contact(club_id)
+        projects_by_level = {}
+        if contact:
+            projects = contact.get_pathway_projects_with_status()
+            for p in projects:
+                level = p.level or 1
+                if level not in projects_by_level:
+                    projects_by_level[level] = []
+                projects_by_level[level].append(p)
+                
+        sorted_levels = sorted(projects_by_level.keys())
+        planner_projects = [(level, projects_by_level[level]) for level in sorted_levels]
+
     # 12. Render template
     template_name = 'member_view.html' if is_member_view else 'meeting_view.html'
     return render_template(
         template_name,
+        meetings=planner_meetings,            # For Planner Modal
+        grouped_projects=planner_projects,    # For Planner Modal
         grouped_logs=sorted_grouped_logs,
+
         roles=dropdown_data['roles'],
         role_icons=role_icons,
         pathways=dropdown_data['pathways'],
