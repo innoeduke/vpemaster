@@ -7,7 +7,7 @@
   <title>Login</title>
   <link rel="preconnect" href="https://fonts.loli.net">
   <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
-  <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600&family=Great+Vibes&display=swap"
+  <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600&family=Great+Vibes&family=ZCOOL+XiaoWei&display=swap"
     rel="stylesheet">
   {% assets "css_all" %}
   <link rel="stylesheet" href="{{ ASSET_URL }}">
@@ -17,67 +17,74 @@
 
 <body>
   <div class="login-container">
-    <img src="{{ url_for('static', filename='images/SHLTMC-logo.webp') }}" alt="SHLTMC Logo"
-      class="login-logo" />
-    <h1>Memory Maker</h1>
-    {% with messages = get_flashed_messages(with_categories=true) %} {% if
-    messages %}
-    <div class="alert-container">
-      {% for category, message in messages %}
-      <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
-    </div>
-    {% endif %} {% endwith %}
-    <form action="{{ url_for('auth_bp.login') }}" method="post" class="login-form">
-      <div>
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" autocomplete="username" placeholder="Username, email, or phone number" required />
+    <div class="login-content-wrapper">
+      <img src="{{ url_for('static', filename='images/SHLTMC-logo.webp') }}" alt="SHLTMC Logo"
+        class="login-logo" />
+      <h2>我的头马旅程</h2>
+      <h1>Memory Maker</h1>
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="alert-container">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
       </div>
-      <div id="club-selector-container" style="display: none;">
-        <label for="club_names">Club:</label>
-        <select id="club_names" name="club_names" required>
-        </select>
-      </div>
-      <div>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" required />
-      </div>
-      <div class="forgot-password-container">
-        <a href="{{ url_for('auth_bp.reset_password_request') }}" class="login-link">Forgot Password?</a>
-      </div>
-      <div>
-        <button type="submit" class="btn btn-primary" style="height: 40px">
-          Login
-        </button>
-      </div>
-    </form>
-    <div class="divider">
-      <span>or</span>
-    </div>
-    <div class="guest-login">
-      <a href="{{ url_for('agenda_bp.agenda') }}" id="guest-login-link" class="btn btn-secondary">Continue as Guest</a>
-    </div>
-
-    <!-- Guest Club Selection Modal -->
-    <div id="guest-modal" class="modal-overlay">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h2>Select a Club</h2>
+      {% endif %} {% endwith %}
+      <form action="{{ url_for('auth_bp.login') }}" method="post" class="login-form">
+        <div>
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" autocomplete="username" placeholder="Username, email, or phone number" required />
         </div>
-        <div class="modal-body">
-          <label for="guest-club-select" class="modal-label">Choose a club to visit:</label>
-          <select id="guest-club-select" class="form-control modal-select">
-            {% for club in clubs %}
-            <option value="{{ club.id }}">{{ club.club_name }}</option>
-            {% endfor %}
+        <div id="club-selector-container" style="display: none;">
+          <label for="club_names">Club:</label>
+          <select id="club_names" name="club_names" required>
           </select>
         </div>
-        <div class="modal-actions">
-          <button id="cancel-guest" type="button" class="btn btn-secondary">Cancel</button>
-          <button id="confirm-guest" type="button" class="btn btn-primary">Continue</button>
+        <div>
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" required />
+        </div>
+        <div class="forgot-password-container">
+          <a href="{{ url_for('auth_bp.reset_password_request') }}" class="login-link">Forgot Password?</a>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary" style="height: 40px">
+            Login
+          </button>
+        </div>
+      </form>
+      <div class="divider">
+        <span>or</span>
+      </div>
+      <div class="guest-login">
+        <a href="{{ url_for('agenda_bp.agenda') }}" id="guest-login-link" class="btn btn-secondary">Continue as Guest</a>
+      </div>
+  
+      <!-- Guest Club Selection Modal -->
+      <div id="guest-modal" class="modal-overlay">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Select a Club</h2>
+          </div>
+          <div class="modal-body">
+            <label for="guest-club-select" class="modal-label">Choose a club to visit:</label>
+            <select id="guest-club-select" class="form-control modal-select">
+              {% for club in clubs %}
+              <option value="{{ club.id }}">{{ club.club_name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button id="cancel-guest" type="button" class="btn btn-secondary">Cancel</button>
+            <button id="confirm-guest" type="button" class="btn btn-primary">Continue</button>
+          </div>
         </div>
       </div>
     </div>
+    
+    <footer class="app-footer">
+      <a href="https://beian.miit.gov.cn" target="_blank">沪ICP备2026004927号-1</a>
+    </footer>
   </div>
 
   <script>

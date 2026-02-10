@@ -168,25 +168,32 @@
     <div class="main-content" id="main-content">
       <!-- Profile container moved to page-header -->
 
-      {% block flash_messages %}
-      {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      <div class="flash-messages">
-        {% for category, message in messages %}
-        {% if category != 'duplicate_warning' %}
-        <div class="flash {{ category }}">
-          {{ message }}
-          <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
+      <div class="content-wrapper">
+        {% block flash_messages %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+          {% if category != 'duplicate_warning' %}
+          <div class="flash {{ category }}">
+            {{ message }}
+            <span class="close-flash" onclick="this.parentElement.remove();">&times;</span>
+          </div>
+          {% endif %}
+          {% endfor %}
         </div>
         {% endif %}
-        {% endfor %}
-      </div>
-      {% endif %}
-      {% endwith %}
-      {% endblock %}
+        {% endwith %}
+        {% endblock %}
 
-      {% block
-      content %}{% endblock %}
+        {% block
+        content %}{% endblock %}
+      </div>
+      <!--  
+      <footer class="app-footer">
+        <a href="https://beian.miit.gov.cn" target="_blank">沪ICP备2026004927号-1</a>
+      </footer>
+      -->
     </div>
   </div>
 

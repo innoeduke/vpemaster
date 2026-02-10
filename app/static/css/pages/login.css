@@ -16,14 +16,27 @@
     font-weight: 400;
 }
 
-h1,
-h2,
+.login-container h2 {
+    font-family: 'Montserrat', 'ZCOOL XiaoWei', cursive;
+    color: #772432;
+    font-size: 2.5rem;
+    margin: 0;
+}
+
+.login-logo {
+    width: 250px;
+    margin-bottom: 20px;
+    transition: width 0.3s ease;
+}
+
 h3,
 h4,
 h5,
 h6 {
     font-family: 'Montserrat', sans-serif;
 }
+
+
 
 .login-form {
     background-color: white;
@@ -81,8 +94,8 @@ h6 {
 }
 
 .alert {
-    padding: 15px;
-    margin-bottom: 20px;
+    padding: 5px;
+    margin-bottom: 10px;
     border: 1px solid transparent;
     border-radius: 4px;
     font-size: 0.95rem;
@@ -260,30 +273,54 @@ h6 {
     box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
 }
 
-.login-logo {
-    width: 300px;
-    margin-bottom: 20px;
-    transition: width 0.3s ease;
+.login-content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+}
+
+.login-container .app-footer {
+    margin-top: auto;
 }
 
 /* Mobile Responsive Adjustments (390x844 and similar) */
 @media (max-width: 480px) {
+    .login-content-wrapper {
+        flex: 1;
+        /* Restore flexible growth */
+        justify-content: center;
+        /* Center content vertically within wrapper */
+    }
+
+    .login-container .app-footer {
+        margin-top: 0;
+        margin-bottom: 40px;
+    }
+
     .login-container {
-        padding: 20px;
-        justify-content: flex-start;
-        padding-top: 60px;
+        padding: 10px;
+        padding-top: 20px;
         min-height: 100vh;
         height: auto;
+        /* justify-content: center removed because wrapper handles centering */
     }
 
     .login-logo {
         width: 180px;
-        margin-bottom: 15px;
+        margin-bottom: 30px;
     }
 
     .login-container h1 {
         font-size: 3rem;
-        margin-bottom: 20px;
+        margin: 10px 0 20px 0;
+        text-align: center;
+    }
+
+    .login-container h2 {
+        font-size: 1.5rem;
         text-align: center;
     }
 
@@ -293,13 +330,26 @@ h6 {
 
     .login-form input,
     .login-form select {
-        padding: 10px 12px;
-        margin-bottom: 12px;
-        font-size: 0.95rem;
+        padding: 8px 10px;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+
+    .login-form label {
+        margin-bottom: 4px;
+        font-size: 0.8rem;
+    }
+
+    .login-form button {
+        margin-top: 5px;
     }
 
     .divider {
-        margin: 16px 0;
+        margin: 10px 0;
+    }
+
+    .guest-login .btn {
+        height: 40px;
     }
 
     .modal-content {

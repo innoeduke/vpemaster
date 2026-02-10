@@ -407,7 +407,7 @@
 	background-color: #6c757d;
 	border: none;
 	cursor: pointer;
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	font-family: 'Montserrat', sans-serif;
@@ -479,6 +479,10 @@
 .icon-cell .icon-btn {
 	padding: 6px 10px;
 	flex-shrink: 0;
+}
+
+.booking-table .assign-cell {
+	text-align: right;
 }
 
 .assign-cell select {
