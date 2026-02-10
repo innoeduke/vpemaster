@@ -125,6 +125,7 @@
 	/* Accordion Item Mobile Override */
 	.accordion-item {
 		border: none !important;
+		padding: 0 !important;
 	}
 
 	/* Grid layout for table rows */

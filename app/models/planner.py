@@ -20,6 +20,11 @@ class Planner(db.Model):
     club = db.relationship('Club', backref='planner_entries')
     role = db.relationship('MeetingRole', backref='planner_entries')
     project = db.relationship('Project', backref='planner_entries')
+    
+    @classmethod
+    def delete_for_meeting(cls, meeting_number):
+        """Deletes all planner entries for a specific meeting."""
+        cls.query.filter_by(meeting_number=meeting_number).delete(synchronize_session=False)
 
     def __repr__(self):
         return f'<Planner {self.id} user_id={self.user_id} status={self.status}>'

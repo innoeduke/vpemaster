@@ -161,11 +161,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         
                         if (dup.in_current_club) {
                             if (dup.type === 'User' || dup.has_user) {
-                                membershipNotice = `<br><span style="color: #dc3545; font-size: 0.85em; font-weight: 500;">Already a member of this club.</span>`;
+                                membershipNotice = `<div class="status-text" style="color: #dc3545;">Already a member of this club.</div>`;
                                 buttonText = 'View Member';
                                 hasHardDuplicate = true;
                             } else {
-                                membershipNotice = `<br><span style="color: #28a745; font-size: 0.85em; font-weight: 500;">Existing guest in this club.</span>`;
+                                membershipNotice = `<div class="status-text" style="color: #28a745;">Existing guest in this club.</div>`;
                                 buttonText = 'Convert to User';
                             }
                         }
@@ -181,14 +181,19 @@ document.addEventListener('DOMContentLoaded', function () {
                             nameDisplay = dup.full_name;
                         }
 
-                        const displayName = nameDisplay.toLowerCase() !== dup.username.toLowerCase() 
-                            ? `<strong>${nameDisplay}</strong> (${dup.username})`
-                            : `<strong>${nameDisplay}</strong>`;
+                        const hasUsername = dup.username && dup.username.toLowerCase() !== 'n/a' && dup.username.trim() !== '';
+                        const displayNameHtml = (hasUsername && nameDisplay.toLowerCase() !== dup.username.toLowerCase())
+                            ? `<div class="dup-name">${nameDisplay}</div><div class="dup-username">(${dup.username})</div>`
+                            : `<div class="dup-name">${nameDisplay}</div>`;
 
                         info.innerHTML = `
-                            ${displayName}<br>
-                            <small>${clubsText}</small>
-                            ${membershipNotice}
+                            <div class="dup-header">
+                                ${displayNameHtml}
+                            </div>
+                            <div class="dup-details">
+                                <div class="dup-club-list"><i class="fas fa-university"></i> ${clubsText}</div>
+                                ${membershipNotice}
+                            </div>
                         `;
                         
                         const actionDiv = document.createElement('div');
@@ -198,7 +203,6 @@ document.addEventListener('DOMContentLoaded', function () {
                         pickBtn.type = 'button';
                         pickBtn.className = 'btn btn-sm btn-info';
                         pickBtn.textContent = buttonText;
-                        pickBtn.style.minWidth = '120px';
                         pickBtn.addEventListener('click', () => {
                             if (dup.type === 'Contact' && !dup.has_user && dup.in_current_club) {
                                 // Requirement 4: Convert guest to user WITHOUT reload to preserve data
@@ -279,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         modalTitle.textContent = 'User Already Exists';
                         proceedWithNewBtn.style.display = 'none';
                     } else {
-                        modalTitle.textContent = 'Existing User Found';
+                        modalTitle.textContent = 'Existing Contact Found';
                         proceedWithNewBtn.style.display = 'block';
                     }
                     

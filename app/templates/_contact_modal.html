@@ -11,8 +11,8 @@
              onerror="this.style.display='none'; document.getElementById('modal-avatar-placeholder').style.display='flex';">
         
         <div class="upload-btn-wrapper">
-          <button type="button" class="btn-upload">Change Photo</button>
-          <input type="file" name="avatar" accept="image/*" onchange="previewAvatar(this)" />
+          <button type="button" class="btn-upload" onclick="document.getElementById('avatar-input').click()">Change Photo</button>
+          <input type="file" id="avatar-input" name="avatar" accept="image/*" onchange="previewAvatar(this)" style="display: none;" />
         </div>
       </div>
       <!-- Accordion 1: Basic Information -->

@@ -7,7 +7,7 @@ from datetime import datetime, date, time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import Meeting, SessionLog, SessionType, Waitlist, Vote, Roster, RosterRole, Contact, Media
+from app.models import Meeting, SessionLog, SessionType, Waitlist, Vote, Roster, RosterRole, Contact, Media, Planner, User
 from app.models.roster import MeetingRole
 from config import Config
 
@@ -51,6 +51,20 @@ class MeetingDeletionTestCase(unittest.TestCase):
             district='Test District'
         )
         db.session.add(self.club)
+        
+        from werkzeug.security import generate_password_hash
+        self.user = User(
+            username="testuser", 
+            email="test@test.com",
+            password_hash=generate_password_hash("testpassword")
+        )
+        db.session.add(self.user)
+        db.session.commit()
+        
+        # Link contact to user
+        from app.models import UserClub
+        uc = UserClub(user=self.user, contact=self.contact, club=self.club)
+        db.session.add(uc)
         db.session.commit()
 
     def create_meeting(self, meeting_number=100):
@@ -94,6 +108,16 @@ class MeetingDeletionTestCase(unittest.TestCase):
         # Add RosterRole
         rr = RosterRole(roster_id=roster.id, role_id=self.role.id)
         db.session.add(rr)
+        
+        # Add Planner entry
+        planner = Planner(
+            meeting_number=meeting_num,
+            user_id=self.user.id,
+            club_id=self.club.id,
+            meeting_role_id=self.role.id,
+            status='draft'
+        )
+        db.session.add(planner)
         db.session.commit()
 
         # Verify data exists
@@ -103,6 +127,7 @@ class MeetingDeletionTestCase(unittest.TestCase):
         self.assertEqual(Vote.query.count(), 1)
         self.assertEqual(Roster.query.count(), 1)
         self.assertEqual(RosterRole.query.count(), 1)
+        self.assertEqual(Planner.query.count(), 1)
 
         # Execute Deletion
         success, msg = meeting.delete_full()
@@ -115,6 +140,7 @@ class MeetingDeletionTestCase(unittest.TestCase):
         self.assertEqual(Vote.query.count(), 0)
         self.assertEqual(Roster.query.count(), 0)
         self.assertEqual(RosterRole.query.count(), 0)
+        self.assertEqual(Planner.query.count(), 0)
 
     def test_delete_meeting_with_media(self):
         meeting_num = 102

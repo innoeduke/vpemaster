@@ -274,6 +274,9 @@
         transform: translateY(-1px);
         box-shadow: 0 6px 8px rgba(0, 65, 101, 0.25);
     }
+    .btn i {
+        margin-right: 8px;
+    }
 </style>
 {% endblock %}
 
@@ -585,7 +588,7 @@
 
         function enableEditing() {
             isEditing = true;
-            editBtn.textContent = 'Save';
+            editBtn.innerHTML = '<i class="fas fa-save"></i> Save';
             editBtn.classList.remove('btn-primary');
             editBtn.classList.add('btn-success');
             cancelBtn.style.display = 'inline-block';
@@ -674,7 +677,7 @@
 
         function disableEditing() {
             isEditing = false;
-            editBtn.textContent = 'Edit';
+            editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
             editBtn.classList.remove('btn-success');
             editBtn.classList.add('btn-primary');
             cancelBtn.style.display = 'none';
@@ -717,7 +720,7 @@
                             // but we ensure the style is there (it is in HTML template)
                         });
                         isEditing = false;
-                        editBtn.textContent = 'Edit';
+                        editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
                         editBtn.classList.remove('btn-success');
                         editBtn.classList.add('btn-primary');
                         cancelBtn.style.display = 'none';

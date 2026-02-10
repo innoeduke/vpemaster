@@ -47,11 +47,12 @@
 	margin-top: 20px;
 }
 
-.award-accordion .accordion-item {
+.booking-container .award-accordion .accordion-item {
 	padding: 20px;
 	border-radius: 8px;
 	margin-top: 20px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	box-shadow: none;
+	background-color: transparent;
 	border: none;
 	overflow: visible;
 }
@@ -189,12 +190,12 @@
 }
 
 /* --- Unified Voting Section (for NPS and Feedback) --- */
-.voting-section {
+.booking-container .voting-section {
 	padding: 20px;
 	border-radius: 8px;
 	margin-top: 20px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-	background-color: white;
+	box-shadow: none;
+	background-color: transparent;
 }
 
 .section-header {
@@ -205,10 +206,11 @@
 }
 
 .section-title {
-	background-color: transparent;
-	color: #333;
-	font-weight: bold;
+	color: #772432;
+	font-weight: 700;
 	font-family: 'Montserrat', sans-serif;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
 }
 
 
@@ -309,10 +311,22 @@
 	font-weight: bold;
 }
 
-/* Unified font-size for both accordion headers and section titles */
-.award-accordion .accordion-header .question-text,
-.section-title {
-	font-size: 1.2em;
+/* Unified styling for both accordion headers and section titles with chained selectors for specificity */
+.booking-container .award-accordion .accordion-header .question-text,
+.booking-container .voting-section .section-header .section-title {
+	background-color: transparent;
+	box-shadow: none;
+	border: none;
+	border-bottom: none;
+	color: #772432;
+	font-weight: 700;
+	font-family: 'Montserrat', sans-serif;
+	padding: 8px 15px;
+	border-radius: 4px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	font-size: 1.1em;
+	display: inline-block;
 }
 
 .feedback-input-container {

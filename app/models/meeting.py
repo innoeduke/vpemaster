@@ -142,6 +142,7 @@ class Meeting(db.Model):
         from .roster import Waitlist, Roster
         from .session import SessionLog
         from .voting import Vote
+        from .planner import Planner
         
         try:
             # 1. Delete Waitlist entries
@@ -156,7 +157,10 @@ class Meeting(db.Model):
             # 4. Delete Vote entries
             Vote.delete_for_meeting(self.Meeting_Number)
 
-            # 5. Handle Meeting's Media
+            # 5. Delete Planner entries
+            Planner.delete_for_meeting(self.Meeting_Number)
+
+            # 6. Handle Meeting's Media
             if self.media_id:
                 media_to_delete = self.media
                 self.media_id = None # Break the link first

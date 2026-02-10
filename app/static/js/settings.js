@@ -789,6 +789,16 @@ function sortTableByColumn(table, column, asc = true) {
   table
     .querySelector(`th:nth-child(${column + 1})`)
     .setAttribute("data-sort-dir", asc ? "asc" : "desc");
+
+  // --- NEW: Notify paginator if one is attached to this table ---
+  if (window.activePaginators) {
+    Object.values(window.activePaginators).forEach(paginator => {
+      if (paginator.tableId === table.id) {
+        paginator.currentPage = 1;
+        paginator.update();
+      }
+    });
+  }
 }
 
 /**

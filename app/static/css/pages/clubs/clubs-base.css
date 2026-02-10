@@ -56,7 +56,7 @@
 .form-table {
 	width: 100%;
 	border-collapse: collapse;
-	border-top: 1px solid #eee;
+	border: 1px solid #eee;
 }
 
 .form-table td {
@@ -71,7 +71,7 @@
 	background-color: #fcfdfe;
 	font-weight: 600;
 	color: #555;
-	border-right: 1px solid #f0f0f0;
+	border-right: 1px solid #eee;
 	padding-left: 20px;
 	white-space: nowrap;
 }

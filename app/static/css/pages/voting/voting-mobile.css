@@ -11,7 +11,7 @@
 	/* Remove border from accordion container */
 	.award-accordion .accordion-item {
 		border: none;
-		padding: 15px;
+		padding: 0 !important;
 		margin-top: 15px;
 	}
 
@@ -59,7 +59,9 @@
 
 	.award-accordion .accordion-header .question-text,
 	.section-title {
-		font-size: 1.1em;
+		font-size: 0.95em !important;
+		line-height: 1.2;
+		padding: 6px 12px;
 	}
 
 
@@ -68,7 +70,7 @@
 	.voting-section {
 		background-color: transparent;
 		box-shadow: none;
-		padding: 10px 0;
+		padding: 0 !important;
 		border-radius: 0;
 	}
 

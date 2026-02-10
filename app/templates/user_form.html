@@ -81,19 +81,24 @@
 </form>
 
 <!-- Duplicate Detection Modal -->
-<div id="duplicateModal" class="modal" style="display: none;">
-    <div class="modal-content" style="max-width: 600px;">
-        <span class="close" id="closeDuplicateModal">&times;</span>
-        <h2>Potential Duplicate Found</h2>
-        <p>The following existing users/contacts match the information you entered. Would you like to use one of them instead?</p>
-        
-        <div id="duplicateList" class="duplicate-list">
-            <!-- Duplicates will be injected here -->
+<div id="duplicateModal" class="modal">
+    <div class="modal-content duplicate-modal-content">
+        <div class="modal-header">
+            <h2>Potential Duplicate Found</h2>
+            <span class="close" id="closeDuplicateModal">&times;</span>
         </div>
         
-        <div class="form-actions" style="margin-top: 20px; display: flex; justify-content: center; gap: 15px;">
-            <button type="button" class="btn btn-secondary" id="proceedWithNew" style="width: 160px;">Continue Anyway</button>
-            <button type="button" class="btn btn-danger" id="cancelSave" style="width: 120px;">Cancel</button>
+        <div class="modal-body">
+            <p class="modal-description">The following existing users/contacts match the information you entered. Would you like to use one of them instead?</p>
+            
+            <div id="duplicateList" class="duplicate-list">
+                <!-- Duplicates will be injected here -->
+            </div>
+        </div>
+        
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-outline" id="proceedWithNew">Continue Anyway</button>
+            <button type="button" class="btn btn-danger" id="cancelSave">Cancel</button>
         </div>
     </div>
 </div>
