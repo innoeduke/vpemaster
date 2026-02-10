@@ -1,0 +1,104 @@
+<div id="reportBugModal" class="modal">
+	<div class="modal-content">
+		<span class="close" onclick="closeReportBugModal()">&times;</span>
+		<h2 style="text-align: center; margin-top: 0;">Report a Bug</h2>
+		<div id="bugReportSuccess" style="display: none; text-align: center; padding: 20px;">
+			<i class="fas fa-check-circle" style="color: #28a745; font-size: 3em; margin-bottom: 15px;"></i>
+			<h3>Report Sent Successfully</h3>
+			<p>Thank you for your feedback.</p>
+			<button type="button" class="btn btn-primary" onclick="closeReportBugModal()">Close</button>
+		</div>
+
+		<form id="reportBugForm" onsubmit="submitBugReport(event)">
+			<div class="form-group">
+				<label for="bugSubject">Subject</label>
+				<input type="text" id="bugSubject" name="subject" class="form-control" value="Bug Report" required>
+			</div>
+			<div class="form-group">
+				<label for="bugDescription">Description</label>
+				<textarea id="bugDescription" name="description" class="form-control" rows="5" required
+					placeholder="Please describe the issue..."></textarea>
+			</div>
+			<div class="modal-actions">
+				<button type="button" class="btn btn-secondary" onclick="closeReportBugModal()">Cancel</button>
+				<button type="submit" class="btn btn-primary">Send Report</button>
+			</div>
+		</form>
+	</div>
+</div>
+
+<script>
+	function openReportBugModal() {
+		const modal = document.getElementById('reportBugModal');
+		if (modal) {
+			// Reset state
+			document.getElementById('reportBugForm').style.display = 'block';
+			document.getElementById('bugReportSuccess').style.display = 'none';
+			document.getElementById('reportBugForm').reset();
+
+			modal.style.display = 'flex';
+			document.getElementById('bugDescription').focus();
+		}
+	}
+
+	function closeReportBugModal() {
+		const modal = document.getElementById('reportBugModal');
+		if (modal) {
+			modal.style.display = 'none';
+			document.getElementById('reportBugForm').reset();
+		}
+	}
+
+	async function submitBugReport(event) {
+		event.preventDefault();
+
+		const form = event.target;
+		const formData = new FormData(form);
+		const data = Object.fromEntries(formData.entries());
+
+		try {
+			const response = await fetch('/api/report-bug', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(data)
+			});
+
+			const result = await response.json();
+
+			if (result.success) {
+				// Hide form and show success message
+				document.getElementById('reportBugForm').style.display = 'none';
+				document.getElementById('bugReportSuccess').style.display = 'block';
+			} else {
+				console.error('Failed to send bug report:', result.error);
+				alert('Failed to send report: ' + (result.error || 'Unknown error'));
+			}
+		} catch (error) {
+			console.error('Error sending bug report:', error);
+			alert('Error sending report. Please try again.');
+		}
+	}
+
+	// Close modal when clicking outside
+	window.addEventListener('click', function (event) {
+		const modal = document.getElementById('reportBugModal');
+		if (event.target === modal) {
+			closeReportBugModal();
+		}
+	});
+</script>
+
+<style>
+	/* Ensure modal styles match existing generic modal styles if possible, 
+       otherwise provide basic styling */
+	#reportBugModal .modal-content {
+		max-width: 500px;
+		width: 90%;
+	}
+
+	#reportBugModal textarea {
+		resize: vertical;
+	}
+</style>

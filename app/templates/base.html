@@ -50,12 +50,12 @@
         </li>
         {% endif %}
         {% if is_authorized(Permissions.ROSTER_VIEW) %}
-            <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}active{% endif %}">
-                <a href="{{ url_for('roster_bp.roster') }}">
-                    <i class="fas fa-clipboard-list nav-icon"></i>
-                    <span>Roster</span>
-                </a>
-            </li>
+        <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}active{% endif %}">
+          <a href="{{ url_for('roster_bp.roster') }}">
+            <i class="fas fa-clipboard-list nav-icon"></i>
+            <span>Roster</span>
+          </a>
+        </li>
         {% endif %}
         {% if has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('voting_bp') %}active{% endif %}">
@@ -90,12 +90,13 @@
         </li>
         {% endif %}
         {% if is_authorized(Permissions.LUCKY_DRAW_VIEW) or is_authorized(Permissions.PATHWAY_LIB_VIEW) %}
-            <li class="{% if request.endpoint and (request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp')) %}active{% endif %}">
-                <a href="{{ url_for('tools_bp.tools') }}">
-                    <i class="fas fa-tools nav-icon"></i>
-                    <span>Tools</span>
-                </a>
-            </li>
+        <li
+          class="{% if request.endpoint and (request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp')) %}active{% endif %}">
+          <a href="{{ url_for('tools_bp.tools') }}">
+            <i class="fas fa-tools nav-icon"></i>
+            <span>Tools</span>
+          </a>
+        </li>
         {% endif %}
         <li class="nav-divider"></li>
         {% if current_user.is_authenticated and current_user.primary_role_name == 'SysAdmin' %}
@@ -158,6 +159,8 @@
             <a href="{{ url_for('about_club_bp.about_club') }}"><i class="fas fa-info-circle"></i> About Club</a>
             {% endif %}
             <div class="menu-divider"></div>
+            <a href="#" onclick="openReportBugModal()"><i class="fas fa-bug"></i> Report Bug</a>
+            <div class="menu-divider"></div>
             <a href="{{ url_for('auth_bp.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
           </div>
         </div>
@@ -208,6 +211,7 @@
   <script src="{{ url_for('static', filename='vendor/js/Sortable.min.js') }}"></script>
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
   <script src="{{ url_for('static', filename='js/search.js') }}"></script>
+  {% include '_report_bug_modal.html' %}
   {% block scripts %}{% endblock %}
 
   <script>
@@ -265,30 +269,30 @@
 
     // --- Unread Messages Logic ---
     function updateUnreadCount() {
-        const badges = [
-            document.getElementById('unread-messages-count-profile'),
-            document.getElementById('unread-messages-count-trigger')
-        ];
+      const badges = [
+        document.getElementById('unread-messages-count-profile'),
+        document.getElementById('unread-messages-count-trigger')
+      ];
 
-        fetch('/api/messages/unread-count')
-            .then(response => {
-                if (response.ok) return response.json();
-                throw new Error('Network response was not ok');
-            })
-            .then(data => {
-                badges.forEach(badge => {
-                    if (badge) {
-                        badge.textContent = data.count;
-                        badge.style.display = data.count > 0 ? 'inline-block' : 'none';
-                    }
-                });
-            })
-            .catch(err => {
-                // Squelch errors for unauthenticated/offline
-                console.log('Error fetching unread count', err);
-            });
+      fetch('/api/messages/unread-count')
+        .then(response => {
+          if (response.ok) return response.json();
+          throw new Error('Network response was not ok');
+        })
+        .then(data => {
+          badges.forEach(badge => {
+            if (badge) {
+              badge.textContent = data.count;
+              badge.style.display = data.count > 0 ? 'inline-block' : 'none';
+            }
+          });
+        })
+        .catch(err => {
+          // Squelch errors for unauthenticated/offline
+          console.log('Error fetching unread count', err);
+        });
     }
-    
+
     // Initial load and polling
     document.addEventListener('DOMContentLoaded', updateUnreadCount);
     setInterval(updateUnreadCount, 60000);

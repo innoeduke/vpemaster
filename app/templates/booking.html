@@ -329,13 +329,14 @@
     var selectedMeetingNumber = {{ selected_meeting_number| tojson }};
     var allContacts = [
         {% for contact in contacts %}
-    {
-        id: { { contact.id } },
-        name: { { contact.Name | tojson } },
-        type: { { contact.Type | tojson } },
-        avatar_url: { { (url_for('static', filename = (config.AVATAR_ROOT_DIR ~ '/' ~contact.Avatar_URL if '/' not in contact.Avatar_URL else contact.Avatar_URL)) if contact.Avatar_URL else url_for('static', filename = 'default_avatar.jpg')) | tojson } }
-    } {% if not loop.last %}, {% endif %}
-    {% endfor %}
+        {
+            id: {{ contact.id }},
+            name: {{ contact.Name | tojson }},
+            type: {{ contact.Type | tojson }},
+            avatar_url: {{ (url_for('static', filename = (config.AVATAR_ROOT_DIR ~ '/' ~contact.Avatar_URL if '/' not in contact.Avatar_URL else contact.Avatar_URL)) if contact.Avatar_URL else url_for('static', filename = 'default_avatar.jpg')) | tojson }}
+        } 
+        {% if not loop.last %}, {% endif %}
+        {% endfor %}
     ];
 </script>
 <script src="{{ url_for('static', filename='js/booking.js') }}"></script>
