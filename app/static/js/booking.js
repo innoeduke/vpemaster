@@ -263,6 +263,31 @@ function removeOwner(sessionId, ownerId) {
     });
 }
 
+function removeWaitlist(sessionId, contactId) {
+  fetch("/booking/book", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      session_id: sessionId,
+      action: "remove_waitlist",
+      contact_id: contactId,
+    }),
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        window.location.reload(true);
+      } else {
+        alert("Error: " + data.message);
+      }
+    })
+    .catch((error) => {
+      console.error("removeWaitlist error:", error);
+      alert("An error occurred. Please try again.");
+      window.location.reload(true);
+    });
+}
+
 function assignRole(sessionId, contactId, selectElement) {
   // For shared roles, we need to know which owner to replace
   const previousContactId = selectElement ? selectElement.dataset.previousId : null;

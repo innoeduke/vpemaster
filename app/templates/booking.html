@@ -35,7 +35,8 @@
     {% endif %}
     <div class="filters-container premium">
         <div class="filter-row-premium">
-            {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
+            {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number,
+            label=None,
             render_outer_container=False) }}
             <div class="filter-right">
                 {#
@@ -45,8 +46,8 @@
                 </button>
                 {% endif %}
                 #}
-                <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}" target="_blank"
-                    class="btn btn-info role-guide-link">
+                <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}"
+                    target="_blank" class="btn btn-info role-guide-link">
                     <i class="fas fa-book-open"></i> View Role Guide
                 </a>
             </div>
@@ -65,7 +66,8 @@
         <td class="role-cell">
             <div class="role-cell-inner">
                 {% if role.role_level_status %}
-                <span class="role-badge {{ role.role_level_status }}" title="{{ 'Required' if role.role_level_status == 'required' else 'Elective' }} for your current level">
+                <span class="role-badge {{ role.role_level_status }}"
+                    title="{{ 'Required' if role.role_level_status == 'required' else 'Elective' }} for your current level">
                     {{ 'Required' if role.role_level_status == 'required' else 'Elective' }}
                 </span>
                 {% endif %}
@@ -73,7 +75,8 @@
                     <i class="fas {{ role.icon }}"></i>
                     <div class="role-display-text">
                         <span>{{ role.role }}</span>
-                        {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
+                        {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif
+                        %}
                     </div>
                 </div>
             </div>
@@ -82,18 +85,21 @@
         <td class="status-cell">
             <div class="status-cell-content">
                 {% if role.has_single_owner %}
-                <div class="role-avatar {% if is_admin_view %}admin-avatar{% endif %}" {% if role.owner_name %}title="{{ role.owner_name }}" {% endif %} {% if is_admin_view and role.owner_id %}data-owner-id="{{ role.owner_id }}" data-session-id="{{ role.session_id }}"{% endif %}>
+                <div class="role-avatar {% if is_admin_view %}admin-avatar{% endif %}" {% if role.owner_name
+                    %}title="{{ role.owner_name }}" {% endif %} {% if is_admin_view and role.owner_id
+                    %}data-owner-id="{{ role.owner_id }}" data-session-id="{{ role.session_id }}" {% endif %}>
                     {% if role.owner_avatar_url %}
                     {% set avatar_path = role.owner_avatar_url %}
                     {% if '/' not in avatar_path %}
-                        {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+                    {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
                     {% endif %}
                     <img src="{{ url_for('static', filename=avatar_path) }}" alt="User Avatar">
                     {% else %}
                     <img src="{{ url_for('static', filename='default_avatar.jpg') }}" alt="Default Avatar">
                     {% endif %}
                     {% if is_admin_view and role.owner_id %}
-                    <button class="avatar-remove-btn" onclick="removeOwner('{{ role.session_id }}', '{{ role.owner_id }}')" title="Remove">
+                    <button class="avatar-remove-btn"
+                        onclick="removeOwner('{{ role.session_id }}', '{{ role.owner_id }}')" title="Remove">
                         <i class="fas fa-times"></i>
                     </button>
                     {% endif %}
@@ -102,18 +108,20 @@
                 {# Shared role: Show all owners #}
                 {% if role.all_owners %}
                 {% for owner in role.all_owners %}
-                <div class="role-avatar {% if is_admin_view %}admin-avatar{% endif %}" title="{{ owner.name }}" {% if is_admin_view %}data-owner-id="{{ owner.id }}" data-session-id="{{ role.session_id }}"{% endif %}>
+                <div class="role-avatar {% if is_admin_view %}admin-avatar{% endif %}" title="{{ owner.name }}" {% if
+                    is_admin_view %}data-owner-id="{{ owner.id }}" data-session-id="{{ role.session_id }}" {% endif %}>
                     {% if owner.avatar_url %}
                     {% set avatar_path = owner.avatar_url %}
                     {% if '/' not in avatar_path %}
-                        {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+                    {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
                     {% endif %}
                     <img src="{{ url_for('static', filename=avatar_path) }}" alt="{{ owner.name }}">
                     {% else %}
                     <img src="{{ url_for('static', filename='default_avatar.jpg') }}" alt="Default Avatar">
                     {% endif %}
                     {% if is_admin_view %}
-                    <button class="avatar-remove-btn" onclick="removeOwner('{{ role.session_id }}', '{{ owner.id }}')" title="Remove">
+                    <button class="avatar-remove-btn" onclick="removeOwner('{{ role.session_id }}', '{{ owner.id }}')"
+                        title="Remove">
                         <i class="fas fa-times"></i>
                     </button>
                     {% endif %}
@@ -125,18 +133,25 @@
                 </div>
                 {% endif %}
                 {% endif %}
-                
+
                 {% if status in ['not started', 'unpublished'] and role.waitlist %}
                 {% for user in role.waitlist %}
-                <div class="role-avatar waitlist-avatar" title="{{ user.name }} (Waitlist)">
+                <div class="role-avatar waitlist-avatar {% if is_admin_view %}admin-avatar{% endif %}"
+                    title="{{ user.name }} (Waitlist)">
                     {% if user.avatar_url %}
                     {% set avatar_path = user.avatar_url %}
                     {% if '/' not in avatar_path %}
-                        {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+                    {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
                     {% endif %}
                     <img src="{{ url_for('static', filename=avatar_path) }}" alt="{{ user.name }}">
                     {% else %}
                     <img src="{{ url_for('static', filename='default_avatar.jpg') }}" alt="Default Avatar">
+                    {% endif %}
+                    {% if is_admin_view %}
+                    <button class="avatar-remove-btn" onclick="removeWaitlist('{{ role.session_id }}', '{{ user.id }}')"
+                        title="Remove">
+                        <i class="fas fa-times"></i>
+                    </button>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -152,28 +167,25 @@
             {% if role.all_owners is defined and role.all_owners|length > 0 %}
             <div class="multi-owner-inputs">
                 {% for owner in role.all_owners %}
-                <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}" data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
-                    <input type="text" class="admin-assign-input"
-                        placeholder="--- Select ---"
-                        value="{{ owner.name }}"
-                        data-current-id="{{ owner.id }}"
-                        autocomplete="off">
+                <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}"
+                    data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
+                    <input type="text" class="admin-assign-input" placeholder="--- Select ---" value="{{ owner.name }}"
+                        data-current-id="{{ owner.id }}" autocomplete="off">
                     <div class="autocomplete-results"></div>
                 </div>
                 {% endfor %}
             </div>
             {% else %}
-                <div class="input-group">
-                    <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}" data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
-                        <input type="text" class="admin-assign-input {% if not role.owner_id %}unassigned-role{% endif %}"
-                            placeholder="--- Select ---"
-                            value="{% if role.owner_id %}{{ role.owner_name }}{% endif %}"
-                            data-current-id="{{ role.owner_id or 0 }}"
-                            data-norm-role="{{ role.role|lower|replace(' ', '') }}"
-                            autocomplete="off">
-                        <div class="autocomplete-results"></div>
-                    </div>
+            <div class="input-group">
+                <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}"
+                    data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
+                    <input type="text" class="admin-assign-input {% if not role.owner_id %}unassigned-role{% endif %}"
+                        placeholder="--- Select ---" value="{% if role.owner_id %}{{ role.owner_name }}{% endif %}"
+                        data-current-id="{{ role.owner_id or 0 }}"
+                        data-norm-role="{{ role.role|lower|replace(' ', '') }}" autocomplete="off">
+                    <div class="autocomplete-results"></div>
                 </div>
+            </div>
             {% endif %}
             {% else %}
             {% if role.owner_id %}
@@ -222,9 +234,8 @@
                 {# Reset Buttons #}
                 <div class="reset-icon-container">
                     {% set has_owners = (role.all_owners is defined and role.all_owners|length > 0) or role.owner_id %}
-                    <button class="icon-btn btn-reset-role" onclick="resetRole(this, '{{ role.session_id }}')" 
-                        title="Unassign All" 
-                        style="color: #6c757d; {% if not has_owners %}display: none;{% endif %}">
+                    <button class="icon-btn btn-reset-role" onclick="resetRole(this, '{{ role.session_id }}')"
+                        title="Unassign All" style="color: #6c757d; {% if not has_owners %}display: none;{% endif %}">
                         <i class="fas fa-undo"></i>
                     </button>
                 </div>
@@ -235,17 +246,19 @@
     {# Admin Recommendation Row - appears below the main row #}
     {% if is_admin_view %}
     {% set norm_role = role.role|lower|replace(' ', '')|replace('-', '') %}
-    <tr class="recommendation-row" data-session-id="{{ role.session_id }}" {% if role.owner_id or (role.all_owners is defined and role.all_owners|length > 0) or not required_roles_by_role[norm_role] %}style="display:none;"{% endif %}>
+    <tr class="recommendation-row" data-session-id="{{ role.session_id }}" {% if role.owner_id or (role.all_owners is
+        defined and role.all_owners|length> 0) or not required_roles_by_role[norm_role] %}style="display:none;"{% endif
+        %}>
         <td colspan="4">
             <div class="recommended-members-container" data-session-id="{{ role.session_id }}">
-                <div class="recommended-label"><i class="fas fa-magic"></i> Recommended (Required for current level):</div>
+                <div class="recommended-label"><i class="fas fa-magic"></i> Recommended (Required for current level):
+                </div>
                 <div class="recommendation-badges">
                     {% for member in required_roles_by_role[norm_role] %}
-                    <div class="recommendation-badge" 
-                         data-contact-id="{{ member.id }}" 
-                         data-contact-name="{{ member.name }}"
-                         title="{{ member.name }}">
-                        <img src="{{ url_for('static', filename=(config.AVATAR_ROOT_DIR ~ '/' ~ member.avatar_url if '/' not in member.avatar_url else member.avatar_url)) }}" alt="{{ member.name }}">
+                    <div class="recommendation-badge" data-contact-id="{{ member.id }}"
+                        data-contact-name="{{ member.name }}" title="{{ member.name }}">
+                        <img src="{{ url_for('static', filename=(config.AVATAR_ROOT_DIR ~ '/' ~ member.avatar_url if '/' not in member.avatar_url else member.avatar_url)) }}"
+                            alt="{{ member.name }}">
                         <span class="badge-name">{{ member.name }}</span>
                     </div>
                     {% endfor %}
@@ -297,8 +310,8 @@
     <p>Booking for Meeting #{{
         selected_meeting_number }} is closed.
         Please visit the <a
-                href="{{ url_for('voting_bp.voting', selected_meeting_number=selected_meeting_number) }}">Voting
-                page</a> to cast your votes.</p>
+            href="{{ url_for('voting_bp.voting', selected_meeting_number=selected_meeting_number) }}">Voting
+            page</a> to cast your votes.</p>
     {% else %}
     {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
     current_user_contact_id) }}
@@ -316,13 +329,13 @@
     var selectedMeetingNumber = {{ selected_meeting_number| tojson }};
     var allContacts = [
         {% for contact in contacts %}
-        {
-            id: {{ contact.id }},
-            name: {{ contact.Name | tojson }},
-            type: {{ contact.Type | tojson }},
-            avatar_url: {{ (url_for('static', filename=(config.AVATAR_ROOT_DIR ~ '/' ~ contact.Avatar_URL if '/' not in contact.Avatar_URL else contact.Avatar_URL)) if contact.Avatar_URL else url_for('static', filename='default_avatar.jpg')) | tojson }}
-        }{% if not loop.last %},{% endif %}
-        {% endfor %}
+    {
+        id: { { contact.id } },
+        name: { { contact.Name | tojson } },
+        type: { { contact.Type | tojson } },
+        avatar_url: { { (url_for('static', filename = (config.AVATAR_ROOT_DIR ~ '/' ~contact.Avatar_URL if '/' not in contact.Avatar_URL else contact.Avatar_URL)) if contact.Avatar_URL else url_for('static', filename = 'default_avatar.jpg')) | tojson } }
+    } {% if not loop.last %}, {% endif %}
+    {% endfor %}
     ];
 </script>
 <script src="{{ url_for('static', filename='js/booking.js') }}"></script>

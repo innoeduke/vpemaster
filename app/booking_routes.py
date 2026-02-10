@@ -643,6 +643,11 @@ def book_or_assign_role():
 
             return jsonify(success=True, updated_sessions=updated_sessions)
 
+        elif action == 'remove_waitlist' and is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
+            contact_id_to_remove = data.get('contact_id')
+            success, msg = RoleService.leave_waitlist(log, contact_id_to_remove)
+            return jsonify(success=success, message=msg)
+
         else:
             return jsonify(success=False, message="Invalid action or permissions."), 403
 
