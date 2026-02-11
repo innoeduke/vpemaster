@@ -30,16 +30,15 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     style="display: flex; align-items: center; gap: 0.5rem; {{ extra_style }}">
     {% endif %}
     
-    <div class="filter-controls-inner" style="display: flex; align-items: center; flex-wrap: nowrap; gap: 4px; flex: 1;">
-        <button id="{{ select_id }}-prev" type="button" class="nav-btn prev-meeting" title="Previous Meeting" style="background: none; border: none; cursor: pointer; color: #772413; font-size: 2em; padding: 2px; flex-shrink: 0; line-height: 1;">
-            <i class="fas fa-caret-left"></i>
-        </button>
-
+    <div class="filter-controls-inner">
         {% if label %}
-        <label for="{{ select_id }}-search" style="margin-right: 0.5rem; white-space: nowrap;">{{ label }}</label>
+        <label for="{{ select_id }}-search" class="filter-label">{{ label }}</label>
         {% endif %}
 
-        <div class="meeting-autocomplete-container" id="{{ select_id }}-autocomplete-container" style="min-width: 0; flex-grow: 1;">
+        <div class="meeting-autocomplete-container" id="{{ select_id }}-autocomplete-container">
+            <button id="{{ select_id }}-prev" type="button" class="nav-btn nav-btn-left prev-meeting" title="Previous Meeting">
+            <i class="fas fa-caret-left"></i>
+            </button>
             <div class="search-input-wrapper">
                 {% if show_icon %}
                 <i class="fas fa-search search-icon"></i>
@@ -97,11 +96,10 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
                     <option value="{{ num }}" {% if ns.selected_value|string == num|string %}selected{% endif %}>{{ num }}</option>
                 {% endfor %}
             </select>
+            <button id="{{ select_id }}-next" type="button" class="nav-btn nav-btn-right next-meeting" title="Next Meeting">
+                <i class="fas fa-caret-right"></i>
+            </button>
         </div>
-
-        <button id="{{ select_id }}-next" type="button" class="nav-btn next-meeting" title="Next Meeting" style="background: none; border: none; cursor: pointer; color: #772413; font-size: 2em; padding: 2px; flex-shrink: 0; line-height: 1;">
-            <i class="fas fa-caret-right"></i>
-        </button>
     </div>
 
     {% if render_outer_container %}
@@ -135,15 +133,18 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     function filterItems() {
         const query = input.value.toLowerCase();
         let firstVisible = -1;
+        let visibleCount = 0;
         items.forEach((item, index) => {
             const text = item.innerText.toLowerCase();
             if (text.includes(query)) {
                 item.style.display = 'flex';
+                visibleCount++;
                 if (firstVisible === -1) firstVisible = index;
             } else {
                 item.style.display = 'none';
             }
         });
+        results.style.display = visibleCount > 0 ? 'block' : 'none';
         highlightedIndex = -1;
         updateHighlight();
     }

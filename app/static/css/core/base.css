@@ -392,8 +392,3 @@ h1 {
     margin: 15px 0;
 }
 
-@media (max-width: 768px) {
-    .mobile-divisor {
-        display: block;
-    }
-}

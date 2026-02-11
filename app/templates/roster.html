@@ -21,8 +21,7 @@
             </a>
         </div>
         
-        {{ render_meeting_filter(all_meetings, selected_meeting_num, label='', data_format='object',
-            select_id='roster-meeting-filter', extra_style="margin-bottom: 5px;") }}
+        {{ render_meeting_filter(all_meetings, selected_meeting_num, label='', data_format='object') }}
 
         {% if selected_meeting %}
         <div class="roster-main-content">

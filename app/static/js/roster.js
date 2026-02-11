@@ -1,7 +1,7 @@
 // Cache DOM elements once for better performance
 function cacheElements() {
   return {
-    meetingFilter: document.getElementById("meeting-filter") || document.getElementById("roster-meeting-filter"),
+    meetingFilter: document.getElementById("meeting-filter"),
     rosterForm: document.getElementById("roster-form"),
     tableBody: document.querySelector(".table tbody"),
     cancelEditBtn: document.getElementById("cancel-edit"),
@@ -53,7 +53,7 @@ function showSuggestions(filteredContacts, elements) {
       elements.contactNameInput.parentNode.appendChild(suggestionsContainer);
     }
   }
-  
+
   suggestionsContainer.innerHTML = '';
   if (filteredContacts.length === 0) {
     suggestionsContainer.style.display = 'none';
@@ -75,7 +75,7 @@ function showSuggestions(filteredContacts, elements) {
   filteredContacts.forEach(contact => {
     const div = document.createElement('div');
     div.className = 'autocomplete-suggestion';
-    
+
     let displayText = contact.Name;
     if (contact.Type === 'Guest' && contact.Phone_Number) {
       const phone = contact.Phone_Number;
@@ -83,14 +83,14 @@ function showSuggestions(filteredContacts, elements) {
       displayText += ` (${last4})`;
     }
     div.textContent = displayText;
-    
+
     // Use mousedown instead of click to fire before input blur
     div.addEventListener('mousedown', (e) => {
       e.preventDefault(); // Prevent input blur from hiding suggestions
       selectContact(contact, elements);
       hideSuggestions();
     });
-    
+
     suggestionsContainer.appendChild(div);
   });
   suggestionsContainer.style.display = 'block';
@@ -106,13 +106,13 @@ function hideSuggestions() {
 // Select a contact from autocomplete
 function selectContact(contact, elements) {
   if (!contact) return;
-  
+
   console.log(`[Roster] Selecting contact: ${contact.Name} (ID: ${contact.id}, is_officer: ${contact.is_officer})`);
 
   // Check if contact already exists in the roster table for this meeting
   // Try ID first, then fallback to Name if ID is missing or not found
   let existingRow = contact.id ? elements.tableBody.querySelector(`tr[data-contact-id="${contact.id}"]`) : null;
-  
+
   if (!existingRow) {
     existingRow = Array.from(elements.tableBody.querySelectorAll('tr')).find(tr => {
       const nameCell = tr.querySelector('.cell-name');
@@ -168,13 +168,13 @@ function initializeRosterAutocomplete(elements) {
     }
     const filteredContacts = contacts.filter(c => c && c.Name && c.Name.toLowerCase().includes(query));
     showSuggestions(filteredContacts, elements);
-    
+
     // Auto-resolve ID if exact match is typed
     const exactMatch = contacts.find(c => c.Name.toLowerCase() === query);
     if (exactMatch) {
-        elements.contactIdInput.value = exactMatch.id;
+      elements.contactIdInput.value = exactMatch.id;
     } else {
-        elements.contactIdInput.value = "";
+      elements.contactIdInput.value = "";
     }
   });
 
@@ -182,10 +182,10 @@ function initializeRosterAutocomplete(elements) {
   elements.contactNameInput.addEventListener('change', () => {
     const val = elements.contactNameInput.value.trim().toLowerCase();
     if (!val) return;
-    
+
     const exactMatch = contacts.find(c => c.Name.toLowerCase() === val);
     if (exactMatch) {
-        selectContact(exactMatch, elements);
+      selectContact(exactMatch, elements);
     }
   });
 
@@ -239,7 +239,7 @@ function initializeContactTypeHandler(elements) {
 
     const contactType = this.value;
     const currentTicket = elements.ticketSelect.value;
-    
+
     // A "default" ticket is one that is empty, "Early-bird", "Role-taker", or "Officer"
     const isDefaultTicket = !currentTicket || currentTicket === "Early-bird" || currentTicket === "Role-taker" || currentTicket === "Officer";
 
@@ -309,27 +309,27 @@ function populateRosterEditForm(rosterId, elements) {
     })
     .then(entry => {
       elements.entryIdInput.value = entry.id;
-      
+
       // Load order number if not null, otherwise set to empty string
       // Setting to empty string will trigger automatic calculation in the type change handler
       elements.orderNumberInput.value = (entry.order_number !== null && entry.order_number !== undefined) ? entry.order_number : "";
-      
+
       elements.contactIdInput.value = entry.contact_id;
       elements.contactNameInput.value = entry.contact_name;
       elements.ticketSelect.value = entry.ticket;
 
       if (entry.contact_type) {
         elements.contactTypeSelect.value = entry.contact_type;
-        
+
         // Force ticket to Officer if type is Officer (fix for existing data)
         if (entry.contact_type === 'Officer') {
-            elements.ticketSelect.value = 'Officer';
+          elements.ticketSelect.value = 'Officer';
         }
 
         // This dispatch will handle correctly updating the order number if it was null
         elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
-      
+
       // Also sync ticket dropdown
       if (elements.ticketSelect.value) {
         elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
@@ -548,7 +548,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   // Attach contact form listener
   const contactForm = document.getElementById("contactForm");
   if (contactForm) {
-      contactForm.addEventListener("submit", handleContactFormSubmit);
+    contactForm.addEventListener("submit", handleContactFormSubmit);
   }
 
   // Fetch contacts before initializing autocomplete

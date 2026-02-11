@@ -60,6 +60,7 @@
 		height: 50px;
 		margin-left: 0;
 		flex-shrink: 0;
+		overflow: visible !important;
 	}
 
 	/* Container adjustments */
@@ -75,15 +76,17 @@
 	/* Filter container mobile layout */
 	.filters-container.premium {
 		padding: 15px;
+		overflow: visible;
 	}
 
 	.filter-row-premium {
 		flex-direction: column;
 		align-items: center;
 		gap: 15px;
+		overflow: visible;
 	}
 
-	.filter-row-premium .filter-left,
+	.filter-row-premium .filter-controls-inner,
 	.filter-row-premium .filter-right {
 		width: 100%;
 		justify-content: center;
@@ -102,8 +105,7 @@
 	}
 
 	.filters-container.premium .role-guide-link {
-		width: auto !important;
-		flex: 1;
+		width: 100% !important;
 		box-sizing: border-box;
 		justify-content: center;
 		font-size: 0.85rem;
@@ -169,7 +171,7 @@
 		font-size: 0.9em;
 		width: 120px;
 		min-width: 120px;
-		overflow: hidden;
+		overflow: visible;
 	}
 
 	/* Allow avatars to display side by side on mobile */
@@ -184,6 +186,8 @@
 		scrollbar-width: none;
 		/* Hide scrollbar for Firefox */
 		max-width: 100%;
+		padding: 10px 5px;
+		margin: -10px -5px;
 	}
 
 	.booking-table .status-cell .status-cell-content::-webkit-scrollbar {
@@ -201,6 +205,7 @@
 	.booking-table .assign-cell {
 		grid-area: action;
 		justify-content: flex-end;
+		min-width: 0;
 	}
 
 	.booking-table .icon-cell {
@@ -287,15 +292,22 @@
 		/* Slightly smaller for mobile */
 	}
 
-	.admin-assign-input {
+	/* Specificity fix: override global forms-mobile.css (0,3,2) with (0,4,1) */
+	:root body .booking-container .booking-table .admin-assign-input {
 		font-size: 0.8em;
 		height: 30px;
+		min-height: 30px;
 		padding: 2px 8px;
 		border-radius: 6px;
+		width: 100%;
+		min-width: 0;
+		display: block;
+		max-width: 100%;
 	}
 
-	.btn-reset-role {
+	.booking-container .btn-reset-role {
 		height: 30px !important;
+		min-height: 0 !important;
 		width: 24px !important;
 		font-size: 0.8em !important;
 	}
