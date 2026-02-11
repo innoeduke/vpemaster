@@ -265,3 +265,9 @@
         box-shadow: none;
     }
 }
+
+@media (max-width: 768px) {
+    .mobile-divisor {
+        display: block;
+    }
+}

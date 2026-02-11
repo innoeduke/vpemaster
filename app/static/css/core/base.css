@@ -381,3 +381,19 @@ h1 {
 .app-footer a:hover {
     text-decoration: underline;
 }
+
+/* --- Global Utilities --- */
+
+/* Mobile divisor line - hidden on desktop, visible on mobile */
+.mobile-divisor {
+    display: none;
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 15px 0;
+}
+
+@media (max-width: 768px) {
+    .mobile-divisor {
+        display: block;
+    }
+}
