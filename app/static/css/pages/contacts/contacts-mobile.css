@@ -4,111 +4,140 @@
    ======================================== */
 
 @media (max-width: 768px) {
+  /* Contact Book Responsive Fixes */
+  .contact-action-bar,
+  .action-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
 
-	/* Contact Book Responsive Fixes */
-	.contact-action-bar,
-	.action-bar {
-		flex-direction: column;
-		align-items: stretch;
-	}
+  .stats-container {
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
 
-	.stats-container {
-		justify-content: center;
-		margin-bottom: 1rem;
-	}
+  .contacts-filter-container {
+    background-color: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 1rem;
+    align-items: stretch;
+  }
 
-	.search-and-buttons {
-		flex-direction: column;
-		align-items: stretch;
-	}
+  #term-dropdown-btn {
+    width: 100%;
+  }
 
-	.search-container {
-		flex: 1;
-		min-width: unset;
-		width: 100%;
-	}
+  .contacts-term-filter-form {
+    max-width: none;
+    width: 100%;
+  }
 
-	.search-container input {
-		width: 100%;
-	}
+  .search-and-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
 
-	.button-group {
-		width: 100%;
-		justify-content: center;
-	}
+  .search-container {
+    flex: 1;
+    min-width: unset;
+    width: 100%;
+  }
 
-	/* Hide Member ID Badge on Mobile */
-	.badge-member-id {
-		display: none;
-	}
+  .search-container input {
+    width: 100%;
+  }
 
-	/* Contacts Page Responsive Fixes */
-	.contact-table-container {
-		display: block;
-	}
+  .button-group {
+    width: 100%;
+    justify-content: center;
+    display: flex;
+    gap: 10px;
+  }
 
-	#contactsTable {
-		display: block;
-		width: 100%;
-		margin: 0;
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-		font-size: 0.9em;
-	}
+  .button-group .btn {
+    flex: 1;
+  }
 
-	/* Column widths and visibility on mobile */
-	#contactsTable .col-checkbox,
-	#contactsTable .checkbox-header {
-		width: 40px !important;
-		min-width: 40px !important;
-		padding: 0 !important;
-	}
+  /* Hide Member ID Badge on Mobile */
+  .badge-member-id {
+    display: none;
+  }
 
-	#contactsTable .col-name {
-		min-width: 140px;
-	}
+  /* Contacts Page Responsive Fixes */
+  .contact-table-container {
+    display: block;
+  }
 
-	#contactsTable .col-part {
-		width: 80px !important;
-		min-width: 80px !important;
-	}
+  #contactsTable {
+    display: block;
+    width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    font-size: 0.9em;
+  }
 
-	#contactsTable .col-actions {
-		width: 50px !important;
-		min-width: 50px !important;
-		padding: 8px 0 !important;
-	}
+  /* Column widths and visibility on mobile */
+  #contactsTable .col-checkbox,
+  #contactsTable .checkbox-header {
+    width: 40px !important;
+    min-width: 40px !important;
+    padding: 0 !important;
+  }
 
-	#contactsTable .action-links {
-		white-space: nowrap;
-		justify-content: center;
-	}
+  #contactsTable .col-name {
+    min-width: 140px;
+  }
 
-	/* Mobile: Show Checkbox, Name, Participation, Actions. Hide others. */
-	#contactsTable .col-phone,
-	#contactsTable .col-date,
-	#contactsTable .col-club,
-	#contactsTable .col-paths,
-	#contactsTable .col-creds,
-	#contactsTable .col-next,
-	#contactsTable .col-mentor {
-		display: none;
-	}
+  #contactsTable .col-part {
+    width: 1% !important;
+    min-width: 80px !important;
+    white-space: nowrap;
+  }
 
-	/* Compact participation badges for mobile */
-	.participation-badge {
-		padding: 1px 4px;
-		font-size: 0.75em;
-	}
+  /* Mobile: Show Checkbox, Name, Participation. Hide Actions and others. */
+  #contactsTable .col-phone,
+  #contactsTable .col-date,
+  #contactsTable .col-club,
+  #contactsTable .col-paths,
+  #contactsTable .col-creds,
+  #contactsTable .col-next,
+  #contactsTable .col-mentor,
+  #contactsTable .col-actions {
+    display: none;
+  }
 
-	.participation-container {
-		flex-wrap: wrap;
-		gap: 3px;
-	}
+  /* Compact participation badges for mobile */
+  .participation-badge {
+    padding: 1px 4px;
+    font-size: 0.75em;
+  }
 
-	/* Hide specific action icons for Guests on Mobile */
-	tr[data-type="Guest"] .toggle-connection-btn,
-	tr[data-type="Guest"] .edit-contact-btn {
-		display: none !important;
-	}
+  .participation-container {
+    flex-wrap: nowrap;
+    gap: 3px;
+  }
+
+  /* Hide specific action icons for Guests on Mobile */
+  tr[data-type="Guest"] .edit-contact-btn {
+    display: none !important;
+  }
+
+  /* Hide toggle connection button for all on mobile */
+  .toggle-connection-btn {
+    display: none !important;
+  }
+
+  /* Stack contact form grid on mobile */
+  .contact-form-grid {
+    grid-template-columns: 1fr;
+  }
 }

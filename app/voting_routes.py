@@ -359,10 +359,7 @@ def voting(selected_meeting_number):
     # Access Control Logic
     meeting = context.get('selected_meeting')
     if meeting:
-        if meeting.status in ['unpublished', 'not started']:
-            if not is_authorized(Permissions.VOTING_TRACK_PROGRESS):
-                return redirect(url_for('agenda_bp.meeting_notice', meeting_number=meeting.Meeting_Number))
-        elif meeting.status == 'finished':
+        if meeting.status == 'finished':
             # Finished meetings: Only users with VOTING_VIEW_RESULTS can see results
             # Others (guests and regular users) should not access this page
             if not is_authorized(Permissions.VOTING_VIEW_RESULTS):

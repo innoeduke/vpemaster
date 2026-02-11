@@ -1,241 +1,86 @@
-{% extends "base.html" %}
-{% block title %}Contacts{% endblock %}
+{% extends "base.html" %} {% block title %}Contacts{% endblock %} {% block
+head_extra %}
 
-{% block head_extra %}
-<style>
-.loading-spinner-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-}
-
-.loading-spinner {
-  text-align: center;
-  color: #666;
-}
-
-.loading-spinner i {
-  font-size: 3rem;
-  color: #004165;
-  margin-bottom: 1rem;
-  display: block;
-}
-
-.loading-spinner p {
-  font-size: 1.1rem;
-  margin: 0;
-}
-</style>
-{% endblock %}
-
-{% block content %}
+{% endblock %} {% block content %}
 <h1><i class="fas fa-book"></i> Contacts</h1>
 
 <div class="contact-action-bar">
-  <!-- Term Filter for Metrics -->
-  <form method="GET" action="{{ url_for('contacts_bp.show_contacts') }}" id="contacts-term-filter-form" style="margin-right: 20px; flex: 1; max-width: 400px;">
-      <div class="form-group" style="display: flex; align-items: center; margin-bottom: 0;">
-          <label style="margin-right: 10px; font-weight: bold; white-space: nowrap;">Club Term:</label>
-          
-          <div class="custom-dropdown" id="term-dropdown-container" style="position: relative; flex: 1;">
-              <button type="button" id="term-dropdown-btn" class="form-control" style="text-align: left; background: #fff; cursor: pointer; display: flex; justify-content: space-between; align-items: center; height: auto; padding: 6px 12px;" onclick="toggleTermDropdown(event)">
-                  <span id="term-btn-text">
-                    {% if selected_term_ids %}
-                        {{ selected_term_ids|length }} selected
-                    {% else %}
-                        0 selected
-                    {% endif %}
-                  </span>
-                  <i class="fas fa-caret-down"></i>
-              </button>
-              
-              <div id="term-dropdown-menu" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ccc; border-radius: 4px; max-height: 400px; overflow-y: auto; z-index: 1000; padding: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">
-                  
-                  <label style="display: block; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #eee; font-weight: bold; margin-bottom: 5px;">
-                      <input type="checkbox" id="term-select-all" onchange="toggleAllTerms(this)" style="margin-right: 8px; vertical-align: middle;" {% if terms and selected_term_ids|length == terms|length %}checked{% endif %}> 
-                      Select / Deselect All
-                  </label>
-                  
-                  {% for term in terms %}
-                  <label style="display: block; padding: 5px 10px; cursor: pointer; font-weight: normal; margin-bottom: 0;">
-                      <input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox" 
-                             data-label="{{ term.label }}" data-start="{{ term.start }}" data-end="{{ term.end }}"
-                             onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{% endif %} style="margin-right: 8px; vertical-align: middle;">
-                      {{ term.label }}
-                  </label>
-                  {% endfor %}
-              </div>
-          </div>
-      </div>
-  </form>
-
-  <script>
-    // Initialize state on load
-    document.addEventListener('DOMContentLoaded', function() {
-        updateTermSelection(true); // true = skip UI update just count? No, update all state.
-    });
-
-    function toggleTermDropdown(event) {
-        event.stopPropagation();
-        event.preventDefault(); // Prevent accidental submission if button type wrong
-        const menu = document.getElementById('term-dropdown-menu');
-        if (menu.style.display === 'none') {
-            menu.style.display = 'block';
-        } else {
-            closeDropdownAndSubmit();
-        }
-    }
-
-    function toggleAllTerms(source) {
-        const checkboxes = document.querySelectorAll('.term-checkbox');
-        checkboxes.forEach(cb => cb.checked = source.checked);
-        updateTermSelection();
-    }
-
-    function updateTermSelection() {
-        const checkboxes = document.querySelectorAll('.term-checkbox');
-        const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
-        const selectedCount = selectedCheckboxes.length;
-        const totalCount = checkboxes.length;
-        
-        // Update Count/Range Text
-        const btnText = document.getElementById('term-btn-text');
-        
-        if (selectedCount === totalCount && totalCount > 0) {
-            btnText.textContent = "All Terms";
-        } else if (selectedCount === 0) {
-            btnText.textContent = "0 selected";
-        } else {
-            // Logic to combine adjacent terms
-            // 1. Sort by start date
-            selectedCheckboxes.sort((a, b) => a.dataset.start.localeCompare(b.dataset.start));
-            
-            const ranges = [];
-            if (selectedCheckboxes.length > 0) {
-                let currentRange = {
-                    startLabel: selectedCheckboxes[0].dataset.label.split(' ')[1], // e.g. "Jan-Jun"
-                    startYear: selectedCheckboxes[0].dataset.label.split(' ')[0],
-                    endLabel: selectedCheckboxes[0].dataset.label.split(' ')[1],
-                    endYear: selectedCheckboxes[0].dataset.label.split(' ')[0],
-                    fullStart: selectedCheckboxes[0].dataset.start,
-                    fullEnd: selectedCheckboxes[0].dataset.end,
-                    count: 1
-                };
-                
-                for (let i = 1; i < selectedCheckboxes.length; i++) {
-                    const next = selectedCheckboxes[i];
-                    const prevEnd = new Date(currentRange.fullEnd);
-                    const nextStart = new Date(next.dataset.start);
-                    
-                    // Check if adjacent: next start is within 1 day of prev end
-                    const diffTime = Math.abs(nextStart - prevEnd);
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                    
-                    if (diffDays <= 2) { // 1 day gap (e.g. Jun 30 to Jul 01)
-                        currentRange.endLabel = next.dataset.label.split(' ')[1];
-                        currentRange.endYear = next.dataset.label.split(' ')[0];
-                        currentRange.fullEnd = next.dataset.end;
-                        currentRange.count++;
-                    } else {
-                        ranges.push(formatRange(currentRange));
-                        currentRange = {
-                            startLabel: next.dataset.label.split(' ')[1],
-                            startYear: next.dataset.label.split(' ')[0],
-                            endLabel: next.dataset.label.split(' ')[1],
-                            endYear: next.dataset.label.split(' ')[0],
-                            fullStart: next.dataset.start,
-                            fullEnd: next.dataset.end,
-                            count: 1
-                        };
-                    }
-                }
-                ranges.push(formatRange(currentRange));
-            }
-            
-            btnText.textContent = ranges.join(', ');
-        }
-        
-        // Helper to format a single range
-        function formatRange(range) {
-            if (range.count === 1) {
-                return `${range.startYear} ${range.startLabel}`;
-            }
-            const s = range.startLabel.split('-')[0]; // "Jan"
-            const e = range.endLabel.split('-')[1];   // "Dec"
-            return `${range.startYear} ${s} - ${range.endYear} ${e}`;
-        }
-        
-        // Update Select All Checkbox State
-        const selectAll = document.getElementById('term-select-all');
-        if (selectedCount === totalCount && totalCount > 0) {
-            selectAll.checked = true;
-            selectAll.indeterminate = false;
-        } else if (selectedCount === 0) {
-            selectAll.checked = false;
-            selectAll.indeterminate = false;
-        } else {
-            selectAll.checked = false;
-        }
-    }
-
-    function closeDropdownAndSubmit() {
-        const menu = document.getElementById('term-dropdown-menu');
-        menu.style.display = 'none';
-        
-        // Check if we need to submit (simple comparison could trigger only on change, 
-        // but explicit requirements say "wait for users... only by then close". 
-        // Submitting every time on close is safe.)
-        document.getElementById('contacts-term-filter-form').submit();
-    }
-
-    // Close on click outside
-    document.addEventListener('click', function(event) {
-        const container = document.getElementById('term-dropdown-container');
-        const menu = document.getElementById('term-dropdown-menu');
-        
-        if (menu.style.display === 'block' && !container.contains(event.target)) {
-            closeDropdownAndSubmit();
-        }
-    });
-    
-    // Prevent clicks inside menu from closing it
-    document.getElementById('term-dropdown-menu').addEventListener('click', function(event) {
-        event.stopPropagation();
-    });
-  </script>
-
   <div class="stats-container">
     <div class="stat-item">
       <div class="stat-value" style="color: #007bff">{{ total_contacts }}</div>
       <div class="stat-label">Total Contacts</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value" style="color: #28a745">{{ type_counts.get('Member', 0) }}</div>
+      <div class="stat-value" style="color: #28a745">
+        {{ type_counts.get('Member', 0) }}
+      </div>
       <div class="stat-label">Total Members</div>
     </div>
   </div>
 
-  <div class="search-and-buttons">
-    <div class="search-container">
-      <input type="text" id="searchInput" placeholder="Search all columns..." class="search-box" />
-      <button id="clear-searchInput" class="clear-search-btn" style="display: none">
-        &times;
-      </button>
+  <div class="contacts-filter-container">
+    <!-- Term Filter for Metrics -->
+    <form method="GET" action="{{ url_for('contacts_bp.show_contacts') }}" id="contacts-term-filter-form"
+      class="contacts-term-filter-form">
+      <div class="form-group">
+        <label class="filter-label">Club Term:</label>
+
+        <div class="custom-dropdown-container" id="term-dropdown-container">
+          <button type="button" id="term-dropdown-btn" class="form-control term-dropdown-btn"
+            onclick="toggleTermDropdown(event)">
+            <span id="term-btn-text">
+              {% if selected_term_ids %} {{ selected_term_ids|length }} selected
+              {% else %} 0 selected {% endif %}
+            </span>
+            <i class="fas fa-caret-down"></i>
+          </button>
+
+          <div id="term-dropdown-menu" class="term-dropdown-menu">
+            <label class="term-select-all-label">
+              <input type="checkbox" id="term-select-all" class="term-checkbox-input" onchange="toggleAllTerms(this)" {%
+                if terms and selected_term_ids|length==terms|length %}checked{% endif %} />
+              Select / Deselect All
+            </label>
+
+            {% for term in terms %}
+            <label class="term-option-label">
+              <input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox term-checkbox-input"
+                data-label="{{ term.label }}" data-start="{{ term.start }}" data-end="{{ term.end }}"
+                onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{%
+                endif %} />
+              {{ term.label }}
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="search-and-buttons">
+      <div class="search-container">
+        <label for="searchInput" class="filter-label">Search Contact:</label>
+        <div style="position: relative">
+          <input type="text" id="searchInput" placeholder="Search all columns..." class="search-box" />
+          <button id="clear-searchInput" class="clear-search-btn" style="display: none">
+            &times;
+          </button>
+        </div>
+      </div>
+      {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+      <div class="button-group">
+        <button class="btn btn-success" onclick="openContactModal()">
+          Add New
+        </button>
+        <button id="mergeContactsBtn" class="btn btn-warning" onclick="handleMergeClick()" style="display: none"
+          title="Select at least 2 contacts to merge">
+          Merge
+        </button>
+        <button class="btn btn-primary" onclick="window.location.href='{{ url_for('roster_bp.roster') }}'">
+          Open Roster
+        </button>
+      </div>
+      {% endif %}
     </div>
-    {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
-    <div class="button-group">
-      <button class="btn btn-success" onclick="openContactModal()">
-        Add New 
-      </button>
-      <button id="mergeContactsBtn" class="btn btn-warning" onclick="handleMergeClick()" style="display: none;" title="Select at least 2 contacts to merge">
-        Merge
-      </button>
-      <button class="btn btn-primary" onclick="window.location.href='{{ url_for('roster_bp.roster') }}'">
-        Open Roster
-      </button>
-    </div>
-    {% endif %}
   </div>
 </div>
 
@@ -243,7 +88,8 @@
 <div class="nav-tabs" id="contactsTabs">
   {% for contact_type in contact_types %}
   <div class="nav-item {% if loop.first %}active{% endif %}" data-type="{{ contact_type }}">
-    {{ contact_type }} <span class="tab-badge">{{ type_counts[contact_type] }}</span>
+    {{ contact_type }}
+    <span class="tab-badge">{{ type_counts[contact_type] }}</span>
   </div>
   {% endfor %}
 </div>
@@ -257,121 +103,48 @@
     </div>
   </div>
 
-  <table id="contactsTable" style="display: none;">
+  <table id="contactsTable" style="display: none">
     <thead>
       <tr>
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
-        <th class="checkbox-header" style="width: 40px; text-align: center;"><input type="checkbox" id="selectAllContacts" onclick="toggleSelectAll(this)"></th>
+        <th class="checkbox-header" style="width: 40px; text-align: center">
+          <input type="checkbox" id="selectAllContacts" onclick="toggleSelectAll(this)" />
+        </th>
         {% endif %}
-        <th class="sortable col-name" data-column-index="0" data-sort-type="string">Name</th>
+        <th class="sortable col-name" data-column-index="0" data-sort-type="string">
+          Name
+        </th>
         <th class="sortable col-part" data-column-index="1" data-sort-type="string">
           Metrics
         </th>
-        <th class="sortable col-phone" data-column-index="2" data-sort-type="string">Phone</th>
-        <th class="sortable col-date" data-column-index="3" data-sort-type="date">Date Created</th>
-        <th class="sortable col-club" data-column-index="4" data-sort-type="string">Club</th>
-        <th class="sortable col-paths" data-column-index="5" data-sort-type="string">Completed Paths</th>
-        <th class="sortable col-creds" data-column-index="6" data-sort-type="string">Credentials</th>
-        <th class="sortable col-next" data-column-index="7" data-sort-type="string">Next Project</th>
-        <th class="sortable col-mentor" data-column-index="8" data-sort-type="string">Mentor</th>
+        <th class="sortable col-phone" data-column-index="2" data-sort-type="string">
+          Phone
+        </th>
+        <th class="sortable col-date" data-column-index="3" data-sort-type="date">
+          Date Created
+        </th>
+        <th class="sortable col-club" data-column-index="4" data-sort-type="string">
+          Club
+        </th>
+        <th class="sortable col-paths" data-column-index="5" data-sort-type="string">
+          Completed Paths
+        </th>
+        <th class="sortable col-creds" data-column-index="6" data-sort-type="string">
+          Credentials
+        </th>
+        <th class="sortable col-next" data-column-index="7" data-sort-type="string">
+          Next Project
+        </th>
+        <th class="sortable col-mentor" data-column-index="8" data-sort-type="string">
+          Mentor
+        </th>
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
         <th class="action-header col-actions" data-column-index="9"></th>
         {% endif %}
       </tr>
     </thead>
     <tbody>
-      {% for contact in contacts %}
-      <tr data-type="{{ contact.Type }}" data-contact-id="{{ contact.id }}">
-        {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
-        <td class="col-checkbox" style="text-align: center;"><input type="checkbox" class="contact-select-checkbox" data-id="{{ contact.id }}" onchange="updateMergeButtonState()"></td>
-        {% endif %}
-        <td class="col-name">
-          <div class="contact-name-cell">
-            {% if contact.Avatar_URL %}
-            {# Check if the URL is already a full path (legacy) or just a filename (new) #}
-            {% set avatar_path = contact.Avatar_URL %}
-            {% if '/' not in avatar_path %}
-              {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
-            {% endif %}
-            <img src="{{ url_for('static', filename=avatar_path) }}" alt="Avatar" class="contact-avatar-small">
-            {% else %}
-            <div class="contact-avatar-placeholder-small">
-              <i class="fas fa-user"></i>
-            </div>
-            {% endif %}
-            <div class="contact-name-info {% if can_view_all_logs %}clickable-name{% endif %}" {% if can_view_all_logs
-              %}onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id, view_mode='member') }}'"
-              title="View {{ contact.Name }}'s speech logs" {% endif %}>
-              {{ contact.Name }}
-              {% if contact.DTM %}
-              <sup class="dtm-superscript">DTM</sup>
-              {% endif %}
-              {% if contact.Member_ID and contact.Type != 'Guest' %}
-              <span class="badge-member-id"
-                style="margin-left: 5px; font-size: 0.8em; vertical-align: text-top; background-color: rgb(231, 231, 228); border-radius: 5px; padding: 2px 5px;">{{
-                contact.Member_ID }}</span>
-              {% endif %}
-            </div>
-          </div>
-        </td>
-        {% set sort_value = ('1' if contact.is_qualified else '0') ~ '_' ~ '%03d'|format(contact.role_count) ~ '_' ~ '%03d'|format(contact.tt_count) ~ '_' ~ '%03d'|format(contact.attendance_count) ~ '_' ~ '%03d'|format(contact.award_count) %}
-        <td class="col-part" data-sort="{{ sort_value }}">
-          <div class="participation-container">
-            {% if contact.is_qualified %}
-            <i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>
-            {% endif %}
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Roles Taken" class="participation-badge badge-roles">
-              <i class="fas fa-user-tag"></i> {{ contact.role_count }}
-            </a>
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Topic Speeches" class="participation-badge badge-tt">
-              <i class="fas fa-comment"></i> {{ contact.tt_count }}
-            </a>
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Attendance" class="participation-badge badge-attendance">
-              <i class="fas fa-calendar-check"></i> {{ contact.attendance_count }}
-            </a>
-            <a href="{{ url_for('speech_logs_bp.show_speech_logs', speaker_id=contact.id) }}" title="Awards Won" class="participation-badge badge-awards">
-              <i class="fas fa-trophy"></i> {{ contact.award_count }}
-            </a>
-          </div>
-        </td>
-        <td class="col-phone">{{ contact.Phone_Number if contact.Phone_Number else '-' }}</td>
-        <td class="col-date">{{ contact.Date_Created.strftime('%Y-%m-%d') if contact.Date_Created else '-' }}</td>
-        {% set primary_club = contact.get_primary_club() %}
-        <td class="col-club">{{ primary_club.club_name if primary_club else '-' }}</td>
-        <td class="col-paths">
-          {% if contact.Completed_Paths and contact.Completed_Paths != '-' %}
-          {% set paths = contact.Completed_Paths.split('/') %}
-          {% for p in paths %}
-          {% set p = p.strip() %}
-          {% set abbr = p[:2]|lower %}
-          <span class="badge-path path-{{ abbr }}">{{ p }}</span>
-          {% endfor %}
-          {% else %}
-          -
-          {% endif %}
-        </td>
-        <td class="col-creds">{{ contact.credentials if contact.credentials else '-' }}</td>
-        <td class="col-next">{{ contact.Next_Project if contact.Next_Project else '-' }}</td>
-        <td class="col-mentor">{{ contact.mentor.Name if contact.mentor else '-' }}</td>
-        {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
-        <td class="col-actions">
-          <div class="action-links">
-            <button class="icon-btn toggle-connection-btn" onclick="toggleConnection({{ contact.id }})" title="{{ 'Connected' if contact.is_connected else 'Disconnected' }}">
-              <i class="fas {{ 'fa-toggle-on' if contact.is_connected else 'fa-toggle-off' }}" style="color: {{ '#28a745' if contact.is_connected else '#6c757d' }}"></i>
-            </button>
-            <button class="icon-btn edit-contact-btn" onclick="openContactModal({{ contact.id }})" title="Edit">
-              <i class="fas fa-edit"></i>
-            </button>
-            {% if contact.Type == 'Guest' %}
-            <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('contacts_bp.delete_contact', contact_id=contact.id) }}', 'contact')" title="Delete">
-              <i class="fas fa-trash-alt"></i>
-            </button>
-            {% endif %}
-          </div>
-        </td>
-        {% endif %}
-      </tr>
-      {% endfor %}
+      <!-- Contacts will be populated by JS -->
     </tbody>
   </table>
 </div>
@@ -381,7 +154,7 @@
   <div class="pagination-info">
     <span id="paginationInfo">Showing 0 - 0 of 0 contacts</span>
   </div>
-  
+
   <div class="pagination-controls">
     <button id="firstPageBtn" class="pagination-btn" title="First Page">
       <i class="fas fa-angle-double-left"></i>
@@ -389,11 +162,11 @@
     <button id="prevPageBtn" class="pagination-btn" title="Previous Page">
       <i class="fas fa-angle-left"></i>
     </button>
-    
+
     <span class="page-indicator">
       Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
     </span>
-    
+
     <button id="nextPageBtn" class="pagination-btn" title="Next Page">
       <i class="fas fa-angle-right"></i>
     </button>
@@ -401,7 +174,7 @@
       <i class="fas fa-angle-double-right"></i>
     </button>
   </div>
-  
+
   <div class="pagination-size">
     <label for="pageSizeSelect">Show:</label>
     <select id="pageSizeSelect" class="page-size-select">
@@ -414,21 +187,45 @@
   </div>
 </div>
 
-{% include '_contact_modal.html' %}
-{% include '_duplicate_modal.html' %}
-{% include '_merge_modal.html' %}
-<script>
-  var MENTOR_CANDIDATES = [
-    {% for m in mentor_candidates %}
-  { id: {{ m.id }}, name: {{ m.Name | tojson }} },
-  {% endfor %}
-  ];
+{% include '_contact_modal.html' %} {% include '_duplicate_modal.html' %} {%
+include '_merge_modal.html' %}
+<script id="contacts-data" type="application/json">
+  {{ contacts_json_data|tojson }}
+</script>
 
-  
+<script id="mentor-data" type="application/json">
+[
+  {% for m in mentor_candidates %}
+  { "id": {{ m.id }}, "name": {{ m.Name | tojson }} }{% if not loop.last %},{% endif %}
+  {% endfor %}
+]
+</script>
+
+<script>
   // Global variables for contacts.js
   var canViewAllLogs = {{ 'true' if can_view_all_logs else 'false' }};
   var hasEditPermission = {{ 'true' if is_authorized(Permissions.CONTACT_BOOK_EDIT) else 'false' }};
-  var INITIAL_CONTACTS = {{ contacts_json_data|tojson }};
+  var selectedTermIds = {{ selected_term_ids|tojson }};
+
+  var INITIAL_CONTACTS = [];
+  try {
+    var dataElement = document.getElementById('contacts-data');
+    if (dataElement) {
+      INITIAL_CONTACTS = JSON.parse(dataElement.textContent);
+    }
+  } catch (e) {
+    console.error("Failed to parse contacts data:", e);
+  }
+
+  var MENTOR_CANDIDATES = [];
+  try {
+    var mentorElement = document.getElementById('mentor-data');
+    if (mentorElement) {
+      MENTOR_CANDIDATES = JSON.parse(mentorElement.textContent);
+    }
+  } catch (e) {
+    console.error("Failed to parse mentor data:", e);
+  }
 </script>
 <script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
 

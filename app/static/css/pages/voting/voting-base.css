@@ -5,350 +5,439 @@
 
 /* --- Page Title with Trend Button --- */
 .page-title-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
 }
 
 .page-title-row h1 {
-	margin: 0;
+  margin: 0;
 }
-
 
 /* --- Disabled Button Style --- */
 #done-voting-btn:disabled {
-	background-color: #e9ecef;
-	color: #adb5bd;
-	cursor: not-allowed;
-	box-shadow: none !important;
-	border: 1px solid #dee2e6;
+  background-color: #e9ecef;
+  color: #adb5bd;
+  cursor: not-allowed;
+  box-shadow: none !important;
+  border: 1px solid #dee2e6;
 }
 
 /* --- Voting Instruction Alert --- */
 .voting-instruction-alert {
-	font-family: 'Montserrat', sans-serif;
-	background-color: #f8f9fa;
-	color: #333;
-	padding: 12px 20px;
-	border-radius: 8px;
-	margin: 10px 0 20px 0;
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	font-size: 0.8em;
-	border: 1px solid #772432;
-	border-left-width: 5px;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  font-family: "Montserrat", sans-serif;
+  background-color: #f8f9fa;
+  color: #333;
+  padding: 12px 20px;
+  border-radius: 8px;
+  margin: 10px 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8em;
+  border: 1px solid #772432;
+  border-left-width: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* --- Accordion Styles --- */
 .award-accordion {
-	margin-top: 20px;
+  margin-top: 20px;
 }
 
 .booking-container .award-accordion .accordion-item {
-	padding: 20px;
-	border-radius: 8px;
-	margin-top: 20px;
-	box-shadow: none;
-	background-color: transparent;
-	border: none;
-	overflow: visible;
+  padding: 20px;
+  border-radius: 8px;
+  margin-top: 20px;
+  box-shadow: none;
+  background-color: transparent;
+  border: none;
+  overflow: visible;
 }
 
 .award-accordion .accordion-header {
-	background-color: transparent;
-	color: #333;
-	font-weight: bold;
-	font-family: 'Montserrat', sans-serif;
-	transition: opacity 0.2s ease;
-	cursor: pointer;
-	padding: 5px 0;
-	width: 100%;
-	text-align: left;
-	outline: none;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	font-size: inherit;
+  background-color: transparent;
+  color: #333;
+  font-weight: bold;
+  font-family: "Montserrat", sans-serif;
+  transition: opacity 0.2s ease;
+  cursor: pointer;
+  padding: 5px 0;
+  width: 100%;
+  text-align: left;
+  outline: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: inherit;
 }
 
 .award-accordion .accordion-header:hover {
-	background-color: transparent;
-	opacity: 0.8;
+  background-color: transparent;
+  opacity: 0.8;
 }
 
 .award-accordion .accordion-header.disabled {
-	cursor: pointer;
+  cursor: pointer;
 }
 
 .award-accordion .accordion-header.disabled .question-text {
-	color: #999;
+  color: #999;
 }
 
 .award-accordion .accordion-header.disabled .question-number {
-	background-color: #ccc;
+  background-color: #ccc;
 }
 
 .award-accordion .accordion-header.active {
-	background-color: transparent;
-	margin-bottom: 15px;
+  background-color: transparent;
+  margin-bottom: 15px;
 }
 
 .award-accordion .accordion-header-right {
-	display: flex;
-	align-items: center;
-	gap: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .award-accordion .accordion-header i {
-	transition: transform 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .award-accordion .accordion-header.active i.fa-chevron-down {
-	transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 .award-accordion .accordion-content {
-	padding: 0;
-	background-color: white;
-	max-height: 0;
-	overflow: hidden;
-	transition: max-height 0.3s ease-out;
+  padding: 0;
+  background-color: white;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
 }
 
 .award-accordion .accordion-content .booking-table {
-	box-shadow: none;
-	border-radius: 0;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 /* --- Voting Icon Styles --- */
 .is-running-meeting .icon-btn.icon-btn-voted .fa-vote-yea {
-	color: #772432;
+  color: #772432;
 }
 
 .winner-label {
-	font-family: 'Montserrat', sans-serif;
-	color: #555;
+  font-family: "Montserrat", sans-serif;
+  color: #555;
 }
 
 .booking-table tr.voted {
-	background-color: #e9f7ef;
-	border-left: 5px solid #28a745;
+  background-color: #e9f7ef;
+  border-left: 5px solid #28a745;
 }
 
 /* --- Vote Bricks --- */
 .vote-bricks-container {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 2px;
-	margin-left: 8px;
-	align-items: center;
-	width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-left: 8px;
+  align-items: center;
+  width: 100%;
 }
 
 .vote-brick {
-	width: 6px;
-	height: 14px;
-	background-color: #772432;
-	border-radius: 2px;
-	transition: transform 0.2s ease;
+  width: 6px;
+  height: 14px;
+  background-color: #772432;
+  border-radius: 2px;
+  transition: transform 0.2s ease;
 }
 
 .vote-brick:hover {
-	transform: scale(1.2);
-	background-color: #5a1b26;
+  transform: scale(1.2);
+  background-color: #5a1b26;
 }
 
 .vote-auto-hide {
-	visibility: hidden;
-	opacity: 0;
+  visibility: hidden;
+  opacity: 0;
 }
 
 .icon-btn.icon-btn-voted {
-	visibility: visible !important;
-	opacity: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* Voted label badge */
 .voted-label {
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	background-color: #28a745;
-	color: white;
-	padding: 6px 12px;
-	border-radius: 20px;
-	font-size: 0.75em;
-	font-weight: bold;
-	white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #28a745;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.75em;
+  font-weight: bold;
+  white-space: nowrap;
+  line-height: 1; /* Center icon and text vertically */
 }
 
 .voted-label i {
-	font-size: 1em;
+  font-size: 1em;
 }
 
 /* --- Unified Voting Section (for NPS and Feedback) --- */
 .booking-container .voting-section {
-	padding: 20px;
-	border-radius: 8px;
-	margin-top: 20px;
-	box-shadow: none;
-	background-color: transparent;
+  padding: 0 !important;
+  border-radius: 8px;
+  margin-top: 20px;
+  box-shadow: none;
+  background-color: transparent;
 }
 
 .section-header {
-	display: flex;
-	align-items: center;
-	gap: 15px;
-	margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
 .section-title {
-	color: #772432;
-	font-weight: 700;
-	font-family: 'Montserrat', sans-serif;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
+  color: #772432;
+  font-weight: 700;
+  font-family: "Montserrat", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-
-
 .rating-question {
-	margin-bottom: 15px;
-	color: #333;
+  margin-bottom: 15px;
+  color: #333;
 }
 
 .rating-question i {
-	color: #a0a0a0;
-	font-size: 0.9em;
+  color: #a0a0a0;
+  font-size: 0.9em;
 }
 
 .rating-scale {
-	display: flex;
-	justify-content: space-between;
-	gap: 0;
-	margin-bottom: 10px;
-	background-color: white;
-	padding: 0;
-	border: 1px solid #ddd;
-	border-radius: 6px;
-	overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  gap: 0;
+  margin-bottom: 10px;
+  background-color: white;
+  padding: 0;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .rating-btn {
-	flex: 1;
-	padding: 12px 0;
-	border: none;
-	border-right: 1px solid #eee;
-	background-color: white;
-	cursor: pointer;
-	font-weight: normal;
-	color: #aaa;
-	min-width: 30px;
-	transition: all 0.2s ease;
-	font-size: 1.1em;
+  flex: 1;
+  padding: 12px 0;
+  border: none;
+  border-right: 1px solid #eee;
+  background-color: white;
+  cursor: pointer;
+  font-weight: normal;
+  color: #aaa;
+  min-width: 30px;
+  transition: all 0.2s ease;
+  font-size: 1.1em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1;
 }
 
 .rating-btn:last-child {
-	border-right: none;
+  border-right: none;
 }
 
 .rating-btn:hover {
-	background-color: #f8f9fa;
-	color: #555;
+  background-color: #f8f9fa;
+  color: #555;
 }
 
 .rating-btn.selected {
-	background-color: #772432;
-	color: white;
-	font-weight: bold;
+  background-color: #772432;
+  color: white;
+  font-weight: bold;
 }
 
 .rating-labels {
-	display: flex;
-	justify-content: space-between;
-	color: #333;
-	font-size: 0.9em;
-	margin-top: 10px;
-	padding: 0 5px;
+  display: flex;
+  justify-content: space-between;
+  color: #333;
+  font-size: 0.9em;
+  margin-top: 10px;
+  padding: 0 5px;
 }
 
 /* --- Feedback Section --- */
 .feedback-question {
-	display: flex;
-	align-items: center;
-	gap: 15px;
-	margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
 /* Standardize question numbers for all sections using specific chained selectors */
 .award-accordion .question-number,
 .voting-section .question-number {
-	background-color: #772432;
-	color: white;
-	width: 30px;
-	height: 30px;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	border-radius: 4px;
-	font-weight: bold;
-	font-size: 16px;
-	font-family: 'Montserrat', sans-serif;
-	flex-shrink: 0;
+  background-color: #772432;
+  color: white;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 16px;
+  font-family: "Montserrat", sans-serif;
+  flex-shrink: 0;
 }
 
 .question-text {
-	font-size: 1em;
-	color: #333;
-	font-weight: normal;
-	font-family: 'Montserrat', sans-serif;
+  font-size: 1em;
+  color: #333;
+  font-weight: normal;
+  font-family: "Montserrat", sans-serif;
 }
 
 .award-accordion .accordion-header .question-text {
-	font-weight: bold;
+  font-weight: bold;
 }
 
 /* Unified styling for both accordion headers and section titles with chained selectors for specificity */
 .booking-container .award-accordion .accordion-header .question-text,
 .booking-container .voting-section .section-header .section-title {
-	background-color: transparent;
-	box-shadow: none;
-	border: none;
-	border-bottom: none;
-	color: #772432;
-	font-weight: 700;
-	font-family: 'Montserrat', sans-serif;
-	padding: 8px 15px;
-	border-radius: 4px;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-	font-size: 1.1em;
-	display: inline-block;
+  background-color: transparent;
+  box-shadow: none;
+  border: none;
+  border-bottom: none;
+  color: #772432;
+  font-weight: 700;
+  font-family: "Montserrat", sans-serif;
+  padding: 8px 15px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 1.1em;
+  display: inline-block;
 }
 
 .feedback-input-container {
-	margin-top: 10px;
+  margin-top: 10px;
 }
 
 .feedback-input {
-	width: 100%;
-	height: 120px;
-	box-sizing: border-box;
-	padding: 15px;
-	border: 1px solid #e0e0e0;
-	border-radius: 6px;
-	background-color: #f8f9fa;
-	font-size: 1em;
-	font-family: inherit;
-	resize: none;
-	transition: border-color 0.2s;
+  width: 100%;
+  height: 120px;
+  box-sizing: border-box;
+  padding: 15px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background-color: #f8f9fa;
+  font-size: 1em;
+  font-family: inherit;
+  resize: none;
+  transition: border-color 0.2s;
 }
 
 .feedback-input:focus {
-	border-color: #7d7d7d;
-	background-color: white;
-	outline: none;
+  border-color: #7d7d7d;
+  background-color: white;
+  outline: none;
+}
+
+/* --- Additional Styles Refactored from Inline --- */
+
+.icon-btn.candidate-shortage {
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.icon-btn.has-voted,
+.icon-btn.winner-cursor,
+.rating-btn:disabled,
+.cursor-default {
+  cursor: default !important;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.candidate-warning {
+  font-size: 0.8em;
+  color: #777;
+  margin-right: 10px;
+}
+
+.accordion-content.force-open {
+  max-height: none !important;
+}
+
+.voting-not-started-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-top: 40px;
+  width: 100%;
+}
+
+.meeting-not-started-msg {
+  font-family: "Montserrat", sans-serif;
+  font-size: 2em;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.meeting-not-started-img-container {
+  text-align: center;
+  margin-top: 0;
+}
+
+.meeting-not-started-img {
+  max-width: 100%;
+  height: auto;
+  border: 5px solid #c5c5c5;
+  border-radius: 15px;
+}
+
+.thank-you-container {
+  text-align: center;
+  margin-top: 40px;
+  padding: 20px;
+}
+
+.thank-you-icon {
+  font-size: 4em;
+  color: #28a745;
+  margin-bottom: 20px;
+}
+
+#batch-vote-actions {
+  text-align: center;
+  margin-top: 20px;
+  padding-bottom: 30px;
+}
+
+#done-voting-btn {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }

@@ -1,0 +1,85 @@
+/* ========================================
+   Forms Mobile Styles
+   For screens <= 768px
+   ======================================== */
+
+@media (max-width: 768px) {
+  :root {
+    --mobile-control-height: 36px;
+  }
+
+  /* Highly specific selectors to ensure inheritance wins over page-specific IDs WITHOUT !important */
+  :root body .btn,
+  :root body button,
+  :root body select,
+  :root body input:not([type="checkbox"]):not([type="radio"]),
+  :root body .meeting-status-display,
+  :root body .custom-select-trigger {
+    height: var(--mobile-control-height);
+    min-height: var(--mobile-control-height);
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0 12px;
+    /* line-height: var(--mobile-control-height); */
+    font-size: 14.5px;
+    font-weight: bold;
+    width: auto;
+    font-family: "Montserrat", sans-serif;
+  }
+
+  /* Autocomplete container needs standard height but NO padding */
+  :root body .meeting-autocomplete-container {
+    height: var(--mobile-control-height);
+    min-height: var(--mobile-control-height);
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0;
+  }
+
+  /* Reset vertical padding and align text for badges and buttons */
+  :root body .btn,
+  :root body .meeting-status-display,
+  :root body .custom-select-trigger {
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: var(--mobile-control-height);
+  }
+
+  /* Truncate text in custom select trigger and position arrow */
+  :root body .custom-select-trigger {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 32px; /* Space for arrow */
+    text-align: left;
+    position: relative;
+  }
+
+  :root body .custom-select-trigger::after {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    line-height: 1;
+  }
+
+  /* Adjust form tables for mobile */
+  .form-table {
+    margin-top: 0;
+  }
+
+  .form-table tr {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-table input[type="text"],
+  .form-table input[type="password"],
+  .form-table input[type="number"],
+  .form-table select {
+    width: 100%;
+  }
+}

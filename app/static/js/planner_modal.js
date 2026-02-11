@@ -17,7 +17,7 @@ const bookBtn = document.getElementById('book-btn');
 let currentMeetingRoles = [];
 let customMeetingSelect, customRoleSelect, customProjectSelect;
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     if (document.getElementById('meeting_number')) {
         customMeetingSelect = new CustomSelect('meeting_number');
     }
@@ -31,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function() {
     if (meetingSelect) {
         meetingSelect.addEventListener('change', loadMeetingRoles);
     }
-    
+
     if (roleSelect) {
         roleSelect.addEventListener('change', () => {
             if (projectChk) projectChk.checked = false;
@@ -51,27 +51,27 @@ document.addEventListener("DOMContentLoaded", function() {
 
 function openPlanModal(planData = null) {
     if (!modal) return;
-    
+
     form.reset();
     document.getElementById('plan-id').value = '';
-    
+
     if (projectGroup) projectGroup.style.display = 'none';
     if (projectChkGroup) projectChkGroup.style.display = 'none';
     if (projectChk) projectChk.checked = false;
     if (dateRow) dateRow.style.display = 'none';
     if (bookBtn) bookBtn.style.display = 'none';
     if (roleSelect) roleSelect.innerHTML = '<option value="">Select Role</option>';
-    
+
     if (planData) {
         // Edit Mode
         document.getElementById('plan-id').value = planData.id;
         if (customMeetingSelect) customMeetingSelect.setValue(planData.meeting_number);
         document.getElementById('notes').value = planData.notes || '';
-        
+
         // Trigger meeting change to load roles, then set role
         loadMeetingRoles().then(() => {
             if (customRoleSelect) customRoleSelect.setValue(planData.role_id);
-            
+
             if (projectChk) projectChk.checked = !!planData.project_id;
             updateProjectVisibility();
             if (customProjectSelect) customProjectSelect.setValue(planData.project_id);
@@ -80,7 +80,7 @@ function openPlanModal(planData = null) {
         if (customMeetingSelect) customMeetingSelect.updateTrigger();
         if (customRoleSelect) customRoleSelect.refresh();
     }
-    
+
     modal.style.display = 'flex';
 }
 
@@ -88,146 +88,12 @@ function closeModal() {
     if (modal) modal.style.display = 'none';
 }
 
-// Custom Select Class (Duplicate from original to ensure standalone capability if needed, 
-// or ideally this should be in a separate utility file if used elsewhere)
-class CustomSelect {
-    constructor(selectId, options = {}) {
-        this.select = document.getElementById(selectId);
-        if (!this.select) return;
-        
-        this.options = options;
-        
-        // Check if already initialized
-        if (this.select.nextSibling && this.select.nextSibling.classList && this.select.nextSibling.classList.contains('custom-select-container')) {
-            this.container = this.select.nextSibling;
-            this.trigger = this.container.querySelector('.custom-select-trigger');
-            this.optionsList = this.container.querySelector('.custom-select-options');
-        } else {
-            this.container = document.createElement('div');
-            this.container.className = 'custom-select-container';
-            this.trigger = document.createElement('div');
-            this.trigger.className = 'custom-select-trigger';
-            this.optionsList = document.createElement('div');
-            this.optionsList.className = 'custom-select-options';
-            
-            this.select.hide = true;
-            this.select.style.display = 'none';
-            this.select.parentNode.insertBefore(this.container, this.select.nextSibling);
-            this.container.appendChild(this.trigger);
-            this.container.appendChild(this.optionsList);
-            
-            this.trigger.onclick = (e) => {
-                e.stopPropagation();
-                document.querySelectorAll('.custom-select-container').forEach(c => {
-                    if (c !== this.container) c.classList.remove('open');
-                });
-                this.container.classList.toggle('open');
-            };
-            
-            document.addEventListener('click', () => {
-                this.container.classList.remove('open');
-            });
-        }
-        
-        this.updateTrigger();
-        this.renderOptions();
-    }
-
-    updateTrigger() {
-        const selectedOpt = this.select.options[this.select.selectedIndex];
-        this.trigger.innerText = selectedOpt ? selectedOpt.text : 'Select...';
-    }
-
-    renderOptions() {
-        this.optionsList.innerHTML = '';
-        
-        const groups = this.select.getElementsByTagName('optgroup');
-        if (groups.length > 0) {
-            Array.from(groups).forEach(group => {
-                const groupDiv = document.createElement('div');
-                groupDiv.className = 'custom-option-group';
-                groupDiv.innerText = group.label;
-                groupDiv.dataset.groupLabel = group.label;
-                this.optionsList.appendChild(groupDiv);
-                
-                Array.from(group.getElementsByTagName('option')).forEach(opt => {
-                    this.createOption(opt);
-                });
-            });
-        } else {
-            Array.from(this.select.options).forEach(opt => {
-                this.createOption(opt);
-            });
-        }
-    }
-
-    createOption(opt) {
-        const optDiv = document.createElement('div');
-        optDiv.className = 'custom-option';
-        if (opt.className) optDiv.className += ' ' + opt.className;
-        if (opt.selected) optDiv.className += ' selected';
-        
-        // Check for data-code to bold it
-        const code = opt.dataset.code;
-        if (code) {
-            const checkmark = opt.text.startsWith('✓ ') ? '✓ ' : '';
-            const name = opt.text.replace('✓ ', '');
-            optDiv.innerHTML = `${checkmark}<span class="project-code">${code}</span> ${name}`;
-        } else {
-            optDiv.innerText = opt.text;
-        }
-        
-        optDiv.dataset.value = opt.value;
-        
-        optDiv.onclick = () => {
-            this.select.value = opt.value;
-            this.select.dispatchEvent(new Event('change'));
-            this.updateTrigger();
-            this.container.classList.remove('open');
-            this.renderOptions(); // Update selected state
-        };
-        
-        this.optionsList.appendChild(optDiv);
-    }
-
-    refresh() {
-        this.updateTrigger();
-        this.renderOptions();
-        this.updateVisibility();
-    }
-
-    updateVisibility() {
-        const optDivs = this.optionsList.querySelectorAll('.custom-option');
-        const groupDivs = this.optionsList.querySelectorAll('.custom-option-group');
-        
-        groupDivs.forEach(g => g.style.display = 'none');
-        
-        optDivs.forEach(div => {
-            const originalOpt = Array.from(this.select.options).find(o => o.value == div.dataset.value);
-            if (originalOpt) {
-                const isVisible = originalOpt.style.display !== 'none';
-                div.style.display = isVisible ? 'block' : 'none';
-                
-                if (isVisible && originalOpt.parentElement.tagName === 'OPTGROUP') {
-                    const groupLabel = originalOpt.parentElement.label;
-                    const groupDiv = Array.from(groupDivs).find(g => g.dataset.groupLabel === groupLabel);
-                    if (groupDiv) groupDiv.style.display = 'block';
-                }
-            }
-        });
-    }
-
-    setValue(val) {
-        this.select.value = val;
-        this.select.dispatchEvent(new Event('change'));
-        this.refresh();
-    }
-}
+// Custom Select Class (Removed: using shared component in static/js/components/custom_select.js)
 
 async function loadMeetingRoles() {
     const meetingNumber = meetingSelect.value;
     if (customMeetingSelect) customMeetingSelect.updateTrigger();
-    
+
     if (!meetingNumber) {
         roleSelect.innerHTML = '<option value="">Select Role</option>';
         if (customRoleSelect) customRoleSelect.refresh();
@@ -239,11 +105,11 @@ async function loadMeetingRoles() {
     try {
         const response = await fetch(`/api/meeting/${meetingNumber}`);
         const data = await response.json();
-        
+
         if (dateDisplay) dateDisplay.innerText = `Meeting Date: ${data.date}`;
         if (dateRow) dateRow.style.display = 'flex';
         currentMeetingRoles = data.roles;
-        
+
         roleSelect.innerHTML = '<option value="">Select Role</option>';
         data.roles.forEach(role => {
             const opt = document.createElement('option');
@@ -264,11 +130,11 @@ async function loadMeetingRoles() {
 
 function updateBookButtonVisibility() {
     if (!roleSelect || !bookBtn) return;
-    
+
     const selectedOpt = roleSelect.options[roleSelect.selectedIndex];
     if (selectedOpt && selectedOpt.value) {
         bookBtn.style.display = 'inline-block';
-        bookBtn.innerText = 'Book'; 
+        bookBtn.innerText = 'Book';
     } else {
         bookBtn.style.display = 'none';
     }
@@ -280,11 +146,11 @@ function updateProjectVisibility() {
     const selectedRole = currentMeetingRoles.find(r => r.id == roleSelect.value);
     if (selectedRole && selectedRole.valid_for_project) {
         projectChkGroup.style.display = 'block';
-        
+
         if (projectChk.checked) {
             projectGroup.style.display = 'block';
             projectIdSelect.required = true;
-            
+
             const expectedFormat = selectedRole.expected_format;
             let visibleCount = 0;
             let lastVisibleValue = '';
@@ -292,16 +158,16 @@ function updateProjectVisibility() {
             // Filter projects by format
             Array.from(projectIdSelect.options).forEach(opt => {
                 if (opt.value === "") return;
-                
+
                 const projectFormat = opt.dataset.format;
                 let isVisible = false;
-                
+
                 if (expectedFormat) {
                     isVisible = (projectFormat === expectedFormat);
                 } else {
                     isVisible = true;
                 }
-                
+
                 opt.style.display = isVisible ? 'block' : 'none';
                 if (isVisible) {
                     visibleCount++;

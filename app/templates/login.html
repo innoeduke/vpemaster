@@ -93,6 +93,7 @@
     </footer>
   </div>
 
+  <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const usernameInput = document.getElementById('username');
@@ -104,6 +105,14 @@
       const confirmGuestBtn = document.getElementById('confirm-guest');
       const guestClubSelect = document.getElementById('guest-club-select');
       let lookupTimeout = null;
+      let clubCustomSelect = null;
+      let guestCustomSelect = null;
+
+      // Initialize guest custom select if modal exists
+      if (guestClubSelect) {
+         // wait for modal to be potentially shown or just init it
+         guestCustomSelect = new CustomSelect('guest-club-select');
+      }
 
       // Guest Modal Event Listeners
       if (guestLink) {
@@ -121,7 +130,8 @@
 
       if (confirmGuestBtn) {
         confirmGuestBtn.addEventListener('click', function () {
-          const clubId = guestClubSelect.value;
+            // Need to get value from the original select which custom select updates
+            const clubId = guestClubSelect.value;
           if (clubId) {
             window.location.href = "{{ url_for('agenda_bp.agenda') }}?club_id=" + clubId;
           }
@@ -147,6 +157,8 @@
           clubSelectorContainer.style.display = 'none';
           clubSelector.innerHTML = '';
           clubSelector.removeAttribute('required');
+           // clean up custom select if it exists? 
+           // actually just hiding container is enough, but we should probably destroy/reset it
           return;
         }
 
@@ -170,7 +182,7 @@
               option.textContent = club.name;
               // Select home club by default, or first club if no home club
               if (club.is_home || index === 0) {
-                option.selected = true;
+               option.selected = true;
               }
               clubSelector.appendChild(option);
             });
@@ -178,6 +190,14 @@
             // Show club selector
             clubSelectorContainer.style.display = 'block';
             clubSelector.setAttribute('required', 'required');
+            
+            // Re-initialize or update Custom Select
+            if (clubCustomSelect) {
+                clubCustomSelect.refresh();
+            } else {
+                clubCustomSelect = new CustomSelect('club_names');
+            }
+
             updateGuestLink();
           } else {
             // Hide club selector if no clubs found

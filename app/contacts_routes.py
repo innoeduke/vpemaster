@@ -86,171 +86,24 @@ def show_contacts():
 
 
     club_id = get_current_club_id()
-    query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)
+    club_id = get_current_club_id()
     
-    # Permission filtering
-    if not can_view_all:
-        query = query.filter(Contact.Type == 'Member')
-        
-    contacts = query.options(joinedload(Contact.mentor))\
-        .order_by(Contact.Name.asc()).all()
-    Contact.populate_users(contacts, club_id)
-    # Batch populate primary clubs to avoid N+1 queries in template
-    Contact.populate_primary_clubs(contacts)
+    # Optimization: Fetch counts only, let client fetch data async
+    # Total contacts
+    total_contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id).count()
     
-    # Helper to build date filter
-    from sqlalchemy import or_,  and_, false
-    def apply_date_filter(query, date_column):
-        if not date_ranges:
-            if should_filter:
-                 # User wanted to filter, but ranges are empty -> Match Nothing
-                 return query.filter(false())
-            else:
-                 # No filter applied (shouldn't happen with current default logic, but safe fallback)
-                 return query
-                 
-        conditions = [date_column.between(start, end) for start, end in date_ranges]
-        return query.filter(or_(*conditions))
-
-    # 1. Attendance (Roster)
-    # Count how many times each contact appears in Roster
-    
-    # --- LIFETIME METRICS FOR QUALIFICATION (GOLD STAR) ---
-    # According to user: Gold star is shown for guests only, ignores date filters, and queries entire dataset.
-    
-    # 1. Lifetime Attendance
-    lifetime_attendance_counts = db.session.query(
-        Roster.contact_id, func.count(Roster.id)
-    ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
-        Roster.contact_id.isnot(None),
-        Meeting.club_id == club_id
-    ).group_by(Roster.contact_id).all()
-    lifetime_attendance_map = {c_id: count for c_id, count in lifetime_attendance_counts}
-
-    # 2. Lifetime Roles
-    lifetime_roles_query = db.session.query(
-        OwnerMeetingRoles.contact_id, Meeting.Meeting_Number, OwnerMeetingRoles.role_id, MeetingRole.name
-    ).join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
-     .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
-     .filter(
-        MeetingRole.type.in_(['standard', 'club-specific']),
-        Meeting.club_id == club_id
-    )
-    lifetime_distinct_roles = lifetime_roles_query.distinct().all()
-
-    lifetime_role_map = {}
-    lifetime_tt_count = {}
-    lifetime_other_role_count = {}
-
-    for owner_id, _, _, role_name in lifetime_distinct_roles:
-        lifetime_role_map[owner_id] = lifetime_role_map.get(owner_id, 0) + 1
-        r_name = role_name.strip() if role_name else ""
-        if r_name == "Topics Speaker":
-            lifetime_tt_count[owner_id] = lifetime_tt_count.get(owner_id, 0) + 1
-        else:
-            lifetime_other_role_count[owner_id] = lifetime_other_role_count.get(owner_id, 0) + 1
-
-    # 3. Lifetime Awards
-    lifetime_best_tt_map = {}
-    for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
-        q = db.session.query(
-            getattr(Meeting, field), func.count(Meeting.id)
-        ).filter(
-            getattr(Meeting, field).isnot(None),
-            Meeting.club_id == club_id
-        )
-        counts = q.group_by(getattr(Meeting, field)).all()
-        if field == 'best_table_topic_id':
-            for c_id, count in counts:
-                lifetime_best_tt_map[c_id] = count
-
-    # --- TERM-FILTERED METRICS FOR DISPLAY BADGES ---
-    roster_query = db.session.query(
-        Roster.contact_id, func.count(Roster.id)
-    ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
-        Roster.contact_id.isnot(None),
-        Meeting.club_id == club_id
-    )
-    
-    roster_query = apply_date_filter(roster_query, Meeting.Meeting_Date)
-    attendance_counts = roster_query.group_by(Roster.contact_id).all()
-    attendance_map = {c_id: count for c_id, count in attendance_counts}
-
-    roles_query = db.session.query(
-        OwnerMeetingRoles.contact_id, Meeting.Meeting_Number, OwnerMeetingRoles.role_id, MeetingRole.name
-    ).join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
-     .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
-     .filter(
-        MeetingRole.type.in_(['standard', 'club-specific']),
-        Meeting.club_id == club_id
-    )
-    
-    roles_query = apply_date_filter(roles_query, Meeting.Meeting_Date)
-    distinct_roles = roles_query.distinct().all()
-
-    role_map = {}
-    contact_tt_count = {}
-    # contact_other_role_count = {} # Not strictly needed for display but can keep if logic requires
-
-    for owner_id, _, _, role_name in distinct_roles:
-        role_map[owner_id] = role_map.get(owner_id, 0) + 1
-        r_name = role_name.strip() if role_name else ""
-        if r_name == "Topics Speaker":
-            contact_tt_count[owner_id] = contact_tt_count.get(owner_id, 0) + 1
-
-    def get_award_counts(field):
-        q = db.session.query(
-            getattr(Meeting, field), func.count(Meeting.id)
-        ).filter(
-            getattr(Meeting, field).isnot(None),
-            Meeting.club_id == club_id
-        )
-        q = apply_date_filter(q, Meeting.Meeting_Date)
-        return q.group_by(getattr(Meeting, field)).all()
-
-    award_map = {}
-    for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
-        counts = get_award_counts(field)
-        for c_id, count in counts:
-            award_map[c_id] = award_map.get(c_id, 0) + count
-
-    def check_membership_qualification(contact_type, tt_count, best_tt_count, other_role_count):
-        """
-        Determines if a guest meets the membership criteria:
-        - Must be a Guest
-        - 4+ Table Topic Speaker roles (Lifetime)
-        - 1+ Best Table Topic award (Lifetime)
-        - 2+ Other roles (Lifetime)
-        """
-        if contact_type != 'Guest':
-            return False
-        return (tt_count >= 4 and best_tt_count >= 1 and other_role_count >= 2)
-
-    # Attach to contacts
-    for c in contacts:
-        # Display metrics (Filtered)
-        c.attendance_count = attendance_map.get(c.id, 0)
-        c.role_count = role_map.get(c.id, 0)
-        c.award_count = award_map.get(c.id, 0)
-        c.tt_count = contact_tt_count.get(c.id, 0)
-        
-        # Qualification (Lifetime)
-        l_tt = lifetime_tt_count.get(c.id, 0)
-        l_best_tt = lifetime_best_tt_map.get(c.id, 0)
-        l_other = lifetime_other_role_count.get(c.id, 0)
-        c.is_qualified = check_membership_qualification(c.Type, l_tt, l_best_tt, l_other)
-
-    # Sort contacts by role_count desc by default
-    contacts.sort(key=lambda c: (c.role_count, c.is_qualified, c.tt_count), reverse=True)
-
-    total_contacts = len(contacts)
-    type_counts = {}
-    for c in contacts:
-        type_counts[c.Type] = type_counts.get(c.Type, 0) + 1
+    # Type counts
+    type_counts_query = db.session.query(Contact.Type, func.count(Contact.id))\
+        .join(ContactClub).filter(ContactClub.club_id == club_id)\
+        .group_by(Contact.Type).all()
+    type_counts = {t: c for t, c in type_counts_query}
     
     # Sort types: Member first, then others
     sorted_types = sorted(type_counts.keys(), key=lambda x: (x not in ['Member'], x))
     
+    contacts = []
+    contacts_json_data = []
+
     all_pathways = Pathway.query.filter_by(type='pathway', status='active').order_by(Pathway.name).all()
     pathways = {}
     for p in all_pathways:
@@ -259,50 +112,12 @@ def show_contacts():
             pathways[ptype] = []
         pathways[ptype].append(p.name)
 
-    club_id = get_current_club_id()
     mentor_candidates = Contact.query.join(ContactClub).filter(
         ContactClub.club_id == club_id,
         Contact.Type.in_(['Member', 'Past Member'])
     ).order_by(Contact.Name.asc()).all()
 
     can_view_all_logs = is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL)
-
-    # Prepare JSON data for client-side JS to avoid double-fetch and use correct filters
-    contacts_json_data = []
-    for c in contacts:
-        # Use attached attributes if available (populated above), else defaults
-        role_c = getattr(c, 'role_count', 0)
-        tt_c = getattr(c, 'tt_count', 0)
-        att_c = getattr(c, 'attendance_count', 0)
-        award_c = getattr(c, 'award_count', 0)
-        is_qual = getattr(c, 'is_qualified', False)
-        
-        primary_club = c.get_primary_club()
-        
-        contacts_json_data.append({
-            'id': c.id,
-            'Name': c.Name,
-            'Type': c.Type,
-            'Phone_Number': c.Phone_Number if c.Phone_Number else '-',
-            'Club': primary_club.club_name if primary_club else '-',
-            'Completed_Paths': c.Completed_Paths if c.Completed_Paths else '-',
-            'credentials': c.credentials if c.credentials else '-',
-            'Next_Project': c.Next_Project if c.Next_Project else '-',
-            'Mentor': c.mentor.Name if c.mentor else '-',
-            'Member_ID': c.Member_ID,
-            'DTM': c.DTM,
-            'Avatar_URL': c.Avatar_URL,
-            'role_count': role_c,
-            'tt_count': tt_c,
-            'attendance_count': att_c,
-            'award_count': award_c,
-            'is_qualified': is_qual,
-            'has_user': c.user is not None,
-            'is_connected': c.is_connected,
-            'Date_Created': c.Date_Created.strftime('%Y-%m-%d') if c.Date_Created else '-'
-            # 'user_role': ... (Not strictly needed for the table display, can add if needed)
-            # 'is_officer': ...
-        })
 
 
     return render_template('contacts.html', 
@@ -766,6 +581,49 @@ def get_all_contacts_api():
         return jsonify({'error': 'Permission denied'}), 403
 
     club_id = get_current_club_id()
+    
+    # --- TERM FILTER LOGIC ---
+    from .utils import get_terms, get_active_term, get_date_ranges_for_terms
+    terms = get_terms()
+    
+    # Logic to mirror show_contacts: use default term if none selected, OR use 'term' param
+    selected_term_ids = request.args.getlist('term')
+    
+    # If no terms provided in API, and it's the initial fetch (convention needed?)
+    # But wait, filtering is usually explicit. 
+    # If NO term is provided, does it mean "All Time" or "Default Term"?
+    # In show_contacts, it defaults to current term.
+    # The frontend will likely pass the terms it thinks are selected. 
+    # If the frontend passes nothing, we should probably assume "No Filter" (All Time) or "Default".
+    # However, to maintain behavior, let's treat it as: if params present, use them. If not, don't filter (or use current logic).
+    # Actually, the frontend calls `/api/contacts/all?t=...`
+    # Let's inspect `selected_term_ids`.
+    
+    # If explicitly empty list passed? iterating `getlist` gives empty list if not present.
+    # We will rely on frontend to pass the default terms if needed. 
+    # BUT, for the *first* load if we want to mimic the previous server-side logic, we might need to apply default terms if none provided?
+    # Let's support an explicit "all" flag or just rely on IDs.
+    
+    date_ranges = []
+    should_filter = False
+    
+    if selected_term_ids:
+        should_filter = True
+        date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
+    
+    from sqlalchemy import or_,  and_, false
+    def apply_date_filter(query, date_column):
+        if not date_ranges:
+            if should_filter:
+                 # User wanted to filter, but ranges are empty -> Match Nothing
+                 return query.filter(false())
+            else:
+                 # No filter applied
+                 return query
+                 
+        conditions = [date_column.between(start, end) for start, end in date_ranges]
+        return query.filter(or_(*conditions))
+
     query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)
     
     if not can_view_all:
@@ -775,53 +633,98 @@ def get_all_contacts_api():
         .order_by(Contact.Name.asc()).all()
     Contact.populate_users(contacts, club_id)
     
-    # Calculate participation metrics (Lifetime for API)
-    # 1. Attendance counts
-    attendance_counts = db.session.query(
+    # --- LIFETIME METRICS ---
+    # 1. Lifetime Attendance (for Qualification)
+    lifetime_attendance_counts = db.session.query(
         Roster.contact_id, func.count(Roster.id)
     ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
         Roster.contact_id.isnot(None),
         Meeting.club_id == club_id
     ).group_by(Roster.contact_id).all()
-    attendance_map = {c_id: count for c_id, count in attendance_counts}
+    # lifetime_attendance_map = {c_id: count for c_id, count in lifetime_attendance_counts} # Not used for qual, but good to have?
 
-    # 2. Role counts
-    distinct_roles = db.session.query(
+    # 2. Lifetime Roles (for Qualification)
+    lifetime_roles_query = db.session.query(
         OwnerMeetingRoles.contact_id, Meeting.Meeting_Number, OwnerMeetingRoles.role_id, MeetingRole.name
     ).join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
      .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
      .filter(
         MeetingRole.type.in_(['standard', 'club-specific']),
         Meeting.club_id == club_id
-    ).distinct().all()
+    )
+    lifetime_distinct_roles = lifetime_roles_query.distinct().all()
+
+    lifetime_tt_count = {}
+    lifetime_other_role_count = {}
+
+    for owner_id, _, _, role_name in lifetime_distinct_roles:
+        r_name = role_name.strip() if role_name else ""
+        if r_name == "Topics Speaker":
+            lifetime_tt_count[owner_id] = lifetime_tt_count.get(owner_id, 0) + 1
+        else:
+            lifetime_other_role_count[owner_id] = lifetime_other_role_count.get(owner_id, 0) + 1
+
+    # 3. Lifetime Awards (for Qualification)
+    lifetime_best_tt_map = {}
+    for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
+        q = db.session.query(
+            getattr(Meeting, field), func.count(Meeting.id)
+        ).filter(
+            getattr(Meeting, field).isnot(None),
+            Meeting.club_id == club_id
+        )
+        counts = q.group_by(getattr(Meeting, field)).all()
+        if field == 'best_table_topic_id':
+             for c_id, count in counts:
+                lifetime_best_tt_map[c_id] = count
+
+    # --- FILTERED METRICS ---
+    # 1. Attendance
+    roster_query = db.session.query(
+        Roster.contact_id, func.count(Roster.id)
+    ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
+        Roster.contact_id.isnot(None),
+        Meeting.club_id == club_id
+    )
+    roster_query = apply_date_filter(roster_query, Meeting.Meeting_Date)
+    attendance_counts = roster_query.group_by(Roster.contact_id).all()
+    attendance_map = {c_id: count for c_id, count in attendance_counts}
+
+    # 2. Roles
+    roles_query = db.session.query(
+        OwnerMeetingRoles.contact_id, Meeting.Meeting_Number, OwnerMeetingRoles.role_id, MeetingRole.name
+    ).join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
+     .join(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
+     .filter(
+        MeetingRole.type.in_(['standard', 'club-specific']),
+        Meeting.club_id == club_id
+    )
+    roles_query = apply_date_filter(roles_query, Meeting.Meeting_Date)
+    distinct_roles = roles_query.distinct().all()
 
     role_map = {}
     contact_tt_count = {}
-    contact_other_role_count = {}
 
     for owner_id, _, _, role_name in distinct_roles:
         role_map[owner_id] = role_map.get(owner_id, 0) + 1
         r_name = role_name.strip() if role_name else ""
         if r_name == "Topics Speaker":
             contact_tt_count[owner_id] = contact_tt_count.get(owner_id, 0) + 1
-        else:
-            contact_other_role_count[owner_id] = contact_other_role_count.get(owner_id, 0) + 1
 
     # 3. Awards
     award_map = {}
-    best_tt_map = {}
 
     for field in ['best_speaker_id', 'best_evaluator_id', 'best_table_topic_id', 'best_role_taker_id']:
-        counts = db.session.query(
+        q = db.session.query(
             getattr(Meeting, field), func.count(Meeting.id)
         ).filter(
             getattr(Meeting, field).isnot(None),
             Meeting.club_id == club_id
-        ).group_by(getattr(Meeting, field)).all()
+        )
+        q = apply_date_filter(q, Meeting.Meeting_Date)
+        counts = q.group_by(getattr(Meeting, field)).all()
         for c_id, count in counts:
             award_map[c_id] = award_map.get(c_id, 0) + count
-            if field == 'best_table_topic_id':
-                best_tt_map[c_id] = count
 
     def check_membership_qualification(contact_type, tt_count, best_tt_count, other_role_count):
         if contact_type != 'Guest':
@@ -834,9 +737,16 @@ def get_all_contacts_api():
     # Build JSON response
     contacts_data = []
     for c in contacts:
+        # Filtered metrics
         tt = contact_tt_count.get(c.id, 0)
-        best_tt = best_tt_map.get(c.id, 0)
-        other_roles = contact_other_role_count.get(c.id, 0)
+        att = attendance_map.get(c.id, 0)
+        award = award_map.get(c.id, 0)
+        roles = role_map.get(c.id, 0)
+        
+        # Lifetime metrics for qualification
+        l_tt = lifetime_tt_count.get(c.id, 0)
+        l_best_tt = lifetime_best_tt_map.get(c.id, 0)
+        l_other = lifetime_other_role_count.get(c.id, 0)
         
         primary_club = c.get_primary_club()
         
@@ -853,11 +763,11 @@ def get_all_contacts_api():
             'Member_ID': c.Member_ID,
             'DTM': c.DTM,
             'Avatar_URL': c.Avatar_URL,
-            'role_count': role_map.get(c.id, 0),
+            'role_count': roles,
             'tt_count': tt,
-            'attendance_count': attendance_map.get(c.id, 0),
-            'award_count': award_map.get(c.id, 0),
-            'is_qualified': check_membership_qualification(c.Type, tt, best_tt, other_roles),
+            'attendance_count': att,
+            'award_count': award,
+            'is_qualified': check_membership_qualification(c.Type, l_tt, l_best_tt, l_other),
             'has_user': c.user is not None,
             'user_role': c.user.primary_role_name if c.user else None,
             'is_officer': c.user.has_role(Permissions.STAFF) if c.user else False,

@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, url_for, request, jsonify
+from flask import Blueprint, redirect, url_for, request, jsonify, send_from_directory, current_app
 from .auth.utils import login_required, current_user
 from app.system_messaging import send_system_message
 from app.models.user import User
@@ -9,6 +9,10 @@ main_bp = Blueprint('main_bp', __name__)
 @login_required
 def index():
     return redirect(url_for('agenda_bp.agenda'))
+
+@main_bp.route('/05d9f3b8f0b1f0715520c412e9f8bd74.txt')
+def serve_verification_file():
+    return send_from_directory(current_app.static_folder, '05d9f3b8f0b1f0715520c412e9f8bd74.txt')
 
 @main_bp.route('/api/report-bug', methods=['POST'])
 @login_required

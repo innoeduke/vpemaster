@@ -4,8 +4,49 @@
    ======================================== */
 
 @media (max-width: 768px) {
+  /* --- General Adjustments --- */
+  .tools-tabs {
+    padding-left: 10px;
+  }
 
-	/* --- General Adjustments --- */
+  .tools-tab-item {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
 
+  /* --- Lucky Draw Mobile Overrides --- */
+  .draw-controls {
+    gap: 12px;
+    margin-bottom: 25px;
+    padding: 20px 15px;
+  }
 
+  .draw-type-selector .custom-select-trigger,
+  .reset-button,
+  .draw-button {
+    height: var(--mobile-control-height, 36px) !important;
+    min-height: var(--mobile-control-height, 36px) !important;
+    line-height: var(--mobile-control-height, 36px) !important;
+    padding: 0 16px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .draw-type-select,
+  .draw-type-selector .custom-select-trigger {
+    min-width: 0;
+    flex: 1;
+    width: 100%;
+  }
+
+  .draw-buttons {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .reset-button,
+  .draw-button {
+    flex: 1;
+  }
 }

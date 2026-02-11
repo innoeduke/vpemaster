@@ -1337,6 +1337,30 @@ def update_logs():
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
 
+@agenda_bp.route('/api/agenda/get_logs/<int:meeting_number>')
+@login_required
+@authorized_club_required
+def get_logs(meeting_number):
+    """
+    API endpoint to fetch current logs data for a meeting.
+    Used for "Fast Cancel" to revert edits without reloading the page.
+    """
+    try:
+        # Security check: Ensure meeting belongs to current club
+        club_id = get_current_club_id()
+        meeting = Meeting.query.filter_by(Meeting_Number=meeting_number)
+        if club_id:
+            meeting = meeting.filter(Meeting.club_id == club_id)
+        if not meeting.first():
+             return jsonify(success=False, message="Meeting not found or access denied"), 404
+
+        logs_data, _ = _get_processed_logs_data(meeting_number, is_authorized(Permissions.MEDIA_ACCESS))
+        project_speakers = _get_project_speakers(meeting_number)
+        
+        return jsonify(success=True, logs_data=logs_data, project_speakers=project_speakers)
+    except Exception as e:
+        return jsonify(success=False, message=str(e)), 500
+
 
 @agenda_bp.route('/agenda/delete/<int:log_id>', methods=['POST'])
 @login_required

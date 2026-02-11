@@ -1,17 +1,47 @@
 // static/js/voting.js
 
-// Note: This script assumes the following global variables are defined in the HTML:
-// - isAdminView (Boolean)
-// - selectedMeetingNumber (String or Number)
-// - userRole (String)
-// - canTrackProgress (Boolean)
+// Global variables (initialized with defaults)
+let isAdminView = false;
+let selectedMeetingNumber = null;
+let userRole = null;
+let canTrackProgress = false;
+let localVotes = {};
+let localMeetingRating = null;
+let localMeetingFeedback = "";
 
-var localVotes = {}; // Store votes locally before batch submission
-var localMeetingRating = null;
-var localMeetingFeedback = "";
+// Function to initialize configuration
+function initVotingConfig() {
+	const votingDataEl = document.getElementById('voting-data');
+	if (votingDataEl) {
+		try {
+			const votingConfig = JSON.parse(votingDataEl.textContent);
+			isAdminView = votingConfig.isAdminView;
+			selectedMeetingNumber = votingConfig.selectedMeetingNumber;
+			userRole = votingConfig.userRole;
+			canTrackProgress = votingConfig.canTrackProgress;
+
+			// Initialize rating if provided
+			if (votingConfig.initialMeetingRating !== undefined && votingConfig.initialMeetingRating !== null) {
+				localMeetingRating = parseInt(votingConfig.initialMeetingRating, 10);
+			}
+			// Initialize feedback if provided
+			if (votingConfig.initialMeetingFeedback !== undefined && votingConfig.initialMeetingFeedback !== null) {
+				localMeetingFeedback = votingConfig.initialMeetingFeedback;
+			}
+		} catch (e) {
+			console.error("Failed to parse voting configuration:", e);
+		}
+	}
+}
+
+// Attempt initialization immediately
+initVotingConfig();
 
 
 document.addEventListener("DOMContentLoaded", function () {
+	// Re-run init to be sure (in case script ran before body/voting-data was ready)
+	initVotingConfig();
+
 	// Accordion functionality
 	const accordionState = JSON.parse(sessionStorage.getItem('accordionState')) || {};
 	const accordionHeaders = document.querySelectorAll(".accordion-header");
@@ -66,14 +96,12 @@ document.addEventListener("DOMContentLoaded", function () {
 	});
 
 	// Initialize Meeting Rating UI
-	if (typeof initialMeetingRating !== 'undefined' && initialMeetingRating !== null) {
-		localMeetingRating = parseInt(initialMeetingRating, 10);
+	if (localMeetingRating !== null) {
 		updateRatingUI(localMeetingRating);
 	}
 
 	// Initialize Meeting Feedback UI
-	if (typeof initialMeetingFeedback !== 'undefined' && initialMeetingFeedback !== null) {
-		localMeetingFeedback = initialMeetingFeedback;
+	if (localMeetingFeedback) {
 		const feedbackInput = document.getElementById('feedback-input');
 		if (feedbackInput) {
 			feedbackInput.value = localMeetingFeedback;
@@ -267,28 +295,37 @@ function updateVoteButtonsUI(category, newWinnerId) {
 			if (newWinnerId !== null) {
 				header.classList.add('voted');
 
-				// Add VOTED label if it doesn't exist
-				let votedLabel = headerRight.querySelector('.voted-label');
+				// Find or create status-wrapper
+				let statusWrapper = headerRight.querySelector('.status-wrapper');
+				if (!statusWrapper) {
+					statusWrapper = document.createElement('div');
+					statusWrapper.className = 'status-wrapper';
+					const chevron = headerRight.querySelector('.fa-chevron-down');
+					if (chevron) {
+						headerRight.insertBefore(statusWrapper, chevron);
+					} else {
+						headerRight.appendChild(statusWrapper);
+					}
+				}
+
+				// Add VOTED label if it doesn't exist inside the wrapper
+				let votedLabel = statusWrapper.querySelector('.voted-label');
 				if (!votedLabel) {
 					votedLabel = document.createElement('span');
 					votedLabel.className = 'voted-label';
 					votedLabel.innerHTML = '<i class="fas fa-trophy"></i> VOTED';
-
-					// Insert before the chevron icon
-					const chevron = headerRight.querySelector('.fa-chevron-down');
-					if (chevron) {
-						headerRight.insertBefore(votedLabel, chevron);
-					} else {
-						headerRight.insertBefore(votedLabel, headerRight.firstChild);
-					}
+					statusWrapper.appendChild(votedLabel);
 				}
 			} else {
 				header.classList.remove('voted');
 
-				// Remove VOTED label if it exists
-				const votedLabel = headerRight.querySelector('.voted-label');
-				if (votedLabel) {
-					votedLabel.remove();
+				// Remove VOTED label if it exists in wrapper
+				const statusWrapper = headerRight.querySelector('.status-wrapper');
+				if (statusWrapper) {
+					const votedLabel = statusWrapper.querySelector('.voted-label');
+					if (votedLabel) {
+						votedLabel.remove();
+					}
 				}
 			}
 		}

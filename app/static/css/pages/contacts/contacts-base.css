@@ -5,209 +5,224 @@
 
 /* --- Contact Page Specific Styles --- */
 .contact-action-bar {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 1rem;
-	align-items: center;
-	justify-content: space-between;
-	margin-bottom: 1rem;
-	padding: 1rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding: 1rem 0;
+}
+
+.filter-label {
+  font-family: "Montserrat", sans-serif;
+  font-weight: bold;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.contacts-filter-container {
+  display: flex;
+  flex: 1;
+  gap: 1.5rem;
+  align-items: flex-end;
+  justify-content: flex-end;
 }
 
 .stats-container {
-	display: flex;
-	gap: 1rem;
+  display: flex;
+  gap: 1rem;
 }
 
 .stat-item {
-	border: 1px solid #ccc;
-	border-radius: 5px;
-	padding: 0.5rem;
-	text-align: center;
-	min-width: 100px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 0.5rem;
+  text-align: center;
+  min-width: 100px;
 }
 
 .stat-value {
-	font-size: 1.2rem;
-	font-weight: bold;
+  font-size: 1.2rem;
+  font-weight: bold;
 }
 
 .stat-label {
-	font-size: 0.8rem;
-	color: #666;
+  font-size: 0.8rem;
+  color: #666;
 }
 
 .search-and-buttons {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: flex-end;
 }
 
 .button-group {
-	display: flex;
-	gap: 0.5rem;
+  display: flex;
+  gap: 0.5rem;
 }
 
 .contact-table-container {
-	display: flex;
-	justify-content: center;
+  display: flex;
+  justify-content: center;
 }
 
 #contactsTable {
-	margin: 0 auto;
-	font-size: 0.9em;
+  margin: 0 auto;
+  font-size: 0.9em;
 }
 
 #contactsTable th {
-	font-size: 1em;
+  font-size: 1em;
 }
 
 .info-icon {
-	font-size: 0.85em;
-	color: #a0aec0;
-	margin-left: 4px;
-	cursor: help;
-	transition: color 0.2s ease;
+  font-size: 0.85em;
+  color: #a0aec0;
+  margin-left: 4px;
+  cursor: help;
+  transition: color 0.2s ease;
 }
 
 .info-icon:hover {
-	color: #4a5568;
+  color: #4a5568;
 }
 
 /* Contact Name Cell with Small Avatar */
 .contact-name-cell {
-	display: flex;
-	align-items: center;
-	gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .contact-avatar-small {
-	width: 32px;
-	height: 32px;
-	border-radius: 50%;
-	object-fit: cover;
-	border: 1px solid #772432;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #772432;
 }
 
 .contact-avatar-placeholder-small {
-	width: 32px;
-	height: 32px;
-	border-radius: 50%;
-	background-color: #f0f0f0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	color: #a0aec0;
-	font-size: 0.8em;
-	border: 1px solid #772432;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a0aec0;
+  font-size: 0.8em;
+  border: 1px solid #772432;
 }
 
 .contact-name-info {
-	display: flex;
-	align-items: center;
-	flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .contact-name-info.clickable-name {
-	cursor: pointer;
-	padding: 2px 4px;
-	border-radius: 3px;
-	transition: all 0.2s ease;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: all 0.2s ease;
 }
 
 .contact-name-info.clickable-name:hover {
-	color: #772432;
-	background-color: #f8f0f2;
-	font-weight: 600;
+  color: #772432;
+  background-color: #f8f0f2;
+  font-weight: 600;
 }
 
 /* Participation Badges */
 .participation-container {
-	display: flex;
-	gap: 5px;
+  display: flex;
+  gap: 5px;
 }
 
 .participation-badge {
-	padding: 2px 6px;
-	border-radius: 4px;
-	font-size: 0.85em;
-	display: inline-flex;
-	align-items: center;
-	gap: 4px;
-	text-decoration: none !important;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  text-decoration: none !important;
 }
 
 .badge-attendance {
-	background-color: #e2e8f0;
-	color: #000;
+  background-color: #e2e8f0;
+  color: #000;
 }
 
 .badge-attendance i {
-	color: #4a5568;
+  color: #4a5568;
 }
 
 .badge-roles {
-	background-color: #bee3f8;
-	color: #000;
+  background-color: #bee3f8;
+  color: #000;
 }
 
 .badge-roles i {
-	color: #2b6cb0;
+  color: #2b6cb0;
 }
 
 .badge-awards {
-	background-color: #feebc8;
-	color: #000;
+  background-color: #feebc8;
+  color: #000;
 }
 
 .badge-tt {
-	background-color: #c6f6d5;
-	color: #000;
+  background-color: #c6f6d5;
+  color: #000;
 }
 
 .badge-tt i {
-	color: #2f855a;
+  color: #2f855a;
 }
 
 .badge-path {
-	background-color: #004165;
-	color: white;
-	padding: 2px 8px;
-	border-radius: 12px;
-	font-size: 0.8em;
-	font-weight: 500;
-	display: inline-block;
-	margin: 2px;
-	white-space: nowrap;
+  background-color: #004165;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+  display: inline-block;
+  margin: 2px;
+  white-space: nowrap;
 }
 
 .badge-path.path-dl {
-	background-color: #EF4444;
+  background-color: #ef4444;
 }
 
 .badge-path.path-eh {
-	background-color: #F59E0B;
+  background-color: #f59e0b;
 }
 
 .badge-path.path-ms {
-	background-color: #10B981;
+  background-color: #10b981;
 }
 
 .badge-path.path-pi {
-	background-color: #3B82F6;
+  background-color: #3b82f6;
 }
 
 .badge-path.path-pm {
-	background-color: #8B5CF6;
+  background-color: #8b5cf6;
 }
 
 .badge-path.path-vc {
-	background-color: #EC4899;
+  background-color: #ec4899;
 }
 
 .badge-path.path-dt {
-	background-color: #772432;
+  background-color: #772432;
 }
 
 /* Legacy Paths (Dark Gray) */
@@ -216,7 +231,7 @@
 .participation-container .badge-path.path-ld,
 .participation-container .badge-path.path-sr,
 .participation-container .badge-path.path-tc {
-	background-color: #a0aec0;
+  background-color: #a0aec0;
 }
 
 /* --- Specific View Styles --- */
@@ -226,53 +241,194 @@
 .guest-view .col-creds,
 .guest-view .col-next,
 .guest-view .col-mentor {
-	display: none;
+  display: none;
 }
 
 /* MEMBER VIEW: Hide Phone, Date Created, Club */
 .member-view .col-phone,
 .member-view .col-date,
 .member-view .col-club {
-	display: none;
+  display: none;
 }
 
 /* Checkbox Column Styling */
 #contactsTable .col-checkbox {
-	width: 40px;
-	padding-left: 0;
-	padding-right: 0;
+  width: 40px;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .checkbox-header {
-	width: 40px;
+  width: 40px;
 }
 
 #mergeContactsBtn {
-	margin-left: 5px;
-	font-weight: 600;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	transition: all 0.2s ease;
+  margin-left: 5px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
 }
 
 #mergeContactsBtn:hover {
-	transform: translateY(-1px);
-	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
 }
 
 /* Compact Actions Column */
 #contactsTable .col-actions {
-	width: 70px;
-	min-width: 70px;
-	padding: 8px 4px;
-	text-align: center;
+  width: 70px;
+  min-width: 70px;
+  padding: 8px 4px;
+  text-align: center;
 }
 
 #contactsTable .action-links {
-	gap: 4px;
-	justify-content: center;
-	flex-wrap: nowrap;
+  gap: 4px;
+  justify-content: center;
+  flex-wrap: nowrap;
 }
 
 #contactsTable .icon-btn {
-	padding: 2px;
+  padding: 2px;
+}
+
+/* --- Loading Spinner --- */
+.loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.loading-spinner {
+  text-align: center;
+  color: #666;
+}
+
+.loading-spinner i {
+  font-size: 3rem;
+  color: #004165;
+  margin-bottom: 1rem;
+  display: block;
+}
+
+.loading-spinner p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* --- Term Filter Dropdown (Moved from inline) --- */
+.contacts-term-filter-form {
+  flex: 1;
+  max-width: 400px;
+}
+
+.contacts-term-filter-form .form-group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.custom-dropdown-container {
+  position: relative;
+  width: 100%;
+}
+
+.term-dropdown-btn {
+  text-align: left;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: auto;
+  padding: 6px 12px;
+}
+
+.term-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 5px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.term-dropdown-menu label {
+  display: block;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+
+/* Select All specific label styling */
+.term-select-all-label {
+  padding: 8px 10px;
+  border-bottom: 1px solid #eee;
+  font-weight: bold;
+  margin-bottom: 5px !important;
+}
+
+.term-option-label {
+  padding: 5px 10px;
+  font-weight: normal;
+}
+
+.term-checkbox-input {
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* --- Contact Form Grid Layout --- */
+.contact-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.contact-form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.contact-form-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.contact-form-item label {
+  font-weight: 600;
+  font-size: 0.85em;
+  color: #333;
+}
+
+.contact-form-item.checkbox-item {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 24px; /* Align check box with labels of other inputs */
+}
+
+.contact-form-item input[type="text"],
+.contact-form-item input[type="email"],
+.contact-form-item select,
+.contact-form-item textarea {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.contact-form-item textarea {
+  min-height: 80px;
+  resize: vertical;
 }

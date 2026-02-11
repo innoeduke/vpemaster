@@ -2,116 +2,123 @@
   <div class="modal-content">
     <span class="close" onclick="closeContactModal()">&times;</span>
     <h2 id="contactModalTitle"></h2>
-     <form id="contactForm" method="POST" enctype="multipart/form-data">
-       <div class="profile-avatar-container" style="margin-top: 10px;">
+    <form id="contactForm" method="POST" enctype="multipart/form-data">
+      <div class="profile-avatar-container" style="margin-top: 10px;">
         <div id="modal-avatar-placeholder" class="avatar-placeholder">
-            <i class="fas fa-user"></i>
+          <i class="fas fa-user"></i>
         </div>
         <img id="modal-avatar-img" src="" alt="Avatar" class="profile-avatar" style="display: none;"
-             onerror="this.style.display='none'; document.getElementById('modal-avatar-placeholder').style.display='flex';">
-        
+          onerror="this.style.display='none'; document.getElementById('modal-avatar-placeholder').style.display='flex';">
+
         <div class="upload-btn-wrapper">
-          <button type="button" class="btn-upload" onclick="document.getElementById('avatar-input').click()">Change Photo</button>
-          <input type="file" id="avatar-input" name="avatar" accept="image/*" onchange="previewAvatar(this)" style="display: none;" />
+          <button type="button" class="btn-upload" onclick="document.getElementById('avatar-input').click()">Change
+            Photo</button>
+          <input type="file" id="avatar-input" name="avatar" accept="image/*" onchange="previewAvatar(this)"
+            style="display: none;" />
         </div>
       </div>
       <!-- Accordion 1: Basic Information -->
       <button type="button" id="basicInfoAccordion" class="accordion active">Basic Information</button>
       <div class="panel" style="max-height: 1000px;"> <!-- Expanded by default -->
-        <table class="form-table">
-            <tr>
-            <td>
-                <label for="first_name">First Name: <span class="required-field">*</span></label>
-            </td>
-            <td><input type="text" id="first_name" name="first_name" required /></td>
-            </tr>
-            <tr>
-            <td>
-                <label for="last_name">Last Name:</label>
-            </td>
-            <td><input type="text" id="last_name" name="last_name" /></td>
-            </tr>
-            <input type="hidden" id="type" name="type" value="Guest" />
-            <input type="hidden" id="name" name="name" value="" />
-            <tr id="member_id_row" style="display: none;">
-            <td><label for="member_id">Member ID:</label></td>
-            <td><input type="text" id="member_id" name="member_id" placeholder="Optional" /></td>
-            </tr>
-            <tr>
-            <td><label for="email">Email:</label></td>
-            <td><input type="email" id="email" name="email" /></td>
-            </tr>
-            <tr>
-            <td><label for="phone_number">Phone:</label></td>
-            <td><input type="text" id="phone_number" name="phone_number" /></td>
-            </tr>
-            <tr>
-            <td><label for="bio">Bio:</label></td>
-            <td>
-                <textarea id="bio" name="bio" rows="3" style="width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;"></textarea>
-            </td>
-            </tr>
-            <tr id="home_club_row" style="display: none;">
-                <td><label for="home_club_id">Home Club:</label></td>
-                <td>
-                <select id="home_club_id" name="home_club_id">
-                    <!-- Populated by JS -->
-                </select>
-                </td>
-            </tr>
-            <tr id="mentor_id_row" style="display: none;">
-                <td><label for="mentor_id">Mentor:</label></td>
-                <td>
-                <select id="mentor_id" name="mentor_id">
-                    <option value="0">None</option>
-                    <!-- Populated by JS -->
-                </select>
-                </td>
-            </tr>
-            <tr>
-              <td><label for="dtm">DTM:</label></td>
-              <td><input type="checkbox" id="dtm" name="dtm" /></td>
-            </tr>
-        </table>
-      </div>
+        <div class="contact-form-grid">
+          <input type="hidden" id="type" name="type" value="Guest" />
+          <input type="hidden" id="name" name="name" value="" />
 
+          <!-- Row 1: First Name & Last Name -->
+          <div class="contact-form-item">
+            <label for="first_name">First Name: <span class="required-field">*</span></label>
+            <input type="text" id="first_name" name="first_name" required />
+          </div>
+          <div class="contact-form-item">
+            <label for="last_name">Last Name:</label>
+            <input type="text" id="last_name" name="last_name" />
+          </div>
+
+          <!-- Row 2: Member ID & DTM (conditionally displayed Member ID, DTM always helps align) -->
+          <div class="contact-form-item" id="member_id_container" style="display: none;">
+            <label for="member_id">Member ID:</label>
+            <input type="text" id="member_id" name="member_id" placeholder="Optional" />
+          </div>
+          <!-- DTM is small, maybe group it or let it float. 
+                 Let's put DTM next to Member ID if visible, or on its own. 
+                 For now, let's keep the grid flexible. -->
+          <div class="contact-form-item checkbox-item">
+            <label for="dtm" style="display:inline-block; margin-right: 8px;">DTM:</label>
+            <input type="checkbox" id="dtm" name="dtm" style="width: auto;" />
+          </div>
+
+          <!-- Row 3: Email & Phone -->
+          <div class="contact-form-item">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" />
+          </div>
+          <div class="contact-form-item">
+            <label for="phone_number">Phone:</label>
+            <input type="text" id="phone_number" name="phone_number" />
+          </div>
+
+          <!-- Row 4: Bio (Full Width) -->
+          <div class="contact-form-item full-width">
+            <label for="bio">Bio:</label>
+            <textarea id="bio" name="bio" rows="3"></textarea>
+          </div>
+
+          <!-- Row 5: Home Club & Mentor (Conditional) -->
+          <div class="contact-form-item" id="home_club_container" style="display: none;">
+            <label for="home_club_id">Home Club:</label>
+            <select id="home_club_id" name="home_club_id">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+          <div class="contact-form-item" id="mentor_id_container" style="display: none;">
+            <label for="mentor_id">Mentor:</label>
+            <select id="mentor_id" name="mentor_id">
+              <option value="0">None</option>
+              <!-- Populated by JS -->
+            </select>
+          </div>
+        </div>
+      </div>
       <!-- Accordion 2: Education & Awards -->
       <div id="educationFieldsWrapper" style="display:none;">
-          <button type="button" class="accordion">Education & Awards</button>
-          <div class="panel">
-            <table class="form-table">
+        <button type="button" class="accordion">Education & Awards</button>
+        <div class="panel">
+          <table class="form-table">
             <tr>
-                <td><label for="completed_paths">Completed Paths:</label></td>
-                <td>
-                <input type="text" id="completed_paths" name="completed_paths" readonly placeholder="Derived from Achievements" />
-                </td>
+              <td><label for="completed_paths">Completed Paths:</label></td>
+              <td>
+                <input type="text" id="completed_paths" name="completed_paths" readonly
+                  placeholder="Derived from Achievements" />
+              </td>
             </tr>
             <tr>
-                <td><label for="current_path">Current Path:</label></td>
-                <td>
+              <td><label for="current_path">Current Path:</label></td>
+              <td>
                 <select id="current_path" name="current_path">
-                    <option value="">-- Select Path --</option>
-                    {% for type, p_list in pathways.items() %}
-                    <optgroup label="{{ type }}">
-                        {% for pathway in p_list %}
-                        <option value="{{ pathway }}">{{ pathway }}</option>
-                        {% endfor %}
-                    </optgroup>
+                  <option value="">-- Select Path --</option>
+                  {% for type, p_list in pathways.items() %}
+                  <optgroup label="{{ type }}">
+                    {% for pathway in p_list %}
+                    <option value="{{ pathway }}">{{ pathway }}</option>
                     {% endfor %}
+                  </optgroup>
+                  {% endfor %}
                 </select>
-                </td>
+              </td>
             </tr>
             <tr>
-                <td><label for="next_project">Next Project:</label></td>
-                <td><input type="text" id="next_project" name="next_project" readonly placeholder="Calculated from logs" /></td>
+              <td><label for="next_project">Next Project:</label></td>
+              <td><input type="text" id="next_project" name="next_project" readonly
+                  placeholder="Calculated from logs" /></td>
             </tr>
             <tr>
-                <td><label for="credentials">Credentials:</label></td>
-                <td><input type="text" id="credentials" name="credentials" readonly placeholder="Derived from Achievements" /></td>
+              <td><label for="credentials">Credentials:</label></td>
+              <td><input type="text" id="credentials" name="credentials" readonly
+                  placeholder="Derived from Achievements" /></td>
             </tr>
 
-            </table>
-          </div>
+          </table>
+        </div>
       </div>
 
       <div class="form-actions">

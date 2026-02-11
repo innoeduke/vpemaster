@@ -129,8 +129,37 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cancelButton) {
       cancelButton.addEventListener("click", () => {
         if (isEditing) {
-          // toggleEditMode(false); // Can cause visual glitch (zombie state) before reload
-          window.location.reload();
+          const meetingNumber = meetingFilter.value;
+          if (!meetingNumber) {
+            window.location.reload();
+            return;
+          }
+
+          // Fast Cancel: Fetch current data and re-render without reload
+          fetch(`/api/agenda/get_logs/${meetingNumber}`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                if (data.project_speakers) {
+                  projectSpeakers = data.project_speakers;
+                  tableContainer.dataset.projectSpeakers = JSON.stringify(projectSpeakers);
+                }
+                if (data.logs_data) {
+                  renderTableRows(data.logs_data);
+                  toggleEditMode(false);
+                } else {
+                  // Fallback if no logs returned
+                  window.location.reload();
+                }
+              } else {
+                console.error("Fast cancel failed:", data.message);
+                window.location.reload();
+              }
+            })
+            .catch(err => {
+              console.error("Fast cancel error:", err);
+              window.location.reload();
+            });
         }
       });
     }
@@ -476,12 +505,12 @@ document.addEventListener("DOMContentLoaded", () => {
         // 3. Owner
         const tdOwner = document.createElement('td');
         tdOwner.className = 'non-edit-mode-cell col-owner';
-        
+
         const ownersData = log.owners_data || [];
         ownersData.forEach((ownerInfo, index) => {
           const ownerRow = document.createElement('div');
           ownerRow.className = 'owner-row';
-          
+
           const nameSpan = document.createElement('span');
           nameSpan.className = 'owner-name';
           nameSpan.textContent = ownerInfo.name;
@@ -504,7 +533,7 @@ document.addEventListener("DOMContentLoaded", () => {
             ownerRow.appendChild(spanAward);
             displayedAwards.add(log.role);
           }
-          
+
           tdOwner.appendChild(ownerRow);
         });
         row.appendChild(tdOwner);
@@ -910,7 +939,7 @@ document.addEventListener("DOMContentLoaded", () => {
         is_hidden: row.dataset.isHidden === "true",
       };
     }
-    
+
     // Collect all owner IDs
     const ownerIdInputs = row.querySelectorAll('input[name="owner_ids"]');
     const ownerIds = Array.from(ownerIdInputs).map(input => input.value).filter(val => val !== "");
@@ -1141,24 +1170,24 @@ document.addEventListener("DOMContentLoaded", () => {
           )
         );
         break;
-    case "Owner_ID":
-      // Parse owner_ids from dataset if available
-      let ownerIds = [];
-      try {
-        if (ownerIdsJson) {
-          ownerIds = JSON.parse(ownerIdsJson);
+      case "Owner_ID":
+        // Parse owner_ids from dataset if available
+        let ownerIds = [];
+        try {
+          if (ownerIdsJson) {
+            ownerIds = JSON.parse(ownerIdsJson);
+          }
+        } catch (e) {
+          console.error("Error parsing ownerIds", e);
         }
-      } catch (e) {
-        console.error("Error parsing ownerIds", e);
-      }
 
-      // Fallback to single value if list is empty but single ID exists
-      if (ownerIds.length === 0 && value) {
-        ownerIds = [value];
-      }
+        // Fallback to single value if list is empty but single ID exists
+        if (ownerIds.length === 0 && value) {
+          ownerIds = [value];
+        }
 
-      cell.appendChild(createOwnerInput(ownerIds));
-      break;
+        cell.appendChild(createOwnerInput(ownerIds));
+        break;
       default:
         const defaultInput = document.createElement("input");
         defaultInput.type = "text";
@@ -1181,7 +1210,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const availableTypes = [...allSessionTypes];
 
     const sections = availableTypes.filter(t => t.Is_Section);
-    
+
     // Group Non-Section types into Standard and Club Specific
     const standard = availableTypes.filter(
       (type) => !type.Is_Section && type.club_id === GLOBAL_CLUB_ID
@@ -1205,14 +1234,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clubSpecific.length > 0) {
       select.appendChild(createOptGroup("--- Club Specific Sessions ---", clubSpecific));
     }
-    
+
     // 2. Standard (Global)
     if (standard.length > 0) {
       select.appendChild(
         createOptGroup("--- Standard Sessions ---", standard)
       );
     }
-    
+
     // 3. Section Headers
     if (sections.length > 0) {
       select.appendChild(createOptGroup("--- Section Headers ---", sections));
@@ -1281,7 +1310,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function createOwnerInput(ownerIds) {
     if (!Array.isArray(ownerIds)) ownerIds = ownerIds ? [ownerIds] : [];
-    
+
     const wrapper = document.createElement("div");
     wrapper.className = "owner-cell-wrapper";
     wrapper.style.display = "flex";
@@ -1290,7 +1319,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const tagsContainer = document.createElement("div");
     tagsContainer.className = "owners-tags-container";
-    
+
     const hiddenInputsContainer = document.createElement("div");
     hiddenInputsContainer.className = "hidden-owners-container";
 
@@ -1298,92 +1327,92 @@ document.addEventListener("DOMContentLoaded", () => {
     let selectedIds = [...ownerIds];
 
     const renderTags = () => {
-        tagsContainer.innerHTML = "";
-        hiddenInputsContainer.innerHTML = "";
-        
-        selectedIds.forEach(id => {
-            const contact = allContacts.find(c => c.id == id);
-            if (!contact) return;
+      tagsContainer.innerHTML = "";
+      hiddenInputsContainer.innerHTML = "";
 
-            const tag = document.createElement("div");
-            tag.className = "owner-tag";
-            tag.innerHTML = `<span>${contact.Name}</span>`;
-            
-            const removeBtn = document.createElement("span");
-            removeBtn.className = "remove-tag";
-            removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-            removeBtn.onclick = (e) => {
-                e.stopPropagation();
-                selectedIds = selectedIds.filter(sid => sid != id);
-                renderTags();
-            };
-            
-            tag.appendChild(removeBtn);
-            tagsContainer.appendChild(tag);
+      selectedIds.forEach(id => {
+        const contact = allContacts.find(c => c.id == id);
+        if (!contact) return;
 
-            // Add hidden input for form submission
-            const hidden = document.createElement("input");
-            hidden.type = "hidden";
-            hidden.name = "owner_ids";
-            hidden.value = id;
-            hiddenInputsContainer.appendChild(hidden);
-        });
+        const tag = document.createElement("div");
+        tag.className = "owner-tag";
+        tag.innerHTML = `<span>${contact.Name}</span>`;
 
-        // Hide container if empty to avoid gap/space
-        tagsContainer.style.display = selectedIds.length > 0 ? "flex" : "none";
+        const removeBtn = document.createElement("span");
+        removeBtn.className = "remove-tag";
+        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
+        removeBtn.onclick = (e) => {
+          e.stopPropagation();
+          selectedIds = selectedIds.filter(sid => sid != id);
+          renderTags();
+        };
 
-        // Sync primary owner data to row (for credentials/project)
-        const currentRow = wrapper.closest("tr");
-        if (currentRow) {
-            const primaryId = selectedIds[0];
-            const primaryContact = allContacts.find(c => c.id == primaryId);
-            
-            // Critical updates for save logic to pick up
-            currentRow.dataset.ownerId = primaryId || "";
-            currentRow.dataset.ownerIds = JSON.stringify(selectedIds);
-            
-            const credentialsInput = currentRow.querySelector('[data-field="Credentials"] input');
-            if (credentialsInput) {
-                credentialsInput.value = primaryContact ? (primaryContact.Credentials || "") : "";
-                currentRow.dataset.credentials = credentialsInput.value;
-            }
+        tag.appendChild(removeBtn);
+        tagsContainer.appendChild(tag);
 
-            if (primaryContact) {
-                updatePairedSession(currentRow, selectedIds);
-                
-                // Auto-update Project for Prepared Speeches (ID 30)
-                const typeSelect = currentRow.querySelector('[data-field="Type_ID"] select');
-// ... rest of the logic
-                if (typeSelect && typeSelect.value == 30 && primaryContact.Next_Project && window.allProjects) {
-                    const nextProjCode = primaryContact.Next_Project;
-                    let foundProjId = null;
-                    for (const proj of window.allProjects) {
-                        if (proj.path_codes) {
-                            for (const [abbr, details] of Object.entries(proj.path_codes)) {
-                                if (abbr + details.code === nextProjCode) {
-                                    foundProjId = proj.id;
-                                    break;
-                                }
-                            }
-                        }
-                        if (foundProjId) break;
-                    }
-                    if (foundProjId) {
-                        currentRow.dataset.projectId = foundProjId;
-                    }
-                }
-            } else {
-                updatePairedSession(currentRow, null);
-                if (currentRow.dataset.typeId == 30) {
-                    currentRow.dataset.projectId = "";
-                }
-            }
+        // Add hidden input for form submission
+        const hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "owner_ids";
+        hidden.value = id;
+        hiddenInputsContainer.appendChild(hidden);
+      });
+
+      // Hide container if empty to avoid gap/space
+      tagsContainer.style.display = selectedIds.length > 0 ? "flex" : "none";
+
+      // Sync primary owner data to row (for credentials/project)
+      const currentRow = wrapper.closest("tr");
+      if (currentRow) {
+        const primaryId = selectedIds[0];
+        const primaryContact = allContacts.find(c => c.id == primaryId);
+
+        // Critical updates for save logic to pick up
+        currentRow.dataset.ownerId = primaryId || "";
+        currentRow.dataset.ownerIds = JSON.stringify(selectedIds);
+
+        const credentialsInput = currentRow.querySelector('[data-field="Credentials"] input');
+        if (credentialsInput) {
+          credentialsInput.value = primaryContact ? (primaryContact.Credentials || "") : "";
+          currentRow.dataset.credentials = credentialsInput.value;
         }
+
+        if (primaryContact) {
+          updatePairedSession(currentRow, selectedIds);
+
+          // Auto-update Project for Prepared Speeches (ID 30)
+          const typeSelect = currentRow.querySelector('[data-field="Type_ID"] select');
+          // ... rest of the logic
+          if (typeSelect && typeSelect.value == 30 && primaryContact.Next_Project && window.allProjects) {
+            const nextProjCode = primaryContact.Next_Project;
+            let foundProjId = null;
+            for (const proj of window.allProjects) {
+              if (proj.path_codes) {
+                for (const [abbr, details] of Object.entries(proj.path_codes)) {
+                  if (abbr + details.code === nextProjCode) {
+                    foundProjId = proj.id;
+                    break;
+                  }
+                }
+              }
+              if (foundProjId) break;
+            }
+            if (foundProjId) {
+              currentRow.dataset.projectId = foundProjId;
+            }
+          }
+        } else {
+          updatePairedSession(currentRow, null);
+          if (currentRow.dataset.typeId == 30) {
+            currentRow.dataset.projectId = "";
+          }
+        }
+      }
     };
 
     const searchContainer = document.createElement("div");
     searchContainer.className = "autocomplete-container";
-    
+
     const searchInput = document.createElement("input");
     searchInput.type = "text";
     searchInput.placeholder = ""; // Don't show a placeholder for a blank owner
@@ -1394,44 +1423,44 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Custom autocomplete logic to add to tags and clear input
     const setupOwnerAutocomplete = (input) => {
-        let currentFocus;
-        input.addEventListener("input", function () {
-            let container, item, val = this.value;
-            closeAllLists();
-            if (!val) return;
-            currentFocus = -1;
-            container = document.createElement("div");
-            container.setAttribute("class", "autocomplete-items");
-            this.parentNode.appendChild(container);
+      let currentFocus;
+      input.addEventListener("input", function () {
+        let container, item, val = this.value;
+        closeAllLists();
+        if (!val) return;
+        currentFocus = -1;
+        container = document.createElement("div");
+        container.setAttribute("class", "autocomplete-items");
+        this.parentNode.appendChild(container);
 
-            allContacts
-                .filter(c => c.Name.toUpperCase().includes(val.toUpperCase()))
-                .slice(0, 10) // Limit results
-                .forEach(contact => {
-                    item = document.createElement("div");
-                    item.innerHTML = `<strong>${contact.Name.substr(0, val.length)}</strong>${contact.Name.substr(val.length)}`;
-                    item.addEventListener("click", () => {
-                        if (!selectedIds.includes(contact.id.toString())) {
-                            selectedIds.push(contact.id.toString());
-                            renderTags();
-                        }
-                        input.value = "";
-                        input.focus();
-                        closeAllLists();
-                    });
-                    container.appendChild(item);
-                });
-        });
+        allContacts
+          .filter(c => c.Name.toUpperCase().includes(val.toUpperCase()))
+          .slice(0, 10) // Limit results
+          .forEach(contact => {
+            item = document.createElement("div");
+            item.innerHTML = `<strong>${contact.Name.substr(0, val.length)}</strong>${contact.Name.substr(val.length)}`;
+            item.addEventListener("click", () => {
+              if (!selectedIds.includes(contact.id.toString())) {
+                selectedIds.push(contact.id.toString());
+                renderTags();
+              }
+              input.value = "";
+              input.focus();
+              closeAllLists();
+            });
+            container.appendChild(item);
+          });
+      });
 
-        function closeAllLists(elmnt) {
-            const items = document.getElementsByClassName("autocomplete-items");
-            for (let i = 0; i < items.length; i++) {
-                if (elmnt != items[i] && elmnt != input) {
-                    items[i].parentNode.removeChild(items[i]);
-                }
-            }
+      function closeAllLists(elmnt) {
+        const items = document.getElementsByClassName("autocomplete-items");
+        for (let i = 0; i < items.length; i++) {
+          if (elmnt != items[i] && elmnt != input) {
+            items[i].parentNode.removeChild(items[i]);
+          }
         }
-        document.addEventListener("click", (e) => closeAllLists(e.target));
+      }
+      document.addEventListener("click", (e) => closeAllLists(e.target));
     };
 
     setupOwnerAutocomplete(searchInput);
@@ -1445,19 +1474,19 @@ document.addEventListener("DOMContentLoaded", () => {
     pickerBtn.title = "Pick from Contact List";
     pickerBtn.style.padding = "2px 8px";
     pickerBtn.onclick = () => {
-        activeOwnerInput = searchInput; // So the modal knows where to "return" the value
-        // We need to override the default modal behavior to ADD instead of REPLACE
-        const oldOnContactSelect = window.onContactSelect;
-        window.onContactSelect = (contact) => {
-            if (!selectedIds.includes(contact.id.toString())) {
-                selectedIds.push(contact.id.toString());
-                renderTags();
-            }
-            searchInput.value = "";
-            searchInput.focus();
-            // Restore? Usually modal selection closes it.
-        };
-        window.openContactModal();
+      activeOwnerInput = searchInput; // So the modal knows where to "return" the value
+      // We need to override the default modal behavior to ADD instead of REPLACE
+      const oldOnContactSelect = window.onContactSelect;
+      window.onContactSelect = (contact) => {
+        if (!selectedIds.includes(contact.id.toString())) {
+          selectedIds.push(contact.id.toString());
+          renderTags();
+        }
+        searchInput.value = "";
+        searchInput.focus();
+        // Restore? Usually modal selection closes it.
+      };
+      window.openContactModal();
     };
 
     const inputRow = document.createElement("div");
@@ -1466,10 +1495,10 @@ document.addEventListener("DOMContentLoaded", () => {
     inputRow.append(searchContainer, pickerBtn);
 
     wrapper.append(tagsContainer, inputRow, hiddenInputsContainer);
-    
+
     // Initial render
     renderTags();
-    
+
     return wrapper;
   }
 
@@ -1482,7 +1511,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else if (ownerData) {
       ownerIds = [ownerData];
     }
-    
+
     const primaryId = ownerIds[0];
     const newContact = allContacts.find(c => c.id == primaryId);
 
@@ -1521,18 +1550,18 @@ document.addEventListener("DOMContentLoaded", () => {
           (st) => st.id == rowTypeSelect.value
         );
         if (rowSessionType) {
-            // Match by paired title OR by exact same role (if shared)
-            if (pairedSessionTitle && rowSessionType.Title === pairedSessionTitle) {
-                shouldSync = true;
-            } else if (isSharedRole && rowSessionType.Role === currentSessionType.Role) {
-                shouldSync = true;
-            }
+          // Match by paired title OR by exact same role (if shared)
+          if (pairedSessionTitle && rowSessionType.Title === pairedSessionTitle) {
+            shouldSync = true;
+          } else if (isSharedRole && rowSessionType.Role === currentSessionType.Role) {
+            shouldSync = true;
+          }
         }
       } else {
-          // If not in edit mode, check dataset.role
-          if (isSharedRole && row.dataset.role === currentSessionType.Role) {
-              shouldSync = true;
-          }
+        // If not in edit mode, check dataset.role
+        if (isSharedRole && row.dataset.role === currentSessionType.Role) {
+          shouldSync = true;
+        }
       }
 
       if (shouldSync) {
@@ -1540,53 +1569,53 @@ document.addEventListener("DOMContentLoaded", () => {
         row.dataset.ownerId = primaryId || "";
         row.dataset.ownerIds = JSON.stringify(ownerIds);
         if (newContact) {
-            row.dataset.credentials = (newContact.Credentials || "");
+          row.dataset.credentials = (newContact.Credentials || "");
         }
 
         // If in edit mode, sync UI components
         if (rowTypeSelect) {
-            // Legacy inputs
-            const pairedHiddenInput = row.querySelector('input[name="owner_id"]');
-            if (pairedHiddenInput) pairedHiddenInput.value = primaryId || "";
-            
-            const pairedCredentialsInput = row.querySelector('[data-field="Credentials"] input');
-            if (pairedCredentialsInput && newContact) {
-                pairedCredentialsInput.value = (newContact.Credentials || "");
-            }
+          // Legacy inputs
+          const pairedHiddenInput = row.querySelector('input[name="owner_id"]');
+          if (pairedHiddenInput) pairedHiddenInput.value = primaryId || "";
 
-            // [NEW] Multi-owner hidden inputs
-            // We use a simplified sync: if the other row is being edited, 
-            // the user might find it weird that tags don't update.
-            // But implementing a full renderTags cross-call is complex.
-            // Minimum: ensure hidden inputs match so save works.
-            const hiddenContainer = row.querySelector(".hidden-owners-container");
-            if (hiddenContainer) {
-                hiddenContainer.innerHTML = "";
-                ownerIds.forEach(id => {
-                    const hidden = document.createElement("input");
-                    hidden.type = "hidden";
-                    hidden.name = "owner_ids";
-                    hidden.value = id;
-                    hiddenContainer.appendChild(hidden);
-                });
-            }
-            
-            // Sync tags visually if possible
-            const tagsContainer = row.querySelector(".owners-tags-container");
-            if (tagsContainer) {
-                tagsContainer.innerHTML = "";
-                ownerIds.forEach(id => {
-                    const contact = allContacts.find(c => c.id == id);
-                    if (contact) {
-                        const tag = document.createElement("div");
-                        tag.className = "owner-tag";
-                        tag.innerHTML = `<span>${contact.Name}</span>`;
-                        tagsContainer.appendChild(tag);
-                    }
-                });
-                // Toggle visibility based on content
-                tagsContainer.style.display = ownerIds.length > 0 ? "flex" : "none";
-            }
+          const pairedCredentialsInput = row.querySelector('[data-field="Credentials"] input');
+          if (pairedCredentialsInput && newContact) {
+            pairedCredentialsInput.value = (newContact.Credentials || "");
+          }
+
+          // [NEW] Multi-owner hidden inputs
+          // We use a simplified sync: if the other row is being edited, 
+          // the user might find it weird that tags don't update.
+          // But implementing a full renderTags cross-call is complex.
+          // Minimum: ensure hidden inputs match so save works.
+          const hiddenContainer = row.querySelector(".hidden-owners-container");
+          if (hiddenContainer) {
+            hiddenContainer.innerHTML = "";
+            ownerIds.forEach(id => {
+              const hidden = document.createElement("input");
+              hidden.type = "hidden";
+              hidden.name = "owner_ids";
+              hidden.value = id;
+              hiddenContainer.appendChild(hidden);
+            });
+          }
+
+          // Sync tags visually if possible
+          const tagsContainer = row.querySelector(".owners-tags-container");
+          if (tagsContainer) {
+            tagsContainer.innerHTML = "";
+            ownerIds.forEach(id => {
+              const contact = allContacts.find(c => c.id == id);
+              if (contact) {
+                const tag = document.createElement("div");
+                tag.className = "owner-tag";
+                tag.innerHTML = `<span>${contact.Name}</span>`;
+                tagsContainer.appendChild(tag);
+              }
+            });
+            // Toggle visibility based on content
+            tagsContainer.style.display = ownerIds.length > 0 ? "flex" : "none";
+          }
         }
       }
     });
@@ -1710,7 +1739,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function createActionsCell(logId, typeId, hasRole, isHidden) {
     const cell = document.createElement("td");
     cell.className = "actions-column";
-    
+
     // Create a wrapper for flex layout to avoid breaking table cell borders
     const wrapper = document.createElement("div");
     wrapper.className = "actions-wrapper";
@@ -1722,23 +1751,23 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleBtn.className = isHidden ? "icon-btn toggle-visibility-btn is-hidden-state" : "icon-btn toggle-visibility-btn";
     toggleBtn.type = "button";
     toggleBtn.title = isHidden ? "Show in Agenda" : "Hide in Agenda";
-    
-    toggleBtn.onclick = function() {
-        const row = this.closest("tr");
-        const currentHidden = row.dataset.isHidden === "true";
-        const newHidden = !currentHidden;
-        
-        // Update dataset
-        row.dataset.isHidden = String(newHidden);
-        
-        // Update styling immediately
-        row.classList.toggle("hidden-row", newHidden);
-        
-        // Update Icon
-        this.innerHTML = newHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
-        // Toggle opacity class
-        this.className = newHidden ? "icon-btn toggle-visibility-btn is-hidden-state" : "icon-btn toggle-visibility-btn";
-        this.title = newHidden ? "Show in Agenda" : "Hide in Agenda";
+
+    toggleBtn.onclick = function () {
+      const row = this.closest("tr");
+      const currentHidden = row.dataset.isHidden === "true";
+      const newHidden = !currentHidden;
+
+      // Update dataset
+      row.dataset.isHidden = String(newHidden);
+
+      // Update styling immediately
+      row.classList.toggle("hidden-row", newHidden);
+
+      // Update Icon
+      this.innerHTML = newHidden ? '<i class="fas fa-eye-slash"></i>' : '<i class="fas fa-eye"></i>';
+      // Toggle opacity class
+      this.className = newHidden ? "icon-btn toggle-visibility-btn is-hidden-state" : "icon-btn toggle-visibility-btn";
+      this.title = newHidden ? "Show in Agenda" : "Hide in Agenda";
     };
     // ----------------------------
 
@@ -1839,7 +1868,7 @@ document.addEventListener("DOMContentLoaded", () => {
     deleteBtn.type = "button";
 
     wrapper.append(deleteBtn);
-    
+
     cell.appendChild(wrapper);
     return cell;
   }
@@ -1932,7 +1961,7 @@ window.showCustomConfirm = function (title, message, iconClass = "confirm") {
     messageEl.textContent = message;
     iconEl.className = "custom-modal-icon " + iconClass;
     iconEl.innerHTML = iconClass === "confirm" ? '<i class="fas fa-question-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
-    
+
     cancelBtn.style.display = "inline-block";
     modal.style.display = "flex";
 
@@ -1971,7 +2000,7 @@ window.showCustomAlert = function (title, message, iconClass = "alert") {
     messageEl.textContent = message;
     iconEl.className = "custom-modal-icon " + iconClass;
     iconEl.innerHTML = '<i class="fas fa-info-circle"></i>';
-    
+
     cancelBtn.style.display = "none";
     modal.style.display = "flex";
 

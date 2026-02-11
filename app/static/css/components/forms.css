@@ -1,121 +1,128 @@
 /* Base button style */
 .btn {
-    font-family: 'Montserrat', sans-serif;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+  font-family: "Montserrat", sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px; /* Reduced for mobile */
+  padding: 4px 12px; /* Reduced for mobile */
+  margin: 0;
+  color: white;
+  text-align: center;
+  border-radius: 6px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 100px;
+  box-sizing: border-box;
+  vertical-align: middle;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+@media (min-width: 769px) {
+  .btn {
     min-height: 38px;
     padding: 8px 20px;
-    margin: 0;
-    color: white;
-    text-align: center;
-    border-radius: 6px;
-    text-decoration: none;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    min-width: 100px;
-    box-sizing: border-box;
-    vertical-align: middle;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    line-height: 1.2;
+  }
 }
 
 .btn:disabled {
-    background-color: #e0e0e0;
-    color: #999;
-    cursor: not-allowed;
-    opacity: 0.7;
-    box-shadow: none;
+  background-color: #e0e0e0;
+  color: #999;
+  cursor: not-allowed;
+  opacity: 0.7;
+  box-shadow: none;
 }
 
 /* Modifier classes for button colors */
 .btn-primary {
-    background-color: #772432;
+  background-color: #772432;
 }
 
 .btn-secondary {
-    background-color: #6c757d;
-    color: white;
+  background-color: #6c757d;
+  color: white;
 }
 
 .btn-danger {
-    background-color: #dc3545;
-    color: white;
+  background-color: #dc3545;
+  color: white;
 }
 
 .btn-info {
-    color: white;
-    background-color: #004165;
+  color: white;
+  background-color: #004165;
 }
 
 .btn-success {
-    color: white;
-    background-color: #4CAF50;
+  color: white;
+  background-color: #4caf50;
 }
 
 .btn-warning {
-    color: white;
-    background-color: #f0ad4e;
+  color: white;
+  background-color: #f0ad4e;
 }
 
 .btn-cancel {
-    color: #333;
-    background-color: #6c757d;
+  color: #333;
+  background-color: #6c757d;
 }
 
 .btn-outline {
-    background-color: transparent;
-    border: 1px solid #6c757d;
-    color: #6c757d;
+  background-color: transparent;
+  border: 1px solid #6c757d;
+  color: #6c757d;
 }
 
 .btn-outline:hover {
-    background-color: #f8f9fa;
+  background-color: #f8f9fa;
 }
 
 .btn-sm {
-    min-height: 30px;
-    padding: 2px 12px;
-    font-size: 13px;
-    min-width: auto;
+  min-height: 30px;
+  padding: 2px 12px;
+  font-size: 13px;
+  min-width: auto;
 }
 
 /* Button group styles */
 .button-group {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    max-width: 100%;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 
-.button-group>.btn {
-    flex-grow: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.button-group > .btn {
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Form page styles */
 .form-table {
-    margin: 20px auto;
-    width: 100%;
-    max-width: 600px;
-    border-collapse: collapse;
-    border: 1px solid #999;
+  margin: 20px auto;
+  width: 100%;
+  max-width: 600px;
+  border-collapse: collapse;
+  border: 1px solid #999;
 }
 
 .form-table th,
 .form-table td {
-    padding: 10px;
-    border: 1px solid #999;
-    vertical-align: middle;
+  padding: 10px;
+  border: 1px solid #999;
+  vertical-align: middle;
 }
 
 .form-table label {
-    font-weight: bold;
+  font-weight: bold;
 }
 
 .form-table input[type="text"],
@@ -124,46 +131,46 @@
 .form-table input[type="number"],
 .form-table select,
 .form-table textarea {
-    width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
 }
 
 .form-table textarea {
-    min-height: 160px;
-    resize: vertical;
+  min-height: 160px;
+  resize: vertical;
 }
 
 /* --- Scoped Fix: Custom Autocomplete (Ported from Agenda Owner Search) --- */
 
 .autocomplete-container {
-    position: relative;
-    width: 100%;
-    font-size: 0.85em;
+  position: relative;
+  width: 100%;
+  font-size: 0.85em;
 }
 
 .owner-search-input {
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 8px 12px;
-    /* Slightly larger padding than agenda for form consistency */
-    font-size: 0.9em;
-    width: 100%;
-    box-sizing: border-box;
-    /* height: 30px; Remove fixed height to match other form inputs if needed */
-    background-color: #ffffff;
-    color: #333333;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px 12px;
+  /* Slightly larger padding than agenda for form consistency */
+  font-size: 0.9em;
+  width: 100%;
+  box-sizing: border-box;
+  /* height: 30px; Remove fixed height to match other form inputs if needed */
+  background-color: #ffffff;
+  color: #333333;
 }
 
 .owner-search-input:focus {
-    border-color: #337ab7;
-    /* Primary color approximation */
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(51, 122, 183, 0.1);
-    background-color: #ffffff;
-    color: #333333;
+  border-color: #337ab7;
+  /* Primary color approximation */
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(51, 122, 183, 0.1);
+  background-color: #ffffff;
+  color: #333333;
 }
 
 /* Override WebKit Autofill for owner-search-input */
@@ -171,342 +178,286 @@
 .owner-search-input:-webkit-autofill:hover,
 .owner-search-input:-webkit-autofill:focus,
 .owner-search-input:-webkit-autofill:active {
-    -webkit-box-shadow: 0 0 0 30px #ffffff inset;
-    -webkit-text-fill-color: #333333;
-    transition: background-color 5000s ease-in-out 0s;
+  -webkit-box-shadow: 0 0 0 30px #ffffff inset;
+  -webkit-text-fill-color: #333333;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .autocomplete-items {
-    position: absolute;
-    border: 1px solid #d4d4d4;
-    border-bottom: none;
-    border-top: none;
-    z-index: 99;
-    top: 100%;
-    bottom: auto;
-    left: 0;
-    right: 0;
-    width: 100%;
-    /* Match parent width */
-    max-height: 200px;
-    overflow-y: auto;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  border: 1px solid #d4d4d4;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  top: 100%;
+  bottom: auto;
+  left: 0;
+  right: 0;
+  width: 100%;
+  /* Match parent width */
+  max-height: 200px;
+  overflow-y: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .autocomplete-items div {
-    padding: 10px;
-    cursor: pointer;
-    background-color: #fff;
-    border-bottom: 1px solid #d4d4d4;
-    color: #333;
-    text-align: left;
-    /* Ensure text aligns left */
+  padding: 10px;
+  cursor: pointer;
+  background-color: #fff;
+  border-bottom: 1px solid #d4d4d4;
+  color: #333;
+  text-align: left;
+  /* Ensure text aligns left */
 }
 
 .autocomplete-items div:hover {
-    background-color: #e9e9e9;
+  background-color: #e9e9e9;
 }
 
-
 .form-actions {
-    text-align: center;
-    margin-top: 20px;
+  text-align: center;
+  margin-top: 20px;
 }
 
 label.required::after {
-    content: "*";
-    color: #772432;
-    margin-left: 4px;
-    font-weight: bold;
+  content: "*";
+  color: #772432;
+  margin-left: 4px;
+  font-weight: bold;
 }
 
-/* Login page styles */
-.login-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-}
-
-.login-form {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    max-width: 400px;
-    width: 100%;
-    box-sizing: border-box;
-}
-
-.login-form input {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.login-form button {
-    width: 100%;
-    margin-top: 10px;
-}
 
 /* --- Shared Component: Search Container --- */
 .search-container {
-    position: relative;
-    display: inline-block;
+  position: relative;
+  display: inline-block;
 }
 
 .search-box {
-    width: 300px;
-    padding: 8px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    flex-grow: 0;
-    padding-right: 30px;
-    /* Make space for the clear button */
+  width: 300px;
+  padding: 8px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex-grow: 0;
+  padding-right: 30px;
+  /* Make space for the clear button */
 }
 
 .clear-search-btn {
-    position: absolute;
-    top: 50%;
-    right: 5px;
-    transform: translateY(-50%);
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    font-size: 20px;
-    color: #888;
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 20px;
+  color: #888;
 }
 
 .clear-search-btn:hover {
-    color: #000;
+  color: #000;
 }
 
 /* --- Duplicate Modal Styling (Premium) --- */
 .duplicate-modal-content {
-    max-width: 600px;
-    padding: 0;
-    overflow: hidden;
-    border: none !important;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  padding: 0;
+  overflow: hidden;
+  border: none !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 .duplicate-modal-content .modal-header {
-    background-color: #fff;
-    padding: 24px 30px;
-    border-bottom: 1px solid #f0f0f0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  background-color: #fff;
+  padding: 24px 30px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .duplicate-modal-content .modal-header h2 {
-    margin: 0;
-    color: #333;
-    font-size: 1.4rem;
-    font-weight: 700;
+  margin: 0;
+  color: #333;
+  font-size: 1.4rem;
+  font-weight: 700;
 }
 
 .duplicate-modal-content .modal-body {
-    padding: 24px 30px;
+  padding: 24px 30px;
 }
 
 .duplicate-modal-content .modal-description {
-    color: #666;
-    font-size: 1rem;
-    line-height: 1.5;
-    margin-bottom: 24px;
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin-bottom: 24px;
 }
 
 .duplicate-list {
-    margin: 0;
-    max-height: 340px;
-    overflow-y: auto;
-    padding: 12px 10px;
-    /* Increased padding to prevent clipping on hover */
+  margin: 0;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 12px 10px;
+  /* Increased padding to prevent clipping on hover */
 }
 
 /* Custom scrollbar for duplicate list */
 .duplicate-list::-webkit-scrollbar {
-    width: 6px;
+  width: 6px;
 }
 
 .duplicate-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 10px;
+  background: #f1f1f1;
+  border-radius: 10px;
 }
 
 .duplicate-list::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 10px;
+  background: #ccc;
+  border-radius: 10px;
 }
 
 .duplicate-list::-webkit-scrollbar-thumb:hover {
-    background: #999;
+  background: #999;
 }
 
 .duplicate-item {
-    padding: 24px;
-    border: 1px solid #f0f0f0;
-    margin-bottom: 20px;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    /* Move content to stack vertically */
-    align-items: center;
-    /* Center everything */
-    background: #fff;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 24px;
+  border: 1px solid #f0f0f0;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  /* Move content to stack vertically */
+  align-items: center;
+  /* Center everything */
+  background: #fff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .duplicate-item:hover {
-    border-color: #772432;
-    box-shadow: 0 8px 20px rgba(119, 36, 50, 0.1);
-    transform: translateY(-2px);
+  border-color: #772432;
+  box-shadow: 0 8px 20px rgba(119, 36, 50, 0.1);
+  transform: translateY(-2px);
 }
 
 .duplicate-info {
-    width: 100%;
-    margin-bottom: 20px;
-    /* Space between info and button */
-    text-align: center;
-    /* Center text content */
+  width: 100%;
+  margin-bottom: 20px;
+  /* Space between info and button */
+  text-align: center;
+  /* Center text content */
 }
 
 .dup-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    /* Center name and username */
-    gap: 8px;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Center name and username */
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
 }
 
 .dup-name {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    line-height: 1.3;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.3;
 }
 
 .dup-username {
-    font-size: 0.95rem;
-    color: #888;
-    font-weight: 500;
+  font-size: 0.95rem;
+  color: #888;
+  font-weight: 500;
 }
 
 .dup-details {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    /* Center children */
-    gap: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Center children */
+  gap: 6px;
 }
 
 .dup-club-list {
-    font-size: 0.95rem;
-    color: #666;
-    line-height: 1.5;
-    display: block;
-    /* Use block for robust centering of inline elements */
-    text-align: center;
-    max-width: 100%;
+  font-size: 0.95rem;
+  color: #666;
+  line-height: 1.5;
+  display: block;
+  /* Use block for robust centering of inline elements */
+  text-align: center;
+  max-width: 100%;
 }
 
 .dup-club-list i {
-    display: inline-block;
-    margin-right: 6px;
-    color: #999;
-    font-size: 0.9rem;
-    vertical-align: middle;
+  display: inline-block;
+  margin-right: 6px;
+  color: #999;
+  font-size: 0.9rem;
+  vertical-align: middle;
 }
 
 .dup-details .status-text {
-    margin-top: 4px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    padding: 0;
+  margin-top: 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0;
 }
 
 .duplicate-actions {
-    width: 100%;
-    display: flex;
-    justify-content: center;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .duplicate-actions .btn {
-    min-width: 200px;
-    /* Wider button since it's now on its own row */
-    padding: 10px 24px;
-    font-size: 14px;
-    font-weight: 700;
+  min-width: 200px;
+  /* Wider button since it's now on its own row */
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .duplicate-modal-content .modal-footer {
-    padding: 24px 30px;
-    background-color: #fcfcfc;
-    border-top: 1px solid #f0f0f0;
-    display: flex;
-    justify-content: center;
-    gap: 20px;
+  padding: 24px 30px;
+  background-color: #fcfcfc;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
 }
 
 .duplicate-modal-content .modal-footer .btn {
-    min-width: 160px;
+  min-width: 160px;
 }
-
 
 /* --- Badge Styling --- */
 .badge {
-    display: inline-block;
-    padding: 2px 8px;
-    font-size: 0.75em;
-    font-weight: 600;
-    line-height: 1.4;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
-    border-radius: 4px;
-    color: #fff;
-    margin-top: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 0.75em;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 4px;
+  color: #fff;
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .badge-user {
-    background-color: #772432;
-    /* Toastmasters Maroon */
+  background-color: #772432;
+  /* Toastmasters Maroon */
 }
 
 .badge-contact {
-    background-color: #6c757d;
-    /* Standard Grey */
-}
-
-
-/* --- Mobile / Tablet Responsive Styles --- */
-@media (max-width: 992px) {
-
-    /* Adjust form tables for mobile */
-    .form-table {
-        margin-top: 0;
-    }
-
-    .form-table tr {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .form-table input[type="text"],
-    .form-table input[type="password"],
-    .form-table input[type="number"],
-    .form-table select {
-        width: 100%;
-    }
+  background-color: #6c757d;
+  /* Standard Grey */
 }

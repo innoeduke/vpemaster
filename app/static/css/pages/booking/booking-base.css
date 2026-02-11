@@ -5,859 +5,849 @@
 
 /* --- Accordion Styles --- */
 .award-accordion {
-	margin-top: 20px;
+  margin-top: 20px;
 }
 
 .accordion-item {
-
-	margin-bottom: 10px;
-	padding: 0 !important;
+  margin: 20px 0;
+  padding: 0 !important;
 }
 
 .accordion-header {
-	background-color: #f8f9fa;
-	color: #333;
-	cursor: pointer;
-	padding: 15px 20px;
-	width: 100%;
-	border: none;
-	text-align: left;
-	outline: none;
-	font-size: 1.2em;
-	font-weight: bold;
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	transition: background-color 0.3s ease;
+  background-color: #f8f9fa;
+  color: #333;
+  cursor: pointer;
+  padding: 15px 20px;
+  width: 100%;
+  border: none;
+  text-align: left;
+  outline: none;
+  font-size: 1.2em;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s ease;
 }
 
 .accordion-header:hover {
-	background-color: #e9ecef;
+  background-color: #e9ecef;
 }
 
 .accordion-header.active {
-	background-color: #e0e0e0;
+  background-color: #e0e0e0;
 }
 
 .accordion-header-right {
-	display: flex;
-	align-items: center;
-	gap: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .accordion-header i {
-	transition: transform 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .accordion-header.active i.fa-chevron-down {
-	transform: rotate(180deg);
+  transform: rotate(180deg);
 }
 
 .accordion-content {
-	border-radius: 8px;
-	background-color: white;
-	max-height: 0;
-	overflow: hidden;
-	transition: max-height 0.3s ease-out;
+  border-radius: 8px;
+  background-color: white;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
 }
 
-.accordion-header.active+.accordion-content {
-	overflow: visible;
+.accordion-header.active + .accordion-content {
+  overflow: visible;
 }
 
 .accordion-content .booking-table {
-	box-shadow: none;
-	border-radius: 0;
+  box-shadow: none;
+  border-radius: 0;
 }
 
 /* --- Booking Container --- */
 .booking-container {
-	max-width: 900px;
-	margin: 20px auto;
+  max-width: 900px;
+  margin: 20px auto;
 }
 
 .booking-container h1 {
-	color: #333;
+  color: #333;
 }
 
 .booking-section-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	text-align: left;
-	margin: 15px 0;
-	font-size: 1.2em;
-	color: #333;
-	font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+  margin: 15px 0;
+  font-size: 1.2em;
+  color: #333;
+  font-weight: 700;
 }
 
 /* --- Filter Container --- */
 .filters-container.premium {
-	background-color: #fff;
-	padding: 15px 20px;
-	border-radius: 8px;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-	margin-bottom: 25px;
-	border: 1px solid #e2e8f0;
+  background-color: #fff;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 25px;
+  border: 1px solid #e2e8f0;
 }
 
 .filter-row-premium {
-	display: flex;
-	align-items: center;
-	padding: 0;
-	gap: 20px;
-	flex-wrap: nowrap;
-	justify-content: space-between;
-	width: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  gap: 20px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .filter-row-premium .filter-left {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	flex-shrink: 0;
-	font-size: 1em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  font-size: 1em;
 }
 
 .filter-row-premium .filter-right {
-	display: flex;
-	justify-content: flex-end;
-	gap: 10px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .filters-container.premium #meeting-filter {
-	font-size: 1.1em;
-	width: auto;
-	min-width: 250px;
-	background-color: transparent;
-	border: none;
-	padding: 0;
-	box-shadow: none;
+  font-size: 1.1em;
+  width: auto;
+  min-width: 250px;
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
 }
 
 .filters-container.premium .btn,
 .filters-container.premium .role-guide-link {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	gap: 10px;
-	font-weight: bold;
-	padding: 0 16px;
-	height: 40px;
-	min-height: 40px;
-	line-height: normal;
-	box-sizing: border-box;
-	font-size: 14.5px;
-	width: auto;
-	font-family: 'Montserrat', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  gap: 10px;
 }
 
 /* --- Horizontal Timeline --- */
 .horizontal-timeline {
-	display: flex;
-	justify-content: flex-start;
-	position: relative;
-	padding-top: 20px;
-	overflow-x: auto;
-	padding-bottom: 15px;
+  display: flex;
+  justify-content: flex-start;
+  position: relative;
+  padding-top: 20px;
+  overflow-x: auto;
+  padding-bottom: 15px;
 }
 
 .horizontal-timeline::before {
-	content: '';
-	position: absolute;
-	top: 38px;
-	left: 20px;
-	width: calc(100% - 40px);
-	height: 2px;
-	background-color: #e0e0e0;
-	z-index: 0;
+  content: "";
+  position: absolute;
+  top: 38px;
+  left: 20px;
+  width: calc(100% - 40px);
+  height: 2px;
+  background-color: #e0e0e0;
+  z-index: 0;
 }
 
 .timeline-header {
-	font-size: 0.9em;
-	color: #555;
-	white-space: nowrap;
+  font-size: 0.9em;
+  color: #555;
+  white-space: nowrap;
 }
 
 .timeline-header .meeting-number {
-	font-weight: bold;
+  font-weight: bold;
 }
 
 .timeline-header .meeting-date {
-	font-weight: normal;
-	color: #888;
-	margin-left: 5px;
-	font-size: 0.8em;
+  font-weight: normal;
+  color: #888;
+  margin-left: 5px;
+  font-size: 0.8em;
 }
 
 .timeline-marker {
-	width: 0;
-	height: 0;
-	background-color: transparent;
-	border-radius: 0;
-	border: none;
-	border-left: 8px solid transparent;
-	border-right: 8px solid transparent;
-	border-bottom: 12px solid #772432;
-	margin: 2px 0 5px 0;
+  width: 0;
+  height: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 12px solid #772432;
+  margin: 2px 0 5px 0;
 }
 
 .timeline-roles-list {
-	display: flex;
-	flex-direction: column;
-	gap: 5px;
-	margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 5px;
 }
 
 .timeline-role i {
-	color: #772432;
+  color: #772432;
 }
 
 .timeline-event {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	position: relative;
-	z-index: 1;
-	text-align: center;
-	min-width: 120px;
-	margin: 0 15px;
-	border: 1px solid transparent;
-	border-radius: 4px;
-	padding: 0 10px;
-	font-size: 0.8em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  min-width: 120px;
+  margin: 0 15px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 0.8em;
 }
 
 .timeline-event:hover {
-	background-color: #eef2f7;
-	border-color: #ccc;
+  background-color: #eef2f7;
+  border-color: #ccc;
 }
 
 .timeline-role {
-	cursor: default;
-	padding: 0;
-	transition: none;
-	background-color: transparent;
+  cursor: default;
+  padding: 0;
+  transition: none;
+  background-color: transparent;
 }
 
 .timeline-role:hover {
-	background-color: transparent;
+  background-color: transparent;
 }
 
 /* --- Booking Table --- */
 .booking-table {
-	width: 100%;
-	border-collapse: collapse;
-	border-radius: 8px;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-	border: none;
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: none;
 }
 
 .booking-table th,
 .booking-table td {
-	padding: 15px;
-	text-align: left;
-	border: none;
-	white-space: nowrap;
-	vertical-align: middle;
+  padding: 15px;
+  text-align: left;
+  border: none;
+  white-space: nowrap;
+  vertical-align: middle;
 }
 
 .booking-table tr {
-	border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
 }
 
 .booking-table th {
-	background-color: #f8f9fa;
+  background-color: #f8f9fa;
 }
 
 .booking-table .owner-header {
-	text-align: center;
+  text-align: center;
 }
 
 .booking-table tbody tr:last-child {
-	border-bottom: none;
+  border-bottom: none;
 }
 
 /* --- Role Cell --- */
 .role-avatar {
-	width: 32px;
-	height: 32px;
-	border-radius: 50%;
-	overflow: hidden;
-	flex-shrink: 0;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	background-color: #f0f0f0;
-	border: 1px solid #ddd;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
 }
 
 .role-avatar img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .role-avatar i.fa-user-circle {
-	font-size: 1.8em;
-	color: #ccc;
-	line-height: 1;
+  font-size: 1.8em;
+  color: #ccc;
+  line-height: 1;
 }
 
 .role-avatar.waitlist-avatar {
-	border: 2px solid #ffc700;
-	width: 28px;
-	height: 28px;
-	opacity: 0.8;
+  border: 2px solid #ffc700;
+  width: 28px;
+  height: 28px;
+  opacity: 0.8;
 }
 
 /* Admin avatar with remove button */
 .role-avatar.admin-avatar {
-	position: relative;
-	overflow: visible;
+  position: relative;
+  overflow: visible;
 }
 
 .role-avatar.admin-avatar img {
-	border-radius: 50%;
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .avatar-remove-btn {
-	position: absolute;
-	top: -5px;
-	right: -5px;
-	width: 18px;
-	height: 18px;
-	border-radius: 50%;
-	background-color: #dc3545;
-	color: white;
-	border: 2px solid white;
-	cursor: pointer;
-	display: none;
-	align-items: center;
-	justify-content: center;
-	font-size: 10px;
-	padding: 0;
-	line-height: 1;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: #dc3545;
+  color: white;
+  border: 2px solid white;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  padding: 0;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .avatar-remove-btn:hover {
-	background-color: #c82333;
+  background-color: #c82333;
 }
 
 .role-avatar.admin-avatar:hover .avatar-remove-btn {
-	display: flex;
+  display: flex;
 }
 
 .is-finished-meeting .role-avatar {
-	width: 60px;
-	height: 60px;
+  width: 60px;
+  height: 60px;
 }
 
 .is-finished-meeting .role-avatar i.fa-user-circle {
-	font-size: 2.8em;
+  font-size: 2.8em;
 }
 
 .role-cell {
-	font-family: 'Montserrat', sans-serif;
-	font-weight: bold;
-	min-width: 250px;
+  font-family: "Montserrat", sans-serif;
+  font-weight: bold;
+  min-width: 250px;
 }
 
 .role-cell i {
-	color: #772432;
-	flex-shrink: 0;
+  color: #772432;
+  flex-shrink: 0;
 }
 
 .role-cell-content {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	white-space: nowrap;
-	overflow: hidden;
-	width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 100%;
 }
 
 .role-cell-inner {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .role-cell-actions {
-	flex-shrink: 0;
-	margin-left: 10px;
+  flex-shrink: 0;
+  margin-left: 10px;
 }
 
 .status-cell-content {
-	display: flex;
-	align-items: center;
-	gap: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 /* --- Action Cell --- */
 .booking-table .btn {
-	padding: 8px 15px;
-	border-radius: 6px;
-	color: white;
-	background-color: #6c757d;
-	border: none;
-	cursor: pointer;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	font-family: 'Montserrat', sans-serif;
-	font-weight: bold;
-	font-size: 0.9rem;
-	width: 130px;
-	height: 38px;
-	box-sizing: border-box;
-	white-space: nowrap;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-	transition: all 0.2s ease;
+  padding: 8px 15px;
+  border-radius: 6px;
+  color: white;
+  background-color: #6c757d;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Montserrat", sans-serif;
+  font-weight: bold;
+  font-size: 0.9rem;
+  width: 130px;
+  height: 38px;
+  box-sizing: border-box;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
 }
 
 .booking-table .btn:hover {
-	transform: translateY(-1px);
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-	filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  filter: brightness(1.1);
 }
 
 .booking-table .btn:active {
-	transform: translateY(1px);
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  transform: translateY(1px);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 .owner-display {
-	font-family: 'Montserrat', sans-serif;
-	font-weight: normal;
-	font-size: 1em;
-	color: #333;
-	text-align: left;
-	width: 100%;
-	white-space: nowrap;
-	overflow: hidden;
+  font-family: "Montserrat", sans-serif;
+  font-weight: normal;
+  font-size: 1em;
+  color: #333;
+  text-align: left;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .icon-cell .button-group {
-	display: flex;
-	flex-direction: row;
-	gap: 5px;
-	align-items: center;
-	justify-content: center;
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
 }
 
 .booking-table .icon-cell .btn {
-	width: auto;
-	white-space: nowrap;
-	box-sizing: border-box;
-	justify-content: center;
+  width: auto;
+  white-space: nowrap;
+  box-sizing: border-box;
+  justify-content: center;
 }
 
 .booking-table .btn-book {
-	background-color: #10b981;
+  background-color: #10b981;
 }
 
 .btn-booked {
-	background-color: #e9ecef;
-	color: #6c757d;
-	cursor: not-allowed;
+  background-color: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
 }
 
 .btn-info {
-	background-color: #004165;
+  background-color: #004165;
 }
 
 .icon-cell {
-	text-align: center;
+  text-align: center;
 }
 
 .icon-cell .icon-btn {
-	padding: 6px 10px;
-	flex-shrink: 0;
+  padding: 6px 10px;
+  flex-shrink: 0;
 }
 
 .booking-table .assign-cell {
-	text-align: right;
+  text-align: right;
 }
 
 .assign-cell select {
-	color: #333;
+  color: #333;
 }
 
 .admin-assign-select.unassigned-role {
-	border-color: #28a745;
-	background-color: #e9f7ef;
-	font-weight: bold;
+  border-color: #28a745;
+  background-color: #e9f7ef;
+  font-weight: bold;
 }
-
 
 /* --- Role Badges --- */
 .role-badge {
-	display: inline-block;
-	padding: 2px 6px;
-	border-radius: 4px;
-	font-size: 0.6em;
-	font-weight: bold;
-	text-transform: uppercase;
-	color: white;
-	vertical-align: middle;
-	align-self: flex-start;
-	white-space: nowrap;
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.6em;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: white;
+  vertical-align: middle;
+  align-self: flex-start;
+  white-space: nowrap;
 }
 
 .role-badge.required {
-	background-color: #dc3545;
+  background-color: #dc3545;
 }
 
 .role-badge.elective {
-	background-color: #17a2b8;
+  background-color: #17a2b8;
 }
 
 .booking-table .role-display-text {
-	display: flex;
-	flex-direction: column;
-	line-height: 1.2;
-	flex-grow: 1;
-	text-align: left;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  flex-grow: 1;
+  text-align: left;
 }
 
 .booking-table .speaker-for {
-	font-size: 0.75em;
-	font-weight: normal;
-	color: #555;
+  font-size: 0.75em;
+  font-weight: normal;
+  color: #555;
 }
 
 .booking-table .admin-assign-select {
-	font-family: 'Montserrat', sans-serif;
-	display: flex;
-	text-align: center;
-	flex-grow: 1;
-	font-size: 1em;
-	width: 100%;
-	appearance: none;
-	-webkit-appearance: none;
-	-moz-appearance: none;
-	background-color: #ffffff;
-	height: 38px;
-	padding: 5px 12px 5px 12px;
-	margin: 0 10px;
-	border: 1px solid #ccc;
-	border-radius: 8px;
+  font-family: "Montserrat", sans-serif;
+  display: flex;
+  text-align: center;
+  flex-grow: 1;
+  font-size: 1em;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: #ffffff;
+  height: 38px;
+  padding: 5px 12px 5px 12px;
+  margin: 0 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
 }
 
 /* --- Autocomplete Styles --- */
 .autocomplete-container {
-	position: relative;
-	width: 100%;
-	z-index: 1;
+  position: relative;
+  width: 100%;
+  z-index: 1;
 }
 
 /* Multi-owner inputs for shared roles */
 .multi-owner-inputs {
-	display: flex;
-	flex-direction: column;
-	gap: 8px;
-	width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 }
 
 .multi-owner-inputs .autocomplete-container {
-	margin-bottom: 0;
+  margin-bottom: 0;
 }
 
 .autocomplete-container:focus-within {
-	z-index: 1001;
+  z-index: 1001;
 }
 
 .admin-assign-input {
-	font-family: 'Montserrat', sans-serif;
-	display: flex;
-	text-align: center;
-	flex-grow: 1;
-	font-size: 1em;
-	width: 100%;
-	height: 38px;
-	padding: 5px 12px;
-	border: 1px solid #ccc;
-	border-radius: 8px;
-	background-color: #ffffff;
-	box-sizing: border-box;
+  font-family: "Montserrat", sans-serif;
+  display: flex;
+  text-align: center;
+  flex-grow: 1;
+  font-size: 1em;
+  width: 100%;
+  height: 38px;
+  padding: 5px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #ffffff;
+  box-sizing: border-box;
 }
 
 .admin-assign-input.unassigned-role {
-	border-color: #28a745;
-	background-color: #e9f7ef;
-	font-weight: bold;
+  border-color: #28a745;
+  background-color: #e9f7ef;
+  font-weight: bold;
 }
 
 .autocomplete-results {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	min-width: 100%;
-	width: max-content;
-	z-index: 1000;
-	background: white;
-	border: 1px solid #ddd;
-	border-top: none;
-	border-radius: 0 0 8px 8px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	max-height: 250px;
-	overflow-y: auto;
-	display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 100%;
+  width: max-content;
+  z-index: 1000;
+  background: white;
+  border: 1px solid #ddd;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 250px;
+  overflow-y: auto;
+  display: none;
 }
 
 .autocomplete-results.active {
-	display: block;
+  display: block;
 }
 
 .autocomplete-item {
-	padding: 10px 15px;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	gap: 12px;
-	transition: background 0.2s;
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: background 0.2s;
 }
 
 .autocomplete-item:hover {
-	background: #f8f9fa;
+  background: #f8f9fa;
 }
 
 .autocomplete-item.unassign-item {
-	color: #dc3545;
-	font-weight: bold;
-	border-bottom: 1px solid #eee;
+  color: #dc3545;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
 }
 
 .item-avatar {
-	width: 28px;
-	height: 28px;
-	border-radius: 50%;
-	overflow: hidden;
-	background: #eee;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .item-avatar img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .item-name {
-	flex-grow: 1;
-	font-weight: 500;
+  flex-grow: 1;
+  font-weight: 500;
 }
 
 .item-type {
-	font-size: 0.75em;
-	padding: 2px 6px;
-	border-radius: 4px;
-	text-transform: uppercase;
+  font-size: 0.75em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
 }
 
 .item-type.member {
-	background: #e3f2fd;
-	color: #1976d2;
+  background: #e3f2fd;
+  color: #1976d2;
 }
 
 .item-type.guest {
-	background: #f1f8e9;
-	color: #388e3c;
+  background: #f1f8e9;
+  color: #388e3c;
 }
 
 /* --- Role Guide Container --- */
 .role-guide-container {
-	text-align: center;
-	margin-bottom: 30px;
+  text-align: center;
+  margin-bottom: 30px;
 }
 
 .role-guide-container .btn-info {
-	display: inline-flex;
-	align-items: center;
-	gap: 10px;
-	font-weight: bold;
-	padding: 8px 15px;
-	height: auto;
-	line-height: 1.5;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: bold;
+  padding: 8px 15px;
+  height: auto;
+  line-height: 1.5;
 }
 
 /* --- Waitlist Styles --- */
 .waitlist-info {
-	font-size: 0.8em;
-	color: #555;
-	margin-top: 5px;
+  font-size: 0.8em;
+  color: #555;
+  margin-top: 5px;
 }
 
 .waitlist-info i {
-	margin-right: 5px;
+  margin-right: 5px;
 }
 
 .waitlist-users {
-	list-style: none;
-	padding: 0;
-	margin: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .waitlist-users li {
-	display: block;
-	margin-bottom: 2px;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+  display: block;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .booking-table .btn-join-waitlist {
-	background-color: #f59e0b;
+  background-color: #f59e0b;
 }
 
 .booking-table .btn-leave-waitlist {
-	background-color: #d75757;
+  background-color: #d75757;
 }
 
 .booking-table .btn-cancel,
 .assign-cell .btn-cancel {
-	background-color: #6c757d;
+  background-color: #6c757d;
 }
 
 /* --- Icon Button --- */
 .icon-btn {
-	display: inline-flex !important;
-	align-items: center;
-	justify-content: center;
-	padding: 6px 10px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
 }
 
 .status-cell-content {
-	display: flex;
-	align-items: center;
+  display: flex;
+  align-items: center;
 }
 
 /* --- Input Group & Reset Button --- */
 .input-group {
-	display: flex;
-	align-items: center;
-	width: 100%;
-	gap: 8px;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 8px;
 }
 
 .input-group .autocomplete-container {
-	flex-grow: 1;
-	width: auto;
-	/* Allow it to shrink/grow */
+  flex-grow: 1;
+  width: auto;
+  /* Allow it to shrink/grow */
 }
 
 .btn-reset-role {
-	background: none;
-	border: none;
-	color: #6c757d;
-	cursor: pointer;
-	padding: 0 5px;
-	font-size: 1.1em;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 30px;
-	height: 38px;
-	/* Match input height */
-	border-radius: 4px;
-	transition: background-color 0.2s;
+  background: none;
+  border: none;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0 5px;
+  font-size: 1.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 38px;
+  /* Match input height */
+  border-radius: 4px;
+  transition: background-color 0.2s;
 }
 
 .btn-reset-role:hover {
-	background-color: #f8f9fa;
-	color: #343a40;
+  background-color: #f8f9fa;
+  color: #343a40;
 }
 
 .reset-icon-container {
-	display: flex;
-	flex-direction: row;
-	gap: 5px;
-	align-items: center;
-	justify-content: center;
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
 }
 
 .reset-icon-container .btn-reset-role {
-	padding: 0;
-	margin: 0;
-	height: 38px;
-	/* Match input height */
+  padding: 0;
+  margin: 0;
+  height: 38px;
+  /* Match input height */
 }
 
 /* --- Admin Recommendation Badges --- */
 .recommendation-row {
-	border: none;
-	background-color: transparent;
+  border: none;
+  background-color: transparent;
 }
 
 .recommendation-row td {
-	padding: 8px 0 15px 0 !important;
+  padding: 8px 0 15px 0 !important;
 }
 
 .recommended-members-container {
-	padding: 10px 20px;
-	background-color: #f1f8e9;
-	/* Light green tint for recommendation */
-	border: 1px dashed #c5e1a5;
-	border-radius: 8px;
-	width: 100%;
-	box-sizing: border-box;
+  padding: 10px 20px;
+  background-color: #f1f8e9;
+  /* Light green tint for recommendation */
+  border: 1px dashed #c5e1a5;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .recommended-label {
-	font-size: 0.85rem;
-	color: #558b2f;
-	margin-bottom: 8px;
-	font-weight: 600;
+  font-size: 0.85rem;
+  color: #558b2f;
+  margin-bottom: 8px;
+  font-weight: 600;
 }
 
 .recommended-label i {
-	margin-right: 5px;
+  margin-right: 5px;
 }
 
 .recommendation-badges {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .recommendation-badge {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	padding: 4px 10px;
-	background-color: white;
-	border: 1px solid #dee2e6;
-	border-radius: 20px;
-	cursor: pointer;
-	transition: all 0.2s ease;
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background-color: white;
+  border: 1px solid #dee2e6;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .recommendation-badge:hover {
-	border-color: #28a745;
-	background-color: #f1f8f9;
-	transform: translateY(-1px);
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-color: #28a745;
+  background-color: #f1f8f9;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .recommendation-badge img {
-	width: 20px;
-	height: 20px;
-	border-radius: 50%;
-	object-fit: cover;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .recommendation-badge .badge-name {
-	font-size: 0.85rem;
-	color: #333;
-	white-space: nowrap;
+  font-size: 0.85rem;
+  color: #333;
+  white-space: nowrap;
 }

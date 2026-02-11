@@ -17,15 +17,33 @@ let selectedContactIds = new Set(); // Globally tracked selected IDs
  * Fetches all contacts from the API and caches them
  */
 async function fetchAndCacheContacts() {
-  // Use server-injected data if available (first load), to respect server-side filters
-  if (typeof INITIAL_CONTACTS !== 'undefined' && INITIAL_CONTACTS) {
+  // Use server-injected data if available (and not empty), to respect server-side filters
+  if (typeof INITIAL_CONTACTS !== 'undefined' && INITIAL_CONTACTS && INITIAL_CONTACTS.length > 0) {
     allContactsCache = INITIAL_CONTACTS;
     INITIAL_CONTACTS = null; // Consume once so subsequent refreshes fetch from API
     return allContactsCache;
   }
 
   try {
-    const response = await fetch('/api/contacts/all?t=' + new Date().getTime());
+    let url = '/api/contacts/all?t=' + new Date().getTime();
+
+    // Append selected term IDs if available (from global variable injected in template)
+    if (typeof selectedTermIds !== 'undefined' && Array.isArray(selectedTermIds) && selectedTermIds.length > 0) {
+      selectedTermIds.forEach(id => {
+        url += `&term=${encodeURIComponent(id)}`;
+      });
+    } else {
+      // If getting terms from URL params directly (fallback)
+      const urlParams = new URLSearchParams(window.location.search);
+      const termsInfo = urlParams.getAll('term');
+      if (termsInfo.length > 0) {
+        termsInfo.forEach(id => {
+          url += `&term=${encodeURIComponent(id)}`;
+        });
+      }
+    }
+
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch contacts');
     }
@@ -78,7 +96,7 @@ function applyFilters() {
         contact.Mentor,
         contact.Member_ID
       ].join(' ').toUpperCase();
-      
+
       return searchableText.includes(searchTerm);
     });
   }
@@ -136,7 +154,7 @@ function renderContactsPage() {
 
   // Update pagination controls
   updatePaginationControls(startIndex, endIndex, filteredContacts.length, totalPages);
-  
+
   // Hide loading spinner and show table
   const spinner = document.getElementById('contactsLoadingSpinner');
   const table = document.getElementById('contactsTable');
@@ -167,17 +185,17 @@ function createContactRow(contact) {
     <td class="col-name">
       <div class="contact-name-cell">
         ${(() => {
-          if (!contact.Avatar_URL) {
-            return `<div class="contact-avatar-placeholder-small"><i class="fas fa-user"></i></div>`;
-          }
-          let avatarPath = contact.Avatar_URL;
-          // If just a filename, prepend root dir
-          if (avatarPath.indexOf('/') === -1) {
-            const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
-            avatarPath = `${root}/${avatarPath}`;
-          }
-          return `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small">`;
-        })()}
+      if (!contact.Avatar_URL) {
+        return `<div class="contact-avatar-placeholder-small"><i class="fas fa-user"></i></div>`;
+      }
+      let avatarPath = contact.Avatar_URL;
+      // If just a filename, prepend root dir
+      if (avatarPath.indexOf('/') === -1) {
+        const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+        avatarPath = `${root}/${avatarPath}`;
+      }
+      return `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small">`;
+    })()}
         <div class="contact-name-info ${canViewAllLogs ? 'clickable-name' : ''}" 
              ${canViewAllLogs ? `onclick="window.location.href='/speech_logs?speaker_id=${contact.id}&view_mode=member'" title="View ${contact.Name}'s speech logs"` : ''}>
           ${contact.Name}
@@ -207,13 +225,13 @@ function createContactRow(contact) {
     <td class="col-date">${contact.Date_Created}</td>
     <td class="col-club">${contact.Club}</td>
     <td class="col-paths">
-      ${contact.Completed_Paths && contact.Completed_Paths !== '-' 
-        ? contact.Completed_Paths.split('/').map(path => {
-            const p = path.trim();
-            const abbr = p.substring(0, 2).toLowerCase();
-            return `<span class="badge-path path-${abbr}">${p}</span>`;
-          }).join(' ')
-        : '-'}
+      ${contact.Completed_Paths && contact.Completed_Paths !== '-'
+      ? contact.Completed_Paths.split('/').map(path => {
+        const p = path.trim();
+        const abbr = p.substring(0, 2).toLowerCase();
+        return `<span class="badge-path path-${abbr}">${p}</span>`;
+      }).join(' ')
+      : '-'}
     </td>
     <td class="col-creds">${contact.credentials}</td>
     <td class="col-next">${contact.Next_Project}</td>
@@ -318,15 +336,15 @@ function applyFiltersAndPaginate(resetPage = false) {
   }
 
   applyFilters();
-  
+
   // Reset to page 1 if current page exceeds total pages
   const totalPages = Math.ceil(filteredContacts.length / pageSize);
   if (currentPage > totalPages && totalPages > 0) {
     currentPage = 1;
   }
-  
+
   renderContactsPage();
-  
+
   // Update clear button visibility
   const searchInput = document.getElementById("searchInput");
   const clearBtn = document.getElementById("clear-searchInput");
@@ -342,7 +360,7 @@ function goToPage(page) {
   const totalPages = Math.ceil(filteredContacts.length / pageSize);
   currentPage = Math.max(1, Math.min(page, totalPages));
   renderContactsPage();
-  
+
   // Save state
   localStorage.setItem('contacts_current_page', currentPage);
 }
@@ -354,7 +372,7 @@ function changePageSize(newSize) {
   pageSize = parseInt(newSize);
   currentPage = 1; // Reset to first page
   renderContactsPage();
-  
+
   // Save state
   localStorage.setItem('contacts_page_size', pageSize);
 }
@@ -369,7 +387,7 @@ function handleContactFormSubmit(event) {
   // Check if this is an AJAX submission (from contacts page)
   if (form.dataset.ajaxSubmit === 'true') {
     event.preventDefault();
-    
+
     fetch(form.action, {
       method: "POST",
       body: formData,
@@ -473,7 +491,7 @@ document.addEventListener("DOMContentLoaded", function () {
     tab.addEventListener("click", () => {
       tabs.forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
-      
+
       // Update view class
       const tabType = tab.dataset.type;
       if (tabType === "Guest") {
@@ -485,10 +503,10 @@ document.addEventListener("DOMContentLoaded", function () {
       } else {
         table.classList.remove("guest-view", "member-view");
       }
-      
+
       currentPage = 1; // Reset to first page when changing tabs
       applyFiltersAndPaginate();
-      
+
       // Save state
       localStorage.setItem("contacts_active_tab", tabType);
     });
@@ -550,17 +568,17 @@ document.addEventListener("DOMContentLoaded", function () {
     if (contactIdToOpen) {
       // Find the contact in cache
       const targetContact = allContactsCache.find(c => c.id === parseInt(contactIdToOpen));
-      
+
       if (targetContact) {
         const contactType = targetContact.Type;
         const tabToActivate = Array.from(tabs).find(t => t.dataset.type === contactType);
-        
+
         if (tabToActivate) {
           tabs.forEach(t => t.classList.remove("active"));
           tabToActivate.classList.add("active");
           applyFiltersAndPaginate();
         }
-        
+
         // Open the modal
         if (typeof openContactModal === 'function') {
           openContactModal(contactIdToOpen);
@@ -592,16 +610,16 @@ function setupContactsTableSorting() {
         // Default to descending for Participation, ascending for others
         sortDirection = (index === 1) ? 'desc' : 'asc';
       }
-      
+
       // Update UI
       headers.forEach(h => delete h.dataset.sortDir);
       header.dataset.sortDir = sortDirection;
-      
+
       // Sort the whole set and go back to page 1
       applyFiltersAndPaginate(true);
     });
   });
-  
+
   // Set initial UI state
   const initialHeader = Array.from(headers).find(h => parseInt(h.dataset.columnIndex) === sortColumnIndex);
   if (initialHeader) {
@@ -645,7 +663,7 @@ function toggleSelectAll(source) {
  */
 function updateMergeButtonState() {
   const mergeBtn = document.getElementById('mergeContactsBtn');
-  
+
   if (mergeBtn) {
     if (selectedContactIds.size >= 2) {
       mergeBtn.style.display = 'inline-block';
@@ -669,7 +687,7 @@ function updateMergeButtonState() {
  */
 function handleMergeClick() {
   const contactIds = Array.from(selectedContactIds);
-  
+
   if (contactIds.length < 2) return;
 
   // Find contact names for confirmation (might be in cache even if not on page)
@@ -677,14 +695,14 @@ function handleMergeClick() {
   // In a real paginated API scenario without full cache, we'd fetch details.
   // Here allContactsCache has everything.
   const selectedContacts = allContactsCache.filter(c => selectedContactIds.has(c.id));
-  
+
   // Logic to identify primary (Oldest Member > Oldest Guest)
   function getSortKey(c) {
     const typePriority = (c.Type !== 'Guest') ? 0 : 1;
     const createdDate = (c.Date_Created && c.Date_Created !== '-') ? c.Date_Created : '9999-99-99';
     return `${typePriority}_${createdDate}_${String(c.id).padStart(10, '0')}`;
   }
-  
+
   const sortedSelected = [...selectedContacts].sort((a, b) => getSortKey(a).localeCompare(getSortKey(b)));
   const primary = sortedSelected[0];
   const others = sortedSelected.slice(1);
@@ -700,7 +718,7 @@ function handleMergeClick() {
   if (countSpan) countSpan.textContent = selectedContacts.length;
   if (primaryDetails) primaryDetails.textContent = primary.Name;
   if (primaryMeta) primaryMeta.textContent = `${primary.Type} • Created: ${primary.Date_Created}`;
-  
+
   if (secondaryList) {
     secondaryList.innerHTML = others.map(c => `<li><strong>${c.Name}</strong> (${c.Type})</li>`).join('');
   }
@@ -709,7 +727,7 @@ function handleMergeClick() {
   confirmBtn.onclick = async () => {
     confirmBtn.disabled = true;
     confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging...';
-    
+
     try {
       const response = await fetch('/contacts/merge', {
         method: 'POST',
@@ -719,7 +737,7 @@ function handleMergeClick() {
         },
         body: JSON.stringify({ contact_ids: contactIds })
       });
-      
+
       const data = await response.json();
       if (data.success) {
         closeMergeModal();
@@ -727,7 +745,7 @@ function handleMergeClick() {
         const selectAll = document.getElementById('selectAllContacts');
         if (selectAll) selectAll.checked = false;
         selectedContactIds.clear();
-        
+
         await refreshContactCache();
       } else {
         alert('Error merging contacts: ' + (data.message || 'Unknown error'));
@@ -751,7 +769,7 @@ function handleMergeClick() {
 function closeMergeModal() {
   const modal = document.getElementById('mergeContactModal');
   if (modal) modal.style.display = 'none';
-  
+
   const confirmBtn = document.getElementById('confirmMergeBtn');
   if (confirmBtn) {
     confirmBtn.disabled = false;
@@ -766,3 +784,171 @@ window.updateMergeButtonState = updateMergeButtonState;
 window.handleMergeClick = handleMergeClick;
 window.closeMergeModal = closeMergeModal;
 window.refreshContactCache = refreshContactCache;
+
+// --- Term Filter Logic ---
+
+/**
+ * Toggles the term dropdown visibility
+ */
+function toggleTermDropdown(event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const menu = document.getElementById('term-dropdown-menu');
+  if (menu) {
+    if (menu.style.display === 'none' || menu.style.display === '') {
+      menu.style.display = 'block';
+    } else {
+      closeDropdownAndSubmit();
+    }
+  }
+}
+
+/**
+ * Toggles all term checkboxes based on the "Select All" checkbox state
+ */
+function toggleAllTerms(source) {
+  const checkboxes = document.querySelectorAll('.term-checkbox');
+  checkboxes.forEach(cb => cb.checked = source.checked);
+  updateTermSelection();
+}
+
+/**
+ * Updates the term selection display text and logic
+ */
+function updateTermSelection() {
+  const checkboxes = document.querySelectorAll('.term-checkbox');
+  const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
+  const selectedCount = selectedCheckboxes.length;
+  const totalCount = checkboxes.length;
+
+  // Update Count/Range Text
+  const btnText = document.getElementById('term-btn-text');
+  if (!btnText) return;
+
+  if (selectedCount === totalCount && totalCount > 0) {
+    btnText.textContent = "All Terms";
+  } else if (selectedCount === 0) {
+    btnText.textContent = "0 selected";
+  } else {
+    const ranges = [];
+    // Logic to combine adjacent terms
+    // 1. Sort by start date
+    selectedCheckboxes.sort((a, b) => {
+      const dateA = a.dataset.start || '';
+      const dateB = b.dataset.start || '';
+      return dateA.localeCompare(dateB);
+    });
+
+    if (selectedCheckboxes.length > 0) {
+      let currentRange = {
+        startLabel: (selectedCheckboxes[0].dataset.label || '').split(' ')[1], // e.g. "Jan-Jun"
+        startYear: (selectedCheckboxes[0].dataset.label || '').split(' ')[0],
+        endLabel: (selectedCheckboxes[0].dataset.label || '').split(' ')[1],
+        endYear: (selectedCheckboxes[0].dataset.label || '').split(' ')[0],
+        fullStart: selectedCheckboxes[0].dataset.start,
+        fullEnd: selectedCheckboxes[0].dataset.end,
+        count: 1
+      };
+
+      for (let i = 1; i < selectedCheckboxes.length; i++) {
+        const next = selectedCheckboxes[i];
+        const prevEnd = new Date(currentRange.fullEnd);
+        const nextStart = new Date(next.dataset.start);
+
+        // Check if adjacent: next start is within 1 day of prev end
+        const diffTime = Math.abs(nextStart - prevEnd);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (diffDays <= 2) { // 1 day gap (e.g. Jun 30 to Jul 01)
+          currentRange.endLabel = (next.dataset.label || '').split(' ')[1];
+          currentRange.endYear = (next.dataset.label || '').split(' ')[0];
+          currentRange.fullEnd = next.dataset.end;
+          currentRange.count++;
+        } else {
+          ranges.push(formatRange(currentRange));
+          currentRange = {
+            startLabel: (next.dataset.label || '').split(' ')[1],
+            startYear: (next.dataset.label || '').split(' ')[0],
+            endLabel: (next.dataset.label || '').split(' ')[1],
+            endYear: (next.dataset.label || '').split(' ')[0],
+            fullStart: next.dataset.start,
+            fullEnd: next.dataset.end,
+            count: 1
+          };
+        }
+      }
+      ranges.push(formatRange(currentRange));
+    }
+
+    btnText.textContent = ranges.join(', ');
+  }
+
+  // Helper to format a single range
+  function formatRange(range) {
+    if (range.count === 1) {
+      return `${range.startYear} ${range.startLabel}`;
+    }
+    const s = (range.startLabel || '').split('-')[0]; // "Jan"
+    const e = (range.endLabel || '').split('-')[1];   // "Jun" or "Dec"
+    return `${range.startYear} ${s} - ${range.endYear} ${e}`;
+  }
+
+  // Update Select All Checkbox State
+  const selectAll = document.getElementById('term-select-all');
+  if (selectAll) {
+    if (selectedCount === totalCount && totalCount > 0) {
+      selectAll.checked = true;
+      selectAll.indeterminate = false;
+    } else if (selectedCount === 0) {
+      selectAll.checked = false;
+      selectAll.indeterminate = false;
+    } else {
+      selectAll.checked = false; // Or indeterminate logic if desired, but unchecked is safer default
+      // selectAll.indeterminate = true; // Optional based on preference
+    }
+  }
+}
+
+/**
+ * Closes the term dropdown and submits the form
+ */
+function closeDropdownAndSubmit() {
+  const menu = document.getElementById('term-dropdown-menu');
+  if (menu) {
+    menu.style.display = 'none';
+  }
+  const form = document.getElementById('contacts-term-filter-form');
+  if (form) form.submit();
+}
+
+// Make term functions globally available
+window.toggleTermDropdown = toggleTermDropdown;
+window.toggleAllTerms = toggleAllTerms;
+window.updateTermSelection = updateTermSelection;
+window.closeDropdownAndSubmit = closeDropdownAndSubmit;
+
+// Add event listeners specific to term logic
+document.addEventListener('DOMContentLoaded', function () {
+  // Initial term updates
+  updateTermSelection();
+
+  // Close on click outside
+  document.addEventListener('click', function (event) {
+    const container = document.getElementById('term-dropdown-container');
+    const menu = document.getElementById('term-dropdown-menu');
+
+    if (menu && menu.style.display === 'block' && container && !container.contains(event.target)) {
+      closeDropdownAndSubmit();
+    }
+  });
+
+  // Prevent clicks inside menu from closing it via the document listener
+  const termMenu = document.getElementById('term-dropdown-menu');
+  if (termMenu) {
+    termMenu.addEventListener('click', function (event) {
+      event.stopPropagation();
+    });
+  }
+});

@@ -6,6 +6,7 @@ css_all = Bundle(
     'css/core/base.css',
     'css/core/navigation.css',
     'css/components/forms.css',
+    'css/components/forms-mobile.css',
     'css/components/tables.css',
     'css/components/modals.css',
     'css/components/autocomplete.css',
@@ -73,7 +74,10 @@ css_all = Bundle(
     'css/pages/profile/profile-base.css',
     'css/pages/profile/profile-mobile.css',
     # Planner CSS
-    'css/pages/planner.css',
+    'css/pages/planner/planner-base.css',
+    'css/pages/planner/planner-desktop.css',
+    'css/pages/planner/planner-ipad.css',
+    'css/pages/planner/planner-mobile.css',
     'css/core/responsive.css',
     filters='cssmin',
     output='css/packed.css'

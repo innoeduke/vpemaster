@@ -9,30 +9,31 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-mobile.css') }}">
 {% endblock %}
 
+{% from 'components/custom_select.html' import render_custom_select %}
+
 {% block content %}
 <div class="container-fluid mt-4">
     {% include 'tools/_tabs.html' %}
-    
+
     <div class="lucky-draw-container">
         <h1 class="page-title"><i class="fas fa-gift"></i> Lucky Draw</h1>
 
         {% if current_meeting %}
         <div class="meeting-info">
             <i class="fas fa-calendar-alt"></i>
-            <span>Meeting #{{ current_meeting.Meeting_Number }} - {{ current_meeting.Meeting_Date.strftime('%B %d, %Y')
+            <span>Meeting #{{ current_meeting.Meeting_Number }} - {{ current_meeting.Meeting_Date.strftime('%B % d % Y')
                 if current_meeting.Meeting_Date else 'No Date' }}</span>
         </div>
 
         <div class="draw-controls">
             <div class="draw-type-selector">
-                <label for="drawType">Draw Type:</label>
-                <select id="drawType" class="draw-type-select">
-                    <option value="all-audience">All Audience</option>
-                    <option value="members">Members Only</option>
-                    <option value="guests">Guests Only</option>
-                    <option value="table-topics">Table Topic Speakers</option>
-                    <option value="full-house">Full House</option>
-                </select>
+                {{ render_custom_select([
+                ('all-audience', 'All Audience', 'fas fa-users'),
+                ('members', 'Members Only', 'fas fa-user-friends'),
+                ('guests', 'Guests Only', 'fas fa-user-plus'),
+                ('table-topics', 'Table Topic Speakers', 'fas fa-microphone'),
+                ('full-house', 'Full House', 'fas fa-home')
+                ], 'all-audience', label='Draw Type:', select_id='drawType') }}
             </div>
 
             <div class="draw-buttons">

@@ -57,7 +57,7 @@
 					{# Check if the URL is already a full path (legacy) or just a filename (new) #}
 					{% set avatar_path = role.owner_avatar_url %}
 					{% if '/' not in avatar_path %}
-						{% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+					{% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
 					{% endif %}
 					<img src="{{ url_for('static', filename=avatar_path) }}" alt="User Avatar">
 					{% else %}
@@ -87,24 +87,23 @@
 
 			{% if (role.owner_id and role.award_category) and can_vote %}
 			{% if voting_disabled %}
-			<button type="button" class="icon-btn" disabled style="color: #ccc; cursor: not-allowed;"
-				title="Not enough candidates to vote">
+			<button type="button" class="icon-btn candidate-shortage" disabled title="Not enough candidates to vote">
 				<i class="fas fa-vote-yea"></i>
 			</button>
 			{% else %}
 			{% set should_show = role.award_type %}
 			<button type="button"
-				class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %} {% if not should_show %}vote-auto-hide{% endif %}"
-				title="Vote" {% if has_voted %}disabled style="cursor: default;" {% else
-				%}onclick="handleVoteClick(this)" {% endif %} data-meeting-number="{{ selected_meeting_number }}"
-				data-contact-id="{{ role.owner_id }}" data-award-category="{{ role.award_category }}">
+				class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %} {% if not should_show %}vote-auto-hide{% endif %} {% if has_voted %}has-voted{% endif %}"
+				title="Vote" {% if has_voted %}disabled {% else %}onclick="handleVoteClick(this)" {% endif %}
+				data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}"
+				data-award-category="{{ role.award_category }}">
 				<i class="fas fa-vote-yea"></i>
 			</button>
 			{% endif %}
 			{% endif %}
 			{% elif status == 'finished' %}
 			{% if role.award_type %}
-			<span class="icon-btn icon-btn-voted" style="cursor: default;" title="{{ role.award_type }} Winner">
+			<span class="icon-btn icon-btn-voted winner-cursor" title="{{ role.award_type }} Winner">
 				<i class="fas fa-award"></i>&nbsp;
 				<span class="winner-label">{{ role.award_type|replace('-', ' ')|title }}</span>
 			</span>
@@ -142,25 +141,28 @@
 				category=='table-topic' and candidate_count < 5 %} {% set voting_disabled=True %} {% endif %} <button
 				class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }} {{ 'disabled' if voting_disabled else '' }}"
 				{% if voting_disabled %}disabled title="Not enough candidates to vote" {% endif %}>
-				<div class="header-left" style="display: flex; align-items: center; gap: 15px;">
+				<div class="header-left">
 					{% set question_ns.count = question_ns.count + 1 %}
 					<div class="question-number">{{ question_ns.count }}</div>
 					<span class="question-text">{{ meta.title }}</span>
 				</div>
 				<div class="accordion-header-right">
-					{% if category_voted %}
-					<span class="voted-label">
-						<i class="fas fa-trophy"></i> VOTED
-					</span>
-					{% endif %}
-					{% if voting_disabled %}
-					<span style="font-size: 0.8em; color: #777; margin-right: 10px;">
-						{% if category == 'table-topic' %}(Candidates < 5){% else %}(Candidates < 3){% endif %} </span>
-							{% endif %}
-							<i class="fas fa-chevron-down"></i>
+					<div class="status-wrapper">
+						{% if voting_disabled %}
+						<span class="candidate-warning">
+							{% if category == 'table-topic' %}(Candidates < 5){% else %}(Candidates < 3){% endif %}
+						</span>
+						{% endif %}
+						{% if category_voted %}
+						<span class="voted-label">
+							<i class="fas fa-trophy"></i> VOTED
+						</span>
+						{% endif %}
+					</div>
+					<i class="fas fa-chevron-down"></i>
 				</div>
 				</button>
-				<div class="accordion-content" {% if default_open %}style="max-height: none;" {% endif %}>
+				<div class="accordion-content {{ 'force-open' if default_open else '' }}">
 					<table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
 						<tbody>
 							{% for role in items %}
@@ -198,17 +200,19 @@
 	{# ============================================= #}
 
 	{% if selected_meeting.status not in ['running', 'finished'] %}
-	<p style="font-family: 'Montserrat', sans-serif; font-size: 2em; text-align: center;">Meeting #{{
-		selected_meeting_number }} is not yet started.</p>
-	<div style="text-align: center; margin-top: 20px;">
-		<img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon"
-			style="max-width: 100%; height: auto; border: 5px solid #c5c5c5; border-radius: 15px;">
+	<div class="voting-not-started-container">
+		<p class="meeting-not-started-msg">Meeting #{{
+			selected_meeting_number }} is not yet started.</p>
+		<div class="meeting-not-started-img-container">
+			<img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon"
+				class="meeting-not-started-img">
+		</div>
 	</div>
 	{% else %}
 	{% if (has_voted and not can_track_progress and selected_meeting.status == 'running') or (selected_meeting.status ==
 	'finished' and not is_admin_view) %}
-	<div id="thank-you-message" style="text-align: center; margin-top: 40px; padding: 20px;">
-		<i class="fas fa-check-circle" style="font-size: 4em; color: #28a745; margin-bottom: 20px;"></i>
+	<div id="thank-you-message" class="thank-you-container">
+		<i class="fas fa-check-circle thank-you-icon"></i>
 		<h2>Thank You!</h2>
 		<p>Your votes have been submitted.</p>
 	</div>
@@ -230,8 +234,8 @@
 			</div>
 			<div class="rating-scale">
 				{% for i in range(11) %}
-				<button type="button" class="rating-btn" data-score="{{ i }}" {% if has_voted %}disabled
-					style="cursor: default;" {% else %}onclick="handleRatingClick(this)" {% endif %}>{{ i
+				<button type="button" class="rating-btn" data-score="{{ i }}" {% if has_voted %}disabled {% else
+					%}onclick="handleRatingClick(this)" {% endif %}>{{ i
 					}}</button>
 				{% endfor %}
 			</div>
@@ -259,14 +263,13 @@
 	{% endif %}
 
 	{% if selected_meeting.status == 'running' and not has_voted %}
-	<div id="batch-vote-actions" style="text-align: center; margin-top: 20px; padding-bottom: 30px;">
-		<button id="done-voting-btn" class="btn btn-primary btn-lg" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
-			disabled>
+	<div id="batch-vote-actions">
+		<button id="done-voting-btn" class="btn btn-primary btn-lg" disabled>
 			Submit
 		</button>
 	</div>
-	<div id="thank-you-message" style="display: none; text-align: center; margin-top: 40px; padding: 20px;">
-		<i class="fas fa-check-circle" style="font-size: 4em; color: #28a745; margin-bottom: 20px;"></i>
+	<div id="thank-you-message" class="thank-you-container" style="display: none;">
+		<i class="fas fa-check-circle thank-you-icon"></i>
 		<h2>Thank You!</h2>
 		<p>Your votes have been submitted.</p>
 	</div>
@@ -278,14 +281,15 @@
 
 </div>
 
-<script>
-	// Pass Python data to global JS variables used by voting.js
-	var isAdminView = {{ is_admin_view| tojson }};
-	var selectedMeetingNumber = {{ selected_meeting_number| tojson }};
-	var userRole = {{ user_role| tojson }};
-	var canTrackProgress = {{ can_track_progress| tojson }};
-	var initialMeetingRating = {{ meeting_rating_score| tojson }};
-	var initialMeetingFeedback = {{ meeting_feedback_comment| tojson }};
+<script id="voting-data" type="application/json">
+{
+	"isAdminView": {{ is_admin_view|tojson }},
+	"selectedMeetingNumber": {{ selected_meeting_number|tojson }},
+	"userRole": {{ user_role|tojson }},
+	"canTrackProgress": {{ can_track_progress|tojson }},
+	"initialMeetingRating": {{ meeting_rating_score|tojson }},
+	"initialMeetingFeedback": {{ meeting_feedback_comment|tojson }}
+}
 </script>
 <script src="{{ url_for('static', filename='js/voting.js') }}"></script>
 {% endblock %}

@@ -4,92 +4,119 @@
    ======================================== */
 
 @media (max-width: 768px) {
-	.award-accordion .accordion-content {
-		background-color: transparent;
-	}
+  .meeting-not-started-msg {
+    font-size: 1.5em;
+  }
 
-	/* Remove border from accordion container */
-	.award-accordion .accordion-item {
-		border: none;
-		padding: 0 !important;
-		margin-top: 15px;
-	}
+  .page-title-row {
+    margin-bottom: 20px;
+  }
 
-	.booking-table .winner-label {
-		display: none;
-	}
+  .booking-filter-container {
+    margin-bottom: 25px !important;
+  }
 
-	/* Vote bricks display horizontally below avatar */
-	.vote-bricks-container {
-		display: flex !important;
-		flex-direction: row !important;
-		flex-wrap: wrap;
-		gap: 2px;
-		width: 100%;
-		max-width: none;
-		margin-left: 0;
-		justify-content: flex-start;
-		align-items: center;
-	}
+  .award-accordion .accordion-content {
+    background-color: transparent;
+  }
 
-	.vote-brick {
-		width: 6px;
-		height: 14px;
-		flex-shrink: 0;
-	}
+  /* Remove border from accordion container */
+  .award-accordion .accordion-item {
+    border: none;
+    padding: 0 !important;
+    margin-top: 15px;
+  }
 
-	.award-accordion .accordion-header-right {
-		font-size: 0.9em;
-		color: #333;
-	}
+  .booking-table .winner-label {
+    display: none;
+  }
 
-	.voted-label {
-		font-size: 0.6em;
-	}
+  /* Vote bricks display horizontally below avatar */
+  .vote-bricks-container {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 2px;
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    justify-content: flex-start;
+    align-items: center;
+  }
 
-	.rating-btn {
-		font-size: 0.85em;
-		padding: 8px 0;
-		min-width: 0;
-	}
+  .vote-brick {
+    width: 6px;
+    height: 14px;
+    flex-shrink: 0;
+  }
 
-	.question-text {
-		font-size: 0.85em;
-	}
+  .award-accordion .accordion-header-right {
+    font-size: 0.9em;
+    color: #333;
+    align-items: center; /* Center the chevron with the stack */
+  }
 
-	.award-accordion .accordion-header .question-text,
-	.section-title {
-		font-size: 0.95em !important;
-		line-height: 1.2;
-		padding: 6px 12px;
-	}
+  .status-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-right: 8px;
+    gap: 4px; /* Space between warning and label */
+  }
 
+  .candidate-warning {
+    margin-right: 0;
+    margin-bottom: 0;
+    font-size: 0.7em;
+  }
 
-	/* Remove card styling on mobile */
-	.award-accordion .accordion-item,
-	.voting-section {
-		background-color: transparent;
-		box-shadow: none;
-		padding: 0 !important;
-		border-radius: 0;
-	}
+  .voted-label {
+    font-size: 0.6em;
+    padding: 2px 8px; /* Reduced from 6px 12px */
+    line-height: 1; /* Ensure tight line-height */
+  }
 
-	/* Voting instruction alert compact */
-	.voting-instruction-alert {
-		padding: 10px 12px;
-		font-size: 0.75em;
-		gap: 8px;
-	}
+  .rating-btn {
+    font-size: 0.85em;
+    padding: 8px 0;
+    min-width: 0;
+  }
 
-	/* Rating labels */
-	.rating-labels {
-		font-size: 0.8em;
-	}
+  .question-text {
+    font-size: 0.85em;
+  }
 
-	/* Feedback input */
-	.feedback-input {
-		height: 100px;
-		padding: 12px;
-		font-size: 0.9em;
-	}
+  .award-accordion .accordion-header .question-text,
+  .section-title {
+    font-size: 0.95em !important;
+    line-height: 1.2;
+    padding: 6px 12px;
+  }
+
+  /* Remove card styling on mobile */
+  .award-accordion .accordion-item,
+  .voting-section {
+    background-color: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  /* Voting instruction alert compact */
+  .voting-instruction-alert {
+    padding: 10px 12px;
+    font-size: 0.75em;
+    gap: 8px;
+  }
+
+  /* Rating labels */
+  .rating-labels {
+    font-size: 0.8em;
+  }
+
+  /* Feedback input */
+  .feedback-input {
+    height: 100px;
+    padding: 12px;
+    font-size: 0.9em;
+  }
 }
