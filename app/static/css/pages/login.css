@@ -71,7 +71,8 @@ h6 {
 
 .login-form input,
 .login-form select {
-  width: 100%;
+  display: block;
+  width: 100% !important;
   height: 44px;
   padding: 0 14px;
   margin-bottom: 16px;
@@ -102,9 +103,9 @@ h6 {
 }
 
 .login-form button {
-  width: 60%;
-  margin: 10px auto 0;
-  display: block;
+  width: 60% !important;
+  margin: 10px auto 0 !important;
+  display: block !important;
   font-weight: 600;
   letter-spacing: 0.01em;
 }
@@ -422,6 +423,15 @@ h6 {
   color: #1a202c;
   transition: all 0.2s ease;
   box-sizing: border-box;
+}
+
+.custom-select-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  margin-right: 10px;
+  text-align: left;
 }
 
 .custom-select-trigger:after {

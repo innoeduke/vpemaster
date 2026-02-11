@@ -51,11 +51,12 @@ class CustomSelect {
 
 	updateTrigger() {
 		if (!this.select.options.length) {
-			this.trigger.innerText = 'Select...';
+			this.trigger.innerHTML = '<span class="custom-select-text">Select...</span>';
 			return;
 		}
 		const selectedOpt = this.select.options[this.select.selectedIndex];
-		this.trigger.innerText = selectedOpt ? selectedOpt.text : 'Select...';
+		const text = selectedOpt ? selectedOpt.text : 'Select...';
+		this.trigger.innerHTML = `<span class="custom-select-text">${text}</span>`;
 	}
 
 	renderOptions() {
