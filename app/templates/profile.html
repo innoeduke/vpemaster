@@ -1,5 +1,9 @@
 {% extends "base.html" %}
+{% from "partials/_profile_macros.html" import profile_section, field_row, field_row_pair %}
 {% block title %}User Profile{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/profile-sections.css') }}">
+{% endblock %}
 {% block flash_messages %}{% endblock %}
 {% block content %}
 
@@ -61,121 +65,50 @@
     
     <div class="profile-form">
       <!-- Section 1: Basic Information -->
-      <div class="profile-section">
-        <h3 class="section-title">Basic Information</h3>
+      {% call profile_section("Basic Information") %}
         <!-- Username & Role - side by side at top -->
-        <div class="field-row-pair">
-          <div class="field-row">
-            <span class="field-label">Username</span>
-            <span class="field-value">
-              {{ user.username }}
-              {% if user.contact and user.contact.DTM %}<sup class="dtm-superscript">DTM</sup>{% endif %}
-            </span>
-          </div>
-          <div class="field-row">
-            <span class="field-label">Role</span>
-            <span class="field-value">
-              {% set role = user.primary_role %}
-              {% set role_class = 'role-' ~ role.award_category if (role and role.award_category) else 'role-other' %}
-              {% if role and role.type == 'officer' %}{% set role_class = 'role-officer' %}{% endif %}
-              <span class="roster-role-tag {{ role_class }}">{{ user.primary_role_name }}</span>
-            </span>
-          </div>
-        </div>
+        {% call field_row_pair() %}
+          {{ field_row("Username", value=user.username ~ (('<sup class="dtm-superscript">DTM</sup>' | safe) if (user.contact and user.contact.DTM) else ''), is_raw=true) }}
+          {% set role = user.primary_role %}
+          {% set role_class = 'role-' ~ role.award_category if (role and role.award_category) else 'role-other' %}
+          {% if role and role.type == 'officer' %}{% set role_class = 'role-officer' %}{% endif %}
+          {% set role_tag %}<span class="roster-role-tag {{ role_class }}">{{ user.primary_role_name }}</span>{% endset %}
+          {{ field_row("Role", value=role_tag, is_raw=true) }}
+        {% endcall %}
 
         <!-- Name row - side by side -->
-        <div class="field-row-pair">
-          <div class="field-row editable">
-            <span class="field-label">First Name</span>
-            <div class="field-input-wrapper">
-              <input type="text" id="first_name" name="first_name" class="field-input"
-                value="{{ user.first_name if user.first_name else '' }}"
-                {% if not can_edit_profile %}disabled{% endif %} />
-            </div>
-          </div>
-          <div class="field-row editable">
-            <span class="field-label">Last Name</span>
-            <div class="field-input-wrapper">
-              <input type="text" id="last_name" name="last_name" class="field-input"
-                value="{{ user.last_name if user.last_name else '' }}"
-                {% if not can_edit_profile %}disabled{% endif %} />
-            </div>
-          </div>
-        </div>
-      </div>
+        {% call field_row_pair() %}
+          {{ field_row("First Name", value=user.first_name, editable=true, id="first_name", can_edit=can_edit_profile) }}
+          {{ field_row("Last Name", value=user.last_name, editable=true, id="last_name", can_edit=can_edit_profile) }}
+        {% endcall %}
+      {% endcall %}
 
       <!-- Section 2: Contact Information -->
-      <div class="profile-section">
-        <h3 class="section-title">Contact Information</h3>
-        <!-- Email - full width -->
-        <div class="field-row editable">
-          <span class="field-label">Email</span>
-          <div class="field-input-wrapper">
-            <input type="email" id="email" name="email" class="field-input"
-              value="{{ user.email if user.email else '' }}"
-              autocomplete="email" {% if not can_edit_profile %}disabled{% endif %} />
-          </div>
-        </div>
-
-        <!-- Phone - full width -->
-        <div class="field-row editable">
-          <span class="field-label">Phone</span>
-          <div class="field-input-wrapper">
-            <input type="text" id="phone_number" name="phone_number" class="field-input"
-              value="{{ user.contact.Phone_Number if user.contact.Phone_Number else '' }}"
-              autocomplete="tel" {% if not can_edit_profile %}disabled{% endif %} />
-          </div>
-        </div>
-      </div>
+      {% call profile_section("Contact Information") %}
+        {{ field_row("Email", value=user.email, editable=true, id="email", type="email", can_edit=can_edit_profile) }}
+        {{ field_row("Phone", value=user.contact.Phone_Number, editable=true, id="phone_number", can_edit=can_edit_profile) }}
+      {% endcall %}
 
       {% if user.contact %}
       <!-- Section 3: Toastmasters -->
-      <div class="profile-section">
-        <h3 class="section-title">Toastmasters</h3>
-        <!-- Home Club -->
-        <div class="field-row">
-          <span class="field-label">Home Club</span>
-          <span class="field-value">
-            {% if user.home_club %}{{ user.home_club.club_name }}{% else %}<span class="text-muted">None</span>{% endif %}
-          </span>
-        </div>
+      {% call profile_section("Toastmasters") %}
+        {{ field_row("Home Club", value=user.home_club.club_name if user.home_club else none) }}
+        
+        {% call field_row_pair() %}
+          {{ field_row("Member ID", value=user.contact.Member_ID) }}
+          {{ field_row("Mentor", value=user.contact.mentor.Name if user.contact.mentor else none) }}
+        {% endcall %}
 
-        <!-- Member ID & Mentor - side by side -->
-        <div class="field-row-pair">
-          <div class="field-row">
-            <span class="field-label">Member ID</span>
-            <span class="field-value">{{ user.contact.Member_ID if user.contact.Member_ID else '' }}</span>
-          </div>
-          <div class="field-row">
-            <span class="field-label">Mentor</span>
-            <span class="field-value">{{ user.contact.mentor.Name if user.contact.mentor else '' }}</span>
-          </div>
-        </div>
-
-        <!-- Credential & Next Project - side by side -->
-        <div class="field-row-pair">
-          <div class="field-row">
-            <span class="field-label">Credential</span>
-            <span class="field-value">{{ user.contact.credentials if user.contact.credentials else '' }}</span>
-          </div>
-          <div class="field-row">
-            <span class="field-label">Next Project</span>
-            <span class="field-value">{{ user.contact.Next_Project if user.contact.Next_Project else '' }}</span>
-          </div>
-        </div>
-      </div>
-
+        {% call field_row_pair() %}
+          {{ field_row("Credential", value=user.contact.credentials) }}
+          {{ field_row("Next Project", value=user.contact.Next_Project) }}
+        {% endcall %}
+      {% endcall %}
+      
       <!-- Section 4: About Me -->
-      <div class="profile-section">
-        <h3 class="section-title">About Me</h3>
-        <!-- Bio -->
-        <div class="field-row editable bio-row">
-          <div class="field-input-wrapper">
-            <textarea id="bio" name="bio" class="field-textarea" rows="4"
-              {% if not can_edit_profile %}disabled{% endif %}>{{ user.contact.Bio if user.contact.Bio else '' }}</textarea>
-          </div>
-        </div>
-      </div>
+      {% call profile_section("About Me") %}
+        {{ field_row("Bio", value=user.contact.Bio, editable=true, id="bio", is_textarea=true, can_edit=can_edit_profile) }}
+      {% endcall %}
       {% else %}
       <div class="profile-section">
         <div class="field-row">

@@ -1,0 +1,48 @@
+{# Shared Profile/About Club Macros #}
+
+{% macro profile_section(title=none, id=none) %}
+<div class="profile-section" {% if id %}id="{{ id }}"{% endif %}>
+    {% if title %}
+    <h3 class="section-title">{{ title }}</h3>
+    {% endif %}
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+{% macro field_row(label, value=none, editable=false, id=none, type='text', name=none, help_text=none, is_textarea=false, rows=4, can_edit=true, placeholder=none, is_raw=false, field_data=none, class='') %}
+<div class="field-row {{ 'editable' if (editable and can_edit) else '' }} {{ class }}">
+    <span class="field-label">{{ label }}</span>
+    {% if editable and can_edit %}
+        <div class="field-input-wrapper" {% if field_data %}data-field="{{ field_data }}"{% endif %}>
+            {% if is_textarea %}
+                <textarea id="{{ id }}" name="{{ name or id }}" class="field-textarea" rows="{{ rows }}" {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}>{{ value if value is not none else '' }}</textarea>
+            {% else %}
+                <input type="{{ type }}" id="{{ id }}" name="{{ name or id }}" class="field-input" value="{{ value if value is not none else '' }}" {% if placeholder %}placeholder="{{ placeholder }}"{% endif %} />
+            {% endif %}
+            {% if help_text %}
+                <span class="note">{{ help_text }}</span>
+            {% endif %}
+        </div>
+    {% else %}
+        <span class="field-value" {% if field_data %}data-field="{{ field_data }}"{% endif %}>
+            {% if is_raw %}
+                {{ value | safe if value is not none else '' }}
+            {% else %}
+                {{ value if value is not none else '' }}
+            {% endif %}
+        </span>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% macro field_row_pair(class='') %}
+<div class="field-row-pair {{ class }}">
+    {{ caller() }}
+</div>
+{% endmacro %}
+
+{% macro field_row_group(class='') %}
+<div class="field-row-group {{ class }}">
+    {{ caller() }}
+</div>
+{% endmacro %}

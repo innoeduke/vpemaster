@@ -1,0 +1,286 @@
+/* ========================================
+   Shared Profile Section Styles
+   Used by Profile, About Club, etc.
+   ======================================== */
+
+.profile-section {
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 12px;
+	margin-bottom: 25px;
+	overflow: hidden;
+}
+
+.profile-section .section-title {
+	font-size: 14px;
+	font-weight: 700;
+	color: #004165; /* Default to Toastmasters Blue, can be overridden */
+	background: #fafafa;
+	padding: 12px 15px;
+	margin: 0;
+	border-bottom: 1px solid #e0e0e0;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* --- Row Structure --- */
+.field-row {
+	display: flex;
+	align-items: center;
+	padding: 0;
+	border-bottom: 1px solid #eee;
+	flex: 1;
+	min-width: 0;
+	overflow: visible; /* Allow content to wrap without box cutting */
+}
+
+.field-row-pair,
+.field-row-group {
+	display: flex;
+	flex-direction: column; /* Stacked by default on desktop */
+	gap: 0;
+	border-bottom: 1px solid #eee;
+	padding: 0;
+}
+
+.field-row-pair .field-row,
+.field-row-group .field-row {
+	border-bottom: 1px solid #eee;
+    width: 100%;
+}
+
+.field-row-pair .field-row:last-child,
+.field-row-group .field-row:last-child {
+	border-bottom: none;
+}
+
+.field-row:last-child,
+.field-row-pair:last-child,
+.field-row-group:last-child {
+	border-bottom: none;
+}
+
+/* --- Labels & Values --- */
+.field-label {
+	font-size: 13px;
+	color: #444;
+	font-weight: 700;
+	width: 140px;
+	background: #fcfcfc;
+	padding: 12px 15px;
+	border-right: 1px solid #e0e0e0;
+	white-space: nowrap;
+	flex-shrink: 0;
+	align-self: stretch;
+	display: flex;
+	align-items: center;
+}
+
+.field-value {
+	padding: 8px 15px;
+	flex: 1;
+	font-size: 15px;
+	font-weight: 700;
+	color: #333;
+	white-space: normal; /* Allow wrapping */
+	overflow-wrap: anywhere;
+	word-break: break-all; /* Ensure Chinese text and long URLs wrap */
+}
+
+/* --- Inputs --- */
+.field-input-wrapper {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.field-input,
+.field-textarea {
+	width: calc(100% - 30px);
+	font-size: 15px;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+	background: #fff;
+	box-sizing: border-box;
+	transition: all 0.2s ease;
+}
+
+.field-input {
+	margin: 10px 15px;
+	height: 44px;
+	padding: 0 15px;
+}
+
+.profile-section .field-textarea {
+	margin: 10px 15px;
+	min-height: 120px;
+	padding: 12px;
+	resize: vertical;
+}
+
+.field-input:focus,
+.field-textarea:focus {
+	outline: none;
+	border-color: #004165;
+	box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
+}
+
+.field-row .note {
+	display: block;
+	font-size: 11px;
+	color: #888;
+	margin: 0 15px 12px;
+	width: calc(100% - 30px);
+	font-style: italic;
+}
+
+/* --- Mobile View (<= 768px) --- */
+@media (max-width: 768px) {
+	.profile-section {
+		border-radius: 10px;
+		margin-bottom: 20px;
+        border-color: #e5e5e5;
+	}
+
+	.profile-section .section-title {
+		font-size: 11px;
+		font-weight: 800;
+		padding: 12px 15px;
+		letter-spacing: 0.8px;
+        border-color: #e5e5e5;
+	}
+
+	.field-row-pair {
+		flex-direction: column;
+	}
+
+	.field-row {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+
+    .field-row-pair .field-row {
+        border-bottom: 1px solid #eee;
+    }
+
+    .field-row-pair .field-row:last-child {
+        border-bottom: none;
+    }
+
+	.field-label {
+		width: 100%;
+		font-size: 10px;
+		text-transform: uppercase;
+		letter-spacing: 0.8px;
+		color: #888;
+		font-weight: 800;
+		background: transparent;
+		padding: 12px 15px 0;
+		border-right: none;
+        border-bottom: none;
+	}
+
+	.field-value {
+		padding: 4px 15px 12px;
+		font-size: 15px;
+		width: 100%;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		box-sizing: border-box;
+	}
+
+	.field-input,
+	.field-textarea {
+		margin: 8px 15px 12px;
+		width: calc(100% - 30px);
+		box-sizing: border-box;
+	}
+
+	/* --- Compact Layouts for Mobile --- */
+	.field-row-pair.mobile-side-by-side,
+    .field-row-group.mobile-side-by-side {
+		flex-direction: row;
+		flex-wrap: nowrap;
+        width: 100%;
+        overflow: hidden; /* Prevent container overflow */
+	}
+
+	.field-row-pair.mobile-side-by-side .field-row,
+    .field-row-group.mobile-side-by-side .field-row {
+		border-bottom: none;
+		border-right: 1px solid #eee;
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+	}
+
+	.field-row-pair.mobile-side-by-side .field-row:last-child,
+    .field-row-group.mobile-side-by-side .field-row:last-child {
+		border-right: none;
+	}
+
+    /* .compact class for even tighter spacing in side-by-side rows */
+    .field-row.compact .field-label {
+        padding: 8px 15px 0;
+        font-size: 9px;
+        background: transparent;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.1;
+    }
+
+    .field-row.compact .field-value {
+        padding: 2px 15px 10px;
+        font-size: 14px;
+        font-weight: 700;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.2;
+    }
+
+    .field-row.compact .field-input {
+        margin: 5px 8px 10px;
+        width: calc(100% - 16px);
+        height: 36px;
+        padding: 0 8px;
+        font-size: 13px;
+    }
+
+	.field-row.mobile-inline {
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.field-row.mobile-inline .field-label {
+		width: 90px;
+		padding: 8px 10px;
+		border-bottom: none;
+		border-right: 1px solid #eee;
+		font-size: 9px;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		line-height: 1.1;
+	}
+
+	.field-row.mobile-inline .field-value {
+		padding: 6px 10px;
+		font-size: 13px;
+        overflow-wrap: anywhere;
+	}
+
+
+    @media (max-width: 480px) {
+        .field-row-group.mobile-side-by-side {
+            flex-wrap: wrap;
+        }
+        .field-row-group.mobile-side-by-side .field-row {
+            flex: 1 1 50%;
+            border-bottom: 1px solid #eee;
+        }
+        .field-row-group.mobile-side-by-side .field-row:nth-child(even) {
+            border-right: none;
+        }
+    }
+}

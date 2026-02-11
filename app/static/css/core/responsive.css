@@ -79,7 +79,7 @@
     }
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
 
     .container-wrapper {
         display: block;
@@ -97,7 +97,7 @@
 
     /* The page header for mobile/tablet (both get solid #333 background) */
     .page-header {
-        left: 0;
+        left: 0 !important;
         width: 100%;
         background-color: #333;
         color: white;
@@ -189,15 +189,18 @@
     /* The nav pane itself is now a slide-in menu */
     .nav-pane {
         position: fixed;
-        top: 0;
+        top: 60px;
         left: 0;
         width: 250px;
-        height: 100%;
+        height: calc(100vh - 60px); /* Fallback */
+        height: calc(100dvh - 60px);
         z-index: 1003;
         transform: translateX(-100%);
         transition: transform 0.3s ease-in-out;
         overflow-y: auto;
         padding-top: 20px;
+        padding-bottom: calc(40px + env(safe-area-inset-bottom));
+        box-sizing: border-box;
     }
 
     .nav-pane.expanded {
@@ -255,7 +258,7 @@
 }
 
 /* PC/Desktop specific overrides for page-header */
-@media (min-width: 993px) {
+@media (min-width: 1025px) {
     .page-header .nav-toggle {
         display: none;
     }

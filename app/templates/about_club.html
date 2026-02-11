@@ -1,9 +1,11 @@
 {% extends "base.html" %}
+{% from "partials/_profile_macros.html" import profile_section, field_row, field_row_pair, field_row_group %}
 
 {% block title %}About Club{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/profile-sections.css') }}">
 <style>
     .about-club-container {
         max-width: 1200px;
@@ -11,31 +13,27 @@
         padding: 20px;
     }
 
+    .settings-header {
+        display: flex;
+        flex-wrap: wrap; /* Allow wrapping */
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
     .about-club-container h1 {
+        width: 100%; /* Take full width */
         color: #004165;
-        margin-bottom: 25px;
+        margin-bottom: 15px; /* Reduced since actions are below */
         font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
     }
 
-    .form-table input.form-control,
-    .form-table textarea.form-control,
-    .form-table select.form-control {
-        width: 100% !important;
-        box-sizing: border-box !important;
-        max-width: 100%;
-        padding: 6px 8px;
-    }
-
-    /* Specific fix for date and time inputs */
-    .form-table input[type="date"].form-control,
-    .form-table input[type="time"].form-control {
-        padding: 4px 6px;
-        height: 38px;
-    }
-
-    .form-table td {
-        position: relative;
-        vertical-align: middle;
+    .about-club-container h1 i {
+        font-size: 0.8em;
+        opacity: 0.9;
     }
 
     /* Club Settings Grid Styles */
@@ -59,12 +57,6 @@
         margin-bottom: 20px;
     }
 
-    /* Force colspanned header to full width */
-    .general-settings-table th[colspan="2"] {
-        width: 100% !important;
-        text-align: left;
-    }
-
     /* Responsive Mobile View (<= 768px) */
     @media (max-width: 768px) {
         .club-settings-grid {
@@ -73,89 +65,10 @@
 
         .settings-header {
             flex-direction: row;
-            /* Match desktop layout for title/buttons */
             justify-content: space-between;
             align-items: center;
             gap: 10px;
             margin-bottom: 25px;
-        }
-
-        .settings-header .button-group {
-            width: auto;
-            /* Don't force full width */
-        }
-
-        /* Simplify header look on mobile */
-        .form-table thead {
-            display: block;
-            margin-top: 15px;
-            margin-bottom: 5px;
-        }
-
-        .form-table thead tr {
-            display: block;
-            border: none !important;
-            box-shadow: none !important;
-            background: none !important;
-        }
-
-        .form-table thead th {
-            display: block;
-            background-color: transparent !important;
-            padding: 0 !important;
-            color: #004165;
-            font-size: 1.1em;
-            font-weight: 700;
-            border: none !important;
-            text-align: left;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-
-        .form-table tbody tr {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .form-table td {
-            width: 100% !important;
-            border-bottom: none;
-        }
-
-        .form-table td:first-child {
-            /*background-color: #fcfcfc;*/
-            padding-bottom: 2px;
-        }
-
-        .form-table td:last-child {
-            padding-top: 2px;
-            border-bottom: 1px solid #dee2e6;
-        }
-
-        .autocomplete-dropdown {
-            position: static !important;
-            width: 100% !important;
-        }
-
-        /* Specific layout for Location & Org */
-        #location-org-table tbody {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        #location-org-table tr.row-inline {
-            flex: 1 1 calc(33.33% - 10px);
-            min-width: 80px;
-        }
-
-        #location-org-table tr.row-stack {
-            flex: 1 1 100%;
-        }
-
-        /* Ensure consistent look for inline items */
-        #location-org-table tr.row-inline td {
-            padding: 8px !important;
         }
     }
 
@@ -283,7 +196,7 @@
 {% block content %}
 <div class="about-club-container">
     <div class="settings-header">
-        <h1>About Our Club</h1>
+        <h1><i class="fas fa-circle-info"></i> About Our Club</h1>
         <div class="header-actions" style="display: flex; align-items: center; gap: 12px;">
             {% if is_authorized(Permissions.ABOUT_CLUB_EDIT) %}
             <div class="button-group">
@@ -321,142 +234,79 @@
 
     {% if club %}
     <div class="club-settings-grid" id="about-club-content">
-        <!-- Left Column: 3 Tables Stacked -->
+        <!-- Left Column: 3 Sections Stacked -->
         <div class="club-settings-left">
             <!-- Basic Information -->
-            <table id="club-settings-table" class="form-table general-settings-table">
-                <thead>
-                    <tr>
-                        <th colspan="2">Basic Information</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="width: 40%;"><strong>Club Logo</strong></td>
-                        <td>
-                            <div id="club-logo-display">
-                                {% if club.logo_url %}
-                                <img id="current-club-logo" src="{{ url_for('static', filename=club.logo_url) }}" alt="Club Logo" style="max-height: 80px; border-radius: 4px;">
-                                {% else %}
-                                <span id="no-logo-text" class="text-muted">No logo</span>
-                                <img id="current-club-logo" src="" alt="Club Logo" style="max-height: 80px; border-radius: 4px; display: none;">
-                                {% endif %}
-                            </div>
-                            <div id="club-logo-edit" style="display: none; margin-top: 10px;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <input type="file" id="logo-upload-input" accept="image/*" class="form-control" style="width: auto; padding: 4px;">
-                                    <button id="logo-upload-btn" class="btn btn-sm btn-primary" type="button" style="display: none;">Upload</button>
-                                </div>
-                                <small class="text-muted">Max size 500x500px, WebP/PNG/JPG</small>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="width: 40%;"><strong>Club Number</strong></td>
-                        <td data-field="club_no">{{ club.club_no }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Club Name</strong></td>
-                        <td data-field="club_name">{{ club.club_name }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Short Name</strong></td>
-                        <td data-field="short_name">{{ club.short_name or '' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Founded Date</strong></td>
-                        <td data-field="founded_date">{{ club.founded_date.strftime('%Y-%m-%d') if club.founded_date
-                            else '' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Website</strong></td>
-                        <td data-field="website">
-                            {% if club.website %}
-                            <a href="{{ 'https://' ~ club.website if '://' not in club.website else club.website }}"
-                                target="_blank" class="website-link">{{ club.website }}</a>
+            {% call profile_section("Basic Information") %}
+                <div class="field-row">
+                    <span class="field-label">Club Logo</span>
+                    <div class="field-value">
+                        <div id="club-logo-display">
+                            {% if club.logo_url %}
+                            <img id="current-club-logo" src="{{ url_for('static', filename=club.logo_url) }}" alt="Club Logo" style="max-height: 80px; border-radius: 4px;">
+                            {% else %}
+                            <span id="no-logo-text" class="text-muted">No logo</span>
+                            <img id="current-club-logo" src="" alt="Club Logo" style="max-height: 80px; border-radius: 4px; display: none;">
                             {% endif %}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                        </div>
+                        <div id="club-logo-edit" style="display: none; margin-top: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <input type="file" id="logo-upload-input" accept="image/*" class="form-control" style="width: auto; padding: 4px;">
+                                <button id="logo-upload-btn" class="btn btn-sm btn-primary" type="button" style="display: none;">Upload</button>
+                            </div>
+                            <small class="text-muted">Max size 500x500px, WebP/PNG/JPG</small>
+                        </div>
+                    </div>
+                </div>
+                {% call field_row_pair(class='mobile-side-by-side') %}
+                    {{ field_row("Club Number", value=club.club_no, field_data="club_no", class='compact') }}
+                    {{ field_row("Short Name", value=club.short_name, field_data="short_name", class='compact') }}
+                {% endcall %}
+                {{ field_row("Club Name", value=club.club_name, field_data="club_name") }}
+                {{ field_row("Founded Date", value=club.founded_date.strftime('%Y-%m-%d') if club.founded_date else '', field_data="founded_date") }}
+                
+                {% set website_link %}
+                    {% if club.website %}
+                    <a href="{{ 'https://' ~ club.website if '://' not in club.website else club.website }}"
+                        target="_blank" class="website-link">{{ club.website }}</a>
+                    {% endif %}
+                {% endset %}
+                {{ field_row("Website", value=website_link, is_raw=true, field_data="website") }}
+            {% endcall %}
 
             <!-- Meeting Information -->
-            <table class="form-table general-settings-table">
-                <thead>
-                    <tr>
-                        <th colspan="2">Meeting Information</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="width: 40%;"><strong>Meeting Date</strong></td>
-                        <td data-field="meeting_date">{{ club.meeting_date or '' }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Meeting Time</strong></td>
-                        <td data-field="meeting_time">{{ club.meeting_time.strftime('%H:%M') if club.meeting_time else
-                            '' }}</td>
-                    </tr>
-                </tbody>
-            </table>
+            {% call profile_section("Meeting Information") %}
+                {% call field_row_pair(class='mobile-side-by-side') %}
+                    {{ field_row("Meeting Date", value=club.meeting_date, field_data="meeting_date", class='compact') }}
+                    {{ field_row("Meeting Time", value=club.meeting_time.strftime('%H:%M') if club.meeting_time else '', field_data="meeting_time", class='compact') }}
+                {% endcall %}
+            {% endcall %}
 
             <!-- Location & Organization -->
-            <table id="location-org-table" class="form-table general-settings-table">
-                <thead>
-                    <tr>
-                        <th colspan="2">Location & Organization</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="row-inline">
-                        <td style="width: 40%;"><strong>District</strong></td>
-                        <td data-field="district">{{ club.district or '' }}</td>
-                    </tr>
-                    <tr class="row-inline">
-                        <td><strong>Division</strong></td>
-                        <td data-field="division">{{ club.division or '' }}</td>
-                    </tr>
-                    <tr class="row-inline">
-                        <td><strong>Area</strong></td>
-                        <td data-field="area">{{ club.area or '' }}</td>
-                    </tr>
-                    <tr class="row-stack">
-                        <td><strong>Contact Phone Number</strong></td>
-                        <td data-field="contact_phone_number">{{ club.contact_phone_number or '' }}</td>
-                    </tr>
-                    <tr class="row-stack">
-                        <td><strong>Club Address</strong></td>
-                        <td data-field="club_address" style="white-space: pre-line;">{{ club.club_address or '' }}</td>
-                    </tr>
-                </tbody>
-            </table>
+            {% call profile_section("Location & Organization") %}
+                {% call field_row_group(class='mobile-side-by-side') %}
+                    {{ field_row("District", value=club.district, field_data="district", class='compact') }}
+                    {{ field_row("Division", value=club.division, field_data="division", class='compact') }}
+                    {{ field_row("Area", value=club.area, field_data="area", class='compact') }}
+                {% endcall %}
+                {{ field_row("Contact Phone", value=club.contact_phone_number, field_data="contact_phone_number") }}
+                {{ field_row("Club Address", value=club.club_address, is_textarea=true, field_data="club_address") }}
+            {% endcall %}
         </div>
 
         <!-- Right Column: Executive Committee -->
         <div>
-            <table class="form-table general-settings-table">
-                <thead>
-                    <tr>
-                        <th colspan="2">Executive Committee</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="width: 40%;"><strong>Team Name</strong></td>
-                        <td data-field="excomm_name">{{ excomm_team.name }}</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Term</strong></td>
-                        <td data-field="excomm_term">{{ excomm_team.term }}</td>
-                    </tr>
-                    {% for role, name in excomm_team.members.items() %}
-                    <tr>
-                        <td><span class="roster-role-tag role-officer" style="margin-bottom: 0;">{{ role }}</span></td>
-                        <td data-field="excomm_{{ role.lower() }}" data-role="{{ role }}">{{ name }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            {% call profile_section("Executive Committee") %}
+                {% call field_row_pair(class='mobile-side-by-side') %}
+                    {{ field_row("Team Name", value=excomm_team.name, field_data="excomm_name", class='compact') }}
+                    {{ field_row("Term", value=excomm_team.term, field_data="excomm_term", class='compact') }}
+                {% endcall %}
+                
+                {% for role, name in excomm_team.members.items() %}
+                    {% set role_tag %}<span class="roster-role-tag role-officer" style="margin-bottom: 0;">{{ role }}</span>{% endset %}
+                    {{ field_row(role_tag, value=name, is_raw=true, field_data="excomm_" ~ role.lower()) }}
+                {% endfor %}
+            {% endcall %}
         </div>
     </div>
     {% else %}
@@ -596,7 +446,8 @@
             const logoEditDiv = document.getElementById('club-logo-edit');
             if (logoEditDiv) logoEditDiv.style.display = 'block';
 
-            const cells = document.querySelectorAll('#about-club-content td[data-field]');
+            // Target .field-value with data-field attribute
+            const cells = document.querySelectorAll('#about-club-content .field-value[data-field]');
             cells.forEach(cell => {
                 const field = cell.getAttribute('data-field');
                 const value = cell.textContent.trim();
@@ -606,7 +457,7 @@
                 if (field.startsWith('excomm_') && field !== 'excomm_name' && field !== 'excomm_term') {
                     input = document.createElement('input');
                     input.type = 'text';
-                    input.className = 'form-control';
+                    input.className = 'field-input';
                     input.value = value;
                     input.setAttribute('autocomplete', 'off');
                     input.setAttribute('placeholder', 'Search member...');
@@ -639,39 +490,57 @@
 
                     cell.style.position = 'relative';
                     cell.textContent = '';
-                    cell.appendChild(input);
-                    cell.appendChild(dropdown);
-                    return;
+                    
+                    // Use a wrapper to match profile structure if possible, but keeping it simple for now
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'field-input-wrapper';
+                    wrapper.appendChild(input);
+                    wrapper.appendChild(dropdown);
+                    cell.parentElement.replaceChild(wrapper, cell);
+                    wrapper.setAttribute('data-field', field); // Keep data-field for saveChanges
                 } else if (field === 'club_address') {
                     input = document.createElement('textarea');
                     input.rows = 3;
                     input.value = value;
+                    input.className = 'field-textarea';
                 } else if (field === 'meeting_time') {
                     input = document.createElement('input');
                     input.type = 'time';
+                    input.className = 'field-input';
                     if (value && value.includes(':')) { input.value = value; }
                 } else if (field === 'founded_date') {
                     input = document.createElement('input');
                     input.type = 'date';
+                    input.className = 'field-input';
                     if (value) {
-                        const parts = value.split('/');
-                        if (parts.length === 3) {
-                            const month = parts[0].padStart(2, '0');
-                            const day = parts[1].padStart(2, '0');
-                            const year = parts[2];
-                            input.value = `${year}-${month}-${day}`;
-                        } else if (value.includes('-')) { input.value = value; }
+                        // Handle both YYYY-MM-DD and MM/DD/YYYY if necessary
+                        if (value.includes('-')) {
+                            input.value = value;
+                        } else {
+                            const parts = value.split('/');
+                            if (parts.length === 3) {
+                                const month = parts[0].padStart(2, '0');
+                                const day = parts[1].padStart(2, '0');
+                                const year = parts[2];
+                                input.value = `${year}-${month}-${day}`;
+                            }
+                        }
                     }
                 } else {
                     input = document.createElement('input');
                     input.type = 'text';
                     input.value = value;
+                    input.className = 'field-input';
                 }
 
-                input.className = 'form-control';
-                input.setAttribute('data-field', field);
-                cell.textContent = '';
-                cell.appendChild(input);
+                if (input && !field.startsWith('excomm_')) {
+                    input.setAttribute('data-field', field);
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'field-input-wrapper';
+                    wrapper.setAttribute('data-field', field);
+                    wrapper.appendChild(input);
+                    cell.parentElement.replaceChild(wrapper, cell);
+                }
             });
         }
 
@@ -680,28 +549,46 @@
             editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
             editBtn.classList.remove('btn-success');
             editBtn.classList.add('btn-primary');
+            editBtn.style.backgroundColor = '#004165';
             cancelBtn.style.display = 'none';
 
             const logoEditDiv = document.getElementById('club-logo-edit');
             if (logoEditDiv) logoEditDiv.style.display = 'none';
 
-            const inputs = document.querySelectorAll('#about-club-content input[data-field], #about-club-content textarea[data-field]');
-            inputs.forEach(input => {
-                const field = input.getAttribute('data-field');
-                const cell = input.parentElement;
-                const dropdown = cell.querySelector('.autocomplete-dropdown');
-                if (dropdown) dropdown.remove();
-                cell.textContent = originalValues[field];
+            const wrappers = document.querySelectorAll('#about-club-content .field-input-wrapper[data-field]');
+            wrappers.forEach(wrapper => {
+                const field = wrapper.getAttribute('data-field');
+                const span = document.createElement('span');
+                span.className = 'field-value';
+                span.setAttribute('data-field', field);
+                span.textContent = originalValues[field];
+                
+                // Special case for website link
+                if (field === 'website' && originalValues[field]) {
+                    const link = document.createElement('a');
+                    let href = originalValues[field];
+                    if (!href.includes('://')) href = 'https://' + href;
+                    link.href = href;
+                    link.target = '_blank';
+                    link.className = 'website-link';
+                    link.textContent = originalValues[field];
+                    span.textContent = '';
+                    span.appendChild(link);
+                }
+                
+                wrapper.parentElement.replaceChild(span, wrapper);
             });
             originalValues = {};
         }
 
         function saveChanges() {
-            const inputs = document.querySelectorAll('#about-club-content input[data-field], #about-club-content textarea[data-field]');
+            const inputs = document.querySelectorAll('#about-club-content .field-input, #about-club-content .field-textarea');
             const data = {};
             inputs.forEach(input => {
                 const field = input.getAttribute('data-field');
-                data[field] = input.value;
+                if (field) {
+                    data[field] = input.value;
+                }
             });
 
             fetch('{{ url_for("about_club_bp.about_club_update") }}', {
@@ -712,25 +599,47 @@
                 .then(response => response.json())
                 .then(result => {
                     if (result.success) {
-                        inputs.forEach(input => {
-                            const cell = input.parentElement;
-                            const field = input.getAttribute('data-field');
-                            cell.textContent = input.value;
-                            // For address, we need to respect pre-line style which cell.textContent will do
-                            // but we ensure the style is there (it is in HTML template)
+                        const wrappers = document.querySelectorAll('#about-club-content .field-input-wrapper[data-field]');
+                        wrappers.forEach(wrapper => {
+                            const field = wrapper.getAttribute('data-field');
+                            const input = wrapper.querySelector('.field-input, .field-textarea');
+                            const value = input.value;
+                            
+                            const span = document.createElement('span');
+                            span.className = 'field-value';
+                            span.setAttribute('data-field', field);
+                            span.textContent = value;
+
+                            // Special case for website link
+                            if (field === 'website' && value) {
+                                const link = document.createElement('a');
+                                let href = value;
+                                if (!href.includes('://')) href = 'https://' + href;
+                                link.href = href;
+                                link.target = '_blank';
+                                link.className = 'website-link';
+                                link.textContent = value;
+                                span.textContent = '';
+                                span.appendChild(link);
+                            }
+
+                            wrapper.parentElement.replaceChild(span, wrapper);
                         });
+
                         isEditing = false;
                         editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
                         editBtn.classList.remove('btn-success');
                         editBtn.classList.add('btn-primary');
+                        editBtn.style.backgroundColor = '';
                         cancelBtn.style.display = 'none';
 
                         const logoEditDiv = document.getElementById('club-logo-edit');
                         if (logoEditDiv) logoEditDiv.style.display = 'none';
 
                         originalValues = {};
+                        const originalBg = editBtn.style.backgroundColor;
                         editBtn.style.backgroundColor = '#28a745';
-                        setTimeout(() => { editBtn.style.backgroundColor = ''; }, 1000);
+                        setTimeout(() => { editBtn.style.backgroundColor = originalBg; }, 1000);
                     } else { console.error('Error:', result.message); flash(result.message, 'danger'); }
                 })
                 .catch(error => { console.error('Error:', error); });

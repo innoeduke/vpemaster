@@ -183,14 +183,14 @@
 }
 
 .roster-container .input-type {
-	flex: 1;
-	min-width: 140px;
+	flex: 1.2;
+	min-width: 180px;
 	flex-shrink: 0;
 }
 
 .roster-container .input-ticket {
-	flex: 1;
-	min-width: 160px;
+	flex: 1.5;
+	min-width: 220px;
 	flex-shrink: 0;
 }
 

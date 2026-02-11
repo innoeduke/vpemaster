@@ -56,127 +56,23 @@
 	margin: 0 auto;
 }
 
-/* Sections as cards */
-.profile-section {
-	background: #fff;
-	border: 1px solid #e0e0e0;
-	border-radius: 12px;
-	margin-bottom: 25px;
-	overflow: hidden;
-}
-
+/* Specific overrides for Profile page */
 .profile-section .section-title {
-	font-size: 14px;
-	font-weight: 700;
-	color: #772432;
-	background: #fafafa;
-	padding: 12px 15px;
-	margin: 0;
-	border-bottom: 1px solid #e0e0e0;
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
+	color: #772432; /* Maroon for Profile */
 }
 
-.field-row {
-	display: flex;
-	align-items: center;
-	padding: 0;
-	border-bottom: 1px solid #eee;
-	flex: 1;
-	min-width: 0;
-}
-
-.field-row-pair {
-	display: flex;
-	gap: 0;
-	border-bottom: 1px solid #eee;
-	padding: 0;
-}
-
-.field-row-pair .field-row {
-	border-bottom: none;
-}
-
-.field-row:last-child,
-.field-row-pair:last-child {
-	border-bottom: none;
+.field-label {
+    border-right: 1px solid #e0e0e0;
 }
 
 .field-row.editable .field-label {
 	color: #772432;
 }
 
-.field-label {
-	font-size: 13px;
-	color: #444;
-	font-weight: 700;
-	width: 140px;
-	background: #fcfcfc;
-	padding: 12px 15px;
-	border-right: 1px solid #e0e0e0;
-	white-space: nowrap;
-	flex-shrink: 0;
-	align-self: stretch;
-	display: flex;
-	align-items: center;
-}
-
-.field-value {
-	padding: 8px 15px;
-	flex: 1;
-	font-size: 15px;
-	font-weight: 700;
-	color: #333;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-
-.field-input-wrapper {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	min-width: 0;
-}
-
-.field-input,
-.field-textarea {
-	width: calc(100% - 30px);
-	font-size: 15px;
-	border: 1px solid #ddd;
-	border-radius: 8px;
-	background: #fff;
-	box-sizing: border-box;
-	transition: all 0.2s ease;
-}
-
-.field-input {
-	margin: 10px 15px;
-	height: 44px;
-	padding: 0 15px;
-}
-
-.profile-section .field-textarea {
-	margin: 0;
-	min-height: 120px;
-	padding: 12px;
-	resize: vertical;
-}
-
 .field-input:focus,
 .field-textarea:focus {
-	outline: none;
 	border-color: #772432;
 	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
-}
-
-.field-row .note {
-	display: block;
-	font-size: 11px;
-	color: #888;
-	margin: 0 15px 12px;
-	width: calc(100% - 30px);
-	font-style: italic;
 }
 
 /* Ensure input and note stack vertically in the value area */
