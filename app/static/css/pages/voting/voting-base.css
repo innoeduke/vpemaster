@@ -4,15 +4,67 @@
    ======================================== */
 
 /* --- Page Title with Trend Button --- */
-.page-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
+/* --- Filter Container premium --- */
+.filters-control.premium {
+  background-color: #fff;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 25px;
+  border: 1px solid #e2e8f0;
 }
 
-.page-title-row h1 {
-  margin: 0;
+.filter-row-premium {
+  display: flex;
+  align-items: center;
+  padding: 0;
+  gap: 20px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.filter-row-premium .filter-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  font-size: 1em;
+}
+
+.filter-row-premium .filter-right {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.trend-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 18px;
+  background-color: #004165;
+  color: #fff !important;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  border: none;
+  gap: 10px;
+  height: 40px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 6px rgba(0, 65, 101, 0.2);
+}
+
+.trend-btn i {
+  color: #fff !important;
+}
+
+.trend-btn:hover {
+  background-color: #002d46;
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(0, 65, 101, 0.3);
 }
 
 /* --- Disabled Button Style --- */
@@ -42,11 +94,11 @@
 }
 
 /* --- Accordion Styles --- */
-.award-accordion {
+.accordion-list {
   margin-top: 20px;
 }
 
-.booking-container .award-accordion .accordion-item {
+.page-container .accordion-list .accordion-item {
   padding: 20px;
   border-radius: 8px;
   margin-top: 20px;
@@ -56,7 +108,7 @@
   overflow: visible;
 }
 
-.award-accordion .accordion-header {
+.accordion-list .accordion-header {
   background-color: transparent;
   color: #333;
   font-weight: bold;
@@ -73,29 +125,29 @@
   font-size: inherit;
 }
 
-.award-accordion .accordion-header:hover {
+.accordion-list .accordion-header:hover {
   background-color: transparent;
   opacity: 0.8;
 }
 
-.award-accordion .accordion-header.disabled {
+.accordion-list .accordion-header.disabled {
   cursor: pointer;
 }
 
-.award-accordion .accordion-header.disabled .question-text {
+.accordion-list .accordion-header.disabled .question-text {
   color: #999;
 }
 
-.award-accordion .accordion-header.disabled .question-number {
+.accordion-list .accordion-header.disabled .question-number {
   background-color: #ccc;
 }
 
-.award-accordion .accordion-header.active {
+.accordion-list .accordion-header.active {
   background-color: transparent;
   margin-bottom: 15px;
 }
 
-.award-accordion .accordion-header-right {
+.accordion-list .accordion-header-right {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -107,15 +159,15 @@
   gap: 10px;
 }
 
-.award-accordion .accordion-header i {
+.accordion-list .accordion-header i {
   transition: transform 0.3s ease;
 }
 
-.award-accordion .accordion-header.active i.fa-chevron-down {
+.accordion-list .accordion-header.active i.fa-chevron-down {
   transform: rotate(180deg);
 }
 
-.award-accordion .accordion-content {
+.accordion-list .accordion-content {
   padding: 0;
   background-color: white;
   max-height: 0;
@@ -123,7 +175,7 @@
   transition: max-height 0.3s ease-out;
 }
 
-.award-accordion .accordion-content .booking-table {
+.accordion-list .accordion-content .booking-table {
   box-shadow: none;
   border-radius: 0;
 }
@@ -196,7 +248,7 @@
 }
 
 /* --- Unified Voting Section (for NPS and Feedback) --- */
-.booking-container .voting-section {
+.page-container .voting-section {
   padding: 0 !important;
   border-radius: 8px;
   margin-top: 20px;
@@ -320,8 +372,8 @@
 }
 
 /* Unified styling for both accordion headers and section titles with chained selectors for specificity */
-.booking-container .award-accordion .accordion-header .question-text,
-.booking-container .voting-section .section-header .section-title {
+.page-container .award-accordion .accordion-header .question-text,
+.page-container .voting-section .section-header .section-title {
   background-color: transparent;
   box-shadow: none;
   border: none;
@@ -397,7 +449,7 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  margin-top: 40px;
+  margin-top: 20px;
   width: 100%;
 }
 

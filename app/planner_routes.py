@@ -17,10 +17,33 @@ def planner():
     # 1. Fetch user's plans
     plans = Planner.query.filter_by(user_id=current_user.id, club_id=club_id).order_by(Planner.meeting_number).all()
     
-    # 2. Fetch unpublished meetings for the dropdown
-    unpublished_meetings = Meeting.query.filter_by(club_id=club_id, status='unpublished').order_by(Meeting.Meeting_Number).all()
+    # 2. Fetch all terms for the club to show in the filter
+    from .utils import get_terms, get_active_term, get_date_ranges_for_terms
+    terms = get_terms()
     
-    # 3. Fetch projects grouped by level
+    # 3. Determine selected terms (support multi-select like contacts page)
+    selected_term_ids = request.args.getlist('term')
+    
+    # Fallback: if no term selected, use the active term
+    current_term = get_active_term(terms)
+    if not selected_term_ids:
+        if current_term:
+            selected_term_ids = [current_term['id']]
+        elif terms:
+            selected_term_ids = [terms[0]['id']]
+            
+    # 4. Fetch unpublished meetings filtered by term date ranges
+    from sqlalchemy import or_
+    date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
+    
+    query = Meeting.query.filter_by(club_id=club_id, status='unpublished')
+    if date_ranges:
+        conditions = [Meeting.Meeting_Date.between(start, end) for start, end in date_ranges]
+        query = query.filter(or_(*conditions))
+    
+    unpublished_meetings = query.order_by(Meeting.Meeting_Number).all()
+    
+    # 5. Fetch projects grouped by level
     contact = current_user.get_contact(club_id)
     projects_by_level = {}
     if contact:
@@ -38,6 +61,8 @@ def planner():
     return render_template('planner.html', 
                          plans=plans, 
                          meetings=unpublished_meetings,
+                         terms=terms,
+                         selected_term_ids=selected_term_ids,
                          grouped_projects=grouped_projects,
                          header_title="Planner")
 

@@ -4,35 +4,9 @@
 {% block title %}Role Booking{% endblock %}
 
 {% block content %}
-<div class="booking-container">
+<div class="page-container">
     <h1><i class="fas fa-tag"></i> Booking Assistant</h1>
     {% if user_role != 'Guest' %}
-    <h3 class="booking-section-header">Booked Roles</h3>
-    <div class="my-bookings-container">
-        {% if user_bookings_by_date %}
-        <div class="horizontal-timeline">
-            {% for group in user_bookings_by_date %}
-            <div class="timeline-event" data-meeting-number="{{ group.date_info.meeting_number }}">
-                <div class="timeline-header">
-                    <span class="meeting-number">#{{ group.date_info.meeting_number }}</span>
-                    <span class="meeting-date">{{ group.date_info.short_date }}</span>
-                </div>
-                <div class="timeline-marker"></div>
-                <div class="timeline-roles-list">
-                    {% for booking in group.bookings %}
-                    <div class="timeline-role">
-                        <i class="fas {{ booking.icon }}"></i> {{ booking.role }}
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p>You have no upcoming roles booked.</p>
-        {% endif %}
-    </div>
-    {% endif %}
     <div class="filters-container premium">
         <div class="filter-row-premium">
             {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number,
@@ -53,6 +27,45 @@
             </div>
         </div>
     </div>
+    <div class="accordion-list">
+        <div class="accordion-item" data-category="booked-roles">
+            <button class="accordion-header active">
+                <div class="header-left">
+                    <span class="accordion-title">Booked Roles</span>
+                </div>
+                <div class="accordion-header-right">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </button>
+            <div class="accordion-content" style="max-height: none;">
+                <div class="my-bookings-container">
+                    {% if user_bookings_by_date %}
+                    <div class="horizontal-timeline">
+                        {% for group in user_bookings_by_date %}
+                        <div class="timeline-event" data-meeting-number="{{ group.date_info.meeting_number }}">
+                            <div class="timeline-header">
+                                <span class="meeting-number">#{{ group.date_info.meeting_number }}</span>
+                                <span class="meeting-date">{{ group.date_info.short_date }}</span>
+                            </div>
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-roles-list">
+                                {% for booking in group.bookings %}
+                                <div class="timeline-role">
+                                    <i class="fas {{ booking.icon }}"></i> {{ booking.role }}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p>You have no upcoming roles booked.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     {% if selected_meeting %}
 
@@ -275,12 +288,14 @@
     {% set use_accordion = True %}
     {% set default_open = True %}
 
-    <div class="award-accordion">
+    <div class="accordion-list">
         {% for category, items in sorted_role_groups %}
         {% if items %}
         <div class="accordion-item" data-category="{{ category or 'other' }}">
             <button class="accordion-header {{ 'active' if default_open else '' }}">
-                <span>{{ (category or 'Other')|replace('-', ' ')|title }} Roles</span>
+                <div class="header-left">
+                    <span class="accordion-title">{{ (category or 'Other')|replace('-', ' ')|title }} Roles</span>
+                </div>
                 <div class="accordion-header-right">
                     <i class="fas fa-chevron-down"></i>
                 </div>

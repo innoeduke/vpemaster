@@ -4,15 +4,43 @@
    ======================================== */
 
 @media (max-width: 768px) {
-  .roster-container {
+  .page-container {
     padding: 10px;
   }
 
-  .page-title-row {
-    margin-bottom: 40px;
+  /* Filter container mobile layout */
+  .filters-control.premium {
+    padding: 15px;
+    overflow: visible;
   }
 
-.roster-container .inline-filter-group {
+  .filter-row-premium {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    overflow: visible;
+  }
+
+  .filter-row-premium .filter-controls-inner,
+  .filter-row-premium .filter-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filter-row-premium .filter-right {
+    gap: 10px;
+  }
+
+  .filter-row-premium .filter-right .trend-btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    height: auto;
+    border-radius: 50px;
+  }
+
+.page-container .inline-filter-group {
     width: 100% !important;
     box-sizing: border-box;
     margin-bottom: 25px !important;
@@ -22,25 +50,25 @@
     padding: 15px;
   }
 
-  .roster-container #roster-form {
+  .page-container #roster-form {
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
 
-  .roster-container .form-group-inline {
+  .page-container .form-group-inline {
     width: 100%;
     min-width: 0;
     flex: none !important; /* Reset desktop flex-basis which becomes height in column mode */
   }
 
-  .roster-container .form-buttons {
+  .page-container .form-buttons {
     width: 100%;
     margin-top: 5px;
     height: auto !important;
   }
 
-  .roster-container .btn {
+  .page-container .btn {
     width: 100%;
   }
 
@@ -51,25 +79,25 @@
     border: none;
   }
 
-  .roster-container .table,
-  .roster-container .table thead,
-  .roster-container .table tbody,
-  .roster-container .table th,
-  .roster-container .table td,
-  .roster-container .table tr {
+  .page-container .table,
+  .page-container .table thead,
+  .page-container .table tbody,
+  .page-container .table th,
+  .page-container .table td,
+  .page-container .table tr {
     display: block;
     border: none !important;
   }
 
   /* Hide Table Header */
-  .roster-container .table thead tr {
+  .page-container .table thead tr {
     position: absolute;
     top: -9999px;
     left: -9999px;
   }
 
   /* Card Style for Rows */
-  .roster-container .table tbody tr {
+  .page-container .table tbody tr {
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -84,7 +112,7 @@
   }
 
   /* Remove default table borders */
-  .roster-container .table tbody td {
+  .page-container .table tbody td {
     border: none;
     padding: 0;
     text-align: left;
@@ -93,7 +121,7 @@
   }
 
   /* 1. Order Number (Top Left) */
-  .roster-container .cell-order {
+  .page-container .cell-order {
     grid-column: 1 / 2;
     grid-row: 1 / 3;
     font-size: 1rem;
@@ -108,7 +136,7 @@
   }
 
   /* 2. Name (Top Middle) */
-  .roster-container .cell-name {
+  .page-container .cell-name {
     grid-column: 2 / 3;
     grid-row: 1 / 2;
     font-size: 0.95rem;
@@ -118,7 +146,7 @@
   }
 
   /* 3. Ticket Badge (Bottom Middle) */
-  .roster-container .cell-ticket {
+  .page-container .cell-ticket {
     grid-column: 2 / 3;
     grid-row: 2 / 3;
   }
@@ -131,7 +159,7 @@
   }
 
   /* 4. Actions (Top Right) */
-  .roster-container .cell-actions {
+  .page-container .cell-actions {
     grid-column: 3 / 4;
     grid-row: 1 / 3;
     display: flex;
@@ -140,7 +168,7 @@
     justify-content: center;
   }
 
-  .roster-container .icon-btn {
+  .page-container .icon-btn {
     width: 36px;
     height: 36px;
     background: #f8f9fa;
@@ -153,31 +181,31 @@
 
   /* Hide Desktop-Only Columns */
   .desktop-only,
-  .roster-container .header-roles,
-  .roster-container .header-club,
-  .roster-container .cell-roles,
-  .roster-container .cell-club {
+  .page-container .header-roles,
+  .page-container .header-club,
+  .page-container .cell-roles,
+  .page-container .cell-club {
     display: none !important;
   }
 
   /* Fix empty blank rows */
-  .roster-container .table tbody tr:empty {
+  .page-container .table tbody tr:empty {
     display: none;
   }
 
   /* Override base forced borders */
-  .roster-container .table tbody td {
+  .page-container .table tbody td {
     border-bottom: none !important;
   }
 
   /* --- Buttons --- */
-  .roster-container .contact-input-container {
+  .page-container .contact-input-container {
     display: flex;
     gap: 10px; /* Gap between name input and plus button */
     width: 100%;
   }
 
-  .roster-container .contact-input-container #contact_name {
+  .page-container .contact-input-container #contact_name {
     flex: 1; /* Expand to take available space */
     border-radius: 6px !important; /* Restore radius on mobile */
   }
@@ -196,7 +224,7 @@
   /* Explicitly override roster page button and selector heights and width to 36px/100% */
   #submit-roster,
   #cancel-edit,
-  .roster-container .custom-select-trigger {
+  .page-container .custom-select-trigger {
     height: var(--mobile-control-height, 36px) !important;
     min-height: var(--mobile-control-height, 36px) !important;
     width: 100% !important;

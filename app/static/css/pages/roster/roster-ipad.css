@@ -6,11 +6,11 @@
 @media (min-width: 769px) and (max-width: 1024px) {
 
 	/* Adjust gaps for slightly tighter screens */
-	.roster-container #roster-form {
+	.page-container #roster-form {
 		gap: 10px;
 	}
 
-	.roster-container .input-name {
+	.page-container .input-name {
 		min-width: 200px;
 	}
 
@@ -19,7 +19,7 @@
 		display: none !important;
 	}
 
-	.roster-container .form-buttons {
+	.page-container .form-buttons {
 		margin-left: auto;
 	}
 }

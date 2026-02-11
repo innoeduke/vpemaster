@@ -15,7 +15,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="booking-container">
+<div class="page-container">
 	{% set legend_items = [] %}
 	{% for ds in datasets %}
 		{% set _ = legend_items.append({'label': ds.label, 'color': ds.color, 'type': 'bar'}) %}

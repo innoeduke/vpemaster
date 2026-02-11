@@ -40,11 +40,8 @@
 		border-bottom-right-radius: 8px;
 	}
 
-	.booking-table .btn-book,
-	.booking-table .btn-cancel,
-	.booking-table .btn-join-waitlist,
-	.booking-table .btn-leave-waitlist {
-		width: 120px;
+	.booking-table .btn {
+		width: 140px !important;
 		font-size: 0.7em;
 		margin-right: 10px;
 	}
@@ -60,16 +57,16 @@
 		height: 50px;
 		margin-left: 0;
 		flex-shrink: 0;
+	}
+
+	.role-avatar.admin-avatar {
 		overflow: visible !important;
 	}
 
 	/* Container adjustments */
-	.booking-container {
-		margin: 10px 0;
-		padding: 0 15px;
-	}
 
-	.booking-container h3 {
+
+	.page-container h3 {
 		text-align: center;
 	}
 
@@ -293,7 +290,7 @@
 	}
 
 	/* Specificity fix: override global forms-mobile.css (0,3,2) with (0,4,1) */
-	:root body .booking-container .booking-table .admin-assign-input {
+	:root body .page-container .booking-table .admin-assign-input {
 		font-size: 0.8em;
 		height: 30px;
 		min-height: 30px;
@@ -305,7 +302,7 @@
 		max-width: 100%;
 	}
 
-	.booking-container .btn-reset-role {
+	.page-container .btn-reset-role {
 		height: 30px !important;
 		min-height: 0 !important;
 		width: 24px !important;

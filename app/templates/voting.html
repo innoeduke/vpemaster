@@ -6,19 +6,22 @@
 {% block header_title %}Voting Form{% endblock %}
 
 {% block content %}
-<div class="booking-container">
-	<div class="page-title-row">
-		<h1><i class="fas fa-vote-yea"></i> Voting Form</h1>
-		{% if is_admin_view %}
-		<a href="{{ url_for('voting_bp.voting_nps') }}" class="trend-btn" title="NPS Trend">
-			<i class="fas fa-chart-line"></i>
-		</a>
-		{% endif %}
-	</div>
-	<div class="booking-filter-container">
-		{{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
-		base_url='/voting', render_outer_container=False) }}
-	</div>
+<div class="page-container">
+    <h1><i class="fas fa-vote-yea"></i> Voting Form</h1>
+
+    <div class="filters-control premium">
+        <div class="filter-row-premium">
+            {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
+            base_url='/voting', render_outer_container=False) }}
+            {% if is_admin_view %}
+            <div class="filter-right">
+                <a href="{{ url_for('voting_bp.voting_nps') }}" class="btn btn-info trend-btn" title="NPS Trend">
+                    <i class="fas fa-chart-line"></i> NPS Trend
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 
 	{% if selected_meeting %}
 
@@ -121,7 +124,7 @@
 	{% set default_open = False %}
 
 	{% if use_accordion %}
-	<div class="award-accordion">
+	<div class="accordion-list">
 		{% for category, items in sorted_role_groups %}
 		{% if items and category and category != 'none' %}
 		{% set category_voted = items|selectattr('award_type')|list|length > 0 %}
@@ -195,15 +198,14 @@
 	{% endif %}
 	{% endmacro %}
 
-
 	{# ============================================= #}
 	{# =============== MAIN VIEW LOGIC =============== #}
 	{# ============================================= #}
 
 	{% if selected_meeting.status not in ['running', 'finished'] %}
 	<div class="voting-not-started-container">
-		<p class="meeting-not-started-msg">Meeting #{{
-			selected_meeting_number }} is not yet started.</p>
+		<!-- <p class="meeting-not-started-msg">Meeting #{{
+			selected_meeting_number }} is not yet started.</p> -->
 		<div class="meeting-not-started-img-container">
 			<img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon"
 				class="meeting-not-started-img">

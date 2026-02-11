@@ -8,20 +8,44 @@
     font-size: 1.5em;
   }
 
-  .page-title-row {
-    margin-bottom: 20px;
+  /* Filter container mobile layout */
+  .filters-control.premium {
+    padding: 15px;
+    overflow: visible;
   }
 
-  .booking-filter-container {
-    margin-bottom: 25px !important;
+  .filter-row-premium {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    overflow: visible;
   }
 
-  .award-accordion .accordion-content {
+  .filter-row-premium .filter-controls-inner,
+  .filter-row-premium .filter-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filter-row-premium .filter-right {
+    gap: 10px;
+  }
+
+  .filter-row-premium .filter-right .trend-btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    height: 36px !important;
+    border-radius: 50px;
+  }
+
+  .accordion-list .accordion-content {
     background-color: transparent;
   }
 
   /* Remove border from accordion container */
-  .award-accordion .accordion-item {
+  .accordion-list .accordion-item {
     border: none;
     padding: 0 !important;
     margin-top: 15px;
@@ -50,7 +74,7 @@
     flex-shrink: 0;
   }
 
-  .award-accordion .accordion-header-right {
+  .accordion-list .accordion-header-right {
     font-size: 0.9em;
     color: #333;
     align-items: center; /* Center the chevron with the stack */

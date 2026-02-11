@@ -4,44 +4,75 @@
    ======================================== */
 
 /* --- Accordion Styles --- */
-.award-accordion {
+.accordion-list {
   margin-top: 20px;
 }
 
 .accordion-item {
-  margin: 20px 0;
   padding: 0 !important;
+  border-radius: 8px;
+  margin-top: 20px;
+  box-shadow: none;
+  background-color: transparent;
+  border: none;
+  overflow: visible;
 }
 
 .accordion-header {
-  background-color: #f8f9fa;
+  background-color: transparent;
   color: #333;
+  font-weight: bold;
+  font-family: "Montserrat", sans-serif;
+  transition: opacity 0.2s ease;
   cursor: pointer;
-  padding: 15px 20px;
+  padding: 5px 0;
   width: 100%;
   border: none;
   text-align: left;
   outline: none;
-  font-size: 1.2em;
-  font-weight: bold;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  transition: background-color 0.3s ease;
+  font-size: inherit;
 }
 
 .accordion-header:hover {
-  background-color: #e9ecef;
+  background-color: transparent;
+  opacity: 0.8;
 }
 
 .accordion-header.active {
-  background-color: #e0e0e0;
+  background-color: transparent;
+  margin-bottom: 15px;
 }
 
 .accordion-header-right {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Premium Header Style */
+.accordion-header .accordion-title {
+  background-color: transparent;
+  box-shadow: none;
+  border: none;
+  border-bottom: none;
+  color: #772432;
+  font-weight: 700;
+  font-family: "Montserrat", sans-serif;
+  padding: 8px 15px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 1.1em;
+  display: inline-block;
 }
 
 .accordion-header i {
@@ -70,24 +101,8 @@
 }
 
 /* --- Booking Container --- */
-.booking-container {
+.page-container {
   max-width: 900px;
-  margin: 20px auto;
-}
-
-.booking-container h1 {
-  color: #333;
-}
-
-.booking-section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  text-align: left;
-  margin: 15px 0;
-  font-size: 1.2em;
-  color: #333;
-  font-weight: 700;
 }
 
 /* --- Filter Container --- */
@@ -132,6 +147,10 @@
   justify-content: center;
   width: auto;
   gap: 10px;
+}
+
+.my-bookings-container {
+  padding: 10px 20px;
 }
 
 /* --- Horizontal Timeline --- */
@@ -306,7 +325,7 @@
   object-fit: cover;
 }
 
-.booking-container .avatar-remove-btn {
+.page-container .avatar-remove-btn {
   position: absolute;
   top: -5px;
   right: -5px;
@@ -327,11 +346,11 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.booking-container .avatar-remove-btn:hover {
+.page-container .avatar-remove-btn:hover {
   background-color: #c82333;
 }
 
-.booking-container .role-avatar.admin-avatar:hover .avatar-remove-btn {
+.page-container .role-avatar.admin-avatar:hover .avatar-remove-btn {
   display: flex !important;
 }
 
@@ -396,7 +415,7 @@
   font-family: "Montserrat", sans-serif;
   font-weight: bold;
   font-size: 0.9rem;
-  width: 130px;
+  width: 140px !important;
   height: 38px;
   box-sizing: border-box;
   white-space: nowrap;

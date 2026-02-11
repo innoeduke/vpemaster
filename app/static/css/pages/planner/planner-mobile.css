@@ -4,25 +4,39 @@
     padding: 8px;
   }
 
-  .planner-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 25px;
-    width: 100%;
-    gap: 12px;
-  }
-
   .page-title {
     font-size: 1.5rem;
-    margin: 0 0 40px 0;
+    margin: 0 0 20px 0;
     text-align: center;
   }
 
   #add-plan-btn {
-    align-self: flex-end;
-    margin: 0 !important;
     white-space: nowrap;
+    width: 100%;
+  }
+  
+  .filters-control.premium {
+    padding: 15px;
+  }
+  
+  .filter-row-premium {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .filter-row-premium .filter-left,
+  .filter-row-premium .filter-right {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filter-row-premium .custom-select-wrapper {
+    width: 100%;
+  }
+
+  .filter-row-premium .custom-select-trigger {
+    height: 36px;
   }
 
   .planner-modal-content {
@@ -222,5 +236,14 @@
   .planner-btn {
     padding: 0.5rem 1rem;
     font-size: 13px;
+  }
+
+  #term-dropdown-btn {
+    width: 100%;
+  }
+
+  .contacts-term-filter-form {
+    max-width: none;
+    width: 100%;
   }
 }

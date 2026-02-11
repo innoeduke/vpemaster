@@ -4,7 +4,7 @@
    ======================================== */
 
 @media (min-width: 1025px) {
-	.roster-container {
+	.page-container {
 		max-width: 1400px;
 	}
 }

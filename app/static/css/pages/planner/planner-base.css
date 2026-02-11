@@ -1,8 +1,6 @@
 /* Planner Page Base Styles */
-.planner-container {
-  padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+.page-container h1 {
+  color: #333;
 }
 
 .page-title {
@@ -14,11 +12,38 @@
   font-size: 1.75rem;
 }
 
-.planner-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
+/* --- Filter Container premium --- */
+.filters-control.premium {
+	background-color: #fff;
+	padding: 15px 20px;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	margin-bottom: 25px;
+	border: 1px solid #e2e8f0;
+}
+
+.filter-row-premium {
+	display: flex;
+	align-items: center;
+	padding: 0;
+	gap: 20px;
+	flex-wrap: nowrap;
+	justify-content: space-between;
+	width: 100%;
+}
+
+.filter-row-premium .filter-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+	font-size: 1em;
+}
+
+.filter-row-premium .filter-right {
+	display: flex;
+	justify-content: flex-end;
+	gap: 10px;
 }
 
 .planner-card {
@@ -420,4 +445,82 @@ optgroup option {
 
 .custom-option.disabled {
   display: none;
+}
+
+/* --- Term Filter Dropdown (Consistency with Contacts Page) --- */
+.contacts-term-filter-form {
+    flex: 1;
+    min-width: 300px;
+}
+
+.contacts-term-filter-form .form-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.filter-label {
+    font-family: "Montserrat", sans-serif;
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.custom-dropdown-container {
+    position: relative;
+    width: 100%;
+}
+
+.term-dropdown-btn {
+    text-align: left;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: auto;
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    min-height: 38px;
+}
+
+.term-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    padding: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.term-dropdown-menu label {
+    display: block;
+    cursor: pointer;
+    margin-bottom: 0;
+}
+
+.term-select-all-label {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+    font-weight: bold;
+    margin-bottom: 5px !important;
+}
+
+.term-option-label {
+    padding: 5px 10px;
+    font-weight: normal;
+}
+
+.term-checkbox-input {
+    margin-right: 8px;
+    vertical-align: middle;
 }

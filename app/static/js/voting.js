@@ -177,7 +177,7 @@ function submitBatchVotes() {
 					window.location.reload(true);
 				} else {
 					// Transition to Thank You state
-					const accordion = document.querySelector('.award-accordion');
+					const accordion = document.querySelector('.accordion-list');
 					if (accordion) accordion.style.display = 'none';
 
 					const actions = document.getElementById('batch-vote-actions');

@@ -6,17 +6,17 @@
 @media (min-width: 769px) and (max-width: 1024px) {
 
 	/* Optimized accordion for iPad */
-	.award-accordion .accordion-item {
+	.accordion-list .accordion-item {
 		padding: 18px;
 		margin-top: 15px;
 	}
 
-	.award-accordion .accordion-header .question-text,
+	.accordion-list .accordion-header .question-text,
 	.section-title {
 		font-size: 1.15em;
 	}
 
-	.award-accordion .accordion-header-right {
+	.accordion-list .accordion-header-right {
 		gap: 10px;
 	}
 
