@@ -531,3 +531,28 @@ optgroup option {
     margin-right: 8px;
     vertical-align: middle;
 }
+
+.project-code-badge {
+    background-color: var(--tm-blue-light, #e3f2fd);
+    color: var(--tm-blue, #004165);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 600;
+    margin-right: 4px;
+}
+
+.custom-select-icon, .custom-option-icon {
+    width: 20px;
+    text-align: center;
+    margin-right: 8px;
+    color: var(--tm-blue, #004165);
+    font-family: "Font Awesome 5 Free" !important;
+    font-weight: 900;
+}
+
+.custom-select-text {
+    flex-grow: 1;
+    text-align: left;
+}
+

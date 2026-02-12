@@ -75,7 +75,13 @@
                         data-status="{{ plan.status }}" data-notes="{{ plan.notes or '' }}">
                         <td data-label="Meeting">#{{ plan.meeting_number or 'N/A' }}</td>
                         <td data-label="Role">{{ plan.role.name if plan.role else 'N/A' }}</td>
-                        <td data-label="Project">{{ plan.project.Project_Name if plan.project else 'N/A' }}</td>
+                        <td data-label="Project">
+                            {% if plan.project %}
+                                <span class="project-code-badge">{{ plan.project.get_code() }}</span> {{ plan.project.Project_Name }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
                         <td data-label="Status">
                             <span class="status-badge status-{{ plan.status }}">
                                 {{ plan.status|capitalize }}

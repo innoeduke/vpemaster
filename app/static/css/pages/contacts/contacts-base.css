@@ -405,7 +405,7 @@
   color: #000;
 }
 
-.profile-avatar-section {
+#contactModal .profile-avatar-section {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -413,7 +413,7 @@
   gap: 15px;
 }
 
-.profile-avatar-container {
+#contactModal .profile-avatar-container {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -426,18 +426,18 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
 
-.profile-avatar-container .avatar-placeholder {
+#contactModal .profile-avatar-container .avatar-placeholder {
   font-size: 60px;
   color: #ced4da;
 }
 
-.profile-avatar-container .profile-avatar {
+#contactModal .profile-avatar-container .profile-avatar {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.btn-upload {
+#contactModal .btn-upload {
   background-color: #fff;
   color: #772432;
   border: 1.5px solid #772432;

@@ -13,5 +13,7 @@ class Achievement(db.Model):
     path_name = db.Column(db.String(100))
     level = db.Column(db.Integer)
     notes = db.Column(db.Text)
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True, index=True)
 
     contact = db.relationship('Contact', back_populates='achievements')
+    club = db.relationship('Club')

@@ -396,7 +396,7 @@ def _fetch_logs_with_filters(filters):
         joinedload(SessionLog.session_type).joinedload(SessionType.role),
         joinedload(SessionLog.meeting),
         joinedload(SessionLog.project)
-    ).join(SessionType).join(MeetingRole).join(Meeting).filter(
+    ).join(SessionType).join(MeetingRole).join(Meeting, SessionLog.meeting_id == Meeting.id).filter(
         MeetingRole.name.isnot(None),
         MeetingRole.name != '',
         MeetingRole.type.in_(['standard', 'club-specific']),
@@ -414,8 +414,7 @@ def _fetch_logs_with_filters(filters):
     if filters['role']:
         base_query = base_query.filter(or_(MeetingRole.name == filters['role'], SessionType.Title == filters['role']))
     
-    from .models.meeting import Meeting
-    results = base_query.join(Meeting, SessionLog.meeting_id == Meeting.id).order_by(Meeting.Meeting_Number.desc()).all()
+    results = base_query.order_by(Meeting.Meeting_Number.desc()).all()
     return results
 
 
@@ -1617,8 +1616,7 @@ def show_project_view():
     if selected_pathway_id:
         filters.append(SessionLog.pathway == selected_pathway_id)
         
-    from .models.meeting import Meeting
-    query = db.session.query(SessionLog).join(SessionLog.meeting).filter(*filters).order_by(Meeting.Meeting_Number.asc()).options(
+    query = db.session.query(SessionLog).join(Meeting, SessionLog.meeting_id == Meeting.id).filter(*filters).order_by(Meeting.Meeting_Number.asc()).options(
         joinedload(SessionLog.project),
         joinedload(SessionLog.meeting),
         joinedload(SessionLog.session_type).joinedload(SessionType.role)
@@ -1755,7 +1753,6 @@ def get_speech_log_details(log_id):
         meeting_id = log.meeting.id if log.meeting else None
         
         if meeting_id:
-             from .models.session import OwnerMeetingRoles
              omr_query = OwnerMeetingRoles.query.filter_by(
                  meeting_id=meeting_id,
                  role_id=role_id,
@@ -1852,7 +1849,6 @@ def update_speech_log(log_id):
     # Context isn't passed in POST explicitly, so we assume Primary Owner for now (or all owners?)
     # Safest is to update for ALL owners assigned to this log (usually 1).
     if credential_val is not None:
-         from .models.session import OwnerMeetingRoles
          
          session_type = log.session_type
          role_obj = session_type.role if session_type else None
@@ -1862,6 +1858,7 @@ def update_speech_log(log_id):
          target_owner_ids = [o.id for o in log.owners]
          
          if target_owner_ids:
+              meeting_id = log.meeting_id
               if meeting_id:
                  role_id = role_obj.id if role_obj else 0
                  

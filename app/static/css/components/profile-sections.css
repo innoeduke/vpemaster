@@ -157,7 +157,7 @@
 
 	.field-row {
 		flex-direction: column;
-		align-items: flex-start;
+		align-items: stretch;
 	}
 
     .field-row-pair .field-row {
@@ -188,6 +188,10 @@
 		white-space: normal;
 		overflow-wrap: anywhere;
 		box-sizing: border-box;
+	}
+
+	.field-input-wrapper {
+		width: 100%;
 	}
 
 	.field-input,

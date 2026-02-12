@@ -455,6 +455,7 @@ class User(UserMixin, db.Model):
 
         uc = self.get_user_club(club_id)
         contact = uc.contact if uc else None
+        prototype_contact = None
 
         # 1. Try to find/reuse contact if not linked to this club yet
         if contact is None:
@@ -492,7 +493,13 @@ class User(UserMixin, db.Model):
                  Email=email or self.email or (source.Email if source else None),
                  Phone_Number=phone or self.phone or (source.Phone_Number if source else None),
                  Type='Member',
-                 Date_Created=date.today()
+                 Date_Created=date.today(),
+                 # Copy additional fields from prototype
+                 Member_ID=source.Member_ID if source else None,
+                 DTM=source.DTM if source else False,
+                 Avatar_URL=source.Avatar_URL if source else None,
+                 Current_Path=source.Current_Path if source else None,
+                 Bio=source.Bio if source else None,
              )
              db.session.add(contact)
              db.session.flush()
@@ -535,6 +542,46 @@ class User(UserMixin, db.Model):
             exists = ContactClub.query.filter_by(contact_id=contact.id, club_id=club_id).first()
         if not exists:
             db.session.add(ContactClub(contact_id=contact.id, club_id=club_id))
+        
+        # 5. Clone path-completion and program-completion achievements from home club
+        if prototype_contact is not None:
+            from .achievement import Achievement
+            
+            # Source achievements from the user's home club contact only
+            home_uc = UserClub.query.filter_by(user_id=self.id, is_home=True).first()
+            home_contact_id = home_uc.contact_id if home_uc and home_uc.contact_id else None
+            
+            if home_contact_id and home_contact_id != contact.id:
+                source_achievements = Achievement.query.filter(
+                    Achievement.contact_id == home_contact_id,
+                    Achievement.achievement_type.in_(['path-completion', 'program-completion'])
+                ).all()
+                
+                for src_ach in source_achievements:
+                    # Check for duplicate before cloning
+                    existing = Achievement.query.filter_by(
+                        contact_id=contact.id,
+                        achievement_type=src_ach.achievement_type,
+                        path_name=src_ach.path_name,
+                        club_id=club_id
+                    ).first()
+                    if not existing:
+                        new_ach = Achievement(
+                            contact_id=contact.id,
+                            member_id=contact.Member_ID,
+                            issue_date=src_ach.issue_date,
+                            achievement_type=src_ach.achievement_type,
+                            path_name=src_ach.path_name,
+                            level=src_ach.level,
+                            notes=src_ach.notes or 'Imported from home club',
+                            club_id=club_id
+                        )
+                        db.session.add(new_ach)
+            
+            # Recalculate derived metadata (Completed_Paths, credentials, etc.)
+            db.session.flush()
+            from ..utils import sync_contact_metadata
+            sync_contact_metadata(contact.id)
         
         return contact
 

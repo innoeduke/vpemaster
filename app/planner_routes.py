@@ -102,6 +102,7 @@ def get_meeting_info(meeting_id):
                 'expected_format': RoleService.get_expected_format_for_session(session_title),
                 'session_id': r.get('session_id'),
                 'is_available': not owner_id,
+                'icon': r.get('icon'),
                 'score': score
             }
         else:

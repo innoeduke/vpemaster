@@ -149,6 +149,7 @@ async function loadMeetingRoles() {
             opt.dataset.validProject = role.valid_for_project;
             opt.dataset.sessionId = role.session_id;
             opt.dataset.available = role.is_available;
+            opt.dataset.icon = role.icon || '';
             roleSelect.appendChild(opt);
         });
         if (customRoleSelect) customRoleSelect.refresh();

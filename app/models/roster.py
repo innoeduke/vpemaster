@@ -64,6 +64,7 @@ class Roster(db.Model):
     __tablename__ = 'roster'
     id = db.Column(db.Integer, primary_key=True)
     meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), nullable=True, index=True)
+    meeting = db.relationship('Meeting', foreign_keys=[meeting_id])
     @property
     def meeting_number(self):
         if self.meeting:

@@ -3,7 +3,6 @@
 {% block title %}Settings{% endblock %}
 
 {% block head_extra %}
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
   #roles-permissions .permissions-matrix-container {
     padding: 20px 0;
@@ -664,20 +663,21 @@
 </div>
 
 <!-- Mobile Warning Modal -->
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 <div id="mobile-settings-warning-modal" class="modal" style="display: none; background-color: rgba(0,0,0,0.9);">
-  <div class="modal-content" style="width: 90%; max-width: 400px; text-align: center;">
+  <div class="modal-content" style="width: 90%; max-width: 400px; text-align: center; font-family: 'Montserrat', sans-serif;">
     <!-- No close button -->
-    <h1 style="color: #004165; margin-bottom: 25px;">Desktop Required</h1>
+    <h1 style="color: #004165; margin-bottom: 25px; font-family: 'Montserrat', sans-serif; font-weight: 700;">Desktop Required</h1>
     <div style="font-size: 48px; color: #d9534f; margin-bottom: 20px;">
       <i class="fas fa-desktop"></i>
     </div>
-    <p style="margin-bottom: 25px; font-size: 1.1em; line-height: 1.5;">
+    <p style="margin-bottom: 25px; font-size: 1.1em; line-height: 1.5; font-family: 'Montserrat', sans-serif;">
       System Settings are not available on mobile devices. <br>
       <br>
       Please access this page from a PC to configure settings.
     </p>
     <a href="{{ url_for('agenda_bp.agenda') }}" class="btn btn-primary"
-      style="width: 90%; display: block; text-decoration: none; height: 40px; line-height: 40px; margin: 0 auto;">
+      style="width: 90%; display: block; text-decoration: none; height: 40px; line-height: 40px; margin: 0 auto; font-family: 'Montserrat', sans-serif; font-weight: 600;">
       Return to Agenda
     </a>
   </div>

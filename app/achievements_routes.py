@@ -3,6 +3,7 @@ from . import db
 from .models import Achievement, Contact, Pathway
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
+from .club_context import get_current_club_id
 from datetime import datetime
 
 achievements_bp = Blueprint('achievements_bp', __name__)
@@ -14,7 +15,10 @@ def show_achievements():
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
-    achievements = Achievement.query.join(Contact).order_by(Achievement.issue_date.desc()).all()
+    current_cid = get_current_club_id()
+    achievements = Achievement.query.join(Contact).filter(
+        Achievement.club_id == current_cid
+    ).order_by(Achievement.issue_date.desc()).all()
     
     # Redirect to settings page with achievements tab
     return redirect(url_for('settings_bp.settings', default_tab='achievements'))
@@ -53,11 +57,13 @@ def achievement_form(id):
         # Check for duplicate
         # We consider a duplicate if contact, type, path, and level match.
         # Date and notes can be different (e.g. correction), but usually you don't achieve the same thing twice.
+        current_cid = get_current_club_id()
         existing_query = Achievement.query.filter_by(
             contact_id=contact_id,
             achievement_type=achievement_type,
             path_name=path_name if path_name else None,
-            level=int(level) if level else None
+            level=int(level) if level else None,
+            club_id=current_cid
         )
         
         if id:
@@ -84,6 +90,7 @@ def achievement_form(id):
         achievement.achievement_type = achievement_type
         achievement.path_name = path_name
         achievement.level = int(level) if level else None
+        achievement.club_id = current_cid
         
         # Auto-add lower levels if this is a level completion
         if achievement_type == 'level-completion' and achievement.level and achievement.level > 1:
@@ -93,7 +100,8 @@ def achievement_form(id):
                     contact_id=contact_id,
                     achievement_type='level-completion',
                     path_name=path_name,
-                    level=i
+                    level=i,
+                    club_id=current_cid
                 ).first()
                 
                 if not lower_exists:
@@ -104,7 +112,8 @@ def achievement_form(id):
                         achievement_type='level-completion',
                         path_name=path_name,
                         level=i,
-                        notes=f"Auto-added based on Level {achievement.level} completion"
+                        notes=f"Auto-added based on Level {achievement.level} completion",
+                        club_id=current_cid
                     )
                     db.session.add(new_lower)
 

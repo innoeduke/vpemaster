@@ -57,7 +57,21 @@ class CustomSelect {
 		}
 		const selectedOpt = this.select.options[this.select.selectedIndex];
 		const text = selectedOpt ? selectedOpt.text : 'Select...';
-		this.trigger.innerHTML = `<span class="custom-select-text">${text}</span>`;
+		let icon = selectedOpt ? selectedOpt.dataset.icon : null;
+
+		let innerHTML = '';
+		if (icon) {
+			// Ensure it has a style prefix (fas, fab, far)
+			if (!icon.startsWith('fa')) {
+				icon = 'fas ' + icon;
+			} else if (!icon.includes(' ')) {
+				// Has 'fa-...' but no 'fas '
+				icon = 'fas ' + icon;
+			}
+			innerHTML += `<i class="${icon} custom-select-icon"></i> `;
+		}
+		innerHTML += `<span class="custom-select-text">${text}</span>`;
+		this.trigger.innerHTML = innerHTML;
 	}
 
 	renderOptions() {
@@ -94,13 +108,29 @@ class CustomSelect {
 
 		// Check for data-code to bold it
 		const code = opt.dataset.code;
+		let icon = opt.dataset.icon;
+
+		let innerHTML = '';
+		if (icon) {
+			// Ensure it has a style prefix (fas, fab, far)
+			if (!icon.startsWith('fa')) {
+				icon = 'fas ' + icon;
+			} else if (!icon.includes(' ')) {
+				// Has 'fa-...' but no 'fas '
+				icon = 'fas ' + icon;
+			}
+			innerHTML += `<i class="${icon} custom-option-icon"></i> `;
+		}
+
 		if (code) {
 			const checkmark = opt.text.startsWith('✓ ') ? '✓ ' : '';
 			const name = opt.text.replace('✓ ', '');
-			optDiv.innerHTML = `${checkmark}<span class="project-code">${code}</span> ${name}`;
+			innerHTML += `${checkmark}<span class="project-code">${code}</span> ${name}`;
 		} else {
-			optDiv.innerText = opt.text;
+			innerHTML += opt.text;
 		}
+
+		optDiv.innerHTML = innerHTML;
 
 		optDiv.dataset.value = opt.value;
 
