@@ -1911,6 +1911,8 @@ def update_speech_log(log_id):
     if 'owner_ids' in data or 'owner_id' in data:
         RoleService.assign_meeting_role(log, owner_ids, is_admin=is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL))
 
+    # Flush changes before refresh to ensure they aren't lost
+    db.session.flush()
     # Re-fetch log to ensure relations are updated
     db.session.refresh(log)
 

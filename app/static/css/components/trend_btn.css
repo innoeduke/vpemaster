@@ -17,6 +17,10 @@
 	border: 1px solid #dee2e6;
 }
 
+.back-btn {
+	width: 32px;
+}
+
 .trend-btn:hover,
 .back-btn:hover {
 	background-color: #772432;
