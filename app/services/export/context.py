@@ -5,8 +5,8 @@ from ...models import db, Meeting, SessionLog, SessionType, Vote, Contact, Pathw
 
 class MeetingExportContext:
     """Centralizes data fetching and caching for meeting exports."""
-    def __init__(self, meeting_number):
-        self.meeting_number = meeting_number
+    def __init__(self, meeting_id):
+        self.meeting_id = meeting_id
         self._meeting = None
         self._logs = None
         self._votes = None
@@ -23,7 +23,7 @@ class MeetingExportContext:
                 orm.joinedload(Meeting.best_speaker),
                 orm.joinedload(Meeting.best_role_taker),
                 orm.joinedload(Meeting.media)
-            ).filter_by(Meeting_Number=self.meeting_number).first()
+            ).get(self.meeting_id)
         return self._meeting
 
     @property
@@ -31,7 +31,7 @@ class MeetingExportContext:
         if self._logs is None:
             # Replicating _get_export_data logic
             self._logs = db.session.query(SessionLog, SessionType).join(SessionType)\
-                .filter(SessionLog.Meeting_Number == self.meeting_number)\
+                .filter(SessionLog.meeting_id == self.meeting_id)\
                 .order_by(SessionLog.Meeting_Seq).all()
         return self._logs
 
@@ -39,7 +39,7 @@ class MeetingExportContext:
     def votes(self):
         if self._votes is None:
             self._votes = Vote.query.options(orm.joinedload(Vote.contact))\
-                .filter_by(meeting_number=self.meeting_number).all()
+                .filter_by(meeting_id=self.meeting_id).all()
         return self._votes
 
     @property

@@ -12,7 +12,7 @@ class RosterComponent(BaseExportComponent):
         ExportFormatter.apply_header_style(ws, ws.max_row)
         
         roster_entries = Roster.query.options(orm.joinedload(Roster.contact), orm.joinedload(Roster.ticket)).filter_by(
-            meeting_number=context.meeting_number).order_by(Roster.order_number).all()
+            meeting_id=context.meeting_id).order_by(Roster.order_number).all()
             
         for entry in roster_entries:
             ws.append([
