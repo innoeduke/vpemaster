@@ -183,7 +183,8 @@ def get_dropdown_metadata():
     # Join with Project to ensure we only get meetings with valid projects? 
     # Or just all meetings that have any session logs?
     meeting_numbers = sorted(
-        [m[0] for m in db.session.query(distinct(SessionLog.Meeting_Number)).all()],
+        [m[0] for m in db.session.query(distinct(Meeting.Meeting_Number))
+         .join(SessionLog, Meeting.id == SessionLog.meeting_id).all()],
         reverse=True
     )
     

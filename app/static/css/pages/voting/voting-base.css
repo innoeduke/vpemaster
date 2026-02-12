@@ -344,7 +344,7 @@
 }
 
 /* Standardize question numbers for all sections using specific chained selectors */
-.award-accordion .question-number,
+.accordion-list .question-number,
 .voting-section .question-number {
   background-color: #772432;
   color: white;
@@ -367,12 +367,12 @@
   font-family: "Montserrat", sans-serif;
 }
 
-.award-accordion .accordion-header .question-text {
+.accordion-list .accordion-header .question-text {
   font-weight: bold;
 }
 
 /* Unified styling for both accordion headers and section titles with chained selectors for specificity */
-.page-container .award-accordion .accordion-header .question-text,
+.page-container .accordion-list .accordion-header .question-text,
 .page-container .voting-section .section-header .section-title {
   background-color: transparent;
   box-shadow: none;

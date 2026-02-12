@@ -57,7 +57,7 @@ class Contact(db.Model):
         
         # 1. Get pathways from SessionLog (ONLY if Project_ID is set = Real Progress)
         q_logs = db.session.query(SessionLog.pathway)\
-            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+            .join(Meeting, SessionLog.meeting_id == Meeting.id)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id)\
             .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
             .filter(
@@ -119,7 +119,7 @@ class Contact(db.Model):
         from .meeting import Meeting
         
         completed_project_ids = db.session.query(SessionLog.Project_ID)\
-            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+            .join(Meeting, SessionLog.meeting_id == Meeting.id)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id)\
             .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
             .filter(

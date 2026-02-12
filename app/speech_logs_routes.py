@@ -414,7 +414,8 @@ def _fetch_logs_with_filters(filters):
     if filters['role']:
         base_query = base_query.filter(or_(MeetingRole.name == filters['role'], SessionType.Title == filters['role']))
     
-    results = base_query.order_by(SessionLog.Meeting_Number.desc()).all()
+    from .models.meeting import Meeting
+    results = base_query.join(Meeting, SessionLog.meeting_id == Meeting.id).order_by(Meeting.Meeting_Number.desc()).all()
     return results
 
 
@@ -876,8 +877,8 @@ def _build_evaluator_map(logs_for_level):
                           for log in (entry['logs'] if isinstance(entry, dict) and entry.get('log_type') == 'grouped_role' else [entry]))
     evaluator_map = {}
     if relevant_meetings:
-        eval_logs = db.session.query(SessionLog).join(SessionType).join(MeetingRole).filter(
-            SessionLog.Meeting_Number.in_(relevant_meetings),
+        eval_logs = db.session.query(SessionLog).join(SessionType).join(MeetingRole).join(Meeting, SessionLog.meeting_id == Meeting.id).filter(
+            Meeting.Meeting_Number.in_(relevant_meetings),
             MeetingRole.name.like('%Evaluator%')
         ).options(joinedload(SessionLog.session_type).joinedload(SessionType.role)).all()
         _attach_owners(eval_logs)
@@ -1616,7 +1617,8 @@ def show_project_view():
     if selected_pathway_id:
         filters.append(SessionLog.pathway == selected_pathway_id)
         
-    query = db.session.query(SessionLog).join(SessionLog.meeting).filter(*filters).order_by(SessionLog.Meeting_Number.asc()).options(
+    from .models.meeting import Meeting
+    query = db.session.query(SessionLog).join(SessionLog.meeting).filter(*filters).order_by(Meeting.Meeting_Number.asc()).options(
         joinedload(SessionLog.project),
         joinedload(SessionLog.meeting),
         joinedload(SessionLog.session_type).joinedload(SessionType.role)
@@ -1752,11 +1754,6 @@ def get_speech_log_details(log_id):
         role_id = role_obj.id if role_obj else 0
         meeting_id = log.meeting.id if log.meeting else None
         
-        if not meeting_id and log.Meeting_Number:
-             from .models.meeting import Meeting
-             m = Meeting.query.filter_by(Meeting_Number=log.Meeting_Number).first()
-             meeting_id = m.id if m else None
-             
         if meeting_id:
              from .models.session import OwnerMeetingRoles
              omr_query = OwnerMeetingRoles.query.filter_by(
@@ -1865,13 +1862,7 @@ def update_speech_log(log_id):
          target_owner_ids = [o.id for o in log.owners]
          
          if target_owner_ids:
-             meeting_id = log.meeting.id if log.meeting else None
-             if not meeting_id and log.Meeting_Number:
-                 from .models.meeting import Meeting
-                 m = Meeting.query.filter_by(Meeting_Number=log.Meeting_Number).first()
-                 meeting_id = m.id if m else None
-                 
-             if meeting_id:
+              if meeting_id:
                  role_id = role_obj.id if role_obj else 0
                  
                  query = OwnerMeetingRoles.query.filter(

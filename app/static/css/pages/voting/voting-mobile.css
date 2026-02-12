@@ -110,7 +110,7 @@
     font-size: 0.85em;
   }
 
-  .award-accordion .accordion-header .question-text,
+  .accordion-list .accordion-header .question-text,
   .section-title {
     font-size: 0.95em !important;
     line-height: 1.2;
@@ -118,7 +118,7 @@
   }
 
   /* Remove card styling on mobile */
-  .award-accordion .accordion-item,
+  .accordion-list .accordion-item,
   .voting-section {
     background-color: transparent;
     box-shadow: none;

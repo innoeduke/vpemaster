@@ -203,7 +203,6 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
     if item['id'] == 'new':
         new_log = SessionLog(
             meeting_id=meeting.id,
-            Meeting_Number=meeting.Meeting_Number,
             Meeting_Seq=seq,
             Type_ID=type_id,
             # owners is a read-only property - do not set here
@@ -232,7 +231,6 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
             old_role = log.session_type.role if log.session_type and log.session_type.role else None
             
             log.meeting_id = meeting.id
-            log.Meeting_Number = meeting.Meeting_Number
             log.Meeting_Seq = seq
             # log.Type_ID = type_id # Defer update to handle role changes
             
@@ -276,9 +274,8 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
         if role_group_key and updated_role_groups is not None and role_group_key in updated_role_groups:
              current_app.logger.info(f"LOG {log.id}: Shared role {new_role.name} already updated in this request. Skipping assignment.")
         elif role_changed or owner_changed:
-            if item['id'] != 'new' and old_owner_id and old_role and role_changed:
-                # Force unassign from the OLD role if the type changed
-                Roster.sync_role_assignment(log.id, old_owner_id, old_role, 'unassign', is_meeting_id=True)
+            # Force unassign from the OLD role if the type changed
+            Roster.sync_role_assignment(log.meeting_id, old_owner_id, old_role, 'unassign')
             
             # Call Service with LIST of IDs
             current_app.logger.info(f"LOG {log.id}: Calling RoleService.assign_meeting_role with owner_ids={[c.id for c in owner_contacts]}")
@@ -1015,7 +1012,6 @@ def _upsert_meeting_record(data, media_id):
             for i, membership in enumerate(valid_staff):
                 roster_entry = Roster(
                     meeting_id=meeting.id,
-                    meeting_number=meeting.Meeting_Number,
                     contact_id=membership.contact_id,
                     order_number=1000 + i,
                     ticket=officer_ticket,
@@ -1035,8 +1031,6 @@ def _generate_logs_from_template(meeting, template_file):
     # Clear existing logs
     if meeting.id:
         SessionLog.query.filter_by(meeting_id=meeting.id).delete()
-    else:
-        SessionLog.query.filter_by(Meeting_Number=meeting.Meeting_Number).delete()
     
     template_path = os.path.join(
         current_app.static_folder, 'mtg_templates', template_file)
@@ -1159,7 +1153,6 @@ def _generate_logs_from_template(meeting, template_file):
 
             new_log = SessionLog(
                 meeting_id=meeting.id,
-                Meeting_Number=meeting.Meeting_Number,
                 Meeting_Seq=seq,
                 Type_ID=type_id,
                 # Owner_ID and credentials removed
@@ -1333,7 +1326,7 @@ def update_logs():
 
         updated_role_groups = set()
         for seq, item in enumerate(agenda_data, 1):
-            _create_or_update_session(item, meeting.Meeting_Number, seq, updated_role_groups)
+            _create_or_update_session(item, meeting.id, seq, updated_role_groups)
 
         _recalculate_start_times([meeting])
 

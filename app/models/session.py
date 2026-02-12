@@ -101,7 +101,13 @@ class SessionLog(db.Model):
     __tablename__ = 'Session_Logs'
     id = db.Column(db.Integer, primary_key=True)
     meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), nullable=True, index=True)
-    Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), nullable=False)
+    # Proxy Meeting_Number to the linked meeting record
+    @property
+    def Meeting_Number(self):
+        """Getter for Meeting_Number, fetches from meeting association."""
+        if self.meeting:
+            return self.meeting.Meeting_Number
+        return None
     Meeting_Seq = db.Column(db.Integer)
     # For custom titles like speeches
     Session_Title = db.Column(db.String(255))
@@ -589,7 +595,7 @@ class SessionLog(db.Model):
             # For shared roles, ALL logs of this role in the meeting are updated
             query = db.session.query(cls)\
                 .join(SessionType, cls.Type_ID == SessionType.id)\
-                .filter(cls.Meeting_Number == target_log.Meeting_Number)\
+                .filter(cls.meeting_id == target_log.meeting_id)\
                 .filter(SessionType.role_id == target_role_id)
                 
             sessions_to_update = query.all()

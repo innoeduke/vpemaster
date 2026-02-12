@@ -327,7 +327,7 @@ def _get_user_bookings(current_user_contact_id):
         MeetingRole.icon
     ).join(SessionType, SessionLog.Type_ID == SessionType.id)\
      .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
-     .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+     .join(Meeting, SessionLog.meeting_id == Meeting.id)\
      .filter(
          db.exists().where(
             db.and_(
@@ -634,10 +634,9 @@ def book_or_assign_role():
             # But I can't change that file in this tool call.
             # I'll rely on fetching 'log' and if it's not distinct, fetching others.
             
-            # Re-query
             sessions_to_report = [log]
             if session_type.role and not session_type.role.has_single_owner:
-                 sessions_to_report = SessionLog.query.filter_by(Meeting_Number=log.Meeting_Number, Type_ID=log.Type_ID).all()
+                 sessions_to_report = SessionLog.query.filter_by(meeting_id=log.meeting_id, Type_ID=log.Type_ID).all()
             
             for session_log in sessions_to_report:
                  contact = session_log.owner

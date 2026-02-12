@@ -64,7 +64,12 @@ class Roster(db.Model):
     __tablename__ = 'roster'
     id = db.Column(db.Integer, primary_key=True)
     meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), nullable=True, index=True)
-    meeting_number = db.Column(db.Integer, nullable=False)
+    @property
+    def meeting_number(self):
+        if self.meeting:
+            return self.meeting.Meeting_Number
+        return None
+        
     order_number = db.Column(db.Integer, nullable=True)
     ticket_id = db.Column(db.Integer, db.ForeignKey('tickets.id'), nullable=True)
     
@@ -167,7 +172,6 @@ class Roster(db.Model):
 
                 roster_entry = Roster(
                     meeting_id=meeting_id,
-                    meeting_number=meeting_number,
                     contact_id=contact_id,
                     order_number=new_order,
                     ticket_id=ticket_obj.id if ticket_obj else None,

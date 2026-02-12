@@ -82,7 +82,6 @@ def roster():
             for off in missing_officers:
                 new_off_entry = Roster(
                     meeting_id=selected_meeting_id,
-                    meeting_number=selected_meeting.Meeting_Number, # Keep meeting_number for now as it's still used in Roster model
                     contact_id=off.id,
                     contact_type='Officer',
                     order_number=next_off_order,
@@ -163,14 +162,14 @@ def roster_participation_trend():
     cancelled_ticket_id = cancelled_ticket.id if cancelled_ticket else -1
     
     counts_query = db.session.query(
-        Roster.meeting_number,
+        Meeting.Meeting_Number,
         Roster.ticket_id,
         func.count(Roster.id).label('count')
-    ).filter(
-        Roster.meeting_number.in_(meeting_numbers),
+    ).join(Meeting, Roster.meeting_id == Meeting.id).filter(
+        Meeting.Meeting_Number.in_(meeting_numbers),
         Roster.ticket_id != cancelled_ticket_id
     ).group_by(
-        Roster.meeting_number,
+        Meeting.Meeting_Number,
         Roster.ticket_id
     ).all()
     
@@ -223,7 +222,6 @@ def create_roster_entry():
 
     new_entry = Roster(
         meeting_id=data['meeting_id'],
-        meeting_number=data.get('meeting_number', 0), # Optional fallback
         order_number=data['order_number'],
         ticket_id=ticket_obj.id
     )

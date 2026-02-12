@@ -140,7 +140,6 @@ def create_plan():
     
     new_plan = Planner(
         meeting_id=data.get('meeting_id'),
-        meeting_number=data.get('meeting_number'), # Keep for backward compat/display if needed
         meeting_role_id=data.get('meeting_role_id'),
         project_id=data.get('project_id'),
         status=data.get('status', 'draft'), # Use status if provided
@@ -166,9 +165,6 @@ def update_plan(plan_id):
     
     if 'meeting_id' in data:
         plan.meeting_id = data['meeting_id']
-        meeting = Meeting.query.get(plan.meeting_id)
-        if meeting:
-            plan.meeting_number = meeting.Meeting_Number
     if 'meeting_role_id' in data:
         plan.meeting_role_id = data['meeting_role_id']
     if 'project_id' in data:

@@ -6,7 +6,11 @@ class Vote(db.Model):
     __tablename__ = 'votes'
     id = db.Column(db.Integer, primary_key=True)
     meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), nullable=True, index=True)
-    meeting_number = db.Column(db.Integer, nullable=False)
+    @property
+    def meeting_number(self):
+        if self.meeting:
+            return self.meeting.Meeting_Number
+        return None
     voter_identifier = db.Column(db.String(64), nullable=False)
     award_category = db.Column(db.Enum('speaker', 'evaluator', 'role-taker',
                                'table-topic', name='award_category_enum'), nullable=True)

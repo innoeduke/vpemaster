@@ -184,7 +184,7 @@ class RoleService:
             db.session.commit()
             
             # Invalidate Cache
-            RoleService._clear_meeting_cache(session_log.Meeting_Number)
+            RoleService._clear_meeting_cache(session_log.meeting_id)
                 
             return True, "Removed from waitlist."
 
@@ -256,12 +256,12 @@ class RoleService:
             db.session.commit()
             
             # Invalidate Cache
-            RoleService._clear_meeting_cache(session_log.meeting_id or session_log.Meeting_Number)
+            RoleService._clear_meeting_cache(session_log.meeting_id)
             
             # Sync Planner Statuses
             session_type = session_log.session_type
             if session_type and session_type.role_id:
-                RoleService.sync_planner_statuses(session_log.meeting_id or session_log.Meeting_Number, session_type.role_id)
+                RoleService.sync_planner_statuses(session_log.meeting_id, session_type.role_id)
 
             return True, "Added to waitlist."
         return True, "Already on waitlist." # Treated as success

@@ -171,18 +171,8 @@ class Meeting(db.Model):
             ).order_by(Meeting.Meeting_Number.asc()).all()
 
             for m in subsequent_meetings:
-                old_num = m.Meeting_Number
-                new_num = old_num - 1
-                
-                # Update child tables that have Meeting_Number columns
-                # We update by meeting_id to be safe and precise
-                SessionLog.query.filter_by(meeting_id=m.id).update({SessionLog.Meeting_Number: new_num}, synchronize_session=False)
-                Roster.query.filter_by(meeting_id=m.id).update({Roster.meeting_number: new_num}, synchronize_session=False)
-                Planner.query.filter_by(meeting_id=m.id).update({Planner.meeting_number: new_num}, synchronize_session=False)
-                Vote.query.filter_by(meeting_id=m.id).update({Vote.meeting_number: new_num}, synchronize_session=False)
-                
                 # Finally update the meeting itself
-                m.Meeting_Number = new_num
+                m.Meeting_Number = m.Meeting_Number - 1
             
             db.session.commit()
             return True, None
