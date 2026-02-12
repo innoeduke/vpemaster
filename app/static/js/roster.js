@@ -201,7 +201,7 @@ function initializeMeetingFilter(elements) {
   if (!elements.meetingFilter) return;
 
   elements.meetingFilter.addEventListener("change", () => {
-    window.location.href = `/roster?meeting_number=${elements.meetingFilter.value}`;
+    window.location.href = `/roster?meeting_id=${elements.meetingFilter.value}`;
   });
 }
 
@@ -366,7 +366,7 @@ function initializeFormHandlers(elements) {
       const method = entryId ? "PUT" : "POST";
 
       const formData = {
-        meeting_number: elements.meetingFilter.value,
+        meeting_id: elements.meetingFilter.value,
         order_number: elements.orderNumberInput.value,
         contact_id: elements.contactIdInput.value,
         contact_type: elements.contactTypeSelect.value,

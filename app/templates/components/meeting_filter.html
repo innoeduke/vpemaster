@@ -4,17 +4,19 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
 {% set ns = namespace(selected_text='', selected_value='') %}
 {% for item in meetings %}
     {% if data_format == 'tuple' %}
-        {% set num = item[0] %}
+        {% set val = item[0] %}
         {% set date = item[1] %}
         {% set status = item[2] if item|length > 2 else none %}
+        {% set num = item[3] if item|length > 3 else item[0] %}
     {% else %}
+        {% set val = item.id %}
         {% set num = item.Meeting_Number %}
         {% set date = item.Meeting_Date %}
         {% set status = item.status if item.status else none %}
     {% endif %}
 
-    {% if selected_id and num|string == selected_id|string %}
-        {% set ns.selected_value = num %}
+    {% if selected_id and val|string == selected_id|string %}
+        {% set ns.selected_value = val %}
         {% set status_icon = '' %}
         {% if status == 'unpublished' %}{% set status_icon = '🔒' %}
         {% elif status == 'not started' %}{% set status_icon = '▶️' %}
@@ -52,10 +54,12 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
             <div id="{{ select_id }}-results" class="autocomplete-results-dropdown" style="display: none;">
                 {% for item in meetings %}
                     {% if data_format == 'tuple' %}
-                        {% set num = item[0] %}
+                        {% set val = item[0] %}
                         {% set date = item[1] %}
                         {% set status = item[2] if item|length > 2 else none %}
+                        {% set num = item[3] if item|length > 3 else item[0] %}
                     {% else %}
+                        {% set val = item.id %}
                         {% set num = item.Meeting_Number %}
                         {% set date = item.Meeting_Date %}
                         {% set status = item.status if item.status else none %}
@@ -77,7 +81,7 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
                     
                     {% set item_text = '#' ~ num ~ ' - ' ~ (date.strftime('%B %d, %Y') if date else 'No Date') %}
                     
-                    <div class="autocomplete-result-item" data-value="{{ num }}" data-text="{{ item_text }}">
+                    <div class="autocomplete-result-item" data-value="{{ val }}" data-text="{{ item_text }}">
                         <span class="status-icon" title="{{ status_label }}">{{ status_icon }}</span>
                         <span class="meeting-num">#{{ num }}</span>
                         <span class="meeting-date">{{ date.strftime('%b %d, %Y') if date else 'No Date' }}</span>
@@ -92,8 +96,12 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
             <select id="{{ select_id }}" {% if base_url %}onchange="window.location.href = '{{ base_url }}/' + this.value;"
                 {% endif %} style="display: none;" {% if is_disabled %}disabled{% endif %}>
                 {% for item in meetings %}
-                    {% if data_format == 'tuple' %}{% set num = item[0] %}{% else %}{% set num = item.Meeting_Number %}{% endif %}
-                    <option value="{{ num }}" {% if ns.selected_value|string == num|string %}selected{% endif %}>{{ num }}</option>
+                    {% if data_format == 'tuple' %}
+                        {% set val = item[0] %}
+                    {% else %}
+                        {% set val = item.id %}
+                    {% endif %}
+                    <option value="{{ val }}" {% if ns.selected_value|string == val|string %}selected{% endif %}>{{ val }}</option>
                 {% endfor %}
             </select>
             <button id="{{ select_id }}-next" type="button" class="nav-btn nav-btn-right next-meeting" title="Next Meeting">

@@ -11,8 +11,8 @@
 
     <div class="filters-control premium">
         <div class="filter-row-premium">
-            {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, label=None,
-            base_url='/voting', render_outer_container=False) }}
+            {{ render_meeting_filter(upcoming_meetings, selected_meeting_id, label=None,
+            base_url='/voting', render_outer_container=False, data_format='tuple') }}
             {% if is_admin_view %}
             <div class="filter-right">
                 <a href="{{ url_for('voting_bp.voting_nps') }}" class="btn btn-info trend-btn" title="NPS Trend">
@@ -38,7 +38,7 @@
 	{# ============================================= #}
 
 	{# Macro to render a single role row in the table #}
-	{% macro render_role_row(role, status, is_admin_view, selected_meeting_number, user_role, has_voted,
+	{% macro render_role_row(role, status, is_admin_view, selected_meeting_id, user_role, has_voted,
 	can_track_progress,
 	voting_disabled=False) %}
 	<tr data-session-id="{{ role.session_id }}" data-role="{{ role.role }}"
@@ -98,7 +98,7 @@
 			<button type="button"
 				class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %} {% if not should_show %}vote-auto-hide{% endif %} {% if has_voted %}has-voted{% endif %}"
 				title="Vote" {% if has_voted %}disabled {% else %}onclick="handleVoteClick(this)" {% endif %}
-				data-meeting-number="{{ selected_meeting_number }}" data-contact-id="{{ role.owner_id }}"
+				data-meeting-id="{{ selected_meeting_id }}" data-contact-id="{{ role.owner_id }}"
 				data-award-category="{{ role.award_category }}">
 				<i class="fas fa-vote-yea"></i>
 			</button>
@@ -117,7 +117,7 @@
 	{% endmacro %}
 
 	{# Macro to render role tables with accordion #}
-	{% macro render_role_tables(roles, sorted_role_groups, status, is_admin_view, selected_meeting_number, user_role,
+	{% macro render_role_tables(roles, sorted_role_groups, status, is_admin_view, selected_meeting_id, user_role,
 	has_voted, can_track_progress, question_ns) %}
 
 	{% set use_accordion = (status in ['running']) or (status == 'finished' and is_admin_view) %}
@@ -169,7 +169,7 @@
 					<table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
 						<tbody>
 							{% for role in items %}
-							{{ render_role_row(role, status, is_admin_view, selected_meeting_number, user_role,
+							{{ render_role_row(role, status, is_admin_view, selected_meeting_id, user_role,
 							has_voted, can_track_progress, voting_disabled) }}
 							{% endfor %} </tbody>
 					</table>
@@ -188,7 +188,7 @@
 			{% set ns = namespace(displayed_awards=[]) %}
 			{% for role in roles %}
 			{% if role.award_type and role.award_type not in ns.displayed_awards %}
-			{{ render_role_row(role, status, is_admin_view, selected_meeting_number, user_role, has_voted,
+			{{ render_role_row(role, status, is_admin_view, selected_meeting_id, user_role, has_voted,
 			can_track_progress) }}
 			{% set ns.displayed_awards = ns.displayed_awards + [role.award_type] %}
 			{% endif %}
@@ -205,7 +205,7 @@
 	{% if selected_meeting.status not in ['running', 'finished'] %}
 	<div class="voting-not-started-container">
 		<!-- <p class="meeting-not-started-msg">Meeting #{{
-			selected_meeting_number }} is not yet started.</p> -->
+			selected_meeting.Meeting_Number }} is not yet started.</p> -->
 		<div class="meeting-not-started-img-container">
 			<img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon"
 				class="meeting-not-started-img">
@@ -222,7 +222,7 @@
 	{% else %}
 	{% set question_ns = namespace(count=0) %}
 	{{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view,
-	selected_meeting_number, user_role, has_voted, can_track_progress, question_ns) }}
+	selected_meeting_id, user_role, has_voted, can_track_progress, question_ns) }}
 
 	{% if selected_meeting.status == 'running' %}
 	<div class="voting-section">
@@ -288,7 +288,7 @@
 <script id="voting-data" type="application/json">
 {
 	"isAdminView": {{ is_admin_view|tojson }},
-	"selectedMeetingNumber": {{ selected_meeting_number|tojson }},
+	"selectedMeetingId": {{ selected_meeting_id|tojson }},
 	"userRole": {{ user_role|tojson }},
 	"canTrackProgress": {{ can_track_progress|tojson }},
 	"initialMeetingRating": {{ meeting_rating_score|tojson }},

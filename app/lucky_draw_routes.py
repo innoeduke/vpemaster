@@ -41,7 +41,7 @@ def lucky_draw():
         roster_entries = Roster.query\
             .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
             .outerjoin(Contact, Roster.contact_id == Contact.id)\
-            .filter(Roster.meeting_number == current_meeting.Meeting_Number)\
+            .filter(Roster.meeting_id == current_meeting.id)\
             .join(Ticket, Roster.ticket_id == Ticket.id)\
             .filter(Ticket.name != 'Cancelled')\
             .order_by(Roster.order_number.asc())\

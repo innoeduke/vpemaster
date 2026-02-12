@@ -560,7 +560,7 @@ def get_unique_identifier(request):
 
 
 
-def get_meetings_by_status(limit_past=8, columns=None, status_filter=None):
+def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_with_logs=True):
     """
     Fetches meetings, categorizing them as 'active' or 'past' based on status.
     
@@ -591,14 +591,14 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None):
             effective_status_filter = [s for s in status_filter if s != 'finished']
 
         query = db.session.query(*query_cols)\
-            .filter(Meeting.status.in_(effective_status_filter))\
-            .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number)\
-            .distinct()\
-            .order_by(Meeting.Meeting_Number.desc())
+            .filter(Meeting.status.in_(effective_status_filter))
+        
+        if only_with_logs:
+            query = query.join(SessionLog, Meeting.id == SessionLog.meeting_id).distinct()
             
-        all_meetings = query.all()
-        default_meeting_num = get_default_meeting_number()
-        return all_meetings, default_meeting_num
+        all_meetings = query.order_by(Meeting.Meeting_Date.desc(), Meeting.id.desc()).all()
+        default_meeting_id = get_default_meeting_id()
+        return all_meetings, default_meeting_id
 
     # --- Mode 2: Default Hybrid Active/Past Logic ---
     club_id = get_current_club_id()
@@ -606,65 +606,69 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None):
     # Fetch active meetings ('unpublished', 'not started', or 'running')
     # Updated: Always include 'unpublished' so list is same for all users
     active_statuses = ['not started', 'running', 'unpublished']
-        
     active_query = db.session.query(*query_cols)\
         .filter(Meeting.status.in_(active_statuses))
     
     if club_id:
         active_query = active_query.filter(Meeting.club_id == club_id)
         
-    active_meetings = active_query.order_by(Meeting.Meeting_Number.desc()).all()
+    active_meetings = active_query.order_by(Meeting.Meeting_Date.desc(), Meeting.id.desc()).all()
 
-    # Manager check removed as 'unpublished' is now always included
-
-    active_meetings.sort(key=lambda m: m.Meeting_Number, reverse=True)
+    # Sort helper to handle both objects and rows/tuples consistently
+    def get_sort_key(m):
+        m_id = m.id if hasattr(m, 'id') else m[0]
+        m_date = m.Meeting_Date if hasattr(m, 'Meeting_Date') else m[1]
+        # Return a tuple for composite sorting
+        return (m_date, m_id)
 
     # Fetch recent inactive meetings ('finished' or 'cancelled')
     past_statuses = ['finished', 'cancelled']
     if is_guest:
         past_statuses = ['cancelled']
-        
+
     past_query = db.session.query(*query_cols)\
         .filter(Meeting.status.in_(past_statuses))
     
     if club_id:
         past_query = past_query.filter(Meeting.club_id == club_id)
         
-    past_query = past_query.order_by(Meeting.Meeting_Number.desc())
+    past_query = past_query.order_by(Meeting.Meeting_Date.desc(), Meeting.id.desc())
     if limit_past is not None:
         past_query = past_query.limit(limit_past)
     
     past_meetings = past_query.all()
 
-    # Combine and sort all meetings by meeting number
+    # Combine and sort all meetings by date and id
     all_meetings = sorted(active_meetings + past_meetings,
-                          key=lambda m: m.Meeting_Number, reverse=True)
+                          key=get_sort_key, reverse=True)
 
-    # Filter meetings to only those that have session logs
-    # Note: For efficiency, we should do this in the origin query, but maintaining 
-    # exact parity with original logic means filtering post-fetch or subquery.
-    # The original logic used a subquery to filter only those in the result set.
-    meetings_with_logs_subquery = db.session.query(
-        distinct(SessionLog.Meeting_Number)).subquery()
-    
-    final_meetings = []
-    
-    # Optimize: Get all valid numbers in one go for the set check
-    valid_numbers = {row[0] for row in db.session.query(meetings_with_logs_subquery).all()}
-    
-    for m in all_meetings:
-        m_num = m.Meeting_Number if hasattr(m, 'Meeting_Number') else m[0] # Handle tuple vs obj
-        if m_num in valid_numbers:
-            final_meetings.append(m)
+    if only_with_logs:
+        # Note: For efficiency, we should do this in the origin query, but maintaining 
+        # exact parity with original logic means filtering post-fetch or subquery.
+        # The original logic used a subquery to filter only those in the result set.
+        meetings_with_logs_subquery = db.session.query(
+            distinct(SessionLog.meeting_id)).subquery()
+        
+        final_meetings = []
+        
+        # Optimize: Get all valid IDs in one go for the set check
+        valid_ids = {row[0] for row in db.session.query(meetings_with_logs_subquery).all()}
+        
+        for m in all_meetings:
+            m_id = m.id if hasattr(m, 'id') else m[0] # Handle tuple vs obj
+            if m_id in valid_ids:
+                final_meetings.append(m)
+    else:
+        final_meetings = all_meetings
 
-    default_meeting = get_default_meeting_number()
+    default_meeting_id = get_default_meeting_id()
 
-    return final_meetings, default_meeting
+    return final_meetings, default_meeting_id
 
 
-def get_default_meeting_number():
+def get_default_meeting_id():
     """
-    Determines the default meeting number based on priority:
+    Determines the default meeting ID based on priority:
     1. 'running' meeting
     2. Lowest numbered unfinished meeting ('not started' or 'unpublished')
     Returns None if neither is found.
@@ -678,23 +682,31 @@ def get_default_meeting_number():
     
     running_meeting = running_query.first()
     if running_meeting:
-        return running_meeting.Meeting_Number
+        return running_meeting.id
 
-    # 2. Check for next unfinished meeting (not started or unpublished)
-    # Always include both statuses to ensure lower-numbered meetings are prioritized
+    # 2. Check for nearest unfinished/cancelled meeting (not started, unpublished, or cancelled)
+    # Priority: Earliest unfinished meeting (often the next one)
     from .models import SessionLog
     upcoming_query = Meeting.query \
-        .join(SessionLog, Meeting.Meeting_Number == SessionLog.Meeting_Number) \
-        .filter(Meeting.status.in_(['not started', 'unpublished']))
+        .join(SessionLog, Meeting.id == SessionLog.meeting_id) \
+        .filter(Meeting.status.in_(['not started', 'unpublished', 'cancelled']))
     
     if club_id:
         upcoming_query = upcoming_query.filter(Meeting.club_id == club_id)
         
-    upcoming_meeting = upcoming_query.order_by(Meeting.Meeting_Number.asc()) \
-        .first()
+    upcoming_meeting = upcoming_query.order_by(Meeting.Meeting_Date.asc(), Meeting.id.asc()).first()
 
     if upcoming_meeting:
-        return upcoming_meeting.Meeting_Number
+        return upcoming_meeting.id
+    
+    # 3. Fallback: Latest finished meeting
+    latest_query = Meeting.query.filter_by(status='finished')
+    if club_id:
+        latest_query = latest_query.filter(Meeting.club_id == club_id)
+    
+    latest_meeting = latest_query.order_by(Meeting.Meeting_Date.desc(), Meeting.id.desc()).first()
+    if latest_meeting:
+        return latest_meeting.id
     
     return None
 

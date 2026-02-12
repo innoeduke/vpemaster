@@ -67,9 +67,9 @@
     <div class="action-bar">
         <div class="action-bar-left">
             <div class="action-bar-left-content" style="display: flex; flex-direction: column; gap: 5px;">
-                {% if meeting_numbers %}
-                {{ render_meeting_filter(meeting_numbers|sort(reverse=True), selected_meeting.Meeting_Number if
-                selected_meeting else none, is_disabled=is_editing) }}
+                {% if meeting_ids %}
+                {{ render_meeting_filter(meeting_ids, selected_meeting_id if
+                selected_meeting_id else none, is_disabled=is_editing, data_format='tuple') }}
                 {% endif %}
             </div>
         </div>
@@ -87,7 +87,7 @@
                     {% endif %}
                     <button id="meeting-status-btn"
                         class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'unpublished' %}btn-success{% else %}btn-primary{% endif %}"
-                        data-meeting-number="{{ selected_meeting.Meeting_Number }}"
+                        data-meeting-id="{{ selected_meeting.id }}"
                         data-current-status="{{ selected_meeting.status }}" {% if selected_meeting.status=='cancelled'
                         %}disabled{% endif %}>
                         {% if selected_meeting.status == 'unpublished' %}
@@ -165,6 +165,7 @@
                 {% for log_dict in logs_data %}
                 <tr data-id="{{ log_dict.id }}"
                     data-project-id="{{ log_dict.Project_ID if log_dict.Project_ID is not none else '' }}"
+                    data-meeting-id="{{ log_dict.meeting_id }}"
                     data-meeting-number="{{ log_dict.Meeting_Number }}"
                     data-meeting-date="{{ log_dict.meeting_date_str }}"
                     data-is-section="{{ log_dict.is_section|lower }}" data-is-hidden="{{ log_dict.is_hidden|lower }}"

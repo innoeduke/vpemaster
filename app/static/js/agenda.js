@@ -117,7 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (meetingFilter) {
       meetingFilter.addEventListener("change", () => {
-        window.location.href = `/agenda?meeting_number=${meetingFilter.value}`;
+        window.location.href = `/agenda?meeting_id=${meetingFilter.value}`;
       });
     }
     if (editBtn) {
@@ -129,14 +129,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (cancelButton) {
       cancelButton.addEventListener("click", () => {
         if (isEditing) {
-          const meetingNumber = meetingFilter.value;
-          if (!meetingNumber) {
+          const meetingId = meetingFilter.value;
+          if (!meetingId) {
             window.location.reload();
             return;
           }
 
           // Fast Cancel: Fetch current data and re-render without reload
-          fetch(`/api/agenda/get_logs/${meetingNumber}`)
+          fetch(`/api/agenda/get_logs/${meetingId}`)
             .then(response => response.json())
             .then(data => {
               if (data.success) {
@@ -309,9 +309,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const dataToSave = Array.from(tableBody.querySelectorAll("tr")).map(
       getRowData
     );
-    const meetingNumber = meetingFilter.value;
+    const meetingId = meetingFilter.value;
 
-    if (!meetingNumber) {
+    if (!meetingId) {
       showCustomAlert("Error", "No meeting is selected. Cannot save.");
       return;
     }
@@ -325,7 +325,7 @@ document.addEventListener("DOMContentLoaded", () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        meeting_number: meetingNumber,
+        meeting_id: meetingId,
         agenda_data: dataToSave,
         ge_mode: parseInt(geStyleSelect.value),
         meeting_title: document.getElementById("edit-meeting-title").value,
@@ -386,6 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // --- Set Data Attributes ---
       row.dataset.id = log.id;
       row.dataset.projectId = log.Project_ID !== null ? log.Project_ID : '';
+      row.dataset.meetingId = log.meeting_id;
       row.dataset.meetingNumber = log.Meeting_Number;
       row.dataset.meetingDate = log.meeting_date_str;
       row.dataset.isSection = String(log.is_section).toLowerCase();
@@ -640,10 +641,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Helper Functions ---
 
   function handleMeetingStatusChange(button) {
-    const meetingNumber = button.dataset.meetingNumber;
+    const meetingId = button.dataset.meetingId;
     let currentStatus = button.dataset.currentStatus;
 
-    if (!meetingNumber) {
+    if (!meetingId) {
       showCustomAlert("No Selection", "No meeting selected.");
       return;
     }
@@ -652,14 +653,14 @@ document.addEventListener("DOMContentLoaded", () => {
       showCustomConfirm("Delete Meeting", "Are you sure you want to PERMANENTLY DELETE this meeting and all its records (logs, votes, media)? This action cannot be undone.")
         .then((confirmed) => {
           if (!confirmed) return;
-          performStatusUpdate(meetingNumber);
+          performStatusUpdate(meetingId);
         });
     } else {
-      performStatusUpdate(meetingNumber);
+      performStatusUpdate(meetingId);
     }
 
-    function performStatusUpdate(meetingNumber) {
-      fetch(`/agenda/status/${meetingNumber}`, {
+    function performStatusUpdate(meetingId) {
+      fetch(`/agenda/status/${meetingId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

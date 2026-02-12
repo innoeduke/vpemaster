@@ -30,7 +30,7 @@ agenda_bp = Blueprint('agenda_bp', __name__)
 # Table Topics, Prepared Speaker, Pathway Speech, Panel Discussion
 
 
-def _get_agenda_logs(meeting_number):
+def _get_agenda_logs(meeting_id):
     """Fetches all agenda logs and related data for a specific meeting."""
     query = db.session.query(SessionLog)\
         .options(
@@ -43,8 +43,8 @@ def _get_agenda_logs(meeting_number):
             orm.joinedload(SessionLog.media)
     )
 
-    if meeting_number:
-        query = query.filter(SessionLog.Meeting_Number == meeting_number)
+    if meeting_id:
+        query = query.filter(SessionLog.meeting_id == meeting_id)
 
     # Order by sequence
     logs = query.order_by(SessionLog.Meeting_Seq.asc()).all()
@@ -59,17 +59,18 @@ def _get_agenda_logs(meeting_number):
     return logs
 
 
-def _get_project_speakers(meeting_number):
+def _get_project_speakers(meeting_id):
     """Gets a list of speakers for a given meeting."""
-    if not meeting_number:
+    if not meeting_id:
         return []
         
     from .models import OwnerMeetingRoles
     speaker_logs = db.session.query(Contact.Name)\
         .join(OwnerMeetingRoles, Contact.id == OwnerMeetingRoles.contact_id)\
         .join(SessionType, OwnerMeetingRoles.role_id == SessionType.role_id)\
+        .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
         .filter(
-            OwnerMeetingRoles.meeting_id == meeting_number,
+            Meeting.id == meeting_id,
             SessionType.Valid_for_Project == True
     ).distinct().all()
     return [name[0] for name in speaker_logs]
@@ -84,18 +85,11 @@ def safe_int(val):
     except (ValueError, TypeError):
         return None
 
-def _create_or_update_session(item, meeting_number, seq, updated_role_groups=None):
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
+    meeting = Meeting.query.get(meeting_id)
     if not meeting:
-        from .club_context import get_current_club_id
-        new_meeting = Meeting(
-            Meeting_Number=meeting_number,
-            club_id=get_current_club_id()
-        )
-        new_meeting.sync_excomm()
-        db.session.add(new_meeting)
-        db.session.flush()  # Flush to get meeting ID if needed, though not strictly required here
-        meeting = new_meeting
+        # This shouldn't happen if we only use IDs, but we can have it for robustness
+        return
 
     type_id = safe_int(item.get('type_id'))
     session_type = db.session.get(SessionType, type_id) if type_id else None
@@ -208,7 +202,8 @@ def _create_or_update_session(item, meeting_number, seq, updated_role_groups=Non
     # Create valid log object first (owners will be assigned via RoleService.assign_meeting_role)
     if item['id'] == 'new':
         new_log = SessionLog(
-            Meeting_Number=meeting_number,
+            meeting_id=meeting.id,
+            Meeting_Number=meeting.Meeting_Number,
             Meeting_Seq=seq,
             Type_ID=type_id,
             # owners is a read-only property - do not set here
@@ -236,7 +231,8 @@ def _create_or_update_session(item, meeting_number, seq, updated_role_groups=Non
             old_owner_id = log.owner.id if (log.owners and log.owner) else None
             old_role = log.session_type.role if log.session_type and log.session_type.role else None
             
-            log.Meeting_Number = meeting_number
+            log.meeting_id = meeting.id
+            log.Meeting_Number = meeting.Meeting_Number
             log.Meeting_Seq = seq
             # log.Type_ID = type_id # Defer update to handle role changes
             
@@ -263,7 +259,7 @@ def _create_or_update_session(item, meeting_number, seq, updated_role_groups=Non
         # Only apply to shared roles (has_single_owner=False)
         role_group_key = None
         if new_role and not new_role.has_single_owner:
-            role_group_key = f"{meeting_number}_{new_role.id}"
+            role_group_key = f"{meeting.id}_{new_role.id}"
 
         # Compare sets of IDs
         old_owner_ids_set = set(c.id for c in (log.owners or []))
@@ -282,7 +278,7 @@ def _create_or_update_session(item, meeting_number, seq, updated_role_groups=Non
         elif role_changed or owner_changed:
             if item['id'] != 'new' and old_owner_id and old_role and role_changed:
                 # Force unassign from the OLD role if the type changed
-                Roster.sync_role_assignment(log.Meeting_Number, old_owner_id, old_role, 'unassign')
+                Roster.sync_role_assignment(log.id, old_owner_id, old_role, 'unassign', is_meeting_id=True)
             
             # Call Service with LIST of IDs
             current_app.logger.info(f"LOG {log.id}: Calling RoleService.assign_meeting_role with owner_ids={[c.id for c in owner_contacts]}")
@@ -312,7 +308,7 @@ def _recalculate_start_times(meetings_to_update):
         # Fetch Is_Hidden along with Is_Section
         logs_to_update = db.session.query(SessionLog, SessionType.Is_Section, SessionType.Is_Hidden)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id, isouter=True)\
-            .filter(SessionLog.Meeting_Number == meeting.Meeting_Number)\
+            .filter(SessionLog.meeting_id == meeting.id)\
             .order_by(SessionLog.Meeting_Seq.asc()).all()
 
         for log, is_section, is_hidden_type in logs_to_update:
@@ -342,13 +338,13 @@ def _recalculate_start_times(meetings_to_update):
                 timedelta(minutes=duration_to_add + break_minutes)
             current_time = next_dt.time()
 
-def _get_processed_logs_data(selected_meeting_num, show_media=False):
+def _get_processed_logs_data(meeting_id, show_media=False):
     """
-    Fetches and processes session logs for a given meeting number.
+    Fetches and processes session logs for a given meeting.
     Returns the list of log dictionaries ready for the frontend.
     """
     club_id = get_current_club_id()
-    if selected_meeting_num:
+    if meeting_id:
         query = Meeting.query.options(
             orm.joinedload(Meeting.best_table_topic_speaker),
             orm.joinedload(Meeting.best_evaluator),
@@ -356,7 +352,7 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
             orm.joinedload(Meeting.best_role_taker),
             orm.joinedload(Meeting.media),
             orm.joinedload(Meeting.manager)
-        ).filter(Meeting.Meeting_Number == selected_meeting_num)
+        ).filter(Meeting.id == meeting_id)
         if club_id:
             query = query.filter(Meeting.club_id == club_id)
         selected_meeting = query.first()
@@ -377,7 +373,7 @@ def _get_processed_logs_data(selected_meeting_num, show_media=False):
                 ('table-topic', selected_meeting.best_table_topic_id))
 
     # --- Fetch Raw Data ---
-    raw_session_logs = _get_agenda_logs(selected_meeting_num)
+    raw_session_logs = _get_agenda_logs(meeting_id)
     
     # We also need project speakers for the frontend usually, but this function only returns logs_data.
     # The caller can handle project_speakers separately if needed, or we can return it too.
@@ -595,40 +591,50 @@ def agenda():
                (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
     
     limit_past = 8 if is_guest else None
-    all_meetings, _ = get_meetings_by_status(limit_past=limit_past)
-
-    meeting_numbers = [(m.Meeting_Number, m.Meeting_Date, m.status) for m in all_meetings]
-
-    selected_meeting_str = request.args.get('meeting_number')
-    selected_meeting_num = None
-
-    if selected_meeting_str:
+    all_meetings, _ = get_meetings_by_status(
+        limit_past=limit_past, 
+        columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number],
+        only_with_logs=False
+    )
+    meeting_ids = all_meetings
+ 
+    selected_meeting_id_str = request.args.get('meeting_id')
+    selected_meeting_num_str = request.args.get('meeting_number')
+    
+    selected_meeting_id = None
+    if selected_meeting_id_str:
         try:
-            selected_meeting_num = int(selected_meeting_str)
+            selected_meeting_id = int(selected_meeting_id_str)
         except ValueError:
-            # Handle invalid meeting number string if necessary
-            selected_meeting_num = None  # Or redirect, flash error
-    else:
-        # Priority: Running -> Not Started
-        from .utils import get_default_meeting_number
-        selected_meeting_num = get_default_meeting_number()
-
-        if selected_meeting_num:
-             pass # Found a default
-        elif meeting_numbers:
-            # Fallback to the most recent existing meeting (highest meeting number)
-            selected_meeting_num = meeting_numbers[0][0]
+            pass
+    elif selected_meeting_num_str:
+        # Fallback for old links if absolutely necessary, but we should steer away
+        try:
+             mn = int(selected_meeting_num_str)
+             club_id = get_current_club_id() # Ensure club_id is defined for the lookup
+             m = Meeting.query.filter_by(Meeting_Number=mn, club_id=club_id).first()
+             if m:
+                 selected_meeting_id = m.id
+        except ValueError:
+             pass
+    
+    if not selected_meeting_id:
+        from .utils import get_default_meeting_id
+        selected_meeting_id = get_default_meeting_id()
+ 
+        if not selected_meeting_id and meeting_ids:
+            selected_meeting_id = meeting_ids[0][0]
 
     # --- Use Helper to Get Processed Data ---
     logs_data = []
     selected_meeting = None
     
-    if selected_meeting_num:
-        logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_num, is_authorized(Permissions.MEDIA_ACCESS))
+    if selected_meeting_id:
+        logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_id, is_authorized(Permissions.MEDIA_ACCESS))
         
         if not selected_meeting:
              # Handle meeting not found (deleted or invalid number)
-             flash(f"Meeting #{selected_meeting_num} not found or you don't have access.", "warning")
+             flash(f"Meeting #{selected_meeting_id} not found or you don't have access.", "warning")
              return redirect(url_for('agenda_bp.agenda'))
 
         # Custom Security Check based on Status
@@ -637,7 +643,7 @@ def agenda():
             if not is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting):
                 # Unauthorized users cannot view unpublished meetings
                 # Redirect to generic not-started page
-                return redirect(url_for('agenda_bp.meeting_notice', meeting_number=selected_meeting_num))
+                return redirect(url_for('agenda_bp.meeting_notice', meeting_id=selected_meeting_id))
 
         # 2. Finished: Guest/Anonymous users cannot view finished meetings
         if selected_meeting.status == 'finished':
@@ -648,7 +654,7 @@ def agenda():
                 return redirect(url_for('agenda_bp.agenda'))
 
     # --- Other Data for Template ---
-    project_speakers = _get_project_speakers(selected_meeting_num)
+    project_speakers = _get_project_speakers(selected_meeting_id)
     
     all_pathways = Pathway.query.filter(Pathway.type != 'dummy', Pathway.status == 'active').order_by(Pathway.name).all()
     pathway_mapping = {p.name: p.abbr for p in all_pathways}
@@ -703,10 +709,11 @@ def agenda():
                            logs_data=logs_data,               # Use the processed list of dictionaries
                            pathways=pathways,               # For modals
                            pathway_mapping=pathway_mapping,
-                           projects=dropdown_data['projects'],
-                           meeting_numbers=meeting_numbers,
+                           meeting_ids=meeting_ids,
+                           selected_meeting_id=selected_meeting_id,
                            selected_meeting=selected_meeting,  # Pass the Meeting object
                            members=members,                 # If needed elsewhere
+                           projects=dropdown_data['projects'],
                            project_speakers=project_speakers,  # For JS
                            meeting_types=meeting_types,
                            default_start_time=default_start_time,
@@ -715,12 +722,12 @@ def agenda():
                            ProjectID=project_id_dict)
 
 
-@agenda_bp.route('/meeting-notice/<int:meeting_number>')
-def meeting_notice(meeting_number):
+@agenda_bp.route('/meeting-notice/<int:meeting_id>')
+def meeting_notice(meeting_id):
     """Generic meeting notice page for unauthorized access."""
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+    meeting = Meeting.query.get(meeting_id)
     status = meeting.status if meeting else 'unknown'
-    return render_template('meeting_notice.html', meeting_number=meeting_number, meeting_status=status)
+    return render_template('meeting_notice.html', meeting_number=meeting.Meeting_Number if meeting else 'N/A', meeting_status=status)
 
 
 # --- API Endpoints for Asynchronous Data Loading ---
@@ -829,20 +836,23 @@ A single endpoint to fetch all data needed for the agenda modals.
 
 
 
-@agenda_bp.route('/agenda/export/<int:meeting_number>')
+@agenda_bp.route('/agenda/export/<int:meeting_id>')
 @login_required
 @authorized_club_required
-def export_agenda(meeting_number):
+def export_agenda(meeting_id):
     """
     Generates a multi-sheet XLSX export of the agenda using the ExportService.
     """
-    output = MeetingExportService.generate_meeting_xlsx(meeting_number)
-    if not output:
+    # Find meeting to get club context
+    meeting = Meeting.query.get(meeting_id)
+    if not meeting:
         return "Meeting not found", 404
+        
+    output = MeetingExportService.generate_meeting_xlsx(meeting_id)
+    if not output:
+        return "Error generating XLSX", 500
 
-    # Fetch meeting for filename
-    meeting = db.session.get(Meeting, meeting_number) or Meeting.query.filter_by(Meeting_Number=meeting_number).first()
-    filename = f"Agenda_{meeting.Meeting_Date.strftime('%Y-%m-%d')}.xlsx" if meeting else f"Agenda_{meeting_number}.xlsx"
+    filename = f"Agenda_{meeting.Meeting_Date.strftime('%Y-%m-%d')}.xlsx"
 
     return send_file(
         output,
@@ -852,22 +862,23 @@ def export_agenda(meeting_number):
     )
 
 
-@agenda_bp.route('/agenda/ppt/<int:meeting_number>')
+@agenda_bp.route('/agenda/ppt/<int:meeting_id>')
 @login_required
 @authorized_club_required
-def download_pptx_agenda(meeting_number):
+def download_pptx_agenda(meeting_id):
     """
     Generates a PPTX agenda for the meeting.
     """
-    output = MeetingExportService.generate_meeting_pptx(meeting_number)
+    # Find meeting to get club context
+    meeting = Meeting.query.get(meeting_id)
+    if not meeting:
+        return "Meeting not found", 404
+        
+    output = MeetingExportService.generate_meeting_pptx(meeting_id)
     if not output:
         return "Could not generate PPTX. Template might be missing or error occurred.", 500
 
-    meeting = db.session.get(Meeting, meeting_number) or Meeting.query.filter_by(Meeting_Number=meeting_number).first()
-    if meeting:
-        filename = f"Meeting_{meeting.Meeting_Number}_{meeting.Meeting_Date.strftime('%Y-%m-%d')}.pptx"
-    else:
-        filename = f"Meeting_{meeting_number}.pptx"
+    filename = f"Meeting_{meeting.Meeting_Number}_{meeting.Meeting_Date.strftime('%Y-%m-%d')}.pptx"
 
     return send_file(
         output,
@@ -886,7 +897,7 @@ class SuspiciousDateError(ValueError):
 
 def _validate_meeting_form_data(form):
     """Parses and validates meeting form data."""
-    meeting_number = form.get('meeting_number')
+    meeting_id = form.get('meeting_id')
     meeting_type = form.get('meeting_type')
     
     # Check template validity using the model's mapping
@@ -919,7 +930,8 @@ def _validate_meeting_form_data(form):
         raise SuspiciousDateError(f"Meeting date ({meeting_date.strftime('%Y-%m-%d')}) is earlier than the most recent meeting ({most_recent_meeting.Meeting_Date.strftime('%Y-%m-%d')}).")
 
     return {
-        'meeting_number': meeting_number,
+        'meeting_id': meeting_id, # Keep meeting_id for upsert logic
+        'meeting_number': form.get('meeting_number'), # Keep meeting_number for new meeting creation
         'meeting_date': meeting_date,
         'start_time': start_time,
         'meeting_type': meeting_type,
@@ -949,7 +961,7 @@ def _get_or_create_media_id(media_url):
 
 def _upsert_meeting_record(data, media_id):
     """Creates or updates the Meeting record."""
-    meeting = Meeting.query.filter_by(Meeting_Number=data['meeting_number']).first()
+    meeting = Meeting.query.get(data['meeting_id'])
     is_new = False
     
     if not meeting:
@@ -1002,6 +1014,7 @@ def _upsert_meeting_record(data, media_id):
             
             for i, membership in enumerate(valid_staff):
                 roster_entry = Roster(
+                    meeting_id=meeting.id,
                     meeting_number=meeting.Meeting_Number,
                     contact_id=membership.contact_id,
                     order_number=1000 + i,
@@ -1020,7 +1033,10 @@ def _generate_logs_from_template(meeting, template_file):
         OwnerMeetingRoles.query.filter_by(meeting_id=meeting.id).delete(synchronize_session=False)
 
     # Clear existing logs
-    SessionLog.query.filter_by(Meeting_Number=meeting.Meeting_Number).delete()
+    if meeting.id:
+        SessionLog.query.filter_by(meeting_id=meeting.id).delete()
+    else:
+        SessionLog.query.filter_by(Meeting_Number=meeting.Meeting_Number).delete()
     
     template_path = os.path.join(
         current_app.static_folder, 'mtg_templates', template_file)
@@ -1142,6 +1158,7 @@ def _generate_logs_from_template(meeting, template_file):
             is_hidden = hidden_val and hidden_val.lower() == 'true'
 
             new_log = SessionLog(
+                meeting_id=meeting.id,
                 Meeting_Number=meeting.Meeting_Number,
                 Meeting_Seq=seq,
                 Type_ID=type_id,
@@ -1226,15 +1243,13 @@ def create_from_template():
         return jsonify({
             'success': True, 
             'message': 'Meeting created successfully!',
-            'redirect_url': url_for('agenda_bp.agenda', meeting_number=data['meeting_number'])
+            'redirect_url': url_for('agenda_bp.agenda', meeting_id=meeting.id)
         }), 201
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error creating meeting: {e}")
         return jsonify({'success': False, 'message': f'Error processing template: {str(e)}'}), 500
-        return redirect(url_for('agenda_bp.agenda'))
-
 
 
 @agenda_bp.route('/agenda/update', methods=['POST'])
@@ -1243,7 +1258,7 @@ def create_from_template():
 def update_logs():
     data = request.get_json()
 
-    meeting_number = data.get('meeting_number')
+    meeting_id = data.get('meeting_id')
     agenda_data = data.get('agenda_data', [])
     new_mode = int(data.get('ge_mode', 0)) if data.get('ge_mode') is not None else None
     new_meeting_title = data.get('meeting_title')
@@ -1252,14 +1267,14 @@ def update_logs():
     new_wod = data.get('wod')
     new_media_url = data.get('media_url')
 
-    if not meeting_number:
-        return jsonify(success=False, message="Meeting number is missing"), 400
+    if not meeting_id:
+        return jsonify(success=False, message="Meeting ID is missing"), 400
 
     try:
-        meeting = Meeting.query.filter_by(
-            Meeting_Number=meeting_number).first()
-        if not meeting:
-            return jsonify(success=False, message="Meeting not found"), 404
+        club_id = get_current_club_id()
+        meeting = Meeting.query.get(meeting_id)
+        if not meeting or (club_id and meeting.club_id != club_id):
+            return jsonify(success=False, message="Meeting not found or access denied"), 404
 
         if new_meeting_title is not None:
             meeting.Meeting_Title = new_meeting_title
@@ -1318,29 +1333,31 @@ def update_logs():
 
         updated_role_groups = set()
         for seq, item in enumerate(agenda_data, 1):
-            _create_or_update_session(item, meeting_number, seq, updated_role_groups)
+            _create_or_update_session(item, meeting.Meeting_Number, seq, updated_role_groups)
 
         _recalculate_start_times([meeting])
 
         # Commit the final session and time changes.
+        for seq, item in enumerate(data['items']):
+            _create_or_update_session(item, meeting_id, seq, updated_role_groups)
+            
         db.session.commit()
         
-        # Invalidate Cache (final clear after all batch updates)
-        RoleService._clear_meeting_cache(meeting_number)
+        RoleService._clear_meeting_cache(meeting_id)
 
-        # Fetch fresh data for client-side update
-        logs_data, _ = _get_processed_logs_data(meeting_number, is_authorized(Permissions.MEDIA_ACCESS))
-        project_speakers = _get_project_speakers(meeting_number)
+        # Return updated logs for client-side rendering
+        logs_data, _ = _get_processed_logs_data(meeting_id, is_authorized(Permissions.MEDIA_ACCESS))
+        project_speakers = _get_project_speakers(meeting_id)
 
         return jsonify(success=True, logs_data=logs_data, project_speakers=project_speakers)
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
 
-@agenda_bp.route('/api/agenda/get_logs/<int:meeting_number>')
+@agenda_bp.route('/api/agenda/get_logs/<int:meeting_id>')
 @login_required
 @authorized_club_required
-def get_logs(meeting_number):
+def get_logs(meeting_id):
     """
     API endpoint to fetch current logs data for a meeting.
     Used for "Fast Cancel" to revert edits without reloading the page.
@@ -1348,14 +1365,12 @@ def get_logs(meeting_number):
     try:
         # Security check: Ensure meeting belongs to current club
         club_id = get_current_club_id()
-        meeting = Meeting.query.filter_by(Meeting_Number=meeting_number)
-        if club_id:
-            meeting = meeting.filter(Meeting.club_id == club_id)
-        if not meeting.first():
+        meeting = Meeting.query.get(meeting_id)
+        if not meeting or (club_id and meeting.club_id != club_id):
              return jsonify(success=False, message="Meeting not found or access denied"), 404
-
-        logs_data, _ = _get_processed_logs_data(meeting_number, is_authorized(Permissions.MEDIA_ACCESS))
-        project_speakers = _get_project_speakers(meeting_number)
+ 
+        logs_data, _ = _get_processed_logs_data(meeting_id, is_authorized(Permissions.MEDIA_ACCESS))
+        project_speakers = _get_project_speakers(meeting_id)
         
         return jsonify(success=True, logs_data=logs_data, project_speakers=project_speakers)
     except Exception as e:
@@ -1399,7 +1414,7 @@ def _tally_votes_and_set_winners(meeting):
         Vote.award_category,
         Vote.contact_id,
         func.count(Vote.id).label('vote_count')
-    ).filter(Vote.meeting_number == meeting.Meeting_Number)\
+    ).filter(Vote.meeting_id == meeting.id)\
      .group_by(Vote.award_category, Vote.contact_id)\
      .all()
 
@@ -1420,7 +1435,7 @@ def _tally_votes_and_set_winners(meeting):
     # Calculate Standard NPS: (Promoters - Detractors) / Total * 100
     # Promoters: 9-10, Detractors: 1-6, Passives: 7-8 (0s are excluded)
     scores = db.session.query(Vote.score).filter(
-        Vote.meeting_number == meeting.Meeting_Number,
+        Vote.meeting_id == meeting.id,
         Vote.question == "How likely are you to recommend this meeting to a friend or colleague?",
         Vote.score.isnot(None),
         Vote.score > 0
@@ -1440,18 +1455,15 @@ def _tally_votes_and_set_winners(meeting):
 
 
 
-@agenda_bp.route('/agenda/status/<int:meeting_number>', methods=['POST'])
+@agenda_bp.route('/agenda/status/<int:meeting_id>', methods=['POST'])
 @login_required
 @authorized_club_required
-def update_meeting_status(meeting_number):
+def update_meeting_status(meeting_id):
     """Toggles the status of a meeting."""
     club_id = get_current_club_id()
-    meeting = Meeting.query.filter_by(Meeting_Number=meeting_number)
-    if club_id:
-        meeting = meeting.filter(Meeting.club_id == club_id)
-    meeting = meeting.first()
-
-    if not meeting:
+    meeting = Meeting.query.get(meeting_id)
+ 
+    if not meeting or (club_id and meeting.club_id != club_id):
         return jsonify(success=False, message="Meeting not found"), 404
 
     current_status = meeting.status
@@ -1467,10 +1479,10 @@ def update_meeting_status(meeting_number):
         _tally_votes_and_set_winners(meeting)
 
         # Clean up waitlist entries for this meeting
-        Waitlist.delete_for_meeting(meeting_number)
-
+        Waitlist.delete_for_meeting(meeting.id)
+ 
         # Sync Planner Statuses: Transition to terminal states
-        plans = Planner.query.filter_by(meeting_number=meeting_number).all()
+        plans = Planner.query.filter_by(meeting_id=meeting.id).all()
         for plan in plans:
             if plan.status == 'booked':
                 plan.status = 'completed'
@@ -1499,7 +1511,7 @@ def update_meeting_status(meeting_number):
         db.session.commit()
         
         # Invalidate Cache
-        RoleService._clear_meeting_cache(meeting_number)
+        RoleService._clear_meeting_cache(meeting.id)
         
         return jsonify(success=True, new_status=new_status)
     except Exception as e:
@@ -1507,20 +1519,18 @@ def update_meeting_status(meeting_number):
         return jsonify(success=False, message=str(e)), 500
 
 
-@agenda_bp.route('/agenda/sync_tally/<int:meeting_number>', methods=['POST'])
+@agenda_bp.route('/agenda/sync_tally/<int:meeting_id>', methods=['POST'])
 @login_required
 @authorized_club_required
-def sync_tally(meeting_number):
+def sync_tally(meeting_id):
     try:
         # Security check: Ensure meeting belongs to current club
         club_id = get_current_club_id()
-        meeting = Meeting.query.filter_by(Meeting_Number=meeting_number)
-        if club_id:
-            meeting = meeting.filter(Meeting.club_id == club_id)
-        if not meeting.first():
+        meeting = Meeting.query.get(meeting_id)
+        if not meeting or (club_id and meeting.club_id != club_id):
              return jsonify(success=False, message="Meeting not found"), 404
 
-        context = MeetingExportContext(meeting_number)
+        context = MeetingExportContext(meeting_id)
         sync_participants_to_tally(context.participants_dict)
         return jsonify(success=True)
     except Exception as e:

@@ -44,7 +44,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
         
         if voter_identifier:
             user_votes = Vote.query.filter_by(
-                meeting_number=selected_meeting.Meeting_Number,
+                meeting_id=selected_meeting.id,
                 voter_identifier=voter_identifier
             ).all()
             winner_ids = {vote.award_category: vote.contact_id for vote in user_votes}
@@ -62,7 +62,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
     vote_counts = {}
     if is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting) and selected_meeting and selected_meeting.status in ['running', 'finished']:
         counts = db.session.query(Vote.contact_id, Vote.award_category, func.count(Vote.id)).filter(
-            Vote.meeting_number == selected_meeting.Meeting_Number
+            Vote.meeting_id == selected_meeting.id
         ).group_by(Vote.contact_id, Vote.award_category).all()
         
         for cid, cat, count in counts:
@@ -135,30 +135,34 @@ def _sort_roles_for_voting(roles):
     return roles
 
 
-def _get_roles_for_voting(selected_meeting_number, selected_meeting):
+def _get_roles_for_voting(meeting_id, meeting):
     """
     Helper function to get and process roles for the voting page.
     
     Args:
-        selected_meeting_number: Meeting number
-        selected_meeting: Meeting object
+        meeting_id: Meeting ID
+        meeting: Meeting object
     
     Returns:
         list: Processed roles for voting
     """
-    if not selected_meeting:
+    if not meeting:
         return []
         
-    session_logs = SessionLog.fetch_for_meeting(selected_meeting_number, meeting_obj=selected_meeting)
-    roles_dict = consolidate_session_logs(session_logs)
-    enriched_roles = _enrich_role_data_for_voting(roles_dict, selected_meeting)
+    # Fetch roles and enrich them
+    club_id = meeting.club_id
+    # Re-fetch logs for consolidation to be safe if RoleService doesn't provide enough info
+    all_logs = SessionLog.query.filter_by(meeting_id=meeting_id).all()
+    consolidated = consolidate_session_logs(all_logs)
+    
+    enriched_roles = _enrich_role_data_for_voting(consolidated, meeting)
     
     # Consolidate 'role-taker' category to one row per person
     # 1. Separate role-takers from others
     other_roles = [r for r in enriched_roles if r.get('award_category') != 'role-taker']
     
     # 2. Get all role takers for the meeting using RoleService
-    role_takers_map = RoleService.get_role_takers(selected_meeting_number, selected_meeting.club_id)
+    role_takers_map = RoleService.get_role_takers(meeting_id, meeting.club_id)
     
     # 3. Create consolidated rows for each person who took a 'role-taker' role
     consolidated_role_takers = []
@@ -166,22 +170,22 @@ def _get_roles_for_voting(selected_meeting_number, selected_meeting):
     # Determine winner info for role-taker award
     voter_identifier = get_session_voter_identifier()
     user_vote_id = None
-    if selected_meeting.status == 'running' and voter_identifier:
+    if meeting.status == 'running' and voter_identifier:
         vote = Vote.query.filter_by(
-            meeting_number=selected_meeting_number,
+            meeting_id=meeting_id,
             voter_identifier=voter_identifier,
             award_category='role-taker'
         ).first()
         if vote:
             user_vote_id = vote.contact_id
             
-    best_role_taker_id = selected_meeting.best_role_taker_id if selected_meeting.status == 'finished' else None
+    best_role_taker_id = meeting.best_role_taker_id if meeting.status == 'finished' else None
 
     # Vote counts for role-takers (admins only)
     vote_counts = {}
-    if is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting) and selected_meeting.status in ['running', 'finished']:
+    if is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting) and meeting.status in ['running', 'finished']:
         counts = db.session.query(Vote.contact_id, func.count(Vote.id)).filter(
-            Vote.meeting_number == selected_meeting_number,
+            Vote.meeting_id == meeting_id,
             Vote.award_category == 'role-taker'
         ).group_by(Vote.contact_id).all()
         for cid, count in counts:
@@ -213,8 +217,8 @@ def _get_roles_for_voting(selected_meeting_number, selected_meeting):
             'owner_name': first_role.get('owner_name'),
             'owner_avatar_url': first_role.get('owner_avatar_url'),
             'award_category': 'role-taker',
-            'award_category_open': bool(not (user_vote_id if selected_meeting.status == 'running' else best_role_taker_id)),
-            'award_type': 'role-taker' if (user_vote_id == contact_id if selected_meeting.status == 'running' else best_role_taker_id == contact_id) else None,
+            'award_category_open': bool(not (user_vote_id if meeting.status == 'running' else best_role_taker_id)),
+            'award_type': 'role-taker' if (user_vote_id == contact_id if meeting.status == 'running' else best_role_taker_id == contact_id) else None,
             'vote_count': vote_counts.get(contact_id, 0)
         }
         consolidated_role_takers.append(role_entry)
@@ -225,7 +229,7 @@ def _get_roles_for_voting(selected_meeting_number, selected_meeting):
     sorted_roles = _sort_roles_for_voting(final_roles)
 
     # Filter to only show roles with award categories
-    if selected_meeting.status in ['running', 'finished']:
+    if meeting.status in ['running', 'finished']:
         sorted_roles = [
             role for role in sorted_roles 
             if role.get('award_category') and role.get('award_category') not in ['none', '', 'None']
@@ -234,36 +238,35 @@ def _get_roles_for_voting(selected_meeting_number, selected_meeting):
     return sorted_roles
 
 
-def _get_voting_page_context(selected_meeting_number, user, current_user_contact_id):
-    """
-    Gathers all context needed for the voting page template.
+def _get_voting_page_context(meeting_id):
+    """Gathers context for the voting page."""
+    # Logic similar to booking page but for voting
+    club_id = get_current_club_id()
     
-    Args:
-        selected_meeting_number: Meeting number
-        user: Current user object
-        current_user_contact_id: Current user's contact ID
-    
-    Returns:
-        dict: Context dictionary for template
-    """
-    # Show all recent meetings in the dropdown, even if voting is not yet available for some
-    is_guest = not user or (hasattr(user, 'primary_role_name') and user.primary_role_name == 'Guest')
-    limit_past = 8 if is_guest else None
-
-    upcoming_meetings, default_meeting_num = get_meetings_by_status(
-        limit_past=limit_past, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date, Meeting.status])
-
-    if not selected_meeting_number:
-        selected_meeting_number = default_meeting_num or (
-            upcoming_meetings[0][0] if upcoming_meetings else None)
-
+    # Show active meetings in dropdown
+    limit_past = None if is_authorized(Permissions.MEDIA_ACCESS) else 8
+    upcoming_meetings, default_meeting_id = get_meetings_by_status(
+        limit_past=limit_past, status_filter=['running', 'finished'],
+        columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number])
+ 
+    if not meeting_id:
+        # Prefer the default meeting IF it is in our filtered list (running/finished)
+        valid_ids = [m[0] for m in upcoming_meetings]
+        if default_meeting_id and default_meeting_id in valid_ids:
+            meeting_id = default_meeting_id
+        else:
+            # Otherwise take the most recent meeting from the list
+            meeting_id = upcoming_meetings[0][0] if upcoming_meetings else None
+ 
     context = {
-        'roles': [],
         'upcoming_meetings': upcoming_meetings,
-        'selected_meeting_number': selected_meeting_number,
+        'selected_meeting_id': meeting_id,
         'selected_meeting': None,
-        'is_admin_view': is_authorized(Permissions.BOOKING_ASSIGN_ALL),
-        'current_user_contact_id': current_user_contact_id,
+        'enriched_role_groups': [],
+        'guest_info': None,
+        'roles': [],
+        'is_admin_view': False,
+        'current_user_contact_id': None,
         'user_role': current_user.primary_role_name if current_user.is_authenticated else 'Guest',
         'best_award_ids': set(),
         'has_voted': False,
@@ -272,22 +275,23 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
         'meeting_rating_score': None,
         'meeting_feedback_comment': ""
     }
-
-    if not selected_meeting_number:
+ 
+    if not meeting_id:
         return context
+ 
+    selected_meeting = Meeting.query.get(meeting_id)
+    if not selected_meeting or (club_id and selected_meeting.club_id != club_id):
+        return context
+
+    user, current_user_contact_id = get_current_user_info()
+    context['current_user_contact_id'] = current_user_contact_id
 
     # Check if user has voted for this meeting
     voter_identifier = get_session_voter_identifier()
     if voter_identifier:
-        vote_exists = Vote.query.filter_by(meeting_number=selected_meeting_number, voter_identifier=voter_identifier).first()
+        vote_exists = Vote.query.filter_by(meeting_id=meeting_id, voter_identifier=voter_identifier).first()
         if vote_exists:
             context['has_voted'] = True
-
-    club_id = get_current_club_id()
-    selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_number)
-    if club_id:
-        selected_meeting = selected_meeting.filter(Meeting.club_id == club_id)
-    selected_meeting = selected_meeting.first()
     
     # Access control for unpublished meetings
     contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
@@ -319,7 +323,7 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     # can_track_progress controls seeing results WHILE running (Admin only)
     context['can_track_progress'] = is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=selected_meeting)
 
-    roles = _get_roles_for_voting(selected_meeting_number, selected_meeting)
+    roles = _get_roles_for_voting(meeting_id, selected_meeting)
     context['roles'] = roles
     context['sorted_role_groups'] = group_roles_by_category(roles)
     context['best_award_ids'] = selected_meeting.get_best_award_ids() if selected_meeting else set()
@@ -328,7 +332,7 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     context['meeting_rating_score'] = None
     if voter_identifier:
         rating_vote = Vote.query.filter_by(
-            meeting_number=selected_meeting_number,
+            meeting_id=meeting_id,
             voter_identifier=voter_identifier,
             question="How likely are you to recommend this meeting to a friend or colleague?"
         ).first()
@@ -339,7 +343,7 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     context['meeting_feedback_comment'] = ""
     if voter_identifier:
         feedback_vote = Vote.query.filter_by(
-            meeting_number=selected_meeting_number,
+            meeting_id=meeting_id,
             voter_identifier=voter_identifier,
             question="More feedback/comments"
         ).first()
@@ -349,12 +353,11 @@ def _get_voting_page_context(selected_meeting_number, user, current_user_contact
     return context
 
 
-@voting_bp.route('/voting', defaults={'selected_meeting_number': None}, methods=['GET'])
-@voting_bp.route('/voting/<int:selected_meeting_number>', methods=['GET'])
-def voting(selected_meeting_number):
+@voting_bp.route('/voting', defaults={'meeting_id': None}, methods=['GET'])
+@voting_bp.route('/voting/<int:meeting_id>', methods=['GET'])
+def voting(meeting_id):
     """Main voting page route."""
-    user, current_user_contact_id = get_current_user_info()
-    context = _get_voting_page_context(selected_meeting_number, user, current_user_contact_id)
+    context = _get_voting_page_context(meeting_id)
     
     # Access Control Logic
     meeting = context.get('selected_meeting')
@@ -372,14 +375,14 @@ def voting(selected_meeting_number):
 def batch_vote():
     """Batch vote submission endpoint."""
     data = request.get_json()
-    meeting_number = data.get('meeting_number')
+    meeting_id = data.get('meeting_id')
     votes = data.get('votes', [])
 
-    if not meeting_number:
-        return jsonify(success=False, message="Missing meeting number."), 400
+    if not meeting_id:
+        return jsonify(success=False, message="Missing meeting ID."), 400
 
     club_id = get_current_club_id()
-    meeting_query = Meeting.query.filter_by(Meeting_Number=meeting_number)
+    meeting_query = Meeting.query.filter_by(id=meeting_id)
     if club_id:
         meeting_query = meeting_query.filter(Meeting.club_id == club_id)
     meeting = meeting_query.first()
@@ -399,7 +402,7 @@ def batch_vote():
     try:
         # Clear previous votes for this voter in this meeting
         Vote.query.filter_by(
-            meeting_number=meeting_number,
+            meeting_id=meeting_id,
             voter_identifier=voter_identifier
         ).delete()
         
@@ -409,7 +412,7 @@ def batch_vote():
             award_category = v.get('award_category')
             if contact_id and award_category:
                 new_vote = Vote(
-                    meeting_number=meeting_number,
+                    meeting_id=meeting_id,
                     voter_identifier=voter_identifier,
                     award_category=award_category,
                     contact_id=contact_id
@@ -423,7 +426,7 @@ def batch_vote():
             
             if question is not None and (score is not None or comments is not None):
                 new_vote = Vote(
-                    meeting_number=meeting_number,
+                    meeting_id=meeting_id,
                     voter_identifier=voter_identifier,
                     question=question,
                     score=score,
@@ -443,15 +446,15 @@ def batch_vote():
 def vote_for_award():
     """Individual vote submission endpoint."""
     data = request.get_json()
-    meeting_number = data.get('meeting_number')
+    meeting_id = data.get('meeting_id')
     contact_id = data.get('contact_id')
     award_category = data.get('award_category')
 
-    if not all([meeting_number, contact_id, award_category]):
+    if not all([meeting_id, contact_id, award_category]):
         return jsonify(success=False, message="Missing data."), 400
 
     club_id = get_current_club_id()
-    meeting_query = Meeting.query.filter_by(Meeting_Number=meeting_number)
+    meeting_query = Meeting.query.filter_by(id=meeting_id)
     if club_id:
         meeting_query = meeting_query.filter(Meeting.club_id == club_id)
     meeting = meeting_query.first()
@@ -473,7 +476,7 @@ def vote_for_award():
     
     # Check for an existing vote from this identifier for this category
     existing_vote = Vote.query.filter_by(
-        meeting_number=meeting_number,
+        meeting_id=meeting_id,
         voter_identifier=voter_identifier,
         award_category=award_category
     ).first()
@@ -493,7 +496,7 @@ def vote_for_award():
         else:
             # New vote
             new_vote = Vote(
-                meeting_number=meeting_number,
+                meeting_id=meeting.id,
                 voter_identifier=voter_identifier,
                 award_category=award_category,
                 contact_id=contact_id
@@ -535,13 +538,13 @@ def voting_nps():
     meetings = query.order_by(Meeting.Meeting_Number.asc()).all()
     
     # Prepare data for the chart
+    meeting_ids = [m.id for m in meetings]
     meeting_numbers = [m.Meeting_Number for m in meetings]
     meeting_dates = [m.Meeting_Date.strftime('%Y-%m-%d') if m.Meeting_Date else '' for m in meetings]
     
     # Get all NPS votes for these meetings in one go to be efficient
-    meeting_numbers_list = [m.Meeting_Number for m in meetings]
-    all_votes = db.session.query(Vote.meeting_number, Vote.score).filter(
-        Vote.meeting_number.in_(meeting_numbers_list),
+    all_votes = db.session.query(Vote.meeting_id, Vote.score).filter(
+        Vote.meeting_id.in_(meeting_ids),
         Vote.question == "How likely are you to recommend this meeting to a friend or colleague?",
         Vote.score.isnot(None),
         Vote.score > 0
@@ -551,15 +554,15 @@ def voting_nps():
     
     # Group votes by meeting
     votes_by_meeting = {}
-    for mtg_num, score in all_votes:
-        if mtg_num not in votes_by_meeting:
-            votes_by_meeting[mtg_num] = []
-        votes_by_meeting[mtg_num].append(score)
+    for mtg_id, score in all_votes:
+        if mtg_id not in votes_by_meeting:
+            votes_by_meeting[mtg_id] = []
+        votes_by_meeting[mtg_id].append(score)
     
     # Calculate true NPS for each meeting
     full_data = []
     for m in meetings:
-        scores = votes_by_meeting.get(m.Meeting_Number, [])
+        scores = votes_by_meeting.get(m.id, [])
         if scores:
             total = len(scores)
             promoters = sum(1 for s in scores if s >= 9)
@@ -575,6 +578,7 @@ def voting_nps():
             count = 0
             
         full_data.append({
+            'id': m.id,
             'number': m.Meeting_Number,
             'score': score,
             'det_pct': det_pct,
@@ -592,6 +596,7 @@ def voting_nps():
     # Slice the data from the first non-zero meeting
     filtered_data = full_data[first_nonzero_idx:]
     
+    meeting_ids = [d['id'] for d in filtered_data]
     meeting_numbers = [d['number'] for d in filtered_data]
     nps_scores = [d['score'] for d in filtered_data]
     detractor_percentages = [d['det_pct'] for d in filtered_data]
@@ -599,6 +604,7 @@ def voting_nps():
     meeting_dates = [d['date'] for d in filtered_data]
     
     return render_template('voting_nps.html',
+                           meeting_ids=meeting_ids,
                            meeting_numbers=meeting_numbers,
                            nps_scores=nps_scores,
                            detractor_percentages=detractor_percentages,
@@ -606,38 +612,38 @@ def voting_nps():
                            meeting_dates=meeting_dates)
 
 
-@voting_bp.route('/voting/nps/comments/<int:meeting_number>', methods=['GET'])
+@voting_bp.route('/voting/nps/comments/<int:meeting_id>', methods=['GET'])
 @login_required
-def get_nps_comments(meeting_number):
+def get_nps_comments(meeting_id):
     """Get NPS comments for a specific meeting."""
     club_id = get_current_club_id()
     
     # Verify the meeting exists and belongs to the current club
-    meeting_query = Meeting.query.filter_by(Meeting_Number=meeting_number)
-    if club_id:
-        meeting_query = meeting_query.filter(Meeting.club_id == club_id)
-    meeting = meeting_query.first()
+    meeting = Meeting.query.get_or_404(meeting_id)
+    if meeting.club_id != club_id:
+         return jsonify(success=False, message="Meeting not found"), 404
     
     if not meeting:
         return jsonify({'comments': [], 'meeting_date': ''})
     
     # Get all NPS-related comments for this meeting
-    comments = db.session.query(Vote.comments).filter(
-        Vote.meeting_number == meeting_number,
+    all_comments = db.session.query(Vote.score, Vote.comments, Role.role_name).join(Role, Vote.role_id == Role.id).filter(
+        Vote.meeting_id == meeting_id,
         Vote.question == "How likely are you to recommend this meeting to a friend or colleague?",
         Vote.comments.isnot(None),
         Vote.comments != ''
     ).all()
     
     # Also get general feedback comments
-    feedback_comments = db.session.query(Vote.comments).filter(
-        Vote.meeting_number == meeting_number,
+    general_comments = db.session.query(Vote.score, Vote.comments).filter(
+        Vote.meeting_id == meeting_id,
+        Vote.role_id.is_(None),
         Vote.question == "More feedback/comments",
         Vote.comments.isnot(None),
         Vote.comments != ''
     ).all()
     
-    all_comments = [c[0] for c in comments] + [c[0] for c in feedback_comments]
+    all_comments = [c[0] for c in all_comments] + [c[0] for c in general_comments]
     meeting_date = meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting.Meeting_Date else ''
     
     return jsonify({

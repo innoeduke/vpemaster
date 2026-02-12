@@ -69,7 +69,8 @@
                 </thead>
                 <tbody id="planner-tbody">
                     {% for plan in plans %}
-                    <tr data-id="{{ plan.id }}" data-meeting="{{ plan.meeting_number or '' }}"
+                    <tr data-id="{{ plan.id }}" data-meeting-id="{{ plan.meeting_id or '' }}"
+                        data-meeting-number="{{ plan.meeting_number or '' }}"
                         data-role="{{ plan.meeting_role_id or '' }}" data-project="{{ plan.project_id or '' }}"
                         data-status="{{ plan.status }}" data-notes="{{ plan.notes or '' }}">
                         <td data-label="Meeting">#{{ plan.meeting_number or 'N/A' }}</td>
@@ -105,71 +106,7 @@
     </div>
 </div>
 
-<!-- Plan Modal -->
-<div id="planModal" class="planner-modal">
-    <div class="planner-modal-content">
-        <span class="planner-close-modal" onclick="closeModal()">&times;</span>
-        <div class="planner-modal-header">
-            <h3>Plan Detail</h3>
-        </div>
-        <form id="planForm">
-            <input type="hidden" id="plan-id">
-            <input type="hidden" id="plan-status" value="draft">
-            <div class="planner-form-group">
-                <label for="meeting_number">Meeting</label>
-                <select id="meeting_number" class="planner-form-control" required>
-                    <option value="">Select Meeting</option>
-                    {% for meeting in meetings %}
-                    <option value="{{ meeting.Meeting_Number }}">#{{ meeting.Meeting_Number }} &nbsp; {{
-                        meeting.Meeting_Date.strftime('%b %d, %Y') if meeting.Meeting_Date else 'N/A' }}</option>
-                    {% endfor %}
-                </select>
-                <div id="meeting-date-row" class="meeting-info-row" style="display: none;">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span id="meeting-date-display"></span>
-                </div>
-            </div>
-            <div class="planner-form-group">
-                <label for="meeting_role_id">Meeting Role</label>
-                <select id="meeting_role_id" class="planner-form-control" required>
-                    <option value="">Select Role</option>
-                    <!-- Populated dynamically -->
-                </select>
-            </div>
-            <div id="project-checkbox-group" class="planner-form-group" style="display: none; margin-bottom: 10px;">
-                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    Project <input type="checkbox" id="has_project_chk">
-                </label>
-            </div>
-            <div id="project-group" class="planner-form-group" style="display: none;">
-                <select id="project_id" class="planner-form-control">
-                    <option value="">Select Project</option>
-                    {% for level, projs in grouped_projects %}
-                    <optgroup label="Level {{ level }}">
-                        {% for project in projs %}
-                        <option value="{{ project.id }}" data-format="{{ project.Format }}"
-                            data-code="{{ project.full_code }}"
-                            class="{% if project.is_completed %}project-completed{% endif %}">
-                            {% if project.is_completed %}✓ {% endif %}{{ project.Project_Name }}
-                        </option>
-                        {% endfor %}
-                    </optgroup>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="planner-form-group">
-                <label for="notes">Notes</label>
-                <textarea id="notes" class="planner-form-control" rows="3"></textarea>
-            </div>
-            <div class="planner-modal-footer">
-                <button type="button" class="planner-btn planner-btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="button" id="book-btn" class="planner-btn planner-btn-success" style="display: none;"
-                    onclick="bookPlan()">Book</button>
-                <button type="submit" id="save-plan-btn" class="planner-btn planner-btn-primary">Save Draft</button>
-            </div>
-        </form>
-    </div>
-</div>
+{% include 'partials/_planner_modal.html' %}
 
 {% endblock %}
 
@@ -314,7 +251,8 @@
             const tr = editBtn.closest('tr');
             const planData = {
                 id: tr.dataset.id,
-                meeting_number: tr.dataset.meeting,
+                meeting_id: tr.dataset.meetingId,
+                meeting_number: tr.dataset.meetingNumber,
                 role_id: tr.dataset.role,
                 project_id: tr.dataset.project,
                 notes: tr.dataset.notes,

@@ -106,41 +106,34 @@ class RoleService:
             # 1. Unassign Old Owners (if existed and not in new list)
             for old_id in old_owner_ids:
                 if old_id not in contact_ids:
-                    Roster.sync_role_assignment(session_log.Meeting_Number, old_id, role_obj, 'unassign')
+                    Roster.sync_role_assignment(session_log.id, old_id, role_obj, 'unassign', is_meeting_id=True)
             
             # 2. Assign New Owners (if exists)
             for new_id in contact_ids:
-                Roster.sync_role_assignment(session_log.Meeting_Number, new_id, role_obj, 'assign')
+                Roster.sync_role_assignment(session_log.id, new_id, role_obj, 'assign', is_meeting_id=True)
         
         # Invalidate Cache
-        RoleService._clear_meeting_cache(session_log.Meeting_Number)
+        RoleService._clear_meeting_cache(session_log.meeting_id)
                 
         # Sync Planner Statuses
         if role_obj:
-            RoleService.sync_planner_statuses(session_log.Meeting_Number, role_obj.id)
+            RoleService.sync_planner_statuses(session_log.meeting_id, role_obj.id)
 
         return updated_logs
 
     @staticmethod
-    def _clear_meeting_cache(meeting_number, club_id=None):
-        """
-        Invalidates all cached data related to a meeting's roles and role-takers.
-        """
+    def _clear_meeting_cache(meeting_id, club_id=None):
+        """Removes meeting-related data from cache."""
         from app import cache
         from app.club_context import get_current_club_id
         
         if not club_id:
             club_id = get_current_club_id()
             
-        # 1. Clear Meeting Roles (consolidated for booking)
-        if club_id:
-            cache.delete(f"meeting_roles_{club_id}_{meeting_number}")
-        cache.delete(f"meeting_roles_None_{meeting_number}") # Fallback
-        
-        # 2. Clear Role Takers (mapped by person for voting/roster)
-        if club_id:
-            cache.delete(f"role_takers_{club_id}_{meeting_number}")
-        cache.delete(f"role_takers_None_{meeting_number}") # Fallback
+        cache.delete(f"meeting_roles_{club_id}_{meeting_id}")
+        cache.delete(f"meeting_roles_None_{meeting_id}")
+        cache.delete(f"role_takers_{club_id}_{meeting_id}")
+        cache.delete(f"role_takers_None_{meeting_id}")
 
     @staticmethod
     def book_meeting_role(session_log, user_contact_id):
@@ -263,12 +256,12 @@ class RoleService:
             db.session.commit()
             
             # Invalidate Cache
-            RoleService._clear_meeting_cache(session_log.Meeting_Number)
+            RoleService._clear_meeting_cache(session_log.meeting_id or session_log.Meeting_Number)
             
             # Sync Planner Statuses
             session_type = session_log.session_type
             if session_type and session_type.role_id:
-                RoleService.sync_planner_statuses(session_log.Meeting_Number, session_type.role_id)
+                RoleService.sync_planner_statuses(session_log.meeting_id or session_log.Meeting_Number, session_type.role_id)
 
             return True, "Added to waitlist."
         return True, "Already on waitlist." # Treated as success
@@ -286,12 +279,12 @@ class RoleService:
         db.session.commit()
         
         # Invalidate Cache
-        RoleService._clear_meeting_cache(session_log.Meeting_Number)
+        RoleService._clear_meeting_cache(session_log.meeting_id)
              
         # Sync Planner Statuses
         session_type = session_log.session_type
         if session_type and session_type.role_id:
-            RoleService.sync_planner_statuses(session_log.Meeting_Number, session_type.role_id)
+            RoleService.sync_planner_statuses(session_log.meeting_id, session_type.role_id)
 
         return True, "Removed from waitlist."
 
@@ -340,9 +333,9 @@ class RoleService:
         # For now, standard check:
         existing = db.session.query(SessionLog.id)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id)\
-            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+            .join(Meeting, SessionLog.meeting_id == Meeting.id)\
             .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
-            .filter(SessionLog.Meeting_Number == session_log.Meeting_Number)\
+            .filter(SessionLog.meeting_id == session_log.meeting_id)\
             .filter(db.exists().where(
                 db.and_(
                     OwnerMeetingRoles.contact_id == contact_id,
@@ -361,28 +354,27 @@ class RoleService:
         return existing is not None
 
     @staticmethod
-    def sync_planner_statuses(meeting_number, role_id):
+    def sync_planner_statuses(meeting_id, role_id):
         """
         Synchronizes Planner statuses for a specific meeting and role 
         based on current Owners and Waitlists.
         """
         # Find all Planner entries for this meeting and role
-        plans = Planner.query.filter_by(meeting_number=meeting_number, meeting_role_id=role_id).all()
+        plans = Planner.query.filter_by(meeting_id=meeting_id, meeting_role_id=role_id).all()
         if not plans:
             return
 
         # Get current state for this role in the meeting
         # 1. Get all owners
         owners_query = db.session.query(OwnerMeetingRoles.contact_id)\
-            .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
-            .filter(Meeting.Meeting_Number == meeting_number, OwnerMeetingRoles.role_id == role_id)\
+            .filter(OwnerMeetingRoles.meeting_id == meeting_id, OwnerMeetingRoles.role_id == role_id)\
             .all()
         owner_ids = {r[0] for r in owners_query}
 
         # 2. Get all waitlisted users
         # We need to find session logs for this role in this meeting
         session_logs = SessionLog.query.join(SessionType)\
-            .filter(SessionLog.Meeting_Number == meeting_number, SessionType.role_id == role_id)\
+            .filter(SessionLog.meeting_id == meeting_id, SessionType.role_id == role_id)\
             .all()
         session_log_ids = [sl.id for sl in session_logs]
         
@@ -433,14 +425,14 @@ class RoleService:
             
         logs = db.session.query(SessionLog.id)\
             .join(SessionType, SessionLog.Type_ID == SessionType.id)\
-            .filter(SessionLog.Meeting_Number == session_log.Meeting_Number)\
+            .filter(SessionLog.meeting_id == session_log.meeting_id)\
             .filter(SessionType.role_id == role_obj.id)\
             .all()
             
         return [l.id for l in logs]
 
     @staticmethod
-    def get_meeting_roles(meeting_number, club_id=None):
+    def get_meeting_roles(meeting_id, club_id=None):
         """
         Get all roles for a meeting, consolidated for booking page display.
         
@@ -449,7 +441,7 @@ class RoleService:
         consolidated into a single record (shared role).
         
         Args:
-            meeting_number: The meeting number to query
+            meeting_id: The meeting ID to query
             club_id: Optional club ID filter
             
         Returns:
@@ -462,11 +454,11 @@ class RoleService:
         if not club_id:
             club_id = get_current_club_id()
             
-        if not meeting_number:
+        if not meeting_id:
             return []
 
         # Check Cache
-        cache_key = f"meeting_roles_{club_id}_{meeting_number}"
+        cache_key = f"meeting_roles_{club_id}_{meeting_id}"
         cached_roles = cache.get(cache_key)
         if cached_roles is not None:
             return cached_roles
@@ -480,8 +472,8 @@ class RoleService:
             )\
             .join(SessionType, SessionLog.Type_ID == SessionType.id)\
             .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
-            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
-            .filter(SessionLog.Meeting_Number == meeting_number)\
+            .join(Meeting, SessionLog.meeting_id == Meeting.id)\
+            .filter(SessionLog.meeting_id == meeting_id)\
             .filter(MeetingRole.name != '', MeetingRole.name.isnot(None))
         
         if club_id:
@@ -490,7 +482,10 @@ class RoleService:
         session_logs = query.all()
         
         # Fetch Planner notes for this meeting to show as tooltips
-        plans = Planner.query.filter_by(meeting_number=meeting_number, club_id=club_id).all()
+        plans = Planner.query.filter(
+            Planner.meeting_id == meeting_id,
+            Planner.club_id == club_id
+        ).all()
         planner_notes_map = {} # (contact_id, role_id) -> notes
         for p in plans:
             # Match via contact_id for consistency with booking logic
@@ -602,7 +597,7 @@ class RoleService:
         return roles_list
 
     @staticmethod
-    def get_role_takers(meeting_number, club_id=None):
+    def get_role_takers(meeting_id, club_id=None):
         """
         Get all role takers for a meeting from OwnerMeetingRoles.
         
@@ -610,7 +605,7 @@ class RoleService:
         each contact has taken in the meeting.
         
         Args:
-            meeting_number: The meeting number to query
+            meeting_id: The meeting ID to query
             club_id: Optional club ID filter
             
         Returns:
@@ -622,11 +617,11 @@ class RoleService:
         if not club_id:
             club_id = get_current_club_id()
             
-        if not meeting_number:
+        if not meeting_id:
             return {}
 
         # Check Cache
-        cache_key = f"role_takers_{club_id}_{meeting_number}"
+        cache_key = f"role_takers_{club_id}_{meeting_id}"
         cached_result = cache.get(cache_key)
         if cached_result is not None:
             return cached_result
@@ -636,7 +631,7 @@ class RoleService:
             .join(Meeting, OwnerMeetingRoles.meeting_id == Meeting.id)\
             .outerjoin(MeetingRole, OwnerMeetingRoles.role_id == MeetingRole.id)\
             .join(Contact, OwnerMeetingRoles.contact_id == Contact.id)\
-            .filter(Meeting.Meeting_Number == meeting_number)
+            .filter(Meeting.id == meeting_id)
         
         if club_id:
             query = query.filter(Meeting.club_id == club_id)
@@ -710,7 +705,7 @@ class RoleService:
                 if club_id:
                     p_query = p_query.filter_by(club_id=club_id)
                 p_entries = p_query.all()
-                planner_map = {(pe.meeting_number, pe.meeting_role_id): pe.project_id for pe in p_entries if pe.meeting_number and pe.meeting_role_id}
+                planner_map = {(pe.meeting_id, pe.meeting_role_id): pe.project_id for pe in p_entries if pe.meeting_id and pe.meeting_role_id}
         
         # 2. Map to SessionLogs
         logs = []
@@ -726,7 +721,7 @@ class RoleService:
             elif role:
                 # Shared role: Find the relevant session log for this meeting/role type
                 log = SessionLog.query.join(SessionType).filter(
-                    SessionLog.Meeting_Number == meeting.Meeting_Number,
+                    SessionLog.meeting_id == meeting.id,
                     SessionType.role_id == role.id
                 ).options(
                     db.joinedload(SessionLog.meeting),
@@ -742,7 +737,7 @@ class RoleService:
 
                 # OVERRIDE: Use project from Planner if available for this specific user
                 role_id = role.id if role else (log.session_type.role_id if log.session_type else None)
-                p_id = planner_map.get((log.Meeting_Number, role_id))
+                p_id = planner_map.get((log.meeting_id, role_id))
                 if p_id:
                     log.Project_ID = p_id
                     log.project = db.session.get(Project, p_id)
@@ -787,7 +782,7 @@ class RoleService:
             if club_id:
                 p_query = p_query.filter_by(club_id=club_id)
             p_entries = p_query.all()
-            planner_map = {(pe.meeting_number, pe.meeting_role_id): pe.project_id for pe in p_entries if pe.meeting_number and pe.meeting_role_id}
+            planner_map = {(pe.meeting_id, pe.meeting_role_id): pe.project_id for pe in p_entries if pe.meeting_id and pe.meeting_role_id}
 
         # 2. Attach context
         contact = db.session.get(Contact, contact_id)
@@ -797,7 +792,7 @@ class RoleService:
             
             # OVERRIDE: Use project from Planner if available for this waitlisted user
             role_id = log.session_type.role_id if log.session_type else None
-            p_id = planner_map.get((log.Meeting_Number, role_id))
+            p_id = planner_map.get((log.meeting_id, role_id))
             if p_id:
                 log.Project_ID = p_id
                 log.project = db.session.get(Project, p_id)

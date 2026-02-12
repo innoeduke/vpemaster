@@ -704,7 +704,7 @@ class DataImportService:
             if is_single_owner and target_contact:
                 # If single-owner role, logs should be unique PER owner if title/type match
                 target_log = SessionLog.query.join(OwnerMeetingRoles).filter(
-                    SessionLog.Meeting_Number == meet_no,
+                    SessionLog.meeting_id == meeting_obj.id,
                     SessionLog.Session_Title == (session_title if session_title else ""),
                     SessionLog.Type_ID == type_id,
                     OwnerMeetingRoles.contact_id == target_contact.id
@@ -713,7 +713,7 @@ class DataImportService:
             if not target_log and not is_single_owner:
                 # Fallback to title/type match ONLY for shared roles
                 target_log = SessionLog.query.filter_by(
-                    Meeting_Number=meet_no,
+                    meeting_id=meeting_obj.id,
                     Session_Title=session_title if session_title else "",
                     Type_ID=type_id
                 ).first()
@@ -735,6 +735,7 @@ class DataImportService:
             
             if not target_log:
                 new_log = SessionLog(
+                    meeting_id=meeting_obj.id,
                     Meeting_Number=meet_no,
                     Type_ID=type_id,
                     Start_Time=self._parse_time(row[4]),
@@ -828,13 +829,14 @@ class DataImportService:
                 ticket_id = ticket.id
                 
             # Dedup
-            existing = Roster.query.filter_by(meeting_number=meet_no, order_number=row[2]).first()
+            existing = Roster.query.filter_by(meeting_id=meeting_obj.id, order_number=row[2]).first()
             if not existing:
                 new_roster = Roster(
+                    meeting_id=meeting_obj.id,
                     meeting_number=meet_no,
                     order_number=row[2],
                     contact_id=contact_id,
-                    contact_type=row[5],
+                    contact_type=row[5] if len(row) > 5 else None,
                     ticket_id=ticket_id
                 )
                 db.session.add(new_roster)

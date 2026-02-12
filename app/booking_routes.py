@@ -16,7 +16,7 @@ from . import db
 booking_bp = Blueprint('booking_bp', __name__)
 
 
-def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeting_number):
+def _apply_user_filters_and_rules(roles, current_user_contact_id, meeting_id):
     """Applies filtering and business rules based on user permissions."""
     if is_authorized(Permissions.BOOKING_ASSIGN_ALL):
         return roles
@@ -29,13 +29,18 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeti
     contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
     
     if contact and contact.Current_Path:
+        # We need the meeting number for the range check, but must scope by club
+        meeting = db.session.get(Meeting, meeting_id)
+        if not meeting: return roles
+        
+        selected_meeting_number = meeting.Meeting_Number
         three_meetings_ago = selected_meeting_number - 2
         
         # Updated query to use OwnerMeetingRoles
         recent_speaker_log = db.session.query(SessionLog.id)\
             .join(SessionType)\
             .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
-            .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+            .join(Meeting, SessionLog.meeting_id == Meeting.id)\
             .filter(
                 db.exists().where(
                     db.and_(
@@ -50,7 +55,8 @@ def _apply_user_filters_and_rules(roles, current_user_contact_id, selected_meeti
                 )
             )\
             .filter(MeetingRole.name == "Prepared Speaker")\
-            .filter(SessionLog.Meeting_Number.between(three_meetings_ago, selected_meeting_number)).first()
+            .filter(Meeting.club_id == club_id)\
+            .filter(Meeting.Meeting_Number.between(three_meetings_ago, selected_meeting_number)).first()
 
         if recent_speaker_log:
             roles = [
@@ -253,16 +259,16 @@ def _get_contact_role_requirements(contact, club_id):
     return final_required_map, final_elective_set, final_elective_needed
 
 
-def _get_roles_for_booking(selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting):
+def _get_roles_for_booking(meeting_id, current_user_contact_id, selected_meeting, is_past_meeting):
     """Helper function to get and process roles for the booking page."""
     club_id = get_current_club_id()
     
     # Use RoleService to get consolidated roles
-    roles = RoleService.get_meeting_roles(selected_meeting_number, club_id)
+    roles = RoleService.get_meeting_roles(meeting_id, club_id)
     
     # Apply user-specific filters and rules
     filtered_roles = _apply_user_filters_and_rules(
-        roles, current_user_contact_id, selected_meeting_number)
+        roles, current_user_contact_id, meeting_id)
     sorted_roles = _sort_roles_for_booking(
         filtered_roles, current_user_contact_id, is_past_meeting)
 
@@ -363,23 +369,25 @@ def _get_user_bookings(current_user_contact_id):
     return sorted(user_bookings_by_date.values(), key=lambda x: x['date_info']['meeting_number'])
 
 
-def _get_booking_page_context(selected_meeting_number, user, current_user_contact_id):
+def _get_booking_page_context(meeting_id, user, current_user_contact_id):
     """Gathers all context needed for the booking page template."""
     # Show all recent meetings in the dropdown, even if booking is closed for them
     is_guest = (user.primary_role_name == 'Guest') if user else True
     limit_past = 8 if is_guest else None
     
     upcoming_meetings, default_meeting_num = get_meetings_by_status(
-        limit_past=limit_past, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date, Meeting.status])
+        limit_past=limit_past, columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number])
 
-    if not selected_meeting_number:
-        selected_meeting_number = default_meeting_num or (
+    if not meeting_id:
+        # If no meeting_id is provided, try to use the default_meeting_num (which is now meeting_id)
+        # or the first upcoming meeting's ID.
+        meeting_id = default_meeting_num or (
             upcoming_meetings[0][0] if upcoming_meetings else None)
 
     context = {
         'roles': [],
         'upcoming_meetings': upcoming_meetings,
-        'selected_meeting_number': selected_meeting_number,
+        'selected_meeting_id': meeting_id, # Renamed for clarity in context
         'user_bookings_by_date': [],
         'contacts': [],
         'selected_meeting': None,
@@ -390,11 +398,11 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
         'required_roles_by_role': {} # {norm_role: [ {id, name, avatar_url} ]}
     }
 
-    if not selected_meeting_number:
+    if not meeting_id:
         return context
 
     club_id = get_current_club_id()
-    selected_meeting = Meeting.query.filter_by(Meeting_Number=selected_meeting_number)
+    selected_meeting = Meeting.query.filter_by(id=meeting_id)
     if club_id:
         selected_meeting = selected_meeting.filter(Meeting.club_id == club_id)
     selected_meeting = selected_meeting.first()
@@ -426,7 +434,7 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     is_past_meeting = selected_meeting.status == 'finished' if selected_meeting else False
 
     roles = _get_roles_for_booking(
-        selected_meeting_number, current_user_contact_id, selected_meeting, is_past_meeting)
+        meeting_id, current_user_contact_id, selected_meeting, is_past_meeting)
     context['roles'] = roles
 
     context['user_bookings_by_date'] = _get_user_bookings(current_user_contact_id)
@@ -474,17 +482,17 @@ def _get_booking_page_context(selected_meeting_number, user, current_user_contac
     return context
 
 
-@booking_bp.route('/booking', defaults={'selected_meeting_number': None}, methods=['GET'])
-@booking_bp.route('/booking/<int:selected_meeting_number>', methods=['GET'])
+@booking_bp.route('/booking', defaults={'meeting_id': None}, methods=['GET'])
+@booking_bp.route('/booking/<int:meeting_id>', methods=['GET'])
 @login_required
-def booking(selected_meeting_number):
+def booking(meeting_id):
     """Main booking page route."""
     user, current_user_contact_id = get_current_user_info()
-    context = _get_booking_page_context(selected_meeting_number, user, current_user_contact_id)
+    context = _get_booking_page_context(meeting_id, user, current_user_contact_id)
     
     if context.get('redirect_to_not_started'):
-        meeting_num = context.get('selected_meeting_number') or selected_meeting_number
-        return redirect(url_for('agenda_bp.meeting_notice', meeting_number=meeting_num))
+        # Use meeting_id for redirect
+        return redirect(url_for('agenda_bp.meeting_notice', meeting_id=meeting_id))
         
     return render_template('booking.html', **context)
 
@@ -511,7 +519,7 @@ def book_or_assign_role():
 
     # Validation: Check meeting status
     club_id = get_current_club_id()
-    meeting_query = Meeting.query.filter_by(Meeting_Number=log.Meeting_Number)
+    meeting_query = Meeting.query.filter_by(id=log.meeting_id) # Use meeting_id from SessionLog
     if club_id:
         meeting_query = meeting_query.filter(Meeting.club_id == club_id)
     meeting = meeting_query.first()

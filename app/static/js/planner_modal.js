@@ -4,7 +4,7 @@
 
 const modal = document.getElementById('planModal');
 const form = document.getElementById('planForm');
-const meetingSelect = document.getElementById('meeting_number');
+const meetingSelect = document.getElementById('meeting_id');
 const roleSelect = document.getElementById('meeting_role_id');
 const projectGroup = document.getElementById('project-group');
 const projectIdSelect = document.getElementById('project_id');
@@ -20,8 +20,8 @@ let customMeetingSelect, customRoleSelect, customProjectSelect;
 const savePlanBtn = document.getElementById('save-plan-btn');
 
 document.addEventListener("DOMContentLoaded", function () {
-    if (document.getElementById('meeting_number')) {
-        customMeetingSelect = new CustomSelect('meeting_number');
+    if (document.getElementById('meeting_id')) {
+        customMeetingSelect = new CustomSelect('meeting_id');
     }
     if (document.getElementById('meeting_role_id')) {
         customRoleSelect = new CustomSelect('meeting_role_id');
@@ -87,7 +87,7 @@ function openPlanModal(planData = null) {
         if (document.getElementById('plan-status')) document.getElementById('plan-status').value = planData.status || 'draft';
         if (savePlanBtn) savePlanBtn.innerText = 'Save';
 
-        if (customMeetingSelect) customMeetingSelect.setValue(planData.meeting_number);
+        if (customMeetingSelect) customMeetingSelect.setValue(planData.meeting_id);
         document.getElementById('notes').value = planData.notes || '';
 
         // If status is not draft, disable meeting and role selects
@@ -122,10 +122,10 @@ function closeModal() {
 // Custom Select Class (Removed: using shared component in static/js/components/custom_select.js)
 
 async function loadMeetingRoles() {
-    const meetingNumber = meetingSelect.value;
+    const meetingId = meetingSelect.value;
     if (customMeetingSelect) customMeetingSelect.updateTrigger();
 
-    if (!meetingNumber) {
+    if (!meetingId) {
         roleSelect.innerHTML = '<option value="">Select Role</option>';
         if (customRoleSelect) customRoleSelect.refresh();
         if (dateRow) dateRow.style.display = 'none';
@@ -134,7 +134,7 @@ async function loadMeetingRoles() {
     }
 
     try {
-        const response = await fetch(`/api/meeting/${meetingNumber}`);
+        const response = await fetch(`/api/meeting/${meetingId}`);
         const data = await response.json();
 
         if (dateDisplay) dateDisplay.innerText = `Meeting Date: ${data.date}`;
@@ -254,7 +254,8 @@ async function handleFormSubmit(e) {
     const planStatus = document.getElementById('plan-status')?.value || 'draft';
 
     const data = {
-        meeting_number: document.getElementById('meeting_number').value || null,
+        meeting_id: document.getElementById('meeting_id').value || null,
+        meeting_number: document.getElementById('meeting_id').options[document.getElementById('meeting_id').selectedIndex]?.dataset.number || null,
         meeting_role_id: document.getElementById('meeting_role_id').value || null,
         project_id: document.getElementById('project_id').value || null,
         notes: document.getElementById('notes').value,
@@ -311,7 +312,8 @@ async function bookPlan() {
 
             const planId = document.getElementById('plan-id').value;
             const data = {
-                meeting_number: document.getElementById('meeting_number').value || null,
+                meeting_id: document.getElementById('meeting_id').value || null,
+                meeting_number: document.getElementById('meeting_id').options[document.getElementById('meeting_id').selectedIndex]?.dataset.number || null,
                 meeting_role_id: document.getElementById('meeting_role_id').value || null,
                 project_id: document.getElementById('project_id').value || null,
                 notes: document.getElementById('notes').value,

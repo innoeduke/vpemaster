@@ -15,7 +15,7 @@ def planner():
     club_id = get_current_club_id()
     
     # 1. Fetch user's plans
-    plans = Planner.query.filter_by(user_id=current_user.id, club_id=club_id).order_by(Planner.meeting_number).all()
+    plans = Planner.query.filter_by(user_id=current_user.id, club_id=club_id).order_by(Planner.meeting_id).all()
     
     # 2. Fetch all terms for the club to show in the filter
     from .utils import get_terms, get_active_term, get_date_ranges_for_terms
@@ -41,7 +41,7 @@ def planner():
         conditions = [Meeting.Meeting_Date.between(start, end) for start, end in date_ranges]
         query = query.filter(or_(*conditions))
     
-    unpublished_meetings = query.order_by(Meeting.Meeting_Number).all()
+    unpublished_meetings = query.order_by(Meeting.Meeting_Date.asc(), Meeting.id.asc()).all()
     
     # 5. Fetch projects grouped by level
     contact = current_user.get_contact(club_id)
@@ -66,15 +66,17 @@ def planner():
                          grouped_projects=grouped_projects,
                          header_title="Planner")
 
-@planner_bp.route('/api/meeting/<int:meeting_number>')
+@planner_bp.route('/api/meeting/<int:meeting_id>')
 @login_required
-def get_meeting_info(meeting_number):
+def get_meeting_info(meeting_id):
     club_id = get_current_club_id()
-    meeting = Meeting.query.filter_by(club_id=club_id, Meeting_Number=meeting_number).first_or_404()
+    meeting = Meeting.query.get_or_404(meeting_id)
+    if club_id and meeting.club_id != club_id:
+         return jsonify(success=False, message="Meeting not found"), 404
     
     # Use RoleService to get consolidated roles for this meeting
     from .services.role_service import RoleService
-    meeting_roles = RoleService.get_meeting_roles(meeting_number, club_id)
+    meeting_roles = RoleService.get_meeting_roles(meeting_id, club_id)
     
     unique_roles = {}
     for r in meeting_roles:
@@ -137,7 +139,8 @@ def create_plan():
     club_id = get_current_club_id()
     
     new_plan = Planner(
-        meeting_number=data.get('meeting_number'),
+        meeting_id=data.get('meeting_id'),
+        meeting_number=data.get('meeting_number'), # Keep for backward compat/display if needed
         meeting_role_id=data.get('meeting_role_id'),
         project_id=data.get('project_id'),
         status=data.get('status', 'draft'), # Use status if provided
@@ -150,8 +153,8 @@ def create_plan():
     db.session.commit()
     
     # Invalidate booking page cache for this meeting
-    if new_plan.meeting_number:
-        RoleService._clear_meeting_cache(new_plan.meeting_number, club_id)
+    if new_plan.meeting_id:
+        RoleService._clear_meeting_cache(new_plan.meeting_id, club_id)
     
     return jsonify({'id': new_plan.id, 'message': 'Plan created successfully'}), 201
 
@@ -161,8 +164,11 @@ def update_plan(plan_id):
     plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
     data = request.get_json()
     
-    if 'meeting_number' in data:
-        plan.meeting_number = data['meeting_number']
+    if 'meeting_id' in data:
+        plan.meeting_id = data['meeting_id']
+        meeting = Meeting.query.get(plan.meeting_id)
+        if meeting:
+            plan.meeting_number = meeting.Meeting_Number
     if 'meeting_role_id' in data:
         plan.meeting_role_id = data['meeting_role_id']
     if 'project_id' in data:
@@ -175,9 +181,9 @@ def update_plan(plan_id):
     db.session.commit()
 
     # Invalidate booking page cache for this meeting
-    if plan.meeting_number:
+    if plan.meeting_id:
         club_id = get_current_club_id()
-        RoleService._clear_meeting_cache(plan.meeting_number, club_id)
+        RoleService._clear_meeting_cache(plan.meeting_id, club_id)
 
     return jsonify({'message': 'Plan updated successfully'})
 
@@ -190,10 +196,10 @@ def cancel_plan(plan_id):
     plan.status = 'cancelled'
     
     # 2. If it was booked/waitlisted, remove from meeting
-    if plan.meeting_number and plan.meeting_role_id:
+    if plan.meeting_id and plan.meeting_role_id:
         # Find the session log for this meeting and role
         session_log = SessionLog.query.join(SessionType).filter(
-            SessionLog.Meeting_Number == plan.meeting_number,
+            SessionLog.meeting_id == plan.meeting_id,
             SessionType.role_id == plan.meeting_role_id
         ).first()
         
@@ -205,9 +211,9 @@ def cancel_plan(plan_id):
     db.session.commit()
 
     # Invalidate booking page cache for this meeting
-    if plan.meeting_number:
+    if plan.meeting_id:
         club_id = get_current_club_id()
-        RoleService._clear_meeting_cache(plan.meeting_number, club_id)
+        RoleService._clear_meeting_cache(plan.meeting_id, club_id)
 
     return jsonify({'message': 'Plan cancelled successfully'})
 
@@ -215,13 +221,13 @@ def cancel_plan(plan_id):
 @login_required
 def delete_plan(plan_id):
     plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
-    meeting_number = plan.meeting_number
+    meeting_id = plan.meeting_id
     db.session.delete(plan)
     db.session.commit()
 
     # Invalidate booking page cache for this meeting
-    if meeting_number:
+    if meeting_id:
         club_id = get_current_club_id()
-        RoleService._clear_meeting_cache(meeting_number, club_id)
+        RoleService._clear_meeting_cache(meeting_id, club_id)
 
     return jsonify({'message': 'Plan deleted successfully'})

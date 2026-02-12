@@ -7,12 +7,14 @@
         </div>
         <form id="planForm">
             <input type="hidden" id="plan-id">
+            <input type="hidden" id="plan-status" value="draft">
             <div class="planner-form-group">
-                <label for="meeting_number">Meeting</label>
-                <select id="meeting_number" class="planner-form-control" required>
+                <label for="meeting_id">Meeting</label>
+                <select id="meeting_id" class="planner-form-control" required>
                     <option value="">Select Meeting</option>
                     {% for meeting in meetings %}
-                    <option value="{{ meeting.Meeting_Number }}">#{{ meeting.Meeting_Number }} &nbsp; {{ meeting.Meeting_Date.strftime('%b %d, %Y') if meeting.Meeting_Date else 'N/A' }}</option>
+                    <option value="{{ meeting.id }}" data-number="{{ meeting.Meeting_Number }}">#{{ meeting.Meeting_Number }} &nbsp; {{
+                        meeting.Meeting_Date.strftime('%b %d, %Y') if meeting.Meeting_Date else 'N/A' }}</option>
                     {% endfor %}
                 </select>
                 <div id="meeting-date-row" class="meeting-info-row" style="display: none;">
@@ -38,10 +40,9 @@
                     {% for level, projs in grouped_projects %}
                     <optgroup label="Level {{ level }}">
                         {% for project in projs %}
-                        <option value="{{ project.id }}" 
-                                data-format="{{ project.Format }}"
-                                data-code="{{ project.full_code }}"
-                                class="{% if project.is_completed %}project-completed{% endif %}">
+                        <option value="{{ project.id }}" data-format="{{ project.Format }}"
+                            data-code="{{ project.full_code }}"
+                            class="{% if project.is_completed %}project-completed{% endif %}">
                             {% if project.is_completed %}✓ {% endif %}{{ project.Project_Name }}
                         </option>
                         {% endfor %}
@@ -55,8 +56,9 @@
             </div>
             <div class="planner-modal-footer">
                 <button type="button" class="planner-btn planner-btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="button" id="book-btn" class="planner-btn planner-btn-success" style="display: none;" onclick="bookPlan()">Book</button>
-                <button type="submit" class="planner-btn planner-btn-primary">Save Draft</button>
+                <button type="button" id="book-btn" class="planner-btn planner-btn-success" style="display: none;"
+                    onclick="bookPlan()">Book</button>
+                <button type="submit" id="save-plan-btn" class="planner-btn planner-btn-primary">Save Draft</button>
             </div>
         </form>
     </div>

@@ -6,6 +6,7 @@ from .base import db
 class Planner(db.Model):
     __tablename__ = 'planner'
     id = db.Column(db.Integer, primary_key=True)
+    meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), nullable=True, index=True)
     meeting_number = db.Column(db.Integer, nullable=True)
     meeting_role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('Projects.id'), nullable=True)

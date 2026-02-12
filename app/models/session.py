@@ -100,8 +100,8 @@ class OwnerMeetingRoles(db.Model):
 class SessionLog(db.Model):
     __tablename__ = 'Session_Logs'
     id = db.Column(db.Integer, primary_key=True)
-    Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), db.ForeignKey(
-        'Meetings.Meeting_Number'), nullable=False)
+    meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), nullable=True, index=True)
+    Meeting_Number = db.Column(mysql.SMALLINT(unsigned=True), nullable=False)
     Meeting_Seq = db.Column(db.Integer)
     # For custom titles like speeches
     Session_Title = db.Column(db.String(255))
@@ -123,7 +123,7 @@ class SessionLog(db.Model):
     project_code = db.Column(db.String(10))
     pathway = db.Column(db.String(100))
 
-    meeting = db.relationship('Meeting', backref='session_logs')
+    meeting = db.relationship('Meeting', backref='session_logs', foreign_keys=[meeting_id])
     project = db.relationship('Project', backref='session_logs')
     
     # [DEPRECATED] Single Owner Relationship (Primary)

@@ -2,7 +2,7 @@
 
 // Global variables (initialized with defaults)
 let isAdminView = false;
-let selectedMeetingNumber = null;
+let selectedMeetingId = null;
 let userRole = null;
 let canTrackProgress = false;
 let localVotes = {};
@@ -16,7 +16,7 @@ function initVotingConfig() {
 		try {
 			const votingConfig = JSON.parse(votingDataEl.textContent);
 			isAdminView = votingConfig.isAdminView;
-			selectedMeetingNumber = votingConfig.selectedMeetingNumber;
+			selectedMeetingId = votingConfig.selectedMeetingId;
 			userRole = votingConfig.userRole;
 			canTrackProgress = votingConfig.canTrackProgress;
 
@@ -166,7 +166,7 @@ function submitBatchVotes() {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
-			meeting_number: selectedMeetingNumber,
+			meeting_id: selectedMeetingId,
 			votes: votes
 		}),
 	})
@@ -215,7 +215,7 @@ function submitBatchVotes() {
 
 
 function handleVoteClick(buttonEl) {
-	const meetingNumber = buttonEl.dataset.meetingNumber;
+	const meetingId = buttonEl.dataset.meetingId;
 	const contactId = parseInt(buttonEl.dataset.contactId, 10);
 	const awardCategory = buttonEl.dataset.awardCategory;
 

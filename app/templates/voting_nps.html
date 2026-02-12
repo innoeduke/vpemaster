@@ -32,6 +32,7 @@
 Chart.register(ChartDataLabels);
 
 document.addEventListener('DOMContentLoaded', function() {
+	const meetingIds = {{ meeting_ids | tojson }};
 	const meetingNumbers = {{ meeting_numbers | tojson }};
 	const npsScores = {{ nps_scores | tojson }};
 	const detractorPercentages = {{ detractor_percentages | tojson }};
@@ -292,16 +293,17 @@ document.addEventListener('DOMContentLoaded', function() {
 				
 				const clickedElement = elements[0];
 				const dataIndex = clickedElement.index;
+				const meetingId = meetingIds[dataIndex];
 				const meetingNumber = meetingNumbers[dataIndex];
 				
 				// Fetch and display comments
-				fetchAndDisplayComments(meetingNumber);
+				fetchAndDisplayComments(meetingId, meetingNumber);
 			} : undefined
 		}
 	});
 
 	// Function to fetch and display comments (Desktop/iPad only)
-	function fetchAndDisplayComments(meetingNumber) {
+	function fetchAndDisplayComments(meetingId, meetingNumber) {
 		if (isMobile) return;
 		
 		const container = document.getElementById('npsCommentsContainer');
@@ -320,7 +322,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			container.scrollIntoView({ behavior: 'smooth', block: 'start' });
 		}, 100);
 		
-		fetch(`/voting/nps/comments/${meetingNumber}`)
+		fetch(`/voting/nps/comments/${meetingId}`)
 			.then(response => response.json())
 			.then(data => {
 				meetingDateEl.textContent = data.meeting_date || '';

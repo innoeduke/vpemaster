@@ -2,7 +2,7 @@
 
 // Note: This script assumes the following global variables are defined in the HTML:
 // - isAdminView (Boolean)
-// - selectedMeetingNumber (String or Number)
+// - selectedMeetingId (Number)
 
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (results.classList.contains("active")) return;
         this.dataset.previousValue = this.value;
         this.dataset.previousId = this.dataset.currentId;
-        
+
         // Hide placeholder on focus
         this.dataset.savedPlaceholder = this.placeholder;
         this.placeholder = "";
@@ -45,24 +45,24 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Handle clicks on recommendation badges
     document.addEventListener("click", function (e) {
-        const badge = e.target.closest(".recommendation-badge");
-        if (badge) {
-            const container = badge.closest(".recommended-members-container");
-            const sessionId = container.dataset.sessionId;
-            const contactId = badge.dataset.contactId;
-            const contactName = badge.dataset.contactName;
-            
-            // Find the input for this session
-            const inputRow = document.querySelector(`tr[data-session-id="${sessionId}"]:not(.recommendation-row)`);
-            if (inputRow) {
-                const input = inputRow.querySelector(".admin-assign-input");
-                const results = inputRow.querySelector(".autocomplete-results");
-                
-                if (input && results) {
-                    selectContact(sessionId, contactId, contactName, input, results);
-                }
-            }
+      const badge = e.target.closest(".recommendation-badge");
+      if (badge) {
+        const container = badge.closest(".recommended-members-container");
+        const sessionId = container.dataset.sessionId;
+        const contactId = badge.dataset.contactId;
+        const contactName = badge.dataset.contactName;
+
+        // Find the input for this session
+        const inputRow = document.querySelector(`tr[data-session-id="${sessionId}"]:not(.recommendation-row)`);
+        if (inputRow) {
+          const input = inputRow.querySelector(".admin-assign-input");
+          const results = inputRow.querySelector(".autocomplete-results");
+
+          if (input && results) {
+            selectContact(sessionId, contactId, contactName, input, results);
+          }
         }
+      }
     });
 
     // Close results when clicking outside
@@ -175,15 +175,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
   document.querySelectorAll(".timeline-event").forEach((item) => {
     item.addEventListener("click", function () {
-      const meetingNumber = this.dataset.meetingNumber;
-      if (meetingNumber) {
-        window.location.href = "/booking/" + meetingNumber;
+      const meetingId = this.dataset.meetingId;
+      if (meetingId) {
+        window.location.href = "/booking/" + meetingId;
       }
     });
   });
 
 });
- // End of DOMContentLoaded listener
+// End of DOMContentLoaded listener
 
 
 function resetRole(btn, sessionId) {
@@ -191,20 +191,20 @@ function resetRole(btn, sessionId) {
   const input = row.querySelector('.admin-assign-input');
 
   if (!input) {
-      console.error("Input not found for reset button", { sessionId });
-      return;
+    console.error("Input not found for reset button", { sessionId });
+    return;
   }
-  
+
   if (!input.dataset.currentId || input.dataset.currentId === "0") {
-      // Check for multi-owner inputs
-      const multiInputs = row.querySelectorAll('.admin-assign-input');
-      if (multiInputs.length > 0) {
-          // If any input has a value, proceed with unassign
-          const hasAssigned = Array.from(multiInputs).some(inp => inp.dataset.currentId && inp.dataset.currentId !== "0");
-          if (!hasAssigned) return;
-      } else {
-          return; // Already unassigned
-      }
+    // Check for multi-owner inputs
+    const multiInputs = row.querySelectorAll('.admin-assign-input');
+    if (multiInputs.length > 0) {
+      // If any input has a value, proceed with unassign
+      const hasAssigned = Array.from(multiInputs).some(inp => inp.dataset.currentId && inp.dataset.currentId !== "0");
+      if (!hasAssigned) return;
+    } else {
+      return; // Already unassigned
+    }
   }
 
   // To unassign ALL owners, we pass contactId=0 and no previousValue/previousId
@@ -291,7 +291,7 @@ function removeWaitlist(sessionId, contactId) {
 function assignRole(sessionId, contactId, selectElement) {
   // For shared roles, we need to know which owner to replace
   const previousContactId = selectElement ? selectElement.dataset.previousId : null;
-  
+
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -322,9 +322,9 @@ function assignRole(sessionId, contactId, selectElement) {
           selectElement.value = selectElement.dataset.previousValue;
           selectElement.dataset.currentId = selectElement.dataset.previousId;
           if (selectElement.dataset.currentId === "0") {
-              selectElement.classList.add("unassigned-role");
+            selectElement.classList.add("unassigned-role");
           } else {
-              selectElement.classList.remove("unassigned-role");
+            selectElement.classList.remove("unassigned-role");
           }
         }
       }
@@ -484,12 +484,12 @@ function syncTally() {
     return;
   }
 
-  if (!selectedMeetingNumber) {
+  if (!selectedMeetingId) {
     alert("No meeting selected.");
     return;
   }
 
-  fetch(`/agenda/sync_tally/${selectedMeetingNumber}`, {
+  fetch(`/agenda/sync_tally/${selectedMeetingId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" }
   })

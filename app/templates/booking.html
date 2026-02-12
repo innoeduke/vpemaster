@@ -9,8 +9,8 @@
     {% if user_role != 'Guest' %}
     <div class="filters-container premium">
         <div class="filter-row-premium">
-            {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number,
-            label=None,
+            {{ render_meeting_filter(upcoming_meetings, selected_meeting_id,
+            label=None, data_format='tuple',
             render_outer_container=False) }}
             <div class="filter-right">
                 {#
@@ -42,7 +42,7 @@
                     {% if user_bookings_by_date %}
                     <div class="horizontal-timeline">
                         {% for group in user_bookings_by_date %}
-                        <div class="timeline-event" data-meeting-number="{{ group.date_info.meeting_number }}">
+                        <div class="timeline-event" data-meeting-id="{{ group.date_info.meeting_id }}">
                             <div class="timeline-header">
                                 <span class="meeting-number">#{{ group.date_info.meeting_number }}</span>
                                 <span class="meeting-date">{{ group.date_info.short_date }}</span>
@@ -350,9 +350,9 @@
 
     {% if selected_meeting.status == 'finished' or (selected_meeting.status == 'running' and not is_admin_view) %}
     <p>Booking for Meeting #{{
-        selected_meeting_number }} is closed.
+        selected_meeting.Meeting_Number }} is closed.
         Please visit the <a
-            href="{{ url_for('voting_bp.voting', selected_meeting_number=selected_meeting_number) }}">Voting
+            href="{{ url_for('voting_bp.voting', meeting_id=selected_meeting_id) }}">Voting
             page</a> to cast your votes.</p>
     {% else %}
     {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
@@ -368,7 +368,7 @@
 <script>
     // Pass Python data to global JS variables used by booking.js
     var isAdminView = {{ is_admin_view| tojson }};
-    var selectedMeetingNumber = {{ selected_meeting_number| tojson }};
+    var selectedMeetingId = {{ selected_meeting_id| tojson }};
     var allContacts = [
         {% for contact in contacts %}
         {

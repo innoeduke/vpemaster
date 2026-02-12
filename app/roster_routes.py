@@ -27,20 +27,23 @@ def roster():
                (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
     limit_past = 8 if is_guest else None
     
-    all_meetings, default_meeting_num = get_meetings_by_status(limit_past=limit_past)
-    meeting_numbers = [m.Meeting_Number for m in all_meetings]
+    all_meetings, default_meeting_id = get_meetings_by_status(
+        limit_past=limit_past, 
+        columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number]
+    )
+    meeting_ids = [m[0] for m in all_meetings]
 
-    selected_meeting_str = request.args.get('meeting_number')
+    selected_meeting_id_str = request.args.get('meeting_id')
     
-    if selected_meeting_str:
+    if selected_meeting_id_str:
         try:
-            selected_meeting_num = int(selected_meeting_str)
+            selected_meeting_id = int(selected_meeting_id_str)
         except ValueError:
-            selected_meeting_num = None
+            selected_meeting_id = None
     else:
-        selected_meeting_num = default_meeting_num
-        if not selected_meeting_num and meeting_numbers:
-            selected_meeting_num = meeting_numbers[0]
+        selected_meeting_id = default_meeting_id
+        if not selected_meeting_id and meeting_ids:
+            selected_meeting_id = meeting_ids[0]
 
     # Get all contacts for the dropdown menu, filtered by club
     contacts = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)\
@@ -52,19 +55,19 @@ def roster():
     roles_map = {}
     next_unallocated_entry = None
     
-    if selected_meeting_num:
-        query = Meeting.query.filter(Meeting.Meeting_Number == selected_meeting_num)
-        if club_id:
-            query = query.filter(Meeting.club_id == club_id)
-        selected_meeting = query.first()
-
-        # Get roster entries for this meeting (including unallocated entries)
-        roster_entries = Roster.query\
-            .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
-            .outerjoin(Contact, Roster.contact_id == Contact.id)\
-            .filter(Roster.meeting_number == selected_meeting_num)\
-            .order_by(Roster.order_number.asc())\
-            .all()
+    if selected_meeting_id:
+        selected_meeting = Meeting.query.get(selected_meeting_id)
+        if selected_meeting and (club_id and selected_meeting.club_id != club_id):
+             selected_meeting = None
+ 
+        if selected_meeting:
+            # Get roster entries for this meeting (including unallocated entries)
+            roster_entries = Roster.query\
+                .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
+                .outerjoin(Contact, Roster.contact_id == Contact.id)\
+                .filter(Roster.meeting_id == selected_meeting_id)\
+                .order_by(Roster.order_number.asc())\
+                .all()
         
         # Auto-sync officers to roster
         club_officers = [c for c in contacts if c.user and c.user.has_role(Permissions.STAFF)]
@@ -78,7 +81,8 @@ def roster():
             
             for off in missing_officers:
                 new_off_entry = Roster(
-                    meeting_number=selected_meeting_num,
+                    meeting_id=selected_meeting_id,
+                    meeting_number=selected_meeting.Meeting_Number, # Keep meeting_number for now as it's still used in Roster model
                     contact_id=off.id,
                     contact_type='Officer',
                     order_number=next_off_order,
@@ -93,14 +97,15 @@ def roster():
                 roster_entries = Roster.query\
                     .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
                     .outerjoin(Contact, Roster.contact_id == Contact.id)\
-                    .filter(Roster.meeting_number == selected_meeting_num)\
+                    .filter(Roster.meeting_id == selected_meeting_id)\
                     .order_by(Roster.order_number.asc())\
                     .all()
             except Exception as e:
                 db.session.rollback()
                 print(f"Error syncing officers: {e}")
 
-        roles_map = RoleService.get_role_takers(selected_meeting_num, club_id)
+        # Roles map
+        roles_map = RoleService.get_role_takers(selected_meeting_id, club_id)
                 
         if roster_entries:
             valid_orders = [entry.order_number for entry in roster_entries if entry.order_number is not None and entry.order_number < 1000]
@@ -123,12 +128,11 @@ def roster():
     return render_template(
         'roster.html',
         all_meetings=all_meetings,
+        selected_meeting_id=selected_meeting_id,
         selected_meeting=selected_meeting,
-        selected_meeting_num=selected_meeting_num,
         roles_map=roles_map,
         roster_entries=roster_entries,
         contacts=contacts,
-        meeting_numbers=meeting_numbers,
         next_unallocated_entry=next_unallocated_entry,
         pathways=pathways,
         tickets=tickets,
@@ -207,7 +211,7 @@ def create_roster_entry():
     """Create a new roster entry"""
     data = request.get_json()
 
-    required_fields = ['meeting_number', 'order_number', 'ticket']
+    required_fields = ['meeting_id', 'order_number', 'ticket']
     for field in required_fields:
         if field not in data or not data[field]:
             return jsonify({'error': f'Missing required field: {field}'}), 400
@@ -218,7 +222,8 @@ def create_roster_entry():
          return jsonify({'error': f'Invalid ticket type: {ticket_name}'}), 400
 
     new_entry = Roster(
-        meeting_number=data['meeting_number'],
+        meeting_id=data['meeting_id'],
+        meeting_number=data.get('meeting_number', 0), # Optional fallback
         order_number=data['order_number'],
         ticket_id=ticket_obj.id
     )

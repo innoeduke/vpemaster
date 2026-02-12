@@ -15,8 +15,8 @@ import copy
 class MeetingExportService:
     """Primary service to generate meeting Excel exports."""
     @staticmethod
-    def generate_meeting_xlsx(meeting_number):
-        context = MeetingExportContext(meeting_number)
+    def generate_meeting_xlsx(meeting_id_or_num):
+        context = MeetingExportContext(meeting_id_or_num)
         if not context.meeting:
             return None
             
@@ -398,9 +398,9 @@ class MeetingExportService:
                             paragraph.text = updated_text
 
     @staticmethod
-    def generate_meeting_pptx(meeting_number):
+    def generate_meeting_pptx(meeting_id_or_num):
         """Generate PowerPoint presentation for a meeting."""
-        context = MeetingExportContext(meeting_number)
+        context = MeetingExportContext(meeting_id_or_num)
         meeting = context.meeting
         if not meeting:
             return None

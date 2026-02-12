@@ -63,6 +63,7 @@ class RosterRole(db.Model):
 class Roster(db.Model):
     __tablename__ = 'roster'
     id = db.Column(db.Integer, primary_key=True)
+    meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), nullable=True, index=True)
     meeting_number = db.Column(db.Integer, nullable=False)
     order_number = db.Column(db.Integer, nullable=True)
     ticket_id = db.Column(db.Integer, db.ForeignKey('tickets.id'), nullable=True)
@@ -114,18 +115,31 @@ class Roster(db.Model):
             cls.query.filter(cls.id.in_(roster_ids)).delete(synchronize_session=False)
 
     @staticmethod
-    def sync_role_assignment(meeting_number, contact_id, role_obj, action):
+    def sync_role_assignment(meeting_id_or_num, contact_id, role_obj, action, is_meeting_id=False):
         """
         Sync roster role assignments when booking/agenda changes.
         """
         if not contact_id or not role_obj:
             return
         
+        from .meeting import Meeting
         # Find roster entry for this contact in this meeting
-        roster_entry = Roster.query.filter_by(
-            meeting_number=meeting_number,
-            contact_id=contact_id
-        ).first()
+        if is_meeting_id:
+            meeting_id = meeting_id_or_num
+            meeting = db.session.get(Meeting, meeting_id)
+            meeting_number = meeting.Meeting_Number if meeting else 0
+            roster_entry = Roster.query.filter_by(
+                meeting_id=meeting_id,
+                contact_id=contact_id
+            ).first()
+        else:
+            meeting_number = meeting_id_or_num
+            meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+            meeting_id = meeting.id if meeting else None
+            roster_entry = Roster.query.filter_by(
+                meeting_number=meeting_number,
+                contact_id=contact_id
+            ).first()
         
         # Fetch contact details for field syncing
         from .contact import Contact
@@ -143,8 +157,9 @@ class Roster(db.Model):
                 new_order = None
                 if is_officer:
                     # Officers get the next available order number starting from 1000
+                    base_filter = Roster.meeting_id == meeting_id_or_num if is_meeting_id else Roster.meeting_number == meeting_id_or_num
                     max_order = db.session.query(func.max(Roster.order_number)).filter(
-                        Roster.meeting_number == meeting_number,
+                        base_filter,
                         Roster.order_number >= 1000
                     ).scalar()
                     new_order = (max_order or 999) + 1
@@ -164,6 +179,7 @@ class Roster(db.Model):
                     ticket_obj = Ticket.query.filter_by(name="Role-taker").first()
 
                 roster_entry = Roster(
+                    meeting_id=meeting_id,
                     meeting_number=meeting_number,
                     contact_id=contact_id,
                     order_number=new_order,
@@ -186,9 +202,9 @@ class Roster(db.Model):
             from .meeting import Meeting
             remaining_role_session = db.session.query(SessionLog.id)\
                 .join(SessionType, SessionLog.Type_ID == SessionType.id)\
-                .join(Meeting, SessionLog.Meeting_Number == Meeting.Meeting_Number)\
+                .join(Meeting, SessionLog.meeting_id == Meeting.id)\
                 .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
-                .filter(SessionLog.Meeting_Number == meeting_number)\
+                .filter(SessionLog.meeting_id == meeting_id)\
                 .filter(db.exists().where(
                     db.and_(
                         OwnerMeetingRoles.contact_id == contact_id,

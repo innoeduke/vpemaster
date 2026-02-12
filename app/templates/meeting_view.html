@@ -6,12 +6,8 @@
 {% block speech_log_toolbar %}
     <div class="filters-container">
         <div class="filter-row-premium">
-            <div class="filter-group-premium">
-                 <label class="label-premium label-filter">Select Meeting:</label>
-                 {% from "components/meeting_filter.html" import render_meeting_filter %}
-                 {{ render_meeting_filter(upcoming_meetings|sort(attribute=0, reverse=True), selected_meeting_number, base_url=None, label="", render_outer_container=False) }}
-            </div>
-            
+            {% from "components/meeting_filter.html" import render_meeting_filter %}
+            {{ render_meeting_filter(upcoming_meetings, selected_meeting_id, base_url=None, label="", render_outer_container=False, data_format='tuple') }}
             <div class="view-mode-toggle">
                 <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn-view-control btn-member-view">
                     <i class="fas fa-user-circle"></i> Member

@@ -135,7 +135,7 @@ def _parse_filters(is_member_view, can_view_all):
     Returns: dict with filter values
     """
     filters = {
-        'meeting_number': request.args.get('meeting_number'),
+        'meeting_id': request.args.get('meeting_id'),
         'pathway': request.args.get('pathway'),
         'level': request.args.get('level'),
         'speaker_id': request.args.get('speaker_id'),
@@ -376,9 +376,9 @@ def _fetch_logs_with_filters(filters):
         # Filter out officer roles (SAA, President, etc.)
         logs = [l for l in logs if not (l.session_type and l.session_type.role and l.session_type.role.type == 'officer')]
 
-        # Apply remaining filters (meeting_number, role) manually
-        if filters['meeting_number']:
-            logs = [l for l in logs if str(l.Meeting_Number) == str(filters['meeting_number'])]
+        # Apply remaining filters (meeting_id, role) manually
+        if filters['meeting_id']:
+            logs = [l for l in logs if str(l.meeting_id) == str(filters['meeting_id'])]
         if filters['role']:
             logs = [l for l in logs if l.session_type and l.session_type.role and l.session_type.role.name == filters['role'] or l.session_type and l.session_type.Title == filters['role']]
             
@@ -409,8 +409,8 @@ def _fetch_logs_with_filters(filters):
     if is_guest:
         base_query = base_query.filter(Meeting.status != 'finished')
     
-    if filters['meeting_number']:
-        base_query = base_query.filter(SessionLog.Meeting_Number == filters['meeting_number'])
+    if filters['meeting_id']:
+        base_query = base_query.filter(SessionLog.meeting_id == filters['meeting_id'])
     if filters['role']:
         base_query = base_query.filter(or_(MeetingRole.name == filters['role'], SessionType.Title == filters['role']))
     
@@ -1410,17 +1410,31 @@ def show_speech_logs():
     filters['pathway'] = pathway_info['selected_pathway']
     
     # NEW: Get meetings for the filter (allow past meetings)
-    upcoming_meetings, default_meeting_num = get_meetings_by_status(
-        limit_past=None, columns=[Meeting.Meeting_Number, Meeting.Meeting_Date, Meeting.status])
+    upcoming_meetings, default_meeting_id = get_meetings_by_status(
+        limit_past=None, columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number], only_with_logs=False)
     
-    selected_meeting_number = filters.get('meeting_number')
+    selected_meeting_id = filters.get('meeting_id')
     
     # Only force a default meeting selection in Admin/Meeting View
     if view_mode == 'admin':
-        if not selected_meeting_number:
-            selected_meeting_number = default_meeting_num or (
+        if not selected_meeting_id:
+            selected_meeting_id = default_meeting_id or (
                 upcoming_meetings[0][0] if upcoming_meetings else None)
-            filters['meeting_number'] = selected_meeting_number
+            filters['meeting_id'] = selected_meeting_id
+            
+    # Find meeting number for display title
+    selected_meeting_number = 'N/A'
+    if selected_meeting_id:
+        # Check in upcoming_meetings first
+        for m in upcoming_meetings:
+            if str(m[0]) == str(selected_meeting_id):
+                selected_meeting_number = m[3] # Meeting_Number is at index 3
+                break
+        
+        # If not found (maybe filtered), we could fetch it from DB, but usually it's in the list
+        if selected_meeting_number == 'N/A' and upcoming_meetings:
+             # Just in case, fall back to DB or keep N/A
+             pass
     
     # 4. Get dropdown metadata (using utils)
     dropdown_data = get_dropdown_metadata()
@@ -1527,6 +1541,7 @@ def show_speech_logs():
         active_level=active_level,
         ProjectID=ProjectID,
         upcoming_meetings=upcoming_meetings,
+        selected_meeting_id=selected_meeting_id,
         selected_meeting_number=selected_meeting_number,
         progress_data_rows=progress_data_rows
     )

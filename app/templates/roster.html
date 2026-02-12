@@ -15,7 +15,7 @@
     <h1><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
     <div class="filters-control premium">
         <div class="filter-row-premium">
-            {{ render_meeting_filter(all_meetings, selected_meeting_num, label='', data_format='object', render_outer_container=False) }}
+            {{ render_meeting_filter(all_meetings, selected_meeting_id, label='', data_format='tuple', render_outer_container=False) }}
             <div class="filter-right">
                 <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn btn-info trend-btn" title="View Participation Trend">
                     <i class="fas fa-chart-line"></i> Meeting Attendance Trend
