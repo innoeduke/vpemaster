@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const createButton = document.getElementById("create-btn");
   const meetingFilter = document.getElementById("meeting-filter");
   const exportButton = document.getElementById("export-btn");
+  const jpgButton = document.getElementById("jpg-btn");
   const tableContainer = document.getElementById("table-container");
   const meetingStatusBtn = document.getElementById("meeting-status-btn");
   const tableBody = document.querySelector("#logs-table tbody");
@@ -181,6 +182,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const pptButton = document.getElementById("ppt-btn");
     if (pptButton) {
       pptButton.addEventListener("click", downloadPPT);
+    }
+    if (jpgButton) {
+      jpgButton.addEventListener("click", exportAgendaJPG);
     }
     if (tableBody) {
       tableBody.addEventListener("click", (event) => {
@@ -997,6 +1001,62 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       showCustomAlert("Select Meeting", "Please select a meeting to download PPT.");
     }
+  }
+
+  function exportAgendaJPG() {
+    if (!meetingFilter || !meetingFilter.value) {
+      showCustomAlert("Select Meeting", "Please select a meeting to export.");
+      return;
+    }
+
+    // Show a loading state on the button
+    const originalHTML = jpgButton.innerHTML;
+    jpgButton.disabled = true;
+    jpgButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+    // Add the export mode class for A4-friendly styling
+    agendaContent.classList.add("jpg-export-mode");
+
+    // Small delay to let the browser repaint with the new class
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        html2canvas(agendaContent, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+          windowWidth: 900,
+        }).then((canvas) => {
+          // Remove export mode class
+          agendaContent.classList.remove("jpg-export-mode");
+
+          // Convert to JPG and download
+          canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            const clubShortName = agendaContent.dataset.clubShortName || "club";
+            const meetingNum = agendaContent.dataset.meetingNumber || "0";
+            const meetingDate = agendaContent.dataset.meetingDate || "unknown";
+            a.href = url;
+            a.download = `${clubShortName}-${meetingNum}-Agenda-${meetingDate}.jpg`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            // Restore button
+            jpgButton.disabled = false;
+            jpgButton.innerHTML = originalHTML;
+          }, "image/jpeg", 0.95);
+        }).catch((err) => {
+          console.error("JPG export error:", err);
+          agendaContent.classList.remove("jpg-export-mode");
+          jpgButton.disabled = false;
+          jpgButton.innerHTML = originalHTML;
+          showCustomAlert("Export Error", "Failed to export agenda as image. Please try again.");
+        });
+      }, 100);
+    });
   }
 
   function updateProjectSpeakers() {

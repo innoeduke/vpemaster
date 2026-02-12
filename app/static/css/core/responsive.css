@@ -241,6 +241,12 @@
         /* Show the overlay when nav is expanded */
     }
 
+    /* Make logout button full width on mobile */
+    .logout-container a {
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
     /* Adjust main content to not be covered by the fixed header */
     .main-content {
         margin-left: 0;

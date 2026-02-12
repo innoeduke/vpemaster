@@ -7,7 +7,11 @@
 
 
 {% block content %}
-<div id="agenda-content"> {# Wrapper for edit-mode class #}
+<div id="agenda-content"
+    data-club-short-name="{{ club.short_name if club and club.short_name else '' }}"
+    data-meeting-number="{{ selected_meeting.Meeting_Number if selected_meeting else '' }}"
+    data-meeting-date="{{ selected_meeting.Meeting_Date.strftime('%Y-%m-%d') if selected_meeting and selected_meeting.Meeting_Date else '' }}"
+> {# Wrapper for edit-mode class #}
     <div class="agenda-header-container">
         <div class="agenda-header-logo">
             {% if club and club.logo_url %}
@@ -42,6 +46,9 @@
                 <p class="subtitle view-mode">
                     {{ selected_meeting.Subtitle }}
                 </p>
+                {% endif %}
+                {% if selected_meeting %}
+                <p class="jpg-export-info">Meeting #{{ selected_meeting.Meeting_Number }} | {{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') if selected_meeting.Meeting_Date else '' }}</p>
                 {% endif %}
         </div>
     </div>
@@ -124,6 +131,10 @@
                             <span>"{{ selected_meeting.WOD }}"</span>
                         </div>
                     </div>
+                    {% endif %}
+
+                    {% if selected_meeting %}
+                    <button id="jpg-btn" class="btn btn-secondary action-icon-btn" title="Export as Image"><i class="fas fa-print"></i></button>
                     {% endif %}
                 </div>
             </div>
@@ -370,6 +381,7 @@
         var ProjectID = {{ ProjectID | tojson | safe }};
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='vendor/js/html2canvas.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
     <script>
         function dismissAgendaMessage(elementId) {

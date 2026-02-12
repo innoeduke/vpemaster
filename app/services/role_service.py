@@ -106,11 +106,11 @@ class RoleService:
             # 1. Unassign Old Owners (if existed and not in new list)
             for old_id in old_owner_ids:
                 if old_id not in contact_ids:
-                    Roster.sync_role_assignment(session_log.id, old_id, role_obj, 'unassign', is_meeting_id=True)
+                    Roster.sync_role_assignment(session_log.meeting_id, old_id, role_obj, 'unassign')
             
             # 2. Assign New Owners (if exists)
             for new_id in contact_ids:
-                Roster.sync_role_assignment(session_log.id, new_id, role_obj, 'assign', is_meeting_id=True)
+                Roster.sync_role_assignment(session_log.meeting_id, new_id, role_obj, 'assign')
         
         # Invalidate Cache
         RoleService._clear_meeting_cache(session_log.meeting_id)

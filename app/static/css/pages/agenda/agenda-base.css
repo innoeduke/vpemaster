@@ -1115,3 +1115,57 @@ td.actions-column {
 		opacity: 1;
 	}
 }
+
+/* --- JPG Export Mode --- */
+#agenda-content.jpg-export-mode {
+	width: 794px;
+	max-width: 794px;
+	padding: 30px 40px;
+	background-color: #ffffff;
+}
+
+#agenda-content.jpg-export-mode .action-bar,
+#agenda-content.jpg-export-mode #edit-mode-buttons,
+#agenda-content.jpg-export-mode .orientation-warning,
+#agenda-content.jpg-export-mode .wod-display:not(.action-bar-wod),
+#agenda-content.jpg-export-mode .dismissible-info,
+#agenda-content.jpg-export-mode .modal,
+#agenda-content.jpg-export-mode .custom-modal,
+#agenda-content.jpg-export-mode #createAgendaModal {
+	display: none !important;
+}
+
+#agenda-content.jpg-export-mode .agenda-header-logo img {
+	max-width: 120px;
+}
+
+#agenda-content.jpg-export-mode .agenda-header-info .meeting-title {
+	font-size: 1.8em;
+	margin-top: 15px;
+	margin-bottom: 8px;
+}
+
+#agenda-content.jpg-export-mode .agenda-header-info .subtitle {
+	font-size: 1.1em;
+	margin-bottom: 10px;
+}
+
+#agenda-content.jpg-export-mode .footnote {
+	margin-top: 20px;
+	padding-top: 10px;
+}
+
+/* Hidden by default, shown during export */
+.jpg-export-info {
+	display: none;
+}
+
+#agenda-content.jpg-export-mode .jpg-export-info {
+	display: block;
+	font-size: 1em;
+	color: #555;
+	margin: 0 40px 15px;
+	font-weight: 600;
+	font-family: 'Montserrat', sans-serif;
+	text-align: center;
+}
