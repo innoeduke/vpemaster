@@ -386,49 +386,208 @@
   vertical-align: middle;
 }
 
-/* --- Contact Form Grid Layout --- */
+/* --- Contact Modal Refinements --- */
+#contactModal .modal-content {
+  padding: 30px;
+  max-width: 500px;
+  border-radius: 20px;
+}
+
+#contactModal .modal-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#contactModal .modal-header h2 {
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin: 0;
+  color: #000;
+}
+
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 25px;
+  gap: 15px;
+}
+
+.profile-avatar-container {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid #772432;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background-color: #f8f9fa;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.profile-avatar-container .avatar-placeholder {
+  font-size: 60px;
+  color: #ced4da;
+}
+
+.profile-avatar-container .profile-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-upload {
+  background-color: #fff;
+  color: #772432;
+  border: 1.5px solid #772432;
+  padding: 6px 20px;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.btn-upload:hover {
+  background-color: #772432;
+  color: #fff;
+}
+
 .contact-form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 10px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  grid-template-rows: auto auto auto auto; /* Allow rows to size naturally */
 }
 
 .contact-form-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  grid-column: span 2; /* Default: half width */
+  text-align: left;
 }
 
 .contact-form-item.full-width {
-  grid-column: 1 / -1;
+  grid-column: span 4; /* Full width */
+}
+
+.contact-form-item.email-column {
+  grid-column: span 3;
+  grid-row: 2;
+}
+
+.contact-form-item.phone-column {
+  grid-column: span 3;
+  grid-row: 3;
+}
+
+.contact-form-item.dtm-cell {
+  grid-column: 4;
+  grid-row: 2 / span 2;
+  border: 1.5px solid #e9ecef;
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 15px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 25px; /* Align with label top of email field */
+}
+
+.contact-form-item.dtm-cell label {
+  margin-bottom: 0px;
+  text-align: center;
+  width: 100%;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.dtm-checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.dtm-checkbox-wrapper input[type="checkbox"] {
+  transform: scale(1.5);
+  cursor: pointer;
+  accent-color: #772432;
 }
 
 .contact-form-item label {
-  font-weight: 600;
-  font-size: 0.85em;
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 5px;
   color: #333;
 }
 
-.contact-form-item.checkbox-item {
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  padding-top: 24px; /* Align check box with labels of other inputs */
-}
 
 .contact-form-item input[type="text"],
 .contact-form-item input[type="email"],
 .contact-form-item select,
 .contact-form-item textarea {
-  width: 100%;
-  padding: 8px;
-  box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1.5px solid #e9ecef;
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 8px;
+  font-family: inherit;
+  transition: all 0.2s ease;
 }
 
-.contact-form-item textarea {
-  min-height: 80px;
-  resize: vertical;
+.contact-form-item input:focus,
+.contact-form-item select:focus,
+.contact-form-item textarea:focus {
+  border-color: #772432;
+  background-color: #fff;
+  box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
+  outline: none;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.btn-success {
+  background-color: #5cb85c;
+  color: #fff;
+  border: none;
+  padding: 10px 30px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1rem;
+  box-shadow: 0 4px 6px rgba(92, 184, 92, 0.2);
+  transition: all 0.2s ease;
+}
+
+.btn-success:hover {
+  background-color: #4cae4c;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(92, 184, 92, 0.3);
+}
+
+.required-field {
+  color: #dc3545;
+  margin-left: 2px;
+}
+
+/* Accordion refinement */
+.accordion {
+  border-radius: 12px;
+  background-color: #f8f9fa;
+  border: 1.5px solid #e9ecef;
+  margin-bottom: 10px;
+}
+
+.accordion.active {
+  background-color: #fff;
+  border-color: #772432;
+}
+
+.panel {
+  padding: 0 10px;
 }

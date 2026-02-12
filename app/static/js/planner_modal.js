@@ -17,6 +17,8 @@ const bookBtn = document.getElementById('book-btn');
 let currentMeetingRoles = [];
 let customMeetingSelect, customRoleSelect, customProjectSelect;
 
+const savePlanBtn = document.getElementById('save-plan-btn');
+
 document.addEventListener("DOMContentLoaded", function () {
     if (document.getElementById('meeting_number')) {
         customMeetingSelect = new CustomSelect('meeting_number');
@@ -34,7 +36,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (roleSelect) {
         roleSelect.addEventListener('change', () => {
-            if (projectChk) projectChk.checked = false;
+            // Only reset if not disabling
+            const selectedRole = currentMeetingRoles.find(r => r.id == roleSelect.value);
+            if (!selectedRole || selectedRole.name !== 'Prepared Speaker') {
+                if (projectChk) projectChk.checked = false;
+            }
             updateProjectVisibility();
             updateBookButtonVisibility();
         });
@@ -54,23 +60,48 @@ function openPlanModal(planData = null) {
 
     form.reset();
     document.getElementById('plan-id').value = '';
+    const planStatusInput = document.getElementById('plan-status') || { value: 'draft' };
+    if (document.getElementById('plan-status')) document.getElementById('plan-status').value = 'draft';
 
     if (projectGroup) projectGroup.style.display = 'none';
     if (projectChkGroup) projectChkGroup.style.display = 'none';
-    if (projectChk) projectChk.checked = false;
+    if (projectChk) {
+        projectChk.checked = false;
+        projectChk.disabled = false;
+        projectChk.parentElement.style.opacity = '1';
+        projectChk.parentElement.style.cursor = 'pointer';
+    }
     if (dateRow) dateRow.style.display = 'none';
     if (bookBtn) bookBtn.style.display = 'none';
-    if (roleSelect) roleSelect.innerHTML = '<option value="">Select Role</option>';
+    if (roleSelect) {
+        roleSelect.innerHTML = '<option value="">Select Role</option>';
+        if (customRoleSelect) customRoleSelect.enable();
+    }
+    if (customMeetingSelect) customMeetingSelect.enable();
+
+    if (savePlanBtn) savePlanBtn.innerText = 'Save Draft';
 
     if (planData) {
         // Edit Mode
         document.getElementById('plan-id').value = planData.id;
+        if (document.getElementById('plan-status')) document.getElementById('plan-status').value = planData.status || 'draft';
+        if (savePlanBtn) savePlanBtn.innerText = 'Save';
+
         if (customMeetingSelect) customMeetingSelect.setValue(planData.meeting_number);
         document.getElementById('notes').value = planData.notes || '';
+
+        // If status is not draft, disable meeting and role selects
+        if (planData.status && planData.status !== 'draft') {
+            if (customMeetingSelect) customMeetingSelect.disable();
+        }
 
         // Trigger meeting change to load roles, then set role
         loadMeetingRoles().then(() => {
             if (customRoleSelect) customRoleSelect.setValue(planData.role_id);
+            if (planData.status && planData.status !== 'draft') {
+                if (customRoleSelect) customRoleSelect.disable();
+                if (bookBtn) bookBtn.style.display = 'none';
+            }
 
             if (projectChk) projectChk.checked = !!planData.project_id;
             updateProjectVisibility();
@@ -131,6 +162,15 @@ async function loadMeetingRoles() {
 function updateBookButtonVisibility() {
     if (!roleSelect || !bookBtn) return;
 
+    // Check if we are in edit mode for a booked plan
+    const planId = document.getElementById('plan-id').value;
+    const planStatus = document.getElementById('plan-status')?.value || 'draft';
+
+    if (planId && planStatus !== 'draft') {
+        bookBtn.style.display = 'none';
+        return;
+    }
+
     const selectedOpt = roleSelect.options[roleSelect.selectedIndex];
     if (selectedOpt && selectedOpt.value) {
         bookBtn.style.display = 'inline-block';
@@ -146,6 +186,18 @@ function updateProjectVisibility() {
     const selectedRole = currentMeetingRoles.find(r => r.id == roleSelect.value);
     if (selectedRole && selectedRole.valid_for_project) {
         projectChkGroup.style.display = 'block';
+
+        // Enforce project for Prepared Speaker
+        if (selectedRole.name === 'Prepared Speaker') {
+            projectChk.checked = true;
+            projectChk.disabled = true;
+            projectChk.parentElement.style.opacity = '0.7';
+            projectChk.parentElement.style.cursor = 'not-allowed';
+        } else {
+            projectChk.disabled = false;
+            projectChk.parentElement.style.opacity = '1';
+            projectChk.parentElement.style.cursor = 'pointer';
+        }
 
         if (projectChk.checked) {
             projectGroup.style.display = 'block';
@@ -199,12 +251,14 @@ function updateProjectVisibility() {
 async function handleFormSubmit(e) {
     if (e) e.preventDefault();
     const planId = document.getElementById('plan-id').value;
+    const planStatus = document.getElementById('plan-status')?.value || 'draft';
+
     const data = {
         meeting_number: document.getElementById('meeting_number').value || null,
         meeting_role_id: document.getElementById('meeting_role_id').value || null,
         project_id: document.getElementById('project_id').value || null,
         notes: document.getElementById('notes').value,
-        status: 'draft'
+        status: planStatus
     };
 
     const method = planId ? 'PUT' : 'POST';

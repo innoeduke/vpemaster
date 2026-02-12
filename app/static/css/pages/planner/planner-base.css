@@ -354,6 +354,13 @@ optgroup option {
   transition: all 0.2s ease;
 }
 
+.custom-select-container.disabled .custom-select-trigger {
+  background: #f8f9fa;
+  color: #888;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .planner-container .custom-select-trigger:after,
 .planner-modal .custom-select-trigger:after {
   content: "\f078";

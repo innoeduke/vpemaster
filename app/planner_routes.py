@@ -85,6 +85,11 @@ def get_meeting_info(meeting_number):
         role_id = r['role_id']
         role_name = r['role']
         
+        # Calculate current participant count (owner + waitlist) for this slot
+        owner_id = r.get('owner_id')
+        waitlist_count = len(r.get('waitlist', []))
+        score = (1 if owner_id else 0) + waitlist_count
+        
         if role_id not in unique_roles:
             session_title = r.get('session_title')
             unique_roles[role_id] = {
@@ -94,12 +99,28 @@ def get_meeting_info(meeting_number):
                 'session_title': session_title,
                 'expected_format': RoleService.get_expected_format_for_session(session_title),
                 'session_id': r.get('session_id'),
-                'is_available': not r.get('owner_id')
+                'is_available': not owner_id,
+                'score': score
             }
-        elif unique_roles[role_id]['is_available'] == False and not r.get('owner_id'):
-            # Prioritize available slots for booking
-            unique_roles[role_id]['session_id'] = r.get('session_id')
-            unique_roles[role_id]['is_available'] = True
+        else:
+            # For roles allow multiple entries (has_single_owner=True),
+            # select the entry with the least count of owners + waitlists.
+            if r.get('has_single_owner'):
+                current_best = unique_roles[role_id]
+                if score < current_best['score']:
+                    unique_roles[role_id].update({
+                        'session_id': r.get('session_id'),
+                        'is_available': not owner_id,
+                        'score': score
+                    })
+                elif score == current_best['score']:
+                    # Tie-breaker: prioritize slots without an owner (avoids jumping behind an existing booking)
+                    if not owner_id and not unique_roles[role_id]['is_available']:
+                        unique_roles[role_id].update({
+                            'session_id': r.get('session_id'),
+                            'is_available': True,
+                            'score': score
+                        })
     
     # Sort roles by name alphabetically
     sorted_roles = sorted(unique_roles.values(), key=lambda x: x['name'])
@@ -128,6 +149,10 @@ def create_plan():
     db.session.add(new_plan)
     db.session.commit()
     
+    # Invalidate booking page cache for this meeting
+    if new_plan.meeting_number:
+        RoleService._clear_meeting_cache(new_plan.meeting_number, club_id)
+    
     return jsonify({'id': new_plan.id, 'message': 'Plan created successfully'}), 201
 
 @planner_bp.route('/api/planner/<int:plan_id>', methods=['PUT'])
@@ -148,6 +173,12 @@ def update_plan(plan_id):
         plan.status = data['status']
     
     db.session.commit()
+
+    # Invalidate booking page cache for this meeting
+    if plan.meeting_number:
+        club_id = get_current_club_id()
+        RoleService._clear_meeting_cache(plan.meeting_number, club_id)
+
     return jsonify({'message': 'Plan updated successfully'})
 
 @planner_bp.route('/api/planner/<int:plan_id>/cancel', methods=['POST'])
@@ -172,12 +203,25 @@ def cancel_plan(plan_id):
                 RoleService.cancel_meeting_role(session_log, user_contact_id, is_admin=True) # is_admin=True to skip ownership check if necessary, though it should be fine
     
     db.session.commit()
+
+    # Invalidate booking page cache for this meeting
+    if plan.meeting_number:
+        club_id = get_current_club_id()
+        RoleService._clear_meeting_cache(plan.meeting_number, club_id)
+
     return jsonify({'message': 'Plan cancelled successfully'})
 
 @planner_bp.route('/api/planner/<int:plan_id>', methods=['DELETE'])
 @login_required
 def delete_plan(plan_id):
     plan = Planner.query.filter_by(id=plan_id, user_id=current_user.id).first_or_404()
+    meeting_number = plan.meeting_number
     db.session.delete(plan)
     db.session.commit()
+
+    # Invalidate booking page cache for this meeting
+    if meeting_number:
+        club_id = get_current_club_id()
+        RoleService._clear_meeting_cache(meeting_number, club_id)
+
     return jsonify({'message': 'Plan deleted successfully'})

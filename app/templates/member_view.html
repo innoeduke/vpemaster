@@ -247,6 +247,7 @@
 
 {% block speech_log_scripts %}
 {{ super() }}
+<script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/components/custom_select_adapter.js') }}"></script>
 <script src="{{ url_for('static', filename='js/planner_modal.js') }}"></script>
 <script>

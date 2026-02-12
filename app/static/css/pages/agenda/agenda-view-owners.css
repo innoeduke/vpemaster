@@ -110,8 +110,9 @@
 }
 
 #logs-table th.col-view-duration-header,
-#logs-table td.col-view-duration {
-    text-align: center !important;
+#logs-table tbody td.col-view-duration {
+    text-align: center;
+    vertical-align: top;
 }
 
 /* Section Row Overrides */

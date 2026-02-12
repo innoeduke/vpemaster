@@ -110,6 +110,15 @@
                     {% else %}
                     <img src="{{ url_for('static', filename='default_avatar.jpg') }}" alt="Default Avatar">
                     {% endif %}
+                    
+                    {% if role.owner_planner_notes %}
+                    <div class="planner-note-tooltip">
+                        <div class="tooltip-bubble">
+                            {{ role.owner_planner_notes }}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     {% if is_admin_view and role.owner_id %}
                     <button class="avatar-remove-btn"
                         onclick="removeOwner('{{ role.session_id }}', '{{ role.owner_id }}')" title="Remove">
@@ -132,6 +141,15 @@
                     {% else %}
                     <img src="{{ url_for('static', filename='default_avatar.jpg') }}" alt="Default Avatar">
                     {% endif %}
+
+                    {% if owner.planner_notes %}
+                    <div class="planner-note-tooltip">
+                        <div class="tooltip-bubble">
+                            {{ owner.planner_notes }}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     {% if is_admin_view %}
                     <button class="avatar-remove-btn" onclick="removeOwner('{{ role.session_id }}', '{{ owner.id }}')"
                         title="Remove">
@@ -160,6 +178,15 @@
                     {% else %}
                     <img src="{{ url_for('static', filename='default_avatar.jpg') }}" alt="Default Avatar">
                     {% endif %}
+
+                    {% if user.planner_notes %}
+                    <div class="planner-note-tooltip">
+                        <div class="tooltip-bubble">
+                            {{ user.planner_notes }}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     {% if is_admin_view %}
                     <button class="avatar-remove-btn" onclick="removeWaitlist('{{ role.session_id }}', '{{ user.id }}')"
                         title="Remove">

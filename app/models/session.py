@@ -679,11 +679,26 @@ class SessionLog(db.Model):
             
             if primary_owner and (log.Project_ID or is_prepared):
                 new_path_level = None
-                # Basic derivation
+                
+                # REFINEMENT: If it's a prepared speech, prioritize project from Planner
+                # This fixes the bug where profile.Next_Project would override the planner selection
+                if is_prepared and primary_owner.user_id:
+                    from .planner import Planner
+                    # Use meeting id and role id for consistency with RoleService
+                    plan_entry = Planner.query.filter_by(
+                        user_id=primary_owner.user_id,
+                        meeting_number=log.Meeting_Number,
+                        meeting_role_id=role_obj.id if role_obj else None
+                    ).first()
+                    
+                    if plan_entry and plan_entry.project_id:
+                        log.Project_ID = plan_entry.project_id
+                
+                # Basic derivation (will use updated log.Project_ID)
                 new_path_level = log.derive_project_code(primary_owner)
                 
-                # Auto-Resolution from Next_Project for Prepared Speeches
-                if primary_owner.Next_Project and is_prepared:
+                # Auto-Resolution from Next_Project for Prepared Speeches ONLY IF still not resolved or generic
+                if primary_owner.Next_Project and is_prepared and (not log.Project_ID or log.Project_ID == ProjectID.GENERIC):
                     current_path_name = primary_owner.Current_Path
                     if current_path_name:
                         pathway = Pathway.query.filter_by(name=current_path_name).first()

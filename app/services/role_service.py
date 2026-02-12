@@ -489,6 +489,15 @@ class RoleService:
             
         session_logs = query.all()
         
+        # Fetch Planner notes for this meeting to show as tooltips
+        plans = Planner.query.filter_by(meeting_number=meeting_number, club_id=club_id).all()
+        planner_notes_map = {} # (contact_id, role_id) -> notes
+        for p in plans:
+            # Match via contact_id for consistency with booking logic
+            p_contact = p.user.get_contact(club_id)
+            if p_contact and p.notes:
+                planner_notes_map[(p_contact.id, p.meeting_role_id)] = p.notes
+
         # Consolidate roles
         roles_dict = {}
         
@@ -513,6 +522,7 @@ class RoleService:
                     'owner_id': owner.id if owner else None,
                     'owner_name': owner.Name if owner else None,
                     'owner_avatar_url': owner.Avatar_URL if owner else None,
+                    'owner_planner_notes': planner_notes_map.get((owner.id, role_id)) if owner else None,
                     'session_id': log.id,
                     'icon': role_obj.icon,
                     'type': role_obj.type,
@@ -527,7 +537,8 @@ class RoleService:
                         {
                             'name': w.contact.Name,
                             'id': w.contact_id,
-                            'avatar_url': w.contact.Avatar_URL
+                            'avatar_url': w.contact.Avatar_URL,
+                            'planner_notes': planner_notes_map.get((w.contact_id, role_id))
                         } for w in log.waitlists
                     ]
                 })
@@ -550,7 +561,8 @@ class RoleService:
                             consolidated_waitlist.append({
                                 'name': w.contact.Name,
                                 'id': w.contact_id,
-                                'avatar_url': w.contact.Avatar_URL
+                                'avatar_url': w.contact.Avatar_URL,
+                                'planner_notes': planner_notes_map.get((w.contact_id, role_id))
                             })
                             seen_waitlist_ids.add(w.contact_id)
                 
@@ -568,7 +580,8 @@ class RoleService:
                         {
                             'id': o.id,
                             'name': o.Name,
-                            'avatar_url': o.Avatar_URL
+                            'avatar_url': o.Avatar_URL,
+                            'planner_notes': planner_notes_map.get((o.id, role_id))
                         } for o in all_owners
                     ],
                     'session_id': first_log.id,

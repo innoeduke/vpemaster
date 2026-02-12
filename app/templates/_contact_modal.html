@@ -1,14 +1,18 @@
 <div id="contactModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeContactModal()">&times;</span>
-    <h2 id="contactModalTitle"></h2>
+    <div class="modal-header">
+      <h2 id="contactModalTitle"></h2>
+    </div>
     <form id="contactForm" method="POST" enctype="multipart/form-data">
-      <div class="profile-avatar-container" style="margin-top: 10px;">
-        <div id="modal-avatar-placeholder" class="avatar-placeholder">
-          <i class="fas fa-user"></i>
+      <div class="profile-avatar-section">
+        <div class="profile-avatar-container">
+          <div id="modal-avatar-placeholder" class="avatar-placeholder">
+            <i class="fas fa-user"></i>
+          </div>
+          <img id="modal-avatar-img" src="" alt="Avatar" class="profile-avatar" style="display: none;"
+            onerror="this.style.display='none'; document.getElementById('modal-avatar-placeholder').style.display='flex';">
         </div>
-        <img id="modal-avatar-img" src="" alt="Avatar" class="profile-avatar" style="display: none;"
-          onerror="this.style.display='none'; document.getElementById('modal-avatar-placeholder').style.display='flex';">
 
         <div class="upload-btn-wrapper">
           <button type="button" class="btn-upload" onclick="document.getElementById('avatar-input').click()">Change
@@ -34,25 +38,25 @@
             <input type="text" id="last_name" name="last_name" />
           </div>
 
-          <!-- Row 2: Member ID & DTM (conditionally displayed Member ID, DTM always helps align) -->
-          <div class="contact-form-item" id="member_id_container" style="display: none;">
-            <label for="member_id">Member ID:</label>
-            <input type="text" id="member_id" name="member_id" placeholder="Optional" />
-          </div>
-          <!-- DTM is small, maybe group it or let it float. 
-                 Let's put DTM next to Member ID if visible, or on its own. 
-                 For now, let's keep the grid flexible. -->
-          <div class="contact-form-item checkbox-item">
-            <label for="dtm" style="display:inline-block; margin-right: 8px;">DTM:</label>
-            <input type="checkbox" id="dtm" name="dtm" style="width: auto;" />
-          </div>
-
-          <!-- Row 3: Email & Phone -->
-          <div class="contact-form-item">
+          <!-- Row 2 & 3: Email, Phone, and DTM (2-row spanning) -->
+          <div class="contact-form-item email-column">
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" />
           </div>
-          <div class="contact-form-item">
+
+          <div class="contact-form-item dtm-cell">
+            <label for="dtm" class="dtm-label">DTM</label>
+            <div class="dtm-checkbox-wrapper">
+              <input type="checkbox" id="dtm" name="dtm" />
+            </div>
+            <!-- Member ID hidden inside DTM cell frame if needed, or we can move it elsewhere -->
+            <div id="member_id_container" style="display: none;">
+              <label for="member_id">Member ID:</label>
+              <input type="text" id="member_id" name="member_id" placeholder="Optional" />
+            </div>
+          </div>
+
+          <div class="contact-form-item phone-column">
             <label for="phone_number">Phone:</label>
             <input type="text" id="phone_number" name="phone_number" />
           </div>

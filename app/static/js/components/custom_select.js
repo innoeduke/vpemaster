@@ -31,6 +31,7 @@ class CustomSelect {
 			this.container.appendChild(this.optionsList);
 
 			this.trigger.onclick = (e) => {
+				if (this.select.disabled) return;
 				e.preventDefault();
 				e.stopPropagation();
 				// Close other open selects
@@ -146,5 +147,15 @@ class CustomSelect {
 		this.select.value = val;
 		this.select.dispatchEvent(new Event('change'));
 		this.refresh();
+	}
+
+	disable() {
+		this.select.disabled = true;
+		this.container.classList.add('disabled');
+	}
+
+	enable() {
+		this.select.disabled = false;
+		this.container.classList.remove('disabled');
 	}
 }
