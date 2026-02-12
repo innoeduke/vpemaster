@@ -103,9 +103,9 @@ class Roster(db.Model):
         return [role.name for role in self.roles]
 
     @classmethod
-    def delete_for_meeting(cls, meeting_number):
+    def delete_for_meeting(cls, meeting_id):
         """Deletes all roster entries and associated roles for a meeting."""
-        rosters = cls.query.filter_by(meeting_number=meeting_number).all()
+        rosters = cls.query.filter_by(meeting_id=meeting_id).all()
         roster_ids = [r.id for r in rosters]
         
         if roster_ids:
@@ -115,31 +115,18 @@ class Roster(db.Model):
             cls.query.filter(cls.id.in_(roster_ids)).delete(synchronize_session=False)
 
     @staticmethod
-    def sync_role_assignment(meeting_id_or_num, contact_id, role_obj, action, is_meeting_id=False):
+    def sync_role_assignment(meeting_id, contact_id, role_obj, action):
         """
         Sync roster role assignments when booking/agenda changes.
         """
         if not contact_id or not role_obj:
             return
         
-        from .meeting import Meeting
         # Find roster entry for this contact in this meeting
-        if is_meeting_id:
-            meeting_id = meeting_id_or_num
-            meeting = db.session.get(Meeting, meeting_id)
-            meeting_number = meeting.Meeting_Number if meeting else 0
-            roster_entry = Roster.query.filter_by(
-                meeting_id=meeting_id,
-                contact_id=contact_id
-            ).first()
-        else:
-            meeting_number = meeting_id_or_num
-            meeting = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
-            meeting_id = meeting.id if meeting else None
-            roster_entry = Roster.query.filter_by(
-                meeting_number=meeting_number,
-                contact_id=contact_id
-            ).first()
+        roster_entry = Roster.query.filter_by(
+            meeting_id=meeting_id,
+            contact_id=contact_id
+        ).first()
         
         # Fetch contact details for field syncing
         from .contact import Contact
@@ -157,7 +144,7 @@ class Roster(db.Model):
                 new_order = None
                 if is_officer:
                     # Officers get the next available order number starting from 1000
-                    base_filter = Roster.meeting_id == meeting_id_or_num if is_meeting_id else Roster.meeting_number == meeting_id_or_num
+                    base_filter = Roster.meeting_id == meeting_id
                     max_order = db.session.query(func.max(Roster.order_number)).filter(
                         base_filter,
                         Roster.order_number >= 1000
@@ -244,14 +231,14 @@ class Waitlist(db.Model):
     contact = db.relationship('Contact', back_populates='waitlists')
 
     @classmethod
-    def delete_for_meeting(cls, meeting_number):
+    def delete_for_meeting(cls, meeting_id):
         """Deletes all waitlist entries associated with a meeting."""
         from .session import SessionLog
         from app.auth.permissions import Permissions
         from app.models.meeting import Meeting
         
         # Find session logs for the meeting to identify relevant waitlists
-        session_logs = SessionLog.query.filter_by(Meeting_Number=meeting_number).all()
+        session_logs = SessionLog.query.filter_by(meeting_id=meeting_id).all()
         session_log_ids = [log.id for log in session_logs]
         
         if session_log_ids:

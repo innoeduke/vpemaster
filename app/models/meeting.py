@@ -145,29 +145,44 @@ class Meeting(db.Model):
         from .planner import Planner
         
         try:
-            # 1. Delete Waitlist entries
-            Waitlist.delete_for_meeting(self.Meeting_Number)
+            meeting_id = self.id
+            target_club_id = self.club_id
+            target_number = self.Meeting_Number
+            
+            Waitlist.delete_for_meeting(meeting_id)
+            SessionLog.delete_for_meeting(meeting_id)
+            Roster.delete_for_meeting(meeting_id)
+            Vote.delete_for_meeting(meeting_id)
+            Planner.delete_for_meeting(meeting_id)
 
-            # 2. Delete SessionLog entries
-            SessionLog.delete_for_meeting(self.Meeting_Number)
-
-            # 3. Delete Roster and RosterRole entries
-            Roster.delete_for_meeting(self.Meeting_Number)
-
-            # 4. Delete Vote entries
-            Vote.delete_for_meeting(self.Meeting_Number)
-
-            # 5. Delete Planner entries
-            Planner.delete_for_meeting(self.Meeting_Number)
-
-            # 6. Handle Meeting's Media
+            db.session.flush()
+            
             if self.media_id:
                 media_to_delete = self.media
                 self.media_id = None # Break the link first
                 db.session.delete(media_to_delete)
 
-            # 6. Delete the Meeting itself
             db.session.delete(self)
+            db.session.flush()
+
+            subsequent_meetings = Meeting.query.filter(
+                Meeting.club_id == target_club_id,
+                Meeting.Meeting_Number > target_number
+            ).order_by(Meeting.Meeting_Number.asc()).all()
+
+            for m in subsequent_meetings:
+                old_num = m.Meeting_Number
+                new_num = old_num - 1
+                
+                # Update child tables that have Meeting_Number columns
+                # We update by meeting_id to be safe and precise
+                SessionLog.query.filter_by(meeting_id=m.id).update({SessionLog.Meeting_Number: new_num}, synchronize_session=False)
+                Roster.query.filter_by(meeting_id=m.id).update({Roster.meeting_number: new_num}, synchronize_session=False)
+                Planner.query.filter_by(meeting_id=m.id).update({Planner.meeting_number: new_num}, synchronize_session=False)
+                Vote.query.filter_by(meeting_id=m.id).update({Vote.meeting_number: new_num}, synchronize_session=False)
+                
+                # Finally update the meeting itself
+                m.Meeting_Number = new_num
             
             db.session.commit()
             return True, None

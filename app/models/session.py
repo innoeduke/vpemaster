@@ -732,12 +732,12 @@ class SessionLog(db.Model):
         return sessions_to_update
 
     @classmethod
-    def fetch_for_meeting(cls, selected_meeting_number, meeting_obj=None):
+    def fetch_for_meeting(cls, selected_meeting_id, meeting_obj=None):
         """
         Fetches session logs for a given meeting, filtering by user role access where appropriate.
         
         Args:
-            selected_meeting_number: Meeting number to fetch logs for
+            selected_meeting_id: Meeting ID to fetch logs for
             meeting_obj: Optional meeting object for authorization check
         
         Returns:
@@ -757,7 +757,7 @@ class SessionLog(db.Model):
             )\
             .join(SessionType, cls.Type_ID == SessionType.id)\
             .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
-            .filter(cls.Meeting_Number == selected_meeting_number)\
+            .filter(cls.meeting_id == selected_meeting_id)\
             .filter(MeetingRole.name != '', MeetingRole.name.isnot(None))
 
         if not is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting_obj):
@@ -766,15 +766,15 @@ class SessionLog(db.Model):
         return query.all()
 
     @classmethod
-    def delete_for_meeting(cls, meeting_number):
+    def delete_for_meeting(cls, meeting_id):
         """Deletes all session logs for a specific meeting."""
         # Fix: Delete OwnerMeetingRoles first to avoid FK constraint
         from .meeting import Meeting
-        m = Meeting.query.filter_by(Meeting_Number=meeting_number).first()
+        m = Meeting.query.filter_by(id=meeting_id).first()
         if m:
              OwnerMeetingRoles.query.filter_by(meeting_id=m.id).delete(synchronize_session=False)
 
-        logs = cls.query.filter_by(Meeting_Number=meeting_number).all()
+        logs = cls.query.filter_by(meeting_id=meeting_id).all()
         for log in logs:
             if log.media:
                 db.session.delete(log.media)

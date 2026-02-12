@@ -21,10 +21,10 @@ class Vote(db.Model):
 
     # Add index for performance
     __table_args__ = (
-        db.Index('idx_meeting_voter', 'meeting_number', 'voter_identifier'),
+        db.Index('idx_meeting_voter', 'meeting_id', 'voter_identifier'),
     )
 
     @classmethod
-    def delete_for_meeting(cls, meeting_number):
+    def delete_for_meeting(cls, meeting_id):
         """Deletes all votes for a meeting."""
-        cls.query.filter_by(meeting_number=meeting_number).delete(synchronize_session=False)
+        cls.query.filter_by(meeting_id=meeting_id).delete(synchronize_session=False)
