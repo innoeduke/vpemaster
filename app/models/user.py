@@ -531,7 +531,8 @@ class User(UserMixin, db.Model):
              uc.contact_id = contact.id
              
         # 4. Ensure ContactClub linkage (for roster/contact management)
-        exists = ContactClub.query.filter_by(contact_id=contact.id, club_id=club_id).first()
+        with db.session.no_autoflush:
+            exists = ContactClub.query.filter_by(contact_id=contact.id, club_id=club_id).first()
         if not exists:
             db.session.add(ContactClub(contact_id=contact.id, club_id=club_id))
         

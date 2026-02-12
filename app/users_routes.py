@@ -35,6 +35,7 @@ def _save_user_data(user=None, **kwargs):
         password = kwargs.get('password') or 'toastmasters'
         user.set_password(password)
         db.session.add(user)
+        db.session.flush()
     else:
         # Existing User
         # Calculate permissions
@@ -65,8 +66,6 @@ def _save_user_data(user=None, **kwargs):
         user.phone = kwargs.get('phone')
         user.email = kwargs.get('email') if kwargs.get('email') is not None else None
 
-    # Ensure ID exists for relationships
-    db.session.flush()
 
     # Link existing contact if provided
     contact_id = kwargs.get('contact_id')

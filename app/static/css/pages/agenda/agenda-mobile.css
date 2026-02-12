@@ -374,6 +374,7 @@
 
   /* Duration Column (Child 4) */
   #logs-table tbody tr:not(.section-row) td:nth-child(4) {
+    grid-row: 1 / span 2;
     grid-column: 3 !important;
     display: flex !important;
     align-items: flex-start !important;
