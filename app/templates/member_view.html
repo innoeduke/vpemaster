@@ -176,7 +176,7 @@
                         {% endfor %}
                     </td>
                     {% for band_data in row.bands %}
-                    <td class="band-cell">
+                    <td class="band-cell {% if band_data.is_elective %}elective-cell{% endif %}">
                         {% if band_data.is_elective and row.extra_roles %}
                         <div class="extra-roles-badge" 
                              data-role="Additional Role"

@@ -1584,6 +1584,22 @@
 	padding: 20px;
 }
 
+/* Gray out unstarted (pending) elective roles when at least one is completed.
+   Increased specificity to avoid !important. */
+.progress-table tr td.elective-cell:has(.role-badge.completed) .role-badge.pending {
+	background-color: #fafafa;
+	color: #94a3b8;
+	border-color: #cbd5e0;
+	border-style: dashed;
+	opacity: 0.6;
+}
+
+.progress-table tr td.elective-cell:has(.role-badge.completed) .role-badge.pending:hover {
+	box-shadow: none;
+	transform: none;
+	opacity: 1;
+}
+
 /* Extra Roles Badge */
 .extra-roles-badge {
 	position: absolute;
