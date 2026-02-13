@@ -81,7 +81,7 @@ class TestMeetingRolesHelper(unittest.TestCase):
         # First call populates cache
         roles_map1 = get_meeting_roles(club_id=1, meeting_number=100)
         
-        cache_key = "role_takers_1_100"
+        cache_key = f"role_takers_1_{self.meeting.id}"
         
         # Verify cache entry exists
         self.assertIsNotNone(cache.get(cache_key))

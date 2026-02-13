@@ -25,8 +25,17 @@ class TestRosterAssignment(unittest.TestCase):
         self.app_context.push()
         db.create_all()
 
+        # Create Club
+        from app.models import Club
+        self.club = Club(club_no='000000', club_name='Test Club')
+        db.session.add(self.club)
+        db.session.flush()
+
         # Setup Data
         self.meeting_num = 9999
+        from app.models import Meeting
+        self.meeting = Meeting(Meeting_Number=self.meeting_num, club_id=self.club.id)
+        db.session.add(self.meeting)
         
         self.officer_contact = Contact(Name="Test Officer", Type="Officer")
         self.member_contact = Contact(Name="Test Member", Type="Member")
@@ -55,10 +64,10 @@ class TestRosterAssignment(unittest.TestCase):
 
     def test_officer_assignment(self):
         """Test that officers get order number >= 1000 and Officer ticket"""
-        Roster.sync_role_assignment(self.meeting_num, self.officer_contact.id, self.role, 'assign')
+        Roster.sync_role_assignment(self.meeting.id, self.officer_contact.id, self.role, 'assign')
         db.session.commit()
         
-        officer_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.officer_contact.id).first()
+        officer_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.officer_contact.id).first()
         self.assertIsNotNone(officer_entry)
         self.assertGreaterEqual(officer_entry.order_number, 1000)
         self.assertEqual(officer_entry.ticket.name, "Officer")
@@ -69,32 +78,32 @@ class TestRosterAssignment(unittest.TestCase):
         db.session.add(officer2)
         db.session.commit()
 
-        Roster.sync_role_assignment(self.meeting_num, self.officer_contact.id, self.role, 'assign')
-        Roster.sync_role_assignment(self.meeting_num, officer2.id, self.role, 'assign')
+        Roster.sync_role_assignment(self.meeting.id, self.officer_contact.id, self.role, 'assign')
+        Roster.sync_role_assignment(self.meeting.id, officer2.id, self.role, 'assign')
         db.session.commit()
 
-        entry1 = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.officer_contact.id).first()
-        entry2 = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=officer2.id).first()
+        entry1 = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.officer_contact.id).first()
+        entry2 = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=officer2.id).first()
         
         self.assertEqual(entry1.order_number, 1000)
         self.assertEqual(entry2.order_number, 1001)
 
     def test_member_assignment(self):
         """Test that members get None order number and Member ticket"""
-        Roster.sync_role_assignment(self.meeting_num, self.member_contact.id, self.role, 'assign')
+        Roster.sync_role_assignment(self.meeting.id, self.member_contact.id, self.role, 'assign')
         db.session.commit()
         
-        member_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.member_contact.id).first()
+        member_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.member_contact.id).first()
         self.assertIsNotNone(member_entry)
         self.assertIsNone(member_entry.order_number)
         self.assertEqual(member_entry.ticket.name, "Early-bird (Member)")
 
     def test_guest_assignment(self):
         """Test that guests get None order number and Role Taker ticket"""
-        Roster.sync_role_assignment(self.meeting_num, self.guest_contact.id, self.role, 'assign')
+        Roster.sync_role_assignment(self.meeting.id, self.guest_contact.id, self.role, 'assign')
         db.session.commit()
         
-        guest_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.guest_contact.id).first()
+        guest_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.guest_contact.id).first()
         self.assertIsNotNone(guest_entry)
         self.assertIsNone(guest_entry.order_number)
         self.assertEqual(guest_entry.ticket.name, "Role-taker")

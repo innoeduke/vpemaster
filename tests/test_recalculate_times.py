@@ -27,7 +27,8 @@ class MockSessionType:
         return 99
 
 class MockMeeting:
-    def __init__(self, Meeting_Number, Meeting_Date, Start_Time, club_id=1, ge_mode=0):
+    def __init__(self, id, Meeting_Number, Meeting_Date, Start_Time, club_id=1, ge_mode=0):
+        self.id = id
         self.Meeting_Number = Meeting_Number
         self.Meeting_Date = Meeting_Date
         self.Start_Time = Start_Time
@@ -43,7 +44,7 @@ def test_recalculate_start_times(app):
     except ImportError:
         pytest.skip("Could not import app.agenda_routes")
     
-    meeting = MockMeeting(1, date(2026, 2, 5), time(19, 0))
+    meeting = MockMeeting(1, 1, date(2026, 2, 5), time(19, 0))
     
     # Types
     type_sect = MockSessionType(1, 'Section', True, False)

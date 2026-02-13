@@ -36,7 +36,7 @@ class TestVerifyRosterLogic(unittest.TestCase):
         db.session.add_all([self.officer_contact, self.member_contact, self.guest_contact, self.role])
         
         # Seed Tickets
-        from app.models import Ticket
+        from app.models import Ticket, Meeting
         tickets = [
             Ticket(name="Officer", price=0),
             Ticket(name="Early-bird (Member)", price=0),
@@ -44,6 +44,10 @@ class TestVerifyRosterLogic(unittest.TestCase):
             Ticket(name="Guest", price=0)
         ]
         db.session.add_all(tickets)
+        
+        from datetime import date
+        self.meeting = Meeting(Meeting_Number=self.meeting_num, Meeting_Date=date(2025, 1, 1), club_id=1)
+        db.session.add(self.meeting)
         db.session.commit()
 
     def tearDown(self):
@@ -56,26 +60,26 @@ class TestVerifyRosterLogic(unittest.TestCase):
         """Verify roster synchronization logic for different contact types"""
         
         # 1. Officer Assignment
-        Roster.sync_role_assignment(self.meeting_num, self.officer_contact.id, self.role, 'assign')
+        Roster.sync_role_assignment(self.meeting.id, self.officer_contact.id, self.role, 'assign')
         db.session.commit()
         
-        officer_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.officer_contact.id).first()
+        officer_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.officer_contact.id).first()
         self.assertGreaterEqual(officer_entry.order_number, 1000)
         self.assertEqual(officer_entry.ticket.name, "Officer")
 
         # 2. Member Assignment
-        Roster.sync_role_assignment(self.meeting_num, self.member_contact.id, self.role, 'assign')
+        Roster.sync_role_assignment(self.meeting.id, self.member_contact.id, self.role, 'assign')
         db.session.commit()
         
-        member_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.member_contact.id).first()
+        member_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.member_contact.id).first()
         self.assertIsNone(member_entry.order_number)
         self.assertEqual(member_entry.ticket.name, "Early-bird (Member)")
 
         # 3. Guest Assignment
-        Roster.sync_role_assignment(self.meeting_num, self.guest_contact.id, self.role, 'assign')
+        Roster.sync_role_assignment(self.meeting.id, self.guest_contact.id, self.role, 'assign')
         db.session.commit()
         
-        guest_entry = Roster.query.filter_by(meeting_number=self.meeting_num, contact_id=self.guest_contact.id).first()
+        guest_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.guest_contact.id).first()
         self.assertIsNone(guest_entry.order_number)
         self.assertEqual(guest_entry.ticket.name, "Role-taker")
 

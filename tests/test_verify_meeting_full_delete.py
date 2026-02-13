@@ -77,7 +77,7 @@ class TestMeetingDeletion(unittest.TestCase):
         """Test that deleting a meeting removes Roster and RosterRole entries"""
         # Verify existence
         self.assertIsNotNone(Meeting.query.filter_by(Meeting_Number=self.meeting_num).first())
-        self.assertIsNotNone(Roster.query.filter_by(meeting_number=self.meeting_num).first())
+        self.assertIsNotNone(Roster.query.filter_by(meeting_id=self.meeting.id).first())
         # Join lookup
         roster_role_exists = db.session.query(RosterRole).filter_by(roster_id=self.roster.id).first()
         self.assertIsNotNone(roster_role_exists)
@@ -90,13 +90,13 @@ class TestMeetingDeletion(unittest.TestCase):
             sess['current_club_id'] = self.club.id
             
         # Perform Deletion via Route
-        response = self.client.post(f'/agenda/status/{self.meeting_num}')
+        response = self.client.post(f'/agenda/status/{self.meeting.id}')
         self.assertEqual(response.status_code, 200, f"Response: {response.json}")
         self.assertTrue(response.json.get('deleted'), "Should return deleted=True")
         
         # Verify Deletion
         self.assertIsNone(Meeting.query.filter_by(Meeting_Number=self.meeting_num).first())
-        self.assertIsNone(Roster.query.filter_by(meeting_number=self.meeting_num).first())
+        self.assertIsNone(Roster.query.filter_by(meeting_id=self.meeting.id).first())
         
         # Verify RosterRole is gone
         roster_role_remaining = db.session.query(RosterRole).filter_by(roster_id=roster_id).first()

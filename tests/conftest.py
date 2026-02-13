@@ -22,6 +22,7 @@ def app():
         db_fd, db_path = tempfile.mkstemp()
         SQLALCHEMY_DATABASE_URI = f'sqlite:///{db_path}'
         WTF_CSRF_ENABLED = False
+        SERVER_NAME = 'localhost.localdomain'
         PRESERVE_CONTEXT_ON_EXCEPTION = False
 
     app = create_app(TestConfig)
@@ -143,7 +144,6 @@ def user1(app):
             db.session.commit()
             db.session.refresh(user)
         return user
-
 @pytest.fixture(scope='function')
 def seeded_permissions(app):
     """Seed permissions into the database."""
@@ -167,6 +167,39 @@ def seeded_permissions(app):
     yield
 
 @pytest.fixture(scope='function')
+def staff_user(app, default_club, default_contact, seeded_permissions):
+    """Create a staff user with necessary permissions."""
+    from app.models import db, User, AuthRole, UserClub
+    from app.auth.permissions import Permissions
+    with app.app_context():
+        user = User.query.filter_by(username='staff').first()
+        if not user:
+            user = User(username='staff', email='staff@example.com', status='active')
+            user.set_password('password')
+            db.session.add(user)
+            db.session.flush()
+            
+            role = AuthRole.query.filter_by(name='Staff').first()
+            if not role:
+                role = AuthRole(name='Staff', level=2)
+                db.session.add(role)
+                db.session.flush()
+            
+            # Ensure staff role has some basic permissions if they are seeded
+            from app.models import Permission
+            roster_view_perm = Permission.query.filter_by(name=Permissions.ROSTER_VIEW).first()
+            if roster_view_perm and roster_view_perm not in role.permissions:
+                role.permissions.append(roster_view_perm)
+            
+            user.roles.append(role)
+            
+            uc = UserClub(user_id=user.id, club_id=default_club.id, contact_id=default_contact.id, club_role_level=role.level)
+            db.session.add(uc)
+            db.session.commit()
+            db.session.refresh(user)
+        return user
+
+@pytest.fixture(scope='function')
 def default_contact_club(app, default_contact, default_club):
     """Get or create a default ContactClub association for testing."""
     from app.models import db, ContactClub
@@ -187,3 +220,35 @@ def default_contact_club(app, default_contact, default_club):
             db.session.refresh(cc)
         
         return cc
+
+class AuthActions:
+    def __init__(self, client):
+        self._client = client
+
+    def login(self, username='staff', password='password', club_id=1):
+        return self._client.post(
+            '/login',
+            data={'username': username, 'password': password, 'club_names': club_id},
+            follow_redirects=True
+        )
+
+    def logout(self):
+        return self._client.get('/logout', follow_redirects=True)
+
+@pytest.fixture
+def auth(client):
+    return AuthActions(client)
+
+@pytest.fixture
+def captured_templates(app):
+    recorded = []
+
+    def record(sender, template, context, **extra):
+        recorded.append(template)
+
+    from flask import template_rendered
+    template_rendered.connect(record, app)
+    try:
+        yield recorded
+    finally:
+        template_rendered.disconnect(record, app)

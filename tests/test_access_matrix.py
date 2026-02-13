@@ -275,7 +275,7 @@ class AccessMatrixTestCase(unittest.TestCase):
         if '{}' in url:
             meeting = self.meetings.get(status) # Can be None for some tests
             if meeting:
-                url = url.format(meeting.Meeting_Number)
+                url = url.format(meeting.id)
         
         # Skip if no meeting for context
         if '{}' in resource_template and not meeting:
@@ -290,7 +290,7 @@ class AccessMatrixTestCase(unittest.TestCase):
     def test_agenda_matrix(self):
         for role in self.ALL_ROLES:
             for status in self.ALL_STATUSES:
-                self.check_matrix(role, status, '/agenda?meeting_number={}')
+                self.check_matrix(role, status, '/agenda?meeting_id={}')
 
     def test_booking_matrix(self):
         for role in self.ALL_ROLES:

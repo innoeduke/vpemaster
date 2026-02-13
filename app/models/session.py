@@ -108,6 +108,18 @@ class SessionLog(db.Model):
         if self.meeting:
             return self.meeting.Meeting_Number
         return None
+
+    @Meeting_Number.setter
+    def Meeting_Number(self, value):
+        """Setter for Meeting_Number for backward compatibility in tests."""
+        from .meeting import Meeting
+        # Find the meeting by number and club_id if possible
+        # This is primarily for test setup where Meeting_Number is used
+        if not self.meeting:
+             m = Meeting.query.filter_by(Meeting_Number=value).first()
+             if m:
+                 self.meeting = m
+                 self.meeting_id = m.id
     Meeting_Seq = db.Column(db.Integer)
     # For custom titles like speeches
     Session_Title = db.Column(db.String(255))

@@ -274,7 +274,7 @@ def _get_roles_for_booking(meeting_id, current_user_contact_id, selected_meeting
 
     # For 'not started' or 'unpublished' meetings, only show Topics Speaker to admins
     is_admin_booker = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting)
-    if selected_meeting.status in ['not started', 'unpublished'] and not is_admin_booker:
+    if selected_meeting and selected_meeting.status in ['not started', 'unpublished'] and not is_admin_booker:
         sorted_roles = [
             role for role in sorted_roles
             if role['role'] != "Topics Speaker"
@@ -412,7 +412,7 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
     
     # 1. Guests can ONLY access 'running' meetings
     if not user:
-        if selected_meeting.status != 'running':
+        if selected_meeting and selected_meeting.status != 'running':
             context['redirect_to_not_started'] = True
             return context
 

@@ -3,7 +3,7 @@
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask import Blueprint, render_template, request, session, jsonify, current_app, redirect, url_for
-from .models import SessionLog, SessionType, Contact, Meeting, User, MeetingRole, Vote
+from .models import SessionLog, SessionType, Contact, Meeting, User, MeetingRole, Vote, AuthRole
 from . import db
 from datetime import datetime
 import secrets
@@ -309,10 +309,9 @@ def _get_voting_page_context(meeting_id):
             return context
 
     if selected_meeting and selected_meeting.status == 'unpublished' and not (is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)):
-        context['force_not_started'] = True
-        context['selected_meeting'] = selected_meeting
-        context['roles'] = [] # Prevent data leakage
-        return context
+        return {
+            'redirect': url_for('agenda_bp.meeting_notice', meeting_id=meeting_id)
+        }
 
     context['selected_meeting'] = selected_meeting
     
@@ -358,6 +357,10 @@ def _get_voting_page_context(meeting_id):
 def voting(meeting_id):
     """Main voting page route."""
     context = _get_voting_page_context(meeting_id)
+    
+    # Handle redirects from context
+    if isinstance(context, dict) and 'redirect' in context:
+        return redirect(context['redirect'])
     
     # Access Control Logic
     meeting = context.get('selected_meeting')
@@ -627,7 +630,7 @@ def get_nps_comments(meeting_id):
         return jsonify({'comments': [], 'meeting_date': ''})
     
     # Get all NPS-related comments for this meeting
-    all_comments = db.session.query(Vote.score, Vote.comments, Role.role_name).join(Role, Vote.role_id == Role.id).filter(
+    all_comments = db.session.query(Vote.score, Vote.comments).filter(
         Vote.meeting_id == meeting_id,
         Vote.question == "How likely are you to recommend this meeting to a friend or colleague?",
         Vote.comments.isnot(None),
@@ -637,7 +640,6 @@ def get_nps_comments(meeting_id):
     # Also get general feedback comments
     general_comments = db.session.query(Vote.score, Vote.comments).filter(
         Vote.meeting_id == meeting_id,
-        Vote.role_id.is_(None),
         Vote.question == "More feedback/comments",
         Vote.comments.isnot(None),
         Vote.comments != ''

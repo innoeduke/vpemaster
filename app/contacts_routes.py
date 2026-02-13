@@ -637,7 +637,7 @@ def get_all_contacts_api():
     # 1. Lifetime Attendance (for Qualification)
     lifetime_attendance_counts = db.session.query(
         Roster.contact_id, func.count(Roster.id)
-    ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
+    ).join(Meeting, Roster.meeting_id == Meeting.id).filter(
         Roster.contact_id.isnot(None),
         Meeting.club_id == club_id
     ).group_by(Roster.contact_id).all()
@@ -682,7 +682,7 @@ def get_all_contacts_api():
     # 1. Attendance
     roster_query = db.session.query(
         Roster.contact_id, func.count(Roster.id)
-    ).join(Meeting, Roster.meeting_number == Meeting.Meeting_Number).filter(
+    ).join(Meeting, Roster.meeting_id == Meeting.id).filter(
         Roster.contact_id.isnot(None),
         Meeting.club_id == club_id
     )

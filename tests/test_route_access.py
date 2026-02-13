@@ -187,17 +187,17 @@ class RouteAccessTestCase(unittest.TestCase):
 
     def test_guest_access(self):
         # 1. Unpublished Meeting -> Redirect to meeting-notice page
-        response = self.client.get(f'/agenda?meeting_number={self.m_unpublished.Meeting_Number}')
+        response = self.client.get(f'/agenda?meeting_id={self.m_unpublished.id}')
         self.assertEqual(response.status_code, 302)
         self.assertIn('/meeting-notice', response.location)
         
         # Booking Unpublished -> Redirect to Login (@login_required)
-        response = self.client.get(f'/booking/{self.m_unpublished.Meeting_Number}')
+        response = self.client.get(f'/booking/{self.m_unpublished.id}')
         self.assertEqual(response.status_code, 302)
         self.assertIn('/login', response.location)
         
         # Voting Unpublished -> Redirect to meeting-notice
-        response = self.client.get(f'/voting/{self.m_unpublished.Meeting_Number}')
+        response = self.client.get(f'/voting/{self.m_unpublished.id}')
         self.assertEqual(response.status_code, 302)
         self.assertIn('/meeting-notice', response.location)
 
@@ -205,16 +205,16 @@ class RouteAccessTestCase(unittest.TestCase):
         self.login('user@test.com', 'password')
         
         # Member vs Unpublished -> Redirect to meeting-notice
-        response = self.client.get(f'/agenda?meeting_number={self.m_unpublished.Meeting_Number}')
+        response = self.client.get(f'/agenda?meeting_id={self.m_unpublished.id}')
         self.assertEqual(response.status_code, 302)
         self.assertIn('/meeting-notice', response.location)
 
         # Member vs Not Started -> 200
-        response = self.client.get(f'/agenda?meeting_number={self.m_not_started.Meeting_Number}')
+        response = self.client.get(f'/agenda?meeting_id={self.m_not_started.id}')
         self.assertEqual(response.status_code, 200, "User accessing not started agenda should be 200")
         
         # Member vs Running -> 200
-        response = self.client.get(f'/agenda?meeting_number={self.m_running.Meeting_Number}')
+        response = self.client.get(f'/agenda?meeting_id={self.m_running.id}')
         self.assertEqual(response.status_code, 200, "User accessing running agenda should be 200")
         
         self.logout()
@@ -223,14 +223,14 @@ class RouteAccessTestCase(unittest.TestCase):
         self.login('staff@test.com', 'password')
         
         # Staff vs Unpublished -> 200
-        response = self.client.get(f'/agenda?meeting_number={self.m_unpublished.Meeting_Number}')
+        response = self.client.get(f'/agenda?meeting_id={self.m_unpublished.id}')
         self.assertEqual(response.status_code, 200, "Staff accessing unpublished agenda should be 200")
         
-        response = self.client.get(f'/booking/{self.m_unpublished.Meeting_Number}')
+        response = self.client.get(f'/booking/{self.m_unpublished.id}')
         self.assertEqual(response.status_code, 200)
         
         # Voting Unpublished -> Staff (Redirect 302)
-        response = self.client.get(f'/voting/{self.m_unpublished.Meeting_Number}')
+        response = self.client.get(f'/voting/{self.m_unpublished.id}')
         self.assertEqual(response.status_code, 302)
         
         self.logout()

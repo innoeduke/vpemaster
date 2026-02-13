@@ -597,7 +597,7 @@ class RoleService:
         return roles_list
 
     @staticmethod
-    def get_role_takers(meeting_id, club_id=None):
+    def get_role_takers(meeting_id=None, club_id=None, meeting_number=None):
         """
         Get all role takers for a meeting from OwnerMeetingRoles.
         
@@ -607,6 +607,7 @@ class RoleService:
         Args:
             meeting_id: The meeting ID to query
             club_id: Optional club ID filter
+            meeting_number: Optional meeting number for backward compatibility
             
         Returns:
             dict: Map of contact_id (str) -> list of role dictionaries
@@ -617,6 +618,15 @@ class RoleService:
         if not club_id:
             club_id = get_current_club_id()
             
+        if meeting_number is not None and meeting_id is None:
+            # Resolve meeting_id for backward compatibility in tests
+            m_query = Meeting.query.filter_by(Meeting_Number=meeting_number)
+            if club_id:
+                m_query = m_query.filter_by(club_id=club_id)
+            m = m_query.first()
+            if m:
+                meeting_id = m.id
+
         if not meeting_id:
             return {}
 

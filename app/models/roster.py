@@ -71,6 +71,16 @@ class Roster(db.Model):
             return self.meeting.Meeting_Number
         return None
         
+    @meeting_number.setter
+    def meeting_number(self, value):
+        """Setter for meeting_number for backward compatibility in tests."""
+        from .meeting import Meeting
+        if not self.meeting:
+            m = Meeting.query.filter_by(Meeting_Number=value).first()
+            if m:
+                self.meeting = m
+                self.meeting_id = m.id
+        
     order_number = db.Column(db.Integer, nullable=True)
     ticket_id = db.Column(db.Integer, db.ForeignKey('tickets.id'), nullable=True)
     
