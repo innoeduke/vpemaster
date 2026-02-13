@@ -149,7 +149,9 @@ class User(UserMixin, db.Model):
 
         # 1. Global SysAdmin check: SysAdmins are admins everywhere
         if self.is_sysadmin:
+            r = Role.get_by_name(Permissions.SYSADMIN)
             roles_data.append({
+                'id': r.id if r else None,
                 'name': Permissions.SYSADMIN,
                 'type': 'officer',
                 'award_category': 'officer'
@@ -165,7 +167,9 @@ class User(UserMixin, db.Model):
         if uc:
             # Base 'User' role for any membership
             if not any(r['name'] == Permissions.USER for r in roles_data):
+                ur = Role.get_by_name(Permissions.USER)
                 roles_data.append({
+                    'id': ur.id if ur else 1, # Fallback to 1 if not found
                     'name': Permissions.USER,
                     'type': 'standard',
                     'award_category': 'user'
@@ -175,6 +179,7 @@ class User(UserMixin, db.Model):
                 for r in uc.roles:
                     if not any(rd['name'] == r.name for rd in roles_data):
                         roles_data.append({
+                            'id': r.id,
                             'name': r.name,
                             'type': 'officer' if r.name in (Permissions.CLUBADMIN, Permissions.STAFF) else 'standard',
                             'award_category': get_auth_role_category(r.name)

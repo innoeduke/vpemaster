@@ -597,7 +597,7 @@ fieldset.modal-frame .compact-form {
 }
 
 .planner-form-group {
-	margin-bottom: 1.5rem;
+	margin-bottom: 1.2rem;
 }
 
 .planner-form-group label {
@@ -744,6 +744,111 @@ fieldset.modal-frame .compact-form {
 	border-color: #e2e8f0 !important;
 }
 
+/* User Grid Layout */
+.user-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 0.6rem 1.2rem;
+}
+
+.user-grid .planner-form-group {
+	margin-bottom: 0;
+}
+
+.span-4 {
+	grid-column: span 4;
+}
+
+.span-3 {
+	grid-column: span 3;
+}
+
+.span-2 {
+	grid-column: span 2;
+}
+
+.span-1 {
+	grid-column: span 1;
+}
+
+.row-span-2 {
+	grid-row: span 2;
+}
+
+.roles-selection-group {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.roles-checkbox-list {
+	flex-grow: 1;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	padding: 0.5rem 0.75rem;
+	background: #f8fafc;
+	overflow-y: auto;
+	overflow-x: hidden;
+	max-height: 140px;
+}
+
+.role-checkbox-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 5px;
+	cursor: pointer;
+	font-size: 0.85rem;
+	white-space: nowrap;
+}
+
+.role-checkbox-item:hover {
+	background: rgba(0, 0, 0, 0.02);
+}
+
+.role-checkbox-item input[type="checkbox"] {
+	margin: 0;
+	cursor: pointer;
+}
+
+.modal-info-bar {
+	background-color: #f1f5f9;
+	border-left: 4px solid #64748b;
+	padding: 0.75rem 1rem;
+	border-radius: 4px;
+	font-size: 0.9rem;
+	color: #475569;
+}
+
+.planner-modal-medium {
+	max-width: 700px;
+}
+
+.text-center {
+	text-align: center;
+}
+
+@media (max-width: 768px) {
+	.user-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.span-4,
+	.span-3,
+	.span-2,
+	.span-1 {
+		grid-column: span 1;
+	}
+
+	.row-span-2 {
+		grid-row: span 1;
+	}
+
+	.roles-checkbox-list {
+		max-height: none;
+	}
+}
+
 /* Achievement Grid Layout */
 .achievement-grid {
 	display: grid;
@@ -801,6 +906,32 @@ fieldset.modal-frame .compact-form {
 .planner-btn-success:hover {
 	background: #218838;
 	box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
+}
+
+.planner-btn.planner-btn-danger {
+	background: #772432 !important;
+	color: #fff !important;
+}
+
+.planner-btn.planner-btn-danger:hover {
+	background: #5d1c27 !important;
+	box-shadow: 0 4px 12px rgba(119, 36, 50, 0.2) !important;
+}
+
+.planner-btn.planner-btn-info {
+	background: #004165 !important;
+	color: #fff !important;
+}
+
+.planner-btn.planner-btn-info:hover {
+	background: #002e4d !important;
+	box-shadow: 0 4px 12px rgba(0, 65, 101, 0.2) !important;
+}
+
+.planner-btn-sm {
+	padding: 0.4rem 0.8rem;
+	font-size: 0.8rem;
+	border-radius: 6px;
 }
 
 .required-field {

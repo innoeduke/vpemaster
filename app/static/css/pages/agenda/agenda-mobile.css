@@ -540,8 +540,7 @@
   /* Create Agenda Modal Refinements - Aligned with Profile and Planner */
   /* Create Agenda Modal Mobile Refinements */
   #agenda-content #createAgendaModal {
-    z-index: 1100;
-    /* Ensure it stays above mobile header (z-index 1005) */
+    /* Ensure it stays above mobile header (z-index 1005) inherited from .modal (2000) */
     align-items: flex-start;
     padding-top: 20px;
     overflow-y: auto;

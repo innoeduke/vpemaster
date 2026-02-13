@@ -1737,8 +1737,8 @@ function openAchievementModal(id = null) {
       if (window.achievementPathSelect) window.achievementPathSelect.refresh();
     }
   } else {
-    title.textContent = "Add Achievement";
-    submitBtn.textContent = "Save Achievement";
+    title.textContent = "Add New";
+    submitBtn.textContent = "Save";
     idInput.value = "";
   }
 
@@ -1830,4 +1830,291 @@ window.openEditSessionModal = openEditSessionModal;
 window.toggleAchievementGroup = toggleAchievementGroup;
 window.openAchievementModal = openAchievementModal;
 window.closeAchievementModal = closeAchievementModal;
+
+/**
+ * User Management Modal Logic
+ */
+function openUserModal(userId = null, btn = null) {
+  const modal = document.getElementById('userModal');
+  const title = document.getElementById('user-modal-title');
+  const form = document.getElementById('user-form');
+
+  if (!modal || !form) return;
+
+  // Reset form
+  form.reset();
+  document.getElementById('user_id').value = '';
+  document.getElementById('user_contact_id').value = '';
+
+  // Reset checkboxes
+  const checkboxes = form.querySelectorAll('input[name="roles"]');
+  checkboxes.forEach(cb => {
+    // Note: dataset.name is used in the partial's checkbox items
+    const roleName = cb.dataset.name;
+    if (roleName === 'User') {
+      cb.checked = true;
+      cb.disabled = true;
+    } else {
+      cb.checked = false;
+      cb.disabled = false;
+    }
+  });
+
+  if (userId && btn) {
+    const tr = btn.closest('tr');
+    title.textContent = 'Edit User';
+    document.getElementById('user_id').value = userId;
+    document.getElementById('user_contact_id').value = tr.dataset.contactId || '';
+    document.getElementById('username').value = tr.dataset.username || '';
+    document.getElementById('first_name').value = tr.dataset.firstName || '';
+    document.getElementById('last_name').value = tr.dataset.lastName || '';
+    document.getElementById('email').value = tr.dataset.email || '';
+    document.getElementById('phone').value = tr.dataset.phone || '';
+
+    // Populate roles
+    try {
+      const userRoles = JSON.parse(tr.dataset.roles || '[]');
+      checkboxes.forEach(cb => {
+        if (userRoles.includes(parseInt(cb.value))) {
+          cb.checked = true;
+        }
+      });
+    } catch (e) {
+      console.error('Error parsing user roles:', e);
+    }
+
+    // Password placeholder
+    document.getElementById('password').placeholder = 'Leave blank to keep current';
+  } else {
+    title.textContent = 'Add New User';
+    document.getElementById('password').placeholder = 'Enter password...';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeUserModal() {
+  const modal = document.getElementById('userModal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function handleUserSubmit(e) {
+  e.preventDefault();
+
+  // Prevent submission if duplicate modal is open
+  const duplicateModal = document.getElementById('duplicateModal');
+  if (duplicateModal && duplicateModal.style.display === 'flex') {
+    return;
+  }
+
+  const form = e.target;
+  const userId = document.getElementById('user_id').value;
+  const url = userId ? `/user/form/${userId}` : '/user/form';
+
+  const formData = new FormData(form);
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+
+    if (response.redirected) {
+      window.location.href = response.url;
+      return;
+    }
+
+    // Usually redirects back to settings
+    window.location.reload();
+  } catch (error) {
+    console.error('Error saving user:', error);
+    window.location.reload();
+  }
+}
+
+window.openUserModal = openUserModal;
+window.closeUserModal = closeUserModal;
+window.handleUserSubmit = handleUserSubmit;
+
+/**
+ * Duplicate Detection for Users in Modal
+ */
+let lastCheckedUserValues = { username: '', first_name: '', last_name: '', email: '', phone: '' };
+
+async function checkUserDuplicates() {
+  const userId = document.getElementById('user_id').value;
+  const contactId = document.getElementById('user_contact_id').value;
+  const clubIdElement = document.querySelector('input[name="club_id"]');
+  const clubId = clubIdElement ? clubIdElement.value : '';
+
+  // Only check for NEW users or users not linked to contact
+  if (userId && contactId) return;
+
+  const username = document.getElementById('username').value.trim();
+  const firstName = document.getElementById('first_name').value.trim();
+  const lastName = document.getElementById('last_name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+
+  // Don't check if all fields are empty
+  if (!username && !firstName && !lastName && !email && !phone) return;
+
+  // Check if anything has actually changed to avoid redundant checks
+  if (username === lastCheckedUserValues.username &&
+    firstName === lastCheckedUserValues.first_name &&
+    lastName === lastCheckedUserValues.last_name &&
+    email === lastCheckedUserValues.email &&
+    phone === lastCheckedUserValues.phone) {
+    return;
+  }
+
+  lastCheckedUserValues = { username, first_name: firstName, last_name: lastName, email, phone };
+
+  try {
+    const response = await fetch('/user/check_duplicates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username, first_name: firstName, last_name: lastName,
+        full_name: `${firstName} ${lastName}`.trim(),
+        email, phone
+      })
+    });
+
+    const data = await response.json();
+    const duplicateModal = document.getElementById('duplicateModal');
+    const duplicateList = document.getElementById('duplicateList');
+    const modalTitle = duplicateModal ? duplicateModal.querySelector('h3') : null;
+    const proceedWithNewBtn = document.getElementById('proceedWithNew');
+
+    if (data.duplicates && data.duplicates.length > 0) {
+      if (!duplicateList || !duplicateModal) return;
+
+      duplicateList.innerHTML = '';
+      let hasHardDuplicate = false;
+
+      data.duplicates.forEach(dup => {
+        const div = document.createElement('div');
+        div.className = 'duplicate-item';
+
+        const info = document.createElement('div');
+        info.className = 'duplicate-info';
+        const clubsText = dup.clubs && dup.clubs.length > 0 ? dup.clubs.join(', ') : 'No club memberships';
+
+        let membershipNotice = '';
+        let buttonText = 'Invite User';
+
+        if (dup.in_current_club) {
+          if (dup.type === 'User' || dup.has_user) {
+            membershipNotice = `<div class="status-text" style="color: #dc3545;">Already a member of this club.</div>`;
+            buttonText = 'View Member';
+            hasHardDuplicate = true;
+          } else {
+            membershipNotice = `<div class="status-text" style="color: #28a745;">Existing guest in this club.</div>`;
+            buttonText = 'Convert to User';
+          }
+        }
+
+        let nameDisplay = dup.username;
+        const first = dup.first_name || '';
+        const last = dup.last_name || '';
+        if (first || last) nameDisplay = `${first} ${last}`.trim();
+
+        const hasUsername = dup.username && dup.username.toLowerCase() !== 'n/a' && dup.username.trim() !== '';
+        const displayNameHtml = (hasUsername && nameDisplay.toLowerCase() !== dup.username.toLowerCase())
+          ? `<div class="dup-name">${nameDisplay}</div><div class="dup-username">(${dup.username})</div>`
+          : `<div class="dup-name">${nameDisplay}</div>`;
+
+        info.innerHTML = `
+          <div class="dup-header">${displayNameHtml}</div>
+          <div class="dup-details">
+            <div class="dup-club-list"><i class="fas fa-university"></i> ${clubsText}</div>
+            ${membershipNotice}
+          </div>
+        `;
+
+        const actionDiv = document.createElement('div');
+        actionDiv.className = 'duplicate-actions';
+
+        const pickBtn = document.createElement('button');
+        pickBtn.type = 'button';
+        pickBtn.className = 'planner-btn planner-btn-sm planner-btn-info';
+        pickBtn.textContent = buttonText;
+        pickBtn.addEventListener('click', async () => {
+          if (dup.type === 'Contact' && !dup.has_user && dup.in_current_club) {
+            // Convert guest to user 
+            document.getElementById('user_contact_id').value = dup.id;
+            if (dup.first_name) document.getElementById('first_name').value = dup.first_name;
+            if (dup.last_name) document.getElementById('last_name').value = dup.last_name;
+            if (dup.email) document.getElementById('email').value = dup.email;
+            if (dup.phone) document.getElementById('phone').value = dup.phone;
+            duplicateModal.style.display = 'none';
+          } else {
+            const targetId = dup.type === 'User' ? dup.id : dup.user_id;
+            if (!targetId) return;
+
+            if (!dup.in_current_club) {
+              // Request to join
+              try {
+                const res = await fetch('/user/request_join', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ target_user_id: targetId, club_id: clubId })
+                });
+                const joinData = await res.json();
+                if (joinData.success) {
+                  window.location.reload();
+                } else {
+                  alert(joinData.error || 'Failed to send request.');
+                }
+              } catch (err) {
+                alert('Error sending request.');
+              }
+            } else {
+              duplicateModal.style.display = 'none';
+            }
+          }
+        });
+
+        actionDiv.appendChild(pickBtn);
+        div.appendChild(info);
+        div.appendChild(actionDiv);
+        duplicateList.appendChild(div);
+      });
+
+      if (modalTitle) {
+        modalTitle.textContent = hasHardDuplicate ? 'User Already Exists' : 'Potential Duplicate Found';
+      }
+      if (proceedWithNewBtn) {
+        proceedWithNewBtn.style.display = hasHardDuplicate ? 'none' : 'block';
+      }
+
+      duplicateModal.style.display = 'flex';
+    }
+  } catch (err) {
+    console.error("Duplication check failed", err);
+  }
+}
+
+// Attach duplicate check and modal controls
+document.addEventListener('DOMContentLoaded', () => {
+  ['username', 'first_name', 'last_name', 'email', 'phone'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('blur', checkUserDuplicates);
+  });
+
+  // Duplicate modal buttons
+  const proceedBtn = document.getElementById('proceedWithNew');
+  if (proceedBtn) proceedBtn.onclick = () => document.getElementById('duplicateModal').style.display = 'none';
+
+  const cancelBtn = document.getElementById('cancelSave');
+  if (cancelBtn) cancelBtn.onclick = () => {
+    document.getElementById('duplicateModal').style.display = 'none';
+    closeUserModal();
+  };
+
+  const closeDup = document.getElementById('closeDuplicateModal');
+  if (closeDup) closeDup.onclick = () => document.getElementById('duplicateModal').style.display = 'none';
+});
 

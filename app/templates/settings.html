@@ -364,7 +364,7 @@
       <div class="settings-header">
         <h2>User Management</h2>
         <div class="button-group">
-          <a href="{{ url_for('users_bp.user_form') }}" class="btn btn-success" style="flex-grow: 0;">Add New</a>
+          <button type="button" class="btn btn-success" style="flex-grow: 0;" onclick="openUserModal()">Add New</button>
           <form action="{{ url_for('users_bp.bulk_import_users') }}" method="post" enctype="multipart/form-data"
             id="bulk-import-form">
             <input type="file" name="file" id="bulk-import-file" />
@@ -390,7 +390,16 @@
         </thead>
         <tbody>
           {% for user in all_users %}
-          <tr class="{{ 'inactive-user' if user.status == 'inactive' else '' }}">
+          {% set user_roles = user.get_roles_for_club(club_id)|map(attribute='id')|list %}
+          <tr class="{{ 'inactive-user' if user.status == 'inactive' else '' }}"
+              data-id="{{ user.id }}"
+              data-username="{{ user.username or '' }}"
+              data-first-name="{{ user.first_name or '' }}"
+              data-last-name="{{ user.last_name or '' }}"
+              data-email="{{ user.email or '' }}"
+              data-phone="{{ user.phone or '' }}"
+              data-contact-id="{{ user.contact.id if user.contact else '' }}"
+              data-roles='{{ user_roles|tojson }}'>
             <td>{{ loop.index }}</td>
             <td>
               {% if user.contact %} {{ user.contact.Name }} ({{ user.username }})
@@ -453,8 +462,9 @@
             <td>{{ user.contact.Next_Project if user.contact and user.contact.Next_Project else '' }}</td>
             <td>
               <div class="action-links">
-                <a href="{{ url_for('users_bp.user_form', user_id=user.id) }}" class="icon-btn" title="Edit"><i
-                    class="fas fa-edit"></i></a>
+                <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('{{ user.id }}', this)" title="Edit">
+                  <i class="fas fa-edit"></i>
+                </button>
                 <button class="delete-btn icon-btn"
                   onclick="openDeleteModal('{{ url_for('users_bp.delete_user', user_id=user.id) }}', 'user')"
                   title="Delete">
@@ -662,6 +672,7 @@
   {% include '_session_modal.html' %}
   {% include 'partials/_achievement_modal.html' %}
   {% include '_role_modal.html' %}
+  {% include 'partials/_user_modal.html' %}
 </div>
 
 <!-- Mobile Warning Modal -->
@@ -733,7 +744,7 @@
       </fieldset>
 
       <div class="modal-buttons">
-        <button type="button" class="btn btn-secondary" onclick="closeExcommModal()">Cancel</button>
+        <button type="button" class="btn btn-danger" onclick="closeExcommModal()">Cancel</button>
         <button type="submit" class="btn btn-success">Save</button>
       </div>
     </form>

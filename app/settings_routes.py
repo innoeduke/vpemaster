@@ -112,6 +112,11 @@ def settings():
     programs = [p.name for p in Pathway.query.filter_by(type='program').order_by(Pathway.name).all()]
     project_types = ['level-completion', 'path-completion', 'program-completion']
 
+    # Auth Roles for User Modal
+    all_auth_roles_query = AuthRole.query.order_by(AuthRole.id).all()
+    # We'll pass them as a list of dicts for simplicity in logic
+    all_auth_roles = [{'id': r.id, 'name': r.name, 'level': r.level} for r in all_auth_roles_query if r.name != 'Guest']
+
     return render_template('settings.html', 
                           global_session_types=global_session_types,
                           local_session_types=local_session_types,
@@ -127,7 +132,8 @@ def settings():
                           GLOBAL_CLUB_ID=GLOBAL_CLUB_ID,
                           pathways=pathways,
                           programs=programs,
-                          project_types=project_types)
+                          project_types=project_types,
+                          all_auth_roles=all_auth_roles)
 
 
 @settings_bp.route('/settings/excomm/add', methods=['POST'])
