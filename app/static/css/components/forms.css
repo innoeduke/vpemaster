@@ -4,8 +4,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 30px; /* Reduced for mobile */
-  padding: 4px 12px; /* Reduced for mobile */
+  min-height: 30px;
+  /* Reduced for mobile */
+  padding: 4px 12px;
+  /* Reduced for mobile */
   margin: 0;
   color: white;
   text-align: center;
@@ -98,7 +100,7 @@
   max-width: 100%;
 }
 
-.button-group > .btn {
+.button-group>.btn {
   flex-grow: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -265,7 +267,8 @@ label.required::after {
   max-width: 600px;
   padding: 0;
   overflow: hidden;
-  border: none !important;
+  border: none;
+
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 

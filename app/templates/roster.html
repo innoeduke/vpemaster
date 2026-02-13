@@ -17,7 +17,7 @@
         <div class="filter-row-premium">
             {{ render_meeting_filter(all_meetings, selected_meeting_id, label='', data_format='tuple', render_outer_container=False) }}
             <div class="filter-right">
-                <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn btn-info trend-btn" title="View Participation Trend">
+                <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn btn-secondary trend-btn" title="View Participation Trend">
                     <i class="fas fa-chart-line"></i> Meeting Attendance Trend
                 </a>
             </div>
@@ -45,7 +45,7 @@
                                 <input type="text" class="form-control" id="contact_name"
                                     placeholder="Member/Guest name" autocomplete="off" required>
                                 <input type="hidden" id="contact_id">
-                                <button class="btn btn-secondary" type="button" id="add-contact-btn"
+                                <button class="btn btn-success" type="button" id="add-contact-btn"
                                     title="Add New Guest" onclick="openContactModalWithReferer()">
                                     <i class="fas fa-plus"></i>
                                 </button>

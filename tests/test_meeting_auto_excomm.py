@@ -46,17 +46,19 @@ def test_agenda_route_create_updates_excomm(app, default_club):
         db.session.add(excomm)
         db.session.flush()
 
+        # Create meeting first
+        meeting = Meeting(Meeting_Number=300, club_id=default_club.id, Meeting_Date=date(2024, 3, 1))
+        db.session.add(meeting)
+        db.session.flush()
+
         item = {'id': 'new', 'type_id': 1}
-        # Mocking or ensuring session type 1 exists might be needed if it fails
-        # But here we focus on meeting creation
-        _create_or_update_session(item, 300, 1)
+        # Pass meeting.id, not number
+        _create_or_update_session(item, meeting.id, 1)
+        meeting.sync_excomm() # Ensure synced for assertion
         
         meeting = Meeting.query.filter_by(Meeting_Number=300).first()
         assert meeting is not None
-        # Should be auto-populated because _create_or_update_session calls it
-        # Note: _create_or_update_session doesn't have a club_id context directly, 
-        # it uses current_club_id which might be tricky in pure unit test without session.
-        # However, Meeting.get_excomm() uses its own club_id.
+        # Should be auto-populated because we called sync_excomm (or the route does)
         assert meeting.excomm_id == excomm.id
 
         db.session.rollback()
@@ -85,7 +87,8 @@ def test_upsert_meeting_record_updates_excomm(app, default_club):
             'meeting_type': 'Keynote Speech',
             'meeting_title': 'Test',
             'subtitle': '',
-            'wod': ''
+            'wod': '',
+            'meeting_id': None
         }
         _upsert_meeting_record(data, None)
         

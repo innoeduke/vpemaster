@@ -117,24 +117,20 @@ def test_contacts_term_filter_integration(auth_client, app):
         db.session.add(cc)
         
         # Add Roster attendance
-        r1 = Roster(contact_id=c.id, meeting_number=m1.Meeting_Number)
-        r2 = Roster(contact_id=c.id, meeting_number=m2.Meeting_Number)
+        r1 = Roster(contact_id=c.id, meeting_id=m1.id)
+        r2 = Roster(contact_id=c.id, meeting_id=m2.id)
         db.session.add(r1)
         db.session.add(r2)
         db.session.commit()
         
         import re
         
-        def get_attendance_count(html_bytes):
-            # Decode bytes to string for reliable regex
-            html = html_bytes.decode('utf-8')
-            # Pattern to find the number inside the attendance badge
-            # matches ... badge-attendance"> <i ...></i> N </a>
-            # Use DOTALL to handle newlines
-            match = re.search(r'badge-attendance"[^>]*>\s*<i[^>]*></i>\s*(\d+)', html, re.DOTALL)
-            if match:
-                return int(match.group(1))
-            return 0
+        def get_attendance_count(response_data):
+            import json
+            data = json.loads(response_data)
+            # Find the contact we created
+            contact_entry = next((item for item in data if item['id'] == c.id), None)
+            return contact_entry['attendance_count'] if contact_entry else 0
         
         # Add Role participation (OwnerMeetingRoles)
         from app.models import OwnerMeetingRoles, MeetingRole
@@ -154,30 +150,29 @@ def test_contacts_term_filter_integration(auth_client, app):
         db.session.commit()
         
         # Helper for roles
-        def get_role_count(html_bytes):
-            html = html_bytes.decode('utf-8')
-            match = re.search(r'badge-roles"[^>]*>\s*<i[^>]*></i>\s*(\d+)', html, re.DOTALL)
-            if match:
-                return int(match.group(1))
-            return 0
+        def get_role_count(response_data):
+            import json
+            data = json.loads(response_data)
+            # Find the contact we created
+            contact_entry = next((item for item in data if item['id'] == c.id), None)
+            return contact_entry['role_count'] if contact_entry else 0
 
         # Test 1: Query Term 1 -> Expect 1 attendance match (r1)
-        resp = auth_client.get(f'/contacts?term={t1["id"]}')
+        resp = auth_client.get(f'/api/contacts/all?term={t1["id"]}')
         assert resp.status_code == 200
         count_t1 = get_attendance_count(resp.data)
         assert count_t1 == 1, f"Expected 1 attendance for T1, got {count_t1}"
         role_count_t1 = get_role_count(resp.data)
         assert role_count_t1 == 1, f"Expected 1 role for T1, got {role_count_t1}"
-        assert b'Select / Deselect All' in resp.data
 
         # Test 2 details: Query Term 2 -> Expect 1 attendance match (r2)
-        resp_t2 = auth_client.get(f'/contacts?term={t2["id"]}')
+        resp_t2 = auth_client.get(f'/api/contacts/all?term={t2["id"]}')
         assert resp_t2.status_code == 200
         count_t2 = get_attendance_count(resp_t2.data)
         assert count_t2 == 1, f"Expected 1 attendance for T2, got {count_t2}"
         
         # Test 3: Multi-select (T1 + T2) -> Expect 2 attendance matches
-        resp_multi = auth_client.get(f'/contacts?term={t1["id"]}&term={t2["id"]}')
+        resp_multi = auth_client.get(f'/api/contacts/all?term={t1["id"]}&term={t2["id"]}')
         assert resp_multi.status_code == 200
         count_multi = get_attendance_count(resp_multi.data)
         assert count_multi == 2, f"Expected 2 attendance for T1+T2, got {count_multi}"

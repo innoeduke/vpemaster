@@ -198,6 +198,10 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
     elif not pathway_val and owner_contact and owner_contact.Current_Path:
         pathway_val = owner_contact.Current_Path
         
+    log = None
+    old_owner_id = None
+    old_role = None
+
     # --- Create or Update SessionLog ---
     # Create valid log object first (owners will be assigned via RoleService.assign_meeting_role)
     if item['id'] == 'new':
@@ -958,7 +962,8 @@ def _get_or_create_media_id(media_url):
 
 def _upsert_meeting_record(data, media_id):
     """Creates or updates the Meeting record."""
-    meeting = Meeting.query.get(data['meeting_id'])
+    meeting = Meeting.query.get(data.get('meeting_id'))
+
     is_new = False
     
     if not meeting:
@@ -1330,10 +1335,6 @@ def update_logs():
 
         _recalculate_start_times([meeting])
 
-        # Commit the final session and time changes.
-        for seq, item in enumerate(data['items']):
-            _create_or_update_session(item, meeting_id, seq, updated_role_groups)
-            
         db.session.commit()
         
         RoleService._clear_meeting_cache(meeting_id)

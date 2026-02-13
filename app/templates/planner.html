@@ -53,62 +53,59 @@
         </div>
     </div>
 
-
-    <div class="planner-card">
-        <div class="planner-table-container">
-            <table class="planner-table">
-                <thead>
-                    <tr>
-                        <th>Meeting</th>
-                        <th>Role</th>
-                        <th>Project</th>
-                        <th>Status</th>
-                        <th>Notes</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="planner-tbody">
-                    {% for plan in plans %}
-                    <tr data-id="{{ plan.id }}" data-meeting-id="{{ plan.meeting_id or '' }}"
-                        data-meeting-number="{{ plan.meeting_number or '' }}"
-                        data-role="{{ plan.meeting_role_id or '' }}" data-project="{{ plan.project_id or '' }}"
-                        data-status="{{ plan.status }}" data-notes="{{ plan.notes or '' }}">
-                        <td data-label="Meeting">#{{ plan.meeting_number or 'N/A' }}</td>
-                        <td data-label="Role">{{ plan.role.name if plan.role else 'N/A' }}</td>
-                        <td data-label="Project">
-                            {% if plan.project %}
-                                <span class="project-code-badge">{{ plan.project.get_code() }}</span> {{ plan.project.Project_Name }}
-                            {% else %}
-                                N/A
+    <div class="planner-table-container">
+        <table class="planner-table">
+            <thead>
+                <tr>
+                    <th>Meeting</th>
+                    <th>Role</th>
+                    <th>Project</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="planner-tbody">
+                {% for plan in plans %}
+                <tr data-id="{{ plan.id }}" data-meeting-id="{{ plan.meeting_id or '' }}"
+                    data-meeting-number="{{ plan.meeting_number or '' }}"
+                    data-role="{{ plan.meeting_role_id or '' }}" data-project="{{ plan.project_id or '' }}"
+                    data-status="{{ plan.status }}" data-notes="{{ plan.notes or '' }}">
+                    <td data-label="Meeting">#{{ plan.meeting_number or 'N/A' }}</td>
+                    <td data-label="Role">{{ plan.role.name if plan.role else 'N/A' }}</td>
+                    <td data-label="Project">
+                        {% if plan.project %}
+                            <span class="project-code-badge">{{ plan.project.get_code() }}</span> {{ plan.project.Project_Name }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td data-label="Status">
+                        <span class="status-badge status-{{ plan.status }}">
+                            {{ plan.status|capitalize }}
+                        </span>
+                    </td>
+                    <td data-label="Notes">{{ plan.notes or '' }}</td>
+                    <td data-label="Actions">
+                        <div class="action-btns">
+                            <button class="btn-icon btn-edit" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            {% if plan.status not in ['completed', 'cancelled', 'obsolete'] %}
+                            <button type="button" class="btn-icon btn-cancel" title="Cancel Plan">
+                                <i class="fas fa-times-circle"></i>
+                            </button>
                             {% endif %}
-                        </td>
-                        <td data-label="Status">
-                            <span class="status-badge status-{{ plan.status }}">
-                                {{ plan.status|capitalize }}
-                            </span>
-                        </td>
-                        <td data-label="Notes">{{ plan.notes or '' }}</td>
-                        <td data-label="Actions">
-                            <div class="action-btns">
-                                <button class="btn-icon btn-edit" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                {% if plan.status not in ['completed', 'cancelled', 'obsolete'] %}
-                                <button type="button" class="btn-icon btn-cancel" title="Cancel Plan">
-                                    <i class="fas fa-times-circle"></i>
-                                </button>
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" style="text-align: center;">No plans yet. Start by adding one!</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td id="no-plans-message" colspan="6" style="text-align: center; ">No plans yet. Start by adding one!</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 

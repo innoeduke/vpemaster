@@ -6,6 +6,8 @@ class Vote(db.Model):
     __tablename__ = 'votes'
     id = db.Column(db.Integer, primary_key=True)
     meeting_id = db.Column(db.Integer, db.ForeignKey('Meetings.id'), nullable=True, index=True)
+    meeting = db.relationship('Meeting', backref=db.backref('votes', cascade='all, delete-orphan'))
+
     @property
     def meeting_number(self):
         if self.meeting:

@@ -78,7 +78,7 @@ class TestRoleService(unittest.TestCase):
         self.assertEqual(self.log_tm.owner.id, self.contact1.id)
         
         # Check Roster Sync
-        roster_entry = Roster.query.filter_by(meeting_number=1, contact_id=self.contact1.id).first()
+        roster_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.contact1.id).first()
         self.assertIsNotNone(roster_entry)
         self.assertTrue(roster_entry.has_role(self.role_tm))
 
@@ -139,8 +139,8 @@ class TestRoleService(unittest.TestCase):
         self.assertEqual(self.log_tm.owner.id, self.contact2.id)
         
         # Verify Roster updated
-        roster1 = Roster.query.filter_by(meeting_number=1, contact_id=self.contact1.id).first()
-        roster2 = Roster.query.filter_by(meeting_number=1, contact_id=self.contact2.id).first()
+        roster1 = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.contact1.id).first()
+        roster2 = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.contact2.id).first()
         
         # Depending on implementation, roster entry might remain but role removed
         if roster1:

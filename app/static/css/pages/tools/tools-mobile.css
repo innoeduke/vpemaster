@@ -4,6 +4,7 @@
    ======================================== */
 
 @media (max-width: 768px) {
+
   /* --- General Adjustments --- */
   .tools-tabs {
     padding-left: 10px;
@@ -33,7 +34,7 @@
     justify-content: center;
   }
 
-  .draw-type-select,
+  .draw-type-selector,
   .draw-type-selector .custom-select-trigger {
     min-width: 0;
     flex: 1;

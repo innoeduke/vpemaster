@@ -91,7 +91,7 @@
   transition: max-height 0.3s ease-out;
 }
 
-.accordion-header.active + .accordion-content {
+.accordion-header.active+.accordion-content {
   overflow: visible;
 }
 
@@ -638,7 +638,7 @@
 }
 
 .autocomplete-container:focus-within {
-  z-index: 1001;
+  z-index: 10000;
 }
 
 .admin-assign-input {
@@ -653,6 +653,7 @@
   border-radius: 8px;
   background-color: #ffffff;
   box-sizing: border-box;
+  z-index: 10;
 }
 
 .admin-assign-input.unassigned-role {
@@ -667,7 +668,7 @@
   left: 0;
   min-width: 100%;
   width: max-content;
-  z-index: 2000;
+  z-index: 100;
   background: white;
   border: 1px solid #ddd;
   border-top: none;

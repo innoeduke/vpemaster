@@ -343,49 +343,49 @@ class Contact(db.Model):
         # 2. Bulk update other related models
         # Roster
         Roster.query.filter(Roster.contact_id.in_(secondary_ids)).update(
-            {Roster.contact_id: primary_id}, synchronize_session=False
+            {Roster.contact_id: primary_id}, synchronize_session='fetch'
         )
         # Waitlist
         Waitlist.query.filter(Waitlist.contact_id.in_(secondary_ids)).update(
-            {Waitlist.contact_id: primary_id}, synchronize_session=False
+            {Waitlist.contact_id: primary_id}, synchronize_session='fetch'
         )
         # OwnerMeetingRoles (Session Ownership)
         OwnerMeetingRoles.query.filter(OwnerMeetingRoles.contact_id.in_(secondary_ids)).update(
-            {OwnerMeetingRoles.contact_id: primary_id}, synchronize_session=False
+            {OwnerMeetingRoles.contact_id: primary_id}, synchronize_session='fetch'
         )
         # ExcommOfficer
         ExcommOfficer.query.filter(ExcommOfficer.contact_id.in_(secondary_ids)).update(
-            {ExcommOfficer.contact_id: primary_id}, synchronize_session=False
+            {ExcommOfficer.contact_id: primary_id}, synchronize_session='fetch'
         )
         # Vote
         Vote.query.filter(Vote.contact_id.in_(secondary_ids)).update(
-            {Vote.contact_id: primary_id}, synchronize_session=False
+            {Vote.contact_id: primary_id}, synchronize_session='fetch'
         )
         # Achievement
         Achievement.query.filter(Achievement.contact_id.in_(secondary_ids)).update(
-            {Achievement.contact_id: primary_id}, synchronize_session=False
+            {Achievement.contact_id: primary_id}, synchronize_session='fetch'
         )
         
         # Update Meeting awards and manager
         Meeting.query.filter(Meeting.best_table_topic_id.in_(secondary_ids)).update(
-            {Meeting.best_table_topic_id: primary_id}, synchronize_session=False
+            {Meeting.best_table_topic_id: primary_id}, synchronize_session='fetch'
         )
         Meeting.query.filter(Meeting.best_evaluator_id.in_(secondary_ids)).update(
-            {Meeting.best_evaluator_id: primary_id}, synchronize_session=False
+            {Meeting.best_evaluator_id: primary_id}, synchronize_session='fetch'
         )
         Meeting.query.filter(Meeting.best_speaker_id.in_(secondary_ids)).update(
-            {Meeting.best_speaker_id: primary_id}, synchronize_session=False
+            {Meeting.best_speaker_id: primary_id}, synchronize_session='fetch'
         )
         Meeting.query.filter(Meeting.best_role_taker_id.in_(secondary_ids)).update(
-            {Meeting.best_role_taker_id: primary_id}, synchronize_session=False
+            {Meeting.best_role_taker_id: primary_id}, synchronize_session='fetch'
         )
         Meeting.query.filter(Meeting.manager_id.in_(secondary_ids)).update(
-            {Meeting.manager_id: primary_id}, synchronize_session=False
+            {Meeting.manager_id: primary_id}, synchronize_session='fetch'
         )
         
         # Update Mentor_ID in Contact table itself (Self-referential)
         cls.query.filter(cls.Mentor_ID.in_(secondary_ids)).update(
-            {cls.Mentor_ID: primary_id}, synchronize_session=False
+            {cls.Mentor_ID: primary_id}, synchronize_session='fetch'
         )
 
         # 3. Delete secondary contacts

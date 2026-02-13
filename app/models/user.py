@@ -637,19 +637,16 @@ class AnonymousUser(AnonymousUserMixin):
 
     def get_permissions(self):
         """Get permissions for Guest role."""
-        if self._permission_cache is None:
-            # Import here to avoid circular dependencies
-            from .role import Role
-            
-            guest_role = Role.get_by_name('Guest')
-            permissions = set()
-            if guest_role:
-                for permission in guest_role.permissions:
-                    permissions.add(permission.name)
-            
-            self._permission_cache = permissions
+        # Import here to avoid circular dependencies
+        from .role import Role
         
-        return self._permission_cache
+        guest_role = Role.get_by_name('Guest')
+        permissions = set()
+        if guest_role:
+            for permission in guest_role.permissions:
+                permissions.add(permission.name)
+        
+        return permissions
 
     def has_permission(self, permission_name):
         """Check if guest has a specific permission."""

@@ -288,7 +288,7 @@
 	max-width: 100%;
 	position: relative;
 	z-index: 100;
-	overflow: visible !important;
+	overflow: visible;
 }
 
 .action-bar-left,
@@ -301,7 +301,7 @@
 	font-size: 0.9em;
 	margin: 0;
 	font-family: 'Montserrat', sans-serif;
-	overflow: visible !important;
+	overflow: visible;
 }
 
 .action-bar-right {
@@ -310,7 +310,7 @@
 }
 
 .action-icon-btn {
-	min-width: 40px !important;
+	min-width: 40px;
 	width: 40px;
 	padding: 0;
 	display: flex;
@@ -326,7 +326,7 @@
 	position: sticky;
 	top: 0;
 	z-index: 1100;
-	width: 100%;
+	width: calc(100% - 20px);
 	display: flex;
 	justify-content: center;
 	gap: 10px;
@@ -334,6 +334,7 @@
 	padding: 10px;
 	border-radius: 0 0 8px 8px;
 	box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+	margin-bottom: 10px;
 }
 
 
@@ -361,9 +362,8 @@
 	cursor: pointer;
 }
 
-.mobile-only-item,
 .action-dropdown {
-	display: none !important;
+	display: none;
 }
 
 .inline-filter-group {
@@ -386,6 +386,16 @@
 	color: white;
 	font-size: 20px;
 	text-align: center;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+}
+
+.section-row td {
+	padding: 10px 16px;
+	font-weight: 700;
+	font-size: 0.85rem;
+	border: 0;
+	color: #ffffff;
 }
 
 /* Standardize Actions Column for ALL rows (Section and Standard) */
@@ -416,7 +426,7 @@ td.actions-column {
 
 /* Ensure all icons in section row are white */
 .section-row .icon-btn {
-	color: white !important;
+	color: white;
 	opacity: 1;
 	/* Ensure visible */
 	transition: transform 0.2s ease, opacity 0.2s ease;
@@ -684,22 +694,7 @@ td.actions-column {
 }
 
 /* Section Row Overrides */
-.section-row {
-	background-color: #772432 !important;
-	color: #ffffff !important;
-	font-family: 'Montserrat', sans-serif !important;
-	text-transform: uppercase;
-	letter-spacing: 0.1em;
-}
 
-.section-row td {
-	padding: 10px 16px !important;
-	font-weight: 700 !important;
-	font-size: 0.85rem !important;
-	border-bottom: none !important;
-	border-right: none !important;
-	color: #ffffff !important;
-}
 
 /* Icon Styles in Header */
 #logs-table thead th i {
@@ -732,25 +727,25 @@ td.actions-column {
 
 /* Links Polish */
 .speech-tooltip-wrapper a:not(.project-code-link) {
-	background-color: transparent !important;
-	padding: 0 !important;
-	color: #2563eb !important;
-	text-decoration: none !important;
-	font-weight: 600 !important;
-	border-radius: 0 !important;
+	background-color: transparent;
+	padding: 0;
+	color: #2563eb;
+	text-decoration: none;
+	font-weight: 600;
+	border-radius: 0;
 }
 
 .speech-tooltip-wrapper a:not(.project-code-link):hover {
-	text-decoration: underline !important;
-	color: #1d4ed8 !important;
+	text-decoration: underline;
+	color: #1d4ed8;
 }
 
 .project-code-link {
-	background-color: #f1f5f9 !important;
-	color: #64748b !important;
-	border: 1px solid #e2e8f0 !important;
-	font-size: 0.7rem !important;
-	font-weight: 600 !important;
+	background-color: #f1f5f9;
+	color: #64748b;
+	border: 1px solid #e2e8f0;
+	font-size: 0.7rem;
+	font-weight: 600;
 }
 
 /* Table Container Polish */

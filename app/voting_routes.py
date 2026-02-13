@@ -302,7 +302,11 @@ def _get_voting_page_context(meeting_id):
                (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
     
     if is_guest:
-        if selected_meeting.status != 'running':
+        if selected_meeting.status == 'unpublished':
+            return {
+                'redirect': url_for('agenda_bp.meeting_notice', meeting_id=meeting_id)
+            }
+        elif selected_meeting.status != 'running':
             context['force_not_started'] = True
             context['selected_meeting'] = selected_meeting
             context['roles'] = [] # Prevent data leakage

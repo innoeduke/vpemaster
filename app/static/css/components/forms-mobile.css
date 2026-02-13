@@ -21,7 +21,6 @@
     align-items: center;
     box-sizing: border-box;
     padding: 0 12px;
-    /* line-height: var(--mobile-control-height); */
     font-size: 14.5px;
     font-weight: bold;
     width: auto;
@@ -44,7 +43,6 @@
   :root body .custom-select-trigger {
     padding-top: 0;
     padding-bottom: 0;
-    line-height: var(--mobile-control-height);
   }
 
   /* Truncate text in custom select trigger and position arrow */
@@ -53,17 +51,22 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding-right: 32px; /* Space for arrow */
+    padding-right: 32px;
+    /* Space for arrow */
     text-align: left;
     position: relative;
   }
 
   :root body .custom-select-trigger::after {
+    content: '\f078';
     position: absolute;
     right: 12px;
     top: 50%;
     transform: translateY(-50%);
-    line-height: 1;
+  }
+
+  :root body .custom-select-trigger.active::after {
+    content: '\f077';
   }
 
   /* Adjust form tables for mobile */

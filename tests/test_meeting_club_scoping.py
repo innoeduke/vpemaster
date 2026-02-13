@@ -62,7 +62,7 @@ def test_meeting_creation_club_scoping(app):
             session['current_club_id'] = club1.id
             _generate_logs_from_template(meeting1, template_name)
             
-            logs = SessionLog.query.filter_by(Meeting_Number=101).all()
+            logs = SessionLog.query.filter_by(meeting_id=meeting1.id).all()
             assert len(logs) == 1
             assert logs[0].Session_Title == "Club1Only"
             assert logs[0].Type_ID == st1.id
@@ -77,7 +77,7 @@ def test_meeting_creation_club_scoping(app):
             session['current_club_id'] = club2.id
             _generate_logs_from_template(meeting2, template_name)
             
-            logs = SessionLog.query.filter_by(Meeting_Number=102).all()
+            logs = SessionLog.query.filter_by(meeting_id=meeting2.id).all()
             assert len(logs) == 1
             
             # Since Club2 doesn't have "Club1Only", it should fallback to 'Generic' or custom

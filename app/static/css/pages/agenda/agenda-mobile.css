@@ -237,7 +237,6 @@
     font-size: 0.8rem;
     /* Reduced font size */
     min-width: 0;
-    width: auto;
     white-space: nowrap;
   }
 
@@ -293,17 +292,17 @@
 
   .action-bar-right .action-group #create-btn,
   .action-bar-right .action-group #edit-btn {
-    display: none !important;
+    display: none;
   }
 
   .action-bar-right .action-group #xlsx-btn,
   .action-bar-right .action-group #ppt-btn,
   .action-bar-right .action-group #jpg-btn {
-    display: none !important;
+    display: none;
   }
 
   .action-dropdown {
-    display: flex !important;
+    display: flex;
     align-items: center;
     position: relative;
   }

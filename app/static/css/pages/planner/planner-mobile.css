@@ -14,17 +14,17 @@
     white-space: nowrap;
     width: 100%;
   }
-  
+
   .filters-control.premium {
     padding: 15px;
   }
-  
+
   .filter-row-premium {
     flex-direction: column;
     align-items: center;
     gap: 15px;
   }
-  
+
   .filter-row-premium .filter-left,
   .filter-row-premium .filter-right {
     width: 100%;
@@ -54,22 +54,18 @@
   .planner-table td {
     display: block;
     width: 100%;
-    border: none !important; /* Force remove all default table borders */
+    border: none !important;
+    /* Force remove all default table borders */
   }
 
   /* Clear container padding/background if needed to let cards breathe */
-  .planner-card,
-  .planner-container .planner-card {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    margin-bottom: 0;
-  }
-
   .planner-table-container {
-    overflow-x: visible !important;
-    border: none !important;
+    background: transparent;
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    margin-bottom: 0;
+    overflow-x: visible;
   }
 
   /* Remove table border */
@@ -80,7 +76,8 @@
   /* Grid Layout for the Card */
   .planner-table tr {
     display: grid;
-    grid-template-columns: 1fr auto; /* Left content Area | Status Badge */
+    grid-template-columns: 1fr auto;
+    /* Left content Area | Status Badge */
     grid-template-rows: auto auto auto auto;
     grid-template-areas:
       "role status"
@@ -93,13 +90,17 @@
     margin-bottom: 0.75rem;
     background: #fff;
     border-radius: 12px;
-    padding: 1rem; /* Reduced from 1.25rem */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); /* Softer shadow like roster */
+    padding: 1rem;
+    /* Reduced from 1.25rem */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    /* Softer shadow like roster */
     position: relative;
     width: 100%;
     box-sizing: border-box;
-    border: 1px solid transparent; /* Ensure no border by default unless needed */
-    row-gap: 0.25rem; /* Reduced from 0.5rem */
+    border: 1px solid transparent;
+    /* Ensure no border by default unless needed */
+    row-gap: 0.25rem;
+    /* Reduced from 0.5rem */
   }
 
   /* 1. Role (Top Left) */
@@ -145,14 +146,16 @@
     border: none;
     display: flex;
     align-items: center;
-    margin-bottom: 0.25rem; /* Reduced from 0.5rem */
+    margin-bottom: 0.25rem;
+    /* Reduced from 0.5rem */
   }
 
   /* Custom label for Meeting */
   .planner-table td[data-label="Meeting"]::before {
     content: "MEETING";
     font-size: 0.75rem;
-    color: #adb5bd; /* Lighter gray like roster order # */
+    color: #adb5bd;
+    /* Lighter gray like roster order # */
     font-weight: 700;
     margin-right: 0.5rem;
     text-transform: uppercase;
@@ -161,7 +164,8 @@
   /* 4. Project */
   .planner-table td[data-label="Project"] {
     grid-area: project;
-    padding: 0.5rem 0.5rem; /* Reduced vertical padding */
+    padding: 0.5rem 0.5rem;
+    /* Reduced vertical padding */
     background: #f9f9f9;
     border-radius: 6px;
     border: none;
@@ -170,7 +174,8 @@
     margin-bottom: 0;
     display: flex;
     align-items: center;
-    width: 95%; /* Restrict width to create right margin effect while spanning grid */
+    width: 95%;
+    /* Restrict width to create right margin effect while spanning grid */
   }
 
   .planner-table td[data-label="Project"]::before {
@@ -211,7 +216,8 @@
   .planner-table td[data-label="Actions"] {
     grid-area: actions;
     padding: 0;
-    border: none; /* No separator border for cleaner look */
+    border: none;
+    /* No separator border for cleaner look */
     display: flex;
     justify-content: flex-end;
     align-items: flex-end;
@@ -225,6 +231,10 @@
   .planner-table tr:hover {
     transform: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .planner-table #no-plans-message {
+    padding: 15px 0 0 0;
   }
 
   /* Button tweaks within card */

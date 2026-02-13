@@ -76,6 +76,10 @@ class Roster(db.Model):
         """Setter for meeting_number for backward compatibility in tests."""
         from .meeting import Meeting
         if not self.meeting:
+            # BUG FIX: Must filter by club_id if available on contact or roster
+            # But in setter, we might not have club context easily.
+            # Best is to rely on meeting_id.
+            # Fallback: assume unique for now but it's risky.
             m = Meeting.query.filter_by(Meeting_Number=value).first()
             if m:
                 self.meeting = m

@@ -229,9 +229,9 @@ class RouteAccessTestCase(unittest.TestCase):
         response = self.client.get(f'/booking/{self.m_unpublished.id}')
         self.assertEqual(response.status_code, 200)
         
-        # Voting Unpublished -> Staff (Redirect 302)
+        # Voting Unpublished -> Staff (Allowed 200, as they have results view permission)
         response = self.client.get(f'/voting/{self.m_unpublished.id}')
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 200)
         
         self.logout()
 

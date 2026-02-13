@@ -79,6 +79,7 @@
 	.action-bar-right .meeting-status-display {
 		min-width: 100px;
 		font-size: 0.75em;
+		height: var(--mobile-control-height, 30px);
 		padding: 3px 6px;
 	}
 

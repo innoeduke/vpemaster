@@ -14,7 +14,8 @@
 .profile-section .section-title {
 	font-size: 14px;
 	font-weight: 700;
-	color: #004165; /* Default to Toastmasters Blue, can be overridden */
+	color: #004165;
+	/* Default to Toastmasters Blue, can be overridden */
 	background: #fafafa;
 	padding: 12px 15px;
 	margin: 0;
@@ -31,13 +32,15 @@
 	border-bottom: 1px solid #eee;
 	flex: 1;
 	min-width: 0;
-	overflow: visible; /* Allow content to wrap without box cutting */
+	overflow: visible;
+	/* Allow content to wrap without box cutting */
 }
 
 .field-row-pair,
 .field-row-group {
 	display: flex;
-	flex-direction: column; /* Stacked by default on desktop */
+	flex-direction: column;
+	/* Stacked by default on desktop */
 	gap: 0;
 	border-bottom: 1px solid #eee;
 	padding: 0;
@@ -46,7 +49,7 @@
 .field-row-pair .field-row,
 .field-row-group .field-row {
 	border-bottom: 1px solid #eee;
-    width: 100%;
+	width: 100%;
 }
 
 .field-row-pair .field-row:last-child,
@@ -82,9 +85,11 @@
 	font-size: 15px;
 	font-weight: 700;
 	color: #333;
-	white-space: normal; /* Allow wrapping */
+	white-space: normal;
+	/* Allow wrapping */
 	overflow-wrap: anywhere;
-	word-break: break-all; /* Ensure Chinese text and long URLs wrap */
+	word-break: break-word;
+	/* Ensure long text wraps correctly */
 }
 
 /* --- Inputs --- */
@@ -93,11 +98,15 @@
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+	position: relative;
 }
 
 .field-input,
 .field-textarea {
 	width: calc(100% - 30px);
+	max-width: calc(100% - 30px);
+	/* Ensure it doesn't exceed container */
+	min-width: 0;
 	font-size: 15px;
 	border: 1px solid #ddd;
 	border-radius: 8px;
@@ -120,7 +129,8 @@
 }
 
 .field-input:focus,
-.field-textarea:focus {
+.field-textarea:focus,
+.field-textarea-auto:focus {
 	outline: none;
 	border-color: #004165;
 	box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
@@ -132,6 +142,7 @@
 	color: #888;
 	margin: 0 15px 12px;
 	width: calc(100% - 30px);
+	max-width: calc(100% - 30px);
 	font-style: italic;
 }
 
@@ -140,7 +151,7 @@
 	.profile-section {
 		border-radius: 10px;
 		margin-bottom: 20px;
-        border-color: #e5e5e5;
+		border-color: #e5e5e5;
 	}
 
 	.profile-section .section-title {
@@ -148,7 +159,7 @@
 		font-weight: 800;
 		padding: 12px 15px;
 		letter-spacing: 0.8px;
-        border-color: #e5e5e5;
+		border-color: #e5e5e5;
 	}
 
 	.field-row-pair {
@@ -160,13 +171,13 @@
 		align-items: stretch;
 	}
 
-    .field-row-pair .field-row {
-        border-bottom: 1px solid #eee;
-    }
+	.field-row-pair .field-row {
+		border-bottom: 1px solid #eee;
+	}
 
-    .field-row-pair .field-row:last-child {
-        border-bottom: none;
-    }
+	.field-row-pair .field-row:last-child {
+		border-bottom: none;
+	}
 
 	.field-label {
 		width: 100%;
@@ -178,15 +189,22 @@
 		background: transparent;
 		padding: 12px 15px 0;
 		border-right: none;
-        border-bottom: none;
+		border-bottom: none;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		word-break: break-all;
+		/* Robust wrapping to prevent cut-off */
+		flex-shrink: 1;
 	}
 
 	.field-value {
 		padding: 4px 15px 12px;
-		font-size: 15px;
+		font-size: 14px;
 		width: 100%;
 		white-space: normal;
 		overflow-wrap: anywhere;
+		word-break: break-all;
+		/* Robust wrapping to prevent cut-off */
 		box-sizing: border-box;
 	}
 
@@ -199,58 +217,64 @@
 		margin: 8px 15px 12px;
 		width: calc(100% - 30px);
 		box-sizing: border-box;
+		font-size: 14px;
 	}
 
 	/* --- Compact Layouts for Mobile --- */
 	.field-row-pair.mobile-side-by-side,
-    .field-row-group.mobile-side-by-side {
+	.field-row-group.mobile-side-by-side {
 		flex-direction: row;
 		flex-wrap: nowrap;
-        width: 100%;
-        overflow: hidden; /* Prevent container overflow */
+		width: 100%;
+		overflow: hidden;
+		/* Prevent container overflow */
+	}
+
+	.field-row-group.mobile-side-by-side {
+		border: 0;
 	}
 
 	.field-row-pair.mobile-side-by-side .field-row,
-    .field-row-group.mobile-side-by-side .field-row {
+	.field-row-group.mobile-side-by-side .field-row {
 		border-bottom: none;
 		border-right: 1px solid #eee;
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.field-row-pair.mobile-side-by-side .field-row:last-child,
-    .field-row-group.mobile-side-by-side .field-row:last-child {
+	.field-row-group.mobile-side-by-side .field-row:last-child {
 		border-right: none;
 	}
 
-    /* .compact class for even tighter spacing in side-by-side rows */
-    .field-row.compact .field-label {
-        padding: 8px 15px 0;
-        font-size: 9px;
-        background: transparent;
-        white-space: normal;
-        overflow-wrap: anywhere;
-        line-height: 1.1;
-    }
+	/* .compact class for even tighter spacing in side-by-side rows */
+	.field-row.compact .field-label {
+		padding: 8px 15px 0;
+		font-size: 9px;
+		background: transparent;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		line-height: 1.1;
+	}
 
-    .field-row.compact .field-value {
-        padding: 2px 15px 10px;
-        font-size: 14px;
-        font-weight: 700;
-        white-space: normal;
-        overflow-wrap: anywhere;
-        line-height: 1.2;
-    }
+	.field-row.compact .field-value {
+		padding: 2px 15px 10px;
+		font-size: 13px;
+		font-weight: 700;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		line-height: 1.2;
+	}
 
-    .field-row.compact .field-input {
-        margin: 5px 8px 10px;
-        width: calc(100% - 16px);
-        height: 36px;
-        padding: 0 8px;
-        font-size: 13px;
-    }
+	.field-row.compact .field-input {
+		margin: 5px 8px 10px;
+		width: calc(100% - 16px);
+		height: 36px;
+		padding: 0 8px;
+		font-size: 13px;
+	}
 
 	.field-row.mobile-inline {
 		flex-direction: row;
@@ -270,21 +294,162 @@
 
 	.field-row.mobile-inline .field-value {
 		padding: 6px 10px;
-		font-size: 13px;
-        overflow-wrap: anywhere;
+		font-size: 12px;
+		overflow-wrap: anywhere;
 	}
 
 
-    @media (max-width: 480px) {
-        .field-row-group.mobile-side-by-side {
-            flex-wrap: wrap;
-        }
-        .field-row-group.mobile-side-by-side .field-row {
-            flex: 1 1 50%;
-            border-bottom: 1px solid #eee;
-        }
-        .field-row-group.mobile-side-by-side .field-row:nth-child(even) {
-            border-right: none;
-        }
-    }
+	@media (max-width: 480px) {
+		.field-row-group.mobile-side-by-side {
+			flex-wrap: wrap;
+		}
+
+		.field-row-group.mobile-side-by-side .field-row {
+			flex: 1 1 50%;
+			border-bottom: 1px solid #eee;
+		}
+
+		.field-row-group.mobile-side-by-side .field-row:nth-child(even) {
+			border-right: none;
+		}
+	}
+}
+
+
+
+/* --- Standardized Mobile Layout for About Club (Specificity Refinement) --- */
+@media (max-width: 768px) {
+	/* Prepending 'body' to increase specificity and avoid using priority overrides */
+
+	/* Pinned header buttons specificity fix */
+	body .about-club-container .settings-header .btn {
+		width: auto;
+		min-width: 100px;
+		padding: 8px 16px;
+	}
+
+	/* Global Row Standardization */
+	body .about-club-container .field-row {
+		flex-direction: column;
+		align-items: stretch;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+		overflow: visible;
+		border-bottom: 1px solid #eee;
+	}
+
+	/* Labels - Consistent stacked appearance */
+	body .about-club-container .field-row .field-label {
+		width: 100%;
+		padding: 12px 15px 4px;
+		background: transparent;
+		border: none;
+		font-size: 10px;
+		text-transform: uppercase;
+		letter-spacing: 0.8px;
+		color: #888;
+		font-weight: 800;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		word-break: break-all;
+		/* Robust wrapping to prevent cut-off */
+	}
+
+	/* Values & Inputs - Consistent alignment */
+	body .about-club-container .field-row .field-value,
+	body .about-club-container .field-row .field-input-wrapper {
+		width: 100%;
+		padding: 4px 15px 12px;
+		/* Reduced top padding to match label-stacked structure */
+		box-sizing: border-box;
+		min-width: 0;
+	}
+
+	body .about-club-container .field-row .field-input,
+	body .about-club-container .field-row .field-textarea {
+		width: 100%;
+		max-width: 100%;
+		margin: 0;
+		box-sizing: border-box;
+	}
+
+	/* Side-by-Side Override - Preserve grid where requested */
+	body .about-club-container .field-row-pair.mobile-side-by-side,
+	body .about-club-container .field-row-group.mobile-side-by-side {
+		flex-direction: row;
+		flex-wrap: nowrap;
+		align-items: stretch;
+		border-bottom: 1px solid #eee;
+	}
+
+	body .about-club-container .mobile-side-by-side .field-row {
+		flex: 1;
+		flex-direction: column;
+		/* Internal stack remains */
+		border-bottom: none;
+		border-right: 1px solid #eee;
+		width: auto;
+		max-width: none;
+		min-width: 0;
+	}
+
+	body .about-club-container .mobile-side-by-side .field-row:last-child {
+		border-right: none;
+	}
+
+	/* Compact override refinement */
+	body .about-club-container .field-row.compact .field-label {
+		padding: 8px 12px 2px;
+	}
+
+	body .about-club-container .field-row.compact .field-value,
+	body .about-club-container .field-row.compact .field-input-wrapper {
+		padding: 0 12px 8px;
+	}
+
+	/* Force single column in edit mode for mobile */
+	body .about-club-container.edit-mode .field-row-pair.mobile-side-by-side,
+	body .about-club-container.edit-mode .field-row-group.mobile-side-by-side {
+		flex-direction: column;
+	}
+
+	body .about-club-container.edit-mode .mobile-side-by-side .field-row {
+		border-right: none;
+		border-bottom: 1px solid #eee;
+		width: 100%;
+	}
+
+	body .about-club-container.edit-mode .mobile-side-by-side .field-row:last-child {
+		border-bottom: none;
+	}
+
+	/* Hide native icons in edit mode */
+	body .about-club-container.edit-mode input[type="date"]::-webkit-inner-spin-button,
+	body .about-club-container.edit-mode input[type="date"]::-webkit-calendar-picker-indicator,
+	body .about-club-container.edit-mode input[type="time"]::-webkit-inner-spin-button,
+	body .about-club-container.edit-mode input[type="time"]::-webkit-calendar-picker-indicator {
+		display: none;
+		-webkit-appearance: none;
+	}
+
+	/* Auto-growing textarea for wrap-able fields */
+	body .about-club-container.edit-mode .field-textarea-auto {
+		width: 100%;
+		max-width: 100%;
+		margin: 0;
+		box-sizing: border-box;
+		min-height: 44px;
+		padding: 10px 15px;
+		font-size: 14px;
+		font-weight: 700;
+		border: 1px solid #ddd;
+		border-radius: 8px;
+		background: #fff;
+		resize: none;
+		overflow: hidden;
+		line-height: 1.4;
+		display: block;
+	}
 }

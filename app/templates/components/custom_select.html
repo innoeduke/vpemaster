@@ -23,9 +23,6 @@
 {% endfor %}
 
 <div class="custom-select-wrapper {{ extra_classes }}">
-    {% if label %}
-    <label id="{{ select_id }}-label">{{ label }}</label>
-    {% endif %}
 
     <div class="meeting-autocomplete-container" id="{{ select_id }}-container">
         <div class="custom-select-trigger" id="{{ select_id }}-trigger" 
@@ -41,7 +38,7 @@
                     {{ ns.selected_text if ns.selected_text else placeholder }}
                 </span>
             </div>
-            <i class="fas fa-chevron-down dropdown-icon" style="margin-left: 5px; font-size: 0.8rem;"></i>
+            <!-- <i class="fas fa-chevron-down dropdown-icon" style="margin-left: 5px; font-size: 0.8rem;"></i> -->
         </div>
         
         <div id="{{ select_id }}-results" class="autocomplete-results-dropdown" style="display: none;" role="listbox">

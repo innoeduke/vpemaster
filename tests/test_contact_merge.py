@@ -20,16 +20,17 @@ def test_merge_contacts_logic(app, client, default_club):
 
         # 2. Setup related data
         # Membership
-        db.session.add(ContactClub(contact_id=c1_id, club_id=default_club.id))
         db.session.add(ContactClub(contact_id=c2_id, club_id=default_club.id))
-        
-        # Roster
-        r1 = Roster(contact_id=c2_id, meeting_number=100)
-        db.session.add(r1)
+        db.session.commit()
         
         # Meeting Award
         m1 = Meeting(club_id=default_club.id, Meeting_Number=101, best_table_topic_id=c2_id)
         db.session.add(m1)
+        db.session.flush() # Get m1.id
+
+        # Roster
+        r1 = Roster(contact_id=c2_id, meeting_id=m1.id)
+        db.session.add(r1)
         
         # Achievement
         a1 = Achievement(contact_id=c3_id, achievement_type='level-completion', issue_date=date.today())
@@ -49,11 +50,11 @@ def test_merge_contacts_logic(app, client, default_club):
         assert db.session.get(Contact, c3_id) is None
         
         # Roster updated
-        updated_r1 = Roster.query.filter_by(meeting_number=100).first()
+        updated_r1 = Roster.query.filter_by(meeting_id=m1.id).first()
         assert updated_r1.contact_id == c1_id
         
         # Meeting award updated
-        updated_m1 = Meeting.query.filter_by(Meeting_Number=101).first()
+        updated_m1 = Meeting.query.get(m1.id)
         assert updated_m1.best_table_topic_id == c1_id
         
         # Achievement updated

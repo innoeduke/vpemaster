@@ -161,6 +161,7 @@
 
 	.booking-table .role-display-text span {
 		font-size: 0.9em;
+		white-space: normal;
 	}
 
 	.booking-table .status-cell {
@@ -194,7 +195,7 @@
 
 	.booking-table .owner-display {
 		margin: 1em 10px;
-		font-size: 1.5em;
+		font-size: 1.3em;
 		white-space: wrap;
 		text-align: right;
 	}

@@ -15,20 +15,24 @@
 
     .settings-header {
         display: flex;
-        flex-wrap: wrap; /* Allow wrapping */
+        flex-direction: row;
+        flex-wrap: wrap;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
+        gap: 15px;
     }
 
     .about-club-container h1 {
-        width: 100%; /* Take full width */
         color: #004165;
-        margin-bottom: 15px; /* Reduced since actions are below */
+        margin: 0;
         font-weight: 700;
+        font-size: 1.75rem;
         display: flex;
         align-items: center;
         gap: 12px;
+        flex: 1;
+        min-width: 250px;
     }
 
     .about-club-container h1 i {
@@ -42,6 +46,14 @@
         grid-template-columns: 1fr 1fr;
         gap: 20px;
         margin-bottom: 30px;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .club-settings-grid > div {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
     }
 
     .club-settings-left {
@@ -50,27 +62,26 @@
         gap: 10px;
     }
 
-    .settings-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-    }
 
-    /* Responsive Mobile View (<= 768px) */
-    @media (max-width: 768px) {
-        .club-settings-grid {
-            grid-template-columns: 1fr;
+        /* Refined Mobile View (<= 768px) */
+        @media (max-width: 768px) {
+            body .about-club-container .club-settings-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+    
+            body .about-club-container .settings-header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 15px;
+                margin-bottom: 25px;
+            }
+    
+            body .about-club-container .settings-header h1 {
+                font-size: 1.5rem;
+                margin-bottom: 5px;
+            }
         }
-
-        .settings-header {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 25px;
-        }
-    }
 
     .website-link {
         font-family: 'Montserrat', sans-serif;
@@ -89,11 +100,24 @@
         border: 1px solid #ddd;
         max-height: 200px;
         overflow-y: auto;
+        overflow-x: hidden;
         z-index: 1000;
         display: none;
-        width: calc(100% - 2px);
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         margin-top: 2px;
+        border-radius: 8px;
+    }
+
+    .autocomplete-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        transition: background-color 0.2s;
     }
 
     /* Premium Modal Styles */
@@ -203,7 +227,7 @@
                 <button id="cancel-club-btn" class="btn btn-danger" style="display: none">
                     <i class="fas fa-times"></i> Cancel
                 </button>
-                <button id="edit-club-btn" class="btn btn-primary" style="background-color: #004165; border-color: #004165;">
+                <button id="edit-club-btn" class="btn btn-info">
                     <i class="fas fa-edit"></i> Edit
                 </button>
             </div>
@@ -223,7 +247,9 @@
                 
                 {% if ns.is_member and not ns.is_home %}
                 <div class="button-group">
-                    <button id="request-home-btn" class="btn btn-outline-primary" style="border-color: #004165; color: #004165; background-color: transparent;" onclick="requestHomeClub({{ club.id }})">
+                    <button id="request-home-btn" class="btn btn-outline-primary" style="border-color: #004165; color: #004165; background-color: transparent;" 
+                        data-club-id="{{ club.id | default(0) }}"
+                        onclick="requestHomeClub(this.dataset.clubId)">
                         <i class="fas fa-home"></i> Set as Home Club
                     </button>
                 </div>
@@ -250,8 +276,8 @@
                             {% endif %}
                         </div>
                         <div id="club-logo-edit" style="display: none; margin-top: 10px;">
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <input type="file" id="logo-upload-input" accept="image/*" class="form-control" style="width: auto; padding: 4px;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <input type="file" id="logo-upload-input" accept="image/*" class="form-control" style="max-width: 100%; width: auto; padding: 4px;">
                                 <button id="logo-upload-btn" class="btn btn-sm btn-primary" type="button" style="display: none;">Upload</button>
                             </div>
                             <small class="text-muted">Max size 500x500px, WebP/PNG/JPG</small>
@@ -262,7 +288,7 @@
                     {{ field_row("Club Number", value=club.club_no, field_data="club_no", class='compact') }}
                     {{ field_row("Short Name", value=club.short_name, field_data="short_name", class='compact') }}
                 {% endcall %}
-                {{ field_row("Club Name", value=club.club_name, field_data="club_name") }}
+                {{ field_row("Club Name", value=club.club_name, field_data="club_name", class='') }}
                 {{ field_row("Founded Date", value=club.founded_date.strftime('%Y-%m-%d') if club.founded_date else '', field_data="founded_date") }}
                 
                 {% set website_link %}
@@ -271,7 +297,7 @@
                         target="_blank" class="website-link">{{ club.website }}</a>
                     {% endif %}
                 {% endset %}
-                {{ field_row("Website", value=website_link, is_raw=true, field_data="website") }}
+                {{ field_row("Website", value=website_link, is_raw=true, field_data="website", class='') }}
             {% endcall %}
 
             <!-- Meeting Information -->
@@ -290,7 +316,7 @@
                     {{ field_row("Area", value=club.area, field_data="area", class='compact') }}
                 {% endcall %}
                 {{ field_row("Contact Phone", value=club.contact_phone_number, field_data="contact_phone_number") }}
-                {{ field_row("Club Address", value=club.club_address, is_textarea=true, field_data="club_address") }}
+                {{ field_row("Club Address", value=club.club_address, is_textarea=true, field_data="club_address", class='') }}
             {% endcall %}
         </div>
 
@@ -304,7 +330,7 @@
                 
                 {% for role, name in excomm_team.members.items() %}
                     {% set role_tag %}<span class="roster-role-tag role-officer" style="margin-bottom: 0;">{{ role }}</span>{% endset %}
-                    {{ field_row(role_tag, value=name, is_raw=true, field_data="excomm_" ~ role.lower()) }}
+                    {{ field_row(role_tag, value=name, is_raw=true, field_data="excomm_" ~ role.lower(), class='') }}
                 {% endfor %}
             {% endcall %}
         </div>
@@ -338,8 +364,18 @@
     </div>
 </div>
 
+<div id="contacts-data-storage" data-contacts='{{ contacts_list | tojson | safe if contacts_list is defined else "[]" }}' style="display: none;"></div>
+
 <script>
-    var CONTACTS_DATA = {{ contacts_list | tojson }};
+    var CONTACTS_DATA = [];
+    try {
+        const storage = document.getElementById('contacts-data-storage');
+        if (storage && storage.dataset.contacts) {
+            CONTACTS_DATA = JSON.parse(storage.dataset.contacts);
+        }
+    } catch (e) {
+        console.error("Error parsing contacts data:", e);
+    }
 
     document.addEventListener('DOMContentLoaded', function () {
         const editBtn = document.getElementById('edit-club-btn');
@@ -438,6 +474,7 @@
 
         function enableEditing() {
             isEditing = true;
+            document.querySelector('.about-club-container').classList.add('edit-mode');
             editBtn.innerHTML = '<i class="fas fa-save"></i> Save';
             editBtn.classList.remove('btn-primary');
             editBtn.classList.add('btn-success');
@@ -454,11 +491,14 @@
                 originalValues[field] = value;
 
                 let input;
+                const wrapFields = ['club_name', 'meeting_date', 'website', 'short_name'];
+                
                 if (field.startsWith('excomm_') && field !== 'excomm_name' && field !== 'excomm_term') {
-                    input = document.createElement('input');
-                    input.type = 'text';
-                    input.className = 'field-input';
+                    // Use textarea for excomm names to allow wrapping
+                    input = document.createElement('textarea');
+                    input.className = 'field-textarea-auto';
                     input.value = value;
+                    input.rows = 1;
                     input.setAttribute('autocomplete', 'off');
                     input.setAttribute('placeholder', 'Search member...');
                     input.setAttribute('data-field', field);
@@ -474,9 +514,9 @@
                         if (filtered.length === 0) { dropdown.style.display = 'none'; return; }
                         filtered.forEach(contact => {
                             const item = document.createElement('div');
+                            item.className = 'autocomplete-item';
                             item.textContent = contact.name;
-                            item.style.cssText = 'padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee;';
-                            item.addEventListener('mouseenter', () => item.style.backgroundColor = '#f0f0f0');
+                            item.addEventListener('mouseenter', () => item.style.backgroundColor = '#f0f4f8');
                             item.addEventListener('mouseleave', () => item.style.backgroundColor = 'white');
                             item.addEventListener('click', () => { input.value = contact.name; dropdown.style.display = 'none'; });
                             dropdown.appendChild(item);
@@ -491,13 +531,12 @@
                     cell.style.position = 'relative';
                     cell.textContent = '';
                     
-                    // Use a wrapper to match profile structure if possible, but keeping it simple for now
                     const wrapper = document.createElement('div');
                     wrapper.className = 'field-input-wrapper';
                     wrapper.appendChild(input);
                     wrapper.appendChild(dropdown);
                     cell.parentElement.replaceChild(wrapper, cell);
-                    wrapper.setAttribute('data-field', field); // Keep data-field for saveChanges
+                    wrapper.setAttribute('data-field', field);
                 } else if (field === 'club_address') {
                     input = document.createElement('textarea');
                     input.rows = 3;
@@ -513,7 +552,6 @@
                     input.type = 'date';
                     input.className = 'field-input';
                     if (value) {
-                        // Handle both YYYY-MM-DD and MM/DD/YYYY if necessary
                         if (value.includes('-')) {
                             input.value = value;
                         } else {
@@ -526,6 +564,11 @@
                             }
                         }
                     }
+                } else if (wrapFields.includes(field)) {
+                    input = document.createElement('textarea');
+                    input.className = 'field-textarea-auto';
+                    input.rows = 1;
+                    input.value = value;
                 } else {
                     input = document.createElement('input');
                     input.type = 'text';
@@ -541,11 +584,23 @@
                     wrapper.appendChild(input);
                     cell.parentElement.replaceChild(wrapper, cell);
                 }
+                
+                // Add auto-grow logic if it's a textarea
+                if (input && input.classList.contains('field-textarea-auto')) {
+                    const autoGrow = (el) => {
+                        el.style.height = 'auto';
+                        el.style.height = (el.scrollHeight) + 'px';
+                    };
+                    input.addEventListener('input', () => autoGrow(input));
+                    // Initial grow
+                    setTimeout(() => autoGrow(input), 0);
+                }
             });
         }
 
         function disableEditing() {
             isEditing = false;
+            document.querySelector('.about-club-container').classList.remove('edit-mode');
             editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
             editBtn.classList.remove('btn-success');
             editBtn.classList.add('btn-primary');
@@ -582,7 +637,7 @@
         }
 
         function saveChanges() {
-            const inputs = document.querySelectorAll('#about-club-content .field-input, #about-club-content .field-textarea');
+            const inputs = document.querySelectorAll('#about-club-content .field-input, #about-club-content .field-textarea, #about-club-content .field-textarea-auto');
             const data = {};
             inputs.forEach(input => {
                 const field = input.getAttribute('data-field');
@@ -602,7 +657,7 @@
                         const wrappers = document.querySelectorAll('#about-club-content .field-input-wrapper[data-field]');
                         wrappers.forEach(wrapper => {
                             const field = wrapper.getAttribute('data-field');
-                            const input = wrapper.querySelector('.field-input, .field-textarea');
+                            const input = wrapper.querySelector('.field-input, .field-textarea, .field-textarea-auto');
                             const value = input.value;
                             
                             const span = document.createElement('span');
@@ -627,6 +682,7 @@
                         });
 
                         isEditing = false;
+                        document.querySelector('.about-club-container').classList.remove('edit-mode');
                         editBtn.innerHTML = '<i class="fas fa-edit"></i> Edit';
                         editBtn.classList.remove('btn-success');
                         editBtn.classList.add('btn-primary');

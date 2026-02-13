@@ -97,11 +97,11 @@ class MeetingDeletionTestCase(unittest.TestCase):
         db.session.add(wl)
         
         # Add Vote
-        vote = Vote(meeting_number=meeting_num, voter_identifier="tester")
+        vote = Vote(meeting_id=meeting.id, voter_identifier="tester")
         db.session.add(vote)
         
         # Add Roster
-        roster = Roster(meeting_number=meeting_num, contact_id=self.contact.id)
+        roster = Roster(meeting_id=meeting.id, contact_id=self.contact.id)
         db.session.add(roster)
         db.session.commit()
         
@@ -111,7 +111,7 @@ class MeetingDeletionTestCase(unittest.TestCase):
         
         # Add Planner entry
         planner = Planner(
-            meeting_number=meeting_num,
+            meeting_id=meeting.id,
             user_id=self.user.id,
             club_id=self.club.id,
             meeting_role_id=self.role.id,
