@@ -494,9 +494,9 @@
         <h2>Achievement Tracking</h2>
         <div class="button-group">
           {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
-          <a href="{{ url_for('achievements_bp.achievement_form') }}" class="btn btn-success">
+          <button type="button" class="btn btn-success" onclick="openAchievementModal()">
             Add New 
-          </a>
+          </button>
           {% endif %}
         </div>
       </div>
@@ -562,7 +562,8 @@
               {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
               <td>
                 <div class="action-links">
-                  <a href="{{ url_for('achievements_bp.achievement_form', id=achievement.id) }}" class="icon-btn"
+                  <a href="javascript:void(0)" class="icon-btn"
+                    onclick="openAchievementModal('{{ achievement.id }}')"
                     title="Edit">
                     <i class="fas fa-edit"></i>
                   </a>
@@ -658,8 +659,9 @@
       </table>
     </div>
   </div>
-  
-  {% include '_session_modal.html' %} {% include '_role_modal.html' %}
+  {% include '_session_modal.html' %}
+  {% include 'partials/_achievement_modal.html' %}
+  {% include '_role_modal.html' %}
 </div>
 
 <!-- Mobile Warning Modal -->
@@ -742,10 +744,13 @@
     var ROLES_DATA = {{ roles| tojson }};
     const ALL_CONTACTS = {{ all_contacts| tojson }};
     const CURRENT_CLUB_ID = {{ club_id }};
+    const PATHWAYS_DATA = {{ pathways| tojson }};
+    const PROGRAMS_DATA = {{ programs| tojson }};
 </script>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}"></script>
 <script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
+<script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/settings_excomm.js') }}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {

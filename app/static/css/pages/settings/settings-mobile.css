@@ -70,6 +70,162 @@
 		display: none !important;
 	}
 
+	/* Achievement Form Refinements */
+	.achievement-modal-frame {
+		padding: 30px 20px;
+		background-color: #fff;
+		border-radius: 16px;
+		box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+		margin: 10px auto 30px auto;
+		width: 95%;
+		box-sizing: border-box;
+		border: 1px solid #f1f5f9;
+	}
+
+	.achievement-modal-frame .modal-header {
+		border: none;
+		padding: 0;
+		margin-bottom: 24px;
+		justify-content: center;
+		display: flex;
+	}
+
+	.achievement-modal-frame .modal-header h2 {
+		font-size: 1.5rem;
+		font-weight: 800;
+		margin: 0;
+		color: #004165;
+		letter-spacing: -0.01em;
+		text-align: center;
+	}
+
+	.achievement-form-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 20px;
+		/* Aligned with meeting form */
+		margin-top: 0;
+	}
+
+	.achievement-form-item {
+		grid-column: span 1;
+	}
+
+	.achievement-form-item.full-width {
+		grid-column: span 1;
+	}
+
+	.achievement-form-item label {
+		font-size: 10px;
+		text-transform: uppercase;
+		letter-spacing: 0.8px;
+		color: #888;
+		font-weight: 800;
+		display: block;
+		line-height: 1.2;
+		margin-bottom: 8px;
+	}
+
+	.required-field {
+		color: #dc3545;
+		margin-left: 2px;
+		font-weight: bold;
+	}
+
+	.achievement-form-grid input:not([type="checkbox"]):not([type="radio"]),
+	.achievement-form-grid select,
+	.achievement-form-grid textarea {
+		height: 44px !important;
+		min-height: 44px !important;
+		border: 1px solid #e9ecef !important;
+		border-radius: 8px !important;
+		padding: 0 15px !important;
+		font-size: 15px !important;
+		background-color: #f8f9fa !important;
+		color: #333 !important;
+		font-weight: 500 !important;
+		box-shadow: none !important;
+		width: 100% !important;
+		box-sizing: border-box;
+	}
+
+	.achievement-form-grid textarea {
+		height: auto !important;
+		padding: 12px 15px !important;
+	}
+
+	/* CustomSelect trigger parity */
+	.achievement-form-grid .custom-select-trigger {
+		height: 44px !important;
+		background-color: #f8f9fa !important;
+		border: 1px solid #e9ecef !important;
+		border-radius: 8px !important;
+		color: #333 !important;
+		font-weight: 500 !important;
+		font-size: 15px !important;
+	}
+
+	/* Reposition Date Icon to FRONT (left) */
+	.achievement-form-grid input[type="date"] {
+		position: relative;
+		padding-left: 42px !important;
+	}
+
+	.achievement-form-grid input[type="date"]::-webkit-calendar-picker-indicator {
+		position: absolute;
+		left: 12px;
+		width: 20px;
+		height: 20px;
+		margin: 0;
+		padding: 0;
+		cursor: pointer;
+		filter: invert(0.4);
+	}
+
+	.achievement-form-grid input:focus,
+	.achievement-form-grid select:focus,
+	.achievement-form-grid textarea:focus {
+		border-color: #004165 !important;
+		background-color: #ffffff !important;
+		box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1) !important;
+		outline: none !important;
+	}
+
+	.form-actions {
+		display: flex;
+		flex-direction: row;
+		gap: 12px;
+		margin-top: 32px;
+		justify-content: center;
+	}
+
+	.form-actions .btn {
+		flex: 1;
+		height: 44px !important;
+		min-height: 44px !important;
+		border-radius: 10px !important;
+		font-size: 15px !important;
+		font-weight: 700 !important;
+		margin: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: none !important;
+	}
+
+	.form-actions .btn-success {
+		background-color: #28a745 !important;
+		color: #fff !important;
+		order: 2;
+	}
+
+	.form-actions .btn-primary {
+		background-color: #e9ecef !important;
+		color: #495057 !important;
+		order: 1;
+		text-decoration: none;
+	}
+
 	/* Ensure modal is visible and centered */
 	#mobile-settings-warning-modal {
 		display: flex !important;

@@ -332,49 +332,52 @@
     <div id="createAgendaModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeCreateAgendaModal()">&times;</span>
-            <h2>Create New Agenda</h2>
+            <div class="modal-header">
+                <h2>Create New Agenda</h2>
+            </div>
             <form id="create-meeting-form">
-                <table class="form-table">
-                    <tr>
-                        <td><label for="meeting_number">Meeting Number:</label></td>
-                        <td><input type="number" id="meeting_number" name="meeting_number" value="{{ next_meeting_num }}" autocomplete="off" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label for="meeting_title">Meeting Title:</label></td>
-                        <td><input type="text" id="meeting_title" name="meeting_title" autocomplete="off"></td>
-                    </tr>
-                    <tr>
-                        <td><label for="meeting_date">Meeting Date:</label></td>
-                        <td><input type="date" id="meeting_date" name="meeting_date" value="{{ next_meeting_date }}" autocomplete="off" required>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label for="start_time">Start Time:</label></td>
-                        <td><input type="time" id="start_time" name="start_time" value="{{ default_start_time }}"
-                                autocomplete="off" required></td>
-                    </tr>
-                    <tr>
-                        <td><label for="meeting_type">Meeting Type:</label></td>
-                        <td>
-                            <select id="meeting_type" name="meeting_type" autocomplete="off" required>
-                                {% for type_name in meeting_types.keys() %}
-                                <option value="{{ type_name }}" {% if type_name=='Keynote Speech' %}selected{% endif %}>
-                                    {{ type_name }}</option>
-                                {% endfor %}
-                            </select>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><label for="ge_mode">GE Style:</label></td>
-                        <td>
-                            <select id="ge_mode" name="ge_mode" autocomplete="off" required>
-                                <option value="1">Distributed (1ms+3m)</option>
-                                <option value="0" selected>Traditional (5m)</option>
-                            </select>
-                        </td>
-                    </tr>
-                </table>
+                <div class="contact-form-grid">
+                    <div class="contact-form-item">
+                        <label for="meeting_number">Meeting Number:</label>
+                        <input type="number" id="meeting_number" name="meeting_number" value="{{ next_meeting_num }}"
+                            autocomplete="off" required>
+                    </div>
+
+                    <div class="contact-form-item">
+                        <label for="meeting_title">Meeting Title:</label>
+                        <input type="text" id="meeting_title" name="meeting_title" autocomplete="off">
+                    </div>
+
+                    <div class="contact-form-item">
+                        <label for="meeting_date">Meeting Date:</label>
+                        <input type="date" id="meeting_date" name="meeting_date" value="{{ next_meeting_date }}"
+                            autocomplete="off" required>
+                    </div>
+
+                    <div class="contact-form-item">
+                        <label for="start_time">Start Time:</label>
+                        <input type="time" id="start_time" name="start_time" value="{{ default_start_time }}"
+                            autocomplete="off" required>
+                    </div>
+
+                    <div class="contact-form-item full-width">
+                        <label for="meeting_type">Meeting Type:</label>
+                        <select id="meeting_type" name="meeting_type" autocomplete="off" required>
+                            {% for type_name in meeting_types.keys() %}
+                            <option value="{{ type_name }}" {% if type_name=='Keynote Speech' %}selected{% endif %}>
+                                {{ type_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="contact-form-item full-width">
+                        <label for="ge_mode">GE Style:</label>
+                        <select id="ge_mode" name="ge_mode" autocomplete="off" required>
+                            <option value="1">Distributed (1ms+3m)</option>
+                            <option value="0" selected>Traditional (5m)</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-success">Create Meeting</button>
                     <button type="button" class="btn btn-primary" onclick="closeCreateAgendaModal()">Cancel</button>

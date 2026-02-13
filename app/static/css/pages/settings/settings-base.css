@@ -517,3 +517,331 @@ fieldset.modal-frame .compact-form {
 	color: #fff;
 	border-bottom: 2px solid #5a1a25;
 }
+
+/* ========================================
+   Planner Modal Base Styles (Settings Copy)
+   ======================================== */
+.planner-modal {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.4);
+	backdrop-filter: blur(4px);
+	justify-content: center;
+	align-items: center;
+	z-index: 2000;
+}
+
+.planner-modal-content {
+	background: #fff;
+	border-radius: 16px;
+	width: 95%;
+	max-width: 500px;
+	padding: 2.5rem;
+	position: relative;
+	box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+	color: #333;
+	animation: modalScaleIn 0.3s ease-out;
+}
+
+@keyframes modalScaleIn {
+	from {
+		opacity: 0;
+		transform: scale(0.95);
+	}
+
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.planner-modal-header {
+	margin-bottom: 1.5rem;
+	border-bottom: 1px solid #f1f5f9;
+	padding-bottom: 0.75rem;
+}
+
+.planner-modal-header h3 {
+	font-family: "Montserrat", sans-serif;
+	font-size: 1.4rem;
+	margin: 0;
+	font-weight: 700;
+	color: #004165;
+	letter-spacing: -0.5px;
+}
+
+.planner-close-modal {
+	position: absolute;
+	top: 1.5rem;
+	right: 1.5rem;
+	font-size: 1.8rem;
+	color: #ccc;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	line-height: 1;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+}
+
+.planner-close-modal:hover {
+	background: #f8f9fa;
+	color: #000;
+}
+
+.planner-form-group {
+	margin-bottom: 1.5rem;
+}
+
+.planner-form-group label {
+	display: block;
+	font-size: 0.85rem;
+	font-weight: 700;
+	margin-bottom: 0.6rem;
+	color: #004165;
+	text-align: left;
+	letter-spacing: 0.3px;
+}
+
+.planner-form-control {
+	width: 100%;
+	min-height: 42px;
+	padding: 0.6rem 0.9rem;
+	background: #fff;
+	border: 1px solid #d1d9e0;
+	border-radius: 8px;
+	color: #333;
+	font-size: 0.95rem;
+	transition: all 0.2s ease;
+	outline: none;
+	box-sizing: border-box;
+	font-family: inherit;
+}
+
+.planner-form-control:focus {
+	border-color: #004165;
+	box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
+}
+
+.planner-form-control[readonly],
+.planner-form-control:disabled {
+	background-color: #f8fafc;
+	color: #64748b;
+	cursor: not-allowed;
+	border-color: #e2e8f0;
+}
+
+/* Custom Select & Autocomplete Harmonization */
+.custom-select-trigger,
+.owner-search-input {
+	min-height: 42px !important;
+	height: 42px !important;
+	font-size: 0.95rem !important;
+	border: 1px solid #d1d9e0 !important;
+	padding: 0.6rem 0.9rem !important;
+}
+
+.custom-select-trigger {
+	display: flex;
+	align-items: center;
+	background: #fff;
+}
+
+.custom-select-trigger:after {
+	content: "\f078";
+	font-family: "Font Awesome 5 Free";
+	font-weight: 900;
+	font-size: 0.8rem;
+	color: #888;
+	margin-left: auto;
+}
+
+.custom-select-container.open .custom-select-trigger:after {
+	content: "\f077";
+}
+
+.custom-select-options {
+	position: absolute;
+	top: calc(100% + 5px);
+	left: 0;
+	width: max-content;
+	min-width: 100%;
+	max-width: 350px;
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+	border: 1px solid #e2e8f0;
+	z-index: 2500;
+	overflow-y: auto;
+	display: none;
+	animation: dropdownSlide 0.2s ease-out;
+}
+
+@keyframes dropdownSlide {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.custom-select-container.open .custom-select-options {
+	display: block;
+}
+
+.custom-option {
+	padding: 0.75rem 1rem;
+	cursor: pointer;
+	transition: background 0.2s;
+	font-size: 0.95rem;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: #333;
+	white-space: nowrap;
+}
+
+.custom-option:hover {
+	background: #f1f8ff;
+	color: #004165;
+}
+
+.custom-option.selected {
+	background: #f8fafc;
+	color: #004165;
+	font-weight: 600;
+}
+
+.custom-select-icon,
+.custom-option-icon {
+	width: 20px;
+	text-align: center;
+	color: #004165;
+	font-family: "Font Awesome 5 Free" !important;
+	font-weight: 900;
+	font-size: 1rem;
+}
+
+.custom-select-text {
+	flex-grow: 1;
+	text-align: left;
+}
+
+.custom-select-container.disabled .custom-select-trigger {
+	background: #f8fafc !important;
+	color: #64748b !important;
+	border-color: #e2e8f0 !important;
+}
+
+/* Achievement Grid Layout */
+.achievement-grid {
+	display: grid;
+	grid-template-columns: 1.2fr 0.8fr;
+	gap: 1rem 1.5rem;
+}
+
+.achievement-grid .full-width {
+	grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+	.achievement-grid {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
+	.achievement-grid .full-width {
+		grid-column: span 1;
+	}
+}
+
+.planner-modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	margin-top: 1.5rem;
+}
+
+.planner-btn {
+	padding: 0.65rem 1.4rem;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: 0.9rem;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	border: none;
+	font-family: inherit;
+}
+
+.planner-btn-secondary {
+	background: #f1f5f9;
+	color: #475569;
+}
+
+.planner-btn-secondary:hover {
+	background: #e2e8f0;
+}
+
+.planner-btn-success {
+	background: #28a745;
+	color: #fff;
+}
+
+.planner-btn-success:hover {
+	background: #218838;
+	box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15);
+}
+
+.required-field {
+	color: #dc3545;
+	margin-left: 2px;
+}
+
+/* --- Autocomplete Suggestions Polish --- */
+.autocomplete-suggestions {
+	position: absolute;
+	border: 1px solid #e0e0e0;
+	border-top: none;
+	z-index: 9999;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background-color: #fff;
+	max-height: 200px;
+	overflow-y: auto;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+	border-bottom-left-radius: 8px;
+	border-bottom-right-radius: 8px;
+}
+
+.autocomplete-suggestion {
+	padding: 10px 15px;
+	cursor: pointer;
+	font-size: 0.95rem;
+	display: flex;
+	align-items: center;
+	transition: background 0.2s;
+}
+
+.autocomplete-suggestion:hover,
+.autocomplete-active {
+	background-color: #f1f8ff;
+	color: #004165;
+}
+
+.autocomplete-suggestion strong {
+	color: #004165;
+	background-color: #fff8e1;
+	padding: 0 2px;
+}

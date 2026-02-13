@@ -5,7 +5,7 @@ from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
-from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, PermissionAudit, ContactClub, Club, ExComm, UserClub, ExcommOfficer
+from .models import SessionType, User, MeetingRole, Achievement, Contact, Permission, AuthRole, RolePermission, PermissionAudit, ContactClub, Club, ExComm, UserClub, ExcommOfficer, Pathway
 from .constants import GLOBAL_CLUB_ID
 import json
 from . import db
@@ -105,7 +105,12 @@ def settings():
     else:
         all_contacts = Contact.query.order_by(Contact.Name.asc()).all()
     
-    all_contacts_data = [{"id": c.id, "Name": c.Name} for c in all_contacts]
+    all_contacts_data = [{"id": c.id, "Name": c.Name, "Member_ID": c.Member_ID or ""} for c in all_contacts]
+
+    # Pathways data for Achievement Modal
+    pathways = [p.name for p in Pathway.query.filter_by(type='pathway').order_by(Pathway.name).all()]
+    programs = [p.name for p in Pathway.query.filter_by(type='program').order_by(Pathway.name).all()]
+    project_types = ['level-completion', 'path-completion', 'program-completion']
 
     return render_template('settings.html', 
                           global_session_types=global_session_types,
@@ -119,7 +124,10 @@ def settings():
                           excomm_history=excomm_history,
                           officer_roles=officer_roles,
                           club_id=club_id, 
-                          GLOBAL_CLUB_ID=GLOBAL_CLUB_ID)
+                          GLOBAL_CLUB_ID=GLOBAL_CLUB_ID,
+                          pathways=pathways,
+                          programs=programs,
+                          project_types=project_types)
 
 
 @settings_bp.route('/settings/excomm/add', methods=['POST'])

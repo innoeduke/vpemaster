@@ -1140,34 +1140,75 @@ td.actions-column {
 	display: none !important;
 }
 
-/* --- Create New Agenda Modal Refinements (Desktop) --- */
-#createAgendaModal h2 {
+/* --- Create New Agenda Modal Refinements (Premium Style) --- */
+#createAgendaModal .modal-content {
+	padding: 30px;
+	max-width: 500px;
+	border-radius: 20px;
+	box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+#createAgendaModal .modal-header {
 	text-align: center;
-	margin-top: 0;
-	color: #004165;
-	font-size: 1.5rem;
-	font-weight: 700;
 	margin-bottom: 24px;
 }
 
-#createAgendaModal .form-table input[type="date"],
-#createAgendaModal .form-table input[type="time"] {
-	width: 100%;
-	padding: 12px;
-	border: 1px solid #ddd;
-	border-radius: 6px;
-	box-sizing: border-box;
-	font-size: 16px;
-	background-color: #fff;
-	transition: border-color 0.2s;
-	font-family: inherit;
+#createAgendaModal .modal-header h2 {
+	font-size: 1.8rem;
+	font-weight: 800;
+	margin: 0;
+	color: #004165;
 }
 
-#createAgendaModal .form-table input[type="date"]:focus,
-#createAgendaModal .form-table input[type="time"]:focus {
-	outline: none;
+/* Form Grid System (Matching Contacts) */
+.contact-form-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 15px;
+}
+
+.contact-form-item {
+	display: flex;
+	flex-direction: column;
+	grid-column: span 2;
+	text-align: left;
+}
+
+.contact-form-item.full-width {
+	grid-column: span 4;
+}
+
+.contact-form-item label {
+	font-weight: 700;
+	font-size: 0.9rem;
+	margin-bottom: 5px;
+	color: #333;
+}
+
+.contact-form-item input[type="text"],
+.contact-form-item input[type="email"],
+.contact-form-item input[type="number"],
+.contact-form-item input[type="date"],
+.contact-form-item input[type="time"],
+.contact-form-item select,
+.contact-form-item textarea {
+	border: 1.5px solid #e9ecef;
+	background-color: #f8f9fa;
+	padding: 10px;
+	border-radius: 8px;
+	font-family: inherit;
+	font-size: 15px;
+	transition: all 0.2s ease;
+	box-sizing: border-box;
+}
+
+.contact-form-item input:focus,
+.contact-form-item select:focus,
+.contact-form-item textarea:focus {
 	border-color: #004165;
+	background-color: #fff;
 	box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
+	outline: none;
 }
 
 #agenda-content.jpg-export-mode .agenda-header-logo img {

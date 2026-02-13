@@ -1,83 +1,93 @@
 // static/js/settings.js
 const ICON_LIST = [
-  { group: "Core Roles", icons: [
-    { value: "fa-microphone", label: "Microphone (Speaker/TM)" },
-    { value: "fa-stopwatch", label: "Stopwatch (Timer)" },
-    { value: "fa-edit", label: "Edit (Evaluator)" },
-    { value: "fa-book", label: "Book (Grammarian)" },
-    { value: "fa-calculator", label: "Calculator (Ah-Counter/Vote)" },
-    { value: "fa-comments", label: "Comments (Topicsmaster)" },
-    { value: "fa-comment", label: "Comment (Topics Speaker)" },
-    { value: "fa-search", label: "Search (Gen. Eval)" },
-    { value: "fa-user-tie", label: "User Tie (Prepared Speaker)" },
-    { value: "fa-lightbulb", label: "Lightbulb (Table Topics)" }
-  ]},
-  { group: "Officers & Leadership", icons: [
-    { value: "fa-gavel", label: "Gavel (President/Judge)" },
-    { value: "fa-crown", label: "Crown (President)" },
-    { value: "fa-graduation-cap", label: "Graduation Cap (VPE)" },
-    { value: "fa-users-cog", label: "Users Cog (VPE/VPM)" },
-    { value: "fa-users", label: "Users (VPM)" },
-    { value: "fa-bullhorn", label: "Bullhorn (VPPR)" },
-    { value: "fa-newspaper", label: "Newspaper (VPPR)" },
-    { value: "fa-coins", label: "Coins (Treasurer)" },
-    { value: "fa-pen-nib", label: "Pen Nib (Secretary)" },
-    { value: "fa-briefcase", label: "Briefcase (SAA)" },
-    { value: "fa-landmark", label: "Landmark" },
-    { value: "fa-university", label: "University/Building" }
-  ]},
-  { group: "Communication & Tools", icons: [
-    { value: "fa-handshake", label: "Handshake (Greeter)" },
-    { value: "fa-handshake-angle", label: "Handshake Angle (Mentor)" },
-    { value: "fa-hand-holding-heart", label: "Hand Holding Heart (Greeter)" },
-    { value: "fa-chalkboard", label: "Chalkboard (Mentor/Trainer)" },
-    { value: "fa-desktop", label: "Desktop (Zoom Master)" },
-    { value: "fa-laptop", label: "Laptop" },
-    { value: "fa-video", label: "Video" },
-    { value: "fa-headphones", label: "Headphones" },
-    { value: "fa-podcast", label: "Podcast" },
-    { value: "fa-microphone-alt", label: "Microphone Alt" },
-    { value: "fa-volume-up", label: "Volume" },
-    { value: "fa-bullseye", label: "Bullseye (Goals)" },
-    { value: "fa-puzzle-piece", label: "Puzzle Piece" },
-    { value: "fa-link", label: "Link" },
-    { value: "fa-cog", label: "Gear" },
-    { value: "fa-wrench", label: "Wrench" },
-    { value: "fa-hammer", label: "Hammer" }
-  ]},
-  { group: "Achievements & Symbols", icons: [
-    { value: "fa-trophy", label: "Trophy" },
-    { value: "fa-medal", label: "Medal" },
-    { value: "fa-award", label: "Award" },
-    { value: "fa-certificate", label: "Certificate" },
-    { value: "fa-star", label: "Star" },
-    { value: "fa-heart", label: "Heart" },
-    { value: "fa-flag", label: "Flag" },
-    { value: "fa-check-double", label: "Check Double" },
-    { value: "fa-info-circle", label: "Info" },
-    { value: "fa-question-circle", label: "Question" },
-    { value: "fa-bolt", label: "Bolt" },
-    { value: "fa-rocket", label: "Rocket" },
-    { value: "fa-key", label: "Key" },
-    { value: "fa-chart-line", label: "Chart Line" },
-    { value: "fa-chart-pie", label: "Chart Pie" }
-  ]},
-  { group: "Social & Fun", icons: [
-    { value: "fa-smile", label: "Smile Face" },
-    { value: "fa-laugh-squint", label: "Laugh Face" },
-    { value: "fa-grin-stars", label: "Grin Stars" },
-    { value: "fa-masks-theater", label: "Masks (Joke/Story)" },
-    { value: "fa-birthday-cake", label: "Celebration" },
-    { value: "fa-mug-hot", label: "Coffee/Break" },
-    { value: "fa-music", label: "Music" },
-    { value: "fa-camera", label: "Camera" },
-    { value: "fa-palette", label: "Palette" },
-    { value: "fa-globe-americas", label: "Earth" },
-    { value: "fa-globe", label: "Globe" },
-    { value: "fa-sun", label: "Sun" },
-    { value: "fa-moon", label: "Moon" },
-    { value: "fa-leaf", label: "Leaf" }
-  ]}
+  {
+    group: "Core Roles", icons: [
+      { value: "fa-microphone", label: "Microphone (Speaker/TM)" },
+      { value: "fa-stopwatch", label: "Stopwatch (Timer)" },
+      { value: "fa-edit", label: "Edit (Evaluator)" },
+      { value: "fa-book", label: "Book (Grammarian)" },
+      { value: "fa-calculator", label: "Calculator (Ah-Counter/Vote)" },
+      { value: "fa-comments", label: "Comments (Topicsmaster)" },
+      { value: "fa-comment", label: "Comment (Topics Speaker)" },
+      { value: "fa-search", label: "Search (Gen. Eval)" },
+      { value: "fa-user-tie", label: "User Tie (Prepared Speaker)" },
+      { value: "fa-lightbulb", label: "Lightbulb (Table Topics)" }
+    ]
+  },
+  {
+    group: "Officers & Leadership", icons: [
+      { value: "fa-gavel", label: "Gavel (President/Judge)" },
+      { value: "fa-crown", label: "Crown (President)" },
+      { value: "fa-graduation-cap", label: "Graduation Cap (VPE)" },
+      { value: "fa-users-cog", label: "Users Cog (VPE/VPM)" },
+      { value: "fa-users", label: "Users (VPM)" },
+      { value: "fa-bullhorn", label: "Bullhorn (VPPR)" },
+      { value: "fa-newspaper", label: "Newspaper (VPPR)" },
+      { value: "fa-coins", label: "Coins (Treasurer)" },
+      { value: "fa-pen-nib", label: "Pen Nib (Secretary)" },
+      { value: "fa-briefcase", label: "Briefcase (SAA)" },
+      { value: "fa-landmark", label: "Landmark" },
+      { value: "fa-university", label: "University/Building" }
+    ]
+  },
+  {
+    group: "Communication & Tools", icons: [
+      { value: "fa-handshake", label: "Handshake (Greeter)" },
+      { value: "fa-handshake-angle", label: "Handshake Angle (Mentor)" },
+      { value: "fa-hand-holding-heart", label: "Hand Holding Heart (Greeter)" },
+      { value: "fa-chalkboard", label: "Chalkboard (Mentor/Trainer)" },
+      { value: "fa-desktop", label: "Desktop (Zoom Master)" },
+      { value: "fa-laptop", label: "Laptop" },
+      { value: "fa-video", label: "Video" },
+      { value: "fa-headphones", label: "Headphones" },
+      { value: "fa-podcast", label: "Podcast" },
+      { value: "fa-microphone-alt", label: "Microphone Alt" },
+      { value: "fa-volume-up", label: "Volume" },
+      { value: "fa-bullseye", label: "Bullseye (Goals)" },
+      { value: "fa-puzzle-piece", label: "Puzzle Piece" },
+      { value: "fa-link", label: "Link" },
+      { value: "fa-cog", label: "Gear" },
+      { value: "fa-wrench", label: "Wrench" },
+      { value: "fa-hammer", label: "Hammer" }
+    ]
+  },
+  {
+    group: "Achievements & Symbols", icons: [
+      { value: "fa-trophy", label: "Trophy" },
+      { value: "fa-medal", label: "Medal" },
+      { value: "fa-award", label: "Award" },
+      { value: "fa-certificate", label: "Certificate" },
+      { value: "fa-star", label: "Star" },
+      { value: "fa-heart", label: "Heart" },
+      { value: "fa-flag", label: "Flag" },
+      { value: "fa-check-double", label: "Check Double" },
+      { value: "fa-info-circle", label: "Info" },
+      { value: "fa-question-circle", label: "Question" },
+      { value: "fa-bolt", label: "Bolt" },
+      { value: "fa-rocket", label: "Rocket" },
+      { value: "fa-key", label: "Key" },
+      { value: "fa-chart-line", label: "Chart Line" },
+      { value: "fa-chart-pie", label: "Chart Pie" }
+    ]
+  },
+  {
+    group: "Social & Fun", icons: [
+      { value: "fa-smile", label: "Smile Face" },
+      { value: "fa-laugh-squint", label: "Laugh Face" },
+      { value: "fa-grin-stars", label: "Grin Stars" },
+      { value: "fa-masks-theater", label: "Masks (Joke/Story)" },
+      { value: "fa-birthday-cake", label: "Celebration" },
+      { value: "fa-mug-hot", label: "Coffee/Break" },
+      { value: "fa-music", label: "Music" },
+      { value: "fa-camera", label: "Camera" },
+      { value: "fa-palette", label: "Palette" },
+      { value: "fa-globe-americas", label: "Earth" },
+      { value: "fa-globe", label: "Globe" },
+      { value: "fa-sun", label: "Sun" },
+      { value: "fa-moon", label: "Moon" },
+      { value: "fa-leaf", label: "Leaf" }
+    ]
+  }
 ];
 
 /**
@@ -136,7 +146,7 @@ function openTab(evt, tabName) {
 function initIconMatrix() {
   const container = document.getElementById("icon-matrix-container");
   const hiddenInput = document.getElementById("icon");
-  
+
   if (!container) {
     console.error("icon-matrix-container not found");
     return;
@@ -182,7 +192,7 @@ function initIconMatrix() {
       item.dataset.value = icon.value;
       item.title = icon.label;
       item.innerHTML = `<i class="fas ${icon.value}"></i>`;
-      
+
       item.addEventListener("click", () => {
         container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
         item.classList.add("active");
@@ -204,10 +214,10 @@ class TablePaginator {
     this.pageSize = config.pageSize || 25;
     this.currentPage = 1;
     this.storageKey = config.storageKey;
-    
+
     this.table = document.getElementById(this.tableId);
     this.container = document.getElementById(this.containerId);
-    
+
     if (!this.table || !this.container) return;
 
     this.tbody = this.table.querySelector('tbody');
@@ -215,7 +225,7 @@ class TablePaginator {
     this.currentPageDisplay = this.container.querySelector('.current-page-display');
     this.totalPagesDisplay = this.container.querySelector('.total-pages-display');
     this.pageSizeSelect = this.container.querySelector('.page-size-select');
-    
+
     this.firstBtn = this.container.querySelector('.first-page-btn');
     this.prevBtn = this.container.querySelector('.prev-page-btn');
     this.nextBtn = this.container.querySelector('.next-page-btn');
@@ -272,7 +282,7 @@ class TablePaginator {
     const rows = Array.from(this.tbody.rows);
     const filteredRows = this.getFilteredRows();
     const totalPages = this.getTotalPages();
-    
+
     if (this.currentPage > totalPages) this.currentPage = totalPages;
     if (this.currentPage < 1) this.currentPage = 1;
 
@@ -493,22 +503,22 @@ function setupGlobalFilter(searchInputId, searchClearId, tabNavSelector) {
       // If we filter, we simply hide rows based on 'data-search-hidden'.
       // If paginator exists, it manages display based on that attribute.
       // If no paginator, we must manually toggle display.
-      
+
       const tabId = activeTab.id;
       let hasPaginator = false;
       if (window.activePaginators && window.activePaginators[tabId]) {
-         // This assumes the paginator controls THE table. Which one?
-         // The paginator class takes 'tableId'. 
-         // If we have multiple tables, we probably only paginate the main one (Club Specific)?
-         // Or none?
-         // Let's assume simplest case: Standard filtering visibility apply to non-paginated tables too.
-         
-         // If this specific table has a paginator attached, use it.
-         // But we don't know easily.
-         // Fallback: Just update display if NO paginator attached to this specific table?
-         // Actually, let's keep it simple: Update display for all rows. 
-         // If paginator is active, it calls 'update()' which re-checks 'data-search-hidden'.
-         // So we just need to trigger paginator update ONCE after processing all rows?
+        // This assumes the paginator controls THE table. Which one?
+        // The paginator class takes 'tableId'. 
+        // If we have multiple tables, we probably only paginate the main one (Club Specific)?
+        // Or none?
+        // Let's assume simplest case: Standard filtering visibility apply to non-paginated tables too.
+
+        // If this specific table has a paginator attached, use it.
+        // But we don't know easily.
+        // Fallback: Just update display if NO paginator attached to this specific table?
+        // Actually, let's keep it simple: Update display for all rows. 
+        // If paginator is active, it calls 'update()' which re-checks 'data-search-hidden'.
+        // So we just need to trigger paginator update ONCE after processing all rows?
       }
 
       // Simple immediate visibility update for safety (overridden by paginator if active)
@@ -834,7 +844,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const title = document.getElementById("session-modal-title");
       const submitBtn = document.getElementById("session-modal-submit");
       const form = document.getElementById("addSessionForm");
-      
+
       if (modal && title && submitBtn && form) {
         title.textContent = "Add New Session Type";
         submitBtn.textContent = "Save";
@@ -863,49 +873,49 @@ document.addEventListener("DOMContentLoaded", () => {
         // Reset matrix selection to "None"
         const container = document.getElementById("icon-matrix-container");
         if (container) {
-            container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
-            const noneItem = container.querySelector('.icon-item[data-value=""]');
-            if (noneItem) noneItem.classList.add("active");
-            const hiddenInput = document.getElementById("icon");
-            if (hiddenInput) hiddenInput.value = "";
+          container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
+          const noneItem = container.querySelector('.icon-item[data-value=""]');
+          if (noneItem) noneItem.classList.add("active");
+          const hiddenInput = document.getElementById("icon");
+          if (hiddenInput) hiddenInput.value = "";
         }
 
         // Logic for Type selector based on Club ID
         const typeRadios = document.querySelectorAll('input[name="type"]');
         if (typeof CURRENT_CLUB_ID !== 'undefined') {
-            typeRadios.forEach(radio => {
-                const label = radio.parentElement;
-                if (!label) return;
-                
-                if (CURRENT_CLUB_ID === 1) {
-                    // Club 1: Hide "club-specific", show others
-                    if (radio.value === 'club-specific') {
-                        label.style.display = 'none';
-                    } else {
-                        label.style.display = 'flex';
-                    }
-                } else {
-                    // Other clubs: Hide "Standard" option (value="standard")
-                    // Show all others.
-                    if (radio.value === 'standard') {
-                        label.style.display = 'none';
-                    } else {
-                        label.style.display = 'flex';
-                    }
-                }
-            });
-            
-            // Set default selection based on visibility
-            // For non-club 1, fail safe to 'club-specific' if not editing
-            if (CURRENT_CLUB_ID !== 1) {
-                const clubSpecific = document.querySelector('input[name="type"][value="club-specific"]');
-                if (clubSpecific) clubSpecific.checked = true;
+          typeRadios.forEach(radio => {
+            const label = radio.parentElement;
+            if (!label) return;
+
+            if (CURRENT_CLUB_ID === 1) {
+              // Club 1: Hide "club-specific", show others
+              if (radio.value === 'club-specific') {
+                label.style.display = 'none';
+              } else {
+                label.style.display = 'flex';
+              }
             } else {
-                const standard = document.querySelector('input[name="type"][value="standard"]');
-                if (standard) standard.checked = true;
+              // Other clubs: Hide "Standard" option (value="standard")
+              // Show all others.
+              if (radio.value === 'standard') {
+                label.style.display = 'none';
+              } else {
+                label.style.display = 'flex';
+              }
             }
+          });
+
+          // Set default selection based on visibility
+          // For non-club 1, fail safe to 'club-specific' if not editing
+          if (CURRENT_CLUB_ID !== 1) {
+            const clubSpecific = document.querySelector('input[name="type"][value="club-specific"]');
+            if (clubSpecific) clubSpecific.checked = true;
+          } else {
+            const standard = document.querySelector('input[name="type"][value="standard"]');
+            if (standard) standard.checked = true;
+          }
         }
-        
+
         modal.style.display = "flex";
       }
     });
@@ -928,7 +938,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   setupTableSorting("sessions-table");
   sortTableByColumn(document.getElementById("sessions-table"), 1, true);
-  
+
   setupTableSorting("user-settings-table");
 
   setupTableSorting("global-roles-table");
@@ -1033,7 +1043,7 @@ document.addEventListener("DOMContentLoaded", () => {
             closeModal("addRoleModal");
             this.reset();
             // showNotification(data.message, "success");
-            
+
             // Update ROLES_DATA for session role dropdown
             const existingIndex = ROLES_DATA.findIndex(r => r.id == data.new_role.id);
             if (existingIndex !== -1) {
@@ -1062,23 +1072,23 @@ document.addEventListener("DOMContentLoaded", () => {
     let row = tableBody.querySelector(`tr[data-id="${sessionData.id}"]`);
     const isNew = !row;
     if (isNew) {
-        row = tableBody.insertRow();
-        row.dataset.id = sessionData.id;
+      row = tableBody.insertRow();
+      row.dataset.id = sessionData.id;
     }
 
     const roleObj = sessionData.role_id
       ? ROLES_DATA.find((r) => r.id == sessionData.role_id)
       : null;
     const roleName = roleObj ? roleObj.name : "";
-    
+
     let roleClass = roleObj ? (roleObj.award_category ? `role-${roleObj.award_category}` : 'role-other') : 'role-other';
     if (roleObj && roleObj.type === 'officer') {
-        roleClass = 'role-officer';
+      roleClass = 'role-officer';
     }
 
     const roleBadgeHtml = roleName ? `<span class="roster-role-tag ${roleClass}">${roleName}</span>` : "";
 
-    
+
     row.innerHTML = `
       <td>${sessionData.id}</td>
       <td data-field="Title">${sessionData.Title || ""}</td>
@@ -1137,8 +1147,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let row = tableBody.querySelector(`tr[data-id="${roleData.id}"]`);
     const isNew = !row;
     if (isNew) {
-        row = tableBody.insertRow();
-        row.dataset.id = roleData.id;
+      row = tableBody.insertRow();
+      row.dataset.id = roleData.id;
     }
 
     row.innerHTML = `
@@ -1244,7 +1254,7 @@ function renderPermissionsMatrix(data) {
   permissions.forEach((p) => {
     // Handle null/undefined category safely
     const safeCategory = p.category || "General";
-    
+
     if (safeCategory !== currentCategory) {
       currentCategory = safeCategory;
       html += `
@@ -1351,10 +1361,10 @@ function savePermissions() {
         payload.forEach(item => {
           originalPermissions[item.role_id] = item.permission_ids.sort();
         });
-        
+
         const saveBtn = document.getElementById("save-permissions-btn");
         if (saveBtn) saveBtn.disabled = true;
-        
+
         // Success message removed per requirement
       } else {
         showNotification(data.message, "error");
@@ -1461,6 +1471,9 @@ document.addEventListener("DOMContentLoaded", () => {
     })
   };
 
+  // Initialize Achievement Modal Autocomplete and Selects
+  initAchievementModal();
+
   // Re-run filter once to apply initial pagination
   setTimeout(() => {
     const searchInput = document.getElementById('global-settings-search');
@@ -1475,116 +1488,116 @@ document.addEventListener("DOMContentLoaded", () => {
  * Opens the role modal in edit mode and populates it with data from the table row.
  */
 function openEditRoleModal(roleId) {
-    const row = document.querySelector(`#roles-table tr[data-id="${roleId}"]`);
-    if (!row) return;
+  const row = document.querySelector(`#roles-table tr[data-id="${roleId}"]`);
+  if (!row) return;
 
-    const modal = document.getElementById("addRoleModal");
-    const title = document.getElementById("role-modal-title");
-    const submitBtn = document.getElementById("role-modal-submit");
-    const form = document.getElementById("addRoleForm");
-    
-    if (!modal || !title || !submitBtn || !form) return;
+  const modal = document.getElementById("addRoleModal");
+  const title = document.getElementById("role-modal-title");
+  const submitBtn = document.getElementById("role-modal-submit");
+  const form = document.getElementById("addRoleForm");
 
-    // Set modal to edit mode
-    title.textContent = "Edit Role";
-    submitBtn.textContent = "Save";
-    document.getElementById("role_id_input").value = roleId;
+  if (!modal || !title || !submitBtn || !form) return;
 
-    // Populate fields
-    form.name.value = row.querySelector('[data-field="name"]').textContent.trim();
-    // Populate fields
-    form.name.value = row.querySelector('[data-field="name"]').textContent.trim();
-    
-    // Type Radio Population
-    const typeValue = row.querySelector('[data-field="type"]').textContent.trim();
-    const typeRadio = form.querySelector(`input[name="type"][value="${typeValue}"]`);
-    if (typeRadio) typeRadio.checked = true;
+  // Set modal to edit mode
+  title.textContent = "Edit Role";
+  submitBtn.textContent = "Save";
+  document.getElementById("role_id_input").value = roleId;
 
-    // Award Category Radio Population
-    const categoryValue = row.querySelector('[data-field="award_category"]').textContent.trim();
-    const categoryRadio = form.querySelector(`input[name="award_category"][value="${categoryValue}"]`);
-    if (categoryRadio) {
-        categoryRadio.checked = true;
-    } else if (categoryValue === "" || categoryValue === "None") {
-         const noneRadio = form.querySelector(`input[name="award_category"][value=""]`);
-         if (noneRadio) noneRadio.checked = true;
-    }
-    
-    // Logic for Type selector visibility based on Club ID when EDITING
-    // Consistent with Add logic:
-    // Club 1: All visible
-    // Other: Hide "standard", show others
-    const typeRadios = form.querySelectorAll('input[name="type"]');
-    if (typeof CURRENT_CLUB_ID !== 'undefined') {
-        typeRadios.forEach(radio => {
-            const label = radio.parentElement;
-            if (!label) return;
-            
-            if (CURRENT_CLUB_ID === 1) {
-                 // Club 1: Hide "club-specific", show others
-                 if (radio.value === 'club-specific') {
-                     label.style.display = 'none';
-                 } else {
-                     label.style.display = 'flex';
-                 }
-            } else {
-                 if (radio.value === 'standard') {
-                     label.style.display = 'none';
-                 } else {
-                     label.style.display = 'flex';
-                 }
-            }
-        });
-    }
-    
-    form.needs_approval.checked = row.querySelector('[data-field="needs_approval"] input').checked;
-    form.has_single_owner.checked = row.querySelector('[data-field="has_single_owner"] input').checked;
-    form.is_member_only.checked = row.querySelector('[data-field="is_member_only"] input').checked;
+  // Populate fields
+  form.name.value = row.querySelector('[data-field="name"]').textContent.trim();
+  // Populate fields
+  form.name.value = row.querySelector('[data-field="name"]').textContent.trim();
 
-    // Icon handling
-    const rawIconText = row.querySelector('[data-field="icon"]').textContent.trim();
-    const iconValue = rawIconText.split(/\s+/).pop() || "";
-    const container = document.getElementById("icon-matrix-container");
-    if (container) {
-        container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
-        const item = container.querySelector(`.icon-item[data-value="${iconValue}"]`);
-        if (item) item.classList.add("active");
-        document.getElementById("icon").value = iconValue;
-    }
+  // Type Radio Population
+  const typeValue = row.querySelector('[data-field="type"]').textContent.trim();
+  const typeRadio = form.querySelector(`input[name="type"][value="${typeValue}"]`);
+  if (typeRadio) typeRadio.checked = true;
 
-    modal.style.display = "flex";
+  // Award Category Radio Population
+  const categoryValue = row.querySelector('[data-field="award_category"]').textContent.trim();
+  const categoryRadio = form.querySelector(`input[name="award_category"][value="${categoryValue}"]`);
+  if (categoryRadio) {
+    categoryRadio.checked = true;
+  } else if (categoryValue === "" || categoryValue === "None") {
+    const noneRadio = form.querySelector(`input[name="award_category"][value=""]`);
+    if (noneRadio) noneRadio.checked = true;
+  }
+
+  // Logic for Type selector visibility based on Club ID when EDITING
+  // Consistent with Add logic:
+  // Club 1: All visible
+  // Other: Hide "standard", show others
+  const typeRadios = form.querySelectorAll('input[name="type"]');
+  if (typeof CURRENT_CLUB_ID !== 'undefined') {
+    typeRadios.forEach(radio => {
+      const label = radio.parentElement;
+      if (!label) return;
+
+      if (CURRENT_CLUB_ID === 1) {
+        // Club 1: Hide "club-specific", show others
+        if (radio.value === 'club-specific') {
+          label.style.display = 'none';
+        } else {
+          label.style.display = 'flex';
+        }
+      } else {
+        if (radio.value === 'standard') {
+          label.style.display = 'none';
+        } else {
+          label.style.display = 'flex';
+        }
+      }
+    });
+  }
+
+  form.needs_approval.checked = row.querySelector('[data-field="needs_approval"] input').checked;
+  form.has_single_owner.checked = row.querySelector('[data-field="has_single_owner"] input').checked;
+  form.is_member_only.checked = row.querySelector('[data-field="is_member_only"] input').checked;
+
+  // Icon handling
+  const rawIconText = row.querySelector('[data-field="icon"]').textContent.trim();
+  const iconValue = rawIconText.split(/\s+/).pop() || "";
+  const container = document.getElementById("icon-matrix-container");
+  if (container) {
+    container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
+    const item = container.querySelector(`.icon-item[data-value="${iconValue}"]`);
+    if (item) item.classList.add("active");
+    document.getElementById("icon").value = iconValue;
+  }
+
+  modal.style.display = "flex";
 }
 
 /**
  * Opens the session modal in edit mode and populates it with data from the table row.
  */
 function openEditSessionModal(sessionId) {
-    const row = document.querySelector(`#sessions-table tr[data-id="${sessionId}"]`);
-    if (!row) return;
+  const row = document.querySelector(`#sessions-table tr[data-id="${sessionId}"]`);
+  if (!row) return;
 
-    const modal = document.getElementById("addSessionModal");
-    const title = document.getElementById("session-modal-title");
-    const submitBtn = document.getElementById("session-modal-submit");
-    const form = document.getElementById("addSessionForm");
+  const modal = document.getElementById("addSessionModal");
+  const title = document.getElementById("session-modal-title");
+  const submitBtn = document.getElementById("session-modal-submit");
+  const form = document.getElementById("addSessionForm");
 
-    if (!modal || !title || !submitBtn || !form) return;
+  if (!modal || !title || !submitBtn || !form) return;
 
-    // Set modal to edit mode
-    title.textContent = "Edit Session Type";
-    submitBtn.textContent = "Save";
-    document.getElementById("session_id_input").value = sessionId;
+  // Set modal to edit mode
+  title.textContent = "Edit Session Type";
+  submitBtn.textContent = "Save";
+  document.getElementById("session_id_input").value = sessionId;
 
-    // Populate fields
-    form.title.value = row.querySelector('[data-field="Title"]').textContent.trim();
-    form.role_id.value = row.querySelector('[data-field="role_id"]').dataset.roleId || "";
-    form.duration_min.value = row.querySelector('[data-field="Duration_Min"]').textContent.trim();
-    form.duration_max.value = row.querySelector('[data-field="Duration_Max"]').textContent.trim();
-    
-    form.is_section.checked = row.querySelector('[data-field="Is_Section"] input').checked;
-    form.valid_for_project.checked = row.querySelector('[data-field="Valid_for_Project"] input').checked;
-    form.is_hidden.checked = row.querySelector('[data-field="Is_Hidden"] input').checked;
+  // Populate fields
+  form.title.value = row.querySelector('[data-field="Title"]').textContent.trim();
+  form.role_id.value = row.querySelector('[data-field="role_id"]').dataset.roleId || "";
+  form.duration_min.value = row.querySelector('[data-field="Duration_Min"]').textContent.trim();
+  form.duration_max.value = row.querySelector('[data-field="Duration_Max"]').textContent.trim();
 
-    modal.style.display = "flex";
+  form.is_section.checked = row.querySelector('[data-field="Is_Section"] input').checked;
+  form.valid_for_project.checked = row.querySelector('[data-field="Valid_for_Project"] input').checked;
+  form.is_hidden.checked = row.querySelector('[data-field="Is_Hidden"] input').checked;
+
+  modal.style.display = "flex";
 }
 
 
@@ -1622,7 +1635,199 @@ function toggleAchievementGroup(groupId) {
 
 // Export to window for inline onclick
 
+
+/**
+ * Achievement Modal Logic
+ */
+function initAchievementModal() {
+  const input = document.getElementById('achievement_contact_search');
+  const hidden = document.getElementById('contact_id');
+  const memberIdDisplay = document.getElementById('member_id');
+  const typeSelect = document.getElementById('achievement_type');
+  const pathSelect = document.getElementById('path_name');
+  const levelInput = document.getElementById('level');
+  const form = document.getElementById('achievementForm');
+
+  if (input && hidden && typeof ALL_CONTACTS !== 'undefined') {
+    initAutocomplete(input, hidden, ALL_CONTACTS, {
+      onSelect: (contact) => {
+        if (memberIdDisplay) memberIdDisplay.value = contact.Member_ID || '';
+      }
+    });
+  }
+
+  if (typeSelect) {
+    typeSelect.addEventListener('change', handleAchievementTypeChange);
+  }
+
+  if (form) {
+    form.addEventListener('submit', handleAchievementSubmit);
+  }
+
+  // Initialize custom selects for modal if CustomSelect class exists
+  if (typeof CustomSelect !== 'undefined') {
+    window.achievementTypeSelect = new CustomSelect('achievement_type');
+    window.achievementPathSelect = new CustomSelect('path_name');
+  }
+}
+
+function openAchievementModal(id = null) {
+  const modal = document.getElementById('achievementModal');
+  const title = document.getElementById('achievement-modal-title');
+  const form = document.getElementById('achievementForm');
+  const idInput = document.getElementById('achievement-id');
+  const submitBtn = document.getElementById('save-achievement-btn');
+
+  if (!modal || !form) return;
+
+  form.reset();
+  document.getElementById('contact_id').value = '';
+  if (document.getElementById('member_id')) document.getElementById('member_id').value = '';
+
+  // Reset custom selects if they exist
+  if (window.achievementTypeSelect) window.achievementTypeSelect.refresh();
+  if (window.achievementPathSelect) window.achievementPathSelect.refresh();
+
+  if (id) {
+    title.textContent = "Edit Achievement";
+    submitBtn.textContent = "Save Changes";
+    idInput.value = id;
+
+    // Fetch achievement data – we can find it in the table or fetch via API
+    // Finding in table is faster for UI parity
+    const row = document.querySelector(`.achievement-row[onclick*="openAchievementModal('${id}')"]`) ||
+      document.querySelector(`.action-links [onclick*="openAchievementModal('${id}')"]`).closest('tr');
+
+    if (row) {
+      const date = row.cells[1].textContent.trim();
+      const memberId = row.cells[2].textContent.trim();
+      const typeText = row.cells[3].textContent.trim();
+      const path = row.cells[4].textContent.trim();
+      const level = row.cells[5].textContent.trim();
+      const notes = row.cells[6].textContent.trim();
+
+      // Map type text back to values
+      let typeValue = "";
+      if (typeText.includes("Level Completion")) typeValue = "level-completion";
+      else if (typeText.includes("Path Completion")) typeValue = "path-completion";
+      else if (typeText.includes("Program Completion")) typeValue = "program-completion";
+      else typeValue = typeText.toLowerCase().replace(/\s+/g, '-');
+
+      // Find contact by Member ID or Name from the group header
+      const parentId = row.getAttribute('data-parent-id');
+      const groupHeader = document.querySelector(`tr[data-id="${parentId}"]`);
+      const contactName = groupHeader ? groupHeader.querySelector('strong').textContent.trim() : "";
+
+      const contact = ALL_CONTACTS.find(c => c.Name === contactName);
+      if (contact) {
+        document.getElementById('contact_id').value = contact.id;
+        document.getElementById('achievement_contact_search').value = contact.Name;
+        document.getElementById('member_id').value = contact.Member_ID || "";
+      }
+
+      document.getElementById('issue_date').value = date;
+      document.getElementById('achievement_type').value = typeValue;
+      document.getElementById('path_name').value = (path === "-" ? "" : path);
+      document.getElementById('level').value = (level === "-" ? "" : level);
+      document.getElementById('notes').value = (notes === "-" ? "" : notes);
+
+      handleAchievementTypeChange(); // Run visibility logic
+
+      if (window.achievementTypeSelect) window.achievementTypeSelect.refresh();
+      if (window.achievementPathSelect) window.achievementPathSelect.refresh();
+    }
+  } else {
+    title.textContent = "Add Achievement";
+    submitBtn.textContent = "Save Achievement";
+    idInput.value = "";
+  }
+
+  modal.style.display = 'flex';
+}
+
+function closeAchievementModal() {
+  closeModal('achievementModal');
+}
+
+function handleAchievementTypeChange() {
+  const typeSelect = document.getElementById('achievement_type');
+  const pathSelect = document.getElementById('path_name');
+  const levelInput = document.getElementById('level');
+
+  if (!typeSelect) return;
+  const type = typeSelect.value;
+
+  // Enable/Disable Level
+  if (levelInput) {
+    if (type === 'level-completion') {
+      levelInput.disabled = false;
+    } else {
+      levelInput.disabled = true;
+      levelInput.value = '';
+    }
+  }
+
+  // Dynamic Pathways
+  if (pathSelect && typeof PATHWAYS_DATA !== 'undefined' && typeof PROGRAMS_DATA !== 'undefined') {
+    let targetList = [];
+    if (type === 'level-completion' || type === 'path-completion') {
+      targetList = PATHWAYS_DATA;
+    } else if (type === 'program-completion') {
+      targetList = PROGRAMS_DATA;
+    }
+
+    const savedValue = pathSelect.value;
+    pathSelect.innerHTML = '<option value="">Select Path...</option>';
+    targetList.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.text = name;
+      opt.dataset.icon = 'fa-map-signs'; // Ensure icon is preserved
+      if (name === savedValue) opt.selected = true;
+      pathSelect.appendChild(opt);
+    });
+
+    if (window.achievementPathSelect) window.achievementPathSelect.refresh();
+  }
+}
+
+async function handleAchievementSubmit(e) {
+  e.preventDefault();
+  const form = e.target;
+  const id = document.getElementById('achievement-id').value;
+  const contactId = document.getElementById('contact_id').value;
+
+  if (!contactId) {
+    alert('Please select a valid member.');
+    return;
+  }
+
+  const formData = new FormData(form);
+  const url = id ? `/achievement/form/${id}` : '/achievement/form';
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData,
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    });
+
+    if (response.redirected) {
+      window.location.href = response.url;
+      return;
+    }
+
+    // If it's a standard redirect from achievement_form, it goes back to settings
+    window.location.reload();
+  } catch (error) {
+    console.error('Error saving achievement:', error);
+    alert('An error occurred while saving.');
+  }
+}
+
 window.openEditRoleModal = openEditRoleModal;
 window.openEditSessionModal = openEditSessionModal;
 window.toggleAchievementGroup = toggleAchievementGroup;
+window.openAchievementModal = openAchievementModal;
+window.closeAchievementModal = closeAchievementModal;
 

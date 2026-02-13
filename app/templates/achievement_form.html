@@ -2,12 +2,15 @@
 {% block title %}{{ 'Edit' if achievement else 'Add' }} Achievement{% endblock %}
 
 {% block content %}
-    <h2>{{ 'Edit' if achievement else 'Add' }} Achievement</h2>
-    <form method="POST" id="achievementForm">
-        <table class="form-table">
-            <tr>
-                <td><label for="achievement_contact_search">Member: <span class="required-field">*</span></label></td>
-                <td>
+    <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
+    <div class="achievement-modal-frame">
+        <div class="modal-header">
+            <h2>{{ 'Edit' if achievement else 'Add' }} Achievement</h2>
+        </div>
+        <form method="POST" id="achievementForm">
+            <div class="achievement-form-grid">
+                <div class="achievement-form-item">
+                    <label for="achievement_contact_search">Member: <span class="required-field">*</span></label>
                     <div class="autocomplete-container">
                         <input type="text" id="achievement_contact_search" 
                                class="owner-search-input" 
@@ -16,19 +19,20 @@
                                required autocomplete="off">
                         <input type="hidden" name="contact_id" id="contact_id" value="{{ achievement.contact_id if achievement else '' }}">
                     </div>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="member_id">Member ID:</label></td>
-                <td><input type="text" name="member_id" id="member_id" class="form-control" value="{{ achievement.member_id if achievement else '' }}" disabled></td>
-            </tr>
-            <tr>
-                <td><label for="issue_date">Issue Date: <span class="required-field">*</span></label></td>
-                <td><input type="date" name="issue_date" id="issue_date" class="form-control" required value="{{ achievement.issue_date.strftime('%Y-%m-%d') if achievement else '' }}"></td>
-            </tr>
-            <tr>
-                <td><label for="achievement_type">Type: <span class="required-field">*</span></label></td>
-                <td>
+                </div>
+
+                <div class="achievement-form-item">
+                    <label for="member_id">Member ID:</label>
+                    <input type="text" name="member_id" id="member_id" class="form-control" value="{{ achievement.member_id if achievement else '' }}" disabled>
+                </div>
+
+                <div class="achievement-form-item">
+                    <label for="issue_date">Issue Date: <span class="required-field">*</span></label>
+                    <input type="date" name="issue_date" id="issue_date" class="form-control" required value="{{ achievement.issue_date.strftime('%Y-%m-%d') if achievement else '' }}">
+                </div>
+
+                <div class="achievement-form-item">
+                    <label for="achievement_type">Type: <span class="required-field">*</span></label>
                     <select name="achievement_type" id="achievement_type" class="form-control" required>
                         {% for type in project_types %}
                         <option value="{{ type }}" {% if achievement and achievement.achievement_type == type %}selected{% endif %}>
@@ -37,44 +41,45 @@
                         </option>
                         {% endfor %}
                     </select>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="path_name">Path Name:</label></td>
-                <td>
+                </div>
+
+                <div class="achievement-form-item">
+                    <label for="path_name">Path Name:</label>
                     <select name="path_name" id="path_name" class="form-control">
                         <option value="">Select Path...</option>
                         {% for path in pathways %}
                         <option value="{{ path }}" {% if achievement and achievement.path_name == path %}selected{% endif %}>{{ path }}</option>
                         {% endfor %}
                     </select>
-                </td>
-            </tr>
-            <tr>
-                <td><label for="level">Level:</label></td>
-                <td><input type="number" name="level" id="level" class="form-control" min="1" max="5" value="{{ achievement.level if achievement else '' }}"></td>
-            </tr>
-            <tr>
-                <td><label for="notes">Notes:</label></td>
-                <td><textarea name="notes" id="notes" class="form-control" rows="3">{{ achievement.notes if achievement else '' }}</textarea></td>
-            </tr>
-        </table>
-        
-        <div class="form-actions">
-            <button type="submit" class="btn btn-success">Save</button>
-            <a href="{{ url_for('settings_bp.settings', default_tab='achievements') }}" class="btn btn-danger">Cancel</a>
-        </div>
-    </form>
+                </div>
+
+                <div class="achievement-form-item">
+                    <label for="level">Level:</label>
+                    <input type="number" name="level" id="level" class="form-control" min="1" max="5" value="{{ achievement.level if achievement else '' }}">
+                </div>
+
+                <div class="achievement-form-item full-width">
+                    <label for="notes">Notes:</label>
+                    <textarea name="notes" id="notes" class="form-control" rows="3">{{ achievement.notes if achievement else '' }}</textarea>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-success">Save Achievement</button>
+                <a href="{{ url_for('settings_bp.settings', default_tab='achievements') }}" class="btn btn-primary">Cancel</a>
+            </div>
+        </form>
+    </div>
 
     <script>
         // Pass contacts to JS
         const allContacts = [
             {% for contact in contacts %}
             {
-                id: "{{ contact.id }}",
-                name: "{{ contact.Name }}",
-                member_id: "{{ contact.Member_ID or '' }}",
-                current_path: "{{ contact.Current_Path or '' }}"
+                id: {{ contact.id | tojson }},
+                name: {{ contact.Name | tojson }},
+                member_id: {{ (contact.Member_ID or '') | tojson }},
+                current_path: {{ (contact.Current_Path or '') | tojson }}
             },
             {% endfor %}
         ];
@@ -85,74 +90,70 @@
             const memberIdInput = document.getElementById('member_id');
             const pathNameInput = document.getElementById('path_name');
             const levelInput = document.getElementById('level');
+            const achievementTypeSelect = document.getElementById('achievement_type');
+            const achievementForm = document.getElementById('achievementForm');
 
             /* --- Custom Autocomplete Logic --- */
             let currentFocus;
             
-            searchInput.addEventListener("input", function(e) {
-                let val = this.value;
-                closeAllLists();
-                if (!val) {
-                    // Optional: Clear fields if input is empty?
-                    return;
-                }
-                currentFocus = -1;
-                
-                // Create container for items
-                let a = document.createElement("div");
-                a.setAttribute("id", this.id + "autocomplete-list");
-                a.setAttribute("class", "autocomplete-items");
-                // Append to the autocomplete container (parent of input)
-                this.parentNode.appendChild(a);
-                
-                // Filter matches
-                let matches = allContacts.filter(c => c.name.toUpperCase().includes(val.toUpperCase())).slice(0, 10);
-                
-                for (let i = 0; i < matches.length; i++) {
-                    let contact = matches[i];
-                    let b = document.createElement("div");
-                    // Highlight match: bold the matching substring (simple implementation)
-                    let name = contact.name;
-                    let matchIndex = name.toUpperCase().indexOf(val.toUpperCase());
-                    if (matchIndex >= 0) {
-                         b.innerHTML = name.substr(0, matchIndex) + "<strong>" + name.substr(matchIndex, val.length) + "</strong>" + name.substr(matchIndex + val.length);
-                    } else {
-                        b.innerHTML = name;
-                    }
+            if (searchInput) {
+                searchInput.addEventListener("input", function(e) {
+                    let val = this.value;
+                    closeAllLists();
+                    if (!val) return;
+                    currentFocus = -1;
                     
-                    b.innerHTML += `<input type='hidden' value='${contact.name}'>`;
+                    let a = document.createElement("div");
+                    a.setAttribute("id", this.id + "autocomplete-list");
+                    a.setAttribute("class", "autocomplete-items");
+                    this.parentNode.appendChild(a);
                     
-                    b.addEventListener("click", function(e) {
-                         searchInput.value = contact.name;
-                         contactIdInput.value = contact.id;
-                         memberIdInput.value = contact.member_id;
-                         if (contact.current_path && pathNameInput) {
-                             pathNameInput.value = contact.current_path;
-                         }
-                         closeAllLists();
+                    let matches = allContacts.filter(c => c.name.toUpperCase().includes(val.toUpperCase())).slice(0, 10);
+                    
+                    matches.forEach(contact => {
+                        let b = document.createElement("div");
+                        let name = contact.name;
+                        let matchIndex = name.toUpperCase().indexOf(val.toUpperCase());
+                        if (matchIndex >= 0) {
+                             b.innerHTML = name.substr(0, matchIndex) + "<strong>" + name.substr(matchIndex, val.length) + "</strong>" + name.substr(matchIndex + val.length);
+                        } else {
+                            b.innerHTML = name;
+                        }
+                        
+                        b.innerHTML += `<input type='hidden' value='${contact.name}'>`;
+                        
+                        b.addEventListener("click", function(e) {
+                             searchInput.value = contact.name;
+                             contactIdInput.value = contact.id;
+                             memberIdInput.value = contact.member_id;
+                             if (contact.current_path && pathNameInput) {
+                                 pathNameInput.value = contact.current_path;
+                                 if (window.pathSelect) window.pathSelect.updateTrigger();
+                             }
+                             closeAllLists();
+                        });
+                        a.appendChild(b);
                     });
-                    a.appendChild(b);
-                }
-            });
-            
-            // Key navigation
-            searchInput.addEventListener("keydown", function(e) {
-                let x = document.getElementById(this.id + "autocomplete-list");
-                if (x) x = x.getElementsByTagName("div");
-                if (e.keyCode == 40) { // Down
-                    currentFocus++;
-                    addActive(x);
-                } else if (e.keyCode == 38) { // Up
-                    currentFocus--;
-                    addActive(x);
-                } else if (e.keyCode == 13) { // Enter
-                    e.preventDefault();
-                    if (currentFocus > -1) {
-                        if (x) x[currentFocus].click();
+                });
+
+                searchInput.addEventListener("keydown", function(e) {
+                    let x = document.getElementById(this.id + "autocomplete-list");
+                    if (x) x = x.getElementsByTagName("div");
+                    if (e.keyCode == 40) { // Down
+                        currentFocus++;
+                        addActive(x);
+                    } else if (e.keyCode == 38) { // Up
+                        currentFocus--;
+                        addActive(x);
+                    } else if (e.keyCode == 13) { // Enter
+                        e.preventDefault();
+                        if (currentFocus > -1) {
+                            if (x) x[currentFocus].click();
+                        }
                     }
-                }
-            });
-            
+                });
+            }
+
             function addActive(x) {
                 if (!x) return false;
                 removeActive(x);
@@ -179,39 +180,33 @@
             document.addEventListener("click", function (e) {
                 closeAllLists(e.target);
             });
-            /* -------------------------------- */
 
-            // Prevent form submission if contact is not selected properly
-            // Note: The custom autocomplete fills contactIdInput, so we just check that.
-
-
-            // Prevent form submission if contact is not selected properly
-            document.getElementById('achievementForm').addEventListener('submit', function(e) {
-                if (!contactIdInput.value) {
-                    e.preventDefault();
-                    alert('Please select a valid member from the list.');
-                }
-            });
+            if (achievementForm) {
+                achievementForm.addEventListener('submit', function(e) {
+                    if (!contactIdInput.value) {
+                        e.preventDefault();
+                        alert('Please select a valid member from the list.');
+                    }
+                });
+            }
 
             // Dynamic Path Names based on Achievement Type
-            const pathways = {{ pathways|tojson }};
-            const programs = {{ programs|tojson }};
+            const pathData = {{ pathways|tojson }};
+            const programData = {{ programs|tojson }};
             const currentPathName = "{{ achievement.path_name if achievement else '' }}";
 
             function updatePathDropdown() {
+                if (!achievementTypeSelect || !pathNameInput) return;
                 const type = achievementTypeSelect.value;
                 let targetList = [];
                 
                 if (type === 'level-completion' || type === 'path-completion') {
-                    targetList = pathways;
+                    targetList = pathData;
                 } else if (type === 'program-completion') {
-                    targetList = programs;
+                    targetList = programData;
                 }
 
-                // Keep existing selection if it's in the new list, or if we are initializing
                 const savedValue = pathNameInput.value || currentPathName;
-
-                // Clear and rebuild
                 pathNameInput.innerHTML = '<option value="">Select Path...</option>';
                 targetList.forEach(name => {
                     const opt = document.createElement('option');
@@ -220,25 +215,30 @@
                     if (name === savedValue) opt.selected = true;
                     pathNameInput.appendChild(opt);
                 });
+
+                if (window.pathSelect) window.pathSelect.refresh();
             }
 
             function handleTypeChange() {
+                if (!achievementTypeSelect) return;
                 const type = achievementTypeSelect.value;
                 
-                // Toggle Level field
-                if (type === 'level-completion') {
-                    levelInput.disabled = false;
-                } else {
-                    levelInput.disabled = true;
-                    levelInput.value = '';
+                if (levelInput) {
+                    if (type === 'level-completion') {
+                        levelInput.disabled = false;
+                    } else {
+                        levelInput.disabled = true;
+                        levelInput.value = '';
+                    }
                 }
-
-                // Switch Path list
                 updatePathDropdown();
             }
 
             if (achievementTypeSelect && levelInput && pathNameInput) {
-                // Initialize
+                // Initialize custom selects
+                window.typeSelect = new CustomSelect('achievement_type');
+                window.pathSelect = new CustomSelect('path_name');
+
                 handleTypeChange();
                 achievementTypeSelect.addEventListener('change', handleTypeChange);
             }

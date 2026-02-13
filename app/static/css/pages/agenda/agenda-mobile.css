@@ -538,88 +538,75 @@
   }
 
   /* Create Agenda Modal Refinements - Aligned with Profile and Planner */
-  #createAgendaModal .modal-content {
+  /* Create Agenda Modal Mobile Refinements */
+  #agenda-content #createAgendaModal {
+    z-index: 1100;
+    /* Ensure it stays above mobile header (z-index 1005) */
+    align-items: flex-start;
+    padding-top: 20px;
+    overflow-y: auto;
+  }
+
+  #agenda-content #createAgendaModal .modal-content {
     padding: 30px 20px;
     border-radius: 16px;
-    /* Matching Planner */
     width: 92%;
     border: none;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-    /* Matching Planner */
+    margin-bottom: 20px;
   }
 
-  #createAgendaModal h2 {
-    font-size: 1.3rem;
-    /* Matching Planner header size */
-    font-weight: 700;
+  #agenda-content #createAgendaModal .modal-header h2 {
+    font-size: 1.5rem;
+    font-weight: 800;
     margin-bottom: 24px;
     color: #004165;
-    /* Matching Planner header color */
     letter-spacing: -0.01em;
     text-align: center;
   }
 
-  #createAgendaModal .form-table {
-    border: none !important;
-    width: 100%;
+  /* Reset grid for mobile */
+  #agenda-content #createAgendaModal .contact-form-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 
-  #createAgendaModal .form-table tr {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 32px;
-    border: none !important;
+  #agenda-content #createAgendaModal .contact-form-item {
+    grid-column: span 1;
   }
 
-  #createAgendaModal .form-table td {
-    padding: 0 !important;
-    border: none !important;
-    text-align: left;
-    width: 100% !important;
+  #agenda-content #createAgendaModal .contact-form-item.full-width {
+    grid-column: span 1;
   }
 
-  #createAgendaModal .form-table td:first-child {
-    background-color: transparent !important;
-    margin-bottom: 12px;
-  }
-
-  #createAgendaModal .form-table label {
+  #agenda-content #createAgendaModal .contact-form-item label {
     font-size: 10px;
-    /* Exact Profile Label size */
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    /* Exact Profile Label spacing */
     color: #888;
-    /* Exact Profile Label color */
     font-weight: 800;
-    /* Matching Profile Label weight */
     display: block;
     line-height: 1.2;
-    margin-top: 24px;
     margin-bottom: 8px;
   }
 
   /* Custom Select Refinements for Meeting Form */
-  #createAgendaModal .custom-select-container {
-    width: 100%;
-  }
-
-  #createAgendaModal .custom-select-trigger {
-    height: 44px !important;
-    min-height: 44px !important;
-    border: 1px solid #ddd !important;
-    border-radius: 8px !important;
-    padding: 0 15px !important;
-    font-size: 15px !important;
-    background-color: #fff !important;
-    color: #333 !important;
-    font-weight: 500 !important;
-    display: flex !important;
-    align-items: center !important;
+  #agenda-content #createAgendaModal .custom-select-trigger {
+    height: 44px;
+    min-height: 44px;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0 15px;
+    font-size: 15px;
+    background-color: #f8f9fa;
+    color: #333;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
     box-sizing: border-box;
   }
 
-  #createAgendaModal .custom-select-trigger:after {
+  #agenda-content #createAgendaModal .custom-select-trigger:after {
     content: "\f078";
     font-family: "Font Awesome 5 Free";
     font-weight: 900;
@@ -628,87 +615,18 @@
     margin-left: auto;
   }
 
-  #createAgendaModal .custom-select-container.open .custom-select-trigger {
-    border-color: #004165 !important;
-    box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1) !important;
+  #agenda-content #createAgendaModal .custom-select-container.open .custom-select-trigger {
+    border-color: #004165;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
   }
 
-  #createAgendaModal .custom-select-container.open .custom-select-trigger:after {
-    content: "\f077";
-  }
-
-  #createAgendaModal .custom-select-options {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    border: 1px solid #eee;
+  #agenda-content #createAgendaModal .custom-select-options {
     z-index: 2100;
-    box-sizing: border-box;
   }
 
-  #createAgendaModal .custom-option {
-    padding: 12px 15px;
-    font-size: 15px;
-    color: #333;
-    box-sizing: border-box;
-  }
-
-  #createAgendaModal .custom-option:hover {
-    background: #f0f7ff;
-  }
-
-  #createAgendaModal .custom-option.selected {
-    background: #e9ecef;
-    color: #004165;
-    font-weight: 600;
-  }
-
-  /* Reset form control base styles for this modal */
-  #createAgendaModal .form-table input:not([type="checkbox"]):not([type="radio"]) {
-    height: 44px !important;
-    min-height: 44px !important;
-    border: 1px solid #ddd !important;
-    border-radius: 8px !important;
-    padding: 0 15px !important;
-    font-size: 15px !important;
-    background-color: #fff !important;
-    color: #333 !important;
-    font-weight: 500 !important;
-    box-shadow: none !important;
-    width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-  }
-
-  #createAgendaModal .form-table select {
-    height: 44px !important;
-    min-height: 44px !important;
-    border: 1px solid #ddd !important;
-    border-radius: 8px !important;
-    padding: 0 15px !important;
-    font-size: 15px !important;
-    background-color: #fff !important;
-    color: #333 !important;
-    font-weight: 500 !important;
-    box-shadow: none !important;
-    width: 100% !important;
-    display: flex;
-    /* REMOVED !important TO ALLOW JS HIDING */
-    align-items: center !important;
-  }
-
-
-  #createAgendaModal .form-table input:focus,
-  #createAgendaModal .form-table select:focus {
-    border-color: #004165 !important;
-    /* Matching Profile/Planner focus color */
-    background-color: #ffffff !important;
-    box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1) !important;
-    /* Matching Profile/Planner focus shadow */
-    outline: none !important;
-  }
-
-  #createAgendaModal .form-actions {
+  /* Form Actions Refinement */
+  #agenda-content #createAgendaModal .form-actions {
     display: flex;
     flex-direction: row;
     gap: 12px;
@@ -716,35 +634,29 @@
     justify-content: center;
   }
 
-  #createAgendaModal .form-actions .btn {
+  #agenda-content #createAgendaModal .form-actions .btn {
     flex: 1;
-    height: 44px !important;
-    /* Matching Profile Button height */
-    min-height: 44px !important;
-    border-radius: 10px !important;
-    /* Matching Profile Button radius */
-    font-size: 15px !important;
-    /* Matching Profile Button font size */
-    font-weight: 700 !important;
-    margin: 0 !important;
-    min-width: 0 !important;
+    height: 44px;
+    min-height: 44px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: none !important;
+    border: none;
   }
 
-  #createAgendaModal .form-actions .btn-success {
-    background-color: #28a745 !important;
-    /* Matching Planner Success Green */
-    color: #fff !important;
+  #agenda-content #createAgendaModal .form-actions .btn-success {
+    background-color: #28a745;
+    color: #fff;
     order: 2;
   }
 
-  #createAgendaModal .form-actions .btn-primary {
-    background-color: #e9ecef !important;
-    /* Matching Planner Secondary Gray */
-    color: #495057 !important;
+  #agenda-content #createAgendaModal .form-actions .btn-primary {
+    background-color: #e9ecef;
+    color: #495057;
     order: 1;
   }
 }

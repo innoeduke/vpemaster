@@ -1,0 +1,76 @@
+<!-- Achievement Modal -->
+<div id="achievementModal" class="planner-modal">
+    <div class="planner-modal-content">
+        <span class="planner-close-modal" onclick="closeAchievementModal()">&times;</span>
+        <div class="planner-modal-header">
+            <h3 id="achievement-modal-title">Add Achievement</h3>
+        </div>
+        <form id="achievementForm" class="achievement-form">
+      <input type="hidden" id="achievement-id" name="id" value="" />
+      <div class="achievement-grid">
+        <!-- Row 1: Member + Member ID -->
+        <div class="planner-form-group">
+          <label for="achievement_contact_search">Member <span class="required-field">*</span></label>
+          <div class="autocomplete-container">
+            <input type="text" id="achievement_contact_search" name="member_name"
+              class="planner-form-control owner-search-input" placeholder="Search for member..." required />
+            <input type="hidden" id="contact_id" name="contact_id" />
+          </div>
+        </div>
+
+        <div class="planner-form-group">
+          <label for="member_id">Member ID</label>
+          <input type="text" id="member_id" name="member_id" class="planner-form-control" placeholder="Automatically populated..." readonly tabindex="-1" />
+        </div>
+
+        <!-- Row 2: Type + Issue Date -->
+        <div class="planner-form-group">
+          <label for="achievement_type">Type <span class="required-field">*</span></label>
+          <select id="achievement_type" name="type" class="planner-form-control" required>
+            <option value="" disabled selected>Select Type...</option>
+            <option value="level-completion" data-icon="fa-medal">Level Completion</option>
+            <option value="path-completion" data-icon="fa-route">Path Completion</option>
+            <option value="program-completion" data-icon="fa-graduation-cap">Program Completion</option>
+          </select>
+        </div>
+
+        <div class="planner-form-group">
+          <label for="issue_date">Issue Date <span class="required-field">*</span></label>
+          <input type="date" id="issue_date" name="issue_date" class="planner-form-control" required />
+        </div>
+
+        <!-- Row 3: Path + Level -->
+        <div class="planner-form-group">
+          <label for="path_name">Path Name</label>
+          <select id="path_name" name="path_name" class="planner-form-control">
+            <option value="">Select Path...</option>
+            {% for path in pathways %}
+            <option value="{{ path }}" data-icon="fa-map-signs">{{ path }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="planner-form-group">
+          <label for="level">Level</label>
+          <input type="number" id="level" name="level" class="planner-form-control" min="1" max="5" placeholder="1-5" />
+        </div>
+
+        <!-- Row 4: Notes (Full Width) -->
+        <div class="planner-form-group full-width">
+          <label for="notes">Notes</label>
+          <textarea id="notes" name="notes" class="planner-form-control" rows="3"
+            placeholder="Additional details (optional)..."></textarea>
+        </div>
+      </div>
+
+      <div class="planner-modal-footer">
+        <button type="button" class="planner-btn planner-btn-secondary" onclick="closeAchievementModal()">
+          Cancel
+        </button>
+        <button type="submit" id="save-achievement-btn" class="planner-btn planner-btn-success">
+          Save Achievement
+        </button>
+      </div>
+    </form>
+    </div>
+</div>
