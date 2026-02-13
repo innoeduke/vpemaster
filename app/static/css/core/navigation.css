@@ -225,7 +225,7 @@
 /* Profile Dropdown (Desktop Layout) */
 .profile-container {
     position: relative;
-    z-index: 1002;
+    z-index: 2000;
     margin-left: auto;
     /* Absolute right alignment within flex */
 }

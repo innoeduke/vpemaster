@@ -21,7 +21,7 @@
         {% if current_meeting %}
         <div class="meeting-info">
             <i class="fas fa-calendar-alt"></i>
-            <span>Meeting #{{ current_meeting.Meeting_Number }} - {{ current_meeting.Meeting_Date.strftime('%B % d % Y')
+            <span>Meeting #{{ current_meeting.Meeting_Number }} - {{ current_meeting.Meeting_Date.strftime('%B %d %Y')
                 if current_meeting.Meeting_Date else 'No Date' }}</span>
         </div>
 

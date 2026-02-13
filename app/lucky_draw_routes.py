@@ -1,9 +1,10 @@
 from flask import Blueprint, render_template, redirect, url_for
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
-from .club_context import authorized_club_required
+from .club_context import authorized_club_required, filter_by_club
 from .models import Roster, Meeting, Contact, Ticket
 from .constants import RoleID
+from .utils import get_default_meeting_id
 from . import db
 
 lucky_draw_bp = Blueprint('lucky_draw_bp', __name__)
@@ -19,21 +20,11 @@ def lucky_draw():
     has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
     has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
 
-    # Get current meeting (next upcoming or most recent)
-    today = db.func.current_date()
-
-    # Find the next upcoming meeting
-    current_meeting = Meeting.query\
-        .filter(Meeting.Meeting_Date >= today)\
-        .order_by(Meeting.Meeting_Date.asc(), Meeting.Meeting_Number.asc())\
-        .first()
-
-    # If no upcoming meeting, get the most recent past meeting
-    if not current_meeting:
-        current_meeting = Meeting.query\
-            .filter(Meeting.Meeting_Date < today)\
-            .order_by(Meeting.Meeting_Date.desc())\
-            .first()
+    # Get current meeting (using same logic as agenda page)
+    selected_meeting_id = get_default_meeting_id()
+    current_meeting = None
+    if selected_meeting_id:
+        current_meeting = db.session.get(Meeting, selected_meeting_id)
 
     # Get roster entries for this meeting (excluding cancelled entries)
     roster_entries = []

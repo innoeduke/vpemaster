@@ -519,6 +519,123 @@ fieldset.modal-frame .compact-form {
 }
 
 /* ========================================
+   Excomm Modal Refinements
+   ======================================== */
+
+#excomm-modal .modal-content {
+	border-radius: 20px;
+	padding: 30px;
+	max-width: 550px;
+	box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+	border: none;
+}
+
+#excomm-modal .modal-content h2 {
+	text-align: center;
+	font-family: "Montserrat", sans-serif;
+	font-weight: 800;
+	color: #004165;
+	margin-bottom: 25px;
+	font-size: 1.6rem;
+}
+
+#excomm-modal .close {
+	top: 20px;
+	right: 25px;
+	font-size: 28px;
+	color: #999;
+	transition: color 0.2s;
+}
+
+#excomm-modal .close:hover {
+	color: #333;
+}
+
+#excomm-modal .form-control {
+	background-color: #f8f9fa;
+	border: 1px solid #e9ecef;
+	border-radius: 10px;
+	padding: 10px 15px;
+	height: 42px;
+	font-weight: 500;
+	transition: all 0.2s ease;
+}
+
+#excomm-modal .form-control:focus {
+	background-color: #fff;
+	border-color: #004165;
+	box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
+	outline: none;
+}
+
+#excomm-modal fieldset.modal-frame {
+	border: 1px solid #f1f5f9;
+	background-color: #fff;
+	border-radius: 15px;
+	padding: 20px;
+	margin-bottom: 20px;
+}
+
+#excomm-modal fieldset.modal-frame legend {
+	font-weight: 700;
+	color: #64748b;
+	font-size: 0.8rem;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	padding: 0 10px;
+	margin-bottom: 0;
+}
+
+#excomm-modal .compact-form label {
+	font-weight: 700;
+	color: #475569;
+	font-size: 0.85rem;
+	margin-bottom: 6px;
+}
+
+#excomm-modal .modal-buttons {
+	display: flex;
+	gap: 15px;
+	margin-top: 25px;
+}
+
+#excomm-modal . .btn {
+	flex: 1;
+	height: 46px;
+	border-radius: 23px;
+	font-weight: 700;
+	font-size: 1rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s;
+}
+
+#excomm-modal .modal-buttons .btn-success {
+	background-color: #28a745;
+	border: none;
+	box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+}
+
+#excomm-modal .modal-buttons .btn-success:hover {
+	background-color: #218838;
+	transform: translateY(-2px);
+	box-shadow: 0 6px 15px rgba(40, 167, 69, 0.3);
+}
+
+#excomm-modal .modal-buttons .btn-danger {
+	background-color: #f8f9fa;
+	color: #64748b;
+	border: 1px solid #e2e8f0;
+}
+
+#excomm-modal .modal-buttons .btn-danger:hover {
+	background-color: #f1f5f9;
+	color: #475569;
+	border-color: #cbd5e1;
+}
+
+/* ========================================
    Planner Modal Base Styles (Settings Copy)
    ======================================== */
 .planner-modal {

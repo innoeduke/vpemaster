@@ -226,24 +226,24 @@
   .action-bar-right .status-group {
     display: flex;
     flex-wrap: nowrap;
-    gap: 10px;
+    gap: 8px;
     justify-content: center;
     width: 100%;
     align-items: center;
-    /* Prevent stretching */
   }
 
   .action-bar-right .status-group .meeting-status-display {
-    flex: 1 1 50%;
+    flex: 1 1 auto;
     font-size: 0.8rem;
     /* Reduced font size */
-    min-width: auto;
-    /* Override base min-width */
+    min-width: 0;
+    width: auto;
+    white-space: nowrap;
   }
 
   .action-bar-right .status-group #meeting-status-btn {
     flex: 1 1 auto;
-    min-width: 120px;
+    min-width: 0;
     height: var(--mobile-control-height, 36px);
     min-height: var(--mobile-control-height, 36px);
     padding: 0 15px;
@@ -253,13 +253,26 @@
     line-height: 1;
   }
 
+  .action-bar-right .status-group #meeting-status-btn:hover {
+    transform: scale(1.05) translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #772432;
+    background-color: #ffffff;
+  }
+
+  .action-bar-right .status-group #meeting-status-btn:active {
+    transform: scale(0.98) translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
   /* Action group: New, Edit, Export, PPT buttons in a row */
   .action-bar-right .action-group {
     display: flex;
     flex-wrap: nowrap;
     gap: 10px;
     justify-content: flex-end;
-    width: 100%;
+    width: auto;
+    flex: 0 0 auto;
     align-items: center;
   }
 

@@ -705,7 +705,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (currentStatus === "finished") {
-      showCustomConfirm("Delete Meeting", "Are you sure you want to PERMANENTLY DELETE this meeting and all its records (logs, votes, media)? This action cannot be undone.")
+      showCustomConfirm("Delete Meeting", "Are you sure you want to <strong>PERMANENTLY DELETE</strong> this meeting and all its records (logs, votes, media)? This action <strong>cannot be undone</strong>.")
         .then((confirmed) => {
           if (!confirmed) return;
           performStatusUpdate(meetingId);
@@ -2070,7 +2070,7 @@ window.showCustomConfirm = function (title, message, iconClass = "confirm") {
     const cancelBtn = document.getElementById("custom-modal-cancel");
 
     titleEl.textContent = title;
-    messageEl.textContent = message;
+    messageEl.innerHTML = message;
     iconEl.className = "custom-modal-icon " + iconClass;
     iconEl.innerHTML = iconClass === "confirm" ? '<i class="fas fa-question-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
 
@@ -2109,7 +2109,7 @@ window.showCustomAlert = function (title, message, iconClass = "alert") {
     const cancelBtn = document.getElementById("custom-modal-cancel");
 
     titleEl.textContent = title;
-    messageEl.textContent = message;
+    messageEl.innerHTML = message;
     iconEl.className = "custom-modal-icon " + iconClass;
     iconEl.innerHTML = '<i class="fas fa-info-circle"></i>';
 
