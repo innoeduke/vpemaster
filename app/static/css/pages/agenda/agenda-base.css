@@ -283,7 +283,7 @@
 .action-bar {
 	display: flex;
 	justify-content: space-between;
-	align-items: flex-end;
+	align-items: center;
 	margin: 20px auto;
 	max-width: 100%;
 	position: relative;
@@ -359,6 +359,11 @@
 .project-link:hover {
 	color: #004165;
 	cursor: pointer;
+}
+
+.mobile-only-item,
+.action-dropdown {
+	display: none !important;
 }
 
 .inline-filter-group {
@@ -1168,4 +1173,10 @@ td.actions-column {
 	font-weight: 600;
 	font-family: 'Montserrat', sans-serif;
 	text-align: center;
+}
+
+/* --- Share Dropdown --- */
+.share-dropdown {
+	display: none;
+	position: relative;
 }

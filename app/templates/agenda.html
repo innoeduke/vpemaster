@@ -115,26 +115,43 @@
                 {% endif %}
 
                 <div class="button-group action-group">
-                    {% if is_authorized(Permissions.AGENDA_EDIT) %}
-                    <button id="create-btn" class="btn btn-success">New</button>
+                    {% if selected_meeting %}
+                    <button id="jpg-btn" class="btn btn-secondary action-icon-btn" title="Export as Image"><i class="fas fa-print"></i></button>
                     {% endif %}
 
                     {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
+                    <button id="xlsx-btn" class="btn btn-secondary action-icon-btn" title="Export to Excel"><i class="fas fa-file-excel"></i></button>
+                    <button id="ppt-btn" class="btn btn-secondary action-icon-btn" title="Download PPT"><i class="fas fa-file-powerpoint"></i></button>
                     <button id="edit-btn" class="btn btn-primary">Edit</button>
-                    <button id="export-btn" class="btn btn-info action-icon-btn" title="Export to Excel"><i class="fas fa-file-excel"></i></button>
-                    <button id="ppt-btn" class="btn btn-warning action-icon-btn" title="Download PPT"><i class="fas fa-file-powerpoint"></i></button>
                     {% elif selected_meeting and selected_meeting.WOD %}
-                    <div class="wod-display action-bar-wod">
+                    <!-- <div class="wod-display action-bar-wod">
                         <div class="envelope-flap"></div>
                         <div class="letter">
                             <span style="font-weight: 600; font-size: 0.7em; color:#555;">Word of the Day:</span>
                             <span>"{{ selected_meeting.WOD }}"</span>
                         </div>
-                    </div>
+                    </div>  -->
                     {% endif %}
 
+                    {% if is_authorized(Permissions.AGENDA_EDIT) %}
+                    <button id="create-btn" class="btn btn-success">New</button>
+                    {% endif %}
+                    
                     {% if selected_meeting %}
-                    <button id="jpg-btn" class="btn btn-secondary action-icon-btn" title="Export as Image"><i class="fas fa-print"></i></button>
+                    <div class="action-dropdown">
+                        <button id="action-btn" class="btn btn-secondary action-icon-btn" title="Actions"><i class="fas fa-ellipsis-v"></i></button>
+                        <div id="action-menu" class="action-menu">
+                            {% if is_authorized(Permissions.AGENDA_EDIT) %}
+                            <div class="action-menu-item mobile-only-item" id="action-new-opt"><i class="fas fa-plus"></i> New</div>
+                            {% endif %}
+                            {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
+                            <div class="action-menu-item mobile-only-item" id="action-edit-opt"><i class="fas fa-edit"></i> Edit</div>
+                            {% endif %}
+                            <div class="action-menu-item" id="action-xlsx-opt"><i class="fas fa-file-excel"></i> Excel</div>
+                            <div class="action-menu-item" id="action-ppt-opt"><i class="fas fa-file-powerpoint"></i> PPT</div>
+                            <div class="action-menu-item" id="action-jpg-opt"><i class="fas fa-print"></i> Image</div>
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -315,7 +332,7 @@
     <div id="createAgendaModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeCreateAgendaModal()">&times;</span>
-            <h1>Create New Agenda</h1>
+            <h2>Create New Agenda</h2>
             <form id="create-meeting-form">
                 <table class="form-table">
                     <tr>
@@ -381,9 +398,16 @@
         var ProjectID = {{ ProjectID | tojson | safe }};
     </script>
     <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/js/html2canvas.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize custom selects for New Meeting form
+            new CustomSelect('meeting_type');
+            new CustomSelect('ge_mode');
+        });
+
         function dismissAgendaMessage(elementId) {
             const el = document.getElementById(elementId);
             if (el) {

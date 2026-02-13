@@ -4,6 +4,7 @@
    ======================================== */
 
 @media (max-width: 768px) {
+
   /* Hide columns in edit mode on mobile */
   .edit-mode-active #logs-table th.col-no,
   .edit-mode-active #logs-table td.col-no,
@@ -201,7 +202,7 @@
   }
 
   .action-bar .button-group {
-    margin-top: 15px;
+    margin-top: 0;
     justify-content: center;
     flex-wrap: wrap;
     max-width: 100%;
@@ -209,10 +210,11 @@
 
   /* Container for both groups */
   .action-bar-right #view-mode-buttons {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr auto;
     gap: 10px;
     width: 100%;
+    align-items: center;
   }
 
   /* Reset min-height from base styles to avoid stretching buttons */
@@ -227,21 +229,24 @@
     gap: 10px;
     justify-content: center;
     width: 100%;
-    align-items: center; /* Prevent stretching */
+    align-items: center;
+    /* Prevent stretching */
   }
 
   .action-bar-right .status-group .meeting-status-display {
     flex: 1 1 50%;
-    font-size: 0.8rem; /* Reduced font size */
-    min-width: auto; /* Override base min-width */
+    font-size: 0.8rem;
+    /* Reduced font size */
+    min-width: auto;
+    /* Override base min-width */
   }
 
   .action-bar-right .status-group #meeting-status-btn {
-    flex: 1 1 50%;
-    min-width: auto; /* Override base min-width */
+    flex: 1 1 auto;
+    min-width: 120px;
     height: var(--mobile-control-height, 36px);
     min-height: var(--mobile-control-height, 36px);
-    padding: 0;
+    padding: 0 15px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -253,15 +258,17 @@
     display: flex;
     flex-wrap: nowrap;
     gap: 10px;
-    justify-content: center;
+    justify-content: flex-end;
     width: 100%;
-    align-items: center; /* Prevent stretching */
+    align-items: center;
   }
 
   .action-bar-right .action-group #create-btn,
   .action-bar-right .action-group #edit-btn,
-  .action-bar-right .action-group #export-btn,
-  .action-bar-right .action-group #ppt-btn {
+  .action-bar-right .action-group #xlsx-btn,
+  .action-bar-right .action-group #ppt-btn,
+  .action-bar-right .action-group #jpg-btn,
+  .action-bar-right .action-group #share-btn {
     height: var(--mobile-control-height, 36px);
     min-height: var(--mobile-control-height, 36px);
     padding: 0;
@@ -273,16 +280,86 @@
 
   .action-bar-right .action-group #create-btn,
   .action-bar-right .action-group #edit-btn {
-    flex: 1 1 auto;
-    max-width: calc(35% - 5px);
+    display: none !important;
   }
 
-  .action-bar-right .action-group #export-btn,
-  .action-bar-right .action-group #ppt-btn {
-    flex: 0 0 auto;
+  .action-bar-right .action-group #xlsx-btn,
+  .action-bar-right .action-group #ppt-btn,
+  .action-bar-right .action-group #jpg-btn {
+    display: none !important;
+  }
+
+  .action-dropdown {
+    display: flex !important;
+    align-items: center;
+    position: relative;
+  }
+
+  .action-dropdown #action-btn {
     width: 50px;
     min-width: 50px;
   }
+
+  .action-menu {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 5px);
+    right: 0;
+    background-color: white;
+    min-width: 140px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 8px 0;
+    z-index: 1000;
+    border: 1px solid #e2e8f0;
+  }
+
+  .action-menu.show {
+    display: block;
+    animation: slideUp 0.2s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .action-menu-item {
+    display: flex !important;
+    padding: 10px 16px;
+    align-items: center;
+    gap: 12px;
+    color: #1e293b;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+  }
+
+  .action-menu-item:hover {
+    background-color: #f8fafc;
+    color: #772432;
+  }
+
+  .action-menu-item i {
+    width: 16px;
+    text-align: center;
+    font-size: 1rem;
+    color: #64748b;
+  }
+
+  .action-menu-item:hover i {
+    color: #772432;
+  }
+
 
   /* Reduce font size in agenda table for mobile */
   .edit-mode-active #logs-table th,
@@ -458,6 +535,217 @@
 
   .footnote ul {
     font-size: 0.85em;
+  }
+
+  /* Create Agenda Modal Refinements - Aligned with Profile and Planner */
+  #createAgendaModal .modal-content {
+    padding: 30px 20px;
+    border-radius: 16px;
+    /* Matching Planner */
+    width: 92%;
+    border: none;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+    /* Matching Planner */
+  }
+
+  #createAgendaModal h2 {
+    font-size: 1.3rem;
+    /* Matching Planner header size */
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: #004165;
+    /* Matching Planner header color */
+    letter-spacing: -0.01em;
+    text-align: center;
+  }
+
+  #createAgendaModal .form-table {
+    border: none !important;
+    width: 100%;
+  }
+
+  #createAgendaModal .form-table tr {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 32px;
+    border: none !important;
+  }
+
+  #createAgendaModal .form-table td {
+    padding: 0 !important;
+    border: none !important;
+    text-align: left;
+    width: 100% !important;
+  }
+
+  #createAgendaModal .form-table td:first-child {
+    background-color: transparent !important;
+    margin-bottom: 12px;
+  }
+
+  #createAgendaModal .form-table label {
+    font-size: 10px;
+    /* Exact Profile Label size */
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    /* Exact Profile Label spacing */
+    color: #888;
+    /* Exact Profile Label color */
+    font-weight: 800;
+    /* Matching Profile Label weight */
+    display: block;
+    line-height: 1.2;
+    margin-top: 24px;
+    margin-bottom: 8px;
+  }
+
+  /* Custom Select Refinements for Meeting Form */
+  #createAgendaModal .custom-select-container {
+    width: 100%;
+  }
+
+  #createAgendaModal .custom-select-trigger {
+    height: 44px !important;
+    min-height: 44px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 8px !important;
+    padding: 0 15px !important;
+    font-size: 15px !important;
+    background-color: #fff !important;
+    color: #333 !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    align-items: center !important;
+    box-sizing: border-box;
+  }
+
+  #createAgendaModal .custom-select-trigger:after {
+    content: "\f078";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    font-size: 0.8rem;
+    color: #888;
+    margin-left: auto;
+  }
+
+  #createAgendaModal .custom-select-container.open .custom-select-trigger {
+    border-color: #004165 !important;
+    box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1) !important;
+  }
+
+  #createAgendaModal .custom-select-container.open .custom-select-trigger:after {
+    content: "\f077";
+  }
+
+  #createAgendaModal .custom-select-options {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid #eee;
+    z-index: 2100;
+    box-sizing: border-box;
+  }
+
+  #createAgendaModal .custom-option {
+    padding: 12px 15px;
+    font-size: 15px;
+    color: #333;
+    box-sizing: border-box;
+  }
+
+  #createAgendaModal .custom-option:hover {
+    background: #f0f7ff;
+  }
+
+  #createAgendaModal .custom-option.selected {
+    background: #e9ecef;
+    color: #004165;
+    font-weight: 600;
+  }
+
+  /* Reset form control base styles for this modal */
+  #createAgendaModal .form-table input:not([type="checkbox"]):not([type="radio"]) {
+    height: 44px !important;
+    min-height: 44px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 8px !important;
+    padding: 0 15px !important;
+    font-size: 15px !important;
+    background-color: #fff !important;
+    color: #333 !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  #createAgendaModal .form-table select {
+    height: 44px !important;
+    min-height: 44px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 8px !important;
+    padding: 0 15px !important;
+    font-size: 15px !important;
+    background-color: #fff !important;
+    color: #333 !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+    width: 100% !important;
+    display: flex;
+    /* REMOVED !important TO ALLOW JS HIDING */
+    align-items: center !important;
+  }
+
+
+  #createAgendaModal .form-table input:focus,
+  #createAgendaModal .form-table select:focus {
+    border-color: #004165 !important;
+    /* Matching Profile/Planner focus color */
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1) !important;
+    /* Matching Profile/Planner focus shadow */
+    outline: none !important;
+  }
+
+  #createAgendaModal .form-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    margin-top: 32px;
+    justify-content: center;
+  }
+
+  #createAgendaModal .form-actions .btn {
+    flex: 1;
+    height: 44px !important;
+    /* Matching Profile Button height */
+    min-height: 44px !important;
+    border-radius: 10px !important;
+    /* Matching Profile Button radius */
+    font-size: 15px !important;
+    /* Matching Profile Button font size */
+    font-weight: 700 !important;
+    margin: 0 !important;
+    min-width: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none !important;
+  }
+
+  #createAgendaModal .form-actions .btn-success {
+    background-color: #28a745 !important;
+    /* Matching Planner Success Green */
+    color: #fff !important;
+    order: 2;
+  }
+
+  #createAgendaModal .form-actions .btn-primary {
+    background-color: #e9ecef !important;
+    /* Matching Planner Secondary Gray */
+    color: #495057 !important;
+    order: 1;
   }
 }
 

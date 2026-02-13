@@ -9,8 +9,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const addRowButton = document.getElementById("add-row-btn");
   const createButton = document.getElementById("create-btn");
   const meetingFilter = document.getElementById("meeting-filter");
-  const exportButton = document.getElementById("export-btn");
+  const xlsxButton = document.getElementById("xlsx-btn");
   const jpgButton = document.getElementById("jpg-btn");
+  const pptButton = document.getElementById("ppt-btn");
+  const actionBtn = document.getElementById("action-btn");
+  const actionMenu = document.getElementById("action-menu");
   const tableContainer = document.getElementById("table-container");
   const meetingStatusBtn = document.getElementById("meeting-status-btn");
   const tableBody = document.querySelector("#logs-table tbody");
@@ -168,8 +171,8 @@ document.addEventListener("DOMContentLoaded", () => {
       addRowButton.addEventListener("click", addNewRow);
     }
 
-    if (exportButton) {
-      exportButton.addEventListener("click", exportAgenda);
+    if (xlsxButton) {
+      xlsxButton.addEventListener("click", exportAgenda);
     }
     if (createButton) {
       createButton.addEventListener("click", () => {
@@ -179,12 +182,60 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     }
-    const pptButton = document.getElementById("ppt-btn");
     if (pptButton) {
       pptButton.addEventListener("click", downloadPPT);
     }
     if (jpgButton) {
       jpgButton.addEventListener("click", exportAgendaJPG);
+    }
+
+    // --- Action Button Logic ---
+    if (actionBtn && actionMenu) {
+      actionBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        actionMenu.classList.toggle("show");
+      });
+
+      document.addEventListener("click", (e) => {
+        if (!actionBtn.contains(e.target) && !actionMenu.contains(e.target)) {
+          actionMenu.classList.remove("show");
+        }
+      });
+
+      const actionNew = document.getElementById("action-new-opt");
+      const actionEdit = document.getElementById("action-edit-opt");
+      const actionXlsx = document.getElementById("action-xlsx-opt");
+      const actionPpt = document.getElementById("action-ppt-opt");
+      const actionJpg = document.getElementById("action-jpg-opt");
+
+      if (actionNew)
+        actionNew.addEventListener("click", () => {
+          const createAgendaModal = document.getElementById("createAgendaModal");
+          if (createAgendaModal) {
+            createAgendaModal.style.display = "flex";
+          }
+          actionMenu.classList.remove("show");
+        });
+      if (actionEdit)
+        actionEdit.addEventListener("click", () => {
+          toggleEditMode(true);
+          actionMenu.classList.remove("show");
+        });
+      if (actionXlsx)
+        actionXlsx.addEventListener("click", () => {
+          exportAgenda();
+          actionMenu.classList.remove("show");
+        });
+      if (actionPpt)
+        actionPpt.addEventListener("click", () => {
+          downloadPPT();
+          actionMenu.classList.remove("show");
+        });
+      if (actionJpg)
+        actionJpg.addEventListener("click", () => {
+          exportAgendaJPG();
+          actionMenu.classList.remove("show");
+        });
     }
     if (tableBody) {
       tableBody.addEventListener("click", (event) => {
