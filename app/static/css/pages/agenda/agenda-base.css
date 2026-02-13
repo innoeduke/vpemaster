@@ -1140,6 +1140,36 @@ td.actions-column {
 	display: none !important;
 }
 
+/* --- Create New Agenda Modal Refinements (Desktop) --- */
+#createAgendaModal h2 {
+	text-align: center;
+	margin-top: 0;
+	color: #004165;
+	font-size: 1.5rem;
+	font-weight: 700;
+	margin-bottom: 24px;
+}
+
+#createAgendaModal .form-table input[type="date"],
+#createAgendaModal .form-table input[type="time"] {
+	width: 100%;
+	padding: 12px;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	box-sizing: border-box;
+	font-size: 16px;
+	background-color: #fff;
+	transition: border-color 0.2s;
+	font-family: inherit;
+}
+
+#createAgendaModal .form-table input[type="date"]:focus,
+#createAgendaModal .form-table input[type="time"]:focus {
+	outline: none;
+	border-color: #004165;
+	box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
+}
+
 #agenda-content.jpg-export-mode .agenda-header-logo img {
 	max-width: 120px;
 }
