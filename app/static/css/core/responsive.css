@@ -96,8 +96,8 @@
     }
 
     /* The page header for mobile/tablet (both get solid #333 background) */
-    .page-header {
-        left: 0 !important;
+    body .page-header {
+        left: 0;
         width: 100%;
         background-color: #333;
         color: white;
@@ -192,7 +192,8 @@
         top: 60px;
         left: 0;
         width: 250px;
-        height: calc(100vh - 60px); /* Fallback */
+        height: calc(100vh - 60px);
+        /* Fallback */
         height: calc(100dvh - 60px);
         z-index: 1003;
         transform: translateX(-100%);
@@ -242,8 +243,8 @@
     }
 
     /* Make logout button full width on mobile */
-    .logout-container a {
-        width: 100% !important;
+    .nav-pane .logout-container a {
+        width: 100%;
         box-sizing: border-box;
     }
 
@@ -285,6 +286,7 @@
         margin: 10px 0;
         padding: 0 15px;
     }
+
     .mobile-divisor {
         display: block;
     }

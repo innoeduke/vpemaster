@@ -82,7 +82,8 @@
 /* Search Wrapper & Dropdown Anchor Hook - Very Important */
 .search-input-wrapper,
 .custom-select-trigger {
-  position: relative; /* Anchor for the dropdown */
+  position: relative;
+  /* Anchor for the dropdown */
   flex-grow: 1;
 }
 
@@ -150,10 +151,12 @@
 /* --- 4. Results Dropdown & Items --- */
 .autocomplete-results-dropdown {
   position: absolute;
-  top: 100%; /* Sit exactly below the wrapper */
+  top: 100%;
+  /* Sit exactly below the wrapper */
   left: 0;
-  width: 100%; /* Match the wrapper width */
-  min-width: 250px;
+  width: max-content;
+  min-width: 100%;
+  max-width: 90vw;
   background: white;
   border: 1px solid #eee;
   border-top: none;
@@ -227,11 +230,30 @@
 }
 
 /* Status Colors */
-.status-tag.status-unpublished { background: #eee; color: #777; }
-.status-tag.status-not-started { background: #e3f2fd; color: #1976d2; }
-.status-tag.status-running { background: #fff3e0; color: #f57c00; }
-.status-tag.status-finished { background: #e8f5e9; color: #388e3c; }
-.status-tag.status-cancelled { background: #ffebee; color: #d32f2f; }
+.status-tag.status-unpublished {
+  background: #eee;
+  color: #777;
+}
+
+.status-tag.status-not-started {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.status-tag.status-running {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.status-tag.status-finished {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.status-tag.status-cancelled {
+  background: #ffebee;
+  color: #d32f2f;
+}
 
 /* --- 5. Mobile Responsiveness --- */
 @media (max-width: 768px) {
@@ -267,9 +289,9 @@
   }
 
   .autocomplete-results-dropdown {
-    width: 100%;
-    min-width: 0;
-    max-width: none;
+    width: max-content;
+    min-width: 100%;
+    max-width: 95vw;
     left: 0;
     top: 100%;
     margin-top: 1px;

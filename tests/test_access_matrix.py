@@ -210,11 +210,12 @@ class AccessMatrixTestCase(unittest.TestCase):
                     expected_code = 200
             elif '/voting' in resource_template:
                 # GUEST -> VOTING:
-                if status == 'running':
-                    expected_code = 200
-                else:
-                    # Unpublished/Notstarted/Finished -> Redirect -> 302
+                if status == 'unpublished' or status == 'finished':
+                    # Unpublished/Finished -> Redirect -> 302
                     expected_code = 302
+                else:
+                    # Running/Not-started -> 200 (not-started handled by force_not_started)
+                    expected_code = 200
             else:
                 expected_code = 302 # Default deny
         
@@ -239,8 +240,8 @@ class AccessMatrixTestCase(unittest.TestCase):
 
             # Voting Logic
             if '/voting' in resource_template:
-                if status in ['unpublished', 'not started']:
-                    if Permissions.VOTING_TRACK_PROGRESS not in perms:
+                if status == 'unpublished':
+                    if Permissions.VOTING_VIEW_RESULTS not in perms:
                          expected_code = 302
                 elif status == 'finished':
                     # Finished meetings: Only users with VOTING_VIEW_RESULTS can see results
@@ -253,7 +254,10 @@ class AccessMatrixTestCase(unittest.TestCase):
                     expected_code = 302
             
             if '/roster' in resource_template:
-                expected_code = 302 # Always redirects to tools
+                if Permissions.ROSTER_VIEW not in perms:
+                    expected_code = 302
+                else:
+                    expected_code = 200
             
             if '/contacts' in resource_template:
                  if Permissions.CONTACT_BOOK_VIEW not in perms:

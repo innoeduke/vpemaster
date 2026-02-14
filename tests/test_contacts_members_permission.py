@@ -86,18 +86,24 @@ class ContactsPermissionTestCase(unittest.TestCase):
     def test_user_sees_only_members(self):
         """Test that a regular user only sees Member type contacts."""
         self.login("user", "password")
-        response = self.client.get('/contacts')
+        # Contact list is now fetched via API
+        response = self.client.get('/api/contacts/all')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Member User", response.data)
-        self.assertNotIn(b"Guest User", response.data)
+        data = response.get_json()
+        names = [c['Name'] for c in data]
+        self.assertIn("Member User", names)
+        self.assertNotIn("Guest User", names)
 
     def test_staff_sees_all_contacts(self):
         """Test that staff sees all contacts."""
         self.login("staff", "password")
-        response = self.client.get('/contacts')
+        # Contact list is now fetched via API
+        response = self.client.get('/api/contacts/all')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Member User", response.data)
-        self.assertIn(b"Guest User", response.data)
+        data = response.get_json()
+        names = [c['Name'] for c in data]
+        self.assertIn("Member User", names)
+        self.assertIn("Guest User", names)
 
 if __name__ == '__main__':
     unittest.main()
