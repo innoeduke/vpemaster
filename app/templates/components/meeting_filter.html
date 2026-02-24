@@ -180,8 +180,8 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     }
 
     function updateBtnState() {
-        if (prevBtn) prevBtn.disabled = realSelect.selectedIndex <= 0;
-        if (nextBtn) nextBtn.disabled = realSelect.selectedIndex >= realSelect.options.length - 1;
+        if (prevBtn) prevBtn.disabled = realSelect.selectedIndex >= realSelect.options.length - 1;
+        if (nextBtn) nextBtn.disabled = realSelect.selectedIndex <= 0;
         
         // Optional: Add visual opacity for disabled state
         if (prevBtn) prevBtn.style.opacity = prevBtn.disabled ? '0.3' : '1';
@@ -194,10 +194,10 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     if (prevBtn) {
         prevBtn.addEventListener('click', () => {
             const currentIndex = realSelect.selectedIndex;
-            if (currentIndex > 0) {
-                const prevOption = realSelect.options[currentIndex - 1];
-                const prevItem = results.querySelector(`.autocomplete-result-item[data-value="${prevOption.value}"]`);
-                if (prevItem) selectItem(prevItem);
+            if (currentIndex < realSelect.options.length - 1) {
+                const targetOption = realSelect.options[currentIndex + 1];
+                const targetItem = results.querySelector(`.autocomplete-result-item[data-value="${targetOption.value}"]`);
+                if (targetItem) selectItem(targetItem);
             }
         });
     }
@@ -205,10 +205,10 @@ extra_classes='', extra_style='', select_id='meeting-filter', is_disabled=False,
     if (nextBtn) {
         nextBtn.addEventListener('click', () => {
             const currentIndex = realSelect.selectedIndex;
-            if (currentIndex < realSelect.options.length - 1) {
-                const nextOption = realSelect.options[currentIndex + 1];
-                const nextItem = results.querySelector(`.autocomplete-result-item[data-value="${nextOption.value}"]`);
-                if (nextItem) selectItem(nextItem);
+            if (currentIndex > 0) {
+                const targetOption = realSelect.options[currentIndex - 1];
+                const targetItem = results.querySelector(`.autocomplete-result-item[data-value="${targetOption.value}"]`);
+                if (targetItem) selectItem(targetItem);
             }
         });
     }

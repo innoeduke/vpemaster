@@ -596,7 +596,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 4. Duration
         const tdDur = document.createElement('td');
-        tdDur.className = 'non-edit-mode-cell';
+        tdDur.className = 'non-edit-mode-cell col-view-duration';
         if (log.Duration_Min && log.Duration_Max) {
           tdDur.textContent = `${log.Duration_Min}'-${log.Duration_Max}'`;
         } else if (log.Duration_Max) {

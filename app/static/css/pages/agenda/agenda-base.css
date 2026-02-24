@@ -1002,6 +1002,24 @@ td.actions-column {
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Consistent hover behaviors for New and Edit buttons */
+#create-btn,
+#edit-btn {
+	transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+#create-btn:hover {
+	background-color: #218838;
+	transform: scale(1.05) translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#edit-btn:hover {
+	transform: scale(1.05) translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	opacity: 0.9;
+}
+
 /* Enforce fixed size for icon buttons to ensure vertical alignment */
 .icon-btn {
 	width: 32px;
@@ -1243,7 +1261,7 @@ td.actions-column {
 #agenda-content.jpg-export-mode .agenda-header-info .meeting-title {
 	font-size: 1.8em;
 	margin-top: 15px;
-	margin-bottom: 8px;
+	margin-bottom: 20px;
 }
 
 #agenda-content.jpg-export-mode .agenda-header-info .subtitle {
