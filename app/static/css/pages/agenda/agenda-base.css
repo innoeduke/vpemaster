@@ -305,14 +305,16 @@
 }
 
 .action-bar-right {
+	display: flex;
+	align-items: center;
+	gap: 15px;
 	justify-content: flex-end;
 	flex-grow: 1;
 }
 
 .action-icon-btn {
-	min-width: 40px;
-	width: 40px;
-	padding: 0;
+	width: auto;
+	padding: 0 4px;
 	display: flex;
 	align-items: center;
 	justify-content: center;

@@ -5,25 +5,47 @@
 
 @media (max-width: 768px) {
 
-  /* Hide columns in edit mode on mobile */
-  .edit-mode-active #logs-table th.col-no,
-  .edit-mode-active #logs-table td.col-no,
-  .edit-mode-active #logs-table th.col-designation,
-  .edit-mode-active #logs-table td.col-designation,
-  .edit-mode-active #logs-table th.col-duration-min,
-  .edit-mode-active #logs-table td.col-duration-min {
-    display: none;
+  /* Prevent grid layout from interfering with edit mode table on narrow screens */
+  .edit-mode-active #logs-table,
+  .edit-mode-active #logs-table thead,
+  .edit-mode-active #logs-table tbody {
+    display: table !important;
   }
 
-  #edit-mode-buttons {
-    top: 60px;
-    border-radius: 8px;
+  .edit-mode-active #logs-table tr.edit-mode-header,
+  .edit-mode-active #logs-table tbody tr {
+    display: table-row !important;
   }
 
-  /* Make the Owner column wider on mobile */
+  .edit-mode-active #logs-table tr.non-edit-mode-header {
+    display: none !important;
+  }
+
+  .edit-mode-active #logs-table th,
+  .edit-mode-active #logs-table td {
+    display: table-cell !important;
+    width: auto !important;
+    /* Allow table to determine widths */
+    vertical-align: middle;
+  }
+
+  .edit-mode-active .table-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding: 10px 0 !important;
+  }
+
+  /* Make the Owner column wider on mobile, and narrow the MAX duration column */
   .edit-mode-active #logs-table .col-owner {
-    width: 30%;
-    min-width: 120px;
+    width: 42% !important;
+    min-width: 130px !important;
+  }
+
+  .edit-mode-active #logs-table .col-duration-max {
+    width: 8% !important;
+    min-width: 40px !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
   }
 
   .edit-mode-field {
@@ -426,8 +448,9 @@
     border-bottom: 1px solid #f1f5f9;
   }
 
-  #logs-table thead th,
-  #logs-table tbody td {
+  /* Only apply grid layout in NON-edit mode */
+  :not(.edit-mode-active) #logs-table thead th,
+  :not(.edit-mode-active) #logs-table tbody td {
     font-size: 0.75rem !important;
     padding: 6px !important;
     border: none !important;
@@ -481,8 +504,8 @@
     background-color: #fcfcfc !important;
   }
 
-  /* Section Row Overrides for Grid */
-  #logs-table tbody tr.section-row {
+  /* Section Row Overrides for Grid - Only in View Mode */
+  :not(.edit-mode-active) #logs-table tbody tr.section-row {
     display: grid !important;
     grid-template-columns: 1fr;
     width: 100%;
@@ -491,7 +514,7 @@
   #logs-table tbody tr.section-row td {
     grid-column: 1 !important;
     width: 100%;
-    padding: 6px 12px !important;
+    padding: 12px 12px !important;
   }
 
   .owner-row {

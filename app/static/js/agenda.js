@@ -886,19 +886,41 @@ document.addEventListener("DOMContentLoaded", () => {
       const isMobileView = colNoHeader && window.getComputedStyle(colNoHeader).display === 'none';
 
       if (isMobileView) {
-        titleCell.colSpan = 5; // Spans the visible middle columns on mobile (8 total - gap of 2 hidden columns + 1 action column? no, 7 visible total: header has 8, sequence is 1, actions is 1, title needs to fill 6? wait.)
+        titleCell.colSpan = 5;
       } else {
-        titleCell.colSpan = 6; // Spans the middle columns on desktop
+        titleCell.colSpan = 7;
       }
 
       titleCell.classList.add("section-row");
       titleCell.classList.add("drag-handle"); // Enable dragging from title
       seqCell.classList.add("drag-handle");   // Enable dragging from sequence no
 
+      // Create a flex wrapper for title input and actions within the section row
+      const titleWrapper = document.createElement("div");
+      titleWrapper.style.display = "flex";
+      titleWrapper.style.alignItems = "center";
+      titleWrapper.style.justifyContent = "center";
+      titleWrapper.style.gap = "10px";
+      titleWrapper.style.width = "100%";
+
+      // Get the input from titleCell (it was appended by createEditableCell but we'll move it)
+      const titleInput = titleCell.querySelector("input");
+      if (titleInput) {
+        titleWrapper.appendChild(titleInput);
+      }
+
+      // Create actions and append inner wrapper to title wrapper
+      const actionsCell = createActionsCell(originalData.id, typeId, hasRole, isHidden);
+      const actionsWrapper = actionsCell.querySelector('.actions-wrapper');
+      if (actionsWrapper) {
+        titleWrapper.appendChild(actionsWrapper);
+      }
+
+      titleCell.appendChild(titleWrapper);
+
       row.append(
         seqCell,
-        titleCell,
-        createActionsCell(originalData.id, typeId, hasRole, isHidden)
+        titleCell
       );
     } else {
       fieldsOrder.forEach((field, index) => {

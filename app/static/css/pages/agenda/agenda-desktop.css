@@ -11,6 +11,8 @@
 		flex-direction: row;
 		gap: 15px;
 		align-items: center;
+		justify-content: flex-end;
+		width: 100%;
 	}
 
 	.action-bar-right .button-group {
@@ -22,6 +24,12 @@
 		font-size: 13px;
 		padding: 0 12px;
 		min-width: 70px;
+	}
+
+	.action-bar-right .action-icon-btn {
+		min-width: 32px;
+		/* Prevents inheriting the 70px min-width from .btn */
+		padding: 0 4px;
 	}
 
 	.meeting-status-display {

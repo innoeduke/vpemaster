@@ -423,7 +423,7 @@
   justify-content: center;
   overflow: hidden;
   background-color: #f8f9fa;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 #contactModal .profile-avatar-container .avatar-placeholder {
@@ -458,18 +458,21 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 15px;
-  grid-template-rows: auto auto auto auto; /* Allow rows to size naturally */
+  grid-template-rows: auto auto auto auto;
+  /* Allow rows to size naturally */
 }
 
 .contact-form-item {
   display: flex;
   flex-direction: column;
-  grid-column: span 2; /* Default: half width */
+  grid-column: span 2;
+  /* Default: half width */
   text-align: left;
 }
 
 .contact-form-item.full-width {
-  grid-column: span 4; /* Full width */
+  grid-column: span 4;
+  /* Full width */
 }
 
 .contact-form-item.email-column {
@@ -493,7 +496,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  margin-top: 25px; /* Align with label top of email field */
+  margin-top: 25px;
+  /* Align with label top of email field */
 }
 
 .contact-form-item.dtm-cell label {
@@ -576,6 +580,10 @@
 }
 
 /* Accordion refinement */
+#educationFieldsWrapper {
+  margin-top: 20px;
+}
+
 .accordion {
   border-radius: 12px;
   background-color: #f8f9fa;

@@ -52,6 +52,8 @@
 		flex-wrap: nowrap;
 		gap: 8px;
 		align-items: center;
+		justify-content: flex-end;
+		width: 100%;
 	}
 
 	/* Status group and action group inline */
@@ -85,9 +87,9 @@
 
 	/* Make icon buttons compact */
 	.action-bar-right .action-icon-btn {
-		min-width: 35px !important;
-		width: 35px;
-		padding: 0 !important;
+		min-width: 32px !important;
+		width: auto;
+		padding: 0 4px !important;
 	}
 
 	/* WOD display for iPad */
@@ -105,6 +107,25 @@
 	#edit-mode-buttons .btn {
 		font-size: 12px;
 		padding: 0 10px;
+	}
+
+	/* Hide columns in edit mode on iPad to save space */
+	.edit-mode-active #logs-table th.col-no,
+	.edit-mode-active #logs-table td.col-no,
+	.edit-mode-active #logs-table th.col-duration-min,
+	.edit-mode-active #logs-table td.col-duration-min {
+		display: none;
+	}
+
+	/* Make the Owner column wider on iPad, and narrow the MAX duration column */
+	.edit-mode-active #logs-table .col-owner {
+		width: 40%;
+		min-width: 130px;
+	}
+
+	.edit-mode-active #logs-table .col-duration-max {
+		width: 8%;
+		min-width: 40px;
 	}
 
 	/* Table adjustments for iPad */
