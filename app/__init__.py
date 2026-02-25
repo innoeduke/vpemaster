@@ -116,7 +116,8 @@ def create_app(config_class='config.Config'):
             is_authorized=is_authorized,
             has_meetings=has_meetings,
             Permissions=Permissions,
-            club=club
+            club=club,
+            get_current_club_id=get_current_club_id
         )
 
     # Register Blueprints

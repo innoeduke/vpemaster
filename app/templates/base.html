@@ -43,7 +43,7 @@
         {% endif %}
         {% if is_authorized(Permissions.BOOKING_BOOK_OWN) and has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}">
-          <a href="{{ url_for('booking_bp.booking') }}">
+          <a href="{{ url_for('booking_bp.booking', club_id=get_current_club_id()) }}">
             <i class="fas fa-tag nav-icon"></i>
             <span>Booking</span>
           </a>
@@ -59,7 +59,7 @@
         {% endif %}
         {% if has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('voting_bp') %}active{% endif %}">
-          <a href="{{ url_for('voting_bp.voting') }}">
+          <a href="{{ url_for('voting_bp.voting', club_id=get_current_club_id()) }}">
             <i class="fas fa-vote-yea nav-icon"></i>
             <span>Voting</span>
           </a>

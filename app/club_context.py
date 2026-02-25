@@ -34,7 +34,19 @@ def get_or_set_default_club():
         int: Current club ID
     """
     from app.models import Club
+    from flask import request
     
+    # 0. Check request arguments (e.g., from redirection query param) FIRST
+    # If explicitly passed via URL, this should override session context.
+    try:
+        url_club_id = request.args.get('club_id')
+        if url_club_id:
+            club_id = int(url_club_id)
+            set_current_club_id(club_id)
+            return club_id
+    except (ValueError, TypeError):
+        pass
+
     club_id = get_current_club_id()
     
     # If club_id is set in session, VALIDATE it for the current authenticated user
@@ -72,17 +84,6 @@ def get_or_set_default_club():
                     session.pop('current_club_id', None)
 
     if not club_id:
-        # 0. Check request arguments (e.g., from redirection query param)
-        from flask import request
-        url_club_id = request.args.get('club_id')
-        if url_club_id:
-            try:
-                club_id = int(url_club_id)
-                set_current_club_id(club_id)
-                return club_id
-            except (ValueError, TypeError):
-                pass
-
         # Try to get user's primary/home club
         from flask_login import current_user
         if current_user.is_authenticated:

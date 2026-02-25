@@ -23,7 +23,7 @@
 	] %}
 	{% set axis_labels = {'left': 'Score / Percentage', 'right': 'Vote Count', 'bottom': 'Meeting Number'} %}
 	
-	{% call render_chart_container('npsChart', 'NPS Trend', 'User Feedback and Satisfaction', url_for('voting_bp.voting'), 'Back to Voting', legend_items, axis_labels, question='How likely are you to recommend this meeting to a friend or colleague?') %}
+	{% call render_chart_container('npsChart', 'NPS Trend', 'User Feedback and Satisfaction', url_for('voting_bp.voting', club_id=get_current_club_id()), 'Back to Voting', legend_items, axis_labels, question='How likely are you to recommend this meeting to a friend or colleague?') %}
 		{{ render_comments_section('npsCommentsContainer', 'commentsMeetingNumber', 'commentsMeetingDate', 'commentsList') }}
 	{% endcall %}
 </div>

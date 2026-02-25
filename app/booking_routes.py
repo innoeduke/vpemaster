@@ -5,7 +5,7 @@ from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from flask_login import current_user
 from flask import Blueprint, render_template, request, session, jsonify, current_app, redirect, url_for
-from .club_context import get_current_club_id
+from .club_context import get_current_club_id, authorized_club_required
 from .utils import get_current_user_info, group_roles_by_category, get_meetings_by_status, derive_credentials, normalize_role_name, get_role_aliases
 from .models import SessionLog, SessionType, Contact, Meeting, Waitlist, MeetingRole, OwnerMeetingRoles, ContactClub, LevelRole
 from sqlalchemy import func
@@ -485,8 +485,9 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
 @booking_bp.route('/booking', defaults={'meeting_id': None}, methods=['GET'])
 @booking_bp.route('/booking/<int:meeting_id>', methods=['GET'])
 @login_required
+@authorized_club_required
 def booking(meeting_id):
-    """Main booking page route."""
+    """Render the main booking page."""
     user, current_user_contact_id = get_current_user_info()
     context = _get_booking_page_context(meeting_id, user, current_user_contact_id)
     

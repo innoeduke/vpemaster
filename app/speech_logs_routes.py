@@ -4,6 +4,7 @@ from . import db
 from .models import SessionLog, Contact, Project, User, SessionType, Media, MeetingRole, Pathway, PathwayProject, LevelRole, Achievement, Meeting, OwnerMeetingRoles
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
+from .club_context import authorized_club_required
 from flask_login import current_user
 from .utils import (
     get_project_code, 
@@ -1391,13 +1392,11 @@ def _get_level_progress_html(user_id, level, pathway_id=None):
 # MAIN ROUTE
 # ============================================================================
 
-@speech_logs_bp.route('/speech_logs')
+@speech_logs_bp.route('/speech_logs', methods=['GET'])
 @login_required
+@authorized_club_required
 def show_speech_logs():
-    """
-    Display speech logs with filtering and progress tracking.
-    Refactored for performance and maintainability.
-    """
+    """Shows all speech logs, or only the member's logs depending on permissions & view_mode."""
     # 1. Get view settings and filters
     can_view_all, view_mode, is_member_view = _get_view_settings()
     filters = _parse_filters(is_member_view, can_view_all)

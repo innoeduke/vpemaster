@@ -352,7 +352,7 @@
     <p>Booking for Meeting #{{
         selected_meeting.Meeting_Number }} is closed.
         Please visit the <a
-            href="{{ url_for('voting_bp.voting', meeting_id=selected_meeting_id) }}">Voting
+            href="{{ url_for('voting_bp.voting', meeting_id=selected_meeting_id, club_id=get_current_club_id()) }}">Voting
             page</a> to cast your votes.</p>
     {% else %}
     {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,

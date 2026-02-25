@@ -9,7 +9,7 @@ from datetime import datetime
 import secrets
 from sqlalchemy import func
 from flask_login import current_user
-from .club_context import get_current_club_id
+from .club_context import get_current_club_id, authorized_club_required
 
 from .services.role_service import RoleService
 from .utils import (
@@ -241,6 +241,7 @@ def _get_roles_for_voting(meeting_id, meeting):
 def _get_voting_page_context(meeting_id):
     """Gathers context for the voting page."""
     # Logic similar to booking page but for voting
+    from app.club_context import get_current_club_id
     club_id = get_current_club_id()
     
     # Show active meetings in dropdown
@@ -358,6 +359,7 @@ def _get_voting_page_context(meeting_id):
 
 @voting_bp.route('/voting', defaults={'meeting_id': None}, methods=['GET'])
 @voting_bp.route('/voting/<int:meeting_id>', methods=['GET'])
+@authorized_club_required
 def voting(meeting_id):
     """Main voting page route."""
     context = _get_voting_page_context(meeting_id)

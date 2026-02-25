@@ -5,6 +5,8 @@ from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from .club_context import get_current_club_id
 from datetime import datetime
+from .blockchain import record_level_completion_on_chain
+import logging
 
 achievements_bp = Blueprint('achievements_bp', __name__)
 
@@ -93,29 +95,48 @@ def achievement_form(id):
         achievement.club_id = current_cid
         
         # Auto-add lower levels if this is a level completion
-        if achievement_type == 'level-completion' and achievement.level and achievement.level > 1:
-            for i in range(1, achievement.level):
-                # Check if lower level achievement exists
-                lower_exists = Achievement.query.filter_by(
-                    contact_id=contact_id,
-                    achievement_type='level-completion',
-                    path_name=path_name,
-                    level=i,
-                    club_id=current_cid
-                ).first()
+        if achievement_type == 'level-completion':
+            # Record it on the blockchain if it's a new or updated achievement (not just editing notes)
+            # Since this takes an active network request, we'll try/except to prevent it from crashing the route
+            try:
+                success = record_level_completion_on_chain(member_id, path_name, achievement.level)
+                if not success:
+                    flash(f"Warning: Failed to record level {achievement.level} completion on blockchain, but it will be saved to the database.", "warning")
+            except Exception as e:
+                logging.error(f"Failed to record level completion on chain: {e}")
+                flash(f"Warning: Exception while recording level {achievement.level} on blockchain. Saved to database.", "warning")
                 
-                if not lower_exists:
-                    new_lower = Achievement(
+            if achievement.level and achievement.level > 1:
+                for i in range(1, achievement.level):
+                    # Check if lower level achievement exists
+                    lower_exists = Achievement.query.filter_by(
                         contact_id=contact_id,
-                        member_id=member_id,
-                        issue_date=issue_date,
                         achievement_type='level-completion',
                         path_name=path_name,
                         level=i,
-                        notes=f"Auto-added based on Level {achievement.level} completion",
                         club_id=current_cid
-                    )
-                    db.session.add(new_lower)
+                    ).first()
+                    
+                    if not lower_exists:
+                        new_lower = Achievement(
+                            contact_id=contact_id,
+                            member_id=member_id,
+                            issue_date=issue_date,
+                            achievement_type='level-completion',
+                            path_name=path_name,
+                            level=i,
+                            notes=f"Auto-added based on Level {achievement.level} completion",
+                            club_id=current_cid
+                        )
+                        db.session.add(new_lower)
+                        
+                        # Also record the auto-added lower level on the blockchain
+                        try:
+                            success_l = record_level_completion_on_chain(member_id, path_name, i)
+                            if not success_l:
+                                logging.warning(f"Warning: Failed to record auto-added level {i} on blockchain.")
+                        except Exception as e:
+                            logging.error(f"Failed to record auto-added level {i} on chain: {e}")
 
         achievement.notes = notes
         achievement.member_id = member_id

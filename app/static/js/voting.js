@@ -162,7 +162,12 @@ function submitBatchVotes() {
 		});
 	}
 
-	fetch("/voting/batch_vote", {
+	let fetchUrl = "/voting/batch_vote";
+	if (typeof window.clubId !== 'undefined' && window.clubId) {
+		fetchUrl += `?club_id=${window.clubId}`;
+	}
+
+	fetch(fetchUrl, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({

@@ -15,7 +15,7 @@
             base_url='/voting', render_outer_container=False, data_format='tuple') }}
             {% if is_admin_view %}
             <div class="filter-right">
-                <a href="{{ url_for('voting_bp.voting_nps') }}" class="btn btn-info trend-btn" title="NPS Trend">
+                <a href="{{ url_for('voting_bp.voting_nps', club_id=get_current_club_id()) }}" class="btn btn-info trend-btn" title="NPS Trend">
                     <i class="fas fa-chart-line"></i> NPS Trend
                 </a>
             </div>
@@ -290,6 +290,7 @@
 	"isAdminView": {{ is_admin_view|tojson }},
 	"selectedMeetingId": {{ selected_meeting_id|tojson }},
 	"userRole": {{ user_role|tojson }},
+	"clubId": {{ get_current_club_id()|tojson }},
 	"canTrackProgress": {{ can_track_progress|tojson }},
 	"initialMeetingRating": {{ meeting_rating_score|tojson }},
 	"initialMeetingFeedback": {{ meeting_feedback_comment|tojson }}
