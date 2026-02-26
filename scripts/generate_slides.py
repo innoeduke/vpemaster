@@ -41,7 +41,7 @@ def fetch_meeting_data(meeting_num):
         with conn.cursor() as cursor:
             # 1. Get Meeting and Club info
             sql = """
-            SELECT m.Meeting_Date, m.Meeting_Number, c.club_name 
+            SELECT m.Meeting_Date, m.Meeting_Number, c.club_name, c.id AS club_id
             FROM Meetings m
             JOIN clubs c ON m.club_id = c.id
             WHERE m.Meeting_Number = %s
@@ -56,6 +56,7 @@ def fetch_meeting_data(meeting_num):
             if meeting['Meeting_Date']:
                 data['meeting_date'] = meeting['Meeting_Date'].strftime("%d-%b-%Y")
             data['club_name'] = meeting['club_name']
+            data['club_id'] = meeting['club_id']
             
             # 2. Get Session Logs
             sql = """
@@ -199,11 +200,13 @@ if __name__ == "__main__":
     # Template location
     # Based on earlier list_dir, it's in /Users/wmu/workspace/toastmasters/vpemaster/instance/
     base_dir = "/Users/wmu/workspace/toastmasters/vpemaster"
-    input_file = os.path.join(base_dir, "instance", "SHLTMC_Meeting_<nnn>.pptx")
-    output_file = os.path.join(home, "Downloads", f"SHLTMC_Meeting_{meeting_number}.pptx")
     
     # Fetch data
     data_to_replace = fetch_meeting_data(meeting_number)
+    
+    club_id = data_to_replace.get('club_id', 1) if data_to_replace else 1
+    input_file = os.path.join(base_dir, "app", "static", "club_resources", str(club_id), "slides_template.pptx")
+    output_file = os.path.join(home, "Downloads", f"SHLTMC_Meeting_{meeting_number}.pptx")
     
     if data_to_replace:
         replace_placeholders(input_file, data_to_replace, output_file)

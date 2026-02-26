@@ -36,6 +36,6 @@ def extract_variables(pptx_path):
     return sorted(list(variables))
 
 if __name__ == "__main__":
-    pptx_file = "/Users/wmu/workspace/toastmasters/vpemaster/instance/SHLTMC_Meeting_<nnn>.pptx"
+    pptx_file = "/Users/wmu/workspace/toastmasters/vpemaster/app/static/club_resources/1/slides_template.pptx"
     varsFound = extract_variables(pptx_file)
     print("\n".join(varsFound))

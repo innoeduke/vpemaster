@@ -594,6 +594,10 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
         query = db.session.query(*query_cols)\
             .filter(Meeting.status.in_(effective_status_filter))
         
+        club_id = get_current_club_id()
+        if club_id:
+            query = query.filter(Meeting.club_id == club_id)
+            
         if only_with_logs:
             query = query.join(SessionLog, Meeting.id == SessionLog.meeting_id).distinct()
             
@@ -647,8 +651,17 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
         # Note: For efficiency, we should do this in the origin query, but maintaining 
         # exact parity with original logic means filtering post-fetch or subquery.
         # The original logic used a subquery to filter only those in the result set.
-        meetings_with_logs_subquery = db.session.query(
-            distinct(SessionLog.meeting_id)).subquery()
+        meetings_with_logs_query = db.session.query(distinct(SessionLog.meeting_id))
+        
+        # Add club_id filter to the logs subquery to ensure we don't pick up matching
+        # meeting IDs from other clubs when IDs might overlap (though they shouldn't with auto-increment,
+        # but joining restricts to valid meetings for this club)
+        if club_id:
+            meetings_with_logs_query = meetings_with_logs_query.join(
+                Meeting, SessionLog.meeting_id == Meeting.id
+            ).filter(Meeting.club_id == club_id)
+            
+        meetings_with_logs_subquery = meetings_with_logs_query.subquery()
         
         final_meetings = []
         

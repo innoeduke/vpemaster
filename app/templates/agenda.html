@@ -95,7 +95,15 @@
                     <button id="meeting-status-btn"
                         class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'unpublished' %}btn-success{% else %}btn-primary{% endif %}"
                         data-meeting-id="{{ selected_meeting.id }}"
-                        data-current-status="{{ selected_meeting.status }}" {% if selected_meeting.status=='cancelled'
+                        data-current-status="{{ selected_meeting.status }}"
+                        {% if selected_meeting.status == 'unpublished' %}
+                        title="Publish to allow members to book roles."
+                        {% elif selected_meeting.status == 'not started' %}
+                        title="Start to let audience vote."
+                        {% elif selected_meeting.status == 'running' %}
+                        title="Stop to end voting and show results."
+                        {% endif %}
+                        {% if selected_meeting.status=='cancelled'
                         %}disabled{% endif %}>
                         {% if selected_meeting.status == 'unpublished' %}
                         Publish

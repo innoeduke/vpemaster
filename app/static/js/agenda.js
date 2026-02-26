@@ -752,25 +752,31 @@ document.addEventListener("DOMContentLoaded", () => {
               button.classList.remove("btn-success");
               button.classList.add("btn-primary");
               iconClass = "fa-play-circle";
+              button.title = "Start to let audience vote.";
             } else if (newStatus === "running") {
               button.textContent = "Stop";
               iconClass = "fa-broadcast-tower";
+              button.title = "Stop to end voting and show results.";
             } else if (newStatus === "finished") {
               button.textContent = "Delete";
               iconClass = "fa-check-circle";
+              button.title = "";
             } else if (newStatus === "cancelled") {
               button.textContent = "Cancelled";
               button.disabled = true;
               button.classList.remove("btn-info", "btn-primary", "btn-success");
               button.classList.add("btn-secondary");
               iconClass = "fa-ban";
+              button.title = "";
             } else if (newStatus === "unpublished") {
               button.textContent = "Publish";
               button.classList.add("btn-success");
               iconClass = "fa-eye-slash";
+              button.title = "Publish to allow members to book roles.";
             } else {
               button.textContent = "Start";
               iconClass = "fa-play-circle";
+              button.title = "";
             }
 
             statusDisplayElement.innerHTML = `<i class="fas fa-fw ${iconClass}"></i>${statusText}`;

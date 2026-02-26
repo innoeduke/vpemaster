@@ -444,7 +444,7 @@ class MeetingExportService:
         MeetingExportService._populate_table_topics(context, replacements, dur_fmt)
 
         # Load template and perform replacements
-        template_path = os.path.join(current_app.instance_path, 'SHLTMC_Meeting_<nnn>.pptx')
+        template_path = os.path.join(current_app.static_folder, 'club_resources', str(meeting.club_id), 'slides_template.pptx')
         if not os.path.exists(template_path):
             current_app.logger.error(f"PPTX Template not found at: {template_path}")
             return None

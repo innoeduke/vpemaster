@@ -140,8 +140,11 @@
 		<div class="accordion-item" data-category="{{ category or 'other' }}">
 			{% set voting_disabled = False %}
 			{% set candidate_count = items | selectattr('owner_id') | list | length %}
+			{% if status == 'running' %}
 			{% if category in ['speaker', 'evaluator'] and candidate_count < 3 %} {% set voting_disabled=True %} {% elif
-				category=='table-topic' and candidate_count < 5 %} {% set voting_disabled=True %} {% endif %} <button
+				category=='table-topic' and candidate_count < 5 %} {% set voting_disabled=True %} {% endif %}
+			{% endif %}
+			<button
 				class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }} {{ 'disabled' if voting_disabled else '' }}"
 				{% if voting_disabled %}disabled title="Not enough candidates to vote" {% endif %}>
 				<div class="header-left">
@@ -151,7 +154,7 @@
 				</div>
 				<div class="accordion-header-right">
 					<div class="status-wrapper">
-						{% if voting_disabled %}
+						{% if voting_disabled and status == 'running' %}
 						<span class="candidate-warning">
 							{% if category == 'table-topic' %}(Candidates < 5){% else %}(Candidates < 3){% endif %}
 						</span>
