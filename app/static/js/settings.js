@@ -1610,18 +1610,17 @@ function toggleAchievementGroup(groupId) {
   const header = document.querySelector(`tr[data-id="${parentId}"]`);
   const icon = header ? header.querySelector(".toggle-icon") : null;
 
-  let isExpanding = false;
+  if (!header) return;
 
-  rows.forEach((row) => {
-    if (row.style.display === "none") {
-      row.style.display = "table-row";
-      isExpanding = true;
-    } else {
-      row.style.display = "none";
-      isExpanding = false;
-    }
-  });
+  // Toggle expanded class
+  const isExpanding = !header.classList.contains('expanded');
+  if (isExpanding) {
+    header.classList.add('expanded');
+  } else {
+    header.classList.remove('expanded');
+  }
 
+  // Update Icon
   if (icon) {
     if (isExpanding) {
       icon.classList.remove("fa-chevron-right");
@@ -1630,6 +1629,16 @@ function toggleAchievementGroup(groupId) {
       icon.classList.remove("fa-chevron-down");
       icon.classList.add("fa-chevron-right");
     }
+  }
+
+  // If paginator exists, let it handle the row visibility
+  if (window.activePaginators && window.activePaginators['achievements']) {
+    window.activePaginators['achievements'].update();
+  } else {
+    // Fallback: manually toggle display
+    rows.forEach((row) => {
+      row.style.display = isExpanding ? "table-row" : "none";
+    });
   }
 }
 
@@ -1796,9 +1805,16 @@ async function handleAchievementSubmit(e) {
   const form = e.target;
   const id = document.getElementById('achievement-id').value;
   const contactId = document.getElementById('contact_id').value;
+  const typeSelect = document.getElementById('achievement_type').value;
 
   if (!contactId) {
     alert('Please select a valid member.');
+    return;
+  }
+
+  // Prevent silent HTML5 validation failure by checking hidden inputs explicitly
+  if (!typeSelect) {
+    alert('Please select an Achievement Type.');
     return;
   }
 
@@ -1811,6 +1827,17 @@ async function handleAchievementSubmit(e) {
       body: formData,
       headers: { 'X-Requested-With': 'XMLHttpRequest' }
     });
+
+    // Check if it's a 400 Bad Request (duplicate)
+    if (!response.ok) {
+      const data = await response.json();
+      if (data.message) {
+        alert(data.message);
+      } else {
+        alert('An error occurred while saving.');
+      }
+      return;
+    }
 
     if (response.redirected) {
       window.location.href = response.url;

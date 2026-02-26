@@ -33,7 +33,7 @@
 
                 <div class="achievement-form-item">
                     <label for="achievement_type">Type: <span class="required-field">*</span></label>
-                    <select name="achievement_type" id="achievement_type" class="form-control" required>
+                    <select name="achievement_type" id="achievement_type" class="form-control">
                         {% for type in project_types %}
                         <option value="{{ type }}" {% if achievement and achievement.achievement_type == type %}selected{% endif %}>
                             {# Capitalize and replace hyphens with spaces #}

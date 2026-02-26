@@ -58,14 +58,18 @@ def achievement_form(id):
 
         # Check for duplicate
         # We consider a duplicate if contact, type, path, and level match.
-        # Date and notes can be different (e.g. correction), but usually you don't achieve the same thing twice.
+        if not achievement_type:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return {'success': False, 'message': 'Achievement type is required.'}, 400
+            flash('Achievement type is required.', 'error')
+            return redirect(url_for('settings_bp.settings', default_tab='achievements'))
+
         current_cid = get_current_club_id()
         existing_query = Achievement.query.filter_by(
             contact_id=contact_id,
             achievement_type=achievement_type,
             path_name=path_name if path_name else None,
-            level=int(level) if level else None,
-            club_id=current_cid
+            level=int(level) if level else None
         )
         
         if id:
@@ -75,12 +79,9 @@ def achievement_form(id):
         existing = existing_query.first()
         
         if existing:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return {'success': False, 'message': 'This achievement already exists for this member.'}, 400
             flash('This achievement already exists for this member.', 'duplicate_warning')
-            # If we are in a POST request, usually we redirect or render template.
-            # If we redirect to 'request.url', we lose the form data unless we pass it back or rely on browser back.
-            # But standard pattern here seems to be redirecting which resets form logic or just re-rendering.
-            # Adjusting to re-render might be better to keep data, but simpler to redirect for "cancellation" as requested.
-            # User said "cancelled the submission".
             return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 
         if not achievement:
@@ -113,8 +114,7 @@ def achievement_form(id):
                         contact_id=contact_id,
                         achievement_type='level-completion',
                         path_name=path_name,
-                        level=i,
-                        club_id=current_cid
+                        level=i
                     ).first()
                     
                     if not lower_exists:

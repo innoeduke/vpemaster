@@ -284,10 +284,17 @@ h1 {
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1000;
+    z-index: 9999;
     width: 80%;
     max-width: 600px;
     text-align: center;
+    pointer-events: none;
+    /* Let clicks pass through empty space */
+}
+
+/* Allow clicks on the actual flash messages so the close button works */
+.flash-messages .flash {
+    pointer-events: auto;
 }
 
 .flash-container-inline {
@@ -398,4 +405,3 @@ h1 {
     border-top: 1px solid #eee;
     margin: 15px 0;
 }
-
