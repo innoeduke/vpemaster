@@ -704,15 +704,31 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (currentStatus === "finished") {
-      showCustomConfirm("Delete Meeting", "Are you sure you want to <strong>PERMANENTLY DELETE</strong> this meeting and all its records (logs, votes, media)? This action <strong>cannot be undone</strong>.")
-        .then((confirmed) => {
-          if (!confirmed) return;
-          performStatusUpdate(meetingId);
-        });
+    let confirmTitle = "";
+    let confirmMessage = "";
+
+    if (currentStatus === "unpublished") {
+      confirmTitle = "Publish Meeting";
+      confirmMessage = "Please make sure the meeting theme and structure are finalized before publishing.<br><br>Publishing opens booking roles and speeches to all members. Do you want to proceed?";
+    } else if (currentStatus === "not started") {
+      confirmTitle = "Start Meeting";
+      confirmMessage = "Please only click this when the meeting has already started.<br><br>Starting will open voting to the audience. Do you want to proceed?";
+    } else if (currentStatus === "running") {
+      confirmTitle = "Stop Meeting";
+      confirmMessage = "Stopping the meeting ends voting and shows the final vote results.<br><br>Do you want to proceed?";
+    } else if (currentStatus === "finished") {
+      confirmTitle = "Delete Meeting";
+      confirmMessage = "Are you sure you want to <strong>PERMANENTLY DELETE</strong> this meeting and all its records (logs, votes, media)? This action <strong>cannot be undone</strong>.";
     } else {
       performStatusUpdate(meetingId);
+      return;
     }
+
+    showCustomConfirm(confirmTitle, confirmMessage)
+      .then((confirmed) => {
+        if (!confirmed) return;
+        performStatusUpdate(meetingId);
+      });
 
     function performStatusUpdate(meetingId) {
       fetch(`/agenda/status/${meetingId}`, {

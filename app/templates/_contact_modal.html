@@ -49,11 +49,6 @@
             <div class="dtm-checkbox-wrapper">
               <input type="checkbox" id="dtm" name="dtm" />
             </div>
-            <!-- Member ID hidden inside DTM cell frame if needed, or we can move it elsewhere -->
-            <div id="member_id_container" style="display: none;">
-              <label for="member_id">Member ID:</label>
-              <input type="text" id="member_id" name="member_id" placeholder="Optional" />
-            </div>
           </div>
 
           <div class="contact-form-item phone-column">
@@ -61,18 +56,10 @@
             <input type="text" id="phone_number" name="phone_number" />
           </div>
 
-          <!-- Row 4: Bio (Full Width) -->
-          <div class="contact-form-item full-width">
-            <label for="bio">Bio:</label>
-            <textarea id="bio" name="bio" rows="3"></textarea>
-          </div>
-
-          <!-- Row 5: Home Club & Mentor (Conditional) -->
-          <div class="contact-form-item" id="home_club_container" style="display: none;">
-            <label for="home_club_id">Home Club:</label>
-            <select id="home_club_id" name="home_club_id">
-              <!-- Populated by JS -->
-            </select>
+          <!-- Row 4: Member ID & Mentor -->
+          <div class="contact-form-item" id="member_id_container" style="display: none;">
+            <label for="member_id">Member ID:</label>
+            <input type="text" id="member_id" name="member_id" placeholder="Optional" />
           </div>
           <div class="contact-form-item" id="mentor_id_container" style="display: none;">
             <label for="mentor_id">Mentor:</label>
@@ -80,6 +67,20 @@
               <option value="0">None</option>
               <!-- Populated by JS -->
             </select>
+          </div>
+
+          <!-- Row 5: Home Club -->
+          <div class="contact-form-item full-width" id="home_club_container" style="display: none;">
+            <label for="home_club_id">Home Club:</label>
+            <select id="home_club_id" name="home_club_id">
+              <!-- Populated by JS -->
+            </select>
+          </div>
+
+          <!-- Row 5: Bio (Full Width) -->
+          <div class="contact-form-item full-width">
+            <label for="bio">Bio:</label>
+            <textarea id="bio" name="bio" rows="3"></textarea>
           </div>
         </div>
       </div>

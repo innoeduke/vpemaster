@@ -191,11 +191,9 @@ function submitBatchVotes() {
 					const instruction = document.querySelector('.voting-instruction-alert');
 					if (instruction) instruction.style.display = 'none';
 
-					const ratingSection = document.querySelector('.meeting-rating-section');
-					if (ratingSection) ratingSection.style.display = 'none';
-
-					const feedbackSection = document.querySelector('.feedback-section');
-					if (feedbackSection) feedbackSection.style.display = 'none';
+					document.querySelectorAll('.voting-section').forEach(section => {
+						section.style.display = 'none';
+					});
 
 					const thanks = document.getElementById('thank-you-message');
 					if (thanks) {

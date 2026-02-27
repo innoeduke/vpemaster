@@ -651,7 +651,7 @@ def get_nps_comments(meeting_id):
         Vote.comments != ''
     ).all()
     
-    all_comments = [c[0] for c in all_comments] + [c[0] for c in general_comments]
+    all_comments = [c[1] for c in all_comments] + [c[1] for c in general_comments]
     meeting_date = meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting.Meeting_Date else ''
     
     return jsonify({

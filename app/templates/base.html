@@ -49,14 +49,6 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.ROSTER_VIEW) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}active{% endif %}">
-          <a href="{{ url_for('roster_bp.roster') }}">
-            <i class="fas fa-clipboard-list nav-icon"></i>
-            <span>Roster</span>
-          </a>
-        </li>
-        {% endif %}
         {% if has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('voting_bp') %}active{% endif %}">
           <a href="{{ url_for('voting_bp.voting', club_id=get_current_club_id()) }}">
@@ -65,14 +57,7 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
-          <a href="{{ url_for('contacts_bp.show_contacts') }}">
-            <i class="fas fa-book nav-icon"></i>
-            <span>Contacts</span>
-          </a>
-        </li>
-        {% endif %}<li class="nav-divider"></li>
+        
         {% if is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and has_meetings %}
         <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
           <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
@@ -86,6 +71,23 @@
           <a href="{{ url_for('planner_bp.planner') }}">
             <i class="fas fa-calendar-check nav-icon"></i>
             <span>Planner</span>
+          </a>
+        </li>
+        {% endif %}
+        <li class="nav-divider"></li>
+        {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
+          <a href="{{ url_for('contacts_bp.show_contacts') }}">
+            <i class="fas fa-book nav-icon"></i>
+            <span>Contacts</span>
+          </a>
+        </li>
+        {% endif %}
+        {% if is_authorized(Permissions.ROSTER_VIEW) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}active{% endif %}">
+          <a href="{{ url_for('roster_bp.roster') }}">
+            <i class="fas fa-clipboard-list nav-icon"></i>
+            <span>Roster</span>
           </a>
         </li>
         {% endif %}

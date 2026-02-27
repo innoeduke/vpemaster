@@ -139,14 +139,17 @@ function openContactModal(contactId) {
         document.getElementById("email").value = data.contact.Email || "";
         document.getElementById("phone_number").value =
           data.contact.Phone_Number || "";
-        document.getElementById("bio").value = data.contact.Bio || "";
+
+        let bioText = data.contact.Bio || "";
+        bioText = bioText.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
+        document.getElementById("bio").value = bioText;
         document.getElementById("completed_paths").value =
           data.contact.Completed_Paths || "";
         document.getElementById("dtm").checked = data.contact.DTM;
 
         // Show/hide member_id and mentor_id rows based on type
-        const memberIdRow = document.getElementById("member_id_row");
-        const mentorIdRow = document.getElementById("mentor_id_row");
+        const memberIdRow = document.getElementById("member_id_container");
+        const mentorIdRow = document.getElementById("mentor_id_container");
         const isGuest = data.contact.Type === 'Guest';
 
         if (memberIdRow) memberIdRow.style.display = isGuest ? 'none' : '';
@@ -172,7 +175,7 @@ function openContactModal(contactId) {
 
         // Populate Home Club Selector
         const homeClubSelect = document.getElementById("home_club_id");
-        const homeClubRow = document.getElementById("home_club_row");
+        const homeClubRow = document.getElementById("home_club_container");
         if (homeClubSelect && homeClubRow) {
           homeClubSelect.innerHTML = '';
           if (data.user_clubs && data.user_clubs.length > 0) {
@@ -244,9 +247,9 @@ function openContactModal(contactId) {
     if (basicInfoAccordion) basicInfoAccordion.style.display = "none";
 
     // Hide member_id and mentor_id rows for new contacts (default is Guest)
-    const memberIdRow = document.getElementById("member_id_row");
-    const mentorIdRow = document.getElementById("mentor_id_row");
-    const homeClubRow = document.getElementById("home_club_row");
+    const memberIdRow = document.getElementById("member_id_container");
+    const mentorIdRow = document.getElementById("mentor_id_container");
+    const homeClubRow = document.getElementById("home_club_container");
     if (memberIdRow) memberIdRow.style.display = 'none';
     if (mentorIdRow) mentorIdRow.style.display = 'none';
     if (homeClubRow) homeClubRow.style.display = 'none';
