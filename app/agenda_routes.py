@@ -651,7 +651,6 @@ def agenda():
             is_guest = not current_user.is_authenticated or \
                        (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
             if is_guest:
-                flash("Guests cannot view finished meeting agendas.", "warning")
                 return redirect(url_for('agenda_bp.meeting_notice', meeting_id=selected_meeting_id))
 
     # --- Other Data for Template ---
