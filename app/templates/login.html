@@ -131,7 +131,11 @@
       if (confirmGuestBtn) {
         confirmGuestBtn.addEventListener('click', function () {
             // Need to get value from the original select which custom select updates
-            const clubId = guestClubSelect.value;
+            let clubId = guestClubSelect.value;
+            if (!clubId && guestClubSelect.options.length > 0) {
+                // Fallback to first option if value is empty (common in custom selects before first change)
+                clubId = guestClubSelect.options[0].value;
+            }
           if (clubId) {
             window.location.href = "{{ url_for('agenda_bp.agenda') }}?club_id=" + clubId;
           }
