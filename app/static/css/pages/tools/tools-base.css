@@ -362,3 +362,237 @@
 }
 
 /* -----------------------------------------
+   3. Level Validator Styles
+   ----------------------------------------- */
+.level-validator-container {
+	max-width: 800px;
+	margin: 0 auto;
+	padding: 20px 15px;
+}
+
+.page-subtitle {
+	text-align: center;
+	color: #6c757d;
+	font-size: 0.95rem;
+	margin-bottom: 30px;
+	margin-top: -10px;
+}
+
+.validator-card {
+	background: #f8f9fa;
+	border-radius: 12px;
+	padding: 30px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+	margin-bottom: 30px;
+}
+
+.validator-form .form-row {
+	display: flex;
+	gap: 20px;
+	flex-wrap: wrap;
+}
+
+.validator-form .form-group {
+	flex: 1;
+	min-width: 180px;
+}
+
+.validator-form .form-group label {
+	display: block;
+	font-weight: 600;
+	color: #333;
+	margin-bottom: 8px;
+	font-size: 0.9rem;
+}
+
+.validator-form .form-group label i {
+	color: #772432;
+	margin-right: 4px;
+}
+
+.validator-form input,
+.validator-form select {
+	width: 100%;
+	padding: 10px 14px;
+	border: 2px solid #e0e0e0;
+	border-radius: 8px;
+	font-size: 0.95rem;
+	color: #333;
+	background: white;
+	transition: border-color 0.3s ease, box-shadow 0.3s ease;
+	box-sizing: border-box;
+	height: 44px;
+}
+
+.validator-form input:focus,
+.validator-form select:focus {
+	outline: none;
+	border-color: #772432;
+	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
+}
+
+.validator-form input::placeholder {
+	color: #adb5bd;
+}
+
+.form-actions {
+	display: flex;
+	justify-content: center;
+	margin-top: 24px;
+}
+
+.verify-button {
+	padding: 12px 36px;
+	font-size: 0.95rem !important;
+	font-weight: 700;
+	background: #772432;
+	border: none;
+	border-radius: 8px;
+	color: white;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	box-shadow: 0 3px 10px rgba(119, 36, 50, 0.3);
+	white-space: nowrap;
+}
+
+.verify-button:hover:not(:disabled) {
+	background: #8e2a3d;
+	transform: translateY(-2px);
+	box-shadow: 0 5px 15px rgba(119, 36, 50, 0.4);
+}
+
+.verify-button:disabled {
+	opacity: 0.7;
+	cursor: not-allowed;
+}
+
+.verify-button i {
+	margin-right: 8px;
+}
+
+/* Result Area */
+.result-area {
+	animation: fadeIn 0.3s ease-in-out;
+}
+
+.result-card {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 20px 24px;
+	border-radius: 12px;
+	margin-bottom: 16px;
+}
+
+.result-card.result-verified {
+	background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+	border: 1px solid #b1dfbb;
+}
+
+.result-card.result-not-found {
+	background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+	border: 1px solid #f1b0b7;
+}
+
+.result-card.result-error {
+	background: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+	border: 1px solid #ffd666;
+}
+
+.result-card.result-pending {
+	background: linear-gradient(135deg, #e2e6ea 0%, #d6dbe0 100%);
+	border: 1px solid #ced4da;
+}
+
+.result-icon {
+	font-size: 2.2rem;
+	flex-shrink: 0;
+}
+
+.result-spinner {
+	font-size: 2.2rem;
+	flex-shrink: 0;
+	color: #6c757d;
+}
+
+.result-verified .result-icon {
+	color: #155724;
+}
+
+.result-not-found .result-icon {
+	color: #721c24;
+}
+
+.result-error .result-icon {
+	color: #856404;
+}
+
+.result-text {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.result-text strong {
+	font-size: 1.1rem;
+}
+
+.result-meta {
+	font-size: 0.85rem;
+	color: #555;
+}
+
+.result-hint {
+	font-size: 0.8rem;
+	color: #888;
+	font-style: italic;
+}
+
+.result-elapsed {
+	font-size: 0.8rem;
+	color: #666;
+	font-style: italic;
+}
+
+.result-elapsed i {
+	margin-right: 3px;
+}
+
+.result-details {
+	background: white;
+	border-radius: 10px;
+	padding: 16px 20px;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.detail-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 8px 0;
+	border-bottom: 1px solid #f0f0f0;
+	gap: 12px;
+}
+
+.detail-row:last-child {
+	border-bottom: none;
+}
+
+.detail-label {
+	font-weight: 600;
+	color: #555;
+	font-size: 0.88rem;
+	white-space: nowrap;
+}
+
+.detail-value {
+	color: #333;
+	font-size: 0.88rem;
+	text-align: right;
+	word-break: break-all;
+}
+
+.detail-value.hash-value {
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 0.82rem;
+	color: #495057;
+}
