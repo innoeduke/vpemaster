@@ -68,6 +68,8 @@ def level_validator():
         'Team Collaboration',
     ]
 
+    is_sysadmin = current_user.is_authenticated and current_user.has_role('SysAdmin')
+
     return render_template(
         'tools/level_validator.html',
         pathways=pathways,
@@ -75,6 +77,7 @@ def level_validator():
         active_tab='level_validator',
         has_lucky_draw_access=has_lucky_draw_access,
         has_pathways_access=has_pathways_access,
+        is_sysadmin=is_sysadmin,
         Permissions=Permissions
     )
 

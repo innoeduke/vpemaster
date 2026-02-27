@@ -341,7 +341,7 @@ function populateRosterEditForm(rosterId, elements) {
       if (elements.submitBtn) {
         elements.submitBtn.innerHTML = '<i class="fas fa-check"></i> Save';
       }
-      elements.rosterForm.scrollIntoView({ behavior: 'smooth' });
+      elements.formContainer.scrollIntoView({ behavior: 'smooth' });
     })
     .catch(error => {
       console.error('Error fetching entry for edit:', error);

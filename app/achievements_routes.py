@@ -73,18 +73,14 @@ def achievement_form(id):
 
         if uid:
             existing_query = Achievement.query.filter(
-                db.or_(Achievement.user_id == uid, Achievement.contact_id == contact_id),
+                Achievement.user_id == uid,
                 Achievement.achievement_type == achievement_type,
                 Achievement.path_name == (path_name if path_name else None),
                 Achievement.level == (int(level) if level else None)
             )
         else:
-            existing_query = Achievement.query.filter_by(
-                contact_id=contact_id,
-                achievement_type=achievement_type,
-                path_name=path_name if path_name else None,
-                level=int(level) if level else None
-            )
+            # No user found, can't check for duplicates meaningfully
+            existing_query = Achievement.query.filter(Achievement.id < 0)  # No user, no match
         
         if id:
             # If editing, exclude self
@@ -102,7 +98,7 @@ def achievement_form(id):
             achievement = Achievement()
             db.session.add(achievement)
 
-        achievement.contact_id = contact_id
+        achievement.user_id = uid
         achievement.issue_date = issue_date
         achievement.achievement_type = achievement_type
         achievement.path_name = path_name
@@ -126,7 +122,7 @@ def achievement_form(id):
                 for i in range(1, achievement.level):
                     # Check if lower level achievement exists
                     lower_exists = Achievement.query.filter_by(
-                        contact_id=contact_id,
+                        user_id=uid,
                         achievement_type='level-completion',
                         path_name=path_name,
                         level=i
@@ -134,7 +130,7 @@ def achievement_form(id):
                     
                     if not lower_exists:
                         new_lower = Achievement(
-                            contact_id=contact_id,
+                            user_id=uid,
                             member_id=member_id,
                             issue_date=issue_date,
                             achievement_type='level-completion',
@@ -192,7 +188,13 @@ def delete_achievement(id):
         return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 
     achievement = Achievement.query.get_or_404(id)
-    contact_id = achievement.contact_id
+    contact_id = None
+    # Get contact_id from the achievement's user for metadata sync
+    if achievement.user_id:
+        from .models import User
+        user = db.session.get(User, achievement.user_id)
+        if user:
+            contact_id = user.contact_id
     
     # If this is a level completion, attempt to revoke it on the blockchain first
     if achievement.achievement_type == 'level-completion' and achievement.member_id and achievement.path_name and achievement.level:

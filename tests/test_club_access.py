@@ -45,7 +45,10 @@ def cleanup_test_data(app):
                     RosterRole.query.filter(RosterRole.roster_id.in_(roster_ids)).delete(synchronize_session=False)
                 Roster.query.filter(Roster.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
                 
-                Achievement.query.filter(Achievement.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
+                # Delete achievements for test users
+                test_user_ids = [u.id for u in User.query.filter(User.username.like('test_%')).all()]
+                if test_user_ids:
+                    Achievement.query.filter(Achievement.user_id.in_(test_user_ids)).delete(synchronize_session=False)
                 UserClub.query.filter(UserClub.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
                 ContactClub.query.filter(ContactClub.contact_id.in_(test_contact_ids)).delete(synchronize_session=False)
                 db.session.commit()

@@ -75,5 +75,8 @@
     new CustomSelect('educationPath');
     new CustomSelect('levelNumber');
 </script>
+<script>
+    window.__isSysAdmin = {{ is_sysadmin | tojson }};
+</script>
 <script src="{{ url_for('static', filename='js/level_validator.js') }}"></script>
 {% endblock %}

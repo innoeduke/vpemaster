@@ -1,6 +1,6 @@
 import pytest
 from app import db
-from app.models import Contact, Roster, ContactClub, Achievement, UserClub, Club, Meeting
+from app.models import Contact, Roster, ContactClub, Achievement, UserClub, Club, Meeting, User
 from datetime import date
 
 from unittest.mock import patch
@@ -32,8 +32,21 @@ def test_merge_contacts_logic(app, client, default_club):
         r1 = Roster(contact_id=c2_id, meeting_id=m1.id)
         db.session.add(r1)
         
-        # Achievement
-        a1 = Achievement(contact_id=c3_id, achievement_type='level-completion', issue_date=date.today())
+        # Achievements are now linked to users, so we need users
+        u1 = User(username="merge_test_1", email="m1@test.com")
+        u1.set_password("password")
+        u3 = User(username="merge_test_3", email="m3@test.com")
+        u3.set_password("password")
+        db.session.add_all([u1, u3])
+        db.session.commit()
+        
+        # Link users to contacts
+        db.session.add(UserClub(user_id=u1.id, contact_id=c1_id, club_id=default_club.id))
+        db.session.add(UserClub(user_id=u3.id, contact_id=c3_id, club_id=default_club.id))
+        db.session.commit()
+
+        # Achievement (belongs to u3)
+        a1 = Achievement(user_id=u3.id, achievement_type='level-completion', issue_date=date.today())
         db.session.add(a1)
         
         db.session.commit()
@@ -57,9 +70,9 @@ def test_merge_contacts_logic(app, client, default_club):
         updated_m1 = Meeting.query.get(m1.id)
         assert updated_m1.best_table_topic_id == c1_id
         
-        # Achievement updated
+        # Achievement updated (now belongs to u1)
         updated_a1 = Achievement.query.filter_by(achievement_type='level-completion').first()
-        assert updated_a1.contact_id == c1_id
+        assert updated_a1.user_id == u1.id
         
         # Membership consolidated (no duplicate)
         memberships = ContactClub.query.filter_by(contact_id=c1_id).all()

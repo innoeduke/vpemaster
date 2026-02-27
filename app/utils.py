@@ -357,13 +357,10 @@ def recalculate_contact_metadata(contact):
             if c_id:
                 related_contact_ids.add(c_id)
 
-    # Fetch achievements for ALL related contacts/users
+    # Fetch achievements for ALL related users
     achievements = Achievement.query.filter(
-        db.or_(
-            Achievement.contact_id.in_(list(related_contact_ids)),
-            Achievement.user_id.in_(list(user_ids))
-        )
-    ).all()
+        Achievement.user_id.in_(list(user_ids))
+    ).all() if user_ids else []
     
     # 1. DTM
     is_dtm = False

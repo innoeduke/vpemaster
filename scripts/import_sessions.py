@@ -24,10 +24,16 @@ def get_historical_credential(contact_id, meeting_date, path_abbr_map):
     """
     if not meeting_date or not contact_id:
         return None
+    
+    # Look up user_id from contact
+    from app.models.user_club import UserClub
+    uc = UserClub.query.filter_by(contact_id=contact_id).first()
+    if not uc or not uc.user_id:
+        return None
         
     # Fetch relevant achievements
     achievements = Achievement.query.filter(
-        Achievement.contact_id == contact_id,
+        Achievement.user_id == uc.user_id,
         Achievement.issue_date <= meeting_date,
         Achievement.achievement_type.in_(['level-completion', 'program-completion'])
     ).all()

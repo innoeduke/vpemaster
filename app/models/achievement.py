@@ -5,7 +5,6 @@ from .base import db
 class Achievement(db.Model):
     __tablename__ = 'achievements'
     id = db.Column(db.Integer, primary_key=True)
-    contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True) # Kept for now
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     requestor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     member_id = db.Column(db.String(50))  # Redundant but requested
@@ -18,4 +17,3 @@ class Achievement(db.Model):
 
     user = db.relationship('User', foreign_keys=[user_id], backref=db.backref('achievements', lazy=True))
     requestor = db.relationship('User', foreign_keys=[requestor_id])
-    contact = db.relationship('Contact', back_populates='achievements')

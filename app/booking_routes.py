@@ -492,8 +492,10 @@ def booking(meeting_id):
     context = _get_booking_page_context(meeting_id, user, current_user_contact_id)
     
     if context.get('redirect_to_not_started'):
-        # Use meeting_id for redirect
-        return redirect(url_for('agenda_bp.meeting_notice', meeting_id=meeting_id))
+        mid = meeting_id or context.get('selected_meeting_id')
+        if mid:
+            return redirect(url_for('agenda_bp.meeting_notice', meeting_id=mid))
+        return redirect(url_for('agenda_bp.agenda'))
         
     return render_template('booking.html', **context)
 

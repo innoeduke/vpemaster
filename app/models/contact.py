@@ -28,7 +28,6 @@ class Contact(db.Model):
     mentor = db.relationship('Contact', remote_side=[id], foreign_keys=[Mentor_ID], backref='mentees')
     
     # Add cascades for child records to ensure clean deletion of contacts
-    achievements = db.relationship('Achievement', cascade='all, delete-orphan', back_populates='contact')
     waitlists = db.relationship('Waitlist', cascade='all, delete-orphan', back_populates='contact')
     roster_entries = db.relationship('Roster', cascade='all, delete-orphan', back_populates='contact')
     user_club_records = db.relationship('UserClub', cascade='all, delete-orphan', back_populates='contact', foreign_keys='UserClub.contact_id')
@@ -127,12 +126,7 @@ class Contact(db.Model):
                     Achievement.path_name != ''
                 ).distinct()
         else:
-            q_ach = db.session.query(Achievement.path_name)\
-                .filter(
-                    Achievement.contact_id == self.id,
-                    Achievement.path_name.isnot(None),
-                    Achievement.path_name != ''
-                ).distinct()
+            q_ach = db.session.query(Achievement.path_name).filter(db.literal_column('0 = 1'))  # No results
             
         # 3. Union results
         final_query = q_logs.union(q_ach)
@@ -160,11 +154,7 @@ class Contact(db.Model):
                 achievement_type='level-completion'
             ).all()
         else:
-            achievements = Achievement.query.filter_by(
-                contact_id=self.id,
-                path_name=pathway_name,
-                achievement_type='level-completion'
-            ).all()
+            achievements = []
         
         return {a.level for a in achievements if a.level}
     
@@ -366,9 +356,19 @@ class Contact(db.Model):
                     sm.contact_id = primary_id
         
         # For UserClub:
+        secondary_user_ids = set()
+        primary_user_id = None
+        for uc in UserClub.query.filter_by(contact_id=primary_id).all():
+            if uc.user_id:
+                primary_user_id = uc.user_id
+                break
+
         for sid in secondary_ids:
             s_uclubs = UserClub.query.filter_by(contact_id=sid).all()
             for suc in s_uclubs:
+                if suc.user_id:
+                    secondary_user_ids.add(suc.user_id)
+                
                 # If primary already has a linkage in this club, delete the secondary's record
                 # (A contact should generally only be linked to one user per club)
                 exists = UserClub.query.filter_by(contact_id=primary_id, club_id=suc.club_id).first()
@@ -398,10 +398,13 @@ class Contact(db.Model):
         Vote.query.filter(Vote.contact_id.in_(secondary_ids)).update(
             {Vote.contact_id: primary_id}, synchronize_session='fetch'
         )
-        # Achievement
-        Achievement.query.filter(Achievement.contact_id.in_(secondary_ids)).update(
-            {Achievement.contact_id: primary_id}, synchronize_session='fetch'
-        )
+        if primary_user_id and secondary_user_ids:
+            # We don't need to merge if it's the same user
+            secondary_user_ids.discard(primary_user_id)
+            if secondary_user_ids:
+                Achievement.query.filter(Achievement.user_id.in_(list(secondary_user_ids))).update(
+                    {Achievement.user_id: primary_user_id}, synchronize_session='fetch'
+                )
         
         # Update Meeting awards and manager
         Meeting.query.filter(Meeting.best_table_topic_id.in_(secondary_ids)).update(

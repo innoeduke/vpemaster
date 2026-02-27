@@ -827,7 +827,7 @@ document.addEventListener("DOMContentLoaded", () => {
     openTab(null, savedTab);
   } else {
     // Default to general if nothing is set
-    openTab(null, "general");
+    openTab(null, "user-settings");
   }
   // Attach functions to window for inline onclick attributes
   window.openTab = openTab;

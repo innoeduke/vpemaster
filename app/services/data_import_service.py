@@ -904,14 +904,14 @@ class DataImportService:
             # Dedup: User/Contact + Date + Type + Level? 
             if uid:
                 existing = Achievement.query.filter(
-                    db.or_(Achievement.user_id == uid, Achievement.contact_id == target_contact_id),
+                    Achievement.user_id == uid,
                     Achievement.issue_date == self._parse_date(row[3]),
                     Achievement.achievement_type == row[4],
                     Achievement.level == row[6]
                 ).first()
             else:
                 existing = Achievement.query.filter_by(
-                    contact_id=target_contact_id,
+                    user_id=0,  # Will never match, acts as skip
                     issue_date=self._parse_date(row[3]),
                     achievement_type=row[4],
                     level=row[6]
@@ -919,8 +919,7 @@ class DataImportService:
             
             if not existing:
                 new_ach = Achievement(
-                    contact_id=target_contact_id,
-                    user_id=uid or 0,
+                    user_id=uid if uid else 0,
                     member_id=row[2],
                     issue_date=self._parse_date(row[3]),
                     achievement_type=row[4],

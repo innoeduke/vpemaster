@@ -5,6 +5,7 @@
 (function () {
 	const STORAGE_KEY = 'levelValidatorTask';
 	const POLL_INTERVAL = 2000; // ms
+	const IS_SYSADMIN = window.__isSysAdmin || false;
 
 	const verifyBtn = document.getElementById('verifyBtn');
 	const resultArea = document.getElementById('resultArea');
@@ -72,7 +73,7 @@
 					</div>
 					<div class="detail-row" style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: none;">
 						<span class="detail-label" style="color: #666; font-weight: normal;">By:</span>
-						<span class="detail-value">${item.user}</span>
+						<span class="detail-value">${IS_SYSADMIN ? item.user : '****'}</span>
 					</div>
 					<div class="detail-row" style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: none;">
 						<span class="detail-label" style="color: #666; font-weight: normal;">Tx Hash:</span>
@@ -108,7 +109,7 @@
       </div>
       <div class="result-details">
         <div class="detail-row"><span class="detail-label">Issue Date</span><span class="detail-value">${result.issue_date}</span></div>
-        <div class="detail-row"><span class="detail-label">Recorded By</span><span class="detail-value">${result.recorded_user}</span></div>
+        <div class="detail-row"><span class="detail-label">Recorded By</span><span class="detail-value">${IS_SYSADMIN ? result.recorded_user : '****'}</span></div>
         <div class="detail-row"><span class="detail-label">Recorded Time</span><span class="detail-value">${result.recorded_time}</span></div>
         <div class="detail-row"><span class="detail-label">Transaction Hash</span><span class="detail-value hash-value">${result.tx_hash}</span></div>
         <div class="detail-row"><span class="detail-label">Block Number</span><span class="detail-value">${result.block_number}</span></div>
@@ -131,7 +132,7 @@
       </div>
       <div class="result-details">
         <div class="detail-row"><span class="detail-label">Issue Date</span><span class="detail-value">${result.issue_date}</span></div>
-        <div class="detail-row"><span class="detail-label">Revoked By</span><span class="detail-value">${result.revoked_user}</span></div>
+        <div class="detail-row"><span class="detail-label">Revoked By</span><span class="detail-value">${IS_SYSADMIN ? result.revoked_user : '****'}</span></div>
         <div class="detail-row"><span class="detail-label">Revoked Time</span><span class="detail-value">${result.revoked_time}</span></div>
         <div class="detail-row"><span class="detail-label">Transaction Hash</span><span class="detail-value hash-value">${result.tx_hash}</span></div>
         <div class="detail-row"><span class="detail-label">Block Number</span><span class="detail-value">${result.block_number}</span></div>
