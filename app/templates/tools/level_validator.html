@@ -36,7 +36,7 @@
                             </optgroup>
                             {% endif %}
                             {% if programs %}
-                            <optgroup label="Legacy Programs">
+                            <optgroup label="Legacy Pathways">
                                 {% for p in programs %}
                                 <option value="{{ p }}">{{ p }}</option>
                                 {% endfor %}
@@ -57,7 +57,7 @@
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button id="verifyBtn" class="btn btn-primary verify-button">
+                    <button id="verifyBtn" class="verify-button">
                         <i class="fas fa-search"></i> Verify on Blockchain
                     </button>
                 </div>
@@ -70,5 +70,10 @@
         </div>
     </div>
 </div>
+<script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
+<script>
+    new CustomSelect('educationPath');
+    new CustomSelect('levelNumber');
+</script>
 <script src="{{ url_for('static', filename='js/level_validator.js') }}"></script>
 {% endblock %}

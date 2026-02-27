@@ -50,4 +50,27 @@
   .draw-button {
     flex: 1;
   }
+
+  /* --- Level Validator Mobile Overrides --- */
+  .validator-form .form-row {
+    flex-direction: column;
+  }
+
+  .validator-form .form-group {
+    flex: 0 0 100%;
+    width: 100%;
+  }
+
+  .validator-form .form-group input,
+  .validator-form .form-group select,
+  .validator-form .form-group .custom-select-container,
+  .validator-form .form-group .meeting-autocomplete-container {
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .validator-card .verify-button {
+    width: 100%;
+  }
 }

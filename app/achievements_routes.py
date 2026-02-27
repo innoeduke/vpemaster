@@ -4,8 +4,9 @@ from .models import Achievement, Contact, Pathway
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from .club_context import get_current_club_id
+from flask_login import current_user
 from datetime import datetime
-from .blockchain import record_level_completion_on_chain
+from .services.blockchain_service import record_level as record_level_completion_on_chain
 import logging
 
 achievements_bp = Blueprint('achievements_bp', __name__)
@@ -97,10 +98,12 @@ def achievement_form(id):
         
         # Auto-add lower levels if this is a level completion
         if achievement_type == 'level-completion':
+            full_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.display_name
+            user_ident = f"{full_name} ({current_user.home_club.short_name})" if getattr(current_user, 'home_club', None) and current_user.home_club.short_name else f"{full_name} (ID: {current_user.id})"
             # Record it on the blockchain if it's a new or updated achievement (not just editing notes)
             # Since this takes an active network request, we'll try/except to prevent it from crashing the route
             try:
-                success = record_level_completion_on_chain(member_id, path_name, achievement.level)
+                success = record_level_completion_on_chain(member_id, path_name, achievement.level, issue_date, user_ident)
                 if not success:
                     flash(f"Warning: Failed to record level {achievement.level} completion on blockchain, but it will be saved to the database.", "warning")
             except Exception as e:
@@ -132,7 +135,9 @@ def achievement_form(id):
                         
                         # Also record the auto-added lower level on the blockchain
                         try:
-                            success_l = record_level_completion_on_chain(member_id, path_name, i)
+                            import time
+                            time.sleep(2) # Prevent nonce collisions on RPC provider for back-to-back txn
+                            success_l = record_level_completion_on_chain(member_id, path_name, i, issue_date, user_ident)
                             if not success_l:
                                 logging.warning(f"Warning: Failed to record auto-added level {i} on blockchain.")
                         except Exception as e:
@@ -147,6 +152,10 @@ def achievement_form(id):
 
         db.session.commit()
         flash('Achievement saved successfully.', 'success')
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return {'success': True}
+            
         return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 
     contacts = Contact.query.filter(Contact.Type.in_(['Member', 'Officer'])).order_by(Contact.Name.asc()).all()
@@ -173,6 +182,26 @@ def delete_achievement(id):
 
     achievement = Achievement.query.get_or_404(id)
     contact_id = achievement.contact_id
+    
+    # If this is a level completion, attempt to revoke it on the blockchain first
+    if achievement.achievement_type == 'level-completion' and achievement.member_id and achievement.path_name and achievement.level:
+        try:
+            from .services.blockchain_service import BlockchainService
+            full_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.display_name
+            user_ident = f"{full_name} ({current_user.home_club.short_name})" if getattr(current_user, 'home_club', None) and current_user.home_club.short_name else f"{full_name} (ID: {current_user.id})"
+            
+            success = BlockchainService.revoke_level(
+                member_no=achievement.member_id,
+                path_name=achievement.path_name,
+                level=achievement.level,
+                issue_date=achievement.issue_date,
+                user_identifier=user_ident
+            )
+            if not success:
+                logging.warning(f"Failed to record revocation on chain for level {achievement.level}, but proceeding with local delete.")
+        except Exception as e:
+            logging.error(f"Failed to revoke level completion on chain: {e}")
+
     db.session.delete(achievement)
     db.session.commit()
     

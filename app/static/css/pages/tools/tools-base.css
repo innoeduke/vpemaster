@@ -413,26 +413,32 @@
 .validator-form input,
 .validator-form select {
 	width: 100%;
-	padding: 10px 14px;
-	border: 2px solid #e0e0e0;
+	padding: 8px 12px;
+	border: 1px solid #ddd;
 	border-radius: 8px;
 	font-size: 0.95rem;
+	font-weight: 600;
 	color: #333;
 	background: white;
-	transition: border-color 0.3s ease, box-shadow 0.3s ease;
+	transition: all 0.3s ease;
 	box-sizing: border-box;
-	height: 44px;
+	min-height: 38px;
+}
+
+:root body .validator-form .custom-select-trigger {
+	text-align: center;
 }
 
 .validator-form input:focus,
 .validator-form select:focus {
 	outline: none;
 	border-color: #772432;
-	box-shadow: 0 0 0 3px rgba(119, 36, 50, 0.1);
+	box-shadow: 0 4px 12px rgba(119, 36, 50, 0.15);
 }
 
 .validator-form input::placeholder {
 	color: #adb5bd;
+	font-weight: 400;
 }
 
 .form-actions {
@@ -443,7 +449,7 @@
 
 .verify-button {
 	padding: 12px 36px;
-	font-size: 0.95rem !important;
+	font-size: 0.95rem;
 	font-weight: 700;
 	background: #772432;
 	border: none;
@@ -453,6 +459,9 @@
 	transition: all 0.3s ease;
 	box-shadow: 0 3px 10px rgba(119, 36, 50, 0.3);
 	white-space: nowrap;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .verify-button:hover:not(:disabled) {

@@ -52,8 +52,21 @@ def level_validator():
     has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
     has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
 
-    pathways = [p.name for p in Pathway.query.filter_by(type='pathway').order_by(Pathway.name).all()]
-    programs = [p.name for p in Pathway.query.filter_by(type='program').order_by(Pathway.name).all()]
+    pathways = [
+        'Dynamic Leadership',
+        'Engaging Humor',
+        'Motivational Strategies',
+        'Persuasive Influence',
+        'Presentation Mastery',
+        'Visionary Communication',
+    ]
+    programs = [
+        'Effective Coaching',
+        'Innovative Planning',
+        'Leadership Development',
+        'Strategic Relationships',
+        'Team Collaboration',
+    ]
 
     return render_template(
         'tools/level_validator.html',
@@ -105,7 +118,7 @@ def verify_level():
 
     def _run_verification(app, tid, mid, pname, lvl):
         with app.app_context():
-            from .blockchain import verify_level_on_chain
+            from .services.blockchain_service import verify_level as verify_level_on_chain
             result = verify_level_on_chain(mid, pname, lvl)
             if tid in _verification_tasks:
                 _verification_tasks[tid]['status'] = 'done'
