@@ -70,15 +70,15 @@
 						<strong style="font-size: 1rem;">${icon} ${item.action}</strong>
 						<span style="color: #666; font-size: 0.88rem;">${item.time}</span>
 					</div>
-					<div class="detail-row" style="padding: 4px 0; border-bottom: none;">
+					<div class="detail-row" style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: none;">
 						<span class="detail-label" style="color: #666; font-weight: normal;">By:</span>
 						<span class="detail-value">${item.user}</span>
 					</div>
-					<div class="detail-row" style="padding: 4px 0; border-bottom: none;">
+					<div class="detail-row" style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: none;">
 						<span class="detail-label" style="color: #666; font-weight: normal;">Tx Hash:</span>
 						<span class="detail-value hash-value">${item.tx_hash}</span>
 					</div>
-					<div class="detail-row" style="padding: 4px 0; border-bottom: none;">
+					<div class="detail-row" style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: none;">
 						<span class="detail-label" style="color: #666; font-weight: normal;">Block:</span>
 						<span class="detail-value">${item.block_number}</span>
 					</div>

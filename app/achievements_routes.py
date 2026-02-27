@@ -18,10 +18,7 @@ def show_achievements():
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
-    current_cid = get_current_club_id()
-    achievements = Achievement.query.join(Contact).filter(
-        Achievement.club_id == current_cid
-    ).order_by(Achievement.issue_date.desc()).all()
+    achievements = Achievement.query.join(Contact).all()
     
     # Redirect to settings page with achievements tab
     return redirect(url_for('settings_bp.settings', default_tab='achievements'))
@@ -65,7 +62,7 @@ def achievement_form(id):
             flash('Achievement type is required.', 'error')
             return redirect(url_for('settings_bp.settings', default_tab='achievements'))
 
-        current_cid = get_current_club_id()
+
         existing_query = Achievement.query.filter_by(
             contact_id=contact_id,
             achievement_type=achievement_type,
@@ -94,7 +91,6 @@ def achievement_form(id):
         achievement.achievement_type = achievement_type
         achievement.path_name = path_name
         achievement.level = int(level) if level else None
-        achievement.club_id = current_cid
         
         # Auto-add lower levels if this is a level completion
         if achievement_type == 'level-completion':
@@ -128,8 +124,7 @@ def achievement_form(id):
                             achievement_type='level-completion',
                             path_name=path_name,
                             level=i,
-                            notes=f"Auto-added based on Level {achievement.level} completion",
-                            club_id=current_cid
+                            notes=f"Auto-added based on Level {achievement.level} completion"
                         )
                         db.session.add(new_lower)
                         

@@ -425,10 +425,6 @@
 	min-height: 38px;
 }
 
-:root body .validator-form .custom-select-trigger {
-	text-align: center;
-}
-
 .validator-form input:focus,
 .validator-form select:focus {
 	outline: none;

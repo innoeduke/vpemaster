@@ -211,6 +211,16 @@ class BlockchainService:
             )
             return False
 
+        # Idempotency check: Skip if already verified on-chain
+        try:
+            status = cls.verify_level(member_no, path_name, level)
+            if status.get('verified'):
+                logger.info(f"Idempotency: Level {level} for member {member_no} already recorded and active on-chain. Skipping.")
+                return True
+        except Exception as e:
+            logger.error(f"Error during idempotency check: {e}")
+            # Continue recording if check fails, to be safe
+
         # Convert date to Unix timestamp (seconds)
         if hasattr(issue_date, 'timetuple'):
             import time
@@ -449,6 +459,58 @@ class BlockchainService:
         except Exception as e:
             logger.error(f"Blockchain query failed: {e}")
             return {"verified": False, "error": f"Blockchain query failed: {e}"}
+
+    @classmethod
+    def bulk_upload(cls):
+        """
+        Record all 'level-completion' achievements in the database to the blockchain.
+        Skips already recorded achievements via idempotency in record_level.
+        """
+        from ..models.achievement import Achievement
+        import time
+
+        # Get all level-completion achievements
+        achievements = Achievement.query.filter_by(
+            achievement_type='level-completion'
+        ).order_by(Achievement.issue_date.asc()).all()
+
+        results = []
+        for ach in achievements:
+            if not ach.member_id or not ach.path_name or not ach.level:
+                continue
+            
+            logger.info(f"Bulk Upload: Processing {ach.member_id} - {ach.path_name} L{ach.level}")
+            try:
+                # record_level handles idempotency check internally
+                success = cls.record_level(
+                    member_no=ach.member_id,
+                    path_name=ach.path_name,
+                    level=ach.level,
+                    issue_date=ach.issue_date,
+                    user_identifier="Bulk Upload"
+                )
+                results.append({
+                    "achievement_id": ach.id,
+                    "success": success,
+                    "member_id": ach.member_id,
+                    "path": ach.path_name,
+                    "level": ach.level
+                })
+                
+                # Small delay to prevent nonce collisions if a transaction was actually sent
+                time.sleep(1) 
+            except Exception as e:
+                logger.error(f"Bulk Upload failed for {ach.id}: {e}")
+                results.append({
+                    "achievement_id": ach.id,
+                    "success": False,
+                    "error": str(e),
+                    "member_id": ach.member_id,
+                    "path": ach.path_name,
+                    "level": ach.level
+                })
+                
+        return results
 
 
 # ── Convenience aliases for backward compatibility ───────
