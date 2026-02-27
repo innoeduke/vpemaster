@@ -103,6 +103,11 @@ def login():
                 flash('Account is inactive.', 'error')
                 return redirect(url_for('auth_bp.login'))
 
+            # Prevent login if user is not linked to any club
+            if not user.is_sysadmin and len(user.club_memberships) == 0:
+                flash('Your account is not linked to any club. Please contact an administrator.', 'error')
+                return redirect(url_for('auth_bp.login'))
+
             login_user(user, remember=True)
             
             # Check for default password
@@ -221,6 +226,17 @@ def profile(contact_id=None):
             if user.contact:
                 user.contact.Phone_Number = request.form.get('phone_number')
                 user.contact.Bio = request.form.get('bio')
+                
+                # Handle Home Club Selection
+                home_club_id_str = request.form.get('home_club_id')
+                if home_club_id_str:
+                    home_club_id = int(home_club_id_str)
+                    
+                    # Ensure the user is actually a member of this club
+                    valid_club_ids = [uc.club_id for uc in user.club_memberships]
+                    if home_club_id in valid_club_ids:
+                        for uc in user.club_memberships:
+                            uc.is_home = (uc.club_id == home_club_id)
                 
                 # Handle Photo Upload
                 file = request.files.get('profile_photo')

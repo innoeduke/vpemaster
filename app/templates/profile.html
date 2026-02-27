@@ -1,8 +1,10 @@
 {% extends "base.html" %}
 {% from "partials/_profile_macros.html" import profile_section, field_row, field_row_pair %}
+{% from "components/custom_select.html" import render_custom_select %}
 {% block title %}User Profile{% endblock %}
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/profile-sections.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/components/meeting_filter.css') }}">
 {% endblock %}
 {% block flash_messages %}{% endblock %}
 {% block content %}
@@ -92,7 +94,27 @@
       {% if user.contact %}
       <!-- Section 3: Toastmasters -->
       {% call profile_section("Toastmasters") %}
-        {{ field_row("Home Club", value=user.home_club.club_name if user.home_club else none) }}
+        {% if can_edit_profile and user.club_memberships|length > 1 %}
+          <div class="field-row editable">
+            <label for="home_club_id" class="field-label">Home Club</label>
+            <div class="field-input-wrapper">
+              {% set club_options = [] %}
+              {% set current_home_club = namespace(id='') %}
+              {% for uc in user.club_memberships %}
+                {% set _ = club_options.append({'value': uc.club_id, 'text': uc.club.club_name}) %}
+                {% if uc.is_home %}{% set current_home_club.id = uc.club_id %}{% endif %}
+              {% endfor %}
+              {{ render_custom_select(
+                 options=club_options,
+                 selected_value=current_home_club.id,
+                 select_id='home_club_id',
+                 placeholder='Select Home Club'
+              ) }}
+            </div>
+          </div>
+        {% else %}
+          {{ field_row("Home Club", value=user.home_club.club_name if user.home_club else none) }}
+        {% endif %}
         
         {% call field_row_pair() %}
           {{ field_row("Member ID", value=user.contact.Member_ID) }}

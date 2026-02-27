@@ -453,31 +453,45 @@ def delete_user(user_id):
     
     # 2. Handle Contact and ContactClub
     if contact:
-        # Delete ContactClub entry for this club
-        cc = ContactClub.query.filter_by(contact_id=contact.id, club_id=current_club_id).first()
-        if cc:
-            db.session.delete(cc)
-            db.session.flush()
-            
-        # Check if Contact is orphaned (not used in any other club)
-        # We check both ContactClub (membership) and UserClub (user link)
-        other_cc_count = ContactClub.query.filter_by(contact_id=contact.id).count()
-        other_uc_count = UserClub.query.filter_by(contact_id=contact.id).count()
+        # DO NOT delete ContactClub entry for this club.
+        # The prompt requires: "delete a user should not remove its contact in the club. 
+        # instead, change its contact type from member to guest."
         
-        if other_cc_count == 0 and other_uc_count == 0:
-            db.session.delete(contact)
-            
+        # Check if they are still an active user in other clubs
+        other_uc_count = UserClub.query.filter_by(user_id=user.id).count()
+        
+        if other_uc_count == 0:
+            contact.Type = 'Guest'
+                
     # 3. Check if User is orphaned
     remaining_clubs = UserClub.query.filter_by(user_id=user.id).count()
     
     # Exception: SysAdmin account doesn't need to be associated with a club
-    # We identify SysAdmin by username 'sysadmin' (common convention)
-    is_sysadmin_account = user.username.lower() in ('sysadmin', 'admin')
+    is_sysadmin_account = user.is_sysadmin
     
     if remaining_clubs == 0 and not is_sysadmin_account:
-        db.session.delete(user)
+        from sqlalchemy.exc import IntegrityError
+        try:
+            with db.session.begin_nested():
+                db.session.delete(user)
+        except IntegrityError:
+            user.status = 'deleted'
+    elif remaining_clubs > 0:
+        # User is still actively in another club, definitely active
+        user.status = 'active'
         
-    db.session.commit()
+        # If the deleted UserClub was their home club, reassign a new home club automatically
+        if uc and uc.is_home:
+            fallback_uc = UserClub.query.filter_by(user_id=user.id).first()
+            if fallback_uc:
+                fallback_uc.is_home = True
+        
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash('An error occurred during deletion.', 'error')
+        
     return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
 

@@ -809,7 +809,10 @@ document.addEventListener("DOMContentLoaded", () => {
           // Add the new contact to our local JavaScript array
           allContacts.push(data.contact);
           window.closeContactModal(); // Close the modal
-          if (activeOwnerInput) {
+
+          if (typeof window.onContactSelect === 'function') {
+            window.onContactSelect(data.contact);
+          } else if (activeOwnerInput) {
             activeOwnerInput.value = data.contact.Name;
             const hiddenInput = activeOwnerInput.nextElementSibling;
             if (
@@ -894,19 +897,18 @@ document.addEventListener("DOMContentLoaded", () => {
       if (isMobileView) {
         titleCell.colSpan = 5;
       } else {
-        titleCell.colSpan = 7;
+        titleCell.colSpan = 6;
       }
 
       titleCell.classList.add("section-row");
       titleCell.classList.add("drag-handle"); // Enable dragging from title
       seqCell.classList.add("drag-handle");   // Enable dragging from sequence no
 
-      // Create a flex wrapper for title input and actions within the section row
+      // Create a flex wrapper for title input within the section row
       const titleWrapper = document.createElement("div");
       titleWrapper.style.display = "flex";
       titleWrapper.style.alignItems = "center";
       titleWrapper.style.justifyContent = "center";
-      titleWrapper.style.gap = "10px";
       titleWrapper.style.width = "100%";
 
       // Get the input from titleCell (it was appended by createEditableCell but we'll move it)
@@ -915,18 +917,15 @@ document.addEventListener("DOMContentLoaded", () => {
         titleWrapper.appendChild(titleInput);
       }
 
-      // Create actions and append inner wrapper to title wrapper
-      const actionsCell = createActionsCell(originalData.id, typeId, hasRole, isHidden);
-      const actionsWrapper = actionsCell.querySelector('.actions-wrapper');
-      if (actionsWrapper) {
-        titleWrapper.appendChild(actionsWrapper);
-      }
-
       titleCell.appendChild(titleWrapper);
+
+      // Create actions cell separately
+      const actionsCell = createActionsCell(originalData.id, typeId, hasRole, isHidden);
 
       row.append(
         seqCell,
-        titleCell
+        titleCell,
+        actionsCell
       );
     } else {
       fieldsOrder.forEach((field, index) => {

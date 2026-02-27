@@ -36,13 +36,25 @@ install:
 	pip install -r requirements.txt
 
 install-test-deps:
-	pip install pytest pytest-cov pytest-watch
+	pip install pytest pytest-cov pytest-watch pytest-xdist pytest-testmon
 
 # Testing
 test:
 	@echo "Running all tests..."
 	@pytest tests/ || (echo "❌ Tests failed" && exit 1)
 	@echo "✅ All tests passed"
+
+test-fast:
+	@echo "Running tests in parallel..."
+	@pytest -n auto tests/
+
+test-smart:
+	@echo "Running only tests affected by code changes..."
+	@pytest --testmon tests/
+
+test-fix:
+	@echo "Running only tests that failed in the last run..."
+	@pytest --lf tests/
 
 test-verbose:
 	@echo "Running tests with verbose output..."

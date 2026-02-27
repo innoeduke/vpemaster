@@ -50,12 +50,15 @@ def settings():
     # Users: Filter by club membership
     if club_id:
         all_users = User.query.join(UserClub).filter(
-            UserClub.club_id == club_id
+            UserClub.club_id == club_id,
+            User.status != 'deleted'
         ).options(
             db.joinedload(User.club_memberships)
         ).order_by(User.username.asc()).all()
     else:
-        all_users = User.query.options(
+        all_users = User.query.filter(
+            User.status != 'deleted'
+        ).options(
             db.joinedload(User.club_memberships)
         ).order_by(User.username.asc()).all()
     

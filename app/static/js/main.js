@@ -134,7 +134,7 @@ function openContactModal(contactId) {
         document.getElementById("last_name").value = data.contact.last_name || "";
         document.getElementById("name").value = data.contact.Name || ""; // Hidden field
         document.getElementById("type").value = data.contact.Type || "Guest"; // Hidden field
-        
+
         document.getElementById("member_id").value = data.contact.Member_ID || "";
         document.getElementById("email").value = data.contact.Email || "";
         document.getElementById("phone_number").value =
@@ -148,7 +148,7 @@ function openContactModal(contactId) {
         const memberIdRow = document.getElementById("member_id_row");
         const mentorIdRow = document.getElementById("mentor_id_row");
         const isGuest = data.contact.Type === 'Guest';
-        
+
         if (memberIdRow) memberIdRow.style.display = isGuest ? 'none' : '';
         if (mentorIdRow) mentorIdRow.style.display = isGuest ? 'none' : '';
 
@@ -174,21 +174,21 @@ function openContactModal(contactId) {
         const homeClubSelect = document.getElementById("home_club_id");
         const homeClubRow = document.getElementById("home_club_row");
         if (homeClubSelect && homeClubRow) {
-            homeClubSelect.innerHTML = '';
-            if (data.user_clubs && data.user_clubs.length > 0) {
-                data.user_clubs.forEach(club => {
-                    const option = document.createElement("option");
-                    option.value = club.id;
-                    option.textContent = club.name;
-                    homeClubSelect.appendChild(option);
-                });
-                if (data.home_club_id) {
-                    homeClubSelect.value = data.home_club_id;
-                }
-                homeClubRow.style.display = '';
-            } else {
-                homeClubRow.style.display = 'none';
+          homeClubSelect.innerHTML = '';
+          if (data.user_clubs && data.user_clubs.length > 0) {
+            data.user_clubs.forEach(club => {
+              const option = document.createElement("option");
+              option.value = club.id;
+              option.textContent = club.name;
+              homeClubSelect.appendChild(option);
+            });
+            if (data.home_club_id) {
+              homeClubSelect.value = data.home_club_id;
             }
+            homeClubRow.style.display = '';
+          } else {
+            homeClubRow.style.display = 'none';
+          }
         }
 
         // Populate Mentor Dropdown
@@ -242,7 +242,7 @@ function openContactModal(contactId) {
     document.getElementById("educationFieldsWrapper").style.display = "none";
     const basicInfoAccordion = document.getElementById("basicInfoAccordion");
     if (basicInfoAccordion) basicInfoAccordion.style.display = "none";
-    
+
     // Hide member_id and mentor_id rows for new contacts (default is Guest)
     const memberIdRow = document.getElementById("member_id_row");
     const mentorIdRow = document.getElementById("mentor_id_row");
@@ -281,9 +281,9 @@ function showDuplicateModal(message, duplicateData) {
   const modal = document.getElementById('duplicateContactModal');
   if (!modal) {
     if (typeof showCustomAlert === 'function') {
-        showCustomAlert("Duplicate Contact", message);
+      showCustomAlert("Duplicate Contact", message);
     } else {
-        alert(message);
+      alert(message);
     }
     return;
   }
@@ -297,17 +297,17 @@ function showDuplicateModal(message, duplicateData) {
   if (nameEl) nameEl.textContent = duplicateData.name || '-';
   if (emailEl) emailEl.textContent = duplicateData.email || '-';
   if (phoneEl) phoneEl.textContent = duplicateData.phone || '-';
-  
+
   // Configure "View Existing" button
   const viewBtn = document.getElementById('viewDupBtn');
   if (viewBtn) {
-    viewBtn.onclick = function() {
-        closeDuplicateModal();
-        if (typeof closeContactModal === 'function') closeContactModal();
-        if (typeof openContactModal === 'function') openContactModal(duplicateData.id);
+    viewBtn.onclick = function () {
+      closeDuplicateModal();
+      if (typeof closeContactModal === 'function') closeContactModal();
+      if (typeof openContactModal === 'function') openContactModal(duplicateData.id);
     };
   }
-  
+
   modal.style.display = 'flex';
 }
 
@@ -566,56 +566,63 @@ document.addEventListener("DOMContentLoaded", function () {
   // --- Global Delete Modal AJAX Handler ---
   const deleteForm = document.getElementById('deleteForm');
   if (deleteForm) {
-      deleteForm.addEventListener('submit', function(e) {
-          // If another handler already prevented default (e.g. specialized logic), skip
-          if (e.defaultPrevented) return;
+    deleteForm.addEventListener('submit', function (e) {
+      // If another handler already prevented default (e.g. specialized logic), skip
+      if (e.defaultPrevented) return;
 
-          e.preventDefault();
-          const form = e.target;
-          
-          fetch(form.action, {
-              method: "POST",
-              headers: {
-                  "X-Requested-With": "XMLHttpRequest",
-              },
-          })
-          .then((response) => {
-              // Handle redirects if any (though usually we expect JSON)
-              if (response.redirected) {
-                  if (typeof closeDeleteModal === 'function') closeDeleteModal();
-                  location.reload();
-                  return;
-              }
-              return response.json();
-          })
-          .then((data) => {
-              if (data) {
-                  if (data.success) {
-                      if (typeof closeDeleteModal === 'function') closeDeleteModal();
-                      
-                      // Handle specialized refresh if available, otherwise reload
-                      if (typeof refreshContactCache === 'function') {
-                          refreshContactCache();
-                      } else {
-                          location.reload();
-                      }
-                  } else {
-                      if (data.logs && typeof showUsageWarningModal === 'function') {
-                          if (typeof closeDeleteModal === 'function') closeDeleteModal();
-                          const usageId = data.id || data.session_type_id;
-                          const usageType = data.type || 'session';
-                          showUsageWarningModal(data.message, data.logs, usageId, usageType);
-                      } else {
-                          alert(data.message || "An error occurred while deleting the item.");
-                      }
-                  }
-              }
-          })
-          .catch((error) => {
-              console.error("Delete Error:", error);
-              alert("An error occurred while deleting the item.");
+      e.preventDefault();
+      const form = e.target;
+
+      fetch(form.action, {
+        method: "POST",
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      })
+        .then((response) => {
+          // Handle redirects if any (though usually we expect JSON)
+          if (response.redirected) {
+            if (typeof closeDeleteModal === 'function') closeDeleteModal();
+            location.reload();
+            return;
+          }
+          if (!response.ok) {
+            return response.text().then(text => {
+              throw new Error(`Server returned ${response.status}: ${text.substring(0, 100)}...`);
+            });
+          }
+          return response.json().catch(() => {
+            throw new Error("Invalid JSON response from server");
           });
-      });
+        })
+        .then((data) => {
+          if (data) {
+            if (data.success) {
+              if (typeof closeDeleteModal === 'function') closeDeleteModal();
+
+              // Handle specialized refresh if available, otherwise reload
+              if (typeof refreshContactCache === 'function') {
+                refreshContactCache();
+              } else {
+                location.reload();
+              }
+            } else {
+              if (data.logs && typeof showUsageWarningModal === 'function') {
+                if (typeof closeDeleteModal === 'function') closeDeleteModal();
+                const usageId = data.id || data.session_type_id;
+                const usageType = data.type || 'session';
+                showUsageWarningModal(data.message, data.logs, usageId, usageType);
+              } else {
+                alert(data.message || "An error occurred while deleting the item.");
+              }
+            }
+          }
+        })
+        .catch((error) => {
+          console.error("Delete Error:", error);
+          alert("An error occurred while deleting the item.");
+        });
+    });
   }
 });
 
@@ -625,18 +632,18 @@ document.addEventListener("DOMContentLoaded", function () {
  * @param {string} type The type of notification ('info', 'warning', 'success', 'error')
  */
 function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.textContent = message;
 
-    document.body.appendChild(notification);
+  document.body.appendChild(notification);
 
-    setTimeout(() => {
-        notification.classList.add('show');
-    }, 10);
+  setTimeout(() => {
+    notification.classList.add('show');
+  }, 10);
 
-    setTimeout(() => {
-        notification.classList.remove('show');
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+  setTimeout(() => {
+    notification.classList.remove('show');
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
 }
