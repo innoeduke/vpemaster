@@ -34,6 +34,46 @@ class Contact(db.Model):
     user_club_records = db.relationship('UserClub', cascade='all, delete-orphan', back_populates='contact', foreign_keys='UserClub.contact_id')
     club_memberships = db.relationship('ContactClub', cascade='all, delete-orphan', back_populates='contact')
     
+    @property
+    def user_id(self):
+        """Returns the user_id associated with this contact if any."""
+        # 1. Preferred: Find user_id from associated UserClub records
+        # Try to match the current club first for context, but return ANY linkage if not found.
+        from ..club_context import get_current_club_id
+        current_club_id = get_current_club_id()
+        
+        fallback_uid = None
+        for uc in self.user_club_records:
+            if uc.user_id:
+                if uc.club_id == current_club_id:
+                    return uc.user_id
+                fallback_uid = uc.user_id
+        
+        if fallback_uid:
+            return fallback_uid
+
+        # 2. Fallback: Match by Email if available
+        if self.Email:
+            from .user import User
+            user = User.query.filter_by(email=self.Email).first()
+            if user:
+                return user.id
+                
+        return None
+
+    @property
+    def user(self):
+        """Get the user associated with this contact if any."""
+        # Optimization: Check if batch-populated
+        if hasattr(self, '_user'):
+            return self._user
+            
+        uid = self.user_id
+        if uid:
+            from .user import User
+            return User.query.get(uid)
+        return None
+    
     def update_name_from_parts(self, overwrite=True):
         """Auto-populate Name from first_name and last_name."""
         if (overwrite or not self.Name) and (self.first_name or self.last_name):
@@ -78,12 +118,21 @@ class Contact(db.Model):
             ).distinct()
             
         # 2. Get pathways from Achievements (Completed Levels/Paths)
-        q_ach = db.session.query(Achievement.path_name)\
-            .filter(
-                Achievement.contact_id == self.id,
-                Achievement.path_name.isnot(None),
-                Achievement.path_name != ''
-            ).distinct()
+        uid = self.user_id
+        if uid:
+            q_ach = db.session.query(Achievement.path_name)\
+                .filter(
+                    Achievement.user_id == uid,
+                    Achievement.path_name.isnot(None),
+                    Achievement.path_name != ''
+                ).distinct()
+        else:
+            q_ach = db.session.query(Achievement.path_name)\
+                .filter(
+                    Achievement.contact_id == self.id,
+                    Achievement.path_name.isnot(None),
+                    Achievement.path_name != ''
+                ).distinct()
             
         # 3. Union results
         final_query = q_logs.union(q_ach)
@@ -103,11 +152,20 @@ class Contact(db.Model):
         if not pathway_name:
             return set()
         
-        achievements = Achievement.query.filter_by(
-            contact_id=self.id,
-            path_name=pathway_name,
-            achievement_type='level-completion'
-        ).all()
+        uid = self.user_id
+        if uid:
+            achievements = Achievement.query.filter_by(
+                user_id=uid,
+                path_name=pathway_name,
+                achievement_type='level-completion'
+            ).all()
+        else:
+            achievements = Achievement.query.filter_by(
+                contact_id=self.id,
+                path_name=pathway_name,
+                achievement_type='level-completion'
+            ).all()
+        
         return {a.level for a in achievements if a.level}
     
     def get_completed_project_ids(self):
@@ -193,29 +251,8 @@ class Contact(db.Model):
         cc = ContactClub.query.filter_by(contact_id=self.id).first()
         return cc.club if cc else None
 
-    @property
-    def user_id(self):
-        """Get the ID of the user associated with this contact in the current club."""
-        from ..club_context import get_current_club_id
-        club_id = get_current_club_id()
-        for uc in self.user_club_records:
-            if uc.club_id == club_id:
-                return uc.user_id
-        return None
-
-    @property
-    def user(self):
-        """Get the user associated with this contact in the current club."""
-        # Optimization: Check if batch-populated
-        if hasattr(self, '_user'):
-            return self._user
-            
-        from ..club_context import get_current_club_id
-        club_id = get_current_club_id()
-        for uc in self.user_club_records:
-            if uc.club_id == club_id:
-                return uc.user
-        return None
+    # Removed duplicate user_id and user definitions that were tied strictly to club_context.
+    # The properties above handle global identification with club preference.
 
     @staticmethod
     def populate_users(contacts, club_id=None):

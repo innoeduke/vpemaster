@@ -444,9 +444,21 @@ def delete_user(user_id):
     if uc:
         contact = uc.contact
         db.session.delete(uc)
-    else:
-        # Fallback: Try to find contact via User method if UserClub is missing
-        contact = user.get_contact(current_club_id)
+    
+    if not contact:
+        # Fallback: Find contact via ContactClub (works even if UserClub has no contact_id)
+        contact = Contact.query.join(ContactClub).filter(
+            ContactClub.club_id == current_club_id,
+            Contact.Type.in_(['Member', 'Officer']),
+            Contact.Name == user.display_name
+        ).first()
+        
+        # Secondary fallback: match by email
+        if not contact and user.email:
+            contact = Contact.query.join(ContactClub).filter(
+                ContactClub.club_id == current_club_id,
+                Contact.Email == user.email
+            ).first()
         
     # Flush to ensure UserClub deletion is registered for subsequent counts
     db.session.flush()
@@ -454,14 +466,8 @@ def delete_user(user_id):
     # 2. Handle Contact and ContactClub
     if contact:
         # DO NOT delete ContactClub entry for this club.
-        # The prompt requires: "delete a user should not remove its contact in the club. 
-        # instead, change its contact type from member to guest."
-        
-        # Check if they are still an active user in other clubs
-        other_uc_count = UserClub.query.filter_by(user_id=user.id).count()
-        
-        if other_uc_count == 0:
-            contact.Type = 'Guest'
+        # Instead, change its contact type from member to guest.
+        contact.Type = 'Guest'
                 
     # 3. Check if User is orphaned
     remaining_clubs = UserClub.query.filter_by(user_id=user.id).count()

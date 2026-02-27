@@ -178,7 +178,11 @@ def _get_viewed_contact(speaker_id):
         return None
     
     try:
-        return db.session.get(Contact, int(speaker_id))
+        contact = db.session.get(Contact, int(speaker_id))
+        if contact:
+            # contact.user_id is now a property that calculates the ID automatically
+            return contact
+        return contact
     except (ValueError, TypeError):
         return None
 
@@ -224,10 +228,17 @@ def _get_pathway_date_range(contact, pathway_name):
         return None, None
         
     # Get all path completions sorted by date
-    achievements = Achievement.query.filter_by(
-        contact_id=contact.id,
-        achievement_type='path-completion'
-    ).order_by(Achievement.issue_date).all()
+    uid = getattr(contact, 'user_id', None)
+    if uid:
+        achievements = Achievement.query.filter_by(
+            user_id=uid,
+            achievement_type='path-completion'
+        ).order_by(Achievement.issue_date).all()
+    else:
+        achievements = Achievement.query.filter_by(
+            contact_id=contact.id,
+            achievement_type='path-completion'
+        ).order_by(Achievement.issue_date).all()
     
     # Identify segments
     start_date = datetime.min.date()

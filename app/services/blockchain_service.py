@@ -213,7 +213,7 @@ class BlockchainService:
 
         # Idempotency check: Skip if already verified on-chain
         try:
-            status = cls.verify_level(member_no, path_name, level)
+            status = BlockchainService.verify_level(member_no, path_name, level)
             if status.get('verified'):
                 logger.info(f"Idempotency: Level {level} for member {member_no} already recorded and active on-chain. Skipping.")
                 return True
@@ -475,11 +475,20 @@ class BlockchainService:
         ).order_by(Achievement.issue_date.asc()).all()
 
         results = []
-        for ach in achievements:
+        total = len(achievements)
+        skipped = 0
+        recorded = 0
+        failed = 0
+
+        print(f"Found {total} level-completion achievements to process.")
+
+        for i, ach in enumerate(achievements, 1):
             if not ach.member_id or not ach.path_name or not ach.level:
+                skipped += 1
+                print(f"  [{i}/{total}] SKIP (missing data) - ID {ach.id}")
                 continue
             
-            logger.info(f"Bulk Upload: Processing {ach.member_id} - {ach.path_name} L{ach.level}")
+            print(f"  [{i}/{total}] Processing: {ach.member_id} - {ach.path_name} L{ach.level} ({ach.issue_date})...", end=" ", flush=True)
             try:
                 # record_level handles idempotency check internally
                 success = cls.record_level(
@@ -489,6 +498,12 @@ class BlockchainService:
                     issue_date=ach.issue_date,
                     user_identifier="Bulk Upload"
                 )
+                if success:
+                    recorded += 1
+                    print("✓")
+                else:
+                    failed += 1
+                    print("✗")
                 results.append({
                     "achievement_id": ach.id,
                     "success": success,
@@ -500,6 +515,8 @@ class BlockchainService:
                 # Small delay to prevent nonce collisions if a transaction was actually sent
                 time.sleep(1) 
             except Exception as e:
+                failed += 1
+                print(f"✗ Error: {e}")
                 logger.error(f"Bulk Upload failed for {ach.id}: {e}")
                 results.append({
                     "achievement_id": ach.id,
@@ -509,7 +526,8 @@ class BlockchainService:
                     "path": ach.path_name,
                     "level": ach.level
                 })
-                
+
+        print(f"\nDone! Recorded: {recorded}, Skipped: {skipped}, Failed: {failed}, Total: {total}")
         return results
 
 

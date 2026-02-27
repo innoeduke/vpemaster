@@ -895,21 +895,32 @@ class DataImportService:
         for row in achievements_data:
             # Schema: id, contact_id, member_id, date, type, path_name, level, notes
             source_contact_id = row[1]
-            target_contact_id = self._map_contact(source_contact_id)
-            if not target_contact_id: continue
+            target_contact = self.contact_map.get(source_contact_id)
+            if not target_contact: continue
             
-            # Dedup: Contact + Date + Type + Level? 
-            # Or just check if identical record exists.
-            existing = Achievement.query.filter_by(
-                contact_id=target_contact_id,
-                issue_date=self._parse_date(row[3]),
-                achievement_type=row[4],
-                level=row[6]
-            ).first()
+            target_contact_id = target_contact.id
+            uid = target_contact.user_id
+            
+            # Dedup: User/Contact + Date + Type + Level? 
+            if uid:
+                existing = Achievement.query.filter(
+                    db.or_(Achievement.user_id == uid, Achievement.contact_id == target_contact_id),
+                    Achievement.issue_date == self._parse_date(row[3]),
+                    Achievement.achievement_type == row[4],
+                    Achievement.level == row[6]
+                ).first()
+            else:
+                existing = Achievement.query.filter_by(
+                    contact_id=target_contact_id,
+                    issue_date=self._parse_date(row[3]),
+                    achievement_type=row[4],
+                    level=row[6]
+                ).first()
             
             if not existing:
                 new_ach = Achievement(
                     contact_id=target_contact_id,
+                    user_id=uid or 0,
                     member_id=row[2],
                     issue_date=self._parse_date(row[3]),
                     achievement_type=row[4],

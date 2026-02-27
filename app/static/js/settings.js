@@ -1463,16 +1463,9 @@ document.addEventListener("DOMContentLoaded", () => {
       tableId: 'user-settings-table',
       containerId: 'user-pagination',
       storageKey: 'user_settings'
-    }),
-    'achievements': new TablePaginator({
-      tableId: 'achievementsTable',
-      containerId: 'achievement-pagination',
-      storageKey: 'achievements'
     })
   };
 
-  // Initialize Achievement Modal Autocomplete and Selects
-  initAchievementModal();
 
   // Re-run filter once to apply initial pagination
   setTimeout(() => {
@@ -1854,9 +1847,6 @@ async function handleAchievementSubmit(e) {
 
 window.openEditRoleModal = openEditRoleModal;
 window.openEditSessionModal = openEditSessionModal;
-window.toggleAchievementGroup = toggleAchievementGroup;
-window.openAchievementModal = openAchievementModal;
-window.closeAchievementModal = closeAchievementModal;
 
 /**
  * User Management Modal Logic

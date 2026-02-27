@@ -201,6 +201,27 @@
 	margin-left: 10px;
 }
 
+.member-id-line {
+	font-size: 0.8em;
+	color: #718096;
+	font-weight: 500;
+	letter-spacing: 0.03em;
+	margin-bottom: 6px;
+	cursor: pointer;
+	transition: color 0.2s;
+}
+
+.member-id-line:hover {
+	color: #4a5568;
+}
+
+.member-id-line[data-copied="true"]::after {
+	content: " Copied!";
+	color: #2f855a;
+	font-size: 0.85em;
+	font-weight: 600;
+}
+
 .name-credential {
 	display: flex;
 	align-items: baseline;
@@ -1307,6 +1328,7 @@
 	font-size: 1.1em;
 	color: #555;
 	white-space: nowrap;
+	position: relative;
 }
 
 .progress-table .level-cell.completed {
@@ -1316,9 +1338,72 @@
 }
 
 .level-check {
+	position: absolute;
+	top: 4px;
+	right: 4px;
 	color: #2f855a;
-	font-size: 0.8em;
-	margin-top: 4px;
+	font-size: 0.7em;
+}
+
+.level-name-row {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+.achievement-quick-actions {
+	margin-top: 8px;
+	display: flex;
+	justify-content: center;
+	gap: 3px;
+}
+
+.btn-roadmap-action {
+	padding: 1px 7px !important;
+	font-size: 0.5em !important;
+	border-radius: 10px !important;
+	line-height: 1.4 !important;
+	cursor: pointer;
+	min-height: auto !important;
+	min-width: auto !important;
+	font-weight: 600 !important;
+	letter-spacing: 0.02em;
+	transition: all 0.15s ease;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.btn-roadmap-action:hover {
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-roadmap-action.btn-outline-success {
+	background-color: transparent !important;
+	border: 1px solid #2f855a !important;
+	color: #2f855a !important;
+}
+
+.btn-roadmap-action.btn-outline-success:hover {
+	background-color: #2f855a !important;
+	color: #fff !important;
+}
+
+.btn-outline-danger {
+	background-color: transparent !important;
+	border: 1px solid #555 !important;
+	color: #555 !important;
+}
+
+.btn-roadmap-action.btn-outline-danger:hover {
+	background-color: #772432 !important;
+	color: #fff !important;
+}
+
+.btn-xs {
+	padding: 1px 5px;
+	font-size: 0.75rem;
+	line-height: 1.5;
+	border-radius: 3px;
 }
 
 .progress-table .band-cell {

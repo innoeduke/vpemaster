@@ -346,15 +346,7 @@ def recalculate_contact_metadata(contact):
     # Find all related contact IDs (same email or same linked user)
     related_contact_ids = {contact.id}
     
-    # 1. By Email
-    if contact.Email:
-        email_contacts = db.session.query(Contact.id).filter(
-            Contact.Email == contact.Email
-        ).all()
-        for (c_id,) in email_contacts:
-            related_contact_ids.add(c_id)
-            
-    # 2. By Linked User (across all clubs)
+    # 1. By Linked User (across all clubs)
     user_ids = {uc.user_id for uc in contact.user_club_records if uc.user_id}
     if user_ids:
         from .models import UserClub
@@ -365,9 +357,12 @@ def recalculate_contact_metadata(contact):
             if c_id:
                 related_contact_ids.add(c_id)
 
-    # Fetch achievements for ALL related contacts
+    # Fetch achievements for ALL related contacts/users
     achievements = Achievement.query.filter(
-        Achievement.contact_id.in_(list(related_contact_ids))
+        db.or_(
+            Achievement.contact_id.in_(list(related_contact_ids)),
+            Achievement.user_id.in_(list(user_ids))
+        )
     ).all()
     
     # 1. DTM
@@ -447,13 +442,6 @@ def sync_contact_metadata(contact_id):
 
     # Find all related contact IDs
     related_contact_ids = {primary_contact.id}
-    if primary_contact.Email:
-        email_contacts = db.session.query(Contact.id).filter(
-            Contact.Email == primary_contact.Email
-        ).all()
-        for (c_id,) in email_contacts:
-            related_contact_ids.add(c_id)
-            
     user_ids = {uc.user_id for uc in primary_contact.user_club_records if uc.user_id}
     if user_ids:
         from .models import UserClub

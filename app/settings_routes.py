@@ -65,13 +65,7 @@ def settings():
     # Batch populate contacts for the current club to avoid N+1 queries in template
     User.populate_contacts(all_users, club_id)
     
-    # Achievements: Filter by club, order by Member Name then Date
-    if club_id:
-        achievements = Achievement.query.join(Contact).join(ContactClub).filter(
-            ContactClub.club_id == club_id
-        ).order_by(Contact.Name.asc(), Achievement.issue_date.desc()).all()
-    else:
-        achievements = Achievement.query.join(Contact).order_by(Contact.Name.asc(), Achievement.issue_date.desc()).all()
+    achievements = [] # Achievements are now centrally managed and removed from settings
 
     
     # Excomm History: Fetch for the current club
@@ -110,10 +104,10 @@ def settings():
     
     all_contacts_data = [{"id": c.id, "Name": c.Name, "Member_ID": c.Member_ID or ""} for c in all_contacts]
 
-    # Pathways data for Achievement Modal
-    pathways = [p.name for p in Pathway.query.filter_by(type='pathway').order_by(Pathway.name).all()]
-    programs = [p.name for p in Pathway.query.filter_by(type='program').order_by(Pathway.name).all()]
-    project_types = ['level-completion', 'path-completion', 'program-completion']
+    # Pathways data removed from settings as achievements are now centrally managed
+    pathways = []
+    programs = []
+    project_types = []
 
     # Auth Roles for User Modal
     all_auth_roles_query = AuthRole.query.order_by(AuthRole.id).all()
