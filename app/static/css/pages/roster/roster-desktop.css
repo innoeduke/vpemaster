@@ -3,8 +3,4 @@
    For screens >= 1025px
    ======================================== */
 
-@media (min-width: 1025px) {
-	.page-container {
-		max-width: 1400px;
-	}
-}
+@media (min-width: 1025px) {}

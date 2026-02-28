@@ -61,11 +61,6 @@
 /* -----------------------------------------
    2. Lucky Draw Styles
    ----------------------------------------- */
-.lucky-draw-container {
-	max-width: 1200px;
-	margin: 0 auto;
-	padding: 20px 15px;
-}
 
 /* --- Page Title Row with Icon Button --- */
 .page-title-row {

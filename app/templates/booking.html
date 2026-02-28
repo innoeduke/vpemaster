@@ -219,6 +219,7 @@
         </td>
         {% endif %}
     </tr>
+
     {# Admin Recommendation Row - appears below the main row #}
     {% if is_admin_view %}
     {% set norm_role = role.role|lower|replace(' ', '')|replace('-', '') %}
@@ -282,48 +283,54 @@
     <div class="page-container">
         <h1><i class="fas fa-tag"></i> Booking Assistant</h1>
         {% if user_role != 'Guest' %}
-        <div class="filters-container premium">
+        <div class="filters-control premium">
             <div class="filter-row-premium">
-                {{ render_meeting_filter(upcoming_meetings, selected_meeting_id,
-                label=None, data_format='tuple',
-                render_outer_container=False) }}
-                <div class="filter-right">
-                    {#
-                    {% if is_admin_view %}
-                    <button class="btn btn-primary" onclick="syncTally()">
-                        <i class="fas fa-sync"></i> Sync to Tally
-                    </button>
-                    {% endif %}
-                    #}
-                    <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}"
-                        target="_blank" class="btn btn-info role-guide-link">
-                        <i class="fas fa-book-open"></i> View Role Guide
-                    </a>
-                </div>
+                    {{ render_meeting_filter(upcoming_meetings, selected_meeting_id,
+                    label=None, data_format='tuple',
+                    render_outer_container=False) }}
+                    
+                    <div class="filter-right">
+                        {% if not notice_image and not show_booking_closed_image %}
+                        <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}"
+                            target="_blank" class="btn btn-info role-guide-link">
+                            <i class="fas fa-book-open"></i> View Role Guide
+                        </a>
+                        {% elif selected_meeting %}
+                        <div class="meeting-status-alert">
+                            <div class="alert-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <div class="alert-title">Notice</div>
+                                <div class="alert-description">
+                                    Meeting #{{ selected_meeting.Meeting_Number }} is {{ selected_meeting.status }}.
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
             </div>
         </div>
+        {% endif %}
     
         {# ============================================= #}
         {# =============== MAIN VIEW LOGIC =============== #}
         {# ============================================= #}
     
         {% if selected_meeting %}
-            {% if selected_meeting.status == 'finished' or (selected_meeting.status == 'running' and not is_admin_view) %}
-            <div class="booking-status-alert">
-                <div class="alert-icon">
-                    <i class="fas fa-calendar-check"></i>
-                </div>
-                <div class="alert-content">
-                    <h4 class="alert-title">Booking Closed</h4>
-                    <p class="alert-description">
-                        Booking for #{{ selected_meeting.Meeting_Number }} is now closed. Please cast your votes at the <a class="alert-link" href="{{ url_for('voting_bp.voting', meeting_id=selected_meeting_id, club_id=get_current_club_id()) }}">Voting page</a>.
-                    </p>
-                </div>
+            <div class="notice-image-container">
+                {% if notice_image %}
+                <img src="{{ url_for('static', filename='images/' ~ notice_image) }}" alt="Meeting notice">
+                {% elif show_booking_closed_image %}
+                <img src="{{ url_for('static', filename='images/booking_closed.webp') }}" alt="Booking Closed">
+                {% endif %}
             </div>
-            {% else %}
+
+    {% if not notice_image and not show_booking_closed_image %}
             {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
             current_user_contact_id) }}
-            {% endif %}
+    {% endif %}
+        {% endif %}
     
             {% if user_bookings_by_date %}
             <div class="accordion-list">
@@ -338,7 +345,6 @@
                     </button>
                     <div class="accordion-content" style="max-height: none;">
                         <div class="my-bookings-container">
-                            
                             <div class="horizontal-timeline">
                                 {% for group in user_bookings_by_date %}
                                 <div class="timeline-event" data-meeting-id="{{ group.date_info.meeting_id }}">
@@ -362,11 +368,6 @@
                 </div>
             </div>
             {% endif %}
-        {% else %}
-            <p>Please select a meeting to view the booking table.</p>
-        {% endif %}
-    
-        {% endif %}
     </div>
     
     <script>

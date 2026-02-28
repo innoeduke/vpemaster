@@ -8,67 +8,6 @@
 }
 
 /* --- Filter Container premium --- */
-.filters-control.premium {
-	background-color: #fff;
-	padding: 15px 20px;
-	border-radius: 8px;
-	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-	margin-bottom: 25px;
-	border: 1px solid #e2e8f0;
-}
-
-.filter-row-premium {
-	display: flex;
-	align-items: center;
-	padding: 0;
-	gap: 20px;
-	flex-wrap: nowrap;
-	justify-content: space-between;
-	width: 100%;
-}
-
-.filter-row-premium .filter-left {
-	display: flex;
-	align-items: center;
-	gap: 10px;
-	flex-shrink: 0;
-	font-size: 1em;
-}
-
-.filter-row-premium .filter-right {
-	display: flex;
-	justify-content: flex-end;
-	gap: 10px;
-}
-
-.trend-btn {
-	display: inline-flex;
-	align-items: center;
-	padding: 8px 18px;
-	background-color: #004165;
-	color: #fff;
-	border-radius: 50px;
-	text-decoration: none;
-	font-weight: 700;
-	font-size: 0.9rem;
-	transition: all 0.2s;
-	border: none;
-	gap: 10px;
-	height: 40px;
-	box-sizing: border-box;
-	box-shadow: 0 4px 6px rgba(0, 65, 101, 0.2);
-}
-
-.trend-btn i {
-	color: #fff;
-}
-
-.trend-btn:hover {
-	background-color: #002d46;
-	color: #fff;
-	transform: translateY(-1px);
-	box-shadow: 0 6px 12px rgba(0, 65, 101, 0.3);
-}
 
 /* Main Content Structure */
 .roster-main-content {

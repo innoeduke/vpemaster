@@ -13,38 +13,6 @@
 }
 
 /* --- Filter Container premium --- */
-.filters-control.premium {
-  background-color: #fff;
-  padding: 15px 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 25px;
-  border: 1px solid #e2e8f0;
-}
-
-.filter-row-premium {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  gap: 20px;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.filter-row-premium .filter-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  font-size: 1em;
-}
-
-.filter-row-premium .filter-right {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
 
 .planner-table-container {
   background: #fff;
@@ -196,9 +164,9 @@
 
 .planner-close-modal {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  font-size: 1.8rem;
+  top: 0.4rem !important;
+  right: 0.4rem !important;
+  font-size: 1.1rem;
   color: #ccc;
   cursor: pointer;
   transition: all 0.2s ease;

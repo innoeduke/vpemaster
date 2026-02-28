@@ -67,10 +67,10 @@
 		gap: 15px;
 	}
 
-	.filter-row-premium .filter-left,
-	.filter-row-premium .filter-right {
+	.filter-row-premium .filter-left {
 		width: auto;
 	}
+
 
 	.filters-container.premium #meeting-filter {
 		min-width: 200px;

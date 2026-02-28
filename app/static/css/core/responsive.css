@@ -282,6 +282,60 @@
 }
 
 @media (max-width: 768px) {
+    .meeting-status-alert {
+        width: 100%;
+    }
+
+    .meeting-status-alert .alert-content {
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .notice-image-container {
+        margin-top: 15px;
+    }
+
+    .notice-image-container img {
+        aspect-ratio: 3 / 4;
+        max-height: 550px;
+        border-width: 3px;
+    }
+
+    /* Premium Filter Mobile Overrides */
+    .filters-control.premium,
+    .filters-container.premium {
+        padding: 15px;
+        overflow: visible;
+    }
+
+    .filter-row-premium {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        overflow: visible;
+    }
+
+    .filter-row-premium .filter-controls-inner,
+    .filter-row-premium .filter-left,
+    .filter-row-premium .filter-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .filter-row-premium .filter-right {
+        gap: 10px;
+    }
+
+    .filter-row-premium .filter-right .trend-btn,
+    .filter-row-premium .filter-right .btn {
+        width: 100%;
+        justify-content: center;
+        font-size: 0.85rem;
+        padding: 8px 10px;
+        height: 36px !important;
+        border-radius: 50px;
+    }
+
     .page-container {
         margin: 10px 0;
         padding: 0 10px;

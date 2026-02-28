@@ -247,7 +247,7 @@ def _get_voting_page_context(meeting_id):
     # Show active meetings in dropdown
     limit_past = None if is_authorized(Permissions.MEDIA_ACCESS) else 8
     upcoming_meetings, default_meeting_id = get_meetings_by_status(
-        limit_past=limit_past, status_filter=['running', 'finished'],
+        limit_past=limit_past, status_filter=['unpublished', 'not started', 'running', 'finished'],
         columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number])
  
     if not meeting_id:
@@ -294,33 +294,25 @@ def _get_voting_page_context(meeting_id):
         if vote_exists:
             context['has_voted'] = True
     
-    # Access control for unpublished meetings
-    contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
-    is_manager = (contact and contact.id == selected_meeting.manager_id) if selected_meeting else False
-    
-    # 1. Guests can ONLY access 'running' meetings
-    is_guest = not current_user.is_authenticated or \
-               (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
-    
-    if is_guest:
-        if selected_meeting.status == 'unpublished':
-            return {
-                'redirect': url_for('agenda_bp.meeting_notice', meeting_id=meeting_id)
-            }
-        elif selected_meeting.status != 'running':
-            context['force_not_started'] = True
-            context['selected_meeting'] = selected_meeting
-            context['roles'] = [] # Prevent data leakage
-            return context
-
-    if selected_meeting and selected_meeting.status == 'unpublished' and not (is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)):
-        return {
-            'redirect': url_for('agenda_bp.meeting_notice', meeting_id=meeting_id)
-        }
-
     context['selected_meeting'] = selected_meeting
+
+    # --- Access Control Logic ---
+    status = selected_meeting.status
     
-    # Permission checks
+    if status == 'unpublished':
+        context['notice_image'] = 'under_planning.webp'
+            
+    elif status == 'not started':
+        context['notice_image'] = 'not_started.webp'
+            
+    elif status == 'finished':
+        # Finished: only those with VOTING_VIEW_RESULTS can see results
+        if not is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting):
+            # Members/Guests see "not started" or "voting closed" notice
+            context['notice_image'] = 'not_started.webp'
+    
+    # Status 'running' is open to everyone for voting
+
     # is_admin_view controls seeing results/accordion (Admin, Officer, VPE, Manager)
     context['is_admin_view'] = is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)
     
@@ -364,18 +356,9 @@ def voting(meeting_id):
     """Main voting page route."""
     context = _get_voting_page_context(meeting_id)
     
-    # Handle redirects from context
-    if isinstance(context, dict) and 'redirect' in context:
-        return redirect(context['redirect'])
-    
-    # Access Control Logic
-    meeting = context.get('selected_meeting')
-    if meeting:
-        if meeting.status == 'finished':
-            # Finished meetings: Only users with VOTING_VIEW_RESULTS can see results
-            # Others (guests and regular users) should not access this page
-            if not is_authorized(Permissions.VOTING_VIEW_RESULTS):
-                return redirect(url_for('agenda_bp.agenda'))
+    # Handle notice context from dictionary returns
+    if isinstance(context, dict) and 'notice_image' in context:
+        return render_template('voting.html', **context)
                  
     return render_template('voting.html', **context)
 

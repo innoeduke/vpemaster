@@ -4,7 +4,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, jsonif
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions, permission_required
-from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles, Planner, Waitlist
+from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles, Planner, Waitlist, Club
 from .constants import ProjectID, SPEECH_TYPES_WITH_PROJECT, GLOBAL_CLUB_ID
 from .services.export import MeetingExportService
 from .services.export.context import MeetingExportContext
@@ -586,6 +586,8 @@ def agenda():
             set_current_club_id(int(club_id_param))
         except (ValueError, TypeError):
             pass
+    
+    club_id = get_current_club_id()
 
     # --- Determine Selected Meeting ---
     is_guest = not current_user.is_authenticated or \
@@ -643,15 +645,49 @@ def agenda():
         if selected_meeting.status == 'unpublished':
             if not is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting):
                 # Unauthorized users cannot view unpublished meetings
-                # Redirect to generic not-started page
-                return redirect(url_for('agenda_bp.meeting_notice', meeting_id=selected_meeting_id))
+                # Instead of redirecting, show notice image and hide booking/voting nav
+                return render_template('agenda.html',
+                                       logs_data=[],
+                                       meeting_ids=all_meetings,
+                                       selected_meeting_id=selected_meeting_id,
+                                        selected_meeting=selected_meeting,
+                                       notice_image='under_planning.webp',
+                                       club=db.session.get(Club, club_id),
+                                       get_current_club_id=get_current_club_id,
+                                       is_authorized=is_authorized,
+                                       Permissions=Permissions,
+                                       projects=[],
+                                       pathways={},
+                                       pathway_mapping={},
+                                       ProjectID={},
+                                       meeting_types={},
+                                       next_meeting_num=0,
+                                       next_meeting_date='',
+                                       project_speakers=[])
 
         # 2. Finished: Guest/Anonymous users cannot view finished meetings
         if selected_meeting.status == 'finished':
             is_guest = not current_user.is_authenticated or \
                        (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
             if is_guest:
-                return redirect(url_for('agenda_bp.meeting_notice', meeting_id=selected_meeting_id))
+                return render_template('agenda.html',
+                                       logs_data=[],
+                                       meeting_ids=all_meetings,
+                                       selected_meeting_id=selected_meeting_id,
+                                       selected_meeting=selected_meeting,
+                                       notice_image='not_started.webp',
+                                       club=db.session.get(Club, club_id),
+                                       get_current_club_id=get_current_club_id,
+                                       is_authorized=is_authorized,
+                                       Permissions=Permissions,
+                                       projects=[],
+                                       pathways={},
+                                       pathway_mapping={},
+                                       ProjectID={},
+                                       meeting_types={},
+                                       next_meeting_num=0,
+                                       next_meeting_date='',
+                                       project_speakers=[])
 
     # --- Other Data for Template ---
     project_speakers = _get_project_speakers(selected_meeting_id)
@@ -720,14 +756,6 @@ def agenda():
                            next_meeting_num=next_meeting_num,
                            next_meeting_date=next_meeting_date,
                            ProjectID=project_id_dict)
-
-
-@agenda_bp.route('/meeting-notice/<int:meeting_id>')
-def meeting_notice(meeting_id):
-    """Generic meeting notice page for unauthorized access."""
-    meeting = Meeting.query.get(meeting_id)
-    status = meeting.status if meeting else 'unknown'
-    return render_template('meeting_notice.html', meeting_number=meeting.Meeting_Number if meeting else 'N/A', meeting_status=status)
 
 
 # --- API Endpoints for Asynchronous Data Loading ---

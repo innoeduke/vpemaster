@@ -15,21 +15,6 @@
     width: 100%;
   }
 
-  .filters-control.premium {
-    padding: 15px;
-  }
-
-  .filter-row-premium {
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-  }
-
-  .filter-row-premium .filter-left,
-  .filter-row-premium .filter-right {
-    width: 100%;
-    justify-content: center;
-  }
 
   .filter-row-premium .custom-select-wrapper {
     width: 100%;

@@ -571,10 +571,7 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
     
     # --- Mode 1: Simple Filter (if status_filter provided) ---
     if status_filter:
-        # Restriction for Guest: cannot view finished meetings
         effective_status_filter = status_filter
-        if is_guest and 'finished' in status_filter:
-            effective_status_filter = [s for s in status_filter if s != 'finished']
 
         query = db.session.query(*query_cols)\
             .filter(Meeting.status.in_(effective_status_filter))
@@ -611,10 +608,7 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
         # Return a tuple for composite sorting
         return (m_date, m_id)
 
-    # Fetch recent inactive meetings ('finished' or 'cancelled')
     past_statuses = ['finished', 'cancelled']
-    if is_guest:
-        past_statuses = ['cancelled']
 
     past_query = db.session.query(*query_cols)\
         .filter(Meeting.status.in_(past_statuses))

@@ -53,6 +53,7 @@
         </div>
     </div>
 
+    {% if not notice_image %}
     {% if selected_meeting and selected_meeting.WOD and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
     <div class="wod-display">
         <div class="envelope-flap"></div>
@@ -61,6 +62,7 @@
             <span>"{{ selected_meeting.WOD }}"</span>
         </div>
     </div>
+    {% endif %}
     {% endif %}
 
     {# This is the updated warning block for the full-screen overlay #}
@@ -82,7 +84,7 @@
         </div>
         <div class="action-bar-right">
             <div id="view-mode-buttons">
-                {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
+                {% if selected_meeting %}
                 <div class="button-group status-group">
                     {% if selected_meeting.status %}
                     <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}"
@@ -92,6 +94,8 @@
                         selected_meeting.status.replace('_', ' ').title() }}
                     </span>
                     {% endif %}
+
+                    {% if is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
                     <button id="meeting-status-btn"
                         class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'unpublished' %}btn-success{% else %}btn-primary{% endif %}"
                         data-meeting-id="{{ selected_meeting.id }}"
@@ -119,6 +123,7 @@
                         {{ selected_meeting.status.replace('_', ' ').title() }}
                         {% endif %}
                     </button>
+                    {% endif %}
                 </div>
                 {% endif %}
 
@@ -145,7 +150,7 @@
                     <button id="create-btn" class="btn btn-success">New</button>
                     {% endif %}
                     
-                    {% if is_authorized(Permissions.CLUBADMIN) %}
+                    {% if is_authorized(Permissions.AGENDA_EDIT) or is_authorized(Permissions.CLUBADMIN) %}
                     <div class="action-dropdown">
                         <button id="action-btn" class="btn btn-secondary action-icon-btn" title="Actions"><i class="fas fa-ellipsis-v"></i></button>
                         <div id="action-menu" class="action-menu">
@@ -155,17 +160,29 @@
                             {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
                             <div class="action-menu-item mobile-only-item" id="action-edit-opt"><i class="fas fa-edit"></i> Edit</div>
                             {% endif %}
+                            {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
                             <div class="action-menu-item" id="action-xlsx-opt"><i class="fas fa-file-excel"></i> Excel</div>
                             <div class="action-menu-item" id="action-ppt-opt"><i class="fas fa-file-powerpoint"></i> PPT</div>
+                            {% endif %}
+                            {% if selected_meeting %}
                             <div class="action-menu-item" id="action-jpg-opt"><i class="fas fa-print"></i> Image</div>
+                            {% endif %}
                         </div>
                     </div>
                     {% endif %}
                 </div>
             </div>
+
         </div>
     </div>
 
+    {% if notice_image %}
+    <div class="notice-image-container">
+        <img src="{{ url_for('static', filename='images/' ~ notice_image) }}" alt="Meeting notice">
+    </div>
+    {% endif %}
+
+    {% if not notice_image %}
     {# Edit Mode Buttons (Only visible if authorized) #}
     {% if is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
     <div class="button-group" id="edit-mode-buttons" style="display: none;">
@@ -445,5 +462,6 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div> {# End of #agenda-content wrapper #}
 {% endblock %}

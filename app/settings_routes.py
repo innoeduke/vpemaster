@@ -774,7 +774,7 @@ def get_permissions_matrix():
 
     # Exclude SysAdmin and ClubAdmin from the permissions matrix
     roles = AuthRole.query.filter(
-        AuthRole.name.notin_(['SysAdmin', 'ClubAdmin'])
+        AuthRole.name != 'SysAdmin'
     ).order_by(AuthRole.id).all()
     permissions = Permission.query.order_by(Permission.category, Permission.name).all()
     

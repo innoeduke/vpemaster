@@ -8,284 +8,276 @@
 {% block content %}
 <div class="page-container">
     <h1><i class="fas fa-vote-yea"></i> Voting Form</h1>
-
     <div class="filters-control premium">
         <div class="filter-row-premium">
             {{ render_meeting_filter(upcoming_meetings, selected_meeting_id, label=None,
             base_url='/voting', render_outer_container=False, data_format='tuple') }}
-            {% if is_admin_view %}
+            
             <div class="filter-right">
-                <a href="{{ url_for('voting_bp.voting_nps', club_id=get_current_club_id()) }}" class="btn btn-info trend-btn" title="NPS Trend">
-                    <i class="fas fa-chart-line"></i> NPS Trend
-                </a>
+                {% if not notice_image %}
+                    {% if is_admin_view %}
+                    <a href="{{ url_for('voting_bp.voting_nps', club_id=get_current_club_id()) }}" class="btn btn-info trend-btn" title="NPS Trend">
+                        <i class="fas fa-chart-line"></i> NPS Trend
+                    </a>
+                    {% endif %}
+                {% elif selected_meeting %}
+                <div class="meeting-status-alert">
+                    <div class="alert-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <div class="alert-title">Notice</div>
+                        <div class="alert-description">
+                            Voting for #{{ selected_meeting.Meeting_Number }} is {{ selected_meeting.status }}.
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
     </div>
 
-	{% if selected_meeting %}
+    {% if notice_image %}
+        <div class="notice-image-container">
+            <img src="{{ url_for('static', filename='images/' ~ notice_image) }}" alt="Meeting notice">
+        </div>
+    {% else %}
 
-	{% if selected_meeting.status == 'running' and not has_voted %}
-	<div class="voting-instruction-alert">
-		<span><i class="fas fa-info-circle"></i><strong> Select your winners!</strong>
-			<p>Click a candidate to cast your vote for each category.</p>
-		</span>
-	</div>
-	{% endif %}
+        {% if selected_meeting %}
+            {% if selected_meeting.status == 'running' and not has_voted %}
+            <div class="voting-instruction-alert">
+                <span><i class="fas fa-info-circle"></i><strong> Select your winners!</strong>
+                    <p>Click a candidate to cast your vote for each category.</p>
+                </span>
+            </div>
+            {% endif %}
 
-	{# ============================================= #}
-	{# ================ MACRO DEFINITIONS ================ #}
-	{# ============================================= #}
+            {# ============================================= #}
+            {# ================ MACRO DEFINITIONS ================ #}
+            {# ============================================= #}
 
-	{# Macro to render a single role row in the table #}
-	{% macro render_role_row(role, status, is_admin_view, selected_meeting_id, user_role, has_voted,
-	can_track_progress,
-	voting_disabled=False) %}
-	<tr data-session-id="{{ role.session_id }}" data-role="{{ role.role }}"
-		class="{% if role.award_type %}voted{% endif %}">
-		<td class="role-cell">
-			<div class="role-cell-content">
-				<i class="fas {{ role.icon }}"></i>
-				<div class="role-display-text">
-					<span>{{ role.role }}</span>
-					{% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
-				</div>
-			</div>
-		</td>
-		{# Status cell: avatar and vote bricks #}
-		<td class="status-cell">
-			<div class="status-cell-content">
-				<div class="role-avatar" {% if role.owner_name %}title="{{ role.owner_name }}" {% endif %}>
-					{% if role.owner_avatar_url %}
-					{# Check if the URL is already a full path (legacy) or just a filename (new) #}
-					{% set avatar_path = role.owner_avatar_url %}
-					{% if '/' not in avatar_path %}
-					{% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
-					{% endif %}
-					<img src="{{ url_for('static', filename=avatar_path) }}" alt="User Avatar">
-					{% else %}
-					<i class="fas fa-user-circle"></i>
-					{% endif %}
-				</div>
-				{% if is_admin_view and role.vote_count and role.vote_count > 0 and (can_track_progress or status ==
-				'finished') %}
-				<div class="vote-bricks-container" title="{{ role.vote_count }} Votes">
-					{% for n in range(role.vote_count) %}
-					<div class="vote-brick"></div>
-					{% endfor %}
-				</div>
-				{% endif %}
-			</div>
-		</td>
+            {# Macro to render a single role row in the table #}
+            {% macro render_role_row(role, status, is_admin_view, selected_meeting_id, user_role, has_voted,
+            can_track_progress,
+            voting_disabled=False) %}
+            <tr data-session-id="{{ role.session_id }}" data-role="{{ role.role }}"
+                class="{% if role.award_type %}voted{% endif %}">
+                <td class="role-cell">
+                    <div class="role-cell-content">
+                        <i class="fas {{ role.icon }}"></i>
+                        <div class="role-display-text">
+                            <span>{{ role.role }}</span>
+                            {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td class="status-cell">
+                    <div class="status-cell-content">
+                        <div class="role-avatar" {% if role.owner_name %}title="{{ role.owner_name }}" {% endif %}>
+                            {% if role.owner_avatar_url %}
+                            {% set avatar_path = role.owner_avatar_url %}
+                            {% if '/' not in avatar_path %}
+                            {% set avatar_path = config.AVATAR_ROOT_DIR ~ '/' ~ avatar_path %}
+                            {% endif %}
+                            <img src="{{ url_for('static', filename=avatar_path) }}" alt="User Avatar">
+                            {% else %}
+                            <i class="fas fa-user-circle"></i>
+                            {% endif %}
+                        </div>
+                        {% if is_admin_view and role.vote_count and role.vote_count > 0 and (can_track_progress or status == 'finished') %}
+                        <div class="vote-bricks-container" title="{{ role.vote_count }} Votes">
+                            {% for n in range(role.vote_count) %}
+                            <div class="vote-brick"></div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="assign-cell">
+                    <div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
+                </td>
+                <td class="icon-cell">
+                    {% if status == 'running' %}
+                        {% set can_vote = role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
+                        {% if (role.owner_id and role.award_category) and can_vote %}
+                            {% if voting_disabled %}
+                            <button type="button" class="icon-btn candidate-shortage" disabled title="Not enough candidates to vote">
+                                <i class="fas fa-vote-yea"></i>
+                            </button>
+                            {% else %}
+                            {% set should_show = role.award_type %}
+                            <button type="button"
+                                class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %} {% if not should_show %}vote-auto-hide{% endif %} {% if has_voted %}has-voted{% endif %}"
+                                title="Vote" {% if has_voted %}disabled {% else %}onclick="handleVoteClick(this)" {% endif %}
+                                data-meeting-id="{{ selected_meeting_id }}" data-contact-id="{{ role.owner_id }}"
+                                data-award-category="{{ role.award_category }}">
+                                <i class="fas fa-vote-yea"></i>
+                            </button>
+                            {% endif %}
+                        {% endif %}
+                    {% elif status == 'finished' %}
+                        {% if role.award_type %}
+                        <span class="icon-btn icon-btn-voted winner-cursor" title="{{ role.award_type }} Winner">
+                            <i class="fas fa-award"></i>&nbsp;
+                            <span class="winner-label">{{ role.award_type|replace('-', ' ')|title }}</span>
+                        </span>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% endmacro %}
 
-		{# Name cell #}
-		<td class="assign-cell">
-			<div class="owner-display">{{ role.owner_name or 'Unassigned' }}</div>
-		</td>
+            {# Macro to render role tables with accordion #}
+            {% macro render_role_tables(roles, sorted_role_groups, status, is_admin_view, selected_meeting_id, user_role,
+            has_voted, can_track_progress, question_ns) %}
 
-		{# Action Icons cell #}
-		<td class="icon-cell">
-			{% if status == 'running' %}
-			{% set can_vote = role.owner_id and role.award_category and (role.award_category_open or role.award_type) %}
+            {% set use_accordion = (status in ['running']) or (status == 'finished' and is_admin_view) %}
+            {% set default_open = False %}
 
-			{% if (role.owner_id and role.award_category) and can_vote %}
-			{% if voting_disabled %}
-			<button type="button" class="icon-btn candidate-shortage" disabled title="Not enough candidates to vote">
-				<i class="fas fa-vote-yea"></i>
-			</button>
-			{% else %}
-			{% set should_show = role.award_type %}
-			<button type="button"
-				class="icon-btn {% if role.award_type %}icon-btn-voted{% endif %} {% if not should_show %}vote-auto-hide{% endif %} {% if has_voted %}has-voted{% endif %}"
-				title="Vote" {% if has_voted %}disabled {% else %}onclick="handleVoteClick(this)" {% endif %}
-				data-meeting-id="{{ selected_meeting_id }}" data-contact-id="{{ role.owner_id }}"
-				data-award-category="{{ role.award_category }}">
-				<i class="fas fa-vote-yea"></i>
-			</button>
-			{% endif %}
-			{% endif %}
-			{% elif status == 'finished' %}
-			{% if role.award_type %}
-			<span class="icon-btn icon-btn-voted winner-cursor" title="{{ role.award_type }} Winner">
-				<i class="fas fa-award"></i>&nbsp;
-				<span class="winner-label">{{ role.award_type|replace('-', ' ')|title }}</span>
-			</span>
-			{% endif %}
-			{% endif %}
-		</td>
-	</tr>
-	{% endmacro %}
+            {% if use_accordion %}
+            <div class="accordion-list">
+                {% for category, items in sorted_role_groups %}
+                {% if items and category and category != 'none' %}
+                {% set category_voted = items|selectattr('award_type')|list|length > 0 %}
+                {% set category_meta = {
+                'speaker': {'num': 1, 'title': 'Best Speaker'},
+                'evaluator': {'num': 2, 'title': 'Best Evaluator'},
+                'role-taker': {'num': 3, 'title': 'Best Role Taker'},
+                'table-topic': {'num': 4, 'title': 'Best Table Topic Speaker'}
+                } %}
+                {% set meta = category_meta.get(category, {'num': '', 'title': (category or 'Other')|replace('-', ' ')|title + ' Roles'}) %}
 
-	{# Macro to render role tables with accordion #}
-	{% macro render_role_tables(roles, sorted_role_groups, status, is_admin_view, selected_meeting_id, user_role,
-	has_voted, can_track_progress, question_ns) %}
+                <div class="accordion-item" data-category="{{ category or 'other' }}">
+                    {% set voting_disabled = False %}
+                    {% set candidate_count = items | selectattr('owner_id') | list | length %}
+                    {% if status == 'running' %}
+                        {% if category in ['speaker', 'evaluator'] and candidate_count < 3 %} 
+                        {% set voting_disabled=True %} 
+                        {% elif category=='table-topic' and candidate_count < 5 %} 
+                        {% set voting_disabled=True %} 
+                        {% endif %}
+                    {% endif %}
+                    <button
+                        class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }} {{ 'disabled' if voting_disabled else '' }}"
+                        {% if voting_disabled %}disabled title="Not enough candidates to vote" {% endif %}>
+                        <div class="header-left">
+                            {% set question_ns.count = question_ns.count + 1 %}
+                            <div class="question-number">{{ question_ns.count }}</div>
+                            <span class="question-text">{{ meta.title }}</span>
+                        </div>
+                        <div class="accordion-header-right">
+                            <div class="status-wrapper">
+                                {% if voting_disabled and status == 'running' %}
+                                <span class="candidate-warning">
+                                    {% if category == 'table-topic' %}(Candidates < 5){% else %}(Candidates < 3){% endif %}
+                                </span>
+                                {% endif %}
+                                {% if category_voted %}
+                                <span class="voted-label">
+                                    <i class="fas fa-trophy"></i> VOTED
+                                </span>
+                                {% endif %}
+                            </div>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </button>
+                    <div class="accordion-content {{ 'force-open' if default_open else '' }}">
+                        <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
+                            <tbody>
+                                {% for role in items %}
+                                {{ render_role_row(role, status, is_admin_view, selected_meeting_id, user_role,
+                                has_voted, can_track_progress, voting_disabled) }}
+                                {% endfor %} 
+                            </tbody>
+                        </table>
+                    </div>
+                    <hr class="mobile-divisor">
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
+                <tbody>
+                    {% set ns = namespace(displayed_awards=[]) %}
+                    {% for role in roles %}
+                    {% if role.award_type and role.award_type not in ns.displayed_awards %}
+                    {{ render_role_row(role, status, is_admin_view, selected_meeting_id, user_role, has_voted,
+                    can_track_progress) }}
+                    {% set ns.displayed_awards = ns.displayed_awards + [role.award_type] %}
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            {% endmacro %}
 
-	{% set use_accordion = (status in ['running']) or (status == 'finished' and is_admin_view) %}
-	{% set default_open = False %}
+            {# ============== CONTENT LOGIC PART ============== #}
 
-	{% if use_accordion %}
-	<div class="accordion-list">
-		{% for category, items in sorted_role_groups %}
-		{% if items and category and category != 'none' %}
-		{% set category_voted = items|selectattr('award_type')|list|length > 0 %}
-		{% set category_meta = {
-		'speaker': {'num': 1, 'title': 'Best Speaker'},
-		'evaluator': {'num': 2, 'title': 'Best Evaluator'},
-		'role-taker': {'num': 3, 'title': 'Best Role Taker'},
-		'table-topic': {'num': 4, 'title': 'Best Table Topic Speaker'}
-		} %}
-		{% set meta = category_meta.get(category, {'num': '', 'title': (category or 'Other')|replace('-', ' ')|title + '
-		Roles'}) %}
+            {% if (has_voted and not can_track_progress and selected_meeting.status == 'running') or (selected_meeting.status == 'finished' and not is_admin_view) %}
+            <div id="thank-you-message" class="thank-you-container">
+                <i class="fas fa-check-circle thank-you-icon"></i>
+                <h2>Thank You!</h2>
+                <p>Your votes have been submitted.</p>
+            </div>
+            {% else %}
+                {% set question_ns = namespace(count=0) %}
+                {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view,
+                selected_meeting_id, user_role, has_voted, can_track_progress, question_ns) }}
 
-		<div class="accordion-item" data-category="{{ category or 'other' }}">
-			{% set voting_disabled = False %}
-			{% set candidate_count = items | selectattr('owner_id') | list | length %}
-			{% if status == 'running' %}
-			{% if category in ['speaker', 'evaluator'] and candidate_count < 3 %} {% set voting_disabled=True %} {% elif
-				category=='table-topic' and candidate_count < 5 %} {% set voting_disabled=True %} {% endif %}
-			{% endif %}
-			<button
-				class="accordion-header {{ 'active' if default_open else '' }} {{ 'voted' if category_voted else '' }} {{ 'disabled' if voting_disabled else '' }}"
-				{% if voting_disabled %}disabled title="Not enough candidates to vote" {% endif %}>
-				<div class="header-left">
-					{% set question_ns.count = question_ns.count + 1 %}
-					<div class="question-number">{{ question_ns.count }}</div>
-					<span class="question-text">{{ meta.title }}</span>
-				</div>
-				<div class="accordion-header-right">
-					<div class="status-wrapper">
-						{% if voting_disabled and status == 'running' %}
-						<span class="candidate-warning">
-							{% if category == 'table-topic' %}(Candidates < 5){% else %}(Candidates < 3){% endif %}
-						</span>
-						{% endif %}
-						{% if category_voted %}
-						<span class="voted-label">
-							<i class="fas fa-trophy"></i> VOTED
-						</span>
-						{% endif %}
-					</div>
-					<i class="fas fa-chevron-down"></i>
-				</div>
-				</button>
-				<div class="accordion-content {{ 'force-open' if default_open else '' }}">
-					<table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
-						<tbody>
-							{% for role in items %}
-							{{ render_role_row(role, status, is_admin_view, selected_meeting_id, user_role,
-							has_voted, can_track_progress, voting_disabled) }}
-							{% endfor %} </tbody>
-					</table>
-				</div>
-				<hr class="mobile-divisor">
-		</div>
-		{% endif %}
-		{% endfor %}
-	</div>
+                {% if selected_meeting.status == 'running' %}
+                <div class="voting-section">
+                    <div class="section-header">
+                        {% set question_ns.count = question_ns.count + 1 %}
+                        <div class="question-number">{{ question_ns.count }}</div>
+                        <div class="section-title">Net Promoter Score</div>
+                    </div>
+                    <div class="section-content">
+                        <div class="rating-question">
+                            <div class="question-text">How likely are you to recommend this meeting to a friend or colleague?</div>
+                        </div>
+                        <div class="rating-scale">
+                            {% for i in range(11) %}
+                            <button type="button" class="rating-btn" data-score="{{ i }}" {% if has_voted %}disabled {% else %}onclick="handleRatingClick(this)" {% endif %}>{{ i }}</button>
+                            {% endfor %}
+                        </div>
+                        <div class="rating-labels">
+                            <span>Not at all likely</span>
+                            <span>Extremely likely</span>
+                        </div>
+                    </div>
+                    <hr class="mobile-divisor">
+                </div>
 
+                <div class="voting-section">
+                    <div class="section-header">
+                        {% set question_ns.count = question_ns.count + 1 %}
+                        <div class="question-number">{{ question_ns.count }}</div>
+                        <div class="section-title">Meeting Feedback / Comments</div>
+                    </div>
+                    <div class="section-content">
+                        <div class="feedback-input-container">
+                            <textarea id="feedback-input" class="feedback-input" placeholder="Enter your answer" rows="4" {% if has_voted %}disabled{% else %}oninput="handleFeedbackInput(this)" {% endif %}></textarea>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
 
-	{% else %}
-	{# Finished member view #}
-	<table class="booking-table is-{{ status|replace(' ', '-') }}-meeting">
-		<tbody>
-			{% set ns = namespace(displayed_awards=[]) %}
-			{% for role in roles %}
-			{% if role.award_type and role.award_type not in ns.displayed_awards %}
-			{{ render_role_row(role, status, is_admin_view, selected_meeting_id, user_role, has_voted,
-			can_track_progress) }}
-			{% set ns.displayed_awards = ns.displayed_awards + [role.award_type] %}
-			{% endif %}
-			{% endfor %}
-		</tbody>
-	</table>
-	{% endif %}
-	{% endmacro %}
-
-	{# ============================================= #}
-	{# =============== MAIN VIEW LOGIC =============== #}
-	{# ============================================= #}
-
-	{% if selected_meeting.status not in ['running', 'finished'] %}
-	<div class="voting-not-started-container">
-		<!-- <p class="meeting-not-started-msg">Meeting #{{
-			selected_meeting.Meeting_Number }} is not yet started.</p> -->
-		<div class="meeting-not-started-img-container">
-			<img src="{{ url_for('static', filename='images/voting_open_soon.webp') }}" alt="Voting opens soon"
-				class="meeting-not-started-img">
-		</div>
-	</div>
-	{% else %}
-	{% if (has_voted and not can_track_progress and selected_meeting.status == 'running') or (selected_meeting.status ==
-	'finished' and not is_admin_view) %}
-	<div id="thank-you-message" class="thank-you-container">
-		<i class="fas fa-check-circle thank-you-icon"></i>
-		<h2>Thank You!</h2>
-		<p>Your votes have been submitted.</p>
-	</div>
-	{% else %}
-	{% set question_ns = namespace(count=0) %}
-	{{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view,
-	selected_meeting_id, user_role, has_voted, can_track_progress, question_ns) }}
-
-	{% if selected_meeting.status == 'running' %}
-	<div class="voting-section">
-		<div class="section-header">
-			{% set question_ns.count = question_ns.count + 1 %}
-			<div class="question-number">{{ question_ns.count }}</div>
-			<div class="section-title">Net Promoter Score</div>
-		</div>
-		<div class="section-content">
-			<div class="rating-question">
-				<div class="question-text">How likely are you to recommend this meeting to a friend or colleague?</div>
-			</div>
-			<div class="rating-scale">
-				{% for i in range(11) %}
-				<button type="button" class="rating-btn" data-score="{{ i }}" {% if has_voted %}disabled {% else
-					%}onclick="handleRatingClick(this)" {% endif %}>{{ i
-					}}</button>
-				{% endfor %}
-			</div>
-			<div class="rating-labels">
-				<span>Not at all likely</span>
-				<span>Extremely likely</span>
-			</div>
-		</div>
-		<hr class="mobile-divisor">
-	</div>
-
-	<div class="voting-section">
-		<div class="section-header">
-			{% set question_ns.count = question_ns.count + 1 %}
-			<div class="question-number">{{ question_ns.count }}</div>
-			<div class="section-title">Meeting Feedback / Comments</div>
-		</div>
-		<div class="section-content">
-			<div class="feedback-input-container">
-				<textarea id="feedback-input" class="feedback-input" placeholder="Enter your answer" rows="4" {% if
-					has_voted %}disabled{% else %}oninput="handleFeedbackInput(this)" {% endif %}></textarea>
-			</div>
-		</div>
-	</div>
-	{% endif %}
-	{% endif %}
-
-	{% if selected_meeting.status == 'running' and not has_voted %}
-	<div id="batch-vote-actions">
-		<button id="done-voting-btn" class="btn btn-primary btn-lg" disabled>
-			Submit
-		</button>
-	</div>
-	<div id="thank-you-message" class="thank-you-container" style="display: none;">
-		<i class="fas fa-check-circle thank-you-icon"></i>
-		<h2>Thank You!</h2>
-		<p>Your votes have been submitted.</p>
-	</div>
-	{% endif %}
-	{% endif %}
-	{% else %}
-	<p>Please select a meeting to view voting options.</p>
-	{% endif %}
-
+            {% if selected_meeting.status == 'running' and not has_voted %}
+            <div id="batch-vote-actions">
+                <button id="done-voting-btn" class="btn btn-primary btn-lg" disabled>
+                    Submit
+                </button>
+            </div>
+            <div id="thank-you-message" class="thank-you-container" style="display: none;">
+                <i class="fas fa-check-circle thank-you-icon"></i>
+                <h2>Thank You!</h2>
+                <p>Your votes have been submitted.</p>
+            </div>
+            {% endif %}
+        {% endif %}
+    {% endif %}
 </div>
 
 <script id="voting-data" type="application/json">

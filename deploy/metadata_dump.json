@@ -4620,16 +4620,18 @@
       "resource": "profile",
       "action": "edit",
       "created_at": "2026-02-09 14:52:38"
+    },
+    {
+      "id": 45,
+      "name": "BOOKING_VIEW_ALL",
+      "description": "Permission to view the booking records of all users",
+      "category": "booking",
+      "resource": "booking",
+      "action": "view_all",
+      "created_at": "2026-03-01 18:05:01"
     }
   ],
   "auth_roles": [
-    {
-      "id": 1,
-      "name": "SysAdmin",
-      "description": "Admin role",
-      "level": 8,
-      "created_at": "2026-01-15 07:42:37"
-    },
     {
       "id": 2,
       "name": "ClubAdmin",
@@ -4661,89 +4663,54 @@
   ],
   "role_permissions": [
     {
-      "id": 101,
-      "role_id": 1,
-      "permission_id": 1
-    },
-    {
-      "id": 99,
-      "role_id": 1,
-      "permission_id": 5
-    },
-    {
-      "id": 93,
-      "role_id": 1,
-      "permission_id": 11
-    },
-    {
-      "id": 87,
-      "role_id": 1,
-      "permission_id": 12
-    },
-    {
-      "id": 89,
-      "role_id": 1,
-      "permission_id": 13
-    },
-    {
-      "id": 95,
-      "role_id": 1,
-      "permission_id": 14
-    },
-    {
-      "id": 97,
-      "role_id": 1,
-      "permission_id": 15
-    },
-    {
-      "id": 62,
-      "role_id": 1,
-      "permission_id": 25
-    },
-    {
-      "id": 78,
-      "role_id": 1,
-      "permission_id": 32
-    },
-    {
-      "id": 82,
-      "role_id": 1,
-      "permission_id": 33
-    },
-    {
-      "id": 91,
-      "role_id": 1,
-      "permission_id": 34
-    },
-    {
-      "id": 86,
-      "role_id": 1,
-      "permission_id": 37
-    },
-    {
-      "id": 103,
-      "role_id": 1,
-      "permission_id": 38
-    },
-    {
-      "id": 111,
-      "role_id": 1,
-      "permission_id": 39
-    },
-    {
-      "id": 112,
-      "role_id": 1,
-      "permission_id": 40
-    },
-    {
       "id": 102,
       "role_id": 2,
       "permission_id": 1
     },
     {
+      "id": 127,
+      "role_id": 2,
+      "permission_id": 2
+    },
+    {
+      "id": 139,
+      "role_id": 2,
+      "permission_id": 3
+    },
+    {
+      "id": 131,
+      "role_id": 2,
+      "permission_id": 4
+    },
+    {
       "id": 100,
       "role_id": 2,
       "permission_id": 5
+    },
+    {
+      "id": 129,
+      "role_id": 2,
+      "permission_id": 6
+    },
+    {
+      "id": 133,
+      "role_id": 2,
+      "permission_id": 7
+    },
+    {
+      "id": 136,
+      "role_id": 2,
+      "permission_id": 8
+    },
+    {
+      "id": 130,
+      "role_id": 2,
+      "permission_id": 9
+    },
+    {
+      "id": 126,
+      "role_id": 2,
+      "permission_id": 10
     },
     {
       "id": 94,
@@ -4771,6 +4738,21 @@
       "permission_id": 15
     },
     {
+      "id": 128,
+      "role_id": 2,
+      "permission_id": 16
+    },
+    {
+      "id": 132,
+      "role_id": 2,
+      "permission_id": 17
+    },
+    {
+      "id": 135,
+      "role_id": 2,
+      "permission_id": 18
+    },
+    {
       "id": 63,
       "role_id": 2,
       "permission_id": 25
@@ -4789,6 +4771,21 @@
       "id": 92,
       "role_id": 2,
       "permission_id": 34
+    },
+    {
+      "id": 134,
+      "role_id": 2,
+      "permission_id": 35
+    },
+    {
+      "id": 137,
+      "role_id": 2,
+      "permission_id": 36
+    },
+    {
+      "id": 138,
+      "role_id": 2,
+      "permission_id": 37
     },
     {
       "id": 104,
@@ -4824,6 +4821,11 @@
       "id": 121,
       "role_id": 2,
       "permission_id": 44
+    },
+    {
+      "id": 140,
+      "role_id": 2,
+      "permission_id": 45
     },
     {
       "id": 34,
@@ -4871,19 +4873,9 @@
       "permission_id": 25
     },
     {
-      "id": 80,
-      "role_id": 3,
-      "permission_id": 32
-    },
-    {
       "id": 107,
       "role_id": 3,
       "permission_id": 39
-    },
-    {
-      "id": 108,
-      "role_id": 3,
-      "permission_id": 40
     },
     {
       "id": 113,
@@ -4891,19 +4883,9 @@
       "permission_id": 41
     },
     {
-      "id": 119,
+      "id": 141,
       "role_id": 3,
-      "permission_id": 42
-    },
-    {
-      "id": 117,
-      "role_id": 3,
-      "permission_id": 43
-    },
-    {
-      "id": 122,
-      "role_id": 3,
-      "permission_id": 44
+      "permission_id": 45
     },
     {
       "id": 40,
@@ -4964,6 +4946,11 @@
       "id": 85,
       "role_id": 5,
       "permission_id": 10
+    },
+    {
+      "id": 125,
+      "role_id": 5,
+      "permission_id": 32
     }
   ],
   "tickets": [

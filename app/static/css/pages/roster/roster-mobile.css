@@ -4,43 +4,10 @@
    ======================================== */
 
 @media (max-width: 768px) {
-  .page-container {
-    padding: 10px;
-  }
 
   /* Filter container mobile layout */
-  .filters-control.premium {
-    padding: 15px;
-    overflow: visible;
-  }
 
-  .filter-row-premium {
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    overflow: visible;
-  }
-
-  .filter-row-premium .filter-controls-inner,
-  .filter-row-premium .filter-right {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .filter-row-premium .filter-right {
-    gap: 10px;
-  }
-
-  .filter-row-premium .filter-right .trend-btn {
-    width: 100%;
-    justify-content: center;
-    font-size: 0.85rem;
-    padding: 8px 10px;
-    height: 36px !important;
-    border-radius: 50px;
-  }
-
-.page-container .inline-filter-group {
+  .page-container .inline-filter-group {
     width: 100% !important;
     box-sizing: border-box;
     margin-bottom: 25px !important;
@@ -59,7 +26,8 @@
   .page-container .form-group-inline {
     width: 100%;
     min-width: 0;
-    flex: none !important; /* Reset desktop flex-basis which becomes height in column mode */
+    flex: none !important;
+    /* Reset desktop flex-basis which becomes height in column mode */
   }
 
   .page-container .form-buttons {
@@ -201,18 +169,22 @@
   /* --- Buttons --- */
   .page-container .contact-input-container {
     display: flex;
-    gap: 10px; /* Gap between name input and plus button */
+    gap: 10px;
+    /* Gap between name input and plus button */
     width: 100%;
   }
 
   .page-container .contact-input-container #contact_name {
-    flex: 1; /* Expand to take available space */
-    border-radius: 6px !important; /* Restore radius on mobile */
+    flex: 1;
+    /* Expand to take available space */
+    border-radius: 6px !important;
+    /* Restore radius on mobile */
   }
 
   #add-contact-btn {
     width: 32px !important;
-    min-width: 32px !important; /* Ensure it doesn't shrink */
+    min-width: 32px !important;
+    /* Ensure it doesn't shrink */
     height: var(--mobile-control-height, 36px) !important;
     padding: 0 !important;
     display: flex !important;

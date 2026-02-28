@@ -100,45 +100,8 @@
   border-radius: 0;
 }
 
-/* --- Booking Container --- */
-.page-container {
-  max-width: 900px;
-}
 
 /* --- Filter Container --- */
-.filters-container.premium {
-  background-color: #fff;
-  padding: 15px 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 25px;
-  border: 1px solid #e2e8f0;
-}
-
-.filter-row-premium {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  gap: 20px;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.filter-row-premium .filter-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  font-size: 1em;
-}
-
-.filter-row-premium .filter-right {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
 
 .filters-container.premium .btn,
 .filters-container.premium .role-guide-link {
@@ -931,29 +894,84 @@
   color: #333;
   white-space: nowrap;
 }
+
 /* --- Booking Status Alert --- */
-.booking-status-alert {
+.meeting-status-alert {
   display: flex;
-  align-items: flex-start;
-  gap: 20px;
+  align-items: center;
+  gap: 12px;
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-left: 5px solid #772432;
-  padding: 24px;
-  border-radius: 12px;
-  margin: 20px 0 30px 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #772432;
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin: 0;
+  box-shadow: none;
   transition: all 0.3s ease;
+  width: auto;
+  min-width: 280px;
+  box-sizing: border-box;
 }
 
-.booking-status-alert:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+.meeting-status-alert .alert-icon {
+  font-size: 1rem;
+  color: #772432;
+  display: flex;
+  align-items: center;
+}
+
+.meeting-status-alert .alert-content {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  line-height: 1.2;
+}
+
+.meeting-status-alert .alert-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #772432;
+  white-space: nowrap;
+}
+
+.meeting-status-alert .alert-description {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.notice-image-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: 20px;
+  box-sizing: border-box;
+}
+
+.notice-image-container .booking-status-alert {
+  max-width: 100%;
+  margin-bottom: 30px;
+}
+
+.notice-image-wrapper {
+  width: 100%;
+  max-width: 100%;
+  text-align: center;
+}
+
+.notice-image-wrapper img {
+  width: 100%;
+  height: auto;
+  border: 5px solid #c5c5c5;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .alert-icon {
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   background-color: #fff1f2;
   color: #772432;
   border-radius: 10px;

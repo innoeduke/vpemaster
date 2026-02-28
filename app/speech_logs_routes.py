@@ -122,7 +122,13 @@ def _get_view_settings():
     can_view_all = is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL)
     view_mode = request.args.get('view_mode', 'member')
     
-    if can_view_all and view_mode == 'admin':
+    # NEW: Force Admin View for SysAdmin (they should not see the member 'Journal' view)
+    is_sysadmin = current_user.is_authenticated and hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'SysAdmin'
+    
+    if is_sysadmin:
+        view_mode = 'admin'
+        is_member_view = False
+    elif can_view_all and view_mode == 'admin':
         is_member_view = False
     else:
         is_member_view = True

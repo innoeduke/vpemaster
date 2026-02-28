@@ -40,11 +40,7 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
     if hasattr(current_user, 'is_sysadmin') and current_user.is_sysadmin:
         return True
 
-    # 2. ClubAdmin Override: Full access to owned clubs (except strictly SysAdmin-only features)
-    if target_perm != Permissions.SYSADMIN:
-        # Use helper method on User model
-        if hasattr(current_user, 'is_club_admin') and current_user.is_club_admin(club_id):
-            return True
+    # (ClubAdmin override removed to rely on database-driven permissions)
 
     # 3. Check for Meeting Manager override
     meeting = kwargs.get('meeting')

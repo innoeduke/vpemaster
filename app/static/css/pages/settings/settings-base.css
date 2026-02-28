@@ -599,7 +599,7 @@ fieldset.modal-frame .compact-form {
 	margin-top: 25px;
 }
 
-#excomm-modal . .btn {
+#excomm-modal .modal-buttons .btn {
 	flex: 1;
 	height: 46px;
 	border-radius: 23px;
@@ -662,6 +662,7 @@ fieldset.modal-frame .compact-form {
 	box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
 	color: #333;
 	animation: modalScaleIn 0.3s ease-out;
+	box-sizing: border-box;
 }
 
 @keyframes modalScaleIn {
@@ -693,13 +694,12 @@ fieldset.modal-frame .compact-form {
 
 .planner-close-modal {
 	position: absolute;
-	top: 1.5rem;
-	right: 1.5rem;
-	font-size: 1.8rem;
+	top: 0.4rem !important;
+	right: 0.4rem !important;
+	font-size: 1.1rem;
 	color: #ccc;
 	cursor: pointer;
 	transition: all 0.2s ease;
-	line-height: 1;
 	width: 32px;
 	height: 32px;
 	display: flex;
@@ -979,8 +979,8 @@ fieldset.modal-frame .compact-form {
 
 @media (max-width: 768px) {
 	.achievement-grid {
-		grid-template-columns: repeat(2, 1fr);
-		gap: 0.8rem 1rem;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.5rem 0.75rem;
 	}
 
 	.achievement-grid .full-width {
@@ -989,11 +989,43 @@ fieldset.modal-frame .compact-form {
 
 	.achievement-grid .planner-form-group {
 		margin-bottom: 0;
+		min-width: 0;
+		/* Critical for grid children */
+	}
+
+	.achievement-grid .planner-form-group label {
+		font-size: 0.65rem;
+		margin-bottom: 0.25rem;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.achievement-grid .planner-form-control,
+	.achievement-grid .custom-select-trigger,
+	.achievement-grid .owner-search-input {
+		font-size: 0.8rem;
+		padding: 0 0.5rem !important;
+		height: 36px !important;
+		min-height: 36px !important;
+		line-height: 36px !important;
+		box-sizing: border-box !important;
+		min-width: 0 !important;
+		width: 100% !important;
+	}
+
+	.achievement-grid textarea.planner-form-control {
+		height: auto !important;
+		min-height: 60px !important;
+		padding: 0.5rem !important;
+		line-height: 1.4 !important;
 	}
 
 	/* Reduce modal padding on mobile for grid to breathe */
 	.planner-modal-content {
-		padding: 1.2rem 1.5rem;
+		padding: 1.25rem 0.85rem !important;
 	}
 }
 
@@ -1042,6 +1074,16 @@ fieldset.modal-frame .compact-form {
 .planner-btn.planner-btn-danger:hover {
 	background: #5d1c27 !important;
 	box-shadow: 0 4px 12px rgba(119, 36, 50, 0.2) !important;
+}
+
+.planner-btn.planner-btn-revoke {
+	background-color: #64748b !important;
+	color: #fff !important;
+}
+
+.planner-btn.planner-btn-revoke:hover {
+	background-color: #475569 !important;
+	box-shadow: 0 4px 12px rgba(100, 116, 139, 0.2) !important;
 }
 
 .planner-btn.planner-btn-info {

@@ -5,67 +5,6 @@
 
 /* --- Page Title with Trend Button --- */
 /* --- Filter Container premium --- */
-.filters-control.premium {
-  background-color: #fff;
-  padding: 15px 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  margin-bottom: 25px;
-  border: 1px solid #e2e8f0;
-}
-
-.filter-row-premium {
-  display: flex;
-  align-items: center;
-  padding: 0;
-  gap: 20px;
-  flex-wrap: nowrap;
-  justify-content: space-between;
-  width: 100%;
-}
-
-.filter-row-premium .filter-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-  font-size: 1em;
-}
-
-.filter-row-premium .filter-right {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.trend-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 18px;
-  background-color: #004165;
-  color: #fff !important;
-  border-radius: 50px;
-  text-decoration: none;
-  font-weight: 700;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-  border: none;
-  gap: 10px;
-  height: 40px;
-  box-sizing: border-box;
-  box-shadow: 0 4px 6px rgba(0, 65, 101, 0.2);
-}
-
-.trend-btn i {
-  color: #fff !important;
-}
-
-.trend-btn:hover {
-  background-color: #002d46;
-  color: #fff !important;
-  transform: translateY(-1px);
-  box-shadow: 0 6px 12px rgba(0, 65, 101, 0.3);
-}
 
 /* --- Disabled Button Style --- */
 #done-voting-btn:disabled {
@@ -240,7 +179,8 @@
   font-size: 0.75em;
   font-weight: bold;
   white-space: nowrap;
-  line-height: 1; /* Center icon and text vertically */
+  line-height: 1;
+  /* Center icon and text vertically */
 }
 
 .voted-label i {
@@ -443,34 +383,9 @@
   max-height: none !important;
 }
 
-.voting-not-started-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  margin-top: 20px;
-  width: 100%;
-}
+/* --- Meeting Status Alert --- */
 
-.meeting-not-started-msg {
-  font-family: "Montserrat", sans-serif;
-  font-size: 2em;
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.meeting-not-started-img-container {
-  text-align: center;
-  margin-top: 0;
-}
-
-.meeting-not-started-img {
-  max-width: 100%;
-  height: auto;
-  border: 5px solid #c5c5c5;
-  border-radius: 15px;
-}
+/* --- Notice Image Container --- */
 
 .thank-you-container {
   text-align: center;

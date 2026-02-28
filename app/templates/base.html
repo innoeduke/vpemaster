@@ -41,7 +41,7 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.BOOKING_BOOK_OWN) and has_meetings %}
+        {% if is_authorized(Permissions.BOOKING_BOOK_OWN) and has_meetings and not hide_booking_nav %}
         <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}">
           <a href="{{ url_for('booking_bp.booking', club_id=get_current_club_id()) }}">
             <i class="fas fa-tag nav-icon"></i>
@@ -49,7 +49,7 @@
           </a>
         </li>
         {% endif %}
-        {% if has_meetings %}
+        {% if has_meetings and not hide_voting_nav %}
         <li class="{% if request.endpoint and request.endpoint.startswith('voting_bp') %}active{% endif %}">
           <a href="{{ url_for('voting_bp.voting', club_id=get_current_club_id()) }}">
             <i class="fas fa-vote-yea nav-icon"></i>
@@ -57,8 +57,17 @@
           </a>
         </li>
         {% endif %}
-        
+        {% if is_authorized(Permissions.ROSTER_VIEW) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}active{% endif %}">
+          <a href="{{ url_for('roster_bp.roster') }}">
+            <i class="fas fa-clipboard-list nav-icon"></i>
+            <span>Roster</span>
+          </a>
+        </li>
+        {% endif %}
+
         {% if is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and has_meetings %}
+        <li class="nav-divider"></li>
         <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
           <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
             <i class="fas fa-tasks nav-icon"></i>
@@ -74,6 +83,7 @@
           </a>
         </li>
         {% endif %}
+
         <li class="nav-divider"></li>
         {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
@@ -83,14 +93,7 @@
           </a>
         </li>
         {% endif %}
-        {% if is_authorized(Permissions.ROSTER_VIEW) %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}active{% endif %}">
-          <a href="{{ url_for('roster_bp.roster') }}">
-            <i class="fas fa-clipboard-list nav-icon"></i>
-            <span>Roster</span>
-          </a>
-        </li>
-        {% endif %}
+        
         {% if is_authorized(Permissions.LUCKY_DRAW_VIEW) or is_authorized(Permissions.PATHWAY_LIB_VIEW) %}
         <li
           class="{% if request.endpoint and (request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp')) %}active{% endif %}">
@@ -100,20 +103,21 @@
           </a>
         </li>
         {% endif %}
-        <li class="nav-divider"></li>
-        {% if current_user.is_authenticated and current_user.primary_role_name == 'SysAdmin' %}
-        <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
-          <a href="{{ url_for('clubs_bp.list_clubs') }}">
-            <i class="fas fa-network-wired nav-icon"></i>
-            <span>Manage Clubs</span>
-          </a>
-        </li>
-        {% endif %}
+        
         {% if is_authorized(Permissions.SETTINGS_VIEW_ALL) and current_user.primary_role_name != 'Guest' %}
         <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
           <a href="{{ url_for('settings_bp.settings', default_tab='user-settings') }}">
             <i class="fas fa-cog nav-icon"></i>
             <span>Settings</span>
+          </a>
+        </li>
+        {% endif %}
+
+        {% if current_user.is_authenticated and current_user.primary_role_name == 'SysAdmin' %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
+          <a href="{{ url_for('clubs_bp.list_clubs') }}">
+            <i class="fas fa-network-wired nav-icon"></i>
+            <span>Manage Clubs</span>
           </a>
         </li>
         {% endif %}

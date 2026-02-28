@@ -413,23 +413,28 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
     # 1. Guests can ONLY access 'running' meetings
     if not user:
         if selected_meeting and selected_meeting.status != 'running':
-            context['redirect_to_not_started'] = True
+            context['notice_image'] = 'not_started.webp'
             return context
-
-    # 2. Unpublished check
-    if selected_meeting and selected_meeting.status == 'unpublished' and not (is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)):
-        context['redirect_to_not_started'] = True
-        return context
 
     context['selected_meeting'] = selected_meeting
     context['is_admin_view'] = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting)
 
-    # 3. Finished check for guests
+    # 2. Unpublished check - Show notice for those without BOOKING_VIEW_ALL
+    if selected_meeting and selected_meeting.status == 'unpublished':
+        if not is_authorized(Permissions.BOOKING_VIEW_ALL, meeting=selected_meeting):
+            context['notice_image'] = 'under_planning.webp'
+            # We continue for members so they can see their own bookings later down the page
+            # But the template will conditionally hide the booking tables if notice_image is set
+
+    # 3. Finished check - Hide table for everyone
     if selected_meeting and selected_meeting.status == 'finished':
-        is_guest = (user.primary_role_name == 'Guest') if user else True
-        if is_guest:
-             context['redirect_to_not_started'] = True
-             return context
+        context['notice_image'] = 'booking_closed.webp'
+        # Template will hide the table because notice_image is set
+
+    # 4. Running check for non-admins (Booking Closed image)
+    if selected_meeting and selected_meeting.status == 'running' and not context['is_admin_view']:
+        # This will be used in the template to show booking_closed.webp below the alert
+        context['show_booking_closed_image'] = True
 
     is_past_meeting = selected_meeting.status == 'finished' if selected_meeting else False
 
@@ -491,12 +496,6 @@ def booking(meeting_id):
     user, current_user_contact_id = get_current_user_info()
     context = _get_booking_page_context(meeting_id, user, current_user_contact_id)
     
-    if context.get('redirect_to_not_started'):
-        mid = meeting_id or context.get('selected_meeting_id')
-        if mid:
-            return redirect(url_for('agenda_bp.meeting_notice', meeting_id=mid))
-        return redirect(url_for('agenda_bp.agenda'))
-        
     return render_template('booking.html', **context)
 
 

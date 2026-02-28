@@ -16,7 +16,7 @@ function openAchievementModal(action, userId, memberName, memberId, achievementT
 	if (action === 'revoke') {
 		title.textContent = 'Revoke Achievement';
 		saveBtn.textContent = 'Revoke';
-		saveBtn.className = 'planner-btn btn-danger';
+		saveBtn.className = 'planner-btn planner-btn-revoke';
 	} else {
 		title.textContent = 'Record Achievement';
 		saveBtn.textContent = 'Save';

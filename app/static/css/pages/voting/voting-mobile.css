@@ -4,41 +4,8 @@
    ======================================== */
 
 @media (max-width: 768px) {
-  .meeting-not-started-msg {
-    font-size: 1.5em;
-  }
 
   /* Filter container mobile layout */
-  .filters-control.premium {
-    padding: 15px;
-    overflow: visible;
-  }
-
-  .filter-row-premium {
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-    overflow: visible;
-  }
-
-  .filter-row-premium .filter-controls-inner,
-  .filter-row-premium .filter-right {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .filter-row-premium .filter-right {
-    gap: 10px;
-  }
-
-  .filter-row-premium .filter-right .trend-btn {
-    width: 100%;
-    justify-content: center;
-    font-size: 0.85rem;
-    padding: 8px 10px;
-    height: 36px !important;
-    border-radius: 50px;
-  }
 
   .accordion-list .accordion-content {
     background-color: transparent;
@@ -140,6 +107,8 @@
   .rating-labels {
     font-size: 0.8em;
   }
+
+
 
   /* Feedback input */
   .feedback-input {

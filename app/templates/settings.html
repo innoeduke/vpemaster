@@ -27,6 +27,33 @@
     cursor: not-allowed !important;
     opacity: 0.6 !important;
   }
+
+  /* Permissions Matrix Table Styles */
+  .matrix-table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  /* Permission Name Column (Width: 40%) */
+  .matrix-table th:first-child,
+  .matrix-table td:first-child {
+    width: 40%;
+  }
+
+  /* Role Columns (Width: 15% each for 4 roles) */
+  .matrix-table th:not(:first-child),
+  .matrix-table td:not(:first-child) {
+    width: 15%;
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .matrix-table .perm-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
 </style>
 {% endblock %}
 

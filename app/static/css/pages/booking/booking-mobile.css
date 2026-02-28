@@ -71,27 +71,6 @@
 	}
 
 	/* Filter container mobile layout */
-	.filters-container.premium {
-		padding: 15px;
-		overflow: visible;
-	}
-
-	.filter-row-premium {
-		flex-direction: column;
-		align-items: center;
-		gap: 15px;
-		overflow: visible;
-	}
-
-	.filter-row-premium .filter-controls-inner,
-	.filter-row-premium .filter-right {
-		width: 100%;
-		justify-content: center;
-	}
-
-	.filter-row-premium .filter-right {
-		gap: 10px;
-	}
 
 	.filter-row-premium .filter-right .btn {
 		flex: 1;
@@ -313,26 +292,7 @@
 	.multi-owner-inputs {
 		gap: 6px;
 	}
-	/* Booking Status Alert Mobile */
-	.booking-status-alert {
-		padding: 16px;
-		gap: 15px;
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
-	}
 
-	.alert-icon {
-		width: 40px;
-		height: 40px;
-		font-size: 1.2rem;
-	}
 
-	.alert-title {
-		font-size: 1.1rem;
-	}
 
-	.alert-description {
-		font-size: 0.9rem;
-	}
 }

@@ -29,11 +29,6 @@
 }
 
 /* Base container for the whole page */
-#pathway-library-container {
-	max-width: 1200px;
-	margin: 0 auto;
-	padding: 20px 0;
-}
 
 /* Custom Dropdown Overrides - Use high specificity instead of !important */
 #pathway-library-container .filters-container .custom-dropdown {

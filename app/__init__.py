@@ -107,14 +107,37 @@ def create_app(config_class='config.Config'):
         # Get current club object
         club = db.session.get(Club, club_id) if club_id else None
         
-        # Check if at least one meeting exists for this club
+        # Check for meeting-based navigation visibility
         has_meetings = False
+        hide_booking_nav = False
+        hide_voting_nav = False
+        
         if club_id:
             has_meetings = db.session.query(Meeting.id).filter(Meeting.club_id == club_id).first() is not None
             
+            if has_meetings:
+                from .utils import get_default_meeting_id
+                default_meeting_id = get_default_meeting_id()
+                if default_meeting_id:
+                    default_meeting = db.session.get(Meeting, default_meeting_id)
+                    if default_meeting:
+                        status = default_meeting.status
+                        
+                        # Booking Visibility - Always allow access if user has the page available
+                        # (The page itself handles notice display)
+                        pass
+                        
+                        # Voting Visibility
+                        # (The page itself handles notice display for unpublished/not started)
+                        if status == 'finished':
+                            if not is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=default_meeting):
+                                hide_voting_nav = True
+
         return dict(
             is_authorized=is_authorized,
             has_meetings=has_meetings,
+            hide_booking_nav=hide_booking_nav,
+            hide_voting_nav=hide_voting_nav,
             Permissions=Permissions,
             club=club,
             get_current_club_id=get_current_club_id

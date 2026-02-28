@@ -7,7 +7,7 @@
 .meeting-autocomplete-container {
   position: relative;
   width: 100%;
-  max-width: 500px;
+  max-width: none;
   font-family: "Montserrat", sans-serif;
   min-width: 0;
   flex-grow: 1;
