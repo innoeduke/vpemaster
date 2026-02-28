@@ -101,9 +101,8 @@
 
 	.achievement-form-grid {
 		display: grid;
-		grid-template-columns: 1fr;
-		gap: 20px;
-		/* Aligned with meeting form */
+		grid-template-columns: repeat(2, 1fr);
+		gap: 12px 16px;
 		margin-top: 0;
 	}
 
@@ -112,7 +111,7 @@
 	}
 
 	.achievement-form-item.full-width {
-		grid-column: span 1;
+		grid-column: span 2;
 	}
 
 	.achievement-form-item label {

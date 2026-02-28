@@ -979,12 +979,21 @@ fieldset.modal-frame .compact-form {
 
 @media (max-width: 768px) {
 	.achievement-grid {
-		grid-template-columns: 1fr;
-		gap: 1rem;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.8rem 1rem;
 	}
 
 	.achievement-grid .full-width {
-		grid-column: span 1;
+		grid-column: span 2;
+	}
+
+	.achievement-grid .planner-form-group {
+		margin-bottom: 0;
+	}
+
+	/* Reduce modal padding on mobile for grid to breathe */
+	.planner-modal-content {
+		padding: 1.2rem 1.5rem;
 	}
 }
 

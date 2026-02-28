@@ -229,4 +229,109 @@
   .path-progress-container {
     display: none;
   }
+
+  /* Achievement Buttons Refinement for Mobile */
+  .btn-roadmap-action .btn-label-text,
+  .btn-achievement-revoke .btn-label-text,
+  .btn-achievement-record .btn-label-text {
+    display: none !important;
+  }
+
+  /* Force compact size and override global .btn min-width */
+  .btn-roadmap-action,
+  .btn-achievement-revoke,
+  .btn-achievement-record {
+    padding: 0 !important;
+    min-width: 32px !important;
+    width: 32px !important;
+    height: 32px !important;
+    justify-content: center;
+    border-radius: 8px !important;
+    display: inline-flex !important;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    border-width: 2px !important;
+  }
+
+  /* Record/Complete - Premium Green */
+  .btn-outline-success.btn-roadmap-action,
+  .btn-achievement-record {
+    color: #28a745 !important;
+    border-color: #28a745 !important;
+    background-color: #fff !important;
+    position: relative;
+  }
+
+  /* Give it a distinctive "Record" look - like a target or a focused button */
+  .btn-achievement-record {
+    background-color: #f0fff4 !important;
+    border-style: solid !important;
+  }
+
+  .btn-outline-success.btn-roadmap-action:hover,
+  .btn-achievement-record:hover {
+    background-color: #28a745 !important;
+    color: white !important;
+  }
+
+  /* Revoke - Toastmasters Maroon */
+  .btn-outline-danger.btn-roadmap-action,
+  .btn-achievement-revoke {
+    color: #772432 !important;
+    border-color: #772432 !important;
+    background-color: #fff !important;
+  }
+
+  /* Subtly different background for revoke */
+  .btn-achievement-revoke {
+    background-color: #fff5f5 !important;
+  }
+
+  .btn-outline-danger.btn-roadmap-action:hover,
+  .btn-achievement-revoke:hover {
+    background-color: #772432 !important;
+    color: white !important;
+  }
+
+  /* Fix Overflow and Positioning in Level Heading */
+  .level-heading {
+    display: flex !important;
+    justify-content: flex-start !important;
+    /* Title starts on left */
+    align-items: center !important;
+    gap: 8px !important;
+    padding-right: 15px !important;
+  }
+
+  .level-heading .flex-center-gap {
+    gap: 8px !important;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .level-heading .achievement-actions {
+    margin-left: auto !important;
+    /* Pushes buttons to the right */
+    margin-right: 5px !important;
+    /* Space before chevron */
+    display: inline-flex !important;
+    gap: 6px !important;
+    flex-shrink: 0;
+  }
+
+  .level-completed-badge {
+    padding: 2px 8px !important;
+    font-size: 0.65em !important;
+    margin-left: 0 !important;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .level-heading .caret-icon {
+    flex-shrink: 0;
+    margin-left: 0 !important;
+  }
 }

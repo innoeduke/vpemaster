@@ -175,13 +175,13 @@
                             <button class="btn btn-xs btn-outline-danger btn-roadmap-action" 
                                     onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ row.level }}')"
                                     title="Revoke Level Achievement">
-                                <i class="fas fa-undo"></i> Revoke
+                                <i class="fas fa-undo"></i> <span class="btn-label-text">Revoke</span>
                             </button>
                             {% else %}
                             <button class="btn btn-xs btn-outline-success btn-roadmap-action" 
                                     onclick="event.stopPropagation(); openAchievementModal('record', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ row.level }}')"
                                     title="Record Level Achievement">
-                                <i class="fas fa-check"></i> Complete
+                                <i class="fas fa-check"></i> <span class="btn-label-text">Complete</span>
                             </button>
                             {% endif %}
                         </div>
@@ -248,28 +248,26 @@
                     <i class="fas fa-trophy"></i> Completed
                 </div>
                 {% endif %}
-                
-                {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) and viewed_contact.user_id %}
-                <div class="achievement-actions" style="margin-left: 15px; display: flex; gap: 8px;">
-                    {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
-                    {% if level|int in completed_levels %}
-                    <button class="btn btn-sm btn-outline-danger" 
-                            onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}')"
-                            title="Revoke Level Achievement"
-                            style="padding: 2px 8px; font-size: 0.8em;">
-                        <i class="fas fa-undo"></i> Revoke
-                    </button>
-                    {% else %}
-                    <button class="btn btn-sm btn-outline-success" 
-                            onclick="event.stopPropagation(); openAchievementModal('record', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}')"
-                            title="Record Level Achievement"
-                            style="padding: 2px 8px; font-size: 0.8em;">
-                        <i class="fas fa-check"></i> Record
-                    </button>
-                    {% endif %}
-                </div>
+            </div>
+            
+            {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) and viewed_contact.user_id %}
+            <div class="achievement-actions">
+                {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
+                {% if level|int in completed_levels %}
+                <button class="btn btn-sm btn-outline-danger btn-achievement-revoke" 
+                        onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}')"
+                        title="Revoke Level Achievement">
+                    <i class="fas fa-undo"></i> <span class="btn-label-text">Revoke</span>
+                </button>
+                {% else %}
+                <button class="btn btn-sm btn-outline-success btn-achievement-record" 
+                        onclick="event.stopPropagation(); openAchievementModal('record', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}')"
+                        title="Record Level Achievement">
+                    <i class="fas fa-check"></i> <span class="btn-label-text">Record</span>
+                </button>
                 {% endif %}
             </div>
+            {% endif %}
             {% set is_completed = (level|int in completed_levels) %}
             {% set is_expanded = not is_completed %}
             <i class="fas {% if is_expanded %}fa-chevron-down{% else %}fa-chevron-right{% endif %} caret-icon"

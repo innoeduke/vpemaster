@@ -136,9 +136,4 @@
   .toggle-connection-btn {
     display: none !important;
   }
-
-  /* Stack contact form grid on mobile */
-  .contact-form-grid {
-    grid-template-columns: 1fr;
-  }
 }

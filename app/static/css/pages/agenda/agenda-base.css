@@ -1235,6 +1235,7 @@ td.actions-column {
 .contact-form-item input[type="time"],
 .contact-form-item select,
 .contact-form-item textarea {
+	width: 100%;
 	border: 1.5px solid #e9ecef;
 	background-color: #f8f9fa;
 	padding: 10px;

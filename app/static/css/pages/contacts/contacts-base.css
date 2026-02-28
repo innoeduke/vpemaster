@@ -479,6 +479,12 @@
   /* Full width */
 }
 
+.contact-form-item.first-name-column,
+.contact-form-item.last-name-column {
+  grid-column: span 2;
+  grid-row: 1;
+}
+
 .contact-form-item.email-column {
   grid-column: span 3;
   grid-row: 2;
@@ -537,6 +543,8 @@
 .contact-form-item input[type="email"],
 .contact-form-item select,
 .contact-form-item textarea {
+  width: 100%;
+  box-sizing: border-box;
   border: 1.5px solid #e9ecef;
   background-color: #f8f9fa;
   padding: 10px;
