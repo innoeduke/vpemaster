@@ -318,12 +318,12 @@
 }
 
 /* --- Term Filter Dropdown (Moved from inline) --- */
-.contacts-term-filter-form {
+.term-filter-form {
   flex: 1;
   max-width: 400px;
 }
 
-.contacts-term-filter-form .form-group {
+.term-filter-form .form-group {
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -379,6 +379,10 @@
 .term-option-label {
   padding: 5px 10px;
   font-weight: normal;
+}
+
+.term-option-label.past-term {
+  color: #999;
 }
 
 .term-checkbox-input {

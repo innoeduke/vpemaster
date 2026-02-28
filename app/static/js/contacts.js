@@ -70,17 +70,20 @@ async function refreshContactCache() {
  */
 function applyFilters() {
   const activeTabItem = document.querySelector(".nav-item.active");
-  if (!activeTabItem) {
-    filteredContacts = [...allContactsCache];
-    return;
-  }
-
-  const activeTab = activeTabItem.dataset.type;
   const searchInput = document.getElementById("searchInput");
   const searchTerm = searchInput ? searchInput.value.toUpperCase().trim() : '';
 
-  // Filter by tab
-  filteredContacts = allContactsCache.filter(contact => contact.Type === activeTab);
+  if (activeTabItem) {
+    const activeTab = activeTabItem.dataset.type;
+    // Filter by tab
+    filteredContacts = allContactsCache.filter(contact => contact.Type === activeTab);
+  } else {
+    // If no tab is active (e.g. regular member view where tabs are hidden), 
+    // filter to show only Members and Officers
+    filteredContacts = allContactsCache.filter(contact =>
+      contact.Type === 'Member' || contact.Type === 'Officer'
+    );
+  }
 
   // Filter by search term
   if (searchTerm) {
@@ -484,6 +487,9 @@ document.addEventListener("DOMContentLoaded", function () {
     } else {
       table.classList.remove("guest-view", "member-view");
     }
+  } else if (!hasEditPermission) {
+    // Default to member view for regular members when tabs are hidden
+    table.classList.add("member-view");
   }
 
   // Tab click logic

@@ -4,6 +4,7 @@
    ======================================== */
 
 @media (max-width: 768px) {
+
   /* 1 Column for Mobile */
   .logs-container {
     grid-template-columns: 1fr;
@@ -37,6 +38,22 @@
     /* Stack label and input */
     align-items: flex-start;
     gap: 5px;
+  }
+
+  /* Ensure the form and its stacked groups take full width */
+  #speech-logs-filter-form {
+    width: 100%;
+  }
+
+  /* Force filter groups to stretch children across the width */
+  .filters-container .filter-group-premium {
+    align-items: stretch;
+  }
+
+  /* Ensure the pathway selector group and its custom dropdown take full width */
+  #speech-logs-filter-form .pathway-selector-group .custom-dropdown,
+  #speech-logs-filter-form .pathway-selector-group .dropdown-premium-btn {
+    width: 100%;
   }
 
   /* Override min-width for meeting filter on mobile */

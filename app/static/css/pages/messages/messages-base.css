@@ -122,6 +122,11 @@
 	padding: 1.5rem;
 }
 
+.msg-nav-container {
+	display: flex;
+	flex-direction: column;
+}
+
 .msg-compose-btn {
 	background-color: #4a6fa5;
 	color: white;

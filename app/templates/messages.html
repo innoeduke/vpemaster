@@ -10,14 +10,16 @@
     <!-- Sidebar -->
     <div class="msg-sidebar">
         <button class="msg-compose-btn" onclick="openComposeModal()">
-            <i class="fas fa-plus"></i> Compose
+            <i class="fas fa-plus"></i> <span>Compose</span>
         </button>
-        
-        <div class="msg-nav-item active" onclick="switchTab('inbox')" id="tab-inbox">
-            <i class="fas fa-inbox"></i> Inbox
-        </div>
-        <div class="msg-nav-item" onclick="switchTab('sent')" id="tab-sent">
-            <i class="fas fa-paper-plane"></i> Sent
+
+        <div class="msg-nav-container">
+            <div class="msg-nav-item active" onclick="switchTab('inbox')" id="tab-inbox">
+                <i class="fas fa-inbox"></i> <span>Inbox</span>
+            </div>
+            <div class="msg-nav-item" onclick="switchTab('sent')" id="tab-sent">
+                <i class="fas fa-paper-plane"></i> <span>Sent</span>
+            </div>
         </div>
     </div>
     

@@ -4,6 +4,7 @@
    ======================================== */
 
 @media (max-width: 768px) {
+
   /* Contact Book Responsive Fixes */
   .contact-action-bar,
   .action-bar {
@@ -34,7 +35,7 @@
     width: 100%;
   }
 
-  .contacts-term-filter-form {
+  .term-filter-form {
     max-width: none;
     width: 100%;
   }

@@ -4,70 +4,6 @@
 {% block title %}Role Booking{% endblock %}
 
 {% block content %}
-<div class="page-container">
-    <h1><i class="fas fa-tag"></i> Booking Assistant</h1>
-    {% if user_role != 'Guest' %}
-    <div class="filters-container premium">
-        <div class="filter-row-premium">
-            {{ render_meeting_filter(upcoming_meetings, selected_meeting_id,
-            label=None, data_format='tuple',
-            render_outer_container=False) }}
-            <div class="filter-right">
-                {#
-                {% if is_admin_view %}
-                <button class="btn btn-primary" onclick="syncTally()">
-                    <i class="fas fa-sync"></i> Sync to Tally
-                </button>
-                {% endif %}
-                #}
-                <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}"
-                    target="_blank" class="btn btn-info role-guide-link">
-                    <i class="fas fa-book-open"></i> View Role Guide
-                </a>
-            </div>
-        </div>
-    </div>
-    <div class="accordion-list">
-        <div class="accordion-item" data-category="booked-roles">
-            <button class="accordion-header active">
-                <div class="header-left">
-                    <span class="accordion-title">Booked Roles</span>
-                </div>
-                <div class="accordion-header-right">
-                    <i class="fas fa-chevron-down"></i>
-                </div>
-            </button>
-            <div class="accordion-content" style="max-height: none;">
-                <div class="my-bookings-container">
-                    {% if user_bookings_by_date %}
-                    <div class="horizontal-timeline">
-                        {% for group in user_bookings_by_date %}
-                        <div class="timeline-event" data-meeting-id="{{ group.date_info.meeting_id }}">
-                            <div class="timeline-header">
-                                <span class="meeting-number">#{{ group.date_info.meeting_number }}</span>
-                                <span class="meeting-date">{{ group.date_info.short_date }}</span>
-                            </div>
-                            <div class="timeline-marker"></div>
-                            <div class="timeline-roles-list">
-                                {% for booking in group.bookings %}
-                                <div class="timeline-role">
-                                    <i class="fas {{ booking.icon }}"></i> {{ booking.role }}
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p>You have no upcoming roles booked.</p>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
-    {% if selected_meeting %}
 
     {# ============================================= #}
     {# ================ MACRO DEFINITIONS ================ #}
@@ -343,43 +279,112 @@
     </div>
     {% endmacro %}
 
+    <div class="page-container">
+        <h1><i class="fas fa-tag"></i> Booking Assistant</h1>
+        {% if user_role != 'Guest' %}
+        <div class="filters-container premium">
+            <div class="filter-row-premium">
+                {{ render_meeting_filter(upcoming_meetings, selected_meeting_id,
+                label=None, data_format='tuple',
+                render_outer_container=False) }}
+                <div class="filter-right">
+                    {#
+                    {% if is_admin_view %}
+                    <button class="btn btn-primary" onclick="syncTally()">
+                        <i class="fas fa-sync"></i> Sync to Tally
+                    </button>
+                    {% endif %}
+                    #}
+                    <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}"
+                        target="_blank" class="btn btn-info role-guide-link">
+                        <i class="fas fa-book-open"></i> View Role Guide
+                    </a>
+                </div>
+            </div>
+        </div>
+    
+        {# ============================================= #}
+        {# =============== MAIN VIEW LOGIC =============== #}
+        {# ============================================= #}
+    
+        {% if selected_meeting %}
+            {% if selected_meeting.status == 'finished' or (selected_meeting.status == 'running' and not is_admin_view) %}
+            <div class="booking-status-alert">
+                <div class="alert-icon">
+                    <i class="fas fa-calendar-check"></i>
+                </div>
+                <div class="alert-content">
+                    <h4 class="alert-title">Booking Closed</h4>
+                    <p class="alert-description">
+                        Booking for #{{ selected_meeting.Meeting_Number }} is now closed. Please cast your votes at the <a class="alert-link" href="{{ url_for('voting_bp.voting', meeting_id=selected_meeting_id, club_id=get_current_club_id()) }}">Voting page</a>.
+                    </p>
+                </div>
+            </div>
+            {% else %}
+            {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
+            current_user_contact_id) }}
+            {% endif %}
+    
+            {% if user_bookings_by_date %}
+            <div class="accordion-list">
+                <div class="accordion-item" data-category="booked-roles">
+                    <button class="accordion-header active">
+                        <div class="header-left">
+                            <span class="accordion-title">Booked Roles</span>
+                        </div>
+                        <div class="accordion-header-right">
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </button>
+                    <div class="accordion-content" style="max-height: none;">
+                        <div class="my-bookings-container">
+                            
+                            <div class="horizontal-timeline">
+                                {% for group in user_bookings_by_date %}
+                                <div class="timeline-event" data-meeting-id="{{ group.date_info.meeting_id }}">
+                                    <div class="timeline-header">
+                                        <span class="meeting-number">#{{ group.date_info.meeting_number }}</span>
+                                        <span class="meeting-date">{{ group.date_info.short_date }}</span>
+                                    </div>
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-roles-list">
+                                        {% for booking in group.bookings %}
+                                        <div class="timeline-role">
+                                            <i class="fas {{ booking.icon }}"></i> {{ booking.role }}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+            <p>Please select a meeting to view the booking table.</p>
+        {% endif %}
+    
+        {% endif %}
+    </div>
+    
+    <script>
+        // Pass Python data to global JS variables used by booking.js
+        var isAdminView = {{ is_admin_view| tojson }};
+        var selectedMeetingId = {{ selected_meeting_id| tojson }};
+        var allContacts = [
+            {% for contact in contacts %}
+            {
+                id: {{ contact.id }},
+                name: {{ contact.Name | tojson }},
+                type: {{ contact.Type | tojson }},
+                avatar_url: {{ (url_for('static', filename = (config.AVATAR_ROOT_DIR ~ '/' ~contact.Avatar_URL if '/' not in contact.Avatar_URL else contact.Avatar_URL)) if contact.Avatar_URL else url_for('static', filename = 'default_avatar.jpg')) | tojson }}
+            } 
+            {% if not loop.last %}, {% endif %}
+            {% endfor %}
+        ];
+    </script>
+    <script src="{{ url_for('static', filename='js/booking.js') }}"></script>
 
-    {# ============================================= #}
-    {# =============== MAIN VIEW LOGIC =============== #}
-    {# ============================================= #}
-
-    {% if selected_meeting.status == 'finished' or (selected_meeting.status == 'running' and not is_admin_view) %}
-    <p>Booking for Meeting #{{
-        selected_meeting.Meeting_Number }} is closed.
-        Please visit the <a
-            href="{{ url_for('voting_bp.voting', meeting_id=selected_meeting_id, club_id=get_current_club_id()) }}">Voting
-            page</a> to cast your votes.</p>
-    {% else %}
-    {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
-    current_user_contact_id) }}
-    {% endif %}
-
-    {% else %}
-    <p>Please select a meeting to view the booking table.</p>
-    {% endif %}
-
-</div>
-
-<script>
-    // Pass Python data to global JS variables used by booking.js
-    var isAdminView = {{ is_admin_view| tojson }};
-    var selectedMeetingId = {{ selected_meeting_id| tojson }};
-    var allContacts = [
-        {% for contact in contacts %}
-        {
-            id: {{ contact.id }},
-            name: {{ contact.Name | tojson }},
-            type: {{ contact.Type | tojson }},
-            avatar_url: {{ (url_for('static', filename = (config.AVATAR_ROOT_DIR ~ '/' ~contact.Avatar_URL if '/' not in contact.Avatar_URL else contact.Avatar_URL)) if contact.Avatar_URL else url_for('static', filename = 'default_avatar.jpg')) | tojson }}
-        } 
-        {% if not loop.last %}, {% endif %}
-        {% endfor %}
-    ];
-</script>
-<script src="{{ url_for('static', filename='js/booking.js') }}"></script>
 {% endblock %}

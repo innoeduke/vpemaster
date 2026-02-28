@@ -145,7 +145,7 @@
                     <button id="create-btn" class="btn btn-success">New</button>
                     {% endif %}
                     
-                    {% if selected_meeting %}
+                    {% if is_authorized(Permissions.CLUBADMIN) %}
                     <div class="action-dropdown">
                         <button id="action-btn" class="btn btn-secondary action-icon-btn" title="Actions"><i class="fas fa-ellipsis-v"></i></button>
                         <div id="action-menu" class="action-menu">

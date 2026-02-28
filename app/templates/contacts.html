@@ -21,7 +21,7 @@ head_extra %}
   <div class="contacts-filter-container">
     <!-- Term Filter for Metrics -->
     <form method="GET" action="{{ url_for('contacts_bp.show_contacts') }}" id="contacts-term-filter-form"
-      class="contacts-term-filter-form">
+      class="term-filter-form">
       <div class="form-group">
         <label class="filter-label">Club Term:</label>
 
@@ -43,7 +43,7 @@ head_extra %}
             </label>
 
             {% for term in terms %}
-            <label class="term-option-label">
+            <label class="term-option-label {% if term.is_past %}past-term{% endif %}">
               <input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox term-checkbox-input"
                 data-label="{{ term.label }}" data-start="{{ term.start }}" data-end="{{ term.end }}"
                 onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{%
@@ -85,6 +85,7 @@ head_extra %}
 </div>
 
 <!-- Contact Tabs -->
+{% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
 <div class="nav-tabs" id="contactsTabs">
   {% for contact_type in contact_types %}
   <div class="nav-item {% if loop.first %}active{% endif %}" data-type="{{ contact_type }}">
@@ -93,6 +94,7 @@ head_extra %}
   </div>
   {% endfor %}
 </div>
+{% endif %}
 
 <div class="contact-table-container">
   <!-- Loading Spinner -->

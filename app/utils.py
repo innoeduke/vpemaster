@@ -953,18 +953,22 @@ def get_terms():
     # Generate terms from 5 years ago to next year
     for year in range(current_year - 5, current_year + 2):
         # Jan-Jun
+        end_1 = f"{year}-06-30"
         terms.append({
             'label': f"{year} Jan-Jun",
             'id': f"{year}_1",
             'start': f"{year}-01-01",
-            'end': f"{year}-06-30"
+            'end': end_1,
+            'is_past': datetime.strptime(end_1, "%Y-%m-%d").date() < today.date()
         })
         # Jul-Dec
+        end_2 = f"{year}-12-31"
         terms.append({
             'label': f"{year} Jul-Dec",
             'id': f"{year}_2",
             'start': f"{year}-07-01",
-            'end': f"{year}-12-31"
+            'end': end_2,
+            'is_past': datetime.strptime(end_2, "%Y-%m-%d").date() < today.date()
         })
     
     # Sort descending

@@ -452,12 +452,12 @@ optgroup option {
 }
 
 /* --- Term Filter Dropdown (Consistency with Contacts Page) --- */
-.contacts-term-filter-form {
+.term-filter-form {
   flex: 1;
   min-width: 300px;
 }
 
-.contacts-term-filter-form .form-group {
+.term-filter-form .form-group {
   display: flex;
   flex-direction: column;
   width: 100%;

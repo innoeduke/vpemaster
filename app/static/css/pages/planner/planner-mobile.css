@@ -252,8 +252,8 @@
     width: 100%;
   }
 
-  .contacts-term-filter-form {
-    max-width: none;
+  .term-filter-form {
     width: 100%;
+    min-width: 0;
   }
 }

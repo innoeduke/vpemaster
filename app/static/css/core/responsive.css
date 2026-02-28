@@ -265,7 +265,7 @@
 
     .page-container {
         margin: 15px auto;
-        padding: 0 20px;
+        padding: 0 10px;
     }
 }
 
@@ -284,7 +284,7 @@
 @media (max-width: 768px) {
     .page-container {
         margin: 10px 0;
-        padding: 0 15px;
+        padding: 0 10px;
     }
 
     .mobile-divisor {

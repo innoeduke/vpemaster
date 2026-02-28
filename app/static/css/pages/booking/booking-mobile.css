@@ -43,7 +43,7 @@
 	.booking-table .btn {
 		width: 140px !important;
 		font-size: 0.7em;
-		margin-right: 10px;
+		margin-right: 0;
 	}
 
 	.booking-table .admin-assign-select {
@@ -202,7 +202,7 @@
 
 	.booking-table .assign-cell {
 		grid-area: action;
-		justify-content: flex-end;
+		justify-self: end;
 		min-width: 0;
 	}
 
@@ -312,5 +312,27 @@
 
 	.multi-owner-inputs {
 		gap: 6px;
+	}
+	/* Booking Status Alert Mobile */
+	.booking-status-alert {
+		padding: 16px;
+		gap: 15px;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.alert-icon {
+		width: 40px;
+		height: 40px;
+		font-size: 1.2rem;
+	}
+
+	.alert-title {
+		font-size: 1.1rem;
+	}
+
+	.alert-description {
+		font-size: 0.9rem;
 	}
 }
