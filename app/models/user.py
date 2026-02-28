@@ -103,9 +103,8 @@ class User(UserMixin, db.Model):
     
     @property
     def is_sysadmin(self):
-        """Check if user has SysAdmin role (globally/platform-wide)."""
-        from ..auth.permissions import Permissions
-        return self.has_role(Permissions.SYSADMIN)
+        """Check if user is the platform-wide SysAdmin account."""
+        return self.username == 'sysadmin'
 
     def is_club_admin(self, club_id=None):
         """Check if user is a ClubAdmin for the specified club."""
@@ -147,15 +146,10 @@ class User(UserMixin, db.Model):
             if name == Permissions.USER: return 'user'
             return 'other'
 
-        # 1. Global SysAdmin check: SysAdmins are admins everywhere
-        if self.is_sysadmin:
-            r = Role.get_by_name(Permissions.SYSADMIN)
-            roles_data.append({
-                'id': r.id if r else None,
-                'name': Permissions.SYSADMIN,
-                'type': 'officer',
-                'award_category': 'officer'
-            })
+        # 1. Global SysAdmin check: The 'sysadmin' account is an admin everywhere
+        # but we no longer have a "SysAdmin" role object in the database.
+        # We can return a virtual role for UI display if needed, 
+        # or handle it in the template.
             
         # 2. Club-specific roles
         current_club_id = get_current_club_id()
@@ -260,14 +254,9 @@ class User(UserMixin, db.Model):
         from .role import Role
         from ..auth.permissions import Permissions
 
-        # 1. SysAdmin is global
+        # 1. SysAdmin is global account-based
         if self.is_sysadmin:
-             # Find the SysAdmin role object from self.roles or query it
-             # Attempt to find in loaded roles first to avoid query
-             for r in self.roles:
-                 if r.name == Permissions.SYSADMIN:
-                     return r
-             return Role.query.filter_by(name=Permissions.SYSADMIN).first()
+             return None # Handled in primary_role_name
 
         # 2. Context-aware check
         club_id = get_current_club_id()
@@ -285,6 +274,8 @@ class User(UserMixin, db.Model):
     @property
     def primary_role_name(self):
         """Returns the name of the user's highest-level role."""
+        if self.is_sysadmin:
+            return "SysAdmin"
         role = self.primary_role
         return role.name if role else "User"
 

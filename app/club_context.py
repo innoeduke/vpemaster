@@ -53,35 +53,18 @@ def get_or_set_default_club():
     if club_id:
         from flask_login import current_user
         if current_user.is_authenticated:
-            # SysAdmin bypass
-            from app.models import AuthRole, UserClub
-            from app.auth.permissions import Permissions
-            
-            # Check if user is sysadmin (has role in ANY club)
-            # This logic mimics authorized_club_required but simpler for context setting
-            is_sysadmin = False
-            # Check specific membership
+            # SysAdmin bypass: Allow SysAdmin to maintain ANY club context
+            if current_user.is_sysadmin:
+                return club_id
+                
+            from app.models import UserClub
+            # Check if user is a member of this club
             user_club = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
             
-            if user_club:
-                pass
-            else:
-                # Not a member. Check if they are a SysAdmin (allows access to any club)
-                is_sysadmin = False
-                sys_role = AuthRole.get_by_name(Permissions.SYSADMIN)
-                
-                if sys_role:
-                    # Check if they have sysadmin role in ANY club
-                    all_ucs = UserClub.query.filter_by(user_id=current_user.id).all()
-                    for uc in all_ucs:
-                        if (uc.club_role_level & sys_role.level) == sys_role.level:
-                            is_sysadmin = True
-                            break
-                
-                if not is_sysadmin:
-                    # Invalid context for this user! Clear it.
-                    club_id = None
-                    session.pop('current_club_id', None)
+            if not user_club:
+                # Invalid context for this regular user! Clear it.
+                club_id = None
+                session.pop('current_club_id', None)
 
     if not club_id:
         # Try to get user's primary/home club
@@ -209,19 +192,11 @@ def authorized_club_required(f):
             abort(404, description="No club context found")
             
         if current_user.is_authenticated:
-            from app.models import AuthRole, UserClub
-            from app.auth.permissions import Permissions
-            
-            # SysAdmin can access any club - check if user has SysAdmin role in ANY club
-            sys_role = AuthRole.get_by_name(Permissions.SYSADMIN)
-            if sys_role:
-                # Optimized check: any membership where the bitmask includes SysAdmin level
-                # This avoids N+1 by querying filter once, or iterating if list is small.
-                # Let's iterate user's memberships since we can't easily do bitwise across all rows without custom SQL or loading all UCs.
-                # Actually, filtering filtering by user_id isn't too expensive.
-                all_ucs = UserClub.query.filter_by(user_id=current_user.id).all()
-                if any((uc.club_role_level & sys_role.level) == sys_role.level for uc in all_ucs):
-                    return f(*args, **kwargs)
+            # SysAdmin can access any club - global bypass
+            if current_user.is_sysadmin:
+                return f(*args, **kwargs)
+                
+            from app.models import UserClub
             
             # Check if user has a UserClub record for THIS specific club
             user_club = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()

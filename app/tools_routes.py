@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, request, jsonify
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized
-from .auth.permissions import Permissions
+from .auth.permissions import Permissions, permission_required
 from .models import Roster, Meeting, Contact, ContactClub, Pathway, Ticket
 from .club_context import get_current_club_id, authorized_club_required
 from . import db
@@ -68,7 +68,7 @@ def level_validator():
         'Team Collaboration',
     ]
 
-    is_sysadmin = current_user.is_authenticated and current_user.has_role('SysAdmin')
+    is_sysadmin = current_user.is_authenticated and current_user.is_sysadmin
 
     return render_template(
         'tools/level_validator.html',
@@ -83,6 +83,8 @@ def level_validator():
 
 
 @tools_bp.route('/validator', methods=['POST'])
+@login_required
+@permission_required(Permissions.SETTINGS_VIEW_ALL)
 def verify_level():
     """Start an async blockchain verification. Returns a task_id for polling."""
     import time

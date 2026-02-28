@@ -38,11 +38,10 @@ def create_admin(username, email, password, contact_name, club_no):
         if not contact_name:
             contact_name = username
         
-        # Get SysAdmin role
-        sysadmin_role = AuthRole.query.filter_by(name='SysAdmin').first()
-        if not sysadmin_role:
-            click.echo("❌ Error: 'SysAdmin' role not found in database. Please run seed data first.", err=True)
-            return
+        # SysAdmin role is no longer used in the database.
+        # Administrative powers are restricted to the 'sysadmin' account.
+        if username != 'sysadmin':
+            click.echo("⚠️  Warning: Global administrative powers are only granted to the 'sysadmin' account.", err=True)
 
         # Validate Club or Create Gossip
         club_obj = None
@@ -68,7 +67,7 @@ def create_admin(username, email, password, contact_name, club_no):
             db.session.flush()
 
         # Generate a unique Member_ID for admin
-        admin_count = User.query.join(User.roles).filter(AuthRole.name == 'SysAdmin').count()
+        admin_count = User.query.filter(User.username.like('admin%')).count()
         member_id = f"ADMIN{admin_count + 1:03d}"
         
         # Create contact first
@@ -96,12 +95,14 @@ def create_admin(username, email, password, contact_name, club_no):
         db.session.flush() # Get user ID
         
         # Create UserClub linkage
+        # We assign level 4 (ClubAdmin) as a base for the sysadmin account in this club
+        # although they have global powers anyway.
         uc = UserClub(
             user_id=admin.id,
             club_id=club_obj.id,
             contact_id=contact.id,
             is_home=True,
-            club_role_level=sysadmin_role.level # Assign SysAdmin level
+            club_role_level=4 # Assign ClubAdmin level
         )
         db.session.add(uc)
 

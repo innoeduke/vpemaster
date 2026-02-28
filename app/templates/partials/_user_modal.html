@@ -54,7 +54,9 @@
               {% endif %}
             </div>
             <!-- Hidden Input for 'User' role since it's disabled but required -->
-            <input type="hidden" name="roles" value="1" />
+            {% for role in all_auth_roles if role.name == 'User' %}
+              <input type="hidden" name="roles" value="{{ role.id }}" />
+            {% endfor %}
           </div>
 
           <!-- Row 4 Left: Phone (3:1 Split) -->

@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized
-from .auth.permissions import Permissions
+from .auth.permissions import Permissions, permission_required
 from .models import Roster, Meeting, Contact, ContactClub, Pathway, Ticket
 from .club_context import get_current_club_id, authorized_club_required
 from . import db
@@ -206,6 +206,7 @@ def roster_participation_trend():
 @roster_bp.route('/api/entry', methods=['POST'])
 @login_required
 @authorized_club_required
+@permission_required(Permissions.ROSTER_EDIT)
 def create_roster_entry():
     """Create a new roster entry"""
     data = request.get_json()
@@ -273,6 +274,7 @@ def get_roster_entry(entry_id):
 @roster_bp.route('/api/entry/<int:entry_id>', methods=['PUT'])
 @login_required
 @authorized_club_required
+@permission_required(Permissions.ROSTER_EDIT)
 def update_roster_entry(entry_id):
     entry = db.session.get(Roster, entry_id)
     if not entry:
@@ -308,6 +310,7 @@ def update_roster_entry(entry_id):
 @roster_bp.route('/api/entry/<int:entry_id>/restore', methods=['POST'])
 @login_required
 @authorized_club_required
+@permission_required(Permissions.ROSTER_EDIT)
 def restore_roster_entry(entry_id):
     entry = db.session.get(Roster, entry_id)
     if not entry:
@@ -335,6 +338,7 @@ def restore_roster_entry(entry_id):
 @roster_bp.route('/api/entry/<int:entry_id>', methods=['DELETE'])
 @login_required
 @authorized_club_required
+@permission_required(Permissions.ROSTER_EDIT)
 def delete_roster_entry(entry_id):
     entry = db.session.get(Roster, entry_id)
     if not entry:

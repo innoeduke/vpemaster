@@ -109,10 +109,10 @@ def settings():
     programs = []
     project_types = []
 
-    # Auth Roles for User Modal
+    # Auth Roles for User Modal - SysAdmin is now account-based, so filter it out
     all_auth_roles_query = AuthRole.query.order_by(AuthRole.id).all()
     # We'll pass them as a list of dicts for simplicity in logic
-    all_auth_roles = [{'id': r.id, 'name': r.name, 'level': r.level} for r in all_auth_roles_query if r.name != 'Guest']
+    all_auth_roles = [{'id': r.id, 'name': r.name, 'level': r.level} for r in all_auth_roles_query if r.name not in ('Guest', 'SysAdmin')]
 
     return render_template('settings.html', 
                           global_session_types=global_session_types,

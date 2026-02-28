@@ -141,6 +141,8 @@ def user_form(user_id):
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return redirect(url_for('agenda_bp.agenda'))
 
+    from .models import AuthRole, UserClub
+
     user = None
     if user_id:
         user = db.get_or_404(User, user_id)
@@ -169,14 +171,8 @@ def user_form(user_id):
     if request.method == 'POST':
         role_ids = request.form.getlist('roles', type=int)
         
-        # Security check: Only SysAdmins can assign SysAdmin role
-        from .models import AuthRole
-        sysadmin_role = AuthRole.query.filter_by(name='SysAdmin').first()
-        if sysadmin_role and sysadmin_role.id in role_ids:
-            # Check if current user is a SysAdmin
-            if not is_authorized(Permissions.SYSADMIN):
-                flash("Only SysAdmins can assign the SysAdmin role.", 'error')
-                return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
+        # Security check: User role is standard, other roles (ClubAdmin, Staff) 
+        # checked via standard permissions. SysAdmin role no longer exists in DB.
         
         # Calculate role_level from role_ids
         role_level = 0
@@ -206,23 +202,14 @@ def user_form(user_id):
 
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
-    from .models import AuthRole, UserClub
+    current_user_is_sysadmin = current_user.is_authenticated and current_user.is_sysadmin
     all_auth_roles = AuthRole.query.order_by(AuthRole.id).all()
-    
-    # Security: Check if current user is actually a SysAdmin
-    # We need to check the database directly to ensure accuracy
-    sysadmin_role = AuthRole.query.filter_by(name='SysAdmin').first()
-    current_user_is_sysadmin = False
-    if sysadmin_role and current_user.is_authenticated:
-        # Check if user has SysAdmin role in any club
-        user_clubs = UserClub.query.filter_by(user_id=current_user.id).all()
-        current_user_is_sysadmin = any((uc.club_role_level & sysadmin_role.level) == sysadmin_role.level for uc in user_clubs)
     
     # Filter roles based on permissions
     filtered_roles = []
     for role in all_auth_roles:
-        # Only SysAdmins can see/assign SysAdmin role
-        if role.name == 'SysAdmin' and not current_user_is_sysadmin:
+        # User/ClubAdmin/Staff are standard. SysAdmin role is being removed.
+        if role.name == 'SysAdmin':
             continue
         # Guest role should not be assignable in user management
         if role.name == 'Guest':

@@ -3,7 +3,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, send_file, current_app, flash
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized
-from .auth.permissions import Permissions
+from .auth.permissions import Permissions, permission_required
 from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, Roster, MeetingRole, Vote, Pathway, PathwayProject, OwnerMeetingRoles, Planner, Waitlist
 from .constants import ProjectID, SPEECH_TYPES_WITH_PROJECT, GLOBAL_CLUB_ID
 from .services.export import MeetingExportService
@@ -1252,6 +1252,7 @@ def create_from_template():
 @agenda_bp.route('/agenda/update', methods=['POST'])
 @login_required
 @authorized_club_required
+@permission_required(Permissions.AGENDA_EDIT)
 def update_logs():
     data = request.get_json()
 

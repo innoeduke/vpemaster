@@ -52,7 +52,7 @@
                         {% if r.name == 'User' %}
                         <input type="checkbox" checked disabled style="margin-right: 8px;">
                         <input type="hidden" name="roles" value="{{ r.id }}">
-                        {% elif is_edit_self and r.id in user_role_ids and r.name in ['ClubAdmin', 'SysAdmin'] %}
+                        {% elif is_edit_self and r.id in user_role_ids and r.name == 'ClubAdmin' %}
                         {# Prevent self-demotion: Disable if editing self and already has the role #}
                         <input type="checkbox" checked disabled style="margin-right: 8px;">
                         <input type="hidden" name="roles" value="{{ r.id }}">
@@ -60,7 +60,7 @@
                         <input type="checkbox" name="roles" value="{{ r.id }}" {% if r.id in user_role_ids
                             %}checked{% endif %} style="margin-right: 8px;">
                         {% endif %}
-                        {% set role_class = 'role-officer' if r.name in ['ClubAdmin', 'SysAdmin', 'Staff'] else 'role-other' %}
+                        {% set role_class = 'role-officer' if r.name in ['ClubAdmin', 'Staff'] else 'role-other' %}
                         <span class="roster-role-tag {{ role_class }}">{{ r.name }}</span>
                     </label>
                     {% endfor %}

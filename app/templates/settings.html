@@ -414,7 +414,11 @@
               } %}
               {% set ns = namespace(best_role=none, max_prio=-1) %}
               
-              {% for role in user.get_roles_for_club(club_id) if role.name != 'Guest' %}
+              {% if user.is_sysadmin %}
+                <span class="roster-role-tag role-sysadmin">SysAdmin</span>
+              {% endif %}
+              
+              {% for role in user.get_roles_for_club(club_id) if role.name not in ('Guest', 'SysAdmin') %}
                 {% set category = role.award_category if role.award_category else 'other' %}
                 {% set prio = role_priority.get(category, 50) %}
                 {% if prio > ns.max_prio %}
