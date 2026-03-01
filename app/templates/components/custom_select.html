@@ -22,6 +22,9 @@
     {% endif %}
 {% endfor %}
 
+{% if label %}
+<label for="{{ select_id }}" id="{{ select_id }}-label" class="custom-select-label">{{ label }}</label>
+{% endif %}
 <div class="custom-select-wrapper {{ extra_classes }}">
 
     <div class="meeting-autocomplete-container" id="{{ select_id }}-container">

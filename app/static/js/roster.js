@@ -291,7 +291,7 @@ function resetRosterForm(elements) {
   if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = "none";
   if (elements.rosterForm) elements.rosterForm.classList.remove("editing-mode");
   if (elements.submitBtn) {
-    elements.submitBtn.innerHTML = '<i class="fas fa-save"></i> Register';
+    elements.submitBtn.innerHTML = '<i class="fas fa-save"></i> <span class="btn-label-text">Register</span>';
   }
 
   // Default to regular order
@@ -339,7 +339,7 @@ function populateRosterEditForm(rosterId, elements) {
       if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = 'inline-block';
       if (elements.rosterForm) elements.rosterForm.classList.add("editing-mode");
       if (elements.submitBtn) {
-        elements.submitBtn.innerHTML = '<i class="fas fa-check"></i> Save';
+        elements.submitBtn.innerHTML = '<i class="fas fa-check"></i> <span class="btn-label-text">Save</span>';
       }
       elements.formContainer.scrollIntoView({ behavior: 'smooth' });
     })
