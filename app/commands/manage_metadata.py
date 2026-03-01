@@ -109,6 +109,9 @@ def restore(file):
     Restore metadata tables from JSON.
     This uses db.session.merge() to upsert records based on Primary Key.
     Discards MeetingRole and SessionType records not belonging to Club 1 (Global).
+    
+    Robust Merging: If a record with the same "natural key" (e.g. name) exists but 
+    has a different ID, the ID is remapped to avoid IntegrityErrors.
     """
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     input_file = os.path.join(project_root, file)
@@ -121,8 +124,37 @@ def restore(file):
         data = json.load(f)
     
     # Ensure tables and schema are up to date
-    import flask_migrate
-    flask_migrate.upgrade()
+    from flask import current_app
+    if 'migrate' in current_app.extensions:
+        import flask_migrate
+        flask_migrate.upgrade()
+
+    # Model configuration for robust merging
+    # Natural Key: Columns that uniquely identify a record besides the Primary Key
+    NATURAL_KEY_MAP = {
+        Club: ['club_no'],
+        Permission: ['name'],
+        AuthRole: ['name'],
+        Pathway: ['name'],
+        Project: ['Project_Name'],
+        MeetingRole: ['name', 'club_id'],
+        SessionType: ['name', 'club_id'],
+        Ticket: ['name'],
+        LevelRole: ['level', 'role', 'type'],
+        PathwayProject: ['path_id', 'project_id'],
+        RolePermission: ['role_id', 'permission_id'],
+        ExComm: ['club_id', 'year_start', 'year_end']
+    }
+
+    # Foreign Key Fields: Fields that need translation if the referenced record was remapped
+    FK_FIELDS = {
+        PathwayProject: {'path_id': Pathway, 'project_id': Project},
+        RolePermission: {'role_id': AuthRole, 'permission_id': Permission},
+        MeetingRole: {'club_id': Club},
+        SessionType: {'club_id': Club},
+        ExComm: {'club_id': Club},
+        Club: {'current_excomm_id': ExComm}
+    }
 
     # Map keys to Models
     model_map = {
@@ -140,23 +172,18 @@ def restore(file):
         "tickets": Ticket
     }
 
+    # ID Mapping: {Model: {old_id: new_id}}
+    id_map = {m: {} for m in model_map.values()}
+
     print("=" * 70)
     print("METADATA RESTORE STARTED")
     print("=" * 70)
 
     total_records = 0
-    
-    # Restore Order
-    # 1. Clubs (First pass, no Excomm linking)
-    # 2. Base tables (Excomm is base relative to others, but depends on Club)
-    # 3. Tables with dependencies
-    # 4. Clubs (Second pass, link Excomm)
-    
     restore_order = [
-         "clubs", # Handled specially
-         "excomm", # After clubs
-         "meeting_roles", "pathways", "projects", "session_types", "permissions", "tickets", 
-         "pathway_projects", "level_roles", "auth_roles", "role_permissions"
+         "clubs", "excomm", "meeting_roles", "pathways", "projects", 
+         "session_types", "permissions", "tickets", "pathway_projects", 
+         "level_roles", "auth_roles", "role_permissions"
     ]
     
     # Add any extra tables found in dump but not explicit in order
@@ -164,10 +191,9 @@ def restore(file):
         if k not in restore_order and k in model_map:
             restore_order.append(k)
             
-    # Append clubs again for 2nd pass
+    # Append clubs again for 2nd pass (to link excomm after excomm is restored)
     restore_order.append("clubs")
 
-    # Track processing
     clubs_first_pass_done = False
 
     for table_name in restore_order:
@@ -182,49 +208,68 @@ def restore(file):
         count = 0
         skipped = 0
         
-        # Special handling for Clubs 2-pass restore
-        if table_name == "clubs":
-            if not clubs_first_pass_done:
-                print(f"  > Processing {table_name} (Pass 1 - Unset ExComm)...")
-                for item in items:
-                    # Create copy and unset current_excomm_id to avoid FK issues
-                    i = item.copy()
-                    i['current_excomm_id'] = None
-                    instance = model(**i)
-                    db.session.merge(instance)
-                    count += 1
-                clubs_first_pass_done = True
-            else:
-                print(f"  > Processing {table_name} (Pass 2 - Link ExComm)...")
-                for item in items:
-                    # Only merge if it has excomm_id (optimization)
-                    if item.get('current_excomm_id'):
-                        instance = model(**item)
-                        db.session.merge(instance)
-                        count += 1
-                # If no excomm links, count is 0, which is fine
-        else:
-            for item in items:
-                # Filter logic: If restoring roles/types, discard if not Club 1 or None
-                if table_name in ["meeting_roles", "session_types"]:
-                    c_id = item.get('club_id')
-                    if c_id not in [GLOBAL_CLUB_ID, None]:
-                        skipped += 1
-                        continue
-                
-                instance = model(**item)
-                db.session.merge(instance)
-                count += 1
+        is_clubs_pass_2 = (table_name == "clubs" and clubs_first_pass_done)
         
+        if table_name == "clubs" and not clubs_first_pass_done:
+            print(f"  > Processing {table_name} (Pass 1 - Unset ExComm)...")
+        elif is_clubs_pass_2:
+            print(f"  > Processing {table_name} (Pass 2 - Link ExComm)...")
+        else:
+            print(f"  > Processing {table_name}...")
+
+        for item in items:
+            old_id = item.get('id')
+            
+            # 1. Filter logic (Global only)
+            if table_name in ["meeting_roles", "session_types"]:
+                c_id = item.get('club_id')
+                if c_id not in [GLOBAL_CLUB_ID, None]:
+                    skipped += 1
+                    continue
+
+            # 2. Translate Foreign Keys using id_map
+            remapped_item = item.copy()
+            if model in FK_FIELDS:
+                for field, referenced_model in FK_FIELDS[model].items():
+                    val = remapped_item.get(field)
+                    if val is not None and val in id_map[referenced_model]:
+                        remapped_item[field] = id_map[referenced_model][val]
+
+            # 3. Special handling for Pass 1 (Unset ExComm)
+            if table_name == "clubs" and not clubs_first_pass_done:
+                remapped_item['current_excomm_id'] = None
+            
+            # 4. robust Merging: Search for existing record by natural key
+            if model in NATURAL_KEY_MAP:
+                criteria = {col: remapped_item.get(col) for col in NATURAL_KEY_MAP[model]}
+                # All criteria must be present for a meaningful search
+                if all(v is not None or col in ['club_id'] for col, v in criteria.items()):
+                    existing = model.query.filter_by(**criteria).first()
+                    if existing:
+                        remapped_item['id'] = existing.id
+                        if old_id is not None:
+                            id_map[model][old_id] = existing.id
+
+            # 5. Merge
+            instance = model(**remapped_item)
+            merged = db.session.merge(instance)
+            db.session.flush() # Ensure it's pushed to get ID if it was auto-inc (rare for metadata)
+            
+            # 6. Update id_map if it was a new record with a different ID
+            if old_id is not None and old_id not in id_map[model]:
+                id_map[model][old_id] = merged.id
+                
+            count += 1
+
         db.session.commit()
-        if table_name != "clubs" or (table_name == "clubs" and clubs_first_pass_done):
-             # Only add to total once or split logic? Just summation is fine.
-             if table_name != "clubs":
-                 total_records += count
-                 
-        msg = f"  ✓ {table_name:20s} - {count:4d} records merged"
-        if skipped > 0:
-            msg += f" ({skipped} skipped - non-global)"
-        print(msg)
+        if table_name == "clubs" and not clubs_first_pass_done:
+            clubs_first_pass_done = True
+        
+        if not is_clubs_pass_2:
+            total_records += count
+            msg = f"  ✓ {table_name:20s} - {count:4d} records merged"
+            if skipped > 0:
+                msg += f" ({skipped} skipped - non-global)"
+            print(msg)
 
     print(f"\nTotal: {total_records} metadata records processed")
