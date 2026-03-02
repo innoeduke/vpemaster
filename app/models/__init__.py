@@ -20,6 +20,7 @@ from .achievement import Achievement
 from .message import Message
 from .ticket import Ticket
 from .planner import Planner
+from .verification_task import VerificationTask
 
 # Import permission system models
 from .permission import Permission
@@ -79,4 +80,5 @@ __all__ = [
     'UserClub',
     'OwnerMeetingRoles',
     'Planner',
+    'VerificationTask',
 ]
