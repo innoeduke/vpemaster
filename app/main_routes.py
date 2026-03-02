@@ -26,7 +26,6 @@ def report_bug():
             return jsonify({'success': False, 'error': 'Description is required'}), 400
             
         # Find SysAdmin user
-        # User requested specifically sending to user with username 'sysadmin'
         sysadmin = User.query.filter_by(username='sysadmin').first()
         
         if not sysadmin:

@@ -347,11 +347,27 @@ def recalculate_contact_metadata(contact):
     related_contact_ids = {contact.id}
     
     # 1. By Linked User (across all clubs)
-    user_ids = {uc.user_id for uc in contact.user_club_records if uc.user_id}
+    # We use a set of user_ids to find all contacts for this user
+    user_ids = set()
+    
+    # Check directly via the contact's backref
+    for uc in contact.user_club_records:
+        if uc.user_id:
+            user_ids.add(uc.user_id)
+            
+    # Fallback: Check the session for any UserClub records pointing to this contact 
+    # (Sometimes backrefs aren't immediately populated in new objects)
+    if not user_ids:
+        from .models import UserClub
+        ucs = db.session.query(UserClub).filter_by(contact_id=contact.id).all()
+        for uc in ucs:
+            if uc.user_id:
+                user_ids.add(uc.user_id)
+
     if user_ids:
         from .models import UserClub
         user_contacts = db.session.query(UserClub.contact_id).filter(
-            UserClub.user_id.in_(user_ids)
+            UserClub.user_id.in_(list(user_ids))
         ).all()
         for (c_id,) in user_contacts:
             if c_id:

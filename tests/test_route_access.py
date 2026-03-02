@@ -188,26 +188,26 @@ class RouteAccessTestCase(unittest.TestCase):
     def test_guest_access(self):
         # 1. Unpublished Meeting -> Redirect to meeting-notice page
         response = self.client.get(f'/agenda?meeting_id={self.m_unpublished.id}')
-        self.assertEqual(response.status_code, 302)
-        self.assertIn('/meeting-notice', response.location)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'under_planning.webp', response.data)
         
         # Booking Unpublished -> Redirect to Login (@login_required)
         response = self.client.get(f'/booking/{self.m_unpublished.id}')
         self.assertEqual(response.status_code, 302)
         self.assertIn('/login', response.location)
         
-        # Voting Unpublished -> Redirect to meeting-notice
+        # Voting Unpublished -> Notice image (200)
         response = self.client.get(f'/voting/{self.m_unpublished.id}')
-        self.assertEqual(response.status_code, 302)
-        self.assertIn('/meeting-notice', response.location)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'under_planning.webp', response.data)
 
     def test_user_access(self):
         self.login('user@test.com', 'password')
         
-        # Member vs Unpublished -> Redirect to meeting-notice
+        # Member vs Unpublished -> Notice image (200)
         response = self.client.get(f'/agenda?meeting_id={self.m_unpublished.id}')
-        self.assertEqual(response.status_code, 302)
-        self.assertIn('/meeting-notice', response.location)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'under_planning.webp', response.data)
 
         # Member vs Not Started -> 200
         response = self.client.get(f'/agenda?meeting_id={self.m_not_started.id}')

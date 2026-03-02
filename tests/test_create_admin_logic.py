@@ -58,7 +58,7 @@ class CreateAdminLogicTestCase(unittest.TestCase):
         db.session.commit()
         
         # Run command without specifying club
-        result = self.runner.invoke(args=['create-admin', '--username', 'admin2', '--email', 'admin2@test.com', '--password', 'password', '--password', 'password'])
+        result = self.runner.invoke(args=['create-admin', '--username', 'sysadmin', '--email', 'admin2@test.com', '--password', 'password', '--password', 'password'])
         
         if result.exit_code != 0:
             print(result.output)
@@ -70,7 +70,7 @@ class CreateAdminLogicTestCase(unittest.TestCase):
         self.assertIsNotNone(club, "Gossip club should be created")
         
         # Check User linked to Gossip Club
-        user = User.query.filter_by(username='admin2').first()
+        user = User.query.filter_by(username='sysadmin').first()
         self.assertIsNotNone(user)
         self.assertTrue(user.is_sysadmin)
         

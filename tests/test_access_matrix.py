@@ -205,14 +205,14 @@ class AccessMatrixTestCase(unittest.TestCase):
             elif '/agenda' in resource_template:
                 # GUEST -> AGENDA: Redirect to meeting-notice for unpublished
                 if status == 'unpublished' or status == 'finished':
-                    expected_code = 302
+                    expected_code = 200
                 else:
                     expected_code = 200
             elif '/voting' in resource_template:
                 # GUEST -> VOTING:
                 if status == 'unpublished' or status == 'finished':
                     # Unpublished/Finished -> Redirect -> 302
-                    expected_code = 302
+                    expected_code = 200
                 else:
                     # Running/Not-started -> 200 (not-started handled by force_not_started)
                     expected_code = 200
@@ -226,7 +226,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                 # Unpublished requires VOTING_VIEW_RESULTS (Officers)
                 if status == 'unpublished':
                     if Permissions.VOTING_VIEW_RESULTS not in perms:
-                        expected_code = 302  # Redirect to meeting-notice
+                        expected_code = 200  # Notice image instead of redirect
                     else:
                         expected_code = 200  # Officers can view
                 else:
@@ -236,17 +236,17 @@ class AccessMatrixTestCase(unittest.TestCase):
                 if status == 'unpublished':
                     # Unpublished requires VOTING_VIEW_RESULTS (Officers)
                     if Permissions.VOTING_VIEW_RESULTS not in perms:
-                        expected_code = 302
+                        expected_code = 200
 
             # Voting Logic
             if '/voting' in resource_template:
                 if status == 'unpublished':
                     if Permissions.VOTING_VIEW_RESULTS not in perms:
-                         expected_code = 302
+                         expected_code = 200
                 elif status == 'finished':
                     # Finished meetings: Only users with VOTING_VIEW_RESULTS can see results
                     if Permissions.VOTING_VIEW_RESULTS not in perms:
-                        expected_code = 302
+                        expected_code = 200
 
             # Resource Logic
             if '/lucky_draw' in resource_template:

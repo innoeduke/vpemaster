@@ -23,7 +23,7 @@ def test_sysadmin_direct_add(client, app, default_club):
         club1 = default_club
         
         # SysAdmin User
-        sysadmin = User(username="sysadmin_direct_test", email="sysadmin_direct_test@test.com")
+        sysadmin = User(username="sysadmin", email="sysadmin_direct_test@test.com")
         sysadmin.set_password("password")
         db.session.add(sysadmin)
         
@@ -43,7 +43,7 @@ def test_sysadmin_direct_add(client, app, default_club):
 
     # 2. Login as SysAdmin
     with client:
-        login_resp = client.post('/login', data={'username': 'sysadmin_direct_test', 'password': 'password', 'club_id': club1_id}, follow_redirects=True)
+        login_resp = client.post('/login', data={'username': 'sysadmin', 'password': 'password', 'club_id': club1_id}, follow_redirects=True)
         assert login_resp.status_code == 200
         
         # 3. Request Join (should be direct add)

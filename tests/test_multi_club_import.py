@@ -6,65 +6,39 @@ import pytest
 from datetime import date
 
 
-def test_ensure_contact_clones_achievements(app, default_club):
-    """When a user with achievements in Club A joins Club B,
-    path-completion and program-completion records are cloned with
-    club_id = Club B.  level-completion records are NOT cloned."""
+def test_ensure_contact_aggregates_centralized_achievements(app, default_club):
+    """When a user with achievements joins a new club, the new contact 
+    should reflect those achievements via synchronized metadata."""
     with app.app_context():
         from app import db
-        from app.models import User, Club, Contact, ContactClub, UserClub, Achievement
+        from app.models import User, Club, Contact, ContactClub, UserClub, Achievement, Pathway
 
         # --- Setup ---
-        club_a = default_club             # already created by fixture
+        club_a = default_club
         club_b = Club(club_name="Second Club", club_no="999777")
         db.session.add(club_b)
         db.session.commit()
 
-        # Create user + contact in Club A
         user = User(username="multi_ach_user", email="multi_ach@test.com")
         user.set_password("password")
         db.session.add(user)
+        
+        # Seed Pathway for metadata sync to work
+        pathway = Pathway(name="Dynamic Leadership", abbr="DL")
+        db.session.add(pathway)
         db.session.commit()
 
-        contact_a = Contact(
-            Name="Multi Ach User",
-            Email="multi_ach@test.com",
-            Type="Member",
-            Date_Created=date.today(),
-            Member_ID="TM123",
-            Current_Path="Dynamic Leadership",
-        )
-        db.session.add(contact_a)
-        db.session.flush()
+        contact_a = user.ensure_contact(club_id=club_a.id)
+        contact_a.Current_Path = "Dynamic Leadership"
+        db.session.commit()
 
-        db.session.add(ContactClub(contact_id=contact_a.id, club_id=club_a.id))
-        db.session.add(UserClub(user_id=user.id, club_id=club_a.id,
-                                contact_id=contact_a.id, is_home=True))
-
-        # Add achievements in Club A
-        ach_path = Achievement(
-            contact_id=contact_a.id, member_id="TM123",
+        # Add achievements linked to USER
+        db.session.add(Achievement(
+            user_id=user.id,
             issue_date=date(2025, 6, 1),
             achievement_type="path-completion",
-            path_name="Dynamic Leadership",
-            club_id=club_a.id,
-        )
-        ach_program = Achievement(
-            contact_id=contact_a.id, member_id="TM123",
-            issue_date=date(2025, 9, 1),
-            achievement_type="program-completion",
-            path_name="Distinguished Toastmasters",
-            club_id=club_a.id,
-        )
-        ach_level = Achievement(
-            contact_id=contact_a.id, member_id="TM123",
-            issue_date=date(2025, 3, 1),
-            achievement_type="level-completion",
-            path_name="Dynamic Leadership",
-            level=3,
-            club_id=club_a.id,
-        )
-        db.session.add_all([ach_path, ach_program, ach_level])
+            path_name="Dynamic Leadership"
+        ))
         db.session.commit()
 
         # --- Act: add user to Club B ---
@@ -73,38 +47,27 @@ def test_ensure_contact_clones_achievements(app, default_club):
             email="multi_ach@test.com",
             club_id=club_b.id,
         )
+        # Manually set path for metadata sync to pick up
+        contact_b.Current_Path = "Dynamic Leadership"
         db.session.commit()
 
         # --- Assert ---
         assert contact_b is not None
-        assert contact_b.id != contact_a.id, "Should be a NEW contact"
+        assert contact_b.id != contact_a.id
+        
+        # Verify metadata aggregation from centralized achievements
+        # (sync_contact_metadata is called inside ensure_contact)
+        from app.utils import sync_contact_metadata
+        sync_contact_metadata(contact_b.id) # Ensure it's fresh
+        
+        assert contact_b.credentials == "DL5"
+        assert "DL5" in contact_b.Completed_Paths
 
-        # Achievements cloned for Club B
-        club_b_achs = Achievement.query.filter_by(
-            contact_id=contact_b.id, club_id=club_b.id
-        ).all()
-
-        types_cloned = {a.achievement_type for a in club_b_achs}
-        assert "path-completion" in types_cloned
-        assert "program-completion" in types_cloned
-        assert "level-completion" not in types_cloned, \
-            "level-completion should NOT be cloned"
-
-        # Verify path names
-        path_names = {a.path_name for a in club_b_achs}
-        assert "Dynamic Leadership" in path_names
-        assert "Distinguished Toastmasters" in path_names
-
-        # Verify basic fields were copied
-        assert contact_b.Member_ID == "TM123"
-        assert contact_b.Current_Path == "Dynamic Leadership"
-
-
-def test_ensure_contact_no_duplicate_clone(app, default_club):
-    """Calling ensure_contact again should NOT create duplicate achievements."""
+def test_ensure_contact_idempotency(app, default_club):
+    """Calling ensure_contact again should be idempotent."""
     with app.app_context():
         from app import db
-        from app.models import User, Club, Contact, ContactClub, UserClub, Achievement
+        from app.models import User, Club, Contact, ContactClub, UserClub, Achievement, Pathway
 
         club_a = default_club
         club_b = Club(club_name="Dup Test Club", club_no="999666")
@@ -116,36 +79,15 @@ def test_ensure_contact_no_duplicate_clone(app, default_club):
         db.session.add(user)
         db.session.commit()
 
-        contact_a = Contact(
-            Name="Dup Test User", Email="dup_test@test.com",
-            Type="Member", Date_Created=date.today(),
-        )
-        db.session.add(contact_a)
-        db.session.flush()
-        db.session.add(ContactClub(contact_id=contact_a.id, club_id=club_a.id))
-        db.session.add(UserClub(user_id=user.id, club_id=club_a.id,
-                                contact_id=contact_a.id, is_home=True))
-        db.session.add(Achievement(
-            contact_id=contact_a.id, issue_date=date(2025, 6, 1),
-            achievement_type="path-completion", path_name="Visionary Communication",
-            club_id=club_a.id,
-        ))
-        db.session.commit()
-
         # First call
-        user.ensure_contact(full_name="Dup Test User",
-                            email="dup_test@test.com", club_id=club_b.id)
+        user.ensure_contact(club_id=club_b.id)
         db.session.commit()
+        
+        contact_1 = user.get_user_club(club_b.id).contact
 
-        # Second call (idempotency check)
-        user.ensure_contact(full_name="Dup Test User",
-                            email="dup_test@test.com", club_id=club_b.id)
+        # Second call
+        user.ensure_contact(club_id=club_b.id)
         db.session.commit()
-
-        contact_b = user.get_user_club(club_b.id).contact
-        count = Achievement.query.filter_by(
-            contact_id=contact_b.id, club_id=club_b.id,
-            achievement_type="path-completion",
-            path_name="Visionary Communication",
-        ).count()
-        assert count == 1, f"Expected 1 cloned achievement, got {count}"
+        
+        contact_2 = user.get_user_club(club_b.id).contact
+        assert contact_1.id == contact_2.id

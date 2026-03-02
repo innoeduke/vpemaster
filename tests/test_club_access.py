@@ -91,7 +91,7 @@ def test_sysadmin_access_any_club(app, client):
             db.session.add(admin_role)
             db.session.flush()
         
-        user = User(username='test_sysadmin', status='active')
+        user = User(username='sysadmin', status='active')
         user.set_password('password')
         db.session.add(user)
         db.session.flush()

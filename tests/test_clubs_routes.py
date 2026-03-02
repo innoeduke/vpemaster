@@ -27,7 +27,7 @@ def sysadmin_user(app, default_club):
         # Create user
         user = User.query.filter_by(email='sysadmin_test@example.com').first()
         if not user:
-            user = User(username='sysadmin_test', email='sysadmin_test@example.com', password_hash='hash')
+            user = User(username='sysadmin', email='sysadmin@example.com', password_hash='hash')
             db.session.add(user)
             db.session.commit()
             db.session.refresh(user)

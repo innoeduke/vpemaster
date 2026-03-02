@@ -33,7 +33,7 @@ def test_contact_isolation(client, app, db_session):
         db_session.commit()
 
         # Admin User
-        admin = User(username="admin_iso", email="admin@test.com")
+        admin = User(username="sysadmin", email="admin@test.com")
         admin.set_password("password")
         db_session.add(admin)
         db_session.commit()
@@ -41,7 +41,7 @@ def test_contact_isolation(client, app, db_session):
         db_session.commit()
 
         # Log in
-        client.post('/login', data={'username': 'admin_iso', 'password': 'password', 'club_names': club_a.id})
+        client.post('/login', data={'username': 'sysadmin', 'password': 'password', 'club_names': club_a.id})
         
         # Create User
         user = User(username="contact_iso_test", email="iso@test.com")

@@ -15,7 +15,7 @@ def test_create_and_delete_guest_contact(client, app, default_club):
     from app.models import User
     with app.app_context():
         if not User.query.get(1):
-            user = User(id=1, email='test@example.com', username='testuser')
+            user = User(id=1, email='test@example.com', username='sysadmin')
             user.set_password('password')
             db.session.add(user)
             db.session.commit()
@@ -80,7 +80,7 @@ def test_delete_guest_contact_with_references(client, app, default_club):
     from app.models import User
     with app.app_context():
         if not User.query.get(1):
-            user = User(id=1, email='test@example.com', username='testuser')
+            user = User(id=1, email='test@example.com', username='sysadmin')
             user.set_password('password')
             db.session.add(user)
             db.session.commit()

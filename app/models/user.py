@@ -29,6 +29,10 @@ class User(UserMixin, db.Model):
     bio = db.Column(db.Text, nullable=True)
     
     @property
+    def is_sysadmin(self):
+        return self.username == 'sysadmin'
+    
+    @property
     def first_name(self):
         return self._first_name
     
@@ -101,10 +105,7 @@ class User(UserMixin, db.Model):
             return None
         return db.session.get(User, user_id)
     
-    @property
-    def is_sysadmin(self):
-        """Check if user is the platform-wide SysAdmin account."""
-        return self.username == 'sysadmin'
+    # is_sysadmin logic is in property above
 
     def is_club_admin(self, club_id=None):
         """Check if user is a ClubAdmin for the specified club."""
@@ -147,9 +148,13 @@ class User(UserMixin, db.Model):
             return 'other'
 
         # 1. Global SysAdmin check: The 'sysadmin' account is an admin everywhere
-        # but we no longer have a "SysAdmin" role object in the database.
-        # We can return a virtual role for UI display if needed, 
-        # or handle it in the template.
+        if self.is_sysadmin:
+            roles_data.append({
+                'id': 0, # Virtual ID for SysAdmin
+                'name': 'SysAdmin',
+                'type': 'standard',
+                'award_category': 'sysadmin'
+            })
             
         # 2. Club-specific roles
         current_club_id = get_current_club_id()

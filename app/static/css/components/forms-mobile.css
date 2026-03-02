@@ -8,7 +8,6 @@
     --mobile-control-height: 36px;
   }
 
-  /* Highly specific selectors to ensure inheritance wins over page-specific IDs WITHOUT !important */
   :root body .btn,
   :root body button,
   :root body select,

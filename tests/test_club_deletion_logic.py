@@ -19,9 +19,9 @@ def auth_sysadmin(client, app):
             db.session.commit()
             
         # Create User
-        user = User.query.filter_by(email='sysadmin_del_test@example.com').first()
+        user = User.query.filter_by(email='sysadmin@example.com').first()
         if not user:
-            user = User(username='sysadmin_del', email='sysadmin_del_test@example.com')
+            user = User(username='sysadmin', email='sysadmin@example.com')
             user.set_password('password')
             db.session.add(user)
             db.session.commit()

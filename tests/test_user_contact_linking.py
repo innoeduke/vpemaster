@@ -57,7 +57,7 @@ def admin_user(test_app):
         db.session.add(contact)
         db.session.commit()
 
-        user = User(username='admin', email='admin@test.com')
+        user = User(username='sysadmin', email='admin@test.com')
         user.set_password('password')
         db.session.add(user)
         db.session.commit()
@@ -78,7 +78,7 @@ def test_link_existing_contact(test_app, test_client, admin_user):
     user_id, club_id = admin_user
     
     # Login as admin
-    test_client.post('/login', data={'username': 'admin', 'password': 'password'})
+    test_client.post('/login', data={'username': 'sysadmin', 'password': 'password'})
     
     with test_app.app_context():
         # Create an existing contact
@@ -130,7 +130,7 @@ def test_create_new_contact_explicitly(test_app, test_client, admin_user):
     user_id, club_id = admin_user
     
     # Login as admin
-    test_client.post('/login', data={'username': 'admin', 'password': 'password'})
+    test_client.post('/login', data={'username': 'sysadmin', 'password': 'password'})
     
     with test_app.app_context():
         # Ensure context has current club

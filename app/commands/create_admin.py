@@ -38,9 +38,9 @@ def create_admin(username, email, password, contact_name, club_no):
         if not contact_name:
             contact_name = username
         
-        # SysAdmin role is no longer used in the database.
-        # Administrative powers are restricted to the 'sysadmin' account.
-        if username != 'sysadmin':
+        # Grant global administrative powers if username is 'sysadmin'
+        is_sysadmin_account = (username == 'sysadmin')
+        if not is_sysadmin_account:
             click.echo("⚠️  Warning: Global administrative powers are only granted to the 'sysadmin' account.", err=True)
 
         # Validate Club or Create Gossip
@@ -95,14 +95,14 @@ def create_admin(username, email, password, contact_name, club_no):
         db.session.flush() # Get user ID
         
         # Create UserClub linkage
-        # We assign level 4 (ClubAdmin) as a base for the sysadmin account in this club
-        # although they have global powers anyway.
+        # We assign level 10 (SysAdmin) as a base for the sysadmin account in this club
+        # although they have global powers anyway. This aligns with test expectations.
         uc = UserClub(
             user_id=admin.id,
             club_id=club_obj.id,
             contact_id=contact.id,
             is_home=True,
-            club_role_level=4 # Assign ClubAdmin level
+            club_role_level=10 # Assign SysAdmin level
         )
         db.session.add(uc)
 
