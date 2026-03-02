@@ -42,46 +42,40 @@ def tools():
     return redirect(url_for('agenda_bp.agenda'))
 
 
-@tools_bp.route('/level_validator', methods=['GET'])
-def level_validator():
-    has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
-    has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
+@tools_bp.route('/validator', methods=['GET', 'POST'])
+def validator():
+    """Level Validator tool. GET renders UI, POST starts async verification."""
+    from .auth.utils import is_authorized
+    if not is_authorized(Permissions.PATHWAY_LIB_VIEW):
+        from flask import abort
+        abort(403)
 
-    pathways = [
-        'Dynamic Leadership',
-        'Engaging Humor',
-        'Motivational Strategies',
-        'Persuasive Influence',
-        'Presentation Mastery',
-        'Visionary Communication',
-    ]
-    programs = [
-        'Effective Coaching',
-        'Innovative Planning',
-        'Leadership Development',
-        'Strategic Relationships',
-        'Team Collaboration',
-    ]
+    if request.method == 'GET':
+        has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
+        has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
+        
+        # Pathways list for dropdown
+        from .models import Pathway
+        pathways = [p.name for p in Pathway.query.filter_by(type='pathway', status='active').order_by(Pathway.name).all()]
+        programs = [p.name for p in Pathway.query.filter_by(type='program', status='active').order_by(Pathway.name).all()]
+        
+        # Check if sysadmin for special UI
+        from flask_login import current_user
+        is_sysadmin = False
+        if current_user.is_authenticated:
+            is_sysadmin = getattr(current_user, 'is_sysadmin', False)
 
-    is_sysadmin = current_user.is_authenticated and current_user.is_sysadmin
+        return render_template(
+            'tools/level_validator.html',
+            has_lucky_draw_access=has_lucky_draw_access,
+            has_pathways_access=has_pathways_access,
+            active_tab='level_validator',
+            pathways=pathways,
+            programs=programs,
+            is_sysadmin=is_sysadmin
+        )
 
-    return render_template(
-        'tools/level_validator.html',
-        pathways=pathways,
-        programs=programs,
-        active_tab='level_validator',
-        has_lucky_draw_access=has_lucky_draw_access,
-        has_pathways_access=has_pathways_access,
-        is_sysadmin=is_sysadmin,
-        Permissions=Permissions
-    )
-
-
-@tools_bp.route('/validator', methods=['POST'])
-@login_required
-@permission_required(Permissions.SETTINGS_VIEW_ALL)
-def verify_level():
-    """Start an async blockchain verification. Returns a task_id for polling."""
+    # Handle POST (Start verification)
     import time
     _cleanup_old_tasks()
 
