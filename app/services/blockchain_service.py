@@ -400,26 +400,60 @@ class BlockchainService:
             return result
 
         try:
-            # High-performance strategy: Query the entire range from deployment 
-            # block to latest using the indexed 'completionHash' filter. 
-            # Alchemy/Infura handle this extremely efficiently for indexed parameters.
+            # Smart Strategy: Use Etherscan to find specific blocks with transactions first.
+            # This is essential for Alchemy Free Tier which has a 10-block query limit.
             
-            deploy_block = cls._find_deployment_block(w3, contract_address)
-            latest_block = w3.eth.block_number
-            
-            logger.info(f"Querying level logs for hash {expected_hex} from block {deploy_block} to {latest_block}")
-            
-            all_rec_events = contract.events.LevelRecorded.get_logs(
-                fromBlock=deploy_block,
-                toBlock=latest_block,
-                argument_filters={"completionHash": expected_hash},
-            )
-            
-            all_rev_events = contract.events.LevelRevoked.get_logs(
-                fromBlock=deploy_block,
-                toBlock=latest_block,
-                argument_filters={"completionHash": expected_hash},
-            )
+            tx_blocks = cls._get_contract_tx_blocks(contract_address)
+            all_rec_events = []
+            all_rev_events = []
+
+            if tx_blocks:
+                logger.info(f"Smart Query: Scanning {len(tx_blocks)} specific blocks identified by Etherscan.")
+                for block_num in tx_blocks:
+                    # Query only this specific block (Range = 1, compliant with 10-block limit)
+                    rec_events = contract.events.LevelRecorded.get_logs(
+                        fromBlock=block_num,
+                        toBlock=block_num,
+                        argument_filters={"completionHash": expected_hash},
+                    )
+                    if rec_events:
+                        all_rec_events.extend(rec_events)
+                    
+                    rev_events = contract.events.LevelRevoked.get_logs(
+                        fromBlock=block_num,
+                        toBlock=block_num,
+                        argument_filters={"completionHash": expected_hash},
+                    )
+                    if rev_events:
+                        all_rev_events.extend(rev_events)
+            else:
+                # Fallback: Binary Search or Chunked Scan (limited to 10 blocks)
+                logger.warning("Smart Query: Etherscan returned no blocks. Falling back to chunked scan (SLOWER).")
+                deploy_block = cls._find_deployment_block(w3, contract_address)
+                latest_block = w3.eth.block_number
+                
+                # We can't query the whole range on Free tier, 
+                # but we can do a very sparse chunked scan if we have to.
+                # Since this is a fallback, we'll use the legacy chunk size.
+                current = deploy_block
+                while current <= latest_block:
+                    look_ahead = min(current + cls._CHUNK_SIZE - 1, latest_block)
+                    # Note: This will still be slow on Free tier if range is large,
+                    # which is why Etherscan is the preferred primary.
+                    rec_events = contract.events.LevelRecorded.get_logs(
+                        fromBlock=current,
+                        toBlock=look_ahead,
+                        argument_filters={"completionHash": expected_hash},
+                    )
+                    all_rec_events.extend(rec_events)
+                    
+                    rev_events = contract.events.LevelRevoked.get_logs(
+                        fromBlock=current,
+                        toBlock=look_ahead,
+                        argument_filters={"completionHash": expected_hash},
+                    )
+                    all_rev_events.extend(rev_events)
+                    current = look_ahead + 1
 
             result = _match(all_rec_events, all_rev_events)
             if result:
