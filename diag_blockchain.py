@@ -85,59 +85,47 @@ def diag():
     except Exception as e:
         logger.error(f"get_code failed: {e}")
 
-    # 4. Test indexed Event Retrieval (The real bottleneck test)
-    logger.info("Step 4: Testing indexed get_logs (The 'Block' test)...")
-    # Using a fake but valid-format hash to see if it responds quickly
-    fake_hash = "0x" + "0" * 64 
-    
-    # Try multiple common locations for the ABI
-    possible_abi_paths = [
-        "app/level_tracker_abi.json",
-        "level_tracker_abi.json",
-        "../app/level_tracker_abi.json"
-    ]
-    abi_path = None
-    for p in possible_abi_paths:
-        if os.path.exists(p):
-            abi_path = p
-            break
-            
-    if abi_path:
-        logger.info(f"Using ABI from: {abi_path}")
-        with open(abi_path, 'r') as f:
-            abi = json.load(f)
-        contract = w3.eth.contract(address=contract_address, abi=abi)
-        
-        start_time = time.time()
-        try:
-            # Query the last 50,000 blocks with a filter
-            # This is where the user suspects it hangs
-            logger.info(f"Querying LevelRecorded logs for last 50,000 blocks...")
-            logs = contract.events.LevelRecorded.get_logs(
-                fromBlock=block_num - 50000,
-                toBlock=block_num,
-                argument_filters={"completionHash": fake_hash}
-            )
-            elapsed = time.time() - start_time
-            logger.info(f"Success! Received {len(logs)} logs in {elapsed:.2f} seconds.")
-        except Exception as e:
-            logger.error(f"get_logs failed: {e}")
-            # Try to extract the response if it's a requests error inside web3
-            if hasattr(e, 'response'):
-                 logger.error(f"Response Body: {e.response.text}")
-            elif "400 Client Error" in str(e):
-                 logger.info("This is likely a block range limit. Testing smaller range (2000 blocks)...")
-                 try:
-                     logs = contract.events.LevelRecorded.get_logs(
-                         fromBlock=block_num - 2000,
-                         toBlock=block_num,
-                         argument_filters={"completionHash": fake_hash}
-                     )
-                     logger.info(f"Small range query SUCCEEDED. Alchemy limited your block range.")
-                 except Exception as e2:
-                     logger.error(f"Small range also failed: {e2}")
+    # 5. Test Smart Filtering (The Fix)
+    logger.info("Step 5: Testing Smart Filtering (Etherscan + specific blocks)...")
+    etherscan_api_key = os.getenv("ETHERSCAN_API_KEY")
+    if not etherscan_api_key:
+        logger.error("ETHERSCAN_API_KEY is missing! Cannot test Step 5.")
     else:
-        logger.warning(f"Skipping Step 4: ABI file not found at {abi_path}")
+        try:
+            import requests as http_requests
+            url = (
+                f"https://api.etherscan.io/v2/api"
+                f"?chainid=11155111" # Sepolia
+                f"&module=account&action=txlist"
+                f"&address={contract_address}"
+                f"&startblock=0&endblock=99999999&sort=asc"
+                f"&apikey={etherscan_api_key}"
+            )
+            logger.info("Quering Etherscan for contract activity...")
+            resp = http_requests.get(url, timeout=10)
+            data = resp.json()
+            if data.get("status") == "1" and data.get("result"):
+                blocks = sorted(set(int(tx["blockNumber"]) for tx in data["result"]))
+                logger.info(f"Etherscan found activity in {len(blocks)} unique blocks.")
+                
+                if blocks:
+                    target_block = blocks[-1]
+                    logger.info(f"Querying Alchemy for the most recent active block: {target_block}")
+                    start_time = time.time()
+                    # Query ONLY the specific block
+                    logs = contract.events.LevelRecorded.get_logs(
+                        fromBlock=target_block,
+                        toBlock=target_block,
+                        argument_filters={"completionHash": fake_hash}
+                    )
+                    elapsed = time.time() - start_time
+                    logger.info(f"SUCCESS! Smart Query (range=1) completed in {elapsed:.2f} seconds.")
+                else:
+                    logger.warning("No activity found on Etherscan for this contract.")
+            else:
+                logger.error(f"Etherscan API error: {data.get('message')}")
+        except Exception as e:
+            logger.error(f"Smart Filtering test failed: {e}")
 
     logger.info("Diagnostic Complete.")
 
