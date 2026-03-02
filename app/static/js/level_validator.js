@@ -201,9 +201,8 @@
 				if (!data.success) {
 					stopPolling();
 					stopElapsedTimer();
-					const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
 					localStorage.removeItem(STORAGE_KEY);
-					showError(data.error || 'Task expired or not found.');
+					showError(data.error || `Error ${r.status}: Task expired or not found.`);
 					setButtonLoading(false);
 					return;
 				}
@@ -226,11 +225,11 @@
 				}
 				// status === 'pending' → keep polling
 			})
-			.catch(() => {
+			.catch((err) => {
 				stopPolling();
 				stopElapsedTimer();
 				localStorage.removeItem(STORAGE_KEY);
-				showError('Network error while checking status.');
+				showError(`Network error while checking status: ${err.message || 'Unknown error'}`);
 				setButtonLoading(false);
 			});
 	}
@@ -260,7 +259,14 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(params)
 		})
-			.then(r => r.json())
+			.then(r => {
+				if (!r.ok) {
+					return r.text().then(text => {
+						throw new Error(`Server returned ${r.status}: ${text.substring(0, 100)}`);
+					});
+				}
+				return r.json();
+			})
 			.then(data => {
 				if (!data.success) {
 					stopElapsedTimer();
@@ -273,8 +279,8 @@
 				localStorage.setItem(STORAGE_KEY, JSON.stringify(task));
 				startPolling(data.task_id, params);
 			})
-			.catch(() => {
-				showError('Network error. Please try again.');
+			.catch((err) => {
+				showError(`Request failed: ${err.message || 'Check server logs'}`);
 				setButtonLoading(false);
 			});
 	}
