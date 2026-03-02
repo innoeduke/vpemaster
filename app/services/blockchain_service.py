@@ -21,10 +21,12 @@ class BlockchainService:
     _CHUNK_SIZE = 10                     # Alchemy free-tier eth_getLogs limit
     _SEPOLIA_CHAIN_ID = 11155111
 
+    _session = None                      # Persistent HTTP session
+
     # ── Connection ───────────────────────────────────────
 
-    @staticmethod
-    def _get_web3_and_contract():
+    @classmethod
+    def _get_web3_and_contract(cls):
         """
         Initialise Web3 + contract instance.
         Returns (w3, contract) or raises RuntimeError.
@@ -38,17 +40,18 @@ class BlockchainService:
                 "(SEPOLIA_RPC_URL / LEVEL_TRACKER_CONTRACT_ADDRESS)."
             )
 
-        w3 = Web3(Web3.HTTPProvider(rpc_url))
-        if not w3.is_connected():
-            # Diagnostic attempt
-            try:
-                import requests
-                resp = requests.post(rpc_url, json={"jsonrpc":"2.0", "method":"eth_blockNumber", "params":[], "id":1}, timeout=10)
-                if resp.status_code != 200:
-                    raise RuntimeError(f"RPC server returned status {resp.status_code}: {resp.text[:100]}")
-            except Exception as e:
-                raise RuntimeError(f"Failed to connect to the Sepolia RPC URL: {e}")
-            raise RuntimeError("Failed to connect to the Sepolia RPC URL (is_connected returned False).")
+        # Optimization: Use a shared session to keep TCP connections alive.
+        # This saves seconds on high-latency networks like the one on production.
+        if cls._session is None:
+            cls._session = http_requests.Session()
+            adapter = http_requests.adapters.HTTPAdapter(pool_connections=5, pool_maxsize=5)
+            cls._session.mount("https://", adapter)
+            cls._session.mount("http://", adapter)
+
+        # Speed hack: Do NOT call w3.is_connected(). On your production server, 
+        # this single heartbeat check is taking 22+ seconds. It's more efficient 
+        # to just attempt the actual operation.
+        w3 = Web3(Web3.HTTPProvider(rpc_url, session=cls._session))
 
         abi_path = os.path.join(
             os.path.dirname(__file__), "..", "level_tracker_abi.json"
