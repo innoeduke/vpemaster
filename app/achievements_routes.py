@@ -8,8 +8,9 @@ from flask_login import current_user
 from datetime import datetime, date
 from .services.blockchain_service import record_level as record_level_completion_on_chain
 from .services.achievement_service import AchievementService
-from flask import jsonify
+from flask import jsonify, current_app
 import logging
+import threading
 
 achievements_bp = Blueprint('achievements_bp', __name__)
 
@@ -104,23 +105,36 @@ def achievement_form(id):
         achievement.path_name = path_name
         achievement.level = int(level) if level else None
         
-        # Auto-add lower levels if this is a level completion
+        # Handle blockchain recording in background
         if achievement_type == 'level-completion':
+            app = current_app._get_current_object()
             full_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.display_name
             user_ident = f"{full_name} ({current_user.home_club.short_name})" if getattr(current_user, 'home_club', None) and current_user.home_club.short_name else f"{full_name} (ID: {current_user.id})"
-            # Record it on the blockchain if it's a new or updated achievement (not just editing notes)
-            # Since this takes an active network request, we'll try/except to prevent it from crashing the route
-            try:
-                success = record_level_completion_on_chain(member_id, path_name, achievement.level, issue_date, user_ident)
-                if not success:
-                    flash(f"Warning: Failed to record level {achievement.level} completion on blockchain, but it will be saved to the database.", "warning")
-            except Exception as e:
-                logging.error(f"Failed to record level completion on chain: {e}")
-                flash(f"Warning: Exception while recording level {achievement.level} on blockchain. Saved to database.", "warning")
-                
+            
+            def _background_record_all(app_ctx, m_id, p_name, lvl, i_date, u_ident, ach_ids):
+                with app_ctx.app_context():
+                    try:
+                        # 1. Record main level
+                        success = record_level_completion_on_chain(m_id, p_name, lvl, i_date, u_ident)
+                        if not success:
+                            raise RuntimeError(f"Failed to record Level {lvl} on blockchain")
+                        
+                        # 2. Record auto-added lower levels if they exist
+                        for low_lvl, ach_id in ach_ids.items():
+                            import time
+                            time.sleep(2) # Prevent nonce collisions
+                            success_l = record_level_completion_on_chain(m_id, p_name, low_lvl, i_date, u_ident)
+                            if not success_l:
+                                logging.warning(f"Failed to record auto-added Level {low_lvl}")
+                    except Exception as e:
+                        logging.error(f"Background blockchain recording sequence failed: {e}")
+                        # Optional: Rollback DB records if you want strict consistency.
+                        # For now, we flash warnings to the user if it was synchronous, 
+                        # but in background we just log.
+            
+            auto_ach_ids = {}
             if achievement.level and achievement.level > 1:
                 for i in range(1, achievement.level):
-                    # Check if lower level achievement exists
                     lower_exists = Achievement.query.filter_by(
                         user_id=uid,
                         achievement_type='level-completion',
@@ -139,16 +153,21 @@ def achievement_form(id):
                             notes=f"Auto-added based on Level {achievement.level} completion"
                         )
                         db.session.add(new_lower)
-                        
-                        # Also record the auto-added lower level on the blockchain
-                        try:
-                            import time
-                            time.sleep(2) # Prevent nonce collisions on RPC provider for back-to-back txn
-                            success_l = record_level_completion_on_chain(member_id, path_name, i, issue_date, user_ident)
-                            if not success_l:
-                                logging.warning(f"Warning: Failed to record auto-added level {i} on blockchain.")
-                        except Exception as e:
-                            logging.error(f"Failed to record auto-added level {i} on chain: {e}")
+                        db.session.flush() # Get ID
+                        auto_ach_ids[i] = new_lower.id
+            
+            db.session.commit() # Commit DB records first
+            
+            thread = threading.Thread(
+                target=_background_record_all,
+                args=(app, member_id, path_name, achievement.level, issue_date, user_ident, auto_ach_ids),
+                daemon=True
+            )
+            thread.start()
+            flash('Achievement saved. Blockchain recording is processing in the background.', 'info')
+        else:
+            db.session.commit()
+            flash('Achievement saved successfully.', 'success')
 
         achievement.notes = notes
         achievement.member_id = member_id
@@ -196,24 +215,35 @@ def delete_achievement(id):
         if user:
             contact_id = user.contact_id
     
-    # If this is a level completion, attempt to revoke it on the blockchain first
+    # If this is a level completion, attempt to revoke it on the blockchain in the background
     if achievement.achievement_type == 'level-completion' and achievement.member_id and achievement.path_name and achievement.level:
-        try:
-            from .services.blockchain_service import BlockchainService
-            full_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.display_name
-            user_ident = f"{full_name} ({current_user.home_club.short_name})" if getattr(current_user, 'home_club', None) and current_user.home_club.short_name else f"{full_name} (ID: {current_user.id})"
-            
-            success = BlockchainService.revoke_level(
-                member_no=achievement.member_id,
-                path_name=achievement.path_name,
-                level=achievement.level,
-                issue_date=achievement.issue_date,
-                user_identifier=user_ident
-            )
-            if not success:
-                logging.warning(f"Failed to record revocation on chain for level {achievement.level}, but proceeding with local delete.")
-        except Exception as e:
-            logging.error(f"Failed to revoke level completion on chain: {e}")
+        app = current_app._get_current_object()
+        full_name = f"{current_user.first_name or ''} {current_user.last_name or ''}".strip() or current_user.display_name
+        user_ident = f"{full_name} ({current_user.home_club.short_name})" if getattr(current_user, 'home_club', None) and current_user.home_club.short_name else f"{full_name} (ID: {current_user.id})"
+        
+        def _background_revoke(app_ctx, m_no, p_name, lvl, i_date, u_ident):
+            with app_ctx.app_context():
+                try:
+                    from .services.blockchain_service import BlockchainService
+                    BlockchainService.revoke_level(
+                        member_no=m_no,
+                        path_name=p_name,
+                        level=lvl,
+                        issue_date=i_date,
+                        user_identifier=u_ident
+                    )
+                except Exception as e:
+                    logging.error(f"Failed to revoke level completion on chain (Background): {e}")
+
+        thread = threading.Thread(
+            target=_background_revoke,
+            args=(app, achievement.member_id, achievement.path_name, achievement.level, achievement.issue_date, user_ident),
+            daemon=True
+        )
+        thread.start()
+        flash('Achievement deleted. Blockchain revocation is processing in the background.', 'info')
+    else:
+        flash('Achievement deleted successfully.', 'success')
 
     db.session.delete(achievement)
     db.session.commit()
