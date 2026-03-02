@@ -400,64 +400,27 @@ class BlockchainService:
             return result
 
         try:
-            all_rec_events = []
-            all_rev_events = []
-
-            # Strategy 1: Etherscan — query only known tx blocks
-            tx_blocks = cls._get_contract_tx_blocks(contract_address)
-
-            if tx_blocks:
-                logger.info(
-                    f"Querying {len(tx_blocks)} specific blocks "
-                    f"for hash {expected_hex}"
-                )
-                for block_num in tx_blocks:
-                    # Look for recording
-                    rec_events = contract.events.LevelRecorded.get_logs(
-                        fromBlock=block_num,
-                        toBlock=block_num,
-                        argument_filters={"completionHash": expected_hash},
-                    )
-                    if rec_events:
-                        all_rec_events.extend(rec_events)
-                    
-                    # Look for revocation
-                    rev_events = contract.events.LevelRevoked.get_logs(
-                        fromBlock=block_num,
-                        toBlock=block_num,
-                        argument_filters={"completionHash": expected_hash},
-                    )
-                    if rev_events:
-                        all_rev_events.extend(rev_events)
-            else:
-                # Strategy 2: Fallback — chunked scan from deployment block
-                logger.info("Falling back to chunked block scanning")
-                deploy_block = cls._find_deployment_block(w3, contract_address)
-                latest_block = w3.eth.block_number
-
-                from_block = deploy_block
-                while from_block <= latest_block:
-                    to_block = min(
-                        from_block + cls._CHUNK_SIZE - 1, latest_block
-                    )
-                    rec_events = contract.events.LevelRecorded.get_logs(
-                        fromBlock=from_block,
-                        toBlock=to_block,
-                        argument_filters={"completionHash": expected_hash},
-                    )
-                    if rec_events:
-                        all_rec_events.extend(rec_events)
-
-                    rev_events = contract.events.LevelRevoked.get_logs(
-                        fromBlock=from_block,
-                        toBlock=to_block,
-                        argument_filters={"completionHash": expected_hash},
-                    )
-                    if rev_events:
-                        all_rev_events.extend(rev_events)
-                        
-                    from_block = to_block + 1
+            # High-performance strategy: Query the entire range from deployment 
+            # block to latest using the indexed 'completionHash' filter. 
+            # Alchemy/Infura handle this extremely efficiently for indexed parameters.
             
+            deploy_block = cls._find_deployment_block(w3, contract_address)
+            latest_block = w3.eth.block_number
+            
+            logger.info(f"Querying level logs for hash {expected_hex} from block {deploy_block} to {latest_block}")
+            
+            all_rec_events = contract.events.LevelRecorded.get_logs(
+                fromBlock=deploy_block,
+                toBlock=latest_block,
+                argument_filters={"completionHash": expected_hash},
+            )
+            
+            all_rev_events = contract.events.LevelRevoked.get_logs(
+                fromBlock=deploy_block,
+                toBlock=latest_block,
+                argument_filters={"completionHash": expected_hash},
+            )
+
             result = _match(all_rec_events, all_rev_events)
             if result:
                 return result
@@ -465,7 +428,7 @@ class BlockchainService:
             return {"verified": False, "expected_hash": expected_hex}
 
         except Exception as e:
-            logger.error(f"Blockchain query failed: {e}")
+            logger.error(f"Blockchain verify_level failed: {e}")
             return {"verified": False, "error": f"Blockchain query failed: {e}"}
 
     @classmethod
