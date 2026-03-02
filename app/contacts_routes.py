@@ -129,6 +129,8 @@ def show_contacts():
                            contact_types=sorted_types,
                            mentor_candidates=mentor_candidates,
                            can_view_all_logs=can_view_all_logs,
+                           can_view_members=can_view_members,
+                           can_send_messages=can_view_all,
                            terms=terms,
                            selected_term_ids=selected_term_ids,
                            current_term=current_term)
@@ -771,6 +773,7 @@ def get_all_contacts_api():
             'award_count': award,
             'is_qualified': check_membership_qualification(c.Type, l_tt, l_best_tt, l_other),
             'has_user': c.user is not None,
+            'user_id': c.user.id if c.user else None,
             'user_role': c.user.primary_role_name if c.user else None,
             'is_officer': c.user.has_role(Permissions.STAFF) if c.user else False,
             'is_connected': c.is_connected,

@@ -131,10 +131,39 @@
   transition: all 0.2s ease;
 }
 
+.badge-member-id {
+  margin-left: 5px;
+  font-size: 0.8em;
+  vertical-align: text-top;
+  background-color: #e7e7e4;
+  border-radius: 5px;
+  padding: 2px 5px;
+  color: #333;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.badge-member-id.clickable-badge {
+  cursor: pointer;
+}
+
+/* Messaging Hover (Name/Avatar) */
+.contact-avatar-small.clickable-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(119, 36, 50, 0.2);
+  border-color: #8e2a3d;
+}
+
 .contact-name-info.clickable-name:hover {
-  color: #772432;
-  background-color: #f8f0f2;
-  font-weight: 600;
+  background-color: #e0f0f1;
+}
+
+/* Speech Logs Hover (Member ID Badge) */
+.badge-member-id.clickable-badge:hover {
+  background-color: #772432;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Participation Badges */

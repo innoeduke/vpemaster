@@ -189,7 +189,10 @@ function createContactRow(contact) {
       <div class="contact-name-cell">
         ${(() => {
       if (!contact.Avatar_URL) {
-        return `<div class="contact-avatar-placeholder-small"><i class="fas fa-user"></i></div>`;
+        return `<div class="contact-avatar-placeholder-small ${canSendMessages && contact.has_user ? 'clickable-avatar' : ''}"
+                     ${canSendMessages && contact.has_user ? `onclick="openMessageModal(${contact.user_id}, '${contact.Name.replace(/'/g, "\\'")}')" title="Message ${contact.Name}"` : ''}>
+                  <i class="fas fa-user"></i>
+                </div>`;
       }
       let avatarPath = contact.Avatar_URL;
       // If just a filename, prepend root dir
@@ -197,14 +200,19 @@ function createContactRow(contact) {
         const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
         avatarPath = `${root}/${avatarPath}`;
       }
-      return `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small">`;
+      return `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small ${canSendMessages && contact.has_user ? 'clickable-avatar' : ''}"
+                   ${canSendMessages && contact.has_user ? `onclick="openMessageModal(${contact.user_id}, '${contact.Name.replace(/'/g, "\\'")}')" title="Message ${contact.Name}"` : ''}>`;
     })()}
-        <div class="contact-name-info ${canViewAllLogs ? 'clickable-name' : ''}" 
-             ${canViewAllLogs ? `onclick="window.location.href='/speech_logs?speaker_id=${contact.id}&view_mode=member'" title="View ${contact.Name}'s speech logs"` : ''}>
+        <span class="contact-name-info ${canSendMessages && contact.has_user ? 'clickable-name' : ''}" 
+             ${canSendMessages && contact.has_user ? `onclick="openMessageModal(${contact.user_id}, '${contact.Name.replace(/'/g, "\\'")}')" title="Message ${contact.Name}"` : ''}>
           ${contact.Name}
           ${contact.DTM ? '<sup class="dtm-superscript">DTM</sup>' : ''}
-          ${contact.Member_ID && contact.Type !== 'Guest' ? `<span class="badge-member-id" style="margin-left: 5px; font-size: 0.8em; vertical-align: text-top; background-color: rgb(231, 231, 228); border-radius: 5px; padding: 2px 5px;">${contact.Member_ID}</span>` : ''}
-        </div>
+        </span>
+        ${contact.Member_ID && contact.Type !== 'Guest' ? `
+          <span class="badge-member-id ${canViewMembers ? 'clickable-badge' : ''}" 
+                ${canViewMembers ? `onclick="event.stopPropagation(); window.location.href='/speech_logs?speaker_id=${contact.id}&view_mode=member'" title="View ${contact.Name}'s speech logs"` : ''}>
+            ${contact.Member_ID}
+          </span>` : ''}
       </div>
     </td>
     <td class="col-part" data-sort="${sortValue}">
@@ -781,6 +789,18 @@ function closeMergeModal() {
     confirmBtn.disabled = false;
     confirmBtn.innerHTML = '<i class="fas fa-check-circle"></i> Confirm Merge';
   }
+}
+
+/**
+ * Redirects to the messages page and opens the compose modal for a specific user
+ */
+function openMessageModal(userId, contactName) {
+  if (!userId) {
+    console.error('No user ID found for this contact');
+    return;
+  }
+  // The messages page handles the auto-open logic via 'recipient_id' and 'recipient_name'
+  window.location.href = `/messages?recipient_id=${userId}&recipient_name=${encodeURIComponent(contactName)}`;
 }
 
 // Make functions available globally 

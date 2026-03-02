@@ -206,6 +206,8 @@ include '_merge_modal.html' %}
 <script>
   // Global variables for contacts.js
   var canViewAllLogs = {{ 'true' if can_view_all_logs else 'false' }};
+  var canViewMembers = {{ 'true' if can_view_members else 'false' }};
+  var canSendMessages = {{ 'true' if can_send_messages else 'false' }};
   var hasEditPermission = {{ 'true' if is_authorized(Permissions.CONTACT_BOOK_EDIT) else 'false' }};
   var selectedTermIds = {{ selected_term_ids|tojson }};
 

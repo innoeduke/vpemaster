@@ -270,15 +270,17 @@
   box-shadow: 0 4px 8px rgba(119, 36, 50, 0.2);
 }
 
+.page-container .btn-success,
 .planner-btn-success {
-  background: #28a745;
+  background: #772432;
   color: #fff;
 }
 
+.page-container .btn-success:hover,
 .planner-btn-success:hover {
-  background: #218838;
+  background: #5a1b26;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.2);
+  box-shadow: 0 4px 8px rgba(119, 36, 50, 0.2);
 }
 
 .project-completed {
