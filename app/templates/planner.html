@@ -70,14 +70,18 @@
                 <tr data-id="{{ plan.id }}" data-meeting-id="{{ plan.meeting_id or '' }}"
                     data-meeting-number="{{ plan.meeting_number or '' }}"
                     data-role="{{ plan.meeting_role_id or '' }}" data-project="{{ plan.project_id or '' }}"
+                    data-title="{{ plan.title or '' }}"
                     data-status="{{ plan.status }}" data-notes="{{ plan.notes or '' }}">
                     <td data-label="Meeting">#{{ plan.meeting_number or 'N/A' }}</td>
                     <td data-label="Role">{{ plan.role.name if plan.role else 'N/A' }}</td>
                     <td data-label="Project">
                         {% if plan.project %}
-                            <span class="project-code-badge">{{ plan.project.get_code() }}</span> {{ plan.project.Project_Name }}
+                            <span class="project-code-badge">{{ plan.project.get_code(contact.Current_Path if contact else None) }}</span> {{ plan.project.Project_Name }}
                         {% else %}
                             N/A
+                        {% endif %}
+                        {% if plan.title %}
+                            <div class="plan-title-display">"{{ plan.title }}"</div>
                         {% endif %}
                     </td>
                     <td data-label="Status">
@@ -258,6 +262,7 @@
                 meeting_number: tr.dataset.meetingNumber,
                 role_id: tr.dataset.role,
                 project_id: tr.dataset.project,
+                title: tr.dataset.title,
                 notes: tr.dataset.notes,
                 status: tr.dataset.status
             };

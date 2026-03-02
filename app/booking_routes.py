@@ -392,8 +392,10 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
         'contacts': [],
         'selected_meeting': None,
         'is_admin_view': is_authorized(Permissions.BOOKING_ASSIGN_ALL),
+        'can_view_details': is_authorized(Permissions.BOOKING_ASSIGN_ALL) or is_authorized(Permissions.BOOKING_BOOK_OWN),
         'current_user_contact_id': current_user_contact_id,
         'user_role': user.primary_role_name if user else 'Guest',
+        'current_user_id': user.id if user and user.is_authenticated else None,
         'best_award_ids': set(),
         'required_roles_by_role': {} # {norm_role: [ {id, name, avatar_url} ]}
     }
@@ -418,6 +420,7 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
 
     context['selected_meeting'] = selected_meeting
     context['is_admin_view'] = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting)
+    context['can_view_details'] = context['is_admin_view'] or is_authorized(Permissions.BOOKING_BOOK_OWN, meeting=selected_meeting)
 
     # 2. Unpublished check - Show notice for those without BOOKING_VIEW_ALL
     if selected_meeting and selected_meeting.status == 'unpublished':
@@ -484,6 +487,24 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
         
         context['required_roles_by_role'] = required_roles_by_role
 
+    # --- Projects for Speech Modal ---
+    grouped_projects = []
+    if user and user.is_authenticated:
+        contact = user.get_contact(club_id)
+        if contact:
+            projects_by_level = {}
+            projects = contact.get_pathway_projects_with_status()
+            for p in projects:
+                level = p.level or 1
+                if level not in projects_by_level:
+                    projects_by_level[level] = []
+                projects_by_level[level].append(p)
+            
+            sorted_levels = sorted(projects_by_level.keys())
+            grouped_projects = [(level, projects_by_level[level]) for level in sorted_levels]
+    
+    context['grouped_projects'] = grouped_projects
+
     return context
 
 
@@ -506,6 +527,8 @@ def book_or_assign_role():
     data = request.get_json()
     session_id = data.get('session_id')
     action = data.get('action')
+    project_id = data.get('project_id')
+    title = data.get('title')
 
     user, current_user_contact_id = get_current_user_info()
 
@@ -537,7 +560,7 @@ def book_or_assign_role():
             if session_type.role and session_type.role.award_category in ['none', None, ''] and not is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
                 return jsonify(success=False, message="This role is not available for booking."), 403
 
-            success, msg = RoleService.book_meeting_role(log, current_user_contact_id)
+            success, msg = RoleService.book_meeting_role(log, current_user_contact_id, project_id=project_id, title=title)
             if not success:
                 return jsonify(success=False, message=msg), 200 # Using 200 for internal logic warnings as per legacy
             return jsonify(success=True, message=msg)
@@ -548,7 +571,7 @@ def book_or_assign_role():
             return jsonify(success=success, message=msg)
 
         elif action == 'join_waitlist':
-            success, msg = RoleService.join_waitlist(log, current_user_contact_id)
+            success, msg = RoleService.join_waitlist(log, current_user_contact_id, project_id=project_id, title=title)
             return jsonify(success=success, message=msg)
 
         elif action == 'leave_waitlist':

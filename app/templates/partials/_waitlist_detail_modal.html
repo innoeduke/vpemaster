@@ -1,0 +1,151 @@
+<div id="waitlistDetailModal" class="modal speech-detail-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Waitlist Entry Details</h3>
+            <button class="close-modal-icon" onclick="closeWaitlistDetailModal()" title="Close">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-section">
+                <div class="detail-row">
+                    <span class="detail-label">Person</span>
+                    <div id="waitlist-person-name" class="detail-value text-bold"></div>
+                </div>
+            </div>
+            
+            <div id="waitlist-project-container" class="detail-section">
+                <div class="detail-row">
+                    <span class="detail-label">Project</span>
+                    <div class="detail-value">
+                        <span id="waitlist-project-code" class="project-code-badge"></span>
+                        <span id="waitlist-project-name"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="waitlist-title-container" class="detail-section">
+                <div class="detail-row">
+                    <span class="detail-label">Speech Title</span>
+                    <div id="waitlist-speech-title" class="detail-value italic"></div>
+                </div>
+            </div>
+
+            <div id="waitlist-notes-container" class="detail-section">
+                <div class="detail-row">
+                    <span class="detail-label">Notes</span>
+                    <div id="waitlist-notes" class="detail-value notes-block"></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="waitlist-message-btn" class="btn btn-primary" onclick="sendWaitlistMessage()">
+                <i class="fas fa-comment-alt"></i> <span>Message</span>
+            </button>
+            <button class="btn btn-secondary" onclick="closeWaitlistDetailModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.speech-detail-modal .modal-content {
+    max-width: 500px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.speech-detail-modal .modal-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    padding: 20px;
+    position: relative;
+    text-align: center;
+}
+
+.close-modal-icon {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 5px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.close-modal-icon:hover {
+    color: #64748b;
+}
+
+.speech-detail-modal .modal-body {
+    padding: 0;
+}
+
+.detail-section {
+    padding: 15px 20px;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.detail-section:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.detail-value {
+    color: #1e293b;
+    font-size: 1rem;
+}
+
+.text-bold {
+    font-weight: 700;
+}
+
+.notes-block {
+    white-space: pre-wrap;
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    margin-top: 5px;
+}
+
+.italic {
+    font-style: italic;
+    color: #64748b;
+}
+
+.modal-footer {
+    padding: 15px 20px;
+    background: #f8f9fa;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btn-primary i {
+    margin-right: 8px;
+}
+
+.btn-primary:disabled {
+    background-color: #cbd5e1 !important;
+    border-color: #cbd5e1 !important;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+</style>

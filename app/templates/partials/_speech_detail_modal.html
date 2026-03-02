@@ -1,0 +1,54 @@
+<!-- Speech Detail Modal -->
+<div id="speechDetailModal" class="planner-modal" style="display: none;">
+    <div class="planner-modal-content">
+        <span class="planner-close-modal" onclick="closeSpeechDetailModal()"><i class="fas fa-times"></i></span>
+        <div class="planner-modal-header">
+            <h3>Project Details</h3>
+            <p class="modal-subtitle">Please provide your project and speech title.</p>
+        </div>
+        <form id="speechDetailForm">
+            <input type="hidden" id="speech-session-id">
+            <input type="hidden" id="speech-action">
+            <input type="hidden" id="speech-role-label">
+            
+            <div class="planner-form-group">
+                <label for="speech_project_id">Project</label>
+                <select id="speech_project_id" class="planner-form-control" required>
+                    <option value="">Select Project</option>
+                    {% for level, projs in grouped_projects %}
+                    <optgroup label="Level {{ level }}">
+                        {% for project in projs %}
+                        <option value="{{ project.id }}" 
+                                data-format="{{ project.Format }}"
+                                class="{% if project.is_completed %}project-completed{% endif %}">
+                            {% if project.is_completed %}✓ {% endif %}{{ project.Project_Name }}
+                        </option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div id="speech-title-group" class="planner-form-group">
+                <label for="speech_title">Speech Title</label>
+                <input type="text" id="speech_title" class="planner-form-control" placeholder="Enter your speech title" required>
+            </div>
+
+            <div class="planner-modal-footer">
+                <button type="button" class="planner-btn planner-btn-secondary" onclick="closeSpeechDetailModal()">Cancel</button>
+                <button type="submit" class="planner-btn planner-btn-primary">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .modal-subtitle {
+        font-size: 0.9rem;
+        color: #666;
+        margin-top: 5px;
+    }
+    .project-completed {
+        color: #28a745;
+    }
+</style>

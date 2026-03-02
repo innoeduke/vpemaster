@@ -12,6 +12,8 @@ const dateDisplay = document.getElementById('meeting-date-display');
 const dateRow = document.getElementById('meeting-date-row');
 const projectChkGroup = document.getElementById('project-checkbox-group');
 const projectChk = document.getElementById('has_project_chk');
+const titleGroup = document.getElementById('title-group');
+const titleInput = document.getElementById('title');
 const bookBtn = document.getElementById('book-btn');
 
 let currentMeetingRoles = [];
@@ -65,6 +67,8 @@ function openPlanModal(planData = null) {
 
     if (projectGroup) projectGroup.style.display = 'none';
     if (projectChkGroup) projectChkGroup.style.display = 'none';
+    if (titleGroup) titleGroup.style.display = 'none';
+    if (titleInput) titleInput.value = '';
     if (projectChk) {
         projectChk.checked = false;
         projectChk.disabled = false;
@@ -106,6 +110,7 @@ function openPlanModal(planData = null) {
             if (projectChk) projectChk.checked = !!planData.project_id;
             updateProjectVisibility();
             if (customProjectSelect) customProjectSelect.setValue(planData.project_id);
+            if (titleInput) titleInput.value = planData.title || '';
         });
     } else {
         if (customMeetingSelect) customMeetingSelect.updateTrigger();
@@ -182,9 +187,17 @@ function updateBookButtonVisibility() {
 }
 
 function updateProjectVisibility() {
-    if (!projectChkGroup || !projectGroup) return;
+    if (!projectChkGroup || !projectGroup || !titleGroup) return;
 
     const selectedRole = currentMeetingRoles.find(r => r.id == roleSelect.value);
+
+    // Show title for Prepared Speaker or Keynote Speaker
+    if (selectedRole && (selectedRole.name === 'Prepared Speaker' || selectedRole.name === 'Keynote Speaker')) {
+        titleGroup.style.display = 'block';
+    } else {
+        titleGroup.style.display = 'none';
+    }
+
     if (selectedRole && selectedRole.valid_for_project) {
         projectChkGroup.style.display = 'block';
 
@@ -259,6 +272,7 @@ async function handleFormSubmit(e) {
         meeting_number: document.getElementById('meeting_id').options[document.getElementById('meeting_id').selectedIndex]?.dataset.number || null,
         meeting_role_id: document.getElementById('meeting_role_id').value || null,
         project_id: document.getElementById('project_id').value || null,
+        title: titleInput ? titleInput.value : null,
         notes: document.getElementById('notes').value,
         status: planStatus
     };
@@ -297,13 +311,18 @@ async function bookPlan() {
 
     const action = 'join_waitlist';
 
+    const projectId = document.getElementById('project_id').value || null;
+    const title = titleInput ? titleInput.value : null;
+
     try {
         const response = await fetch('/booking/book', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 session_id: sessionId,
-                action: action
+                action: action,
+                project_id: projectId,
+                title: title
             })
         });
 
@@ -317,6 +336,7 @@ async function bookPlan() {
                 meeting_number: document.getElementById('meeting_id').options[document.getElementById('meeting_id').selectedIndex]?.dataset.number || null,
                 meeting_role_id: document.getElementById('meeting_role_id').value || null,
                 project_id: document.getElementById('project_id').value || null,
+                title: titleInput ? titleInput.value : null,
                 notes: document.getElementById('notes').value,
                 status: status
             };

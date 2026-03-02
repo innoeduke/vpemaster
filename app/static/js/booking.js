@@ -213,14 +213,33 @@ function resetRole(btn, sessionId) {
 }
 
 function bookOrCancelRole(sessionId, action, roleLabel) {
+  if (action === 'book') {
+    const row = document.querySelector(`tr[data-session-id="${sessionId}"]`);
+    const isValidForProject = row && row.dataset.validForProject === 'true';
+
+    if (isValidForProject) {
+      openSpeechDetailModal(sessionId, action, roleLabel);
+      return;
+    }
+  }
+
+  executeBookingAction(sessionId, action, roleLabel);
+}
+
+function executeBookingAction(sessionId, action, roleLabel, projectId = null, title = null) {
+  const payload = {
+    session_id: sessionId,
+    action: action,
+    role: roleLabel
+  };
+
+  if (projectId) payload.project_id = projectId;
+  if (title) payload.title = title;
+
   fetch("/booking/book", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      session_id: sessionId,
-      action: action,
-      role: roleLabel
-    }),
+    body: JSON.stringify(payload),
   })
     .then((response) => response.json())
     .then((data) => {
@@ -231,11 +250,175 @@ function bookOrCancelRole(sessionId, action, roleLabel) {
       }
     })
     .catch((error) => {
-      console.error("bookOrCancelRole error:", error);
+      console.error("executeBookingAction error:", error);
       alert("An error occurred. Please try again.");
       window.location.reload(true);
     });
 }
+
+
+function openSpeechDetailModal(sessionId, action, roleLabel) {
+  const modal = document.getElementById('speechDetailModal');
+  const form = document.getElementById('speechDetailForm');
+  const titleGroup = document.getElementById('speech-title-group');
+  const titleInput = document.getElementById('speech_title');
+  const projectSelect = document.getElementById('speech_project_id');
+
+  document.getElementById('speech-session-id').value = sessionId;
+  document.getElementById('speech-action').value = action;
+  document.getElementById('speech-role-label').value = roleLabel;
+
+  // Get expected format from the row
+  const row = document.querySelector(`tr[data-session-id="${sessionId}"]`);
+  const expectedFormat = row ? row.dataset.expectedFormat : null;
+
+  // Reset form
+  form.reset();
+
+  // Filter projects by format
+  if (projectSelect) {
+    const options = projectSelect.querySelectorAll('option[data-format]');
+    const optgroups = projectSelect.querySelectorAll('optgroup');
+
+    let visibleCount = 0;
+    options.forEach(opt => {
+      const format = opt.dataset.format;
+      if (!format || !expectedFormat || format === expectedFormat) {
+        opt.style.display = '';
+        visibleCount++;
+      } else {
+        opt.style.display = 'none';
+      }
+    });
+
+    // Hide empty optgroups
+    optgroups.forEach(group => {
+      const groupOptions = Array.from(group.querySelectorAll('option'));
+      const hasVisible = groupOptions.some(opt => opt.style.display !== 'none');
+      group.style.display = hasVisible ? '' : 'none';
+    });
+
+    // Auto-selection: if only one valid project is available
+    if (visibleCount === 1) {
+      const firstValidOption = Array.from(options).find(opt => opt.style.display !== 'none' && opt.value !== "");
+      if (firstValidOption) {
+        projectSelect.value = firstValidOption.value;
+      }
+    }
+  }
+
+  // Conditionally show title field
+  const rolesWithTitles = ['Prepared Speaker', 'Keynote Speaker'];
+  if (rolesWithTitles.includes(roleLabel)) {
+    titleGroup.style.display = 'block';
+    titleInput.required = true;
+  } else {
+    titleGroup.style.display = 'none';
+    titleInput.required = false;
+  }
+
+  modal.style.display = 'flex';
+}
+
+/**
+ * Shows the waitlist detail modal with planner information.
+ * @param {HTMLElement} element - The waitlist avatar element.
+ */
+function showWaitlistDetails(element) {
+  const modal = document.getElementById('waitlistDetailModal');
+  const name = element.dataset.name;
+  const projectName = element.dataset.projectName;
+  const projectCode = element.dataset.projectCode;
+  const title = element.dataset.title;
+  const notes = element.dataset.notes;
+  const userId = element.dataset.userId;
+
+  document.getElementById('waitlist-person-name').textContent = name;
+
+  const projectContainer = document.getElementById('waitlist-project-container');
+  if (projectName || projectCode) {
+    projectContainer.style.display = 'block';
+    document.getElementById('waitlist-project-code').textContent = projectCode;
+    document.getElementById('waitlist-project-code').style.display = projectCode ? 'inline-block' : 'none';
+    document.getElementById('waitlist-project-name').textContent = projectName;
+  } else {
+    projectContainer.style.display = 'none';
+  }
+
+  const titleContainer = document.getElementById('waitlist-title-container');
+  if (title) {
+    titleContainer.style.display = 'block';
+    document.getElementById('waitlist-speech-title').textContent = title;
+  } else {
+    titleContainer.style.display = 'none';
+  }
+
+  const notesContainer = document.getElementById('waitlist-notes-container');
+  if (notes) {
+    notesContainer.style.display = 'block';
+    document.getElementById('waitlist-notes').textContent = notes;
+  } else {
+    notesContainer.style.display = 'none';
+  }
+
+  // Handle Message button
+  const messageBtn = document.getElementById('waitlist-message-btn');
+  // Only show if contact has a user account AND is not the current user
+  if (userId && String(userId) !== String(currentUserId)) {
+    messageBtn.style.display = 'inline-flex';
+    messageBtn.dataset.userId = userId;
+    messageBtn.dataset.userName = name;
+    messageBtn.dataset.projectCode = projectCode || '';
+    messageBtn.dataset.projectName = projectName || '';
+    messageBtn.title = `Send message to ${name}`;
+  } else {
+    messageBtn.style.display = 'none';
+  }
+
+  modal.style.display = 'flex';
+}
+
+function sendWaitlistMessage() {
+  const btn = document.getElementById('waitlist-message-btn');
+  const userId = btn.dataset.userId;
+  const userName = btn.dataset.userName;
+  const projectCode = btn.dataset.projectCode;
+  const projectName = btn.dataset.projectName;
+
+  if (userId) {
+    let subject = '[Booking]';
+    if (projectCode || projectName) {
+      subject += ' ' + `${projectCode} ${projectName}`.trim();
+    }
+    window.location.href = `/messages?recipient_id=${userId}&recipient_name=${encodeURIComponent(userName)}&subject=${encodeURIComponent(subject)}`;
+  }
+}
+
+function closeWaitlistDetailModal() {
+  document.getElementById('waitlistDetailModal').style.display = 'none';
+}
+
+function closeSpeechDetailModal() {
+  document.getElementById('speechDetailModal').style.display = 'none';
+}
+
+// Handle speech detail form submission
+document.addEventListener('DOMContentLoaded', () => {
+  const speechForm = document.getElementById('speechDetailForm');
+  if (speechForm) {
+    speechForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const sessionId = document.getElementById('speech-session-id').value;
+      const action = document.getElementById('speech-action').value;
+      const roleLabel = document.getElementById('speech-role-label').value;
+      const projectId = document.getElementById('speech_project_id').value;
+      const title = document.getElementById('speech_title').value;
+
+      closeSpeechDetailModal();
+      executeBookingAction(sessionId, action, roleLabel, projectId, title);
+    });
+  }
+});
 
 
 function removeOwner(sessionId, ownerId) {
@@ -448,34 +631,15 @@ function approveWaitlist(sessionId, roleLabel) {
 
 
 function joinWaitlist(sessionId, roleLabel) {
-  console.log("joinWaitlist called with:", { sessionId, roleLabel });
-  fetch("/booking/book", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      session_id: sessionId,
-      action: "join_waitlist",
-      role: roleLabel
-    }),
-  })
-    .then((response) => {
-      console.log("joinWaitlist response status:", response.status);
-      return response.json();
-    })
-    .then((data) => {
-      console.log("joinWaitlist data:", data);
-      if (data.success) {
-        console.log("joinWaitlist success, reloading...");
-        window.location.reload(true);
-      } else {
-        alert("Error: " + data.message);
-      }
-    })
-    .catch((error) => {
-      console.error("joinWaitlist error:", error);
-      alert("An error occurred. Please try again.");
-      window.location.reload(true);
-    });
+  const row = document.querySelector(`tr[data-session-id="${sessionId}"]`);
+  const isValidForProject = row && row.dataset.validForProject === 'true';
+
+  if (isValidForProject) {
+    openSpeechDetailModal(sessionId, "join_waitlist", roleLabel);
+    return;
+  }
+
+  executeBookingAction(sessionId, "join_waitlist", roleLabel);
 }
 
 

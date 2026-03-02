@@ -102,6 +102,15 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadMessages(currentTab);
         setInterval(() => loadMessages(currentTab, true), 60000);
+
+        // Check for recipient in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const recipientId = urlParams.get('recipient_id');
+        const recipientName = urlParams.get('recipient_name');
+        const subject = urlParams.get('subject');
+        if (recipientId && recipientName) {
+            openComposeModal(recipientId, recipientName, subject);
+        }
     });
 
     function switchTab(tab) {

@@ -14,6 +14,7 @@ class Planner(db.Model):
         return None
     meeting_role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('Projects.id'), nullable=True)
+    title = db.Column(db.String(255), nullable=True)
     status = db.Column(db.String(20), default='draft', nullable=False)
     notes = db.Column(db.Text, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), index=True, nullable=False)
@@ -25,6 +26,7 @@ class Planner(db.Model):
     club = db.relationship('Club', backref='planner_entries')
     role = db.relationship('MeetingRole', backref='planner_entries')
     project = db.relationship('Project', backref='planner_entries')
+    meeting = db.relationship('Meeting', backref='planner_entries')
     
     @classmethod
     def delete_for_meeting(cls, meeting_id):

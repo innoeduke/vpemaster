@@ -11,7 +11,9 @@
 
     {# Macro to render a single role row in the table #}
     {% macro render_role_row(role, status, is_admin_view, contacts, current_user_contact_id) %}
-    <tr data-session-id="{{ role.session_id }}" data-role="{{ role.role }}">
+    <tr data-session-id="{{ role.session_id }}" data-role="{{ role.role }}" 
+        data-valid-for-project="{{ 'true' if role.valid_for_project else 'false' }}"
+        data-expected-format="{{ role.expected_format or '' }}">
         <td class="role-cell">
             <div class="role-cell-inner">
                 {% if role.role_level_status %}
@@ -103,8 +105,17 @@
 
                 {% if status in ['not started', 'unpublished'] and role.waitlist %}
                 {% for user in role.waitlist %}
-                <div class="role-avatar waitlist-avatar {% if is_admin_view %}admin-avatar{% endif %}"
-                    title="{{ user.name }} (Waitlist)">
+                <div class="role-avatar waitlist-avatar {% if can_view_details %}clickable-avatar{% endif %}"
+                    title="{{ user.name }} (Waitlist)"
+                    {% if can_view_details %}
+                    onclick="showWaitlistDetails(this)"
+                    data-name="{{ user.name }}"
+                    data-project-name="{{ user.planner_project_name or '' }}"
+                    data-project-code="{{ user.planner_project_code or '' }}"
+                    data-title="{{ user.planner_title or '' }}"
+                    data-notes="{{ user.planner_notes or '' }}"
+                    data-user-id="{{ user.user_id or '' }}"
+                    {% endif %}>
                     {% if user.avatar_url %}
                     {% set avatar_path = user.avatar_url %}
                     {% if '/' not in avatar_path %}
@@ -124,7 +135,7 @@
                     {% endif %}
 
                     {% if is_admin_view %}
-                    <button class="avatar-remove-btn" onclick="removeWaitlist('{{ role.session_id }}', '{{ user.id }}')"
+                    <button class="avatar-remove-btn" onclick="event.stopPropagation(); removeWaitlist('{{ role.session_id }}', '{{ user.id }}')"
                         title="Remove">
                         <i class="fas fa-times"></i>
                     </button>
@@ -370,9 +381,15 @@
             {% endif %}
     </div>
     
+    {% if user_role != 'Guest' %}
+        {% include 'partials/_speech_detail_modal.html' %}
+        {% include 'partials/_waitlist_detail_modal.html' %}
+    {% endif %}
+    
     <script>
         // Pass Python data to global JS variables used by booking.js
         var isAdminView = {{ is_admin_view| tojson }};
+        var currentUserId = {{ current_user_id| tojson }};
         var selectedMeetingId = {{ selected_meeting_id| tojson }};
         var allContacts = [
             {% for contact in contacts %}

@@ -14,8 +14,11 @@ planner_bp = Blueprint('planner_bp', __name__)
 def planner():
     club_id = get_current_club_id()
     
-    # 1. Fetch user's plans
-    plans = Planner.query.filter_by(user_id=current_user.id, club_id=club_id).order_by(Planner.meeting_id).all()
+    # 1. Fetch user's plans with joined relationships
+    from sqlalchemy.orm import joinedload
+    plans = Planner.query.filter_by(user_id=current_user.id, club_id=club_id)\
+        .options(joinedload(Planner.meeting), joinedload(Planner.role), joinedload(Planner.project))\
+        .order_by(Planner.meeting_id).all()
     
     # 2. Fetch all terms for the club to show in the filter
     from .utils import get_terms, get_active_term, get_date_ranges_for_terms
@@ -64,6 +67,7 @@ def planner():
                          terms=terms,
                          selected_term_ids=selected_term_ids,
                          grouped_projects=grouped_projects,
+                         contact=contact,
                          header_title="Planner")
 
 @planner_bp.route('/api/meeting/<int:meeting_id>')
@@ -139,13 +143,41 @@ def create_plan():
     data = request.get_json()
     club_id = get_current_club_id()
     
+    user_id = current_user.id
+    meeting_id = data.get('meeting_id')
+    role_id = data.get('meeting_role_id')
+    
+    # Check for existing entry to avoid duplicates (especially during booking flow)
+    existing = None
+    if meeting_id and role_id:
+        existing = Planner.query.filter_by(
+            user_id=user_id,
+            meeting_id=meeting_id,
+            meeting_role_id=role_id
+        ).first()
+    
+    if existing:
+        # Update existing instead of creating new
+        if 'project_id' in data:
+            existing.project_id = data.get('project_id')
+        if 'title' in data:
+            existing.title = data.get('title')
+        if 'status' in data:
+            existing.status = data.get('status')
+        if 'notes' in data:
+            existing.notes = data.get('notes')
+        
+        db.session.commit()
+        return jsonify({'id': existing.id, 'message': 'Plan updated successfully', 'updated': True}), 200
+
     new_plan = Planner(
-        meeting_id=data.get('meeting_id'),
-        meeting_role_id=data.get('meeting_role_id'),
+        meeting_id=meeting_id,
+        meeting_role_id=role_id,
         project_id=data.get('project_id'),
-        status=data.get('status', 'draft'), # Use status if provided
+        title=data.get('title'),
+        status=data.get('status', 'draft'),
         notes=data.get('notes'),
-        user_id=current_user.id,
+        user_id=user_id,
         club_id=club_id
     )
     
@@ -170,6 +202,8 @@ def update_plan(plan_id):
         plan.meeting_role_id = data['meeting_role_id']
     if 'project_id' in data:
         plan.project_id = data['project_id']
+    if 'title' in data:
+        plan.title = data['title']
     if 'notes' in data:
         plan.notes = data['notes']
     if 'status' in data:

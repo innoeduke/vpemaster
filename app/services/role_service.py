@@ -136,7 +136,7 @@ class RoleService:
         cache.delete(f"role_takers_None_{meeting_id}")
 
     @staticmethod
-    def book_meeting_role(session_log, user_contact_id):
+    def book_meeting_role(session_log, user_contact_id, project_id=None, title=None):
         """
         Handles self-booking logic: Checks duplicates, approvals, then assigns.
         """
@@ -152,17 +152,21 @@ class RoleService:
         role_obj = session_type.role if session_type else None
         
         if role_obj and role_obj.needs_approval:
-            return RoleService.join_waitlist(session_log, user_contact_id)
+            return RoleService.join_waitlist(session_log, user_contact_id, project_id=project_id, title=title)
 
         # 3. Validation: Is it already taken?
-        # IMPORTANT: Self-booking strictly implies claiming an EMPTY slot.
-        # If there are existing owners, self-booking usually shouldn't behave as "join team" unless explicit.
-        # Current logic checks if owners are set.
         if session_log.owners:
-             return RoleService.join_waitlist(session_log, user_contact_id)
+             return RoleService.join_waitlist(session_log, user_contact_id, project_id=project_id, title=title)
 
         # 4. Success -> Assign
         RoleService._captured_assign_role(session_log, [user_contact_id])
+        
+        # 5. Save Speech Details if provided
+        if project_id:
+            session_log.Project_ID = project_id
+        if title:
+            session_log.Session_Title = title
+            
         db.session.commit()
         return True, "Role booked successfully."
 
@@ -227,7 +231,7 @@ class RoleService:
         return False, "You do not hold this role."
 
     @staticmethod
-    def join_waitlist(session_log, contact_id):
+    def join_waitlist(session_log, contact_id, project_id=None, title=None):
         # Handle 'distinct' roles vs grouped roles waitlisting
         session_ids = RoleService._get_related_session_ids(session_log)
         
@@ -253,6 +257,36 @@ class RoleService:
                 added = True
         
         if added:
+            # Sync to Planner if project_id or title is provided
+            if project_id or title:
+                contact = db.session.get(Contact, contact_id)
+                if contact and contact.user_id:
+                    session_type = session_log.session_type
+                    role_id = session_type.role_id if session_type else None
+                    
+                    if role_id:
+                        # Check if a plan already exists for this user/meeting/role
+                        plan = Planner.query.filter_by(
+                            user_id=contact.user_id,
+                            meeting_id=session_log.meeting_id,
+                            meeting_role_id=role_id
+                        ).first()
+                        
+                        if not plan:
+                            plan = Planner(
+                                user_id=contact.user_id,
+                                meeting_id=session_log.meeting_id,
+                                meeting_role_id=role_id,
+                                club_id=session_log.meeting.club_id if session_log.meeting else None
+                            )
+                            db.session.add(plan)
+                        
+                        if project_id:
+                            plan.project_id = project_id
+                        if title:
+                            plan.title = title
+                        plan.status = 'waitlist'
+
             db.session.commit()
             
             # Invalidate Cache
@@ -481,17 +515,23 @@ class RoleService:
             
         session_logs = query.all()
         
-        # Fetch Planner notes for this meeting to show as tooltips
+        # Fetch Planner details for this meeting
         plans = Planner.query.filter(
             Planner.meeting_id == meeting_id,
             Planner.club_id == club_id
-        ).all()
-        planner_notes_map = {} # (contact_id, role_id) -> notes
+        ).options(joinedload(Planner.project)).all()
+        
+        planner_data_map = {} # (contact_id, role_id) -> {notes, project_name, project_code, title}
         for p in plans:
-            # Match via contact_id for consistency with booking logic
             p_contact = p.user.get_contact(club_id)
-            if p_contact and p.notes:
-                planner_notes_map[(p_contact.id, p.meeting_role_id)] = p.notes
+            if p_contact:
+                p_code = p.project.get_code(p_contact.Current_Path) if p.project else ""
+                planner_data_map[(p_contact.id, p.meeting_role_id)] = {
+                    'notes': p.notes,
+                    'project_name': p.project.Project_Name if p.project else "",
+                    'project_code': p_code,
+                    'title': p.title
+                }
 
         # Consolidate roles
         roles_dict = {}
@@ -515,9 +555,13 @@ class RoleService:
                     'role': role_obj.name.strip(),
                     'role_id': role_id,
                     'owner_id': owner.id if owner else None,
+                    'user_id': owner.user_id if owner else None,
                     'owner_name': owner.Name if owner else None,
                     'owner_avatar_url': owner.Avatar_URL if owner else None,
-                    'owner_planner_notes': planner_notes_map.get((owner.id, role_id)) if owner else None,
+                    'owner_planner_notes': planner_data_map.get((owner.id, role_id), {}).get('notes') if owner else None,
+                'owner_planner_project_name': planner_data_map.get((owner.id, role_id), {}).get('project_name') if owner else None,
+                'owner_planner_project_code': planner_data_map.get((owner.id, role_id), {}).get('project_code') if owner else None,
+                'owner_planner_title': planner_data_map.get((owner.id, role_id), {}).get('title') if owner else None,
                     'session_id': log.id,
                     'icon': role_obj.icon,
                     'type': role_obj.type,
@@ -526,14 +570,19 @@ class RoleService:
                     'award_category': role_obj.award_category,
                     'valid_for_project': log.session_type.Valid_for_Project if log.session_type else False,
                     'session_title': log.session_type.Title if log.session_type else None,
+                    'expected_format': RoleService.get_expected_format_for_session(log.session_type.Title) if log.session_type else None,
                     'has_single_owner': True,
                     'speaker_name': log.Session_Title.strip() if role_obj.name.strip() == "Individual Evaluator" and log.Session_Title else None,
                     'waitlist': [
                         {
                             'name': w.contact.Name,
                             'id': w.contact_id,
+                            'user_id': w.contact.user_id,
                             'avatar_url': w.contact.Avatar_URL,
-                            'planner_notes': planner_notes_map.get((w.contact_id, role_id))
+                            'planner_notes': planner_data_map.get((w.contact_id, role_id), {}).get('notes'),
+                            'planner_project_name': planner_data_map.get((w.contact_id, role_id), {}).get('project_name'),
+                            'planner_project_code': planner_data_map.get((w.contact_id, role_id), {}).get('project_code'),
+                            'planner_title': planner_data_map.get((w.contact_id, role_id), {}).get('title')
                         } for w in log.waitlists
                     ]
                 })
@@ -557,7 +606,10 @@ class RoleService:
                                 'name': w.contact.Name,
                                 'id': w.contact_id,
                                 'avatar_url': w.contact.Avatar_URL,
-                                'planner_notes': planner_notes_map.get((w.contact_id, role_id))
+                                'planner_notes': planner_data_map.get((w.contact_id, role_id), {}).get('notes'),
+                                'planner_project_name': planner_data_map.get((w.contact_id, role_id), {}).get('project_name'),
+                                'planner_project_code': planner_data_map.get((w.contact_id, role_id), {}).get('project_code'),
+                                'planner_title': planner_data_map.get((w.contact_id, role_id), {}).get('title')
                             })
                             seen_waitlist_ids.add(w.contact_id)
                 
@@ -574,9 +626,13 @@ class RoleService:
                     'all_owners': [
                         {
                             'id': o.id,
+                            'user_id': o.user_id,
                             'name': o.Name,
                             'avatar_url': o.Avatar_URL,
-                            'planner_notes': planner_notes_map.get((o.id, role_id))
+                            'planner_notes': planner_data_map.get((o.id, role_id), {}).get('notes'),
+                            'planner_project_name': planner_data_map.get((o.id, role_id), {}).get('project_name'),
+                            'planner_project_code': planner_data_map.get((o.id, role_id), {}).get('project_code'),
+                            'planner_title': planner_data_map.get((o.id, role_id), {}).get('title')
                         } for o in all_owners
                     ],
                     'session_id': first_log.id,
@@ -587,6 +643,7 @@ class RoleService:
                     'award_category': role_obj.award_category,
                     'valid_for_project': first_log.session_type.Valid_for_Project if first_log.session_type else False,
                     'session_title': first_log.session_type.Title if first_log.session_type else None,
+                    'expected_format': RoleService.get_expected_format_for_session(first_log.session_type.Title) if first_log.session_type else None,
                     'has_single_owner': False,
                     'waitlist': consolidated_waitlist
                 })

@@ -50,15 +50,19 @@
                     {% endfor %}
                 </select>
             </div>
+            <div id="title-group" class="planner-form-group" style="display: none;">
+                <label for="title">Title</label>
+                <input type="text" id="title" class="planner-form-control" placeholder="Speech Title">
+            </div>
             <div class="planner-form-group">
                 <label for="notes">Notes</label>
                 <textarea id="notes" class="planner-form-control" rows="3"></textarea>
             </div>
             <div class="planner-modal-footer">
                 <button type="button" class="planner-btn planner-btn-secondary" onclick="closeModal()">Cancel</button>
+                <button type="submit" id="save-plan-btn" class="planner-btn planner-btn-primary">Save Draft</button>
                 <button type="button" id="book-btn" class="planner-btn planner-btn-success" style="display: none;"
                     onclick="bookPlan()">Book</button>
-                <button type="submit" id="save-plan-btn" class="planner-btn planner-btn-primary">Save Draft</button>
             </div>
         </form>
     </div>

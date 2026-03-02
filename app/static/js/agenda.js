@@ -906,15 +906,13 @@ document.addEventListener("DOMContentLoaded", () => {
         null
       );
 
-      // Dynamically set colspan based on whether the 'No' column is hidden (mobile view)
-      const colNoHeader = document.querySelector('#logs-table th.col-no');
-      const isMobileView = colNoHeader && window.getComputedStyle(colNoHeader).display === 'none';
+      // Determine if Duration_Min is hidden (only on iPad: 769px - 1024px)
+      const isiPad = window.matchMedia('(min-width: 769px) and (max-width: 1024px)').matches;
 
-      if (isMobileView) {
-        titleCell.colSpan = 5;
-      } else {
-        titleCell.colSpan = 6;
-      }
+      // Base colspan is 6 (covers Start Time, Session Type, Session Title, Owner, Min, Max)
+      // On iPad, Duration_Min is hidden so we reduce colspan to 5.
+      // On Mobile (< 768px), "No" is hidden but it's a neighbor, it doesn't affect Title's colspan.
+      titleCell.colSpan = isiPad ? 5 : 6;
 
       titleCell.classList.add("section-row");
       titleCell.classList.add("drag-handle"); // Enable dragging from title

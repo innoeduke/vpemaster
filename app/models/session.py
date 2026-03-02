@@ -233,7 +233,9 @@ class SessionLog(db.Model):
         if not pathway_name:
             return None
 
-        path_obj = db.session.query(Pathway).filter_by(name=pathway_name).first()
+        path_obj = db.session.query(Pathway).filter(
+            (Pathway.name == pathway_name) | (Pathway.abbr == pathway_name)
+        ).first()
         if not path_obj:
             return None
 
@@ -692,25 +694,36 @@ class SessionLog(db.Model):
             
             # Project Code Logic (Based on Primary Owner)
             # Only update if it is a Project or Prepared Speech
-            is_prepared = (log.session_type and log.session_type.Title == 'Prepared Speech') or \
-                          (log.session_type and log.session_type.Title == 'Presentation')
+            is_prepared = (log.session_type and (log.session_type.Title in ['Prepared Speech', 'Presentation', 'Keynote Speaker'] or log.session_type.Valid_for_Project)) or \
+                          (role_obj and role_obj.name in ['Prepared Speaker', 'Keynote Speaker'])
             
             if primary_owner and (log.Project_ID or is_prepared):
                 new_path_level = None
                 
-                # REFINEMENT: If it's a prepared speech, prioritize project from Planner
-                # This fixes the bug where profile.Next_Project would override the planner selection
-                if is_prepared and primary_owner.user_id:
+                if is_prepared and primary_owner and primary_owner.user_id:
                     from .planner import Planner
-                    # Use meeting id and role id for consistency with RoleService
-                    plan_entry = Planner.query.filter_by(
+                    # Use meeting number if available (production), or meeting_id (test/fallback)
+                    plan_query = Planner.query.filter_by(
                         user_id=primary_owner.user_id,
-                        meeting_number=log.Meeting_Number,
                         meeting_role_id=role_obj.id if role_obj else None
-                    ).first()
+                    )
                     
-                    if plan_entry and plan_entry.project_id:
-                        log.Project_ID = plan_entry.project_id
+                    if log.meeting_id:
+                        plan_query = plan_query.filter_by(meeting_id=log.meeting_id)
+                    elif log.Meeting_Number:
+                        # Fallback for some legacy test setups
+                        from .meeting import Meeting
+                        plan_query = plan_query.join(Meeting).filter(Meeting.Meeting_Number == log.Meeting_Number)
+                    else:
+                        plan_query = None
+                        
+                    plan_entry = plan_query.first() if plan_query else None
+                    
+                    if plan_entry:
+                        if plan_entry.project_id:
+                            log.Project_ID = plan_entry.project_id
+                        if plan_entry.title:
+                            log.Session_Title = plan_entry.title
                 
                 # Basic derivation (will use updated log.Project_ID)
                 new_path_level = log.derive_project_code(primary_owner)
@@ -730,20 +743,21 @@ class SessionLog(db.Model):
                                 if pp:
                                     log.Project_ID = pp.project_id
                                     new_path_level = primary_owner.Next_Project
-                
+                                    
                 log.project_code = new_path_level
                 
                 # Update pathway snapshot ONLY for speeches/projects
                 if primary_owner.Current_Path:
                     log.pathway = primary_owner.Current_Path
             else:
-                # If not a project/speech, ensure these are NULLed if we are "resetting" ownership?
-                # Or just don't update them. 
-                # Ideally, if it's not a project, these fields should be NULL to avoid stale data.
-                # But existing data might be partial. Let's strictly follow:
-                # "non-project should take null value" per user comment on import logic.
-                # Assuming this applies to runtime updates too.
-                if not (log.Project_ID or is_prepared):
+                # Slot is empty or owner doesn't support projects
+                # If it's a role valid for projects, clear the details upon unassignment
+                if not primary_owner:
+                    log.Project_ID = None
+                    log.Session_Title = None
+                    log.project_code = None
+                    log.pathway = None
+                elif not (log.Project_ID or is_prepared):
                     log.project_code = None
                     log.pathway = None
 

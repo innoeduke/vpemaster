@@ -220,6 +220,17 @@
 	color: white;
 }
 
+.page-container .trend-btn {
+	background-color: #772432;
+	color: white;
+	box-shadow: 0 4px 6px rgba(119, 36, 50, 0.2);
+}
+
+.page-container .trend-btn:hover {
+	background-color: #8e2a3d;
+	box-shadow: 0 6px 12px rgba(119, 36, 50, 0.3);
+}
+
 /* Contact Input Group */
 .page-container .contact-input-container {
 	display: flex;

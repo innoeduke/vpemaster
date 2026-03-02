@@ -343,9 +343,11 @@
 }
 
 /* Admin avatar with remove button */
-.role-avatar.admin-avatar {
+.role-avatar.admin-avatar,
+.role-avatar.clickable-avatar {
   position: relative;
   overflow: visible;
+  cursor: pointer;
 }
 
 .role-avatar.admin-avatar img {

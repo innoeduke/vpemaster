@@ -557,11 +557,20 @@ td.actions-column {
 }
 
 .edit-mode-active td[data-field="Meeting_Seq"] input,
-.edit-mode-active td[data-field="Start_Time"] input {
+.edit-mode-active td[data-field="Start_Time"] input,
+.edit-mode-active td.col-duration-min input,
+.edit-mode-active td.col-duration-max input {
 	border: none;
 	background-color: transparent;
 	outline: none;
 	pointer-events: none;
+	text-align: center;
+}
+
+.edit-mode-active td.col-duration-min input,
+.edit-mode-active td.col-duration-max input {
+	pointer-events: auto;
+	/* Re-enable pointer events for duration fields */
 }
 
 .edit-mode-active .hidden-row {
