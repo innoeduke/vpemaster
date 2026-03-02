@@ -40,7 +40,15 @@ class BlockchainService:
 
         w3 = Web3(Web3.HTTPProvider(rpc_url))
         if not w3.is_connected():
-            raise RuntimeError("Failed to connect to the Sepolia RPC URL.")
+            # Diagnostic attempt
+            try:
+                import requests
+                resp = requests.post(rpc_url, json={"jsonrpc":"2.0", "method":"eth_blockNumber", "params":[], "id":1}, timeout=10)
+                if resp.status_code != 200:
+                    raise RuntimeError(f"RPC server returned status {resp.status_code}: {resp.text[:100]}")
+            except Exception as e:
+                raise RuntimeError(f"Failed to connect to the Sepolia RPC URL: {e}")
+            raise RuntimeError("Failed to connect to the Sepolia RPC URL (is_connected returned False).")
 
         abi_path = os.path.join(
             os.path.dirname(__file__), "..", "level_tracker_abi.json"
