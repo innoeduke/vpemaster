@@ -564,3 +564,114 @@
 	background-color: #65a30d;
 	color: white;
 }
+
+/* Export icon button in form bar */
+.page-container .form-buttons .action-icon-btn {
+	flex: 0 0 auto;
+	width: 40px;
+	min-width: 40px;
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* --- Roster Export Info (hidden by default, shown during export) --- */
+.roster-export-info {
+	display: none;
+}
+
+/* --- JPG Export Mode --- */
+.page-container.jpg-export-mode {
+	width: 794px;
+	max-width: 794px;
+	padding: 30px 40px;
+	background-color: #ffffff;
+}
+
+.page-container.jpg-export-mode .roster-export-info {
+	display: block;
+	font-size: 1em;
+	color: #555;
+	margin: 0 0 15px;
+	font-weight: 600;
+	font-family: 'Montserrat', sans-serif;
+	text-align: center;
+}
+
+.page-container.jpg-export-mode .filters-control,
+.page-container.jpg-export-mode .roster-form-container,
+.page-container.jpg-export-mode .cell-actions,
+.page-container.jpg-export-mode .roster-header-actions,
+.page-container.jpg-export-mode .modal,
+.page-container.jpg-export-mode .custom-modal {
+	display: none !important;
+}
+
+/* Force desktop table layout during export */
+.page-container.jpg-export-mode .roster-table-container {
+	background: white;
+	border-radius: 12px;
+	box-shadow: none;
+	overflow: hidden;
+}
+
+.page-container.jpg-export-mode .table,
+.page-container.jpg-export-mode .table thead,
+.page-container.jpg-export-mode .table tbody,
+.page-container.jpg-export-mode .table th,
+.page-container.jpg-export-mode .table td,
+.page-container.jpg-export-mode .table tr {
+	display: revert !important;
+}
+
+.page-container.jpg-export-mode .table thead tr {
+	position: static !important;
+}
+
+/* Force Roles column visible */
+.page-container.jpg-export-mode .header-roles,
+.page-container.jpg-export-mode .cell-roles {
+	display: table-cell !important;
+}
+
+/* Column widths for A4 */
+.page-container.jpg-export-mode .header-order {
+	width: 8%;
+}
+
+.page-container.jpg-export-mode .header-name {
+	width: 32%;
+}
+
+.page-container.jpg-export-mode .header-ticket {
+	width: 22%;
+}
+
+.page-container.jpg-export-mode .header-roles {
+	width: 38%;
+}
+
+/* Override mobile card grid layout back to table row */
+.page-container.jpg-export-mode .table tbody tr {
+	display: table-row !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	box-shadow: none !important;
+	border-radius: 0 !important;
+	grid-template-columns: unset !important;
+}
+
+.page-container.jpg-export-mode .table tbody td {
+	display: table-cell !important;
+	padding: 12px 15px !important;
+	border-bottom: 1px solid #f0f0f0 !important;
+}
+
+/* Hide actions + home club columns (must be AFTER revert rules to override them) */
+.page-container.jpg-export-mode .cell-actions,
+.page-container.jpg-export-mode .roster-header-actions,
+.page-container.jpg-export-mode td.cell-club,
+.page-container.jpg-export-mode th.header-club {
+	display: none !important;
+}

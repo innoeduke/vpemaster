@@ -565,7 +565,169 @@ document.addEventListener("DOMContentLoaded", async function () {
   if (typeof setupTableSorting === "function") {
     setupTableSorting("rosterTable");
   }
+
+  // Wire up JPG export button
+  const jpgButton = document.getElementById("roster-jpg-btn");
+  if (jpgButton) {
+    jpgButton.addEventListener("click", exportRosterJPG);
+  }
 });
+
+// Export roster table as multi-page A4 PDF
+function exportRosterJPG() {
+  const pageContainer = document.querySelector(".page-container");
+  const jpgButton = document.getElementById("roster-jpg-btn");
+  if (!pageContainer || !jpgButton) return;
+
+  // Show loading state
+  const originalHTML = jpgButton.innerHTML;
+  jpgButton.disabled = true;
+  jpgButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+  // Add export mode class for A4-friendly styling
+  pageContainer.classList.add("jpg-export-mode");
+
+  // Directly hide Actions and Home Club columns via JS (more reliable than CSS for html2canvas)
+  const hiddenEls = [];
+  pageContainer.querySelectorAll(".cell-actions, .roster-header-actions, .cell-club, .header-club").forEach((el) => {
+    hiddenEls.push({ el, prev: el.style.display });
+    el.style.display = "none";
+  });
+
+  // Small delay to let the browser repaint with the new class
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      // Measure row bottom positions BEFORE html2canvas (while DOM is live)
+      const containerRect = pageContainer.getBoundingClientRect();
+      const rows = pageContainer.querySelectorAll("#rosterTable tbody tr");
+      const rowBottoms = []; // pixel Y of each row's bottom edge relative to container top
+      rows.forEach((row) => {
+        const rowRect = row.getBoundingClientRect();
+        rowBottoms.push(rowRect.bottom - containerRect.top);
+      });
+
+      html2canvas(pageContainer, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+        windowWidth: 900,
+      }).then((canvas) => {
+        // Remove export mode class and restore hidden elements
+        pageContainer.classList.remove("jpg-export-mode");
+        hiddenEls.forEach(({ el, prev }) => { el.style.display = prev; });
+
+        // A4 dimensions in mm
+        const pageWidth = 210;
+        const pageHeight = 297;
+        const margin = 10; // mm margin on each side
+        const contentWidth = pageWidth - margin * 2;
+        const contentHeight = pageHeight - margin * 2;
+
+        // Scale factor: DOM pixels -> canvas pixels
+        const scaleFactor = canvas.width / containerRect.width;
+
+        // How many DOM pixels fit on one A4 content area
+        const domPixelsPerPage = (containerRect.width * contentHeight) / contentWidth;
+
+        // Calculate image dimensions to fit A4 width
+        const imgWidth = contentWidth;
+        const totalImgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        // Create PDF (portrait A4)
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF("p", "mm", "a4");
+
+        if (totalImgHeight <= contentHeight) {
+          // Single page — image fits on one page
+          const imgData = canvas.toDataURL("image/jpeg", 0.95);
+          pdf.addImage(imgData, "JPEG", margin, margin, imgWidth, totalImgHeight);
+        } else {
+          // Multi-page — slice at row boundaries
+          let currentTopPx = 0; // DOM pixels from top of container
+
+          let pageIndex = 0;
+          while (currentTopPx < containerRect.height - 1) {
+            if (pageIndex > 0) pdf.addPage();
+
+            // Find the last row whose bottom fits within this page
+            let pageBottomPx = currentTopPx + domPixelsPerPage;
+            let sliceBottomPx = pageBottomPx;
+
+            if (rowBottoms.length > 0) {
+              // Find last row that ends at or before pageBottomPx
+              let lastFittingRow = -1;
+              for (let i = 0; i < rowBottoms.length; i++) {
+                if (rowBottoms[i] <= pageBottomPx + 1) {
+                  lastFittingRow = i;
+                }
+              }
+
+              if (lastFittingRow >= 0 && rowBottoms[lastFittingRow] > currentTopPx) {
+                sliceBottomPx = rowBottoms[lastFittingRow];
+              } else {
+                // No row boundary found — force a break (fallback)
+                sliceBottomPx = Math.min(pageBottomPx, containerRect.height);
+              }
+            }
+
+            // Clamp to container height
+            sliceBottomPx = Math.min(sliceBottomPx, containerRect.height);
+
+            const sliceHeightPx = sliceBottomPx - currentTopPx;
+            const srcY = Math.round(currentTopPx * scaleFactor);
+            const srcH = Math.round(sliceHeightPx * scaleFactor);
+
+            // Create a temporary canvas for this page slice
+            const sliceCanvas = document.createElement("canvas");
+            sliceCanvas.width = canvas.width;
+            sliceCanvas.height = srcH;
+
+            const ctx = sliceCanvas.getContext("2d");
+            ctx.drawImage(
+              canvas,
+              0, srcY,                              // source x, y
+              canvas.width, srcH,                    // source width, height
+              0, 0,                                  // dest x, y
+              sliceCanvas.width, sliceCanvas.height   // dest width, height
+            );
+
+            const sliceImgData = sliceCanvas.toDataURL("image/jpeg", 0.95);
+            const sliceImgHeight = (sliceCanvas.height * imgWidth) / sliceCanvas.width;
+            pdf.addImage(sliceImgData, "JPEG", margin, margin, imgWidth, sliceImgHeight);
+
+            currentTopPx = sliceBottomPx;
+            pageIndex++;
+
+            // Safety: prevent infinite loops
+            if (pageIndex > 50) break;
+          }
+        }
+
+        // Download the PDF
+        const clubShortName = pageContainer.dataset.clubShortName || "club";
+        const meetingNum = pageContainer.dataset.meetingNumber || "0";
+        const meetingDate = pageContainer.dataset.meetingDate || "unknown";
+        pdf.save(`${clubShortName}-${meetingNum}-Roster-${meetingDate}.pdf`);
+
+        // Restore button
+        jpgButton.disabled = false;
+        jpgButton.innerHTML = originalHTML;
+      }).catch((err) => {
+        console.error("PDF export error:", err);
+        pageContainer.classList.remove("jpg-export-mode");
+        hiddenEls.forEach(({ el, prev }) => { el.style.display = prev; });
+        jpgButton.disabled = false;
+        jpgButton.innerHTML = originalHTML;
+        if (typeof showNotification === "function") {
+          showNotification("Failed to export roster as PDF. Please try again.", "error");
+        } else {
+          alert("Failed to export roster as PDF. Please try again.");
+        }
+      });
+    }, 100);
+  });
+}
 
 function openContactModalWithReferer() {
   if (typeof openContactModal === "function") {

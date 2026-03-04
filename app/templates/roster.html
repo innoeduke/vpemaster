@@ -11,7 +11,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-container">
+<div class="page-container"
+    data-club-short-name="{{ club.short_name if club and club.short_name else '' }}"
+    data-meeting-number="{{ selected_meeting.Meeting_Number if selected_meeting else '' }}"
+    data-meeting-date="{{ selected_meeting.Meeting_Date.strftime('%Y-%m-%d') if selected_meeting and selected_meeting.Meeting_Date else '' }}"
+>
     <h1><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
     <div class="filters-control premium">
         <div class="filter-row-premium">
@@ -66,11 +70,16 @@
                         <div class="form-buttons">
                             <button type="submit" id="submit-roster" class="btn btn-success" title="Register/Save Entry"><i class="fas fa-save"></i> <span class="btn-label-text">Register</span></button>
                             <button type="button" class="btn btn-secondary" id="cancel-edit" style="display: none;" title="Cancel Edit"><i class="fas fa-times"></i> <span class="btn-label-text">Cancel</span></button>
+                            <button type="button" id="roster-jpg-btn" class="btn btn-secondary action-icon-btn" title="Export as PDF"><i class="fas fa-file-pdf"></i></button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
+
+        {% if selected_meeting %}
+        <p class="roster-export-info">Meeting #{{ selected_meeting.Meeting_Number }} | {{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') if selected_meeting.Meeting_Date else '' }}</p>
+        {% endif %}
 
         <!-- Bottom: Roster Table -->
         <div class="roster-table-container">
@@ -206,5 +215,7 @@
         {% endfor %}
     ];
 </script>
+<script src="{{ url_for('static', filename='vendor/js/jspdf.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/js/html2canvas.min.js') }}"></script>
 <script src="{{ url_for('static', filename='js/roster.js') }}"></script>
 {% endblock %}
