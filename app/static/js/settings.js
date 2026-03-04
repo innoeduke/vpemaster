@@ -2196,7 +2196,7 @@ async function loadUsersAsync() {
           <td>${contactDisplay}</td>
           <td>${rolesHtml}</td>
           <td>${user.email}</td>
-          <td>${user.phone}</td>
+          <td>${user.phone || ''}</td>
           <td>${user.mentor_name}</td>
           <td>${pathHtml}</td>
           <td>${user.next_project}</td>

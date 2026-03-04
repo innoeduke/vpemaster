@@ -157,8 +157,8 @@ class User(UserMixin, db.Model):
             })
             
         # 2. Club-specific roles
-        current_club_id = get_current_club_id()
-        if (not club_id or club_id == current_club_id) and hasattr(self, '_current_user_club'):
+        # Use cached record if it matches the requested club_id
+        if hasattr(self, '_current_user_club') and self._current_user_club and (not club_id or self._current_user_club.club_id == club_id):
             uc = self._current_user_club
         else:
             uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
@@ -410,6 +410,7 @@ class User(UserMixin, db.Model):
             return
             
         from .user_club import UserClub
+        from .contact import Contact
         from ..club_context import get_current_club_id
         
         if not club_id:
@@ -419,7 +420,9 @@ class User(UserMixin, db.Model):
         ucs = UserClub.query.filter(
             UserClub.user_id.in_(user_ids),
             UserClub.club_id == club_id
-        ).options(db.joinedload(UserClub.contact)).all()
+        ).options(
+            db.joinedload(UserClub.contact).joinedload(Contact.mentor)
+        ).all()
         
         # Map user_id to UserClub
         uc_map = {uc.user_id: uc for uc in ucs}

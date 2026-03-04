@@ -42,12 +42,7 @@ class UserClub(db.Model):
         if not self.club_role_level:
             return []
         
-        # This might catch all roles and filter in python to avoid complex bitwise SQL every time
-        # Alternatively, we could cache roles. 
-        # For now, let's query all active roles and filter.
-        # Ideally, we should cache all_roles globally or per request.
-        all_roles = Role.query.all()
-        return [r for r in all_roles if (self.club_role_level & r.level) == r.level]
+        return [r for r in Role.get_all_cached() if (self.club_role_level & r.level) == r.level]
     
     @property
     def club_role(self):

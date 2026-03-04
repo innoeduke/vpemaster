@@ -830,7 +830,7 @@ def get_settings_users():
             'contact_name': contact.Name if contact else '',
             'contact_id': contact.id if contact else '',
             'email': user.email or '',
-            'phone': contact.Phone_Number if contact else '',
+            'phone': contact.Phone_Number if contact and contact.Phone_Number else '',
             'mentor_name': contact.mentor.Name if contact and contact.mentor else '',
             'current_path': current_path,
             'path_abbr': path_abbr,

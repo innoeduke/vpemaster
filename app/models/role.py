@@ -27,10 +27,29 @@ class Role(db.Model):
     def __repr__(self):
         return f'<Role {self.name}>'
     
+    _all_roles_cache = None
+    _name_cache = {}
+
     @staticmethod
     def get_by_name(name):
-        """Get role by name."""
-        return Role.query.filter_by(name=name).first()
+        """Get role by name, using cache if available."""
+        if name in Role._name_cache:
+            return Role._name_cache[name]
+        
+        role = Role.query.filter_by(name=name).first()
+        if role:
+            Role._name_cache[name] = role
+        return role
+
+    @staticmethod
+    def get_all_cached():
+        """Get all roles, using cache if available."""
+        if Role._all_roles_cache is None:
+            Role._all_roles_cache = Role.query.all()
+            # Also populate name cache while we are at it
+            for r in Role._all_roles_cache:
+                Role._name_cache[r.name] = r
+        return Role._all_roles_cache
     
     def has_permission(self, permission_name):
         """Check if this role has a specific permission."""
