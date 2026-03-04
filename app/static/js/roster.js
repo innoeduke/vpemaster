@@ -566,168 +566,329 @@ document.addEventListener("DOMContentLoaded", async function () {
     setupTableSorting("rosterTable");
   }
 
-  // Wire up JPG export button
-  const jpgButton = document.getElementById("roster-jpg-btn");
-  if (jpgButton) {
-    jpgButton.addEventListener("click", exportRosterJPG);
+  // Setup export handler
+  const exportBtn = document.getElementById("roster-export-btn");
+  if (exportBtn) {
+    exportBtn.addEventListener("click", function (e) {
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        handleDirectMobilePDF(e.currentTarget);
+      } else {
+        openExportModal();
+      }
+    });
   }
 });
 
-// Export roster table as multi-page A4 PDF
-function exportRosterJPG() {
-  const pageContainer = document.querySelector(".page-container");
-  const jpgButton = document.getElementById("roster-jpg-btn");
-  if (!pageContainer || !jpgButton) return;
+// Helper to handle direct PDF export on mobile without showing modal
+async function handleDirectMobilePDF(btn) {
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
-  // Show loading state
-  const originalHTML = jpgButton.innerHTML;
-  jpgButton.disabled = true;
-  jpgButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+  const modal = document.getElementById("roster-export-modal");
+  if (!modal) return;
 
-  // Add export mode class for A4-friendly styling
-  pageContainer.classList.add("jpg-export-mode");
+  // Temporarily make modal "rendered" but off-screen and invisible to user
+  const originalDisplay = modal.style.display;
+  const originalOpacity = modal.style.opacity;
+  const originalPosition = modal.style.position;
+  const originalLeft = modal.style.left;
+  const originalTop = modal.style.top;
+  const originalZIndex = modal.style.zIndex;
 
-  // Directly hide Actions and Home Club columns via JS (more reliable than CSS for html2canvas)
-  const hiddenEls = [];
-  pageContainer.querySelectorAll(".cell-actions, .roster-header-actions, .cell-club, .header-club").forEach((el) => {
-    hiddenEls.push({ el, prev: el.style.display });
-    el.style.display = "none";
+  modal.style.display = "block";
+  modal.style.opacity = "1";
+  modal.style.position = "fixed";
+  modal.style.left = "-9999px";
+  modal.style.top = "0";
+  modal.style.zIndex = "-1000";
+
+  try {
+    // Populate the hidden pages inside the modal container
+    populateExportPages();
+
+    // Trigger the PDF export directly
+    // Increase timeout slightly to ensure full DOM rendering
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await exportFromModalPDF();
+  } catch (err) {
+    console.error("Mobile direct export error:", err);
+    alert("Failed to export PDF.");
+  } finally {
+    // Restore modal state
+    modal.style.display = originalDisplay;
+    modal.style.opacity = originalOpacity;
+    modal.style.position = originalPosition;
+    modal.style.left = originalLeft;
+    modal.style.top = originalTop;
+    modal.style.zIndex = originalZIndex;
+
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  }
+}
+
+// Populate the print pages (shared by modal and direct export)
+function populateExportPages() {
+  const pagesContainer = document.getElementById("print-pages-container");
+  const pageContainerPrimary = document.querySelector(".page-container");
+  if (!pagesContainer) return;
+
+  // Clear existing pages
+  pagesContainer.innerHTML = '';
+
+  // Get metadata for header
+  const meetingNum = pageContainerPrimary ? pageContainerPrimary.dataset.meetingNumber || "0" : "0";
+  const meetingDateOriginal = pageContainerPrimary ? pageContainerPrimary.dataset.meetingDate || "" : "";
+  let formattedDate = meetingDateOriginal;
+  if (meetingDateOriginal && meetingDateOriginal.length === 10) {
+    const parts = meetingDateOriginal.split('-');
+    if (parts.length === 3) {
+      const d = new Date(parts[0], parseInt(parts[1]) - 1, parts[2]);
+      const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      // Use &nbsp; for the date spaces to prevent html2canvas collapsing them
+      formattedDate = `${months[d.getMonth()]}&nbsp;${d.getDate()},&nbsp;${d.getFullYear()}`;
+    }
+  }
+
+  // Get all valid rows from the original table
+  const originalRows = document.querySelectorAll("#rosterTable tbody tr");
+  const extractedRows = [];
+
+  originalRows.forEach(row => {
+    // Check if it's the 15 empty rows placeholder
+    if (!row.dataset.entryId && !row.dataset.contactId && !row.querySelector('.roster-roles')) return;
+
+    const orderCell = row.querySelector('.cell-order');
+    const nameCell = row.querySelector('.cell-name');
+    const ticketCell = row.querySelector('.cell-ticket');
+    const rolesCell = row.querySelector('.cell-roles');
+
+    // Create new row for print table
+    const tr = document.createElement("tr");
+
+    const tdOrder = document.createElement("td");
+    tdOrder.className = "print-cell-order";
+    tdOrder.innerHTML = orderCell ? orderCell.innerHTML : '';
+    tr.appendChild(tdOrder);
+
+    const tdName = document.createElement("td");
+    tdName.innerHTML = nameCell ? nameCell.innerHTML : '';
+    tr.appendChild(tdName);
+
+    const tdTicket = document.createElement("td");
+    tdTicket.innerHTML = ticketCell ? ticketCell.innerHTML : '';
+    tr.appendChild(tdTicket);
+
+    const tdRoles = document.createElement("td");
+    tdRoles.innerHTML = rolesCell ? rolesCell.innerHTML : '';
+    tr.appendChild(tdRoles);
+
+    const tdV = document.createElement("td");
+    tdV.className = "print-cell-v";
+    tdV.innerHTML = '<div style="width: 20px; height: 20px; border: 2px solid #ccc; border-radius: 4px; display: inline-block; margin-top: 5px;"></div>';
+    tr.appendChild(tdV);
+
+    extractedRows.push(tr);
   });
 
-  // Small delay to let the browser repaint with the new class
-  requestAnimationFrame(() => {
-    setTimeout(() => {
-      // Measure row bottom positions BEFORE html2canvas (while DOM is live)
-      const containerRect = pageContainer.getBoundingClientRect();
-      const rows = pageContainer.querySelectorAll("#rosterTable tbody tr");
-      const rowBottoms = []; // pixel Y of each row's bottom edge relative to container top
-      rows.forEach((row) => {
-        const rowRect = row.getBoundingClientRect();
-        rowBottoms.push(rowRect.bottom - containerRect.top);
-      });
+  // Paginate rows into multiple A4 DOM containers (max ~14 rows per page for safety to fit taller rows with tags)
+  const rowsPerPage = 14;
+  const numPages = Math.ceil(extractedRows.length / rowsPerPage) || 1; // At least 1 empty page
 
-      html2canvas(pageContainer, {
+  for (let i = 0; i < numPages; i++) {
+    const pageDiv = document.createElement('div');
+    pageDiv.className = 'print-page';
+
+    // Page Header
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'print-header';
+    headerDiv.style = "text-align: center; margin-bottom: 20px;";
+    headerDiv.innerHTML = `
+      <h2 style="word-spacing: 0.3em; white-space: nowrap;">Meeting&nbsp;Roster</h2>
+      <p class="print-subtitle" style="font-weight: bold; color: #555; word-spacing: 0.2em; white-space: nowrap;">
+          ${meetingNum ? `Meeting&nbsp;#${meetingNum}&nbsp;|&nbsp;` : ''}${formattedDate}
+      </p>
+    `;
+    pageDiv.appendChild(headerDiv);
+
+    // Page Table
+    const table = document.createElement('table');
+    table.className = 'table print-table';
+    table.innerHTML = `
+      <thead>
+          <tr>
+              <th style="width: 10%;">Order</th>
+              <th style="width: 30%;">Name</th>
+              <th style="width: 25%;">Ticket</th>
+              <th style="width: 25%;">Roles</th>
+              <th style="width: 10%; text-align: center;">V</th>
+          </tr>
+      </thead>
+      <tbody></tbody>
+    `;
+    const tbody = table.querySelector('tbody');
+
+    // Append rows for this page
+    const startIdx = i * rowsPerPage;
+    const endIdx = Math.min(startIdx + rowsPerPage, extractedRows.length);
+    for (let j = startIdx; j < endIdx; j++) {
+      tbody.appendChild(extractedRows[j]);
+    }
+
+    pageDiv.appendChild(table);
+    pagesContainer.appendChild(pageDiv);
+  }
+}
+
+// Open Export Modal and populate the print table
+function openExportModal() {
+  const modal = document.getElementById("roster-export-modal");
+  if (!modal) return;
+
+  populateExportPages();
+
+  modal.style.display = "block";
+  document.body.style.overflow = "hidden"; // Prevent background scrolling
+}
+
+// Close Export Modal
+window.closeExportModal = function () {
+  const modal = document.getElementById("roster-export-modal");
+  if (modal) {
+    modal.style.display = "none";
+    document.body.style.overflow = "";
+  }
+};
+
+// Ensure clicking outside modal closes it
+document.addEventListener("click", function (event) {
+  const modal = document.getElementById("roster-export-modal");
+  if (event.target === modal) {
+    closeExportModal();
+  }
+});
+
+// Export print-content as JPG Image
+window.exportFromModalJPG = async function (event) {
+  const container = document.getElementById("print-pages-container");
+  const pageContainer = document.querySelector(".page-container");
+  if (!container) return;
+
+  const btn = event ? event.currentTarget : null;
+  const originalHTML = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+  }
+
+  // Temporarily adjust container to capture full height without scrollbars
+  const originalMaxHeight = container.style.maxHeight;
+  const originalOverflow = container.style.overflowY;
+  container.style.maxHeight = 'none';
+  container.style.overflowY = 'visible';
+
+  try {
+    const canvas = await html2canvas(container, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#f0f0f0",
+      logging: false,
+      windowWidth: 900
+    });
+
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const clubShortName = pageContainer ? pageContainer.dataset.clubShortName || "club" : "club";
+      const meetingNum = pageContainer ? pageContainer.dataset.meetingNumber || "0" : "0";
+      const meetingDate = pageContainer ? pageContainer.dataset.meetingDate || "unknown" : "unknown";
+
+      a.href = url;
+      a.download = `${clubShortName}-${meetingNum}-Roster-${meetingDate}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, "image/jpeg", 0.95);
+  } catch (err) {
+    console.error("JPG export error:", err);
+    alert("Failed to export as image.");
+  } finally {
+    // Restore
+    container.style.maxHeight = originalMaxHeight || '';
+    container.style.overflowY = originalOverflow || '';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  }
+};
+
+// Export print-content as multi-page PDF
+window.exportFromModalPDF = async function (event) {
+  const pages = document.querySelectorAll(".print-page");
+  const pageContainer = document.querySelector(".page-container");
+  if (pages.length === 0) return;
+
+  const btn = event ? event.currentTarget : null;
+  const originalHTML = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+  }
+
+  // Temporarily reset styles that might clip
+  const container = document.getElementById("print-pages-container");
+  const originalMaxHeight = container.style.maxHeight;
+  const originalOverflow = container.style.overflowY;
+  container.style.maxHeight = 'none';
+  container.style.overflowY = 'visible';
+
+  try {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF("p", "mm", "a4");
+    const pageWidth = 210;
+    const pageHeight = 297;
+
+    for (let i = 0; i < pages.length; i++) {
+      const page = pages[i];
+      const canvas = await html2canvas(page, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
         logging: false,
-        windowWidth: 900,
-      }).then((canvas) => {
-        // Remove export mode class and restore hidden elements
-        pageContainer.classList.remove("jpg-export-mode");
-        hiddenEls.forEach(({ el, prev }) => { el.style.display = prev; });
-
-        // A4 dimensions in mm
-        const pageWidth = 210;
-        const pageHeight = 297;
-        const margin = 10; // mm margin on each side
-        const contentWidth = pageWidth - margin * 2;
-        const contentHeight = pageHeight - margin * 2;
-
-        // Scale factor: DOM pixels -> canvas pixels
-        const scaleFactor = canvas.width / containerRect.width;
-
-        // How many DOM pixels fit on one A4 content area
-        const domPixelsPerPage = (containerRect.width * contentHeight) / contentWidth;
-
-        // Calculate image dimensions to fit A4 width
-        const imgWidth = contentWidth;
-        const totalImgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        // Create PDF (portrait A4)
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF("p", "mm", "a4");
-
-        if (totalImgHeight <= contentHeight) {
-          // Single page — image fits on one page
-          const imgData = canvas.toDataURL("image/jpeg", 0.95);
-          pdf.addImage(imgData, "JPEG", margin, margin, imgWidth, totalImgHeight);
-        } else {
-          // Multi-page — slice at row boundaries
-          let currentTopPx = 0; // DOM pixels from top of container
-
-          let pageIndex = 0;
-          while (currentTopPx < containerRect.height - 1) {
-            if (pageIndex > 0) pdf.addPage();
-
-            // Find the last row whose bottom fits within this page
-            let pageBottomPx = currentTopPx + domPixelsPerPage;
-            let sliceBottomPx = pageBottomPx;
-
-            if (rowBottoms.length > 0) {
-              // Find last row that ends at or before pageBottomPx
-              let lastFittingRow = -1;
-              for (let i = 0; i < rowBottoms.length; i++) {
-                if (rowBottoms[i] <= pageBottomPx + 1) {
-                  lastFittingRow = i;
-                }
-              }
-
-              if (lastFittingRow >= 0 && rowBottoms[lastFittingRow] > currentTopPx) {
-                sliceBottomPx = rowBottoms[lastFittingRow];
-              } else {
-                // No row boundary found — force a break (fallback)
-                sliceBottomPx = Math.min(pageBottomPx, containerRect.height);
-              }
-            }
-
-            // Clamp to container height
-            sliceBottomPx = Math.min(sliceBottomPx, containerRect.height);
-
-            const sliceHeightPx = sliceBottomPx - currentTopPx;
-            const srcY = Math.round(currentTopPx * scaleFactor);
-            const srcH = Math.round(sliceHeightPx * scaleFactor);
-
-            // Create a temporary canvas for this page slice
-            const sliceCanvas = document.createElement("canvas");
-            sliceCanvas.width = canvas.width;
-            sliceCanvas.height = srcH;
-
-            const ctx = sliceCanvas.getContext("2d");
-            ctx.drawImage(
-              canvas,
-              0, srcY,                              // source x, y
-              canvas.width, srcH,                    // source width, height
-              0, 0,                                  // dest x, y
-              sliceCanvas.width, sliceCanvas.height   // dest width, height
-            );
-
-            const sliceImgData = sliceCanvas.toDataURL("image/jpeg", 0.95);
-            const sliceImgHeight = (sliceCanvas.height * imgWidth) / sliceCanvas.width;
-            pdf.addImage(sliceImgData, "JPEG", margin, margin, imgWidth, sliceImgHeight);
-
-            currentTopPx = sliceBottomPx;
-            pageIndex++;
-
-            // Safety: prevent infinite loops
-            if (pageIndex > 50) break;
-          }
-        }
-
-        // Download the PDF
-        const clubShortName = pageContainer.dataset.clubShortName || "club";
-        const meetingNum = pageContainer.dataset.meetingNumber || "0";
-        const meetingDate = pageContainer.dataset.meetingDate || "unknown";
-        pdf.save(`${clubShortName}-${meetingNum}-Roster-${meetingDate}.pdf`);
-
-        // Restore button
-        jpgButton.disabled = false;
-        jpgButton.innerHTML = originalHTML;
-      }).catch((err) => {
-        console.error("PDF export error:", err);
-        pageContainer.classList.remove("jpg-export-mode");
-        hiddenEls.forEach(({ el, prev }) => { el.style.display = prev; });
-        jpgButton.disabled = false;
-        jpgButton.innerHTML = originalHTML;
-        if (typeof showNotification === "function") {
-          showNotification("Failed to export roster as PDF. Please try again.", "error");
-        } else {
-          alert("Failed to export roster as PDF. Please try again.");
-        }
+        windowWidth: 900
       });
-    }, 100);
-  });
-}
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      if (i > 0) pdf.addPage();
+
+      // Render it full bleed. Since .print-page is an exact A4 dimension ratio 
+      // and already contains internal CSS padding, this is 1:1 pixel perfect.
+      pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
+    }
+
+    const clubShortName = pageContainer ? pageContainer.dataset.clubShortName || "club" : "club";
+    const meetingNum = pageContainer ? pageContainer.dataset.meetingNumber || "0" : "0";
+    const meetingDate = pageContainer ? pageContainer.dataset.meetingDate || "unknown" : "unknown";
+    pdf.save(`${clubShortName}-${meetingNum}-Roster-${meetingDate}.pdf`);
+
+  } catch (err) {
+    console.error("PDF export error:", err);
+    alert("Failed to export as PDF.");
+  } finally {
+    container.style.maxHeight = originalMaxHeight || '';
+    container.style.overflowY = originalOverflow || '';
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+    }
+  }
+};
 
 function openContactModalWithReferer() {
   if (typeof openContactModal === "function") {

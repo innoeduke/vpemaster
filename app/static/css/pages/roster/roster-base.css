@@ -589,25 +589,90 @@
 	background-color: #ffffff;
 }
 
-.page-container.jpg-export-mode .roster-export-info {
-	display: block;
-	font-size: 1em;
-	color: #555;
-	margin: 0 0 15px;
-	padding: 20px 40px;
+/* --- Export Modal Layout Fixes --- */
+.export-modal-content {
+	max-width: 900px !important;
+	width: 95% !important;
+	padding: 40px 20px 20px 20px !important;
+	/* Extra top padding for buttons */
+	position: relative;
+	max-height: calc(100vh - 120px) !important;
+	/* Leave room for header offset */
+	display: flex;
+	flex-direction: column;
+	margin: 100px auto auto auto;
+	/* Push down 100px from top, center horizontally */
+}
+
+.export-close-btn {
+	position: absolute;
+	top: 40px;
+	right: 30px;
+	font-size: 28px;
+	font-weight: bold;
+	color: #aaa;
+	cursor: pointer;
+	line-height: 1;
+	z-index: 10;
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.export-close-btn:hover {
+	color: #333;
+	background-color: #f0f0f0;
+}
+
+.export-actions {
+	display: flex;
+	justify-content: flex-start;
+	/* Align buttons to the left */
+	gap: 10px;
+	margin-bottom: 20px;
+	padding-left: 10px;
+	/* Give slight padding from the left edge */
+}
+
+/* --- Print Pagination --- */
+.print-pages-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 20px;
+	background: #f0f0f0;
+	padding: 20px;
+	max-height: 70vh;
+	overflow-y: auto;
+}
+
+.print-page {
 	width: 794px;
-	/* A4 width */
-	margin: 0 auto;
+	min-height: 1123px;
+	/* A4 aspect ratio */
+	background-color: #ffffff;
+	padding: 40px;
+	box-sizing: border-box;
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	position: relative;
 }
 
 .print-table {
 	width: 100%;
-	border-collapse: collapse;
+	border-collapse: separate;
+	border-spacing: 0;
+	border-top: 1px solid #dee2e6;
+	border-left: 1px solid #dee2e6;
 }
 
 .print-table th,
 .print-table td {
-	border: 1px solid #dee2e6;
+	border-bottom: 1px solid #dee2e6;
+	border-right: 1px solid #dee2e6;
 	padding: 12px 15px;
 	vertical-align: middle;
 	font-size: 14px;

@@ -4898,6 +4898,11 @@
       "permission_id": 6
     },
     {
+      "id": 142,
+      "role_id": 4,
+      "permission_id": 8
+    },
+    {
       "id": 43,
       "role_id": 4,
       "permission_id": 10
@@ -4926,11 +4931,6 @@
       "id": 106,
       "role_id": 4,
       "permission_id": 40
-    },
-    {
-      "id": 114,
-      "role_id": 4,
-      "permission_id": 41
     },
     {
       "id": 120,
@@ -4991,13 +4991,20 @@
     },
     {
       "id": 6,
+      "name": "Online",
+      "price": 0.0,
+      "icon": "fa-laptop",
+      "color": "#17a2b8"
+    },
+    {
+      "id": 7,
       "name": "Unpaid",
       "price": 0.0,
       "icon": "fa-exclamation-circle",
       "color": "#dc3545"
     },
     {
-      "id": 7,
+      "id": 8,
       "name": "Cancelled",
       "price": 0.0,
       "icon": "fa-ban",

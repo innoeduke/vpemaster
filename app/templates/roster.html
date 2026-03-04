@@ -197,8 +197,8 @@
     <!-- Export Modal -->
     <div id="roster-export-modal" class="custom-modal" style="display:none;">
         <div class="custom-modal-content export-modal-content">
-            <span class="custom-close-btn" onclick="closeExportModal()">&times;</span>
-            <div class="export-actions" style="margin-bottom: 20px; text-align: right;">
+            <span class="export-close-btn" onclick="closeExportModal()">&times;</span>
+            <div class="export-actions">
                 <button type="button" class="btn btn-secondary" onclick="exportFromModalJPG()" title="Download as Image">
                     <i class="fas fa-image"></i> Export Image
                 </button>
@@ -207,27 +207,8 @@
                 </button>
             </div>
             
-            <div id="print-content" class="print-container">
-                <div class="print-header" style="text-align: center; margin-bottom: 20px;">
-                    <h2>Meeting Roster</h2>
-                    <p class="print-subtitle" style="font-weight: bold; color: #555;">
-                        Meeting #{{ selected_meeting.Meeting_Number }} | {{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') if selected_meeting.Meeting_Date else '' }}
-                    </p>
-                </div>
-                <table class="table print-table" id="printRosterTable">
-                    <thead>
-                        <tr>
-                            <th style="width: 10%;">Order</th>
-                            <th style="width: 30%;">Name</th>
-                            <th style="width: 25%;">Ticket</th>
-                            <th style="width: 25%;">Roles</th>
-                            <th style="width: 10%; text-align: center;">V</th>
-                        </tr>
-                    </thead>
-                    <tbody id="printRosterBody">
-                        <!-- Populated via JS -->
-                    </tbody>
-                </table>
+            <div id="print-pages-container" class="print-pages-container">
+                <!-- Pages populated via JS -->
             </div>
         </div>
     </div>
