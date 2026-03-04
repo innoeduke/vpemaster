@@ -47,23 +47,8 @@ def settings():
     merged_roles = MeetingRole.get_all_for_club(club_id)
     roles = [{'id': role.id, 'name': role.name, 'award_category': role.award_category, 'type': role.type} for role in merged_roles]
     
-    # Users: Filter by club membership
-    if club_id:
-        all_users = User.query.join(UserClub).filter(
-            UserClub.club_id == club_id,
-            User.status != 'deleted'
-        ).options(
-            db.joinedload(User.club_memberships)
-        ).order_by(User.username.asc()).all()
-    else:
-        all_users = User.query.filter(
-            User.status != 'deleted'
-        ).options(
-            db.joinedload(User.club_memberships)
-        ).order_by(User.username.asc()).all()
-    
-    # Batch populate contacts for the current club to avoid N+1 queries in template
-    User.populate_contacts(all_users, club_id)
+    # Users will be loaded asynchronously via /api/settings/users to prevent N+1 queries during initial load
+    all_users = []
     
     achievements = [] # Achievements are now centrally managed and removed from settings
 
@@ -762,6 +747,100 @@ def import_roles():
 
 
 
+
+
+@settings_bp.route('/api/settings/users', methods=['GET'])
+@login_required
+@authorized_club_required
+def get_settings_users():
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    club_id = get_current_club_id()
+    
+    # Users: Filter by club membership
+    if club_id:
+        all_users = User.query.join(UserClub).filter(
+            UserClub.club_id == club_id,
+            User.status != 'deleted'
+        ).options(
+            db.joinedload(User.club_memberships)
+        ).order_by(User.username.asc()).all()
+    else:
+        all_users = User.query.filter(
+            User.status != 'deleted'
+        ).options(
+            db.joinedload(User.club_memberships)
+        ).order_by(User.username.asc()).all()
+    
+    # Batch populate contacts for the current club to avoid N+1 queries
+    User.populate_contacts(all_users, club_id)
+    
+    users_data = []
+    for user in all_users:
+        contact = user.contact
+        
+        # Determine best role and path like in template
+        user_roles = user.get_roles_for_club(club_id)
+        role_ids = [r['id'] for r in user_roles]
+        
+        role_priority = {
+            'sysadmin': 100,
+            'clubadmin': 90,
+            'staff': 80,
+            'other': 50,
+            'user': 10
+        }
+        
+        best_role = None
+        max_prio = -1
+        
+        # Check sysadmin flag
+        if user.is_sysadmin:
+            best_role = {'name': 'SysAdmin', 'award_category': 'sysadmin'}
+            max_prio = 100
+            
+        for role in user_roles:
+            if role['name'] not in ('Guest', 'SysAdmin'):
+                category = role.get('award_category') or 'other'
+                prio = role_priority.get(category, 50)
+                if prio > max_prio:
+                    max_prio = prio
+                    best_role = role
+                    
+        # current path
+        current_path = contact.Current_Path if contact else ''
+        path_abbr = 'dt'
+        if current_path:
+            path_map = {
+                'Dynamic Leadership': 'dl', 'Engaging Humor': 'eh', 
+                'Motivational Strategies': 'ms', 'Persuasive Influence': 'pi',
+                'Presentation Mastery': 'pm', 'Visionary Communication': 'vc',
+                'Effective Coaching': 'ec', 'Innovative Planning': 'ip',
+                'Leadership Development': 'ld', 'Strategic Relationships': 'sr',
+                'Team Collaboration': 'tc'
+            }
+            path_abbr = path_map.get(current_path, 'dt')
+            
+        users_data.append({
+            'id': user.id,
+            'first_name': user.first_name or '',
+            'last_name': user.last_name or '',
+            'username': user.username or '',
+            'contact_name': contact.Name if contact else '',
+            'contact_id': contact.id if contact else '',
+            'email': user.email or '',
+            'phone': contact.Phone_Number if contact else '',
+            'mentor_name': contact.mentor.Name if contact and contact.mentor else '',
+            'current_path': current_path,
+            'path_abbr': path_abbr,
+            'next_project': contact.Next_Project if contact else '',
+            'best_role': best_role,
+            'status': user.status,
+            'roles_json': json.dumps(role_ids)
+        })
+        
+    return jsonify(success=True, users=users_data)
 
 
 @settings_bp.route('/api/permissions/matrix', methods=['GET'])

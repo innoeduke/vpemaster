@@ -594,84 +594,36 @@
 	font-size: 1em;
 	color: #555;
 	margin: 0 0 15px;
+	padding: 20px 40px;
+	width: 794px;
+	/* A4 width */
+	margin: 0 auto;
+}
+
+.print-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.print-table th,
+.print-table td {
+	border: 1px solid #dee2e6;
+	padding: 12px 15px;
+	vertical-align: middle;
+	font-size: 14px;
+	color: #333;
+}
+
+.print-table th {
+	background-color: #f8f9fa;
 	font-weight: 600;
-	font-family: 'Montserrat', sans-serif;
+	border-bottom-width: 2px;
+}
+
+.print-table td.print-cell-order {
 	text-align: center;
 }
 
-.page-container.jpg-export-mode .filters-control,
-.page-container.jpg-export-mode .roster-form-container,
-.page-container.jpg-export-mode .cell-actions,
-.page-container.jpg-export-mode .roster-header-actions,
-.page-container.jpg-export-mode .modal,
-.page-container.jpg-export-mode .custom-modal {
-	display: none !important;
-}
-
-/* Force desktop table layout during export */
-.page-container.jpg-export-mode .roster-table-container {
-	background: white;
-	border-radius: 12px;
-	box-shadow: none;
-	overflow: hidden;
-}
-
-.page-container.jpg-export-mode .table,
-.page-container.jpg-export-mode .table thead,
-.page-container.jpg-export-mode .table tbody,
-.page-container.jpg-export-mode .table th,
-.page-container.jpg-export-mode .table td,
-.page-container.jpg-export-mode .table tr {
-	display: revert !important;
-}
-
-.page-container.jpg-export-mode .table thead tr {
-	position: static !important;
-}
-
-/* Force Roles column visible */
-.page-container.jpg-export-mode .header-roles,
-.page-container.jpg-export-mode .cell-roles {
-	display: table-cell !important;
-}
-
-/* Column widths for A4 */
-.page-container.jpg-export-mode .header-order {
-	width: 8%;
-}
-
-.page-container.jpg-export-mode .header-name {
-	width: 32%;
-}
-
-.page-container.jpg-export-mode .header-ticket {
-	width: 22%;
-}
-
-.page-container.jpg-export-mode .header-roles {
-	width: 38%;
-}
-
-/* Override mobile card grid layout back to table row */
-.page-container.jpg-export-mode .table tbody tr {
-	display: table-row !important;
-	padding: 0 !important;
-	margin: 0 !important;
-	box-shadow: none !important;
-	border-radius: 0 !important;
-	grid-template-columns: unset !important;
-}
-
-.page-container.jpg-export-mode .table tbody td {
-	display: table-cell !important;
-	padding: 12px 15px !important;
-	border-bottom: 1px solid #f0f0f0 !important;
-}
-
-/* Hide actions + home club columns (must be AFTER revert rules to override them) */
-.page-container.jpg-export-mode .cell-actions,
-.page-container.jpg-export-mode .roster-header-actions,
-.page-container.jpg-export-mode td.cell-club,
-.page-container.jpg-export-mode th.header-club {
-	display: none !important;
+.print-table td.print-cell-v {
+	text-align: center;
 }

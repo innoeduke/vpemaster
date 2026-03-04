@@ -412,96 +412,13 @@
             <th data-column-index="8">Actions</th>
           </tr>
         </thead>
-        <tbody>
-          {% for user in all_users %}
-          {% set user_roles = user.get_roles_for_club(club_id)|map(attribute='id')|list %}
-          <tr class="{{ 'inactive-user' if user.status == 'inactive' else '' }}"
-              data-id="{{ user.id }}"
-              data-username="{{ user.username or '' }}"
-              data-first-name="{{ user.first_name or '' }}"
-              data-last-name="{{ user.last_name or '' }}"
-              data-email="{{ user.email or '' }}"
-              data-phone="{{ user.phone or '' }}"
-              data-contact-id="{{ user.contact.id if user.contact else '' }}"
-              data-roles='{{ user_roles|tojson }}'>
-            <td>{{ loop.index }}</td>
-            <td>
-              {% if user.contact %} {{ user.contact.Name }} ({{ user.username }})
-              {% else %}
-              <em class="user-not-linked">Not Linked</em>
-              {% endif %}
-            </td>
-            <td>
-              {% set role_priority = {
-                'sysadmin': 100,
-                'clubadmin': 90,
-                'staff': 80,
-                'other': 50,
-                'user': 10
-              } %}
-              {% set ns = namespace(best_role=none, max_prio=-1) %}
-              
-              {% if user.is_sysadmin %}
-                <span class="roster-role-tag role-sysadmin">SysAdmin</span>
-              {% endif %}
-              
-              {% for role in user.get_roles_for_club(club_id) if role.name not in ('Guest', 'SysAdmin') %}
-                {% set category = role.award_category if role.award_category else 'other' %}
-                {% set prio = role_priority.get(category, 50) %}
-                {% if prio > ns.max_prio %}
-                  {% set ns.max_prio = prio %}
-                  {% set ns.best_role = role %}
-                {% endif %}
-              {% endfor %}
-              
-              {% if ns.best_role %}
-                {% set role = ns.best_role %}
-                {% set role_class = 'role-' ~ role.award_category if role.award_category else 'role-other' %}
-                <span class="roster-role-tag {{ role_class }}">{{ role.name }}</span>
-              {% else %}
-                <em class="text-muted">No Role</em>
-              {% endif %}
-            </td>
-            <td>{{ user.email if user.email else '' }}</td>
-            <td>
-              {{ user.contact.Phone_Number if user.contact and
-              user.contact.Phone_Number else '' }}
-            </td>
-            <td>{{ user.contact.mentor.Name if user.contact and user.contact.mentor else '' }}</td>
-            <td>
-              {% if user.contact and user.contact.Current_Path %}
-                {% set path_map = {
-                  'Dynamic Leadership': 'dl',
-                  'Engaging Humor': 'eh', 
-                  'Motivational Strategies': 'ms',
-                  'Persuasive Influence': 'pi',
-                  'Presentation Mastery': 'pm',
-                  'Visionary Communication': 'vc',
-                  'Effective Coaching': 'ec',
-                  'Innovative Planning': 'ip',
-                  'Leadership Development': 'ld',
-                  'Strategic Relationships': 'sr',
-                  'Team Collaboration': 'tc'
-                } %}
-                {% set path_abbr = path_map.get(user.contact.Current_Path, 'dt') %}
-                <span class="badge-path path-{{ path_abbr }}">{{ user.contact.Current_Path }}</span>
-              {% endif %}
-            </td>
-            <td>{{ user.contact.Next_Project if user.contact and user.contact.Next_Project else '' }}</td>
-            <td>
-              <div class="action-links">
-                <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('{{ user.id }}', this)" title="Edit">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button class="delete-btn icon-btn"
-                  onclick="openDeleteModal('{{ url_for('users_bp.delete_user', user_id=user.id) }}', 'user')"
-                  title="Delete">
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
+        <tbody id="users-table-body">
+          <tr>
+            <td colspan="9" class="text-center py-4">
+              <i class="fas fa-spinner fa-spin fa-2x"></i>
+              <p class="mt-2 text-muted">Loading users...</p>
             </td>
           </tr>
-          {% endfor %}
         </tbody>
       </table>
       <div class="pagination-container" id="user-pagination">

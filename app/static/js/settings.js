@@ -2135,3 +2135,101 @@ document.addEventListener('DOMContentLoaded', () => {
   if (closeDup) closeDup.onclick = () => document.getElementById('duplicateModal').style.display = 'none';
 });
 
+/* --- Async User Loading --- */
+async function loadUsersAsync() {
+  const tableBody = document.getElementById('users-table-body');
+  if (!tableBody) return;
+
+  try {
+    const response = await fetch('/api/settings/users');
+    const data = await response.json();
+
+    if (data.success) {
+      tableBody.innerHTML = ''; // Clear loading row
+
+      data.users.forEach((user, index) => {
+        const tr = document.createElement('tr');
+        tr.className = user.status === 'inactive' ? 'inactive-user' : '';
+        tr.dataset.id = user.id;
+        tr.dataset.username = user.username;
+        tr.dataset.firstName = user.first_name;
+        tr.dataset.lastName = user.last_name;
+        tr.dataset.email = user.email;
+        tr.dataset.phone = user.phone;
+        tr.dataset.contactId = user.contact_id;
+        tr.dataset.roles = user.roles_json;
+
+        // Roles HTML
+        let rolesHtml = '';
+        if (user.best_role) {
+          if (user.best_role.name === 'SysAdmin') {
+            rolesHtml = `<span class="roster-role-tag role-sysadmin">SysAdmin</span>`;
+          } else {
+            const badgeClass = user.best_role.award_category ? `role-${user.best_role.award_category}` : 'role-other';
+            rolesHtml = `<span class="roster-role-tag ${badgeClass}">${user.best_role.name}</span>`;
+          }
+        } else {
+          rolesHtml = `<em class="text-muted">No Role</em>`;
+        }
+
+        // Path HTML
+        let pathHtml = '';
+        if (user.current_path) {
+          pathHtml = `<span class="badge-path path-${user.path_abbr}">${user.current_path}</span>`;
+        }
+
+        const contactDisplay = user.contact_name ? `${user.contact_name} (${user.username})` : `<em class="user-not-linked">Not Linked</em>`;
+
+        let actionsHtml = `
+          <div class="action-links">
+            <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="Edit">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="delete-btn icon-btn" onclick="openDeleteModal('/user/delete/${user.id}', 'user')" title="Delete">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        `;
+
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${contactDisplay}</td>
+          <td>${rolesHtml}</td>
+          <td>${user.email}</td>
+          <td>${user.phone}</td>
+          <td>${user.mentor_name}</td>
+          <td>${pathHtml}</td>
+          <td>${user.next_project}</td>
+          <td>${actionsHtml}</td>
+        `;
+
+        tableBody.appendChild(tr);
+      });
+
+      // Initial filtering/pagination call if global search has a value or just to paginate
+      if (window.activePaginators && window.activePaginators['user-settings']) {
+        window.activePaginators['user-settings'].update();
+      }
+
+      // Trigger global search update if there is any filter applied
+      const searchInput = document.getElementById('global-settings-search');
+      if (searchInput && searchInput.value) {
+        searchInput.dispatchEvent(new Event('keyup'));
+      }
+
+    } else {
+      tableBody.innerHTML = `<tr><td colspan="9" class="text-danger text-center">Failed to load users: ${data.message}</td></tr>`;
+    }
+  } catch (error) {
+    console.error("Error loading users:", error);
+    tableBody.innerHTML = `<tr><td colspan="9" class="text-danger text-center">Error loading users.</td></tr>`;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // If the active tab is user-settings (or no active tab set), load the users immediately
+  // For simplicity, just fetch it in the background on DOMContentLoaded
+  loadUsersAsync();
+});
+
+
