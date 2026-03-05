@@ -265,6 +265,7 @@
 	border-collapse: collapse;
 	margin: 0;
 	border: 1px solid #999;
+	font-size: 0.9rem;
 }
 
 .page-container .table thead th,
@@ -281,6 +282,10 @@
 	border-bottom: 2px solid #e9ecef;
 }
 
+.page-container .table thead th.header-order {
+	text-align: center;
+}
+
 .page-container .table tbody td {
 	padding: 12px 15px;
 	vertical-align: middle;
@@ -294,34 +299,35 @@
 
 /* Table Columns */
 .page-container .header-order {
-	width: 1%;
-	min-width: 60px;
+	width: 3%;
+	min-width: 40px;
 	text-align: center;
 }
 
 .page-container .header-name {
-	width: auto;
+	width: 20%;
 	min-width: 150px;
+	max-width: 200px;
 }
 
 .page-container .header-ticket {
-	width: 1%;
-	min-width: 100px;
+	width: 15%;
+	min-width: 110px;
 	white-space: nowrap;
 }
 
 .page-container .header-roles {
-	width: auto;
-	min-width: 120px;
+	width: 25%;
+	min-width: 150px;
 }
 
 .page-container .header-club {
-	width: auto;
+	width: 20%;
 	min-width: 150px;
 }
 
 .page-container .roster-header-actions {
-	width: 1%;
+	width: 15%;
 	min-width: 100px;
 	text-align: center;
 	white-space: nowrap;
@@ -378,7 +384,9 @@
 
 .page-container .cell-name {
 	font-weight: 700;
-	white-space: nowrap;
+	white-space: normal;
+	word-wrap: break-word;
+	max-width: 200px;
 }
 
 .page-container .cell-ticket {
@@ -661,16 +669,19 @@
 	position: relative;
 }
 
-.print-table {
+/* High specificity to override .page-container .table styles during html2canvas render */
+body .page-container .print-pages-container .print-page .print-table {
 	width: 100%;
 	border-collapse: separate;
 	border-spacing: 0;
-	border-top: 1px solid #dee2e6;
-	border-left: 1px solid #dee2e6;
+	border: none;
+	text-rendering: geometricPrecision;
+	letter-spacing: 0.2px;
 }
 
-.print-table th,
-.print-table td {
+body .page-container .print-pages-container .print-page .print-table thead th,
+body .page-container .print-pages-container .print-page .print-table tbody td {
+	border: none;
 	border-bottom: 1px solid #dee2e6;
 	border-right: 1px solid #dee2e6;
 	padding: 12px 15px;
@@ -679,10 +690,27 @@
 	color: #333;
 }
 
-.print-table th {
+/* Force word spacing on role tags in print mode, html2canvas often strips spaces here */
+body .page-container .print-pages-container .print-page .print-table .roster-role-tag {
+	word-spacing: 0.15em;
+	letter-spacing: 0.3px;
+}
+
+/* Ensure outer left border is drawn via the first child */
+body .page-container .print-pages-container .print-page .print-table thead th:first-child,
+body .page-container .print-pages-container .print-page .print-table tbody td:first-child {
+	border-left: 1px solid #dee2e6;
+}
+
+body .page-container .print-pages-container .print-page .print-table thead th {
 	background-color: #f8f9fa;
 	font-weight: 600;
-	border-bottom-width: 2px;
+	border-top: 1px solid #dee2e6;
+	border-bottom: 2px solid #dee2e6;
+}
+
+body .page-container .print-pages-container .print-page .print-table tbody tr:last-child td {
+	border-bottom: 1px solid #dee2e6;
 }
 
 .print-table td.print-cell-order {

@@ -86,7 +86,7 @@
             <table class="table table-striped" id="rosterTable">
                 <thead>
                     <tr>
-                        <th class="sortable header-order" data-column-index="0">Order</th>
+                        <th class="sortable header-order" data-column-index="0">#</th>
                         <th class="sortable header-name" data-column-index="1">Name</th>
                         <th class="sortable header-ticket" data-column-index="2">Ticket</th>
                         <th class="header-roles desktop-only">Roles</th>
@@ -148,7 +148,7 @@
                         </td>
                         <td class="cell-club desktop-only">
                             <span class="roster-text">
-                                {{ entry.contact.get_primary_club().club_name if entry.contact and entry.contact.get_primary_club() else '' }}
+                                {{ entry.contact.get_home_club().club_name if entry.contact and entry.contact.get_home_club() else '' }}
                             </span>
                         </td>
                         <td class="cell-actions">

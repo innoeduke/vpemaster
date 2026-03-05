@@ -695,8 +695,8 @@ function populateExportPages() {
     extractedRows.push(tr);
   });
 
-  // Paginate rows into multiple A4 DOM containers (max ~14 rows per page for safety to fit taller rows with tags)
-  const rowsPerPage = 14;
+  // Paginate rows into multiple A4 DOM containers (max ~12 rows per page for safety to fit taller rows with tags)
+  const rowsPerPage = 12;
   const numPages = Math.ceil(extractedRows.length / rowsPerPage) || 1; // At least 1 empty page
 
   for (let i = 0; i < numPages; i++) {
@@ -788,16 +788,35 @@ window.exportFromModalJPG = async function (event) {
   // Temporarily adjust container to capture full height without scrollbars
   const originalMaxHeight = container.style.maxHeight;
   const originalOverflow = container.style.overflowY;
+  const originalBackground = container.style.background;
+  const originalPadding = container.style.padding;
+  const originalGap = container.style.gap;
+
   container.style.maxHeight = 'none';
   container.style.overflowY = 'visible';
+  container.style.background = '#ffffff';
+  container.style.padding = '0';
+  container.style.gap = '0';
+
+  // Temporarily remove shadow and roundness from individual pages
+  const originalPageStyles = [];
+  const pages = container.querySelectorAll(".print-page");
+  pages.forEach(p => {
+    originalPageStyles.push({
+      boxShadow: p.style.boxShadow,
+      margin: p.style.margin
+    });
+    p.style.boxShadow = 'none';
+    p.style.margin = '0';
+  });
 
   try {
     const canvas = await html2canvas(container, {
-      scale: 2,
+      scale: 3,
       useCORS: true,
-      backgroundColor: "#f0f0f0",
+      backgroundColor: "#ffffff",
       logging: false,
-      windowWidth: 900
+      windowWidth: 794
     });
 
     canvas.toBlob((blob) => {
@@ -821,6 +840,15 @@ window.exportFromModalJPG = async function (event) {
     // Restore
     container.style.maxHeight = originalMaxHeight || '';
     container.style.overflowY = originalOverflow || '';
+    container.style.background = originalBackground || '';
+    container.style.padding = originalPadding || '';
+    container.style.gap = originalGap || '';
+
+    pages.forEach((p, idx) => {
+      p.style.boxShadow = originalPageStyles[idx].boxShadow;
+      p.style.margin = originalPageStyles[idx].margin;
+    });
+
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = originalHTML;
@@ -845,8 +873,26 @@ window.exportFromModalPDF = async function (event) {
   const container = document.getElementById("print-pages-container");
   const originalMaxHeight = container.style.maxHeight;
   const originalOverflow = container.style.overflowY;
+  const originalBackground = container.style.background;
+  const originalPadding = container.style.padding;
+  const originalGap = container.style.gap;
+
   container.style.maxHeight = 'none';
   container.style.overflowY = 'visible';
+  container.style.background = '#ffffff';
+  container.style.padding = '0';
+  container.style.gap = '0';
+
+  // Temporarily remove shadow and roundness from individual pages
+  const originalPageStyles = [];
+  pages.forEach(p => {
+    originalPageStyles.push({
+      boxShadow: p.style.boxShadow,
+      margin: p.style.margin
+    });
+    p.style.boxShadow = 'none';
+    p.style.margin = '0';
+  });
 
   try {
     const { jsPDF } = window.jspdf;
@@ -857,11 +903,11 @@ window.exportFromModalPDF = async function (event) {
     for (let i = 0; i < pages.length; i++) {
       const page = pages[i];
       const canvas = await html2canvas(page, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         backgroundColor: "#ffffff",
         logging: false,
-        windowWidth: 900
+        windowWidth: 794
       });
 
       const imgData = canvas.toDataURL("image/jpeg", 0.95);
@@ -883,6 +929,15 @@ window.exportFromModalPDF = async function (event) {
   } finally {
     container.style.maxHeight = originalMaxHeight || '';
     container.style.overflowY = originalOverflow || '';
+    container.style.background = originalBackground || '';
+    container.style.padding = originalPadding || '';
+    container.style.gap = originalGap || '';
+
+    pages.forEach((p, idx) => {
+      p.style.boxShadow = originalPageStyles[idx].boxShadow;
+      p.style.margin = originalPageStyles[idx].margin;
+    });
+
     if (btn) {
       btn.disabled = false;
       btn.innerHTML = originalHTML;
