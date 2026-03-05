@@ -715,16 +715,9 @@ function populateExportPages() {
     // Use exact integer pixel widths to avoid html2canvas widening layout drift
     headerDiv.style = "display: flex; width: 714px; align-items: center; justify-content: space-between; margin-bottom: 20px;";
 
-    // Left column: logo (120px)
-    const logoDiv = document.createElement('div');
-    logoDiv.style = "width: 120px; flex-shrink: 0;";
-    if (clubId) {
-      logoDiv.innerHTML = `<img src="/static/club_resources/${clubId}/club_logo.webp" style="max-width: 100%; height: auto; max-height: 80px;" alt="Club Logo">`;
-    }
-
-    // Right column: text (594px = 714px - 120px)
+    // Left column: text (594px = 714px - 120px)
     const textDiv = document.createElement('div');
-    textDiv.style = "width: 594px; text-align: right; flex-shrink: 0;";
+    textDiv.style = "width: 594px; text-align: left; flex-shrink: 0;";
 
     // Build region string
     const regionParts = [];
@@ -745,8 +738,15 @@ function populateExportPages() {
       ${regionText ? `<p style="margin: 5px 0 0 0; font-size: 12px; color: #666; white-space: pre; letter-spacing: 0.5px; word-spacing: 1px;">${regionText}</p>` : ''}
     `;
 
-    headerDiv.appendChild(logoDiv);
+    // Right column: logo (120px)
+    const logoDiv = document.createElement('div');
+    logoDiv.style = "width: 120px; text-align: right; flex-shrink: 0;";
+    if (clubId) {
+      logoDiv.innerHTML = `<img src="/static/club_resources/${clubId}/club_logo.webp" style="max-width: 100%; height: auto; max-height: 80px;" alt="Club Logo">`;
+    }
+
     headerDiv.appendChild(textDiv);
+    headerDiv.appendChild(logoDiv);
     pageDiv.appendChild(headerDiv);
 
     // Page Table
