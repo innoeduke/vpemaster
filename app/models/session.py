@@ -214,6 +214,8 @@ class SessionLog(db.Model):
 
     media = db.relationship('Media', backref='session_log',
                             uselist=False, cascade='all, delete-orphan')
+    
+    waitlists = db.relationship('Waitlist', cascade='all, delete-orphan', back_populates='session_log')
 
     def derive_project_code(self, owner_contact=None, pathway_override=None, context_credential=None):
         """
@@ -729,7 +731,6 @@ class SessionLog(db.Model):
                 # If it's a role valid for projects, clear the details upon unassignment
                 if not primary_owner:
                     log.Project_ID = None
-                    log.Session_Title = None
                     log.project_code = None
                     log.pathway = None
                 elif not (log.Project_ID or is_speech_project):

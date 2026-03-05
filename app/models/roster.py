@@ -246,7 +246,7 @@ class Waitlist(db.Model):
         'Contacts.id'), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=True)
 
-    session_log = db.relationship('SessionLog', backref='waitlists')
+    session_log = db.relationship('SessionLog', back_populates='waitlists')
     contact = db.relationship('Contact', back_populates='waitlists')
 
     @classmethod

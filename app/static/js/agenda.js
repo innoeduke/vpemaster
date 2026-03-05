@@ -376,6 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.reload();
       return;
     }
+    console.log("Saving Agenda Data:", dataToSave);
     fetch("/agenda/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -657,6 +658,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ownerId: "",
       durationMin: "",
       durationMax: "",
+      isNewManually: "true", // Flag for auto-title logic
     });
 
     if (nextRow) {
@@ -1041,7 +1043,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const ownerIdInputs = row.querySelectorAll('input[name="owner_ids"]');
     const ownerIds = Array.from(ownerIdInputs).map(input => input.value).filter(val => val !== "");
 
-    return {
+    const data = {
       id: row.dataset.id,
       meeting_number: row.dataset.meetingNumber,
       meeting_seq: seqInput ? seqInput.value : "",
@@ -1060,10 +1062,11 @@ document.addEventListener("DOMContentLoaded", () => {
       project_id: row.dataset.projectId,
       status: row.dataset.status,
       project_code: row.dataset.projectCode || "",
-      project_code: row.dataset.projectCode || "",
       pathway: row.dataset.pathway || "",
       is_hidden: row.dataset.isHidden === "true", // Include hidden status in save data
     };
+    console.log(`Row ${row.dataset.id} data:`, data);
+    return data;
   }
 
   function renumberRows() {
@@ -1212,8 +1215,18 @@ document.addEventListener("DOMContentLoaded", () => {
       : "";
 
     // If new type is predefined, use its title. Otherwise, keep the custom title.
-    let newTitle =
-      sessionType && sessionType.Predefined ? sessionType.Title : currentTitle;
+    // PRESERVE: If we have a current title and it's not a new manual row, keep it.
+    let newTitle = currentTitle;
+    if (sessionType && sessionType.Predefined) {
+      newTitle = sessionType.Title;
+    }
+
+    // --- Auto-Title Logic for Manually Added Rows ---
+    if (row.dataset.isNewManually === "true" && !row.dataset.hasUserEditedTitle) {
+      if (sessionType && sessionType.Title !== "Evaluation") {
+        newTitle = sessionType.Title;
+      }
+    }
 
     // Special case: If changing *to* Evaluation, keep the speaker name
     if (sessionType && sessionType.Title === "Evaluation") {
@@ -1228,6 +1241,9 @@ document.addEventListener("DOMContentLoaded", () => {
         newTitle
       )
     );
+
+    // Sync to dataset for safety
+    row.dataset.sessionTitle = newTitle;
 
     const projectBtn = row.querySelector(".project-btn");
     if (projectBtn) {
@@ -1458,6 +1474,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const input = document.createElement("input");
     input.type = "text";
     input.value = originalValue;
+
+    // Track manual edits for auto-title logic
+    input.addEventListener("input", function () {
+      const row = this.closest("tr");
+      if (row && row.dataset.isNewManually === "true") {
+        row.dataset.hasUserEditedTitle = "true";
+      }
+    });
+
     return input;
   }
 

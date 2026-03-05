@@ -129,7 +129,10 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
     
     status = item.get('status') if item.get('status') else 'Booked'
     session_title = item.get('session_title')
-
+    
+    from flask import current_app
+    current_app.logger.info(f"Processing session item: id={item.get('id')}, title='{session_title}'")
+    
     # --- Credentials Logic (no changes needed) ---
     credentials = item.get('credentials')
     # Check for None or empty string
@@ -243,8 +246,9 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
             log.Project_ID = project_id
             log.Status = status
             if session_title is not None:
+                current_app.logger.info(f"LOG {log.id}: Updating Session_Title to '{session_title}'")
                 log.Session_Title = session_title
-                
+            
             if 'is_hidden' in item:
                 log.hidden = item['is_hidden']
             
@@ -1415,6 +1419,13 @@ def delete_log(log_id):
         if log.owners:
             from .services.role_service import RoleService
             RoleService.cancel_meeting_role(log, log.owners[0].id, is_admin=True)
+
+        # Robust Deletion: Manually clear waitlists to avoid IntegrityError if ORM cascade fails
+        from .models.roster import Waitlist
+        waitlist_entries = Waitlist.query.filter_by(session_log_id=log.id).all()
+        for entry in waitlist_entries:
+            db.session.delete(entry)
+        db.session.flush()
 
         db.session.delete(log)
         db.session.commit()
