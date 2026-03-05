@@ -643,6 +643,12 @@ function populateExportPages() {
   // Get metadata for header
   const meetingNum = pageContainerPrimary ? pageContainerPrimary.dataset.meetingNumber || "0" : "0";
   const meetingDateOriginal = pageContainerPrimary ? pageContainerPrimary.dataset.meetingDate || "" : "";
+  const clubId = pageContainerPrimary ? pageContainerPrimary.dataset.clubId || "" : "";
+  const clubNo = pageContainerPrimary ? pageContainerPrimary.dataset.clubNo || "" : "";
+  const clubName = pageContainerPrimary ? pageContainerPrimary.dataset.clubName || "" : "";
+  const clubDistrict = pageContainerPrimary ? pageContainerPrimary.dataset.clubDistrict || "" : "";
+  const clubDivision = pageContainerPrimary ? pageContainerPrimary.dataset.clubDivision || "" : "";
+  const clubArea = pageContainerPrimary ? pageContainerPrimary.dataset.clubArea || "" : "";
   let formattedDate = meetingDateOriginal;
   if (meetingDateOriginal && meetingDateOriginal.length === 10) {
     const parts = meetingDateOriginal.split('-');
@@ -706,13 +712,41 @@ function populateExportPages() {
     // Page Header
     const headerDiv = document.createElement('div');
     headerDiv.className = 'print-header';
-    headerDiv.style = "text-align: center; margin-bottom: 20px;";
-    headerDiv.innerHTML = `
-      <h2 style="word-spacing: 0.3em; white-space: nowrap;">Meeting&nbsp;Roster</h2>
-      <p class="print-subtitle" style="font-weight: bold; color: #555; word-spacing: 0.2em; white-space: nowrap;">
-          ${meetingNum ? `Meeting&nbsp;#${meetingNum}&nbsp;|&nbsp;` : ''}${formattedDate}
-      </p>
+    // Use exact integer pixel widths to avoid html2canvas widening layout drift
+    headerDiv.style = "display: flex; width: 714px; align-items: center; justify-content: space-between; margin-bottom: 20px;";
+
+    // Left column: logo (120px)
+    const logoDiv = document.createElement('div');
+    logoDiv.style = "width: 120px; flex-shrink: 0;";
+    if (clubId) {
+      logoDiv.innerHTML = `<img src="/static/club_resources/${clubId}/club_logo.webp" style="max-width: 100%; height: auto; max-height: 80px;" alt="Club Logo">`;
+    }
+
+    // Right column: text (594px = 714px - 120px)
+    const textDiv = document.createElement('div');
+    textDiv.style = "width: 594px; text-align: right; flex-shrink: 0;";
+
+    // Build region string
+    const regionParts = [];
+    if (clubDistrict && clubDistrict !== 'None') regionParts.push(`D${clubDistrict}`);
+    if (clubDivision && clubDivision !== 'None') regionParts.push(`Div ${clubDivision}`);
+    if (clubArea && clubArea !== 'None') regionParts.push(`Area ${clubArea}`);
+    if (clubNo && clubNo !== 'None') regionParts.push(`Club ${clubNo}`);
+    if (clubName && clubName !== 'None') regionParts.push(clubName);
+    const regionText = regionParts.length > 0 ? regionParts.join(' / ') : '';
+
+    textDiv.innerHTML = `
+      <h2 style="margin: 0; padding: 0; font-size: 24px; word-spacing: 0.3em; white-space: nowrap;">
+          Meeting&nbsp;Roster
+          <span style="font-size: 16px; color: #555; word-spacing: 0.2em; font-weight: normal; margin-left: 10px;">
+              ${meetingNum ? `Meeting&nbsp;#${meetingNum}&nbsp;|&nbsp;` : ''}${formattedDate}
+          </span>
+      </h2>
+      ${regionText ? `<p style="margin: 5px 0 0 0; font-size: 12px; color: #666; white-space: pre; letter-spacing: 0.5px; word-spacing: 1px;">${regionText}</p>` : ''}
     `;
+
+    headerDiv.appendChild(logoDiv);
+    headerDiv.appendChild(textDiv);
     pageDiv.appendChild(headerDiv);
 
     // Page Table

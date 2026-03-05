@@ -15,6 +15,12 @@
     data-club-short-name="{{ club.short_name if club and club.short_name else '' }}"
     data-meeting-number="{{ selected_meeting.Meeting_Number if selected_meeting else '' }}"
     data-meeting-date="{{ selected_meeting.Meeting_Date.strftime('%Y-%m-%d') if selected_meeting and selected_meeting.Meeting_Date else '' }}"
+    data-club-id="{{ club.id if club and club.id else '' }}"
+    data-club-no="{{ club.club_no if club and club.club_no else '' }}"
+    data-club-name="{{ club.club_name if club and club.club_name else '' }}"
+    data-club-district="{{ club.district if club and club.district else '' }}"
+    data-club-division="{{ club.division if club and club.division else '' }}"
+    data-club-area="{{ club.area if club and club.area else '' }}"
 >
     <h1><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
     <div class="filters-control premium">
