@@ -240,44 +240,20 @@ class SessionLog(db.Model):
             return None
 
         pathway_suffix = path_obj.abbr
-        role_name = self.session_type.role.name if self.session_type and self.session_type.role else None
-
-        # --- Priority 1: Speaker/Evaluator with Project ID ---
-        # Dynamically identify roles linked to session types valid for projects
-        project_specific_roles = [st.role.name for st in SessionType.query.filter_by(Valid_for_Project=True).all() if st.role]
         
-        is_presentation = (self.session_type and self.session_type.Title == 'Presentation')
-        
-        if (role_name in project_specific_roles or is_presentation) and self.Project_ID:
-            # For presentations, we might want to use self.pathway if it's explicitly set to a series
-            # but per requirement, we use owner's current path for the DB field, 
-            # while Project.get_code will naturally find the series fallback.
+        # --- Priority 1: Assigned Project (Any Role) ---
+        if self.Project_ID:
             code = get_project_code(self.Project_ID, pathway_name)
             if code:
                 return code
 
-        # --- Priority 2: Other roles - Use highest level achievement + 1 ---
-        else:
-            # Determine base level from context credential (snapshot) or current credential
-            start_level = 1
-            creds = context_credential if context_credential is not None else (contact.credentials if contact else None)
+        # --- Priority 2: Fallback for Speeches/Presentations (Auto-Resolution) ---
+        is_speech = self.session_type and self.session_type.Title in ['Prepared Speech', 'Presentation']
+        if is_speech and contact and contact.Next_Project:
+            # Return full project code (e.g., PM1.2) if available
+            return contact.Next_Project
 
-            
-            if creds:
-                # Match the current path abbreviation followed by a level number
-                match = re.match(rf"^{pathway_suffix}(\d+)$", creds.strip().upper())
-                if match:
-                    level_achieved = int(match.group(1))
-                    
-                    # If highest level (5) is reached, treat as generic (no code)
-                    if level_achieved >= 5:
-                        return None
-                        
-                    # Otherwise, next level
-                    start_level = level_achieved + 1
-                
-            return f"{pathway_suffix}{start_level}"
-
+        # For all other roles (Table Topics, Timer, etc.), no code should be shown if no project is assigned.
         return None
 
     def get_display_level_and_type(self, pathway_cache=None, context_pathway_name=None, context_contact=None):
@@ -693,14 +669,13 @@ class SessionLog(db.Model):
             # We updated the DB table `owner_meeting_roles` above, so `log.owners` will return new values.
             
             # Project Code Logic (Based on Primary Owner)
-            # Only update if it is a Project or Prepared Speech
-            is_prepared = (log.session_type and (log.session_type.Title in ['Prepared Speech', 'Presentation', 'Keynote Speaker'] or log.session_type.Valid_for_Project)) or \
-                          (role_obj and role_obj.name in ['Prepared Speaker', 'Keynote Speaker'])
+            # Auto-resolution is restricted to Speeches and Presentations
+            is_speech_project = (log.session_type and log.session_type.Title in ['Prepared Speech', 'Presentation'])
             
-            if primary_owner and (log.Project_ID or is_prepared):
+            if primary_owner and (log.Project_ID or is_speech_project):
                 new_path_level = None
                 
-                if is_prepared and primary_owner and primary_owner.user_id:
+                if is_speech_project and primary_owner and primary_owner.user_id:
                     from .planner import Planner
                     # Use meeting number if available (production), or meeting_id (test/fallback)
                     plan_query = Planner.query.filter_by(
@@ -728,8 +703,8 @@ class SessionLog(db.Model):
                 # Basic derivation (will use updated log.Project_ID)
                 new_path_level = log.derive_project_code(primary_owner)
                 
-                # Auto-Resolution from Next_Project for Prepared Speeches ONLY IF still not resolved or generic
-                if primary_owner.Next_Project and is_prepared and (not log.Project_ID or log.Project_ID == ProjectID.GENERIC):
+                # Auto-Resolution from Next_Project for Speeches ONLY IF still not resolved or generic
+                if primary_owner.Next_Project and is_speech_project and (not log.Project_ID or log.Project_ID == ProjectID.GENERIC):
                     current_path_name = primary_owner.Current_Path
                     if current_path_name:
                         pathway = Pathway.query.filter_by(name=current_path_name).first()
@@ -757,7 +732,7 @@ class SessionLog(db.Model):
                     log.Session_Title = None
                     log.project_code = None
                     log.pathway = None
-                elif not (log.Project_ID or is_prepared):
+                elif not (log.Project_ID or is_speech_project):
                     log.project_code = None
                     log.pathway = None
 
