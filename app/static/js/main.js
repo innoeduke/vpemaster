@@ -147,13 +147,13 @@ function openContactModal(contactId) {
           data.contact.Completed_Paths || "";
         document.getElementById("dtm").checked = data.contact.DTM;
 
-        // Show/hide member_id and mentor_id rows based on type
+        // Show/hide mentor_id rows based on type
         const memberIdRow = document.getElementById("member_id_container");
         const mentorIdRow = document.getElementById("mentor_id_container");
         const isGuest = data.contact.Type === 'Guest';
 
-        if (memberIdRow) memberIdRow.style.display = isGuest ? 'none' : '';
-        if (mentorIdRow) mentorIdRow.style.display = isGuest ? 'none' : '';
+        if (memberIdRow) memberIdRow.style.display = 'block'; // Always show for edit
+        if (mentorIdRow) mentorIdRow.style.display = isGuest ? 'none' : 'block';
 
         // Handle Avatar Preview
         const avatarImg = document.getElementById("modal-avatar-img");
@@ -177,9 +177,13 @@ function openContactModal(contactId) {
         const homeClubSelect = document.getElementById("home_club_id");
         const homeClubRow = document.getElementById("home_club_container");
         if (homeClubSelect && homeClubRow) {
-          homeClubSelect.innerHTML = '';
-          if (data.user_clubs && data.user_clubs.length > 0) {
-            data.user_clubs.forEach(club => {
+          homeClubSelect.innerHTML = '<option value="">-- Select Home Club --</option>';
+
+          // Show clubs the user is a member of (including the home club provided by backend)
+          const clubsToShow = data.user_clubs || [];
+
+          if (clubsToShow.length > 0) {
+            clubsToShow.forEach(club => {
               const option = document.createElement("option");
               option.value = club.id;
               option.textContent = club.name;
@@ -188,10 +192,8 @@ function openContactModal(contactId) {
             if (data.home_club_id) {
               homeClubSelect.value = data.home_club_id;
             }
-            homeClubRow.style.display = '';
-          } else {
-            homeClubRow.style.display = 'none';
           }
+          homeClubRow.style.display = 'block'; // Always show for edit
         }
 
         // Populate Mentor Dropdown
@@ -246,13 +248,14 @@ function openContactModal(contactId) {
     const basicInfoAccordion = document.getElementById("basicInfoAccordion");
     if (basicInfoAccordion) basicInfoAccordion.style.display = "none";
 
-    // Hide member_id and mentor_id rows for new contacts (default is Guest)
+    // Hide mentor_id row for new contacts (default is Guest)
     const memberIdRow = document.getElementById("member_id_container");
     const mentorIdRow = document.getElementById("mentor_id_container");
     const homeClubRow = document.getElementById("home_club_container");
-    if (memberIdRow) memberIdRow.style.display = 'none';
+
+    if (memberIdRow) memberIdRow.style.display = 'block'; // Keep visible to allow entry
     if (mentorIdRow) mentorIdRow.style.display = 'none';
-    if (homeClubRow) homeClubRow.style.display = 'none';
+    if (homeClubRow) homeClubRow.style.display = 'none'; // Only show if we have clubs to pick from
 
     // Reset Avatar for New Entry
     document.getElementById("modal-avatar-img").style.display = 'none';

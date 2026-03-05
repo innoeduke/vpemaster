@@ -2,7 +2,7 @@
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
 from . import db
-from .models import Contact, SessionLog, Pathway, ContactClub, Meeting, Vote, ExComm, UserClub, Roster, SessionType, MeetingRole, OwnerMeetingRoles
+from .models import Contact, SessionLog, Pathway, ContactClub, Meeting, Vote, ExComm, UserClub, Roster, SessionType, MeetingRole, OwnerMeetingRoles, Club
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions, permission_required
 from .club_context import get_current_club_id, authorized_club_required
@@ -165,12 +165,29 @@ def contact_form(contact_id=None):
         # If so, get that user's other clubs.
         
         user = contact.user # Uses current club context
+        user_clubs_data = []
+        home_club_id = None
+        
+        # 1. Primary source: Home Club via Member ID (global)
+        home_club = contact.get_home_club()
+        if home_club:
+            home_club_id = home_club.id
+            user_clubs_data = [{'id': home_club.id, 'name': home_club.club_name}]
+
+        # 2. Add other clubs the user is a member of
         if user:
             ucs = UserClub.query.filter_by(user_id=user.id).options(joinedload(UserClub.club)).all()
-            user_clubs_data = [{'id': uc.club.id, 'name': uc.club.club_name} for uc in ucs]
+            # Merge with existing data to avoid duplicates
+            existing_ids = {c['id'] for c in user_clubs_data}
+            for uc in ucs:
+                if uc.club.id not in existing_ids:
+                    user_clubs_data.append({'id': uc.club.id, 'name': uc.club.club_name})
             
+            # Prefer home club from UserClub record if it exists
             home_uc = next((uc for uc in ucs if uc.is_home), None)
-            home_club_id = home_uc.club_id if home_uc else None
+            if home_uc:
+                home_club_id = home_uc.club_id
+
 
         return jsonify({
             'contact': {
@@ -259,9 +276,15 @@ def contact_form(contact_id=None):
             home_club_val = request.form.get('home_club_id')
             # Only update if the field was present in the form submission
             if 'home_club_id' in request.form:
+                 # Prefer user linked via current club context
                  user = contact.user
+                 if not user and member_id:
+                     # Fallback: Find user via Member ID if contact is a Guest
+                     from .models import User
+                     user = User.query.filter_by(member_no=member_id).first()
+                 
                  if user:
-                     new_home_club_id = int(home_club_val) if home_club_val else None
+                     new_home_club_id = int(home_club_val) if home_club_val and str(home_club_val).strip() else None
                      user.set_home_club(new_home_club_id)
             
             # Handle Avatar Upload
