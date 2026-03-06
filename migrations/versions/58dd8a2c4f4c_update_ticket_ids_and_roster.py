@@ -47,24 +47,25 @@ def upgrade():
         op.execute(f"UPDATE roster SET ticket_id = {new} WHERE ticket_id = {old}")
     
     # 3. Correct Roster Assignments for Guest contacts using name/type lookups if possible
-    # We want to move Guests from 'Member' tickets to 'Guest' tickets.
-    # Logic:
-    # - Early-bird (Member) -> Early-bird (Guest)
-    # - Walk-in (Member) -> Walk-in (Guest)
+    # Check if 'type' column exists before running name/type based updates
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [c['name'] for c in inspector.get_columns('tickets')]
     
-    # Robust subquery-based updates to find current IDs by name and type
-    op.execute("""
-        UPDATE roster 
-        SET ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Guest' LIMIT 1)
-        WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Member' LIMIT 1)
-        AND contact_type = 'Guest'
-    """)
-    op.execute("""
-        UPDATE roster 
-        SET ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Guest' LIMIT 1)
-        WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Member' LIMIT 1)
-        AND contact_type = 'Guest'
-    """)
+    if 'type' in columns:
+        # Robust subquery-based updates to find current IDs by name and type
+        op.execute("""
+            UPDATE roster 
+            SET ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Guest' LIMIT 1)
+            WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Member' LIMIT 1)
+            AND contact_type = 'Guest'
+        """)
+        op.execute("""
+            UPDATE roster 
+            SET ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Guest' LIMIT 1)
+            WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Member' LIMIT 1)
+            AND contact_type = 'Guest'
+        """)
 
     # Re-enable foreign key checks AT THE VERY END
     op.execute("SET FOREIGN_KEY_CHECKS = 1;")
@@ -74,19 +75,25 @@ def downgrade():
     # Disable foreign key checks
     op.execute("SET FOREIGN_KEY_CHECKS = 0;")
     
-    # Reverse Guest Assignment Corrections using robust lookups
-    op.execute("""
-        UPDATE roster 
-        SET ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Member' LIMIT 1)
-        WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Guest' LIMIT 1)
-        AND contact_type = 'Guest'
-    """)
-    op.execute("""
-        UPDATE roster 
-        SET ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Member' LIMIT 1)
-        WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Guest' LIMIT 1)
-        AND contact_type = 'Guest'
-    """)
+    # Check if 'type' column exists before reversing corrections
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [c['name'] for c in inspector.get_columns('tickets')]
+
+    if 'type' in columns:
+        # Reverse Guest Assignment Corrections using robust lookups
+        op.execute("""
+            UPDATE roster 
+            SET ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Member' LIMIT 1)
+            WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Guest' LIMIT 1)
+            AND contact_type = 'Guest'
+        """)
+        op.execute("""
+            UPDATE roster 
+            SET ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Member' LIMIT 1)
+            WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Guest' LIMIT 1)
+            AND contact_type = 'Guest'
+        """)
 
     # Reverse mapping for downgrade:
     # 5 -> 2
