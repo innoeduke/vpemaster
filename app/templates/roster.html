@@ -35,8 +35,11 @@
         <div class="filter-row-premium">
             {{ render_meeting_filter(all_meetings, selected_meeting_id, label='', data_format='tuple', render_outer_container=False) }}
             <div class="filter-right">
-                <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn btn-secondary trend-btn" title="View Participation Trend">
-                    <i class="fas fa-chart-line"></i> Meeting Attendance Trend
+                <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn btn-secondary trend-btn" title="View Attendance Trend">
+                    <i class="fas fa-chart-line"></i> Attendance 
+                </a>
+                <a href="{{ url_for('roster_bp.roster_amount_trend') }}" class="btn btn-secondary trend-btn" title="View Amount Trend" style="margin-left: 10px;">
+                    <i class="fas fa-coins"></i> Ticket Sales
                 </a>
             </div>
         </div>

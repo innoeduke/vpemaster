@@ -214,6 +214,72 @@ def roster_participation_trend():
                            datasets=datasets)
 
 
+@roster_bp.route('/amount-trend', methods=['GET'])
+@login_required
+@authorized_club_required
+def roster_amount_trend():
+    """Stacked bar chart showing amount trend by contact type over meetings."""
+    from sqlalchemy import func
+    
+    club_id = get_current_club_id()
+    
+    query = Meeting.query.filter(Meeting.status == 'finished', Meeting.Meeting_Number >= 951)
+    if club_id:
+        query = query.filter(Meeting.club_id == club_id)
+    meetings = query.order_by(Meeting.Meeting_Number.asc()).all()
+    meeting_numbers = [m.Meeting_Number for m in meetings]
+    meeting_dates = [m.Meeting_Date.strftime('%Y-%m-%d') if m.Meeting_Date else '' for m in meetings]
+    
+    amounts_query = db.session.query(
+        Meeting.Meeting_Number,
+        Roster.contact_type,
+        func.sum(Roster.amount).label('total_amount')
+    ).join(Meeting, Roster.meeting_id == Meeting.id)\
+     .join(Ticket, Roster.ticket_id == Ticket.id)\
+     .filter(
+        Meeting.Meeting_Number.in_(meeting_numbers),
+        Ticket.name != 'Cancelled'
+    ).group_by(
+        Meeting.Meeting_Number,
+        Roster.contact_type
+    ).all()
+    
+    amounts_by_meeting = {}
+    for mtg_num, c_type, total in amounts_query:
+        if mtg_num not in amounts_by_meeting:
+            amounts_by_meeting[mtg_num] = {}
+        # Ensure default to 'Guest' if contact_type is empty
+        c_type = c_type or 'Guest'
+        amounts_by_meeting[mtg_num][c_type] = amounts_by_meeting[mtg_num].get(c_type, 0) + (total or 0)
+    
+    # Define contact types and their colors
+    contact_types = [
+        {'name': 'Guest', 'color': '#20c997'}, # Teal
+        {'name': 'Member', 'color': '#ffc107'}, # Yellow
+        {'name': 'Officer', 'color': '#fd7e14'} # Orange
+    ]
+    
+    datasets = []
+    for c_type_info in contact_types:
+        name = c_type_info['name']
+        data = []
+        for mtg_num in meeting_numbers:
+            amount = amounts_by_meeting.get(mtg_num, {}).get(name, 0)
+            data.append(float(amount))
+            
+        if sum(data) > 0:
+            datasets.append({
+                'label': name,
+                'data': data,
+                'color': c_type_info['color']
+            })
+            
+    return render_template('roster_amount_trend.html',
+                           meeting_numbers=meeting_numbers,
+                           meeting_dates=meeting_dates,
+                           datasets=datasets)
+
+
 @roster_bp.route('/api/entry', methods=['POST'])
 @login_required
 @authorized_club_required

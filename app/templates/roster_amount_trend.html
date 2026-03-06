@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% from "components/stacked_chart.html" import render_chart_container %}
 
-{% block title %}Participation Trend{% endblock %}
+{% block title %}Amount Trend{% endblock %}
 
-{% block header_title %}Participation Trend{% endblock %}
+{% block header_title %}Amount Trend{% endblock %}
 
 {% block head_extra %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -20,9 +20,9 @@
 	{% for ds in datasets %}
 		{% set _ = legend_items.append({'label': ds.label, 'color': ds.color, 'type': 'bar'}) %}
 	{% endfor %}
-	{% set axis_labels = {'left': 'Participants', 'bottom': 'Meeting Number'} %}
+	{% set axis_labels = {'left': 'Amount (¥)', 'bottom': 'Meeting Number'} %}
 	
-	{{ render_chart_container('participationChart', 'Attendance', 'Attendees by Ticket Type', url_for('roster_bp.roster'), 'Back to Roster', legend_items, axis_labels) }}
+	{{ render_chart_container('amountChart', 'Ticket Sales', 'CNY Amount by Contact Type', url_for('roster_bp.roster'), 'Back to Roster', legend_items, axis_labels) }}
 </div>
 
 <script>
@@ -52,18 +52,18 @@ document.addEventListener('DOMContentLoaded', function() {
 		innerContainer.style.height = '100%';
 	}
 
-	// Calculate max participant count for scale
-	let maxParticipants = 0;
+	// Calculate max amount for scale
+	let maxAmount = 0;
 	for (const ds of datasetsRaw) {
 		for (const val of ds.data) {
-			maxParticipants = Math.max(maxParticipants, val);
+			maxAmount = Math.max(maxAmount, val);
 		}
 	}
 	// Calculate total per meeting for stacked bars
 	const totalPerMeeting = meetingNumbers.map((_, idx) => {
 		return datasetsRaw.reduce((sum, ds) => sum + (ds.data[idx] || 0), 0);
 	});
-	const maxStackedTotal = Math.max(...totalPerMeeting, 10);
+	const maxStackedTotal = Math.max(...totalPerMeeting, 100);
 	const suggestedMax = Math.ceil(maxStackedTotal * 1.1);
 
 	// Shared scale configuration (Desktop)
@@ -74,9 +74,14 @@ document.addEventListener('DOMContentLoaded', function() {
 			beginAtZero: true,
 			min: 0,
 			suggestedMax: suggestedMax,
-			title: { display: true, text: 'Participants', font: { weight: 'bold' } },
+			title: { display: true, text: 'Amount (¥)', font: { weight: 'bold' } },
 			grid: { color: 'rgba(0, 0, 0, 0.05)' },
-			stacked: true
+			stacked: true,
+            ticks: {
+                callback: function(value) {
+                    return '¥' + value;
+                }
+            }
 		},
 		x: {
 			title: { display: true, text: 'Meeting Number', font: { weight: 'bold' } },
@@ -94,8 +99,13 @@ document.addEventListener('DOMContentLoaded', function() {
 			beginAtZero: true,
 			min: 0,
 			suggestedMax: suggestedMax,
-			title: { display: true, text: 'Participants', font: { weight: 'bold' } },
-			stacked: true
+			title: { display: true, text: 'Amount (¥)', font: { weight: 'bold' } },
+			stacked: true,
+            ticks: {
+                callback: function(value) {
+                    return '¥' + value;
+                }
+            }
 		},
 		y: {
 			type: 'category',
@@ -132,10 +142,21 @@ document.addEventListener('DOMContentLoaded', function() {
 				callbacks: {
 					title: (context) => `Meeting #${meetingNumbers[context[0].dataIndex]}`,
 					afterTitle: (context) => meetingDates[context[0].dataIndex] || '',
+                    label: (context) => {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed !== null) {
+                            const val = isMobile ? context.parsed.x : context.parsed.y;
+                            label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'CNY' }).format(val);
+                        }
+                        return label;
+                    },
 					footer: (context) => {
 						const idx = context[0].dataIndex;
 						const total = datasetsRaw.reduce((sum, ds) => sum + (ds.data[idx] || 0), 0);
-						return `Total: ${total}`;
+						return `Total: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'CNY' }).format(total)}`;
 					}
 				}
 			}
@@ -149,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	if (isMobile) {
 		if (titleTop) titleTop.style.display = 'none';
-		titleBottom.innerText = 'Participants';
+		titleBottom.innerText = 'Amount (¥)';
 	} else {
 		if (titleTop) titleTop.style.display = 'none';
 		titleBottom.innerText = 'Meeting Number';
@@ -167,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			borderWidth: 2,
 			borderRadius: 6,
 			borderSkipped: idx === 0 ? false : 'bottom',
-			stack: 'participation_stack',
+			stack: 'amount_stack',
 			barThickness: barThickness,
 			order: idx + 1,
 			datalabels: isLast ? {
@@ -177,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					// Calculate total for this bar
 					const idx = ctx.dataIndex;
 					const total = datasetsRaw.reduce((sum, d) => sum + (d.data[idx] || 0), 0);
-					return total;
+					return total > 0 ? `¥${total}` : '';
 				},
 				font: { weight: 'bold', size: isMobile ? 11 : 12, family: "'Montserrat', sans-serif" },
 				color: '#1a1a1b',
@@ -212,7 +233,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	});
 
 	// 2. DATA CHART (Scrollable Foreground)
-	new Chart(document.getElementById('participationChart').getContext('2d'), {
+	new Chart(document.getElementById('amountChart').getContext('2d'), {
 		type: 'bar',
 		data: {
 			labels: labels,
