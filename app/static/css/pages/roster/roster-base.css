@@ -614,15 +614,22 @@
 	color: white;
 }
 
-/* Export icon button in form bar */
-.page-container .form-buttons .action-icon-btn {
+/* Icon-only button styles */
+.page-container .action-icon-btn {
 	flex: 0 0 auto;
-	width: 40px;
-	min-width: 40px;
+	width: 44px;
+	/* match typical .btn height = 44px */
+	min-width: 44px;
 	padding: 0;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+}
+
+.page-container .form-buttons .action-icon-btn {
+	width: 40px;
+	/* match .form-buttons .btn height = 40px */
+	min-width: 40px;
 }
 
 /* --- Roster Export Info (hidden by default, shown during export) --- */

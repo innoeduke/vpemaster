@@ -48,6 +48,7 @@
     {% if selected_meeting %}
     <div class="roster-main-content">
         <!-- Top: Add/Update Form (Inline) -->
+        {% if is_authorized(Permissions.ROSTER_EDIT) %}
         <div class="roster-form-container">
             <div class="card">
                 <div class="card-body">
@@ -93,6 +94,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
         {% if selected_meeting %}
         <p class="roster-export-info">Meeting #{{ selected_meeting.Meeting_Number }} | {{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') if selected_meeting.Meeting_Date else '' }}</p>
@@ -108,7 +110,9 @@
                         <th class="sortable header-ticket" data-column-index="2">Ticket</th>
                         <th class="header-roles desktop-only">Roles</th>
                         <th class="header-amount desktop-only">Amount</th>
+                        {% if is_authorized(Permissions.ROSTER_EDIT) %}
                         <th class="roster-header-actions">Actions</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody>
@@ -168,6 +172,7 @@
                                 {{ "¥%.2f"|format(entry.ticket.price or 0) if entry.ticket else '-' }}
                             </span>
                         </td>
+                        {% if is_authorized(Permissions.ROSTER_EDIT) %}
                         <td class="cell-actions">
                             <button class="{% if entry.ticket and entry.ticket.name != 'Cancelled' %}icon-btn{% endif %} edit-entry"
                                 data-id="{{ entry.id }}" 
@@ -190,6 +195,7 @@
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
 
@@ -202,7 +208,9 @@
                         <td></td>
                         <td class="desktop-only"></td>
                         <td class="desktop-only"></td>
+                        {% if is_authorized(Permissions.ROSTER_EDIT) %}
                         <td></td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                     {% endif %}
