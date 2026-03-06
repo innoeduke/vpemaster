@@ -48,10 +48,10 @@ class TestRosterAssignment(unittest.TestCase):
         # Seed Tickets
         from app.models import Ticket
         tickets = [
-            Ticket(name="Officer", price=0),
-            Ticket(name="Early-bird (Member)", price=0),
-            Ticket(name="Role-taker", price=0),
-            Ticket(name="Guest", price=0)
+            Ticket(name="Officer", price=0, club_id=self.club.id),
+            Ticket(name="Early-bird (Member)", price=0, club_id=self.club.id),
+            Ticket(name="Role-taker", price=0, club_id=self.club.id),
+            Ticket(name="Guest", price=0, club_id=self.club.id)
         ]
         db.session.add_all(tickets)
         db.session.commit()

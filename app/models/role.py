@@ -14,7 +14,7 @@ class Role(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
-    permissions = db.relationship('Permission', secondary='role_permissions', back_populates='roles')
+    permissions = db.relationship('Permission', secondary='role_permissions', back_populates='roles', lazy='joined')
     users = db.relationship(
         'User',
         secondary='user_clubs',

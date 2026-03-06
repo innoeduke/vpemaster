@@ -38,10 +38,10 @@ class TestVerifyRosterLogic(unittest.TestCase):
         # Seed Tickets
         from app.models import Ticket, Meeting
         tickets = [
-            Ticket(name="Officer", price=0),
-            Ticket(name="Early-bird (Member)", price=0),
-            Ticket(name="Role-taker", price=0),
-            Ticket(name="Guest", price=0)
+            Ticket(name="Officer", price=0, club_id=1),
+            Ticket(name="Early-bird (Member)", price=0, club_id=1),
+            Ticket(name="Role-taker", price=0, club_id=1),
+            Ticket(name="Guest", price=0, club_id=1)
         ]
         db.session.add_all(tickets)
         

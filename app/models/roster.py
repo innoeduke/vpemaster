@@ -87,6 +87,7 @@ class Roster(db.Model):
         
     order_number = db.Column(db.Integer, nullable=True)
     ticket_id = db.Column(db.Integer, db.ForeignKey('tickets.id'), nullable=True)
+    amount = db.Column(db.Float, default=0.0)
     
     ticket = db.relationship('Ticket')
     contact_id = db.Column(db.Integer, db.ForeignKey(
@@ -180,10 +181,22 @@ class Roster(db.Model):
                 elif contact.Type == 'Member':
                     ticket_name = "Early-bird (Member)"
 
-                ticket_obj = Ticket.query.filter_by(name=ticket_name).first()
-                # Fallback to Role-taker if not found, though DB should have it
+                from .meeting import Meeting
+                from ..constants import GLOBAL_CLUB_ID
+                meeting = db.session.get(Meeting, meeting_id)
+                club_id = meeting.club_id if meeting else GLOBAL_CLUB_ID
+
+                # Prioritize Club Ticket over Global Ticket
+                ticket_obj = Ticket.query.filter_by(name=ticket_name, club_id=club_id).first()
+                if not ticket_obj and club_id != GLOBAL_CLUB_ID:
+                    ticket_obj = Ticket.query.filter_by(name=ticket_name, club_id=GLOBAL_CLUB_ID).first()
+                
+                # Fallback to Role-taker if not found
                 if not ticket_obj:
-                    ticket_obj = Ticket.query.filter_by(name="Role-taker").first()
+                    ticket_name = "Role-taker"
+                    ticket_obj = Ticket.query.filter_by(name=ticket_name, club_id=club_id).first()
+                    if not ticket_obj and club_id != GLOBAL_CLUB_ID:
+                        ticket_obj = Ticket.query.filter_by(name=ticket_name, club_id=GLOBAL_CLUB_ID).first()
 
                 roster_entry = Roster(
                     meeting_id=meeting_id,
@@ -262,3 +275,17 @@ class Waitlist(db.Model):
         
         if session_log_ids:
             cls.query.filter(cls.session_log_id.in_(session_log_ids)).delete(synchronize_session=False)
+
+
+@db.event.listens_for(Roster, 'before_insert')
+@db.event.listens_for(Roster, 'before_update')
+def update_roster_amount(mapper, connection, target):
+    """Automatically sync amount from ticket price on save/update."""
+    if target.ticket_id:
+        from .ticket import Ticket
+        # Fetch ticket directly to ensure we get the latest price for the given ticket_id
+        ticket = db.session.get(Ticket, target.ticket_id)
+        if ticket:
+            target.amount = ticket.price
+    else:
+        target.amount = 0.0

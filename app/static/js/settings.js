@@ -2230,6 +2230,236 @@ document.addEventListener('DOMContentLoaded', () => {
   // If the active tab is user-settings (or no active tab set), load the users immediately
   // For simplicity, just fetch it in the background on DOMContentLoaded
   loadUsersAsync();
+
+  // Settings initializations
+  setupTableSorting("tickets-table");
+  setupTableSorting("global-tickets-table");
+
+  if (document.getElementById("tickets-table")) {
+    window.activePaginators = window.activePaginators || {};
+    window.activePaginators["tickets-settings"] = new TablePaginator({
+      tableId: "tickets-table",
+      containerId: "tickets-settings", // using the tab as container but we might need a paginator DOM if long. The global filter will just hide rows.
+      pageSize: 25,
+      storageKey: "tickets_table"
+    });
+  }
+
+  // Add Ticket Form Submission
+  const ticketForm = document.getElementById("ticket-form");
+  if (ticketForm) {
+    ticketForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const submitBtn = document.getElementById("ticketModalSubmitBtn");
+      const errorDiv = document.getElementById("ticket-modal-error");
+      const id = document.getElementById("ticket-id").value;
+      const isEdit = id && id !== "";
+
+      errorDiv.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+      const formData = new FormData(ticketForm);
+      const url = isEdit ? '/settings/tickets/update' : '/settings/tickets/add';
+
+      try {
+        let response;
+        if (isEdit) {
+          // update endpoint expects a list of objects based on settings_routes.py we wrote
+          const payload = [{
+            id: id,
+            name: formData.get('name'),
+            type: formData.get('type') || '',
+            price: formData.get('price') || 0,
+            icon: formData.get('icon') || '',
+            color: formData.get('color') || ''
+          }];
+          response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          response = await fetch(url, {
+            method: 'POST',
+            body: formData
+          });
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          window.location.reload();
+        } else {
+          errorDiv.textContent = data.message || "An error occurred.";
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        errorDiv.textContent = "Network error: " + error.message;
+        errorDiv.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Ticket';
+      }
+    });
+  }
 });
+
+/* --- Ticket Modal Logic --- */
+
+function initTicketIconMatrix() {
+  const container = document.getElementById("ticket-icon-matrix-container");
+  const hiddenInput = document.getElementById("ticket-icon");
+
+  if (!container || !hiddenInput) return;
+
+  // Clear existing content except the hidden input
+  Array.from(container.children).forEach(child => {
+    if (child.id !== "ticket-icon") child.remove();
+  });
+
+  // Collect icons in use
+  const inUseIcons = new Set();
+  document.querySelectorAll('#tickets-table tbody tr').forEach(row => {
+    const iconCell = row.querySelector('td[data-field="icon"] i');
+    if (iconCell) {
+      const match = iconCell.className.match(/(fa-[a-z0-9\-]+)/);
+      if (match) inUseIcons.add(match[1]);
+    }
+  });
+
+  const fullIconList = [];
+  if (inUseIcons.size > 0) {
+    const inUseArray = Array.from(inUseIcons).map(val => {
+      let label = val;
+      for (const group of ICON_LIST) {
+        const found = group.icons.find(i => i.value === val);
+        if (found) { label = found.label; break; }
+      }
+      return { value: val, label: label };
+    });
+    fullIconList.push({ group: "In Use", icons: inUseArray });
+  }
+  fullIconList.push(...ICON_LIST);
+
+  // Add Grouped Icons
+  fullIconList.forEach((group) => {
+    const title = document.createElement("div");
+    title.className = "icon-group-title";
+    title.textContent = group.group;
+    container.appendChild(title);
+
+    const grid = document.createElement("div");
+    grid.className = "icon-matrix";
+
+    if (group.group === "Core Roles") {
+      const noneItem = document.createElement("div");
+      noneItem.className = "icon-item active";
+      noneItem.dataset.value = "";
+      noneItem.title = "None";
+      noneItem.innerHTML = `<i class="fas fa-ban"></i>`;
+      noneItem.addEventListener("click", () => {
+        container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
+        noneItem.classList.add("active");
+        hiddenInput.value = "";
+      });
+      grid.appendChild(noneItem);
+    }
+
+    group.icons.forEach((icon) => {
+      const item = document.createElement("div");
+      item.className = "icon-item";
+      item.dataset.value = icon.value;
+      item.title = icon.label;
+      item.innerHTML = `<i class="fas ${icon.value}"></i>`;
+
+      item.addEventListener("click", () => {
+        container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
+        item.classList.add("active");
+        hiddenInput.value = icon.value;
+      });
+      grid.appendChild(item);
+    });
+    container.appendChild(grid);
+  });
+}
+
+function filterTicketIcons(searchText) {
+  const lowerSearch = searchText.toLowerCase();
+  const container = document.getElementById("ticket-icon-matrix-container");
+  if (!container) return;
+
+  const items = container.querySelectorAll(".icon-item");
+  const groupTitles = container.querySelectorAll(".icon-group-title");
+
+  items.forEach(item => {
+    const title = (item.title || "").toLowerCase();
+    const val = (item.dataset.value || "").toLowerCase();
+    if (title.includes(lowerSearch) || val.includes(lowerSearch) || val === "") {
+      item.style.display = "flex";
+    } else {
+      item.style.display = "none";
+    }
+  });
+
+  // Hide empty groups
+  groupTitles.forEach(title => {
+    const grid = title.nextElementSibling;
+    if (grid && grid.classList.contains("icon-matrix")) {
+      const visibleItems = Array.from(grid.querySelectorAll(".icon-item")).filter(i => i.style.display !== "none");
+      if (visibleItems.length === 0) {
+        title.style.display = "none";
+        grid.style.display = "none";
+      } else {
+        title.style.display = "block";
+        grid.style.display = "grid";
+      }
+    }
+  });
+}
+
+function openAddTicketModal() {
+  document.getElementById("ticket-modal-title").innerText = "Add New Ticket";
+  const form = document.getElementById("ticket-form");
+  form.reset();
+  document.getElementById("ticket-id").value = "";
+  document.getElementById("ticket-icon").value = "";
+  initTicketIconMatrix();
+  document.getElementById("ticket-modal").style.display = "flex";
+}
+
+function openEditTicketModal(id, name, type, price, iconValue, color) {
+  document.getElementById("ticket-modal-title").innerText = "Edit Ticket";
+  const form = document.getElementById("ticket-form");
+  form.reset();
+
+  document.getElementById("ticket-id").value = id;
+  document.getElementById("ticket-name").value = name;
+  document.getElementById("ticket-type").value = type;
+  document.getElementById("ticket-price").value = price;
+
+  // Normalize color to 7-character hex for HTML5 input
+  let normalizedColor = "#000000";
+  if (color && typeof color === 'string' && color.trim() !== "" && color !== "None") {
+    let raw = color.trim();
+    if (raw.charAt(0) !== '#') raw = '#' + raw;
+    if (raw.length === 4) { // e.g. #FFF
+      raw = '#' + raw[1] + raw[1] + raw[2] + raw[2] + raw[3] + raw[3];
+    }
+    normalizedColor = raw.toLowerCase();
+  }
+  document.getElementById("ticket-color").value = normalizedColor;
+
+  document.getElementById("ticket-icon").value = iconValue || "";
+
+  initTicketIconMatrix();
+  const container = document.getElementById("ticket-icon-matrix-container");
+  if (container) {
+    container.querySelectorAll(".icon-item").forEach(i => i.classList.remove("active"));
+    const activeItem = container.querySelector(`.icon-item[data-value="${iconValue || ""}"]`);
+    if (activeItem) activeItem.classList.add("active");
+  }
+
+  document.getElementById("ticket-modal").style.display = "flex";
+}
 
 

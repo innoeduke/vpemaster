@@ -10,6 +10,47 @@
 /* --- Filter Container premium --- */
 
 /* Main Content Structure */
+.roster-header-grid {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+	flex-wrap: wrap;
+	gap: 15px;
+}
+
+.roster-header-grid h1 {
+	margin: 0;
+}
+
+.revenue-kpi {
+	background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+	border-left: 4px solid #772432;
+	padding: 10px 20px;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+	display: inline-flex;
+	flex-direction: column;
+	align-items: flex-end;
+	min-width: 150px;
+}
+
+.revenue-kpi .kpi-label {
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	color: #6c757d;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	margin-bottom: 2px;
+}
+
+.revenue-kpi .kpi-value {
+	font-size: 1.5rem;
+	font-weight: 700;
+	color: #333;
+	line-height: 1.2;
+}
+
 .roster-main-content {
 	display: flex;
 	flex-direction: column;
@@ -305,29 +346,29 @@
 }
 
 .page-container .header-name {
-	width: 20%;
+	width: 28%;
 	min-width: 150px;
-	max-width: 200px;
+	max-width: 250px;
 }
 
 .page-container .header-ticket {
-	width: 15%;
+	width: 12%;
 	min-width: 110px;
 	white-space: nowrap;
 }
 
 .page-container .header-roles {
-	width: 25%;
+	width: 35%;
 	min-width: 150px;
 }
 
-.page-container .header-club {
-	width: 20%;
-	min-width: 150px;
+.page-container .header-amount {
+	width: 10%;
+	min-width: 60px;
 }
 
 .page-container .roster-header-actions {
-	width: 15%;
+	width: 12%;
 	min-width: 100px;
 	text-align: center;
 	white-space: nowrap;

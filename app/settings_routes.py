@@ -13,6 +13,7 @@ import os
 import csv
 import io
 from datetime import datetime
+from .models.ticket import Ticket
 
 settings_bp = Blueprint('settings_bp', __name__)
 
@@ -99,6 +100,16 @@ def settings():
     # We'll pass them as a list of dicts for simplicity in logic
     all_auth_roles = [{'id': r.id, 'name': r.name, 'level': r.level} for r in all_auth_roles_query if r.name not in ('Guest', 'SysAdmin')]
 
+    # Fetch Tickets
+    global_tickets = Ticket.query.filter_by(club_id=GLOBAL_CLUB_ID).all()
+    local_tickets = []
+    if club_id and club_id != GLOBAL_CLUB_ID:
+        local_tickets = Ticket.query.filter_by(club_id=club_id).all()
+    
+    # Merge for display, optional. Here we pass both to the template separately like roles.
+    merged_tickets = Ticket.get_all_for_club(club_id)
+    tickets = [{'id': t.id, 'name': t.name, 'price': t.price, 'type': t.type, 'icon': t.icon, 'color': t.color} for t in merged_tickets]
+
     return render_template('settings.html', 
                           global_session_types=global_session_types,
                           local_session_types=local_session_types,
@@ -115,7 +126,10 @@ def settings():
                           pathways=pathways,
                           programs=programs,
                           project_types=project_types,
-                          all_auth_roles=all_auth_roles)
+                          all_auth_roles=all_auth_roles,
+                          global_tickets=global_tickets,
+                          local_tickets=local_tickets,
+                          tickets=tickets)
 
 
 @settings_bp.route('/settings/excomm/add', methods=['POST'])
@@ -743,10 +757,137 @@ def import_roles():
         return jsonify(success=False, message=str(e)), 500
 
 
+@settings_bp.route('/settings/tickets/add', methods=['POST'])
+@login_required
+def add_ticket():
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+    club_id = get_current_club_id()
+    trimmed_name = request.form.get('name', '').strip()
+    if not trimmed_name:
+         return jsonify(success=False, message="Ticket name is required"), 400
+
+    # Check if we are updating or adding
+    ticket_id = request.form.get('id')
+    ticket = None
+    if ticket_id:
+        ticket = db.session.get(Ticket, ticket_id)
+        if not ticket or ticket.club_id != club_id:
+            return jsonify(success=False, message="Ticket not found or permission denied"), 404
+
+    # Check if ticket name already exists in this club
+    query = Ticket.query.filter_by(name=trimmed_name, club_id=club_id)
+    if ticket:
+        query = query.filter(Ticket.id != ticket.id)
+    
+    if query.first():
+        return jsonify(success=False, message=f'Ticket with name "{trimmed_name}" already exists in this club.'), 400
+
+    try:
+        price_val = request.form.get('price', 0.0)
+        try:
+            price_val = float(price_val)
+        except ValueError:
+            price_val = 0.0
+
+        if ticket:
+            # Update existing
+            ticket.name = trimmed_name
+            ticket.icon = request.form.get('icon')
+            ticket.type = request.form.get('type')
+            ticket.color = request.form.get('color')
+            ticket.price = price_val
+            msg = "Ticket updated successfully"
+        else:
+            # Create new
+            ticket = Ticket(
+                name=trimmed_name,
+                icon=request.form.get('icon'),
+                type=request.form.get('type'),
+                color=request.form.get('color'),
+                price=price_val,
+                club_id=club_id
+            )
+            db.session.add(ticket)
+            msg = "Ticket added successfully"
+        
+        db.session.commit()
+
+        ticket_data = {
+            'id': ticket.id,
+            'name': ticket.name,
+            'icon': ticket.icon,
+            'type': ticket.type,
+            'color': ticket.color,
+            'price': ticket.price
+        }
+        return jsonify(success=True, message=msg, new_ticket=ticket_data)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
 
 
+@settings_bp.route('/settings/tickets/update', methods=['POST'])
+@login_required
+def update_tickets():
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+    club_id = get_current_club_id()
+    data = request.json
+    try:
+        for item in data:
+            ticket = db.session.get(Ticket, item['id'])
+            if ticket and ticket.club_id == club_id:
+                ticket.name = item.get('name')
+                ticket.icon = item.get('icon')
+                ticket.type = item.get('type')
+                ticket.color = item.get('color')
+                try:
+                    ticket.price = float(item.get('price', 0.0))
+                except ValueError:
+                    ticket.price = 0.0
+
+        db.session.commit()
+        return jsonify(success=True, message="Tickets updated successfully.")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
 
 
+@settings_bp.route('/settings/tickets/delete/<int:id>', methods=['POST'])
+@login_required
+def delete_ticket(id):
+    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+    club_id = get_current_club_id()
+    try:
+        ticket = db.session.get(Ticket, id)
+        
+        if not ticket:
+             return jsonify(success=False, message="Ticket not found"), 404
+
+        if ticket.club_id == GLOBAL_CLUB_ID and club_id != GLOBAL_CLUB_ID:
+             return jsonify(success=False, message="Cannot delete a Global ticket."), 403
+
+        if ticket and (ticket.club_id == club_id or club_id == GLOBAL_CLUB_ID):
+            # Check usage in Roster
+            from .models.roster import Roster
+            
+            usage_roster = Roster.query.filter_by(ticket_id=id).all()
+            if usage_roster:
+                return jsonify(
+                    success=False, 
+                    message=f"Cannot delete ticket '{ticket.name}' because it is used in {len(usage_roster)} roster entry/entries. Please update the rosters first."
+                ), 400
+
+            db.session.delete(ticket)
+            db.session.commit()
+            return jsonify(success=True, message="Ticket deleted successfully.")
+        else:
+            return jsonify(success=False, message="Permission denied"), 403
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
 
 
 @settings_bp.route('/api/settings/users', methods=['GET'])

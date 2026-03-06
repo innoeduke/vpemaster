@@ -238,23 +238,50 @@ function initializeContactTypeHandler(elements) {
     if (e.target !== elements.contactTypeSelect) return;
 
     const contactType = this.value;
-    const currentTicket = elements.ticketSelect.value;
+    const currentTicketId = elements.ticketSelect.value;
 
-    // A "default" ticket is one that is empty, "Early-bird", "Role-taker", or "Officer"
-    const isDefaultTicket = !currentTicket || currentTicket === "Early-bird" || currentTicket === "Role-taker" || currentTicket === "Officer";
+    // Find all ticket options associated with the elements.ticketSelect custom UI
+    const ticketResultsContainer = document.getElementById("ticket-results");
+    const ticketOptions = ticketResultsContainer ? Array.from(ticketResultsContainer.querySelectorAll(".autocomplete-result-item")) : [];
 
-    console.log(`[Roster] Contact type -> ${contactType}. Ticket was: ${currentTicket || 'empty'} (isDefault: ${isDefaultTicket})`);
+    // Filter tickets based on contact type
+    let isCurrentTicketValid = false;
+    let officerTicketId = "";
+    let earlyBirdTicketId = "";
 
-    if (isDefaultTicket) {
-      const newDefault = (contactType === "Officer") ? "Officer" : "Early-bird";
-      if (currentTicket !== newDefault) {
-        console.log(`[Roster] Auto-defaulting ticket to: ${newDefault}`);
-        elements.ticketSelect.value = newDefault;
+    ticketOptions.forEach(option => {
+      const type = option.dataset.type;
+      const value = option.dataset.value;
+      const text = option.dataset.text;
+
+      if (text === "Officer") officerTicketId = value;
+      if (text === "Early-bird") earlyBirdTicketId = value;
+
+      // Show ticket if its type matches contactType or if the ticket type is empty/null (generic)
+      if (!type || type === "None" || type === contactType) {
+        option.style.display = "flex";
+        if (value === currentTicketId) isCurrentTicketValid = true;
+      } else {
+        option.style.display = "none";
+      }
+    });
+
+    // Check if current ticket is considered a "default" ticket name (by checking against IDs)
+    const isDefaultTicket = !currentTicketId || currentTicketId === earlyBirdTicketId || currentTicketId === officerTicketId;
+
+    console.log(`[Roster] Contact type -> ${contactType}. Ticket ID was: ${currentTicketId || 'empty'} (isDefault: ${isDefaultTicket}, isValid: ${isCurrentTicketValid})`);
+
+    // Only auto-default if it's currently a default ticket, or if the current ticket is no longer allowed.
+    if (isDefaultTicket || !isCurrentTicketValid) {
+      const newDefaultId = (contactType === "Officer") ? officerTicketId : earlyBirdTicketId;
+      if (currentTicketId !== newDefaultId) {
+        console.log(`[Roster] Auto-defaulting ticket to ID: ${newDefaultId}`);
+        elements.ticketSelect.value = newDefaultId;
         // Triggering change event so custom_select UI updates
         elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
     } else {
-      console.log(`[Roster] Preserving manual ticket selection: ${currentTicket}`);
+      console.log(`[Roster] Preserving manual ticket selection: ${currentTicketId}`);
     }
 
     // Update order number if necessary
@@ -316,14 +343,17 @@ function populateRosterEditForm(rosterId, elements) {
 
       elements.contactIdInput.value = entry.contact_id;
       elements.contactNameInput.value = entry.contact_name;
-      elements.ticketSelect.value = entry.ticket;
+      // In roster view row, we set data-ticket-id on the row, but here from API we need the ID directly
+      elements.ticketSelect.value = entry.ticket_id || entry.ticket;
 
       if (entry.contact_type) {
         elements.contactTypeSelect.value = entry.contact_type;
 
-        // Force ticket to Officer if type is Officer (fix for existing data)
+        // Force ticket to Officer if type is Officer (fix for existing data where it might be a name)
         if (entry.contact_type === 'Officer') {
-          elements.ticketSelect.value = 'Officer';
+          const officerOpt = Array.from(document.querySelectorAll('#ticket-results .autocomplete-result-item')).find(o => o.dataset.text === 'Officer');
+          if (officerOpt) elements.ticketSelect.value = officerOpt.dataset.value;
+          else elements.ticketSelect.value = 'Officer'; // fallback if IDs are weird
         }
 
         // This dispatch will handle correctly updating the order number if it was null
@@ -370,7 +400,7 @@ function initializeFormHandlers(elements) {
         order_number: elements.orderNumberInput.value,
         contact_id: elements.contactIdInput.value,
         contact_type: elements.contactTypeSelect.value,
-        ticket: elements.ticketSelect.value,
+        ticket_id: elements.ticketSelect.value,
       };
 
       // Validation
@@ -382,7 +412,7 @@ function initializeFormHandlers(elements) {
         showNotification("Please select a Contact Type.", "warning");
         return;
       }
-      if (!formData.ticket) {
+      if (!formData.ticket_id) {
         showNotification("Please select a Ticket type.", "warning");
         return;
       }

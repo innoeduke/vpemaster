@@ -75,7 +75,7 @@ def roster():
         missing_officers = [o for o in club_officers if o.id not in roster_contact_ids]
         
         if missing_officers:
-            officer_ticket = Ticket.query.filter_by(name='Officer').first()
+            officer_ticket = Ticket.get_by_name('Officer', club_id)
             officer_orders = [r.order_number for r in roster_entries if r.order_number and r.order_number >= 1000]
             next_off_order = max(officer_orders) + 1 if officer_orders else 1000
             
@@ -106,6 +106,10 @@ def roster():
         # Roles map
         roles_map = RoleService.get_role_takers(selected_meeting_id, club_id)
                 
+        
+        # Calculate total amount
+        total_amount = sum(entry.ticket.price for entry in roster_entries if entry.ticket and entry.ticket.price)
+
         if roster_entries:
             valid_orders = [entry.order_number for entry in roster_entries if entry.order_number is not None and entry.order_number < 1000]
             max_order = max(valid_orders) if valid_orders else 0
@@ -121,7 +125,7 @@ def roster():
             pathways[ptype] = []
         pathways[ptype].append(p.name)
 
-    tickets = Ticket.query.order_by(Ticket.id).all()
+    tickets = Ticket.get_all_for_club(club_id)
     tickets_map = {t.name: t for t in tickets}
 
     return render_template(
@@ -136,7 +140,8 @@ def roster():
         pathways=pathways,
         tickets=tickets,
         tickets_map=tickets_map,
-        RoleID=RoleID
+        RoleID=RoleID,
+        total_amount=total_amount if 'total_amount' in locals() else 0
     )
 
 
@@ -149,7 +154,7 @@ def roster_participation_trend():
     
     club_id = get_current_club_id()
     
-    all_tickets = Ticket.query.order_by(Ticket.id).all()
+    all_tickets = Ticket.get_all_for_club(club_id)
     
     query = Meeting.query.filter(Meeting.status == 'finished', Meeting.Meeting_Number >= 951)
     if club_id:
@@ -158,40 +163,46 @@ def roster_participation_trend():
     meeting_numbers = [m.Meeting_Number for m in meetings]
     meeting_dates = [m.Meeting_Date.strftime('%Y-%m-%d') if m.Meeting_Date else '' for m in meetings]
     
-    cancelled_ticket = Ticket.query.filter_by(name='Cancelled').first()
-    cancelled_ticket_id = cancelled_ticket.id if cancelled_ticket else -1
-    
     counts_query = db.session.query(
         Meeting.Meeting_Number,
-        Roster.ticket_id,
+        Ticket.name,
         func.count(Roster.id).label('count')
-    ).join(Meeting, Roster.meeting_id == Meeting.id).filter(
+    ).join(Meeting, Roster.meeting_id == Meeting.id)\
+     .join(Ticket, Roster.ticket_id == Ticket.id)\
+     .filter(
         Meeting.Meeting_Number.in_(meeting_numbers),
-        Roster.ticket_id != cancelled_ticket_id
+        Ticket.name != 'Cancelled'
     ).group_by(
         Meeting.Meeting_Number,
-        Roster.ticket_id
+        Ticket.name
     ).all()
     
     counts_by_meeting = {}
-    for mtg_num, ticket_id, count in counts_query:
+    for mtg_num, ticket_name, count in counts_query:
         if mtg_num not in counts_by_meeting:
             counts_by_meeting[mtg_num] = {}
-        counts_by_meeting[mtg_num][ticket_id] = count
+        counts_by_meeting[mtg_num][ticket_name] = count
     
     datasets = []
-    for ticket in all_tickets:
-        if ticket.name == 'Cancelled':
+    # Deduplicate tickets by name for the legend/labels
+    # Use the first encountered ticket for styling (color/icon)
+    unique_tickets = {}
+    for t in all_tickets:
+        if t.name not in unique_tickets:
+            unique_tickets[t.name] = t
+
+    for name, ticket in unique_tickets.items():
+        if name == 'Cancelled':
             continue
         
         data = []
         for mtg_num in meeting_numbers:
-            count = counts_by_meeting.get(mtg_num, {}).get(ticket.id, 0)
+            count = counts_by_meeting.get(mtg_num, {}).get(name, 0)
             data.append(count)
         
         if sum(data) > 0:
             datasets.append({
-                'label': ticket.name,
+                'label': name,
                 'data': data,
                 'color': ticket.color or '#6c757d',
                 'icon': ticket.icon or 'fa-ticket-alt'
@@ -211,15 +222,15 @@ def create_roster_entry():
     """Create a new roster entry"""
     data = request.get_json()
 
-    required_fields = ['meeting_id', 'order_number', 'ticket']
+    required_fields = ['meeting_id', 'order_number', 'ticket_id']
     for field in required_fields:
         if field not in data or not data[field]:
             return jsonify({'error': f'Missing required field: {field}'}), 400
 
-    ticket_name = data['ticket']
-    ticket_obj = Ticket.query.filter_by(name=ticket_name).first()
+    ticket_id = data['ticket_id']
+    ticket_obj = db.session.get(Ticket, ticket_id)
     if not ticket_obj:
-         return jsonify({'error': f'Invalid ticket type: {ticket_name}'}), 400
+         return jsonify({'error': f'Invalid ticket id: {ticket_id}'}), 400
 
     new_entry = Roster(
         meeting_id=data['meeting_id'],
@@ -264,6 +275,7 @@ def get_roster_entry(entry_id):
         'id': entry.id,
         'meeting_number': entry.meeting_number,
         'order_number': entry.order_number,
+        'ticket_id': entry.ticket_id,
         'ticket': entry.ticket.name if entry.ticket else None,
         'contact_id': entry.contact_id,
         'contact_name': contact_name,
@@ -284,9 +296,9 @@ def update_roster_entry(entry_id):
 
     if 'order_number' in data:
         entry.order_number = data['order_number']
-    if 'ticket' in data:
-        ticket_name = data['ticket']
-        ticket_obj = Ticket.query.filter_by(name=ticket_name).first()
+    if 'ticket_id' in data:
+        ticket_id = data['ticket_id']
+        ticket_obj = db.session.get(Ticket, ticket_id)
         if ticket_obj:
             entry.ticket_id = ticket_obj.id
 
@@ -323,7 +335,7 @@ def restore_roster_entry(entry_id):
     else:
         ticket_name = 'Early-bird (Guest)'
     
-    t_obj = Ticket.query.filter_by(name=ticket_name).first()
+    t_obj = Ticket.get_by_name(ticket_name, entry.meeting.club_id if entry.meeting else None)
     if t_obj:
         entry.ticket_id = t_obj.id
 
@@ -353,7 +365,7 @@ def delete_roster_entry(entry_id):
             db.session.delete(entry)
             message = 'Entry deleted successfully'
         else:
-            cancelled_ticket = Ticket.query.filter_by(name='Cancelled').first()
+            cancelled_ticket = Ticket.get_by_name('Cancelled', entry.meeting.club_id if entry.meeting else None)
             if cancelled_ticket:
                 entry.ticket_id = cancelled_ticket.id
             message = 'Entry cancelled successfully'

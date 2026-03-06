@@ -82,6 +82,9 @@
       <button class="nav-item" onclick="openTab(event, 'sessions')">
         Sessions
       </button>
+      <button class="nav-item" onclick="openTab(event, 'tickets-settings')">
+        Tickets
+      </button>
       <button class="nav-item" onclick="openTab(event, 'roles-permissions')">
         Roles & Permissions
       </button>
@@ -444,9 +447,57 @@
       </div>
     </div>
 
-
-
-
+    <!-- TICKETS TAB -->
+    <div id="tickets-settings" class="tab-content" style="display: none;">
+      <div class="settings-header">
+        <h2>Tickets Management</h2>
+        <div class="button-group">
+          <button id="add-ticket-btn" class="btn btn-success" style="flex-grow: 0;" onclick="openAddTicketModal()">Add New</button>
+        </div>
+      </div>
+      <table id="tickets-table">
+        <thead>
+          <tr>
+            <th class="sortable" data-column-index="0">ID</th>
+            <th class="sortable" data-column-index="1">Name</th>
+            <th class="sortable" data-column-index="2">Type</th>
+            <th class="sortable" data-column-index="3">Price</th>
+            <th class="sortable" data-column-index="4">Icon</th>
+            <th class="sortable" data-column-index="5">Color</th>
+            <th data-column-index="6">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticket in local_tickets %}
+          <tr data-id="{{ ticket.id }}">
+            <td>{{ ticket.id }}</td>
+            <td data-field="name">{{ ticket.name }}</td>
+            <td data-field="type">{{ ticket.type or '' }}</td>
+            <td data-field="price">{{ "%.2f"|format(ticket.price) if ticket.price else '0.00' }}</td>
+            <td data-field="icon">
+              {% if ticket.icon %}<i class="fas {{ ticket.icon }}"></i> {{ ticket.icon }}{% endif %}
+            </td>
+            <td data-field="color">
+              {% if ticket.color %}
+              <div style="display: inline-block; width: 16px; height: 16px; background-color: {{ ticket.color }}; border-radius: 50%; vertical-align: middle;"></div>
+              {{ ticket.color }}
+              {% endif %}
+            </td>
+            <td>
+              <div class="action-links">
+                <button class="edit-btn icon-btn" onclick="openEditTicketModal('{{ ticket.id }}', '{{ ticket.name }}', '{{ ticket.type or '' }}', '{{ ticket.price or 0 }}', '{{ ticket.icon or '' }}', '{{ ticket.color or '' }}')" title="Edit">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('settings_bp.delete_ticket', id=ticket.id) }}', 'ticket')" title="Delete">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
 
   </div>
 
@@ -497,6 +548,7 @@
   {% include '_session_modal.html' %}
   {% include '_role_modal.html' %}
   {% include 'partials/_user_modal.html' %}
+  {% include '_ticket_modal.html' %}
 </div>
 
 <!-- Mobile Warning Modal -->
@@ -581,7 +633,7 @@
     const CURRENT_CLUB_ID = {{ club_id }};
 </script>
 {% endblock %} {% block scripts %}
-<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+<script src="{{ url_for('static', filename='js/settings.js') }}?v={{ range(1, 10000) | random }}"></script>
 <script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
 <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/settings_excomm.js') }}"></script>

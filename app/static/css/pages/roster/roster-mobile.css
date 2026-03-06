@@ -13,6 +13,54 @@
     margin-bottom: 25px !important;
   }
 
+  /* Centered Header Grid */
+  .roster-header-grid {
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+    gap: 15px;
+    /* Increased gap */
+    margin-bottom: 25px;
+  }
+
+  .roster-header-grid h1 {
+    font-size: 1.8rem;
+    width: 100%;
+    margin-bottom: 0;
+  }
+
+  /* Revenue KPI pill-shaped tagline */
+  .revenue-kpi {
+    background: #fdf2f4;
+    border: 1px solid #772432;
+    padding: 6px 16px;
+    border-radius: 50px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+    display: inline-flex;
+    margin: 5px auto 0;
+    box-shadow: 0 2px 4px rgba(119, 36, 50, 0.1);
+  }
+
+  .revenue-kpi .kpi-label {
+    margin-bottom: 0;
+    font-size: 0.75rem;
+    color: #772432;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .revenue-kpi .kpi-value {
+    font-size: 1rem;
+    color: #772432;
+    font-weight: 700;
+  }
+
+
   .roster-form-container {
     padding: 15px;
   }

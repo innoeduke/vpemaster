@@ -4633,6 +4633,13 @@
   ],
   "auth_roles": [
     {
+      "id": 1,
+      "name": "SysAdmin",
+      "description": "Admin role",
+      "level": 8,
+      "created_at": "2026-01-15 07:42:37"
+    },
+    {
       "id": 2,
       "name": "ClubAdmin",
       "description": "VPE role",
@@ -4663,17 +4670,92 @@
   ],
   "role_permissions": [
     {
+      "id": 101,
+      "role_id": 1,
+      "permission_id": 1
+    },
+    {
+      "id": 99,
+      "role_id": 1,
+      "permission_id": 5
+    },
+    {
+      "id": 93,
+      "role_id": 1,
+      "permission_id": 11
+    },
+    {
+      "id": 87,
+      "role_id": 1,
+      "permission_id": 12
+    },
+    {
+      "id": 89,
+      "role_id": 1,
+      "permission_id": 13
+    },
+    {
+      "id": 95,
+      "role_id": 1,
+      "permission_id": 14
+    },
+    {
+      "id": 97,
+      "role_id": 1,
+      "permission_id": 15
+    },
+    {
+      "id": 62,
+      "role_id": 1,
+      "permission_id": 25
+    },
+    {
+      "id": 78,
+      "role_id": 1,
+      "permission_id": 32
+    },
+    {
+      "id": 82,
+      "role_id": 1,
+      "permission_id": 33
+    },
+    {
+      "id": 91,
+      "role_id": 1,
+      "permission_id": 34
+    },
+    {
+      "id": 86,
+      "role_id": 1,
+      "permission_id": 37
+    },
+    {
+      "id": 103,
+      "role_id": 1,
+      "permission_id": 38
+    },
+    {
+      "id": 111,
+      "role_id": 1,
+      "permission_id": 39
+    },
+    {
+      "id": 112,
+      "role_id": 1,
+      "permission_id": 40
+    },
+    {
       "id": 102,
       "role_id": 2,
       "permission_id": 1
     },
     {
-      "id": 127,
+      "id": 123,
       "role_id": 2,
       "permission_id": 2
     },
     {
-      "id": 139,
+      "id": 124,
       "role_id": 2,
       "permission_id": 3
     },
@@ -4688,17 +4770,17 @@
       "permission_id": 5
     },
     {
-      "id": 129,
+      "id": 127,
       "role_id": 2,
       "permission_id": 6
     },
     {
-      "id": 133,
+      "id": 128,
       "role_id": 2,
       "permission_id": 7
     },
     {
-      "id": 136,
+      "id": 129,
       "role_id": 2,
       "permission_id": 8
     },
@@ -4738,17 +4820,12 @@
       "permission_id": 15
     },
     {
-      "id": 128,
-      "role_id": 2,
-      "permission_id": 16
-    },
-    {
-      "id": 132,
+      "id": 135,
       "role_id": 2,
       "permission_id": 17
     },
     {
-      "id": 135,
+      "id": 136,
       "role_id": 2,
       "permission_id": 18
     },
@@ -4778,12 +4855,12 @@
       "permission_id": 35
     },
     {
-      "id": 137,
+      "id": 132,
       "role_id": 2,
       "permission_id": 36
     },
     {
-      "id": 138,
+      "id": 133,
       "role_id": 2,
       "permission_id": 37
     },
@@ -4823,7 +4900,7 @@
       "permission_id": 44
     },
     {
-      "id": 140,
+      "id": 137,
       "role_id": 2,
       "permission_id": 45
     },
@@ -4873,9 +4950,19 @@
       "permission_id": 25
     },
     {
+      "id": 80,
+      "role_id": 3,
+      "permission_id": 32
+    },
+    {
       "id": 107,
       "role_id": 3,
       "permission_id": 39
+    },
+    {
+      "id": 108,
+      "role_id": 3,
+      "permission_id": 40
     },
     {
       "id": 113,
@@ -4883,7 +4970,22 @@
       "permission_id": 41
     },
     {
-      "id": 141,
+      "id": 119,
+      "role_id": 3,
+      "permission_id": 42
+    },
+    {
+      "id": 117,
+      "role_id": 3,
+      "permission_id": 43
+    },
+    {
+      "id": 122,
+      "role_id": 3,
+      "permission_id": 44
+    },
+    {
+      "id": 138,
       "role_id": 3,
       "permission_id": 45
     },
@@ -4933,6 +5035,11 @@
       "permission_id": 40
     },
     {
+      "id": 114,
+      "role_id": 4,
+      "permission_id": 41
+    },
+    {
       "id": 120,
       "role_id": 4,
       "permission_id": 42
@@ -4957,42 +5064,48 @@
     {
       "id": 1,
       "name": "Early-bird",
-      "price": 0.0,
+      "price": 20.0,
+      "type": "Member",
       "icon": "fa-dove",
       "color": "#20c997"
     },
     {
       "id": 2,
-      "name": "Role-taker",
-      "price": 0.0,
-      "icon": "fa-microphone",
-      "color": "#0d6efd"
+      "name": "Early-bird",
+      "price": 40.0,
+      "type": "Guest",
+      "icon": "fa-dove",
+      "color": "#20c997"
     },
     {
       "id": 3,
       "name": "Walk-in",
-      "price": 0.0,
+      "price": 25.0,
+      "type": "Member",
       "icon": "fa-walking",
       "color": "#ffc107"
     },
     {
       "id": 4,
-      "name": "Officer",
-      "price": 0.0,
-      "icon": "fa-user-shield",
-      "color": "#fd7e14"
+      "name": "Walk-in",
+      "price": 50.0,
+      "type": "Guest",
+      "icon": "fa-walking",
+      "color": "#ffc107"
     },
     {
       "id": 5,
-      "name": "Voucher",
-      "price": 0.0,
-      "icon": "fa-tag",
-      "color": "#6f42c1"
+      "name": "Role-taker",
+      "price": 25.0,
+      "type": "Guest",
+      "icon": "fa-microphone",
+      "color": "#0d6efd"
     },
     {
       "id": 6,
       "name": "Online",
       "price": 0.0,
+      "type": null,
       "icon": "fa-laptop",
       "color": "#17a2b8"
     },
@@ -5000,6 +5113,7 @@
       "id": 7,
       "name": "Unpaid",
       "price": 0.0,
+      "type": null,
       "icon": "fa-exclamation-circle",
       "color": "#dc3545"
     },
@@ -5007,8 +5121,25 @@
       "id": 8,
       "name": "Cancelled",
       "price": 0.0,
+      "type": null,
       "icon": "fa-ban",
       "color": "#dc3545"
+    },
+    {
+      "id": 9,
+      "name": "Voucher",
+      "price": 0.0,
+      "type": null,
+      "icon": "fa-tag",
+      "color": "#6f42c1"
+    },
+    {
+      "id": 10,
+      "name": "Officer",
+      "price": 0.0,
+      "type": "Officer",
+      "icon": "fa-user-shield",
+      "color": "#fd7e14"
     }
   ]
 }

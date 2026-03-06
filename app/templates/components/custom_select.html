@@ -11,8 +11,9 @@
         {% set opt_text = opt.text if opt.text is defined else (opt.name if opt.name is defined else opt_val) %}
         {% set opt_icon = opt.icon if opt.icon is defined else '' %}
         {% set opt_color = opt.color if opt.color is defined else '' %}
+        {% set opt_type = opt.type if opt.type is defined else '' %}
     {% else %}
-        {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_icon = '' %}{% set opt_color = '' %}
+        {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_icon = '' %}{% set opt_color = '' %}{% set opt_type = '' %}
     {% endif %}
 
     {% if selected_value|string == opt_val|string %}
@@ -55,11 +56,12 @@
                     {% set opt_text = opt.text if opt.text is defined else (opt.name if opt.name is defined else opt_val) %}
                     {% set opt_icon = opt.icon if opt.icon is defined else '' %}
                     {% set opt_color = opt.color if opt.color is defined else '' %}
+                    {% set opt_type = opt.type if opt.type is defined else '' %}
                 {% else %}
-                    {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_icon = '' %}{% set opt_color = '' %}
+                    {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_icon = '' %}{% set opt_color = '' %}{% set opt_type = '' %}
                 {% endif %}
                 <div class="autocomplete-result-item {{ 'selected' if selected_value|string == opt_val|string else '' }}" 
-                     data-value="{{ opt_val }}" data-text="{{ opt_text }}" data-icon="{{ opt_icon }}" data-color="{{ opt_color }}" role="option"
+                     data-value="{{ opt_val }}" data-text="{{ opt_text }}" data-icon="{{ opt_icon }}" data-color="{{ opt_color }}" data-type="{{ opt_type }}" role="option"
                      aria-selected="{{ 'true' if selected_value|string == opt_val|string else 'false' }}">
                     {% if opt_icon %}
                     <i class="{{ opt_icon }} result-item-icon" style="margin-right: 8px; width: 16px; text-align: center; {% if opt_color %}color: {{ opt_color }};{% endif %}"></i>
@@ -80,10 +82,11 @@
                 {% elif opt is mapping %}
                     {% set opt_val = opt.value if opt.value is defined else (opt.id if opt.id is defined else opt.name) %}
                     {% set opt_text = opt.text if opt.text is defined else (opt.name if opt.name is defined else opt_val) %}
+                    {% set opt_type = opt.type if opt.type is defined else '' %}
                 {% else %}
-                    {% set opt_val = opt %}{% set opt_text = opt %}
+                    {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_type = '' %}
                 {% endif %}
-                <option value="{{ opt_val }}" {% if selected_value|string == opt_val|string %}selected{% endif %}>{{ opt_text }}</option>
+                <option value="{{ opt_val }}" data-type="{{ opt_type }}" {% if selected_value|string == opt_val|string %}selected{% endif %}>{{ opt_text }}</option>
             {% endfor %}
         </select>
     </div>

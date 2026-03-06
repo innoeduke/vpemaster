@@ -22,7 +22,15 @@
     data-club-division="{{ club.division if club and club.division else '' }}"
     data-club-area="{{ club.area if club and club.area else '' }}"
 >
-    <h1><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
+    <div class="roster-header-grid">
+        <h1><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
+        {% if selected_meeting %}
+        <div class="revenue-kpi">
+            <span class="kpi-label">Total Amount</span>
+            <span class="kpi-value">¥{{ "%.2f"|format(total_amount|default(0)) }}</span>
+        </div>
+        {% endif %}
+    </div>
     <div class="filters-control premium">
         <div class="filter-row-premium">
             {{ render_meeting_filter(all_meetings, selected_meeting_id, label='', data_format='tuple', render_outer_container=False) }}
@@ -68,7 +76,7 @@
                             {% set ticket_opts = [] %}
                             {% for t in tickets %}
                                 {% set t_icon = t.icon if t.icon else 'fa-ticket-alt' %}
-                                {% set _ = ticket_opts.append({'value': t.name, 'text': t.name, 'icon': 'fas ' ~ t_icon, 'color': t.color}) %}
+                                {% set _ = ticket_opts.append({'value': t.id, 'text': t.name, 'icon': 'fas ' ~ t_icon, 'color': t.color, 'type': t.type}) %}
                             {% endfor %}
                             {{ render_custom_select(ticket_opts, "", label='Ticket', select_id='ticket', placeholder='Select...') }}
                         </div>
@@ -96,14 +104,14 @@
                         <th class="sortable header-name" data-column-index="1">Name</th>
                         <th class="sortable header-ticket" data-column-index="2">Ticket</th>
                         <th class="header-roles desktop-only">Roles</th>
-                        <th class="header-club desktop-only">Home Club</th>
+                        <th class="header-amount desktop-only">Amount</th>
                         <th class="roster-header-actions">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for entry in roster_entries %}
                     <tr data-entry-id="{{ entry.id }}" data-order="{{ entry.order_number }}"
-                        data-contact-id="{{ entry.contact_id or '' }}" data-ticket="{{ entry.ticket.name if entry.ticket else '' }}">
+                        data-contact-id="{{ entry.contact_id or '' }}" data-ticket-id="{{ entry.ticket.id if entry.ticket else '' }}">
                         <td class="cell-order">{{ entry.order_number if entry.order_number is not none else '' }}</td>
                         <td class="cell-name">
                             {{ entry.contact.Name if entry.contact else 'N/A' }}
@@ -152,9 +160,9 @@
                                 </div>
                             {% endif %}
                         </td>
-                        <td class="cell-club desktop-only">
+                        <td class="cell-amount desktop-only">
                             <span class="roster-text">
-                                {{ entry.contact.get_home_club().club_name if entry.contact and entry.contact.get_home_club() else '' }}
+                                {{ "¥%.2f"|format(entry.ticket.price or 0) if entry.ticket else '-' }}
                             </span>
                         </td>
                         <td class="cell-actions">
