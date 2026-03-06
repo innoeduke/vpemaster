@@ -24,6 +24,7 @@ def upgrade():
     # IDs involved: 2, 5, 9, 4, 10
     ids = [2, 5, 9, 4, 10]
     for id_val in ids:
+        # Check if ID exists before updating
         op.execute(f"UPDATE tickets SET id = -{id_val} WHERE id = {id_val}")
         op.execute(f"UPDATE roster SET ticket_id = -{id_val} WHERE ticket_id = {id_val}")
     
@@ -45,25 +46,48 @@ def upgrade():
         op.execute(f"UPDATE tickets SET id = {new} WHERE id = {old}")
         op.execute(f"UPDATE roster SET ticket_id = {new} WHERE ticket_id = {old}")
     
-    # Re-enable foreign key checks
-    op.execute("SET FOREIGN_KEY_CHECKS = 1;")
+    # 3. Correct Roster Assignments for Guest contacts using name/type lookups if possible
+    # We want to move Guests from 'Member' tickets to 'Guest' tickets.
+    # Logic:
+    # - Early-bird (Member) -> Early-bird (Guest)
+    # - Walk-in (Member) -> Walk-in (Guest)
+    
+    # Robust subquery-based updates to find current IDs by name and type
+    op.execute("""
+        UPDATE roster 
+        SET ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Guest' LIMIT 1)
+        WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Member' LIMIT 1)
+        AND contact_type = 'Guest'
+    """)
+    op.execute("""
+        UPDATE roster 
+        SET ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Guest' LIMIT 1)
+        WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Member' LIMIT 1)
+        AND contact_type = 'Guest'
+    """)
 
-    # 3. Correct Roster Assignments for Guest contacts
-    # - ticket_id 1 (Early-bird Member) -> 2 (Early-bird Guest)
-    # - ticket_id 3 (Walk-in Member) -> 4 (Walk-in Guest)
-    op.execute("UPDATE roster SET ticket_id = 2 WHERE ticket_id = 1 AND contact_type = 'Guest'")
-    op.execute("UPDATE roster SET ticket_id = 4 WHERE ticket_id = 3 AND contact_type = 'Guest'")
+    # Re-enable foreign key checks AT THE VERY END
+    op.execute("SET FOREIGN_KEY_CHECKS = 1;")
 
 
 def downgrade():
-    # Reverse Guest Assignment Corrections first (best effort)
-    # Move them back to Member IDs if they are Guests
-    op.execute("UPDATE roster SET ticket_id = 1 WHERE ticket_id = 2 AND contact_type = 'Guest'")
-    op.execute("UPDATE roster SET ticket_id = 3 WHERE ticket_id = 4 AND contact_type = 'Guest'")
-
     # Disable foreign key checks
     op.execute("SET FOREIGN_KEY_CHECKS = 0;")
     
+    # Reverse Guest Assignment Corrections using robust lookups
+    op.execute("""
+        UPDATE roster 
+        SET ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Member' LIMIT 1)
+        WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Early-bird' AND type = 'Guest' LIMIT 1)
+        AND contact_type = 'Guest'
+    """)
+    op.execute("""
+        UPDATE roster 
+        SET ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Member' LIMIT 1)
+        WHERE ticket_id = (SELECT id FROM tickets WHERE name = 'Walk-in' AND type = 'Guest' LIMIT 1)
+        AND contact_type = 'Guest'
+    """)
+
     # Reverse mapping for downgrade:
     # 5 -> 2
     # 9 -> 5
@@ -95,5 +119,5 @@ def downgrade():
         op.execute(f"UPDATE tickets SET id = {new} WHERE id = {old}")
         op.execute(f"UPDATE roster SET ticket_id = {new} WHERE ticket_id = {old}")
 
-    # Re-enable foreign key checks
+    # Re-enable foreign key checks AT THE VERY END
     op.execute("SET FOREIGN_KEY_CHECKS = 1;")
