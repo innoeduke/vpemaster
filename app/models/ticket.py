@@ -13,14 +13,20 @@ class Ticket(db.Model):
     club = db.relationship('Club', backref='tickets')
 
     @classmethod
-    def get_by_name(cls, name, club_id=None):
-        """Fetch a ticket by name, prioritizing club-specific over global."""
+    def get_by_name(cls, name, type=None, club_id=None):
+        """Fetch a ticket by name (and optionally type), prioritizing club-specific over global."""
         from ..constants import GLOBAL_CLUB_ID
+        
+        # Build base filter
+        filters = {'name': name}
+        if type:
+            filters['type'] = type
+            
         if club_id and club_id != GLOBAL_CLUB_ID:
-            ticket = cls.query.filter_by(name=name, club_id=club_id).first()
+            ticket = cls.query.filter_by(club_id=club_id, **filters).first()
             if ticket:
                 return ticket
-        return cls.query.filter_by(name=name, club_id=GLOBAL_CLUB_ID).first()
+        return cls.query.filter_by(club_id=GLOBAL_CLUB_ID, **filters).first()
 
     @classmethod
     def get_all_for_club(cls, club_id):

@@ -176,27 +176,27 @@ class Roster(db.Model):
 
                 # Logic for Ticket Class
                 ticket_name = "Role-taker" # Default
+                ticket_type = "Guest"
                 if is_officer:
                     ticket_name = "Officer"
+                    ticket_type = "Officer"
                 elif contact.Type == 'Member':
-                    ticket_name = "Early-bird (Member)"
+                    ticket_name = "Early-bird"
+                    ticket_type = "Member"
+                else:
+                    ticket_name = "Role-taker"
+                    ticket_type = "Guest"
 
                 from .meeting import Meeting
-                from ..constants import GLOBAL_CLUB_ID
                 meeting = db.session.get(Meeting, meeting_id)
-                club_id = meeting.club_id if meeting else GLOBAL_CLUB_ID
+                club_id = meeting.club_id if meeting else None
 
-                # Prioritize Club Ticket over Global Ticket
-                ticket_obj = Ticket.query.filter_by(name=ticket_name, club_id=club_id).first()
-                if not ticket_obj and club_id != GLOBAL_CLUB_ID:
-                    ticket_obj = Ticket.query.filter_by(name=ticket_name, club_id=GLOBAL_CLUB_ID).first()
+                # Fetch ticket using robust lookup
+                ticket_obj = Ticket.get_by_name(name=ticket_name, type=ticket_type, club_id=club_id)
                 
-                # Fallback to Role-taker if not found
-                if not ticket_obj:
-                    ticket_name = "Role-taker"
-                    ticket_obj = Ticket.query.filter_by(name=ticket_name, club_id=club_id).first()
-                    if not ticket_obj and club_id != GLOBAL_CLUB_ID:
-                        ticket_obj = Ticket.query.filter_by(name=ticket_name, club_id=GLOBAL_CLUB_ID).first()
+                # Fallback to general Role-taker if specific one not found
+                if not ticket_obj and ticket_name != "Role-taker":
+                    ticket_obj = Ticket.get_by_name(name="Role-taker", type="Guest", club_id=club_id)
 
                 roster_entry = Roster(
                     meeting_id=meeting_id,

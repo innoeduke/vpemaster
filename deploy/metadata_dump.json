@@ -5067,7 +5067,8 @@
       "price": 20.0,
       "type": "Member",
       "icon": "fa-dove",
-      "color": "#20c997"
+      "color": "#20c997",
+      "club_id": 2
     },
     {
       "id": 2,
@@ -5075,7 +5076,8 @@
       "price": 40.0,
       "type": "Guest",
       "icon": "fa-dove",
-      "color": "#20c997"
+      "color": "#20c997",
+      "club_id": 2
     },
     {
       "id": 3,
@@ -5083,7 +5085,8 @@
       "price": 25.0,
       "type": "Member",
       "icon": "fa-walking",
-      "color": "#ffc107"
+      "color": "#ffc107",
+      "club_id": 2
     },
     {
       "id": 4,
@@ -5091,7 +5094,8 @@
       "price": 50.0,
       "type": "Guest",
       "icon": "fa-walking",
-      "color": "#ffc107"
+      "color": "#ffc107",
+      "club_id": 2
     },
     {
       "id": 5,
@@ -5099,7 +5103,8 @@
       "price": 25.0,
       "type": "Guest",
       "icon": "fa-microphone",
-      "color": "#0d6efd"
+      "color": "#0d6efd",
+      "club_id": 2
     },
     {
       "id": 6,
@@ -5107,7 +5112,8 @@
       "price": 0.0,
       "type": null,
       "icon": "fa-laptop",
-      "color": "#17a2b8"
+      "color": "#17a2b8",
+      "club_id": 2
     },
     {
       "id": 7,
@@ -5115,7 +5121,8 @@
       "price": 0.0,
       "type": null,
       "icon": "fa-exclamation-circle",
-      "color": "#dc3545"
+      "color": "#dc3545",
+      "club_id": 2
     },
     {
       "id": 8,
@@ -5123,7 +5130,8 @@
       "price": 0.0,
       "type": null,
       "icon": "fa-ban",
-      "color": "#dc3545"
+      "color": "#dc3545",
+      "club_id": 2
     },
     {
       "id": 9,
@@ -5131,7 +5139,8 @@
       "price": 0.0,
       "type": null,
       "icon": "fa-tag",
-      "color": "#6f42c1"
+      "color": "#6f42c1",
+      "club_id": 2
     },
     {
       "id": 10,
@@ -5139,7 +5148,8 @@
       "price": 0.0,
       "type": "Officer",
       "icon": "fa-user-shield",
-      "color": "#fd7e14"
+      "color": "#fd7e14",
+      "club_id": 2
     }
   ]
 }

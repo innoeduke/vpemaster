@@ -22,10 +22,17 @@ def upgrade():
     op.create_index(op.f('ix_tickets_club_id'), 'tickets', ['club_id'], unique=False)
     op.create_foreign_key(op.f('fk_tickets_club_id_clubs'), 'tickets', 'clubs', ['club_id'], ['id'])
 
-    # 2. Set existing tickets to GLOBAL_CLUB_ID (1)
-    # Using raw SQL to avoid dependency on global constant in migration if possible, 
-    # but since it's already used in other migrations, we'll stick to 1.
-    op.execute("UPDATE tickets SET club_id = 1")
+    # 2. Set existing tickets to correct club_id (2)
+    # Using raw SQL to avoid dependency on global constant in migration if possible.
+    op.execute("UPDATE tickets SET club_id = 2")
+
+    # 3. Final sync of roster amounts from ticket prices
+    # Note: This will sync based on current ticket prices in the database.
+    op.execute("""
+        UPDATE roster r 
+        INNER JOIN tickets t ON r.ticket_id = t.id 
+        SET r.amount = t.price
+    """)
 
 
 def downgrade():

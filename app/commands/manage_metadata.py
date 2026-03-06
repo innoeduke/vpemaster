@@ -139,7 +139,7 @@ def restore(file):
         Project: ['Project_Name'],
         MeetingRole: ['name', 'club_id'],
         SessionType: ['name', 'club_id'],
-        Ticket: ['name'],
+        Ticket: ['name', 'type'],
         LevelRole: ['level', 'role', 'type'],
         PathwayProject: ['path_id', 'project_id'],
         RolePermission: ['role_id', 'permission_id'],
