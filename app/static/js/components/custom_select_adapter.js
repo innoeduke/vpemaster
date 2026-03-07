@@ -12,7 +12,7 @@ class CustomSelectAdapter {
         this.menu = null;
         this.isOpen = false;
         this.isMultiple = this.select.multiple;
-        
+
         // Hide the native select
         this.select.style.display = 'none';
 
@@ -31,8 +31,8 @@ class CustomSelectAdapter {
         this.container = document.createElement('div');
         this.container.className = 'custom-dropdown relative-pos';
         this.container.id = `${this.select.id}-custom-container`;
-        
-        
+
+
         // Create trigger button
         this.trigger = document.createElement('button');
         this.trigger.type = 'button';
@@ -54,7 +54,7 @@ class CustomSelectAdapter {
         this.menu = document.createElement('div');
         this.menu.className = 'dropdown-premium-menu';
         this.menu.id = `${this.select.id}-custom-menu`;
-        
+
         // Assemble
         this.container.appendChild(this.trigger);
         this.container.appendChild(this.menu);
@@ -77,17 +77,17 @@ class CustomSelectAdapter {
             selectAll.style.display = 'flex';
             selectAll.style.alignItems = 'center';
             selectAll.style.gap = '8px';
-            
+
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.className = 'dropdown-checkbox';
-            
+
             const total = Array.from(this.select.options).filter(o => o.value !== '').length;
             const selected = Array.from(this.select.selectedOptions).filter(o => o.value !== '').length;
-            
+
             checkbox.checked = total > 0 && selected === total;
             checkbox.indeterminate = selected > 0 && selected < total;
-            
+
             checkbox.addEventListener('change', (e) => {
                 e.stopPropagation();
                 Array.from(this.select.options).forEach(opt => {
@@ -126,7 +126,7 @@ class CustomSelectAdapter {
         item.className = 'dropdown-item-label';
         item.style.cursor = 'pointer';
         item.dataset.value = option.value;
-        
+
         const flex = document.createElement('div');
         flex.className = 'flex-center-gap';
         flex.style.gap = '8px';
@@ -151,11 +151,11 @@ class CustomSelectAdapter {
             check.style.visibility = option.selected ? 'visible' : 'hidden';
             flex.appendChild(check);
         }
-        
+
         const text = document.createElement('span');
         text.textContent = option.text;
         flex.appendChild(text);
-        
+
         item.appendChild(flex);
 
         if (!this.isMultiple) {
@@ -186,7 +186,7 @@ class CustomSelectAdapter {
         const btnText = this.trigger.querySelector('.btn-text');
         const options = Array.from(this.select.options).filter(o => o.value !== '');
         const selectedOptions = Array.from(this.select.selectedOptions).filter(o => o.value !== '');
-        
+
         if (this.isMultiple) {
             if (selectedOptions.length === 0) {
                 btnText.textContent = '0 selected';
@@ -260,7 +260,7 @@ class CustomSelectAdapter {
 
             const startMatch = start.text.match(pattern);
             const endMatch = end.text.match(pattern);
-            
+
             const sYear = startMatch[1];
             const sMonth = startMatch[2].split('-')[0]; // Jan or Jul
             const eYear = endMatch[1];
@@ -274,12 +274,12 @@ class CustomSelectAdapter {
         });
 
         const allLabels = [...formattedGroups, ...others];
-        
+
         // Final length check: if too many labels, show count
         if (allLabels.length > 2) {
             return `${selectedOptions.length} selected`;
         }
-        
+
         return allLabels.join(', ');
     }
 
@@ -290,17 +290,19 @@ class CustomSelectAdapter {
 
     open() {
         // Dispatch event to close other dropdowns
-        document.dispatchEvent(new CustomEvent('custom-dropdown-open', { 
-            detail: { instance: this } 
+        document.dispatchEvent(new CustomEvent('custom-dropdown-open', {
+            detail: { instance: this }
         }));
 
         this.menu.style.display = 'block';
+        this.container.classList.add('is-open');
         this.isOpen = true;
         setTimeout(() => document.addEventListener('click', this.handleOutsideClick), 0);
     }
 
     close() {
         this.menu.style.display = 'none';
+        this.container.classList.remove('is-open');
         this.isOpen = false;
         document.removeEventListener('click', this.handleOutsideClick);
     }
@@ -318,7 +320,7 @@ class CustomSelectAdapter {
         });
 
         this.select.addEventListener('change', () => {
-             this.updateUI();
+            this.updateUI();
         });
 
         // Listen for other dropdowns opening

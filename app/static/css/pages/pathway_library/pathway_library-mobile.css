@@ -109,6 +109,13 @@
 		margin-top: 5px;
 		display: none;
 		/* JS will toggle this */
+		/* Force Safari to create a new stacking context for the menu itself */
+		-webkit-transform: translate3d(0, 0, 0);
+		transform: translate3d(0, 0, 0);
+	}
+
+	#pathway-library-container .custom-dropdown.is-open {
+		z-index: 100 !important;
 	}
 
 	#pathway-library-container .filters-container select {
