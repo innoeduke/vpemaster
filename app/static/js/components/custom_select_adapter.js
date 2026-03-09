@@ -296,6 +296,8 @@ class CustomSelectAdapter {
 
         this.menu.style.display = 'block';
         this.container.classList.add('is-open');
+        const formGroup = this.container.closest('.form-group');
+        if (formGroup) formGroup.classList.add('is-open');
         this.isOpen = true;
         setTimeout(() => document.addEventListener('click', this.handleOutsideClick), 0);
     }
@@ -303,6 +305,8 @@ class CustomSelectAdapter {
     close() {
         this.menu.style.display = 'none';
         this.container.classList.remove('is-open');
+        const formGroup = this.container.closest('.form-group');
+        if (formGroup) formGroup.classList.remove('is-open');
         this.isOpen = false;
         document.removeEventListener('click', this.handleOutsideClick);
     }

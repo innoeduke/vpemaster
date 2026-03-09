@@ -11,6 +11,9 @@
 		/* Stack the main filter container */
 		padding-top: 20px;
 		padding-bottom: 20px;
+		/* Round 3: Force a hardware-accelerated stacking context for children in Safari */
+		-webkit-transform: translateZ(0);
+		transform: translateZ(0);
 	}
 
 	.filters-container .form-group {
@@ -18,7 +21,14 @@
 		/* Reset the base size of filter groups */
 		width: 100%;
 		/* Make each filter group take up the full width */
+		/* Round 3: Static Descending Z-Index Strategy */
+		position: relative;
 	}
+
+	/* Ensure top filters always overlay bottom filters on mobile Safari */
+	.filters-container .form-group:nth-child(1) { z-index: 50; }
+	.filters-container .form-group:nth-child(2) { z-index: 40; }
+	.filters-container .form-group:nth-child(3) { z-index: 30; }
 
 	/* Optimizing Project Header for Mobile */
 	.project-header {
@@ -115,6 +125,12 @@
 	}
 
 	#pathway-library-container .custom-dropdown.is-open {
+		z-index: 100 !important;
+	}
+
+	/* Round 2: Elevate the entire parent form-group to prevent Safari stacking context isolation */
+	#pathway-library-container .filters-container .form-group.is-open {
+		position: relative;
 		z-index: 100 !important;
 	}
 
