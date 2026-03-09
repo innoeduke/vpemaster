@@ -11,9 +11,13 @@
 		/* Stack the main filter container */
 		padding-top: 20px;
 		padding-bottom: 20px;
-		/* Round 3: Force a hardware-accelerated stacking context for children in Safari */
-		-webkit-transform: translateZ(0);
-		transform: translateZ(0);
+		/* Round 4: Removed translateZ from container to avoid isolating stacking context */
+	}
+
+	/* Round 4: Elevate the entire filters container when any dropdown is open */
+	#pathway-library-container .filters-container.is-open {
+		position: relative;
+		z-index: 9500 !important;
 	}
 
 	.filters-container .form-group {

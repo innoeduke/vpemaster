@@ -298,6 +298,8 @@ class CustomSelectAdapter {
         this.container.classList.add('is-open');
         const formGroup = this.container.closest('.form-group');
         if (formGroup) formGroup.classList.add('is-open');
+        const filtersContainer = this.container.closest('.filters-container');
+        if (filtersContainer) filtersContainer.classList.add('is-open');
         this.isOpen = true;
         setTimeout(() => document.addEventListener('click', this.handleOutsideClick), 0);
     }
@@ -307,6 +309,8 @@ class CustomSelectAdapter {
         this.container.classList.remove('is-open');
         const formGroup = this.container.closest('.form-group');
         if (formGroup) formGroup.classList.remove('is-open');
+        const filtersContainer = this.container.closest('.filters-container');
+        if (filtersContainer) filtersContainer.classList.remove('is-open');
         this.isOpen = false;
         document.removeEventListener('click', this.handleOutsideClick);
     }
