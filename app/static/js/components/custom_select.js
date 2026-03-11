@@ -44,6 +44,13 @@ class CustomSelect {
 			document.addEventListener('click', () => {
 				this.container.classList.remove('open');
 			});
+
+			// Support programmatic value changes by listening to 'change' on the original select.
+			// Only update the trigger display (text/icon), NOT re-render options,
+			// because roster.js manages option visibility via direct DOM manipulation.
+			this.select.addEventListener('change', () => {
+				this.updateTrigger();
+			});
 		}
 
 		this.updateTrigger();

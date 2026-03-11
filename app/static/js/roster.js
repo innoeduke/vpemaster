@@ -42,7 +42,8 @@ function cacheElements() {
     contactTypeSelect: document.getElementById("contact_type"),
     ticketSelect: document.getElementById("ticket"),
     submitBtn: document.getElementById("submit-roster"),
-    formContainer: document.querySelector(".roster-form-container")
+    formContainer: document.querySelector(".roster-form-container"),
+    isPopulating: false // Flag to prevent auto-calculations during form population
   };
 }
 
@@ -358,14 +359,21 @@ function initializeContactTypeHandler(elements) {
       }
     }
 
-    // Always reassign order number on contact type change (which may have auto-defaulted the ticket)
-    updateOrderNumber(elements);
+    // Auto-reassign order number upon updates to the ticket/contact_type, 
+    // but only if we are NOT in the middle of populating the form for an existing entry.
+    if (!elements.isPopulating) {
+        updateOrderNumber(elements);
+    }
   });
 
   // Track manual ticket changes
   elements.ticketSelect.addEventListener("change", function (e) {
     if (e.target !== elements.ticketSelect) return;
-    updateOrderNumber(elements);
+    
+    // Auto-reassign order number upon updates to the ticket/contact_type
+    if (!elements.isPopulating) {
+        updateOrderNumber(elements);
+    }
   });
 }
 
@@ -434,22 +442,27 @@ function populateRosterEditForm(rosterId, elements) {
       elements.ticketSelect.value = entry.ticket_id || entry.ticket;
 
       if (entry.contact_type) {
-        elements.contactTypeSelect.value = entry.contact_type;
+        elements.isPopulating = true;
+        try {
+            elements.contactTypeSelect.value = entry.contact_type;
 
-        // Force ticket to Officer if type is Officer (fix for existing data where it might be a name)
-        if (entry.contact_type === 'Officer') {
-          const officerOpt = Array.from(document.querySelectorAll('#ticket-results .autocomplete-result-item')).find(o => o.dataset.text === 'Officer');
-          if (officerOpt) elements.ticketSelect.value = officerOpt.dataset.value;
-          else elements.ticketSelect.value = 'Officer'; // fallback if IDs are weird
+            // Force ticket to Officer if type is Officer (fix for existing data where it might be a name)
+            if (entry.contact_type === 'Officer') {
+                const officerOpt = Array.from(document.querySelectorAll('#ticket-results .autocomplete-result-item')).find(o => o.dataset.text === 'Officer');
+                if (officerOpt) elements.ticketSelect.value = officerOpt.dataset.value;
+                else elements.ticketSelect.value = 'Officer'; // fallback if IDs are weird
+            }
+
+            // This dispatch will handle correctly updating the order number if it was null
+            elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+            // Also sync ticket dropdown
+            if (elements.ticketSelect.value) {
+                elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        } finally {
+            elements.isPopulating = false;
         }
-
-        // This dispatch will handle correctly updating the order number if it was null
-        elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-
-      // Also sync ticket dropdown
-      if (elements.ticketSelect.value) {
-        elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
 
       elements.formTitle.textContent = 'Edit Entry';

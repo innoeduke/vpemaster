@@ -184,7 +184,6 @@
     items.forEach(item => {
         item.addEventListener('mousedown', (e) => {
             e.preventDefault(); // Prevent focus loss before selection
-            console.log(`[CustomSelect] Mousedown on: ${item.dataset.value}`);
             selectItem(item);
         });
     });
