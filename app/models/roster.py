@@ -161,30 +161,18 @@ class Roster(db.Model):
 
         if not roster_entry:
             if action == 'assign':
-                # Logic for Order Number
-                new_order = None
-                if is_officer:
-                    # Officers get the next available order number starting from 1000
-                    base_filter = Roster.meeting_id == meeting_id
-                    max_order = db.session.query(func.max(Roster.order_number)).filter(
-                        base_filter,
-                        Roster.order_number >= 1000
-                    ).scalar()
-                    new_order = (max_order or 999) + 1
-                else:
-                    new_order = None
-
-                # Logic for Ticket Class
-                ticket_name = "Role-taker" # Default
-                ticket_type = "Guest"
+                # Determine initial ticket name and type
                 if is_officer:
                     ticket_name = "Officer"
                     ticket_type = "Officer"
                 elif contact.Type == 'Member':
                     ticket_name = "Early-bird"
                     ticket_type = "Member"
-                else:
+                elif contact.Type == 'Guest':
                     ticket_name = "Role-taker"
+                    ticket_type = "Guest"
+                else:
+                    ticket_name = "Walk-in"
                     ticket_type = "Guest"
 
                 from .meeting import Meeting
@@ -194,9 +182,40 @@ class Roster(db.Model):
                 # Fetch ticket using robust lookup
                 ticket_obj = Ticket.get_by_name(name=ticket_name, type=ticket_type, club_id=club_id)
                 
-                # Fallback to general Role-taker if specific one not found
-                if not ticket_obj and ticket_name != "Role-taker":
-                    ticket_obj = Ticket.get_by_name(name="Role-taker", type="Guest", club_id=club_id)
+                # Expiration check: if Early-bird is expired, fallback to Walk-in
+                if ticket_name == "Early-bird" and ticket_obj and ticket_obj.is_expired(meeting.Meeting_Date):
+                    ticket_name = "Walk-in"
+                    ticket_obj = Ticket.get_by_name(name=ticket_name, type=ticket_type, club_id=club_id)
+
+                # Fallback Sequence (Type-Aware):
+                if not ticket_obj:
+                    alt_name = "Walk-in" if ticket_name != "Walk-in" else "Early-bird"
+                    ticket_obj = Ticket.get_by_name(name=alt_name, type=ticket_type, club_id=club_id)
+                
+                if not ticket_obj:
+                    ticket_obj = Ticket.query.filter_by(club_id=club_id, type=ticket_type).first()
+                
+                if not ticket_obj:
+                    ticket_obj = Ticket.query.filter_by(club_id=club_id).first()
+
+                # Logic for Order Number based on FINAL ticket price
+                is_free = ticket_obj.price == 0 if ticket_obj else False
+                new_order = None
+                
+                if is_free:
+                    # Free tickets get next available >= 1000
+                    base_filter = Roster.meeting_id == meeting_id
+                    max_order = db.session.query(func.max(Roster.order_number)).filter(
+                        base_filter, Roster.order_number >= 1000
+                    ).scalar()
+                    new_order = (max_order or 999) + 1
+                else:
+                    # Paid tickets get next available < 1000
+                    base_filter = Roster.meeting_id == meeting_id
+                    max_order = db.session.query(func.max(Roster.order_number)).filter(
+                        base_filter, Roster.order_number < 1000
+                    ).scalar()
+                    new_order = (max_order or 0) + 1
 
                 roster_entry = Roster(
                     meeting_id=meeting_id,

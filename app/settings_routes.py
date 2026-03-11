@@ -108,7 +108,7 @@ def settings():
     
     # Merge for display, optional. Here we pass both to the template separately like roles.
     merged_tickets = Ticket.get_all_for_club(club_id)
-    tickets = [{'id': t.id, 'name': t.name, 'price': t.price, 'type': t.type, 'icon': t.icon, 'color': t.color} for t in merged_tickets]
+    tickets = [{'id': t.id, 'name': t.name, 'price': t.price, 'type': t.type, 'icon': t.icon, 'color': t.color, 'expired_at': t.expired_at.strftime('%H:%M') if t.expired_at else ''} for t in merged_tickets]
 
     return render_template('settings.html', 
                           global_session_types=global_session_types,
@@ -797,15 +797,34 @@ def add_ticket():
             ticket.type = request.form.get('type')
             ticket.color = request.form.get('color')
             ticket.price = price_val
+            
+            expired_at_str = request.form.get('expired_at')
+            if expired_at_str:
+                try:
+                    ticket.expired_at = datetime.strptime(expired_at_str, '%H:%M').time()
+                except ValueError:
+                    ticket.expired_at = None
+            else:
+                ticket.expired_at = None
+                
             msg = "Ticket updated successfully"
         else:
             # Create new
+            expired_at_str = request.form.get('expired_at')
+            expired_at_val = None
+            if expired_at_str:
+                try:
+                    expired_at_val = datetime.strptime(expired_at_str, '%H:%M').time()
+                except ValueError:
+                    pass
+                    
             ticket = Ticket(
                 name=trimmed_name,
                 icon=request.form.get('icon'),
                 type=request.form.get('type'),
                 color=request.form.get('color'),
                 price=price_val,
+                expired_at=expired_at_val,
                 club_id=club_id
             )
             db.session.add(ticket)
@@ -819,7 +838,8 @@ def add_ticket():
             'icon': ticket.icon,
             'type': ticket.type,
             'color': ticket.color,
-            'price': ticket.price
+            'price': ticket.price,
+            'expired_at': ticket.expired_at.strftime('%H:%M') if ticket.expired_at else ''
         }
         return jsonify(success=True, message=msg, new_ticket=ticket_data)
     except Exception as e:
@@ -842,6 +862,16 @@ def update_tickets():
                 ticket.icon = item.get('icon')
                 ticket.type = item.get('type')
                 ticket.color = item.get('color')
+                
+                expired_at_str = item.get('expired_at')
+                if expired_at_str:
+                    try:
+                        ticket.expired_at = datetime.strptime(expired_at_str, '%H:%M').time()
+                    except ValueError:
+                        ticket.expired_at = None
+                else:
+                    ticket.expired_at = None
+
                 try:
                     ticket.price = float(item.get('price', 0.0))
                 except ValueError:

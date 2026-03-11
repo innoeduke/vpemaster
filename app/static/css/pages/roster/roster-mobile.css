@@ -27,9 +27,32 @@
     font-size: 1.8rem;
     width: 100%;
     margin-bottom: 0;
+    order: 1;
   }
 
-  /* Revenue KPI pill-shaped tagline */
+  /* KPI Container mobile */
+  .kpi-container {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    margin-top: 5px;
+    order: 3;
+  }
+
+  .roster-header-grid .filters-control.premium {
+    order: 2;
+    margin-bottom: 10px;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    box-sizing: border-box;
+  }
+
+  /* Revenue & Attendance KPI pill-shaped tagline */
+  .attendance-kpi,
   .revenue-kpi {
     background: #fdf2f4;
     border: 1px solid #772432;
@@ -41,23 +64,34 @@
     gap: 8px;
     min-width: 0;
     display: inline-flex;
-    margin: 5px auto 0;
+    margin: 0 auto;
     box-shadow: 0 2px 4px rgba(119, 36, 50, 0.1);
   }
 
+  .attendance-kpi {
+    background: #fdf2f4;
+    border-color: #772432;
+  }
+
+  .attendance-kpi .kpi-label,
   .revenue-kpi .kpi-label {
     margin-bottom: 0;
     font-size: 0.75rem;
-    color: #772432;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
+  .attendance-kpi .kpi-label,
+  .revenue-kpi .kpi-label {
+    color: #772432;
+  }
+
+  .attendance-kpi .kpi-value,
   .revenue-kpi .kpi-value {
     font-size: 1rem;
-    color: #772432;
     font-weight: 700;
+    color: #772432;
   }
 
 

@@ -2272,7 +2272,8 @@ document.addEventListener('DOMContentLoaded', () => {
             type: formData.get('type') || '',
             price: formData.get('price') || 0,
             icon: formData.get('icon') || '',
-            color: formData.get('color') || ''
+            color: formData.get('color') || '',
+            expired_at: formData.get('expired_at') || null
           }];
           response = await fetch(url, {
             method: 'POST',
@@ -2423,11 +2424,12 @@ function openAddTicketModal() {
   form.reset();
   document.getElementById("ticket-id").value = "";
   document.getElementById("ticket-icon").value = "";
+  document.getElementById("ticket-expired-at").value = "";
   initTicketIconMatrix();
   document.getElementById("ticket-modal").style.display = "flex";
 }
 
-function openEditTicketModal(id, name, type, price, iconValue, color) {
+function openEditTicketModal(id, name, type, price, iconValue, color, expiredAt) {
   document.getElementById("ticket-modal-title").innerText = "Edit Ticket";
   const form = document.getElementById("ticket-form");
   form.reset();
@@ -2458,6 +2460,8 @@ function openEditTicketModal(id, name, type, price, iconValue, color) {
     const activeItem = container.querySelector(`.icon-item[data-value="${iconValue || ""}"]`);
     if (activeItem) activeItem.classList.add("active");
   }
+
+  document.getElementById("ticket-expired-at").value = expiredAt || "";
 
   document.getElementById("ticket-modal").style.display = "flex";
 }

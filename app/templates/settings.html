@@ -464,7 +464,8 @@
             <th class="sortable" data-column-index="3">Price</th>
             <th class="sortable" data-column-index="4">Icon</th>
             <th class="sortable" data-column-index="5">Color</th>
-            <th data-column-index="6">Actions</th>
+            <th class="sortable" data-column-index="6">Expired At</th>
+            <th data-column-index="7">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -483,9 +484,12 @@
               {{ ticket.color }}
               {% endif %}
             </td>
+            <td data-field="expired_at">
+              {{ ticket.expired_at.strftime('%H:%M') if ticket.expired_at else '' }}
+            </td>
             <td>
               <div class="action-links">
-                <button class="edit-btn icon-btn" onclick="openEditTicketModal('{{ ticket.id }}', '{{ ticket.name }}', '{{ ticket.type or '' }}', '{{ ticket.price or 0 }}', '{{ ticket.icon or '' }}', '{{ ticket.color or '' }}')" title="Edit">
+                <button class="edit-btn icon-btn" onclick="openEditTicketModal('{{ ticket.id }}', '{{ ticket.name }}', '{{ ticket.type or '' }}', '{{ ticket.price or 0 }}', '{{ ticket.icon or '' }}', '{{ ticket.color or '' }}', '{{ ticket.expired_at.strftime('%H:%M') if ticket.expired_at else '' }}')" title="Edit">
                   <i class="fas fa-edit"></i>
                 </button>
                 <button class="delete-btn icon-btn" onclick="openDeleteModal('{{ url_for('settings_bp.delete_ticket', id=ticket.id) }}', 'ticket')" title="Delete">

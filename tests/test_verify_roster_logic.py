@@ -38,10 +38,10 @@ class TestVerifyRosterLogic(unittest.TestCase):
         # Seed Tickets
         from app.models import Ticket, Meeting
         tickets = [
-            Ticket(name="Officer", price=0, club_id=1),
-            Ticket(name="Early-bird (Member)", price=0, club_id=1),
-            Ticket(name="Role-taker", price=0, club_id=1),
-            Ticket(name="Guest", price=0, club_id=1)
+            Ticket(name="Officer", type="Officer", price=0, club_id=1),
+            Ticket(name="Early-bird", type="Member", price=0, club_id=1),
+            Ticket(name="Role-taker", type="Guest", price=0, club_id=1),
+            Ticket(name="Guest", type="Guest", price=0, club_id=1)
         ]
         db.session.add_all(tickets)
         
@@ -73,7 +73,7 @@ class TestVerifyRosterLogic(unittest.TestCase):
         
         member_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.member_contact.id).first()
         self.assertIsNone(member_entry.order_number)
-        self.assertEqual(member_entry.ticket.name, "Early-bird (Member)")
+        self.assertEqual(member_entry.ticket.name, "Early-bird")
 
         # 3. Guest Assignment
         Roster.sync_role_assignment(self.meeting.id, self.guest_contact.id, self.role, 'assign')

@@ -9,8 +9,21 @@ class Ticket(db.Model):
     icon = db.Column(db.String(50)) # FontAwesome icon class
     color = db.Column(db.String(50)) # CSS color class or hex
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True, index=True)
+    expired_at = db.Column(db.Time)
 
     club = db.relationship('Club', backref='tickets')
+
+    def is_expired(self, meeting_date, now=None):
+        """Check if the ticket is expired for a specific meeting date."""
+        if not self.expired_at or not meeting_date:
+            return False
+        
+        from datetime import datetime
+        if now is None:
+            now = datetime.now()
+            
+        expiry_datetime = datetime.combine(meeting_date, self.expired_at)
+        return now > expiry_datetime
 
     @classmethod
     def get_by_name(cls, name, type=None, club_id=None):
@@ -41,10 +54,10 @@ class Ticket(db.Model):
         if club_id and club_id != GLOBAL_CLUB_ID:
             local_tickets = cls.query.filter_by(club_id=club_id).all()
             
-        # Merge: Local overwrites Global by name
-        merged = {t.name: t for t in global_tickets}
+        # Merge: Local overwrites Global by (name, type)
+        merged = {(t.name, t.type): t for t in global_tickets}
         for t in local_tickets:
-            merged[t.name] = t
+            merged[(t.name, t.type)] = t
             
         return sorted(list(merged.values()), key=lambda x: x.id)
 

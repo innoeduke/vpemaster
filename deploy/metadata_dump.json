@@ -5068,7 +5068,8 @@
       "type": "Member",
       "icon": "fa-dove",
       "color": "#20c997",
-      "club_id": 2
+      "club_id": 2,
+      "expired_at": "18:00:00"
     },
     {
       "id": 2,
@@ -5077,7 +5078,8 @@
       "type": "Guest",
       "icon": "fa-dove",
       "color": "#20c997",
-      "club_id": 2
+      "club_id": 2,
+      "expired_at": "18:00:00"
     },
     {
       "id": 3,
@@ -5086,7 +5088,8 @@
       "type": "Member",
       "icon": "fa-walking",
       "color": "#ffc107",
-      "club_id": 2
+      "club_id": 2,
+      "expired_at": null
     },
     {
       "id": 4,
@@ -5095,7 +5098,8 @@
       "type": "Guest",
       "icon": "fa-walking",
       "color": "#ffc107",
-      "club_id": 2
+      "club_id": 2,
+      "expired_at": null
     },
     {
       "id": 5,
@@ -5104,7 +5108,8 @@
       "type": "Guest",
       "icon": "fa-microphone",
       "color": "#0d6efd",
-      "club_id": 2
+      "club_id": 2,
+      "expired_at": null
     },
     {
       "id": 6,
@@ -5113,7 +5118,8 @@
       "type": null,
       "icon": "fa-laptop",
       "color": "#17a2b8",
-      "club_id": 2
+      "club_id": 2,
+      "expired_at": null
     },
     {
       "id": 7,
@@ -5122,7 +5128,8 @@
       "type": null,
       "icon": "fa-exclamation-circle",
       "color": "#dc3545",
-      "club_id": 2
+      "club_id": 2,
+      "expired_at": null
     },
     {
       "id": 8,
@@ -5131,7 +5138,8 @@
       "type": null,
       "icon": "fa-ban",
       "color": "#dc3545",
-      "club_id": 2
+      "club_id": 2,
+      "expired_at": null
     },
     {
       "id": 9,
@@ -5140,7 +5148,8 @@
       "type": null,
       "icon": "fa-tag",
       "color": "#6f42c1",
-      "club_id": 2
+      "club_id": 2,
+      "expired_at": null
     },
     {
       "id": 10,
@@ -5149,7 +5158,8 @@
       "type": "Officer",
       "icon": "fa-user-shield",
       "color": "#fd7e14",
-      "club_id": 2
+      "club_id": 2,
+      "expired_at": null
     }
   ]
 }

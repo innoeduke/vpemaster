@@ -1,3 +1,32 @@
+// --- Global Helpers ---
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === name + "=") {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+function handleJsonResponse(response) {
+  return response.text().then((text) => {
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      // If it's not JSON, return the text or a generic message
+      return { ok: response.ok, error: text || "Unknown server error", status: response.status };
+    }
+    return { ok: response.ok, data, status: response.status };
+  });
+}
+
 // Cache DOM elements once for better performance
 function cacheElements() {
   return {
@@ -206,25 +235,28 @@ function initializeMeetingFilter(elements) {
 }
 
 // Calculate next order number for roster entries
-function calculateNextOrder(isOfficer, tableBody) {
+function calculateNextOrder(isFree, tableBody) {
   if (!tableBody) return 1;
   const rows = tableBody.querySelectorAll("tr[data-entry-id]");
   let maxRegular = 0;
-  let maxOverall = 0;
+  let maxFree = 0;
 
   rows.forEach((row) => {
     const orderCell = row.querySelector("td:first-child");
     if (orderCell && orderCell.textContent) {
       const order = parseInt(orderCell.textContent.trim(), 10);
       if (!isNaN(order)) {
-        if (order > maxOverall) maxOverall = order;
-        if (order < 1000 && order > maxRegular) maxRegular = order;
+        if (order >= 1000) {
+            if (order > maxFree) maxFree = order;
+        } else {
+            if (order > maxRegular) maxRegular = order;
+        }
       }
     }
   });
 
-  if (isOfficer) {
-    return maxOverall < 1000 ? 1000 : maxOverall + 1;
+  if (isFree) {
+    return maxFree < 1000 ? 1000 : maxFree + 1;
   } else {
     return maxRegular > 0 ? maxRegular + 1 : 1;
   }
@@ -248,59 +280,117 @@ function initializeContactTypeHandler(elements) {
     let isCurrentTicketValid = false;
     let officerTicketId = "";
     let earlyBirdTicketId = "";
+    let currentTicketText = "";
+
+    if (currentTicketId) {
+      const currentOpt = ticketOptions.find(o => o.dataset.value === currentTicketId);
+      if (currentOpt) currentTicketText = currentOpt.dataset.text;
+    }
+
+    // Get meeting date and server-now from page container
+    const pageContainer = document.querySelector(".page-container");
+    const meetingDateStr = pageContainer ? pageContainer.dataset.meetingDate : "";
+    const serverNowStr = pageContainer ? pageContainer.dataset.serverNow : "";
+    
+    // Use server now if available, otherwise fallback to local browser time
+    const now = serverNowStr ? new Date(serverNowStr.replace(' ', 'T')) : new Date();
+
+    let isCurrentTicketExpired = false;
 
     ticketOptions.forEach(option => {
       const type = option.dataset.type;
       const value = option.dataset.value;
-      const text = option.dataset.text;
-
-      if (text === "Officer") officerTicketId = value;
-      if (text === "Early-bird") earlyBirdTicketId = value;
+      const text = (option.dataset.text || "").trim().toLowerCase();
+      const expiredAt = option.dataset.expiredAt;
 
       // Show ticket if its type matches contactType or if the ticket type is empty/null (generic)
-      if (!type || type === "None" || type === contactType) {
+      const isTypeValid = !type || type === "None" || type === contactType;
+      
+      let isExpired = false;
+      if (expiredAt && meetingDateStr) {
+        const [hours, minutes] = expiredAt.split(':').map(Number);
+        const [y, m, d] = meetingDateStr.split('-').map(Number);
+        const expiryDatetime = new Date(y, m - 1, d, hours, minutes, 0, 0);
+        isExpired = now > expiryDatetime;
+        
+        if (value === currentTicketId) {
+            isCurrentTicketExpired = isExpired;
+        }
+      }
+
+      if (isTypeValid) {
         option.style.display = "flex";
+        if (text === "officer") officerTicketId = value;
+        
+        // Potential defaults for Members/Guests
+        // Only set earlyBirdTicketId if it's NOT expired
+        if ((text.startsWith("early-bird") || text === "early bird") && !isExpired) {
+            if (!earlyBirdTicketId) earlyBirdTicketId = value;
+        }
+        
+        // If we haven't found a valid Early-bird yet (or it's expired), look for fallbacks
+        if (!earlyBirdTicketId) {
+            if (text.startsWith("walk-in")) earlyBirdTicketId = value;
+            if (text.startsWith("role-taker") && contactType === "Guest") earlyBirdTicketId = value;
+        }
+
         if (value === currentTicketId) isCurrentTicketValid = true;
       } else {
         option.style.display = "none";
       }
     });
 
-    // Check if current ticket is considered a "default" ticket name (by checking against IDs)
-    const isDefaultTicket = !currentTicketId || currentTicketId === earlyBirdTicketId || currentTicketId === officerTicketId;
+    const currentTicketLower = (currentTicketText || "").trim().toLowerCase();
+    // Check if current ticket is considered a "default" ticket name
+    const isDefaultTicket = !currentTicketId || 
+                           currentTicketLower.startsWith("early-bird") || 
+                           currentTicketLower === "early bird" ||
+                           currentTicketLower.startsWith("officer");
 
-    console.log(`[Roster] Contact type -> ${contactType}. Ticket ID was: ${currentTicketId || 'empty'} (isDefault: ${isDefaultTicket}, isValid: ${isCurrentTicketValid})`);
+    // Swap logic:
+    const shouldSwap = !currentTicketId || !isCurrentTicketValid || isCurrentTicketExpired || isDefaultTicket;
 
-    // Only auto-default if it's currently a default ticket, or if the current ticket is no longer allowed.
-    if (isDefaultTicket || !isCurrentTicketValid) {
+    if (shouldSwap) {
       const newDefaultId = (contactType === "Officer") ? officerTicketId : earlyBirdTicketId;
-      if (currentTicketId !== newDefaultId) {
-        console.log(`[Roster] Auto-defaulting ticket to ID: ${newDefaultId}`);
+      if (currentTicketId !== newDefaultId && newDefaultId) {
         elements.ticketSelect.value = newDefaultId;
-        // Triggering change event so custom_select UI updates
         elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
       }
-    } else {
-      console.log(`[Roster] Preserving manual ticket selection: ${currentTicketId}`);
     }
 
-    // Update order number if necessary
-    const isOfficer = contactType === "Officer";
-    const currentOrder = parseInt(elements.orderNumberInput.value, 10);
-    const orderIsNone = isNaN(currentOrder);
-    const rangeMismatch = isOfficer ? (currentOrder < 1000) : (currentOrder >= 1000);
-
-    if (orderIsNone || rangeMismatch) {
-      elements.orderNumberInput.value = calculateNextOrder(isOfficer, elements.tableBody);
-      console.log(`[Roster] Updated order number to: ${elements.orderNumberInput.value}`);
-    }
+    // Always reassign order number on contact type change (which may have auto-defaulted the ticket)
+    updateOrderNumber(elements);
   });
 
-  // Track manual ticket changes for debugging
+  // Track manual ticket changes
   elements.ticketSelect.addEventListener("change", function (e) {
     if (e.target !== elements.ticketSelect) return;
-    console.log(`[Roster] Ticket value is now: ${this.value}`);
+    updateOrderNumber(elements);
   });
+}
+
+/**
+ * Reassigns the order number based on the currently selected ticket's price.
+ * Paid tickets (price > 0) -> 1-999 range.
+ * Free tickets (price = 0) -> 1000+ range.
+ */
+function updateOrderNumber(elements) {
+  if (!elements.ticketSelect || !elements.orderNumberInput) return;
+
+  const ticketResultsContainer = document.getElementById("ticket-results");
+  const ticketOptions = ticketResultsContainer ? Array.from(ticketResultsContainer.querySelectorAll(".autocomplete-result-item")) : [];
+  const selectedTicketOpt = ticketOptions.find(o => o.dataset.value === elements.ticketSelect.value);
+  
+  // If no ticket is selected yet, we can't reliably determine the range, 
+  // but usually one is auto-selected before this is called.
+  if (selectedTicketOpt) {
+    const isFree = parseFloat(selectedTicketOpt.dataset.price) === 0;
+    const nextOrder = calculateNextOrder(isFree, elements.tableBody);
+    
+    // The user requested that order_number should be REASSIGNED when updated.
+    // We update it even if it's already in the correct range to ensure it's "fresh".
+    elements.orderNumberInput.value = nextOrder;
+  }
 }
 
 // Reset the roster form to default state
@@ -321,20 +411,17 @@ function resetRosterForm(elements) {
     elements.submitBtn.innerHTML = '<i class="fas fa-save"></i> <span class="btn-label-text">Register</span>';
   }
 
-  // Default to regular order
+  // Default to regular order (assume non-free until ticket selected)
   elements.orderNumberInput.value = calculateNextOrder(false, elements.tableBody);
 }
 
 // Populate form with data for editing
 function populateRosterEditForm(rosterId, elements) {
   fetch(`/roster/api/entry/${rosterId}`)
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('Failed to fetch entry details.');
-      }
-      return response.json();
-    })
-    .then(entry => {
+    .then(handleJsonResponse)
+    .then(({ ok, data, error }) => {
+      if (!ok) throw new Error(data?.error || error || "Failed to fetch entry details.");
+      const entry = data;
       elements.entryIdInput.value = entry.id;
 
       // Load order number if not null, otherwise set to empty string
@@ -419,14 +506,15 @@ function initializeFormHandlers(elements) {
 
       fetch(url, {
         method: method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrf_token") || "",
+        },
         body: JSON.stringify(formData),
       })
-        .then((response) =>
-          response.json().then((data) => ({ ok: response.ok, data }))
-        )
-        .then(({ ok, data }) => {
-          if (!ok) throw new Error(data.error || "Failed to save the entry.");
+        .then(handleJsonResponse)
+        .then(({ ok, data, error }) => {
+          if (!ok) throw new Error(data?.error || error || "Failed to save the entry.");
           window.location.reload();
         })
         .catch((error) => {
@@ -480,12 +568,16 @@ function initializeTableInteractions(elements) {
       e.preventDefault();
       const entryId = restoreButton.dataset.id;
       if (confirm("Are you sure you want to restore this roster entry?")) {
-        fetch(`/roster/api/entry/${entryId}/restore`, { method: "POST" })
-          .then((response) =>
-            response.json().then((data) => ({ ok: response.ok, data }))
-          )
-          .then(({ ok, data }) => {
-            if (!ok) throw new Error(data.error || "Failed to restore entry.");
+        fetch(`/roster/api/entry/${entryId}/restore`, {
+          method: "POST",
+          headers: {
+            "X-CSRFToken": getCookie("csrf_token") || "",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then(handleJsonResponse)
+          .then(({ ok, data, error }) => {
+            if (!ok) throw new Error(data?.error || error || "Failed to restore entry.");
             window.location.reload();
           })
           .catch((error) => {
@@ -499,12 +591,16 @@ function initializeTableInteractions(elements) {
       e.preventDefault();
       const entryId = cancelButton.dataset.id;
       if (confirm("Are you sure you want to cancel this roster entry?")) {
-        fetch(`/roster/api/entry/${entryId}`, { method: "DELETE" })
-          .then((response) =>
-            response.json().then((data) => ({ ok: response.ok, data }))
-          )
-          .then(({ ok, data }) => {
-            if (!ok) throw new Error(data.error || "Failed to cancel entry.");
+        fetch(`/roster/api/entry/${entryId}`, {
+          method: "DELETE",
+          headers: {
+            "X-CSRFToken": getCookie("csrf_token") || "",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then(handleJsonResponse)
+          .then(({ ok, data, error }) => {
+            if (!ok) throw new Error(data?.error || error || "Failed to cancel entry.");
             window.location.reload();
           })
           .catch((error) => {
@@ -518,12 +614,16 @@ function initializeTableInteractions(elements) {
       e.preventDefault();
       const entryId = deleteButton.dataset.id;
       if (confirm("Are you sure you want to permanently DELETE this roster entry? This cannot be undone.")) {
-        fetch(`/roster/api/entry/${entryId}?hard_delete=true`, { method: "DELETE" })
-          .then((response) =>
-            response.json().then((data) => ({ ok: response.ok, data }))
-          )
-          .then(({ ok, data }) => {
-            if (!ok) throw new Error(data.error || "Failed to delete entry.");
+        fetch(`/roster/api/entry/${entryId}?hard_delete=true`, {
+          method: "DELETE",
+          headers: {
+            "X-CSRFToken": getCookie("csrf_token") || "",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then(handleJsonResponse)
+          .then(({ ok, data, error }) => {
+            if (!ok) throw new Error(data?.error || error || "Failed to delete entry.");
             window.location.reload();
           })
           .catch((error) => {
@@ -545,11 +645,12 @@ function handleContactFormSubmit(event) {
     body: formData,
     headers: {
       "X-Requested-With": "XMLHttpRequest",
+      "X-CSRFToken": getCookie("csrf_token") || "",
     },
   })
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.success) {
+    .then(handleJsonResponse)
+    .then(({ ok, data, error }) => {
+      if (ok && data.success) {
         // Build the return URL with new contact details
         const url = new URL(window.location.href);
         url.searchParams.set("new_contact_id", data.contact.id);
@@ -557,10 +658,13 @@ function handleContactFormSubmit(event) {
         url.searchParams.set("new_contact_type", data.contact.Type);
         window.location.href = url.toString();
       } else {
-        if (data.duplicate_contact) {
+        if (data && data.duplicate_contact) {
           showDuplicateModal(data.message, data.duplicate_contact);
         } else {
-          showNotification(data.message || "An error occurred while saving the contact.", "error");
+          showNotification(
+            data?.message || error || "An error occurred while saving the contact.",
+            "error"
+          );
         }
       }
     })

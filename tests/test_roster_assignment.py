@@ -48,10 +48,10 @@ class TestRosterAssignment(unittest.TestCase):
         # Seed Tickets
         from app.models import Ticket
         tickets = [
-            Ticket(name="Officer", price=0, club_id=self.club.id),
-            Ticket(name="Early-bird (Member)", price=0, club_id=self.club.id),
-            Ticket(name="Role-taker", price=0, club_id=self.club.id),
-            Ticket(name="Guest", price=0, club_id=self.club.id)
+            Ticket(name="Officer", type="Officer", price=0, club_id=self.club.id),
+            Ticket(name="Early-bird", type="Member", price=0, club_id=self.club.id),
+            Ticket(name="Role-taker", type="Guest", price=0, club_id=self.club.id),
+            Ticket(name="Guest", type="Guest", price=0, club_id=self.club.id)
         ]
         db.session.add_all(tickets)
         db.session.commit()
@@ -96,7 +96,7 @@ class TestRosterAssignment(unittest.TestCase):
         member_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.member_contact.id).first()
         self.assertIsNotNone(member_entry)
         self.assertIsNone(member_entry.order_number)
-        self.assertEqual(member_entry.ticket.name, "Early-bird (Member)")
+        self.assertEqual(member_entry.ticket.name, "Early-bird")
 
     def test_guest_assignment(self):
         """Test that guests get None order number and Role Taker ticket"""

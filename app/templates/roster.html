@@ -21,26 +21,34 @@
     data-club-district="{{ club.district if club and club.district else '' }}"
     data-club-division="{{ club.division if club and club.division else '' }}"
     data-club-area="{{ club.area if club and club.area else '' }}"
+    data-server-now="{{ now.strftime('%Y-%m-%d %H:%M:%S') if now else '' }}"
 >
     <div class="roster-header-grid">
         <h1><i class="fas fa-clipboard-list"></i> Meeting Roster</h1>
         {% if selected_meeting %}
-        <div class="revenue-kpi">
-            <span class="kpi-label">Total Amount</span>
-            <span class="kpi-value">¥{{ "%.2f"|format(total_amount|default(0)) }}</span>
+        <div class="kpi-container">
+            <div class="attendance-kpi">
+                <span class="kpi-label">Attendees</span>
+                <span class="kpi-value">{{ total_attendees|default(0) }}</span>
+            </div>
+            <div class="revenue-kpi">
+                <span class="kpi-label">Amount</span>
+                <span class="kpi-value">¥{{ "%.2f"|format(total_amount|default(0)) }}</span>
+            </div>
         </div>
         {% endif %}
-    </div>
-    <div class="filters-control premium">
-        <div class="filter-row-premium">
-            {{ render_meeting_filter(all_meetings, selected_meeting_id, label='', data_format='tuple', render_outer_container=False) }}
-            <div class="filter-right">
-                <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn btn-secondary trend-btn" title="View Attendance Trend">
-                    <i class="fas fa-chart-line"></i> Attendance 
-                </a>
-                <a href="{{ url_for('roster_bp.roster_amount_trend') }}" class="btn btn-secondary trend-btn" title="View Amount Trend" style="margin-left: 10px;">
-                    <i class="fas fa-coins"></i> Ticket Sales
-                </a>
+        
+        <div class="filters-control premium">
+            <div class="filter-row-premium">
+                {{ render_meeting_filter(all_meetings, selected_meeting_id, label='', data_format='tuple', render_outer_container=False) }}
+                <div class="filter-right">
+                    <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn btn-secondary trend-btn" title="View Attendance Trend">
+                        <i class="fas fa-chart-line"></i> Attendance 
+                    </a>
+                    <a href="{{ url_for('roster_bp.roster_amount_trend') }}" class="btn btn-secondary trend-btn" title="View Amount Trend" style="margin-left: 10px;">
+                        <i class="fas fa-coins"></i> Ticket Sales
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -80,7 +88,8 @@
                             {% set ticket_opts = [] %}
                             {% for t in tickets %}
                                 {% set t_icon = t.icon if t.icon else 'fa-ticket-alt' %}
-                                {% set _ = ticket_opts.append({'value': t.id, 'text': t.name, 'icon': 'fas ' ~ t_icon, 'color': t.color, 'type': t.type}) %}
+                                {% set t_expired = t.expired_at.strftime('%H:%M') if t.expired_at else '' %}
+                                {% set _ = ticket_opts.append({'value': t.id, 'text': t.name, 'icon': 'fas ' ~ t_icon, 'color': t.color, 'type': t.type, 'expired_at': t_expired, 'price': t.price}) %}
                             {% endfor %}
                             {{ render_custom_select(ticket_opts, "", label='Ticket', select_id='ticket', placeholder='Select...') }}
                         </div>
@@ -147,7 +156,7 @@
                                 {% set icon_class = 'fa-ticket-alt' %}
                             {% endif %}
 
-                            <span class="ticket-badge">
+                            <span class="ticket-badge {% if entry.order_number is none and entry.ticket and entry.ticket.expired_at and now > datetime.combine(selected_meeting.Meeting_Date, entry.ticket.expired_at) %}ticket-expired{% endif %}">
                                 <i class="fas {{ icon_class }}" style="color: {{ icon_color }};" title="{{ entry.ticket.name if entry.ticket else '' }}"></i>
                                 {{ entry.ticket.name.split('(')[0].strip() if entry.ticket else '' }}
                             </span>

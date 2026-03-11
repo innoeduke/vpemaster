@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
+from datetime import datetime
 from flask_login import current_user
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions, permission_required
@@ -69,46 +70,13 @@ def roster():
                 .order_by(Roster.order_number.asc())\
                 .all()
         
-        # Auto-sync officers to roster
-        club_officers = [c for c in contacts if c.user and c.user.has_role(Permissions.STAFF)]
-        roster_contact_ids = {r.contact_id for r in roster_entries if r.contact_id}
-        missing_officers = [o for o in club_officers if o.id not in roster_contact_ids]
-        
-        if missing_officers:
-            officer_ticket = Ticket.get_by_name('Officer', club_id)
-            officer_orders = [r.order_number for r in roster_entries if r.order_number and r.order_number >= 1000]
-            next_off_order = max(officer_orders) + 1 if officer_orders else 1000
-            
-            for off in missing_officers:
-                new_off_entry = Roster(
-                    meeting_id=selected_meeting_id,
-                    contact_id=off.id,
-                    contact_type='Officer',
-                    order_number=next_off_order,
-                    ticket_id=officer_ticket.id if officer_ticket else None
-                )
-                db.session.add(new_off_entry)
-                next_off_order += 1
-            
-            try:
-                db.session.commit()
-                # Re-fetch roster entries
-                roster_entries = Roster.query\
-                    .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\
-                    .outerjoin(Contact, Roster.contact_id == Contact.id)\
-                    .filter(Roster.meeting_id == selected_meeting_id)\
-                    .order_by(Roster.order_number.asc())\
-                    .all()
-            except Exception as e:
-                db.session.rollback()
-                print(f"Error syncing officers: {e}")
-
         # Roles map
         roles_map = RoleService.get_role_takers(selected_meeting_id, club_id)
                 
         
-        # Calculate total amount
+        # Calculate total amount and attendees
         total_amount = sum(entry.ticket.price for entry in roster_entries if entry.ticket and entry.ticket.price)
+        total_attendees = sum(1 for entry in roster_entries if entry.ticket and entry.ticket.name != 'Cancelled')
 
         if roster_entries:
             valid_orders = [entry.order_number for entry in roster_entries if entry.order_number is not None and entry.order_number < 1000]
@@ -141,7 +109,10 @@ def roster():
         tickets=tickets,
         tickets_map=tickets_map,
         RoleID=RoleID,
-        total_amount=total_amount if 'total_amount' in locals() else 0
+        total_amount=total_amount if 'total_amount' in locals() else 0,
+        total_attendees=total_attendees if 'total_attendees' in locals() else 0,
+        now=datetime.now(),
+        datetime=datetime
     )
 
 
@@ -395,13 +366,14 @@ def restore_roster_entry(entry_id):
         return jsonify({'error': 'Entry not found'}), 404
 
     if entry.contact_type == 'Officer':
-        ticket_name = 'Officer'
+        t_obj = Ticket.get_by_name('Officer', type='Officer', club_id=entry.meeting.club_id if entry.meeting else None)
     elif entry.contact and entry.contact.Type == 'Member':
-        ticket_name = 'Early-bird (Member)'
+        t_obj = Ticket.get_by_name('Early-bird', type='Member', club_id=entry.meeting.club_id if entry.meeting else None)
+    elif entry.contact and entry.contact.Type == 'Guest':
+        t_obj = Ticket.get_by_name('Role-taker', type='Guest', club_id=entry.meeting.club_id if entry.meeting else None)
     else:
-        ticket_name = 'Early-bird (Guest)'
+        t_obj = Ticket.get_by_name('Walk-in', type='Guest', club_id=entry.meeting.club_id if entry.meeting else None)
     
-    t_obj = Ticket.get_by_name(ticket_name, entry.meeting.club_id if entry.meeting else None)
     if t_obj:
         entry.ticket_id = t_obj.id
 
@@ -427,11 +399,20 @@ def delete_roster_entry(entry_id):
     try:
         if hard_delete:
             from .models.roster import RosterRole
+            from .models.session import OwnerMeetingRoles
+            
+            # Release any booked roles in the agenda for this meeting
+            OwnerMeetingRoles.query.filter_by(
+                meeting_id=entry.meeting_id,
+                contact_id=entry.contact_id
+            ).delete(synchronize_session=False)
+
+            # Remove associated roster roles and the entry itself
             RosterRole.query.filter_by(roster_id=entry_id).delete()
             db.session.delete(entry)
             message = 'Entry deleted successfully'
         else:
-            cancelled_ticket = Ticket.get_by_name('Cancelled', entry.meeting.club_id if entry.meeting else None)
+            cancelled_ticket = Ticket.get_by_name('Cancelled', club_id=entry.meeting.club_id if entry.meeting else None)
             if cancelled_ticket:
                 entry.ticket_id = cancelled_ticket.id
             message = 'Entry cancelled successfully'

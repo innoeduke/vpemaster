@@ -7,6 +7,12 @@
 	margin-bottom: 20px;
 }
 
+.roster-header-grid .filters-control.premium {
+	order: 3;
+	width: 100%;
+	box-sizing: border-box;
+}
+
 /* --- Filter Container premium --- */
 
 /* Main Content Structure */
@@ -21,20 +27,38 @@
 
 .roster-header-grid h1 {
 	margin: 0;
+	order: 1;
 }
 
+.kpi-container {
+	display: flex;
+	gap: 15px;
+	align-items: center;
+	order: 2;
+}
+
+.attendance-kpi,
 .revenue-kpi {
 	background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-	border-left: 4px solid #772432;
 	padding: 10px 20px;
 	border-radius: 8px;
 	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 	display: inline-flex;
 	flex-direction: column;
 	align-items: flex-end;
+	min-width: 120px;
+}
+
+.attendance-kpi,
+.revenue-kpi {
+	border-left: 4px solid #772432;
+}
+
+.revenue-kpi {
 	min-width: 150px;
 }
 
+.attendance-kpi .kpi-label,
 .revenue-kpi .kpi-label {
 	font-size: 0.75rem;
 	text-transform: uppercase;
@@ -44,6 +68,7 @@
 	margin-bottom: 2px;
 }
 
+.attendance-kpi .kpi-value,
 .revenue-kpi .kpi-value {
 	font-size: 1.5rem;
 	font-weight: 700;
@@ -538,6 +563,11 @@
 
 .ticket-badge i {
 	font-size: 1.1rem;
+}
+
+.ticket-badge.ticket-expired {
+	color: #800000 !important;
+	border-color: #800000 !important;
 }
 
 .ticket-badge:hover {
