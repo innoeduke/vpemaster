@@ -333,9 +333,9 @@ def update_next_project(contact):
     contact.Next_Project = None
 
 
-def recalculate_contact_metadata(contact):
+def recalculate_contact_metadata(contact, avatar_url=None):
     """
-    Update Contact metadata (DTM, Completed_Paths, credentials, Next_Project) 
+    Update Contact metadata (DTM, Completed_Paths, credentials, Next_Project, Avatar_URL) 
     strictly based on the Achievements table and SessionLogs for this contact 
     AND all related contact records (same email or same user).
     Does NOT commit to DB.
@@ -443,6 +443,10 @@ def recalculate_contact_metadata(contact):
     # 4. Next Project
     update_next_project(contact)
 
+    # 5. Avatar Sync (Explicitly passed)
+    if avatar_url:
+        contact.Avatar_URL = avatar_url
+
 
 def sync_contact_metadata(contact_id):
     """
@@ -468,7 +472,8 @@ def sync_contact_metadata(contact_id):
     # Update all related contacts
     contacts_to_update = Contact.query.filter(Contact.id.in_(list(related_contact_ids))).all()
     for contact in contacts_to_update:
-        recalculate_contact_metadata(contact)
+        # Propagate Avatar_URL during sync if it exists on primary
+        recalculate_contact_metadata(contact, avatar_url=primary_contact.Avatar_URL)
         db.session.add(contact)
     
     db.session.commit()

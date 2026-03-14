@@ -250,6 +250,8 @@ def profile(contact_id=None):
                         avatar_url = process_avatar(file, user.contact.id)
                         if avatar_url:
                             user.contact.Avatar_URL = avatar_url
+                            from ..utils import sync_contact_metadata
+                            sync_contact_metadata(user.contact.id)
                         else:
                             flash('Error processing image.', 'error')
 
