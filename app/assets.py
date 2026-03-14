@@ -39,6 +39,7 @@ css_all = Bundle(
     'css/pages/contacts/contacts-desktop.css',
     'css/pages/contacts/contacts-ipad.css',
     'css/pages/contacts/contacts-mobile.css',
+    'css/pages/contacts/member-cards.css',
     'css/pages/login.css',
     # Pathway Library CSS (modular structure)
     'css/pages/pathway_library/pathway_library-base.css',

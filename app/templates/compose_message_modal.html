@@ -232,14 +232,20 @@
 <script>
     let searchTimeout = null;
 
-    function openComposeModal(recipientId = null, recipientName = null, subject = null) {
+    function openComposeModal(recipientId = null, recipientName = null, subject = null, mode = null) {
         const modal = document.getElementById('composeModal');
         const modalTitle = modal.querySelector('.compose-title');
         
         if (recipientId && recipientName) {
             document.getElementById('recipient_id').value = recipientId;
             document.getElementById('recipient_search').value = recipientName;
-            modalTitle.innerHTML = '<i class="fas fa-reply"></i> Reply Message';
+            
+            // Set title based on mode or default to Reply
+            if (mode === 'new') {
+                modalTitle.innerHTML = '<i class="fas fa-pen"></i> New Message';
+            } else {
+                modalTitle.innerHTML = '<i class="fas fa-reply"></i> Reply Message';
+            }
         } else {
             modalTitle.innerHTML = '<i class="fas fa-pen"></i> New Message';
         }

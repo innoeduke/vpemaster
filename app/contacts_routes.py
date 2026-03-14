@@ -136,6 +136,22 @@ def show_contacts():
                            current_term=current_term)
 
 
+@contacts_bp.route('/contacts/cards')
+@login_required
+def member_cards():
+    """Renders the member cards view page."""
+    can_view_all = is_authorized(Permissions.CONTACT_BOOK_VIEW)
+    can_view_members = is_authorized(Permissions.CONTACTS_MEMBERS_VIEW)
+
+    if not can_view_all and not can_view_members:
+        flash("You don't have permission to view this page.", 'error')
+        return redirect(url_for('agenda_bp.agenda'))
+
+    return render_template('member_cards.html',
+                           can_view_members=can_view_members,
+                           can_view_all=can_view_all)
+
+
 @contacts_bp.route('/contact/form', methods=['GET', 'POST'])
 @contacts_bp.route('/contact/form/<int:contact_id>', methods=['GET', 'POST'])
 @login_required
@@ -800,6 +816,10 @@ def get_all_contacts_api():
             'user_role': c.user.primary_role_name if c.user else None,
             'is_officer': c.user.has_role(Permissions.STAFF) if c.user else False,
             'is_connected': c.is_connected,
+            'Email': c.Email if c.Email else '-',
+            'first_name': c.first_name if c.first_name else '-',
+            'last_name': c.last_name if c.last_name else '-',
+            'username': c.user.username if c.user else '-',
             'Date_Created': c.Date_Created.strftime('%Y-%m-%d') if c.Date_Created else '-'
         })
 

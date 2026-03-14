@@ -108,8 +108,9 @@
         const recipientId = urlParams.get('recipient_id');
         const recipientName = urlParams.get('recipient_name');
         const subject = urlParams.get('subject');
+        const mode = urlParams.get('mode');
         if (recipientId && recipientName) {
-            openComposeModal(recipientId, recipientName, subject);
+            openComposeModal(recipientId, recipientName, subject, mode);
         }
     });
 

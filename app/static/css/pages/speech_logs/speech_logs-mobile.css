@@ -181,6 +181,10 @@
     margin-bottom: 5px;
   }
 
+  .name-credential {
+    justify-content: center;
+  }
+
   .header-right {
     order: 2;
     width: 100%;

@@ -78,6 +78,9 @@ head_extra %}
         <button class="btn btn-primary" onclick="window.location.href='{{ url_for('roster_bp.roster') }}'">
           Open Roster
         </button>
+        <button class="btn btn-outline-info" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}'" title="Grid View">
+          <i class="fas fa-th-large"></i>
+        </button>
       </div>
       {% endif %}
     </div>

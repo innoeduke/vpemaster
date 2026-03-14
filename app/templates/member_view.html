@@ -56,6 +56,12 @@
                     title="View Profile">
                     <i class="fas fa-id-card"></i> Profile
                 </a>
+                {% if viewed_contact.user_id and viewed_contact.id != current_user.contact_id %}
+                <a href="{{ url_for('messages.messages', recipient_id=viewed_contact.user_id, recipient_name=viewed_contact.Name, mode='new') }}" 
+                   class="btn-view-control btn-message-small" title="Send Message">
+                    <i class="fas fa-envelope"></i> Message
+                </a>
+                {% endif %}
                 {% elif current_user.contact_id == viewed_contact.id %}
                 <a href="{{ url_for('auth_bp.profile') }}" class="btn-view-control btn-profile-small"
                     title="My Profile">

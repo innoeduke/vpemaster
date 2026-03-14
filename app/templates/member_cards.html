@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Member Cards{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/contacts/member-cards.css') }}" />
+{% endblock %}
+
+{% block content %}
+<div class="cards-page-container">
+    <div class="member-cards-header no-print">
+        <div class="cards-header-info">
+            <h1><i class="fas fa-id-card"></i> Member Directory</h1>
+            <p class="cards-subtitle">Member card directory for quick reference</p>
+        </div>
+        <div class="cards-header-actions">
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="cardSearch" placeholder="Search members..." onkeyup="filterCards()" />
+            </div>
+            <div class="cards-header-buttons">
+                <button onclick="window.print()" class="btn btn-export">
+                    <i class="fas fa-file-pdf"></i> Export
+                </button>
+                <a href="{{ url_for('contacts_bp.show_contacts') }}" class="btn btn-outline-secondary btn-table-view">
+                    <i class="fas fa-table"></i> Table View
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="cardsLoadingSpinner" class="loading-spinner-container no-print">
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Loading member data...</p>
+        </div>
+    </div>
+
+    <div id="memberCardsGrid" class="member-cards-grid">
+        <!-- Cards will be dynamically populated -->
+    </div>
+
+    <div id="noResults" class="no-results" style="display: none;">
+        <i class="fas fa-search"></i>
+        <p>No members found matching your search.</p>
+    </div>
+</div>
+
+<script>
+    let allMembers = [];
+
+    function getAvatarUrl(avatarPath) {
+        if (!avatarPath) return null;
+        
+        // If it's a full URL or already absolute, return as is
+        if (avatarPath.startsWith('http') || avatarPath.startsWith('/')) {
+            return avatarPath;
+        }
+        
+        // Otherwise, handle as local asset
+        let root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+        
+        // If just a filename, prepend root
+        if (avatarPath.indexOf('/') === -1) {
+            avatarPath = `${root}/${avatarPath}`;
+        }
+        
+        return `/static/${avatarPath}`;
+    }
+
+    async function loadMembers() {
+        const grid = document.getElementById('memberCardsGrid');
+        const spinner = document.getElementById('cardsLoadingSpinner');
+        
+        try {
+            const response = await fetch('/api/contacts/all');
+            if (!response.ok) throw new Error('Failed to fetch data');
+            
+            const data = await response.json();
+            // Filter to only show Members initially
+            allMembers = data.filter(c => c.Type === 'Member');
+            
+            renderCards(allMembers);
+            spinner.style.display = 'none';
+        } catch (error) {
+            console.error('Error loading members:', error);
+            grid.innerHTML = '<p class="error">Error loading member data. Please try again later.</p>';
+            spinner.style.display = 'none';
+        }
+    }
+
+    function renderCards(members) {
+        const grid = document.getElementById('memberCardsGrid');
+        grid.innerHTML = '';
+        
+        members.forEach(member => {
+            const card = document.createElement('a');
+            card.href = `/speech_logs?speaker_id=${member.id}&view_mode=member`;
+            card.className = 'member-card';
+            
+            const avatarUrl = getAvatarUrl(member.Avatar_URL);
+            const avatarHtml = avatarUrl 
+                ? `<img src="${avatarUrl}" alt="${member.Name}" class="card-avatar-img">`
+                : `<div class="card-avatar-placeholder"><i class="fas fa-user"></i></div>`;
+
+            card.innerHTML = `
+                <div class="card-top">
+                    <div class="card-avatar-wrapper">
+                        ${avatarHtml}
+                    </div>
+                    <div class="card-identity">
+                        <h3 class="member-name">
+                            ${member.Name}${member.credentials && member.credentials !== '-' ? `<span class="member-credentials">, ${member.credentials}</span>` : ''}
+                        </h3>
+                        <p class="member-username">@${member.username}</p>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-item">
+                        <span class="detail-label">Member ID</span>
+                        <span class="detail-value">${member.Member_ID || '-'}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Email</span>
+                        <span class="detail-value email-text">${member.Email || '-'}</span>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function filterCards() {
+        const query = document.getElementById('cardSearch').value.toLowerCase();
+        const filtered = allMembers.filter(m => 
+            m.Name.toLowerCase().includes(query) || 
+            m.username.toLowerCase().includes(query) || 
+            (m.Member_ID && m.Member_ID.toLowerCase().includes(query)) ||
+            (m.Email && m.Email.toLowerCase().includes(query))
+        );
+        
+        renderCards(filtered);
+        
+        const noResults = document.getElementById('noResults');
+        noResults.style.display = filtered.length === 0 ? 'block' : 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', loadMembers);
+</script>
+{% endblock %}
