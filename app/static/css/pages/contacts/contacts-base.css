@@ -124,13 +124,6 @@
   flex-wrap: wrap;
 }
 
-.contact-name-info.clickable-name {
-  cursor: pointer;
-  padding: 2px 4px;
-  border-radius: 3px;
-  transition: all 0.2s ease;
-}
-
 .badge-member-id {
   margin-left: 5px;
   font-size: 0.8em;
@@ -139,31 +132,18 @@
   border-radius: 5px;
   padding: 2px 5px;
   color: #333;
-  transition: all 0.2s ease;
   display: inline-block;
 }
 
-.badge-member-id.clickable-badge {
+/* Clickable Contact Cell (Container hover) */
+.contact-name-cell.clickable-cell {
   cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
 }
 
-/* Messaging Hover (Name/Avatar) */
-.contact-avatar-small.clickable-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(119, 36, 50, 0.2);
-  border-color: #8e2a3d;
-}
-
-.contact-name-info.clickable-name:hover {
+.contact-name-cell.clickable-cell:hover {
   background-color: #e0f0f1;
-}
-
-/* Speech Logs Hover (Member ID Badge) */
-.badge-member-id.clickable-badge:hover {
-  background-color: #772432;
-  color: #fff;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Participation Badges */

@@ -33,7 +33,7 @@
 	.chart-scroll-area {
 		overflow-x: hidden;
 		overflow-y: auto;
-		margin: 35px 0;
+		margin: 0 0 35px 0;
 	}
 
 	.chart-title-main {

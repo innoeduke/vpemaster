@@ -27,7 +27,8 @@ def lookup_user_clubs():
         or_(
             User.username == login_identifier,
             User.email == login_identifier,
-            User.phone == login_identifier
+            User.phone == login_identifier,
+            User.member_no == login_identifier
         )
     ).first()
     
@@ -90,7 +91,8 @@ def login():
             or_(
                 User.username == login_identifier, 
                 User.email == login_identifier,
-                User.phone == login_identifier
+                User.phone == login_identifier,
+                User.member_no == login_identifier
             )
         ).first()
 

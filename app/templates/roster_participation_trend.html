@@ -6,8 +6,8 @@
 {% block header_title %}Participation Trend{% endblock %}
 
 {% block head_extra %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script src="{{ url_for('static', filename='vendor/js/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/js/chartjs-plugin-datalabels.min.js') }}"></script>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-base.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-desktop.css') }}">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/components/stacked_chart/stacked_chart-ipad.css') }}">
@@ -32,9 +32,16 @@ document.addEventListener('DOMContentLoaded', function() {
 	const meetingNumbers = {{ meeting_numbers | tojson }};
 	const meetingDates = {{ meeting_dates | tojson }};
 	const datasetsRaw = {{ datasets | tojson }};
-	const labels = meetingNumbers.map(num => `#${num}`);
-	
 	const isMobile = window.innerWidth < 768;
+
+	// On mobile, reverse order so latest meeting appears at the top
+	if (isMobile) {
+		meetingNumbers.reverse();
+		meetingDates.reverse();
+		datasetsRaw.forEach(ds => ds.data.reverse());
+	}
+
+	const labels = meetingNumbers.map(num => `#${num}`);
 	const scrollArea = document.querySelector('.chart-scroll-area');
 	const innerContainer = document.getElementById('chartInnerContainer');
 	
@@ -102,7 +109,8 @@ document.addEventListener('DOMContentLoaded', function() {
 			position: 'left',
 			title: { display: true, text: 'Meeting', font: { weight: 'bold' } },
 			grid: { display: false },
-			stacked: true
+			stacked: true,
+			offset: false
 		}
 	};
 
@@ -202,8 +210,8 @@ document.addEventListener('DOMContentLoaded', function() {
 			...commonOptions,
 			plugins: { ...commonOptions.plugins, tooltip: { enabled: false } },
 			scales: isMobile ? {
-				x: { ...mobileScales.x, title: { display: false } },
-				y: { ...mobileScales.y, display: false }
+				x: { ...mobileScales.x, title: { display: false }, afterFit: (axis) => { axis.height = 35; } },
+				y: { ...mobileScales.y, ticks: { display: false }, title: { display: false }, grid: { display: false }, afterFit: (axis) => { axis.width = 45; } }
 			} : {
 				y: { ...desktopScales.y, title: { display: false }, afterFit: (axis) => { axis.width = 60; } },
 				x: { ...desktopScales.x, display: false }
@@ -222,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			...commonOptions,
 			scales: isMobile ? {
 				x: { ...mobileScales.x, display: false },
-				y: { ...mobileScales.y, title: { display: false }, grid: { display: false }, ticks: { padding: 5, autoSkip: false } }
+				y: { ...mobileScales.y, title: { display: false }, grid: { display: false }, ticks: { padding: 5, autoSkip: false }, afterFit: (axis) => { axis.width = 45; } }
 			} : {
 				y: { ...desktopScales.y, title: { display: false }, ticks: { display: false }, grid: { display: false }, afterFit: (axis) => { axis.width = 1; } },
 				x: { ...desktopScales.x, title: { display: false }, grid: { display: false }, ticks: { padding: 12 } }
@@ -230,10 +238,9 @@ document.addEventListener('DOMContentLoaded', function() {
 		}
 	});
 
-	// Sync scroll to most recent
+	// Sync scroll to most recent (desktop only; mobile is already reversed)
 	setTimeout(() => {
-		if (isMobile) scrollArea.scrollTop = scrollArea.scrollHeight;
-		else scrollArea.scrollLeft = scrollArea.scrollWidth;
+		if (!isMobile) scrollArea.scrollLeft = scrollArea.scrollWidth;
 	}, 150);
 });
 </script>

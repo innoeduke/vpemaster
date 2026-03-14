@@ -186,11 +186,11 @@ function createContactRow(contact) {
 
   html += `
     <td class="col-name">
-      <div class="contact-name-cell">
+      <div class="contact-name-cell ${canViewMembers && contact.Member_ID && contact.Type !== 'Guest' ? 'clickable-cell' : ''}"
+           ${canViewMembers && contact.Member_ID && contact.Type !== 'Guest' ? `onclick="window.location.href='/speech_logs?speaker_id=${contact.id}&view_mode=member'" title="View ${contact.Name}'s member page"` : ''}>
         ${(() => {
       if (!contact.Avatar_URL) {
-        return `<div class="contact-avatar-placeholder-small ${canSendMessages && contact.has_user ? 'clickable-avatar' : ''}"
-                     ${canSendMessages && contact.has_user ? `onclick="openMessageModal(${contact.user_id}, '${contact.Name.replace(/'/g, "\\'")}')" title="Message ${contact.Name}"` : ''}>
+        return `<div class="contact-avatar-placeholder-small">
                   <i class="fas fa-user"></i>
                 </div>`;
       }
@@ -200,17 +200,14 @@ function createContactRow(contact) {
         const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
         avatarPath = `${root}/${avatarPath}`;
       }
-      return `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small ${canSendMessages && contact.has_user ? 'clickable-avatar' : ''}"
-                   ${canSendMessages && contact.has_user ? `onclick="openMessageModal(${contact.user_id}, '${contact.Name.replace(/'/g, "\\'")}')" title="Message ${contact.Name}"` : ''}>`;
+      return `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small">`;
     })()}
-        <span class="contact-name-info ${canSendMessages && contact.has_user ? 'clickable-name' : ''}" 
-             ${canSendMessages && contact.has_user ? `onclick="openMessageModal(${contact.user_id}, '${contact.Name.replace(/'/g, "\\'")}')" title="Message ${contact.Name}"` : ''}>
+        <span class="contact-name-info">
           ${contact.Name}
           ${contact.DTM ? '<sup class="dtm-superscript">DTM</sup>' : ''}
         </span>
         ${contact.Member_ID && contact.Type !== 'Guest' ? `
-          <span class="badge-member-id ${canViewMembers ? 'clickable-badge' : ''}" 
-                ${canViewMembers ? `onclick="event.stopPropagation(); window.location.href='/speech_logs?speaker_id=${contact.id}&view_mode=member'" title="View ${contact.Name}'s speech logs"` : ''}>
+          <span class="badge-member-id">
             ${contact.Member_ID}
           </span>` : ''}
       </div>
