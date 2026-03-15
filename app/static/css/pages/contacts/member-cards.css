@@ -9,7 +9,8 @@
 .member-cards-header {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center; /* Center items in header */
+    text-align: center; /* Center text in header */
     margin-bottom: 30px;
     border-bottom: 2px solid #f1f5f9;
     padding-bottom: 20px;
@@ -42,6 +43,7 @@
     display: flex;
     gap: 15px;
     align-items: center;
+    justify-content: center; /* Center buttons and search */
     flex-wrap: wrap;
     width: 100%;
     position: relative;
@@ -122,8 +124,10 @@
 /* Grid Layout */
 .member-cards-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 350px)); /* Use auto-fit for better centering */
+    justify-content: center; /* Center the grid items */
     gap: 25px;
+    width: 100%;
 }
 
 /* Individual Card Styling */
@@ -276,13 +280,14 @@
 
 @media (max-width: 992px) {
     .member-cards-grid {
-        grid-template-columns: repeat(2, 1fr);
+        /* Handled by auto-fit now, but can keep for explicit control if needed */
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     }
 }
 
 @media (max-width: 576px) {
     .member-cards-header {
-        align-items: stretch;
+        align-items: center;
         gap: 20px;
         padding-bottom: 25px;
     }

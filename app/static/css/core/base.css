@@ -1,4 +1,11 @@
-/* General body and wrapper styles */
+html {
+    box-sizing: border-box;
+}
+
+*, *:before, *:after {
+    box-sizing: inherit;
+}
+
 body {
     font-family: 'Inter', serif;
     margin: 0;
@@ -24,7 +31,7 @@ h6,
 
 .container-wrapper {
     display: flex;
-    width: 100vw;
+    width: 100%;
 }
 
 /* Main content area */
