@@ -330,6 +330,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (enable && geStyleSelect) {
       geStyleSelect.value = geStyleSelect.dataset.currentStyle;
     }
+    const editMeetingDate = document.getElementById("edit-meeting-date");
+    if (enable && editMeetingDate) {
+      // Date value is already set by Jinja in the template attribute value
+    }
   }
 
   function saveChanges(shouldReload = false) {
@@ -383,7 +387,8 @@ document.addEventListener("DOMContentLoaded", () => {
       body: JSON.stringify({
         meeting_id: meetingId,
         agenda_data: dataToSave,
-        ge_mode: parseInt(geStyleSelect.value),
+        ge_mode: geStyleSelect ? parseInt(geStyleSelect.value) : null,
+        meeting_date: document.getElementById("edit-meeting-date").value,
         meeting_title: document.getElementById("edit-meeting-title").value,
         subtitle: document.getElementById("edit-subtitle").value,
         meeting_type: document.getElementById("edit-meeting-type").value,

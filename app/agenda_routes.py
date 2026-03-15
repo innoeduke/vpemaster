@@ -1345,6 +1345,14 @@ def update_logs():
         if new_mode is not None and meeting.ge_mode != new_mode:
             meeting.ge_mode = new_mode
 
+        # Update Meeting Date
+        new_meeting_date = data.get('meeting_date')
+        if new_meeting_date:
+            try:
+                meeting.Meeting_Date = datetime.strptime(new_meeting_date, '%Y-%m-%d').date()
+            except (ValueError, TypeError):
+                pass
+
         # Commit changes to the meeting object before processing logs
         db.session.commit()
 

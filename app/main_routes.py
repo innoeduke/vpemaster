@@ -57,12 +57,12 @@ def calendar():
         if month_key not in meetings_by_month:
             meetings_by_month[month_key] = {
                 'label': month_label,
-                'weeks': {i: [] for i in range(1, 6)}
+                'weeks': {i: [] for i in range(1, 5)}
             }
         
         week_num = (m.Meeting_Date.day - 1) // 7 + 1
-        if week_num > 5:
-            week_num = 5
+        if week_num > 4:
+            week_num = 4
             
         meetings_by_month[month_key]['weeks'][week_num].append(m)
         

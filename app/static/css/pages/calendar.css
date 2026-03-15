@@ -7,7 +7,7 @@
 
 .calendar-grid-header {
     display: grid;
-    grid-template-columns: 120px repeat(5, 1fr);
+    grid-template-columns: 120px repeat(4, 1fr);
     background: #004165; /* TM Blue */
     color: white;
     border-radius: 12px 12px 0 0;
@@ -26,7 +26,7 @@
 
 .calendar-row {
     display: grid;
-    grid-template-columns: 120px repeat(5, 1fr);
+    grid-template-columns: 120px repeat(4, 1fr);
     background: white;
     margin-bottom: 2px;
     min-height: 140px;
@@ -270,7 +270,7 @@
 .filter-label {
     font-weight: 700;
     color: #475569;
-    margin-bottom: 0;
+    margin-bottom: 8px;
     font-size: 0.9rem;
 }
 
