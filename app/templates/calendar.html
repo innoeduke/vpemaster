@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Calendar{% endblock %}
+
+{% block header_title %}Club Calendar{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/calendar.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="calendar-page-container">
+    <h1><i class="fas fa-calendar-alt"></i> Club Calendar</h1>
+    <div class="filters-control premium">
+        <div class="filter-row-premium">
+            <div class="filter-left">
+                <form method="GET" action="{{ url_for('main_bp.calendar') }}" id="calendar-term-filter-form" class="term-filter-form">
+                    <div class="form-group">
+                        <label class="filter-label">Club Term:</label>
+                        <div class="custom-dropdown-container" id="term-dropdown-container">
+                            <button type="button" id="term-dropdown-btn" class="form-control term-dropdown-btn" onclick="toggleTermDropdown(event)">
+                                <span id="term-btn-text">
+                                    {% if selected_term_ids %} {{ selected_term_ids|length }} selected
+                                    {% else %} 0 selected {% endif %}
+                                </span>
+                                <i class="fas fa-caret-down"></i>
+                            </button>
+                            <div class="term-dropdown-menu" id="term-dropdown-menu" style="display: none;">
+                                <label class="term-select-all-label">
+                                    <input type="checkbox" id="term-select-all" class="term-checkbox-input" onchange="toggleAllTerms(this)">
+                                    Select All
+                                </label>
+                                {% for term in terms %}
+                                <label class="term-option-label {% if term.is_past %}past-term{% endif %}">
+                                    <input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox term-checkbox-input"
+                                        data-label="{{ term.label }}" data-start="{{ term.start }}" data-end="{{ term.end }}"
+                                        onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{% endif %} />
+                                    {{ term.label }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="calendar-grid-container">
+        <div class="calendar-grid-header">
+            <div>Month</div>
+            <div>Week 1</div>
+            <div>Week 2</div>
+            <div>Week 3</div>
+            <div>Week 4</div>
+            <div>Week 5</div>
+        </div>
+        <div class="calendar-body">
+            {% for month_key, data in meetings_by_month.items() %}
+            <div class="calendar-row">
+                <div class="month-label">{{ data.label }}</div>
+                {% for week_num in range(1, 6) %}
+                <div class="calendar-cell {% if not data.weeks[week_num] %}empty-cell{% endif %}">
+                    {% for meeting in data.weeks[week_num] %}
+                    {% set is_next = (meeting.id == next_meeting_id) %}
+                    {% set is_ongoing = (meeting.status == 'running') %}
+                    <a href="{{ url_for('agenda_bp.agenda', meeting_id=meeting.id) }}" 
+                       class="meeting-card status-{{ meeting.status|lower|replace(' ', '-') }} {% if is_next or is_ongoing %}highlight{% endif %}">
+                        <div class="meeting-date">{{ meeting.Meeting_Date.strftime('%b %d') }}</div>
+                        <div class="meeting-title">{{ meeting.Meeting_Title or 'Regular Meeting' }}</div>
+                        <div class="meeting-footer">
+                            <span class="meeting-num">#{{ meeting.Meeting_Number }}</span>
+                            <span class="meeting-type-badge type-{{ meeting.type|lower|replace(' ', '-') }}">{{ meeting.type }}</span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="calendar-row" style="grid-template-columns: 1fr; justify-content: center; align-items: center; min-height: 100px;">
+                <div style="text-align: center; width: 100%; color: #64748b;">No meetings found for the selected term.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // --- Term Filter Logic (Replicated from planner page) ---
+    function toggleTermDropdown(event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        const menu = document.getElementById('term-dropdown-menu');
+        if (menu) {
+            if (menu.style.display === 'none' || menu.style.display === '') {
+                menu.style.display = 'block';
+            } else {
+                closeDropdownAndSubmit();
+            }
+        }
+    }
+
+    function toggleAllTerms(source) {
+        const checkboxes = document.querySelectorAll('.term-checkbox');
+        checkboxes.forEach(cb => cb.checked = source.checked);
+        updateTermSelection();
+    }
+
+    function updateTermSelection() {
+        const checkboxes = document.querySelectorAll('.term-checkbox');
+        const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
+        const selectedCount = selectedCheckboxes.length;
+        const totalCount = checkboxes.length;
+
+        const btnText = document.getElementById('term-btn-text');
+        if (!btnText) return;
+
+        if (selectedCount === totalCount && totalCount > 0) {
+            btnText.textContent = "All Terms";
+        } else if (selectedCount === 0) {
+            btnText.textContent = "0 selected";
+        } else {
+            const ranges = [];
+            selectedCheckboxes.sort((a, b) => {
+                const dateA = a.dataset.start || '';
+                const dateB = b.dataset.start || '';
+                return dateA.localeCompare(dateB);
+            });
+
+            if (selectedCheckboxes.length > 0) {
+                let currentRange = {
+                    startLabel: (selectedCheckboxes[0].dataset.label || '').split(' ')[1],
+                    startYear: (selectedCheckboxes[0].dataset.label || '').split(' ')[0],
+                    endLabel: (selectedCheckboxes[0].dataset.label || '').split(' ')[1],
+                    endYear: (selectedCheckboxes[0].dataset.label || '').split(' ')[0],
+                    fullStart: selectedCheckboxes[0].dataset.start,
+                    fullEnd: selectedCheckboxes[0].dataset.end,
+                    count: 1
+                };
+
+                for (let i = 1; i < selectedCheckboxes.length; i++) {
+                    const next = selectedCheckboxes[i];
+                    const prevEnd = new Date(currentRange.fullEnd);
+                    const nextStart = new Date(next.dataset.start);
+                    const diffTime = Math.abs(nextStart - prevEnd);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                    if (diffDays <= 2) {
+                        currentRange.endLabel = (next.dataset.label || '').split(' ')[1];
+                        currentRange.endYear = (next.dataset.label || '').split(' ')[0];
+                        currentRange.fullEnd = next.dataset.end;
+                        currentRange.count++;
+                    } else {
+                        ranges.push(formatRange(currentRange));
+                        currentRange = {
+                            startLabel: (next.dataset.label || '').split(' ')[1],
+                            startYear: (next.dataset.label || '').split(' ')[0],
+                            endLabel: (next.dataset.label || '').split(' ')[1],
+                            endYear: (next.dataset.label || '').split(' ')[0],
+                            fullStart: next.dataset.start,
+                            fullEnd: next.dataset.end,
+                            count: 1
+                        };
+                    }
+                }
+                ranges.push(formatRange(currentRange));
+            }
+            btnText.textContent = ranges.join(', ');
+        }
+
+        function formatRange(range) {
+            if (range.count === 1) return `${range.startYear} ${range.startLabel}`;
+            const s = (range.startLabel || '').split('-')[0];
+            const e = (range.endLabel || '').split('-')[1];
+            return `${range.startYear} ${s} - ${range.endYear} ${e}`;
+        }
+
+        const selectAll = document.getElementById('term-select-all');
+        if (selectAll) {
+            selectAll.checked = (selectedCount === totalCount && totalCount > 0);
+        }
+    }
+
+    function closeDropdownAndSubmit() {
+        const menu = document.getElementById('term-dropdown-menu');
+        if (menu) menu.style.display = 'none';
+        const form = document.getElementById('calendar-term-filter-form');
+        if (form) form.submit();
+    }
+
+    // Initialize term selection display on load
+    document.addEventListener('DOMContentLoaded', () => {
+        updateTermSelection();
+        
+        // Close dropdown on click outside
+        document.addEventListener('click', (event) => {
+            const container = document.getElementById('term-dropdown-container');
+            const menu = document.getElementById('term-dropdown-menu');
+            if (menu && menu.style.display === 'block' && container && !container.contains(event.target)) {
+                closeDropdownAndSubmit();
+            }
+        });
+
+        // Prevent internal clicks from bubbling to document
+        const termMenu = document.getElementById('term-dropdown-menu');
+        if (termMenu) {
+            termMenu.addEventListener('click', (e) => e.stopPropagation());
+        }
+    });
+</script>
+{% endblock %}

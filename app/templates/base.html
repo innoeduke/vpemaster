@@ -33,6 +33,14 @@
         <h2 class="nav-title">Memory Maker</h2>
       </div>
       <ul class="nav-links">
+        {% if is_authorized(Permissions.BOOKING_BOOK_OWN) %}
+        <li class="{% if request.endpoint and request.endpoint == 'main_bp.calendar' %}active{% endif %}">
+          <a href="{{ url_for('main_bp.calendar') }}">
+            <i class="fas fa-th nav-icon"></i>
+            <span>Calendar</span>
+          </a>
+        </li>
+        {% endif %}
         {% if is_authorized(Permissions.AGENDA_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('agenda_bp') %}active{% endif %}">
           <a href="{{ url_for('agenda_bp.agenda') }}">

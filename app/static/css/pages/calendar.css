@@ -1,0 +1,409 @@
+/* Calendar Page Styles */
+.calendar-page-container {
+    padding: 20px 0;
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.calendar-grid-header {
+    display: grid;
+    grid-template-columns: 120px repeat(5, 1fr);
+    background: #004165; /* TM Blue */
+    color: white;
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    margin-bottom: 2px;
+}
+
+.calendar-grid-header div {
+    padding: 12px 15px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.calendar-row {
+    display: grid;
+    grid-template-columns: 120px repeat(5, 1fr);
+    background: white;
+    margin-bottom: 2px;
+    min-height: 140px;
+}
+
+.calendar-row:last-child {
+    border-radius: 0 0 12px 12px;
+}
+
+.month-label {
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #004165;
+    border-right: 1px solid #e2e8f0;
+    padding: 15px;
+    text-align: center;
+    font-size: 1rem;
+    line-height: 1.2;
+}
+
+.calendar-cell {
+    border-right: 1px solid #e2e8f0;
+    padding: 8px;
+    background: #fff;
+    transition: background 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0; /* Allow inner content to wrap */
+}
+
+.calendar-cell:last-child {
+    border-right: none;
+}
+
+.calendar-cell:hover {
+    background: #f8fafc;
+}
+
+.empty-cell {
+    background: #fdfdfd;
+}
+
+.meeting-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    height: 100%;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.meeting-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+
+/* Status-based Backgrounds */
+.status-running {
+    background-color: #f0fdf4; /* Very light green */
+    border-color: #bbf7d0;
+}
+
+.status-finished {
+    background-color: #e2e8f0; /* Darker slate for past meetings */
+    border-color: #cbd5e1;
+    opacity: 0.85;
+    filter: grayscale(0.2);
+}
+
+.status-finished .meeting-footer {
+    border-top: 1px solid #cbd5e1; /* Darker line for past meetings */
+}
+
+.status-cancelled {
+    background-color: #fef2f2; /* Light red */
+    border-color: #fecaca;
+    opacity: 0.8;
+}
+
+.status-unpublished, .status-not-started {
+    background-color: #ffffff;
+}
+
+/* Highlight Ongoing/Upcoming - Now in Maroon */
+.meeting-card.highlight {
+    border: 2px solid #772432; /* TM Maroon */
+    background-color: #fdf2f2; /* Very light maroon bg */
+    box-shadow: 0 4px 12px rgba(119, 36, 50, 0.15);
+}
+
+.meeting-card.highlight.status-running {
+    border-color: #772432;
+    background-color: #fdf2f2;
+}
+
+.meeting-card.highlight::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #772432;
+}
+
+.meeting-date {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #475569;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+}
+
+.meeting-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    flex: 1;
+    margin: 4px 0;
+}
+
+.meeting-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 8px;
+    border-top: 1px solid rgba(226, 232, 240, 0.6);
+    min-height: 24px;
+}
+
+.meeting-num {
+    margin-right: auto; /* Push num to the left, badge stays right */
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+    line-height: 1.5; /* Match badge visual height */
+}
+
+.meeting-type-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    height: 18px; /* Fixed height for consistent look */
+    background: #e2e8f0;
+    color: #475569;
+    border-radius: 4px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1;
+    margin: 0; /* Clear any stray margins */
+}
+
+/* Meeting Type Badge Colors */
+.meeting-type-badge.type-keynote-speech {
+    background-color: #e0f2fe;
+    color: #0369a1;
+}
+
+.meeting-type-badge.type-speech-marathon {
+    background-color: #fef3c7;
+    color: #b45309;
+}
+
+.meeting-type-badge.type-speech-contest {
+    background-color: #fce7f3;
+    color: #be185d;
+}
+
+.meeting-type-badge.type-panel-discussion {
+    background-color: #ede9fe;
+    color: #6d28d9;
+}
+
+.meeting-type-badge.type-debate {
+    background-color: #ffedd5;
+    color: #c2410c;
+}
+
+.meeting-type-badge.type-pecha-kucha {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.meeting-type-badge.type-gavel-passing {
+    background-color: #dcfce7;
+    color: #15803d;
+}
+
+.meeting-type-badge.type-club-election {
+    background-color: #fae8ff;
+    color: #a21caf;
+}
+
+
+
+
+
+.calendar-grid-container {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.filter-row-premium {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.filter-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.filter-label {
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 0;
+    font-size: 0.9rem;
+}
+
+.custom-dropdown-container {
+    position: relative;
+    display: inline-block;
+    min-width: 200px;
+}
+
+.term-dropdown-btn {
+    width: 100%;
+    padding: 10px 15px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: 500;
+    color: #1e293b;
+}
+
+.term-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+    z-index: 1000;
+    margin-top: 5px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.term-option-label {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background 0.2s;
+    font-size: 0.9rem;
+}
+
+.term-option-label:hover {
+    background: #f1f5f9;
+}
+
+.term-checkbox-input {
+    margin-right: 10px;
+}
+
+.term-select-all-label {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #e2e8f0;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .month-label {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .calendar-grid-header {
+        display: none;
+    }
+    .calendar-row {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        gap: 15px;
+        padding: 20px 15px;
+        background: #f8fafc;
+        margin-bottom: 20px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+    }
+    .month-label {
+        font-weight: 800;
+        font-size: 1.1rem;
+        background: #004165; /* TM Blue */
+        color: white;
+        border-radius: 8px;
+        border: none;
+        margin-bottom: 10px;
+        padding: 12px;
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+    .calendar-cell {
+        border: none;
+        padding: 0;
+    }
+    .calendar-cell:not(.empty-cell) {
+        margin-bottom: 0;
+    }
+    .calendar-cell.empty-cell {
+        display: none;
+    }
+    .meeting-card {
+        margin-bottom: 10px;
+        text-align: left;
+    }
+    .meeting-card:last-child {
+        margin-bottom: 0;
+    }
+    .meeting-title {
+        padding: 8px 0;
+    }
+    .filters-control.premium {
+        padding: 15px;
+    }
+    .filter-left {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        width: 100%;
+    }
+    .filter-label {
+        margin-bottom: 4px;
+    }
+    .custom-dropdown-container {
+        width: 100%;
+    }
+}
