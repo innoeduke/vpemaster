@@ -66,8 +66,8 @@ head_extra %}
           </button>
         </div>
       </div>
-      {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
       <div class="button-group">
+        {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
         <button class="btn btn-success" onclick="openContactModal()">
           Add New
         </button>
@@ -75,14 +75,20 @@ head_extra %}
           title="Select at least 2 contacts to merge">
           Merge
         </button>
-        <button class="btn btn-primary" onclick="window.location.href='{{ url_for('roster_bp.roster') }}'">
+        {% endif %}
+        
+        {% if is_authorized(Permissions.ROSTER_VIEW) %}
+        <button class="btn btn-primary" onclick="window.location.href='{{ url_for('roster_bp.roster') }}';">
           Open Roster
         </button>
-        <button class="btn btn-outline-info" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}'" title="Grid View">
+        {% endif %}
+        
+        {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+        <button class="btn btn-navy" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="Grid View">
           <i class="fas fa-th-large"></i>
         </button>
+        {% endif %}
       </div>
-      {% endif %}
     </div>
   </div>
 </div>

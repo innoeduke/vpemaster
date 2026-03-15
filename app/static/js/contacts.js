@@ -215,18 +215,33 @@ function createContactRow(contact) {
     <td class="col-part" data-sort="${sortValue}">
       <div class="participation-container">
         ${contact.is_qualified ? '<i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>' : ''}
-        <a href="/speech_logs?speaker_id=${contact.id}" title="Roles Taken" class="participation-badge badge-roles">
-          <i class="fas fa-user-tag"></i> ${contact.role_count}
-        </a>
-        <a href="/speech_logs?speaker_id=${contact.id}" title="Topic Speeches" class="participation-badge badge-tt">
-          <i class="fas fa-comment"></i> ${contact.tt_count}
-        </a>
-        <a href="/speech_logs?speaker_id=${contact.id}" title="Attendance" class="participation-badge badge-attendance">
-          <i class="fas fa-calendar-check"></i> ${contact.attendance_count}
-        </a>
-        <a href="/speech_logs?speaker_id=${contact.id}" title="Awards Won" class="participation-badge badge-awards">
-          <i class="fas fa-trophy"></i> ${contact.award_count}
-        </a>
+        ${canViewMembers ? `
+          <a href="/speech_logs?speaker_id=${contact.id}" title="Roles Taken" class="participation-badge badge-roles">
+            <i class="fas fa-user-tag"></i> ${contact.role_count}
+          </a>
+          <a href="/speech_logs?speaker_id=${contact.id}" title="Topic Speeches" class="participation-badge badge-tt">
+            <i class="fas fa-comment"></i> ${contact.tt_count}
+          </a>
+          <a href="/speech_logs?speaker_id=${contact.id}" title="Attendance" class="participation-badge badge-attendance">
+            <i class="fas fa-calendar-check"></i> ${contact.attendance_count}
+          </a>
+          <a href="/speech_logs?speaker_id=${contact.id}" title="Awards Won" class="participation-badge badge-awards">
+            <i class="fas fa-trophy"></i> ${contact.award_count}
+          </a>
+        ` : `
+          <span title="Roles Taken" class="participation-badge badge-roles">
+            <i class="fas fa-user-tag"></i> ${contact.role_count}
+          </span>
+          <span title="Topic Speeches" class="participation-badge badge-tt">
+            <i class="fas fa-comment"></i> ${contact.tt_count}
+          </span>
+          <span title="Attendance" class="participation-badge badge-attendance">
+            <i class="fas fa-calendar-check"></i> ${contact.attendance_count}
+          </span>
+          <span title="Awards Won" class="participation-badge badge-awards">
+            <i class="fas fa-trophy"></i> ${contact.award_count}
+          </span>
+        `}
       </div>
     </td>
     <td class="col-phone">${contact.Phone_Number}</td>
