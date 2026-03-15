@@ -195,6 +195,7 @@ def create_app(config_class='config.Config'):
     from app.commands.create_club import create_club
     from app.commands.pack_unpack import pack, unpack
     from app.commands.blockchain import deploy_contract, upload_achievements
+    from app.commands.backup import backup
 
     app.cli.add_command(create_admin)
     app.cli.add_command(import_data)
@@ -204,6 +205,7 @@ def create_app(config_class='config.Config'):
     app.cli.add_command(fix_home_club_command)
     app.cli.add_command(pack)
     app.cli.add_command(unpack)
+    app.cli.add_command(backup)
     
     # Add blockchain command group
     import click
