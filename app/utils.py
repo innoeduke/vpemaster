@@ -900,7 +900,8 @@ def process_avatar(file, contact_id):
         img = img.resize((300, 300), Image.Resampling.LANCZOS)
         
         # Save file as WebP
-        filename = secure_filename(f"avatar_{contact_id}.webp")
+        import time
+        filename = secure_filename(f"avatar_{contact_id}_{int(time.time())}.webp")
         
         # Use configured root directory
         root_dir = current_app.config.get('AVATAR_ROOT_DIR', 'uploads/avatars')
