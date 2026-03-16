@@ -53,10 +53,15 @@ def cleanup_test_artifacts():
 def clean_db(app):
     """Clean database between tests."""
     with app.app_context():
-        from app import db
+        from app import db, cache
+        from app.models import AuthRole
         # Drop all tables and recreate them to ensure a clean slate
         db.drop_all()
         db.create_all()
+        
+        # Clear static/app caches to prevent state pollution between tests
+        AuthRole.clear_role_cache()
+        cache.clear()
     yield
 
 @pytest.fixture(scope='function')

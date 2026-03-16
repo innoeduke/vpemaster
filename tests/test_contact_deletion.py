@@ -3,7 +3,7 @@ from unittest.mock import patch
 from app.models import db, Contact, Vote, ExComm, ContactClub
 from datetime import date
 
-def test_create_and_delete_guest_contact(client, app, default_club):
+def test_create_and_delete_guest_contact(client, app, auth, default_club, seeded_permissions):
     """
     Verifies that a guest contact can be created and then deleted using route functions.
     """
@@ -11,20 +11,24 @@ def test_create_and_delete_guest_contact(client, app, default_club):
     unique_id = str(uuid.uuid4())[:8]
     unique_name = f'Test Guest {unique_id}'
 
-    # 0. Create User for Login
-    from app.models import User
+    # 0. Create User and Link to Club for Login
+    from app.models import User, UserClub
     with app.app_context():
-        if not User.query.get(1):
+        user = db.session.get(User, 1)
+        if not user:
             user = User(id=1, email='test@example.com', username='sysadmin')
             user.set_password('password')
             db.session.add(user)
-            db.session.commit()
+            db.session.flush()
+        
+        # Ensure user is linked to the club as an admin
+        uc = UserClub.query.filter_by(user_id=user.id, club_id=default_club.id).first()
+        if not uc:
+            db.session.add(UserClub(user_id=user.id, club_id=default_club.id, club_role_level=100)) # Level 100 for admin
+        db.session.commit()
 
-    # 1. Setup Session
-    with client.session_transaction() as sess:
-        sess['_user_id'] = '1'
-        sess['current_club_id'] = default_club.id
-        sess['_fresh'] = True
+    # 1. Login as sysadmin
+    auth.login(username='sysadmin', password='password', club_id=default_club.id)
 
     # Patch authorization to allow contact management
     with patch('app.contacts_routes.is_authorized', return_value=True):
@@ -65,7 +69,7 @@ def test_create_and_delete_guest_contact(client, app, default_club):
             contact = db.session.get(Contact, contact_id)
             assert contact is None
 
-def test_delete_guest_contact_with_references(client, app, default_club):
+def test_delete_guest_contact_with_references(client, app, auth, default_club, seeded_permissions):
     """
     Verifies that a guest contact with references in Votes and ExComm can be deleted.
     This specifically tests the fix for the IntegrityError bug.
@@ -76,14 +80,21 @@ def test_delete_guest_contact_with_references(client, app, default_club):
     unique_name = f'Reference Guest {unique_id}'
     voter_id = f'voter_{unique_id}'
 
-    # 0. Create User for Login
-    from app.models import User
+    # 0. Create User and Link to Club for Login
+    from app.models import User, UserClub
     with app.app_context():
-        if not User.query.get(1):
+        user = db.session.get(User, 1)
+        if not user:
             user = User(id=1, email='test@example.com', username='sysadmin')
             user.set_password('password')
             db.session.add(user)
-            db.session.commit()
+            db.session.flush()
+        
+        # Ensure user is linked to the club as an admin
+        uc = UserClub.query.filter_by(user_id=user.id, club_id=default_club.id).first()
+        if not uc:
+            db.session.add(UserClub(user_id=user.id, club_id=default_club.id, club_role_level=100))
+        db.session.commit()
 
     with app.app_context():
         # 1. Manually create a Guest Contact and references
@@ -119,11 +130,8 @@ def test_delete_guest_contact_with_references(client, app, default_club):
         db.session.add(officer_link)
         db.session.commit()
 
-    # 2. Setup Session
-    with client.session_transaction() as sess:
-        sess['_user_id'] = '1'
-        sess['current_club_id'] = default_club.id
-        sess['_fresh'] = True
+    # 2. Login as sysadmin
+    auth.login(username='sysadmin', password='password', club_id=default_club.id)
 
     # 3. Delete Guest Contact via route
     with patch('app.contacts_routes.is_authorized', return_value=True):

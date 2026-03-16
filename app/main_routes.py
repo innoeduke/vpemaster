@@ -6,6 +6,7 @@ from app.models.meeting import Meeting
 from app.club_context import get_current_club_id
 from app.utils import get_terms, get_active_term, get_date_ranges_for_terms
 from sqlalchemy import or_
+from sqlalchemy.orm import joinedload
 from collections import OrderedDict
 from datetime import datetime
 
@@ -38,7 +39,7 @@ def calendar():
     # 3. Fetch meetings filtered by term date ranges
     date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
     
-    query = Meeting.query.filter_by(club_id=club_id)
+    query = Meeting.query.options(joinedload(Meeting.manager)).filter_by(club_id=club_id)
     if date_ranges:
         conditions = [Meeting.Meeting_Date.between(start, end) for start, end in date_ranges]
         query = query.filter(or_(*conditions))

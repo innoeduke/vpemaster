@@ -19,7 +19,24 @@ roster_bp = Blueprint('roster_bp', __name__)
 @authorized_club_required
 def roster():
     """Independent roster page"""
-    if not is_authorized(Permissions.ROSTER_VIEW):
+    # Get meeting first to allow context-aware authorization
+    club_id = get_current_club_id()
+    selected_meeting_id_str = request.args.get('meeting_id')
+    selected_meeting = None
+    
+    if selected_meeting_id_str:
+        try:
+            selected_meeting_id = int(selected_meeting_id_str)
+            selected_meeting = db.session.get(Meeting, selected_meeting_id)
+        except (ValueError, TypeError):
+            selected_meeting_id = None
+    else:
+        from .utils import get_default_meeting_id
+        selected_meeting_id = get_default_meeting_id()
+        if selected_meeting_id:
+            selected_meeting = db.session.get(Meeting, selected_meeting_id)
+
+    if not is_authorized(Permissions.ROSTER_VIEW, meeting=selected_meeting):
         return redirect(url_for('agenda_bp.agenda'))
 
     club_id = get_current_club_id()
@@ -254,7 +271,6 @@ def roster_amount_trend():
 @roster_bp.route('/api/entry', methods=['POST'])
 @login_required
 @authorized_club_required
-@permission_required(Permissions.ROSTER_EDIT)
 def create_roster_entry():
     """Create a new roster entry"""
     data = request.get_json()
@@ -263,6 +279,11 @@ def create_roster_entry():
     for field in required_fields:
         if field not in data or not data[field]:
             return jsonify({'error': f'Missing required field: {field}'}), 400
+
+    # Authorization Check (including Meeting Manager override)
+    selected_meeting = db.session.get(Meeting, data['meeting_id'])
+    if not is_authorized(Permissions.ROSTER_EDIT, meeting=selected_meeting):
+        return jsonify({'error': 'Unauthorized'}), 403
 
     ticket_id = data['ticket_id']
     ticket_obj = db.session.get(Ticket, ticket_id)
@@ -323,11 +344,14 @@ def get_roster_entry(entry_id):
 @roster_bp.route('/api/entry/<int:entry_id>', methods=['PUT'])
 @login_required
 @authorized_club_required
-@permission_required(Permissions.ROSTER_EDIT)
 def update_roster_entry(entry_id):
     entry = db.session.get(Roster, entry_id)
     if not entry:
         return jsonify({'error': 'Entry not found'}), 404
+
+    # Authorization Check (including Meeting Manager override)
+    if not is_authorized(Permissions.ROSTER_EDIT, meeting=entry.meeting):
+        return jsonify({'error': 'Unauthorized'}), 403
 
     data = request.get_json()
 
@@ -359,11 +383,14 @@ def update_roster_entry(entry_id):
 @roster_bp.route('/api/entry/<int:entry_id>/restore', methods=['POST'])
 @login_required
 @authorized_club_required
-@permission_required(Permissions.ROSTER_EDIT)
 def restore_roster_entry(entry_id):
     entry = db.session.get(Roster, entry_id)
     if not entry:
         return jsonify({'error': 'Entry not found'}), 404
+
+    # Authorization Check (including Meeting Manager override)
+    if not is_authorized(Permissions.ROSTER_EDIT, meeting=entry.meeting):
+        return jsonify({'error': 'Unauthorized'}), 403
 
     if entry.contact_type == 'Officer':
         t_obj = Ticket.get_by_name('Officer', type='Officer', club_id=entry.meeting.club_id if entry.meeting else None)
@@ -388,11 +415,14 @@ def restore_roster_entry(entry_id):
 @roster_bp.route('/api/entry/<int:entry_id>', methods=['DELETE'])
 @login_required
 @authorized_club_required
-@permission_required(Permissions.ROSTER_EDIT)
 def delete_roster_entry(entry_id):
     entry = db.session.get(Roster, entry_id)
     if not entry:
         return jsonify({'error': 'Entry not found'}), 404
+
+    # Authorization Check (including Meeting Manager override)
+    if not is_authorized(Permissions.ROSTER_EDIT, meeting=entry.meeting):
+        return jsonify({'error': 'Unauthorized'}), 403
 
     hard_delete = request.args.get('hard_delete') == 'true'
 

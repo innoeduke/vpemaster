@@ -136,18 +136,18 @@
 	box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
 }
 
-/* Custom Select Integration within Profile sections */
-.profile-section .meeting-autocomplete-container {
+/* Custom Select Integration within Profile sections - Increased specificity to remove !important */
+body .profile-section .meeting-autocomplete-container {
 	margin: 10px 15px;
-	width: calc(100% - 30px) !important;
-	max-width: none !important;
-	height: auto !important;
+	width: calc(100% - 30px);
+	max-width: none;
+	height: auto;
 }
 
-.profile-section .custom-select-trigger {
-	margin: 0 !important;
-	width: 100% !important;
-	max-width: none !important;
+body .profile-section .custom-select-trigger {
+	margin: 0;
+	width: 100%;
+	max-width: none;
 	height: 44px;
 	padding: 0 15px;
 	box-shadow: none;
@@ -161,11 +161,11 @@
 	box-shadow: 0 0 0 3px rgba(0, 65, 101, 0.1);
 }
 
-.profile-section .autocomplete-results-dropdown {
-	margin-left: 0 !important;
-	width: 100% !important;
-	min-width: 100% !important;
-	max-width: none !important;
+body .profile-section .autocomplete-results-dropdown {
+	margin-left: 0;
+	width: 100%;
+	min-width: 100%;
+	max-width: none;
 	box-sizing: border-box;
 }
 
@@ -253,18 +253,18 @@
 		font-size: 14px;
 	}
 
-	.profile-section .meeting-autocomplete-container {
+	body .profile-section .meeting-autocomplete-container {
 		margin: 8px 15px 12px;
-		width: calc(100% - 30px) !important;
-		height: auto !important;
+		width: calc(100% - 30px);
+		height: auto;
 		/* Overrides meeting_filter.css mobile fixed height */
 	}
 
-	.profile-section .custom-select-trigger {
-		margin: 0 !important;
-		width: 100% !important;
-		max-width: none !important;
-		height: 38px !important;
+	body .profile-section .custom-select-trigger {
+		margin: 0;
+		width: 100%;
+		max-width: none;
+		height: 38px;
 		padding: 0 10px;
 		box-shadow: none;
 		font-size: 14px;

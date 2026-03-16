@@ -326,13 +326,13 @@
         gap: 10px;
     }
 
-    .filter-row-premium .filter-right .trend-btn,
-    .filter-row-premium .filter-right .btn {
+    body .filter-row-premium .filter-right .trend-btn,
+    body .filter-row-premium .filter-right .btn {
         width: 100%;
         justify-content: center;
         font-size: 0.85rem;
         padding: 8px 10px;
-        height: 36px !important;
+        height: 36px;
         border-radius: 50px;
     }
 

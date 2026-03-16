@@ -40,9 +40,9 @@ def auth_client(client, app, default_club, default_contact):
             db.session.commit()
 
         # Create User if not exists
-        user = User.query.filter_by(username='testadmin').first()
+        user = User.query.filter_by(username='sysadmin').first()
         if not user:
-            user = User(username='testadmin', email='admin@test.com')
+            user = User(username='sysadmin', email='admin@test.com')
             user.set_password('password')
             db.session.add(user)
             db.session.commit()
@@ -54,7 +54,7 @@ def auth_client(client, app, default_club, default_contact):
                 user_id=user.id, 
                 club_id=default_club.id, 
                 contact_id=default_contact.id,
-                club_role_level=role.level 
+                club_role_level=100
             )
             db.session.add(uc)
         else:
@@ -75,8 +75,12 @@ def auth_client(client, app, default_club, default_contact):
                 
         db.session.commit()
         
-    # Login
-    client.post('/login', data=dict(username='testadmin', password='password'), follow_redirects=True)
+    # Login with sysadmin
+    client.post('/login', data=dict(
+        username='sysadmin', 
+        password='password',
+        club_names=default_club.id
+    ), follow_redirects=True)
     return client
 
 from app.auth.permissions import Permissions

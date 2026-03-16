@@ -49,7 +49,7 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
         if hasattr(current_user, 'contact_id') and current_user.contact_id == meeting.manager_id:
             # Grant Operator-level permissions relevant to meeting management
             # Specifically Agenda Edit and Booking management
-            if target_perm in {'AGENDA_EDIT', 'BOOKING_ASSIGN_ALL', 'BOOKING_BOOK_OWN', 'VOTING_VIEW_RESULTS', 'VOTING_TRACK_PROGRESS'}:
+            if target_perm in {'AGENDA_EDIT', 'BOOKING_ASSIGN_ALL', 'BOOKING_BOOK_OWN', 'VOTING_VIEW_RESULTS', 'VOTING_TRACK_PROGRESS', 'ROSTER_EDIT', 'BOOKING_VIEW_ALL', 'ROSTER_VIEW'}:
                 return True
 
     # 4. Standard permission check via has_permission()

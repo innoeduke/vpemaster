@@ -64,3 +64,8 @@ class Role(db.Model):
         """Remove a permission from this role."""
         if permission in self.permissions:
             self.permissions.remove(permission)
+    @staticmethod
+    def clear_role_cache():
+        """Clear all role caches."""
+        Role._all_roles_cache = None
+        Role._name_cache = {}

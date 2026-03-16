@@ -95,7 +95,7 @@ class TestRosterAssignment(unittest.TestCase):
         
         member_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.member_contact.id).first()
         self.assertIsNotNone(member_entry)
-        self.assertIsNone(member_entry.order_number)
+        self.assertGreaterEqual(member_entry.order_number, 1000)
         self.assertEqual(member_entry.ticket.name, "Early-bird")
 
     def test_guest_assignment(self):
@@ -105,7 +105,7 @@ class TestRosterAssignment(unittest.TestCase):
         
         guest_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.guest_contact.id).first()
         self.assertIsNotNone(guest_entry)
-        self.assertIsNone(guest_entry.order_number)
+        self.assertGreaterEqual(guest_entry.order_number, 1000)
         self.assertEqual(guest_entry.ticket.name, "Role-taker")
 
 if __name__ == '__main__':

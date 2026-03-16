@@ -213,7 +213,7 @@ class User(UserMixin, db.Model):
             self._permission_cache = permissions
         return self._permission_cache
     
-    def has_permission(self, permission_name):
+    def has_permission(self, permission_name, club_id=None):
         """Check if user has a specific permission."""
         # SysAdmin Bypass
         if self.is_sysadmin:
@@ -612,7 +612,7 @@ class AnonymousUser(AnonymousUserMixin):
         
         return permissions
 
-    def has_permission(self, permission_name):
+    def has_permission(self, permission_name, club_id=None):
         """Check if guest has a specific permission."""
         return permission_name in self.get_permissions()
 

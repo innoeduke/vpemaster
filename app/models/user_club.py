@@ -42,7 +42,7 @@ class UserClub(db.Model):
         if not self.club_role_level:
             return []
         
-        return [r for r in Role.get_all_cached() if (self.club_role_level & r.level) == r.level]
+        return [r for r in Role.get_all_cached() if r.level and (self.club_role_level & r.level) == r.level]
     
     @property
     def club_role(self):

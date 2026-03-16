@@ -672,7 +672,7 @@ class SessionLog(db.Model):
             
             # Project Code Logic (Based on Primary Owner)
             # Auto-resolution is restricted to Speeches and Presentations
-            is_speech_project = (log.session_type and log.session_type.Title in ['Prepared Speech', 'Presentation'])
+            is_speech_project = (log.session_type and log.session_type.Title in ['Prepared Speech', 'Presentation', 'Keynote Speaker', 'Hot Seat Speaker'])
             
             if primary_owner and (log.Project_ID or is_speech_project):
                 new_path_level = None
@@ -733,6 +733,7 @@ class SessionLog(db.Model):
                     log.Project_ID = None
                     log.project_code = None
                     log.pathway = None
+                    log.Session_Title = None
                 elif not (log.Project_ID or is_speech_project):
                     log.project_code = None
                     log.pathway = None

@@ -73,10 +73,11 @@ class UserRefactorTestCase(unittest.TestCase):
         db.session.add(ContactClub(contact_id=self.admin_contact.id, club_id=self.club.id))
         
         db.session.commit()
+        AuthRole.clear_role_cache()
 
     def login(self):
         return self.client.post('/login', data=dict(
-            username='admin@test.com',
+            username='admin',
             password='password',
             club_names=self.club.id
         ), follow_redirects=True)

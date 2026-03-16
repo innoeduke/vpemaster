@@ -67,6 +67,11 @@
                        class="meeting-card status-{{ meeting.status|lower|replace(' ', '-') }} {% if is_next or is_ongoing %}highlight{% endif %}">
                         <div class="meeting-date">{{ meeting.Meeting_Date.strftime('%b %d') }}</div>
                         <div class="meeting-title">{{ meeting.Meeting_Title or 'Regular Meeting' }}</div>
+                        {% if meeting.manager %}
+                        <div class="meeting-manager">
+                            <i class="fas fa-user-tie"></i> {{ meeting.manager.Name }}
+                        </div>
+                        {% endif %}
                         <div class="meeting-footer">
                             <span class="meeting-num">#{{ meeting.Meeting_Number }}</span>
                             <span class="meeting-type-badge type-{{ meeting.type|lower|replace(' ', '-') }}">{{ meeting.type }}</span>

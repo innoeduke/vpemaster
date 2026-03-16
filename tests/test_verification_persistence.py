@@ -9,9 +9,9 @@ def test_verification_task_persistence(client, app, auth, default_club):
     # 1. Setup user with permission
     from app.models import User, AuthRole, UserClub, Permission
     with app.app_context():
-        user = User.query.filter_by(username='testadmin').first()
+        user = User.query.filter_by(username='sysadmin').first()
         if not user:
-            user = User(username='testadmin', email='testadmin@example.com', status='active')
+            user = User(username='sysadmin', email='testadmin@example.com', status='active')
             user.set_password('password')
             db.session.add(user)
             db.session.flush()
@@ -37,7 +37,7 @@ def test_verification_task_persistence(client, app, auth, default_club):
             db.session.commit()
 
     # 2. Login as the newly created admin
-    auth.login(username='testadmin', password='password')
+    auth.login(username='sysadmin', password='password', club_id=default_club.id)
 
     # 3. Mock blockchain service to control timing
     with patch('app.services.blockchain_service.verify_level') as mock_verify:

@@ -17,25 +17,26 @@ def test_role_bitmask_storage(app, db_session):
         # Setup Roles with power-of-2 levels if not exist
         member_role = AuthRole.get_by_name(Permissions.USER)
         if not member_role:
-             member_role = AuthRole(name="Member", level=1)
+             member_role = AuthRole(name=Permissions.USER, level=1)
              db_session.add(member_role)
+        else:
+             member_role.level = 1
              
         officer_role = AuthRole.get_by_name("Officer")
         if not officer_role:
              officer_role = AuthRole(name="Officer", level=2)
              db_session.add(officer_role)
+        else:
+             officer_role.level = 2
              
         vpe_role = AuthRole.get_by_name("VPE")
         if not vpe_role:
              vpe_role = AuthRole(name="VPE", level=64)
              db_session.add(vpe_role)
+        else:
+             vpe_role.level = 64
         
         db_session.commit()
-        
-        # Ensure levels are correct for test
-        member_role.level = 1
-        officer_role.level = 2
-        vpe_role.level = 64
         
         # Also ensure any other roles in DB don't have None level which would break bitwise ops
         other_roles = AuthRole.query.filter(AuthRole.level == None).all()
@@ -43,6 +44,9 @@ def test_role_bitmask_storage(app, db_session):
             r.level = 0
             
         db_session.commit()
+        
+        # Clear Role cache to ensure fresh lookup
+        AuthRole.clear_role_cache()
 
         # Create Club
         club = Club(club_no="BM_1", club_name="Bitmask Club")
