@@ -58,7 +58,8 @@ class MeetingSlideService:
             # 1. Set Title (Capitalized, Centered, Gotham, 54px/40.5pt)
             title_shape = slide.shapes.title
             if title_shape:
-                title_shape.text = slide_title.upper() if slide_title else ""
+                host_role = host.get('role', 'host').lower().replace(' ', '_')
+                title_shape.text = f"{{{{{host_role}_session_title}}}}".upper() if not slide_title else slide_title.upper()
                 if title_shape.has_text_frame:
                     tf = title_shape.text_frame
                     p = tf.paragraphs[0]
@@ -135,8 +136,8 @@ class MeetingSlideService:
             
             # Add Host Info
             host_info_box = slide.shapes.add_textbox(host_left - Cm(1.0), host_top + host_size + Cm(0.2), host_size + Cm(2.0), Cm(1.0))
+            host_info_box.name = f"{host_role}_info"
             tf = host_info_box.text_frame
-            host_role = host.get('role', 'host').lower().replace(' ', '_')
             tf.text = f"{{{{{host_role}_info}}}}"
             p = tf.paragraphs[0]
             p.alignment = PP_ALIGN.CENTER
@@ -185,6 +186,7 @@ class MeetingSlideService:
                         tf = info_box.text_frame
                         contact_role = contact.get('role', f'contact{i+1}').lower().replace(' ', '_')
                         placeholder_name = contact_role if any(c.isdigit() for c in contact_role) else f"{contact_role}{i+1}"
+                        info_box.name = f"{placeholder_name}_info"
                         tf.text = f"{{{{{placeholder_name}_info}}}}"
                         p = tf.paragraphs[0]
                         p.alignment = PP_ALIGN.CENTER
@@ -206,9 +208,10 @@ class MeetingSlideService:
             return None
 
         # Define formatting helpers
-        def info_fmt(name, creds):
+        def info_fmt(name, creds, role=None):
             if not name: return ""
-            return f"{name}\n{creds}" if creds else name
+            full_name = f"{name}, {creds}" if creds else name
+            return f"{full_name}\n{role}" if role else full_name
 
         def dur_fmt(log):
             if not log: return ""
@@ -241,7 +244,6 @@ class MeetingSlideService:
         MeetingSlideService._populate_standard_roles(context, meeting, replacements, info_fmt, dur_fmt, avatar_map)
         MeetingSlideService._populate_speakers(context, replacements, info_fmt, dur_fmt, avatar_map)
         MeetingSlideService._populate_evaluators(context, replacements, info_fmt, dur_fmt, avatar_map)
-        MeetingSlideService._populate_panel_discussion(context, replacements, info_fmt, dur_fmt, avatar_map)
         MeetingSlideService._populate_featured_session(context, meeting, replacements, info_fmt, dur_fmt, avatar_map)
         MeetingSlideService._populate_table_topics(context, replacements, dur_fmt)
 
@@ -257,7 +259,7 @@ class MeetingSlideService:
             # Refactored: Populate each slide individually
             for slide in prs.slides:
                 host_type = MeetingSlideService._identify_host_type(slide)
-                MeetingSlideService._populate_slide(slide, meeting, replacements, avatar_map, host_type)
+                MeetingSlideService._populate_slide(slide, meeting, context, replacements, avatar_map, host_type)
             
             output = io.BytesIO()
             prs.save(output)
@@ -277,39 +279,36 @@ class MeetingSlideService:
             "{{club_name}}": (meeting.club.club_name if meeting.club else ""),
         }
         
-        # Role placeholders (info + duration)
+        # Role placeholders (info + duration + session_title)
         for p in ["saa", "welcome-officer", "president", "vpm", "vpe", "vppr", "treasurer", "secretary", 
                   "tme", "timer", "ah-counter", "grammarian", "topicsmaster", "ge", "photographer"]:
             replacements["{{" + p + "_info}}"] = ""
             replacements["{{" + p + "_duration}}"] = ""
+            replacements["{{" + p + "_session_title}}"] = ""
         
         # Speaker placeholders (up to 6)
         for i in range(1, 7):
             replacements.update({
                 f"{{{{ps{i}}}}}": "", f"{{{{ps{i}_title}}}}": "", 
                 f"{{{{ps{i}-project_info}}}}": "", f"{{{{ps{i}_info}}}}": "", 
-                f"{{{{ps{i}_duration}}}}": ""
+                f"{{{{ps{i}_duration}}}}": "", f"{{{{ps{i}_session_title}}}}": ""
             })
         
         # Evaluator placeholders (up to 6)
         for i in range(1, 7):
             replacements.update({
-                f"{{{{ie{i}_info}}}}": "", f"{{{{ie{i}_duration}}}}": ""
+                f"{{{{ie{i}_info}}}}": "", f"{{{{ie{i}_duration}}}}": "", f"{{{{ie{i}_session_title}}}}": ""
             })
         
-        # Panel Discussion placeholders (up to 10 panelists)
-        replacements.update({
-            "{{moderator_info}}": "",
-            "{{panel-discussion_duration}}": "",
-            "{{moderator_duration}}": ""
-        })
-        for i in range(1, 11):
-            replacements[f"{{{{panelist{i}_info}}}}"] = ""
+        # Panel Discussion & Debate placeholders (up to 10 panelists/debaters)
+        # These are now handled locally within _populate_slide if identified
         
         # Featured session and table topics
         replacements.update({
             "{{keynote_title}}": "", "{{keynote_duration}}": "", "{{keynote-speaker_info}}": "",
-            "{{table-topics_duration}}": ""
+            "{{keynote_session_title}}": "",
+            "{{table-topics_duration}}": "",
+            "{{table-topics_session_title}}": ""
         })
         
         return replacements
@@ -329,12 +328,21 @@ class MeetingSlideService:
             if last_match:
                 log, st = last_match
                 if info_key: 
-                    replacements[info_key] = info_fmt(log.owner.Name, derive_credentials(log.owner))
+                    prefix = info_key.replace("{{", "").replace("_info}}", "")
+                    role_alias = prefix.replace("-", " ").title() if prefix else ""
+                    replacements[info_key] = info_fmt(log.owner.Name, derive_credentials(log.owner), role_alias)
+                    
                     if avatar_map is not None:
-                        prefix = info_key.replace("{{", "").replace("_info}}", "")
                         avatar_map[f"{prefix}_avatar"] = log.owner
 
-                if dur_key: replacements[dur_key] = dur_fmt(log)
+                if dur_key: 
+                    replacements[dur_key] = dur_fmt(log)
+                
+                # Populate session title
+                if info_key:
+                    prefix = info_key.replace("{{", "").replace("_info}}", "")
+                    replacements[f"{{{{{prefix}_session_title}}}}"] = log.Session_Title or ""
+                
                 return True
             return False
         
@@ -362,44 +370,10 @@ class MeetingSlideService:
                 prefix = role_to_prefix.get(role_name)
                 key = "{{" + prefix + "_info}}" if prefix else None
                 if prefix and contact and key and not replacements.get(key):
-                    replacements[key] = info_fmt(contact.Name, derive_credentials(contact))
+                    role_alias = prefix.replace("-", " ").title() if prefix else ""
+                    replacements[key] = info_fmt(contact.Name, derive_credentials(contact), role_alias)
                     if avatar_map is not None:
                         avatar_map[f"{prefix}_avatar"] = contact
-
-    @staticmethod
-    def _populate_panel_discussion(context, replacements, info_fmt, dur_fmt, avatar_map=None):
-        """Populate Moderator and Panelist information."""
-        # Moderator - check for single owner
-        moderator_log = next((log for log, st in context.logs if st.role and st.role.name == "Moderator"), None)
-        if moderator_log:
-            replacements["{{panel-discussion_duration}}"] = dur_fmt(moderator_log)
-            if moderator_log.owner:
-                replacements["{{moderator_info}}"] = info_fmt(moderator_log.owner.Name, derive_credentials(moderator_log.owner))
-                if avatar_map is not None:
-                    avatar_map["moderator_avatar"] = moderator_log.owner
-
-        # Panelists - can be multiple
-        panelists = []
-        for log, st in context.logs:
-            if st.role and st.role.name == "Panelist":
-                # A log can have multiple owners, or we might have multiple logs
-                if log.owners:
-                    panelists.extend(log.owners)
-                elif log.owner:
-                    panelists.append(log.owner)
-        
-        # Unique list preservation order
-        seen = set()
-        unique_panelists = []
-        for p in panelists:
-            if p.id not in seen:
-                unique_panelists.append(p)
-                seen.add(p.id)
-
-        for i, panelist in enumerate(unique_panelists[:10], 1):
-            replacements[f"{{{{panelist{i}_info}}}}"] = info_fmt(panelist.Name, derive_credentials(panelist))
-            if avatar_map is not None:
-                avatar_map[f"panelist{i}_avatar"] = panelist
 
     @staticmethod
     def _populate_speakers(context, replacements, info_fmt, dur_fmt, avatar_map=None):
@@ -407,8 +381,9 @@ class MeetingSlideService:
         speakers = [(log, st) for log, st in context.logs if (st.role and st.role.name == "Prepared Speaker" and log.owner)]
         for i, (log, st) in enumerate(speakers[:6], 1):
             replacements[f"{{{{ps{i}}}}}"] = log.owner.Name
-            replacements[f"{{{{ps{i}_info}}}}"] = info_fmt(log.owner.Name, derive_credentials(log.owner))
+            replacements[f"{{{{ps{i}_info}}}}"] = info_fmt(log.owner.Name, derive_credentials(log.owner), f"Speaker {i}")
             replacements[f"{{{{ps{i}_duration}}}}"] = dur_fmt(log)
+            replacements[f"{{{{ps{i}_session_title}}}}"] = log.Session_Title or ""
             if avatar_map is not None:
                 avatar_map[f"ps{i}_avatar"] = log.owner
             
@@ -424,8 +399,9 @@ class MeetingSlideService:
         """Populate individual evaluator information (up to 6 evaluators)."""
         evaluators = [(log, st) for log, st in context.logs if (st.role and st.role.name == "Individual Evaluator" and log.owner)]
         for i, (log, st) in enumerate(evaluators[:6], 1):
-            replacements[f"{{{{ie{i}_info}}}}"] = info_fmt(log.owner.Name, derive_credentials(log.owner))
+            replacements[f"{{{{ie{i}_info}}}}"] = info_fmt(log.owner.Name, derive_credentials(log.owner), f"Evaluator {i}")
             replacements[f"{{{{ie{i}_duration}}}}"] = dur_fmt(log)
+            replacements[f"{{{{ie{i}_session_title}}}}"] = log.Session_Title or f"Evaluation {i}"
             if avatar_map is not None:
                 avatar_map[f"ie{i}_avatar"] = log.owner
 
@@ -449,9 +425,11 @@ class MeetingSlideService:
         
         if featured:
             replacements["{{keynote_title}}"] = featured[0].Session_Title or meeting.type or "Featured Session"
+            replacements["{{keynote_session_title}}"] = featured[0].Session_Title or meeting.type or "Featured Session"
             replacements["{{keynote_duration}}"] = dur_fmt(featured[0])
             if featured[0].owner:
-                replacements["{{keynote-speaker_info}}"] = info_fmt(featured[0].owner.Name, derive_credentials(featured[0].owner))
+                role_alias = "Keynote Speaker" if m_type == "keynote" else (meeting.type or "Featured Speaker")
+                replacements["{{keynote-speaker_info}}"] = info_fmt(featured[0].owner.Name, derive_credentials(featured[0].owner), role_alias)
                 if avatar_map is not None:
                     avatar_map["keynote-speaker_avatar"] = featured[0].owner
         else:
@@ -463,6 +441,7 @@ class MeetingSlideService:
         tt = next(((l, s) for l, s in context.logs if (s.Title == "Table Topics" or (s.role and s.role.name == "Topicsmaster"))), (None, None))
         if tt[0]:
             replacements["{{table-topics_duration}}"] = dur_fmt(tt[0])
+            replacements["{{table-topics_session_title}}"] = tt[0].Session_Title or "Table Topics"
 
     @staticmethod
     def _identify_host_type(slide):
@@ -501,56 +480,129 @@ class MeetingSlideService:
         return None
 
     @staticmethod
-    def _populate_slide(slide, meeting, replacements, avatar_map, host_type=None):
+    def _populate_slide(slide, meeting, context, replacements, avatar_map, host_type=None):
         """
         Populate a single slide with meeting info and role-specific data.
         """
-        # 1. Prepare local replacements for this slide
+        # 1. Formatting helpers
+        def info_fmt(name, creds, role=None):
+            if not name: return ""
+            full_name = f"{name}, {creds}" if creds else name
+            return f"{full_name}\n{role}" if role else full_name
+
+        def dur_fmt(log):
+            if not log: return ""
+            dmin, dmax = log.Duration_Min, log.Duration_Max
+            if dmin is not None and dmax is not None:
+                if dmin == 0 and dmax == 0: return ""
+                if dmin == 0: return f"{dmax} '"
+                return f"{dmin} ~ {dmax} '"
+            val = dmax if dmax is not None else dmin
+            if val == 0: return ""
+            return f"{val} '" if val is not None else ""
+
+
+        # 2. Prepare local replacements for this slide
         local_replacements = replacements.copy()
         local_avatar_map = avatar_map.copy() if avatar_map else {}
         
-        # 2. Add meeting-wide info
-        local_replacements.update({
-            "{{meeting_number}}": str(meeting.Meeting_Number),
-            "{{meeting_date}}": meeting.Meeting_Date.strftime('%d-%b-%Y') if meeting.Meeting_Date else "",
-            "{{club_name}}": (meeting.club.club_name if meeting.club else ""),
-        })
-
         # 3. Handle generic placeholders and title if host_type is identified
         if host_type:
             prefix = host_type.replace(" ", "-")
+            host_key = prefix.replace("-", "_") # e.g. debate_host
+            
             # Map generic duration
             dur_val = replacements.get(f"{{{{{prefix}_duration}}}}", "")
-            if not dur_val and host_type == "moderator":
-                dur_val = replacements.get("{{panel-discussion_duration}}", "")
+            if not dur_val:
+                if host_type == "moderator":
+                    host_log = next((log for log, st in context.logs if st.role and st.role.name == "Moderator"), None)
+                    dur_val = dur_fmt(host_log) if host_log else ""
+                elif host_type == "debate host":
+                    host_log = next((log for log, st in context.logs if st.role and st.role.name == "Debate Host"), None)
+                    dur_val = dur_fmt(host_log) if host_log else ""
             
             local_replacements["{{duration}}"] = dur_val
             local_replacements["{{slide_duration}}"] = dur_val
             
             # Map generic host info
-            info_val = replacements.get(f"{{{{{prefix}_info}}}}", "")
-            local_replacements["{{host_info}}"] = info_val
+            info_val = replacements.get(f"{{{{{host_key}_info}}}}", "")
+            session_title = replacements.get(f"{{{{{host_key}_session_title}}}}", "")
             
-            # Map generic title
-            local_replacements["{{slide_title}}"] = host_type.upper()
+            if not info_val:
+                # Dynamic identification for event types
+                if host_type == "moderator":
+                    host_log = next((log for log, st in context.logs if st.role and st.role.name == "Moderator"), None)
+                    if host_log and host_log.owner:
+                        info_val = info_fmt(host_log.owner.Name, derive_credentials(host_log.owner), "Moderator")
+                        session_title = host_log.Session_Title or "Panel Discussion"
+                        local_avatar_map["host_avatar"] = host_log.owner
+                        local_replacements["{{moderator_info}}"] = info_val
+                elif host_type == "debate host":
+                    host_log = next((log for log, st in context.logs if st.role and st.role.name == "Debate Host"), None)
+                    if host_log and host_log.owner:
+                        info_val = info_fmt(host_log.owner.Name, derive_credentials(host_log.owner), "Debate Host")
+                        session_title = host_log.Session_Title or "Debate"
+                        local_avatar_map["host_avatar"] = host_log.owner
+                        local_replacements["{{debate_host_info}}"] = info_val
+
+            local_replacements["{{host_info}}"] = info_val
+            local_replacements["{{slide_title}}"] = session_title.upper() if session_title else host_type.upper()
 
             # Set slide title shape if it's a placeholder and empty/placeholder text
             for shape in slide.shapes:
                 if shape.is_placeholder and shape.placeholder_format.type == 1: # Title
-                    if not shape.text or "click to add title" in shape.text.lower():
-                        shape.text = host_type.upper()
+                    if not shape.text or "click to add title" in shape.text.lower() or shape.text.lower() == host_type.lower():
+                        current_title = session_title.upper() if session_title else host_type.upper()
+                        shape.text = current_title
+                        if shape.has_text_frame:
+                            p = shape.text_frame.paragraphs[0]
+                            p.alignment = PP_ALIGN.CENTER
 
-            # Map generic avatar names for this slide
-            host_avatar_data = local_avatar_map.get(f"{prefix}_avatar")
-            if host_avatar_data:
-                local_avatar_map["host_avatar"] = host_avatar_data
+            # Map generic avatar names for host if already in local_avatar_map from caller
+            if f"{host_key}_avatar" in local_avatar_map:
+                local_avatar_map["host_avatar"] = local_avatar_map[f"{host_key}_avatar"]
             
-            # Map contactN_avatar for panelists if moderator slide
+            # Map contactN_avatar and contactN_info based on host_type (extra roles)
+            extra_role_name = None
             if host_type == "moderator":
-                for i in range(1, 11):
-                    p_avatar = local_avatar_map.get(f"panelist{i}_avatar")
-                    if p_avatar:
-                        local_avatar_map[f"contact{i}_avatar"] = p_avatar
+                extra_role_name = "Panelist"
+            elif host_type == "debate host":
+                extra_role_name = "Debater"
+            
+            if extra_role_name:
+                extras = []
+                for log, st in context.logs:
+                    if st.role and st.role.name == extra_role_name:
+                        if log.owners: extras.extend(log.owners)
+                        elif log.owner: extras.append(log.owner)
+                
+                for i, contact in enumerate(extras[:10], 1):
+                    info = info_fmt(contact.Name, derive_credentials(contact), extra_role_name)
+                    local_replacements[f"{{{{contact{i}_info}}}}"] = info
+                    local_avatar_map[f"contact{i}_avatar"] = contact
+                    # Populate role-specific placeholder as well
+                    specific_prefix = extra_role_name.lower().replace(" ", "_")
+                    local_replacements[f"{{{{{specific_prefix}{i}_info}}}}"] = info
+
+        # 3.5 Conditional role display: if only one contact, hide role
+        contact_placeholders = set()
+        for shape in slide.shapes:
+            if not shape.has_text_frame: continue
+            # Find all strings like {{something_info}}
+            matches = re.findall(r'\{\{.*?_info\}\}', shape.text)
+            contact_placeholders.update(matches)
+        
+        if len(contact_placeholders) <= 1:
+            for key in contact_placeholders:
+                if key in local_replacements:
+                    val = local_replacements[key]
+                    if "\n" in val:
+                        local_replacements[key] = val.split("\n", 1)[0]
+            # Also handle the generic host_info mapping
+            if "{{host_info}}" in local_replacements and "{{host_info}}" in contact_placeholders:
+                val = local_replacements["{{host_info}}"]
+                if "\n" in val:
+                    local_replacements["{{host_info}}"] = val.split("\n", 1)[0]
 
         def robust_replace(text):
             # Clean up common OCR/typing issues

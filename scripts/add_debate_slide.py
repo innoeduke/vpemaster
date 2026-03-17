@@ -14,17 +14,17 @@ app.static_folder = '/Users/wmu/workspace/toastmasters/vpemaster/app/static'
 with app.app_context():
     club_id = 2
     slide_title = ""
-    num_roles = 3 
-    meeting_type = "Panel Discussion"
+    num_roles = 6 
+    meeting_type = "Debate"
     host = {
         'name': '',
         'credential': '',
-        'role': 'Moderator',
+        'role': 'Debate Host',
         'avatar-url': ''
     }
     
     extra_contacts = [
-        {'name': f'Speaker {i+1}', 'role': 'Panelist', 'avatar-url': ''}
+        {'name': f'Speaker {i+1}', 'role': 'Debater', 'avatar-url': ''}
         for i in range(num_roles)
     ]
     
@@ -38,7 +38,7 @@ with app.app_context():
         extra_contacts=extra_contacts,
         duration_info=duration_info,
         event_type=meeting_type,
-        slide_number=3 # Position at the beginning
+        slide_number=10 # Position at the beginning
     )
     
     if success:
