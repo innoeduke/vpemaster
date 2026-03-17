@@ -275,7 +275,7 @@ def create_roster_entry():
     """Create a new roster entry"""
     data = request.get_json()
 
-    required_fields = ['meeting_id', 'order_number', 'ticket_id']
+    required_fields = ['meeting_id', 'ticket_id']
     for field in required_fields:
         if field not in data or not data[field]:
             return jsonify({'error': f'Missing required field: {field}'}), 400
@@ -292,7 +292,7 @@ def create_roster_entry():
 
     new_entry = Roster(
         meeting_id=data['meeting_id'],
-        order_number=data['order_number'],
+        order_number=data.get('order_number') if data.get('order_number') not in [None, '', 'null'] else None,
         ticket_id=ticket_obj.id
     )
 
@@ -356,7 +356,8 @@ def update_roster_entry(entry_id):
     data = request.get_json()
 
     if 'order_number' in data:
-        entry.order_number = data['order_number']
+        val = data['order_number']
+        entry.order_number = val if val not in [None, '', 'null'] else None
     if 'ticket_id' in data:
         ticket_id = data['ticket_id']
         ticket_obj = db.session.get(Ticket, ticket_id)

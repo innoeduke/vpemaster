@@ -8,6 +8,7 @@ from .models import SessionLog, SessionType, Contact, Meeting, Project, Media, R
 from .constants import ProjectID, SPEECH_TYPES_WITH_PROJECT, GLOBAL_CLUB_ID
 from .services.export import MeetingExportService
 from .services.export.context import MeetingExportContext
+from .services.meeting_slide_service import MeetingSlideService
 from . import db
 from sqlalchemy import distinct, orm, func
 from datetime import datetime, timedelta
@@ -906,7 +907,7 @@ def download_pptx_agenda(meeting_id):
     if not meeting:
         return "Meeting not found", 404
         
-    output = MeetingExportService.generate_meeting_pptx(meeting_id)
+    output = MeetingSlideService.generate_meeting_pptx(meeting_id)
     if not output:
         return "Could not generate PPTX. Template might be missing or error occurred.", 500
 

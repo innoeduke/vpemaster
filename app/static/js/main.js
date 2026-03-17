@@ -284,6 +284,7 @@ function closeContactModal() {
 }
 
 function showDuplicateModal(message, duplicateData) {
+  if (typeof closeContactModal === 'function') closeContactModal();
   const modal = document.getElementById('duplicateContactModal');
   if (!modal) {
     if (typeof showCustomAlert === 'function') {

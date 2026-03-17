@@ -66,8 +66,9 @@
 
                         <div class="form-group-inline input-order">
                             <label for="order_number">Order#</label>
-                            <input type="number" class="form-control" id="order_number" value="{{ next_unallocated_entry.order_number if next_unallocated_entry else 1 }}" required>
+                            <input type="number" class="form-control" id="order_number" value="{{ next_unallocated_entry.order_number if next_unallocated_entry else 1 }}">
                         </div>
+
 
                         <div class="form-group-inline input-name" style="position: relative;">
                             <label for="contact_name">Name</label>

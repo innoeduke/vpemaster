@@ -175,14 +175,12 @@ function selectContact(contact, elements) {
   const isOfficer = contact.is_officer === true || contact.is_officer === "true" || contact.Type === "Officer";
   if (isOfficer) {
     elements.contactTypeSelect.value = "Officer";
-  } else if (contact.Type) {
-    elements.contactTypeSelect.value = contact.Type;
+  } else {
+    elements.contactTypeSelect.value = contact.Type || "Guest";
   }
 
   // Trigger change handler to set ticket and order number
-  if (elements.contactTypeSelect.value) {
-    elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-  }
+  elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 // Initialize roster-specific autocomplete functionality
@@ -321,18 +319,32 @@ function initializeContactTypeHandler(elements) {
 
       if (isTypeValid) {
         option.style.display = "flex";
+        
+        // Priority defaults
         if (text === "officer") officerTicketId = value;
         
         // Potential defaults for Members/Guests
-        // Only set earlyBirdTicketId if it's NOT expired
-        if ((text.startsWith("early-bird") || text === "early bird") && !isExpired) {
-            if (!earlyBirdTicketId) earlyBirdTicketId = value;
-        }
-        
-        // If we haven't found a valid Early-bird yet (or it's expired), look for fallbacks
-        if (!earlyBirdTicketId) {
-            if (text.startsWith("walk-in")) earlyBirdTicketId = value;
-            if (text.startsWith("role-taker") && contactType === "Guest") earlyBirdTicketId = value;
+        // Only set if NOT expired
+        if (!isExpired) {
+            const isGuest = contactType === "Guest";
+            const isMember = contactType === "Member" || contactType === "Officer";
+            const isOfficer = contactType === "Officer";
+
+            // If we find an exact match or clear prefix for the type name, prioritize it
+            if (isGuest && (text === "guest" || text.startsWith("guest"))) earlyBirdTicketId = value;
+            else if (isOfficer && (text === "officer" || text.startsWith("officer"))) earlyBirdTicketId = value;
+            else if (isMember && (text === "member" || text.startsWith("member"))) earlyBirdTicketId = value;
+            
+            // Fallback to Early-bird if no exact type match yet
+            if (!earlyBirdTicketId && (text.includes("early-bird") || text.includes("early bird"))) {
+                earlyBirdTicketId = value;
+            }
+            
+            // Further fallbacks
+            if (!earlyBirdTicketId) {
+                if (text.includes("walk-in")) earlyBirdTicketId = value;
+                if (text.includes("role-taker") && contactType === "Guest") earlyBirdTicketId = value;
+            }
         }
 
         if (value === currentTicketId) isCurrentTicketValid = true;
@@ -395,8 +407,10 @@ function updateOrderNumber(elements) {
     const isFree = parseFloat(selectedTicketOpt.dataset.price) === 0;
     const nextOrder = calculateNextOrder(isFree, elements.tableBody);
     
-    // The user requested that order_number should be REASSIGNED when updated.
-    // We update it even if it's already in the correct range to ensure it's "fresh".
+    // Only auto-reassign if currently empty, or we want to force it?
+    // The user requested that order_number should be REASSIGNED when updated, 
+    // but if we are in Add mode and it's already set, maybe we leave it?
+    // Actually, let's keep the logic but ensure we can submit empty values.
     elements.orderNumberInput.value = nextOrder;
   }
 }
@@ -409,18 +423,18 @@ function resetRosterForm(elements) {
   elements.formTitle.textContent = "Add Entry";
   elements.contactNameInput.value = "";
   elements.contactIdInput.value = "";
-  elements.contactTypeSelect.value = "";
-  elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-  elements.ticketSelect.value = "";
-  elements.ticketSelect.dispatchEvent(new Event('change', { bubbles: true }));
+  // Default to Guest for new entries
+  if (elements.contactTypeSelect) {
+    elements.contactTypeSelect.value = "Guest";
+    elements.contactTypeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  
   if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = "none";
   if (elements.rosterForm) elements.rosterForm.classList.remove("editing-mode");
   if (elements.submitBtn) {
     elements.submitBtn.innerHTML = '<i class="fas fa-save"></i> <span class="btn-label-text">Register</span>';
   }
-
-  // Default to regular order (assume non-free until ticket selected)
-  elements.orderNumberInput.value = calculateNextOrder(false, elements.tableBody);
+  if (elements.orderNumberInput) elements.orderNumberInput.value = "";
 }
 
 // Populate form with data for editing

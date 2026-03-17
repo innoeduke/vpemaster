@@ -198,29 +198,10 @@ class Roster(db.Model):
                 if not ticket_obj:
                     ticket_obj = Ticket.query.filter_by(club_id=club_id).first()
 
-                # Logic for Order Number based on FINAL ticket price
-                is_free = ticket_obj.price == 0 if ticket_obj else False
-                new_order = None
-                
-                if is_free:
-                    # Free tickets get next available >= 1000
-                    base_filter = Roster.meeting_id == meeting_id
-                    max_order = db.session.query(func.max(Roster.order_number)).filter(
-                        base_filter, Roster.order_number >= 1000
-                    ).scalar()
-                    new_order = (max_order or 999) + 1
-                else:
-                    # Paid tickets get next available < 1000
-                    base_filter = Roster.meeting_id == meeting_id
-                    max_order = db.session.query(func.max(Roster.order_number)).filter(
-                        base_filter, Roster.order_number < 1000
-                    ).scalar()
-                    new_order = (max_order or 0) + 1
-
                 roster_entry = Roster(
                     meeting_id=meeting_id,
                     contact_id=contact_id,
-                    order_number=new_order,
+                    order_number=None,
                     ticket_id=ticket_obj.id if ticket_obj else None,
                     contact_type='Officer' if is_officer else contact.Type
                 )

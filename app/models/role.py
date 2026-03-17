@@ -33,8 +33,9 @@ class Role(db.Model):
     @staticmethod
     def get_by_name(name):
         """Get role by name, using cache if available."""
-        if name in Role._name_cache:
-            return Role._name_cache[name]
+        role = Role._name_cache.get(name)
+        if role:
+            return db.session.merge(role, load=False)
         
         role = Role.query.filter_by(name=name).first()
         if role:
@@ -49,7 +50,9 @@ class Role(db.Model):
             # Also populate name cache while we are at it
             for r in Role._all_roles_cache:
                 Role._name_cache[r.name] = r
-        return Role._all_roles_cache
+            return Role._all_roles_cache
+        
+        return [db.session.merge(r, load=False) for r in Role._all_roles_cache]
     
     def has_permission(self, permission_name):
         """Check if this role has a specific permission."""

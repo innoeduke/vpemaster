@@ -69,7 +69,7 @@ class TestRosterAssignment(unittest.TestCase):
         
         officer_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.officer_contact.id).first()
         self.assertIsNotNone(officer_entry)
-        self.assertGreaterEqual(officer_entry.order_number, 1000)
+        self.assertIsNone(officer_entry.order_number)
         self.assertEqual(officer_entry.ticket.name, "Officer")
 
     def test_multiple_officer_ordering(self):
@@ -85,8 +85,8 @@ class TestRosterAssignment(unittest.TestCase):
         entry1 = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.officer_contact.id).first()
         entry2 = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=officer2.id).first()
         
-        self.assertEqual(entry1.order_number, 1000)
-        self.assertEqual(entry2.order_number, 1001)
+        self.assertIsNone(entry1.order_number)
+        self.assertIsNone(entry2.order_number)
 
     def test_member_assignment(self):
         """Test that members get None order number and Member ticket"""
@@ -95,7 +95,7 @@ class TestRosterAssignment(unittest.TestCase):
         
         member_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.member_contact.id).first()
         self.assertIsNotNone(member_entry)
-        self.assertGreaterEqual(member_entry.order_number, 1000)
+        self.assertIsNone(member_entry.order_number)
         self.assertEqual(member_entry.ticket.name, "Early-bird")
 
     def test_guest_assignment(self):
@@ -105,7 +105,7 @@ class TestRosterAssignment(unittest.TestCase):
         
         guest_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.guest_contact.id).first()
         self.assertIsNotNone(guest_entry)
-        self.assertGreaterEqual(guest_entry.order_number, 1000)
+        self.assertIsNone(guest_entry.order_number)
         self.assertEqual(guest_entry.ticket.name, "Role-taker")
 
 if __name__ == '__main__':
