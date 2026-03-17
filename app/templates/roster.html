@@ -88,9 +88,10 @@
                         <div class="form-group-inline input-ticket">
                             {% set ticket_opts = [] %}
                             {% for t in tickets %}
+                                {% set t_name_clean = t.name.split('(')[0].strip() %}
                                 {% set t_icon = t.icon if t.icon else 'fa-ticket-alt' %}
                                 {% set t_expired = t.expired_at.strftime('%H:%M') if t.expired_at else '' %}
-                                {% set _ = ticket_opts.append({'value': t.id, 'text': t.name, 'icon': 'fas ' ~ t_icon, 'color': t.color, 'type': t.type, 'expired_at': t_expired, 'price': t.price}) %}
+                                {% set _ = ticket_opts.append({'value': t.id, 'text': t_name_clean, 'icon': 'fas ' ~ t_icon, 'color': t.color, 'type': t.type, 'expired_at': t_expired, 'price': t.price}) %}
                             {% endfor %}
                             {{ render_custom_select(ticket_opts, "", label='Ticket', select_id='ticket', placeholder='Select...') }}
                         </div>

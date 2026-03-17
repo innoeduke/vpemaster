@@ -1,6 +1,7 @@
 # vpemaster/contacts_routes.py
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify, current_app
+import urllib.parse
 from . import db
 from .models import Contact, SessionLog, Pathway, ContactClub, Meeting, Vote, ExComm, UserClub, Roster, SessionType, MeetingRole, OwnerMeetingRoles, Club
 from .auth.utils import login_required, is_authorized
@@ -85,7 +86,6 @@ def show_contacts():
     
 
 
-    club_id = get_current_club_id()
     club_id = get_current_club_id()
     
     # Optimization: Fetch counts only, let client fetch data async
@@ -430,12 +430,13 @@ def contact_form(contact_id=None):
             target_contact = new_contact
 
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify(success=True, contact={'id': target_contact.id, 'Name': target_contact.Name})
+            return jsonify(success=True, contact={'id': target_contact.id, 'Name': target_contact.Name, 'Type': target_contact.Type})
 
         referer = request.form.get('referer') or request.args.get('referer')
         if referer and 'roster' in referer:
             separator = '&' if '?' in referer else '?'
-            redirect_url = f"{referer}{separator}new_contact_id={target_contact.id}&new_contact_name={target_contact.Name}&new_contact_type={target_contact.Type}"
+            encoded_name = urllib.parse.quote(target_contact.Name)
+            redirect_url = f"{referer}{separator}new_contact_id={target_contact.id}&new_contact_name={encoded_name}&new_contact_type={target_contact.Type}"
             return redirect(redirect_url)
             
         return redirect(url_for('contacts_bp.show_contacts'))

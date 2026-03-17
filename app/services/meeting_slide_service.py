@@ -230,11 +230,13 @@ class MeetingSlideService:
             "treasurer_avatar": None, "secretary_avatar": None, "tme_avatar": None,
             "timer_avatar": None, "ah-counter_avatar": None, "grammarian_avatar": None,
             "topicsmaster_avatar": None, "ge_avatar": None, "photographer_avatar": None,
-            "keynote-speaker_avatar": None
+            "keynote-speaker_avatar": None, "moderator_avatar": None
         }
         for i in range(1, 7):
             avatar_map[f"ps{i}_avatar"] = None
             avatar_map[f"ie{i}_avatar"] = None
+        for i in range(1, 5):
+            avatar_map[f"panelist{i}_avatar"] = None
         
         MeetingSlideService._populate_standard_roles(context, meeting, replacements, info_fmt, dur_fmt, avatar_map)
         MeetingSlideService._populate_speakers(context, replacements, info_fmt, dur_fmt, avatar_map)
@@ -251,8 +253,11 @@ class MeetingSlideService:
 
         try:
             prs = Presentation(template_path)
-            MeetingSlideService._perform_replacements(prs, replacements, avatar_map)
-            MeetingSlideService._replace_avatar_shapes(prs, avatar_map)
+            
+            # Refactored: Populate each slide individually
+            for slide in prs.slides:
+                host_type = MeetingSlideService._identify_host_type(slide)
+                MeetingSlideService._populate_slide(slide, meeting, replacements, avatar_map, host_type)
             
             output = io.BytesIO()
             prs.save(output)
@@ -292,13 +297,14 @@ class MeetingSlideService:
                 f"{{{{ie{i}_info}}}}": "", f"{{{{ie{i}_duration}}}}": ""
             })
         
-        # Panel Discussion placeholders
+        # Panel Discussion placeholders (up to 10 panelists)
         replacements.update({
             "{{moderator_info}}": "",
-            "{{panelist1_info}}": "", "{{panelist2_info}}": "",
-            "{{panelist3_info}}": "", "{{panelist4_info}}": "",
-            "{{panel-discussion_duration}}": ""
+            "{{panel-discussion_duration}}": "",
+            "{{moderator_duration}}": ""
         })
+        for i in range(1, 11):
+            replacements[f"{{{{panelist{i}_info}}}}"] = ""
         
         # Featured session and table topics
         replacements.update({
@@ -390,7 +396,7 @@ class MeetingSlideService:
                 unique_panelists.append(p)
                 seen.add(p.id)
 
-        for i, panelist in enumerate(unique_panelists[:4], 1):
+        for i, panelist in enumerate(unique_panelists[:10], 1):
             replacements[f"{{{{panelist{i}_info}}}}"] = info_fmt(panelist.Name, derive_credentials(panelist))
             if avatar_map is not None:
                 avatar_map[f"panelist{i}_avatar"] = panelist
@@ -459,32 +465,122 @@ class MeetingSlideService:
             replacements["{{table-topics_duration}}"] = dur_fmt(tt[0])
 
     @staticmethod
-    def _perform_replacements(prs, replacements, avatar_map=None):
-        """Apply all placeholder replacements to PowerPoint presentation."""
+    def _identify_host_type(slide):
+        """
+        Identify the host role type of a slide by inspecting its text boxes and shape names.
+        Returns "debate host", "moderator", "timer", "ah-counter", etc. or None.
+        """
+        role_map = {
+            "moderator": ["moderator", "panel discussion"],
+            "timer": ["timer", "timing record"],
+            "ah-counter": ["ah-counter", "ah counter"],
+            "grammarian": ["grammarian"],
+            "topicsmaster": ["topicsmaster", "table topics"],
+            "ge": ["general evaluator", " ge "],
+            "saa": ["saa", "sergeant at arms"],
+            "tme": ["tme", "toastmaster"],
+            "president": ["president"],
+            "debate host": ["debate host", "debate"]
+        }
+
+        # Check shape names first
+        for shape in slide.shapes:
+            name = (shape.name or "").lower()
+            for role, keywords in role_map.items():
+                if any(kw in name for kw in keywords):
+                    return role
+
+        # Check text content
+        for shape in slide.shapes:
+            if not shape.has_text_frame:
+                continue
+            text = shape.text.lower()
+            for role, keywords in role_map.items():
+                if any(kw in text for kw in keywords):
+                    return role
+        return None
+
+    @staticmethod
+    def _populate_slide(slide, meeting, replacements, avatar_map, host_type=None):
+        """
+        Populate a single slide with meeting info and role-specific data.
+        """
+        # 1. Prepare local replacements for this slide
+        local_replacements = replacements.copy()
+        local_avatar_map = avatar_map.copy() if avatar_map else {}
+        
+        # 2. Add meeting-wide info
+        local_replacements.update({
+            "{{meeting_number}}": str(meeting.Meeting_Number),
+            "{{meeting_date}}": meeting.Meeting_Date.strftime('%d-%b-%Y') if meeting.Meeting_Date else "",
+            "{{club_name}}": (meeting.club.club_name if meeting.club else ""),
+        })
+
+        # 3. Handle generic placeholders and title if host_type is identified
+        if host_type:
+            prefix = host_type.replace(" ", "-")
+            # Map generic duration
+            dur_val = replacements.get(f"{{{{{prefix}_duration}}}}", "")
+            if not dur_val and host_type == "moderator":
+                dur_val = replacements.get("{{panel-discussion_duration}}", "")
+            
+            local_replacements["{{duration}}"] = dur_val
+            local_replacements["{{slide_duration}}"] = dur_val
+            
+            # Map generic host info
+            info_val = replacements.get(f"{{{{{prefix}_info}}}}", "")
+            local_replacements["{{host_info}}"] = info_val
+            
+            # Map generic title
+            local_replacements["{{slide_title}}"] = host_type.upper()
+
+            # Set slide title shape if it's a placeholder and empty/placeholder text
+            for shape in slide.shapes:
+                if shape.is_placeholder and shape.placeholder_format.type == 1: # Title
+                    if not shape.text or "click to add title" in shape.text.lower():
+                        shape.text = host_type.upper()
+
+            # Map generic avatar names for this slide
+            host_avatar_data = local_avatar_map.get(f"{prefix}_avatar")
+            if host_avatar_data:
+                local_avatar_map["host_avatar"] = host_avatar_data
+            
+            # Map contactN_avatar for panelists if moderator slide
+            if host_type == "moderator":
+                for i in range(1, 11):
+                    p_avatar = local_avatar_map.get(f"panelist{i}_avatar")
+                    if p_avatar:
+                        local_avatar_map[f"contact{i}_avatar"] = p_avatar
+
         def robust_replace(text):
+            # Clean up common OCR/typing issues
             text = re.sub(r'Evaluator\s*for', 'Evaluator for', text, flags=re.I)
             text = re.sub(r'INDIVIDUAL EVALUATOR\s*for', 'INDIVIDUAL EVALUATOR for', text, flags=re.I)
-            for key, val in replacements.items():
+            
+            for key, val in local_replacements.items():
                 if key in text:
                     text = text.replace(key, str(val))
             return text
+
+        # 4. Perform text replacements
+        for shape in slide.shapes:
+            if shape.name in local_avatar_map:
+                continue
+            if not shape.has_text_frame:
+                continue
+            for paragraph in shape.text_frame.paragraphs:
+                full_text = "".join(run.text for run in paragraph.runs)
+                updated_text = robust_replace(full_text)
+                if updated_text != full_text:
+                    if paragraph.runs:
+                        paragraph.runs[0].text = updated_text
+                        for i in range(1, len(paragraph.runs)):
+                            paragraph.runs[i].text = ""
+                    else:
+                        paragraph.text = updated_text
         
-        for slide in prs.slides:
-            for shape in slide.shapes:
-                if shape.name in avatar_map:
-                    continue
-                if not shape.has_text_frame:
-                    continue
-                for paragraph in shape.text_frame.paragraphs:
-                    full_text = "".join(run.text for run in paragraph.runs)
-                    updated_text = robust_replace(full_text)
-                    if updated_text != full_text:
-                        if paragraph.runs:
-                            paragraph.runs[0].text = updated_text
-                            for i in range(1, len(paragraph.runs)):
-                                paragraph.runs[i].text = ""
-                        else:
-                            paragraph.text = updated_text
+        # 5. Replace avatars for THIS slide
+        MeetingSlideService._replace_avatar_shapes(slide, local_avatar_map)
 
     @staticmethod
     def _crop_image_to_aspect_ratio(image_path, target_width, target_height):
@@ -558,14 +654,23 @@ class MeetingSlideService:
             current_app.logger.error(f"Error filling shape {shape.name}: {e}")
 
     @staticmethod
-    def _replace_avatar_shapes(prs, avatar_map):
+    def _replace_avatar_shapes(slide_or_prs, avatar_map):
         """Replace placeholder shapes with avatar images (using fill)."""
         if not avatar_map:
             return
 
         normalized_map = {k.strip().lower(): v for k, v in avatar_map.items()}
 
-        for slide in prs.slides:
+        if hasattr(slide_or_prs, 'slides') and not hasattr(slide_or_prs, 'shapes'):
+            slides = slide_or_prs.slides
+        elif hasattr(slide_or_prs, 'shapes'):
+            slides = [slide_or_prs]
+        elif isinstance(slide_or_prs, (list, tuple)):
+            slides = slide_or_prs
+        else:
+            slides = [slide_or_prs]
+
+        for slide in slides:
             for shape in slide.shapes:
                 shape_name_clean = (shape.name or "").strip().lower()
                 if shape_name_clean in normalized_map:
