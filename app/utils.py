@@ -848,6 +848,7 @@ def group_roles_by_category(roles):
         'evaluator': 2,
         'role-taker': 3,
         'table-topic': 4,
+        'debater': 5,
         'none': 99
     }
     

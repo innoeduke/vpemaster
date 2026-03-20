@@ -5,7 +5,7 @@ from ..formatter import ExportFormatter
 class VotesComponent(BaseExportComponent):
     """Renders the Votes table."""
     def render(self, ws, context, start_row):
-        headers = ['Best Speaker', 'Best Evaluator', 'Best Table Topic', 'Best Role Taker', 'NPS', 'Feedback']
+        headers = ['Best Speaker', 'Best Evaluator', 'Best Table Topic', 'Best Role Taker', 'Best Debater', 'NPS', 'Feedback']
         ws.append(headers)
         ExportFormatter.apply_header_style(ws, ws.max_row)
         
@@ -34,14 +34,15 @@ class VotesComponent(BaseExportComponent):
                 data.get('evaluator', ''),
                 data.get('table-topic', ''),
                 data.get('role-taker', ''),
+                data.get('debater', ''),
                 data.get('nps', ''),
                 data.get('feedback', '')
             ]
             ws.append(row)
             if data.get('feedback'):
-                ExportFormatter.apply_wrap_text(ws.cell(row=ws.max_row, column=6))
+                ExportFormatter.apply_wrap_text(ws.cell(row=ws.max_row, column=7))
         
-        ws.column_dimensions['F'].width = 40
+        ws.column_dimensions['G'].width = 40
         
         # Auto-fit columns for this component
         ExportFormatter.auto_fit_columns(ws)

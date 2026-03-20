@@ -363,7 +363,7 @@ function updateDoneButtonState() {
 	const doneBtn = document.getElementById('done-voting-btn');
 	if (!doneBtn) return;
 
-	// 1. Validate Award Categories (Q1-Q4)
+	// 1. Validate Award Categories (Q1-Q4, or Q1-Q5 with debater)
 	let allCategoriesValid = true;
 	const accordionItems = document.querySelectorAll('.accordion-item');
 

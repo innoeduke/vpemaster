@@ -56,6 +56,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
             'evaluator': selected_meeting.best_evaluator_id,
             'table-topic': selected_meeting.best_table_topic_id,
             'role-taker': selected_meeting.best_role_taker_id,
+            'debater': selected_meeting.best_debater_id,
         }
 
     # Vote counts for officers
@@ -119,7 +120,8 @@ def _sort_roles_for_voting(roles):
         'speaker': 1,
         'evaluator': 2,
         'role-taker': 3,
-        'table-topic': 4
+        'table-topic': 4,
+        'debater': 5
     }
     
     def get_category_priority(role):
@@ -507,6 +509,8 @@ def vote_for_award():
                 meeting.best_table_topic_id = your_vote_id
             elif award_category == 'role-taker':
                 meeting.best_role_taker_id = your_vote_id
+            elif award_category == 'debater':
+                meeting.best_debater_id = your_vote_id
             db.session.commit()
 
         return jsonify(success=True, your_vote_id=your_vote_id, award_category=award_category)

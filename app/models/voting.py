@@ -25,7 +25,7 @@ class Vote(db.Model):
                 self.meeting_id = m.id
     voter_identifier = db.Column(db.String(64), nullable=False)
     award_category = db.Column(db.Enum('speaker', 'evaluator', 'role-taker',
-                               'table-topic', name='award_category_enum'), nullable=True)
+                               'table-topic', 'debater', name='award_category_enum'), nullable=True)
     contact_id = db.Column(db.Integer, db.ForeignKey(
         'Contacts.id'), nullable=True)
     question = db.Column(db.String(255), nullable=True)

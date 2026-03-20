@@ -61,6 +61,7 @@ class Meeting(db.Model):
     best_evaluator_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     best_speaker_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     best_role_taker_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
+    best_debater_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'))
     media_id = db.Column(db.Integer, db.ForeignKey('Media.id', use_alter=True))
     ge_mode = db.Column(db.Integer, default=0)
     status = db.Column(db.Enum('unpublished', 'not started', 'running', 'finished', 'cancelled', name='meeting_status'),
@@ -80,6 +81,8 @@ class Meeting(db.Model):
     best_speaker = db.relationship('Contact', foreign_keys=[best_speaker_id])
     best_role_taker = db.relationship(
         'Contact', foreign_keys=[best_role_taker_id])
+    best_debater = db.relationship(
+        'Contact', foreign_keys=[best_debater_id])
     media = db.relationship('Media', foreign_keys=[media_id])
     
     def sync_excomm(self, force=False):
@@ -129,7 +132,8 @@ class Meeting(db.Model):
                 self.best_table_topic_id,
                 self.best_evaluator_id,
                 self.best_speaker_id,
-                self.best_role_taker_id
+                self.best_role_taker_id,
+                self.best_debater_id
             ] if award_id
         }
 
