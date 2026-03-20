@@ -217,6 +217,12 @@
 	color: white;
 }
 
+.tab-content .roster-role-tag.role-debater {
+	background-color: #06b6d4;
+	/* Cyan */
+	color: white;
+}
+
 /* Administrative Roles - Differentiated */
 .tab-content .roster-role-tag.role-sysadmin {
 	background-color: #7c3aed;
