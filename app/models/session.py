@@ -284,23 +284,23 @@ class SessionLog(db.Model):
         
         is_prepared_speech = self.project and self.project.is_prepared_speech
         
+        # Determine target pathway context
+        # Preference: 
+        # 1. explicit context passed in (e.g. from project view filter)
+        # 2. log's own pathway field (snapshot)
+        # 3. context contact's current path
+        # 4. primary owner's current path
+        target_path_name = context_pathway_name
+        if not target_path_name:
+            target_path_name = self.pathway
+        if not target_path_name:
+            target_path_name = context_contact.Current_Path if context_contact else (self.owner.Current_Path if self.owner else None)
+            
         # Determine if this is a speech
         if (self.session_type.Valid_for_Project and self.Project_ID and self.Project_ID != ProjectID.GENERIC) or is_prepared_speech:
             log_type = 'speech'
             pathway_abbr = None
             found_data = False
-            
-            # Determine target pathway context
-            # Preference: 
-            # 1. explicit context passed in (e.g. from project view filter)
-            # 2. log's own pathway field (snapshot)
-            # 3. context contact's current path
-            # 4. primary owner's current path
-            target_path_name = context_pathway_name
-            if not target_path_name:
-                target_path_name = self.pathway
-            if not target_path_name:
-                target_path_name = context_contact.Current_Path if context_contact else (self.owner.Current_Path if self.owner else None)
 
             # Priority 1: Lookup PathwayProject data (Canonical)
             if self.Project_ID:
@@ -390,6 +390,17 @@ class SessionLog(db.Model):
                 match = re.match(r"([A-Z]+)(\d+)", self.project_code)
                 if match:
                     display_level = str(match.group(2))
+            
+            # NEW: If still General, assign to the contact's active level AT THE TIME OF THE MEETING
+            if display_level == "General" and target_path_name:
+                contact = context_contact or self.owner
+                meeting_date = self.meeting.Meeting_Date if self.meeting else None
+                
+                if contact and meeting_date:
+                    # Determine active level for this member at this meeting date
+                    # For new members (no achievements) this will return 1 (Level 1)
+                    active_lvl = contact.get_active_level_at_date(target_path_name, meeting_date)
+                    display_level = str(active_lvl)
         
         return display_level, log_type, project_code
     

@@ -146,6 +146,11 @@ class Contact(db.Model):
         if not pathway_name:
             return set()
         
+        # Simple caching on the object
+        cache_key = f'_completed_levels_{pathway_name}'
+        if hasattr(self, cache_key):
+            return getattr(self, cache_key)
+        
         uid = self.user_id
         if uid:
             achievements = Achievement.query.filter_by(
@@ -156,7 +161,63 @@ class Contact(db.Model):
         else:
             achievements = []
         
-        return {a.level for a in achievements if a.level}
+        res = {a.level for a in achievements if a.level}
+        setattr(self, cache_key, res)
+        return res
+    
+    def get_active_level_at_date(self, pathway_name, reference_date):
+        """
+        Determines the active level for a given pathway at a specific date.
+        
+        Logic: The active level is the lowest level N where level N was NOT 
+        completed on or before the reference_date.
+        
+        Args:
+            pathway_name: Name of the pathway (e.g., "Dynamic Leadership")
+            reference_date: The date to check (datetime.date)
+            
+        Returns:
+            int: The active level (1-5) at that date.
+        """
+        from .achievement import Achievement
+        
+        if not pathway_name:
+            return 1
+            
+        # 1. Fetch all level-completion achievements for this pathway
+        # Cache them for performance during bulk log processing
+        cache_key = f'_achievements_{pathway_name}'
+        if not hasattr(self, cache_key):
+            uid = self.user_id
+            if uid:
+                achievements = Achievement.query.filter_by(
+                    user_id=uid,
+                    path_name=pathway_name,
+                    achievement_type='level-completion'
+                ).order_by(Achievement.level).all()
+                setattr(self, cache_key, achievements)
+            else:
+                setattr(self, cache_key, [])
+        
+        achievements = getattr(self, cache_key)
+        
+        # 2. Find the lowest level that was NOT completed yet on this date
+        # Check levels in order
+        for level in range(1, 6):
+            # Find if this level has a completion record
+            comp = next((a for a in achievements if a.level == level), None)
+            
+            if not comp:
+                # Level never completed -> it's the active level
+                return level
+                
+            # Level completed: was it completed AFTER the reference date?
+            # If reference_date is on or before issue_date, it belongs to this level
+            if reference_date <= comp.issue_date:
+                return level
+                
+        # If all 5 levels completed on or before reference_date
+        return 5
     
     def get_completed_project_ids(self):
         """
