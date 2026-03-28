@@ -811,6 +811,10 @@ function sortTableByColumn(table, column, asc = true) {
   }
 }
 
+// Attach functions to window immediately so inline onclick handlers work
+window.openTab = openTab;
+window.closeModal = closeModal;
+
 /**
  * All setup logic for the settings page.
  */
@@ -829,9 +833,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // Default to general if nothing is set
     openTab(null, "user-settings");
   }
-  // Attach functions to window for inline onclick attributes
-  window.openTab = openTab;
-  window.closeModal = closeModal;
 
   // --- 2. Modal Logic ---
   // Initialize icon matrix for role modal

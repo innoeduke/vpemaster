@@ -380,7 +380,6 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.reload();
       return;
     }
-    console.log("Saving Agenda Data:", dataToSave);
     fetch("/agenda/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1070,7 +1069,7 @@ document.addEventListener("DOMContentLoaded", () => {
       pathway: row.dataset.pathway || "",
       is_hidden: row.dataset.isHidden === "true", // Include hidden status in save data
     };
-    console.log(`Row ${row.dataset.id} data:`, data);
+
     return data;
   }
 
