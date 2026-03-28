@@ -25,18 +25,22 @@ def upgrade():
 
 
 def downgrade():
-    op.create_table('guests',
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('club_id', sa.Integer(), autoincrement=False, nullable=False),
-    sa.Column('name', sa.String(length=100), nullable=False),
-    sa.Column('phone', sa.String(length=50), nullable=True),
-    sa.Column('email', sa.String(length=120), nullable=True),
-    sa.Column('status', sa.String(length=50), nullable=True),
-    sa.Column('type', sa.String(length=50), nullable=True),
-    sa.Column('created_date', sa.DateTime(), nullable=False),
-    sa.Column('notes', sa.Text(), nullable=True),
-    sa.ForeignKeyConstraint(['club_id'], ['clubs.id']),
-    sa.PrimaryKeyConstraint('id')
-    )
-    with op.batch_alter_table('guests', schema=None) as batch_op:
-        batch_op.create_index('ix_guests_club_id', ['club_id'], unique=False)
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    if 'guests' not in inspector.get_table_names():
+        op.create_table('guests',
+        sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column('club_id', sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column('name', sa.String(length=100), nullable=False),
+        sa.Column('phone', sa.String(length=50), nullable=True),
+        sa.Column('email', sa.String(length=120), nullable=True),
+        sa.Column('status', sa.String(length=50), nullable=True),
+        sa.Column('type', sa.String(length=50), nullable=True),
+        sa.Column('created_date', sa.DateTime(), nullable=False),
+        sa.Column('notes', sa.Text(), nullable=True),
+        sa.ForeignKeyConstraint(['club_id'], ['clubs.id']),
+        sa.PrimaryKeyConstraint('id')
+        )
+        with op.batch_alter_table('guests', schema=None) as batch_op:
+            batch_op.create_index('ix_guests_club_id', ['club_id'], unique=False)
+

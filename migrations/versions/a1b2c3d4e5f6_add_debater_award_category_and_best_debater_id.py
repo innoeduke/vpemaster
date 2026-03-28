@@ -38,11 +38,21 @@ def upgrade():
 
 
 def downgrade():
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+
     # 1. Remove best_debater_id from Meetings
-    op.drop_constraint('fk_meetings_best_debater_id', 'Meetings', type_='foreignkey')
-    op.drop_column('Meetings', 'best_debater_id')
+    columns = [col['name'] for col in inspector.get_columns('Meetings')]
+    if 'best_debater_id' in columns:
+        fks = [fk['name'] for fk in inspector.get_foreign_keys('Meetings')]
+        if 'fk_meetings_best_debater_id' in fks:
+            op.drop_constraint('fk_meetings_best_debater_id', 'Meetings', type_='foreignkey')
+        op.drop_column('Meetings', 'best_debater_id')
 
     # 2. Remove 'debater' from award_category_enum
+    # Set existing 'debater' awards to NULL to prevent DataError truncated column
+    op.execute("UPDATE votes SET award_category = NULL WHERE award_category = 'debater'")
+    
     op.alter_column(
         'votes', 'award_category',
         existing_type=sa.Enum('speaker', 'evaluator', 'role-taker', 'table-topic', 'debater', name='award_category_enum'),

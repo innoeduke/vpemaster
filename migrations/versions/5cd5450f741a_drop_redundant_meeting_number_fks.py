@@ -39,5 +39,10 @@ def upgrade():
 
 
 def downgrade():
+    # Temporarily disable FK checks — backfilled meeting_number values
+    # (e.g. 0) may not exist in the Meetings table.
+    op.execute("SET FOREIGN_KEY_CHECKS = 0")
     with op.batch_alter_table('Session_Logs', schema=None) as batch_op:
         batch_op.create_foreign_key('fk_Session_Logs_Meeting_Number_Meetings', 'Meetings', ['Meeting_Number'], ['Meeting_Number'])
+    op.execute("SET FOREIGN_KEY_CHECKS = 1")
+
