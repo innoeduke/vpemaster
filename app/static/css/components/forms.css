@@ -100,11 +100,13 @@
   max-width: 100%;
 }
 
-.button-group>.btn {
-  flex-grow: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+@media (max-width: 768px) {
+  .button-group>.btn {
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
 /* Form page styles */

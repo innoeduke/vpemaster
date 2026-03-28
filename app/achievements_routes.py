@@ -281,6 +281,13 @@ def api_record_achievement():
             level=level,
             notes=notes
         )
+        
+        # Ensure contact metadata (e.g., credentials) gets synced based on the new achievement
+        user = db.session.get(User, user_id)
+        if user and user.contact_id:
+            from .utils import sync_contact_metadata
+            sync_contact_metadata(user.contact_id)
+            
         return jsonify({'success': True, 'message': 'Achievement recorded successfully.', 'achievement_id': achievement.id})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
@@ -315,7 +322,24 @@ def api_revoke_achievement():
         return jsonify({'success': False, 'message': 'Achievement not found.'}), 400
 
     try:
+        # Get user_id before we delete the achievement so we can sync their metadata
+        target_user_id = None
+        if achievement_id:
+            achievement = db.session.get(Achievement, achievement_id)
+            if achievement:
+                target_user_id = achievement.user_id
+        elif 'user_id' in locals() and user_id:
+            target_user_id = user_id
+            
         AchievementService.revoke_achievement(achievement_id, current_user.id)
+        
+        # Ensure contact metadata is recalculated after revoking an achievement
+        if target_user_id:
+            user = db.session.get(User, target_user_id)
+            if user and user.contact_id:
+                from .utils import sync_contact_metadata
+                sync_contact_metadata(user.contact_id)
+        
         return jsonify({'success': True, 'message': 'Achievement revoked successfully.'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500

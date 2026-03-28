@@ -417,8 +417,7 @@ def recalculate_contact_metadata(contact, avatar_url=None):
     # 3. Credentials
     new_credentials = None
     if contact.Current_Path:
-        # We only check achievements for the Current_Path in THIS contact's context
-        # (Though we could arguably check globally too)
+        # We check achievements for the Current_Path
         level_achievements = [
             a for a in achievements 
             if a.achievement_type == 'level-completion' and a.path_name == contact.Current_Path and a.level
@@ -429,9 +428,11 @@ def recalculate_contact_metadata(contact, avatar_url=None):
             if pathway and pathway.abbr:
                 new_credentials = f"{pathway.abbr}{max_level}"
         else:
-            path_comp = next((a for a in achievements if a.achievement_type == 'path-completion' and a.path_name == contact.Current_Path), None)
-            if path_comp:
-                pathway = Pathway.query.filter_by(name=contact.Current_Path).first()
+            # Exception: If a member completed at least one path but hasn't completed
+            # level 1 in their new path, their credential should be <pathcode>5
+            path_comps = [a for a in achievements if a.achievement_type == 'path-completion']
+            if path_comps:
+                pathway = Pathway.query.filter_by(name=path_comps[0].path_name).first()
                 if pathway and pathway.abbr:
                     new_credentials = f"{pathway.abbr}5"
     

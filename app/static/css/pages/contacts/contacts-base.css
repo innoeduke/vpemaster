@@ -24,7 +24,7 @@
 .contacts-filter-container {
   display: flex;
   flex: 1;
-  gap: 1.5rem;
+  gap: 1rem;
   align-items: flex-end;
   justify-content: flex-end;
 }
@@ -54,7 +54,7 @@
 
 .search-and-buttons {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem;
   align-items: flex-end;
 }
