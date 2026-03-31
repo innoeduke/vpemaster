@@ -1956,6 +1956,29 @@ window.closeUserModal = closeUserModal;
 window.handleUserSubmit = handleUserSubmit;
 
 /**
+ * Remove User from Club confirmation modal.
+ * Reuses the generic delete modal but with a descriptive message.
+ */
+function openRemoveUserModal(actionUrl, userName) {
+  const deleteModal = document.getElementById("deleteModal");
+  const deleteForm = document.getElementById("deleteForm");
+  const deleteModalText = document.getElementById("deleteModalText");
+  
+  if (deleteForm && deleteModal && deleteModalText) {
+    deleteForm.action = actionUrl;
+    deleteModalText.innerHTML = `
+      <strong>Remove "${userName}" from this club?</strong><br><br>
+      <span style="font-size: 0.9em; color: #666;">
+        Their contact record will be converted from <em>Member</em> to <em>Guest</em>.<br>
+        If the user has no other club memberships, their account will also be removed.
+      </span>
+    `;
+    deleteModal.style.display = "flex";
+  }
+}
+window.openRemoveUserModal = openRemoveUserModal;
+
+/**
  * Duplicate Detection for Users in Modal
  */
 let lastCheckedUserValues = { username: '', first_name: '', last_name: '', email: '', phone: '' };
@@ -2181,13 +2204,14 @@ async function loadUsersAsync() {
 
         const contactDisplay = user.contact_name ? `${user.contact_name} (${user.username})` : `<em class="user-not-linked">Not Linked</em>`;
 
+        const escapedName = (user.contact_name || user.username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         let actionsHtml = `
           <div class="action-links">
             <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="Edit">
               <i class="fas fa-edit"></i>
             </button>
-            <button class="delete-btn icon-btn" onclick="openDeleteModal('/user/delete/${user.id}', 'user')" title="Delete">
-              <i class="fas fa-trash-alt"></i>
+            <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}')" title="Remove from Club">
+              <i class="fas fa-user-minus"></i>
             </button>
           </div>
         `;
