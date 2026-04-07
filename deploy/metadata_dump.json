@@ -4647,6 +4647,13 @@
       "created_at": "2026-01-15 07:42:37"
     },
     {
+      "id": 6,
+      "name": "Operator",
+      "description": "Operator role for managing meetings and bookings",
+      "level": 3,
+      "created_at": "2026-04-07 08:00:00"
+    },
+    {
       "id": 3,
       "name": "Staff",
       "description": "Officer role",

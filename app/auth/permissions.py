@@ -154,5 +154,6 @@ class Permissions:
     # Roles
     SYSADMIN = 'SysAdmin'
     CLUBADMIN = 'ClubAdmin'
+    OPERATOR = 'Operator'
     STAFF = 'Staff'
     USER = 'User'

@@ -10,19 +10,11 @@ class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False, index=True)
     description = db.Column(db.Text)
-    level = db.Column(db.Integer)  # For hierarchy: Admin=8, VPE=4, Officer=2, Member=1
+    level = db.Column(db.Integer)  # For hierarchy: SysAdmin=8, ClubAdmin=4, Operator=3, Staff=2, User=1
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
     # Relationships
     permissions = db.relationship('Permission', secondary='role_permissions', back_populates='roles', lazy='joined')
-    users = db.relationship(
-        'User',
-        secondary='user_clubs',
-        back_populates='roles',
-        primaryjoin='Role.level == UserClub.club_role_level.op("&")(Role.level)',
-        secondaryjoin='User.id == UserClub.user_id',
-        viewonly=True
-    )
     
     def __repr__(self):
         return f'<Role {self.name}>'
@@ -67,6 +59,7 @@ class Role(db.Model):
         """Remove a permission from this role."""
         if permission in self.permissions:
             self.permissions.remove(permission)
+
     @staticmethod
     def clear_role_cache():
         """Clear all role caches."""

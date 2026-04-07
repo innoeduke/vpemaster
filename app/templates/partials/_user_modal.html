@@ -42,10 +42,10 @@
               {% if all_auth_roles %}
                 {% for role in all_auth_roles %}
                 <label class="role-checkbox-item">
-                  <input type="checkbox" name="roles" value="{{ role.id }}" 
+                  <input type="radio" name="role_id" value="{{ role.id }}" 
                          data-name="{{ role.name }}"
-                         {% if role.name == 'User' %}checked disabled{% endif %}>
-                  {% set role_class = 'role-' ~ role.name|lower if role.name|lower in ['sysadmin', 'clubadmin', 'staff', 'user'] else 'role-other' %}
+                         {% if role.name == 'User' %}checked{% endif %}>
+                  {% set role_class = 'role-' ~ role.name|lower if role.name|lower in ['sysadmin', 'clubadmin', 'operator', 'staff', 'user'] else 'role-other' %}
                   <span class="roster-role-tag {{ role_class }}">{{ role.name }}</span>
                 </label>
                 {% endfor %}
@@ -53,10 +53,6 @@
                 <p class="text-muted">No roles found</p>
               {% endif %}
             </div>
-            <!-- Hidden Input for 'User' role since it's disabled but required -->
-            {% for role in all_auth_roles if role.name == 'User' %}
-              <input type="hidden" name="roles" value="{{ role.id }}" />
-            {% endfor %}
           </div>
 
           <!-- Row 4 Left: Phone (3:1 Split) -->

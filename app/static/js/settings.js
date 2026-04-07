@@ -1865,16 +1865,14 @@ function openUserModal(userId = null, btn = null) {
   document.getElementById('user_contact_id').value = '';
 
   // Reset checkboxes
-  const checkboxes = form.querySelectorAll('input[name="roles"]');
-  checkboxes.forEach(cb => {
-    // Note: dataset.name is used in the partial's checkbox items
-    const roleName = cb.dataset.name;
+  const radios = form.querySelectorAll('input[name="role_id"]');
+  radios.forEach(rb => {
+    // Note: dataset.name is used in the partial's radio items
+    const roleName = rb.dataset.name;
     if (roleName === 'User') {
-      cb.checked = true;
-      cb.disabled = true;
+      rb.checked = true;
     } else {
-      cb.checked = false;
-      cb.disabled = false;
+      rb.checked = false;
     }
   });
 
@@ -1889,14 +1887,16 @@ function openUserModal(userId = null, btn = null) {
     document.getElementById('email').value = tr.dataset.email || '';
     document.getElementById('phone').value = tr.dataset.phone || '';
 
-    // Populate roles
+    // Populate role
     try {
       const userRoles = JSON.parse(tr.dataset.roles || '[]');
-      checkboxes.forEach(cb => {
-        if (userRoles.includes(parseInt(cb.value))) {
-          cb.checked = true;
-        }
-      });
+      if (userRoles.length > 0) {
+        radios.forEach(rb => {
+          if (userRoles.includes(parseInt(rb.value))) {
+            rb.checked = true;
+          }
+        });
+      }
     } catch (e) {
       console.error('Error parsing user roles:', e);
     }
@@ -2186,12 +2186,11 @@ async function loadUsersAsync() {
         // Roles HTML
         let rolesHtml = '';
         if (user.best_role) {
-          if (user.best_role.name === 'SysAdmin') {
-            rolesHtml = `<span class="roster-role-tag role-sysadmin">SysAdmin</span>`;
-          } else {
-            const badgeClass = user.best_role.award_category ? `role-${user.best_role.award_category}` : 'role-other';
-            rolesHtml = `<span class="roster-role-tag ${badgeClass}">${user.best_role.name}</span>`;
-          }
+          const roleName = user.best_role.name;
+          const roleNameLower = roleName.toLowerCase();
+          const knownRoles = ['sysadmin', 'clubadmin', 'operator', 'staff', 'user'];
+          const badgeClass = knownRoles.includes(roleNameLower) ? `role-${roleNameLower}` : 'role-other';
+          rolesHtml = `<span class="roster-role-tag ${badgeClass}">${roleName}</span>`;
         } else {
           rolesHtml = `<em class="text-muted">No Role</em>`;
         }

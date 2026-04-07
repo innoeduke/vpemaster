@@ -530,11 +530,14 @@ class DataImportService:
                 # Link UserClub
                 uc = UserClub.query.filter_by(user_id=target_user.id, club_id=self.club_id).first()
                 if not uc:
+                    # Get default User role ID
+                    from app.models.role import Role as AuthRole
+                    user_role = AuthRole.get_by_name('User')
                     uc = UserClub(
                         user_id=target_user.id,
                         club_id=self.club_id,
                         contact_id=target_contact.id,
-                        club_role_level=1 # Default Member level
+                        auth_role_id=user_role.id if user_role else None
                     )
                     db.session.add(uc)
                 elif not uc.contact_id:

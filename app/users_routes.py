@@ -100,14 +100,15 @@ def _save_user_data(user=None, **kwargs):
     )
 
     # 3. Handle Roles
-    # Logic: Calculate highest role from bitmask (role_level) and assign to CURRENT club
-    role_level = kwargs.get('role_level')
-    if role_level is None and is_new:
-        role_level = 1 # Default User
+    # Logic: Assign single role_id (FK to auth_roles) to CURRENT club
+    role_id = kwargs.get('role_id')
+    if role_id is None and is_new:
+        from .models import AuthRole
+        user_role = AuthRole.query.filter_by(name='User').first()
+        role_id = user_role.id if user_role else None
         
-    highest_role_id = None
-    if role_level is not None and role_level > 0:
-        user.set_club_role(club_id, role_level)
+    if role_id is not None:
+        user.set_club_role(club_id, role_id)
         
         # 4. Audit Log
         if current_user and current_user.is_authenticated:
@@ -117,7 +118,7 @@ def _save_user_data(user=None, **kwargs):
                  target_type='USER',
                  target_id=user.id,
                  target_name=user.username,
-                 changes=f"Updated role level to: {role_level}"
+                 changes=f"Updated role to ID: {role_id}"
              )
              db.session.add(audit)
     
@@ -169,17 +170,11 @@ def user_form(user_id):
         pathways[ptype].append(p.name)
 
     if request.method == 'POST':
-        role_ids = request.form.getlist('roles', type=int)
+        # Single role selection (radio button)
+        role_id = request.form.get('role_id', type=int)
         
         # Security check: User role is standard, other roles (ClubAdmin, Staff) 
         # checked via standard permissions. SysAdmin role no longer exists in DB.
-        
-        # Calculate role_level from role_ids
-        role_level = 0
-        if role_ids:
-             roles = AuthRole.query.filter(AuthRole.id.in_(role_ids)).all()
-             for r in roles:
-                 role_level += r.level if r.level else 0
         
         _save_user_data(
             user=user,
@@ -189,7 +184,7 @@ def user_form(user_id):
             last_name=request.form.get('last_name'),
             email=request.form.get('email'),
             phone=request.form.get('phone'),
-            role_level=role_level,
+            role_id=role_id,
             status=request.form.get('status'),
             contact_id=request.form.get('contact_id', 0, type=int),
             create_new_contact=request.form.get('create_new_contact') == 'on',
@@ -203,7 +198,7 @@ def user_form(user_id):
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
     current_user_is_sysadmin = current_user.is_authenticated and current_user.is_sysadmin
-    all_auth_roles = AuthRole.query.order_by(AuthRole.id).all()
+    all_auth_roles = AuthRole.query.order_by(AuthRole.level.desc()).all()
     
     # Filter roles based on permissions
     filtered_roles = []
@@ -226,8 +221,8 @@ def user_form(user_id):
         from .models import UserClub
         uc = UserClub.query.filter_by(user_id=user.id, club_id=club_id).first()
         if uc:
-            if uc.roles:
-                user_role_ids.extend([r.id for r in uc.roles])
+            if uc.auth_role:
+                user_role_ids.append(uc.auth_role.id)
             user_contact = uc.contact
             
         if not user_contact and not source_contact:
@@ -539,12 +534,12 @@ def bulk_import_users():
 
             from .models import AuthRole
             user_role = AuthRole.query.filter_by(name='User').first()
-            role_level = user_role.level if user_role else 1
+            role_id = user_role.id if user_role else None
 
             _save_user_data(
                 username=username,
                 email=email,
-                role_level=role_level,
+                role_id=role_id,
                 password='toastmasters'
             )
             success_count += 1
@@ -595,7 +590,9 @@ def request_join():
         # Ensure contact and linkage exists
         target_user.ensure_contact(club_id=club_id)
         # Set default role (User/Member)
-        target_user.set_club_role(club_id, 1)
+        from .models import AuthRole as AR
+        default_role = AR.query.filter_by(name='User').first()
+        target_user.set_club_role(club_id, default_role.id if default_role else None)
         db.session.commit()
         return jsonify({'success': True, 'direct_add': True})
 
@@ -645,7 +642,9 @@ def respond_join():
             # Ensure contact and linkage exists
             current_user.ensure_contact(club_id=club_id)
             # Set default role (User/Member)
-            current_user.set_club_role(club_id, 1)
+            from .models import AuthRole as AR2
+            default_role2 = AR2.query.filter_by(name='User').first()
+            current_user.set_club_role(club_id, default_role2.id if default_role2 else None)
             
             response_body = f"{current_user.display_name} has accepted your request to join {club.club_name}."
         else:

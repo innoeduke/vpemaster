@@ -96,7 +96,7 @@ def settings():
     project_types = []
 
     # Auth Roles for User Modal - SysAdmin is now account-based, so filter it out
-    all_auth_roles_query = AuthRole.query.order_by(AuthRole.id).all()
+    all_auth_roles_query = AuthRole.query.order_by(AuthRole.level.desc()).all()
     # We'll pass them as a list of dicts for simplicity in logic
     all_auth_roles = [{'id': r.id, 'name': r.name, 'level': r.level} for r in all_auth_roles_query if r.name not in ('Guest', 'SysAdmin')]
 
@@ -1022,10 +1022,10 @@ def get_permissions_matrix():
     # club_id is implicitly used by is_authorized but if needed:
     # club_id = get_current_club_id()
 
-    # Exclude SysAdmin and ClubAdmin from the permissions matrix
+    # Exclude SysAdmin and Guest from the permissions matrix
     roles = AuthRole.query.filter(
-        AuthRole.name != 'SysAdmin'
-    ).order_by(AuthRole.id).all()
+        AuthRole.name.notin_(['SysAdmin', 'Guest'])
+    ).order_by(AuthRole.level.desc()).all()
     permissions = Permission.query.order_by(Permission.category, Permission.name).all()
     
     # Get current mappings
@@ -1118,21 +1118,14 @@ def update_user_roles():
 
     data = request.get_json() # {user_id: X, role_ids: [Y, Z]}
     user_id = data.get('user_id')
-    new_role_ids = set(data.get('role_ids', []))
+    new_role_id = data.get('role_id')
 
     try:
         user = db.session.get(User, user_id)
         if not user:
             return jsonify(success=False, message="User not found"), 404
 
-        # Calculate bitmask sum of all selected roles
-        role_level = 0
-        if new_role_ids:
-            roles = AuthRole.query.filter(AuthRole.id.in_(new_role_ids)).all()
-            for r in roles:
-                role_level += r.level if r.level is not None else 0
-        
-        # Update all user's club memberships with the new role level
+        # Update all user's club memberships with the new role
         user_clubs = UserClub.query.filter_by(user_id=user_id).all()
         
         if not user_clubs:
@@ -1151,15 +1144,15 @@ def update_user_roles():
                 uc = UserClub(
                     user_id=user.id,
                     club_id=club_id,
-                    club_role_level=role_level,
+                    auth_role_id=new_role_id,
                     contact_id=contact_id
                 )
                 db.session.add(uc)
         else:
-            # Update role level for all existing club memberships
+            # Update role for all existing club memberships
             for uc in user_clubs:
-                if uc.club_role_level != role_level:
-                    uc.club_role_level = role_level
+                if uc.auth_role_id != new_role_id:
+                    uc.auth_role_id = new_role_id
 
         # Audit log
         audit = PermissionAudit(
@@ -1168,7 +1161,7 @@ def update_user_roles():
             target_type='USER',
             target_id=user_id,
             target_name=user.username,
-            changes=f"Updated role level to: {role_level}"
+            changes=f"Updated role to ID: {new_role_id}"
         )
         db.session.add(audit)
 

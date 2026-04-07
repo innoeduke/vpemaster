@@ -95,14 +95,15 @@ def create_admin(username, email, password, contact_name, club_no):
         db.session.flush() # Get user ID
         
         # Create UserClub linkage
-        # We assign level 10 (SysAdmin) as a base for the sysadmin account in this club
+        # We assign the SysAdmin role for the sysadmin account in this club
         # although they have global powers anyway. This aligns with test expectations.
+        sysadmin_role = AuthRole.query.filter_by(name='SysAdmin').first()
         uc = UserClub(
             user_id=admin.id,
             club_id=club_obj.id,
             contact_id=contact.id,
             is_home=True,
-            club_role_level=10 # Assign SysAdmin level
+            auth_role_id=sysadmin_role.id if sysadmin_role else None
         )
         db.session.add(uc)
 

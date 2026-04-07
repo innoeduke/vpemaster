@@ -49,18 +49,16 @@
                     style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 4px;">
                     {% for r in all_auth_roles %}
                     <label style="display: flex; align-items: center; margin-bottom: 5px; cursor: pointer;">
-                        {% if r.name == 'User' %}
-                        <input type="checkbox" checked disabled style="margin-right: 8px;">
-                        <input type="hidden" name="roles" value="{{ r.id }}">
-                        {% elif is_edit_self and r.id in user_role_ids and r.name == 'ClubAdmin' %}
+                        {% if is_edit_self and r.id in user_role_ids and r.name == 'ClubAdmin' %}
                         {# Prevent self-demotion: Disable if editing self and already has the role #}
-                        <input type="checkbox" checked disabled style="margin-right: 8px;">
-                        <input type="hidden" name="roles" value="{{ r.id }}">
+                        <input type="radio" checked disabled style="margin-right: 8px;">
+                        <input type="hidden" name="role_id" value="{{ r.id }}">
+                        {% elif r.id in user_role_ids or (not user_role_ids and r.name == 'User') %}
+                        <input type="radio" name="role_id" value="{{ r.id }}" checked style="margin-right: 8px;">
                         {% else %}
-                        <input type="checkbox" name="roles" value="{{ r.id }}" {% if r.id in user_role_ids
-                            %}checked{% endif %} style="margin-right: 8px;">
+                        <input type="radio" name="role_id" value="{{ r.id }}" style="margin-right: 8px;">
                         {% endif %}
-                        {% set role_class = 'role-officer' if r.name in ['ClubAdmin', 'Staff'] else 'role-other' %}
+                        {% set role_class = 'role-' ~ r.name|lower if r.name|lower in ['clubadmin', 'operator', 'staff', 'user'] else 'role-other' %}
                         <span class="roster-role-tag {{ role_class }}">{{ r.name }}</span>
                     </label>
                     {% endfor %}

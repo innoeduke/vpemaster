@@ -236,6 +236,12 @@
 	color: white;
 }
 
+.tab-content .roster-role-tag.role-operator {
+	background-color: #0d9488;
+	/* Teal */
+	color: white;
+}
+
 .tab-content .roster-role-tag.role-staff {
 	background-color: #0ea5e9;
 	/* Light Blue */

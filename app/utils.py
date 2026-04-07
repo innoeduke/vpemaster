@@ -200,7 +200,7 @@ def get_dropdown_metadata():
     tickets = Ticket.query.order_by(Ticket.id).all()
 
     # Auth Roles
-    auth_roles_list = AuthRole.query.order_by(AuthRole.name).all()
+    auth_roles_list = AuthRole.query.order_by(AuthRole.level.desc()).all()
     
     return {
         'pathways': grouped_pathways,

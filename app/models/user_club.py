@@ -17,7 +17,7 @@ class UserClub(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id', ondelete='CASCADE'), nullable=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id', ondelete='CASCADE'), nullable=False)
-    club_role_level = db.Column(db.Integer, default=0, nullable=False)  # Bitmask sum of role levels
+    auth_role_id = db.Column(db.Integer, db.ForeignKey('auth_roles.id'), nullable=True, index=True)
     current_path_id = db.Column(db.Integer, db.ForeignKey('pathways.id'), nullable=True)
     joined_date = db.Column(db.Date, nullable=True)
     is_home = db.Column(db.Boolean, default=False, nullable=False)  # Indicates if this is the user's home club
@@ -30,30 +30,18 @@ class UserClub(db.Model):
     user = db.relationship('User', backref=db.backref('club_memberships', cascade='all, delete-orphan'))
     contact = db.relationship('Contact', foreign_keys=[contact_id], back_populates='user_club_records')
     club = db.relationship('Club', backref=db.backref('user_memberships', cascade='all, delete-orphan'))
-    # club_role relationship removed as it is no longer a direct FK
+    auth_role = db.relationship('Role', foreign_keys=[auth_role_id], lazy='joined')
     current_path = db.relationship('Pathway', foreign_keys=[current_path_id])
     mentor = db.relationship('Contact', foreign_keys=[mentor_id])
     next_project = db.relationship('Project', foreign_keys=[next_project_id])
 
     @property
-    def roles(self):
-        """Returns a list of AuthRole objects that match the bitmask."""
-        from .role import Role
-        if not self.club_role_level:
-            return []
-        
-        return [r for r in Role.get_all_cached() if r.level and (self.club_role_level & r.level) == r.level]
-    
-    @property
     def club_role(self):
         """
-        Backwards compatibility: Return the HIGHEST role object.
+        Backwards compatibility: Return the role object.
         Used by existing code that expects a single role.
         """
-        assigned_roles = self.roles
-        if not assigned_roles:
-            return None
-        return max(assigned_roles, key=lambda r: r.level)
+        return self.auth_role
     
     def __init__(self, **kwargs):
         super(UserClub, self).__init__(**kwargs)
@@ -76,7 +64,7 @@ class UserClub(db.Model):
             'user_id': self.user_id,
             'contact_id': self.contact_id,
             'club_id': self.club_id,
-            'club_role_level': self.club_role_level,
+            'auth_role_id': self.auth_role_id,
             'current_path_id': self.current_path_id,
             'joined_date': self.joined_date.isoformat() if self.joined_date else None,
             'is_home': self.is_home,

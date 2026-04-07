@@ -201,9 +201,9 @@ def authorized_club_required(f):
             # Check if user has a UserClub record for THIS specific club
             user_club = UserClub.query.filter_by(user_id=current_user.id, club_id=club_id).first()
             
-            if user_club and user_club.club_role_level > 0:
-                # User has a club membership with at least one role for this club
-                # For now, any role grants access (Member, Officer, ClubAdmin)
+            if user_club and user_club.auth_role_id is not None:
+                # User has a club membership with a role for this club
+                # For now, any role grants access (User, Staff, Operator, ClubAdmin)
                 return f(*args, **kwargs)
             
             # If we fall through here, the authenticated user is unauthorized for this club

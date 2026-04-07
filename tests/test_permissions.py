@@ -59,7 +59,7 @@ class PermissionsTestCase(unittest.TestCase):
             for attr in dir(Permissions) 
             if attr.isupper() and not attr.startswith('_') 
             and isinstance(getattr(Permissions, attr), str)
-            and attr not in ['ADMIN', 'OPERATOR', 'STAFF', 'USER'] # Exclude Roles
+            and attr not in ['ADMIN', 'OPERATOR', 'STAFF', 'USER', 'CLUBADMIN'] # Exclude Roles
         ]
         
         # For this test to pass in CI with sqlite memory, we would need to seed it.

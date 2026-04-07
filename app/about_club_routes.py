@@ -229,12 +229,11 @@ def about_club_update():
                         
                         for uc in ucs:
                             if uc.user_id:
-                                # Check if user needs the Staff role
-                                if uc.club_role_level:
-                                    if not (uc.club_role_level & staff_role.level):
-                                        uc.club_role_level |= staff_role.level
-                                else:
-                                    uc.club_role_level = staff_role.level
+                                # Only upgrade if current role level is LOWER than Staff
+                                current_role = uc.auth_role
+                                current_level = current_role.level if current_role else 0
+                                if current_level < staff_role.level:
+                                    uc.auth_role_id = staff_role.id
                                     
                                     # Audit log for auto-upgrade
                                     audit = PermissionAudit(

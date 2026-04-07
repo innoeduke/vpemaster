@@ -76,10 +76,9 @@ class User(UserMixin, db.Model):
     roles = db.relationship(
         'app.models.role.Role',
         secondary='user_clubs',
-        back_populates='users',
         lazy='joined',
         primaryjoin='User.id == UserClub.user_id',
-        secondaryjoin='(UserClub.club_role_level.op("&")(app.models.role.Role.level)) == app.models.role.Role.level',
+        secondaryjoin='UserClub.auth_role_id == app.models.role.Role.id',
         viewonly=True
     )
     
@@ -128,7 +127,7 @@ class User(UserMixin, db.Model):
         if not uc:
             return False
             
-        return (uc.club_role_level & club_role.level) == club_role.level
+        return uc.auth_role_id == club_role.id
 
     def get_roles_for_club(self, club_id):
         """Get all roles for this user in a specific club context."""
@@ -143,6 +142,7 @@ class User(UserMixin, db.Model):
         def get_auth_role_category(name):
             if name == Permissions.SYSADMIN: return 'sysadmin'
             if name == Permissions.CLUBADMIN: return 'clubadmin'
+            if name == Permissions.OPERATOR: return 'operator'
             if name in (Permissions.STAFF, 'Officer'): return 'staff'
             if name == Permissions.USER: return 'user'
             return 'other'
@@ -164,25 +164,25 @@ class User(UserMixin, db.Model):
             uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
 
         if uc:
-            # Base 'User' role for any membership
-            if not any(r['name'] == Permissions.USER for r in roles_data):
+            if uc.auth_role:
+                r = uc.auth_role
+                if not any(rd['name'] == r.name for rd in roles_data):
+                    roles_data.append({
+                        'id': r.id,
+                        'name': r.name,
+                        'type': 'officer' if r.name in (Permissions.CLUBADMIN, Permissions.OPERATOR, Permissions.STAFF) else 'standard',
+                        'award_category': get_auth_role_category(r.name)
+                    })
+            else:
+                # Fallback if somehow missing
                 ur = Role.get_by_name(Permissions.USER)
-                roles_data.append({
-                    'id': ur.id if ur else 1, # Fallback to 1 if not found
-                    'name': Permissions.USER,
-                    'type': 'standard',
-                    'award_category': 'user'
-                })
-                
-            if uc.roles:
-                for r in uc.roles:
-                    if not any(rd['name'] == r.name for rd in roles_data):
-                        roles_data.append({
-                            'id': r.id,
-                            'name': r.name,
-                            'type': 'officer' if r.name in (Permissions.CLUBADMIN, Permissions.STAFF) else 'standard',
-                            'award_category': get_auth_role_category(r.name)
-                        })
+                if ur:
+                    roles_data.append({
+                        'id': ur.id,
+                        'name': Permissions.USER,
+                        'type': 'standard',
+                        'award_category': 'user'
+                    })
         
         return sorted(roles_data, key=lambda x: x['name'])
 
@@ -239,11 +239,9 @@ class User(UserMixin, db.Model):
         if not uc:
             return False
             
-        # Check permissions of roles assigned in this club
-        # uc.roles returns Role objects based on the bitmask
-        for role in uc.roles:
-            if role.has_permission(permission_name):
-                return True
+        # Check permissions of the role assigned in this club
+        if uc.auth_role and uc.auth_role.has_permission(permission_name):
+            return True
                 
         return False
     
@@ -554,10 +552,10 @@ class User(UserMixin, db.Model):
         
         return contact
 
-    def set_club_role(self, club_id, role_level):
+    def set_club_role(self, club_id, role_id):
         """
-        Set the user's role level for a specific club using UserClub.
-        role_level is the bitmask sum of all roles.
+        Set the user's role for a specific club using UserClub.
+        role_id is the auth_roles.id of the role to assign.
         """
         from .user_club import UserClub
         from .club import Club
@@ -575,7 +573,7 @@ class User(UserMixin, db.Model):
         existing_uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
         
         if existing_uc:
-            existing_uc.club_role_level = role_level
+            existing_uc.auth_role_id = role_id
         else:
             # Check if this is the first club for the user
             is_first_club = UserClub.query.filter_by(user_id=self.id).count() == 0
@@ -583,7 +581,7 @@ class User(UserMixin, db.Model):
             new_uc = UserClub(
                 user_id=self.id,
                 club_id=club_id,
-                club_role_level=role_level,
+                auth_role_id=role_id,
                 is_home=is_first_club
             )
             # contact_id will be set by UserClub.__init__ or ensure_contact

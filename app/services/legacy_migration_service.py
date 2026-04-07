@@ -232,35 +232,35 @@ class LegacyMigrationService:
             # Staff(2) -> Staff
             # User(1) -> Member
             
-            target_mask = 0
+            target_role_id = None
             
-            # Fetch v2 Role objects to get correct levels
-            # Permissions.CLUBADMIN etc are defined in code, we need to query DB or use constants if available
-            # Let's simple-query
+            # Fetch v2 Role objects to get correct IDs
             role_objects = {r.name: r for r in Role.query.all()}
             
+            # Find the highest role for this user
+            best_level = 0
             for rname in roles:
                 if rname == 'SysAdmin': 
-                    # If we trust the dump, map to ClubAdmin for safety, or prompt. 
-                    # Plan says: Map to ClubAdmin for target club.
                     r_obj = role_objects.get('ClubAdmin')
-                    if r_obj: target_mask |= r_obj.level
                 elif rname == 'ClubAdmin':
                     r_obj = role_objects.get('ClubAdmin')
-                    if r_obj: target_mask |= r_obj.level
                 elif rname == 'Staff':
                     r_obj = role_objects.get('Staff')
-                    if r_obj: target_mask |= r_obj.level
                 elif rname == 'User':
-                    r_obj = role_objects.get('User') # Usually 'User' or 'Member'? v2 default is 'User' role usually level 1
-                    if r_obj: target_mask |= r_obj.level
+                    r_obj = role_objects.get('User')
+                else:
+                    r_obj = role_objects.get('User')
+                
+                if r_obj and r_obj.level and r_obj.level > best_level:
+                    best_level = r_obj.level
+                    target_role_id = r_obj.id
             
-            # Ensure at least 'User' level
-            if target_mask == 0:
+            # Ensure at least 'User' role
+            if not target_role_id:
                  r_obj = role_objects.get('User')
-                 if r_obj: target_mask = r_obj.level
+                 if r_obj: target_role_id = r_obj.id
 
-            user.set_club_role(self.target_club_id, target_mask)
+            user.set_club_role(self.target_club_id, target_role_id)
             
             # Link user to contact if possible
             # Logic: If this user matches a contact we just migrated (by name/email), link them in UserClub
