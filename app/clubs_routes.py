@@ -365,3 +365,74 @@ def respond_home_request():
     db.session.commit()
     
     return jsonify({'success': True})
+
+
+@clubs_bp.route('/clubs/respond_home_proposal', methods=['POST'])
+@login_required
+def respond_home_proposal():
+    """
+    Handles user response (approve/reject) to an admin's home club proposal.
+    Payload: { message_id, action }
+    """
+    data = request.json
+    message_id = data.get('message_id')
+    action = data.get('action')
+    
+    from app.models import Message
+    msg = db.session.get(Message, message_id)
+    if not msg:
+        return jsonify({'success': False, 'error': 'Message not found'}), 404
+
+    # Extract info from tags
+    import re
+    match = re.search(r'\[HOME_CLUB_PROPOSAL:(\d+):(\d+)\]', msg.body)
+    if not match:
+        return jsonify({'success': False, 'error': 'Invalid proposal format'}), 400
+        
+    admin_id = int(match.group(1))
+    target_club_id = int(match.group(2))
+    
+    # SECURITY CHECK: Only the recipient can approve the proposal
+    if msg.recipient_id != current_user.id:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+    from app.models import User, Club
+    target_club = db.session.get(Club, target_club_id) if target_club_id != 0 else None
+    
+    response_subject = f"Response to Home Club Proposal: {target_club.club_name if target_club else 'None'}"
+    
+    if action == 'approve':
+        # 1. Update Home Club
+        current_user.set_home_club(target_club_id if target_club_id != 0 else None)
+        
+        # 2. Notify Admin
+        admin_msg = Message(
+            sender_id=current_user.id,
+            recipient_id=admin_id,
+            subject=response_subject,
+            body=f"User {current_user.display_name} has **APPROVED** your proposal to set **{target_club.club_name if target_club else 'None'}** as their home club."
+        )
+        db.session.add(admin_msg)
+        
+        # Update original message
+        msg.body = msg.body.replace(match.group(0), f"\n\n[Responded: APPROVED]")
+        
+    elif action == 'reject':
+        # Notify Admin
+        admin_msg = Message(
+            sender_id=current_user.id,
+            recipient_id=admin_id,
+            subject=response_subject,
+            body=f"User {current_user.display_name} has **REJECTED** your proposal to set **{target_club.club_name if target_club else 'None'}** as their home club."
+        )
+        db.session.add(admin_msg)
+        
+        # Update original message
+        msg.body = msg.body.replace(match.group(0), f"\n\n[Responded: REJECTED]")
+    else:
+        return jsonify({'success': False, 'error': 'Invalid action'}), 400
+        
+    msg.read = True
+    db.session.commit()
+    
+    return jsonify({'success': True})

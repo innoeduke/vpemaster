@@ -177,23 +177,49 @@ function openContactModal(contactId) {
         const homeClubSelect = document.getElementById("home_club_id");
         const homeClubRow = document.getElementById("home_club_container");
         if (homeClubSelect && homeClubRow) {
-          homeClubSelect.innerHTML = '<option value="">-- Select Home Club --</option>';
+          // Show clubs the user is a member of
+          let clubsToShow = data.user_clubs || [];
+          const isSysAdmin = data.is_sysadmin;
+          const currentClubId = data.current_club_id;
 
-          // Show clubs the user is a member of (including the home club provided by backend)
-          const clubsToShow = data.user_clubs || [];
+          homeClubSelect.innerHTML = '';
+          // If no home club, show None
+          if (!data.home_club_id) {
+            const noneOption = document.createElement("option");
+            noneOption.value = "";
+            noneOption.textContent = "None";
+            homeClubSelect.appendChild(noneOption);
+          }
 
           if (clubsToShow.length > 0) {
             clubsToShow.forEach(club => {
               const option = document.createElement("option");
               option.value = club.id;
+              
+              // Handle labels: Exactly as in DB
               option.textContent = club.name;
+
+              // Handle disabling particular options for Club Admins
+              if (!isSysAdmin && club.id !== currentClubId) {
+                  option.disabled = true;
+              }
+              
               homeClubSelect.appendChild(option);
             });
             if (data.home_club_id) {
               homeClubSelect.value = data.home_club_id;
             }
           }
-          homeClubRow.style.display = 'block'; // Always show for edit
+
+          // Visibility and Disabling logic
+          homeClubRow.style.display = 'block'; // Always show now
+          
+          if (data.user_clubs && data.user_clubs.length <= 1) {
+             // If user only in one club, don't allow changing it
+             homeClubSelect.disabled = true;
+          } else {
+             homeClubSelect.disabled = false;
+          }
         }
 
         // Populate Mentor Dropdown

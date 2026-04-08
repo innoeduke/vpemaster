@@ -225,7 +225,9 @@ def contact_form(contact_id=None):
                 'mentor_id': contact.Mentor_ID
             },
             'user_clubs': user_clubs_data,
-            'home_club_id': home_club_id
+            'home_club_id': home_club_id,
+            'is_sysadmin': is_authorized(Permissions.SYSADMIN),
+            'current_club_id': get_current_club_id()
         })
 
 
@@ -301,7 +303,41 @@ def contact_form(contact_id=None):
                  
                  if user:
                      new_home_club_id = int(home_club_val) if home_club_val and str(home_club_val).strip() else None
-                     user.set_home_club(new_home_club_id)
+                     current_home_club = user.home_club
+                     current_home_club_id = current_home_club.id if current_home_club else None
+
+                     if new_home_club_id and new_home_club_id != current_home_club_id:
+                         # Security Enforcement: Non-SysAdmins can only set/propose the CURRENT club.
+                         current_cid = get_current_club_id()
+                         if not is_authorized(Permissions.SYSADMIN) and new_home_club_id != current_cid:
+                             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                                 return jsonify(success=False, message='You can only set the home club to the current club.'), 403
+                             flash('You can only set the home club to the current club.', 'error')
+                             return redirect(url_for('contacts_bp.show_contacts', club_id=current_cid))
+
+                         # Target club for logging/messaging
+                         target_club = Club.query.get(new_home_club_id) if new_home_club_id else None
+                         club_name = target_club.club_name if target_club else "None"
+
+                         # If self-editing or SysAdmin? Immediate update.
+                         if current_user.id == user.id or is_authorized(Permissions.SYSADMIN):
+                             user.set_home_club(new_home_club_id)
+                             if current_user.id != user.id:
+                                 flash(f'Home club for {user.username} has been updated to {club_name}.', 'success')
+                         else:
+                             # Send Proposal Message instead of updating for Club Admins
+                             from .models import Message
+                             target_club = db.session.get(Club, new_home_club_id) if new_home_club_id else None
+                             club_name = target_club.club_name if target_club else "None"
+                             
+                             proposal_msg = Message(
+                                 sender_id=current_user.id,
+                                 recipient_id=user.id,
+                                 subject=f"Home Club Change Proposal: {club_name}",
+                                 body=f"Administrator {current_user.display_name} has proposed to set **{club_name}** as your home club.\n\n[HOME_CLUB_PROPOSAL:{current_user.id}:{new_home_club_id or 0}]"
+                             )
+                             db.session.add(proposal_msg)
+                             flash(f'A home club change proposal has been sent to {user.username} for approval.', 'info')
             
             # Handle Avatar Upload
             file = request.files.get('avatar')

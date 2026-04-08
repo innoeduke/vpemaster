@@ -45,7 +45,12 @@ class UserClub(db.Model):
     
     def __init__(self, **kwargs):
         super(UserClub, self).__init__(**kwargs)
-        # contact_id should be explicitly provided or managed by User.ensure_contact
+        # 1st club for a user is marked as home club by default if not specified
+        if 'is_home' not in kwargs and self.user_id:
+            # We check the database for existing memberships for this user
+            existing_count = UserClub.query.filter_by(user_id=self.user_id).count()
+            if existing_count == 0:
+                self.is_home = True
 
     # Constraints and indexes
     __table_args__ = (

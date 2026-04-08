@@ -305,29 +305,17 @@ class Contact(db.Model):
     def get_home_club(self):
         """
         Get the home club for this contact.
-        Looks up UserClub by User matched via Member_ID where is_home = True.
+        Consistently looks up the home club via the associated User record.
         """
         if getattr(self, '_home_club_checked', False):
             return getattr(self, '_home_club', None)
             
-        from .user_club import UserClub
-        from .user import User
-        
         self._home_club_checked = True
         self._home_club = None
         
-        if not self.Member_ID:
-            return None
-            
-        # 1. Find the User associated with this Member_ID
-        user = User.query.filter_by(member_no=self.Member_ID).first()
-        if not user:
-             return None
-             
-        # 2. Find their home club via UserClub
-        home_uc = UserClub.query.filter_by(user_id=user.id, is_home=True).first()
-        if home_uc:
-            self._home_club = home_uc.club
+        user = self.user
+        if user:
+            self._home_club = user.home_club
             
         return self._home_club
 

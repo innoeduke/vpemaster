@@ -553,6 +553,7 @@
 .contact-form-item select,
 .contact-form-item textarea {
   width: 100%;
+  height: 42px; /* Explicit height for consistency */
   box-sizing: border-box;
   border: 1.5px solid #e9ecef;
   background-color: #f8f9fa;
@@ -560,6 +561,12 @@
   border-radius: 8px;
   font-family: inherit;
   transition: all 0.2s ease;
+  line-height: normal;
+}
+
+.contact-form-item textarea {
+  height: auto;
+  min-height: 80px;
 }
 
 .contact-form-item input:focus,

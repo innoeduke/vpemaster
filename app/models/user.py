@@ -575,16 +575,12 @@ class User(UserMixin, db.Model):
         if existing_uc:
             existing_uc.auth_role_id = role_id
         else:
-            # Check if this is the first club for the user
-            is_first_club = UserClub.query.filter_by(user_id=self.id).count() == 0
-            
             new_uc = UserClub(
                 user_id=self.id,
                 club_id=club_id,
-                auth_role_id=role_id,
-                is_home=is_first_club
+                auth_role_id=role_id
             )
-            # contact_id will be set by UserClub.__init__ or ensure_contact
+            # is_home will be set to True if it's the user's first club via UserClub.__init__
             db.session.add(new_uc)
 
 

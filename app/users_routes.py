@@ -245,20 +245,28 @@ def user_form(user_id):
 
     # Check if current user is admin of the target user's home club
     is_home_club_admin = False
-    if user and user.home_club and current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, user.home_club.id):
-        is_home_club_admin = True
+    can_reset_password = False
     
-    # Also allow if creating new user in a club where they are admin
-    if not user and club_id and current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, club_id):
-         # If creating new user, they can edit everything anyway because user is None
-         pass
+    if user:
+        if current_user_is_sysadmin:
+            is_home_club_admin = True
+            can_reset_password = True
+        elif user.home_club and current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, user.home_club.id):
+            is_home_club_admin = True
+            # New Requirement: Disable password reset if home club is not the current club
+            if user.home_club.id == club_id:
+                can_reset_password = True
+    else:
+        # New user: Always allow password setting
+        can_reset_password = True
 
     return render_template('user_form.html', user=user, user_contact=user_contact, source_contact=source_contact, 
                            contacts=member_contacts, mentor_contacts=mentor_contacts, pathways=pathways, 
                            all_auth_roles=filtered_roles, user_role_ids=user_role_ids, 
                            club_id=club_id, club_name=club_name, is_edit_self=is_edit_self,
                            current_user_is_sysadmin=current_user_is_sysadmin,
-                           is_home_club_admin=is_home_club_admin)
+                           is_home_club_admin=is_home_club_admin,
+                           can_reset_password=can_reset_password)
 
 
 @users_bp.route('/user/check_duplicates', methods=['POST'])
