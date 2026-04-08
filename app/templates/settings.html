@@ -299,7 +299,8 @@
             <th class="sortable" data-column-index="5">Needs Approval</th>
             <th class="sortable" data-column-index="6">Single Owner Only</th>
             <th class="sortable" data-column-index="7">Member Only</th>
-            <th data-column-index="8">Actions</th>
+            <th class="sortable" data-column-index="8">Default Ticket</th>
+            <th data-column-index="9">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -328,6 +329,7 @@
             <td data-field="is_member_only">
               <input type="checkbox" name="is_member_only" {% if role.is_member_only %}checked{% endif %} disabled />
             </td>
+            <td data-field="ticket_type">{{ role.ticket_type or '' }}</td>
             <td>
               <div class="action-links">
                 <button class="edit-btn icon-btn" onclick="openEditRoleModal('{{ role.id }}')" title="Edit">
@@ -360,6 +362,7 @@
             <th class="sortable" data-column-index="5">Needs Approval</th>
             <th class="sortable" data-column-index="6">Single Owner Only</th>
             <th class="sortable" data-column-index="7">Member Only</th>
+            <th class="sortable" data-column-index="8">Default Ticket</th>
             <!-- No actions -->
           </tr>
         </thead>
@@ -380,6 +383,7 @@
             <td><input type="checkbox" {% if role.needs_approval %}checked{% endif %} disabled /></td>
             <td><input type="checkbox" {% if role.has_single_owner %}checked{% endif %} disabled /></td>
             <td><input type="checkbox" {% if role.is_member_only %}checked{% endif %} disabled /></td>
+            <td>{{ role.ticket_type or '' }}</td>
           </tr>
           {% endfor %}
         </tbody>

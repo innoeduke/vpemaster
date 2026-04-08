@@ -1548,6 +1548,13 @@ function openEditRoleModal(roleId) {
   form.has_single_owner.checked = row.querySelector('[data-field="has_single_owner"] input').checked;
   form.is_member_only.checked = row.querySelector('[data-field="is_member_only"] input').checked;
 
+  // Handle Ticket Type
+  const ticketTypeCell = row.querySelector('[data-field="ticket_type"]');
+  const ticketTypeValue = ticketTypeCell ? ticketTypeCell.textContent.trim() : "";
+  if (form.ticket_type) {
+    form.ticket_type.value = ticketTypeValue;
+  }
+
   // Icon handling
   const rawIconText = row.querySelector('[data-field="icon"]').textContent.trim();
   const iconValue = rawIconText.split(/\s+/).pop() || "";

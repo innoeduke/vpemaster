@@ -373,10 +373,10 @@ def recalculate_contact_metadata(contact, avatar_url=None):
             if c_id:
                 related_contact_ids.add(c_id)
 
-    # Fetch achievements for ALL related users
+    # Fetch achievements for ALL related users, sorted by date descending
     achievements = Achievement.query.filter(
         Achievement.user_id.in_(list(user_ids))
-    ).all() if user_ids else []
+    ).order_by(Achievement.issue_date.desc()).all() if user_ids else []
     
     # 1. DTM
     is_dtm = False
@@ -416,8 +416,9 @@ def recalculate_contact_metadata(contact, avatar_url=None):
 
     # 3. Credentials
     new_credentials = None
+    
+    # Priority A: Check for Level Progress in Current Path
     if contact.Current_Path:
-        # We check achievements for the Current_Path
         level_achievements = [
             a for a in achievements 
             if a.achievement_type == 'level-completion' and a.path_name == contact.Current_Path and a.level
@@ -427,19 +428,22 @@ def recalculate_contact_metadata(contact, avatar_url=None):
             pathway = Pathway.query.filter_by(name=contact.Current_Path).first()
             if pathway and pathway.abbr:
                 new_credentials = f"{pathway.abbr}{max_level}"
-        else:
-            # Exception: If a member completed at least one path but hasn't completed
-            # level 1 in their new path, their credential should be <pathcode>5
-            path_comps = [a for a in achievements if a.achievement_type == 'path-completion']
-            if path_comps:
-                pathway = Pathway.query.filter_by(name=path_comps[0].path_name).first()
-                if pathway and pathway.abbr:
-                    new_credentials = f"{pathway.abbr}5"
+
+    # Priority B: Fallback to Most Recently Completed Path (XX5)
+    # This ensures that even without progress in a current path, the user shows their last completion.
+    if not new_credentials:
+        # Since achievements are sorted by issue_date DESC, path_comps[0] is the most recent
+        path_comps = [a for a in achievements if a.achievement_type == 'path-completion']
+        if path_comps:
+            pathway = Pathway.query.filter_by(name=path_comps[0].path_name).first()
+            if pathway and pathway.abbr:
+                new_credentials = f"{pathway.abbr}5"
     
+    # Apply DTM override or the derived credentials
     if contact.DTM:
         contact.credentials = 'DTM'
-    elif new_credentials:
-        contact.credentials = new_credentials
+    else:
+        contact.credentials = new_credentials or None  # Ensure it can be cleared if no data exists
 
     # 4. Next Project
     update_next_project(contact)

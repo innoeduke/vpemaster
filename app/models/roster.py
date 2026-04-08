@@ -15,6 +15,7 @@ class MeetingRole(db.Model):
     has_single_owner = db.Column(db.Boolean, nullable=False)
     is_member_only = db.Column(db.Boolean, default=False)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=True, index=True)
+    ticket_type = db.Column(db.String(50), nullable=True)
 
     club = db.relationship('Club', backref='meeting_roles')
 
@@ -162,7 +163,12 @@ class Roster(db.Model):
         if not roster_entry:
             if action == 'assign':
                 # Determine initial ticket name and type
-                if is_officer:
+                # PRIORITY 1: Role-specific dynamic mapping
+                if role_obj.ticket_type:
+                    ticket_name = role_obj.ticket_type
+                    ticket_type = None # Usually Neutral for specific assignments
+                # PRIORITY 2: Standard Behavioral logic
+                elif is_officer:
                     ticket_name = "Officer"
                     ticket_type = "Officer"
                 elif contact.Type == 'Member':

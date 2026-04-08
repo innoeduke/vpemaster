@@ -46,7 +46,7 @@ def settings():
         pass
 
     merged_roles = MeetingRole.get_all_for_club(club_id)
-    roles = [{'id': role.id, 'name': role.name, 'award_category': role.award_category, 'type': role.type} for role in merged_roles]
+    roles = [{'id': role.id, 'name': role.name, 'award_category': role.award_category, 'type': role.type, 'ticket_type': role.ticket_type} for role in merged_roles]
     
     # Users will be loaded asynchronously via /api/settings/users to prevent N+1 queries during initial load
     all_users = []
@@ -560,6 +560,7 @@ def add_role():
             role.needs_approval = 'needs_approval' in request.form
             role.has_single_owner = 'has_single_owner' in request.form
             role.is_member_only = 'is_member_only' in request.form
+            role.ticket_type = request.form.get('ticket_type') or None
             msg = "Role updated successfully"
         else:
             # Create new
@@ -571,6 +572,7 @@ def add_role():
                 needs_approval='needs_approval' in request.form,
                 has_single_owner='has_single_owner' in request.form,
                 is_member_only='is_member_only' in request.form,
+                ticket_type=request.form.get('ticket_type') or None,
                 club_id=club_id
             )
             db.session.add(role)
@@ -587,7 +589,8 @@ def add_role():
             'award_category': role.award_category,
             'needs_approval': role.needs_approval,
             'has_single_owner': role.has_single_owner,
-            'is_member_only': role.is_member_only
+            'is_member_only': role.is_member_only,
+            'ticket_type': role.ticket_type
         }
         return jsonify(success=True, message=msg, new_role=role_data)
     except Exception as e:
