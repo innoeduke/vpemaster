@@ -44,14 +44,14 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
 
     # 3. Check for Meeting Manager override
     meeting = kwargs.get('meeting')
-    if meeting:
+    if meeting and meeting.manager_id:
         # If user is the manager of this specific meeting
-        if hasattr(current_user, 'contact_id') and current_user.contact_id == meeting.manager_id:
+        user_contact_id = getattr(current_user, 'contact_id', None)
+        if user_contact_id and user_contact_id == meeting.manager_id:
             # Grant Operator-level permissions relevant to meeting management
-            # Specifically Agenda Edit and Booking management
             if target_perm in {'AGENDA_EDIT', 'BOOKING_ASSIGN_ALL', 'BOOKING_BOOK_OWN', 'VOTING_VIEW_RESULTS', 'VOTING_TRACK_PROGRESS', 'ROSTER_EDIT', 'BOOKING_VIEW_ALL', 'ROSTER_VIEW'}:
                 return True
-
+                
     # 4. Standard permission check via has_permission()
     # (Checks global roles assigned in user_roles table if no club override matches)
     
@@ -63,9 +63,10 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
     if club_id:
         # Check permissions specifically within this club
         if hasattr(current_user, 'has_club_permission'):
-            return current_user.has_club_permission(target_perm, club_id)
+            return current_user.has_club_permission(target_perm, club_id, **kwargs)
+        return False
             
-    # Fallback to global checks (or aggregated permissions) if no club context
+    # Fallback to global checks
     if hasattr(current_user, 'has_permission'):
         return current_user.has_permission(target_perm)
     

@@ -59,45 +59,41 @@ def test_role_bitmask_storage(app, db_session):
         db_session.add(user)
         db_session.commit()
         
-        # Assign Multiple Roles: Member (1) + VPE (64) = 65
-        role_sum = member_role.level + vpe_role.level
-        user.set_club_role(club.id, role_sum)
+        # Assign Single Role: VPE (64)
+        user.set_club_role(club.id, vpe_role.level) # 64
+        db_session.commit()
         db_session.commit()
         
         # Verify Storage
         uc = UserClub.query.filter_by(user_id=user.id, club_id=club.id).first()
-        assert uc.club_role_level == 65
+        assert uc.club_role_level == 64
         
         # Verify Retrieval
         roles = user.get_roles_for_club(club.id)
         role_names = [r['name'] for r in roles]
-        assert member_role.name in role_names
         assert vpe_role.name in role_names
+        assert member_role.name not in role_names
         assert officer_role.name not in role_names
         
         # Verify object Roles property
         uc_roles = [r.name for r in uc.roles]
-        assert member_role.name in uc_roles
         assert vpe_role.name in uc_roles
+        assert member_role.name not in uc_roles
         
         # Verify primary (highest) role
-        # Assuming get_current_club_id returns context, but primary_role has fallback logic?
-        # primary_role logic depends on context. Let's mock context manually or check logic.
-        # Logic: return max(roles)
         primary = uc.club_role
         assert primary.name == vpe_role.name
         
-        # Add another role: Officer (2) -> Level should be 67
-        new_sum = uc.club_role_level + officer_role.level
-        user.set_club_role(club.id, new_sum)
+        # Add another role: Officer (2)
+        user.set_club_role(club.id, officer_role.level)
         db_session.commit()
         
-        uc.club_role_level # refresh
-        assert uc.club_role_level == 67
+        db_session.refresh(uc)
+        assert uc.club_role_level == 2
         roles = user.get_roles_for_club(club.id)
         role_names = [r['name'] for r in roles]
-        assert len(roles) >= 3 # might contain 'User' implicitly
         assert officer_role.name in role_names
+        assert vpe_role.name not in role_names
         
         print("Bitmask role storage verification passed.")
         

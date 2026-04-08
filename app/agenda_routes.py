@@ -1496,7 +1496,6 @@ def _tally_votes_and_set_winners(meeting):
         meeting.nps = 0.0
 
 
-
 @agenda_bp.route('/agenda/status/<int:meeting_id>', methods=['POST'])
 @login_required
 @authorized_club_required

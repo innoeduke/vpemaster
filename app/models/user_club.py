@@ -17,8 +17,35 @@ class UserClub(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id', ondelete='CASCADE'), nullable=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id', ondelete='CASCADE'), nullable=False)
-    auth_role_id = db.Column(db.Integer, db.ForeignKey('auth_roles.id'), nullable=True, index=True)
     current_path_id = db.Column(db.Integer, db.ForeignKey('pathways.id'), nullable=True)
+    auth_role_id = db.Column(db.Integer, db.ForeignKey('auth_roles.id'), nullable=True, index=True)
+    
+    @property
+    def club_role_level(self):
+        """Backwards compatibility: Return the level from the auth_role."""
+        return self.auth_role.level if self.auth_role else None
+    
+    @club_role_level.setter
+    def club_role_level(self, value):
+        """Backwards compatibility: Update auth_role_id when level is set."""
+        if value is not None:
+             from .role import Role
+             role = Role.query.filter_by(level=value).first()
+             if role:
+                 self.auth_role_id = role.id
+        
+        # Clear user's permission cache
+        if hasattr(self, 'user') and self.user:
+            self.user._permission_cache = None
+
+    from sqlalchemy.orm import validates
+
+    @validates('auth_role_id')
+    def validate_auth_role_id(self, key, value):
+        # Clear user's permission cache
+        if hasattr(self, 'user') and self.user:
+            self.user._permission_cache = None
+        return value
     joined_date = db.Column(db.Date, nullable=True)
     is_home = db.Column(db.Boolean, default=False, nullable=False)  # Indicates if this is the user's home club
     mentor_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
@@ -42,8 +69,28 @@ class UserClub(db.Model):
         Used by existing code that expects a single role.
         """
         return self.auth_role
+
+    @property
+    def roles(self):
+        """Simplied direct matching for backward compatibility."""
+        return [self.auth_role] if self.auth_role else []
     
     def __init__(self, **kwargs):
+        # Backward Compatibility: if club_role_level is provided but auth_role_id is not
+        if 'club_role_level' in kwargs and 'auth_role_id' not in kwargs:
+            level = kwargs['club_role_level']
+            from .role import Role
+            role = Role.query.filter_by(level=level).first()
+            if role:
+                kwargs['auth_role_id'] = role.id
+        
+        # Conversely, if auth_role_id is provided but club_role_level is not
+        if 'auth_role_id' in kwargs and 'club_role_level' not in kwargs:
+            from .role import Role
+            role = Role.query.get(kwargs['auth_role_id']) if kwargs['auth_role_id'] else None
+            if role:
+                kwargs['club_role_level'] = role.level
+
         super(UserClub, self).__init__(**kwargs)
         # 1st club for a user is marked as home club by default if not specified
         if 'is_home' not in kwargs and self.user_id:

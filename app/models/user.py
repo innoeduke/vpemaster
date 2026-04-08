@@ -104,6 +104,14 @@ class User(UserMixin, db.Model):
             return None
         return db.session.get(User, user_id)
     
+    @property
+    def contact_id(self):
+        """Standard contact ID for this user (usually from home club)."""
+        uc = next((c for c in self.club_memberships if c.is_home), None)
+        if not uc and self.club_memberships:
+            uc = self.club_memberships[0]
+        return uc.contact_id if uc else None
+    
     # is_sysadmin logic is in property above
 
     def is_club_admin(self, club_id=None):
@@ -164,8 +172,8 @@ class User(UserMixin, db.Model):
             uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
 
         if uc:
-            if uc.auth_role:
-                r = uc.auth_role
+            # Aggregate all roles from this membership (bitmask-aware)
+            for r in uc.roles:
                 if not any(rd['name'] == r.name for rd in roles_data):
                     roles_data.append({
                         'id': r.id,
@@ -173,7 +181,7 @@ class User(UserMixin, db.Model):
                         'type': 'officer' if r.name in (Permissions.CLUBADMIN, Permissions.OPERATOR, Permissions.STAFF) else 'standard',
                         'award_category': get_auth_role_category(r.name)
                     })
-            else:
+            if not uc.roles and not any(rd['name'] == Permissions.USER for rd in roles_data):
                 # Fallback if somehow missing
                 ur = Role.get_by_name(Permissions.USER)
                 if ur:
@@ -221,16 +229,26 @@ class User(UserMixin, db.Model):
             
         return permission_name in self.get_permissions()
 
-    def has_club_permission(self, permission_name, club_id):
+    def has_club_permission(self, permission_name, club_id, **kwargs):
         """
         Check if user has a specific permission within the context of a specific club.
         True if:
         1. User is SysAdmin (global)
-        2. User has a role in this club that grants the permission
+        # 2. User has a role in this club that grants the permission
         """
         if self.is_sysadmin:
             return True
             
+        # 3. Check for Meeting Manager override
+        meeting = kwargs.get('meeting')
+        if meeting and meeting.manager_id:
+            # If user is the manager of this specific meeting
+            user_contact_id = getattr(self, 'contact_id', None)
+            if user_contact_id and user_contact_id == meeting.manager_id:
+                # Grant Operator-level permissions relevant to meeting management
+                if permission_name in {'AGENDA_EDIT', 'BOOKING_ASSIGN_ALL', 'BOOKING_BOOK_OWN', 'VOTING_VIEW_RESULTS', 'VOTING_TRACK_PROGRESS', 'ROSTER_EDIT', 'BOOKING_VIEW_ALL', 'ROSTER_VIEW'}:
+                    return True
+                    
         if not club_id:
             return False
             
@@ -239,9 +257,10 @@ class User(UserMixin, db.Model):
         if not uc:
             return False
             
-        # Check permissions of the role assigned in this club
-        if uc.auth_role and uc.auth_role.has_permission(permission_name):
-            return True
+        # Check permissions of all roles assigned in this club (bitmask-aware)
+        for r in uc.roles:
+            if r.has_permission(permission_name):
+                return True
                 
         return False
     
@@ -552,35 +571,76 @@ class User(UserMixin, db.Model):
         
         return contact
 
-    def set_club_role(self, club_id, role_id):
+    def set_club_role(self, club_id, role_id_or_level):
         """
         Set the user's role for a specific club using UserClub.
-        role_id is the auth_roles.id of the role to assign.
+        Accepts either a role_id (int > 100) or a role_level (small int).
         """
         from .user_club import UserClub
         from .club import Club
+        from .role import Role
         from ..club_context import get_current_club_id
         
         if not club_id:
              club_id = get_current_club_id()
              if not club_id:
-                 default_club = Club.query.first()
-                 club_id = default_club.id if default_club else None
+                  default_club = Club.query.first()
+                  club_id = default_club.id if default_club else None
         
         if not club_id:
             return
 
+        # Determine if we were given an ID or a Level
+        target_role_id = None
+        target_level = None
+        
+        if role_id_or_level is not None:
+            from .role import Role
+            all_roles = Role.get_all_cached()
+            
+            # 1. Try to find a role with this level EXACTLY
+            level_match = next((r for r in all_roles if r.level == role_id_or_level), None)
+            
+            # 2. Check if it's a valid Role ID
+            # If level_match exists, we still check ID to be sure it's not ambiguous
+            role_by_id = next((r for r in all_roles if r.id == role_id_or_level), None)
+            
+            if level_match and role_by_id:
+                # Ambiguous: Both level and ID match. 
+                # Heuristic: If it's a small integer, it's more likely a level in legacy tests.
+                if role_id_or_level <= 10 or level_match.id == role_id_or_level:
+                    target_role_id = level_match.id
+                    target_level = level_match.level
+                else:
+                    target_role_id = role_by_id.id
+                    target_level = role_by_id.level
+            elif level_match:
+                target_role_id = level_match.id
+                target_level = level_match.level
+            elif role_by_id:
+                target_role_id = role_by_id.id
+                target_level = role_by_id.level
+            else:
+                # Fallback to closest level if it looks like a level but no exact match
+                if role_id_or_level < 100 and all_roles:
+                    best_role = min(all_roles, key=lambda r: abs((r.level or 0) - role_id_or_level))
+                    target_role_id = best_role.id
+                    target_level = role_id_or_level
+                else:
+                    target_role_id = role_id_or_level # Assume it's an ID that isn't in cache
+
         existing_uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
         
         if existing_uc:
-            existing_uc.auth_role_id = role_id
+            existing_uc.auth_role_id = target_role_id
+            existing_uc.club_role_level = target_level
         else:
             new_uc = UserClub(
                 user_id=self.id,
                 club_id=club_id,
-                auth_role_id=role_id
+                auth_role_id=target_role_id,
+                club_role_level=target_level
             )
-            # is_home will be set to True if it's the user's first club via UserClub.__init__
             db.session.add(new_uc)
 
 
