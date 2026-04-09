@@ -60,7 +60,7 @@ def test_role_bitmask_storage(app, db_session):
         db_session.commit()
         
         # Assign Single Role: VPE (64)
-        user.set_club_role(club.id, vpe_role.level) # 64
+        user.set_club_role(club.id, level=vpe_role.level) # 64
         db_session.commit()
         db_session.commit()
         
@@ -85,7 +85,7 @@ def test_role_bitmask_storage(app, db_session):
         assert primary.name == vpe_role.name
         
         # Add another role: Officer (2)
-        user.set_club_role(club.id, officer_role.level)
+        user.set_club_role(club.id, level=officer_role.level)
         db_session.commit()
         
         db_session.refresh(uc)

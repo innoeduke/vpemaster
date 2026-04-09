@@ -2,7 +2,7 @@ import logging
 from logging.config import fileConfig
 
 from flask import current_app
-
+import sqlalchemy as sa
 from alembic import context
 
 # this is the Alembic Config object, which provides
@@ -104,7 +104,14 @@ def run_migrations_online():
         )
 
         with context.begin_transaction():
+            # Disable FK checks for MySQL to handle data integrity issues during downgrade
+            if connection.dialect.name == 'mysql':
+                connection.execute(sa.text("SET FOREIGN_KEY_CHECKS = 0;"))
+            
             context.run_migrations()
+            
+            if connection.dialect.name == 'mysql':
+                connection.execute(sa.text("SET FOREIGN_KEY_CHECKS = 1;"))
 
 
 if context.is_offline_mode():

@@ -58,8 +58,8 @@ def test_user_role_isolation(client, app, db_session):
         # 3. Assign Roles: 
         # Club A -> ClubAdmin
         # Club B -> Member
-        user.set_club_role(club_a.id, club_admin_role.level)
-        user.set_club_role(club_b.id, member_role.level)
+        user.set_club_role(club_a.id, level=club_admin_role.level)
+        user.set_club_role(club_b.id, level=member_role.level)
         db_session.commit()
         
         # Create SysAdmin user to perform the edit
@@ -69,7 +69,7 @@ def test_user_role_isolation(client, app, db_session):
         db_session.commit()
         
         # Give admin SysAdmin role in Club A (effectively global/powerful for this test context or we mock is_authorized)
-        admin.set_club_role(club_a.id, sysadmin_role.level)
+        admin.set_club_role(club_a.id, level=sysadmin_role.level)
         db_session.commit()
         
         # Login as Admin

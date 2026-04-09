@@ -108,7 +108,7 @@ def _save_user_data(user=None, **kwargs):
         role_id = user_role.id if user_role else None
         
     if role_id is not None:
-        user.set_club_role(club_id, role_id)
+        user.set_club_role(club_id, role_id=role_id)
         
         # 4. Audit Log
         if current_user and current_user.is_authenticated:
@@ -600,7 +600,7 @@ def request_join():
         # Set default role (User/Member)
         from .models import AuthRole as AR
         default_role = AR.query.filter_by(name='User').first()
-        target_user.set_club_role(club_id, default_role.id if default_role else None)
+        target_user.set_club_role(club_id, role_id=default_role.id if default_role else None)
         db.session.commit()
         return jsonify({'success': True, 'direct_add': True})
 
@@ -652,7 +652,7 @@ def respond_join():
             # Set default role (User/Member)
             from .models import AuthRole as AR2
             default_role2 = AR2.query.filter_by(name='User').first()
-            current_user.set_club_role(club_id, default_role2.id if default_role2 else None)
+            current_user.set_club_role(club_id, role_id=default_role2.id if default_role2 else None)
             
             response_body = f"{current_user.display_name} has accepted your request to join {club.club_name}."
         else:

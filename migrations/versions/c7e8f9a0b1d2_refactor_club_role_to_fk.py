@@ -7,6 +7,7 @@ Create Date: 2026-04-07 16:18:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.engine.reflection import Inspector
 
 
 # revision identifiers, used by Alembic.
@@ -14,6 +15,11 @@ revision = 'c7e8f9a0b1d2'
 down_revision = 'b4f7a2c1d839'
 branch_labels = None
 depends_on = None
+
+
+def get_column_names(conn, table_name):
+    inspector = Inspector.from_engine(conn)
+    return [c['name'] for c in inspector.get_columns(table_name)]
 
 
 def upgrade():
@@ -64,28 +70,39 @@ def upgrade():
 
 def downgrade():
     conn = op.get_bind()
+    columns = get_column_names(conn, 'user_clubs')
     
     # 1. Re-add club_role_level column
-    with op.batch_alter_table('user_clubs', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('club_role_level', sa.Integer(), nullable=False, server_default='0'))
+    if 'club_role_level' not in columns:
+        with op.batch_alter_table('user_clubs', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('club_role_level', sa.Integer(), nullable=False, server_default='0'))
     
     # 2. Migrate auth_role_id back to bitmask level
-    roles = conn.execute(sa.text("SELECT id, level FROM auth_roles")).fetchall()
-    role_level_map = {r[0]: r[1] for r in roles}
-    
-    user_clubs = conn.execute(sa.text(
-        "SELECT id, auth_role_id FROM user_clubs"
-    )).fetchall()
-    
-    for uc_id, role_id in user_clubs:
-        level = role_level_map.get(role_id, 0) if role_id else 0
-        conn.execute(
-            sa.text("UPDATE user_clubs SET club_role_level = :level WHERE id = :ucid"),
-            {'level': level or 0, 'ucid': uc_id}
-        )
+    if 'auth_role_id' in columns:
+        roles = conn.execute(sa.text("SELECT id, level FROM auth_roles")).fetchall()
+        role_level_map = {r[0]: r[1] for r in roles}
+        
+        user_clubs = conn.execute(sa.text(
+            "SELECT id, auth_role_id FROM user_clubs"
+        )).fetchall()
+        
+        for uc_id, role_id in user_clubs:
+            level = role_level_map.get(role_id, 0) if role_id else 0
+            conn.execute(
+                sa.text("UPDATE user_clubs SET club_role_level = :level WHERE id = :ucid"),
+                {'level': level or 0, 'ucid': uc_id}
+            )
     
     # 3. Drop auth_role_id column
-    with op.batch_alter_table('user_clubs', schema=None) as batch_op:
-        batch_op.drop_index('ix_user_clubs_auth_role')
-        batch_op.drop_constraint('fk_user_clubs_auth_role', type_='foreignkey')
-        batch_op.drop_column('auth_role_id')
+    if 'auth_role_id' in columns:
+        with op.batch_alter_table('user_clubs', schema=None) as batch_op:
+            try:
+                # Drop constraint FIRST
+                batch_op.drop_constraint('fk_user_clubs_auth_role', type_='foreignkey')
+            except Exception:
+                pass
+            try:
+                batch_op.drop_index('ix_user_clubs_auth_role')
+            except Exception:
+                pass
+            batch_op.drop_column('auth_role_id')

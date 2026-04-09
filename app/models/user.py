@@ -571,10 +571,10 @@ class User(UserMixin, db.Model):
         
         return contact
 
-    def set_club_role(self, club_id, role_id_or_level):
+    def set_club_role(self, club_id, role_id_or_level=None, role_id=None, level=None):
         """
         Set the user's role for a specific club using UserClub.
-        Accepts either a role_id (int > 100) or a role_level (small int).
+        Accepts role_id (int), level (int), or a positional role_id_or_level.
         """
         from .user_club import UserClub
         from .club import Club
@@ -590,58 +590,66 @@ class User(UserMixin, db.Model):
         if not club_id:
             return
 
-        # Determine if we were given an ID or a Level
-        target_role_id = None
-        target_level = None
+        target_role_id = role_id
+        target_level = level
         
-        if role_id_or_level is not None:
-            from .role import Role
+        # If neither is provided explicitly, try to derive from positional argument
+        if role_id_or_level is not None and target_role_id is None and target_level is None:
             all_roles = Role.get_all_cached()
             
-            # 1. Try to find a role with this level EXACTLY
-            level_match = next((r for r in all_roles if r.level == role_id_or_level), None)
-            
-            # 2. Check if it's a valid Role ID
-            # If level_match exists, we still check ID to be sure it's not ambiguous
+            # 1. Try to find a role with this ID exactly (Prefer ID in V2)
             role_by_id = next((r for r in all_roles if r.id == role_id_or_level), None)
             
-            if level_match and role_by_id:
-                # Ambiguous: Both level and ID match. 
-                # Heuristic: If it's a small integer, it's more likely a level in legacy tests.
-                if role_id_or_level <= 10 or level_match.id == role_id_or_level:
-                    target_role_id = level_match.id
-                    target_level = level_match.level
-                else:
-                    target_role_id = role_by_id.id
-                    target_level = role_by_id.level
-            elif level_match:
-                target_role_id = level_match.id
-                target_level = level_match.level
-            elif role_by_id:
+            # 2. Try to find a role with this Level exactly
+            level_match = next((r for r in all_roles if r.level == role_id_or_level), None)
+            
+            if role_by_id:
+                # If we have an ID match, we use it. 
+                # (Even if Level match exists, ID is the primary intent in V2 UI/Migration)
                 target_role_id = role_by_id.id
                 target_level = role_by_id.level
+            elif level_match:
+                # Fallback to level-based lookup if no ID matches
+                target_role_id = level_match.id
+                target_level = level_match.level
             else:
-                # Fallback to closest level if it looks like a level but no exact match
-                if role_id_or_level < 100 and all_roles:
+                # Fallback to closest level if it looks like a level (heuristic)
+                if isinstance(role_id_or_level, int) and role_id_or_level < 100 and all_roles:
                     best_role = min(all_roles, key=lambda r: abs((r.level or 0) - role_id_or_level))
                     target_role_id = best_role.id
                     target_level = role_id_or_level
                 else:
                     target_role_id = role_id_or_level # Assume it's an ID that isn't in cache
+        
+        # If Level was provided explicitly but no ID, fetch the ID
+        if target_level is not None and target_role_id is None:
+             from .role import Role
+             role = Role.query.filter_by(level=target_level).first()
+             if role:
+                 target_role_id = role.id
 
         existing_uc = UserClub.query.filter_by(user_id=self.id, club_id=club_id).first()
         
         if existing_uc:
             existing_uc.auth_role_id = target_role_id
-            existing_uc.club_role_level = target_level
+            # Also set club_role_level to trigger the setter and clear cache
+            if target_level is not None:
+                existing_uc.club_role_level = target_level
+            else:
+                # Ensure cache is cleared if level is None but ID changed
+                self._permission_cache = None
         else:
             new_uc = UserClub(
                 user_id=self.id,
                 club_id=club_id,
                 auth_role_id=target_role_id,
-                club_role_level=target_level
             )
+            if target_level is not None:
+                new_uc.club_role_level = target_level
             db.session.add(new_uc)
+
+        # Force clear of self-permission cache
+        self._permission_cache = None
 
 
 

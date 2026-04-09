@@ -29,6 +29,16 @@ def upgrade():
             batch_op.add_column(sa.Column('ticket_type', sa.String(length=50), nullable=True))
 
     # Check user_clubs indices and foreign keys
+    user_clubs_columns = [c['name'] for c in inspector.get_columns('user_clubs')]
+    
+    # Self-healing: If auth_role_id is missing on production despite version records, add it
+    if 'auth_role_id' not in user_clubs_columns:
+        with op.batch_alter_table('user_clubs', schema=None) as batch_op:
+            batch_op.add_column(sa.Column('auth_role_id', sa.Integer(), nullable=True))
+            batch_op.create_foreign_key('fk_user_clubs_auth_role', 'auth_roles', ['auth_role_id'], ['id'])
+            batch_op.create_index('ix_user_clubs_auth_role', ['auth_role_id'])
+            
+    # Refresh inspector data for user_clubs
     user_clubs_indexes = [i['name'] for i in inspector.get_indexes('user_clubs')]
     user_clubs_fks = [fk['name'] for fk in inspector.get_foreign_keys('user_clubs')]
     
@@ -66,7 +76,10 @@ def downgrade():
                 batch_op.drop_constraint('fk_user_clubs_auth_role', type_='foreignkey')
                 
             batch_op.drop_index(batch_op.f('ix_user_clubs_auth_role_id'))
-            batch_op.create_index('ix_user_clubs_auth_role', ['auth_role_id'], unique=False)
+            
+            # Idempotent index creation
+            if 'ix_user_clubs_auth_role' not in user_clubs_indexes:
+                batch_op.create_index('ix_user_clubs_auth_role', ['auth_role_id'], unique=False)
             
             batch_op.create_foreign_key('fk_user_clubs_auth_role', 'auth_roles', ['auth_role_id'], ['id'])
 

@@ -47,7 +47,7 @@ class BackupService:
         # Command construction
         # Note: --no-defaults is used to avoid issues with local .my.cnf
         cmd = [
-            'mysqldump',
+            BackupService._find_binary('mysqldump'),
             '--no-defaults',
             '-h', config['host'],
             '-u', config['user'],
@@ -55,7 +55,7 @@ class BackupService:
             '--no-tablespaces',
             '--set-gtid-purged=OFF',
             '--single-transaction',
-            f"--ignore-table={config['db']}.alembic_version",
+            # f"--ignore-table={config['db']}.alembic_version", # Included version now for robustness
             config['db']
         ]
         
@@ -116,7 +116,7 @@ class BackupService:
                 shutil.rmtree(temp_dir)
 
     @staticmethod
-    def restore_database(filepath, db_name=None):
+    def restore_database(filepath, db_name=None, upgrade=True, stamp_version=None):
         """Restores a database from a SQL dump."""
         if not os.path.exists(filepath):
             return False, "Backup file not found"
@@ -124,8 +124,14 @@ class BackupService:
         config = BackupService._get_db_config()
         target_db = db_name or config['db']
         
+        # 1. Clear existing columns to ensure no zombie structure
+        clean_success, clean_msg = BackupService._clear_database()
+        if not clean_success:
+            return False, f"Cleanup failed: {clean_msg}"
+            
+        # 2. Apply SQL dump
         cmd = [
-            'mysql',
+            BackupService._find_binary('mysql'),
             '--no-defaults',
             '-h', config['host'],
             '-u', config['user'],
@@ -139,10 +145,170 @@ class BackupService:
             
             if result.returncode != 0:
                 return False, f"mysql restore error: {result.stderr}"
+            
+            # 3. Synchronize schema if requested
+            if upgrade:
+                # Check if alembic_version exists after restore
+                has_version = False
+                try:
+                    from sqlalchemy import inspect
+                    from .. import db
+                    inspector = inspect(db.engine)
+                    has_version = 'alembic_version' in inspector.get_table_names()
+                except Exception:
+                    pass
+
+                if not has_version:
+                    # Legacy Backup detected! 
+                    # We need to stamp it to an older version so 'upgrade' knows to work.
+                    target_stamp = stamp_version or BackupService._get_parent_from_history()
+                    
+                    if target_stamp:
+                        current_app.logger.info(f"Legacy backup detected (missing version table). Stamping to: {target_stamp}")
+                        stamp_success, stamp_msg = BackupService._run_db_command(['stamp', target_stamp])
+                        if not stamp_success:
+                            return True, f"Restored but failed to stamp version {target_stamp}: {stamp_msg}"
+                
+                upgrade_success, upgrade_msg = BackupService._run_db_upgrade()
+                if not upgrade_success:
+                    return True, f"Database restored but upgrade failed: {upgrade_msg}"
+                
+                # 4. Final Validation Sanity Check
+                valid, valid_msg = BackupService._validate_schema()
+                if not valid:
+                    return True, f"Database restored and upgraded, but {valid_msg}"
+                    
+                return True, f"Database restore and upgrade successful. {upgrade_msg}"
                 
             return True, "Database restore successful"
         except Exception as e:
             return False, str(e)
+
+    @staticmethod
+    def _clear_database():
+        """Drops all tables in the current database."""
+        try:
+            from sqlalchemy import inspect, text
+            from .. import db
+            # We need an app context for this, which we should have from CLI
+            
+            inspector = inspect(db.engine)
+            table_names = inspector.get_table_names()
+            
+            if not table_names:
+                return True, "Database already empty"
+                
+            # Disable foreign key checks
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
+            
+            # Handle both tables and views if necessary, but tables is primary
+            for table in table_names:
+                db.session.execute(text(f"DROP TABLE IF EXISTS `{table}`;"))
+            
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
+            db.session.commit()
+            
+            return True, f"Dropped {len(table_names)} tables"
+        except Exception as e:
+            return False, str(e)
+
+    @staticmethod
+    def _find_binary(name):
+        """Finds the path to a binary, looking in common locations."""
+        # Try standard path
+        import shutil
+        if shutil.which(name):
+            return shutil.which(name)
+            
+        # Try common Mac Homebrew paths
+        common_paths = [
+            f'/opt/homebrew/bin/{name}',
+            f'/usr/local/bin/{name}',
+            f'/usr/bin/{name}'
+        ]
+        for path in common_paths:
+            if os.path.exists(path):
+                return path
+                
+        return name # Fallback to name and hope for the best
+
+    @staticmethod
+    def _validate_schema():
+        """Checks if key business columns exist in the DB after upgrade."""
+        try:
+            from sqlalchemy import inspect
+            from .. import db
+            # Need an app context
+            inspector = inspect(db.engine)
+            
+            # Key indicator for the recent refactoring
+            table_names = inspector.get_table_names()
+            if 'user_clubs' not in table_names:
+                 return True, "No user_clubs table found to validate."
+
+            user_clubs_cols = [c['name'] for c in inspector.get_columns('user_clubs')]
+            
+            if 'auth_role_id' not in user_clubs_cols:
+                return False, "Validation warning: 'auth_role_id' column is missing in 'user_clubs'. Restore may be inconsistent."
+            
+            return True, "Schema validation successful."
+        except Exception as e:
+            return False, str(e)
+
+    @staticmethod
+    def _run_db_upgrade():
+        """Runs flask db upgrade via subprocess to ensure environment parity."""
+        return BackupService._run_db_command(['upgrade'])
+
+    @staticmethod
+    def _run_db_command(args):
+        """Runs a flask db command safely."""
+        try:
+            flask_bin = BackupService._find_binary('flask')
+            import sys
+            if flask_bin == 'flask' and os.path.dirname(sys.executable):
+                # Try sibling of the current python executable
+                test_bin = os.path.join(os.path.dirname(sys.executable), 'flask')
+                if os.path.exists(test_bin):
+                    flask_bin = test_bin
+                
+            env = os.environ.copy()
+            env['FLASK_APP'] = 'run.py' # Ensure FLASK_APP is set
+            
+            result = subprocess.run([flask_bin, 'db'] + args, capture_output=True, text=True, env=env)
+            if result.returncode != 0:
+                return False, result.stderr
+            return True, result.stdout
+        except Exception as e:
+            return False, str(e)
+
+    @staticmethod
+    def _get_parent_from_history():
+        """Parses flask db history to find the parent of the current head."""
+        try:
+            success, output = BackupService._run_db_command(['history'])
+            if not success:
+                return None
+            
+            # history output format: 
+            # <prev> -> <head> (head), <comment>
+            # We want the <prev> of the head line.
+            lines = [l.strip() for l in output.split('\n') if '->' in l]
+            if not lines:
+                return None
+            
+            # The first line should be the head
+            head_line = lines[0]
+            if '(head)' in head_line:
+                # Format: c7e8f9a0b1d2 -> e3a4db9468b7 (head)
+                parts = head_line.split('->')
+                if len(parts) >= 2:
+                    parent = parts[0].strip()
+                    # Return the id only
+                    return parent.split(' ')[0]
+            return None
+        except Exception:
+            return None
 
     @staticmethod
     def restore_resources(filepath):

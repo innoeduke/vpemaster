@@ -39,8 +39,10 @@ def create_backup_command(db, resources):
 @click.option('--db-file', help='Path to database backup file.')
 @click.option('--res-file', help='Path to resources backup file.')
 @click.option('--latest', is_flag=True, help='Restore latest backups found.')
+@click.option('--upgrade/--no-upgrade', default=True, help='Automatically run migrations after restore.')
+@click.option('--stamp', help='Explicitly stamp to this version if restoring unversioned data.')
 @with_appcontext
-def restore_backup_command(db_file, res_file, latest):
+def restore_backup_command(db_file, res_file, latest, upgrade, stamp):
     """Restores from a backup."""
     from flask import current_app
     backup_dir = os.path.join(current_app.instance_path, 'backup')
@@ -53,11 +55,11 @@ def restore_backup_command(db_file, res_file, latest):
             
     if db_file:
         click.echo(f"Restoring database from {db_file}...")
-        success, message = BackupService.restore_database(db_file)
+        success, message = BackupService.restore_database(db_file, upgrade=upgrade, stamp_version=stamp)
         if success:
-            click.secho(message, fg='green')
+            click.secho(f"✅ {message}", fg='green')
         else:
-            click.secho(message, fg='red')
+            click.secho(f"❌ {message}", fg='red')
             
     if res_file:
         click.echo(f"Restoring resources from {res_file}...")

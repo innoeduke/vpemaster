@@ -260,7 +260,7 @@ class LegacyMigrationService:
                  r_obj = role_objects.get('User')
                  if r_obj: target_role_id = r_obj.id
 
-            user.set_club_role(self.target_club_id, target_role_id)
+            user.set_club_role(self.target_club_id, role_id=target_role_id)
             
             # Link user to contact if possible
             # Logic: If this user matches a contact we just migrated (by name/email), link them in UserClub

@@ -37,7 +37,7 @@ def test_contact_isolation(client, app, db_session):
         admin.set_password("password")
         db_session.add(admin)
         db_session.commit()
-        admin.set_club_role(club_a.id, sysadmin_role.level)
+        admin.set_club_role(club_a.id, level=sysadmin_role.level)
         db_session.commit()
 
         # Log in
