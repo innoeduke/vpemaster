@@ -112,6 +112,7 @@ def run_migrations_online():
             
             if connection.dialect.name == 'mysql':
                 connection.execute(sa.text("SET FOREIGN_KEY_CHECKS = 1;"))
+            
 
 
 if context.is_offline_mode():

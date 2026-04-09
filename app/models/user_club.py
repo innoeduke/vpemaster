@@ -76,20 +76,16 @@ class UserClub(db.Model):
         return [self.auth_role] if self.auth_role else []
     
     def __init__(self, **kwargs):
-        # Backward Compatibility: if club_role_level is provided but auth_role_id is not
+        # Backward Compatibility: if club_role_level is provided, convert to auth_role_id
         if 'club_role_level' in kwargs and 'auth_role_id' not in kwargs:
-            level = kwargs['club_role_level']
+            level = kwargs.pop('club_role_level')
             from .role import Role
             role = Role.query.filter_by(level=level).first()
             if role:
                 kwargs['auth_role_id'] = role.id
-        
-        # Conversely, if auth_role_id is provided but club_role_level is not
-        if 'auth_role_id' in kwargs and 'club_role_level' not in kwargs:
-            from .role import Role
-            role = Role.query.get(kwargs['auth_role_id']) if kwargs['auth_role_id'] else None
-            if role:
-                kwargs['club_role_level'] = role.level
+        elif 'club_role_level' in kwargs:
+            # Remove it so it doesn't get passed to the column (which no longer exists)
+            kwargs.pop('club_role_level')
 
         super(UserClub, self).__init__(**kwargs)
         # 1st club for a user is marked as home club by default if not specified

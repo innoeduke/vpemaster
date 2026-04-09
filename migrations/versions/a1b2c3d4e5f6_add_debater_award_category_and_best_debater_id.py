@@ -44,9 +44,12 @@ def downgrade():
     # 1. Remove best_debater_id from Meetings
     columns = [col['name'] for col in inspector.get_columns('Meetings')]
     if 'best_debater_id' in columns:
-        fks = [fk['name'] for fk in inspector.get_foreign_keys('Meetings')]
-        if 'fk_meetings_best_debater_id' in fks:
-            op.drop_constraint('fk_meetings_best_debater_id', 'Meetings', type_='foreignkey')
+        # Dynamic detection of FKs on best_debater_id
+        fks = inspector.get_foreign_keys('Meetings')
+        for fk in fks:
+            if 'best_debater_id' in fk.get('constrained_columns', []):
+                op.drop_constraint(fk['name'], 'Meetings', type_='foreignkey')
+        
         op.drop_column('Meetings', 'best_debater_id')
 
     # 2. Remove 'debater' from award_category_enum

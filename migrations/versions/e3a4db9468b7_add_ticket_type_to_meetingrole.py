@@ -70,17 +70,24 @@ def downgrade():
     user_clubs_indexes = [i['name'] for i in inspector.get_indexes('user_clubs')]
     user_clubs_fks = [fk['name'] for fk in inspector.get_foreign_keys('user_clubs')]
     
-    if 'ix_user_clubs_auth_role_id' in user_clubs_indexes:
+    # Dynamic detection of FKs and Indexes on auth_role_id
+    fks_to_drop = [fk['name'] for fk in inspector.get_foreign_keys('user_clubs') if 'auth_role_id' in fk['constrained_columns']]
+    idxs_to_drop = [idx['name'] for idx in inspector.get_indexes('user_clubs') if 'auth_role_id' in idx['column_names']]
+    
+    if fks_to_drop or idxs_to_drop:
         with op.batch_alter_table('user_clubs', schema=None) as batch_op:
-            if 'fk_user_clubs_auth_role' in user_clubs_fks:
-                batch_op.drop_constraint('fk_user_clubs_auth_role', type_='foreignkey')
-                
-            batch_op.drop_index(batch_op.f('ix_user_clubs_auth_role_id'))
+            for fk_name in fks_to_drop:
+                batch_op.drop_constraint(fk_name, type_='foreignkey')
             
-            # Idempotent index creation
+            for idx_name in idxs_to_drop:
+                batch_op.drop_index(idx_name)
+            
+            # Re-create the index as 'ix_user_clubs_auth_role' (the state expected by previous revision)
             if 'ix_user_clubs_auth_role' not in user_clubs_indexes:
                 batch_op.create_index('ix_user_clubs_auth_role', ['auth_role_id'], unique=False)
             
+            # Re-create the FK if we were supposed to (optional for downgrade to base, but good for intermediate)
+            # Find referenced table for auth_role_id (usually auth_roles)
             batch_op.create_foreign_key('fk_user_clubs_auth_role', 'auth_roles', ['auth_role_id'], ['id'])
 
     # Check meeting_roles columns

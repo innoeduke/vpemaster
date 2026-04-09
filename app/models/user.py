@@ -632,20 +632,12 @@ class User(UserMixin, db.Model):
         
         if existing_uc:
             existing_uc.auth_role_id = target_role_id
-            # Also set club_role_level to trigger the setter and clear cache
-            if target_level is not None:
-                existing_uc.club_role_level = target_level
-            else:
-                # Ensure cache is cleared if level is None but ID changed
-                self._permission_cache = None
         else:
             new_uc = UserClub(
                 user_id=self.id,
                 club_id=club_id,
                 auth_role_id=target_role_id,
             )
-            if target_level is not None:
-                new_uc.club_role_level = target_level
             db.session.add(new_uc)
 
         # Force clear of self-permission cache

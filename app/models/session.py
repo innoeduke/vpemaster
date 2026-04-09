@@ -88,7 +88,7 @@ class OwnerMeetingRoles(db.Model):
     role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), nullable=True, index=True)
     contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id'), index=True)
     # session_log_id is only populated if role.has_single_owner is True
-    session_log_id = db.Column(db.Integer, db.ForeignKey('Session_Logs.id'), nullable=True, index=False)
+    session_log_id = db.Column(db.Integer, db.ForeignKey('Session_Logs.id'), nullable=True)
     credential = db.Column(db.String(255), nullable=True)
 
     meeting = db.relationship('Meeting', backref='owner_roles')
@@ -586,10 +586,8 @@ class SessionLog(db.Model):
              session_type = db.session.get(SessionType, target_log.Type_ID)
              
         role_obj = session_type.role if session_type else None
-        
-        sessions_to_update = [target_log]
-        
         has_single_owner = role_obj.has_single_owner if role_obj else True
+        sessions_to_update = [target_log]
         
         if role_obj and not has_single_owner:
             # Find all logs for this role in this meeting
@@ -609,13 +607,12 @@ class SessionLog(db.Model):
         # Identify scope - handle case where meeting relationship might not be loaded
         meeting_id = None
         if target_log.meeting:
-            meeting_id = target_log.meeting.id
-        
-        if not meeting_id:
-            # Fallback if meeting relationship not loaded or obj new
-            from .meeting import Meeting
-            m = Meeting.query.filter_by(Meeting_Number=target_log.Meeting_Number).first()
-            meeting_id = m.id if m else None
+            # Ensure we have the meeting record to get its ID correctly
+            meeting_id = target_log.meeting_id
+            if not meeting_id and target_log.Meeting_Number:
+                from .meeting import Meeting
+                m = Meeting.query.filter_by(Meeting_Number=target_log.Meeting_Number).first()
+                meeting_id = m.id if m else None
         
         # Determine Role ID and Single Owner Status
         # Default to None and Single Owner if no role associated
