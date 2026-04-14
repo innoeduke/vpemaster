@@ -907,7 +907,9 @@ def download_pptx_agenda(meeting_id):
     if not meeting:
         return "Meeting not found", 404
         
-    output = MeetingSlideService.generate_meeting_pptx(meeting_id)
+    # v2 Integration: Pre-process agenda data to pass to the layout-based service
+    logs_data, _ = _get_processed_logs_data(meeting_id)
+    output = MeetingSlideService.generate_meeting_pptx(meeting_id, logs_data)
     if not output:
         return "Could not generate PPTX. Template might be missing or error occurred.", 500
 
