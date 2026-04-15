@@ -862,8 +862,12 @@ function populateExportPages() {
     extractedRows.push(tr);
   });
 
-  // Paginate rows into multiple A4 DOM containers (max ~12 rows per page for safety to fit taller rows with tags)
-  const rowsPerPage = 12;
+  // Paginate rows into multiple A4 DOM containers
+  // A4 at 96 DPI: 794×1123px, content area 714×1043px
+  // Header ~60px + thead ~38px + bottom margin ~30px = ~128px overhead
+  // Available for rows: 1043 - 128 = 915px
+  // Row height ~35-45px with role tags, using 15 rows for comfortable fit
+  const rowsPerPage = 15;
   const numPages = Math.ceil(extractedRows.length / rowsPerPage) || 1; // At least 1 empty page
 
   for (let i = 0; i < numPages; i++) {
@@ -913,14 +917,16 @@ function populateExportPages() {
     // Page Table
     const table = document.createElement('table');
     table.className = 'table print-table';
+    // Fixed widths optimized for A4 content area (714px) with balanced visual distribution
+    // Order uses whitespace: nowrap to prevent header wrapping
     table.innerHTML = `
       <thead>
           <tr>
-              <th style="width: 10%;">Order</th>
-              <th style="width: 30%;">Name</th>
-              <th style="width: 25%;">Ticket</th>
-              <th style="width: 25%;">Roles</th>
-              <th style="width: 10%; text-align: center;">V</th>
+              <th style="width: 70px; white-space: nowrap;">Order</th>
+              <th style="width: 220px;">Name</th>
+              <th style="width: 160px;">Ticket</th>
+              <th style="width: 160px;">Roles</th>
+              <th style="width: 64px; text-align: center;">V</th>
           </tr>
       </thead>
       <tbody></tbody>
