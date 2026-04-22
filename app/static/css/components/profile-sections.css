@@ -123,9 +123,13 @@
 
 .profile-section .field-textarea {
 	margin: 10px 15px;
-	min-height: 120px;
-	padding: 12px;
+	min-height: 72px;
+	padding: 10px 15px;
 	resize: vertical;
+	font-family: inherit;
+	font-weight: 700;
+	color: #333;
+	line-height: 1.5;
 }
 
 .field-input:focus,

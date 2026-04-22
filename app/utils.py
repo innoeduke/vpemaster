@@ -453,10 +453,15 @@ def recalculate_contact_metadata(contact, avatar_url=None):
         contact.Avatar_URL = avatar_url
 
 
-def sync_contact_metadata(contact_id):
+def sync_contact_metadata(contact_id, commit=True):
     """
     Update Contact metadata for a specific contact and all related contacts 
-    (same person in different clubs) and commit to DB.
+    (same person in different clubs).
+    
+    Args:
+        contact_id: ID of the primary contact to sync.
+        commit: If True (default), commits after updating. If False, only flushes
+                so the caller can commit as part of a larger transaction.
     """
     primary_contact = db.session.get(Contact, contact_id)
     if not primary_contact:
@@ -481,7 +486,10 @@ def sync_contact_metadata(contact_id):
         recalculate_contact_metadata(contact, avatar_url=primary_contact.Avatar_URL)
         db.session.add(contact)
     
-    db.session.commit()
+    if commit:
+        db.session.commit()
+    else:
+        db.session.flush()
     return primary_contact
 
 

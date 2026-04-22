@@ -567,7 +567,7 @@ class User(UserMixin, db.Model):
         # 5. Recalculate derived metadata (Completed_Paths, credentials, etc.)
         db.session.flush()
         from ..utils import sync_contact_metadata
-        sync_contact_metadata(contact.id)
+        sync_contact_metadata(contact.id, commit=False)
         
         return contact
 
