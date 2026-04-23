@@ -11,6 +11,7 @@
     data-club-short-name="{{ club.short_name if club and club.short_name else '' }}"
     data-meeting-number="{{ selected_meeting.Meeting_Number if selected_meeting else '' }}"
     data-meeting-date="{{ selected_meeting.Meeting_Date.strftime('%Y-%m-%d') if selected_meeting and selected_meeting.Meeting_Date else '' }}"
+    data-can-delete="{{ is_authorized(Permissions.AGENDA_DELETE)|lower }}"
 > {# Wrapper for edit-mode class #}
     <div class="agenda-header-container">
         <div class="agenda-header-logo">
@@ -95,7 +96,10 @@
                     </span>
                     {% endif %}
 
-                    {% if is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
+                    {% set can_edit = is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
+                    {% set can_delete = is_authorized(Permissions.AGENDA_DELETE, meeting=selected_meeting) %}
+                    
+                    {% if (selected_meeting.status != 'finished' and can_edit) or (selected_meeting.status == 'finished' and can_delete) %}
                     <button id="meeting-status-btn"
                         class="btn {% if selected_meeting.status in ['finished','cancelled'] %}btn-secondary{% elif selected_meeting.status == 'unpublished' %}btn-success{% else %}btn-primary{% endif %}"
                         data-meeting-id="{{ selected_meeting.id }}"
@@ -146,7 +150,7 @@
                     </div>  -->
                     {% endif %}
 
-                    {% if is_authorized(Permissions.AGENDA_EDIT) %}
+                    {% if is_authorized(Permissions.AGENDA_CREATE) %}
                     <button id="create-btn" class="btn btn-success">New</button>
                     {% endif %}
                     
@@ -154,7 +158,7 @@
                     <div class="action-dropdown">
                         <button id="action-btn" class="btn btn-secondary action-icon-btn" title="Actions"><i class="fas fa-ellipsis-v"></i></button>
                         <div id="action-menu" class="action-menu">
-                            {% if is_authorized(Permissions.AGENDA_EDIT) %}
+                            {% if is_authorized(Permissions.AGENDA_CREATE) %}
                             <div class="action-menu-item mobile-only-item" id="action-new-opt"><i class="fas fa-plus"></i> New</div>
                             {% endif %}
                             {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}

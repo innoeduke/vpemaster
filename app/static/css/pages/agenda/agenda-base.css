@@ -504,15 +504,15 @@ td.actions-column {
 }
 
 #logs-table .edit-mode-header th:nth-child(2) {
-	width: 8%;
+	width: 10%;
 }
 
 #logs-table .edit-mode-header th:nth-child(3) {
-	width: 18%;
+	width: 20%;
 }
 
 #logs-table .edit-mode-header th:nth-child(4) {
-	width: 31%;
+	width: 27%;
 }
 
 #logs-table .edit-mode-header th:nth-child(5) {

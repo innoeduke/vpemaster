@@ -1234,8 +1234,8 @@ def _generate_logs_from_template(meeting, template_file):
 @login_required
 @authorized_club_required
 def create_from_template():
-    # Check if user has permission to edit agenda
-    if not is_authorized(Permissions.AGENDA_EDIT):
+    # Check if user has permission to create agenda
+    if not is_authorized(Permissions.AGENDA_CREATE):
         return jsonify({'success': False, 'message': "You don't have permission to create meetings."}), 403
     
     try:
@@ -1535,6 +1535,10 @@ def update_meeting_status(meeting_id):
 
     elif current_status == 'finished':
         # Full deletion flow as requested
+        # Check if user has permission to delete meetings
+        if not is_authorized(Permissions.AGENDA_DELETE):
+            return jsonify(success=False, message="You do not have permission to delete meetings."), 403
+            
         try:
             # Full deletion flow using the model method
             success, error_msg = meeting.delete_full()
