@@ -7,8 +7,8 @@
 .contact-action-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.5rem;
-  align-items: flex-start;
+  gap: 1rem;
+  align-items: flex-end;
   justify-content: space-between;
   margin-bottom: 1rem;
   padding: 1rem 0;
@@ -23,10 +23,9 @@
 
 .contacts-filter-container {
   display: flex;
-  flex: 1;
   gap: 1rem;
   align-items: flex-end;
-  justify-content: flex-end;
+  flex-wrap: nowrap;
 }
 
 .stats-container {
@@ -52,17 +51,34 @@
   color: #666;
 }
 
+.search-container {
+  width: 250px;
+  flex: none;
+}
+
+.search-container #searchInput {
+  width: 100%;
+  height: 38px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+}
+
 .search-and-buttons {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.5rem;
+  gap: 1rem;
   align-items: flex-end;
 }
 
 .button-group {
   display: flex;
   gap: 0.5rem;
+  flex-wrap: nowrap;
+  align-items: flex-end;
 }
+
+/* --- Compact Mode Overrides --- */
+/* When compact-actions is applied by JS, hide desktop buttons and show ellipsis */
 
 .contact-table-container {
   display: flex;
@@ -328,8 +344,15 @@
 
 /* --- Term Filter Dropdown (Moved from inline) --- */
 .term-filter-form {
-  flex: 1;
-  max-width: 400px;
+  width: 220px;
+  flex: none;
+}
+
+.term-filter-form select {
+  width: 100%;
+  height: 38px;
+  padding: 8px 12px;
+  box-sizing: border-box;
 }
 
 .term-filter-form .form-group {

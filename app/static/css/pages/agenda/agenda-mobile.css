@@ -323,10 +323,17 @@
     display: none;
   }
 
+  /* Restore mobile ellipsis for agenda */
+  .mobile-only-item {
+    display: flex !important;
+  }
+  
   .action-dropdown {
     display: flex;
-    align-items: center;
-    position: relative;
+  }
+  
+  .desktop-only-btn {
+    display: none !important;
   }
 
   .action-dropdown #action-btn {
@@ -334,64 +341,19 @@
     min-width: 50px;
   }
 
+  /* Agenda-specific pop-up menu instead of drop-down */
   .action-menu {
-    display: none;
-    position: absolute;
     bottom: calc(100% + 5px);
-    right: 0;
-    background-color: white;
-    min-width: 140px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    padding: 8px 0;
-    z-index: 1000;
-    border: 1px solid #e2e8f0;
+    top: auto;
   }
 
   .action-menu.show {
-    display: block;
     animation: slideUp 0.2s ease-out;
   }
 
   @keyframes slideUp {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  .action-menu-item {
-    display: flex !important;
-    padding: 10px 16px;
-    align-items: center;
-    gap: 12px;
-    color: #1e293b;
-    font-size: 0.85rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    white-space: nowrap;
-  }
-
-  .action-menu-item:hover {
-    background-color: #f8fafc;
-    color: #772432;
-  }
-
-  .action-menu-item i {
-    width: 16px;
-    text-align: center;
-    font-size: 1rem;
-    color: #64748b;
-  }
-
-  .action-menu-item:hover i {
-    color: #772432;
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
 

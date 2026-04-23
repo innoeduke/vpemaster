@@ -582,6 +582,62 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  // Action Dropdown Logic
+  const actionBtn = document.getElementById("action-btn");
+  const actionMenu = document.getElementById("action-menu");
+  const actionBar = document.querySelector(".contact-action-bar");
+
+  if (actionBtn && actionMenu && actionBar) {
+    actionBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      actionMenu.classList.toggle("show");
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!actionBtn.contains(e.target) && !actionMenu.contains(e.target)) {
+        actionMenu.classList.remove("show");
+      }
+    });
+
+    // Dynamic 'compact-actions' mode for desktop only
+    let isChecking = false;
+    const resizeObserver = new ResizeObserver(entries => {
+      if (isChecking) return;
+      
+      const isMobile = window.innerWidth <= 768;
+      
+      for (let entry of entries) {
+        const bar = entry.target;
+        
+        if (isMobile) {
+          bar.classList.remove("compact-actions");
+          continue;
+        }
+
+        const stats = bar.querySelector(".stats-container");
+        const filters = bar.querySelector(".contacts-filter-container");
+        
+        if (!stats || !filters) continue;
+
+        isChecking = true;
+        // Reset to measure natural position
+        bar.classList.remove("compact-actions");
+        
+        // Detection: vertical stacking OR horizontal overflow
+        const isStacked = filters.offsetTop > stats.offsetTop + 15;
+        const isOverflowing = bar.scrollWidth > bar.clientWidth + 5;
+        
+        if (isStacked || isOverflowing) {
+          bar.classList.add("compact-actions");
+        }
+        
+        // Release lock after measurement
+        setTimeout(() => { isChecking = false; }, 50);
+      }
+    });
+    resizeObserver.observe(actionBar);
+  }
+
   // Fetch and cache all contacts asynchronously (non-blocking)
   fetchAndCacheContacts().then(() => {
     // Initial render after data is loaded

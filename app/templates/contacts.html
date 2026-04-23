@@ -68,7 +68,7 @@ head_extra %}
       </div>
       <div class="button-group">
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
-        <button class="btn btn-success" onclick="openContactModal()">
+        <button class="btn btn-success desktop-only-btn" onclick="openContactModal()">
           Add New
         </button>
         <button id="mergeContactsBtn" class="btn btn-warning" onclick="handleMergeClick()" style="display: none"
@@ -78,16 +78,42 @@ head_extra %}
         {% endif %}
         
         {% if is_authorized(Permissions.ROSTER_VIEW) %}
-        <button class="btn btn-primary" onclick="window.location.href='{{ url_for('roster_bp.roster') }}';">
+        <button class="btn btn-primary desktop-only-btn" onclick="window.location.href='{{ url_for('roster_bp.roster') }}';">
           Open Roster
         </button>
         {% endif %}
         
         {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
-        <button class="btn btn-navy" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="Grid View">
+        <button class="btn btn-navy desktop-only-btn" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="Grid View">
           <i class="fas fa-th-large"></i>
         </button>
         {% endif %}
+
+        <!-- Mobile Action Dropdown -->
+        <div class="action-dropdown mobile-only-item">
+          <button id="action-btn" class="btn btn-secondary action-icon-btn" title="Actions">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+          <div id="action-menu" class="action-menu">
+            {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+            <div class="action-menu-item" onclick="openContactModal()">
+              <i class="fas fa-plus"></i> Add New
+            </div>
+            {% endif %}
+
+            {% if is_authorized(Permissions.ROSTER_VIEW) %}
+            <div class="action-menu-item" onclick="window.location.href='{{ url_for('roster_bp.roster') }}';">
+              <i class="fas fa-users"></i> Open Roster
+            </div>
+            {% endif %}
+
+            {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+            <div class="action-menu-item" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';">
+              <i class="fas fa-th-large"></i> Grid View
+            </div>
+            {% endif %}
+          </div>
+        </div>
       </div>
     </div>
   </div>
