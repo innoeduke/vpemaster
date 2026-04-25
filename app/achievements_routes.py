@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from . import db
-from .models import Achievement, Contact, Pathway
+from .models import Achievement, Contact, Pathway, User
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions
 from .club_context import get_current_club_id
@@ -210,7 +210,6 @@ def delete_achievement(id):
     contact_id = None
     # Get contact_id from the achievement's user for metadata sync
     if achievement.user_id:
-        from .models import User
         user = db.session.get(User, achievement.user_id)
         if user:
             contact_id = user.contact_id

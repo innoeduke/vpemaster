@@ -257,7 +257,7 @@ def profile(contact_id=None):
 
             db.session.commit()
             flash('Profile updated successfully!', 'success')
-            return redirect(url_for('auth_bp.profile'))
+            return redirect(url_for('auth_bp.profile', contact_id=contact_id))
 
         elif action == 'reset_password':
             if not can_reset_password:
