@@ -364,9 +364,7 @@
 	cursor: pointer;
 }
 
-.action-dropdown {
-	display: none;
-}
+
 
 .inline-filter-group {
 	display: flex;
@@ -504,15 +502,15 @@ td.actions-column {
 }
 
 #logs-table .edit-mode-header th:nth-child(2) {
-	width: 8%;
+	width: 12%;
 }
 
 #logs-table .edit-mode-header th:nth-child(3) {
-	width: 18%;
+	width: 22%;
 }
 
 #logs-table .edit-mode-header th:nth-child(4) {
-	width: 31%;
+	width: 23%;
 }
 
 #logs-table .edit-mode-header th:nth-child(5) {
@@ -540,6 +538,8 @@ td.actions-column {
 .edit-mode-active th,
 .edit-mode-active td {
 	vertical-align: middle;
+	padding-left: 8px;
+	padding-right: 8px;
 }
 
 .edit-mode-active td select,
@@ -548,7 +548,22 @@ td.actions-column {
 	width: 100%;
 	box-sizing: border-box;
 	height: 30px;
-	padding: 5px;
+	padding: 2px 6px;
+	font-size: 0.8rem;
+	border: 1px solid #cbd5e0;
+	border-radius: 4px;
+}
+
+.edit-mode-active td select {
+	appearance: none;
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+	background-repeat: no-repeat;
+	background-position: right 6px center;
+	background-size: 14px;
+	padding-right: 24px;
+	background-color: #fff;
 }
 
 .edit-mode-active tr[data-is-section="true"] td[data-field="Session_Title"] input {

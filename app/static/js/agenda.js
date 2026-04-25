@@ -780,9 +780,14 @@ document.addEventListener("DOMContentLoaded", () => {
               iconClass = "fa-broadcast-tower";
               button.title = "Stop to end voting and show results.";
             } else if (newStatus === "finished") {
-              button.textContent = "Delete";
+              const canDelete = agendaContent.dataset.canDelete === "true";
+              if (canDelete) {
+                button.textContent = "Delete";
+                button.title = "";
+              } else {
+                button.style.display = "none";
+              }
               iconClass = "fa-check-circle";
-              button.title = "";
             } else if (newStatus === "cancelled") {
               button.textContent = "Cancelled";
               button.disabled = true;

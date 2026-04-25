@@ -61,6 +61,17 @@
     justify-content: center;
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  /* Mobile: show all buttons, hide the ellipsis menu */
+  .button-group .desktop-only-btn {
+    display: inline-flex !important;
+  }
+
+  .button-group .mobile-only-item,
+  .button-group .action-dropdown {
+    display: none !important;
   }
 
   .button-group .btn {

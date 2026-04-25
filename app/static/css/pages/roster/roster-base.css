@@ -755,6 +755,7 @@ body .page-container .print-pages-container .print-page .print-table {
 	border: none;
 	text-rendering: geometricPrecision;
 	letter-spacing: 0.2px;
+	table-layout: fixed;
 }
 
 body .page-container .print-pages-container .print-page .print-table thead th,

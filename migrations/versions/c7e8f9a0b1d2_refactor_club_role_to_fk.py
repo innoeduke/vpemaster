@@ -93,16 +93,18 @@ def downgrade():
                 {'level': level or 0, 'ucid': uc_id}
             )
     
-    # 3. Drop auth_role_id column
+    # 3. Drop auth_role_id column and related constraints
     if 'auth_role_id' in columns:
+        # Drop constraints and indexes with raw SQL to handle potential missing names or platform differences
+        try:
+            conn.execute(sa.text("ALTER TABLE user_clubs DROP FOREIGN KEY fk_user_clubs_auth_role"))
+        except Exception:
+            pass
+        
+        try:
+            conn.execute(sa.text("ALTER TABLE user_clubs DROP INDEX ix_user_clubs_auth_role"))
+        except Exception:
+            pass
+
         with op.batch_alter_table('user_clubs', schema=None) as batch_op:
-            try:
-                # Drop constraint FIRST
-                batch_op.drop_constraint('fk_user_clubs_auth_role', type_='foreignkey')
-            except Exception:
-                pass
-            try:
-                batch_op.drop_index('ix_user_clubs_auth_role')
-            except Exception:
-                pass
             batch_op.drop_column('auth_role_id')

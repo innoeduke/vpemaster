@@ -20,6 +20,7 @@
         justify-content: space-between;
         align-items: center;
         margin-bottom: 25px;
+        padding-top: 40px;
         gap: 15px;
     }
 
@@ -324,13 +325,13 @@
         <div>
             {% call profile_section("Executive Committee") %}
                 {% call field_row_pair(class='mobile-side-by-side') %}
-                    {{ field_row("Team Name", value=excomm_team.name, field_data="excomm_name", class='compact') }}
-                    {{ field_row("Term", value=excomm_team.term, field_data="excomm_term", class='compact') }}
+                    {{ field_row("Team Name", value=excomm_team.name, class='compact') }}
+                    {{ field_row("Term", value=excomm_team.term, class='compact') }}
                 {% endcall %}
                 
                 {% for role, name in excomm_team.members.items() %}
                     {% set role_tag %}<span class="roster-role-tag role-officer" style="margin-bottom: 0;">{{ role }}</span>{% endset %}
-                    {{ field_row(role_tag, value=name, is_raw=true, field_data="excomm_" ~ role.lower(), class='') }}
+                    {{ field_row(role_tag, value=name, is_raw=true, class='') }}
                 {% endfor %}
             {% endcall %}
         </div>
@@ -491,53 +492,8 @@
                 originalValues[field] = value;
 
                 let input;
-                const wrapFields = ['club_name', 'meeting_date', 'website', 'short_name'];
                 
-                if (field.startsWith('excomm_') && field !== 'excomm_name' && field !== 'excomm_term') {
-                    // Use textarea for excomm names to allow wrapping
-                    input = document.createElement('textarea');
-                    input.className = 'field-textarea-auto';
-                    input.value = value;
-                    input.rows = 1;
-                    input.setAttribute('autocomplete', 'off');
-                    input.setAttribute('placeholder', 'Search member...');
-                    input.setAttribute('data-field', field);
-
-                    const dropdown = document.createElement('div');
-                    dropdown.className = 'autocomplete-dropdown';
-
-                    input.addEventListener('input', function (e) {
-                        const searchTerm = e.target.value.toLowerCase();
-                        dropdown.innerHTML = '';
-                        if (searchTerm.length === 0) { dropdown.style.display = 'none'; return; }
-                        const filtered = CONTACTS_DATA.filter(contact => contact.name.toLowerCase().includes(searchTerm)).slice(0, 5);
-                        if (filtered.length === 0) { dropdown.style.display = 'none'; return; }
-                        filtered.forEach(contact => {
-                            const item = document.createElement('div');
-                            item.className = 'autocomplete-item';
-                            item.textContent = contact.name;
-                            item.addEventListener('mouseenter', () => item.style.backgroundColor = '#f0f4f8');
-                            item.addEventListener('mouseleave', () => item.style.backgroundColor = 'white');
-                            item.addEventListener('click', () => { input.value = contact.name; dropdown.style.display = 'none'; });
-                            dropdown.appendChild(item);
-                        });
-                        dropdown.style.display = 'block';
-                    });
-
-                    document.addEventListener('click', function (e) {
-                        if (!input.contains(e.target) && !dropdown.contains(e.target)) { dropdown.style.display = 'none'; }
-                    });
-
-                    cell.style.position = 'relative';
-                    cell.textContent = '';
-                    
-                    const wrapper = document.createElement('div');
-                    wrapper.className = 'field-input-wrapper';
-                    wrapper.appendChild(input);
-                    wrapper.appendChild(dropdown);
-                    cell.parentElement.replaceChild(wrapper, cell);
-                    wrapper.setAttribute('data-field', field);
-                } else if (field === 'club_address') {
+                if (field === 'club_address') {
                     input = document.createElement('textarea');
                     input.rows = 3;
                     input.value = value;
@@ -564,11 +520,6 @@
                             }
                         }
                     }
-                } else if (wrapFields.includes(field)) {
-                    input = document.createElement('textarea');
-                    input.className = 'field-textarea-auto';
-                    input.rows = 1;
-                    input.value = value;
                 } else {
                     input = document.createElement('input');
                     input.type = 'text';
@@ -576,24 +527,13 @@
                     input.className = 'field-input';
                 }
 
-                if (input && !field.startsWith('excomm_')) {
+                if (input) {
                     input.setAttribute('data-field', field);
                     const wrapper = document.createElement('div');
                     wrapper.className = 'field-input-wrapper';
                     wrapper.setAttribute('data-field', field);
                     wrapper.appendChild(input);
                     cell.parentElement.replaceChild(wrapper, cell);
-                }
-                
-                // Add auto-grow logic if it's a textarea
-                if (input && input.classList.contains('field-textarea-auto')) {
-                    const autoGrow = (el) => {
-                        el.style.height = 'auto';
-                        el.style.height = (el.scrollHeight) + 'px';
-                    };
-                    input.addEventListener('input', () => autoGrow(input));
-                    // Initial grow
-                    setTimeout(() => autoGrow(input), 0);
                 }
             });
         }

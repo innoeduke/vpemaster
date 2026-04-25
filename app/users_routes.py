@@ -176,24 +176,31 @@ def user_form(user_id):
         # Security check: User role is standard, other roles (ClubAdmin, Staff) 
         # checked via standard permissions. SysAdmin role no longer exists in DB.
         
-        _save_user_data(
-            user=user,
-            username=request.form.get('username'),
-            full_name=request.form.get('full_name'),
-            first_name=request.form.get('first_name'),
-            last_name=request.form.get('last_name'),
-            email=request.form.get('email'),
-            phone=request.form.get('phone'),
-            role_id=role_id,
-            status=request.form.get('status'),
-            contact_id=request.form.get('contact_id', 0, type=int),
-            create_new_contact=request.form.get('create_new_contact') == 'on',
-            password=request.form.get('password'),
-            club_id=club_id
-        )
-        db.session.commit()
-        
-        db.session.commit()
+        try:
+            _save_user_data(
+                user=user,
+                username=request.form.get('username'),
+                full_name=request.form.get('full_name'),
+                first_name=request.form.get('first_name'),
+                last_name=request.form.get('last_name'),
+                email=request.form.get('email'),
+                phone=request.form.get('phone'),
+                role_id=role_id,
+                status=request.form.get('status'),
+                contact_id=request.form.get('contact_id', 0, type=int),
+                create_new_contact=request.form.get('create_new_contact') == 'on',
+                password=request.form.get('password'),
+                club_id=club_id
+            )
+            db.session.commit()
+            
+            action = 'updated' if user else 'created'
+            flash(f'User {request.form.get("username")} {action} successfully.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f'Error saving user: {e}', exc_info=True)
+            flash(f'Error saving user: {e}', 'error')
+            return redirect(url_for('users_bp.user_form', user_id=user_id))
 
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 

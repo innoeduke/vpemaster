@@ -294,11 +294,17 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         };
 
+        // Flag to prevent blur-triggered duplicate checks during form submission
+        let isSubmitting = false;
+
         // Attachment of event listeners for real-time check
         ['username', 'first_name', 'last_name', 'email', 'phone'].forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                el.addEventListener('blur', checkDuplicates);
+                el.addEventListener('blur', () => {
+                    // Don't trigger duplicate check if form is being submitted
+                    if (!isSubmitting) checkDuplicates();
+                });
             }
         });
 
@@ -309,6 +315,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 e.preventDefault();
                 return;
             }
+            // Set flag to prevent blur-triggered duplicate checks
+            isSubmitting = true;
         });
 
         proceedWithNewBtn.addEventListener('click', () => {
