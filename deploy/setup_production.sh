@@ -72,6 +72,13 @@ else
         sudo usermod -a -G $SHARED_GROUP $NGINX_USER
         echo "✅ Added $NGINX_USER to $SHARED_GROUP"
     fi
+
+    # Add current user to the shared group (for manual testing like 'flask run')
+    CURRENT_USER=$(whoami)
+    if [ "$CURRENT_USER" != "root" ]; then
+        sudo usermod -a -G $SHARED_GROUP $CURRENT_USER
+        echo "✅ Added $CURRENT_USER to $SHARED_GROUP"
+    fi
 fi
 
 # --- Permission Management ---
@@ -80,9 +87,14 @@ echo "🔐 Configuring permissions (Least Privilege)..."
 # 1. Set ownership: deployer owns the code, shared group for access
 sudo chown -R $DEPLOYER_USER:$SHARED_GROUP "$PROJECT_ROOT"
 
-# 2. Default permissions: Directories 755, Files 644
-sudo find "$PROJECT_ROOT" -type d -exec chmod 755 {} +
-sudo find "$PROJECT_ROOT" -type f -exec chmod 644 {} +
+# 2. Default permissions: Directories 755, Files 644 (excluding venv)
+sudo find "$PROJECT_ROOT" -type d -not -path "*/venv/*" -exec chmod 755 {} +
+sudo find "$PROJECT_ROOT" -type f -not -path "*/venv/*" -exec chmod 644 {} +
+
+# 2b. Ensure venv binaries are executable
+if [ -d "$PROJECT_ROOT/venv/bin" ]; then
+    sudo chmod +x "$PROJECT_ROOT/venv/bin/"*
+fi
 
 # 3. Restrict sensitive files (.env, private keys)
 if [ -f "$PROJECT_ROOT/.env" ]; then
