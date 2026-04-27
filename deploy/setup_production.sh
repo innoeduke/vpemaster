@@ -167,9 +167,17 @@ if [ "$SERVER_NAME" != "_" ]; then
 
     if [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ]; then
         echo "✅ SSL Certificates found: $CERT_FILE and $KEY_FILE"
-        echo "🛡️  Ensuring correct permissions for certificates..."
+        echo "🛡️  Configuring Nginx for manual SSL..."
         sudo chmod 600 "$KEY_FILE"
         sudo chmod 644 "$CERT_FILE"
+        
+        # Inject SSL configuration into the Nginx file
+        sudo sed -i "/listen 80;/a \    listen 443 ssl;\n    ssl_certificate $CERT_FILE;\n    ssl_certificate_key $KEY_FILE;\n    ssl_protocols TLSv1.2 TLSv1.3;\n    ssl_ciphers HIGH:!aNULL:!MD5;" "$NGINX_DEST"
+        # Optional: Add redirect from 80 to 443
+        # sudo sed -i "s/listen 80;/listen 80;\n    return 301 https://\$host\$request_uri;/" "$NGINX_DEST"
+        
+        sudo nginx -t && sudo nginx -s reload
+        echo "✅ Manual SSL configuration applied!"
     else
         echo "⚠️  SSL Certificates NOT found at $CERT_FILE or $KEY_FILE"
         echo "🔒 Would you like to set up SSL with Certbot instead? (y/n)"
