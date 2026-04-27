@@ -156,56 +156,5 @@ if [ -n "$NGINX_CONF_DIR" ]; then
         sudo nginx -t && sudo nginx -s reload || echo "⚠️  Nginx reload failed. Check config."
     fi
 fi
-
 echo "✨ Deployment setup complete!"
-
-# --- SSL Setup ---
-if [ "$SERVER_NAME" != "_" ]; then
-    echo "🔒 Checking for SSL certificates in /etc/nginx/..."
-    CERT_FILE="/etc/nginx/${SERVER_NAME}_bundle.crt"
-    KEY_FILE="/etc/nginx/${SERVER_NAME}.key"
-
-    if [ -f "$CERT_FILE" ] && [ -f "$KEY_FILE" ]; then
-        echo "✅ SSL Certificates found: $CERT_FILE and $KEY_FILE"
-        echo "🛡️  Configuring Nginx for manual SSL..."
-        sudo chmod 600 "$KEY_FILE"
-        sudo chmod 644 "$CERT_FILE"
-        
-        # Inject SSL configuration into the Nginx file
-        sudo sed -i "/listen 80;/a \    listen 443 ssl;\n    ssl_certificate $CERT_FILE;\n    ssl_certificate_key $KEY_FILE;\n    ssl_protocols TLSv1.2 TLSv1.3;\n    ssl_ciphers HIGH:!aNULL:!MD5;" "$NGINX_DEST"
-        # Optional: Add redirect from 80 to 443
-        # sudo sed -i "s/listen 80;/listen 80;\n    return 301 https://\$host\$request_uri;/" "$NGINX_DEST"
-        
-        sudo nginx -t && sudo nginx -s reload
-        echo "✅ Manual SSL configuration applied!"
-    else
-        echo "⚠️  SSL Certificates NOT found at $CERT_FILE or $KEY_FILE"
-        echo "🔒 Would you like to set up SSL with Certbot instead? (y/n)"
-        read -r setup_ssl
-        if [[ "$setup_ssl" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            echo "📥 Installing Certbot..."
-            if [ "$OS_TYPE" == "ubuntu" ]; then
-                sudo apt update && sudo apt install -y certbot python3-certbot-nginx
-            elif [ "$OS_TYPE" == "opencloudos" ]; then
-                sudo dnf install -y certbot python3-certbot-nginx
-            elif [ "$OS_TYPE" == "macos" ]; then
-                brew install certbot
-            fi
-
-            echo "🛡️  Running Certbot for $SERVER_NAME..."
-            if [ "$OS_TYPE" == "macos" ]; then
-                sudo certbot certonly --nginx -d "$SERVER_NAME"
-            else
-                sudo certbot --nginx -d "$SERVER_NAME"
-            fi
-            echo "✅ SSL setup complete with Certbot!"
-        else
-            echo "💡 Please upload your certificates to /etc/nginx/ as:"
-            echo "   - $CERT_FILE"
-            echo "   - $KEY_FILE"
-            echo "   Then run 'sudo nginx -t && sudo nginx -s reload'"
-        fi
-    fi
-fi
-
 echo "📝 Note: You may need to update 'SERVER_NAME' in $NGINX_DEST and run 'sudo nginx -s reload'."
