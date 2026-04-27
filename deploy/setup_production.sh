@@ -103,12 +103,11 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
 fi
 
 # 4. Writable directories for the service user
-mkdir -p "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs"
-sudo chown -R $SERVICE_USER:$SHARED_GROUP "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs"
-sudo chmod -R 770 "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs"
+mkdir -p "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run"
+sudo chown -R $SERVICE_USER:$SHARED_GROUP "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run"
+sudo chmod -R 770 "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run"
 
-# 5. Ensure Gunicorn socket directory is accessible (if applicable)
-# The socket will be created in PROJECT_ROOT, so SHARED_GROUP needs execute on PROJECT_ROOT
+# 5. Ensure PROJECT_ROOT is accessible
 sudo chmod 755 "$PROJECT_ROOT"
 
 # --- Service File Generation ---
