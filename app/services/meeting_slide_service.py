@@ -31,7 +31,7 @@ class MeetingSlideService:
         Version 2 (Layout-based) slide generation.
         Uses slides_layouts.pptx from club_resources.
         """
-        meeting = Meeting.query.get(meeting_id)
+        meeting = db.session.get(Meeting, meeting_id)
         if not meeting:
             current_app.logger.error(f"Meeting {meeting_id} not found.")
             return None

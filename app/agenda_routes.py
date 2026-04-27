@@ -1504,7 +1504,7 @@ def _tally_votes_and_set_winners(meeting):
 def update_meeting_status(meeting_id):
     """Toggles the status of a meeting."""
     club_id = get_current_club_id()
-    meeting = Meeting.query.get(meeting_id)
+    meeting = db.session.get(Meeting, meeting_id)
  
     if not meeting or (club_id and meeting.club_id != club_id):
         return jsonify(success=False, message="Meeting not found"), 404

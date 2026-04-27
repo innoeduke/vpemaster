@@ -16,12 +16,22 @@ class TestMeetingSlideService(unittest.TestCase):
     def tearDown(self):
         self.ctx.pop()
 
+    @patch('app.agenda_routes._get_processed_logs_data')
+    @patch('app.services.meeting_slide_service.Meeting')
+    @patch('app.services.meeting_slide_service.Contact')
     @patch('app.services.meeting_slide_service.MeetingExportContext')
     @patch('app.services.meeting_slide_service.Presentation')
     @patch('os.path.exists')
-    def test_generate_meeting_pptx_success(self, mock_exists, mock_presentation, mock_context_cls):
-        # Mock Meeting
+    def test_generate_meeting_pptx_success(self, mock_exists, mock_presentation, mock_context_cls, mock_contact_model, mock_meeting_model, mock_get_logs):
+        # Mock logs data
+        mock_get_logs.return_value = ([], None)
+        
+        # Mock Meeting Model Query
         mock_meeting = Mock()
+        mock_meeting_model.query.get.return_value = mock_meeting
+        
+        # Mock Contact Model Query
+        mock_contact_model.query.get.return_value = Mock()
         mock_meeting.Meeting_Number = 100
         mock_meeting.Meeting_Date = Mock()
         mock_meeting.Meeting_Date.strftime.return_value = "16-Mar-2026"
@@ -50,8 +60,10 @@ class TestMeetingSlideService(unittest.TestCase):
         mock_presentation.assert_called_once()
         mock_prs.save.assert_called_once()
 
+    @patch('app.services.meeting_slide_service.Meeting')
     @patch('app.services.meeting_slide_service.MeetingExportContext')
-    def test_generate_meeting_pptx_no_meeting(self, mock_context_cls):
+    def test_generate_meeting_pptx_no_meeting(self, mock_context_cls, mock_meeting_model):
+        mock_meeting_model.query.get.return_value = None
         mock_context = mock_context_cls.return_value
         mock_context.meeting = None
         
