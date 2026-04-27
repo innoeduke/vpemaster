@@ -1,0 +1,18 @@
+[Unit]
+Description=Gunicorn instance to serve VPEMaster
+After=network.target mysql.service
+
+[Service]
+User={{SERVICE_USER}}
+Group={{SHARED_GROUP}}
+WorkingDirectory={{PROJECT_ROOT}}
+Environment="PATH={{PROJECT_ROOT}}/venv/bin"
+EnvironmentFile={{PROJECT_ROOT}}/.env
+ExecStart={{PROJECT_ROOT}}/venv/bin/gunicorn --workers {{WORKERS}} --bind unix:{{PROJECT_ROOT}}/vpemaster.sock -m 007 run:app
+
+# Restart on failure
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

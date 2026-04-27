@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.vpemaster.app</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{{PROJECT_ROOT}}/venv/bin/gunicorn</string>
+        <string>--workers</string>
+        <string>{{WORKERS}}</string>
+        <string>--bind</string>
+        <string>127.0.0.1:8000</string>
+        <string>run:app</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>{{PROJECT_ROOT}}</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>{{PROJECT_ROOT}}/venv/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>{{PROJECT_ROOT}}/logs/stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>{{PROJECT_ROOT}}/logs/stderr.log</string>
+</dict>
+</plist>
