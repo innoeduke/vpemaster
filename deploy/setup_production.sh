@@ -103,9 +103,9 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
 fi
 
 # 4. Writable directories for the service user
-mkdir -p "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run" "$PROJECT_ROOT/.webassets-cache"
-sudo chown -R $SERVICE_USER:$SHARED_GROUP "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run" "$PROJECT_ROOT/.webassets-cache"
-sudo chmod -R 770 "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run" "$PROJECT_ROOT/.webassets-cache"
+mkdir -p "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run" "$PROJECT_ROOT/.webassets-cache" "$PROJECT_ROOT/app/static/.webassets-cache"
+sudo chown -R $SERVICE_USER:$SHARED_GROUP "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run" "$PROJECT_ROOT/.webassets-cache" "$PROJECT_ROOT/app/static"
+sudo chmod -R 770 "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run" "$PROJECT_ROOT/.webassets-cache" "$PROJECT_ROOT/app/static"
 
 # 5. Ensure PROJECT_ROOT is accessible
 sudo chmod 755 "$PROJECT_ROOT"
