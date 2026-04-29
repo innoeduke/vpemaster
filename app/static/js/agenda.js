@@ -572,10 +572,19 @@ document.addEventListener("DOMContentLoaded", () => {
           const ownerRow = document.createElement('div');
           ownerRow.className = 'owner-row';
 
-          const nameSpan = document.createElement('span');
-          nameSpan.className = 'owner-name';
-          nameSpan.textContent = ownerInfo.name;
-          ownerRow.appendChild(nameSpan);
+          const canViewContacts = document.getElementById('agenda-content')?.dataset.canViewContacts === 'true';
+          if (canViewContacts && ownerInfo.id) {
+            const nameLink = document.createElement('a');
+            nameLink.className = 'owner-name owner-link';
+            nameLink.href = `/profile/${ownerInfo.id}`;
+            nameLink.textContent = ownerInfo.name;
+            ownerRow.appendChild(nameLink);
+          } else {
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'owner-name';
+            nameSpan.textContent = ownerInfo.name;
+            ownerRow.appendChild(nameSpan);
+          }
 
           if (ownerInfo.credentials && ownerInfo.credentials !== "DTM") {
             const credSpan = document.createElement('span');

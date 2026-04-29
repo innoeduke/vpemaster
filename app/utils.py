@@ -957,14 +957,14 @@ def process_club_logo(file, club_id):
         img.thumbnail((500, 500), Image.Resampling.LANCZOS)
         
         # Save file as WebP
-        filename = secure_filename(f"club_logo_{club_id}.webp")
-        # Store in a separate folder or same? Let's use uploads/club_logos
-        upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'club_logos')
+        filename = "club_logo.webp"
+        # Store in the new standardized folder: club_resources/<club_id>
+        upload_folder = os.path.join(current_app.root_path, 'static', 'club_resources', str(club_id))
         os.makedirs(upload_folder, exist_ok=True)
         file_path = os.path.join(upload_folder, filename)
         img.save(file_path, "WEBP", quality=85)
         
-        return f"uploads/club_logos/{filename}"
+        return f"club_resources/{club_id}/{filename}"
     except Exception as e:
         print(f"Error processing logo for club {club_id}: {e}")
         return None

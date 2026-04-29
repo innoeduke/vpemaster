@@ -12,13 +12,14 @@
     data-meeting-number="{{ selected_meeting.Meeting_Number if selected_meeting else '' }}"
     data-meeting-date="{{ selected_meeting.Meeting_Date.strftime('%Y-%m-%d') if selected_meeting and selected_meeting.Meeting_Date else '' }}"
     data-can-delete="{{ is_authorized(Permissions.AGENDA_DELETE)|lower }}"
+    data-can-view-contacts="{{ (is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW))|lower }}"
 > {# Wrapper for edit-mode class #}
     <div class="agenda-header-container">
         <div class="agenda-header-logo">
-            {% if club and club.logo_url %}
-            <img src="{{ url_for('static', filename=club.logo_url) }}" alt="{{ club.club_name }} Logo">
+            {% if club %}
+            <img src="{{ url_for('static', filename=club.effective_logo_url) }}" alt="{{ club.club_name }} Logo">
             {% else %}
-            <img src="{{ url_for('static', filename='images/SHLTMC-logo.webp') }}" alt="Default Club Logo">
+            <img src="{{ url_for('static', filename='images/club_logo.webp') }}" alt="Default Club Logo">
             {% endif %}
         </div>
 
@@ -299,7 +300,11 @@
                         {# Use pre-fetched owner data from log_dict #}
                         {% for owner_info in log_dict.owners_data %}
                         <div class="owner-row">
+                            {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+                            <a href="{{ url_for('auth_bp.profile', contact_id=owner_info.id) }}" class="owner-name owner-link">{{ owner_info.name }}</a>
+                            {% else %}
                             <span class="owner-name">{{ owner_info.name }}</span>
+                            {% endif %}
                             
                             {% if owner_info.credentials == "DTM" %}
                             <sup class="dtm-superscript">DTM</sup>

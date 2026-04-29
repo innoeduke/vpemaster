@@ -558,11 +558,16 @@ function buildSavePayload() {
           ? projectSelectDropdown.value
           : null;
       break;
-    default: // Pathway Speech
-      const isGeneric = genericCheckbox.checked;
-      payload.session_title = speechTitle.value;
-      payload.project_id = isGeneric ? ProjectID.GENERIC : projectSelect.value || ProjectID.GENERIC;
-      payload.pathway = pathwaySelect.value;
+    default:
+      // Only include speech-specific fields if the standard selection UI is visible
+      // (i.e., this is a speech/presentation, not a role like Grammarian/Timer)
+      if (modalElements.standardSelection && modalElements.standardSelection.style.display !== "none") {
+        const isGeneric = genericCheckbox.checked;
+        payload.session_title = speechTitle.value;
+        payload.project_id = isGeneric ? ProjectID.GENERIC : projectSelect.value || ProjectID.GENERIC;
+        payload.pathway = pathwaySelect.value;
+      }
+      // For roles, only credential and media_url (already in base payload) are sent
       break;
   }
   return payload;

@@ -1747,14 +1747,18 @@ def get_speech_log_details(log_id):
 
 
     # Retrieve correct credential context
-    # Try to find exactly which owner we are editing for
-    # If member view (or impersonating), we focus on that user's entry
-    target_contact_id = current_user_contact_id
-    
-    # If admin viewing global, default to primary owner if exists
-    if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) and not target_contact_id:
-        if log.owners:
-            target_contact_id = log.owners[0].id
+    # The modal edits the log's owner data, so we should look up the
+    # primary owner's credential — not the current admin user's.
+    # Only use current user's contact_id if they are one of the owners.
+    target_contact_id = None
+    if log.owners:
+        owner_ids = [o.id for o in log.owners]
+        if current_user_contact_id in owner_ids:
+            # Current user is an owner — use their credential
+            target_contact_id = current_user_contact_id
+        else:
+            # Admin editing someone else's log — use primary owner
+            target_contact_id = owner_ids[0]
             
     credential_value = ""
     

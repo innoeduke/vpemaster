@@ -737,6 +737,17 @@ td.actions-column {
 	color: #1e293b;
 }
 
+a.owner-link {
+	text-decoration: none;
+	color: inherit;
+	transition: color 0.15s ease;
+}
+
+a.owner-link:hover {
+	color: #004165;
+	text-decoration: underline;
+}
+
 .dtm-superscript {
 	color: #772432;
 	font-weight: 700;
@@ -980,7 +991,7 @@ td.actions-column {
 /* --- Meeting Status Display --- */
 .meeting-status-display {
 	display: inline-flex;
-	padding: 5px 12px;
+	padding: 4px 12px;
 	border-radius: 15px;
 	font-size: 0.9em;
 	align-items: center;
@@ -988,6 +999,15 @@ td.actions-column {
 	gap: 8px;
 	min-width: 140px;
 	justify-content: center;
+	min-height: 30px;
+	box-sizing: border-box;
+}
+
+@media (min-width: 769px) {
+	.meeting-status-display {
+		min-height: 38px;
+		padding: 8px 20px;
+	}
 }
 
 .status-unpublished,

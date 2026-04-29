@@ -18,7 +18,7 @@ class Club(db.Model):
     meeting_time = db.Column(db.Time, nullable=True)
     contact_phone_number = db.Column(db.String(50), nullable=True)
     website = db.Column(db.String(255), nullable=True)
-    logo_url = db.Column(db.String(255), nullable=True)
+    logo_url = db.Column(db.String(255), nullable=True, default='images/club_logo.webp')
     founded_date = db.Column(db.Date, nullable=True)
     current_excomm_id = db.Column(db.Integer, db.ForeignKey('excomm.id', use_alter=True, name='fk_club_current_excomm'), nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -45,6 +45,31 @@ class Club(db.Model):
         cascade='all, delete-orphan'
     )
     
+    @property
+    def effective_logo_url(self):
+        """Returns the logo URL if it exists, otherwise returns the default logo."""
+        from flask import current_app
+        import os
+        
+        default_logo = 'images/club_logo.webp'
+        
+        if not self.logo_url:
+            return default_logo
+            
+        # Check if file exists in static folder
+        # We use a simple check to avoid performance issues if called many times,
+        # but for a header logo it's fine.
+        try:
+            static_folder = os.path.join(current_app.root_path, 'static')
+            file_path = os.path.join(static_folder, self.logo_url)
+            
+            if os.path.exists(file_path):
+                return self.logo_url
+        except Exception:
+            pass
+            
+        return default_logo
+
     def __repr__(self):
         return f'<Club {self.club_no}: {self.club_name}>'
     
