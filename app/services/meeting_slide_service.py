@@ -16,6 +16,7 @@ from .export.context import MeetingExportContext
 from ..utils import derive_credentials
 from ..models.meeting import Meeting
 from ..models.contact import Contact
+from .. import db
 
 class MeetingSlideService:
     """Service to generate meeting PowerPoint slides."""
