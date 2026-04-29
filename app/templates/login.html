@@ -19,7 +19,7 @@
 <body>
   <div class="login-container">
     <div class="login-content-wrapper">
-      <img src="{{ url_for('static', filename='images/SHLTMC-logo.webp') }}" alt="SHLTMC Logo" class="login-logo" />
+      <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="Memory Maker Logo" class="login-logo" />
       <h2>我的头马旅程</h2>
       <h1>Memory Maker</h1>
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
@@ -110,8 +110,8 @@
 
       // Initialize guest custom select if modal exists
       if (guestClubSelect) {
-         // wait for modal to be potentially shown or just init it
-         guestCustomSelect = new CustomSelect('guest-club-select');
+        // wait for modal to be potentially shown or just init it
+        guestCustomSelect = new CustomSelect('guest-club-select');
       }
 
       // Guest Modal Event Listeners
@@ -130,12 +130,12 @@
 
       if (confirmGuestBtn) {
         confirmGuestBtn.addEventListener('click', function () {
-            // Need to get value from the original select which custom select updates
-            let clubId = guestClubSelect.value;
-            if (!clubId && guestClubSelect.options.length > 0) {
-                // Fallback to first option if value is empty (common in custom selects before first change)
-                clubId = guestClubSelect.options[0].value;
-            }
+          // Need to get value from the original select which custom select updates
+          let clubId = guestClubSelect.value;
+          if (!clubId && guestClubSelect.options.length > 0) {
+            // Fallback to first option if value is empty (common in custom selects before first change)
+            clubId = guestClubSelect.options[0].value;
+          }
           if (clubId) {
             window.location.href = "{{ url_for('agenda_bp.agenda') }}?club_id=" + clubId;
           }
@@ -161,8 +161,8 @@
           clubSelectorContainer.style.display = 'none';
           clubSelector.innerHTML = '';
           clubSelector.removeAttribute('required');
-           // clean up custom select if it exists? 
-           // actually just hiding container is enough, but we should probably destroy/reset it
+          // clean up custom select if it exists? 
+          // actually just hiding container is enough, but we should probably destroy/reset it
           return;
         }
 
@@ -186,7 +186,7 @@
               option.textContent = club.name;
               // Select home club by default, or first club if no home club
               if (club.is_home || index === 0) {
-               option.selected = true;
+                option.selected = true;
               }
               clubSelector.appendChild(option);
             });
@@ -194,12 +194,12 @@
             // Show club selector
             clubSelectorContainer.style.display = 'block';
             clubSelector.setAttribute('required', 'required');
-            
+
             // Re-initialize or update Custom Select
             if (clubCustomSelect) {
-                clubCustomSelect.refresh();
+              clubCustomSelect.refresh();
             } else {
-                clubCustomSelect = new CustomSelect('club_names');
+              clubCustomSelect = new CustomSelect('club_names');
             }
 
             updateGuestLink();
