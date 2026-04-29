@@ -17,7 +17,7 @@
     <div class="agenda-header-container">
         <div class="agenda-header-logo">
             {% if club %}
-            <img src="{{ url_for('static', filename=club.effective_logo_url) }}" alt="{{ club.club_name }} Logo">
+            <img id="header-logo" src="{{ url_for('static', filename=club.effective_logo_url) }}" alt="{{ club.club_name }} Logo" class="club-logo">
             {% else %}
             <img src="{{ url_for('static', filename='images/club_logo.webp') }}" alt="Default Club Logo">
             {% endif %}

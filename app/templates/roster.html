@@ -132,7 +132,11 @@
                         data-contact-id="{{ entry.contact_id or '' }}" data-ticket-id="{{ entry.ticket.id if entry.ticket else '' }}">
                         <td class="cell-order">{{ entry.order_number if entry.order_number is not none else '' }}</td>
                         <td class="cell-name">
+                            {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) and entry.contact_id %}
+                            <a href="#" class="roster-contact-link" data-contact-id="{{ entry.contact_id }}">{{ entry.contact.Name if entry.contact else 'N/A' }}</a>
+                            {% else %}
                             {{ entry.contact.Name if entry.contact else 'N/A' }}
+                            {% endif %}
                             {% if entry.contact_type %}
                             {% set c_type = entry.contact_type %}
                             {% elif entry.contact %}

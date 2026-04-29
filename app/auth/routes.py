@@ -1,4 +1,4 @@
-from flask import render_template, request, redirect, url_for, session, flash, current_app, jsonify
+from flask import render_template, request, redirect, url_for, session, flash, current_app, jsonify, get_flashed_messages
 from .permissions import Permissions
 import os
 from sqlalchemy import or_
@@ -72,6 +72,21 @@ def lookup_user_clubs():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('main_bp.index'))
+
+    # Deduplicate flash messages (e.g., "Please log in") to prevent triple prompts
+    # from multiple concurrent protected resource requests.
+    flashed_messages = get_flashed_messages(with_categories=True)
+    if flashed_messages:
+        unique_messages = []
+        seen = set()
+        for category, message in flashed_messages:
+            if message not in seen:
+                unique_messages.append((category, message))
+                seen.add(message)
+        
+        # Re-flash only the unique messages
+        for category, message in unique_messages:
+            flash(message, category)
 
     if request.method == 'POST':
         login_identifier = request.form.get('username', '').strip()

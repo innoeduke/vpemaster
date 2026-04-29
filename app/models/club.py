@@ -52,19 +52,23 @@ class Club(db.Model):
         import os
         
         default_logo = 'images/club_logo.webp'
+        url = self.logo_url
         
-        if not self.logo_url:
+        if not url:
             return default_logo
             
-        # Check if file exists in static folder
-        # We use a simple check to avoid performance issues if called many times,
-        # but for a header logo it's fine.
-        try:
-            static_folder = os.path.join(current_app.root_path, 'static')
-            file_path = os.path.join(static_folder, self.logo_url)
+        # Strip potential legacy 'static/' prefix if present in DB
+        if url.startswith('static/'):
+            url = url[len('static/'):]
             
-            if os.path.exists(file_path):
-                return self.logo_url
+        # Check if file exists in static folder
+        try:
+            # current_app.static_folder is the absolute path to the static directory
+            static_folder = current_app.static_folder
+            file_path = os.path.join(static_folder, url)
+            
+            if os.path.exists(file_path) and os.path.isfile(file_path):
+                return url
         except Exception:
             pass
             

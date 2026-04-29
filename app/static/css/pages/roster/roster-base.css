@@ -455,6 +455,17 @@
 	max-width: 200px;
 }
 
+.roster-contact-link {
+	color: inherit;
+	text-decoration: none;
+	transition: color 0.2s;
+}
+
+.roster-contact-link:hover {
+	color: #772432;
+	text-decoration: underline;
+}
+
 .page-container .cell-ticket {
 	white-space: nowrap;
 }

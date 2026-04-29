@@ -102,12 +102,17 @@ if [ -f "$PROJECT_ROOT/.env" ]; then
     sudo chown $DEPLOYER_USER:$SHARED_GROUP "$PROJECT_ROOT/.env"
 fi
 
-# 4. Writable directories for the service user
-mkdir -p "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run" "$PROJECT_ROOT/.webassets-cache" "$PROJECT_ROOT/app/static/.webassets-cache"
+# 4. Writable directories for the service user (Database, logs, dynamic resources)
+mkdir -p "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run" "$PROJECT_ROOT/.webassets-cache" "$PROJECT_ROOT/app/static/images" "$PROJECT_ROOT/app/static/club_resources"
 sudo chown -R $SERVICE_USER:$SHARED_GROUP "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run" "$PROJECT_ROOT/.webassets-cache" "$PROJECT_ROOT/app/static"
 sudo chmod -R 770 "$PROJECT_ROOT/instance" "$PROJECT_ROOT/logs" "$PROJECT_ROOT/run" "$PROJECT_ROOT/.webassets-cache" "$PROJECT_ROOT/app/static"
 
-# 5. Ensure PROJECT_ROOT is accessible
+# 5. Backup directory (Specifically owned by deployer for secure storage)
+mkdir -p "$PROJECT_ROOT/instance/backup"
+sudo chown $DEPLOYER_USER:$SHARED_GROUP "$PROJECT_ROOT/instance/backup"
+sudo chmod 770 "$PROJECT_ROOT/instance/backup"
+
+# 6. Ensure PROJECT_ROOT is accessible
 sudo chmod 755 "$PROJECT_ROOT"
 
 # --- Service File Generation ---

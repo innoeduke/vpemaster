@@ -659,6 +659,16 @@ function initializeTableInteractions(elements) {
           });
       }
     }
+
+    // Handle clicking contact name to edit
+    const contactLink = e.target.closest(".roster-contact-link");
+    if (contactLink) {
+      e.preventDefault();
+      const contactId = contactLink.dataset.contactId;
+      if (typeof openContactModal === "function") {
+        openContactModal(contactId);
+      }
+    }
   });
 }
 
