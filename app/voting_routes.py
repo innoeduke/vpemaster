@@ -7,7 +7,7 @@ from .models import SessionLog, SessionType, Contact, Meeting, User, MeetingRole
 from . import db
 from datetime import datetime
 import secrets
-from sqlalchemy import func
+from sqlalchemy import func, distinct
 from flask_login import current_user
 from .club_context import get_current_club_id, authorized_club_required
 
@@ -297,6 +297,12 @@ def _get_voting_page_context(meeting_id):
             context['has_voted'] = True
     
     context['selected_meeting'] = selected_meeting
+    
+    # Calculate total received votes (unique voters)
+    total_voters = db.session.query(func.count(distinct(Vote.voter_identifier)))\
+        .filter(Vote.meeting_id == meeting_id)\
+        .scalar() or 0
+    context['total_voters'] = total_voters
 
     # --- Access Control Logic ---
     status = selected_meeting.status

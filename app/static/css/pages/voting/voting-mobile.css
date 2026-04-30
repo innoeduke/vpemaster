@@ -6,6 +6,16 @@
 @media (max-width: 768px) {
 
   /* Filter container mobile layout */
+  .vote-count-badge {
+    padding: 4px 10px;
+    height: 34px;
+    gap: 5px;
+    font-size: 0.9em;
+  }
+
+  .vote-count-badge .label {
+    display: none;
+  }
 
   .accordion-list .accordion-content {
     background-color: transparent;

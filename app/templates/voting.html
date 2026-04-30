@@ -15,6 +15,11 @@
             
             <div class="filter-right">
                 {% if not notice_image %}
+                    <div class="vote-count-badge" title="Total Votes Received">
+                        <i class="fas fa-vote-yea"></i>
+                        <span class="count">{{ total_voters }}</span>
+                        <span class="label">Votes</span>
+                    </div>
                     {% if is_admin_view %}
                     <a href="{{ url_for('voting_bp.voting_nps', club_id=get_current_club_id()) }}" class="btn btn-info trend-btn" title="NPS Trend">
                         <i class="fas fa-chart-line"></i> NPS Trend

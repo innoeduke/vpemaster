@@ -15,6 +15,43 @@
   border: 1px solid #dee2e6;
 }
 
+/* --- Vote Count Badge --- */
+.vote-count-badge {
+  display: inline-flex;
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid #772432;
+  border-radius: 50px;
+  padding: 6px 14px;
+  gap: 8px;
+  font-family: "Montserrat", sans-serif;
+  box-shadow: 0 2px 4px rgba(119, 36, 50, 0.1);
+  height: 40px;
+  box-sizing: border-box;
+  color: #772432;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.vote-count-badge i {
+  font-size: 0.9em;
+  color: #772432;
+}
+
+.vote-count-badge .count {
+  font-size: 1.1em;
+}
+
+.vote-count-badge .label {
+  font-size: 0.75em;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+  border-left: 1px solid rgba(119, 36, 50, 0.2);
+  padding-left: 8px;
+  margin-left: 2px;
+}
+
 /* --- Voting Instruction Alert --- */
 .voting-instruction-alert {
   font-family: "Montserrat", sans-serif;
