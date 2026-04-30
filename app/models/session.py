@@ -529,17 +529,29 @@ class SessionLog(db.Model):
             
             # If log has no pathway:
             # - Speeches must belong to the selected pathway OR be compatible with it
-            # - Roles are generic → accept
-            if not current_log_path and log_type == 'speech':
-                 # Check if the project is valid for the requested pathway
-                 is_valid = False
-                 if self.project:
-                     for pp in self.project.pathway_projects:
-                         if pp.pathway and pp.pathway.name == pathway:
-                             is_valid = True
-                             break
-                 if not is_valid:
-                     return False
+            # - Roles are generic → accept but verify credential snapshot matches the selected pathway
+            if not current_log_path:
+                if log_type == 'speech':
+                     # Check if the project is valid for the requested pathway
+                     is_valid = False
+                     if self.project:
+                         for pp in self.project.pathway_projects:
+                             if pp.pathway and pp.pathway.name == pathway:
+                                 is_valid = True
+                                 break
+                     if not is_valid:
+                         return False
+                elif log_type == 'role':
+                     # Enforce credential snapshot matching for generic roles
+                     is_generic = not self.Project_ID or self.Project_ID == ProjectID.GENERIC
+                     if is_generic:
+                         context_cred = getattr(self, 'context_credential', None)
+                         if context_cred and context_cred not in ['DTM']:
+                             from .project import Pathway
+                             path_obj = Pathway.query.filter_by(name=pathway).first()
+                             if path_obj and path_obj.abbr:
+                                 if not context_cred.startswith(path_obj.abbr):
+                                     return False
         
         # Status filter
         if status:
