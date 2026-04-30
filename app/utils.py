@@ -2,7 +2,7 @@
 
 from flask import current_app
 # Ensure Project model is imported if needed elsewhere
-from .models import Project, Meeting, SessionLog, Pathway, PathwayProject, Achievement, Contact, Club, SessionType, MeetingRole, OwnerMeetingRoles
+from .models import Project, Meeting, SessionLog, Pathway, PathwayProject, Achievement, Contact, Club, SessionType, MeetingRole, OwnerMeetingRoles, ExComm, ExcommOfficer
 from .auth.permissions import Permissions
 from .club_context import get_current_club_id
 from . import db
@@ -1045,5 +1045,49 @@ def get_date_ranges_for_terms(term_ids, all_terms):
 
 
 
-
-
+def sync_club_officer_status(club_id, contact_ids=None):
+    """
+    Syncs the is_officer flag in ContactClub for a specific club.
+    A contact is considered an officer ONLY if they are assigned to the CURRENT excomm team in that club.
+    
+    Args:
+        club_id: ID of the club
+        contact_ids: Optional list of contact IDs to sync. If None, syncs all contacts in the club.
+    """
+    from .models import ExcommOfficer, ExComm, ContactClub, Club
+    from sqlalchemy import distinct
+    from . import db
+    
+    # 1. Identify the current excomm for this club
+    club = db.session.get(Club, club_id)
+    if not club or not club.current_excomm_id:
+        officer_contact_ids = set()
+    else:
+        # 2. Identify all contacts that are officers in the CURRENT excomm team
+        officer_query = db.session.query(distinct(ExcommOfficer.contact_id))            .filter(ExcommOfficer.excomm_id == club.current_excomm_id)
+        
+        if contact_ids:
+            officer_query = officer_query.filter(ExcommOfficer.contact_id.in_(contact_ids))
+            
+        officer_contact_ids = {row[0] for row in officer_query.all()}
+    
+    # 3. Update ContactClub records for the affected contacts
+    if contact_ids:
+        # Sync specific contacts
+        cc_records = ContactClub.query.filter(
+            ContactClub.club_id == club_id,
+            ContactClub.contact_id.in_(contact_ids)
+        ).all()
+    else:
+        # Sync all contacts in the club (Fallback/Full Sync)
+        cc_records = ContactClub.query.filter_by(club_id=club_id).all()
+        
+    for cc in cc_records:
+        should_be_officer = cc.contact_id in officer_contact_ids
+        if cc.is_officer != should_be_officer:
+            cc.is_officer = should_be_officer
+            db.session.add(cc)
+            
+    # We don't commit here, as this is usually called within a route's transaction
+    # But we flush to ensure changes are visible to the current transaction
+    db.session.flush()

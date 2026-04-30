@@ -281,6 +281,16 @@
   width: 40px;
   padding-left: 0;
   padding-right: 0;
+  text-align: center;
+}
+
+#contactsTable .col-officer {
+  width: 90px;
+  text-align: center;
+}
+
+#contactsTable th.col-officer {
+  padding-right: 25px; /* Make room for the sort icon */
 }
 
 .checkbox-header {
@@ -527,40 +537,35 @@
   grid-row: 3;
 }
 
-.contact-form-item.dtm-cell {
+.contact-form-item.dtm-item {
   grid-column: 4;
-  grid-row: 2 / span 2;
+  grid-row: 2;
+}
+
+.contact-form-item.officer-item {
+  grid-column: 4;
+  grid-row: 3;
+}
+
+.checkbox-box {
   border: 1.5px solid #e9ecef;
   background-color: #f8f9fa;
-  border-radius: 12px;
-  padding: 15px 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 25px;
-  /* Align with label top of email field */
-}
-
-.contact-form-item.dtm-cell label {
-  margin-bottom: 0px;
-  text-align: center;
-  width: 100%;
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.dtm-checkbox-wrapper {
+  border-radius: 8px;
+  height: 42px; /* Match height of other input fields */
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
 }
 
-.dtm-checkbox-wrapper input[type="checkbox"] {
-  transform: scale(1.5);
+.checkbox-box input[type="checkbox"] {
+  transform: scale(1.2);
   cursor: pointer;
   accent-color: #772432;
+}
+
+.checkbox-box input[type="checkbox"].disabled-checkbox {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .contact-form-item label {

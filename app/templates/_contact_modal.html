@@ -38,22 +38,30 @@
             <input type="text" id="last_name" name="last_name" />
           </div>
 
-          <!-- Row 2 & 3: Email, Phone, and DTM (2-row spanning) -->
+          <!-- Row 2: Email & DTM -->
           <div class="contact-form-item email-column">
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" />
           </div>
 
-          <div class="contact-form-item dtm-cell">
-            <label for="dtm" class="dtm-label">DTM</label>
-            <div class="dtm-checkbox-wrapper">
+          <div class="contact-form-item dtm-item">
+            <label for="dtm">DTM:</label>
+            <div class="checkbox-box">
               <input type="checkbox" id="dtm" name="dtm" />
             </div>
           </div>
 
+          <!-- Row 3: Phone & Officer -->
           <div class="contact-form-item phone-column">
             <label for="phone_number">Phone:</label>
             <input type="text" id="phone_number" name="phone_number" />
+          </div>
+
+          <div class="contact-form-item officer-item">
+            <label for="is_officer">Officer:</label>
+            <div class="checkbox-box">
+              <input type="checkbox" id="is_officer" name="is_officer" {% if not is_authorized(Permissions.CLUBADMIN) %}disabled class="disabled-checkbox"{% endif %} />
+            </div>
           </div>
 
           <!-- Row 4: Member ID & Mentor -->

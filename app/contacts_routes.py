@@ -39,13 +39,18 @@ def search_contacts_by_name():
     # Batch populate users to avoid N+1 and fix invalid joinedload
     Contact.populate_users(contacts, club_id)
 
+    # Build officer set from ContactClub
+    officer_ids = set(
+        cc.contact_id for cc in ContactClub.query.filter_by(club_id=club_id, is_officer=True).all()
+    )
+
     contacts_data = [{
         "id": c.id,
         "Name": c.Name,
         "Type": c.Type,
         "Phone_Number": c.Phone_Number,
         "UserRole": c.user.primary_role_name if c.user else None,
-        "is_officer": c.user.has_role(Permissions.STAFF) if c.user else False
+        "is_officer": c.id in officer_ids
     } for c in contacts]
     return jsonify(contacts_data)
 
@@ -205,6 +210,11 @@ def contact_form(contact_id=None):
                 home_club_id = home_uc.club_id
 
 
+        # Check is_officer
+        current_club_id = get_current_club_id()
+        cc = ContactClub.query.filter_by(contact_id=contact.id, club_id=current_club_id).first()
+        is_officer = cc.is_officer if cc else False
+
         return jsonify({
             'contact': {
                 'id': contact.id,
@@ -213,6 +223,7 @@ def contact_form(contact_id=None):
                 'last_name': contact.last_name,
                 'Email': contact.Email,
                 'Type': contact.Type,
+                'is_officer': is_officer,
                 'Phone_Number': contact.Phone_Number,
                 'Bio': contact.Bio,
                 'Member_ID': contact.Member_ID,
@@ -227,6 +238,7 @@ def contact_form(contact_id=None):
             'user_clubs': user_clubs_data,
             'home_club_id': home_club_id,
             'is_sysadmin': is_authorized(Permissions.SYSADMIN),
+            'is_clubadmin': current_user.has_role(Permissions.CLUBADMIN),
             'current_club_id': get_current_club_id()
         })
 
@@ -270,6 +282,17 @@ def contact_form(contact_id=None):
             if 'completed_paths' in request.form:
                 contact.Completed_Paths = request.form.get('completed_paths')
             contact.DTM = 'dtm' in request.form
+            
+            # Update is_officer flag if user is ClubAdmin
+            if current_user.has_role(Permissions.CLUBADMIN) or is_authorized(Permissions.SYSADMIN):
+                current_club_id = get_current_club_id()
+                cc = ContactClub.query.filter_by(contact_id=contact.id, club_id=current_club_id).first()
+                new_is_officer = 'is_officer' in request.form
+                if cc:
+                    cc.is_officer = new_is_officer
+                elif new_is_officer:
+                    cc = ContactClub(contact_id=contact.id, club_id=current_club_id, is_officer=True)
+                    db.session.add(cc)
             
             # Auto-populate Name from parts if they exist
             # Force update using form data to ensure persistence
@@ -451,9 +474,13 @@ def contact_form(contact_id=None):
             # Associate with current club
             current_cid = get_current_club_id()
             if current_cid:
+                is_officer = False
+                if current_user.has_role(Permissions.CLUBADMIN) or is_authorized(Permissions.SYSADMIN):
+                    is_officer = 'is_officer' in request.form
                 db.session.add(ContactClub(
                     contact_id=new_contact.id,
-                    club_id=current_cid
+                    club_id=current_cid,
+                    is_officer=is_officer
                 ))
                 db.session.commit()
 
@@ -814,6 +841,11 @@ def get_all_contacts_api():
     # Batch populate primary clubs to avoid N+1 queries in the loop below
     Contact.populate_primary_clubs(contacts)
 
+    # Build officer IDs set from ContactClub
+    officer_ids = set(
+        cc.contact_id for cc in ContactClub.query.filter_by(club_id=club_id, is_officer=True).all()
+    )
+
     # Build JSON response
     contacts_data = []
     for c in contacts:
@@ -851,7 +883,7 @@ def get_all_contacts_api():
             'has_user': c.user is not None,
             'user_id': c.user.id if c.user else None,
             'user_role': c.user.primary_role_name if c.user else None,
-            'is_officer': c.user.has_role(Permissions.STAFF) if c.user else False,
+            'is_officer': c.id in officer_ids,
             'is_connected': c.is_connected,
             'Email': c.Email if c.Email else '-',
             'first_name': c.first_name if c.first_name else '-',

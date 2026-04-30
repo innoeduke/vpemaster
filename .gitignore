@@ -18,5 +18,6 @@ htmlcov/
 .vscode/
 .pytest_cache/
 logs/
+scratch/
 pyrefly.toml
 .testmondata

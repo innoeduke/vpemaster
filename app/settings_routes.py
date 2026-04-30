@@ -14,6 +14,7 @@ import csv
 import io
 from datetime import datetime
 from .models.ticket import Ticket
+from .utils import sync_club_officer_status
 
 settings_bp = Blueprint('settings_bp', __name__)
 
@@ -168,6 +169,11 @@ def add_excomm():
                     meeting_role_id=int(role_id)
                 ))
                 
+        # Sync is_officer flag for all contacts assigned to this excomm team
+        new_officer_ids = {int(contact_id) for contact_id in officers_data.values() if contact_id}
+        if new_officer_ids:
+            sync_club_officer_status(club_id, list(new_officer_ids))
+                
         db.session.commit()
         return jsonify(success=True, message="Excomm team added successfully")
         
@@ -202,7 +208,8 @@ def update_excomm():
         # Update Officers
         # Simple strategy: Delete all existing and re-add (or sync)
         # To be safe and clean, let's sync.
-        from .models import ExcommOfficer
+        # Get existing officers before deletion to sync their status later
+        old_officer_ids = {o.contact_id for o in ExcommOfficer.query.filter_by(excomm_id=excomm.id).all()}
         
         # Remove existing officers
         ExcommOfficer.query.filter_by(excomm_id=excomm.id).delete()
@@ -215,6 +222,13 @@ def update_excomm():
                     contact_id=int(contact_id),
                     meeting_role_id=int(role_id)
                 ))
+        
+        # Sync is_officer flag for affected contacts
+        # Union of old and new officers to ensure removal works too
+        new_officer_ids = {int(contact_id) for contact_id in officers_data.values() if contact_id}
+        affected_contact_ids = old_officer_ids.union(new_officer_ids)
+        if affected_contact_ids:
+            sync_club_officer_status(club_id, list(affected_contact_ids))
         
         db.session.commit()
         return jsonify(success=True, message="Excomm team updated successfully")
@@ -242,7 +256,15 @@ def delete_excomm(id):
         if club.current_excomm_id == excomm.id:
             club.current_excomm_id = None
             
+        # Get officers before deleting
+        officer_ids = {o.contact_id for o in excomm.officers}
+            
         db.session.delete(excomm)
+        
+        # Sync status for deleted officers
+        if officer_ids:
+            sync_club_officer_status(club_id, list(officer_ids))
+            
         db.session.commit()
         return jsonify(success=True, message="Excomm team deleted successfully")
         

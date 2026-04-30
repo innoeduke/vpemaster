@@ -68,6 +68,11 @@ def roster():
         .order_by(Contact.Name).all()
     Contact.populate_users(contacts, club_id)
 
+    # Build set of officer contact IDs from ContactClub.is_officer
+    officer_contact_ids = set(
+        cc.contact_id for cc in ContactClub.query.filter_by(club_id=club_id, is_officer=True).all()
+    )
+
     selected_meeting = None
     roster_entries = []
     roles_map = {}
@@ -121,6 +126,7 @@ def roster():
         roles_map=roles_map,
         roster_entries=roster_entries,
         contacts=contacts,
+        officer_contact_ids=officer_contact_ids,
         next_unallocated_entry=next_unallocated_entry,
         pathways=pathways,
         tickets=tickets,
@@ -321,10 +327,12 @@ def get_roster_entry(entry_id):
     
     contact_name = None
     contact_type = entry.contact_type
+    club_id = get_current_club_id()
 
     if entry.contact:
         contact_name = entry.contact.Name
-        if entry.contact.user and entry.contact.user.has_role(Permissions.STAFF):
+        cc = ContactClub.query.filter_by(contact_id=entry.contact_id, club_id=club_id).first()
+        if cc and cc.is_officer:
             contact_type = 'Officer'
         elif not contact_type:
             contact_type = entry.contact.Type

@@ -151,32 +151,35 @@ head_extra %}
         <th class="sortable col-name" data-column-index="0" data-sort-type="string">
           Name
         </th>
-        <th class="sortable col-part" data-column-index="1" data-sort-type="string">
+        <th class="sortable col-officer" data-column-index="1" data-sort-type="boolean">
+          Officer
+        </th>
+        <th class="sortable col-part" data-column-index="2" data-sort-type="string">
           Metrics
         </th>
-        <th class="sortable col-phone" data-column-index="2" data-sort-type="string">
+        <th class="sortable col-phone" data-column-index="3" data-sort-type="string">
           Phone
         </th>
-        <th class="sortable col-date" data-column-index="3" data-sort-type="date">
+        <th class="sortable col-date" data-column-index="4" data-sort-type="date">
           Date Created
         </th>
-        <th class="sortable col-club" data-column-index="4" data-sort-type="string">
+        <th class="sortable col-club" data-column-index="5" data-sort-type="string">
           Club
         </th>
-        <th class="sortable col-paths" data-column-index="5" data-sort-type="string">
+        <th class="sortable col-paths" data-column-index="6" data-sort-type="string">
           Completed Paths
         </th>
-        <th class="sortable col-creds" data-column-index="6" data-sort-type="string">
+        <th class="sortable col-creds" data-column-index="7" data-sort-type="string">
           Credentials
         </th>
-        <th class="sortable col-next" data-column-index="7" data-sort-type="string">
+        <th class="sortable col-next" data-column-index="8" data-sort-type="string">
           Next Project
         </th>
-        <th class="sortable col-mentor" data-column-index="8" data-sort-type="string">
+        <th class="sortable col-mentor" data-column-index="9" data-sort-type="string">
           Mentor
         </th>
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
-        <th class="action-header col-actions" data-column-index="9"></th>
+        <th class="action-header col-actions" data-column-index="10"></th>
         {% endif %}
       </tr>
     </thead>

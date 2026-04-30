@@ -116,6 +116,7 @@
   }
 
   /* Mobile: Show Checkbox, Name, Participation. Hide Actions and others. */
+  #contactsTable .col-officer,
   #contactsTable .col-phone,
   #contactsTable .col-date,
   #contactsTable .col-club,

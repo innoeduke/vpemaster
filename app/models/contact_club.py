@@ -16,6 +16,7 @@ class ContactClub(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     contact_id = db.Column(db.Integer, db.ForeignKey('Contacts.id', ondelete='CASCADE'), nullable=False)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id', ondelete='CASCADE'), nullable=False)
+    is_officer = db.Column(db.Boolean, default=False, nullable=False, server_default=db.text('0'))
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     
@@ -39,6 +40,7 @@ class ContactClub(db.Model):
             'id': self.id,
             'contact_id': self.contact_id,
             'club_id': self.club_id,
+            'is_officer': self.is_officer,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }

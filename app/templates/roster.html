@@ -64,12 +64,6 @@
                         <input type="hidden" id="entry-id" value="">
                         <h3 class="card-title" id="form-title" style="display:none;">Add Entry</h3> <!-- Hidden title -->
 
-                        <div class="form-group-inline input-order">
-                            <label for="order_number">Order#</label>
-                            <input type="number" class="form-control" id="order_number" value="{{ next_unallocated_entry.order_number if next_unallocated_entry else 1 }}">
-                        </div>
-
-
                         <div class="form-group-inline input-name" style="position: relative;">
                             <label for="contact_name">Name</label>
                             <div class="contact-input-container">
@@ -94,6 +88,11 @@
                                 {% set _ = ticket_opts.append({'value': t.id, 'text': t_name_clean, 'icon': 'fas ' ~ t_icon, 'color': t.color, 'type': t.type, 'expired_at': t_expired, 'price': t.price}) %}
                             {% endfor %}
                             {{ render_custom_select(ticket_opts, "", label='Ticket', select_id='ticket', placeholder='Select...') }}
+                        </div>
+
+                        <div class="form-group-inline input-order">
+                            <label for="order_number">Order#</label>
+                            <input type="number" class="form-control" id="order_number" value="{{ next_unallocated_entry.order_number if next_unallocated_entry else 1 }}">
                         </div>
 
                         <div class="form-buttons">
@@ -140,7 +139,7 @@
                             {% if entry.contact_type %}
                             {% set c_type = entry.contact_type %}
                             {% elif entry.contact %}
-                            {% if entry.contact.user and entry.contact.user.has_role(Permissions.STAFF) %}
+                            {% if entry.contact and entry.contact_id in officer_contact_ids %}
                             {% set c_type = 'Officer' %}
                             {% else %}
                             {% set c_type = entry.contact.Type %}
@@ -269,7 +268,7 @@
             "Name": {{ c.Name | tojson }},
             "Type": "{{ c.Type }}",
             "Phone_Number": "{{ c.Phone_Number or '' }}",
-            "is_officer": {{ (c.user is not none and c.user.has_role(Permissions.STAFF)) | lower }}
+            "is_officer": {{ (c.id in officer_contact_ids) | lower }}
         }{% if not loop.last %},{% endif %}
         {% endfor %}
     ];

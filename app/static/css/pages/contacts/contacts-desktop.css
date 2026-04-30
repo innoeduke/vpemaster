@@ -15,7 +15,9 @@
 		padding: 12px 15px;
 	}
 
-	/* Ensure action column is visible on desktop */
+	/* Ensure columns are visible on desktop */
+	table#contactsTable th.col-officer,
+	table#contactsTable td.col-officer,
 	table#contactsTable th.col-actions,
 	table#contactsTable td.col-actions {
 		display: table-cell;

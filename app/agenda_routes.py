@@ -1031,24 +1031,18 @@ def _upsert_meeting_record(data, media_id):
         meeting.sync_excomm()
 
     if is_new:
-        # Auto-add Staff to Roster
-        from .models import UserClub, AuthRole
+        # Auto-add Officers to Roster
+        from .models import ContactClub
         club_id = get_current_club_id()
         if club_id:
-            # Find all staff members for this club (Officers/Admins)
-            staff_members = UserClub.query.join(AuthRole, UserClub.auth_role_id == AuthRole.id)\
-                .filter(UserClub.club_id == club_id, AuthRole.level > 1).all()
-            
-            # Add each staff member to the roster
-            # Officers get order numbers starting from 1000
-            # Filter to ensure we only count members who have a contact_id
-            valid_staff = [m for m in staff_members if m.contact_id]
+            # Find all officers for this club
+            officers = ContactClub.query.filter_by(club_id=club_id, is_officer=True).all()
             
             # Pre-fetch Officer ticket
             from .models import Ticket
-            officer_ticket = Ticket.query.filter_by(name='Officer').first()
+            officer_ticket = Ticket.query.filter_by(name='Officer', club_id=club_id).first()
             
-            for i, membership in enumerate(valid_staff):
+            for i, membership in enumerate(officers):
                 roster_entry = Roster(
                     meeting_id=meeting.id,
                     contact_id=membership.contact_id,

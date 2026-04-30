@@ -146,6 +146,16 @@ function openContactModal(contactId) {
         document.getElementById("completed_paths").value =
           data.contact.Completed_Paths || "";
         document.getElementById("dtm").checked = data.contact.DTM;
+        const officerCheckbox = document.getElementById("is_officer");
+        if (officerCheckbox) {
+          officerCheckbox.checked = data.contact.is_officer;
+          officerCheckbox.disabled = !(data.is_clubadmin || data.is_sysadmin);
+          if (officerCheckbox.disabled) {
+            officerCheckbox.classList.add("disabled-checkbox");
+          } else {
+            officerCheckbox.classList.remove("disabled-checkbox");
+          }
+        }
 
         // Show/hide mentor_id rows based on type
         const memberIdRow = document.getElementById("member_id_container");
@@ -286,6 +296,15 @@ function openContactModal(contactId) {
     // Reset Avatar for New Entry
     document.getElementById("modal-avatar-img").style.display = 'none';
     document.getElementById("modal-avatar-placeholder").style.display = 'flex';
+
+    const officerCheckbox = document.getElementById("is_officer");
+    if (officerCheckbox) {
+      officerCheckbox.checked = false;
+      // We don't have 'data' here to check permissions, but the template already handles the default state.
+      // However, for consistency when reopening after an edit, we might want to ensure it's still correct.
+      // But adding new contacts is usually for Guests, and we'll handle the toggle logic if we ever allow
+      // adding Officers directly (which the UI currently restricts to Guests).
+    }
 
     // Reset Accordions for New Entry: Basic Info open, Education closed
     const acc = document.querySelectorAll(".accordion");

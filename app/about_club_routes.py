@@ -6,7 +6,6 @@ from .club_context import get_current_club_id, authorized_club_required
 from .models import User, Contact, AuthRole, PermissionAudit, ContactClub, Club, ExComm, UserClub, ExcommOfficer, MeetingRole
 from . import db
 from datetime import datetime
-from .utils import process_club_logo
 
 about_club_bp = Blueprint('about_club_bp', __name__)
 
@@ -203,51 +202,7 @@ def about_club_update():
         if excomm:
             excomm.updated_at = datetime.utcnow()
             
-            # Check and add Staff role for ExComm members
-            try:
-                staff_role = AuthRole.query.filter_by(name=Permissions.STAFF).first()
-                if staff_role:
-                    # Collect unique contact IDs from current excomm officers
-                    officer_contact_ids = set()
-                    
-                    # Reload officers to get latest state from DB session
-                    # Since we modified the session but haven't committed, 
-                    # we must rely on what we just did or flush.
-                    # Simplest is to flush and re-query ExcommOfficer table for this excomm
-                    db.session.flush()
-                    
-                    current_officers = ExcommOfficer.query.filter_by(excomm_id=excomm.id).all()
-                    for officer in current_officers:
-                        officer_contact_ids.add(officer.contact_id)
-                    
-                    if officer_contact_ids:
-                        # Find UserClub records for these contacts in this club
-                        ucs = UserClub.query.filter(
-                            UserClub.contact_id.in_(list(officer_contact_ids)),
-                            UserClub.club_id == club.id
-                        ).all()
-                        
-                        for uc in ucs:
-                            if uc.user_id:
-                                # Only upgrade if current role level is LOWER than Staff
-                                current_role = uc.auth_role
-                                current_level = current_role.level if current_role else 0
-                                if current_level < staff_role.level:
-                                    uc.auth_role_id = staff_role.id
-                                    
-                                    # Audit log for auto-upgrade
-                                    audit = PermissionAudit(
-                                        admin_id=current_user.id,
-                                        action='AUTO_UPGRADE_EXCOMM_STAFF',
-                                        target_type='USER',
-                                        target_id=uc.user_id,
-                                        target_name=uc.user.username if uc.user else f"User {uc.user_id}",
-                                        changes=f"Auto-assigned Staff role to ExComm officer in club {club.id}"
-                                    )
-                                    db.session.add(audit)
-            except Exception as role_err:
-                current_app.logger.error(f"Error during ExComm role upgrade: {str(role_err)}")
-                # Continue with the rest of the update even if role upgrade fails
+                # Continue with the rest of the update even if is_officer update fails
 
         db.session.commit()
         

@@ -119,16 +119,17 @@ function applyFilters() {
 function getContactSortValue(contact, index) {
   switch (index) {
     case 0: return (contact.Name || '').toLowerCase();
-    case 1:
+    case 1: return contact.is_officer ? '1' : '0';
+    case 2:
       // Participation: [Role Count]_[Qualified]_[TT Count]_[Attendance]_[Awards]
       return `${String(contact.role_count || 0).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count || 0).padStart(3, '0')}_${String(contact.attendance_count || 0).padStart(3, '0')}_${String(contact.award_count || 0).padStart(3, '0')}`;
-    case 2: return (contact.Phone_Number || '').toLowerCase();
-    case 3: return (contact.Date_Created || '').toLowerCase();
-    case 4: return (contact.Club || '').toLowerCase();
-    case 5: return (contact.Completed_Paths || '').toLowerCase();
-    case 6: return (contact.credentials || '').toLowerCase();
-    case 7: return (contact.Next_Project || '').toLowerCase();
-    case 8: return (contact.Mentor || '').toLowerCase();
+    case 3: return (contact.Phone_Number || '').toLowerCase();
+    case 4: return (contact.Date_Created || '').toLowerCase();
+    case 5: return (contact.Club || '').toLowerCase();
+    case 6: return (contact.Completed_Paths || '').toLowerCase();
+    case 7: return (contact.credentials || '').toLowerCase();
+    case 8: return (contact.Next_Project || '').toLowerCase();
+    case 9: return (contact.Mentor || '').toLowerCase();
     default: return '';
   }
 }
@@ -211,6 +212,9 @@ function createContactRow(contact) {
             ${contact.Member_ID}
           </span>` : ''}
       </div>
+    </td>
+    <td class="col-officer" style="text-align: center;">
+      <input type="checkbox" ${contact.is_officer ? 'checked' : ''} disabled title="Managed via ExComm settings">
     </td>
     <td class="col-part" data-sort="${sortValue}">
       <div class="participation-container">

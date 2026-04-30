@@ -156,9 +156,15 @@ class Roster(db.Model):
         if not contact:
             return
 
-        from ..auth.permissions import Permissions
         from .ticket import Ticket
-        is_officer = (contact.user and contact.user.has_role(Permissions.STAFF)) or contact.Type == 'Officer'
+        from .meeting import Meeting
+        from .contact_club import ContactClub
+        
+        meeting = db.session.get(Meeting, meeting_id)
+        club_id = meeting.club_id if meeting else None
+
+        cc = ContactClub.query.filter_by(contact_id=contact_id, club_id=club_id).first() if club_id else None
+        is_officer = cc.is_officer if cc else False
 
         if not roster_entry:
             if action == 'assign':
@@ -180,10 +186,6 @@ class Roster(db.Model):
                 else:
                     ticket_name = "Walk-in"
                     ticket_type = "Guest"
-
-                from .meeting import Meeting
-                meeting = db.session.get(Meeting, meeting_id)
-                club_id = meeting.club_id if meeting else None
 
                 # Fetch ticket using robust lookup
                 ticket_obj = Ticket.get_by_name(name=ticket_name, type=ticket_type, club_id=club_id)
