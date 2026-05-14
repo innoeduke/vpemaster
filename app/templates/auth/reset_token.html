@@ -1,34 +1,66 @@
-{% block flash_messages %}{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
 
-{% block content %}
-<div class="login-container">
-  <form method="POST" action="" class="login-form">
-    <h2 style="text-align: center; margin-bottom: 20px">Reset Password</h2>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Set New Password</title>
+  <link rel="preconnect" href="https://fonts.loli.net">
+  <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+  <link
+    href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@500;600&display=swap"
+    rel="stylesheet">
+  {% assets "css_all" %}
+  <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}" />
+</head>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-    <div class="alert-container">
-      {% for category, message in messages %}
-      <div class="alert alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
+<body>
+  <div class="login-container">
+    <div class="login-content-wrapper">
+      <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="Memory Maker Logo" class="login-logo" />
+      <h2 style="margin-bottom: 5px;">Set New Password</h2>
+      <p style="color: #888; font-size: 0.9em; margin-bottom: 20px;">Choose a strong password for your account.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      <div class="alert-container">
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="" class="login-form">
+        <div>
+          <label for="password">New Password:</label>
+          <input type="password" id="password" name="password" required minlength="8"
+            placeholder="Enter new password" autocomplete="new-password" />
+          <small style="color: #888; font-size: 0.8em;">Min 8 chars, with uppercase, lowercase, and number.</small>
+        </div>
+
+        <div>
+          <label for="confirm_password">Confirm Password:</label>
+          <input type="password" id="confirm_password" name="confirm_password" required
+            placeholder="Confirm new password" autocomplete="new-password" />
+        </div>
+
+        <div>
+          <button type="submit" class="btn btn-primary" style="height: 40px">
+            Reset Password
+          </button>
+        </div>
+      </form>
+
+      <div style="text-align: center; margin-top: 15px;">
+        <a href="{{ url_for('auth_bp.login') }}" class="login-link">
+          <i class="fas fa-arrow-left"></i> Back to Login
+        </a>
+      </div>
     </div>
-    {% endif %}
-    {% endwith %}
+  </div>
+</body>
 
-    <div class="form-group">
-      <label for="password">New Password</label>
-      <input type="password" id="password" name="password" required minlength="8" placeholder="Enter new password">
-      <small class="note">Minimum 8 characters, uppercase, lowercase, and number required.</small>
-    </div>
-
-    <div class="form-group">
-      <label for="confirm_password">Confirm Password</label>
-      <input type="password" id="confirm_password" name="confirm_password" required placeholder="Confirm new password">
-    </div>
-
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Reset Password</button>
-    </div>
-  </form>
-</div>
-{% endblock %}
+</html>

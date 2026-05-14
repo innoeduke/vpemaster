@@ -365,7 +365,7 @@ def reset_token(token):
              else:
                   user.set_password(password)
                   db.session.commit()
-                  flash('Your password has been updated! You are now able to log in', 'success')
+                  flash('Your password has been updated successfully!', 'success')
                   return redirect(url_for('auth_bp.login'))
                   
     return render_template('auth/reset_token.html')
