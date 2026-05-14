@@ -646,9 +646,9 @@ def agenda():
              return redirect(url_for('agenda_bp.agenda'))
 
         # Custom Security Check based on Status
-        # 1. Unpublished: Only Officers/Admin can view full details
+        # 1. Unpublished: Only users with AGENDA_VIEW_UNPUBLISHED can view full details
         if selected_meeting.status == 'unpublished':
-            if not is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting):
+            if not is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED, meeting=selected_meeting):
                 # Unauthorized users cannot view unpublished meetings
                 # Instead of redirecting, show notice image and hide booking/voting nav
                 return render_template('agenda.html',
@@ -670,11 +670,9 @@ def agenda():
                                        next_meeting_date='',
                                        project_speakers=[])
 
-        # 2. Finished: Guest/Anonymous users cannot view finished meetings
-        if selected_meeting.status == 'finished':
-            is_guest = not current_user.is_authenticated or \
-                       (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest')
-            if is_guest:
+        # 2. Published meetings (not started, running, finished): require AGENDA_VIEW
+        if selected_meeting.status in ('not started', 'running', 'finished'):
+            if not is_authorized(Permissions.AGENDA_VIEW, meeting=selected_meeting):
                 return render_template('agenda.html',
                                        logs_data=[],
                                        meeting_ids=all_meetings,
@@ -693,6 +691,7 @@ def agenda():
                                        next_meeting_num=0,
                                        next_meeting_date='',
                                        project_speakers=[])
+
 
     # --- Other Data for Template ---
     project_speakers = _get_project_speakers(selected_meeting_id)

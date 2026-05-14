@@ -1,62 +1,102 @@
-# SAA Work Charts
-
-## Table View
-
-| 任务 | 负责人 | 时间 | 备注 |
-|------|--------|------|------|
-| **📄 Documents & Printing** | | | |
-| Collect & prepare PPT slides per Agenda | SAA / SAA Assistant | By 5pm | Store in a file |
-| Print Agenda, certificates, and forms | SAA / SAA Assistant | By 5pm | Deliver to meeting room door |
-| Receive prints and verify | SAA / SAA Assistant | 6pm | If errors, contact print shop immediately |
-| **🍕 Snacks & Refreshments** | | | |
-| Order snacks | SAA / SAA Assistant | By 5pm | Deliver by 6pm |
-| Check snacks delivery & arrange | SAA / SAA Assistant | 6pm | Tissues, forks, cups on 2 tables by door |
-| **🏠 Venue Setup** | | | |
-| Set up all tables & chairs | SAA / SAA Assistant + Members/Guests | 6pm | 2 rows: President/SAA/GE left, QC/Evaluators right |
-| Place writing whiteboard | Members can help | - | - |
-| **🎌 Branding & Reception** | | | |
-| Place club poster by door & hang flag | Members can help | - | - |
-| **🖥️ Device/Software Setup** | | | |
-| Turn on projector and AC | Members can help | - | - |
-| Set up circuit board & connect devices | Members can help | - | Mic / Projector / Camera / Laptop |
-| Test Microsoft Teams | Members can help | - | Mic/Speaker → USB devices; Camera → |
-| Test mics and slides | Members can help | - | - |
-| Start Microsoft Teams Meeting & Recording | Members can help | - | - |
-| Start MemMaker Meeting | Members can help | - | - |
-| **🕐 Meeting Start** | | | |
-| Add table topic speakers to agenda | SAA / SAA Assistant | - | - |
-| Update the meeting roster with guest info | SAA / SAA Assistant | - | - |
-| Remind TME to gather audience | SAA Assistant | Before start | If not full, sit forward |
-
+---
+papersize: a4
+geometry: margin=1.2cm
+mainfont: Helvetica
+fontsize: 10pt
+header-includes: |
+  \renewcommand{\arraystretch}{1.1}  
 ---
 
-## Checklist View
+# Meeting Orchestration Work Charts
 
-- [ ] **📄 Documents & Printing**
-  - [ ] Collect & prepare PPT slides per Agenda | By 5pm
-  - [ ] Print Agenda, certificates, and forms | By 5pm
-  - [ ] Receive prints and verify | 6pm
+Last Modified: 2026-05-15
 
-- [ ] **🍕 Snacks & Refreshments**
-  - [ ] Order snacks | By 5pm
-  - [ ] Check snacks delivery & arrange | 6pm
-
-- [ ] **🏠 Venue Setup**
-  - [ ] Set up all tables & chairs | 6pm
-  - [ ] Place writing whiteboard | -
-
-- [ ] **🎌 Branding & Reception**
-  - [ ] Place club poster by door & hang flag | -
-
-- [ ] **🖥️ Device/Software Setup**
-  - [ ] Turn on projector and AC | -
-  - [ ] Set up circuit board & connect devices | -
-  - [ ] Test Microsoft Teams | -
-  - [ ] Test mics and slides | -
-  - [ ] Start Microsoft Teams Meeting & Recording | -
-  - [ ] Start MemMaker Meeting | -
-
-- [ ] **🕐 Meeting Start**
-  - [ ] Add table topic speakers to agenda | -
-  - [ ] Update the meeting roster with guest info | -
-  - [ ] Remind TME to gather audience | Before start
++--------+------------------------+----------------+------------+-----------------------------------+
+| **ID** | **Task**               | Owner          | Time       | Notes                             |
++========+========================+================+============+===================================+
+|        |                        |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| **Documents & Printing**                                                                          |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 1.1    | Collect speaker slides | SAA            | By 2pm     | keynote, table topics, prepared   |
+|        |                        |                |            | speeches, announcements, etc.     |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 1.2    | Submit all printing    | VPE            | By 3pm     | Agenda, certificates, and eval    |
+|        | materials to SAA       |                |            | forms, etc.                       |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 1.3    | Print the early bird   | SAA            | By 4pm     | Early bird tickets expire at 3pm  |
+|        | roster sheet           |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 1.4    | Send prints to         | SAA            | By 4pm     | Also send entrance QR code to     |
+|        | print vendor           |                |            | print vendor                      |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 1.5    | Receive prints and     | SAA            | By 6pm     | If errors, contact print vendor   |
+|        | verify                 |                |            | immediately                       |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 1.6    | Generate Meeting       | VPE            | By 6pm     | Upload to shared Drive folder for |
+|        | slides per Agenda      |                |            | access                            |
++--------+------------------------+----------------+------------+-----------------------------------+
+|        |                        |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| **Snacks & Refreshments**                                                                         |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 2.1    | Order snacks           | SAA            | 12pm       | Deliver by 6pm                    |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 2.2    | Check snacks delivery  | SAA            | 6pm        | Tissues, forks, cups, water on    |
+|        | & arrange              |                |            | the side table by the door        |
++--------+------------------------+----------------+------------+-----------------------------------+
+|        |                        |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| **Venue Setup**                                                                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 3.1    | Set up all tables &    | Venue vendor   | By 6pm     | 1 row left : President/SAA; 2     |
+|        | chairs                 |                |            | rows right: QC                    |
+|        |                        |                |            | (timer/ac/gram)/Evaluators; 1     |
+|        |                        |                |            | table for welcome officer by the  |
+|        |                        |                |            | door                              |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 3.2    | Prepare whiteboard     | SAA +          | By 6:30pm  | Write the WOD on it               |
+|        |                        | Grammarian     |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 3.3    | Place club poster by   | SAA + Members  | -          | -                                 |
+|        | door & hang flag       |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+|        |                        |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| **Device/Software Setup**                                                                         |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 4.1    | Turn on projector, TV, | SAA            | -          | Use remote controls               |
+|        | and AC                 |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 4.2    | Turn on and test Audio | SAA            | -          | -                                 |
+|        | speaker                |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 4.3    | Set up Audio Mixer &   | SAA            | -          | Mic / Projector / Camera / Laptop |
+|        | connect devices        |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 4.4    | Test Microsoft Teams   | SAA            | -          | Mic/Speaker: USBPnP devices;      |
+|        | (voice/video)          |                |            | Camera: OBSBOT                    |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 4.5    | Test mics and slides   | SAA            | -          | Turn on Noise Suppression in the  |
+|        |                        |                |            | Settings / Devices / Audio        |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 4.6    | Start Online Meeting   | SAA            | Before     | Meeting ID: 428389900126 PW:      |
+|        | & recording            |                | start      | WRrzJ8;                           |
+|        |                        |                |            | Enable spotlight for everyone     |
+|        |                        |                |            | (default setting)                 |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 4.7    | Start MemMaker Meeting | VPE            | 6:55pm     | -                                 |
++--------+------------------------+----------------+------------+-----------------------------------+
+|        |                        |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| **Meeting Start**                                                                                 |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 5.1    | Add table topic        | VPE            | -          | Add into MemMaker via Booking     |
+|        | speakers               |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 5.2    | Update the meeting     | VPE            | -          | Add into MemMaker via Roster      |
+|        | roster with guest info |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 5.3    | Remind TME to gather   | SAA + Timer    | Before     | If not full, sit forward          |
+|        | audience               |                | start      |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+

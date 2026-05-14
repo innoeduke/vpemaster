@@ -308,16 +308,16 @@ def _get_voting_page_context(meeting_id):
     status = selected_meeting.status
     
     if status == 'unpublished':
-        context['notice_image'] = 'under_planning.webp'
-            
-    elif status == 'not started':
-        context['notice_image'] = 'not_started.webp'
-            
-    elif status == 'finished':
-        # Finished: only those with VOTING_VIEW_RESULTS can see results
-        if not is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting):
-            # Members/Guests see "not started" or "voting closed" notice
+        if not is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED, meeting=selected_meeting):
+            context['notice_image'] = 'under_planning.webp'
+
+    elif status in ('not started', 'running', 'finished'):
+        if not is_authorized(Permissions.AGENDA_VIEW, meeting=selected_meeting):
             context['notice_image'] = 'not_started.webp'
+        elif status == 'finished':
+            # Finished: only those with VOTING_VIEW_RESULTS can see results
+            if not is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting):
+                context['notice_image'] = 'not_started.webp'
     
     # Status 'running' is open to everyone for voting
 

@@ -605,7 +605,12 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
     
     # --- Mode 1: Simple Filter (if status_filter provided) ---
     if status_filter:
+        from .auth.utils import is_authorized
+        from .auth.permissions import Permissions
         effective_status_filter = status_filter
+        # Strip 'unpublished' if user doesn't have permission to view them
+        if 'unpublished' in effective_status_filter and not is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED):
+            effective_status_filter = [s for s in effective_status_filter if s != 'unpublished']
 
         query = db.session.query(*query_cols)\
             .filter(Meeting.status.in_(effective_status_filter))
@@ -624,9 +629,12 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
     # --- Mode 2: Default Hybrid Active/Past Logic ---
     club_id = get_current_club_id()
 
-    # Fetch active meetings ('unpublished', 'not started', or 'running')
-    # Updated: Always include 'unpublished' so list is same for all users
-    active_statuses = ['not started', 'running', 'unpublished']
+    # Fetch active meetings ('not started', 'running', and 'unpublished' if permitted)
+    from .auth.utils import is_authorized
+    from .auth.permissions import Permissions
+    active_statuses = ['not started', 'running']
+    if is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED):
+        active_statuses.append('unpublished')
     active_query = db.session.query(*query_cols)\
         .filter(Meeting.status.in_(active_statuses))
     
@@ -698,8 +706,13 @@ def get_default_meeting_id():
     Determines the default meeting ID based on priority:
     1. 'running' meeting
     2. Lowest numbered unfinished meeting ('not started' or 'unpublished')
+       - 'unpublished' only included if user has AGENDA_VIEW_UNPUBLISHED
+    3. Fallback: Latest finished meeting
     Returns None if neither is found.
     """
+    from .auth.utils import is_authorized
+    from .auth.permissions import Permissions
+
     # 1. Check for running meeting
     club_id = get_current_club_id()
     
@@ -711,12 +724,16 @@ def get_default_meeting_id():
     if running_meeting:
         return running_meeting.id
 
-    # 2. Check for nearest unfinished/cancelled meeting (not started, unpublished, or cancelled)
-    # Priority: Earliest unfinished meeting (often the next one)
+    # 2. Check for nearest unfinished meeting (not started, unpublished, or cancelled)
+    # Only include 'unpublished' if user has AGENDA_VIEW_UNPUBLISHED permission
     from .models import SessionLog
+    upcoming_statuses = ['not started', 'cancelled']
+    if is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED):
+        upcoming_statuses.append('unpublished')
+    
     upcoming_query = Meeting.query \
         .join(SessionLog, Meeting.id == SessionLog.meeting_id) \
-        .filter(Meeting.status.in_(['not started', 'unpublished', 'cancelled']))
+        .filter(Meeting.status.in_(upcoming_statuses))
     
     if club_id:
         upcoming_query = upcoming_query.filter(Meeting.club_id == club_id)

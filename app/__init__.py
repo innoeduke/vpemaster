@@ -33,6 +33,7 @@ cache = Cache()
 from flask_login import LoginManager
 login_manager = LoginManager()
 login_manager.login_view = 'auth_bp.login'
+login_manager.login_message = None  # Guest users should not see a login prompt
 login_manager.login_message_category = 'info'
 
 from flask_principal import Principal, Identity, AnonymousIdentity, identity_loaded

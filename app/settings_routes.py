@@ -1047,9 +1047,10 @@ def get_permissions_matrix():
     # club_id is implicitly used by is_authorized but if needed:
     # club_id = get_current_club_id()
 
-    # Exclude SysAdmin and Guest from the permissions matrix
+    # Exclude SysAdmin from the permissions matrix; Guest is included
+    # so admins can configure what unauthenticated visitors can access
     roles = AuthRole.query.filter(
-        AuthRole.name.notin_(['SysAdmin', 'Guest'])
+        AuthRole.name.notin_(['SysAdmin'])
     ).order_by(AuthRole.level.desc()).all()
     permissions = Permission.query.order_by(Permission.category, Permission.name).all()
     

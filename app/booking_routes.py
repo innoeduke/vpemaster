@@ -412,9 +412,9 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
     contact = user.get_contact(club_id) if (user and selected_meeting) else None
     is_manager = (contact and contact.id == selected_meeting.manager_id) if selected_meeting else False
     
-    # 1. Guests can ONLY access 'running' meetings
-    if not user:
-        if selected_meeting and selected_meeting.status != 'running':
+    # 1. Published meetings: require AGENDA_VIEW permission
+    if selected_meeting and selected_meeting.status in ('not started', 'running', 'finished'):
+        if not is_authorized(Permissions.AGENDA_VIEW, meeting=selected_meeting):
             context['notice_image'] = 'not_started.webp'
             return context
 
@@ -422,9 +422,9 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
     context['is_admin_view'] = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting)
     context['can_view_details'] = context['is_admin_view'] or is_authorized(Permissions.BOOKING_BOOK_OWN, meeting=selected_meeting)
 
-    # 2. Unpublished check - Show notice for those without BOOKING_VIEW_ALL
+    # 2. Unpublished check - Show notice for those without AGENDA_VIEW_UNPUBLISHED
     if selected_meeting and selected_meeting.status == 'unpublished':
-        if not is_authorized(Permissions.BOOKING_VIEW_ALL, meeting=selected_meeting):
+        if not is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED, meeting=selected_meeting):
             context['notice_image'] = 'under_planning.webp'
             # We continue for members so they can see their own bookings later down the page
             # But the template will conditionally hide the booking tables if notice_image is set
