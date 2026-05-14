@@ -111,6 +111,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: nowrap;
 }
 
 .contact-avatar-small {
@@ -119,6 +120,7 @@
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid #772432;
+  flex-shrink: 0;
 }
 
 .contact-avatar-placeholder-small {
@@ -132,23 +134,31 @@
   color: #a0aec0;
   font-size: 0.8em;
   border: 1px solid #772432;
+  flex-shrink: 0;
+}
+
+.contact-name-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  min-width: 0;
 }
 
 .contact-name-info {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  white-space: nowrap;
 }
 
 .badge-member-id {
-  margin-left: 5px;
+  display: inline-block;
+  margin-top: 0;
   font-size: 0.8em;
-  vertical-align: text-top;
   background-color: #e7e7e4;
   border-radius: 5px;
   padding: 2px 5px;
   color: #333;
-  display: inline-block;
+  white-space: nowrap;
+  width: fit-content;
 }
 
 /* Clickable Contact Cell (Container hover) */

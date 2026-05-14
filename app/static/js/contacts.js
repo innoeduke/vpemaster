@@ -203,14 +203,16 @@ function createContactRow(contact) {
       }
       return `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small">`;
     })()}
-        <span class="contact-name-info">
-          ${contact.Name}
-          ${contact.DTM ? '<sup class="dtm-superscript">DTM</sup>' : ''}
-        </span>
-        ${contact.Member_ID && contact.Type !== 'Guest' ? `
-          <span class="badge-member-id">
-            ${contact.Member_ID}
-          </span>` : ''}
+        <div class="contact-name-text">
+          <span class="contact-name-info">
+            ${contact.Name}
+            ${contact.DTM ? '<sup class="dtm-superscript">DTM</sup>' : ''}
+          </span>
+          ${contact.Member_ID && contact.Type !== 'Guest' ? `
+            <span class="badge-member-id">
+              ${contact.Member_ID}
+            </span>` : ''}
+        </div>
       </div>
     </td>
     <td class="col-officer" style="text-align: center;">
