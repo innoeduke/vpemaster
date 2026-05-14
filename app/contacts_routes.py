@@ -374,7 +374,8 @@ def contact_form(contact_id=None):
             
             # Sync metadata (this will also aggregate paths if we just added/removed some manually)
             from .utils import sync_contact_metadata
-            sync_contact_metadata(contact.id)
+            has_new_avatar = file and file.filename != '' and avatar_url
+            sync_contact_metadata(contact.id, sync_avatar=bool(has_new_avatar))
             
             if request.headers.get('X-Requested-With') != 'XMLHttpRequest':
                 flash('Contact updated successfully!', 'success')

@@ -453,7 +453,7 @@ def recalculate_contact_metadata(contact, avatar_url=None):
         contact.Avatar_URL = avatar_url
 
 
-def sync_contact_metadata(contact_id, commit=True):
+def sync_contact_metadata(contact_id, commit=True, sync_avatar=False):
     """
     Update Contact metadata for a specific contact and all related contacts 
     (same person in different clubs).
@@ -462,6 +462,9 @@ def sync_contact_metadata(contact_id, commit=True):
         contact_id: ID of the primary contact to sync.
         commit: If True (default), commits after updating. If False, only flushes
                 so the caller can commit as part of a larger transaction.
+        sync_avatar: If True, propagates the primary contact's Avatar_URL to all
+                     related contacts. Defaults to False to prevent accidental
+                     avatar overwrites during non-avatar metadata syncs.
     """
     primary_contact = db.session.get(Contact, contact_id)
     if not primary_contact:
@@ -482,8 +485,9 @@ def sync_contact_metadata(contact_id, commit=True):
     # Update all related contacts
     contacts_to_update = Contact.query.filter(Contact.id.in_(list(related_contact_ids))).all()
     for contact in contacts_to_update:
-        # Propagate Avatar_URL during sync if it exists on primary
-        recalculate_contact_metadata(contact, avatar_url=primary_contact.Avatar_URL)
+        # Only propagate Avatar_URL when explicitly requested (during avatar upload)
+        avatar_to_sync = primary_contact.Avatar_URL if sync_avatar else None
+        recalculate_contact_metadata(contact, avatar_url=avatar_to_sync)
         db.session.add(contact)
     
     if commit:
