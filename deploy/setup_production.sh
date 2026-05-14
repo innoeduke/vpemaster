@@ -8,10 +8,10 @@ set -e
 # --- Configuration ---
 PROJECT_ROOT=$(pwd)
 SERVICE_USER="vpemaster"
-DEPLOYER_USER="deployer"
-SHARED_GROUP="vpemaster-web"
-WORKERS=4
-SERVER_NAME="moleqode.com" # Updated to your domain
+DEPLOYER_USER="ubuntu"
+SHARED_GROUP="www-data"
+WORKERS=6
+SERVER_NAME="dev.moleqode.com" # Updated to your domain
 
 echo "🚀 Starting VPEMaster Deployment Setup..."
 echo "📍 Project Root: $PROJECT_ROOT"
