@@ -5,6 +5,8 @@ from app.models import Club, ExComm, Contact, ContactClub
 from app.auth.permissions import Permissions
 from app.auth.utils import is_authorized
 from datetime import datetime
+import os
+import shutil
 
 clubs_bp = Blueprint('clubs_bp', __name__)
 
@@ -87,6 +89,19 @@ def create_club():
         try:
             db.session.add(new_club)
             db.session.commit()
+            
+            # Seed club resources
+            from flask import current_app
+            src_dir = os.path.join(current_app.static_folder, 'club_resources', '0')
+            dst_dir = os.path.join(current_app.static_folder, 'club_resources', str(new_club.id))
+            
+            if os.path.exists(src_dir) and not os.path.exists(dst_dir):
+                shutil.copytree(src_dir, dst_dir)
+            
+            # Set default logo to the copied file
+            new_club.logo_url = f'club_resources/{new_club.id}/club_logo.webp'
+            db.session.commit()
+
             return redirect(url_for('clubs_bp.list_clubs'))
         except Exception as e:
             db.session.rollback()
@@ -193,7 +208,14 @@ def delete_club(club_id):
                 db.session.delete(contact)
         
         db.session.commit()
-        flash('Club, its meetings, and its specific contacts deleted successfully.', 'success')
+
+        # 4. Delete the club's resource folder
+        from flask import current_app
+        resource_dir = os.path.join(current_app.static_folder, 'club_resources', str(club_id))
+        if os.path.exists(resource_dir):
+            shutil.rmtree(resource_dir)
+
+        flash('Club, its meetings, its specific contacts, and its resource folder deleted successfully.', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error deleting club: {str(e)}', 'danger')

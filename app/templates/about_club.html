@@ -270,7 +270,7 @@
                     <div class="field-value">
                         <div id="club-logo-display">
                             {% if club.logo_url %}
-                            <img id="current-club-logo" src="{{ url_for('static', filename=club.logo_url) }}" alt="Club Logo" style="max-height: 80px; border-radius: 4px;">
+                            <img id="current-club-logo" src="{{ url_for('static', filename=club.effective_logo_url) }}" alt="Club Logo" style="max-height: 80px; border-radius: 4px;">
                             {% else %}
                             <span id="no-logo-text" class="text-muted">No logo</span>
                             <img id="current-club-logo" src="" alt="Club Logo" style="max-height: 80px; border-radius: 4px; display: none;">

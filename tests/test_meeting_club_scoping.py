@@ -48,13 +48,17 @@ def test_meeting_creation_club_scoping(app):
 
         # 3. Create a dummy template CSV
         template_name = "test_template.csv"
-        template_path = os.path.join(app.static_folder, 'mtg_templates', template_name)
+        template_path = os.path.join(app.static_folder, 'club_resources', '0', 'templates', template_name)
         os.makedirs(os.path.dirname(template_path), exist_ok=True)
         
         with open(template_path, 'w', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(['Type', 'Title', 'Role', 'Owner', 'Min', 'Max'])
             writer.writerow(['Club1Only', '', '', '', '5', '10'])
+
+        # Seed club directories so the test template is copied over
+        Meeting.get_type_to_template(club1.id)
+        Meeting.get_type_to_template(club2.id)
 
         # 4. Generate logs for Club 1 meeting using Club 1 context
         from flask import session

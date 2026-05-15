@@ -6,6 +6,7 @@ from .club_context import get_current_club_id, authorized_club_required
 from .models import User, Contact, AuthRole, PermissionAudit, ContactClub, Club, ExComm, UserClub, ExcommOfficer, MeetingRole
 from . import db
 from datetime import datetime
+from .utils import process_club_logo
 
 about_club_bp = Blueprint('about_club_bp', __name__)
 

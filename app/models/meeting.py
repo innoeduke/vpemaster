@@ -4,48 +4,64 @@ from sqlalchemy.dialects import mysql
 from .base import db
 
 
-def generate_type_to_template():
-    """
-    Dynamically generate the TYPE_TO_TEMPLATE mapping by listing CSV files
-    in the mtg_templates folder and converting filenames to title case.
-    
-    Returns:
-        dict: Mapping of theme names to template filenames.
-              e.g., {'Keynote Speech': 'keynote_speech.csv', ...}
-    """
-    templates_dir = os.path.join(
-        os.path.dirname(__file__), '..', 'static', 'mtg_templates'
-    )
-    
-    type_to_template = {}
-    
-    try:
-        for filename in os.listdir(templates_dir):
-            if filename.endswith('.csv') and not filename.startswith('.'):
-                # Convert filename to theme name: 'keynote_speech.csv' -> 'Keynote Speech'
-                theme_name = filename[:-4].replace('_', ' ').title()
-                type_to_template[theme_name] = filename
-    except OSError:
-        # Fallback to static mapping if directory cannot be read
-        type_to_template = {
-            'Keynote Speech': 'keynote_speech.csv',
-            'Speech Marathon': 'speech_marathon.csv',
-            'Speech Contest': 'speech_contest.csv',
-            'Panel Discussion': 'panel_discussion.csv',
-            'Debate': 'debate.csv',
-            'Pecha Kucha': 'pecha_kucha.csv',
-            'Gavel Passing': 'gavel_passing.csv',
-            'Club Election': 'club_election.csv'
-        }
-    
-    return type_to_template
-
+import shutil
+from flask import current_app
 
 class Meeting(db.Model):
     __tablename__ = 'Meetings'
     
-    # Meeting Type Mapping to Template Files (dynamically generated)
-    TYPE_TO_TEMPLATE = generate_type_to_template()
+    @classmethod
+    def get_template_path(cls, club_id, template_file):
+        """Returns the absolute path to a specific club's template file."""
+        return os.path.join(
+            current_app.static_folder, 'club_resources', str(club_id), 'templates', template_file
+        )
+
+    @classmethod
+    def get_type_to_template(cls, club_id):
+        """
+        Dynamically generate the template mapping by listing CSV files
+        in the club's specific templates folder. If the folder doesn't exist,
+        it creates it and seeds it with global templates.
+        """
+        club_templates_dir = os.path.join(
+            current_app.static_folder, 'club_resources', str(club_id), 'templates'
+        )
+        global_templates_dir = os.path.join(
+            current_app.static_folder, 'club_resources', '0', 'templates'
+        )
+
+        # Seed club directory from global templates if it does not exist
+        if not os.path.exists(club_templates_dir):
+            os.makedirs(club_templates_dir, exist_ok=True)
+            if os.path.exists(global_templates_dir):
+                for item in os.listdir(global_templates_dir):
+                    src_path = os.path.join(global_templates_dir, item)
+                    dst_path = os.path.join(club_templates_dir, item)
+                    if os.path.isfile(src_path) and item.endswith('.csv'):
+                        shutil.copy2(src_path, dst_path)
+        
+        type_to_template = {}
+        try:
+            for filename in os.listdir(club_templates_dir):
+                if filename.endswith('.csv') and not filename.startswith('.'):
+                    # Convert filename to theme name: 'keynote_speech.csv' -> 'Keynote Speech'
+                    theme_name = filename[:-4].replace('_', ' ').title()
+                    type_to_template[theme_name] = filename
+        except OSError:
+            # Fallback to static mapping if directory cannot be read
+            type_to_template = {
+                'Keynote Speech': 'keynote_speech.csv',
+                'Speech Marathon': 'speech_marathon.csv',
+                'Speech Contest': 'speech_contest.csv',
+                'Panel Discussion': 'panel_discussion.csv',
+                'Debate': 'debate.csv',
+                'Pecha Kucha': 'pecha_kucha.csv',
+                'Gavel Passing': 'gavel_passing.csv',
+                'Club Election': 'club_election.csv'
+            }
+        
+        return type_to_template
 
     id = db.Column(db.Integer, primary_key=True)
     club_id = db.Column(db.Integer, db.ForeignKey('clubs.id'), nullable=False, index=True)

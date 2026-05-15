@@ -706,12 +706,13 @@ def agenda():
             pathways[ptype] = []
         pathways[ptype].append(p.name)
 
-    # --- Template Data ---
-    # We use the mapping defined in the Meeting model as the source of truth
-    meeting_types = Meeting.TYPE_TO_TEMPLATE
-
     # --- Minimal Data for Initial Page Load ---
     club_id = get_current_club_id()
+
+    # --- Template Data ---
+    # We use the mapping defined in the Meeting model as the source of truth
+    meeting_types = Meeting.get_type_to_template(club_id)
+
     members = Contact.query.join(ContactClub).filter(
         ContactClub.club_id == club_id,
         Contact.Type == 'Member'
@@ -933,13 +934,14 @@ def _validate_meeting_form_data(form):
     """Parses and validates meeting form data."""
     meeting_id = form.get('meeting_id')
     meeting_type = form.get('meeting_type')
+    club_id = get_current_club_id()
     
     # Check template validity using the model's mapping
-    template_file = Meeting.TYPE_TO_TEMPLATE.get(meeting_type)
+    template_file = Meeting.get_type_to_template(club_id).get(meeting_type)
     if not template_file:
          raise ValueError(f"Invalid meeting type: {meeting_type}")
          
-    template_path = os.path.join(current_app.static_folder, 'mtg_templates', template_file)
+    template_path = Meeting.get_template_path(club_id, template_file)
     
     if not os.path.exists(template_path):
          raise ValueError(f"Template file not found for meeting type: {meeting_type}")
@@ -1064,8 +1066,7 @@ def _generate_logs_from_template(meeting, template_file):
     if meeting.id:
         SessionLog.query.filter_by(meeting_id=meeting.id).delete()
     
-    template_path = os.path.join(
-        current_app.static_folder, 'mtg_templates', template_file)
+    template_path = Meeting.get_template_path(meeting.club_id, template_file)
         
     # Get current ExComm team from database for officer auto-population
     from .models import ExComm

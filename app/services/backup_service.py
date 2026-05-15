@@ -85,7 +85,6 @@ class BackupService:
         # Directories to backup relative to app root
         resource_dirs = [
             'static/images',
-            'static/mtg_templates',
             'static/club_resources',
             'static/uploads/avatars'
         ]
