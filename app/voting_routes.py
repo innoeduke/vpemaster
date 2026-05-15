@@ -280,6 +280,7 @@ def _get_voting_page_context(meeting_id):
     }
  
     if not meeting_id:
+        context['notice_image'] = 'not_started.webp'
         return context
  
     selected_meeting = Meeting.query.get(meeting_id)
@@ -308,8 +309,9 @@ def _get_voting_page_context(meeting_id):
     status = selected_meeting.status
     
     if status == 'unpublished':
-        if not is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED, meeting=selected_meeting):
-            context['notice_image'] = 'under_planning.webp'
+        context['notice_image'] = 'under_planning.webp'
+    elif status == 'cancelled':
+        context['notice_image'] = 'booking_closed.webp'
 
     elif status in ('not started', 'running', 'finished'):
         if status == 'not started':
