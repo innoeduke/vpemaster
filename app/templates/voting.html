@@ -8,39 +8,25 @@
 {% block content %}
 <div class="page-container">
     <h1><i class="fas fa-vote-yea"></i> Voting Form</h1>
+    {% if is_admin_view %}
     <div class="filters-control premium">
         <div class="filter-row-premium">
             {{ render_meeting_filter(upcoming_meetings, selected_meeting_id, label=None,
             base_url='/voting', render_outer_container=False, data_format='tuple') }}
             
             <div class="filter-right">
-                {% if not notice_image %}
-                    <div class="vote-count-badge" title="Total Votes Received">
-                        <i class="fas fa-vote-yea"></i>
-                        <span class="count">{{ total_voters }}</span>
-                        <span class="label">Votes</span>
-                    </div>
-                    {% if is_admin_view %}
-                    <a href="{{ url_for('voting_bp.voting_nps', club_id=get_current_club_id()) }}" class="btn btn-info trend-btn" title="NPS Trend">
-                        <i class="fas fa-chart-line"></i> NPS Trend
-                    </a>
-                    {% endif %}
-                {% elif selected_meeting %}
-                <div class="meeting-status-alert">
-                    <div class="alert-icon">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="alert-content">
-                        <div class="alert-title">Notice</div>
-                        <div class="alert-description">
-                            Voting for #{{ selected_meeting.Meeting_Number }} is {{ selected_meeting.status }}.
-                        </div>
-                    </div>
+                <div class="vote-count-badge" title="Total Votes Received">
+                    <i class="fas fa-vote-yea"></i>
+                    <span class="count">{{ total_voters }}</span>
+                    <span class="label">Votes</span>
                 </div>
-                {% endif %}
+                <a href="{{ url_for('voting_bp.voting_nps', club_id=get_current_club_id()) }}" class="btn btn-info trend-btn" title="NPS Trend">
+                    <i class="fas fa-chart-line"></i> NPS Trend
+                </a>
             </div>
         </div>
     </div>
+    {% endif %}
 
     {% if notice_image %}
         <div class="notice-image-container">
