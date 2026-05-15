@@ -9,7 +9,6 @@ __pycache__/
 app/static/css/packed.css
 app/static/.webassets-cache/
 app/static/uploads/
-app/static/club_resources
 WARP.md
 .coverage
 .coverage.*
@@ -21,3 +20,9 @@ logs/
 scratch/
 pyrefly.toml
 .testmondata
+
+# Ignore ALL numbered folders in club_resources (1,2,3,...999...)
+/app/static/club_resources/[0-9]*/
+
+# EXCEPTION: DO NOT ignore the "0" folder
+!/app/static/club_resources/0/
