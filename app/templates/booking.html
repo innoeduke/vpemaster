@@ -269,7 +269,13 @@
         <div class="accordion-item" data-category="{{ category or 'other' }}">
             <button class="accordion-header {{ 'active' if default_open else '' }}">
                 <div class="header-left">
-                    <span class="accordion-title">{{ (category or 'Other')|replace('-', ' ')|title }} Roles</span>
+                    <span class="accordion-title">
+                        {% if category == 'role-taker' %}
+                            Functional Roles
+                        {% else %}
+                            {{ (category or 'Other')|replace('-', ' ')|title }} Roles
+                        {% endif %}
+                    </span>
                 </div>
                 <div class="accordion-header-right">
                     <i class="fas fa-chevron-down"></i>

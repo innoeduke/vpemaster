@@ -134,8 +134,8 @@
 
                 <div class="button-group action-group">
                     {% if selected_meeting %}
-                    <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}" target="_blank" class="btn btn-secondary action-icon-btn" title="View Role Guide"><i class="fas fa-book-open"></i></a>
                     <button id="jpg-btn" class="btn btn-secondary action-icon-btn" title="Export as Image"><i class="fas fa-print"></i></button>
+                    <a id="role-guide-btn" href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}" target="_blank" class="btn btn-secondary action-icon-btn" title="View Role Guide"><i class="fas fa-book-open"></i></a>
                     {% endif %}
 
                     {% if selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}

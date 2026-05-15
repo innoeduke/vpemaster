@@ -35,7 +35,7 @@
       <ul class="nav-links">
         {% if is_authorized(Permissions.BOOKING_BOOK_OWN) %}
         <li class="{% if request.endpoint and request.endpoint == 'main_bp.calendar' %}active{% endif %}">
-          <a href="{{ url_for('main_bp.calendar') }}">
+          <a href="{{ url_for('main_bp.calendar') }}" title="View club calendar">
             <i class="fas fa-th nav-icon"></i>
             <span>Calendar</span>
           </a>
@@ -43,7 +43,7 @@
         {% endif %}
         {% if is_authorized(Permissions.AGENDA_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('agenda_bp') %}active{% endif %}">
-          <a href="{{ url_for('agenda_bp.agenda') }}">
+          <a href="{{ url_for('agenda_bp.agenda') }}" title="View and manage meeting agendas">
             <i class="fas fa-calendar-alt nav-icon"></i>
             <span>Agenda</span>
           </a>
@@ -51,7 +51,8 @@
         {% endif %}
         {% if is_authorized(Permissions.BOOKING_BOOK_OWN) and has_meetings and not hide_booking_nav %}
         <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}active{% endif %}">
-          <a href="{{ url_for('booking_bp.booking', club_id=get_current_club_id()) }}">
+          <a href="{{ url_for('booking_bp.booking', club_id=get_current_club_id()) }}"
+            title="Book roles for upcoming meetings">
             <i class="fas fa-tag nav-icon"></i>
             <span>Booking</span>
           </a>
@@ -59,7 +60,8 @@
         {% endif %}
         {% if has_meetings and not hide_voting_nav %}
         <li class="{% if request.endpoint and request.endpoint.startswith('voting_bp') %}active{% endif %}">
-          <a href="{{ url_for('voting_bp.voting', club_id=get_current_club_id()) }}">
+          <a href="{{ url_for('voting_bp.voting', club_id=get_current_club_id()) }}"
+            title="Vote for best speeches, evaluations, and role takers">
             <i class="fas fa-vote-yea nav-icon"></i>
             <span>Voting</span>
           </a>
@@ -67,7 +69,7 @@
         {% endif %}
         {% if is_authorized(Permissions.ROSTER_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}active{% endif %}">
-          <a href="{{ url_for('roster_bp.roster') }}">
+          <a href="{{ url_for('roster_bp.roster') }}" title="Process meeting check-in & view participation stats">
             <i class="fas fa-clipboard-list nav-icon"></i>
             <span>Roster</span>
           </a>
@@ -77,7 +79,7 @@
         {% if is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and has_meetings %}
         <li class="nav-divider"></li>
         <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}active{% endif %}">
-          <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
+          <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}" title="View pathways roadmaps and speech logs">
             <i class="fas fa-tasks nav-icon"></i>
             <span>Journals</span>
           </a>
@@ -85,7 +87,7 @@
         {% endif %}
         {% if current_user.is_authenticated %}
         <li class="{% if request.endpoint and request.endpoint.startswith('planner_bp') %}active{% endif %}">
-          <a href="{{ url_for('planner_bp.planner') }}">
+          <a href="{{ url_for('planner_bp.planner') }}" title="Plan future speeches and roles">
             <i class="fas fa-calendar-check nav-icon"></i>
             <span>Planner</span>
           </a>
@@ -95,26 +97,27 @@
         <li class="nav-divider"></li>
         {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
         <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}active{% endif %}">
-          <a href="{{ url_for('contacts_bp.show_contacts') }}">
+          <a href="{{ url_for('contacts_bp.show_contacts') }}" title="Manage club contacts and members">
             <i class="fas fa-book nav-icon"></i>
             <span>Contacts</span>
           </a>
         </li>
         {% endif %}
-        
+
         {% if is_authorized(Permissions.LUCKY_DRAW_VIEW) or is_authorized(Permissions.PATHWAY_LIB_VIEW) %}
         <li
           class="{% if request.endpoint and (request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp')) %}active{% endif %}">
-          <a href="{{ url_for('tools_bp.tools') }}">
+          <a href="{{ url_for('tools_bp.tools') }}" title="Access helpful club tools">
             <i class="fas fa-tools nav-icon"></i>
             <span>Tools</span>
           </a>
         </li>
         {% endif %}
-        
+
         {% if is_authorized(Permissions.SETTINGS_VIEW_ALL) and current_user.primary_role_name != 'Guest' %}
         <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
-          <a href="{{ url_for('settings_bp.settings', default_tab='user-settings') }}">
+          <a href="{{ url_for('settings_bp.settings', default_tab='user-settings') }}"
+            title="Configure system and club settings">
             <i class="fas fa-cog nav-icon"></i>
             <span>Settings</span>
           </a>
@@ -123,7 +126,7 @@
 
         {% if current_user.is_authenticated and current_user.primary_role_name == 'SysAdmin' %}
         <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}active{% endif %}">
-          <a href="{{ url_for('clubs_bp.list_clubs') }}">
+          <a href="{{ url_for('clubs_bp.list_clubs') }}" title="Manage club and system settings">
             <i class="fas fa-network-wired nav-icon"></i>
             <span>Manage Clubs</span>
           </a>

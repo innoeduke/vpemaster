@@ -312,7 +312,9 @@ def _get_voting_page_context(meeting_id):
             context['notice_image'] = 'under_planning.webp'
 
     elif status in ('not started', 'running', 'finished'):
-        if not is_authorized(Permissions.AGENDA_VIEW, meeting=selected_meeting):
+        if status == 'not started':
+            context['notice_image'] = 'not_started.webp'
+        elif not is_authorized(Permissions.AGENDA_VIEW, meeting=selected_meeting):
             context['notice_image'] = 'not_started.webp'
         elif status == 'finished':
             # Finished: only those with VOTING_VIEW_RESULTS can see results

@@ -75,18 +75,14 @@ def login():
 
     # Deduplicate flash messages (e.g., "Please log in") to prevent triple prompts
     # from multiple concurrent protected resource requests.
-    flashed_messages = get_flashed_messages(with_categories=True)
-    if flashed_messages:
+    if '_flashes' in session:
         unique_messages = []
         seen = set()
-        for category, message in flashed_messages:
+        for category, message in session['_flashes']:
             if message not in seen:
                 unique_messages.append((category, message))
                 seen.add(message)
-        
-        # Re-flash only the unique messages
-        for category, message in unique_messages:
-            flash(message, category)
+        session['_flashes'] = unique_messages
 
     if request.method == 'POST':
         login_identifier = request.form.get('username', '').strip()

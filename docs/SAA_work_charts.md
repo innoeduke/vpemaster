@@ -9,7 +9,7 @@ header-includes: |
 
 # Meeting Orchestration Work Charts
 
-Last Modified: 2026-05-15
+Last Updated: 2026-05-15           Created by: Winnie Wu, Reviewed by: Kyle Wei
 
 +--------+------------------------+----------------+------------+-----------------------------------+
 | **ID** | **Task**               | Owner          | Time       | Notes                             |
@@ -49,21 +49,19 @@ Last Modified: 2026-05-15
 +--------+------------------------+----------------+------------+-----------------------------------+
 | **Venue Setup**                                                                                   |
 +--------+------------------------+----------------+------------+-----------------------------------+
-| 3.1    | Set up all tables &    | Venue vendor   | By 6pm     | 1 row left : President/SAA; 2     |
-|        | chairs                 |                |            | rows right: QC                    |
-|        |                        |                |            | (timer/ac/gram)/Evaluators; 1     |
-|        |                        |                |            | table for welcome officer by the  |
-|        |                        |                |            | door                              |
+| 3.1    | Set up all tables &    | Venue vendor   | By 6pm     | 1 row (2 tbls) left: SAA/VPE/Pres |
+|        | chairs                 |                |            | 2 rows (2 tbls/row) right:        |
+|        |                        |                |            | Functional Roles, Evaluators      |
 +--------+------------------------+----------------+------------+-----------------------------------+
-| 3.2    | Prepare whiteboard     | SAA +          | By 6:30pm  | Write the WOD on it               |
-|        |                        | Grammarian     |            |                                   |
+| 3.2    | Prepare whiteboard     | SAA +          | By 6:30pm  | Write the Word of the Day on      |
+|        |                        | Grammarian     |            | the whiteboard                    |
 +--------+------------------------+----------------+------------+-----------------------------------+
 | 3.3    | Place club poster by   | SAA + Members  | -          | -                                 |
 |        | door & hang flag       |                |            |                                   |
 +--------+------------------------+----------------+------------+-----------------------------------+
 |        |                        |                |            |                                   |
 +--------+------------------------+----------------+------------+-----------------------------------+
-| **Device/Software Setup**                                                                         |
+| **Device & Software Setup**                                                                       |
 +--------+------------------------+----------------+------------+-----------------------------------+
 | 4.1    | Turn on projector, TV, | SAA            | -          | Use remote controls               |
 |        | and AC                 |                |            |                                   |
@@ -80,23 +78,35 @@ Last Modified: 2026-05-15
 | 4.5    | Test mics and slides   | SAA            | -          | Turn on Noise Suppression in the  |
 |        |                        |                |            | Settings / Devices / Audio        |
 +--------+------------------------+----------------+------------+-----------------------------------+
-| 4.6    | Start Online Meeting   | SAA            | Before     | Meeting ID: 428389900126 PW:      |
-|        | & recording            |                | start      | WRrzJ8;                           |
+| 4.6    | Start Online Meeting   | SAA            | Before     | Meeting ID: 428389900126;         |
+|        | & recording            |                | start      | Password: WRrzJ8;                 |
 |        |                        |                |            | Enable spotlight for everyone     |
 |        |                        |                |            | (default setting)                 |
 +--------+------------------------+----------------+------------+-----------------------------------+
-| 4.7    | Start MemMaker Meeting | VPE            | 6:55pm     | -                                 |
-+--------+------------------------+----------------+------------+-----------------------------------+
 |        |                        |                |            |                                   |
 +--------+------------------------+----------------+------------+-----------------------------------+
-| **Meeting Start**                                                                                 |
+| **Meeting Start at 6:55PM**                                                                       |
 +--------+------------------------+----------------+------------+-----------------------------------+
-| 5.1    | Add table topic        | VPE            | -          | Add into MemMaker via Booking     |
-|        | speakers               |                |            |                                   |
-+--------+------------------------+----------------+------------+-----------------------------------+
-| 5.2    | Update the meeting     | VPE            | -          | Add into MemMaker via Roster      |
-|        | roster with guest info |                |            |                                   |
-+--------+------------------------+----------------+------------+-----------------------------------+
-| 5.3    | Remind TME to gather   | SAA + Timer    | Before     | If not full, sit forward          |
+| 5.1    | Remind TME to gather   | SAA + Timer    | Before     | Invite audience to sit forward    |
 |        | audience               |                | start      |                                   |
 +--------+------------------------+----------------+------------+-----------------------------------+
+| 5.2    | Start MemMaker Meeting | VPE            | 6:55pm     | -                                 |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 5.3    | Add table topic        | VPE            | -          | Add into MemMaker via Booking     |
+|        | speakers               |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 5.4    | Update the meeting     | VPE            | -          | Add into MemMaker via Roster      |
+|        | roster with guest info |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 5.5    | Update meeting photos  | Photographer   | -          | VPE may remind photographer in    |
+|        | to photo album timely  |                |            | meeting; ensure the photos are    |
+|        |                        |                |            | uploaded timely to the album      |
++--------+------------------------+----------------+------------+-----------------------------------+
+| 5.6    | Add avatar photos for  | VPE            | -          | Add into MemMaker via Contacts    |
+|        | all role takers        |                |            |                                   |
++--------+------------------------+----------------+------------+-----------------------------------+
+
+
+
+
+
