@@ -1339,3 +1339,41 @@ a.owner-link:hover {
 	display: none;
 	position: relative;
 }
+
+/* --- Custom Select Delete Support --- */
+.custom-option {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding-right: 40px !important; /* Make room for delete icon */
+    position: relative;
+}
+
+.custom-option-delete {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #d9534f;
+    cursor: pointer;
+    padding: 5px;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.custom-option-delete:hover {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.2);
+    color: #c9302c;
+}
+
+/* Ensure icons don't shrink */
+.custom-option i.custom-option-icon {
+    flex-shrink: 0;
+}
+
+/* Adjust text to grow */
+.custom-option .custom-select-text {
+    flex-grow: 1;
+}

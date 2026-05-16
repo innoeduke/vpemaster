@@ -895,6 +895,124 @@ def export_agenda(meeting_id):
     )
 
 
+@agenda_bp.route('/agenda/export_template', methods=['POST'])
+@login_required
+@authorized_club_required
+def export_meeting_template():
+    """
+    Exports the current meeting structure as a CSV template file
+    in the club's resource folder.
+    """
+    if not is_authorized(Permissions.AGENDA_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    data = request.get_json()
+    meeting_id = data.get('meeting_id')
+    template_name = data.get('template_name')
+
+    if not meeting_id or not template_name:
+        return jsonify(success=False, message="Meeting ID and Template Name are required"), 400
+
+    meeting = db.session.get(Meeting, meeting_id)
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found"), 404
+
+    club_id = get_current_club_id()
+    if meeting.club_id != club_id:
+        return jsonify(success=False, message="Unauthorized"), 403
+
+    # Fetch logs
+    logs = SessionLog.query.filter_by(meeting_id=meeting_id).order_by(SessionLog.Meeting_Seq.asc()).all()
+
+    # Sanitize filename: replace spaces with _ and add .csv
+    safe_name = template_name.strip().replace(' ', '_')
+    if not safe_name:
+        return jsonify(success=False, message="Invalid template name"), 400
+    
+    filename = f"{safe_name}.csv"
+
+    # Target folder: static/club_resources/<club_id>/templates/
+    templates_dir = os.path.join(current_app.static_folder, 'club_resources', str(club_id), 'templates')
+    os.makedirs(templates_dir, exist_ok=True)
+    filepath = os.path.join(templates_dir, filename)
+
+    try:
+        # Write CSV content: Type,Title,Role,Owner,Duration_Min,Duration_Max,Hidden
+        with open(filepath, mode='w', newline='', encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Type', 'Title', 'Role', 'Owner', 'Duration_Min', 'Duration_Max', 'Hidden'])
+            
+            for log in logs:
+                st = log.session_type
+                role_name = st.role.name if st and st.role else ""
+                type_title = st.Title if st else ""
+                
+                # Reset Title to Type title unless it's a Section or Generic type
+                session_title = log.Session_Title or ""
+                if type_title and type_title not in ["Section", "Generic"]:
+                    session_title = type_title
+                
+                writer.writerow([
+                    type_title,
+                    session_title,
+                    role_name,
+                    "", # Owner column blank as requested
+                    log.Duration_Min if log.Duration_Min is not None else 0,
+                    log.Duration_Max if log.Duration_Max is not None else "",
+                    "true" if log.hidden else ""
+                ])
+                
+        return jsonify(success=True, message=f"Template '{filename}' exported successfully to your club resources.")
+    except Exception as e:
+        current_app.logger.error(f"Error exporting template: {str(e)}")
+        return jsonify(success=False, message=str(e)), 500
+
+
+@agenda_bp.route('/agenda/delete_template', methods=['POST'])
+@login_required
+@authorized_club_required
+def delete_meeting_template():
+    """
+    Deletes a club-specific meeting template CSV file.
+    """
+    if not is_authorized(Permissions.AGENDA_EDIT):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    data = request.get_json()
+    template_name = data.get('template_name')
+
+    if not template_name:
+        return jsonify(success=False, message="Template name is required"), 400
+
+    club_id = get_current_club_id()
+    
+    # Get mapping to find the filename
+    type_to_template = Meeting.get_type_to_template(club_id)
+    filename = type_to_template.get(template_name)
+    
+    if not filename:
+        return jsonify(success=False, message=f"Template '{template_name}' not found"), 404
+        
+    template_path = Meeting.get_template_path(club_id, filename)
+    
+    # Security check: Ensure we are only deleting files within the club's resource folder
+    club_resources_dir = os.path.abspath(os.path.join(current_app.static_folder, 'club_resources', str(club_id)))
+    abs_template_path = os.path.abspath(template_path)
+    
+    if not abs_template_path.startswith(club_resources_dir):
+        return jsonify(success=False, message="Cannot delete templates outside of club resources"), 403
+
+    if not os.path.exists(template_path):
+        return jsonify(success=False, message="Template file not found on disk"), 404
+
+    try:
+        os.remove(template_path)
+        return jsonify(success=True, message=f"Template '{template_name}' deleted successfully.")
+    except Exception as e:
+        current_app.logger.error(f"Error deleting template: {str(e)}")
+        return jsonify(success=False, message=str(e)), 500
+
+
 @agenda_bp.route('/agenda/ppt/<int:meeting_id>')
 @login_required
 @authorized_club_required
