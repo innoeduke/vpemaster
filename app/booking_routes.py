@@ -378,16 +378,14 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
     upcoming_meetings, default_meeting_num = get_meetings_by_status(
         limit_past=limit_past, columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number])
 
-    if not meeting_id:
-        # If no meeting_id is provided, try to use the default_meeting_num (which is now meeting_id)
-        # or the first upcoming meeting's ID.
-        meeting_id = default_meeting_num or (
-            upcoming_meetings[0][0] if upcoming_meetings else None)
+    # Filter meetings based on permissions
+    if not is_authorized(Permissions.AGENDA_EDIT):
+        upcoming_meetings = [m for m in upcoming_meetings if (m.status if hasattr(m, 'status') else m[2]) != 'finished']
 
     context = {
         'roles': [],
         'upcoming_meetings': upcoming_meetings,
-        'selected_meeting_id': meeting_id, # Renamed for clarity in context
+        'selected_meeting_id': meeting_id, # Placeholder, will update below
         'user_bookings_by_date': [],
         'contacts': [],
         'selected_meeting': None,
@@ -399,6 +397,21 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
         'best_award_ids': set(),
         'required_roles_by_role': {} # {norm_role: [ {id, name, avatar_url} ]}
     }
+
+    if not meeting_id:
+        # Check if default_meeting_num is in our visible list
+        visible_ids = {m.id if hasattr(m, 'id') else m[0] for m in upcoming_meetings}
+        if default_meeting_num in visible_ids:
+            meeting_id = default_meeting_num
+        elif upcoming_meetings:
+            # Pick the most relevant visible meeting (usually the first one in the sorted list)
+            meeting_id = upcoming_meetings[0][0] if hasattr(upcoming_meetings[0], 'id') else upcoming_meetings[0][0]
+        else:
+            meeting_id = None
+            if not is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED):
+                context['notice_image'] = 'under_planning.webp'
+        
+        context['selected_meeting_id'] = meeting_id
 
     if not meeting_id:
         return context

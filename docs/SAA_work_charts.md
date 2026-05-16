@@ -57,7 +57,7 @@ Last Updated: 2026-05-15           Created by: Winnie Wu, Reviewed by: Kyle Wei
 |        |                        | Grammarian     |            | the whiteboard                    |
 +--------+------------------------+----------------+------------+-----------------------------------+
 | 3.3    | Place club poster by   | SAA + Members  | -          | -                                 |
-|        | door & hang flag       |                |            |                                   |
+|        | door & hang banner     |                |            |                                   |
 +--------+------------------------+----------------+------------+-----------------------------------+
 |        |                        |                |            |                                   |
 +--------+------------------------+----------------+------------+-----------------------------------+
@@ -99,14 +99,8 @@ Last Updated: 2026-05-15           Created by: Winnie Wu, Reviewed by: Kyle Wei
 |        | roster with guest info |                |            |                                   |
 +--------+------------------------+----------------+------------+-----------------------------------+
 | 5.5    | Update meeting photos  | Photographer   | -          | VPE may remind photographer in    |
-|        | to photo album timely  |                |            | meeting; ensure the photos are    |
-|        |                        |                |            | uploaded timely to the album      |
+|        | to photo album timely  |                |            | meeting                           |
 +--------+------------------------+----------------+------------+-----------------------------------+
 | 5.6    | Add avatar photos for  | VPE            | -          | Add into MemMaker via Contacts    |
 |        | all role takers        |                |            |                                   |
 +--------+------------------------+----------------+------------+-----------------------------------+
-
-
-
-
-

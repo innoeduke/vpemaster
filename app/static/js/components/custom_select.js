@@ -141,6 +141,20 @@ class CustomSelect {
 
 		optDiv.dataset.value = opt.value;
 
+		if (this.options.canDelete) {
+			const deleteBtn = document.createElement('span');
+			deleteBtn.className = 'custom-option-delete';
+			deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+			deleteBtn.title = 'Delete Template';
+			deleteBtn.onclick = (e) => {
+				e.stopPropagation();
+				if (this.options.deleteCallback) {
+					this.options.deleteCallback(opt.value, opt.text, this);
+				}
+			};
+			optDiv.appendChild(deleteBtn);
+		}
+
 		optDiv.onclick = (e) => {
 			e.stopPropagation();
 			this.select.value = opt.value;

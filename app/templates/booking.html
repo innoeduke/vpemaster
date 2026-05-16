@@ -299,7 +299,7 @@
 
     <div class="page-container">
         <h1><i class="fas fa-tag"></i> Booking Assistant</h1>
-        {% if user_role != 'Guest' %}
+        {% if user_role != 'Guest' and notice_image != 'under_planning.webp' %}
         <div class="filters-control premium">
             <div class="filter-row-premium">
                     {{ render_meeting_filter(upcoming_meetings, selected_meeting_id,
@@ -334,19 +334,17 @@
         {# =============== MAIN VIEW LOGIC =============== #}
         {# ============================================= #}
     
-        {% if selected_meeting %}
-            <div class="notice-image-container">
-                {% if notice_image %}
-                <img src="{{ url_for('static', filename='images/' ~ notice_image) }}" alt="Meeting notice">
-                {% elif show_booking_closed_image %}
-                <img src="{{ url_for('static', filename='images/booking_closed.webp') }}" alt="Booking Closed">
-                {% endif %}
-            </div>
+        <div class="notice-image-container">
+            {% if notice_image %}
+            <img src="{{ url_for('static', filename='images/' ~ notice_image) }}" alt="Meeting notice">
+            {% elif show_booking_closed_image %}
+            <img src="{{ url_for('static', filename='images/booking_closed.webp') }}" alt="Booking Closed">
+            {% endif %}
+        </div>
 
-    {% if not notice_image and not show_booking_closed_image %}
+        {% if selected_meeting and not notice_image and not show_booking_closed_image %}
             {{ render_role_tables(roles, sorted_role_groups, selected_meeting.status, is_admin_view, contacts,
             current_user_contact_id) }}
-    {% endif %}
         {% endif %}
     
             {% if user_bookings_by_date %}
