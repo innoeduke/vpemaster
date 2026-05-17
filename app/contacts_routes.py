@@ -497,11 +497,14 @@ def contact_form(contact_id=None):
             return jsonify(success=True, contact={'id': target_contact.id, 'Name': target_contact.Name, 'Type': target_contact.Type})
 
         referer = request.form.get('referer') or request.args.get('referer')
-        if referer and 'roster' in referer:
-            separator = '&' if '?' in referer else '?'
-            encoded_name = urllib.parse.quote(target_contact.Name)
-            redirect_url = f"{referer}{separator}new_contact_id={target_contact.id}&new_contact_name={encoded_name}&new_contact_type={target_contact.Type}"
-            return redirect(redirect_url)
+        if referer:
+            if 'roster' in referer:
+                separator = '&' if '?' in referer else '?'
+                encoded_name = urllib.parse.quote(target_contact.Name)
+                redirect_url = f"{referer}{separator}new_contact_id={target_contact.id}&new_contact_name={encoded_name}&new_contact_type={target_contact.Type}"
+                return redirect(redirect_url)
+            else:
+                return redirect(referer)
             
         return redirect(url_for('contacts_bp.show_contacts'))
 

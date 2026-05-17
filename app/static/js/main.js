@@ -123,7 +123,9 @@ function openContactModal(contactId) {
   contactForm.reset();
   if (contactId) {
     contactModalTitle.textContent = "Edit Contact";
-    contactForm.action = `/contact/form/${contactId}`;
+    const actionUrl = new URL(`/contact/form/${contactId}`, window.location.origin);
+    actionUrl.searchParams.set("referer", window.location.href);
+    contactForm.action = actionUrl.pathname + actionUrl.search;
     fetch(`/contact/form/${contactId}`, {
       headers: { "X-Requested-With": "XMLHttpRequest" },
     })
@@ -279,7 +281,9 @@ function openContactModal(contactId) {
       });
   } else {
     contactModalTitle.textContent = "Add Guest";
-    contactForm.action = "/contact/form";
+    const actionUrl = new URL("/contact/form", window.location.origin);
+    actionUrl.searchParams.set("referer", window.location.href);
+    contactForm.action = actionUrl.pathname + actionUrl.search;
     document.getElementById("educationFieldsWrapper").style.display = "none";
     const basicInfoAccordion = document.getElementById("basicInfoAccordion");
     if (basicInfoAccordion) basicInfoAccordion.style.display = "none";
