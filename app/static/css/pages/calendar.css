@@ -104,10 +104,30 @@
 }
 
 .status-finished {
-    background-color: #e2e8f0; /* Darker slate for past meetings */
-    border-color: #cbd5e1;
-    opacity: 0.85;
-    filter: grayscale(0.2);
+    background-color: #f1f5f9; /* Fallback */
+    border-color: rgba(0, 0, 0, 0.05);
+    opacity: 1;
+    filter: none;
+}
+
+.status-finished.type-keynote-speech { background-color: #e0f2fe; }
+.status-finished.type-speech-marathon { background-color: #fef3c7; }
+.status-finished.type-speech-contest { background-color: #fce7f3; }
+.status-finished.type-panel-discussion { background-color: #ede9fe; }
+.status-finished.type-debate { background-color: #ffedd5; }
+.status-finished.type-pecha-kucha { background-color: #f1f5f9; }
+.status-finished.type-gavel-passing { background-color: #dcfce7; }
+.status-finished.type-club-election { background-color: #fae8ff; }
+
+.status-finished .meeting-type-badge {
+    background-color: white !important;
+    color: black !important;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.meeting-card.is-upcoming {
+    background-color: #f8fafc; /* Light gray */
+    border-color: #e2e8f0;
 }
 
 .status-finished .meeting-footer {

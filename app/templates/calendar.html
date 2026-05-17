@@ -63,8 +63,9 @@
                     {% for meeting in data.weeks[week_num] %}
                     {% set is_next = (meeting.id == next_meeting_id) %}
                     {% set is_ongoing = (meeting.status == 'running') %}
+                    {% set is_upcoming = (meeting.Meeting_Date > today and not is_next and not is_ongoing and meeting.status != 'cancelled') %}
                     <a href="{{ url_for('agenda_bp.agenda', meeting_id=meeting.id) }}" 
-                       class="meeting-card status-{{ meeting.status|lower|replace(' ', '-') }} {% if is_next or is_ongoing %}highlight{% endif %}">
+                       class="meeting-card status-{{ meeting.status|lower|replace(' ', '-') }} type-{{ meeting.type|lower|replace(' ', '-') }} {% if is_next or is_ongoing %}highlight{% endif %} {% if is_upcoming %}is-upcoming{% endif %}">
                         <div class="meeting-date">{{ meeting.Meeting_Date.strftime('%b %d') }}</div>
                         <div class="meeting-title">{{ meeting.Meeting_Title or 'Regular Meeting' }}</div>
                         {% if meeting.manager %}
