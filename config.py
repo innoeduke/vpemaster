@@ -18,7 +18,11 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL')
 
     # Flask-SQLAlchemy settings
-    SQLALCHEMY_ENGINE_OPTIONS = {'pool_recycle': 280}
+    SQLALCHEMY_ENGINE_OPTIONS = {'pool_recycle': 3600, 
+                                 'pool_pre_ping': True,
+                                 'pool_size': 20,
+                                 'max_overflow': 30,
+                                 }
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # Good practice
 
     # Upload settings
