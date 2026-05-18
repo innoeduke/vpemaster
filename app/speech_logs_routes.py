@@ -1386,7 +1386,7 @@ def _get_level_progress_html(user_id, level, pathway_id=None):
     """
     # Create minimal filter set for this user
     filters = {
-        'meeting_number': None,
+        'meeting_id': None,
         'pathway': pathway_id, # This might need to be the name or ID depending on usage
         'level': None,
         'speaker_id': user_id,

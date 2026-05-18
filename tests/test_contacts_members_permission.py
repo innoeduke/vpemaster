@@ -38,7 +38,8 @@ class ContactsPermissionTestCase(unittest.TestCase):
         self.perm_cb_view = Permission(name=Permissions.CONTACT_BOOK_VIEW, description="View All Contacts", category="contacts")
         self.perm_cm_view = Permission(name=Permissions.CONTACTS_MEMBERS_VIEW, description="View Member Contacts", category="contacts")
         self.perm_sl_view_own = Permission(name=Permissions.SPEECH_LOGS_VIEW_OWN, description="View Own Speech Logs", category="speech_logs")
-        db.session.add_all([self.perm_cb_view, self.perm_cm_view, self.perm_sl_view_own])
+        self.perm_sl_edit_all = Permission(name=Permissions.SPEECH_LOGS_EDIT_ALL, description="Edit All Speech Logs", category="speech_logs")
+        db.session.add_all([self.perm_cb_view, self.perm_cm_view, self.perm_sl_view_own, self.perm_sl_edit_all])
         
         # 2. Create roles
         self.role_staff = AuthRole(name="Staff", level=2)
@@ -47,7 +48,7 @@ class ContactsPermissionTestCase(unittest.TestCase):
         db.session.flush()
         
         # 3. Assign permissions
-        self.role_staff.permissions.extend([self.perm_cb_view, self.perm_cm_view, self.perm_sl_view_own])
+        self.role_staff.permissions.extend([self.perm_cb_view, self.perm_cm_view, self.perm_sl_view_own, self.perm_sl_edit_all])
         self.role_user.permissions.extend([self.perm_cm_view, self.perm_sl_view_own])
         
         # 4. Create club
@@ -133,6 +134,47 @@ class ContactsPermissionTestCase(unittest.TestCase):
         # Should fall back to their own logs (Member User) and NOT show Guest User logs
         self.assertIn("Member User", html)
         self.assertNotIn("Guest User", html)
+
+    def test_complete_speech_log_success(self):
+        """Test that completing a speech log succeeds and returns the progress HTML without KeyError."""
+        from app.models.meeting import Meeting
+        from app.models.session import SessionLog, SessionType
+        from app.models.roster import MeetingRole
+
+        self.login("staff", "password")
+
+        # 1. Create meeting, role, session type, and session log
+        meeting = Meeting(club_id=self.club.id, Meeting_Number=969, status='finished', Meeting_Date=date(2026, 4, 15))
+        db.session.add(meeting)
+        db.session.flush()
+
+        role = MeetingRole(name="Prepared Speaker", type="standard", needs_approval=False, has_single_owner=True)
+        db.session.add(role)
+        db.session.flush()
+
+        st = SessionType(Title="Prepared Speech", role_id=role.id, club_id=self.club.id)
+        db.session.add(st)
+        db.session.flush()
+
+        log = SessionLog(meeting_id=meeting.id, Type_ID=st.id, Status="booked")
+        db.session.add(log)
+        db.session.flush()
+
+        # Add an owner record
+        from app.models.session import OwnerMeetingRoles
+        omr = OwnerMeetingRoles(meeting_id=meeting.id, role_id=role.id, contact_id=self.member_contact.id, session_log_id=log.id)
+        db.session.add(omr)
+        db.session.commit()
+
+        # We need to simulate being in the club's context
+        with self.client.session_transaction() as sess:
+            sess['club_id'] = self.club.id
+
+        # 2. Call complete speech log endpoint
+        response = self.client.post(f'/speech_log/complete/{log.id}')
+        self.assertEqual(response.status_code, 200)
+        data = response.get_json()
+        self.assertTrue(data['success'])
 
 if __name__ == '__main__':
     unittest.main()
