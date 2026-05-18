@@ -498,7 +498,8 @@ document.addEventListener("DOMContentLoaded", () => {
       row.dataset.durationMax = log.Duration_Max !== null ? log.Duration_Max : '';
       row.dataset.status = log.status || '';
       row.dataset.role = log.role || '';
-      row.dataset.currentPathLevel = log.current_path_level || '';
+      row.dataset.currentPathLevel = log.project_code || '';
+      row.dataset.projectCode = log.project_code || '';
 
       // --- Set Classes ---
       if (log.is_section) row.classList.add('section-row');
@@ -2109,16 +2110,63 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!row) return;
 
     const roleName = row.dataset.role || "N/A";
-    const currentPathLevel = row.dataset.currentPathLevel || "";
+    const currentPathLevel = (row.dataset.projectCode || row.dataset.currentPathLevel || "").trim();
 
     document.getElementById("edit-role-log-id").value = logId;
     document.getElementById("role-name-display").textContent = roleName;
-    document.getElementById("edit-current-path-level").value = currentPathLevel;
 
-    // // If using separate dropdowns:
-    // const pathLevelMatch = currentPathLevel.match(/^([A-Z]+)(\d+)$/);
-    // document.getElementById('edit-role-pathway').value = pathLevelMatch ? pathLevelMatch[1] : '';
-    // document.getElementById('edit-role-level').value = pathLevelMatch ? pathLevelMatch[2] : '';
+    // Populate pathway dropdown dynamically if not done already
+    const pathwayDropdown = document.getElementById("edit-role-pathway");
+    if (pathwayDropdown && pathwayDropdown.options.length <= 1) {
+      if (typeof groupedPathways !== "undefined") {
+        for (const [groupLabel, items] of Object.entries(groupedPathways)) {
+          const optgroup = document.createElement("optgroup");
+          optgroup.label = groupLabel;
+          items.forEach((item) => {
+            const value = typeof item === 'object' ? item.name : item;
+            const text = typeof item === 'object' ? item.name : item;
+            optgroup.appendChild(new Option(text, value));
+          });
+          pathwayDropdown.appendChild(optgroup);
+        }
+      }
+    }
+
+    let selectedPathway = "";
+    let selectedLevel = "";
+
+    const pathLevelMatch = currentPathLevel.match(/^([A-Z]+)(\d+)$/);
+    if (pathLevelMatch) {
+      const abbr = pathLevelMatch[1];
+      const lvl = pathLevelMatch[2];
+      if (typeof pathwayMap !== "undefined") {
+        selectedPathway = Object.keys(pathwayMap).find(key => pathwayMap[key] === abbr) || "";
+      }
+      selectedLevel = lvl;
+    }
+
+    // Default to owner's working path and level if not specified
+    if (!selectedPathway || !selectedLevel) {
+      const ownerId = row.dataset.ownerId;
+      const contact = allContacts.find((c) => c.id == ownerId);
+      if (contact) {
+        if (!selectedPathway && contact.Current_Path) {
+          selectedPathway = contact.Current_Path;
+        }
+        if (!selectedLevel) {
+          const levelMatch = (contact.Credentials || "").match(/\d+/);
+          if (levelMatch) {
+            const completedLevel = parseInt(levelMatch[0], 10);
+            selectedLevel = Math.min(completedLevel + 1, 5).toString();
+          } else {
+            selectedLevel = "1"; // Default to Level 1
+          }
+        }
+      }
+    }
+
+    document.getElementById("edit-role-pathway").value = selectedPathway;
+    document.getElementById("edit-role-level").value = selectedLevel;
 
     document.getElementById("roleEditModal").style.display = "flex";
   };
@@ -2133,25 +2181,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const row = tableBody.querySelector(`tr[data-id="${logId}"]`);
     if (!row) return;
 
-    const newPathLevel = document
-      .getElementById("edit-current-path-level")
-      .value.trim()
-      .toUpperCase();
+    const pathwayName = document.getElementById("edit-role-pathway").value;
+    const levelVal = document.getElementById("edit-role-level").value;
 
-    // // If using separate dropdowns:
-    // const pathway = document.getElementById('edit-role-pathway').value;
-    // const level = document.getElementById('edit-role-level').value;
-    // const newPathLevel = (pathway && level) ? `${pathway}${level}` : '';
+    let pathwayAbbr = "";
+    if (pathwayName && typeof pathwayMap !== "undefined") {
+      pathwayAbbr = pathwayMap[pathwayName] || "";
+    }
 
-    // Update the row's dataset immediately
+    const newPathLevel = (pathwayAbbr && levelVal) ? `${pathwayAbbr}${levelVal}` : "";
+
     row.dataset.currentPathLevel = newPathLevel;
+    row.dataset.projectCode = newPathLevel;
 
-    // Optionally update a visible cell if needed (though path/level isn't usually displayed directly in edit mode)
-    // Example: const pathLevelCell = row.querySelector('.some-path-level-display-cell');
-    // if(pathLevelCell) pathLevelCell.textContent = newPathLevel;
-
-    // NOTE: Actual saving happens when the main "Save" button is clicked,
-    // which reads the updated dataset via getRowData.
     closeRoleEditModal();
   };
   // --- Test Hooks ---

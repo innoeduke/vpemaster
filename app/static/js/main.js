@@ -182,8 +182,8 @@ function openContactModal(contactId) {
         const mentorIdRow = document.getElementById("mentor_id_container");
         const isGuest = data.contact.Type === 'Guest';
 
-        if (memberIdRow) memberIdRow.style.display = 'block'; // Always show for edit
-        if (mentorIdRow) mentorIdRow.style.display = isGuest ? 'none' : 'block';
+        if (memberIdRow) memberIdRow.style.display = 'flex'; // Always show for edit
+        if (mentorIdRow) mentorIdRow.style.display = isGuest ? 'none' : 'flex';
 
         // Handle Avatar Preview
         const avatarImg = document.getElementById("modal-avatar-img");
@@ -242,7 +242,7 @@ function openContactModal(contactId) {
           }
 
           // Visibility and Disabling logic
-          homeClubRow.style.display = 'block'; // Always show now
+          homeClubRow.style.display = 'flex'; // Always show now
           
           if (data.user_clubs && data.user_clubs.length <= 1) {
              // If user only in one club, don't allow changing it
@@ -305,7 +305,7 @@ function openContactModal(contactId) {
     const mentorIdRow = document.getElementById("mentor_id_container");
     const homeClubRow = document.getElementById("home_club_container");
 
-    if (memberIdRow) memberIdRow.style.display = 'block'; // Keep visible to allow entry
+    if (memberIdRow) memberIdRow.style.display = 'flex'; // Keep visible to allow entry
     if (mentorIdRow) mentorIdRow.style.display = 'none';
     if (homeClubRow) homeClubRow.style.display = 'none'; // Only show if we have clubs to pick from
 

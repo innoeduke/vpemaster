@@ -1,7 +1,6 @@
 <div id="meetingDetailsModal" class="modal">
   <div class="modal-content" style="max-width: 800px;">
-    <span class="close" onclick="closeMeetingDetailsModal()">&times;</span>
-    <h2>Edit Meeting Details</h2>
+    <h2>Edit Details</h2>
     
     <style>
         .meeting-details-grid {
@@ -98,9 +97,9 @@
         </div>
     </div>
 
-    <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeMeetingDetailsModal()">Cancel</button>
-        <button id="save-meeting-details-btn" class="btn btn-success">Save Changes</button>
+    <div class="form-actions">
+        <button type="button" class="btn btn-speech-cancel" onclick="closeMeetingDetailsModal()">Cancel</button>
+        <button id="save-meeting-details-btn" class="btn btn-speech-save">Save</button>
     </div>
   </div>
 </div>

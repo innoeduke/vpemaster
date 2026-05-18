@@ -1,7 +1,6 @@
 <div id="speechEditModal" class="modal">
   <div class="modal-content">
-    <span class="close" onclick="closeSpeechEditModal()">&times;</span>
-    <h2>Edit Speech Details</h2>
+    <h2>Edit Details</h2>
 
     <form id="speechEditForm" onsubmit="saveSpeechChanges(event)">
       <input type="hidden" id="edit-log-id" name="log_id" />
@@ -40,20 +39,16 @@
       </div>
 
       <div id="standard-selection" style="display: none;">
-        <div class="form-group modal-form-row" id="pathway-generic-row">
-          <div class="modal-split-row">
-            <div class="form-group modal-col-expand">
-              <label for="edit-pathway" id="label-pathway-series" class="modal-label">Pathway:</label>
-              <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
-            </div>
-            <div class="form-group modal-col-fixed">
-              <label for="edit-is-generic" class="modal-label">Generic:</label>
-              <div class="checkbox-vertical-align">
-                <input type="checkbox" id="edit-is-generic" name="is_generic" onchange="toggleGeneric(this.checked)"
-                  class="scaled-checkbox" />
-              </div>
-            </div>
-          </div>
+        <!-- Is Project Checkbox stacked first -->
+        <div class="form-group" style="display: flex; align-items: center; margin-bottom: 15px;">
+          <input type="checkbox" id="edit-is-project" name="is_project" class="scaled-checkbox" checked />
+          <label for="edit-is-project" style="margin-left: 10px; cursor: pointer; font-weight: 700; margin-bottom: 0; color: #555;">Is Project?</label>
+        </div>
+
+        <!-- Pathway select container, now stacked and full-width -->
+        <div class="form-group" id="pathway-generic-row">
+          <label for="edit-pathway" id="label-pathway-series" class="modal-label">Pathway:</label>
+          <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
         </div>
         <div class="form-group" id="level-select-group">
           <label for="edit-level" id="label-level" class="modal-label">Level:</label>
@@ -79,8 +74,8 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-success">Save Changes</button>
-        <button type="button" class="btn btn-danger" onclick="closeSpeechEditModal()">Cancel</button>
+        <button type="button" class="btn btn-speech-cancel" onclick="closeSpeechEditModal()">Cancel</button>
+        <button type="submit" class="btn btn-speech-save">Save</button>
       </div>
     </form>
   </div>

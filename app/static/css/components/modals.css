@@ -24,10 +24,14 @@
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
-.modal-content h1 {
+.modal-content h1,
+.modal-content h2 {
     text-align: center;
     margin-top: 0;
     color: #004165;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 25px;
 }
 
 .modal-content .form-group-row {
@@ -332,4 +336,60 @@
 .usage-warning-modal .usage-meeting-link:hover {
     color: #dc3545;
     transform: scale(1.1);
+}
+
+/* Custom premium styling for Speech, Role and Meeting Edit Modal action buttons */
+#speechEditModal .form-actions,
+#roleEditModal .form-actions,
+#meetingDetailsModal .form-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: center !important;
+    gap: 15px !important;
+    margin-top: 30px !important;
+}
+
+#speechEditModal .form-actions .btn,
+#roleEditModal .form-actions .btn,
+#meetingDetailsModal .form-actions .btn {
+    min-width: 120px !important;
+    width: auto !important;
+    height: var(--mobile-control-height, 42px) !important;
+    border-radius: 8px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    box-sizing: border-box !important;
+}
+
+#speechEditModal .form-actions .btn-speech-cancel,
+#roleEditModal .form-actions .btn-speech-cancel,
+#meetingDetailsModal .form-actions .btn-speech-cancel {
+    background-color: transparent !important;
+    color: #555 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+#speechEditModal .form-actions .btn-speech-cancel:hover,
+#roleEditModal .form-actions .btn-speech-cancel:hover,
+#meetingDetailsModal .form-actions .btn-speech-cancel:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    color: #333 !important;
+}
+
+#speechEditModal .form-actions .btn-speech-save,
+#roleEditModal .form-actions .btn-speech-save,
+#meetingDetailsModal .form-actions .btn-speech-save {
+    background-color: #772432 !important; /* Official Toastmasters Maroon */
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+#speechEditModal .form-actions .btn-speech-save:hover,
+#roleEditModal .form-actions .btn-speech-save:hover,
+#meetingDetailsModal .form-actions .btn-speech-save:hover {
+    background-color: #5e1c27 !important; /* Darker maroon */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+    transform: translateY(-1px);
 }

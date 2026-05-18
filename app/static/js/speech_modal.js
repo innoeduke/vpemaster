@@ -22,7 +22,7 @@ const modalElements = {
 
   pathwayGenericRow: document.getElementById("pathway-generic-row"),
   pathwaySelect: document.getElementById("edit-pathway"),
-  genericCheckbox: document.getElementById("edit-is-generic"),
+  isProjectCheckbox: document.getElementById("edit-is-project"),
   levelSelectGroup: document.getElementById("level-select-group"),
   levelSelect: document.getElementById("edit-level"),
   projectSelectGroup: document.getElementById("project-select-group"),
@@ -78,6 +78,7 @@ function populateGroupedDropdown(dropdown, groupedData, { defaultOption }) {
  */
 function toggleGeneric(isGeneric) {
   const {
+    pathwayGenericRow,
     levelSelectGroup,
     projectSelectGroup,
     pathwaySelect,
@@ -85,17 +86,20 @@ function toggleGeneric(isGeneric) {
     projectSelect,
   } = modalElements;
   const display = isGeneric ? "none" : "block";
-  levelSelectGroup.style.display = display;
-  projectSelectGroup.style.display = display;
-  pathwaySelect.disabled = isGeneric;
-  levelSelect.disabled = isGeneric;
-  projectSelect.disabled = isGeneric;
+  if (pathwayGenericRow) pathwayGenericRow.style.display = display;
+  if (levelSelectGroup) levelSelectGroup.style.display = display;
+  if (projectSelectGroup) projectSelectGroup.style.display = display;
+  if (pathwaySelect) pathwaySelect.disabled = isGeneric;
+  if (levelSelect) levelSelect.disabled = isGeneric;
+  if (projectSelect) projectSelect.disabled = isGeneric;
 
   if (isGeneric) {
-    pathwaySelect.value = "";
-    levelSelect.value = "";
-    projectSelect.value = "";
-    projectSelect.innerHTML = '<option value="">-- Select --</option>';
+    if (pathwaySelect) pathwaySelect.value = "";
+    if (levelSelect) levelSelect.value = "";
+    if (projectSelect) {
+      projectSelect.value = "";
+      projectSelect.innerHTML = '<option value="">-- Select --</option>';
+    }
   }
 }
 
@@ -188,7 +192,7 @@ function resetModal(logData, sessionType) {
   toggleGeneric(false);
   modalElements.form.reset();
   modalElements.logId.value = logData.id;
-  modalElements.title.textContent = `Edit ${sessionType} Details`;
+  modalElements.title.textContent = "Edit Details";
   modalElements.speechTitle.value = logData.Session_Title || "";
   modalElements.credential.value = logData.credential || "";
   modalElements.sessionType.value = sessionType;
@@ -206,9 +210,9 @@ function resetModal(logData, sessionType) {
     modalElements.pathwayGenericRow,
     modalElements.levelSelectGroup,
     modalElements.projectSelectGroup,
-    modalElements.genericCheckbox,
     modalElements.projectGroup,
     modalElements.pathwayGroup,
+    modalElements.projectModeFields,
   ];
   optionalElements.forEach((el) => {
     if (el) el.style.display = "none";
@@ -221,7 +225,7 @@ function resetModal(logData, sessionType) {
   modalElements.pathwaySelect.required = false;
 }
 
-function setupEvaluatorModal(logData) {
+function setupEvaluatorModal(logData, { workingPath } = {}) {
   modalElements.projectGroup.style.display = "block";
   modalElements.speechTitleLabel.textContent = "Evaluator for:";
 
@@ -233,47 +237,6 @@ function setupEvaluatorModal(logData) {
     valueField: "id",
     textField: "Project_Name",
   });
-
-  modalElements.isProjectChk.onchange = (e) => {
-    modalElements.projectModeFields.style.display = e.target.checked
-      ? "block"
-      : "none";
-    if (!e.target.checked) {
-      modalElements.projectSelectDropdown.value = "";
-      modalElements.speechTitle.value = logData.agenda_title || "";
-    } else {
-      // When switching to project mode, keep the existing speech title
-      // Do not override with the project name
-    }
-  };
-
-  const isEvalProject =
-    logData.Project_ID && ProjectID.EVALUATION_PROJECTS.includes(Number(logData.Project_ID));
-  modalElements.isProjectChk.checked = isEvalProject;
-
-  // Show/hide the project mode fields container
-  modalElements.projectModeFields.style.display = isEvalProject
-    ? "block"
-    : "none";
-
-  // Set the project dropdown value if it's an evaluation project
-  if (isEvalProject) {
-    modalElements.projectSelectDropdown.value = logData.Project_ID;
-  }
-}
-
-function setupSpecialProjectModal(logData, { sessionType, workingPath }) {
-  modalElements.title.textContent = `Edit ${sessionType} Details`;
-  modalElements.speechTitle.disabled = true;
-  modalElements.projectGroup.style.display = "block";
-
-  const PROJECT_IDS = {
-    "Table Topics": ProjectID.TOPICSMASTER_PROJECT,
-    "Panel Discussion": ProjectID.MODERATOR_PROJECT,
-    "Keynote Speech": ProjectID.KEYNOTE_SPEAKER_PROJECT
-  };
-  const isProject = logData.Project_ID == PROJECT_IDS[sessionType];
-  modalElements.isProjectChk.checked = isProject;
 
   if (typeof groupedPathways !== 'undefined' && groupedPathways) {
     populateGroupedDropdown(modalElements.pathwaySelectDropdown, groupedPathways, {
@@ -287,22 +250,114 @@ function setupSpecialProjectModal(logData, { sessionType, workingPath }) {
       textField: "name",
     });
   }
-  modalElements.pathwaySelectDropdown.value =
-    logData.pathway || workingPath || "";
 
-  modalElements.pathwayGroup.style.display = isProject ? "block" : "none";
-  modalElements.projectSelectDropdown.style.display = "none";
+  const defaultPath = workingPath || logData.pathway || "";
 
   modalElements.isProjectChk.onchange = (e) => {
-    modalElements.pathwayGroup.style.display = e.target.checked ? "block" : "none";
-    if (!e.target.checked) {
+    const isChecked = e.target.checked;
+    modalElements.projectModeFields.style.display = isChecked ? "block" : "none";
+    modalElements.pathwayGroup.style.display = isChecked ? "block" : "none";
+    if (!isChecked) {
+      modalElements.projectSelectDropdown.value = "";
       modalElements.pathwaySelectDropdown.value = "";
+      modalElements.speechTitle.value = logData.agenda_title || "";
+    } else {
+      modalElements.pathwaySelectDropdown.value = defaultPath;
     }
   };
+
+  const isEvalProject =
+    logData.Project_ID && ProjectID.EVALUATION_PROJECTS.includes(Number(logData.Project_ID));
+  modalElements.isProjectChk.checked = isEvalProject;
+
+  modalElements.projectModeFields.style.display = isEvalProject ? "block" : "none";
+  modalElements.pathwayGroup.style.display = isEvalProject ? "block" : "none";
+
+  if (isEvalProject) {
+    modalElements.projectSelectDropdown.value = logData.Project_ID;
+    modalElements.pathwaySelectDropdown.value = defaultPath;
+  }
+}
+
+function setupSpecialProjectModal(logData, { sessionType, workingPath }) {
+  modalElements.title.textContent = "Edit Details";
+  modalElements.speechTitle.disabled = true;
+  modalElements.projectGroup.style.display = "block";
+
+  const PROJECT_IDS = {
+    "Table Topics": ProjectID.TOPICSMASTER_PROJECT,
+    "Panel Discussion": ProjectID.MODERATOR_PROJECT,
+    "Keynote Speech": ProjectID.KEYNOTE_SPEAKER_PROJECT
+  };
+  const targetProjectId = PROJECT_IDS[sessionType];
+  const isProject = logData.Project_ID == targetProjectId;
+  modalElements.isProjectChk.checked = isProject;
+
+  // Populate projects dropdown with only the single available project for this special session
+  const specialProject = allProjects.find((p) => p.id == targetProjectId);
+  const projectsList = specialProject ? [specialProject] : [];
+  populateDropdown(modalElements.projectSelectDropdown, projectsList, {
+    defaultOption: `-- Select ${sessionType} Project --`,
+    valueField: "id",
+    textField: "Project_Name"
+  });
+
+  // Pre-select the project if populated
+  if (projectsList.length > 0) {
+    modalElements.projectSelectDropdown.value = projectsList[0].id;
+  }
+
+  // Populate pathways dropdown
+  if (typeof groupedPathways !== 'undefined' && groupedPathways) {
+    populateGroupedDropdown(modalElements.pathwaySelectDropdown, groupedPathways, {
+      defaultOption: "-- Select Pathway --"
+    });
+  } else {
+    const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
+    populateDropdown(modalElements.pathwaySelectDropdown, pathways, {
+      defaultOption: "-- Select Pathway --",
+      valueField: "name",
+      textField: "name",
+    });
+  }
+
+  const defaultPath = workingPath || logData.pathway || "";
+
+  modalElements.isProjectChk.onchange = (e) => {
+    const isChecked = e.target.checked;
+    modalElements.projectModeFields.style.display = isChecked ? "block" : "none";
+    modalElements.pathwayGroup.style.display = isChecked ? "block" : "none";
+    if (modalElements.projectSelectDropdown) {
+      modalElements.projectSelectDropdown.style.display = isChecked ? "block" : "none";
+    }
+    if (!isChecked) {
+      modalElements.pathwaySelectDropdown.value = "";
+      modalElements.projectSelectDropdown.value = "";
+    } else {
+      modalElements.pathwaySelectDropdown.value = defaultPath;
+      if (projectsList.length > 0) {
+        modalElements.projectSelectDropdown.value = projectsList[0].id;
+      }
+    }
+  };
+
+  // Set initial visibility and values
+  modalElements.projectModeFields.style.display = isProject ? "block" : "none";
+  modalElements.pathwayGroup.style.display = isProject ? "block" : "none";
+  if (modalElements.projectSelectDropdown) {
+    modalElements.projectSelectDropdown.style.display = isProject ? "block" : "none";
+  }
+
+  if (isProject) {
+    modalElements.pathwaySelectDropdown.value = defaultPath;
+    if (projectsList.length > 0) {
+      modalElements.projectSelectDropdown.value = projectsList[0].id;
+    }
+  }
 }
 
 function setupRoleModal(logData, { sessionType }) {
-  modalElements.title.textContent = `Edit ${sessionType} Details`;
+  modalElements.title.textContent = "Edit Details";
   // Hide all speech-specific fields
   modalElements.speechTitle.disabled = true; // Or hide parent
   // Actually, for roles we might not even want "Speech Title".
@@ -322,14 +377,13 @@ function setupRoleModal(logData, { sessionType }) {
 
 
 function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
-  modalElements.title.textContent = "Edit Speech Details";
+  modalElements.title.textContent = "Edit Details";
 
   modalElements.standardSelection.style.display = "block";
   modalElements.pathwaySelect.required = true;
   modalElements.pathwayGenericRow.style.display = "block";
   modalElements.levelSelectGroup.style.display = "block";
   modalElements.projectSelectGroup.style.display = "block";
-  modalElements.genericCheckbox.style.display = "block";
 
   modalElements.labelPathway.textContent = "Pathway:";
   modalElements.labelProject.textContent = "Project:";
@@ -382,7 +436,7 @@ function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
   }
 
   const isGeneric = projectToSelect == ProjectID.GENERIC;
-  modalElements.genericCheckbox.checked = isGeneric;
+  modalElements.isProjectCheckbox.checked = !isGeneric;
   toggleGeneric(isGeneric);
 
   modalElements.pathwaySelect.value = pathwayToSelect || "";
@@ -557,12 +611,13 @@ function buildSavePayload() {
         isProject && projectSelectDropdown.value
           ? projectSelectDropdown.value
           : null;
+      payload.pathway = isProject ? pathwaySelectDropdown.value || "" : null;
       break;
     default:
       // Only include speech-specific fields if the standard selection UI is visible
       // (i.e., this is a speech/presentation, not a role like Grammarian/Timer)
       if (modalElements.standardSelection && modalElements.standardSelection.style.display !== "none") {
-        const isGeneric = genericCheckbox.checked;
+        const isGeneric = !modalElements.isProjectCheckbox.checked;
         payload.session_title = speechTitle.value;
         payload.project_id = isGeneric ? ProjectID.GENERIC : projectSelect.value || ProjectID.GENERIC;
         payload.pathway = pathwaySelect.value;
@@ -784,9 +839,9 @@ document.addEventListener("DOMContentLoaded", () => {
   modalElements.form.addEventListener("submit", saveSpeechChanges);
   modalElements.pathwaySelect.addEventListener("change", updateDynamicOptions);
   modalElements.levelSelect.addEventListener("change", updateDynamicOptions);
-  if (modalElements.genericCheckbox) {
-    modalElements.genericCheckbox.addEventListener("change", (e) =>
-      toggleGeneric(e.target.checked)
+  if (modalElements.isProjectCheckbox) {
+    modalElements.isProjectCheckbox.addEventListener("change", (e) =>
+      toggleGeneric(!e.target.checked)
     );
   }
 });
