@@ -79,6 +79,12 @@ class ContactsPermissionTestCase(unittest.TestCase):
         db.session.add(UserClub(user_id=self.user_staff.id, club_id=self.club.id, club_role_level=self.role_staff.level, contact_id=self.member_contact.id))
         db.session.add(UserClub(user_id=self.user_user.id, club_id=self.club.id, club_role_level=self.role_user.level, contact_id=self.member_contact.id))
         
+        # 7. Create LevelRole entries to allow roadmap rendering
+        from app.models.project import LevelRole
+        lr1 = LevelRole(level=1, role="Prepared Speech", type="speech", count_required=3, band=0)
+        lr2 = LevelRole(level=1, role="Timer", type="role", count_required=1, band=1)
+        db.session.add_all([lr1, lr2])
+        
         db.session.commit()
 
     def login(self, username, password):
@@ -120,6 +126,8 @@ class ContactsPermissionTestCase(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
         self.assertIn("Other Member User", html)
+        self.assertNotIn('id="add-plan-btn"', html)
+        self.assertNotIn("New Item", html)
 
     def test_user_cannot_view_guest_speech_logs(self):
         """Test that a regular user cannot view guest speech logs, falling back to their own logs."""
@@ -134,6 +142,19 @@ class ContactsPermissionTestCase(unittest.TestCase):
         # Should fall back to their own logs (Member User) and NOT show Guest User logs
         self.assertIn("Member User", html)
         self.assertNotIn("Guest User", html)
+
+    def test_user_sees_new_item_on_own_profile(self):
+        """Test that a user can see the '+New Item' button on their own profile."""
+        self.login("user", "password")
+        with self.client.session_transaction() as sess:
+            sess['club_id'] = self.club.id
+        
+        response = self.client.get(f'/speech_logs?speaker_id={self.member_contact.id}')
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn("Member User", html)
+        self.assertIn('id="add-plan-btn"', html)
+        self.assertIn("New Item", html)
 
     def test_complete_speech_log_success(self):
         """Test that completing a speech log succeeds and returns the progress HTML without KeyError."""

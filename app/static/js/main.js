@@ -188,6 +188,21 @@ function openContactModal(contactId) {
         // Handle Avatar Preview
         const avatarImg = document.getElementById("modal-avatar-img");
         const placeholder = document.getElementById("modal-avatar-placeholder");
+        const avatarContainer = document.querySelector(".profile-avatar-container");
+        const type = data.contact.Type;
+        
+        if (avatarContainer) {
+          avatarContainer.dataset.contactId = data.contact.id;
+          avatarContainer.dataset.contactType = type;
+          if (type === 'Member' || type === 'Officer') {
+            avatarContainer.style.cursor = 'pointer';
+            avatarContainer.title = "View Speech Logs";
+          } else {
+            avatarContainer.style.cursor = 'default';
+            avatarContainer.removeAttribute('title');
+          }
+        }
+
         if (data.contact.Avatar_URL) {
           let avatarPath = data.contact.Avatar_URL;
           // If just a filename, prepend root dir
@@ -274,7 +289,6 @@ function openContactModal(contactId) {
         const basicInfoAccordion = document.getElementById("basicInfoAccordion");
         const contactTabs = document.querySelector(".contact-modal-tabs");
         const tabEducation = document.getElementById("tab-education");
-        const type = data.contact.Type;
         if (type === 'Member' || type === 'Officer') {
           if (educationWrapper) educationWrapper.style.display = "block";
           if (tabEducation) tabEducation.style.display = "inline-block";
@@ -310,6 +324,13 @@ function openContactModal(contactId) {
     if (homeClubRow) homeClubRow.style.display = 'none'; // Only show if we have clubs to pick from
 
     // Reset Avatar for New Entry
+    const avatarContainer = document.querySelector(".profile-avatar-container");
+    if (avatarContainer) {
+      delete avatarContainer.dataset.contactId;
+      delete avatarContainer.dataset.contactType;
+      avatarContainer.style.cursor = 'default';
+      avatarContainer.removeAttribute('title');
+    }
     document.getElementById("modal-avatar-img").style.display = 'none';
     document.getElementById("modal-avatar-placeholder").style.display = 'flex';
 
@@ -384,6 +405,18 @@ function previewAvatar(input) {
     reader.readAsDataURL(input.files[0]);
   }
 }
+
+function navigateToSpeechLogs() {
+  const avatarContainer = document.querySelector(".profile-avatar-container");
+  if (avatarContainer) {
+    const contactId = avatarContainer.dataset.contactId;
+    const type = avatarContainer.dataset.contactType;
+    if (contactId && (type === 'Member' || type === 'Officer')) {
+      window.location.href = `/speech_logs?view_mode=member&speaker_id=${contactId}`;
+    }
+  }
+}
+window.navigateToSpeechLogs = navigateToSpeechLogs;
 
 document.addEventListener("DOMContentLoaded", function () {
   const navPane = document.getElementById("nav-pane");

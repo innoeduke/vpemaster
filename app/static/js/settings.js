@@ -211,7 +211,7 @@ class TablePaginator {
   constructor(config) {
     this.tableId = config.tableId;
     this.containerId = config.containerId;
-    this.pageSize = config.pageSize || 25;
+    this.pageSize = config.pageSize || 10;
     this.currentPage = 1;
     this.storageKey = config.storageKey;
 
@@ -1463,6 +1463,7 @@ document.addEventListener("DOMContentLoaded", () => {
     'user-settings': new TablePaginator({
       tableId: 'user-settings-table',
       containerId: 'user-pagination',
+      pageSize: 10,
       storageKey: 'user_settings'
     })
   };

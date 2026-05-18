@@ -1,12 +1,11 @@
 <div id="contactModal" class="modal">
   <div class="modal-content">
-    <span class="close" onclick="closeContactModal()">&times;</span>
     <div class="modal-header">
       <h2 id="contactModalTitle"></h2>
     </div>
     <form id="contactForm" method="POST" enctype="multipart/form-data">
       <div class="profile-avatar-section">
-        <div class="profile-avatar-container">
+        <div class="profile-avatar-container" onclick="navigateToSpeechLogs()">
           <div id="modal-avatar-placeholder" class="avatar-placeholder">
             <i class="fas fa-user"></i>
           </div>
@@ -136,7 +135,8 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-success">Save</button>
+        <button type="button" class="btn btn-speech-cancel" onclick="closeContactModal()">Cancel</button>
+        <button type="submit" class="btn btn-speech-save">Save</button>
       </div>
     </form>
   </div>
