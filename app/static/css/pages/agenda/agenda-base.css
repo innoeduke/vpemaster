@@ -768,7 +768,7 @@ a.owner-link:hover {
 .speech-tooltip-wrapper a:not(.project-code-link) {
 	background-color: transparent;
 	padding: 0;
-	color: #2563eb;
+	color: #772432;
 	text-decoration: none;
 	font-weight: 600;
 	border-radius: 0;
@@ -776,7 +776,7 @@ a.owner-link:hover {
 
 .speech-tooltip-wrapper a:not(.project-code-link):hover {
 	text-decoration: underline;
-	color: #1d4ed8;
+	color: #5c1c27;
 }
 
 .project-code-link {
