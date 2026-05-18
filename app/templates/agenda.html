@@ -299,6 +299,7 @@
                     </td>
                     <td class="non-edit-mode-cell col-owner">
                         {# Use pre-fetched owner data from log_dict #}
+                        {% if log_dict.owners_data %}
                         {% for owner_info in log_dict.owners_data %}
                         <div class="owner-row">
                             {% if is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
@@ -325,6 +326,9 @@
                             {% endif %}
                         </div>
                         {% endfor %}
+                        {% else %}
+                        -
+                        {% endif %}
                     </td>
                     <td class="non-edit-mode-cell col-view-duration">
                         {% if log_dict.Duration_Min and log_dict.Duration_Max %}{{ log_dict.Duration_Min }}'-{{

@@ -215,6 +215,13 @@ def contact_form(contact_id=None):
         cc = ContactClub.query.filter_by(contact_id=contact.id, club_id=current_club_id).first()
         is_officer = cc.is_officer if cc else False
 
+        # Get mentor candidates for the current club
+        mentor_candidates = Contact.query.join(ContactClub).filter(
+            ContactClub.club_id == current_club_id,
+            Contact.Type.in_(['Member', 'Past Member'])
+        ).order_by(Contact.Name.asc()).all()
+        mentor_candidates_data = [{'id': m.id, 'name': m.Name} for m in mentor_candidates]
+
         return jsonify({
             'contact': {
                 'id': contact.id,
@@ -239,7 +246,8 @@ def contact_form(contact_id=None):
             'home_club_id': home_club_id,
             'is_sysadmin': is_authorized(Permissions.SYSADMIN),
             'is_clubadmin': current_user.has_role(Permissions.CLUBADMIN),
-            'current_club_id': get_current_club_id()
+            'current_club_id': get_current_club_id(),
+            'mentor_candidates': mentor_candidates_data
         })
 
 

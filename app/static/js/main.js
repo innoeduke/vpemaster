@@ -113,7 +113,25 @@ function initializeSearchFilter(
   filterItems();
 }
 
-// --- Shared Modal Functions ---
+function switchContactTab(tabName) {
+  const tabBasic = document.getElementById("tab-basic-info");
+  const tabEdu = document.getElementById("tab-education");
+  const panelBasic = document.getElementById("panel-basic-info");
+  const panelEdu = document.getElementById("panel-education");
+
+  if (tabName === 'basic-info') {
+    if (tabBasic) tabBasic.classList.add("active");
+    if (tabEdu) tabEdu.classList.remove("active");
+    if (panelBasic) panelBasic.style.display = "block";
+    if (panelEdu) panelEdu.style.display = "none";
+  } else if (tabName === 'education') {
+    if (tabBasic) tabBasic.classList.remove("active");
+    if (tabEdu) tabEdu.classList.add("active");
+    if (panelBasic) panelBasic.style.display = "none";
+    if (panelEdu) panelEdu.style.display = "block";
+  }
+}
+window.switchContactTab = switchContactTab;
 
 function openContactModal(contactId) {
   const contactModal = document.getElementById("contactModal");
@@ -236,9 +254,10 @@ function openContactModal(contactId) {
 
         // Populate Mentor Dropdown
         const mentorSelect = document.getElementById("mentor_id");
-        if (mentorSelect && typeof MENTOR_CANDIDATES !== 'undefined') {
+        if (mentorSelect) {
+          const candidates = data.mentor_candidates || (typeof MENTOR_CANDIDATES !== 'undefined' ? MENTOR_CANDIDATES : []);
           mentorSelect.innerHTML = '<option value="0">None</option>';
-          MENTOR_CANDIDATES.forEach(m => {
+          candidates.forEach(m => {
             // Don't list self as mentor
             if (m.id !== data.contact.id) {
               const option = document.createElement("option");
@@ -253,40 +272,33 @@ function openContactModal(contactId) {
         // Handle Education Accordion Visibility
         const educationWrapper = document.getElementById("educationFieldsWrapper");
         const basicInfoAccordion = document.getElementById("basicInfoAccordion");
+        const contactTabs = document.querySelector(".contact-modal-tabs");
+        const tabEducation = document.getElementById("tab-education");
         const type = data.contact.Type;
         if (type === 'Member' || type === 'Officer') {
-          educationWrapper.style.display = "block";
-          if (basicInfoAccordion) basicInfoAccordion.style.display = "flex"; // Accordions use flex
+          if (educationWrapper) educationWrapper.style.display = "block";
+          if (tabEducation) tabEducation.style.display = "inline-block";
+          if (contactTabs) contactTabs.style.display = "flex";
           document.getElementById("current_path").value = data.contact.current_path || "";
           document.getElementById("next_project").value = data.contact.next_project || "";
           document.getElementById("credentials").value = data.contact.credentials || "";
         } else {
-          educationWrapper.style.display = "none";
-          if (basicInfoAccordion) basicInfoAccordion.style.display = "none";
+          if (educationWrapper) educationWrapper.style.display = "none";
+          if (tabEducation) tabEducation.style.display = "none";
+          if (contactTabs) contactTabs.style.display = "none";
         }
 
-        // Reset Accordions: Basic Info open, Education closed
-        const acc = document.querySelectorAll(".accordion");
-        acc.forEach((btn, index) => {
-          const panel = btn.nextElementSibling;
-          if (index === 0) {
-            btn.classList.add("active");
-            // Use a large fixed value to ensure accordion is expanded
-            panel.style.maxHeight = "1000px";
-          } else {
-            btn.classList.remove("active");
-            panel.style.maxHeight = null;
-          }
-        });
+        switchContactTab('basic-info');
       });
   } else {
     contactModalTitle.textContent = "Add Guest";
     const actionUrl = new URL("/contact/form", window.location.origin);
     actionUrl.searchParams.set("referer", window.location.href);
     contactForm.action = actionUrl.pathname + actionUrl.search;
+    
+    const contactTabs = document.querySelector(".contact-modal-tabs");
+    if (contactTabs) contactTabs.style.display = "none";
     document.getElementById("educationFieldsWrapper").style.display = "none";
-    const basicInfoAccordion = document.getElementById("basicInfoAccordion");
-    if (basicInfoAccordion) basicInfoAccordion.style.display = "none";
 
     // Hide mentor_id row for new contacts (default is Guest)
     const memberIdRow = document.getElementById("member_id_container");
@@ -304,25 +316,9 @@ function openContactModal(contactId) {
     const officerCheckbox = document.getElementById("is_officer");
     if (officerCheckbox) {
       officerCheckbox.checked = false;
-      // We don't have 'data' here to check permissions, but the template already handles the default state.
-      // However, for consistency when reopening after an edit, we might want to ensure it's still correct.
-      // But adding new contacts is usually for Guests, and we'll handle the toggle logic if we ever allow
-      // adding Officers directly (which the UI currently restricts to Guests).
     }
 
-    // Reset Accordions for New Entry: Basic Info open, Education closed
-    const acc = document.querySelectorAll(".accordion");
-    acc.forEach((btn, index) => {
-      const panel = btn.nextElementSibling;
-      if (index === 0) {
-        btn.classList.add("active");
-        // Use a large fixed value to ensure accordion is expanded
-        panel.style.maxHeight = "1000px";
-      } else {
-        btn.classList.remove("active");
-        panel.style.maxHeight = null;
-      }
-    });
+    switchContactTab('basic-info');
   }
   contactModal.style.display = "flex";
 }
