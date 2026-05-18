@@ -2,7 +2,7 @@
 head_extra %}
 
 {% endblock %} {% block content %}
-<h1><i class="fas fa-book"></i> Contacts</h1>
+<h1><i class="fas fa-address-book"></i> Contacts</h1>
 
 <div class="contact-action-bar">
   <div class="stats-container">
@@ -69,7 +69,7 @@ head_extra %}
       <div class="button-group">
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
         <button class="btn btn-success desktop-only-btn" onclick="openContactModal()">
-          Add New
+          New
         </button>
         <button id="mergeContactsBtn" class="btn btn-warning" onclick="handleMergeClick()" style="display: none"
           title="Select at least 2 contacts to merge">
@@ -79,12 +79,12 @@ head_extra %}
         
         {% if is_authorized(Permissions.ROSTER_VIEW) %}
         <button class="btn btn-primary desktop-only-btn" onclick="window.location.href='{{ url_for('roster_bp.roster') }}';">
-          Open Roster
+          Roster
         </button>
         {% endif %}
         
         {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
-        <button class="btn btn-navy desktop-only-btn" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="Grid View">
+        <button class="btn btn-maroon desktop-only-btn" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="Grid View">
           <i class="fas fa-th-large"></i>
         </button>
         {% endif %}
@@ -97,13 +97,13 @@ head_extra %}
           <div id="action-menu" class="action-menu">
             {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
             <div class="action-menu-item" onclick="openContactModal()">
-              <i class="fas fa-plus"></i> Add New
+              <i class="fas fa-plus"></i> New
             </div>
             {% endif %}
 
             {% if is_authorized(Permissions.ROSTER_VIEW) %}
             <div class="action-menu-item" onclick="window.location.href='{{ url_for('roster_bp.roster') }}';">
-              <i class="fas fa-users"></i> Open Roster
+              <i class="fas fa-users"></i> Roster
             </div>
             {% endif %}
 

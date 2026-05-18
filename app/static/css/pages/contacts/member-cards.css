@@ -111,14 +111,15 @@
 }
 
 .btn-table-view {
-    background-color: #004165 !important;
-    border-color: #004165 !important;
+    background-color: #772432 !important;
+    border-color: #772432 !important;
     color: white !important;
 }
 
 .btn-table-view:hover {
-    background-color: transparent !important;
-    color: #004165 !important;
+    background-color: #5a1b26 !important;
+    border-color: #5a1b26 !important;
+    color: white !important;
 }
 
 /* Grid Layout */

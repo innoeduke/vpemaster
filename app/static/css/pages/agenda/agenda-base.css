@@ -499,7 +499,8 @@ td.actions-column {
 
 /* Column Widths for Edit Mode */
 #logs-table .edit-mode-header th:nth-child(1) {
-	width: 6%;
+	width: 8%;
+	min-width: 45px;
 }
 
 #logs-table .edit-mode-header th:nth-child(2) {
@@ -507,15 +508,20 @@ td.actions-column {
 }
 
 #logs-table .edit-mode-header th:nth-child(3) {
-	width: 22%;
+	width: 21%;
 }
 
 #logs-table .edit-mode-header th:nth-child(4) {
-	width: 23%;
+	width: 22%;
 }
 
 #logs-table .edit-mode-header th:nth-child(5) {
 	width: 19%;
+}
+
+.edit-mode-active .col-no {
+	min-width: 45px;
+	text-align: center;
 }
 
 #logs-table .edit-mode-header th:nth-child(6) {

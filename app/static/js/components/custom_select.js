@@ -132,7 +132,7 @@ class CustomSelect {
 		if (code) {
 			const checkmark = opt.text.startsWith('✓ ') ? '✓ ' : '';
 			const name = opt.text.replace('✓ ', '');
-			innerHTML += `${checkmark}<span class="project-code">${code}</span> ${name}`;
+			innerHTML += `${checkmark}<span class="project-code">${code}</span><span class="project-name">${name}</span>`;
 		} else {
 			innerHTML += opt.text;
 		}

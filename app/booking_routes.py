@@ -541,6 +541,7 @@ def book_or_assign_role():
     session_id = data.get('session_id')
     action = data.get('action')
     project_id = data.get('project_id')
+    pathway_name = data.get('pathway')
     title = data.get('title')
 
     user, current_user_contact_id = get_current_user_info()
@@ -573,7 +574,7 @@ def book_or_assign_role():
             if session_type.role and session_type.role.award_category in ['none', None, ''] and not is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
                 return jsonify(success=False, message="This role is not available for booking."), 403
 
-            success, msg = RoleService.book_meeting_role(log, current_user_contact_id, project_id=project_id, title=title)
+            success, msg = RoleService.book_meeting_role(log, current_user_contact_id, project_id=project_id, title=title, pathway=pathway_name)
             if not success:
                 return jsonify(success=False, message=msg), 200 # Using 200 for internal logic warnings as per legacy
             return jsonify(success=True, message=msg)
@@ -584,7 +585,7 @@ def book_or_assign_role():
             return jsonify(success=success, message=msg)
 
         elif action == 'join_waitlist':
-            success, msg = RoleService.join_waitlist(log, current_user_contact_id, project_id=project_id, title=title)
+            success, msg = RoleService.join_waitlist(log, current_user_contact_id, project_id=project_id, title=title, pathway=pathway_name)
             return jsonify(success=success, message=msg)
 
         elif action == 'leave_waitlist':

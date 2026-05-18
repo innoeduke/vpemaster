@@ -136,7 +136,7 @@ class RoleService:
         cache.delete(f"role_takers_None_{meeting_id}")
 
     @staticmethod
-    def book_meeting_role(session_log, user_contact_id, project_id=None, title=None):
+    def book_meeting_role(session_log, user_contact_id, project_id=None, title=None, pathway=None):
         """
         Handles self-booking logic: Checks duplicates, approvals, then assigns.
         """
@@ -152,11 +152,11 @@ class RoleService:
         role_obj = session_type.role if session_type else None
         
         if role_obj and role_obj.needs_approval:
-            return RoleService.join_waitlist(session_log, user_contact_id, project_id=project_id, title=title)
+            return RoleService.join_waitlist(session_log, user_contact_id, project_id=project_id, title=title, pathway=pathway)
 
         # 3. Validation: Is it already taken?
         if session_log.owners:
-             return RoleService.join_waitlist(session_log, user_contact_id, project_id=project_id, title=title)
+             return RoleService.join_waitlist(session_log, user_contact_id, project_id=project_id, title=title, pathway=pathway)
 
         # 4. Success -> Assign
         RoleService._captured_assign_role(session_log, [user_contact_id])
@@ -166,6 +166,8 @@ class RoleService:
             session_log.Project_ID = project_id
         if title:
             session_log.Session_Title = title
+        if pathway:
+            session_log.pathway = pathway
             
         db.session.commit()
         return True, "Role booked successfully."
@@ -231,7 +233,7 @@ class RoleService:
         return False, "You do not hold this role."
 
     @staticmethod
-    def join_waitlist(session_log, contact_id, project_id=None, title=None):
+    def join_waitlist(session_log, contact_id, project_id=None, title=None, pathway=None):
         # Handle 'distinct' roles vs grouped roles waitlisting
         session_ids = RoleService._get_related_session_ids(session_log)
         
@@ -257,8 +259,8 @@ class RoleService:
                 added = True
         
         if added:
-            # Sync to Planner if project_id or title is provided
-            if project_id or title:
+            # Sync to Planner if project_id or title or pathway is provided
+            if project_id or title or pathway:
                 contact = db.session.get(Contact, contact_id)
                 if contact and contact.user_id:
                     session_type = session_log.session_type
@@ -285,6 +287,8 @@ class RoleService:
                             plan.project_id = project_id
                         if title:
                             plan.title = title
+                        if pathway:
+                            plan.pathway = pathway
                         plan.status = 'waitlist'
 
             db.session.commit()

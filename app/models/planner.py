@@ -14,6 +14,7 @@ class Planner(db.Model):
         return None
     meeting_role_id = db.Column(db.Integer, db.ForeignKey('meeting_roles.id'), nullable=True)
     project_id = db.Column(db.Integer, db.ForeignKey('Projects.id'), nullable=True)
+    pathway = db.Column(db.String(100), nullable=True)
     title = db.Column(db.String(255), nullable=True)
     status = db.Column(db.String(20), default='draft', nullable=False)
     notes = db.Column(db.Text, nullable=True)

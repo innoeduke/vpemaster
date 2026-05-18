@@ -3,7 +3,7 @@
     <div class="planner-modal-content">
         <span class="planner-close-modal" onclick="closeModal()"><i class="fas fa-times"></i></span>
         <div class="planner-modal-header">
-            <h3>Plan Detail</h3>
+            <h3>Item Detail</h3>
         </div>
         <form id="planForm">
             <input type="hidden" id="plan-id">
@@ -17,16 +17,18 @@
                         meeting.Meeting_Date.strftime('%b %d, %Y') if meeting.Meeting_Date else 'N/A' }}</option>
                     {% endfor %}
                 </select>
-                <div id="meeting-date-row" class="meeting-info-row" style="display: none;">
-                    <i class="fas fa-calendar-alt"></i>
-                    <span id="meeting-date-display"></span>
-                </div>
             </div>
             <div class="planner-form-group">
                 <label for="meeting_role_id">Meeting Role</label>
                 <select id="meeting_role_id" class="planner-form-control" required>
                     <option value="">Select Role</option>
                     <!-- Populated dynamically -->
+                </select>
+            </div>
+            <div id="pathway-group" class="planner-form-group" style="display: none;">
+                <label for="planner_pathway">Pathway</label>
+                <select id="planner_pathway" class="planner-form-control">
+                    <option value="">Select Pathway</option>
                 </select>
             </div>
             <div id="project-checkbox-group" class="planner-form-group" style="display: none; margin-bottom: 10px;">
@@ -60,7 +62,7 @@
             </div>
             <div class="planner-modal-footer">
                 <button type="button" class="planner-btn planner-btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" id="save-plan-btn" class="planner-btn planner-btn-primary">Save Draft</button>
+                <button type="submit" id="save-plan-btn" class="planner-btn planner-btn-primary">Draft Box</button>
                 <button type="button" id="book-btn" class="planner-btn planner-btn-success" style="display: none;"
                     onclick="bookPlan()">Book</button>
             </div>

@@ -48,7 +48,7 @@
                 </form>
             </div>
             <div class="filter-right">
-                <button class="btn btn-success" id="add-plan-btn"><i class="fas fa-plus"></i> New Plan</button>
+                <button class="btn btn-success" id="add-plan-btn"><i class="fas fa-plus"></i> New Item</button>
             </div>
         </div>
     </div>
@@ -70,6 +70,7 @@
                 <tr data-id="{{ plan.id }}" data-meeting-id="{{ plan.meeting_id or '' }}"
                     data-meeting-number="{{ plan.meeting_number or '' }}"
                     data-role="{{ plan.meeting_role_id or '' }}" data-project="{{ plan.project_id or '' }}"
+                    data-pathway="{{ plan.pathway or '' }}"
                     data-title="{{ plan.title or '' }}"
                     data-status="{{ plan.status }}" data-notes="{{ plan.notes or '' }}">
                     <td data-label="Meeting">#{{ plan.meeting_number or 'N/A' }}</td>
@@ -118,6 +119,12 @@
 {% endblock %}
 
 {% block scripts %}
+<script>
+    var allProjects = {{ projects | tojson | safe if projects else '[]' }};
+    var pathwayMap = {{ pathway_mapping | tojson | safe if pathway_mapping else '{}' }};
+    var groupedPathways = {{ pathways | tojson | safe if pathways else '{}' }};
+    var workingPath = "{{ contact.Current_Path or '' }}";
+</script>
 <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/planner_modal.js') }}"></script>
 <script>
@@ -262,6 +269,7 @@
                 meeting_number: tr.dataset.meetingNumber,
                 role_id: tr.dataset.role,
                 project_id: tr.dataset.project,
+                pathway: tr.dataset.pathway,
                 title: tr.dataset.title,
                 notes: tr.dataset.notes,
                 status: tr.dataset.status

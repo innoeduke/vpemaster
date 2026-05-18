@@ -61,6 +61,9 @@ def planner():
     sorted_levels = sorted(projects_by_level.keys())
     grouped_projects = [(level, projects_by_level[level]) for level in sorted_levels]
 
+    from .utils import get_dropdown_metadata
+    dropdown_data = get_dropdown_metadata()
+
     return render_template('planner.html', 
                          plans=plans, 
                          meetings=unpublished_meetings,
@@ -68,6 +71,9 @@ def planner():
                          selected_term_ids=selected_term_ids,
                          grouped_projects=grouped_projects,
                          contact=contact,
+                         pathways=dropdown_data['pathways'],
+                         pathway_mapping=dropdown_data['pathway_mapping'],
+                         projects=dropdown_data['projects'],
                          header_title="Planner")
 
 @planner_bp.route('/api/meeting/<int:meeting_id>')
@@ -160,6 +166,8 @@ def create_plan():
         # Update existing instead of creating new
         if 'project_id' in data:
             existing.project_id = data.get('project_id')
+        if 'pathway' in data:
+            existing.pathway = data.get('pathway')
         if 'title' in data:
             existing.title = data.get('title')
         if 'status' in data:
@@ -174,6 +182,7 @@ def create_plan():
         meeting_id=meeting_id,
         meeting_role_id=role_id,
         project_id=data.get('project_id'),
+        pathway=data.get('pathway'),
         title=data.get('title'),
         status=data.get('status', 'draft'),
         notes=data.get('notes'),
@@ -202,6 +211,8 @@ def update_plan(plan_id):
         plan.meeting_role_id = data['meeting_role_id']
     if 'project_id' in data:
         plan.project_id = data['project_id']
+    if 'pathway' in data:
+        plan.pathway = data['pathway']
     if 'title' in data:
         plan.title = data['title']
     if 'notes' in data:

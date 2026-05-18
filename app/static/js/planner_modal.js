@@ -6,6 +6,8 @@ const modal = document.getElementById('planModal');
 const form = document.getElementById('planForm');
 const meetingSelect = document.getElementById('meeting_id');
 const roleSelect = document.getElementById('meeting_role_id');
+const pathwayGroup = document.getElementById('pathway-group');
+const pathwaySelect = document.getElementById('planner_pathway');
 const projectGroup = document.getElementById('project-group');
 const projectIdSelect = document.getElementById('project_id');
 const dateDisplay = document.getElementById('meeting-date-display');
@@ -17,9 +19,19 @@ const titleInput = document.getElementById('title');
 const bookBtn = document.getElementById('book-btn');
 
 let currentMeetingRoles = [];
-let customMeetingSelect, customRoleSelect, customProjectSelect;
+let customMeetingSelect, customRoleSelect, customPathwaySelect, customProjectSelect;
 
 const savePlanBtn = document.getElementById('save-plan-btn');
+
+const roleProjectMapping = {
+    'Prepared Speaker': { formats: ['Prepared Speech', 'Presentation'] },
+    'Keynote Speaker': { ids: [51] },
+    'Topicsmaster': { ids: [10] },
+    'Individual Evaluator': { ids: [4, 5, 6] },
+    'Meeting Manager': { formats: ['Meeting Manager'] },
+    'Moderator': { ids: [57] },
+    'Panelist': { ids: [57] }
+};
 
 document.addEventListener("DOMContentLoaded", function () {
     if (document.getElementById('meeting_id')) {
@@ -27,6 +39,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
     if (document.getElementById('meeting_role_id')) {
         customRoleSelect = new CustomSelect('meeting_role_id');
+    }
+    if (document.getElementById('planner_pathway')) {
+        customPathwaySelect = new CustomSelect('planner_pathway');
     }
     if (document.getElementById('project_id')) {
         customProjectSelect = new CustomSelect('project_id');
@@ -42,9 +57,17 @@ document.addEventListener("DOMContentLoaded", function () {
             const selectedRole = currentMeetingRoles.find(r => r.id == roleSelect.value);
             if (!selectedRole || selectedRole.name !== 'Prepared Speaker') {
                 if (projectChk) projectChk.checked = false;
+            } else {
+                if (projectChk) projectChk.checked = true;
             }
             updateProjectVisibility();
             updateBookButtonVisibility();
+        });
+    }
+
+    if (pathwaySelect) {
+        pathwaySelect.addEventListener('change', () => {
+            updateProjectDropdownOptions();
         });
     }
 
@@ -57,6 +80,132 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+function populatePathwayDropdown() {
+    if (!pathwaySelect) return;
+    
+    pathwaySelect.innerHTML = '<option value="">Select Pathway</option>';
+    
+    if (typeof groupedPathways !== 'undefined' && groupedPathways) {
+        for (const [groupLabel, items] of Object.entries(groupedPathways)) {
+            const optgroup = document.createElement('optgroup');
+            optgroup.label = groupLabel;
+            items.forEach(item => {
+                const value = typeof item === 'object' ? item.name : item;
+                const text = typeof item === 'object' ? item.name : item;
+                optgroup.appendChild(new Option(text, value));
+            });
+            pathwaySelect.appendChild(optgroup);
+        }
+    } else if (typeof pathwayMap !== 'undefined' && pathwayMap) {
+        const pathways = Object.keys(pathwayMap).map(name => ({ name }));
+        pathways.forEach(p => {
+            pathwaySelect.add(new Option(p.name, p.name));
+        });
+    }
+    
+    if (customPathwaySelect) customPathwaySelect.refresh();
+}
+
+function updateProjectDropdownOptions(selectedProjectId = null) {
+    if (!projectIdSelect) return;
+    
+    projectIdSelect.innerHTML = '<option value="">Select Project</option>';
+    
+    const pathwayName = pathwaySelect ? pathwaySelect.value : '';
+    if (!pathwayName) {
+        if (customProjectSelect) customProjectSelect.refresh();
+        return;
+    }
+    
+    const pathwayAbbr = typeof pathwayMap !== 'undefined' ? pathwayMap[pathwayName] : null;
+    if (!pathwayAbbr) {
+        if (customProjectSelect) customProjectSelect.refresh();
+        return;
+    }
+    
+    // Find selected role's allowed project formats or IDs
+    const roleId = roleSelect ? roleSelect.value : '';
+    const selectedRole = currentMeetingRoles.find(r => r.id == roleId);
+    const mapping = selectedRole ? roleProjectMapping[selectedRole.name] : null;
+    
+    // Find all projects that belong to this pathway and match role formats/IDs
+    const pathwayProjects = [];
+    if (typeof allProjects !== 'undefined') {
+        allProjects.forEach(proj => {
+            if (proj.path_codes && proj.path_codes[pathwayAbbr]) {
+                // If there are allowed project definitions, strictly filter
+                if (mapping) {
+                    if (mapping.ids && !mapping.ids.includes(proj.id)) {
+                        return; // Skip if ID not allowed
+                    }
+                    if (mapping.formats && (!proj.Format || !mapping.formats.includes(proj.Format))) {
+                        return; // Skip if Format not allowed
+                    }
+                }
+                const meta = proj.path_codes[pathwayAbbr];
+                pathwayProjects.push({
+                    id: proj.id,
+                    name: proj.Project_Name,
+                    level: meta.level || 1,
+                    code: `${pathwayAbbr}${meta.code}`,
+                    is_completed: proj.is_completed || false,
+                    format: proj.Duration_Min && proj.Duration_Max ? `${proj.Duration_Min}-${proj.Duration_Max} Min` : ''
+                });
+            }
+        });
+    }
+    
+    // Group projects by level
+    const projectsByLevel = {};
+    pathwayProjects.forEach(p => {
+        if (!projectsByLevel[p.level]) {
+            projectsByLevel[p.level] = [];
+        }
+        projectsByLevel[p.level].push(p);
+    });
+    
+    // Sort projects within each level by their code (e.g. 1.4.1, 1.4.2, 1.4.3)
+    Object.keys(projectsByLevel).forEach(level => {
+        projectsByLevel[level].sort((a, b) => {
+            if (a.code && b.code) {
+                return a.code.localeCompare(b.code, undefined, { numeric: true, sensitivity: 'base' });
+            }
+            return 0;
+        });
+    });
+    
+    // Populate the dropdown
+    const sortedLevels = Object.keys(projectsByLevel).sort((a, b) => a - b);
+    sortedLevels.forEach(level => {
+        const optgroup = document.createElement('optgroup');
+        optgroup.label = `Level ${level}`;
+        
+        projectsByLevel[level].forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.innerText = p.is_completed ? `✓ ${p.name}` : p.name;
+            if (p.is_completed) {
+                opt.classList.add('project-completed');
+            }
+            opt.dataset.format = p.format;
+            opt.dataset.code = p.code;
+            optgroup.appendChild(opt);
+        });
+        
+        projectIdSelect.appendChild(optgroup);
+    });
+    
+    if (selectedProjectId) {
+        if (customProjectSelect) {
+            customProjectSelect.setValue(selectedProjectId);
+        } else {
+            projectIdSelect.value = selectedProjectId;
+        }
+    } else {
+        if (customProjectSelect) customProjectSelect.refresh();
+    }
+}
+
 function openPlanModal(planData = null) {
     if (!modal) return;
 
@@ -66,6 +215,7 @@ function openPlanModal(planData = null) {
     if (document.getElementById('plan-status')) document.getElementById('plan-status').value = 'draft';
 
     if (projectGroup) projectGroup.style.display = 'none';
+    if (pathwayGroup) pathwayGroup.style.display = 'none';
     if (projectChkGroup) projectChkGroup.style.display = 'none';
     if (titleGroup) titleGroup.style.display = 'none';
     if (titleInput) titleInput.value = '';
@@ -83,7 +233,9 @@ function openPlanModal(planData = null) {
     }
     if (customMeetingSelect) customMeetingSelect.enable();
 
-    if (savePlanBtn) savePlanBtn.innerText = 'Save Draft';
+    if (savePlanBtn) savePlanBtn.innerText = 'Draft Box';
+
+    populatePathwayDropdown();
 
     if (planData) {
         // Edit Mode
@@ -109,7 +261,34 @@ function openPlanModal(planData = null) {
 
             if (projectChk) projectChk.checked = !!planData.project_id;
             updateProjectVisibility();
-            if (customProjectSelect) customProjectSelect.setValue(planData.project_id);
+            
+            // Set default pathway
+            let pathwayToSelect = '';
+            if (planData.pathway) {
+                pathwayToSelect = planData.pathway;
+            } else if (planData.project_id && typeof allProjects !== 'undefined') {
+                const proj = allProjects.find(p => p.id == planData.project_id);
+                if (proj && proj.path_codes) {
+                    const pathAbbr = Object.keys(proj.path_codes)[0];
+                    if (pathAbbr && typeof pathwayMap !== 'undefined') {
+                        pathwayToSelect = Object.keys(pathwayMap).find(name => pathwayMap[name] === pathAbbr) || '';
+                    }
+                }
+            }
+            if (!pathwayToSelect && typeof workingPath !== 'undefined') {
+                pathwayToSelect = workingPath;
+            }
+            
+            if (pathwaySelect) {
+                if (customPathwaySelect) {
+                    customPathwaySelect.setValue(pathwayToSelect);
+                } else {
+                    pathwaySelect.value = pathwayToSelect;
+                }
+            }
+            
+            updateProjectDropdownOptions(planData.project_id);
+
             if (titleInput) titleInput.value = planData.title || '';
         });
     } else {
@@ -123,8 +302,6 @@ function openPlanModal(planData = null) {
 function closeModal() {
     if (modal) modal.style.display = 'none';
 }
-
-// Custom Select Class (Removed: using shared component in static/js/components/custom_select.js)
 
 async function loadMeetingRoles() {
     const meetingId = meetingSelect.value;
@@ -198,65 +375,54 @@ function updateProjectVisibility() {
         titleGroup.style.display = 'none';
     }
 
-    if (selectedRole && selectedRole.valid_for_project) {
-        projectChkGroup.style.display = 'block';
+    if (selectedRole) {
+        if (pathwayGroup) pathwayGroup.style.display = 'block';
 
-        // Enforce project for Prepared Speaker
-        if (selectedRole.name === 'Prepared Speaker') {
-            projectChk.checked = true;
-            projectChk.disabled = true;
-            projectChk.parentElement.style.opacity = '0.7';
-            projectChk.parentElement.style.cursor = 'not-allowed';
-        } else {
+        // Re-filter projects based on the current selected pathway
+        let pathwayToSelect = pathwaySelect ? pathwaySelect.value : '';
+        if (!pathwayToSelect && typeof workingPath !== 'undefined') {
+            pathwayToSelect = workingPath;
+            if (pathwaySelect) {
+                if (customPathwaySelect) {
+                    customPathwaySelect.setValue(pathwayToSelect);
+                } else {
+                    pathwaySelect.value = pathwayToSelect;
+                }
+            }
+        }
+
+        const isValidForProject = selectedRole && !!roleProjectMapping[selectedRole.name];
+
+        if (isValidForProject) {
+            projectChkGroup.style.display = 'block';
+
             projectChk.disabled = false;
             projectChk.parentElement.style.opacity = '1';
             projectChk.parentElement.style.cursor = 'pointer';
-        }
 
-        if (projectChk.checked) {
-            projectGroup.style.display = 'block';
-            projectIdSelect.required = true;
+            updateProjectDropdownOptions(projectIdSelect.value);
 
-            const expectedFormat = selectedRole.expected_format;
-            let visibleCount = 0;
-            let lastVisibleValue = '';
-
-            // Filter projects by format
-            Array.from(projectIdSelect.options).forEach(opt => {
-                if (opt.value === "") return;
-
-                const projectFormat = opt.dataset.format;
-                let isVisible = false;
-
-                if (expectedFormat) {
-                    isVisible = (projectFormat === expectedFormat);
-                } else {
-                    isVisible = true;
-                }
-
-                opt.style.display = isVisible ? 'block' : 'none';
-                if (isVisible) {
-                    visibleCount++;
-                    lastVisibleValue = opt.value;
-                }
-            });
-
-            if (customProjectSelect) customProjectSelect.refresh();
-
-            // Auto-selection logic
-            if (visibleCount === 1 && !projectIdSelect.value) {
-                if (customProjectSelect) customProjectSelect.setValue(lastVisibleValue);
-                projectIdSelect.dispatchEvent(new Event('change'));
+            if (projectChk.checked) {
+                projectGroup.style.display = 'block';
+                projectIdSelect.required = true;
+            } else {
+                projectGroup.style.display = 'none';
+                if (customProjectSelect) customProjectSelect.setValue('');
+                projectIdSelect.required = false;
             }
         } else {
+            projectChkGroup.style.display = 'none';
             projectGroup.style.display = 'none';
+            projectChk.checked = false;
             if (customProjectSelect) customProjectSelect.setValue('');
             projectIdSelect.required = false;
         }
     } else {
         projectChkGroup.style.display = 'none';
+        if (pathwayGroup) pathwayGroup.style.display = 'none';
         projectGroup.style.display = 'none';
         projectChk.checked = false;
+        if (customPathwaySelect) customPathwaySelect.setValue('');
         if (customProjectSelect) customProjectSelect.setValue('');
         projectIdSelect.required = false;
     }
@@ -272,6 +438,7 @@ async function handleFormSubmit(e) {
         meeting_number: document.getElementById('meeting_id').options[document.getElementById('meeting_id').selectedIndex]?.dataset.number || null,
         meeting_role_id: document.getElementById('meeting_role_id').value || null,
         project_id: document.getElementById('project_id').value || null,
+        pathway: document.getElementById('planner_pathway').value || null,
         title: titleInput ? titleInput.value : null,
         notes: document.getElementById('notes').value,
         status: planStatus
@@ -312,6 +479,7 @@ async function bookPlan() {
     const action = 'join_waitlist';
 
     const projectId = document.getElementById('project_id').value || null;
+    const pathway = document.getElementById('planner_pathway').value || null;
     const title = titleInput ? titleInput.value : null;
 
     try {
@@ -322,6 +490,7 @@ async function bookPlan() {
                 session_id: sessionId,
                 action: action,
                 project_id: projectId,
+                pathway: pathway,
                 title: title
             })
         });
@@ -336,6 +505,7 @@ async function bookPlan() {
                 meeting_number: document.getElementById('meeting_id').options[document.getElementById('meeting_id').selectedIndex]?.dataset.number || null,
                 meeting_role_id: document.getElementById('meeting_role_id').value || null,
                 project_id: document.getElementById('project_id').value || null,
+                pathway: pathway,
                 title: titleInput ? titleInput.value : null,
                 notes: document.getElementById('notes').value,
                 status: status

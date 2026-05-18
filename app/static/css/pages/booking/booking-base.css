@@ -723,6 +723,20 @@
   line-height: 1.5;
 }
 
+.role-guide-link {
+  background-color: #772432 !important; /* Toastmasters Maroon */
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15) !important;
+}
+
+.role-guide-link:hover {
+  background-color: #5e1c27 !important; /* Darker maroon */
+  color: #ffffff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+}
+
 /* --- Waitlist Styles --- */
 .waitlist-info {
   font-size: 0.8em;

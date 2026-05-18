@@ -168,10 +168,19 @@ def get_dropdown_metadata():
             'level': pp.level
         }
     
+    from flask_login import current_user
+    completed_ids = set()
+    if current_user and current_user.is_authenticated:
+        contact = current_user.get_contact(current_club_id)
+        if contact:
+            completed_ids = contact.get_completed_project_ids()
+
     projects_data = [
         {
             "id": p.id,
             "Project_Name": p.Project_Name,
+            "Format": p.Format,
+            "is_completed": p.id in completed_ids,
             "path_codes": project_codes_lookup.get(p.id, {}),
             "Duration_Min": p.Duration_Min,
             "Duration_Max": p.Duration_Max

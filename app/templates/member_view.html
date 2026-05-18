@@ -129,7 +129,7 @@
         <div class="roadmap-header" style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;">
             <h2 style="margin-bottom: 0;">Path Roadmap</h2>
             <button class="btn btn-success" id="add-plan-btn" style="padding: 6px 12px; font-size: 0.9em;">
-                <i class="fas fa-plus"></i> New Plan
+                <i class="fas fa-plus"></i> New Item
             </button>
         </div>
 
@@ -301,6 +301,9 @@
 
 {% block speech_log_scripts %}
 {{ super() }}
+<script>
+    var workingPath = "{{ viewed_contact.Current_Path or '' }}";
+</script>
 <script src="{{ url_for('static', filename='js/achievements.js') }}"></script>
 <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
 <script src="{{ url_for('static', filename='js/components/custom_select_adapter.js') }}"></script>

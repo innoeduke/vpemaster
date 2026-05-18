@@ -358,6 +358,7 @@ optgroup option {
   border: 1px solid #eee;
   z-index: 2100;
   overflow-y: auto;
+  overflow-x: hidden;
   display: none;
   animation: dropdownSlide 0.2s ease-out;
 }
@@ -396,6 +397,7 @@ optgroup option {
   display: flex;
   align-items: center;
   gap: 8px;
+  white-space: normal;
 }
 
 .custom-option:hover {
@@ -414,7 +416,15 @@ optgroup option {
 
 .custom-option .project-code {
   font-weight: 700;
-  min-width: 50px;
+  min-width: 75px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.custom-option .project-name {
+  flex-grow: 1;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .custom-option.disabled {
