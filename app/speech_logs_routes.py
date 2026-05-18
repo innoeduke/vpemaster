@@ -152,8 +152,30 @@ def _parse_filters(is_member_view, can_view_all):
 
     # Handle speaker_id for member view
     if is_member_view:
-        if can_view_all and filters['speaker_id']:
-            # Admin impersonating user
+        can_view_other_members = is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or can_view_all
+        is_authorized_speaker = False
+        
+        if can_view_other_members and filters['speaker_id']:
+            if can_view_all:
+                is_authorized_speaker = True
+            else:
+                from .club_context import get_current_club_id
+                from .models.contact_club import ContactClub
+                club_id = get_current_club_id()
+                try:
+                    target_speaker_id = int(filters['speaker_id'])
+                    contact = Contact.query.join(ContactClub).filter(
+                        ContactClub.club_id == club_id,
+                        Contact.id == target_speaker_id,
+                        Contact.Type == 'Member'
+                    ).first()
+                    if contact:
+                        is_authorized_speaker = True
+                except (ValueError, TypeError):
+                    pass
+                    
+        if is_authorized_speaker:
+            # Keep the requested speaker_id
             pass
         else:
             from .club_context import get_current_club_id
