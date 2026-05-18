@@ -3,45 +3,18 @@
 // Note: This script assumes the following global variables are defined in the HTML:
 // - isAdminView (Boolean)
 // - selectedMeetingId (Number)
+// - currentBookingHash (String)
 
+let accordionState = {};
+try {
+  accordionState = JSON.parse(sessionStorage.getItem('bookingAccordionState')) || {};
+} catch (e) {
+  console.warn("Session storage not available:", e);
+}
 
 document.addEventListener("DOMContentLoaded", function () {
   if (isAdminView) {
-    document.querySelectorAll(".autocomplete-container").forEach((container) => {
-      const input = container.querySelector(".admin-assign-input");
-      const results = container.querySelector(".autocomplete-results");
-      const sessionId = container.dataset.sessionId;
-      const isMemberOnly = container.dataset.isMemberOnly === "true";
-
-      input.addEventListener("focus", function () {
-        if (results.classList.contains("active")) return;
-        this.dataset.previousValue = this.value;
-        this.dataset.previousId = this.dataset.currentId;
-
-        // Hide placeholder on focus
-        this.dataset.savedPlaceholder = this.placeholder;
-        this.placeholder = "";
-
-        showResults("", results, sessionId, input, isMemberOnly);
-      });
-
-      input.addEventListener("blur", function () {
-        // Restore placeholder on blur
-        if (this.dataset.savedPlaceholder) {
-          this.placeholder = this.dataset.savedPlaceholder;
-        }
-      });
-
-      input.addEventListener("input", function () {
-        showResults(this.value, results, sessionId, input, isMemberOnly);
-      });
-
-      input.addEventListener("keydown", function (e) {
-        if (e.key === "Escape") {
-          results.classList.remove("active");
-        }
-      });
-    });
+    initializeAdminAutocomplete();
 
     // Handle clicks on recommendation badges
     document.addEventListener("click", function (e) {
@@ -73,64 +46,83 @@ document.addEventListener("DOMContentLoaded", function () {
         });
       }
     });
-
-    function showResults(query, resultsContainer, sessionId, input, isMemberOnly) {
-      const filteredContacts = allContacts.filter((c) => {
-        const matchesQuery = c.name.toLowerCase().includes(query.toLowerCase());
-        const matchesType = !isMemberOnly || c.type === "Member";
-        return matchesQuery && matchesType;
-      }).slice(0, 5);
-
-      resultsContainer.innerHTML = "";
-
-      filteredContacts.forEach((contact) => {
-        const item = document.createElement("div");
-        item.className = "autocomplete-item";
-        item.innerHTML = `
-          <div class="item-avatar">
-              <img src="${contact.avatar_url || '/static/default_avatar.jpg'}" alt="">
-          </div>
-          <div class="item-name">${contact.name}</div>
-          <div class="item-type ${contact.type.toLowerCase()}">${contact.type}</div>
-        `;
-        item.addEventListener("mousedown", (e) => {
-          e.preventDefault();
-          selectContact(sessionId, contact.id, contact.name, input, resultsContainer);
-        });
-        resultsContainer.appendChild(item);
-      });
-
-      if (resultsContainer.children.length > 0) {
-        resultsContainer.classList.add("active");
-      } else {
-        resultsContainer.classList.remove("active");
-      }
-    }
-
-    function selectContact(sessionId, contactId, contactName, input, resultsContainer) {
-      input.value = contactName;
-      input.dataset.currentId = contactId;
-      resultsContainer.classList.remove("active");
-      if (contactId === "0" || contactId === 0) {
-        input.classList.add("unassigned-role");
-      } else {
-        input.classList.remove("unassigned-role");
-      }
-      assignRole(sessionId, contactId, input);
-    }
   }
 
-  // Accordion functionality
-  let accordionState = {};
-  try {
-    accordionState = JSON.parse(sessionStorage.getItem('bookingAccordionState')) || {};
-  } catch (e) {
-    console.warn("Session storage not available:", e);
+  initializeAccordions();
+
+  // Meeting Filter Logic
+  const meetingFilter = document.getElementById("meeting-filter");
+  if (meetingFilter) {
+    meetingFilter.addEventListener("change", function () {
+      if (this.value) {
+        window.location.href = '/booking/' + this.value;
+      }
+    });
   }
 
+  document.querySelectorAll(".timeline-event").forEach((item) => {
+    item.addEventListener("click", function () {
+      const meetingId = this.dataset.meetingId;
+      if (meetingId) {
+        window.location.href = "/booking/" + meetingId;
+      }
+    });
+  });
+
+  // Setup state polling if a valid meeting is selected and hash is present
+  if (typeof selectedMeetingId !== "undefined" && selectedMeetingId && typeof currentBookingHash !== "undefined") {
+    setInterval(pollBookingState, 10000);
+  }
+});
+
+function initializeAdminAutocomplete() {
+  document.querySelectorAll(".autocomplete-container").forEach((container) => {
+    if (container.dataset.autocompleteInitialized) return;
+    container.dataset.autocompleteInitialized = "true";
+
+    const input = container.querySelector(".admin-assign-input");
+    const results = container.querySelector(".autocomplete-results");
+    const sessionId = container.dataset.sessionId;
+    const isMemberOnly = container.dataset.isMemberOnly === "true";
+
+    input.addEventListener("focus", function () {
+      if (results.classList.contains("active")) return;
+      this.dataset.previousValue = this.value;
+      this.dataset.previousId = this.dataset.currentId;
+
+      // Hide placeholder on focus
+      this.dataset.savedPlaceholder = this.placeholder;
+      this.placeholder = "";
+
+      showResults("", results, sessionId, input, isMemberOnly);
+    });
+
+    input.addEventListener("blur", function () {
+      // Restore placeholder on blur
+      if (this.dataset.savedPlaceholder) {
+        this.placeholder = this.dataset.savedPlaceholder;
+      }
+    });
+
+    input.addEventListener("input", function () {
+      showResults(this.value, results, sessionId, input, isMemberOnly);
+    });
+
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        results.classList.remove("active");
+      }
+    });
+  });
+}
+
+function initializeAccordions() {
   const accordionHeaders = document.querySelectorAll(".accordion-header");
 
   accordionHeaders.forEach(header => {
+    if (header.dataset.accordionInitialized) return;
+    header.dataset.accordionInitialized = "true";
+
     const accordionItem = header.parentElement;
     const category = accordionItem.dataset.category;
     const accordionContent = header.nextElementSibling;
@@ -162,28 +154,172 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     });
   });
+}
 
-  // Meeting Filter Logic
-  const meetingFilter = document.getElementById("meeting-filter");
-  if (meetingFilter) {
-    meetingFilter.addEventListener("change", function () {
-      if (this.value) {
-        window.location.href = '/booking/' + this.value;
-      }
-    });
-  }
+function showResults(query, resultsContainer, sessionId, input, isMemberOnly) {
+  const filteredContacts = allContacts.filter((c) => {
+    const matchesQuery = c.name.toLowerCase().includes(query.toLowerCase());
+    const matchesType = !isMemberOnly || c.type === "Member";
+    return matchesQuery && matchesType;
+  }).slice(0, 5);
 
-  document.querySelectorAll(".timeline-event").forEach((item) => {
-    item.addEventListener("click", function () {
-      const meetingId = this.dataset.meetingId;
-      if (meetingId) {
-        window.location.href = "/booking/" + meetingId;
-      }
+  resultsContainer.innerHTML = "";
+
+  filteredContacts.forEach((contact) => {
+    const item = document.createElement("div");
+    item.className = "autocomplete-item";
+    item.innerHTML = `
+      <div class="item-avatar">
+          <img src="${contact.avatar_url || '/static/default_avatar.jpg'}" alt="">
+      </div>
+      <div class="item-name">${contact.name}</div>
+      <div class="item-type ${contact.type.toLowerCase()}">${contact.type}</div>
+    `;
+    item.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      selectContact(sessionId, contact.id, contact.name, input, resultsContainer);
     });
+    resultsContainer.appendChild(item);
   });
 
-});
-// End of DOMContentLoaded listener
+  if (resultsContainer.children.length > 0) {
+    resultsContainer.classList.add("active");
+  } else {
+    resultsContainer.classList.remove("active");
+  }
+}
+
+function selectContact(sessionId, contactId, contactName, input, resultsContainer) {
+  input.value = contactName;
+  input.dataset.currentId = contactId;
+  resultsContainer.classList.remove("active");
+  if (contactId === "0" || contactId === 0) {
+    input.classList.add("unassigned-role");
+  } else {
+    input.classList.remove("unassigned-role");
+  }
+  assignRole(sessionId, contactId, input);
+}
+
+function shouldSkipRefresh() {
+  // 1. Any autocomplete input is focused or autocomplete dropdown is active
+  const focusedInput = document.querySelector(".admin-assign-input:focus");
+  const activeDropdown = document.querySelector(".autocomplete-results.active");
+  if (focusedInput || activeDropdown) {
+    return true;
+  }
+
+  // 2. Modals are open
+  const speechDetailModal = document.getElementById("speechDetailModal");
+  const waitlistDetailModal = document.getElementById("waitlistDetailModal");
+  if (
+    (speechDetailModal && speechDetailModal.style.display === "flex") ||
+    (waitlistDetailModal && waitlistDetailModal.style.display === "flex")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function pollBookingState() {
+  if (document.hidden || shouldSkipRefresh()) {
+    return;
+  }
+
+  fetch(`/booking/${selectedMeetingId}/hash`)
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success && data.hash && data.hash !== currentBookingHash) {
+        // State has changed! Fetch updated HTML fragment
+        fetch(`/booking/${selectedMeetingId}/tables_html`)
+          .then((res) => res.text())
+          .then((html) => {
+            // Double check protection before swapping
+            if (shouldSkipRefresh()) return;
+
+            const container = document.getElementById("booking-tables-container");
+            if (container) {
+              // Map of new owner/waitlist state per session_id
+              const newStates = {};
+              const tempDiv = document.createElement("div");
+              tempDiv.innerHTML = html;
+
+              tempDiv.querySelectorAll("tr[data-session-id]").forEach((row) => {
+                const sid = row.dataset.sessionId;
+                if (!sid) return;
+
+                let stateStr = "";
+                const adminInput = row.querySelector(".admin-assign-input");
+                if (adminInput) {
+                  stateStr += adminInput.value + "|" + adminInput.dataset.currentId;
+                } else {
+                  const ownerDisplay = row.querySelector(".owner-display");
+                  if (ownerDisplay) {
+                    stateStr += ownerDisplay.textContent.trim();
+                  }
+                }
+
+                row.querySelectorAll(".waitlist-avatar").forEach((w) => {
+                  stateStr += "|" + (w.dataset.name || "") + "|" + (w.dataset.userId || "");
+                });
+
+                newStates[sid] = stateStr;
+              });
+
+              // Collect session_ids whose state changed
+              const changedSessionIds = [];
+              container.querySelectorAll("tr[data-session-id]").forEach((row) => {
+                const sid = row.dataset.sessionId;
+                if (!sid) return;
+
+                let oldStateStr = "";
+                const adminInput = row.querySelector(".admin-assign-input");
+                if (adminInput) {
+                  oldStateStr += adminInput.value + "|" + adminInput.dataset.currentId;
+                } else {
+                  const ownerDisplay = row.querySelector(".owner-display");
+                  if (ownerDisplay) {
+                    oldStateStr += ownerDisplay.textContent.trim();
+                  }
+                }
+
+                row.querySelectorAll(".waitlist-avatar").forEach((w) => {
+                  oldStateStr += "|" + (w.dataset.name || "") + "|" + (w.dataset.userId || "");
+                });
+
+                if (newStates[sid] && newStates[sid] !== oldStateStr) {
+                  changedSessionIds.push(sid);
+                }
+              });
+
+              // Perform DOM Swap
+              container.innerHTML = html;
+              currentBookingHash = data.hash;
+
+              // Rebind listeners
+              if (isAdminView) {
+                initializeAdminAutocomplete();
+              }
+              initializeAccordions();
+
+              // Trigger pulse glow animation on changed rows
+              changedSessionIds.forEach((sid) => {
+                const row = container.querySelector(`tr[data-session-id="${sid}"]:not(.recommendation-row)`);
+                if (row) {
+                  row.classList.add("row-pulse-glow");
+                  row.addEventListener("animationend", () => {
+                    row.classList.remove("row-pulse-glow");
+                  }, { once: true });
+                }
+              });
+            }
+          })
+          .catch((err) => console.error("Error fetching tables HTML:", err));
+      }
+    })
+    .catch((err) => console.error("Error polling booking hash:", err));
+}
 
 
 function resetRole(btn, sessionId) {
@@ -226,7 +362,7 @@ function bookOrCancelRole(sessionId, action, roleLabel) {
   executeBookingAction(sessionId, action, roleLabel);
 }
 
-function executeBookingAction(sessionId, action, roleLabel, projectId = null, title = null) {
+function executeBookingAction(sessionId, action, roleLabel, projectId = null, title = null, pathway = null) {
   const payload = {
     session_id: sessionId,
     action: action,
@@ -235,6 +371,7 @@ function executeBookingAction(sessionId, action, roleLabel, projectId = null, ti
 
   if (projectId) payload.project_id = projectId;
   if (title) payload.title = title;
+  if (pathway) payload.pathway = pathway;
 
   fetch("/booking/book", {
     method: "POST",
@@ -257,52 +394,179 @@ function executeBookingAction(sessionId, action, roleLabel, projectId = null, ti
 }
 
 
+function populatePathwayDropdownInSpeechModal() {
+  const pathwaySelect = document.getElementById('speech_pathway');
+  if (!pathwaySelect) return;
+  
+  pathwaySelect.innerHTML = '<option value="">Select Pathway</option>';
+  
+  if (typeof groupedPathways !== 'undefined' && groupedPathways) {
+    for (const [groupLabel, items] of Object.entries(groupedPathways)) {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = groupLabel;
+      items.forEach(item => {
+        const value = typeof item === 'object' ? item.name : item;
+        const text = typeof item === 'object' ? item.name : item;
+        optgroup.appendChild(new Option(text, value));
+      });
+      pathwaySelect.appendChild(optgroup);
+    }
+  }
+}
+
+function updateSpeechProjectDropdownOptions(selectedProjectId = null) {
+  const projectSelect = document.getElementById('speech_project_id');
+  const pathwaySelect = document.getElementById('speech_pathway');
+  const roleLabelInput = document.getElementById('speech-role-label');
+  if (!projectSelect || !pathwaySelect) return;
+
+  projectSelect.innerHTML = '<option value="">Select Project</option>';
+
+  const pathwayName = pathwaySelect.value;
+  if (!pathwayName) {
+    return;
+  }
+
+  const pathwayAbbr = typeof pathwayMap !== 'undefined' ? pathwayMap[pathwayName] : null;
+  if (!pathwayAbbr) {
+    return;
+  }
+
+  // Find selected role's allowed project formats or IDs
+  const roleLabel = roleLabelInput ? roleLabelInput.value : '';
+  const roleProjectMapping = {
+    'Prepared Speaker': { formats: ['Prepared Speech', 'Presentation'] },
+    'Keynote Speaker': { ids: [51] },
+    'Topicsmaster': { ids: [10] },
+    'Individual Evaluator': { ids: [4, 5, 6] },
+    'Speech Evaluator': { ids: [4, 5, 6] },
+    'Evaluator': { ids: [4, 5, 6] },
+    'Meeting Manager': { formats: ['Meeting Manager'] },
+    'Moderator': { ids: [57] },
+    'Panelist': { ids: [57] }
+  };
+
+  let normalizedRole = roleLabel.trim().replace(/\s+\d+$/, '');
+  const mapping = roleProjectMapping[normalizedRole];
+
+  // Find all projects that belong to this pathway and match role formats/IDs
+  const pathwayProjects = [];
+  if (typeof allProjects !== 'undefined') {
+    allProjects.forEach(proj => {
+      if (proj.path_codes && proj.path_codes[pathwayAbbr]) {
+        // Filter strictly if mapping matches
+        if (mapping) {
+          if (mapping.ids && !mapping.ids.includes(proj.id)) {
+            return;
+          }
+          if (mapping.formats && (!proj.Format || !mapping.formats.includes(proj.Format))) {
+            return;
+          }
+        }
+        const meta = proj.path_codes[pathwayAbbr];
+        pathwayProjects.push({
+          id: proj.id,
+          name: proj.Project_Name,
+          level: meta.level || 1,
+          code: `${pathwayAbbr}${meta.code}`,
+          is_completed: proj.is_completed || false,
+          format: proj.Duration_Min && proj.Duration_Max ? `${proj.Duration_Min}-${proj.Duration_Max} Min` : ''
+        });
+      }
+    });
+  }
+
+  // Group projects by level
+  const projectsByLevel = {};
+  pathwayProjects.forEach(p => {
+    if (!projectsByLevel[p.level]) {
+      projectsByLevel[p.level] = [];
+    }
+    projectsByLevel[p.level].push(p);
+  });
+
+  // Sort projects within each level by code
+  Object.keys(projectsByLevel).forEach(level => {
+    projectsByLevel[level].sort((a, b) => {
+      if (a.code && b.code) {
+        return a.code.localeCompare(b.code, undefined, { numeric: true, sensitivity: 'base' });
+      }
+      return 0;
+    });
+  });
+
+  // Populate projects dropdown
+  const sortedLevels = Object.keys(projectsByLevel).sort((a, b) => a - b);
+  sortedLevels.forEach(level => {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = `Level ${level}`;
+
+    projectsByLevel[level].forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.innerText = p.is_completed ? `✓ ${p.name}` : p.name;
+      if (p.is_completed) {
+        opt.classList.add('project-completed');
+      }
+      opt.dataset.format = p.format;
+      opt.dataset.code = p.code;
+      optgroup.appendChild(opt);
+    });
+
+    projectSelect.appendChild(optgroup);
+  });
+
+  if (selectedProjectId) {
+    projectSelect.value = selectedProjectId;
+  }
+}
+
 function openSpeechDetailModal(sessionId, action, roleLabel) {
   const modal = document.getElementById('speechDetailModal');
   const form = document.getElementById('speechDetailForm');
   const titleGroup = document.getElementById('speech-title-group');
   const titleInput = document.getElementById('speech_title');
   const projectSelect = document.getElementById('speech_project_id');
+  const pathwaySelect = document.getElementById('speech_pathway');
+  const pathwayGroup = document.getElementById('speech-pathway-group');
 
   document.getElementById('speech-session-id').value = sessionId;
   document.getElementById('speech-action').value = action;
   document.getElementById('speech-role-label').value = roleLabel;
 
-  // Get expected format from the row
-  const row = document.querySelector(`tr[data-session-id="${sessionId}"]`);
-  const expectedFormat = row ? row.dataset.expectedFormat : null;
-
   // Reset form
   form.reset();
 
-  // Filter projects by format
-  if (projectSelect) {
-    const options = projectSelect.querySelectorAll('option[data-format]');
-    const optgroups = projectSelect.querySelectorAll('optgroup');
+  // Populate pathways dropdown list
+  populatePathwayDropdownInSpeechModal();
 
-    let visibleCount = 0;
-    options.forEach(opt => {
-      const format = opt.dataset.format;
-      if (!format || !expectedFormat || format === expectedFormat) {
-        opt.style.display = '';
-        visibleCount++;
-      } else {
-        opt.style.display = 'none';
+  // Project checkbox setup: checked for Prepared Speaker, unchecked for others by default
+  const projectChk = document.getElementById('speech_is_project');
+  const projectGroup = document.getElementById('speech-project-group');
+  if (projectChk) {
+    const isPreparedSpeaker = (roleLabel === 'Prepared Speaker');
+    projectChk.checked = isPreparedSpeaker;
+
+    if (pathwaySelect && typeof workingPath !== 'undefined' && workingPath) {
+      pathwaySelect.value = workingPath;
+    }
+
+    if (isPreparedSpeaker) {
+      if (pathwayGroup) pathwayGroup.style.display = 'block';
+      if (pathwaySelect) pathwaySelect.required = true;
+      if (projectGroup) projectGroup.style.display = 'block';
+      if (projectSelect) projectSelect.required = true;
+      updateSpeechProjectDropdownOptions();
+    } else {
+      if (pathwayGroup) pathwayGroup.style.display = 'none';
+      if (pathwaySelect) {
+        pathwaySelect.required = false;
+        pathwaySelect.value = '';
       }
-    });
-
-    // Hide empty optgroups
-    optgroups.forEach(group => {
-      const groupOptions = Array.from(group.querySelectorAll('option'));
-      const hasVisible = groupOptions.some(opt => opt.style.display !== 'none');
-      group.style.display = hasVisible ? '' : 'none';
-    });
-
-    // Auto-selection: if only one valid project is available
-    if (visibleCount === 1) {
-      const firstValidOption = Array.from(options).find(opt => opt.style.display !== 'none' && opt.value !== "");
-      if (firstValidOption) {
-        projectSelect.value = firstValidOption.value;
+      if (projectGroup) projectGroup.style.display = 'none';
+      if (projectSelect) {
+        projectSelect.required = false;
+        projectSelect.value = '';
       }
     }
   }
@@ -411,11 +675,50 @@ document.addEventListener('DOMContentLoaded', () => {
       const sessionId = document.getElementById('speech-session-id').value;
       const action = document.getElementById('speech-action').value;
       const roleLabel = document.getElementById('speech-role-label').value;
-      const projectId = document.getElementById('speech_project_id').value;
+      const isProjectChk = document.getElementById('speech_is_project');
+      const isProject = isProjectChk ? isProjectChk.checked : true;
+      const pathway = isProject ? document.getElementById('speech_pathway').value : null;
+      const projectId = isProject ? document.getElementById('speech_project_id').value : null;
       const title = document.getElementById('speech_title').value;
 
       closeSpeechDetailModal();
-      executeBookingAction(sessionId, action, roleLabel, projectId, title);
+      executeBookingAction(sessionId, action, roleLabel, projectId, title, pathway);
+    });
+  }
+
+  const speechIsProject = document.getElementById('speech_is_project');
+  if (speechIsProject) {
+    speechIsProject.addEventListener('change', function () {
+      const projectGroup = document.getElementById('speech-project-group');
+      const projectSelect = document.getElementById('speech_project_id');
+      const pathwayGroup = document.getElementById('speech-pathway-group');
+      const pathwaySelect = document.getElementById('speech_pathway');
+      if (projectGroup && projectSelect && pathwayGroup && pathwaySelect) {
+        if (this.checked) {
+          pathwayGroup.style.display = 'block';
+          pathwaySelect.required = true;
+          if (typeof workingPath !== 'undefined' && workingPath) {
+            pathwaySelect.value = workingPath;
+          }
+          projectGroup.style.display = 'block';
+          projectSelect.required = true;
+          updateSpeechProjectDropdownOptions();
+        } else {
+          pathwayGroup.style.display = 'none';
+          pathwaySelect.required = false;
+          pathwaySelect.value = '';
+          projectGroup.style.display = 'none';
+          projectSelect.required = false;
+          projectSelect.value = '';
+        }
+      }
+    });
+  }
+
+  const speechPathway = document.getElementById('speech_pathway');
+  if (speechPathway) {
+    speechPathway.addEventListener('change', function () {
+      updateSpeechProjectDropdownOptions();
     });
   }
 });

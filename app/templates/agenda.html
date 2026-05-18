@@ -439,7 +439,7 @@
         var groupedPathways = {{ pathways | tojson | safe }};
         var ProjectID = {{ ProjectID | tojson | safe }};
     </script>
-    <script src="{{ url_for('static', filename='js/speech_modal.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/speech_modal.js') }}?v={{ range(1, 10000) | random }}"></script>
     <script src="{{ url_for('static', filename='js/components/custom_select.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/js/html2canvas.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/agenda.js') }}"></script>

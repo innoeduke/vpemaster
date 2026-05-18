@@ -11,7 +11,19 @@
             <input type="hidden" id="speech-action">
             <input type="hidden" id="speech-role-label">
             
-            <div class="planner-form-group">
+            <div class="planner-form-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                <input type="checkbox" id="speech_is_project" class="scaled-checkbox">
+                <label for="speech_is_project" style="cursor: pointer; margin-bottom: 0; font-weight: 600;">Is Project?</label>
+            </div>
+            
+            <div id="speech-pathway-group" class="planner-form-group" style="display: none; margin-bottom: 15px;">
+                <label for="speech_pathway">Pathway</label>
+                <select id="speech_pathway" class="planner-form-control">
+                    <option value="">Select Pathway</option>
+                </select>
+            </div>
+
+            <div id="speech-project-group" class="planner-form-group">
                 <label for="speech_project_id">Project</label>
                 <select id="speech_project_id" class="planner-form-control" required>
                     <option value="">Select Project</option>

@@ -17,6 +17,13 @@ depends_on = None
 
 
 def upgrade():
+    # 0. Check if 'pathway' column exists in 'planner' table, add it if not
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('planner')]
+    if 'pathway' not in columns:
+        op.add_column('planner', sa.Column('pathway', sa.String(length=100), nullable=True))
+
     # 1. Update Pathways table name
     op.execute("UPDATE pathways SET name = 'Non Pathway' WHERE name = 'Generic'")
     
@@ -48,3 +55,10 @@ def downgrade():
     
     # 5. Revert achievements path_name values
     op.execute("UPDATE achievements SET path_name = 'Generic' WHERE path_name = 'Non Pathway'")
+
+    # 6. Revert adding pathway column
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    columns = [col['name'] for col in inspector.get_columns('planner')]
+    if 'pathway' in columns:
+        op.drop_column('planner', 'pathway')

@@ -502,9 +502,21 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
 
     # --- Projects for Speech Modal ---
     grouped_projects = []
+    grouped_pathways = {}
+    pathway_mapping = {}
+    all_projects = []
+    working_path = None
+
     if user and user.is_authenticated:
+        from .utils import get_dropdown_metadata
+        metadata = get_dropdown_metadata()
+        grouped_pathways = metadata.get('pathways', {})
+        pathway_mapping = metadata.get('pathway_mapping', {})
+        all_projects = metadata.get('projects', [])
+
         contact = user.get_contact(club_id)
         if contact:
+            working_path = contact.Current_Path
             projects_by_level = {}
             projects = contact.get_pathway_projects_with_status()
             for p in projects:
@@ -517,6 +529,23 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
             grouped_projects = [(level, projects_by_level[level]) for level in sorted_levels]
     
     context['grouped_projects'] = grouped_projects
+    context['grouped_pathways'] = grouped_pathways
+    context['pathway_mapping'] = pathway_mapping
+    context['all_projects'] = all_projects
+    context['working_path'] = working_path
+
+    # Calculate state hash of consolidated roles for real-time polling synchronization
+    state_parts = []
+    for r in roles:
+        owner_id = r.get('owner_id') or ''
+        all_owners = r.get('all_owners') or []
+        owners_str = "-".join(str(o['id']) for o in all_owners) if all_owners else str(owner_id)
+        waitlist_str = "-".join(str(w['id']) for w in r.get('waitlist', []))
+        state_parts.append(f"{r['session_id']}:{owners_str}:{waitlist_str}")
+    
+    state_str = "|".join(state_parts)
+    import hashlib
+    context['initial_hash'] = hashlib.md5(state_str.encode('utf-8')).hexdigest()
 
     return context
 
@@ -531,6 +560,26 @@ def booking(meeting_id):
     context = _get_booking_page_context(meeting_id, user, current_user_contact_id)
     
     return render_template('booking.html', **context)
+
+
+@booking_bp.route('/booking/<int:meeting_id>/hash', methods=['GET'])
+@login_required
+@authorized_club_required
+def booking_hash(meeting_id):
+    """Get the booking state hash of the meeting for polling."""
+    user, current_user_contact_id = get_current_user_info()
+    context = _get_booking_page_context(meeting_id, user, current_user_contact_id)
+    return jsonify(success=True, hash=context.get('initial_hash', ''))
+
+
+@booking_bp.route('/booking/<int:meeting_id>/tables_html', methods=['GET'])
+@login_required
+@authorized_club_required
+def booking_tables_html(meeting_id):
+    """Render and return only the role booking tables partial HTML."""
+    user, current_user_contact_id = get_current_user_info()
+    context = _get_booking_page_context(meeting_id, user, current_user_contact_id)
+    return render_template('partials/_booking_tables.html', **context)
 
 
 @booking_bp.route('/booking/book', methods=['POST'])

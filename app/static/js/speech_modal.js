@@ -582,7 +582,6 @@ function buildSavePayload() {
     speechTitle,
     projectSelect,
     pathwaySelect,
-    genericCheckbox,
     projectSelectDropdown,
     pathwaySelectDropdown,
   } = modalElements;
