@@ -447,7 +447,6 @@ td.actions-column {
 /* --- Tooltip --- */
 .speech-tooltip-wrapper {
 	position: relative;
-	cursor: pointer;
 	display: inline-block;
 }
 

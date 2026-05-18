@@ -18,7 +18,7 @@ booking_bp = Blueprint('booking_bp', __name__)
 
 def _apply_user_filters_and_rules(roles, current_user_contact_id, meeting_id):
     """Applies filtering and business rules based on user permissions."""
-    if is_authorized(Permissions.BOOKING_ASSIGN_ALL):
+    if is_authorized(Permissions.BOOKING_ASSIGN_ALL) or is_authorized(Permissions.AGENDA_EDIT):
         return roles
 
     # --- Rule: Hide roles without award category (other roles) for non-admins ---
@@ -273,7 +273,7 @@ def _get_roles_for_booking(meeting_id, current_user_contact_id, selected_meeting
         filtered_roles, current_user_contact_id, is_past_meeting)
 
     # For 'not started' or 'unpublished' meetings, only show Topics Speaker to admins
-    is_admin_booker = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting)
+    is_admin_booker = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting) or is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting)
     if selected_meeting and selected_meeting.status in ['not started', 'unpublished'] and not is_admin_booker:
         sorted_roles = [
             role for role in sorted_roles
@@ -580,6 +580,48 @@ def booking_tables_html(meeting_id):
     user, current_user_contact_id = get_current_user_info()
     context = _get_booking_page_context(meeting_id, user, current_user_contact_id)
     return render_template('partials/_booking_tables.html', **context)
+
+
+@booking_bp.route('/booking/<int:meeting_id>/add_table_topics_speech', methods=['POST'])
+@login_required
+@authorized_club_required
+def add_table_topics_speech(meeting_id):
+    """Add a new, hidden Topics Speech session at the end of the meeting's agenda."""
+    if not is_authorized(Permissions.AGENDA_EDIT):
+        return jsonify(success=False, message="Unauthorized"), 403
+
+    meeting = db.session.get(Meeting, meeting_id)
+    if not meeting:
+        return jsonify(success=False, message="Meeting not found."), 404
+
+    club_id = meeting.club_id
+    topics_speech_id = SessionType.get_id_by_title('Topics Speech', club_id)
+    if not topics_speech_id:
+        return jsonify(success=False, message="Topics Speech session type not found."), 404
+
+    session_type = db.session.get(SessionType, topics_speech_id)
+
+    # Find the maximum Meeting_Seq to append to the end
+    max_seq = db.session.query(func.max(SessionLog.Meeting_Seq)).filter_by(meeting_id=meeting_id).scalar() or 0
+    new_seq = max_seq + 1
+
+    new_log = SessionLog(
+        meeting_id=meeting_id,
+        Meeting_Seq=new_seq,
+        Type_ID=topics_speech_id,
+        Duration_Min=session_type.Duration_Min or 0,
+        Duration_Max=session_type.Duration_Max or 0,
+        Session_Title='Topics Speech',
+        Status='Booked',
+        hidden=True
+    )
+    db.session.add(new_log)
+    db.session.commit()
+
+    # Clear cached meeting roles to ensure the new topics speech appears immediately on reload
+    RoleService._clear_meeting_cache(meeting_id, club_id)
+
+    return jsonify(success=True)
 
 
 @booking_bp.route('/booking/book', methods=['POST'])
