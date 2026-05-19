@@ -90,14 +90,17 @@ def _attach_owners(logs):
     # 3. Attach to logs via the new _cached_owners attribute
     # Improved: Also attach historical credentials found in OwnerMeetingRoles
     
-    # helper to map credentials: {session_log_id: {contact_id: credential}}
-    creds_map = {}
+    # helper to map targets: {session_log_id: {contact_id: {pathway, level}}}
+    targets_map = {}
     for omr, contact in omr_entries:
-        if omr.session_log_id not in creds_map:
-            creds_map[omr.session_log_id] = {}
-        creds_map[omr.session_log_id][contact.id] = omr.credential
+        if omr.session_log_id not in targets_map:
+            targets_map[omr.session_log_id] = {}
+        targets_map[omr.session_log_id][contact.id] = {
+            'pathway': omr.target_pathway,
+            'level': omr.target_level
+        }
 
-    # Shared roles credentials
+    # Shared roles targets
     if 'omr_shared' in locals():
         for omr, contact in omr_shared:
             # For shared roles, we can't key by log ID easily until we map back
@@ -105,13 +108,16 @@ def _attach_owners(logs):
             key = (omr.meeting_id, omr.role_id)
             for l in shared_logs:
                 if (l.meeting.id, l.session_type.role_id) == key:
-                    if l.id not in creds_map:
-                        creds_map[l.id] = {}
-                    creds_map[l.id][contact.id] = omr.credential
+                    if l.id not in targets_map:
+                        targets_map[l.id] = {}
+                    targets_map[l.id][contact.id] = {
+                        'pathway': omr.target_pathway,
+                        'level': omr.target_level
+                    }
 
     for l in logs:
         l._cached_owners = owners_by_log.get(l.id, [])
-        l._cached_owner_credentials = creds_map.get(l.id, {})
+        l._cached_owner_targets = targets_map.get(l.id, {})
 
 
 def _get_view_settings():
@@ -504,18 +510,20 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
         p_filter = filters.get('pathway')
         context_path = p_filter if p_filter and p_filter != 'all' else None
         
-        # Determine context credential for the owner
-        context_cred = None
-        if log.context_owner and hasattr(log, '_cached_owner_credentials'):
-             context_cred = log._cached_owner_credentials.get(log.context_owner.id)
+        # Determine context target for the owner
+        context_target = None
+        if log.context_owner and hasattr(log, '_cached_owner_targets'):
+             context_target = log._cached_owner_targets.get(log.context_owner.id)
 
-        # We set it on the log so get_display_level_and_type can find it via getattr(self, 'context_credential')
-        # or we pass it if we update the method signature. 
-        # The method get_display_level_and_type calls derive_project_code.
-        # derive_project_code checks 'context_credential' arg. 
-        # But get_display_level_and_type logic at 377: context_cred = getattr(self, 'context_credential', None)
-        # So we set the attribute here.
-        log.context_credential = context_cred
+        # We set it on the log so it can be used for display and logic
+        log.context_target = context_target
+        
+        # Override context_path if target pathway is set for this role
+        if context_target and context_target.get('pathway'):
+            # Only override if we aren't explicitly filtering by another pathway
+            # Or perhaps target_pathway IS the pathway for this role, so it should be the display pathway
+            if not context_path or context_path == 'all':
+                context_path = context_target.get('pathway')
 
         display_level, log_type, project_code = log.get_display_level_and_type(
             pathway_cache, 

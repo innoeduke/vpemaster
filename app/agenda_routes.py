@@ -307,8 +307,10 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
         log.Type_ID = type_id
         log.project_code = project_code
 
-        # Update credentials in OwnerMeetingRoles if provided
-        if credentials and owner_contacts:
+        # Update targets in OwnerMeetingRoles if provided
+        # Per-owner targets take priority over shared credential
+        owner_targets = item.get('owner_targets') or {}
+        if (credentials or owner_targets) and owner_contacts:
             meeting_id = log.meeting_id
             session_type = log.session_type
             role_obj = session_type.role if session_type else None
@@ -325,7 +327,18 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
                 omr_records = omr_query.all()
                 for omr in omr_records:
                     if omr.contact_id in [c.id for c in owner_contacts]:
-                        omr.credential = credentials
+                        contact_str = str(omr.contact_id)
+                        # We use owner_targets for pathway and level
+                        if contact_str in owner_targets:
+                            target = owner_targets[contact_str]
+                            if target:
+                                omr.target_pathway = target.get('pathway')
+                                omr.target_level = target.get('level')
+                        else:
+                            # We keep credentials for backwards compatibility
+                            # though it should ideally be stored in omr.credential if it's an education credential
+                            # We won't blindly overwrite target_pathway with credentials as they are different semantics now
+                            pass
 
 
 

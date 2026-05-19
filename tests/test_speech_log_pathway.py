@@ -177,3 +177,129 @@ def test_guest_without_user_defaults_to_non_pathway(client, app, default_club, s
             updated_log = SessionLog.query.get(log_id)
             assert updated_log.pathway == "Non Pathway"
 
+
+def test_functional_role_pathway_save(client, app, default_club, staff_user):
+    """Verify that updating a functional role's pathway saves to OwnerMeetingRoles and serializes correctly on get_logs."""
+    with app.app_context():
+        # Ensure staff role has AGENDA_EDIT permission
+        from app.models import AuthRole, Permission
+        from app.auth.permissions import Permissions
+        staff_role = AuthRole.query.filter_by(name='Staff').first()
+        agenda_edit_perm = Permission.query.filter_by(name=Permissions.AGENDA_EDIT).first()
+        if staff_role and agenda_edit_perm and agenda_edit_perm not in staff_role.permissions:
+            staff_role.permissions.append(agenda_edit_perm)
+            db.session.commit()
+
+        # Ensure Dynamic Leadership Pathway exists
+        p1 = Pathway.query.filter_by(name="Dynamic Leadership").first()
+        if not p1:
+            p1 = Pathway(name="Dynamic Leadership", abbr="DL", type="pathway", status="active")
+            db.session.add(p1)
+            db.session.commit()
+
+        # Create contact
+        contact = Contact(Name="Functional Role User", Type="Member", Current_Path="Dynamic Leadership")
+        db.session.add(contact)
+        db.session.commit()
+
+        # Create Meeting & SessionType for Ah-Counter
+        role = MeetingRole(name="Ah-Counter", type="standard", needs_approval=False, has_single_owner=True)
+        db.session.add(role)
+        db.session.commit()
+
+        st = SessionType(Title="Ah-Counter", role_id=role.id, club_id=default_club.id)
+        db.session.add(st)
+        db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(Meeting_Number=103, Meeting_Date=date.today(), club_id=default_club.id)
+        db.session.add(meeting)
+        db.session.commit()
+
+        # Create SessionLog for Ah-Counter (initially DL1)
+        log = SessionLog(
+            meeting_id=meeting.id,
+            Meeting_Seq=1,
+            Type_ID=st.id,
+            Status="Booked",
+            pathway="Dynamic Leadership"
+        )
+        db.session.add(log)
+        db.session.flush()
+
+        from app.models import OwnerMeetingRoles
+        # Add to OwnerMeetingRoles
+        omr = OwnerMeetingRoles(
+            meeting_id=meeting.id,
+            role_id=role.id,
+            contact_id=contact.id,
+            session_log_id=log.id,
+            credential="DL1"
+        )
+        db.session.add(omr)
+        db.session.commit()
+
+        log_id = log.id
+        meeting_id = meeting.id
+        contact_id = contact.id
+
+    # Authenticate client
+    client.post('/login', data=dict(
+        username='staff',
+        password='password'
+    ))
+    with client.session_transaction() as sess:
+        sess['club_id'] = default_club.id
+        sess['current_club_id'] = default_club.id
+
+    # Save details via agenda update (simulate saveChanges in agenda page)
+    with patch('app.agenda_routes.is_authorized', return_value=True):
+        resp = client.post(
+            '/agenda/update',
+            json={
+                'meeting_id': meeting_id,
+                'agenda_data': [
+                    {
+                        'id': log_id,
+                        'meeting_number': 103,
+                        'meeting_seq': 1,
+                        'start_time': '20:00',
+                        'type_id': st.id,
+                        'session_title': 'Ah-Counter Report',
+                        'owner_ids': [contact_id],
+                        'owner_id': contact_id,
+                        'credentials': 'DL2',  # Changed level from DL1 to DL2
+                        'duration_min': 2,
+                        'duration_max': 3,
+                        'project_id': None,
+                        'status': 'Booked'
+                    }
+                ]
+            }
+        )
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data.get('success') is True
+
+        # Verify OwnerMeetingRoles updated
+        with app.app_context():
+            updated_omr = OwnerMeetingRoles.query.filter_by(
+                meeting_id=meeting_id,
+                role_id=role.id,
+                contact_id=contact_id,
+                session_log_id=log_id
+            ).first()
+            assert updated_omr is not None
+            assert updated_omr.credential == 'DL2'
+
+        # Fetch logs via API and assert serialized credentials is DL2
+        resp_logs = client.get(f'/api/agenda/get_logs/{meeting_id}')
+        assert resp_logs.status_code == 200
+        logs_data = resp_logs.get_json()
+        assert logs_data.get('success') is True
+        logs = logs_data.get('logs_data', [])
+        assert len(logs) > 0
+        matching_log = next(l for l in logs if l['id'] == log_id)
+        assert matching_log['Credentials'] == 'DL2'
+
+

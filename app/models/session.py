@@ -90,6 +90,8 @@ class OwnerMeetingRoles(db.Model):
     # session_log_id is only populated if role.has_single_owner is True
     session_log_id = db.Column(db.Integer, db.ForeignKey('Session_Logs.id'), nullable=True)
     credential = db.Column(db.String(255), nullable=True)
+    target_pathway = db.Column(db.String(100), nullable=True)
+    target_level = db.Column(db.String(10), nullable=True)
 
     meeting = db.relationship('Meeting', backref='owner_roles')
     role = db.relationship('app.models.roster.MeetingRole')
@@ -378,23 +380,30 @@ class SessionLog(db.Model):
         
         else:  # It's a role
             # Use context contact and context pathway to derive the correct level dynamically
-            context_cred = getattr(self, 'context_credential', None)
-            project_code = self.derive_project_code(
-                owner_contact=context_contact, 
-                pathway_override=context_pathway_name,
-                context_credential=context_cred
-            )
-            if project_code:
-                match = re.match(r"([A-Z]+)(\d+)", project_code)
-                if match:
-                    display_level = str(match.group(2))
+            context_target = getattr(self, 'context_target', None)
             
-            # Fallback to DB project_code if derivation failed
-            if not project_code and self.project_code:
-                project_code = self.project_code
-                match = re.match(r"([A-Z]+)(\d+)", self.project_code)
-                if match:
-                    display_level = str(match.group(2))
+            if context_target and context_target.get('pathway') and context_target.get('level'):
+                # We have an explicit target set via the role modal!
+                target_path = Pathway.query.filter_by(name=context_target['pathway']).first()
+                if target_path:
+                    project_code = f"{target_path.abbr}{context_target['level']}"
+                    display_level = str(context_target['level'])
+            else:
+                project_code = self.derive_project_code(
+                    owner_contact=context_contact, 
+                    pathway_override=context_pathway_name
+                )
+                if project_code:
+                    match = re.match(r"([A-Z]+)(\d+)", project_code)
+                    if match:
+                        display_level = str(match.group(2))
+                
+                # Fallback to DB project_code if derivation failed
+                if not project_code and self.project_code:
+                    project_code = self.project_code
+                    match = re.match(r"([A-Z]+)(\d+)", self.project_code)
+                    if match:
+                        display_level = str(match.group(2))
             
             # NEW: If still General, assign to the contact's active level AT THE TIME OF THE MEETING
             if display_level == "General" and target_path_name:
