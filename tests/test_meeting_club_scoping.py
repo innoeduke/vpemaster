@@ -56,6 +56,14 @@ def test_meeting_creation_club_scoping(app):
             writer.writerow(['Type', 'Title', 'Role', 'Owner', 'Min', 'Max'])
             writer.writerow(['Club1Only', '', '', '', '5', '10'])
 
+        import shutil
+        club1_dir = os.path.join(app.static_folder, 'club_resources', str(club1.id))
+        club2_dir = os.path.join(app.static_folder, 'club_resources', str(club2.id))
+        if os.path.exists(club1_dir):
+            shutil.rmtree(club1_dir)
+        if os.path.exists(club2_dir):
+            shutil.rmtree(club2_dir)
+
         # Seed club directories so the test template is copied over
         Meeting.get_type_to_template(club1.id)
         Meeting.get_type_to_template(club2.id)
@@ -91,3 +99,7 @@ def test_meeting_creation_club_scoping(app):
 
         # Cleanup
         os.remove(template_path)
+        if os.path.exists(club1_dir):
+            shutil.rmtree(club1_dir)
+        if os.path.exists(club2_dir):
+            shutil.rmtree(club2_dir)

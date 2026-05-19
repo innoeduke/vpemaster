@@ -50,6 +50,16 @@ def create_app(config_class='config.Config'):
     # Load configuration from the config.py file
     app.config.from_object(config_class)
 
+    # Clean up SQLALCHEMY_ENGINE_OPTIONS for sqlite databases
+    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI')
+    if db_uri and db_uri.startswith('sqlite'):
+        engine_options = app.config.get('SQLALCHEMY_ENGINE_OPTIONS', {})
+        if engine_options:
+            engine_options = dict(engine_options)
+            engine_options.pop('pool_size', None)
+            engine_options.pop('max_overflow', None)
+            app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options
+
     # (Optional) Load instance-specific config, e.g., /instance/config.py
     # app.config.from_pyfile('config.py', silent=True)
 

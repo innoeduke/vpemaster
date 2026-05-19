@@ -126,6 +126,15 @@ function showRoleHistory(badge) {
                     ${evaluatorHtml}
                 </div>
             `;
+
+      historyItem.addEventListener('click', function (e) {
+        if (e.target.closest('a')) return;
+        if (item.id) {
+          closeHistoryModal();
+          openSpeechEditModal(item.id, null, item.role_name);
+        }
+      });
+
       historyListEl.appendChild(historyItem);
     });
   }

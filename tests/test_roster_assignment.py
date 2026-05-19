@@ -44,6 +44,11 @@ class TestRosterAssignment(unittest.TestCase):
         self.role = MeetingRole(name="Test Role", type="functionary", needs_approval=False, has_single_owner=False)
         
         db.session.add_all([self.officer_contact, self.member_contact, self.guest_contact, self.role])
+        db.session.flush()
+
+        from app.models.contact_club import ContactClub
+        officer_cc = ContactClub(contact_id=self.officer_contact.id, club_id=self.club.id, is_officer=True)
+        db.session.add(officer_cc)
         
         # Seed Tickets
         from app.models import Ticket

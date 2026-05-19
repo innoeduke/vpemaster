@@ -343,59 +343,59 @@
 #roleEditModal .form-actions,
 #meetingDetailsModal .form-actions,
 #contactModal .form-actions {
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: center !important;
-    gap: 15px !important;
-    margin-top: 30px !important;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
 }
 
 #speechEditModal .form-actions .btn,
 #roleEditModal .form-actions .btn,
 #meetingDetailsModal .form-actions .btn,
 #contactModal .form-actions .btn {
-    min-width: 120px !important;
-    width: auto !important;
-    height: var(--mobile-control-height, 42px) !important;
-    border-radius: 8px !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    box-sizing: border-box !important;
+    min-width: 120px;
+    width: auto;
+    height: var(--mobile-control-height, 42px);
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 700;
+    box-sizing: border-box;
 }
 
 #speechEditModal .form-actions .btn-speech-cancel,
 #roleEditModal .form-actions .btn-speech-cancel,
 #meetingDetailsModal .form-actions .btn-speech-cancel,
 #contactModal .form-actions .btn-speech-cancel {
-    background-color: transparent !important;
-    color: #555 !important;
-    border: none !important;
-    box-shadow: none !important;
+    background-color: transparent;
+    color: #555;
+    border: none;
+    box-shadow: none;
 }
 
 #speechEditModal .form-actions .btn-speech-cancel:hover,
 #roleEditModal .form-actions .btn-speech-cancel:hover,
 #meetingDetailsModal .form-actions .btn-speech-cancel:hover,
 #contactModal .form-actions .btn-speech-cancel:hover {
-    background-color: rgba(0, 0, 0, 0.05) !important;
-    color: #333 !important;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
 }
 
 #speechEditModal .form-actions .btn-speech-save,
 #roleEditModal .form-actions .btn-speech-save,
 #meetingDetailsModal .form-actions .btn-speech-save,
 #contactModal .form-actions .btn-speech-save {
-    background-color: #772432 !important; /* Official Toastmasters Maroon */
-    color: #fff !important;
-    border: none !important;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    background-color: #772432; /* Official Toastmasters Maroon */
+    color: #fff;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 #speechEditModal .form-actions .btn-speech-save:hover,
 #roleEditModal .form-actions .btn-speech-save:hover,
 #meetingDetailsModal .form-actions .btn-speech-save:hover,
 #contactModal .form-actions .btn-speech-save:hover {
-    background-color: #5e1c27 !important; /* Darker maroon */
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+    background-color: #5e1c27; /* Darker maroon */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
     transform: translateY(-1px);
 }

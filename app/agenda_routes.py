@@ -445,8 +445,9 @@ def _get_processed_logs_data(meeting_id, show_media=False):
         elif log.project and log.project.is_generic:
             project_code_str = "TM1.0"
         elif project:  # Calculate code for any project, even if no owner
-            # Use model's resolution logic which includes fallback
-            context_path = primary_owner.Current_Path if (primary_owner and primary_owner.Current_Path) else None
+            context_path = log.pathway
+            if not context_path:
+                context_path = primary_owner.Current_Path if (primary_owner and primary_owner.Current_Path) else None
             
             # OPTIMIZED: Use memory cache via Model Method
             pp, path_obj = Project.resolve_context_from_cache(log.Project_ID, context_path, pp_cache)

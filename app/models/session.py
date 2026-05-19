@@ -227,13 +227,18 @@ class SessionLog(db.Model):
         
         contact = owner_contact or self.owner
         
-        # Determine pathway name: override > contact preference
+        # Determine pathway name: override > self.pathway > contact preference
         pathway_name = pathway_override
         if not pathway_name:
-            pathway_name = contact.Current_Path if contact else None
+            pathway_name = self.pathway
+        if not pathway_name:
+            if contact:
+                is_guest_without_user = (contact.Type == 'Guest') or (contact.user is None)
+                if not is_guest_without_user:
+                    pathway_name = contact.Current_Path
 
         if not pathway_name:
-            return None
+            pathway_name = "Non Pathway"
 
         path_obj = db.session.query(Pathway).filter(
             (Pathway.name == pathway_name) | (Pathway.abbr == pathway_name)
@@ -430,20 +435,12 @@ class SessionLog(db.Model):
         if not pathway_name:
             return
             
-        # Verify the pathway type in the database
         path_obj = Pathway.query.filter_by(name=pathway_name).first()
-        if not path_obj or path_obj.type != 'pathway':
+        if not path_obj or path_obj.type not in ['pathway', 'others']:
             # Do not allow storing series/presentation-type paths in the main pathway column
             return
 
-        old_pathway = self.pathway
         self.pathway = pathway_name
-        
-        # Sync to user profile if relevant
-        if self.owner and old_pathway != pathway_name:
-            # Sync to the Contact's current path (ensures profile is updated)
-            self.owner.Current_Path = pathway_name
-            db.session.add(self.owner)
 
     def update_durations(self, data, updated_project=None):
         """

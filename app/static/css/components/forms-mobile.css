@@ -88,16 +88,16 @@
   /* Fix modal-content form inputs and select widths on mobile to prevent overflow and misalignment */
   :root body .modal-content input:not([type="checkbox"]):not([type="radio"]),
   :root body .modal-content select {
-    width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-    display: block !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    text-align: left !important;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    display: block;
+    margin-left: 0;
+    margin-right: 0;
+    text-align: left;
   }
 
   :root body .modal-content .form-group {
-    text-align: left !important;
+    text-align: left;
   }
 }

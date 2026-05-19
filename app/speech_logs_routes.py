@@ -807,6 +807,7 @@ def _process_band_requirements(level_str, band_reqs, logs_for_level, used_log_id
                         status = 'booked'
 
                     role_details.append({
+                        'id': log.id,
                         'name': item_name_with_code, 
                         'status': status,
                         'meeting_number': log.Meeting_Number,
@@ -999,6 +1000,7 @@ def _process_badge_group(major_code, p_type, rps, logs_for_level, evaluator_map,
                         status = 'booked'
 
                     history_item = {
+                        'id': log.id,
                         'name': item_name_with_code,
                         'status': status,
                         'meeting_number': log.Meeting_Number,
@@ -1112,6 +1114,7 @@ def _collect_extra_roles(logs_for_level, used_log_ids):
                 status = 'booked'
 
             extra_roles.append({
+                'id': log.id,
                 'name': item_name_with_code,
                 'status': status,
                 'meeting_number': log.Meeting_Number,
@@ -1285,6 +1288,7 @@ def _calculate_completion_summary(grouped_logs, pp_mapping, selected_pathway_nam
                                 status = 'booked'
 
                             extra_roles.append({
+                                'id': log.id,
                                 'name': item_name_with_code,
                                 'status': status,
                                 'meeting_number': log.Meeting_Number,
@@ -1816,7 +1820,13 @@ def get_speech_log_details(log_id):
 
     # Use the helper function to get project code
     project_code = ""
-    pathway_name_to_return = log.owner.Current_Path if log.owner and log.owner.Current_Path else "Presentation Mastery"
+    pathway_name_to_return = None
+    if log.owner:
+        is_guest_without_user = (log.owner.Type == 'Guest') or (log.owner.user is None)
+        if not is_guest_without_user:
+            pathway_name_to_return = log.owner.Current_Path
+    if not pathway_name_to_return:
+        pathway_name_to_return = "Non Pathway"
     level = 1
     
     # Better logic: if there is a Project linked, try to find the pathway it belongs to
@@ -1832,7 +1842,11 @@ def get_speech_log_details(log_id):
                     pathway_name_to_return = pathway_db.name
 
         if not pathway_name_to_return and log.owner:
-            pathway_name_to_return = log.owner.Current_Path
+            is_guest_without_user = (log.owner.Type == 'Guest') or (log.owner.user is None)
+            if not is_guest_without_user and log.owner.Current_Path:
+                pathway_name_to_return = log.owner.Current_Path
+            else:
+                pathway_name_to_return = "Non Pathway"
 
         # 2. Derive level and project code based on that pathway
         level = log.project.get_level(pathway_name_to_return)
@@ -1848,7 +1862,8 @@ def get_speech_log_details(log_id):
         "level": level,
         "project_code": log.project_code,
         "credential": credential_value,
-        "Media_URL": log.media.url if (is_authorized(Permissions.MEDIA_ACCESS) and log.media) else ""
+        "Media_URL": log.media.url if (is_authorized(Permissions.MEDIA_ACCESS) and log.media) else "",
+        "session_type_title": log.session_type.Title if log.session_type else "Pathway Speech"
     }
 
     return jsonify(success=True, log=log_data)
@@ -1964,11 +1979,13 @@ def update_speech_log(log_id):
     pathway_val = data.get('pathway')
     primary_owner = log.owners[0] if log.owners else None
     
-    if is_presentation:
-        if primary_owner and primary_owner.Current_Path:
-            pathway_val = primary_owner.Current_Path
-    elif not pathway_val and primary_owner and primary_owner.Current_Path:
-        pathway_val = primary_owner.Current_Path
+    if not pathway_val:
+        if primary_owner:
+            is_guest_without_user = (primary_owner.Type == 'Guest') or (primary_owner.user is None)
+            if not is_guest_without_user and primary_owner.Current_Path:
+                pathway_val = primary_owner.Current_Path
+        if not pathway_val:
+            pathway_val = "Non Pathway"
         
     if pathway_val:
         log.update_pathway(pathway_val)

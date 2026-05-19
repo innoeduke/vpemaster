@@ -2044,7 +2044,17 @@ document.addEventListener("DOMContentLoaded", () => {
           const logId = row.dataset.id;
           const ownerId = row.dataset.ownerId; // Use allContacts
           const contact = allContacts.find((c) => c.id == ownerId);
-          const currentPath = contact ? contact.Current_Path : null;
+          let currentPath = null;
+          if (contact) {
+            const isGuestWithoutUser = (contact.Type === "Guest");
+            if (!isGuestWithoutUser && contact.Current_Path) {
+              currentPath = contact.Current_Path;
+            } else {
+              currentPath = "Non Pathway";
+            }
+          } else {
+            currentPath = "Non Pathway";
+          }
           const nextProject = contact ? contact.Next_Project : null;
           const typeId = row.querySelector(
             '[data-field="Type_ID"] select'
@@ -2132,14 +2142,14 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    let selectedPathway = "";
+    let selectedPathway = (row.dataset.pathway || "").trim();
     let selectedLevel = "";
 
     const pathLevelMatch = currentPathLevel.match(/^([A-Z]+)(\d+)$/);
     if (pathLevelMatch) {
       const abbr = pathLevelMatch[1];
       const lvl = pathLevelMatch[2];
-      if (typeof pathwayMap !== "undefined") {
+      if (!selectedPathway && typeof pathwayMap !== "undefined") {
         selectedPathway = Object.keys(pathwayMap).find(key => pathwayMap[key] === abbr) || "";
       }
       selectedLevel = lvl;
@@ -2150,8 +2160,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const ownerId = row.dataset.ownerId;
       const contact = allContacts.find((c) => c.id == ownerId);
       if (contact) {
-        if (!selectedPathway && contact.Current_Path) {
-          selectedPathway = contact.Current_Path;
+        if (!selectedPathway) {
+          if (contact.Type === "Guest") {
+            selectedPathway = "Non Pathway";
+          } else if (contact.Current_Path) {
+            selectedPathway = contact.Current_Path;
+          } else {
+            selectedPathway = "Non Pathway";
+          }
         }
         if (!selectedLevel) {
           const levelMatch = (contact.Credentials || "").match(/\d+/);
@@ -2161,6 +2177,13 @@ document.addEventListener("DOMContentLoaded", () => {
           } else {
             selectedLevel = "1"; // Default to Level 1
           }
+        }
+      } else {
+        if (!selectedPathway) {
+          selectedPathway = "Non Pathway";
+        }
+        if (!selectedLevel) {
+          selectedLevel = "1";
         }
       }
     }
@@ -2193,6 +2216,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     row.dataset.currentPathLevel = newPathLevel;
     row.dataset.projectCode = newPathLevel;
+    row.dataset.pathway = pathwayName;
 
     closeRoleEditModal();
   };

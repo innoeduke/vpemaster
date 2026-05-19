@@ -86,15 +86,14 @@ function toggleGeneric(isGeneric) {
     projectSelect,
   } = modalElements;
   const display = isGeneric ? "none" : "block";
-  if (pathwayGenericRow) pathwayGenericRow.style.display = display;
+  if (pathwayGenericRow) pathwayGenericRow.style.display = "block";
   if (levelSelectGroup) levelSelectGroup.style.display = display;
   if (projectSelectGroup) projectSelectGroup.style.display = display;
-  if (pathwaySelect) pathwaySelect.disabled = isGeneric;
+  if (pathwaySelect) pathwaySelect.disabled = false;
   if (levelSelect) levelSelect.disabled = isGeneric;
   if (projectSelect) projectSelect.disabled = isGeneric;
 
   if (isGeneric) {
-    if (pathwaySelect) pathwaySelect.value = "";
     if (levelSelect) levelSelect.value = "";
     if (projectSelect) {
       projectSelect.value = "";
@@ -120,6 +119,7 @@ async function openSpeechEditModal(
     if (!data.success) throw new Error(data.message || "Unknown error");
 
     const passedSessionType =
+      data.log.session_type_title ||
       sessionTypeTitle ||
       document.querySelector(`tr[data-id="${logId}"]`)?.dataset
         .sessionTypeTitle;
@@ -128,15 +128,31 @@ async function openSpeechEditModal(
     resetModal(data.log, currentSessionType);
 
     const setupFunctions = {
-      "Evaluation": setupEvaluatorModal,
-      "Panel Discussion": setupSpecialProjectModal,
-      "Table Topics": setupSpecialProjectModal,
-      "Keynote Speech": setupSpecialProjectModal,
-      "Pathway Speech": setupSpeechModal,
-      "Prepared Speech": setupSpeechModal,
-      "Presentation": setupSpeechModal,
-      // Add other explicit speech types if known
-      default: setupRoleModal,
+      "Evaluation": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+        ...opts,
+        projectIds: ProjectID.EVALUATION_PROJECTS,
+        defaultOption: "-- Select Evaluation Project --",
+        speechTitleLabelText: "Evaluator for:"
+      }),
+      "Panel Discussion": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+        ...opts,
+        projectIds: [ProjectID.MODERATOR_PROJECT],
+        defaultOption: "-- Select Panel Discussion Project --"
+      }),
+      "Table Topics": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+        ...opts,
+        projectIds: [ProjectID.TOPICSMASTER_PROJECT],
+        defaultOption: "-- Select Table Topics Project --"
+      }),
+      "Keynote Speech": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+        ...opts,
+        projectIds: [ProjectID.KEYNOTE_SPEAKER_PROJECT],
+        defaultOption: "-- Select Keynote Speech Project --"
+      }),
+      "Pathway Speech": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
+      "Prepared Speech": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
+      "Presentation": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
+      default: (log, opts) => SpeechModalSetupManager.setupRole(log, opts),
     };
     const setupFunction =
       setupFunctions[currentSessionType] || setupFunctions.default;
@@ -225,228 +241,152 @@ function resetModal(logData, sessionType) {
   modalElements.pathwaySelect.required = false;
 }
 
-function setupEvaluatorModal(logData, { workingPath } = {}) {
-  modalElements.projectGroup.style.display = "block";
-  modalElements.speechTitleLabel.textContent = "Evaluator for:";
-
-  const evalProjects = allProjects
-    .filter((p) => ProjectID.EVALUATION_PROJECTS.includes(p.id))
-    .sort((a, b) => a.id - b.id);
-  populateDropdown(modalElements.projectSelectDropdown, evalProjects, {
-    defaultOption: "-- Select Evaluation Project --",
-    valueField: "id",
-    textField: "Project_Name",
-  });
-
-  if (typeof groupedPathways !== 'undefined' && groupedPathways) {
-    populateGroupedDropdown(modalElements.pathwaySelectDropdown, groupedPathways, {
-      defaultOption: "-- Select Pathway --"
-    });
-  } else {
-    const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
-    populateDropdown(modalElements.pathwaySelectDropdown, pathways, {
-      defaultOption: "-- Select Pathway --",
-      valueField: "name",
-      textField: "name",
-    });
-  }
-
-  const defaultPath = workingPath || logData.pathway || "";
-
-  modalElements.isProjectChk.onchange = (e) => {
-    const isChecked = e.target.checked;
-    modalElements.projectModeFields.style.display = isChecked ? "block" : "none";
-    modalElements.pathwayGroup.style.display = isChecked ? "block" : "none";
-    if (!isChecked) {
-      modalElements.projectSelectDropdown.value = "";
-      modalElements.pathwaySelectDropdown.value = "";
-      modalElements.speechTitle.value = logData.agenda_title || "";
+const SpeechModalSetupManager = {
+  populatePathwayDropdown(dropdown) {
+    if (typeof groupedPathways !== 'undefined' && groupedPathways) {
+      populateGroupedDropdown(dropdown, groupedPathways, {
+        defaultOption: "-- Select Pathway --"
+      });
     } else {
-      modalElements.pathwaySelectDropdown.value = defaultPath;
+      const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
+      populateDropdown(dropdown, pathways, {
+        defaultOption: "-- Select Pathway --",
+        valueField: "name",
+        textField: "name",
+      });
     }
-  };
+  },
 
-  const isEvalProject =
-    logData.Project_ID && ProjectID.EVALUATION_PROJECTS.includes(Number(logData.Project_ID));
-  modalElements.isProjectChk.checked = isEvalProject;
+  setupRole(logData, { sessionType }) {
+    modalElements.title.textContent = "Edit Details";
+    modalElements.speechTitle.disabled = true;
+    modalElements.standardSelection.style.display = "none";
+    modalElements.projectGroup.style.display = "none";
+    modalElements.speechTitle.closest('.form-group').style.display = 'none';
+  },
 
-  modalElements.projectModeFields.style.display = isEvalProject ? "block" : "none";
-  modalElements.pathwayGroup.style.display = isEvalProject ? "block" : "none";
+  setupProjectRole(logData, { sessionType, workingPath, projectIds, defaultOption, speechTitleLabelText }) {
+    modalElements.title.textContent = "Edit Details";
+    if (speechTitleLabelText) {
+      modalElements.speechTitleLabel.textContent = speechTitleLabelText;
+    }
+    if (sessionType !== "Evaluation") {
+      modalElements.speechTitle.disabled = true;
+    }
+    modalElements.projectGroup.style.display = "block";
+    modalElements.pathwayGroup.style.display = "block";
 
-  if (isEvalProject) {
-    modalElements.projectSelectDropdown.value = logData.Project_ID;
-    modalElements.pathwaySelectDropdown.value = defaultPath;
-  }
-}
+    const targetProjectIds = Array.isArray(projectIds)
+      ? projectIds.map(Number)
+      : [Number(projectIds)];
 
-function setupSpecialProjectModal(logData, { sessionType, workingPath }) {
-  modalElements.title.textContent = "Edit Details";
-  modalElements.speechTitle.disabled = true;
-  modalElements.projectGroup.style.display = "block";
+    const projectsList = allProjects
+      .filter((p) => targetProjectIds.includes(Number(p.id)))
+      .sort((a, b) => a.id - b.id);
 
-  const PROJECT_IDS = {
-    "Table Topics": ProjectID.TOPICSMASTER_PROJECT,
-    "Panel Discussion": ProjectID.MODERATOR_PROJECT,
-    "Keynote Speech": ProjectID.KEYNOTE_SPEAKER_PROJECT
-  };
-  const targetProjectId = PROJECT_IDS[sessionType];
-  const isProject = logData.Project_ID == targetProjectId;
-  modalElements.isProjectChk.checked = isProject;
-
-  // Populate projects dropdown with only the single available project for this special session
-  const specialProject = allProjects.find((p) => p.id == targetProjectId);
-  const projectsList = specialProject ? [specialProject] : [];
-  populateDropdown(modalElements.projectSelectDropdown, projectsList, {
-    defaultOption: `-- Select ${sessionType} Project --`,
-    valueField: "id",
-    textField: "Project_Name"
-  });
-
-  // Pre-select the project if populated
-  if (projectsList.length > 0) {
-    modalElements.projectSelectDropdown.value = projectsList[0].id;
-  }
-
-  // Populate pathways dropdown
-  if (typeof groupedPathways !== 'undefined' && groupedPathways) {
-    populateGroupedDropdown(modalElements.pathwaySelectDropdown, groupedPathways, {
-      defaultOption: "-- Select Pathway --"
+    populateDropdown(modalElements.projectSelectDropdown, projectsList, {
+      defaultOption: defaultOption,
+      valueField: "id",
+      textField: "Project_Name"
     });
-  } else {
-    const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
-    populateDropdown(modalElements.pathwaySelectDropdown, pathways, {
-      defaultOption: "-- Select Pathway --",
-      valueField: "name",
-      textField: "name",
-    });
-  }
 
-  const defaultPath = workingPath || logData.pathway || "";
-
-  modalElements.isProjectChk.onchange = (e) => {
-    const isChecked = e.target.checked;
-    modalElements.projectModeFields.style.display = isChecked ? "block" : "none";
-    modalElements.pathwayGroup.style.display = isChecked ? "block" : "none";
-    if (modalElements.projectSelectDropdown) {
-      modalElements.projectSelectDropdown.style.display = isChecked ? "block" : "none";
-    }
-    if (!isChecked) {
-      modalElements.pathwaySelectDropdown.value = "";
-      modalElements.projectSelectDropdown.value = "";
-    } else {
-      modalElements.pathwaySelectDropdown.value = defaultPath;
-      if (projectsList.length > 0) {
-        modalElements.projectSelectDropdown.value = projectsList[0].id;
-      }
-    }
-  };
-
-  // Set initial visibility and values
-  modalElements.projectModeFields.style.display = isProject ? "block" : "none";
-  modalElements.pathwayGroup.style.display = isProject ? "block" : "none";
-  if (modalElements.projectSelectDropdown) {
-    modalElements.projectSelectDropdown.style.display = isProject ? "block" : "none";
-  }
-
-  if (isProject) {
-    modalElements.pathwaySelectDropdown.value = defaultPath;
-    if (projectsList.length > 0) {
+    if (projectsList.length === 1) {
       modalElements.projectSelectDropdown.value = projectsList[0].id;
     }
-  }
-}
 
-function setupRoleModal(logData, { sessionType }) {
-  modalElements.title.textContent = "Edit Details";
-  // Hide all speech-specific fields
-  modalElements.speechTitle.disabled = true; // Or hide parent
-  // Actually, for roles we might not even want "Speech Title".
-  // But logic resetModal enables it.
-  
-  // Hide Standard Fields
-  modalElements.standardSelection.style.display = "none";
-  modalElements.projectGroup.style.display = "none";
-  
-  // Also hide the Speech Title label/input row if possible, or just disable it?
-  // User screenshot shows "Ah-Counter Introduction" as title. 
-  // If we want to hide it completely:
-  modalElements.speechTitle.closest('.form-group').style.display = 'none';
-  
-  // Ensure credential is shown (resetModal handles enablement)
-}
+    this.populatePathwayDropdown(modalElements.pathwaySelectDropdown);
 
+    const defaultPath = workingPath || logData.pathway || "Non Pathway";
+    modalElements.pathwaySelectDropdown.value = defaultPath;
 
-function setupSpeechModal(logData, { workingPath, nextProject, sessionType }) {
-  modalElements.title.textContent = "Edit Details";
+    const isProject = logData.Project_ID && targetProjectIds.includes(Number(logData.Project_ID));
+    modalElements.isProjectChk.checked = isProject;
 
-  modalElements.standardSelection.style.display = "block";
-  modalElements.pathwaySelect.required = true;
-  modalElements.pathwayGenericRow.style.display = "block";
-  modalElements.levelSelectGroup.style.display = "block";
-  modalElements.projectSelectGroup.style.display = "block";
-
-  modalElements.labelPathway.textContent = "Pathway:";
-  modalElements.labelProject.textContent = "Project:";
-  modalElements.labelLevel.textContent = "Level:";
-
-
-  if (typeof groupedPathways !== 'undefined' && groupedPathways) {
-    populateGroupedDropdown(modalElements.pathwaySelect, groupedPathways, {
-      defaultOption: "-- Select Pathway --"
-    });
-  } else {
-    const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
-    populateDropdown(modalElements.pathwaySelect, pathways, {
-      defaultOption: "-- Select Pathway --",
-      valueField: "name",
-      textField: "name",
-    });
-  }
-
-  let pathwayToSelect = logData.pathway;
-  let levelToSelect = logData.level;
-  let projectToSelect = logData.Project_ID;
-  const projectCode = logData.project_code || nextProject;
-
-  // REQUIREMENT: Populate path/level/project based on project_code if available and non-generic
-  if (projectToSelect != ProjectID.GENERIC && projectCode && !['TM1.0', '', 'null'].includes(projectCode)) {
-    const codeMatch = projectCode.match(/^([A-Z]+)(\d+(?:\.\d+)?)$/);
-    if (codeMatch) {
-      const abbr = codeMatch[1];
-      const codePart = codeMatch[2];
-
-      const pathwayName = Object.keys(pathwayMap).find(name => pathwayMap[name] === abbr);
-      if (pathwayName) {
-        pathwayToSelect = pathwayName;
-        // Search by code string match
-        const foundProject = allProjects.find(p => p.path_codes[abbr] && String(p.path_codes[abbr].code) === codePart);
-        if (foundProject) {
-          projectToSelect = foundProject.id;
-          levelToSelect = foundProject.path_codes[abbr].level;
+    const toggleFields = (isChecked) => {
+      modalElements.projectModeFields.style.display = isChecked ? "block" : "none";
+      if (modalElements.projectSelectDropdown && sessionType !== "Evaluation") {
+        modalElements.projectSelectDropdown.style.display = isChecked ? "block" : "none";
+      }
+      if (!isChecked) {
+        modalElements.projectSelectDropdown.value = "";
+        if (sessionType === "Evaluation") {
+          modalElements.speechTitle.value = logData.agenda_title || "";
+        }
+      } else {
+        if (projectsList.length === 1) {
+          modalElements.projectSelectDropdown.value = projectsList[0].id;
+        } else if (isProject) {
+          modalElements.projectSelectDropdown.value = logData.Project_ID;
         }
       }
+    };
+
+    modalElements.isProjectChk.onchange = (e) => toggleFields(e.target.checked);
+    toggleFields(isProject);
+  },
+
+  setupSpeech(logData, { workingPath, nextProject, sessionType }) {
+    modalElements.title.textContent = "Edit Details";
+    modalElements.standardSelection.style.display = "block";
+    modalElements.pathwaySelect.required = true;
+    modalElements.pathwayGenericRow.style.display = "block";
+    modalElements.levelSelectGroup.style.display = "block";
+    modalElements.projectSelectGroup.style.display = "block";
+
+    modalElements.labelPathway.textContent = "Pathway:";
+    modalElements.labelProject.textContent = "Project:";
+    modalElements.labelLevel.textContent = "Level:";
+
+    this.populatePathwayDropdown(modalElements.pathwaySelect);
+
+    let pathwayToSelect = logData.pathway;
+    let levelToSelect = logData.level;
+    let projectToSelect = logData.Project_ID;
+    const projectCode = logData.project_code || nextProject;
+
+    // REQUIREMENT: Populate path/level/project based on project_code if available and non-generic
+    if (projectToSelect != ProjectID.GENERIC && projectCode && !['TM1.0', '', 'null'].includes(projectCode)) {
+      const codeMatch = projectCode.match(/^([A-Z]+)(\d+(?:\.\d+)?)$/);
+      if (codeMatch) {
+        const abbr = codeMatch[1];
+        const codePart = codeMatch[2];
+
+        const pathwayName = Object.keys(pathwayMap).find(name => pathwayMap[name] === abbr);
+        if (pathwayName) {
+          pathwayToSelect = pathwayName;
+          const foundProject = allProjects.find(p => p.path_codes[abbr] && String(p.path_codes[abbr].code) === codePart);
+          if (foundProject) {
+            projectToSelect = foundProject.id;
+            levelToSelect = foundProject.path_codes[abbr].level;
+          }
+        }
+      }
+    } else if (!pathwayToSelect && workingPath) {
+      pathwayToSelect = workingPath;
     }
-  } else if (!pathwayToSelect && workingPath) {
-    pathwayToSelect = workingPath;
+
+    if (!pathwayToSelect) {
+      pathwayToSelect = "Non Pathway";
+    }
+
+    // Ensure level value is string type to match dropdown options
+    if (levelToSelect !== undefined && levelToSelect !== null) {
+      levelToSelect = String(levelToSelect);
+    }
+
+    const isGeneric = projectToSelect == ProjectID.GENERIC;
+    modalElements.isProjectCheckbox.checked = !isGeneric;
+    toggleGeneric(isGeneric);
+
+    modalElements.pathwaySelect.value = pathwayToSelect || "";
+
+    if (!isGeneric) {
+      updateLevelOptions();
+      modalElements.levelSelect.value = levelToSelect || "";
+      updateProjectOptions(projectToSelect);
+    }
   }
-
-  // Ensure level value is string type to match dropdown options
-  if (levelToSelect !== undefined && levelToSelect !== null) {
-    levelToSelect = String(levelToSelect);
-  }
-
-  const isGeneric = projectToSelect == ProjectID.GENERIC;
-  modalElements.isProjectCheckbox.checked = !isGeneric;
-  toggleGeneric(isGeneric);
-
-  modalElements.pathwaySelect.value = pathwayToSelect || "";
-
-  if (!isGeneric) {
-    updateLevelOptions();
-    modalElements.levelSelect.value = levelToSelect || "";
-    updateProjectOptions(projectToSelect);
-  }
-}
+};
 
 // --- Dynamic Dropdown Helpers ---
 
@@ -595,22 +535,22 @@ function buildSavePayload() {
   switch (sessionType.value) {
     case "Panel Discussion":
       payload.project_id = isProject ? ProjectID.MODERATOR_PROJECT : null;
-      payload.pathway = isProject ? pathwaySelectDropdown.value || "" : null;
+      payload.pathway = pathwaySelectDropdown.value || "";
       break;
     case "Table Topics":
       payload.project_id = isProject ? ProjectID.TOPICSMASTER_PROJECT : null;
-      payload.pathway = isProject ? pathwaySelectDropdown.value || "" : null;
+      payload.pathway = pathwaySelectDropdown.value || "";
       break;
     case "Keynote Speech":
       payload.project_id = isProject ? ProjectID.KEYNOTE_SPEAKER_PROJECT : null;
-      payload.pathway = isProject ? pathwaySelectDropdown.value || "" : null;
+      payload.pathway = pathwaySelectDropdown.value || "";
       break;
     case "Evaluation":
       payload.project_id =
         isProject && projectSelectDropdown.value
           ? projectSelectDropdown.value
           : null;
-      payload.pathway = isProject ? pathwaySelectDropdown.value || "" : null;
+      payload.pathway = pathwaySelectDropdown.value || "";
       break;
     default:
       // Only include speech-specific fields if the standard selection UI is visible
@@ -632,7 +572,13 @@ function handleSaveSuccess(updateResult, payload) {
   if (window.location.pathname.includes("/agenda")) {
     updateAgendaRow(logId, updateResult, payload);
   } else {
-    updateSpeechLogCard(logId, updateResult, payload);
+    const card = document.getElementById(`log-card-${logId}`);
+    if (card) {
+      updateSpeechLogCard(logId, updateResult, payload);
+    } else {
+      window.location.reload();
+      return;
+    }
   }
   closeSpeechEditModal();
 }
