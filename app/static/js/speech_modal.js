@@ -257,12 +257,19 @@ const SpeechModalSetupManager = {
     }
   },
 
-  setupRole(logData, { sessionType }) {
+  setupRole(logData, { sessionType, workingPath }) {
     modalElements.title.textContent = "Edit Details";
     modalElements.speechTitle.disabled = true;
     modalElements.standardSelection.style.display = "none";
     modalElements.projectGroup.style.display = "none";
     modalElements.speechTitle.closest('.form-group').style.display = 'none';
+
+    // Show pathway dropdown for all roles (unified pathway handling)
+    modalElements.pathwayGroup.style.display = "block";
+    SpeechModalSetupManager.populatePathwayDropdown(modalElements.pathwaySelectDropdown);
+    // Priority: saved log pathway > workingPath > "Non Pathway"
+    const defaultPath = logData.pathway || workingPath || "Non Pathway";
+    modalElements.pathwaySelectDropdown.value = defaultPath;
   },
 
   setupProjectRole(logData, { sessionType, workingPath, projectIds, defaultOption, speechTitleLabelText }) {
@@ -296,7 +303,8 @@ const SpeechModalSetupManager = {
 
     this.populatePathwayDropdown(modalElements.pathwaySelectDropdown);
 
-    const defaultPath = workingPath || logData.pathway || "Non Pathway";
+    // Priority: saved log pathway > owner's working path > "Non Pathway"
+    const defaultPath = logData.pathway || workingPath || "Non Pathway";
     modalElements.pathwaySelectDropdown.value = defaultPath;
 
     const isProject = logData.Project_ID && targetProjectIds.includes(Number(logData.Project_ID));
@@ -553,15 +561,16 @@ function buildSavePayload() {
       payload.pathway = pathwaySelectDropdown.value || "";
       break;
     default:
-      // Only include speech-specific fields if the standard selection UI is visible
-      // (i.e., this is a speech/presentation, not a role like Grammarian/Timer)
+      // Include speech-specific fields if the standard selection UI is visible
       if (modalElements.standardSelection && modalElements.standardSelection.style.display !== "none") {
         const isGeneric = !modalElements.isProjectCheckbox.checked;
         payload.session_title = speechTitle.value;
         payload.project_id = isGeneric ? ProjectID.GENERIC : projectSelect.value || ProjectID.GENERIC;
         payload.pathway = pathwaySelect.value;
+      } else {
+        // For roles (GE, Timer, etc.), send the pathway from the pathway-group dropdown
+        payload.pathway = pathwaySelectDropdown.value || "";
       }
-      // For roles, only credential and media_url (already in base payload) are sent
       break;
   }
   return payload;
@@ -608,6 +617,11 @@ function updateAgendaRow(logId, updateResult, payload) {
       mediaLink.remove();
     }
   };
+
+  // Always sync pathway on the row dataset (unified for all role types)
+  if (updateResult.pathway !== undefined) {
+    agendaRow.dataset.pathway = updateResult.pathway || "";
+  }
 
   if (sessionType === "Individual Evaluator") {
     const titleCell = agendaRow.querySelector(

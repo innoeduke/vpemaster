@@ -1820,11 +1820,13 @@ def get_speech_log_details(log_id):
 
     # Use the helper function to get project code
     project_code = ""
-    pathway_name_to_return = None
-    if log.owner:
-        is_guest_without_user = (log.owner.Type == 'Guest') or (log.owner.user is None)
-        if not is_guest_without_user:
-            pathway_name_to_return = log.owner.Current_Path
+    # Priority: log.pathway (saved selection) > owner's Current_Path > "Non Pathway"
+    pathway_name_to_return = log.pathway
+    if not pathway_name_to_return:
+        if log.owner:
+            is_guest_without_user = (log.owner.Type == 'Guest') or (log.owner.user is None)
+            if not is_guest_without_user:
+                pathway_name_to_return = log.owner.Current_Path
     if not pathway_name_to_return:
         pathway_name_to_return = "Non Pathway"
     level = 1
@@ -1946,11 +1948,7 @@ def update_speech_log(log_id):
     # 2. Use Model Methods for Complex logic
     log.update_media(media_url)
     
-    # RULE: SessionLog.pathway MUST only store pathway-type paths (e.g., "Presentation Mastery").
-    # For Presentations, we force use of the owner's main pathway-type path, 
-    # even if a "Series" (presentation-type path) was selected in the modal for project lookup.
-    is_presentation = updated_project.is_presentation if updated_project else (log.project.is_presentation if log.project else False)
-    
+    # Pathway is now always saved from user selection; no presentation override needed.
 
     # Updated Owner Logic: Handle list of owners
     from .services.role_service import RoleService

@@ -498,8 +498,8 @@ document.addEventListener("DOMContentLoaded", () => {
       row.dataset.durationMax = log.Duration_Max !== null ? log.Duration_Max : '';
       row.dataset.status = log.status || '';
       row.dataset.role = log.role || '';
-      row.dataset.currentPathLevel = log.project_code || '';
-      row.dataset.projectCode = log.project_code || '';
+      row.dataset.currentPathLevel = log.project_code || log.Credentials || '';
+      row.dataset.projectCode = log.project_code || log.Credentials || '';
 
       // --- Set Classes ---
       if (log.is_section) row.classList.add('section-row');
@@ -2217,6 +2217,12 @@ document.addEventListener("DOMContentLoaded", () => {
     row.dataset.currentPathLevel = newPathLevel;
     row.dataset.projectCode = newPathLevel;
     row.dataset.pathway = pathwayName;
+    row.dataset.credentials = newPathLevel;
+
+    const credInput = row.querySelector('[data-field="Credentials"] input');
+    if (credInput) {
+      credInput.value = newPathLevel;
+    }
 
     closeRoleEditModal();
   };

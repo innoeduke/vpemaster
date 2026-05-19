@@ -147,6 +147,9 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
     log_project = db.session.get(Project, project_id) if project_id else None
     is_presentation = log_project is not None and log_project.is_presentation
 
+    # Read pathway early so project_code derivation uses the user's selected pathway
+    early_pathway_val = item.get('pathway') or None
+
     if item.get('id') == 'new':
         log_for_derivation = SessionLog(
             Project_ID=project_id,
@@ -164,7 +167,7 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
         # Note: owners is a read-only property; derive_project_code accepts owner_contact directly
         log_for_derivation.session_type = session_type
 
-    project_code = log_for_derivation.derive_project_code(owner_contact)
+    project_code = log_for_derivation.derive_project_code(owner_contact, pathway_override=early_pathway_val)
         
     # --- Duration Handling ---
     duration_min = safe_int(item.get('duration_min'))
@@ -190,17 +193,18 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
                 duration_max = session_type.Duration_Max
 
     # --- Pathway Logic ---
+    # Unified rule: save whatever the frontend sends. If nothing sent,
+    # default to owner's Current_Path (for members) or "Non Pathway" (for guests/no path).
     pathway_val = item.get('pathway')
-    
-    # RULE: SessionLog.pathway MUST only store pathway-type paths (e.g., "Presentation Mastery").
-    # For Presentations, we force use of the owner's main pathway-type path, 
-    # even if a "Series" (presentation-type path) was selected in the modal for project lookup.
-    if is_presentation:
-        if owner_contact and owner_contact.Current_Path:
-            pathway_val = owner_contact.Current_Path
-    # Fallback for standard sessions if no pathway provided
-    elif not pathway_val and owner_contact and owner_contact.Current_Path:
-        pathway_val = owner_contact.Current_Path
+    if not pathway_val:
+        if owner_contact:
+            is_guest = (owner_contact.Type == 'Guest') or (owner_contact.user is None)
+            if not is_guest and owner_contact.Current_Path:
+                pathway_val = owner_contact.Current_Path
+            else:
+                pathway_val = 'Non Pathway'
+        else:
+            pathway_val = 'Non Pathway'
         
     log = None
     old_owner_id = None
@@ -303,6 +307,26 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
         log.Type_ID = type_id
         log.project_code = project_code
 
+        # Update credentials in OwnerMeetingRoles if provided
+        if credentials and owner_contacts:
+            meeting_id = log.meeting_id
+            session_type = log.session_type
+            role_obj = session_type.role if session_type else None
+            if role_obj and meeting_id:
+                omr_query = OwnerMeetingRoles.query.filter_by(
+                    meeting_id=meeting_id,
+                    role_id=role_obj.id
+                )
+                if role_obj.has_single_owner:
+                    omr_query = omr_query.filter_by(session_log_id=log.id)
+                else:
+                    omr_query = omr_query.filter_by(session_log_id=None)
+                
+                omr_records = omr_query.all()
+                for omr in omr_records:
+                    if omr.contact_id in [c.id for c in owner_contacts]:
+                        omr.credential = credentials
+
 
 
 def _recalculate_start_times(meetings_to_update):
@@ -393,6 +417,13 @@ def _get_processed_logs_data(meeting_id, show_media=False):
     # --- Pre-fetch Pathway Project Data for current meeting logs ---
     project_ids = [log.Project_ID for log in raw_session_logs if log.Project_ID]
     pp_cache = Project.prefetch_context(project_ids)
+
+    # Cache OwnerMeetingRoles credentials for functional roles
+    omr_credentials = {}
+    if meeting_id:
+        omrs = OwnerMeetingRoles.query.filter_by(meeting_id=meeting_id).all()
+        for omr in omrs:
+            omr_credentials[(omr.role_id, omr.contact_id, omr.session_log_id)] = omr.credential
     
     # Pre-fetch potential speakers for DTM check (Evaluation logs)
     evaluator_speaker_names = [
@@ -485,6 +516,18 @@ def _get_processed_logs_data(meeting_id, show_media=False):
             if log.Session_Title in speaker_dtm_cache and speaker_dtm_cache[log.Session_Title]:
                 speaker_is_dtm = True
 
+        role_id = session_type.role_id if (session_type and session_type.role) else None
+        has_single_owner = session_type.role.has_single_owner if (session_type and session_type.role) else True
+        session_log_id = log.id if has_single_owner else None
+
+        def get_owner_credential(o):
+            if not o:
+                return ''
+            custom_cred = omr_credentials.get((role_id, o.id, session_log_id))
+            if custom_cred:
+                return custom_cred
+            return derive_credentials(o)
+
         log_dict = {
             # SessionLog fields
             'id': log.id,
@@ -495,7 +538,7 @@ def _get_processed_logs_data(meeting_id, show_media=False):
             'Session_Title': session_title_for_dict,
             'Type_ID': log.Type_ID,
             'Owner_ID': log.owner.id if log.owners else None,
-            'Credentials': derive_credentials(primary_owner),
+            'Credentials': get_owner_credential(primary_owner),
             'Duration_Min': log.Duration_Min,
             'Duration_Max': log.Duration_Max,
             'Status': log.Status,
@@ -520,7 +563,7 @@ def _get_processed_logs_data(meeting_id, show_media=False):
             'owner_name': " & ".join([o.Name for o in owners]) if owners else (primary_owner.Name if primary_owner else ''),
             # Detailed owner info for modals/logic (could return list)
             'owner_ids': [o.id for o in owners],
-            'owners_data': [{'id': o.id, 'name': o.Name, 'dtm': o.DTM, 'club': o.get_primary_club().club_name if o.get_primary_club() else '', 'credentials': derive_credentials(o)} for o in owners],
+            'owners_data': [{'id': o.id, 'name': o.Name, 'dtm': o.DTM, 'club': o.get_primary_club().club_name if o.get_primary_club() else '', 'credentials': get_owner_credential(o)} for o in owners],
             
             'owner_dtm': primary_owner.DTM if primary_owner else False,
             'owner_type': primary_owner.Type if primary_owner else '',
