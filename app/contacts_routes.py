@@ -288,7 +288,14 @@ def contact_form(contact_id=None):
             
             # Manual overrides for completed paths and DTM if present in form
             if 'completed_paths' in request.form:
-                contact.Completed_Paths = request.form.get('completed_paths')
+                new_completed = request.form.get('completed_paths')
+                if contact.Completed_Paths != new_completed:
+                    if not is_authorized(Permissions.ACHIEVEMENTS_EDIT):
+                        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                            return jsonify(success=False, message="You don't have permission to modify completed paths."), 403
+                        flash("You don't have permission to modify completed paths.", 'error')
+                        return redirect(url_for('contacts_bp.show_contacts'))
+                    contact.Completed_Paths = new_completed
             contact.DTM = 'dtm' in request.form
             
             # Update is_officer flag if user is ClubAdmin

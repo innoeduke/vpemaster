@@ -56,10 +56,16 @@
                     title="View Profile">
                     <i class="fas fa-id-card"></i> Profile
                 </a>
+                {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) or is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+                <button type="button" class="btn-view-control btn-profile-small" id="btnManagePathways"
+                    title="Manage Pathways" onclick="openManagePathwaysModal()">
+                    <i class="fas fa-graduation-cap"></i> Pathways
+                </button>
+                {% endif %}
                 {% if viewed_contact.user_id and viewed_contact.id != current_user.contact_id %}
                 <a href="{{ url_for('messages.messages', recipient_id=viewed_contact.user_id, recipient_name=viewed_contact.Name, mode='new') }}" 
                    class="btn-view-control btn-message-small" title="Send Message">
-                    <i class="fas fa-envelope"></i> Message
+                     <i class="fas fa-envelope"></i> Message
                 </a>
                 {% endif %}
                 {% elif current_user.contact_id == viewed_contact.id %}
@@ -299,6 +305,32 @@
     {% else %}
         <p class="no-logs-message">No activities found matching your criteria.</p>
     {% endif %}
+
+    <!-- Pathways Management Modal -->
+    <div id="pathwaysModal" class="modal-premium" style="display: none; position: fixed; z-index: 1100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); align-items: center; justify-content: center;">
+        <div class="modal-content-premium" style="background: linear-gradient(135deg, #1e293b, #0f172a); color: #f8fafc; border-radius: 16px; padding: 24px; width: 550px; max-width: 90%; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3), 0 10px 10px -5px rgba(0,0,0,0.04); border: 1px solid rgba(255,255,255,0.1); position: relative; animation: slideDown 0.3s ease-out; margin: auto;">
+            <span class="close-premium" onclick="closeManagePathwaysModal()" style="position: absolute; right: 20px; top: 15px; font-size: 24px; cursor: pointer; color: #94a3b8; transition: color 0.2s;">&times;</span>
+            <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 1.5rem; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; display: flex; align-items: center; gap: 10px; color: #f8fafc;">
+                <i class="fas fa-graduation-cap" style="color: #38bdf8;"></i> Manage Pathways
+            </h3>
+            
+            <div id="pathwaysListContainer" style="margin-bottom: 24px; min-height: 100px;">
+                <!-- Dynamic pathways list loaded here -->
+            </div>
+
+            {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
+            <div class="register-pathway-section" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;">
+                <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 1.1rem; color: #e2e8f0;">Register New Pathway</h4>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <select id="newPathwaySelect" style="flex: 1; background: #334155; border: 1px solid #475569; color: #f8fafc; padding: 8px 12px; border-radius: 8px; font-size: 0.95rem;">
+                        <option value="">-- Choose a pathway --</option>
+                    </select>
+                    <button type="button" class="btn-premium" onclick="registerNewPathway()" style="background: #0284c7; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 500; cursor: pointer; transition: background 0.2s; white-space: nowrap;">Register</button>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}
 
 {% block speech_log_scripts %}
@@ -328,6 +360,197 @@
             };
         }
     });
+
+    const contactId = {{ viewed_contact.id }};
+    const canEditAchievements = {{ 'true' if is_authorized(Permissions.ACHIEVEMENTS_EDIT) else 'false' }};
+    const canEditDefault = {{ 'true' if is_authorized(Permissions.CONTACT_BOOK_EDIT) else 'false' }};
+
+    function openManagePathwaysModal() {
+        document.getElementById("pathwaysModal").style.display = "flex";
+        loadContactPathways();
+    }
+
+    function closeManagePathwaysModal() {
+        document.getElementById("pathwaysModal").style.display = "none";
+        if (window.pathwaysChanged) {
+            location.reload();
+        }
+    }
+
+    // Close when clicking outside modal content
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById("pathwaysModal");
+        if (event.target == modal) {
+            closeManagePathwaysModal();
+        }
+    });
+
+    function loadContactPathways() {
+        const listContainer = document.getElementById("pathwaysListContainer");
+        listContainer.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 20px;">Loading pathways...</div>';
+        
+        fetch(`/api/contacts/${contactId}/pathways`)
+            .then(res => res.json())
+            .then(data => {
+                if (!data.success) {
+                    listContainer.innerHTML = `<div style="color: #f87171; padding: 10px;">Error: ${data.message}</div>`;
+                    return;
+                }
+                
+                // Render pathways
+                if (data.registered.length === 0) {
+                    listContainer.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">No pathways registered for this contact.</div>';
+                } else {
+                    let html = `
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; color: #94a3b8; font-size: 0.85rem;">
+                                    <th style="padding: 8px 4px; width: 60px; text-align: center;">Default</th>
+                                    <th style="padding: 8px 4px;">Pathway</th>
+                                    <th style="padding: 8px 4px; width: 100px;">Status</th>
+                                    <th style="padding: 8px 4px; text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    data.registered.forEach(cp => {
+                        const statusColor = cp.status === 'completed' ? '#059669' : '#d97706';
+                        const statusText = cp.status.charAt(0).toUpperCase() + cp.status.slice(1);
+                        const pathAbbr = cp.pathway_abbr ? cp.pathway_abbr.toLowerCase() : 'other';
+                        
+                        const radioChecked = cp.is_default ? 'checked' : '';
+                        const radioDisabled = !canEditDefault ? 'disabled' : '';
+                        
+                        let actionsHtml = '';
+                        if (canEditAchievements) {
+                            if (cp.status === 'working') {
+                                actionsHtml += `
+                                    <button type="button" onclick="completePathway(${cp.path_id}, '${cp.pathway_name}')" style="background: #059669; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; transition: opacity 0.2s; font-weight: 500;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">Complete</button>
+                                `;
+                            }
+                            actionsHtml += `
+                                <button type="button" onclick="deregisterPathway(${cp.path_id}, '${cp.pathway_name}')" style="background: #dc2626; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; cursor: pointer; transition: opacity 0.2s; font-weight: 500;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">Remove</button>
+                            `;
+                        } else {
+                            actionsHtml = '<span style="color: #64748b; font-size: 0.8rem; font-style: italic;">None</span>';
+                        }
+                        
+                        html += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background-color 0.2s;">
+                                <td style="padding: 10px 4px; text-align: center; vertical-align: middle;">
+                                    <input type="radio" name="default_pathway_radio" ${radioChecked} ${radioDisabled} onclick="setDefaultPathway(${cp.path_id}, '${cp.pathway_name}')" style="cursor: ${canEditDefault ? 'pointer' : 'not-allowed'}; transform: scale(1.15);">
+                                </td>
+                                <td style="padding: 10px 4px; vertical-align: middle; font-weight: 500; font-size: 0.95rem;">
+                                    <span class="badge-path path-${pathAbbr}" style="margin-right: 6px; padding: 3px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">${cp.pathway_abbr}</span>
+                                    ${cp.pathway_name}
+                                </td>
+                                <td style="padding: 10px 4px; vertical-align: middle;">
+                                    <span style="background: ${statusColor}; color: white; border-radius: 4px; padding: 2px 6px; font-size: 0.75rem; font-weight: 600;">${statusText}</span>
+                                </td>
+                                <td style="padding: 10px 4px; text-align: right; vertical-align: middle;">
+                                    <div style="display: flex; gap: 6px; justify-content: flex-end; align-items: center;">
+                                        ${actionsHtml}
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                            </tbody>
+                        </table>
+                    `;
+                    listContainer.innerHTML = html;
+                }
+                
+                // Populate available pathways select dropdown
+                const selectEl = document.getElementById("newPathwaySelect");
+                if (selectEl) {
+                    selectEl.innerHTML = '<option value="">-- Choose a pathway --</option>';
+                    data.available.forEach(p => {
+                        const opt = document.createElement("option");
+                        opt.value = p.id;
+                        opt.textContent = `${p.name} (${p.abbr})`;
+                        selectEl.appendChild(opt);
+                    });
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                listContainer.innerHTML = `<div style="color: #f87171; padding: 10px;">Network error loading pathways.</div>`;
+            });
+    }
+
+    function registerNewPathway() {
+        const selectEl = document.getElementById("newPathwaySelect");
+        const pathwayId = selectEl.value;
+        if (!pathwayId) return;
+        
+        fetch(`/api/contacts/${contactId}/pathways/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pathway_id: parseInt(pathwayId) })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadContactPathways();
+                window.pathwaysChanged = true;
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+
+    function completePathway(pathwayId, pathwayName) {
+        if (!confirm(`Are you sure you want to complete the pathway: ${pathwayName}?`)) return;
+        
+        fetch(`/api/contacts/${contactId}/pathways/${pathwayId}/complete`, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadContactPathways();
+                window.pathwaysChanged = true;
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+
+    function setDefaultPathway(pathwayId, pathwayName) {
+        fetch(`/api/contacts/${contactId}/pathways/${pathwayId}/set_default`, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadContactPathways();
+                window.pathwaysChanged = true;
+            } else {
+                alert(data.message);
+            }
+        });
+    }
+
+    function deregisterPathway(pathwayId, pathwayName) {
+        if (!confirm(`Are you sure you want to remove the pathway: ${pathwayName}? All metadata associated with it in this contact's record will be affected.`)) return;
+        
+        fetch(`/api/contacts/${contactId}/pathways/${pathwayId}/deregister`, {
+            method: 'POST'
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                loadContactPathways();
+                window.pathwaysChanged = true;
+            } else {
+                alert(data.message);
+            }
+        });
+    }
 </script>
 {% endblock %}
 

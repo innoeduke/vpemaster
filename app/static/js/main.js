@@ -160,12 +160,46 @@ function openContactModal(contactId) {
         document.getElementById("phone_number").value =
           data.contact.Phone_Number || "";
 
-        let bioText = data.contact.Bio || "";
-        bioText = bioText.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
-        document.getElementById("bio").value = bioText;
-        document.getElementById("completed_paths").value =
-          data.contact.Completed_Paths || "";
-        document.getElementById("dtm").checked = data.contact.DTM;
+         let bioText = data.contact.Bio || "";
+         bioText = bioText.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
+         document.getElementById("bio").value = bioText;
+         
+         const completedPathsEl = document.getElementById("completed_paths");
+         if (completedPathsEl) {
+           if (completedPathsEl.tagName === 'SELECT') {
+             // De-select all first
+             Array.from(completedPathsEl.options).forEach(opt => opt.selected = false);
+             const completedVal = data.contact.Completed_Paths || "";
+             const parts = completedVal.split('/').map(p => p.trim().replace(/\d+$/, '').toUpperCase());
+             
+             // Mapping of pathway abbreviations to full names
+             const abbrToName = {
+               'DL': 'Dynamic Leadership',
+               'EC': 'Effective Coaching',
+               'EH': 'Engaging Humor',
+               'IP': 'Innovative Planning',
+               'LD': 'Leadership Development',
+               'MS': 'Motivational Strategies',
+               'PI': 'Persuasive Influence',
+               'PM': 'Presentation Mastery',
+               'SR': 'Strategic Relationships',
+               'TC': 'Team Collaboration',
+               'VC': 'Visionary Communication'
+             };
+             
+             const completedNames = parts.map(abbr => abbrToName[abbr] || abbr);
+             Array.from(completedPathsEl.options).forEach(opt => {
+               const val = opt.value.toLowerCase();
+               const txt = opt.text.toLowerCase();
+               if (completedNames.some(name => name.toLowerCase() === val || name.toLowerCase() === txt)) {
+                 opt.selected = true;
+               }
+             });
+           } else {
+             completedPathsEl.value = data.contact.Completed_Paths || "";
+           }
+         }
+         document.getElementById("dtm").checked = data.contact.DTM;
         const officerCheckbox = document.getElementById("is_officer");
         if (officerCheckbox) {
           officerCheckbox.checked = data.contact.is_officer;

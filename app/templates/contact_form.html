@@ -36,8 +36,30 @@
         </tr>
         <tr>
             <td><label for="completed_paths">Completed Paths:</label></td>
-            <td><input type="text" id="completed_paths" name="completed_paths"
-                    value="{{ contact.Completed_Paths if contact else '' }}" placeholder="e.g., PM1, DL2..."></td>
+            <td>
+                {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
+                <select id="completed_paths" name="completed_paths" multiple style="width: 100%; height: 100px;">
+                    {% for type, p_list in pathways.items() %}
+                    <optgroup label="{{ type }}">
+                        {% for pathway in p_list %}
+                        {% set ns = namespace(selected=false) %}
+                        {% if contact %}
+                            {% for cp in contact.registered_paths %}
+                                {% if cp.status == 'completed' and cp.pathway and cp.pathway.name == pathway %}
+                                    {% set ns.selected = true %}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        <option value="{{ pathway }}" {% if ns.selected %}selected{% endif %}>{{ pathway }}</option>
+                        {% endfor %}
+                    </optgroup>
+                    {% endfor %}
+                </select>
+                {% else %}
+                <input type="text" id="completed_paths" name="completed_paths" readonly
+                       value="{{ contact.Completed_Paths if contact else '' }}" placeholder="Derived from Achievements">
+                {% endif %}
+            </td>
         </tr>
         <tr>
             <td><label for="dtm">DTM:</label></td>
