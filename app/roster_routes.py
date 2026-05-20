@@ -84,6 +84,8 @@ def roster():
              selected_meeting = None
  
         if selected_meeting:
+            Roster.convert_expired_early_birds(selected_meeting_id)
+
             # Get roster entries for this meeting (including unallocated entries)
             roster_entries = Roster.query\
                 .options(db.joinedload(Roster.roles), db.joinedload(Roster.ticket))\

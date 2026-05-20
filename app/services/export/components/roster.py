@@ -11,6 +11,8 @@ class RosterComponent(BaseExportComponent):
         ws.append(headers)
         ExportFormatter.apply_header_style(ws, ws.max_row)
         
+        Roster.convert_expired_early_birds(context.meeting_id)
+        
         roster_entries = Roster.query.options(orm.joinedload(Roster.contact), orm.joinedload(Roster.ticket)).filter_by(
             meeting_id=context.meeting_id).order_by(Roster.order_number).all()
             

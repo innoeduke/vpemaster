@@ -14,6 +14,7 @@ from config import Config
 class TestConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_ENGINE_OPTIONS = {}
     WTF_CSRF_ENABLED = False
     LOGIN_DISABLED = True
 
@@ -30,10 +31,14 @@ class TestVerifyRosterLogic(unittest.TestCase):
         self.officer_contact = Contact(Name="Test Officer", Type="Officer")
         self.member_contact = Contact(Name="Test Member", Type="Member")
         self.guest_contact = Contact(Name="Test Guest", Type="Guest")
-        
         self.role = MeetingRole(name="Test Role", type="functionary", needs_approval=False, has_single_owner=False)
         
-        db.session.add_all([self.officer_contact, self.member_contact, self.guest_contact, self.role])
+        from app.models import ContactClub
+        cc_officer = ContactClub(contact=self.officer_contact, club_id=1, is_officer=True)
+        cc_member = ContactClub(contact=self.member_contact, club_id=1, is_officer=False)
+        cc_guest = ContactClub(contact=self.guest_contact, club_id=1, is_officer=False)
+        
+        db.session.add_all([self.officer_contact, self.member_contact, self.guest_contact, self.role, cc_officer, cc_member, cc_guest])
         
         # Seed Tickets
         from app.models import Ticket, Meeting
@@ -82,6 +87,63 @@ class TestVerifyRosterLogic(unittest.TestCase):
         guest_entry = Roster.query.filter_by(meeting_id=self.meeting.id, contact_id=self.guest_contact.id).first()
         self.assertIsNone(guest_entry.order_number)
         self.assertEqual(guest_entry.ticket.name, "Role-taker")
+
+    def test_convert_expired_early_birds(self):
+        """Verify that expired Early-bird tickets without order_number are converted to Walk-in tickets"""
+        from app.models import Ticket, Roster
+        from datetime import time
+        
+        # 1. Create a Walk-in ticket
+        walk_in_ticket = Ticket.get_by_name(name="Walk-in", type="Guest", club_id=1)
+        if not walk_in_ticket:
+            walk_in_ticket = Ticket(name="Walk-in", type="Guest", price=40.0, club_id=1)
+            db.session.add(walk_in_ticket)
+            
+        # 2. Get the Early-bird ticket and set its price and expired_at time
+        early_bird_ticket = Ticket.get_by_name(name="Early-bird", type="Member", club_id=1)
+        early_bird_ticket.price = 20.0
+        early_bird_ticket.expired_at = time(12, 0)
+        
+        db.session.commit()
+        
+        # 3. Create Roster entries
+        # Entry A: Early-bird ticket, order_number = None (Should be converted)
+        entry_a = Roster(
+            meeting_id=self.meeting.id,
+            contact_id=self.member_contact.id,
+            ticket_id=early_bird_ticket.id,
+            order_number=None
+        )
+        # Entry B: Early-bird ticket, order_number = 123 (Should NOT be converted)
+        entry_b = Roster(
+            meeting_id=self.meeting.id,
+            contact_id=self.officer_contact.id,
+            ticket_id=early_bird_ticket.id,
+            order_number=123
+        )
+        
+        db.session.add_all([entry_a, entry_b])
+        db.session.commit()
+        
+        # Verify initial prices are early-bird price (¥20.0)
+        self.assertEqual(entry_a.amount, 20.0)
+        self.assertEqual(entry_b.amount, 20.0)
+        
+        # 4. Trigger conversion
+        Roster.convert_expired_early_birds(self.meeting.id)
+        
+        # Refresh from DB
+        db.session.refresh(entry_a)
+        db.session.refresh(entry_b)
+        
+        # 5. Assertions
+        # Entry A should be converted to Walk-in ticket (price ¥40.0)
+        self.assertEqual(entry_a.ticket_id, walk_in_ticket.id)
+        self.assertEqual(entry_a.amount, 40.0)
+        
+        # Entry B should remain Early-bird (price ¥20.0)
+        self.assertEqual(entry_b.ticket_id, early_bird_ticket.id)
+        self.assertEqual(entry_b.amount, 20.0)
 
 if __name__ == '__main__':
     unittest.main()

@@ -15,6 +15,7 @@ from sqlalchemy import func
 class TestConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_ENGINE_OPTIONS = {}
     WTF_CSRF_ENABLED = False
     LOGIN_DISABLED = True
 
@@ -41,9 +42,14 @@ class TestRosterAssignment(unittest.TestCase):
         self.member_contact = Contact(Name="Test Member", Type="Member")
         self.guest_contact = Contact(Name="Test Guest", Type="Guest")
         
+        from app.models import ContactClub
+        cc_officer = ContactClub(contact=self.officer_contact, club_id=self.club.id, is_officer=True)
+        cc_member = ContactClub(contact=self.member_contact, club_id=self.club.id, is_officer=False)
+        cc_guest = ContactClub(contact=self.guest_contact, club_id=self.club.id, is_officer=False)
+        
         self.role = MeetingRole(name="Test Role", type="functionary", needs_approval=False, has_single_owner=False)
         
-        db.session.add_all([self.officer_contact, self.member_contact, self.guest_contact, self.role])
+        db.session.add_all([self.officer_contact, self.member_contact, self.guest_contact, self.role, cc_officer, cc_member, cc_guest])
         
         # Seed Tickets
         from app.models import Ticket

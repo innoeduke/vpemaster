@@ -21,6 +21,7 @@ def app():
         import tempfile
         db_fd, db_path = tempfile.mkstemp()
         SQLALCHEMY_DATABASE_URI = f'sqlite:///{db_path}'
+        SQLALCHEMY_ENGINE_OPTIONS = {}
         WTF_CSRF_ENABLED = False
         SERVER_NAME = 'localhost.localdomain'
         PRESERVE_CONTEXT_ON_EXCEPTION = False

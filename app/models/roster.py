@@ -136,6 +136,40 @@ class Roster(db.Model):
             # Delete roster entries
             cls.query.filter(cls.id.in_(roster_ids)).delete(synchronize_session=False)
 
+    @classmethod
+    def convert_expired_early_birds(cls, meeting_id):
+        """
+        Check if the Early-bird ticket for the meeting's club has expired.
+        If expired, convert any roster entries for this meeting that have 
+        an Early-bird ticket and no order_number to Walk-in tickets.
+        """
+        from .meeting import Meeting
+        from .ticket import Ticket
+        
+        meeting = db.session.get(Meeting, meeting_id)
+        if not meeting:
+            return
+            
+        club_id = meeting.club_id
+        tickets = Ticket.get_all_for_club(club_id)
+        tickets_map = {t.name: t for t in tickets}
+        
+        early_bird = tickets_map.get('Early-bird')
+        walk_in = tickets_map.get('Walk-in')
+        
+        if early_bird and walk_in and early_bird.is_expired(meeting.Meeting_Date):
+            # Find all roster entries for this meeting with early-bird ticket and no order_number
+            unpaid_entries = cls.query.filter_by(
+                meeting_id=meeting_id,
+                ticket_id=early_bird.id,
+                order_number=None
+            ).all()
+            
+            if unpaid_entries:
+                for entry in unpaid_entries:
+                    entry.ticket_id = walk_in.id
+                db.session.commit()
+
     @staticmethod
     def sync_role_assignment(meeting_id, contact_id, role_obj, action):
         """
