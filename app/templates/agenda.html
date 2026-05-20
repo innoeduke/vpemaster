@@ -239,6 +239,7 @@
                     data-status="{{ log_dict.status if log_dict.status else '' }}" data-role="{{ log_dict.role or '' }}"
                     data-project-code="{{ log_dict.project_code or '' }}" data-pathway="{{ log_dict.pathway or '' }}"
                     data-owner-ids='{{ log_dict.owner_ids|tojson|safe }}'
+                    data-owner-targets='{{ log_dict.owner_targets|tojson|safe }}'
                     class="{{ 'section-row' if log_dict.is_section else '' }} {{ 'hidden-row' if log_dict.is_hidden else '' }} {{ 'readonly-row' if log_dict.is_readonly|default(false) else '' }}">
 
                     {# --- Row Content using log_dict --- #}
@@ -428,7 +429,6 @@
     {% include '_speech_edit_modal.html' %}
     {% include '_contact_modal.html' %}
     {% include '_duplicate_modal.html' %}
-    {% include 'role_modal.html' %}
     {% include '_meeting_details_modal.html' %}
 
     <script>

@@ -258,8 +258,14 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
                 log.hidden = item['is_hidden']
             
             # Use log.update_pathway for consistent sync logic
-            if pathway_val:
-                log.update_pathway(pathway_val)
+            is_prepared_speech = session_type and session_type.Title == 'Prepared Speech'
+            is_project = (session_type and session_type.Valid_for_Project and project_id and project_id != ProjectID.GENERIC) or is_prepared_speech
+
+            if is_project:
+                if pathway_val:
+                    log.update_pathway(pathway_val)
+            else:
+                log.update_pathway(None)
 
     # Use shared assignment logic if owner changed or it's a new log with an owner
     # For multi-owner, we check if the set of owners changed
@@ -311,22 +317,18 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
         # Per-owner targets take priority over shared credential
         owner_targets = item.get('owner_targets') or {}
         if (credentials or owner_targets) and owner_contacts:
-            meeting_id = log.meeting_id
-            session_type = log.session_type
             role_obj = session_type.role if session_type else None
             if role_obj and meeting_id:
-                omr_query = OwnerMeetingRoles.query.filter_by(
+                omr_records = OwnerMeetingRoles.query.filter_by(
                     meeting_id=meeting_id,
                     role_id=role_obj.id
-                )
-                if role_obj.has_single_owner:
-                    omr_query = omr_query.filter_by(session_log_id=log.id)
-                else:
-                    omr_query = omr_query.filter_by(session_log_id=None)
-                
-                omr_records = omr_query.all()
+                ).all()
                 for omr in omr_records:
                     if omr.contact_id in [c.id for c in owner_contacts]:
+                        # For single owner roles, ensure it matches this specific session log
+                        if role_obj.has_single_owner and omr.session_log_id != log.id:
+                            continue
+                        
                         contact_str = str(omr.contact_id)
                         # We use owner_targets for pathway and level
                         if contact_str in owner_targets:
@@ -334,11 +336,8 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
                             if target:
                                 omr.target_pathway = target.get('pathway')
                                 omr.target_level = target.get('level')
-                        else:
-                            # We keep credentials for backwards compatibility
-                            # though it should ideally be stored in omr.credential if it's an education credential
-                            # We won't blindly overwrite target_pathway with credentials as they are different semantics now
-                            pass
+                        if credentials:
+                            omr.credential = credentials
 
 
 
@@ -431,12 +430,25 @@ def _get_processed_logs_data(meeting_id, show_media=False):
     project_ids = [log.Project_ID for log in raw_session_logs if log.Project_ID]
     pp_cache = Project.prefetch_context(project_ids)
 
-    # Cache OwnerMeetingRoles credentials for functional roles
+    # Cache OwnerMeetingRoles credentials and targets for functional roles
     omr_credentials = {}
+    omr_targets = {}
     if meeting_id:
         omrs = OwnerMeetingRoles.query.filter_by(meeting_id=meeting_id).all()
         for omr in omrs:
             omr_credentials[(omr.role_id, omr.contact_id, omr.session_log_id)] = omr.credential
+            if omr.session_log_id is not None:
+                if (omr.role_id, omr.contact_id, None) not in omr_credentials:
+                    omr_credentials[(omr.role_id, omr.contact_id, None)] = omr.credential
+            if omr.target_pathway:
+                target_data = {
+                    'pathway': omr.target_pathway,
+                    'level': omr.target_level
+                }
+                omr_targets[(omr.role_id, omr.contact_id, omr.session_log_id)] = target_data
+                if omr.session_log_id is not None:
+                    if (omr.role_id, omr.contact_id, None) not in omr_targets:
+                        omr_targets[(omr.role_id, omr.contact_id, None)] = target_data
     
     # Pre-fetch potential speakers for DTM check (Evaluation logs)
     evaluator_speaker_names = [
@@ -533,6 +545,15 @@ def _get_processed_logs_data(meeting_id, show_media=False):
         has_single_owner = session_type.role.has_single_owner if (session_type and session_type.role) else True
         session_log_id = log.id if has_single_owner else None
 
+        session_owner_targets = {}
+        if role_id:
+            for o in owners:
+                target = omr_targets.get((role_id, o.id, log.id))
+                if not target:
+                    target = omr_targets.get((role_id, o.id, None))
+                if target:
+                    session_owner_targets[str(o.id)] = target
+
         def get_owner_credential(o):
             if not o:
                 return ''
@@ -551,6 +572,7 @@ def _get_processed_logs_data(meeting_id, show_media=False):
             'Session_Title': session_title_for_dict,
             'Type_ID': log.Type_ID,
             'Owner_ID': log.owner.id if log.owners else None,
+            'owner_targets': session_owner_targets,
             'Credentials': get_owner_credential(primary_owner),
             'Duration_Min': log.Duration_Min,
             'Duration_Max': log.Duration_Max,

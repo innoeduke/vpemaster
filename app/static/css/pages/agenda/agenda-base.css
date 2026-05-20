@@ -1490,3 +1490,20 @@ a.owner-link:hover {
 .role-owners-scroll-hint.visible {
 	display: block;
 }
+
+/* Make Session Title column clickable to Edit Details */
+td.non-edit-mode-cell.col-session {
+	cursor: pointer;
+	position: relative;
+	transition: background-color 0.2s ease;
+}
+
+td.non-edit-mode-cell.col-session:hover {
+	background-color: #f8fafc;
+}
+
+/* Ensure links inside the cell still behave as links but don't prevent clicking the rest of the cell */
+td.non-edit-mode-cell.col-session a {
+	position: relative;
+	z-index: 2;
+}

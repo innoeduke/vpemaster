@@ -85,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
         GLOBAL_CLUB_ID = data.global_club_id || 1; // Update from server response
 
         // Make data available globally for speech_modal.js, which expects them as globals
+        window.allContacts = allContacts;
         window.allProjects = allProjects;
         window.pathways = data.pathways;
         window.pathwayMap = data.pathway_mapping;
@@ -276,6 +277,19 @@ document.addEventListener("DOMContentLoaded", () => {
       tableBody.addEventListener("click", (event) => {
         if (event.target.closest(".delete-btn")) {
           deleteLogRow(event.target.closest("tr"));
+          return;
+        }
+
+        const colSession = event.target.closest(".col-session");
+        if (colSession && !isEditing && editBtn) {
+          // If the user clicked a link (a element) inside the session column, don't trigger the modal
+          if (event.target.closest("a")) {
+            return;
+          }
+          const row = colSession.closest("tr");
+          if (row) {
+            handleSessionTitleClick(row);
+          }
         }
       });
     }
@@ -341,6 +355,53 @@ document.addEventListener("DOMContentLoaded", () => {
 
         submitForm(false);
       });
+    }
+  }
+
+  function handleSessionTitleClick(row) {
+    if (isEditing) return;
+    if (!editBtn) return;
+    if (allSessionTypes.length === 0) return;
+
+    const logId = row.dataset.id;
+    if (!logId || logId === "new") return;
+
+    const typeId = row.dataset.typeId;
+    const sessionType = allSessionTypes.find((st) => st.id == typeId);
+    if (!sessionType) return;
+
+    const hasRole = sessionType.Role && sessionType.Role.trim() !== "";
+    const rolesToHideFor = [
+      allMeetingRoles.PREPARED_SPEAKER
+        ? allMeetingRoles.PREPARED_SPEAKER.name
+        : "Prepared Speaker",
+      "Table Topics",
+    ];
+
+    const shouldShowProjectButton =
+      sessionType.Valid_for_Project || sessionType.Title === "Table Topics";
+    const shouldShowRoleButton =
+      hasRole && !rolesToHideFor.includes(sessionType.Role);
+
+    if (shouldShowProjectButton) {
+      const ownerId = row.dataset.ownerId;
+      const contact = allContacts.find((c) => c.id == ownerId);
+      let currentPath = null;
+      if (contact) {
+        const isGuestWithoutUser = (contact.Type === "Guest");
+        if (!isGuestWithoutUser && contact.Current_Path) {
+          currentPath = contact.Current_Path;
+        } else {
+          currentPath = "Non Pathway";
+        }
+      } else {
+        currentPath = "Non Pathway";
+      }
+      const nextProject = contact ? contact.Next_Project : null;
+      const sessionTypeTitle = sessionType.Title || null;
+      openSpeechEditModal(logId, currentPath, sessionTypeTitle, nextProject);
+    } else if (shouldShowRoleButton) {
+      openSpeechEditModal(logId);
     }
   }
 
@@ -500,6 +561,8 @@ document.addEventListener("DOMContentLoaded", () => {
       row.dataset.role = log.role || '';
       row.dataset.currentPathLevel = log.project_code || log.Credentials || '';
       row.dataset.projectCode = log.project_code || log.Credentials || '';
+      row.dataset.pathway = log.pathway || '';
+      row.dataset.ownerTargets = JSON.stringify(log.owner_targets || {});
 
       // --- Set Classes ---
       if (log.is_section) row.classList.add('section-row');
@@ -522,7 +585,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 2. Session Title (Complex Logic)
         const tdSession = document.createElement('td');
-        tdSession.className = 'non-edit-mode-cell';
+        tdSession.className = 'non-edit-mode-cell col-session';
         const tooltipWrapper = document.createElement('div');
         tooltipWrapper.className = 'speech-tooltip-wrapper';
 
@@ -2082,7 +2145,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (logId === "new") {
             saveChanges();
           } else {
-            openRoleEditModal(logId);
+            openSpeechEditModal(logId);
           }
         };
       }
@@ -2117,243 +2180,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return cell;
   }
 
-  window.openRoleEditModal = function (logId) {
-    const row = tableBody.querySelector(`tr[data-id="${logId}"]`);
-    if (!row) return;
 
-    const roleName = row.dataset.role || "N/A";
-
-    document.getElementById("edit-role-log-id").value = logId;
-    document.getElementById("role-name-display").textContent = roleName;
-
-    // Get all owner IDs for this row
-    let ownerIds = [];
-    try {
-      ownerIds = JSON.parse(row.dataset.ownerIds || "[]");
-    } catch (e) {
-      const singleId = row.dataset.ownerId;
-      if (singleId) ownerIds = [singleId];
-    }
-    if (ownerIds.length === 0) {
-      const singleId = row.dataset.ownerId;
-      if (singleId) ownerIds = [singleId];
-    }
-
-    // Parse existing per-owner targets if available
-    let existingOwnerTargets = {};
-    try {
-      existingOwnerTargets = JSON.parse(row.dataset.ownerTargets || "{}");
-    } catch (e) { /* ignore */ }
-
-    // Fallback: use the shared credential for all owners
-    const sharedCredential = (row.dataset.projectCode || row.dataset.currentPathLevel || "").trim();
-
-    // Build the scrollable owner cards
-    const scrollContainer = document.getElementById("role-owners-scroll");
-    scrollContainer.innerHTML = "";
-
-    // Helper: build a pathway <select> with grouped options
-    function buildPathwaySelect() {
-      const sel = document.createElement("select");
-      sel.className = "role-card-pathway";
-      sel.innerHTML = '<option value="">-- Select Pathway --</option>';
-      if (typeof groupedPathways !== "undefined") {
-        for (const [groupLabel, items] of Object.entries(groupedPathways)) {
-          const optgroup = document.createElement("optgroup");
-          optgroup.label = groupLabel;
-          items.forEach((item) => {
-            const value = typeof item === "object" ? item.name : item;
-            const text = typeof item === "object" ? item.name : item;
-            optgroup.appendChild(new Option(text, value));
-          });
-          sel.appendChild(optgroup);
-        }
-      } else if (typeof pathwayMap !== "undefined") {
-        Object.keys(pathwayMap).forEach((name) => {
-          sel.appendChild(new Option(name, name));
-        });
-      }
-      return sel;
-    }
-
-    // Helper: build a level <select>
-    function buildLevelSelect() {
-      const sel = document.createElement("select");
-      sel.className = "role-card-level";
-      sel.innerHTML = '<option value="">-- Select Level --</option>';
-      for (let i = 1; i <= 5; i++) {
-        sel.appendChild(new Option(`Level ${i}`, i));
-      }
-      return sel;
-    }
-
-    // Helper: determine default pathway + level for an owner
-    function getOwnerDefaults(ownerId) {
-      let pathway = "";
-      let level = "";
-
-      // 1. Check per-owner saved target first
-      const savedTarget = existingOwnerTargets[ownerId];
-      if (savedTarget && savedTarget.pathway) {
-        pathway = savedTarget.pathway;
-        level = savedTarget.level || "1";
-      }
-
-      // 2. Fallback to row pathway
-      if (!pathway) {
-        pathway = (row.dataset.pathway || "").trim();
-      }
-
-      // 3. Fallback to contact data
-      const contact = allContacts.find((c) => c.id == ownerId);
-      if (contact) {
-        if (!pathway) {
-          if (contact.Type === "Guest" || !contact.Current_Path) {
-            pathway = "Non Pathway";
-          } else {
-            pathway = contact.Current_Path;
-          }
-        }
-        if (!level) {
-          const levelMatch = (contact.Credentials || "").match(/\d+/);
-          if (levelMatch) {
-            level = Math.min(parseInt(levelMatch[0], 10) + 1, 5).toString();
-          } else {
-            level = "1";
-          }
-        }
-      }
-
-      if (!pathway) pathway = "Non Pathway";
-      if (pathway === "Non Pathway") {
-        level = "";
-      } else if (!level) {
-        level = "1";
-      }
-
-      return { pathway, level };
-    }
-
-    // Create one card per owner
-    ownerIds.forEach((ownerId) => {
-      const contact = allContacts.find((c) => c.id == ownerId);
-      const ownerName = contact ? contact.Name : `Owner #${ownerId}`;
-      const defaults = getOwnerDefaults(ownerId);
-
-      const card = document.createElement("div");
-      card.className = "role-owner-card";
-      card.dataset.ownerId = ownerId;
-
-      // Owner name header
-      const nameDiv = document.createElement("div");
-      nameDiv.className = "card-owner-name";
-      nameDiv.textContent = ownerName;
-      card.appendChild(nameDiv);
-
-      // Pathway
-      const pathGroup = document.createElement("div");
-      pathGroup.className = "form-group";
-      const pathLabel = document.createElement("label");
-      pathLabel.textContent = "Pathway";
-      const pathSelect = buildPathwaySelect();
-      pathSelect.value = defaults.pathway;
-      pathGroup.appendChild(pathLabel);
-      pathGroup.appendChild(pathSelect);
-      card.appendChild(pathGroup);
-
-      // Level
-      const levelGroup = document.createElement("div");
-      levelGroup.className = "form-group";
-      const levelLabel = document.createElement("label");
-      levelLabel.textContent = "Level";
-      const levelSelect = buildLevelSelect();
-      levelSelect.value = defaults.level;
-      levelGroup.appendChild(levelLabel);
-      levelGroup.appendChild(levelSelect);
-      card.appendChild(levelGroup);
-
-      scrollContainer.appendChild(card);
-    });
-
-    // If no owners, show a placeholder card
-    if (ownerIds.length === 0) {
-      const defaults = getOwnerDefaults(null);
-      const card = document.createElement("div");
-      card.className = "role-owner-card";
-      card.dataset.ownerId = "";
-
-      const nameDiv = document.createElement("div");
-      nameDiv.className = "card-owner-name";
-      nameDiv.textContent = "No Owner Assigned";
-      card.appendChild(nameDiv);
-
-      const pathGroup = document.createElement("div");
-      pathGroup.className = "form-group";
-      const pathLabel = document.createElement("label");
-      pathLabel.textContent = "Pathway";
-      const pathSelect = buildPathwaySelect();
-      pathSelect.value = defaults.pathway;
-      pathGroup.appendChild(pathLabel);
-      pathGroup.appendChild(pathSelect);
-      card.appendChild(pathGroup);
-
-      const levelGroup = document.createElement("div");
-      levelGroup.className = "form-group";
-      const levelLabel = document.createElement("label");
-      levelLabel.textContent = "Level";
-      const levelSelect = buildLevelSelect();
-      levelSelect.value = defaults.level;
-      levelGroup.appendChild(levelLabel);
-      levelGroup.appendChild(levelSelect);
-      card.appendChild(levelGroup);
-
-      scrollContainer.appendChild(card);
-    }
-
-    document.getElementById("roleEditModal").style.display = "flex";
-  };
-
-  window.closeRoleEditModal = function () {
-    document.getElementById("roleEditModal").style.display = "none";
-  };
-
-  window.saveRoleChanges = function (event) {
-    event.preventDefault();
-    const logId = document.getElementById("edit-role-log-id").value;
-    const row = tableBody.querySelector(`tr[data-id="${logId}"]`);
-    if (!row) return;
-
-    const cards = document.querySelectorAll("#role-owners-scroll .role-owner-card");
-    const ownerTargets = {};
-    let primaryPathway = "";
-
-    cards.forEach((card, idx) => {
-      const ownerId = card.dataset.ownerId;
-      const pathwayName = card.querySelector(".role-card-pathway")?.value || "";
-      const levelVal = card.querySelector(".role-card-level")?.value || "";
-
-      if (ownerId) {
-        ownerTargets[ownerId] = { pathway: pathwayName, level: levelVal };
-      }
-
-      // Use first owner (primary) for backward-compatible row fields
-      if (idx === 0) {
-        primaryPathway = pathwayName;
-      }
-    });
-
-    // Store per-owner targets as JSON on the row
-    row.dataset.ownerTargets = JSON.stringify(ownerTargets);
-
-    // Backward-compatible: set shared fields from primary owner
-    row.dataset.pathway = primaryPathway;
-
-    // Remove legacy currentPathLevel updates since we no longer hijack credential
-    
-    // Note: We don't overwrite row.dataset.credentials anymore, as credentials means DTM, PM3 etc.
-
-    closeRoleEditModal();
-  };
   // --- Test Hooks ---
   if (typeof window !== 'undefined') {
     window._agendaTestHooks = {

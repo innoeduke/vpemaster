@@ -1795,8 +1795,15 @@ def get_speech_log_details(log_id):
             target_contact_id = owner_ids[0]
             
     credential_value = ""
+    target_pathway = ""
+    target_level = ""
+    owner_name = ""
     
     if log.owners and target_contact_id:
+        target_contact = next((c for c in log.owners if c.id == target_contact_id), None)
+        if target_contact:
+            owner_name = target_contact.Name
+
         # Find the specific OwnerMeetingRoles entry
         # Logic matches Session.owners property but specific to one contact
         
@@ -1813,23 +1820,29 @@ def get_speech_log_details(log_id):
                  contact_id=target_contact_id
              )
              
-             # Filter by session_log_id ONLY if it's a single-owner role
-             # Shared roles have session_log_id=None
+             # For single-owner roles, prefer the OMR linked to this specific log
+             # For shared roles (or legacy records), just match by meeting+role+contact
              has_single_owner = role_obj.has_single_owner if role_obj else True
              
              if has_single_owner:
-                 omr_query = omr_query.filter_by(session_log_id=log.id)
+                 # Try exact match first, then fall back to any match
+                 omr = omr_query.filter_by(session_log_id=log.id).first()
+                 if not omr:
+                     omr = omr_query.first()
              else:
-                 omr_query = omr_query.filter_by(session_log_id=None)
-                 
-             omr = omr_query.first()
-             if omr and omr.credential:
-                 credential_value = omr.credential
+                 omr = omr_query.first()
+             if omr:
+                 if omr.credential:
+                     credential_value = omr.credential
+                 if omr.target_pathway:
+                     target_pathway = omr.target_pathway
+                 if omr.target_level:
+                     target_level = omr.target_level
 
     # Use the helper function to get project code
     project_code = ""
-    # Priority: log.pathway (saved selection) > owner's Current_Path > "Non Pathway"
-    pathway_name_to_return = log.pathway
+    # Priority: target_pathway (from OwnerMeetingRoles) > log.pathway (saved selection) > owner's Current_Path > "Non Pathway"
+    pathway_name_to_return = target_pathway if target_pathway else log.pathway
     if not pathway_name_to_return:
         if log.owner:
             is_guest_without_user = (log.owner.Type == 'Guest') or (log.owner.user is None)
@@ -1837,7 +1850,7 @@ def get_speech_log_details(log_id):
                 pathway_name_to_return = log.owner.Current_Path
     if not pathway_name_to_return:
         pathway_name_to_return = "Non Pathway"
-    level = 1
+    level = target_level if target_level else 1
     
     # Better logic: if there is a Project linked, try to find the pathway it belongs to
     # especially for Presentations or if the user is not linked to a path
@@ -1872,6 +1885,9 @@ def get_speech_log_details(log_id):
         "level": level,
         "project_code": log.project_code,
         "credential": credential_value,
+        "owner_name": owner_name,
+        "target_pathway": target_pathway,
+        "target_level": target_level,
         "Media_URL": log.media.url if (is_authorized(Permissions.MEDIA_ACCESS) and log.media) else "",
         "session_type_title": log.session_type.Title if log.session_type else "Pathway Speech"
     }
@@ -1909,12 +1925,24 @@ def update_speech_log(log_id):
     project_id = data.get('project_id')
     credential_val = data.get('credential')
     
+    # 1. Update Owner Logic: Handle list of owners FIRST so target updates apply to them
+    from .services.role_service import RoleService
+    owner_ids = data.get('owner_ids', []) # Expected list of IDs
+    
+    # Backward compatibility: if single 'owner_id' provided and no 'owner_ids', use it
+    if not owner_ids and 'owner_id' in data:
+         val = data.get('owner_id')
+         if val:
+             owner_ids = [int(val)]
+
+    if 'owner_ids' in data or 'owner_id' in data:
+        RoleService.assign_meeting_role(log, owner_ids, is_admin=is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL))
+        # Flush changes and refresh log to ensure we have the latest owners
+        db.session.flush()
+        db.session.refresh(log)
+    
     # Update Credential in OwnerMeetingRoles
-    # We update for ALL current owners if shared? Or just primary? 
-    # Requirement: "edit the credential of the role-taker"
-    # For now, we update the PRIMARY owner's credential if multiple, or specific one if context known?
-    # Context isn't passed in POST explicitly, so we assume Primary Owner for now (or all owners?)
-    # Safest is to update for ALL owners assigned to this log (usually 1).
+    # We update for ALL current owners assigned to this log
     if credential_val is not None:
          
          session_type = log.session_type
@@ -1928,21 +1956,73 @@ def update_speech_log(log_id):
               meeting_id = log.meeting_id
               if meeting_id:
                  role_id = role_obj.id if role_obj else 0
-                 
                  query = OwnerMeetingRoles.query.filter(
                      OwnerMeetingRoles.meeting_id == meeting_id,
                      OwnerMeetingRoles.role_id == role_id,
                      OwnerMeetingRoles.contact_id.in_(target_owner_ids)
                  )
                  
-                 if has_single_owner:
-                     query = query.filter(OwnerMeetingRoles.session_log_id == log.id)
-                 else:
-                     query = query.filter(OwnerMeetingRoles.session_log_id == None)
-                     
                  omr_entries = query.all()
                  for omr in omr_entries:
                      omr.credential = credential_val
+         
+    # Update target_pathway and target_level in OwnerMeetingRoles
+    pathway_val = data.get('pathway')
+    level_val = data.get('level')
+    owner_targets = data.get('owner_targets') or {}
+    
+    session_type = log.session_type
+    role_obj = session_type.role if session_type else None
+    has_single_owner = role_obj.has_single_owner if role_obj else True
+    target_owner_ids = [o.id for o in log.owners]
+    
+    affected_log_ids = []
+    if target_owner_ids and log.meeting_id:
+        role_id = role_obj.id if role_obj else 0
+        query = OwnerMeetingRoles.query.filter(
+            OwnerMeetingRoles.meeting_id == log.meeting_id,
+            OwnerMeetingRoles.role_id == role_id,
+            OwnerMeetingRoles.contact_id.in_(target_owner_ids)
+        )
+            
+        for omr in query.all():
+            if omr.session_log_id and omr.session_log_id != log.id:
+                affected_log_ids.append(omr.session_log_id)
+                
+            contact_str = str(omr.contact_id)
+            if contact_str in owner_targets:
+                target = owner_targets[contact_str]
+                p_val = target.get('pathway')
+                l_val = target.get('level')
+                if p_val is not None:
+                    omr.target_pathway = p_val
+                if l_val is not None:
+                    if p_val == "Non Pathway":
+                        omr.target_level = None
+                    else:
+                        omr.target_level = str(l_val) if l_val else None
+            else:
+                if pathway_val is not None:
+                    omr.target_pathway = pathway_val
+                if level_val is not None:
+                    # If "Non Pathway" is explicitly saved, we clear level
+                    if pathway_val == "Non Pathway":
+                        omr.target_level = None
+                    else:
+                        omr.target_level = str(level_val) if level_val else None
+
+        # For shared roles, find all other session logs with the same role in this meeting
+        if not has_single_owner:
+            from app.models.session import SessionType
+            related_logs = SessionLog.query.join(SessionType).filter(
+                SessionLog.meeting_id == log.meeting_id,
+                SessionType.role_id == role_id,
+                SessionLog.id != log.id
+            ).all()
+            for rl in related_logs:
+                affected_log_ids.append(rl.id)
+                # Ensure functional roles have NULL pathway in SessionLog
+                rl.update_pathway(None)
          
     # Pre-fetch project if needed for duration logic
     updated_project = None
@@ -1955,46 +2035,28 @@ def update_speech_log(log_id):
 
     # 2. Use Model Methods for Complex logic
     log.update_media(media_url)
-    
-    # Pathway is now always saved from user selection; no presentation override needed.
-
-    # Updated Owner Logic: Handle list of owners
-    from .services.role_service import RoleService
-    owner_ids = data.get('owner_ids', []) # Expected list of IDs
-    
-    # Backward compatibility: if single 'owner_id' provided and no 'owner_ids', use it
-    if not owner_ids and 'owner_id' in data:
-         val = data.get('owner_id')
-         if val:
-             owner_ids = [int(val)]
-
-    # Use RoleService to update owners (handles related logic if needed, though usually assign_meeting_role does more)
-    # But for speech log update modal, we often just update the Log itself.
-    # However, RoleService.assign_meeting_role is the comprehensive one.
-    # Let's use SessionLog.set_owners logic but accessible via RoleService or direct?
-    # Roster Sync might be needed if they change owners here.
-    # So RoleService is best.
-    if 'owner_ids' in data or 'owner_id' in data:
-        RoleService.assign_meeting_role(log, owner_ids, is_admin=is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL))
-
-    # Flush changes before refresh to ensure they aren't lost
-    db.session.flush()
-    # Re-fetch log to ensure relations are updated
-    db.session.refresh(log)
 
     pathway_val = data.get('pathway')
     primary_owner = log.owners[0] if log.owners else None
     
-    if not pathway_val:
-        if primary_owner:
-            is_guest_without_user = (primary_owner.Type == 'Guest') or (primary_owner.user is None)
-            if not is_guest_without_user and primary_owner.Current_Path:
-                pathway_val = primary_owner.Current_Path
+    is_prepared_speech = session_type and session_type.Title == 'Prepared Speech'
+    is_project = (session_type and session_type.Valid_for_Project and project_id and project_id != ProjectID.GENERIC) or is_prepared_speech
+
+    if is_project:
         if not pathway_val:
-            pathway_val = "Non Pathway"
-        
-    if pathway_val:
-        log.update_pathway(pathway_val)
+            if primary_owner:
+                is_guest_without_user = (primary_owner.Type == 'Guest') or (primary_owner.user is None)
+                if not is_guest_without_user and primary_owner.Current_Path:
+                    pathway_val = primary_owner.Current_Path
+            if not pathway_val:
+                pathway_val = "Non Pathway"
+            
+        if pathway_val:
+            log.update_pathway(pathway_val)
+    else:
+        # For functional roles, the session itself doesn't have a pathway.
+        # Credit tracking is fully handled by OwnerMeetingRoles.target_pathway.
+        log.update_pathway(None)
 
     log.update_durations(data, updated_project)
     
@@ -2012,11 +2074,12 @@ def update_speech_log(log_id):
             session_title=log.Session_Title,
             project_name=summary['project_name'],
             project_code=summary['project_code'],
-            pathway=summary['pathway'],
+            pathway=pathway_val if pathway_val else summary['pathway'],
             project_id=log.Project_ID,
             duration_min=log.Duration_Min,
             duration_max=log.Duration_Max,
-            media_url=media_url
+            media_url=media_url,
+            affected_log_ids=affected_log_ids
         )
 
     except Exception as e:

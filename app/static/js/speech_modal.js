@@ -12,7 +12,8 @@ const modalElements = {
   logId: document.getElementById("edit-log-id"),
   sessionType: document.getElementById("edit-session-type-title"),
   speechTitle: document.getElementById("edit-speech-title"),
-  speechTitleLabel: document.querySelector('label[for="edit-speech-title"]'),
+  speechTitleLabel: document.querySelector('#edit-speech-title-label'),
+  sessionOwner: document.getElementById("edit-session-owner"),
   credential: document.getElementById("edit-credential"),
   mediaUrl: document.getElementById("edit-speech-media-url"),
 
@@ -35,6 +36,12 @@ const modalElements = {
   projectSelectDropdown: document.getElementById("project-select-dropdown"),
   pathwayGroup: document.getElementById("pathway-group"),
   pathwaySelectDropdown: document.getElementById("pathway-select-dropdown"),
+  levelGroup: document.getElementById("level-group"),
+  levelSelectDropdown: document.getElementById("level-select-dropdown"),
+  speechModeFields: document.getElementById("speech-mode-fields"),
+  roleModeFields: document.getElementById("role-mode-fields"),
+  roleNameDisplay: document.getElementById("role-name-display"),
+  roleOwnersScroll: document.getElementById("role-owners-scroll"),
 };
 
 // --- Utility Functions ---
@@ -101,13 +108,12 @@ function toggleGeneric(isGeneric) {
     }
   }
 }
-
 // --- Main Public Functions ---
 
 /**
- * Main entry point to open the speech edit modal.
+ * Main entry point to open the speech or role edit details modal.
  */
-async function openSpeechEditModal(
+async function openEditDetailsModal(
   logId,
   workingPath = null,
   sessionTypeTitle = null,
@@ -121,86 +127,366 @@ async function openSpeechEditModal(
     const passedSessionType =
       data.log.session_type_title ||
       sessionTypeTitle ||
-      document.querySelector(`tr[data-id="${logId}"]`)?.dataset
-        .sessionTypeTitle;
+      document.querySelector(`tr[data-id="${logId}"]`)?.dataset.sessionTypeTitle;
     const currentSessionType = passedSessionType || "Pathway Speech";
 
+    // Setup basic details
     resetModal(data.log, currentSessionType);
 
-    const setupFunctions = {
-      "Evaluation": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
-        ...opts,
-        projectIds: ProjectID.EVALUATION_PROJECTS,
-        defaultOption: "-- Select Evaluation Project --",
-        speechTitleLabelText: "Evaluator for:"
-      }),
-      "Panel Discussion": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
-        ...opts,
-        projectIds: [ProjectID.MODERATOR_PROJECT],
-        defaultOption: "-- Select Panel Discussion Project --"
-      }),
-      "Table Topics": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
-        ...opts,
-        projectIds: [ProjectID.TOPICSMASTER_PROJECT],
-        defaultOption: "-- Select Table Topics Project --"
-      }),
-      "Keynote Speech": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
-        ...opts,
-        projectIds: [ProjectID.KEYNOTE_SPEAKER_PROJECT],
-        defaultOption: "-- Select Keynote Speech Project --"
-      }),
-      "Pathway Speech": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
-      "Prepared Speech": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
-      "Presentation": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
-      default: (log, opts) => SpeechModalSetupManager.setupRole(log, opts),
-    };
-    const setupFunction =
-      setupFunctions[currentSessionType] || setupFunctions.default;
-    setupFunction(data.log, {
-      workingPath,
-      nextProject,
-      sessionType: currentSessionType,
-    });
+    const sessionType = currentSessionType;
+    const isPreparedSpeech = sessionType === "Prepared Speech" || sessionType === "Pathway Speech" || sessionType === "Presentation";
+    const isProjectRole = ["Evaluation", "Panel Discussion", "Table Topics", "Keynote Speech"].includes(sessionType);
+
+    const row = document.querySelector(`tr[data-id="${logId}"]`);
+
+    if (!isPreparedSpeech && !isProjectRole && row) {
+      // Toggle wrappers: show role mode, hide speech mode
+      modalElements.speechModeFields.style.display = "none";
+      modalElements.roleModeFields.style.display = "block";
+
+      const roleName = row.dataset.role || "N/A";
+      modalElements.roleNameDisplay.textContent = roleName;
+
+      // Get all owner IDs for this row
+      let ownerIds = [];
+      try {
+        ownerIds = JSON.parse(row.dataset.ownerIds || "[]");
+      } catch (e) {
+        const singleId = row.dataset.ownerId;
+        if (singleId) ownerIds = [singleId];
+      }
+      if (ownerIds.length === 0) {
+        const singleId = row.dataset.ownerId;
+        if (singleId) ownerIds = [singleId];
+      }
+
+      // Parse existing per-owner targets if available
+      let existingOwnerTargets = {};
+      try {
+        existingOwnerTargets = JSON.parse(row.dataset.ownerTargets || "{}");
+      } catch (e) { /* ignore */ }
+
+      // Build the scrollable owner cards
+      const scrollContainer = modalElements.roleOwnersScroll;
+      scrollContainer.innerHTML = "";
+
+      // Helper: build a pathway <select> with grouped options
+      function buildPathwaySelect() {
+        const sel = document.createElement("select");
+        sel.className = "role-card-pathway";
+        sel.innerHTML = '<option value="">-- Select Pathway --</option>';
+        if (typeof groupedPathways !== "undefined") {
+          for (const [groupLabel, items] of Object.entries(groupedPathways)) {
+            const optgroup = document.createElement("optgroup");
+            optgroup.label = groupLabel;
+            items.forEach((item) => {
+              const value = typeof item === "object" ? item.name : item;
+              const text = typeof item === "object" ? item.name : item;
+              optgroup.appendChild(new Option(text, value));
+            });
+            sel.appendChild(optgroup);
+          }
+        } else if (typeof pathwayMap !== "undefined") {
+          Object.keys(pathwayMap).forEach((name) => {
+            sel.appendChild(new Option(name, name));
+          });
+        }
+        return sel;
+      }
+
+      // Helper: build a level <select>
+      function buildLevelSelect() {
+        const sel = document.createElement("select");
+        sel.className = "role-card-level";
+        sel.innerHTML = '<option value="">-- Select Level --</option>';
+        for (let i = 1; i <= 5; i++) {
+          sel.appendChild(new Option(`Level ${i}`, i));
+        }
+        return sel;
+      }
+
+      // Helper: determine default pathway + level for an owner
+      function getOwnerDefaults(ownerId) {
+        let pathway = "";
+        let level = "";
+
+        // 1. Check per-owner saved target first
+        const savedTarget = existingOwnerTargets[ownerId];
+        if (savedTarget && savedTarget.pathway) {
+          pathway = savedTarget.pathway;
+          level = savedTarget.level || "1";
+        }
+
+        // 2. Fallback to row pathway
+        if (!pathway) {
+          pathway = (row.dataset.pathway || "").trim();
+        }
+
+        // 3. Fallback to contact data
+        const contactsList = window.allContacts || [];
+        const contact = contactsList.find((c) => c.id == ownerId);
+        if (contact) {
+          if (!pathway) {
+            if (contact.Type === "Guest" || !contact.Current_Path) {
+              pathway = "Non Pathway";
+            } else {
+              pathway = contact.Current_Path;
+            }
+          }
+          if (!level) {
+            const levelMatch = (contact.Credentials || "").match(/\d+/);
+            if (levelMatch) {
+              level = Math.min(parseInt(levelMatch[0], 10) + 1, 5).toString();
+            } else {
+              level = "1";
+            }
+          }
+        }
+
+        if (!pathway) pathway = "Non Pathway";
+        if (pathway === "Non Pathway") {
+          level = "";
+        } else if (!level) {
+          level = "1";
+        }
+
+        return { pathway, level };
+      }
+
+      // Create one card per owner
+      const contactsList = window.allContacts || [];
+      ownerIds.forEach((ownerId) => {
+        const contact = contactsList.find((c) => c.id == ownerId);
+        const ownerName = contact ? contact.Name : `Owner #${ownerId}`;
+        const defaults = getOwnerDefaults(ownerId);
+
+        const card = document.createElement("div");
+        card.className = "role-owner-card";
+        card.dataset.ownerId = ownerId;
+
+        // Owner name header
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "card-owner-name";
+        nameDiv.textContent = ownerName;
+        card.appendChild(nameDiv);
+
+        // Pathway
+        const pathGroup = document.createElement("div");
+        pathGroup.className = "form-group";
+        const pathLabel = document.createElement("label");
+        pathLabel.textContent = "Pathway";
+        const pathSelect = buildPathwaySelect();
+        pathSelect.value = defaults.pathway;
+        pathGroup.appendChild(pathLabel);
+        pathGroup.appendChild(pathSelect);
+        card.appendChild(pathGroup);
+
+        // Level
+        const levelGroup = document.createElement("div");
+        levelGroup.className = "form-group";
+        const levelLabel = document.createElement("label");
+        levelLabel.textContent = "Level";
+        const levelSelect = buildLevelSelect();
+        levelSelect.value = defaults.level;
+        levelGroup.appendChild(levelLabel);
+        levelGroup.appendChild(levelSelect);
+        card.appendChild(levelGroup);
+
+        scrollContainer.appendChild(card);
+      });
+
+      // If no owners, show a placeholder card
+      if (ownerIds.length === 0) {
+        const defaults = getOwnerDefaults(null);
+        const card = document.createElement("div");
+        card.className = "role-owner-card";
+        card.dataset.ownerId = "";
+
+        const nameDiv = document.createElement("div");
+        nameDiv.className = "card-owner-name";
+        nameDiv.textContent = "No Owner Assigned";
+        card.appendChild(nameDiv);
+
+        const pathGroup = document.createElement("div");
+        pathGroup.className = "form-group";
+        const pathLabel = document.createElement("label");
+        pathLabel.textContent = "Pathway";
+        const pathSelect = buildPathwaySelect();
+        pathSelect.value = defaults.pathway;
+        pathGroup.appendChild(pathLabel);
+        pathGroup.appendChild(pathSelect);
+        card.appendChild(pathGroup);
+
+        const levelGroup = document.createElement("div");
+        levelGroup.className = "form-group";
+        const levelLabel = document.createElement("label");
+        levelLabel.textContent = "Level";
+        const levelSelect = buildLevelSelect();
+        levelSelect.value = defaults.level;
+        levelGroup.appendChild(levelLabel);
+        levelGroup.appendChild(levelSelect);
+        card.appendChild(levelGroup);
+
+        scrollContainer.appendChild(card);
+      }
+    } else {
+      // Toggle wrappers: show speech mode, hide role mode
+      modalElements.speechModeFields.style.display = "block";
+      modalElements.roleModeFields.style.display = "none";
+
+      const setupFunctions = {
+        "Evaluation": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+          ...opts,
+          projectIds: ProjectID.EVALUATION_PROJECTS,
+          defaultOption: "-- Select Evaluation Project --",
+          speechTitleLabelText: "Evaluator for:"
+        }),
+        "Panel Discussion": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+          ...opts,
+          projectIds: [ProjectID.MODERATOR_PROJECT],
+          defaultOption: "-- Select Panel Discussion Project --"
+        }),
+        "Table Topics": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+          ...opts,
+          projectIds: [ProjectID.TOPICSMASTER_PROJECT],
+          defaultOption: "-- Select Table Topics Project --"
+        }),
+        "Keynote Speech": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+          ...opts,
+          projectIds: [ProjectID.KEYNOTE_SPEAKER_PROJECT],
+          defaultOption: "-- Select Keynote Speech Project --"
+        }),
+        "Pathway Speech": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
+        "Prepared Speech": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
+        "Presentation": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
+        default: (log, opts) => SpeechModalSetupManager.setupRole(log, opts),
+      };
+      const setupFunction =
+        setupFunctions[currentSessionType] || setupFunctions.default;
+      setupFunction(data.log, {
+        workingPath,
+        nextProject,
+        sessionType: currentSessionType,
+      });
+    }
 
     modalElements.modal.style.display = "flex";
   } catch (error) {
     console.error("Fetch error:", error);
-    alert(`An error occurred while fetching speech details: ${error.message}`);
+    alert(`An error occurred while fetching details: ${error.message}`);
   }
 }
 
 /**
- * Closes the speech edit modal.
+ * Closes the edit details modal.
  */
-function closeSpeechEditModal() {
+function closeEditDetailsModal() {
   modalElements.modal.style.display = "none";
 }
 
 /**
- * Main save function. Builds a payload and sends it.
+ * Main save function. Handles both role and speech updates.
  */
-async function saveSpeechChanges(event) {
+async function saveEditDetailsChanges(event) {
   event.preventDefault();
   const logId = modalElements.logId.value;
-  const payload = buildSavePayload();
 
-  try {
-    const response = await fetch(`/speech_log/update/${logId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const updateResult = await response.json();
-    if (updateResult.success) {
-      handleSaveSuccess(updateResult, payload);
-    } else {
-      throw new Error(updateResult.message || "Unknown error");
+  const isRoleMode = modalElements.roleModeFields.style.display === "block";
+
+  if (isRoleMode) {
+    const submitBtn = modalElements.form.querySelector('button[type="submit"]');
+    const originalText = submitBtn ? submitBtn.textContent : "Save";
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = "Saving...";
     }
-  } catch (error) {
-    console.error("Save error:", error);
-    alert(`An error occurred while saving changes: ${error.message}`);
+
+    const cards = document.querySelectorAll("#role-owners-scroll .role-owner-card");
+    const ownerTargets = {};
+    let primaryPathway = "";
+
+    cards.forEach((card, idx) => {
+      const ownerId = card.dataset.ownerId;
+      const pathwayName = card.querySelector(".role-card-pathway")?.value || "";
+      const levelVal = card.querySelector(".role-card-level")?.value || "";
+
+      if (ownerId) {
+        ownerTargets[ownerId] = { pathway: pathwayName, level: levelVal };
+      }
+
+      if (idx === 0) {
+        primaryPathway = pathwayName;
+      }
+    });
+
+    try {
+      const response = await fetch(`/speech_log/update/${logId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner_targets: ownerTargets })
+      });
+      const data = await response.json();
+      if (data.success) {
+        const row = document.querySelector(`tr[data-id="${logId}"]`);
+        if (row) {
+          row.dataset.ownerTargets = JSON.stringify(ownerTargets);
+          row.dataset.pathway = primaryPathway;
+        }
+
+        const affectedLogIds = [logId];
+        if (data.affected_log_ids && data.affected_log_ids.length > 0) {
+          affectedLogIds.push(...data.affected_log_ids);
+        }
+
+        affectedLogIds.forEach(id => {
+          const affectedRow = document.querySelector(`tr[data-id="${id}"]`);
+          if (affectedRow) {
+            affectedRow.dataset.ownerTargets = JSON.stringify(ownerTargets);
+            affectedRow.dataset.pathway = primaryPathway;
+          }
+        });
+
+        closeEditDetailsModal();
+      } else {
+        alert("Error saving: " + (data.message || "Unknown error"));
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      alert("An error occurred while saving: " + error.message);
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+      }
+    }
+  } else {
+    // Speech/Project mode save
+    const payload = buildSavePayload();
+
+    try {
+      const response = await fetch(`/speech_log/update/${logId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const updateResult = await response.json();
+      if (updateResult.success) {
+        handleSaveSuccess(updateResult, payload);
+      } else {
+        throw new Error(updateResult.message || "Unknown error");
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      alert(`An error occurred while saving changes: ${error.message}`);
+    }
   }
 }
+
+// Expose functions globally for backward-compatibility with other HTML/templates
+window.openSpeechEditModal = openEditDetailsModal;
+window.closeSpeechEditModal = closeEditDetailsModal;
+window.saveSpeechChanges = saveEditDetailsChanges;
+
 
 // --- Setup Helpers ---
 
@@ -209,6 +495,7 @@ function resetModal(logData, sessionType) {
   modalElements.form.reset();
   modalElements.logId.value = logData.id;
   modalElements.title.textContent = "Edit Details";
+  modalElements.sessionOwner.value = logData.owner_name || "";
   modalElements.speechTitle.value = logData.Session_Title || "";
   modalElements.credential.value = logData.credential || "";
   modalElements.sessionType.value = sessionType;
@@ -234,7 +521,7 @@ function resetModal(logData, sessionType) {
     if (el) el.style.display = "none";
   });
 
-  modalElements.speechTitleLabel.textContent = "Speech Title:";
+  modalElements.speechTitleLabel.textContent = "Session Title:";
   modalElements.labelPathway.textContent = "Pathway:";
   modalElements.labelLevel.textContent = "Level:";
   modalElements.labelProject.textContent = "Project:";
@@ -265,11 +552,18 @@ const SpeechModalSetupManager = {
     modalElements.speechTitle.closest('.form-group').style.display = 'none';
 
     // Show pathway dropdown for all roles (unified pathway handling)
-    modalElements.pathwayGroup.style.display = "block";
+    modalElements.pathwayGroup.style.display = "flex";
+    if (modalElements.levelGroup) {
+      modalElements.levelGroup.style.display = "block";
+    }
     SpeechModalSetupManager.populatePathwayDropdown(modalElements.pathwaySelectDropdown);
-    // Priority: saved log pathway > workingPath > "Non Pathway"
+    // Priority: saved log target pathway > workingPath > "Non Pathway"
     const defaultPath = logData.pathway || workingPath || "Non Pathway";
     modalElements.pathwaySelectDropdown.value = defaultPath;
+    
+    // Priority: saved log target level > empty
+    const defaultLevel = logData.level || "";
+    modalElements.levelSelectDropdown.value = defaultLevel;
   },
 
   setupProjectRole(logData, { sessionType, workingPath, projectIds, defaultOption, speechTitleLabelText }) {
@@ -281,7 +575,10 @@ const SpeechModalSetupManager = {
       modalElements.speechTitle.disabled = true;
     }
     modalElements.projectGroup.style.display = "block";
-    modalElements.pathwayGroup.style.display = "block";
+    modalElements.pathwayGroup.style.display = "flex";
+    if (modalElements.levelGroup) {
+      modalElements.levelGroup.style.display = "block";
+    }
 
     const targetProjectIds = Array.isArray(projectIds)
       ? projectIds.map(Number)
@@ -303,9 +600,14 @@ const SpeechModalSetupManager = {
 
     this.populatePathwayDropdown(modalElements.pathwaySelectDropdown);
 
-    // Priority: saved log pathway > owner's working path > "Non Pathway"
+    // Priority: saved log target pathway > owner's working path > "Non Pathway"
     const defaultPath = logData.pathway || workingPath || "Non Pathway";
     modalElements.pathwaySelectDropdown.value = defaultPath;
+    
+    const defaultLevel = logData.level || "";
+    if (modalElements.levelSelectDropdown) {
+        modalElements.levelSelectDropdown.value = defaultLevel;
+    }
 
     const isProject = logData.Project_ID && targetProjectIds.includes(Number(logData.Project_ID));
     modalElements.isProjectChk.checked = isProject;
@@ -318,7 +620,7 @@ const SpeechModalSetupManager = {
       if (!isChecked) {
         modalElements.projectSelectDropdown.value = "";
         if (sessionType === "Evaluation") {
-          modalElements.speechTitle.value = logData.agenda_title || "";
+          modalElements.speechTitle.value = logData.Session_Title || "";
         }
       } else {
         if (projectsList.length === 1) {
@@ -353,7 +655,7 @@ const SpeechModalSetupManager = {
     const projectCode = logData.project_code || nextProject;
 
     // REQUIREMENT: Populate path/level/project based on project_code if available and non-generic
-    if (projectToSelect != ProjectID.GENERIC && projectCode && !['TM1.0', '', 'null'].includes(projectCode)) {
+    if (projectCode && !['TM1.0', '', 'null'].includes(projectCode)) {
       const codeMatch = projectCode.match(/^([A-Z]+)(\d+(?:\.\d+)?)$/);
       if (codeMatch) {
         const abbr = codeMatch[1];
@@ -362,15 +664,36 @@ const SpeechModalSetupManager = {
         const pathwayName = Object.keys(pathwayMap).find(name => pathwayMap[name] === abbr);
         if (pathwayName) {
           pathwayToSelect = pathwayName;
-          const foundProject = allProjects.find(p => p.path_codes[abbr] && String(p.path_codes[abbr].code) === codePart);
-          if (foundProject) {
-            projectToSelect = foundProject.id;
-            levelToSelect = foundProject.path_codes[abbr].level;
+          
+          if (projectToSelect && projectToSelect != ProjectID.GENERIC) {
+            // Already have a specific project ID, look up its level for this pathway
+            const foundProject = allProjects.find(p => Number(p.id) === Number(projectToSelect));
+            if (foundProject && foundProject.path_codes[abbr]) {
+              levelToSelect = foundProject.path_codes[abbr].level;
+            }
+          } else {
+            // Find first matching project by pathway and code part
+            const foundProject = allProjects.find(p => p.path_codes[abbr] && String(p.path_codes[abbr].code) === codePart);
+            if (foundProject) {
+              projectToSelect = foundProject.id;
+              levelToSelect = foundProject.path_codes[abbr].level;
+            }
           }
         }
       }
     } else if (!pathwayToSelect && workingPath) {
       pathwayToSelect = workingPath;
+    }
+
+    // Fallback: derive level if pathway and project are set but level is not
+    if (pathwayToSelect && pathwayToSelect !== "Non Pathway" && projectToSelect && projectToSelect != ProjectID.GENERIC && !levelToSelect) {
+      const abbr = pathwayMap[pathwayToSelect];
+      if (abbr) {
+        const foundProject = allProjects.find(p => Number(p.id) === Number(projectToSelect));
+        if (foundProject && foundProject.path_codes[abbr]) {
+          levelToSelect = foundProject.path_codes[abbr].level;
+        }
+      }
     }
 
     if (!pathwayToSelect) {
@@ -540,18 +863,26 @@ function buildSavePayload() {
   };
   const isProject = isProjectChk?.checked || false;
 
+  // Helper to read the level dropdown (shared across all session types that use pathwayGroup)
+  const levelDropdownValue = modalElements.levelSelectDropdown
+    ? modalElements.levelSelectDropdown.value || null
+    : null;
+
   switch (sessionType.value) {
     case "Panel Discussion":
       payload.project_id = isProject ? ProjectID.MODERATOR_PROJECT : null;
       payload.pathway = pathwaySelectDropdown.value || "";
+      payload.level = levelDropdownValue;
       break;
     case "Table Topics":
       payload.project_id = isProject ? ProjectID.TOPICSMASTER_PROJECT : null;
       payload.pathway = pathwaySelectDropdown.value || "";
+      payload.level = levelDropdownValue;
       break;
     case "Keynote Speech":
       payload.project_id = isProject ? ProjectID.KEYNOTE_SPEAKER_PROJECT : null;
       payload.pathway = pathwaySelectDropdown.value || "";
+      payload.level = levelDropdownValue;
       break;
     case "Evaluation":
       payload.project_id =
@@ -559,6 +890,7 @@ function buildSavePayload() {
           ? projectSelectDropdown.value
           : null;
       payload.pathway = pathwaySelectDropdown.value || "";
+      payload.level = levelDropdownValue;
       break;
     default:
       // Include speech-specific fields if the standard selection UI is visible
@@ -567,9 +899,11 @@ function buildSavePayload() {
         payload.session_title = speechTitle.value;
         payload.project_id = isGeneric ? ProjectID.GENERIC : projectSelect.value || ProjectID.GENERIC;
         payload.pathway = pathwaySelect.value;
+        payload.level = modalElements.levelSelect.value || null;
       } else {
-        // For roles (GE, Timer, etc.), send the pathway from the pathway-group dropdown
+        // For roles (GE, Timer, etc.), send the pathway and level from the pathway-group dropdowns
         payload.pathway = pathwaySelectDropdown.value || "";
+        payload.level = levelDropdownValue;
       }
       break;
   }
@@ -578,17 +912,23 @@ function buildSavePayload() {
 
 function handleSaveSuccess(updateResult, payload) {
   const logId = modalElements.logId.value;
-  if (window.location.pathname.includes("/agenda")) {
-    updateAgendaRow(logId, updateResult, payload);
-  } else {
-    const card = document.getElementById(`log-card-${logId}`);
-    if (card) {
-      updateSpeechLogCard(logId, updateResult, payload);
-    } else {
-      window.location.reload();
-      return;
-    }
+  
+  const logsToUpdate = [logId];
+  if (updateResult.affected_log_ids && updateResult.affected_log_ids.length > 0) {
+    logsToUpdate.push(...updateResult.affected_log_ids);
   }
+
+  logsToUpdate.forEach(id => {
+    if (window.location.pathname.includes("/agenda")) {
+      updateAgendaRow(id, updateResult, payload);
+    } else {
+      const card = document.getElementById(`log-card-${id}`);
+      if (card) {
+        updateSpeechLogCard(id, updateResult, payload);
+      }
+    }
+  });
+
   closeSpeechEditModal();
 }
 

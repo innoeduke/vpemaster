@@ -175,7 +175,7 @@ def test_guest_without_user_defaults_to_non_pathway(client, app, default_club, s
         
         with app.app_context():
             updated_log = SessionLog.query.get(log_id)
-            assert updated_log.pathway == "Non Pathway"
+            assert updated_log.pathway is None
 
 
 def test_functional_role_pathway_save(client, app, default_club, staff_user):
@@ -301,5 +301,153 @@ def test_functional_role_pathway_save(client, app, default_club, staff_user):
         assert len(logs) > 0
         matching_log = next(l for l in logs if l['id'] == log_id)
         assert matching_log['Credentials'] == 'DL2'
+
+
+def test_evaluation_session_details(client, app, default_club, staff_user):
+    """Verify that details endpoint correctly serializes Session_Title for Evaluation session logs."""
+    with app.app_context():
+        # Create Evaluation session type and role
+        role = MeetingRole.query.filter_by(name="Evaluator").first()
+        if not role:
+            role = MeetingRole(name="Evaluator", type="standard", needs_approval=False, has_single_owner=True)
+            db.session.add(role)
+            db.session.commit()
+
+        st = SessionType.query.filter_by(Title="Evaluation").first()
+        if not st:
+            st = SessionType(Title="Evaluation", role_id=role.id, club_id=default_club.id)
+            db.session.add(st)
+            db.session.commit()
+
+        # Create contact
+        contact = Contact(Name="Evaluator Member", Type="Member")
+        db.session.add(contact)
+        db.session.commit()
+
+        # Create meeting
+        from datetime import date
+        meeting = Meeting(Meeting_Number=104, Meeting_Date=date.today(), club_id=default_club.id)
+        db.session.add(meeting)
+        db.session.commit()
+
+        # Create session log with evaluator as owner and a custom session title (speaker name)
+        log = SessionLog(
+            meeting_id=meeting.id,
+            Meeting_Seq=1,
+            Type_ID=st.id,
+            Status="Completed",
+            Session_Title="John Zhang"
+        )
+        log.owners.append(contact)
+        db.session.add(log)
+        db.session.commit()
+
+        log_id = log.id
+
+    # Authenticate client
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(staff_user.id)
+        sess['club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    # Get speech details
+    with patch('app.speech_logs_routes.is_authorized', return_value=True):
+        resp = client.get(f'/speech_log/details/{log_id}')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data.get('success') is True
+        assert data.get('log', {}).get('Session_Title') == "John Zhang"
+        assert data.get('log', {}).get('session_type_title') == "Evaluation"
+
+
+def test_functional_role_immediate_update(client, app, default_club, staff_user):
+    """Verify that updating a functional role's pathway via speech_log/update endpoint saves to OwnerMeetingRoles."""
+    with app.app_context():
+        # Create pathway
+        p1 = Pathway.query.filter_by(name="Persuasive Influence").first()
+        if not p1:
+            p1 = Pathway(name="Persuasive Influence", abbr="PI", type="pathway", status="active")
+            db.session.add(p1)
+            db.session.commit()
+
+        # Create contact
+        contact = Contact(Name="Immediate Update User", Type="Member", Current_Path="Persuasive Influence")
+        db.session.add(contact)
+        db.session.commit()
+
+        # Create Meeting & SessionType for Timer
+        role = MeetingRole(name="Timer", type="standard", needs_approval=False, has_single_owner=False)
+        db.session.add(role)
+        db.session.commit()
+
+        st = SessionType(Title="Timer Introduction", role_id=role.id, club_id=default_club.id)
+        db.session.add(st)
+        db.session.commit()
+
+        from datetime import date
+        meeting = Meeting(Meeting_Number=105, Meeting_Date=date.today(), club_id=default_club.id)
+        db.session.add(meeting)
+        db.session.commit()
+
+        # Create SessionLog
+        log = SessionLog(
+            meeting_id=meeting.id,
+            Meeting_Seq=2,
+            Type_ID=st.id,
+            Status="Booked"
+        )
+        db.session.add(log)
+        db.session.flush()
+
+        from app.models import OwnerMeetingRoles
+        # Add to OwnerMeetingRoles
+        omr = OwnerMeetingRoles(
+            meeting_id=meeting.id,
+            role_id=role.id,
+            contact_id=contact.id,
+            session_log_id=None
+        )
+        db.session.add(omr)
+        db.session.commit()
+
+        log_id = log.id
+        meeting_id = meeting.id
+        contact_id = contact.id
+
+    # Authenticate client
+    with client.session_transaction() as sess:
+        sess['_user_id'] = str(staff_user.id)
+        sess['club_id'] = default_club.id
+        sess['_fresh'] = True
+
+    # Immediate update
+    with patch('app.speech_logs_routes.is_authorized', return_value=True):
+        resp_update = client.post(
+            f'/speech_log/update/{log_id}',
+            json={
+                'owner_targets': {
+                    str(contact_id): {
+                        'pathway': 'Persuasive Influence',
+                        'level': '2'
+                    }
+                }
+            }
+        )
+        assert resp_update.status_code == 200
+        data_update = resp_update.get_json()
+        assert data_update.get('success') is True
+
+        # Verify OwnerMeetingRoles updated
+        with app.app_context():
+            updated_omr = OwnerMeetingRoles.query.filter_by(
+                meeting_id=meeting_id,
+                role_id=role.id,
+                contact_id=contact_id
+            ).first()
+            assert updated_omr is not None
+            assert updated_omr.target_pathway == 'Persuasive Influence'
+            assert updated_omr.target_level == '2'
+
+
 
 

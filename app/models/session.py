@@ -182,9 +182,8 @@ class SessionLog(db.Model):
         )
         if has_single_owner:
              query = query.filter(OwnerMeetingRoles.session_log_id == self.id)
-        else:
-             # For shared roles, session_log_id is NULL
-             query = query.filter(OwnerMeetingRoles.session_log_id == None)
+        # For shared roles, don't filter by session_log_id — meeting_id+role_id is sufficient.
+        # Legacy OMR records may have a non-null session_log_id.
         return query.all()
 
     @owners.setter
@@ -442,6 +441,7 @@ class SessionLog(db.Model):
         from .project import Pathway
         
         if not pathway_name:
+            self.pathway = None
             return
             
         path_obj = Pathway.query.filter_by(name=pathway_name).first()
@@ -490,7 +490,13 @@ class SessionLog(db.Model):
         
         project_name = "N/A"
         project_code = ""
-        current_pathway = self.pathway or (self.owner.Current_Path if self.owner else "N/A")
+        current_pathway = self.pathway
+        if not current_pathway:
+             context_target = getattr(self, 'context_target', None)
+             if context_target and context_target.get('pathway'):
+                  current_pathway = context_target['pathway']
+        if not current_pathway:
+             current_pathway = self.owner.Current_Path if self.owner else "N/A"
 
         if self.Project_ID:
             project = db.session.get(Project, self.Project_ID)
@@ -650,9 +656,7 @@ class SessionLog(db.Model):
             
             if is_single_owner:
                 delete_query = delete_query.filter(OwnerMeetingRoles.session_log_id == target_log.id)
-            else:
-                delete_query = delete_query.filter(OwnerMeetingRoles.session_log_id == None)
-                
+            
             delete_query.delete(synchronize_session=False)
             
             # Insertion
