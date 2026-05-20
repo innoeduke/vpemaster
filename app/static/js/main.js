@@ -312,7 +312,8 @@ function openContactModal(contactId) {
     
     const contactTabs = document.querySelector(".contact-modal-tabs");
     if (contactTabs) contactTabs.style.display = "none";
-    document.getElementById("educationFieldsWrapper").style.display = "none";
+    const educationWrapper = document.getElementById("educationFieldsWrapper");
+    if (educationWrapper) educationWrapper.style.display = "none";
 
     // Hide mentor_id row for new contacts (default is Guest)
     const memberIdRow = document.getElementById("member_id_container");
