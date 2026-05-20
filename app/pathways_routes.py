@@ -136,7 +136,7 @@ def update_project(project_id):
 @pathways_bp.route('/api/contacts/<int:contact_id>/pathways', methods=['GET'])
 @login_required
 def get_contact_pathways(contact_id):
-    if not (is_authorized(Permissions.CONTACT_BOOK_EDIT) or is_authorized(Permissions.ACHIEVEMENTS_VIEW)):
+    if not (is_authorized(Permissions.ACHIEVEMENTS_EDIT) or is_authorized(Permissions.CONTACT_BOOK_EDIT)):
         return jsonify(success=False, message="Permission denied"), 403
 
     contact = db.session.get(Contact, contact_id)
