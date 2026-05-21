@@ -240,9 +240,10 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
         member_pathways = viewed_contact.get_member_pathways()
         
         # Ensure selected pathway is in list
-        if selected_pathway and selected_pathway != 'all' and selected_pathway not in member_pathways:
-            member_pathways.append(selected_pathway)
-            member_pathways.sort()
+        if selected_pathway and selected_pathway != 'all':
+            if not any(p['name'] == selected_pathway for p in member_pathways):
+                member_pathways.append({'name': selected_pathway, 'status': 'unknown', 'abbr': '', 'path_id': None})
+                member_pathways.sort(key=lambda x: x['name'])
     
     return {
         'selected_pathway': selected_pathway,

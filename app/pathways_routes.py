@@ -254,7 +254,7 @@ def complete_contact_pathway(contact_id, pathway_id):
 @pathways_bp.route('/api/contacts/<int:contact_id>/pathways/<int:pathway_id>/set_default', methods=['POST'])
 @login_required
 def set_default_contact_pathway(contact_id, pathway_id):
-    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
+    if not is_authorized(Permissions.CONTACT_BOOK_EDIT) and current_user.contact_id != contact_id:
         return jsonify(success=False, message="Permission denied"), 403
 
     contact = db.session.get(Contact, contact_id)

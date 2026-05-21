@@ -183,7 +183,16 @@ class Contact(db.Model):
         Get all registered pathways for this contact.
         Returns list of pathway names ordered alphabetically.
         """
-        return sorted([cp.pathway.name for cp in self.registered_paths if cp.pathway])
+        pathways = []
+        for cp in self.registered_paths:
+            if cp.pathway:
+                pathways.append({
+                    'name': cp.pathway.name,
+                    'status': cp.status,
+                    'abbr': cp.pathway.abbr,
+                    'path_id': cp.pathway.id
+                })
+        return sorted(pathways, key=lambda x: x['name'])
 
 
     def get_completed_levels(self, pathway_name):
