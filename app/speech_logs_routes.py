@@ -233,10 +233,15 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
     if viewed_contact:
         member_pathways = viewed_contact.get_member_pathways()
         
+        # Always include "Non Pathway" as an option for filtering roles without a specific pathway
+        if 'Non Pathway' not in member_pathways:
+            member_pathways.append('Non Pathway')
+        
         # Ensure selected pathway is in list
         if selected_pathway and selected_pathway != 'all' and selected_pathway not in member_pathways:
             member_pathways.append(selected_pathway)
-            member_pathways.sort()
+        
+        member_pathways.sort()
     
     return {
         'selected_pathway': selected_pathway,

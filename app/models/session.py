@@ -523,6 +523,14 @@ class SessionLog(db.Model):
         if pathway and pathway != 'all':
             current_log_path = getattr(self, 'pathway', None)
             
+            # Special case: "Non Pathway" shows logs without a pathway OR with pathway='Non Pathway'
+            if pathway == 'Non Pathway':
+                # Accept if pathway is None/NULL or equals 'Non Pathway'
+                if current_log_path and current_log_path != 'Non Pathway':
+                    return False
+                # If no pathway, it matches "Non Pathway" - accept it
+                return True
+            
             # If log has a pathway and it doesn't match → reject
             if current_log_path and current_log_path != pathway:
                 return False
