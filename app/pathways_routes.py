@@ -136,7 +136,7 @@ def update_project(project_id):
 @pathways_bp.route('/api/contacts/<int:contact_id>/pathways', methods=['GET'])
 @login_required
 def get_contact_pathways(contact_id):
-    if not (is_authorized(Permissions.ACHIEVEMENTS_EDIT) or is_authorized(Permissions.CONTACT_BOOK_EDIT)):
+    if not (is_authorized(Permissions.ACHIEVEMENTS_EDIT) or is_authorized(Permissions.CONTACT_BOOK_EDIT) or (current_user.is_authenticated and current_user.contact_id == contact_id)):
         return jsonify(success=False, message="Permission denied"), 403
 
     contact = db.session.get(Contact, contact_id)
@@ -147,7 +147,11 @@ def get_contact_pathways(contact_id):
     registered = [cp.to_dict() for cp in contact.registered_paths]
     registered_ids = {cp.path_id for cp in contact.registered_paths}
 
-    available_pathways = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
+    # Only show pathways with type 'pathway' or 'program' for registration
+    available_pathways = Pathway.query.filter(
+        Pathway.status == 'active',
+        Pathway.type.in_(['pathway', 'program'])
+    ).order_by(Pathway.name).all()
     available = [
         {'id': p.id, 'name': p.name, 'abbr': p.abbr}
         for p in available_pathways if p.id not in registered_ids

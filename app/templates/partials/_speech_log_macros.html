@@ -28,7 +28,7 @@
                 {% if is_authorized(current_user.contact_id ==
                 log.owner.id, Permissions.SPEECH_LOGS_EDIT_ALL) %}
                 <button class="icon-btn edit-log-btn"
-                    onclick="openSpeechEditModal({{ item.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
+                    onclick="openEditDetailsModal({{ item.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
                     title="Edit" style="font-size: 0.8em; margin-left: 8px; padding: 0;"><i
                         class="fas fa-edit"></i></button>
                 {% endif %}
@@ -68,7 +68,7 @@
                 {% endif %}
                 {% if is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL) %}
                 <button class="icon-btn edit-log-btn"
-                    onclick="openSpeechEditModal({{ log.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
+                    onclick="openEditDetailsModal({{ log.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
                     title="Edit"><i class="fas fa-edit"></i></button>
                 {% endif %}
             </div>
@@ -139,7 +139,7 @@
                 {% if is_authorized(current_user.contact_id in log.owners|map(attribute='id'),
                 Permissions.SPEECH_LOGS_EDIT_ALL) %}
                 <button class="icon-btn edit-log-btn"
-                    onclick="openSpeechEditModal({{ log.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
+                    onclick="openEditDetailsModal({{ log.id }}, null, (this.closest('.speech-log-entry, .role-log-entry') || {}).dataset?.sessionTypeTitle)"
                     title="Edit"><i class="fas fa-edit"></i></button>
                 {% endif %}
             </div>

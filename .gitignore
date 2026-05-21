@@ -26,3 +26,4 @@ pyrefly.toml
 
 # EXCEPTION: DO NOT ignore the "0" folder
 !/app/static/club_resources/0/
+.claude/

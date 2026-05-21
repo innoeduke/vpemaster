@@ -60,6 +60,12 @@ def migrate_data():
                             if lvl5_ach:
                                 completed_date = lvl5_ach.issue_date
                         
+                        # Check if already registered
+                        existing_cp = ContactPath.query.filter_by(contact_id=contact.id, path_id=pathway.id).first()
+                        if existing_cp:
+                            print(f"  [Skip] ContactPath already exists for {pathway.name}")
+                            continue
+
                         # Create ContactPath
                         cp = ContactPath(
                             contact_id=contact.id,
@@ -76,7 +82,11 @@ def migrate_data():
                         print(f"  [Warning] Pathway not found for completed code/name: {part}")
             
             # 2. Migrate current (default) path
-            if legacy_current:
+            # Guest contacts should have NULL current path - clear any wrong value
+            if contact.Type == 'Guest' and legacy_current:
+                contact._Current_Path = None
+                print(f"  - Cleared wrong Current_Path for Guest: {legacy_current}")
+            elif legacy_current:
                 pathway = pathway_by_name.get(legacy_current.strip().lower()) or pathway_by_abbr.get(legacy_current.strip().upper())
                 if pathway:
                     if pathway.id in registered_pathway_ids:
@@ -87,18 +97,25 @@ def migrate_data():
                             cp.is_default = True
                             print(f"  - Set existing completed path {pathway.name} as default")
                     else:
-                        # Register as working path and default
-                        cp = ContactPath(
-                            contact_id=contact.id,
-                            path_id=pathway.id,
-                            status='working',
-                            is_default=True,
-                            registered_date=date.today(),
-                            completed_date=None
-                        )
-                        db.session.add(cp)
+                        # Check if already exists before registering as working path
+                        existing_cp = ContactPath.query.filter_by(contact_id=contact.id, path_id=pathway.id).first()
+                        if existing_cp:
+                            existing_cp.is_default = True
+                            existing_cp.status = 'working'
+                            print(f"  - Updated existing ContactPath as default working: {pathway.name}")
+                        else:
+                            # Register as working path and default
+                            cp = ContactPath(
+                                contact_id=contact.id,
+                                path_id=pathway.id,
+                                status='working',
+                                is_default=True,
+                                registered_date=date.today(),
+                                completed_date=None
+                            )
+                            db.session.add(cp)
+                            print(f"  - Working Path (Default): {pathway.name}")
                         registered_pathway_ids.add(pathway.id)
-                        print(f"  - Working Path (Default): {pathway.name}")
                 else:
                     print(f"  [Warning] Pathway not found for current path: {legacy_current}")
             

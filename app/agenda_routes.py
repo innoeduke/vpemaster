@@ -877,7 +877,8 @@ A single endpoint to fetch all data needed for the agenda modals.
             "Completed_Paths": c.Completed_Paths,
             "Credentials": derive_credentials(c),
             "Current_Path": c.Current_Path,
-            "Next_Project": c.Next_Project
+            "Next_Project": c.Next_Project,
+            "registered_paths": [p['name'] for p in c.get_member_pathways()]
         } for c in contacts
     ]
 

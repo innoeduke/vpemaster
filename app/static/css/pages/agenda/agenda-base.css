@@ -1410,6 +1410,8 @@ a.owner-link:hover {
 }
 
 .role-owner-card {
+	display: flex;
+	flex-direction: column;
 	flex: 0 0 auto;
 	min-width: 240px;
 	background: #f8fafc;

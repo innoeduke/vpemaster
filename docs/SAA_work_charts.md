@@ -24,8 +24,8 @@ Last Updated: 2026-05-15           Created by: Winnie Wu, Reviewed by: Kyle Wei
 | 1.2    | Submit all printing    | VPE            | By 3pm     | Agenda, certificates, and eval    |
 |        | materials to SAA       |                |            | forms, etc.                       |
 +--------+------------------------+----------------+------------+-----------------------------------+
-| 1.3    | Print the early bird   | SAA            | By 4pm     | Early bird tickets expire at 3pm  |
-|        | roster sheet           |                |            |                                   |
+| 1.3    | Print the roster sheet | Treasurer      | By 4pm     | Early bird tickets expire at 3pm; |
+|        |                        |                |            | send the sheet to SAA             |
 +--------+------------------------+----------------+------------+-----------------------------------+
 | 1.4    | Send prints to         | SAA            | By 4pm     | Also send entrance QR code to     |
 |        | print vendor           |                |            | print vendor                      |
@@ -66,8 +66,8 @@ Last Updated: 2026-05-15           Created by: Winnie Wu, Reviewed by: Kyle Wei
 | 4.1    | Turn on projector, TV, | SAA            | -          | Use remote controls               |
 |        | and AC                 |                |            |                                   |
 +--------+------------------------+----------------+------------+-----------------------------------+
-| 4.2    | Turn on and test Audio | SAA            | -          | -                                 |
-|        | speaker                |                |            |                                   |
+| 4.2    | Turn on and test Audio | SAA            | -          | Charge the transmitters right     |
+|        | speaker                |                |            | upon arrival                      |
 +--------+------------------------+----------------+------------+-----------------------------------+
 | 4.3    | Set up Audio Mixer &   | SAA            | -          | Mic / Projector / Camera / Laptop |
 |        | connect devices        |                |            |                                   |

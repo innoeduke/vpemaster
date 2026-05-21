@@ -19,25 +19,24 @@ const modalElements = {
 
   standardSelection: document.getElementById("standard-selection"),
 
-  projectModeFields: document.getElementById("project-mode-fields"),
-
-  pathwayGenericRow: document.getElementById("pathway-generic-row"),
-  pathwaySelect: document.getElementById("edit-pathway"),
-  isProjectCheckbox: document.getElementById("edit-is-project"),
-  levelSelectGroup: document.getElementById("level-select-group"),
-  levelSelect: document.getElementById("edit-level"),
-  projectSelectGroup: document.getElementById("project-select-group"),
-  projectSelect: document.getElementById("edit-project"),
-  labelPathway: document.getElementById("label-pathway-series"),
-  labelLevel: document.getElementById("label-level"),
-  labelProject: document.getElementById("label-project-presentation"),
-  projectGroup: document.getElementById("project-group"),
-  isProjectChk: document.getElementById("is-project-chk"),
-  projectSelectDropdown: document.getElementById("project-select-dropdown"),
-  pathwayGroup: document.getElementById("pathway-group"),
-  pathwaySelectDropdown: document.getElementById("pathway-select-dropdown"),
-  levelGroup: document.getElementById("level-group"),
-  levelSelectDropdown: document.getElementById("level-select-dropdown"),
+  projectModeFields: document.querySelector("#speech-mode-fields #project-mode-fields"),
+  pathwayGenericRow: document.querySelector("#speech-mode-fields #pathway-generic-row"),
+  pathwaySelect: document.querySelector("#speech-mode-fields #edit-pathway"),
+  isProjectCheckbox: document.querySelector("#speech-mode-fields #edit-is-project"),
+  levelSelectGroup: document.querySelector("#speech-mode-fields #level-select-group"),
+  levelSelect: document.querySelector("#speech-mode-fields #edit-level"),
+  projectSelectGroup: document.querySelector("#speech-mode-fields #project-select-group"),
+  projectSelect: document.querySelector("#speech-mode-fields #edit-project"),
+  labelPathway: document.querySelector("#speech-mode-fields #label-pathway-series"),
+  labelLevel: document.querySelector("#speech-mode-fields #label-level"),
+  labelProject: document.querySelector("#speech-mode-fields #label-project-presentation"),
+  projectGroup: document.querySelector("#speech-mode-fields #project-group"),
+  isProjectChk: document.querySelector("#speech-mode-fields #is-project-chk"),
+  projectSelectDropdown: document.querySelector("#speech-mode-fields #project-select-dropdown"),
+  pathwayGroup: document.querySelector("#speech-mode-fields #pathway-group"),
+  pathwaySelectDropdown: document.querySelector("#speech-mode-fields #pathway-select-dropdown"),
+  levelGroup: document.querySelector("#speech-mode-fields #level-group"),
+  levelSelectDropdown: document.querySelector("#speech-mode-fields #level-select-dropdown"),
   speechModeFields: document.getElementById("speech-mode-fields"),
   roleModeFields: document.getElementById("role-mode-fields"),
   roleNameDisplay: document.getElementById("role-name-display"),
@@ -135,61 +134,68 @@ async function openEditDetailsModal(
 
     const sessionType = currentSessionType;
     const isPreparedSpeech = sessionType === "Prepared Speech" || sessionType === "Pathway Speech" || sessionType === "Presentation";
-    const isProjectRole = ["Evaluation", "Panel Discussion", "Table Topics", "Keynote Speech"].includes(sessionType);
+    const isProjectRole = ["Topicsmaster", "Moderator", "Keynote Speaker", "Individual Evaluator", "Evaluation"].includes(data.log.role);
 
     const row = document.querySelector(`tr[data-id="${logId}"]`);
 
-    if (!isPreparedSpeech && !isProjectRole && row) {
+    if (!isPreparedSpeech && !isProjectRole) {
       // Toggle wrappers: show role mode, hide speech mode
       modalElements.speechModeFields.style.display = "none";
       modalElements.roleModeFields.style.display = "block";
 
-      const roleName = row.dataset.role || "N/A";
+      const roleName = data.log.role || (row ? row.dataset.role : "") || "N/A";
       modalElements.roleNameDisplay.textContent = roleName;
 
-      // Get all owner IDs for this row
-      let ownerIds = [];
-      try {
-        ownerIds = JSON.parse(row.dataset.ownerIds || "[]");
-      } catch (e) {
-        const singleId = row.dataset.ownerId;
-        if (singleId) ownerIds = [singleId];
-      }
-      if (ownerIds.length === 0) {
-        const singleId = row.dataset.ownerId;
-        if (singleId) ownerIds = [singleId];
+      // Get all owner IDs for this log
+      let ownerIds = data.log.owner_ids || [];
+      if (ownerIds.length === 0 && row) {
+        try {
+          ownerIds = JSON.parse(row.dataset.ownerIds || "[]");
+        } catch (e) {
+          const singleId = row.dataset.ownerId;
+          if (singleId) ownerIds = [singleId];
+        }
+        if (ownerIds.length === 0) {
+          const singleId = row.dataset.ownerId;
+          if (singleId) ownerIds = [singleId];
+        }
       }
 
       // Parse existing per-owner targets if available
-      let existingOwnerTargets = {};
-      try {
-        existingOwnerTargets = JSON.parse(row.dataset.ownerTargets || "{}");
-      } catch (e) { /* ignore */ }
+      let existingOwnerTargets = data.log.owner_targets || {};
+      if (Object.keys(existingOwnerTargets).length === 0 && row) {
+        try {
+          existingOwnerTargets = JSON.parse(row.dataset.ownerTargets || "{}");
+        } catch (e) { /* ignore */ }
+      }
 
       // Build the scrollable owner cards
       const scrollContainer = modalElements.roleOwnersScroll;
       scrollContainer.innerHTML = "";
 
       // Helper: build a pathway <select> with grouped options
-      function buildPathwaySelect() {
+      function buildPathwaySelect(ownerId) {
         const sel = document.createElement("select");
         sel.className = "role-card-pathway";
-        sel.innerHTML = '<option value="">-- Select Pathway --</option>';
-        if (typeof groupedPathways !== "undefined") {
-          for (const [groupLabel, items] of Object.entries(groupedPathways)) {
-            const optgroup = document.createElement("optgroup");
-            optgroup.label = groupLabel;
-            items.forEach((item) => {
-              const value = typeof item === "object" ? item.name : item;
-              const text = typeof item === "object" ? item.name : item;
-              optgroup.appendChild(new Option(text, value));
-            });
-            sel.appendChild(optgroup);
-          }
-        } else if (typeof pathwayMap !== "undefined") {
-          Object.keys(pathwayMap).forEach((name) => {
+        sel.innerHTML = '';
+        
+        const contactsList = data.log.owners_data || window.allContacts || [];
+        const contact = contactsList.find((c) => c.id == ownerId);
+        let regPaths = [];
+        if (contact && contact.registered_paths) {
+          regPaths = contact.registered_paths.map(p => typeof p === 'object' ? p.name : p);
+        }
+        
+        if (regPaths.length > 0) {
+          sel.innerHTML = '<option value="">-- Select Pathway --</option>';
+          regPaths.forEach((name) => {
             sel.appendChild(new Option(name, name));
           });
+          if (!regPaths.includes("Non Pathway")) {
+            sel.appendChild(new Option("Non Pathway", "Non Pathway"));
+          }
+        } else {
+          sel.appendChild(new Option("Non Pathway", "Non Pathway"));
         }
         return sel;
       }
@@ -217,13 +223,13 @@ async function openEditDetailsModal(
           level = savedTarget.level || "1";
         }
 
-        // 2. Fallback to row pathway
+        // 2. Fallback to row/log pathway
         if (!pathway) {
-          pathway = (row.dataset.pathway || "").trim();
+          pathway = (data.log.pathway || (row ? row.dataset.pathway : "") || "").trim();
         }
 
         // 3. Fallback to contact data
-        const contactsList = window.allContacts || [];
+        const contactsList = data.log.owners_data || window.allContacts || [];
         const contact = contactsList.find((c) => c.id == ownerId);
         if (contact) {
           if (!pathway) {
@@ -254,7 +260,7 @@ async function openEditDetailsModal(
       }
 
       // Create one card per owner
-      const contactsList = window.allContacts || [];
+      const contactsList = data.log.owners_data || window.allContacts || [];
       ownerIds.forEach((ownerId) => {
         const contact = contactsList.find((c) => c.id == ownerId);
         const ownerName = contact ? contact.Name : `Owner #${ownerId}`;
@@ -275,7 +281,7 @@ async function openEditDetailsModal(
         pathGroup.className = "form-group";
         const pathLabel = document.createElement("label");
         pathLabel.textContent = "Pathway";
-        const pathSelect = buildPathwaySelect();
+        const pathSelect = buildPathwaySelect(ownerId);
         pathSelect.value = defaults.pathway;
         pathGroup.appendChild(pathLabel);
         pathGroup.appendChild(pathSelect);
@@ -291,6 +297,17 @@ async function openEditDetailsModal(
         levelGroup.appendChild(levelLabel);
         levelGroup.appendChild(levelSelect);
         card.appendChild(levelGroup);
+
+        const syncLevel = () => {
+          if (pathSelect.value === "Non Pathway") {
+            levelSelect.value = "";
+            levelSelect.disabled = true;
+          } else {
+            levelSelect.disabled = false;
+          }
+        };
+        pathSelect.addEventListener("change", syncLevel);
+        syncLevel();
 
         scrollContainer.appendChild(card);
       });
@@ -311,7 +328,7 @@ async function openEditDetailsModal(
         pathGroup.className = "form-group";
         const pathLabel = document.createElement("label");
         pathLabel.textContent = "Pathway";
-        const pathSelect = buildPathwaySelect();
+        const pathSelect = buildPathwaySelect(null);
         pathSelect.value = defaults.pathway;
         pathGroup.appendChild(pathLabel);
         pathGroup.appendChild(pathSelect);
@@ -327,6 +344,17 @@ async function openEditDetailsModal(
         levelGroup.appendChild(levelSelect);
         card.appendChild(levelGroup);
 
+        const syncLevel = () => {
+          if (pathSelect.value === "Non Pathway") {
+            levelSelect.value = "";
+            levelSelect.disabled = true;
+          } else {
+            levelSelect.disabled = false;
+          }
+        };
+        pathSelect.addEventListener("change", syncLevel);
+        syncLevel();
+
         scrollContainer.appendChild(card);
       }
     } else {
@@ -335,7 +363,14 @@ async function openEditDetailsModal(
       modalElements.roleModeFields.style.display = "none";
 
       const setupFunctions = {
+        // Project roles keyed by session_type_title
         "Evaluation": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+          ...opts,
+          projectIds: ProjectID.EVALUATION_PROJECTS,
+          defaultOption: "-- Select Evaluation Project --",
+          speechTitleLabelText: "Evaluator for:"
+        }),
+        "Individual Evaluator": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
           ...opts,
           projectIds: ProjectID.EVALUATION_PROJECTS,
           defaultOption: "-- Select Evaluation Project --",
@@ -359,15 +394,32 @@ async function openEditDetailsModal(
         "Pathway Speech": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
         "Prepared Speech": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
         "Presentation": (log, opts) => SpeechModalSetupManager.setupSpeech(log, opts),
+        // Project roles keyed by actual role.name (alias mappings)
+        "Topicsmaster": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+          ...opts,
+          projectIds: [ProjectID.TOPICSMASTER_PROJECT],
+          defaultOption: "-- Select Table Topics Project --"
+        }),
+        "Moderator": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+          ...opts,
+          projectIds: [ProjectID.MODERATOR_PROJECT],
+          defaultOption: "-- Select Panel Discussion Project --"
+        }),
+        "Keynote Speaker": (log, opts) => SpeechModalSetupManager.setupProjectRole(log, {
+          ...opts,
+          projectIds: [ProjectID.KEYNOTE_SPEAKER_PROJECT],
+          defaultOption: "-- Select Keynote Speech Project --"
+        }),
         default: (log, opts) => SpeechModalSetupManager.setupRole(log, opts),
       };
       const setupFunction =
-        setupFunctions[currentSessionType] || setupFunctions.default;
+        setupFunctions[data.log.role] || setupFunctions[currentSessionType] || setupFunctions.default;
       setupFunction(data.log, {
         workingPath,
         nextProject,
         sessionType: currentSessionType,
       });
+
     }
 
     modalElements.modal.style.display = "flex";
@@ -446,7 +498,11 @@ async function saveEditDetailsChanges(event) {
           }
         });
 
-        closeEditDetailsModal();
+        if (!window.location.pathname.includes("/agenda")) {
+          window.location.reload();
+        } else {
+          closeEditDetailsModal();
+        }
       } else {
         alert("Error saving: " + (data.message || "Unknown error"));
       }
@@ -482,10 +538,10 @@ async function saveEditDetailsChanges(event) {
   }
 }
 
-// Expose functions globally for backward-compatibility with other HTML/templates
-window.openSpeechEditModal = openEditDetailsModal;
-window.closeSpeechEditModal = closeEditDetailsModal;
-window.saveSpeechChanges = saveEditDetailsChanges;
+// Expose functions globally
+window.openEditDetailsModal = openEditDetailsModal;
+window.closeEditDetailsModal = closeEditDetailsModal;
+window.saveEditDetailsChanges = saveEditDetailsChanges;
 
 
 // --- Setup Helpers ---
@@ -505,6 +561,24 @@ function resetModal(logData, sessionType) {
   
   // Reset visibility of Speech Title form group (might be hidden by role modal)
   modalElements.speechTitle.closest('.form-group').style.display = 'block';
+
+  // Reset disabled states for checkboxes and clear custom event handlers
+  if (modalElements.isProjectCheckbox) {
+    modalElements.isProjectCheckbox.disabled = false;
+  }
+  if (modalElements.isProjectChk) {
+    modalElements.isProjectChk.disabled = false;
+    modalElements.isProjectChk.onchange = null;
+  }
+  if (modalElements.pathwaySelectDropdown) {
+    modalElements.pathwaySelectDropdown.onchange = null;
+  }
+  if (modalElements.levelSelectDropdown) {
+    modalElements.levelSelectDropdown.disabled = false;
+  }
+  if (modalElements.levelSelect) {
+    modalElements.levelSelect.disabled = false;
+  }
 
   if (modalElements.standardSelection)
     modalElements.standardSelection.style.display = "none";
@@ -529,18 +603,27 @@ function resetModal(logData, sessionType) {
 }
 
 const SpeechModalSetupManager = {
-  populatePathwayDropdown(dropdown) {
-    if (typeof groupedPathways !== 'undefined' && groupedPathways) {
-      populateGroupedDropdown(dropdown, groupedPathways, {
-        defaultOption: "-- Select Pathway --"
+  populatePathwayDropdown(dropdown, ownerId, logRegisteredPaths, ownersData = null) {
+    const contactsList = ownersData || window.allContacts || [];
+    const contact = contactsList.find((c) => c.id == ownerId);
+    let regPaths = [];
+    if (contact && contact.registered_paths) {
+      regPaths = contact.registered_paths.map(p => typeof p === 'object' ? p.name : p);
+    } else if (logRegisteredPaths) {
+      regPaths = logRegisteredPaths.map(p => typeof p === 'object' ? p.name : p);
+    }
+
+    dropdown.innerHTML = '';
+    if (regPaths.length > 0) {
+      dropdown.add(new Option("-- Select Pathway --", ""));
+      regPaths.forEach((name) => {
+        dropdown.add(new Option(name, name));
       });
+      if (!regPaths.includes("Non Pathway")) {
+        dropdown.add(new Option("Non Pathway", "Non Pathway"));
+      }
     } else {
-      const pathways = Object.keys(pathwayMap).map((name) => ({ name }));
-      populateDropdown(dropdown, pathways, {
-        defaultOption: "-- Select Pathway --",
-        valueField: "name",
-        textField: "name",
-      });
+      dropdown.add(new Option("Non Pathway", "Non Pathway"));
     }
   },
 
@@ -551,12 +634,18 @@ const SpeechModalSetupManager = {
     modalElements.projectGroup.style.display = "none";
     modalElements.speechTitle.closest('.form-group').style.display = 'none';
 
+    // Populate owner name header inside the card
+    const ownerNameElement = document.getElementById("project-role-owner-name");
+    if (ownerNameElement) {
+      ownerNameElement.textContent = logData.owner_name || "No Owner Assigned";
+    }
+
     // Show pathway dropdown for all roles (unified pathway handling)
     modalElements.pathwayGroup.style.display = "flex";
     if (modalElements.levelGroup) {
       modalElements.levelGroup.style.display = "block";
     }
-    SpeechModalSetupManager.populatePathwayDropdown(modalElements.pathwaySelectDropdown);
+    SpeechModalSetupManager.populatePathwayDropdown(modalElements.pathwaySelectDropdown, logData.owner_id, logData.registered_paths, logData.owners_data);
     // Priority: saved log target pathway > workingPath > "Non Pathway"
     const defaultPath = logData.pathway || workingPath || "Non Pathway";
     modalElements.pathwaySelectDropdown.value = defaultPath;
@@ -564,6 +653,24 @@ const SpeechModalSetupManager = {
     // Priority: saved log target level > empty
     const defaultLevel = logData.level || "";
     modalElements.levelSelectDropdown.value = defaultLevel;
+
+    const syncRoleLevel = () => {
+      const pathway = modalElements.pathwaySelectDropdown.value;
+      if (pathway === "Non Pathway") {
+        if (modalElements.levelSelectDropdown) {
+          modalElements.levelSelectDropdown.value = "";
+          modalElements.levelSelectDropdown.disabled = true;
+        }
+      } else {
+        if (modalElements.levelSelectDropdown) {
+          modalElements.levelSelectDropdown.disabled = false;
+        }
+      }
+    };
+    modalElements.pathwaySelectDropdown.onchange = () => {
+      syncRoleLevel();
+    };
+    syncRoleLevel();
   },
 
   setupProjectRole(logData, { sessionType, workingPath, projectIds, defaultOption, speechTitleLabelText }) {
@@ -571,9 +678,16 @@ const SpeechModalSetupManager = {
     if (speechTitleLabelText) {
       modalElements.speechTitleLabel.textContent = speechTitleLabelText;
     }
-    if (sessionType !== "Evaluation") {
+    if (sessionType !== "Evaluation" && sessionType !== "Individual Evaluator") {
       modalElements.speechTitle.disabled = true;
     }
+
+    // Populate owner name header inside the card
+    const ownerNameElement = document.getElementById("project-role-owner-name");
+    if (ownerNameElement) {
+      ownerNameElement.textContent = logData.owner_name || "No Owner Assigned";
+    }
+
     modalElements.projectGroup.style.display = "block";
     modalElements.pathwayGroup.style.display = "flex";
     if (modalElements.levelGroup) {
@@ -598,7 +712,7 @@ const SpeechModalSetupManager = {
       modalElements.projectSelectDropdown.value = projectsList[0].id;
     }
 
-    this.populatePathwayDropdown(modalElements.pathwaySelectDropdown);
+    this.populatePathwayDropdown(modalElements.pathwaySelectDropdown, logData.owner_id, logData.registered_paths, logData.owners_data);
 
     // Priority: saved log target pathway > owner's working path > "Non Pathway"
     const defaultPath = logData.pathway || workingPath || "Non Pathway";
@@ -610,16 +724,15 @@ const SpeechModalSetupManager = {
     }
 
     const isProject = logData.Project_ID && targetProjectIds.includes(Number(logData.Project_ID));
-    modalElements.isProjectChk.checked = isProject;
 
     const toggleFields = (isChecked) => {
       modalElements.projectModeFields.style.display = isChecked ? "block" : "none";
-      if (modalElements.projectSelectDropdown && sessionType !== "Evaluation") {
+      if (modalElements.projectSelectDropdown && sessionType !== "Evaluation" && sessionType !== "Individual Evaluator") {
         modalElements.projectSelectDropdown.style.display = isChecked ? "block" : "none";
       }
       if (!isChecked) {
         modalElements.projectSelectDropdown.value = "";
-        if (sessionType === "Evaluation") {
+        if (sessionType === "Evaluation" || sessionType === "Individual Evaluator") {
           modalElements.speechTitle.value = logData.Session_Title || "";
         }
       } else {
@@ -631,8 +744,36 @@ const SpeechModalSetupManager = {
       }
     };
 
+    const syncProjectChk = () => {
+      const pathway = modalElements.pathwaySelectDropdown.value;
+      if (pathway === "Non Pathway") {
+        modalElements.isProjectChk.checked = false;
+        modalElements.isProjectChk.disabled = true;
+        if (modalElements.levelSelectDropdown) {
+          modalElements.levelSelectDropdown.value = "";
+          modalElements.levelSelectDropdown.disabled = true;
+        }
+        toggleFields(false);
+      } else {
+        modalElements.isProjectChk.disabled = false;
+        if (modalElements.levelSelectDropdown) {
+          modalElements.levelSelectDropdown.disabled = false;
+        }
+      }
+    };
+
+    modalElements.pathwaySelectDropdown.onchange = () => {
+      syncProjectChk();
+    };
+
     modalElements.isProjectChk.onchange = (e) => toggleFields(e.target.checked);
-    toggleFields(isProject);
+    
+    // Initial sync and toggle setup
+    syncProjectChk();
+    if (modalElements.pathwaySelectDropdown.value !== "Non Pathway") {
+      modalElements.isProjectChk.checked = isProject;
+      toggleFields(isProject);
+    }
   },
 
   setupSpeech(logData, { workingPath, nextProject, sessionType }) {
@@ -643,11 +784,17 @@ const SpeechModalSetupManager = {
     modalElements.levelSelectGroup.style.display = "block";
     modalElements.projectSelectGroup.style.display = "block";
 
+    // Populate owner name header inside the card
+    const ownerNameElement = document.getElementById("speech-owner-name");
+    if (ownerNameElement) {
+      ownerNameElement.textContent = logData.owner_name || "No Owner Assigned";
+    }
+
     modalElements.labelPathway.textContent = "Pathway:";
     modalElements.labelProject.textContent = "Project:";
     modalElements.labelLevel.textContent = "Level:";
 
-    this.populatePathwayDropdown(modalElements.pathwaySelect);
+    this.populatePathwayDropdown(modalElements.pathwaySelect, logData.owner_id, logData.registered_paths, logData.owners_data);
 
     let pathwayToSelect = logData.pathway;
     let levelToSelect = logData.level;
@@ -706,15 +853,26 @@ const SpeechModalSetupManager = {
     }
 
     const isGeneric = projectToSelect == ProjectID.GENERIC;
-    modalElements.isProjectCheckbox.checked = !isGeneric;
-    toggleGeneric(isGeneric);
 
     modalElements.pathwaySelect.value = pathwayToSelect || "";
 
-    if (!isGeneric) {
-      updateLevelOptions();
-      modalElements.levelSelect.value = levelToSelect || "";
-      updateProjectOptions(projectToSelect);
+    if (pathwayToSelect === "Non Pathway") {
+      modalElements.isProjectCheckbox.checked = false;
+      modalElements.isProjectCheckbox.disabled = true;
+      toggleGeneric(true);
+      if (modalElements.levelSelect) {
+        modalElements.levelSelect.value = "";
+        modalElements.levelSelect.disabled = true;
+      }
+    } else {
+      modalElements.isProjectCheckbox.disabled = false;
+      modalElements.isProjectCheckbox.checked = !isGeneric;
+      toggleGeneric(isGeneric);
+      if (!isGeneric) {
+        updateLevelOptions();
+        modalElements.levelSelect.value = levelToSelect || "";
+        updateProjectOptions(projectToSelect);
+      }
     }
   }
 };
@@ -722,8 +880,20 @@ const SpeechModalSetupManager = {
 // --- Dynamic Dropdown Helpers ---
 
 function updateDynamicOptions() {
-  updateLevelOptions();
-  updateProjectOptions();
+  const pathway = modalElements.pathwaySelect.value;
+  if (pathway === "Non Pathway") {
+    modalElements.isProjectCheckbox.checked = false;
+    modalElements.isProjectCheckbox.disabled = true;
+    toggleGeneric(true);
+    if (modalElements.levelSelect) {
+      modalElements.levelSelect.value = "";
+      modalElements.levelSelect.disabled = true;
+    }
+  } else {
+    modalElements.isProjectCheckbox.disabled = false;
+    updateLevelOptions();
+    updateProjectOptions();
+  }
 }
 
 function updateLevelOptions() {
@@ -885,12 +1055,14 @@ function buildSavePayload() {
       payload.level = levelDropdownValue;
       break;
     case "Evaluation":
+    case "Individual Evaluator":
       payload.project_id =
         isProject && projectSelectDropdown.value
           ? projectSelectDropdown.value
           : null;
       payload.pathway = pathwaySelectDropdown.value || "";
       payload.level = levelDropdownValue;
+      payload.session_title = speechTitle.value || "";
       break;
     default:
       // Include speech-specific fields if the standard selection UI is visible
@@ -913,23 +1085,21 @@ function buildSavePayload() {
 function handleSaveSuccess(updateResult, payload) {
   const logId = modalElements.logId.value;
   
+  if (!window.location.pathname.includes("/agenda")) {
+    window.location.reload();
+    return;
+  }
+  
   const logsToUpdate = [logId];
   if (updateResult.affected_log_ids && updateResult.affected_log_ids.length > 0) {
     logsToUpdate.push(...updateResult.affected_log_ids);
   }
 
   logsToUpdate.forEach(id => {
-    if (window.location.pathname.includes("/agenda")) {
-      updateAgendaRow(id, updateResult, payload);
-    } else {
-      const card = document.getElementById(`log-card-${id}`);
-      if (card) {
-        updateSpeechLogCard(id, updateResult, payload);
-      }
-    }
+    updateAgendaRow(id, updateResult, payload);
   });
 
-  closeSpeechEditModal();
+  closeEditDetailsModal();
 }
 
 // --- UI Update Functions ---
@@ -1135,7 +1305,7 @@ function updateSpeechLogCard(logId, updateResult, payload) {
 
 // --- Event Listeners ---
 document.addEventListener("DOMContentLoaded", () => {
-  modalElements.form.addEventListener("submit", saveSpeechChanges);
+  modalElements.form.addEventListener("submit", saveEditDetailsChanges);
   modalElements.pathwaySelect.addEventListener("change", updateDynamicOptions);
   modalElements.levelSelect.addEventListener("change", updateDynamicOptions);
   if (modalElements.isProjectCheckbox) {

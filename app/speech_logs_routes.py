@@ -227,24 +227,24 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
     Returns: dict with pathway info
     """
     selected_pathway = filters.get('pathway')
-    
+
     # Handle 'all' selection
     if raw_pathway == 'all':
         selected_pathway = 'all'
     elif not raw_pathway and viewed_contact and viewed_contact.Current_Path:
         selected_pathway = viewed_contact.Current_Path
-    
+
     # Get member pathways using model method
     member_pathways = []
     if viewed_contact:
         member_pathways = viewed_contact.get_member_pathways()
-        
+
         # Ensure selected pathway is in list
-        if selected_pathway and selected_pathway != 'all':
+        if selected_pathway and selected_pathway not in ('all', 'Non Pathway'):
             if not any(p['name'] == selected_pathway for p in member_pathways):
                 member_pathways.append({'name': selected_pathway, 'status': 'unknown', 'abbr': '', 'path_id': None})
                 member_pathways.sort(key=lambda x: x['name'])
-    
+
     return {
         'selected_pathway': selected_pathway,
         'member_pathways': member_pathways,
@@ -262,6 +262,9 @@ def _get_pathway_date_range(contact, pathway_name):
     if not contact or not pathway_name or pathway_name == 'all':
         return None, None
         
+    if pathway_name == 'Non Pathway':
+        return datetime.min.date(), datetime.max.date()
+        
     # Get all path completions sorted by date
     uid = getattr(contact, 'user_id', None)
     if uid:
@@ -270,8 +273,9 @@ def _get_pathway_date_range(contact, pathway_name):
             achievement_type='path-completion'
         ).order_by(Achievement.issue_date).all()
     else:
+        # Fall back to member_id if no user_id
         achievements = Achievement.query.filter_by(
-            contact_id=contact.id,
+            member_id=str(contact.id),
             achievement_type='path-completion'
         ).order_by(Achievement.issue_date).all()
     
@@ -518,13 +522,25 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
 
         # We set it on the log so it can be used for display and logic
         log.context_target = context_target
-        
+
         # Override context_path if target pathway is set for this role
         if context_target and context_target.get('pathway'):
             # Only override if we aren't explicitly filtering by another pathway
             # Or perhaps target_pathway IS the pathway for this role, so it should be the display pathway
             if not context_path or context_path == 'all':
                 context_path = context_target.get('pathway')
+
+        # Filter by target_pathway from owner_meeting_roles
+        if p_filter and p_filter != 'all':
+            target_pathway = context_target.get('pathway') if context_target else None
+            if p_filter == 'Non Pathway':
+                # "Non Pathway" means show only logs where target_pathway is NULL
+                if target_pathway is not None:
+                    continue
+            else:
+                # For specific pathways, only show if target_pathway matches
+                if target_pathway != p_filter:
+                    continue
 
         display_level, log_type, project_code = log.get_display_level_and_type(
             pathway_cache, 
@@ -1842,13 +1858,16 @@ def get_speech_log_details(log_id):
 
     # Use the helper function to get project code
     project_code = ""
-    # Priority: target_pathway (from OwnerMeetingRoles) > log.pathway (saved selection) > owner's Current_Path > "Non Pathway"
+    # Priority: target_pathway (from OwnerMeetingRoles) > log.pathway > "Non Pathway"
+    # For functional roles (Timer, GE, etc.) where target_pathway is NULL and log.pathway is also NULL,
+    # we should NOT fall back to owner's Current_Path - they should show "Non Pathway" directly.
+    # Only speeches (Prepared Speech, Pathway Speech, Presentation) should use owner's Current_Path as fallback.
     pathway_name_to_return = target_pathway if target_pathway else log.pathway
     if not pathway_name_to_return:
-        if log.owner:
-            is_guest_without_user = (log.owner.Type == 'Guest') or (log.owner.user is None)
-            if not is_guest_without_user:
-                pathway_name_to_return = log.owner.Current_Path
+        # Only use owner's Current_Path as fallback if log.pathway exists (speech case)
+        # For functional roles with no target_pathway and no log.pathway, show "Non Pathway"
+        if log.pathway and log.owner and log.owner.Current_Path:
+            pathway_name_to_return = log.owner.Current_Path
     if not pathway_name_to_return:
         pathway_name_to_return = "Non Pathway"
     level = target_level if target_level else 1
@@ -1878,6 +1897,55 @@ def get_speech_log_details(log_id):
         if not getattr(log, 'project_code', None):
             log.project_code = log.project.get_code(pathway_name_to_return)
 
+    from .utils import derive_credentials
+
+    owner_ids = [o.id for o in log.owners]
+    owner_targets = {}
+    owners_data = []
+
+    session_type = log.session_type
+    role_obj = session_type.role if session_type else None
+    role_id = role_obj.id if role_obj else 0
+    meeting_id = log.meeting.id if log.meeting else None
+    role_name = role_obj.name if role_obj else (session_type.Title if session_type else "N/A")
+
+    for o in log.owners:
+        omr = None
+        if meeting_id and role_id:
+            omr_query = OwnerMeetingRoles.query.filter_by(
+                meeting_id=meeting_id,
+                role_id=role_id,
+                contact_id=o.id
+            )
+            has_single_owner = role_obj.has_single_owner if role_obj else True
+            if has_single_owner:
+                omr = omr_query.filter_by(session_log_id=log.id).first()
+                if not omr:
+                    omr = omr_query.first()
+            else:
+                omr = omr_query.first()
+
+        t_pathway = ""
+        t_level = ""
+        if omr:
+            t_pathway = omr.target_pathway or ""
+            t_level = omr.target_level or ""
+
+        owner_targets[str(o.id)] = {
+            "pathway": t_pathway,
+            "level": t_level
+        }
+
+        owners_data.append({
+            "id": o.id,
+            "Name": o.Name,
+            "DTM": o.DTM,
+            "Type": o.Type,
+            "Credentials": derive_credentials(o),
+            "Current_Path": o.Current_Path,
+            "registered_paths": [p['name'] for p in o.get_member_pathways()]
+        })
+
     log_data = {
         "id": log.id,
         "Session_Title": log.Session_Title,
@@ -1887,10 +1955,16 @@ def get_speech_log_details(log_id):
         "project_code": log.project_code,
         "credential": credential_value,
         "owner_name": owner_name,
+        "owner_id": target_contact_id,
+        "registered_paths": [p['name'] for p in target_contact.get_member_pathways()] if (log.owners and target_contact_id and target_contact) else [],
         "target_pathway": target_pathway,
         "target_level": target_level,
         "Media_URL": log.media.url if (is_authorized(Permissions.MEDIA_ACCESS) and log.media) else "",
-        "session_type_title": log.session_type.Title if log.session_type else "Pathway Speech"
+        "session_type_title": log.session_type.Title if log.session_type else "Pathway Speech",
+        "owner_ids": owner_ids,
+        "owner_targets": owner_targets,
+        "role": role_name,
+        "owners_data": owners_data
     }
 
     return jsonify(success=True, log=log_data)

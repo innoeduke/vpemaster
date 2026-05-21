@@ -161,7 +161,7 @@ def member_cards():
 @contacts_bp.route('/contact/form/<int:contact_id>', methods=['GET', 'POST'])
 @login_required
 def contact_form(contact_id=None):
-    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
+    if not (is_authorized(Permissions.CONTACT_BOOK_EDIT) or (current_user.is_authenticated and contact_id and current_user.contact_id == contact_id)):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify(success=False, message="You don't have permission to perform this action."), 403
         flash("You don't have permission to perform this action.", 'error')
@@ -235,6 +235,7 @@ def contact_form(contact_id=None):
                 'Bio': contact.Bio,
                 'Member_ID': contact.Member_ID,
                 'Completed_Paths': contact.Completed_Paths,
+                'registered_paths': contact.get_member_pathways(),
                 'DTM': contact.DTM,
                 'current_path': contact.Current_Path,
                 'next_project': contact.Next_Project,

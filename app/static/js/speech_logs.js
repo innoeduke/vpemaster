@@ -131,7 +131,7 @@ function showRoleHistory(badge) {
         if (e.target.closest('a')) return;
         if (item.id) {
           closeHistoryModal();
-          openSpeechEditModal(item.id, null, item.role_name);
+          openEditDetailsModal(item.id, null, item.role_name);
         }
       });
 

@@ -399,9 +399,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const nextProject = contact ? contact.Next_Project : null;
       const sessionTypeTitle = sessionType.Title || null;
-      openSpeechEditModal(logId, currentPath, sessionTypeTitle, nextProject);
+      openEditDetailsModal(logId, currentPath, sessionTypeTitle, nextProject);
     } else if (shouldShowRoleButton) {
-      openSpeechEditModal(logId);
+      openEditDetailsModal(logId);
     }
   }
 
@@ -2129,7 +2129,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (logId === "new") {
             saveChanges();
           } else {
-            openSpeechEditModal(
+            openEditDetailsModal(
               logId,
               currentPath,
               sessionTypeTitle,
@@ -2145,7 +2145,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (logId === "new") {
             saveChanges();
           } else {
-            openSpeechEditModal(logId);
+            openEditDetailsModal(logId);
           }
         };
       }
