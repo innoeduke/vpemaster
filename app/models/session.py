@@ -443,7 +443,7 @@ class SessionLog(db.Model):
         """
         from .project import Pathway
         
-        if not pathway_name:
+        if not pathway_name or pathway_name == "Non Pathway":
             self.pathway = None
             return
             
@@ -698,16 +698,32 @@ class SessionLog(db.Model):
             if sorted_contacts:
                 primary_owner = sorted_contacts[0]
             
+            import re
             for cid in unique_owner_ids:
                 contact = contacts_map.get(cid)
                 credential_snapshot = contact.credentials if contact else None
                 
+                t_pathway = None
+                t_level = None
+                if contact and contact.Current_Path and contact.Type != 'Guest':
+                    t_pathway = contact.Current_Path
+                    if contact.credentials:
+                        level_match = re.search(r'\d+', contact.credentials)
+                        if level_match:
+                            t_level = str(min(int(level_match.group(0)) + 1, 5))
+                        else:
+                            t_level = "1"
+                    else:
+                        t_level = "1"
+
                 new_omr = OwnerMeetingRoles(
                     meeting_id=meeting_id,
                     role_id=target_role_id,
                     contact_id=cid,
                     session_log_id=target_log.id if is_single_owner else None,
-                    credential=credential_snapshot
+                    credential=credential_snapshot,
+                    target_pathway=t_pathway,
+                    target_level=t_level
                 )
                 db.session.add(new_omr)
 

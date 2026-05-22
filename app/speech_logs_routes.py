@@ -534,8 +534,8 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
         if p_filter and p_filter != 'all':
             target_pathway = context_target.get('pathway') if context_target else None
             if p_filter == 'Non Pathway':
-                # "Non Pathway" means show only logs where target_pathway is NULL
-                if target_pathway is not None:
+                # "Non Pathway" means show only logs where target_pathway is NULL, empty, or "Non Pathway"
+                if target_pathway not in (None, '', 'Non Pathway'):
                     continue
             else:
                 # For specific pathways, only show if target_pathway matches
@@ -1851,10 +1851,8 @@ def get_speech_log_details(log_id):
              if omr:
                  if omr.credential:
                      credential_value = omr.credential
-                 if omr.target_pathway:
-                     target_pathway = omr.target_pathway
-                 if omr.target_level:
-                     target_level = omr.target_level
+                 target_pathway = omr.target_pathway if omr.target_pathway is not None else "Non Pathway"
+                 target_level = omr.target_level or ""
 
     # Use the helper function to get project code
     project_code = ""
@@ -1925,10 +1923,10 @@ def get_speech_log_details(log_id):
             else:
                 omr = omr_query.first()
 
-        t_pathway = ""
-        t_level = ""
+        t_pathway = None
+        t_level = None
         if omr:
-            t_pathway = omr.target_pathway or ""
+            t_pathway = omr.target_pathway if omr.target_pathway is not None else "Non Pathway"
             t_level = omr.target_level or ""
 
         owner_targets[str(o.id)] = {
@@ -2070,18 +2068,17 @@ def update_speech_log(log_id):
                 p_val = target.get('pathway')
                 l_val = target.get('level')
                 if p_val is not None:
-                    omr.target_pathway = p_val
+                    omr.target_pathway = None if p_val == "Non Pathway" else p_val
                 if l_val is not None:
-                    if p_val == "Non Pathway":
+                    if p_val == "Non Pathway" or not omr.target_pathway:
                         omr.target_level = None
                     else:
                         omr.target_level = str(l_val) if l_val else None
             else:
                 if pathway_val is not None:
-                    omr.target_pathway = pathway_val
+                    omr.target_pathway = None if pathway_val == "Non Pathway" else pathway_val
                 if level_val is not None:
-                    # If "Non Pathway" is explicitly saved, we clear level
-                    if pathway_val == "Non Pathway":
+                    if pathway_val == "Non Pathway" or not omr.target_pathway:
                         omr.target_level = None
                     else:
                         omr.target_level = str(level_val) if level_val else None

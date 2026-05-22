@@ -218,28 +218,19 @@ async function openEditDetailsModal(
 
         // 1. Check per-owner saved target first
         const savedTarget = existingOwnerTargets[ownerId];
-        if (savedTarget && savedTarget.pathway) {
-          pathway = savedTarget.pathway;
-          level = savedTarget.level || "1";
-        }
-
-        // 2. Fallback to row/log pathway
-        if (!pathway) {
-          pathway = (data.log.pathway || (row ? row.dataset.pathway : "") || "").trim();
-        }
-
-        // 3. Fallback to contact data
-        const contactsList = data.log.owners_data || window.allContacts || [];
-        const contact = contactsList.find((c) => c.id == ownerId);
-        if (contact) {
-          if (!pathway) {
+        if (savedTarget !== undefined && savedTarget !== null) {
+          pathway = savedTarget.pathway || "Non Pathway";
+          level = savedTarget.level || "";
+        } else {
+          // 2. Fallback to contact data (only if ownerId has no saved target)
+          const contactsList = data.log.owners_data || window.allContacts || [];
+          const contact = contactsList.find((c) => c.id == ownerId);
+          if (contact) {
             if (contact.Type === "Guest" || !contact.Current_Path) {
               pathway = "Non Pathway";
             } else {
               pathway = contact.Current_Path;
             }
-          }
-          if (!level) {
             const levelMatch = (contact.Credentials || "").match(/\d+/);
             if (levelMatch) {
               level = Math.min(parseInt(levelMatch[0], 10) + 1, 5).toString();
@@ -646,12 +637,20 @@ const SpeechModalSetupManager = {
       modalElements.levelGroup.style.display = "block";
     }
     SpeechModalSetupManager.populatePathwayDropdown(modalElements.pathwaySelectDropdown, logData.owner_id, logData.registered_paths, logData.owners_data);
-    // Priority: saved log target pathway > workingPath > "Non Pathway"
-    const defaultPath = logData.pathway || workingPath || "Non Pathway";
+    // Priority: target_pathway (from OwnerMeetingRoles) > owner's Current_Path or workingPath > "Non Pathway"
+    let defaultPath = logData.target_pathway;
+    if (defaultPath === undefined || defaultPath === null || defaultPath === "") {
+      const contactsList = logData.owners_data || window.allContacts || [];
+      const contact = contactsList.find((c) => c.id == logData.owner_id);
+      defaultPath = (contact && contact.Current_Path) || workingPath || "Non Pathway";
+    }
     modalElements.pathwaySelectDropdown.value = defaultPath;
     
-    // Priority: saved log target level > empty
-    const defaultLevel = logData.level || "";
+    // Priority: target_level (from OwnerMeetingRoles) > empty
+    let defaultLevel = logData.target_level;
+    if (defaultLevel === undefined || defaultLevel === null || defaultLevel === "") {
+      defaultLevel = "";
+    }
     modalElements.levelSelectDropdown.value = defaultLevel;
 
     const syncRoleLevel = () => {
@@ -714,11 +713,19 @@ const SpeechModalSetupManager = {
 
     this.populatePathwayDropdown(modalElements.pathwaySelectDropdown, logData.owner_id, logData.registered_paths, logData.owners_data);
 
-    // Priority: saved log target pathway > owner's working path > "Non Pathway"
-    const defaultPath = logData.pathway || workingPath || "Non Pathway";
+    // Priority: target_pathway (from OwnerMeetingRoles) > owner's Current_Path or workingPath > "Non Pathway"
+    let defaultPath = logData.target_pathway;
+    if (defaultPath === undefined || defaultPath === null || defaultPath === "") {
+      const contactsList = logData.owners_data || window.allContacts || [];
+      const contact = contactsList.find((c) => c.id == logData.owner_id);
+      defaultPath = (contact && contact.Current_Path) || workingPath || "Non Pathway";
+    }
     modalElements.pathwaySelectDropdown.value = defaultPath;
     
-    const defaultLevel = logData.level || "";
+    let defaultLevel = logData.target_level;
+    if (defaultLevel === undefined || defaultLevel === null || defaultLevel === "") {
+      defaultLevel = "";
+    }
     if (modalElements.levelSelectDropdown) {
         modalElements.levelSelectDropdown.value = defaultLevel;
     }
@@ -796,8 +803,8 @@ const SpeechModalSetupManager = {
 
     this.populatePathwayDropdown(modalElements.pathwaySelect, logData.owner_id, logData.registered_paths, logData.owners_data);
 
-    let pathwayToSelect = logData.pathway;
-    let levelToSelect = logData.level;
+    let pathwayToSelect = logData.target_pathway;
+    let levelToSelect = logData.target_level;
     let projectToSelect = logData.Project_ID;
     const projectCode = logData.project_code || nextProject;
 
@@ -828,8 +835,12 @@ const SpeechModalSetupManager = {
           }
         }
       }
-    } else if (!pathwayToSelect && workingPath) {
-      pathwayToSelect = workingPath;
+    }
+
+    if (!pathwayToSelect) {
+      const contactsList = logData.owners_data || window.allContacts || [];
+      const contact = contactsList.find((c) => c.id == logData.owner_id);
+      pathwayToSelect = (contact && contact.Current_Path) || workingPath || "";
     }
 
     // Fallback: derive level if pathway and project are set but level is not

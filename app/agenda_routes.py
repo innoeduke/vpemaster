@@ -334,8 +334,12 @@ def _create_or_update_session(item, meeting_id, seq, updated_role_groups=None):
                         if contact_str in owner_targets:
                             target = owner_targets[contact_str]
                             if target:
-                                omr.target_pathway = target.get('pathway')
-                                omr.target_level = target.get('level')
+                                p_val = target.get('pathway')
+                                omr.target_pathway = None if p_val == "Non Pathway" else p_val
+                                if p_val == "Non Pathway" or not omr.target_pathway:
+                                    omr.target_level = None
+                                else:
+                                    omr.target_level = target.get('level')
                         if credentials:
                             omr.credential = credentials
 
@@ -440,15 +444,15 @@ def _get_processed_logs_data(meeting_id, show_media=False):
             if omr.session_log_id is not None:
                 if (omr.role_id, omr.contact_id, None) not in omr_credentials:
                     omr_credentials[(omr.role_id, omr.contact_id, None)] = omr.credential
-            if omr.target_pathway:
-                target_data = {
-                    'pathway': omr.target_pathway,
-                    'level': omr.target_level
-                }
-                omr_targets[(omr.role_id, omr.contact_id, omr.session_log_id)] = target_data
-                if omr.session_log_id is not None:
-                    if (omr.role_id, omr.contact_id, None) not in omr_targets:
-                        omr_targets[(omr.role_id, omr.contact_id, None)] = target_data
+            # We want to serialize target_pathway even if it is None (representing 'Non Pathway')
+            target_data = {
+                'pathway': omr.target_pathway if omr.target_pathway is not None else 'Non Pathway',
+                'level': omr.target_level
+            }
+            omr_targets[(omr.role_id, omr.contact_id, omr.session_log_id)] = target_data
+            if omr.session_log_id is not None:
+                if (omr.role_id, omr.contact_id, None) not in omr_targets:
+                    omr_targets[(omr.role_id, omr.contact_id, None)] = target_data
     
     # Pre-fetch potential speakers for DTM check (Evaluation logs)
     evaluator_speaker_names = [

@@ -149,5 +149,32 @@ class TestRoleService(unittest.TestCase):
         self.assertIsNotNone(roster2)
         self.assertTrue(roster2.has_role(self.role_tm))
 
+    def test_get_roles_for_contact_single_owner_fallback_prevention(self):
+        """
+        Verify that get_roles_for_contact does not bind a contact to another user's
+        session log for a single-owner role when session_log_id is None.
+        """
+        from app.models import OwnerMeetingRoles
+        
+        # 1. Book the distinct (single-owner) TM log to contact2
+        success, msg = RoleService.book_meeting_role(self.log_tm, self.contact2.id)
+        self.assertTrue(success)
+        
+        # 2. Add an OMR entry for role_tm with session_log_id = None for contact1
+        omr = OwnerMeetingRoles(
+            meeting_id=self.meeting.id,
+            role_id=self.role_tm.id,
+            contact_id=self.contact1.id,
+            session_log_id=None
+        )
+        db.session.add(omr)
+        db.session.commit()
+        
+        # 3. Retrieve roles for contact1
+        logs = RoleService.get_roles_for_contact(self.contact1.id)
+        
+        # 4. contact1's role list should not contain self.log_tm because it is owned by contact2
+        self.assertNotIn(self.log_tm, logs)
+
 if __name__ == '__main__':
     unittest.main()
