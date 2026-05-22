@@ -2135,6 +2135,13 @@ def update_speech_log(log_id):
     # 3. Derive Project Code
     log.project_code = log.derive_project_code()
 
+    speaker_is_dtm = False
+    if session_type and session_type.Title == 'Evaluation' and log.Session_Title:
+        from app.models.contact import Contact
+        speaker = Contact.query.filter(Contact.Name == log.Session_Title.strip()).first()
+        if speaker and speaker.DTM:
+            speaker_is_dtm = True
+
     try:
         db.session.commit()
         
@@ -2151,7 +2158,8 @@ def update_speech_log(log_id):
             duration_min=log.Duration_Min,
             duration_max=log.Duration_Max,
             media_url=media_url,
-            affected_log_ids=affected_log_ids
+            affected_log_ids=affected_log_ids,
+            speaker_is_dtm=speaker_is_dtm
         )
 
     except Exception as e:

@@ -1144,13 +1144,7 @@ function updateAgendaRow(logId, updateResult, payload) {
     agendaRow.dataset.pathway = updateResult.pathway || "";
   }
 
-  if (sessionType === "Individual Evaluator") {
-    const titleCell = agendaRow.querySelector(
-      ".non-edit-mode-cell:nth-child(2)"
-    );
-    if (titleCell) updateMediaLink(titleCell);
-    return;
-  }
+
 
   if (sessionType === "Table Topics" || sessionType === "Panel Discussion") {
     agendaRow.dataset.projectId = updateResult.project_id || "";
@@ -1228,10 +1222,13 @@ function updateAgendaRow(logId, updateResult, payload) {
     ".non-edit-mode-cell:nth-child(2)"
   );
   if (viewTitleCell) {
-    let title =
-      (sessionType === "Pathway Speech" || sessionType === "Prepared Speech") && updateResult.project_id != ProjectID.GENERIC
-        ? `"${updateResult.session_title.replace(/"/g, "")}"`
-        : updateResult.session_title;
+    let title = updateResult.session_title;
+    if (sessionType === "Evaluation" || sessionType === "Individual Evaluator") {
+      let cleaned = title ? title.replace(/"/g, "") : "";
+      title = "Evaluator for " + cleaned;
+    } else if ((sessionType === "Pathway Speech" || sessionType === "Prepared Speech" || sessionType === "Presentation") && updateResult.project_id != ProjectID.GENERIC) {
+      title = `"${title.replace(/"/g, "")}"`;
+    }
     let code = updateResult.project_code
       ? `(${updateResult.project_code})`
       : "";
@@ -1249,6 +1246,14 @@ function updateAgendaRow(logId, updateResult, payload) {
     const wrapper = document.createElement("div");
     wrapper.className = "speech-tooltip-wrapper";
     wrapper.textContent = `${title} ${code}`.trim();
+
+    if ((sessionType === "Evaluation" || sessionType === "Individual Evaluator") && updateResult.speaker_is_dtm) {
+      const sup = document.createElement("sup");
+      sup.className = "dtm-superscript";
+      sup.textContent = "DTM";
+      wrapper.appendChild(sup);
+    }
+
     if (updateResult.project_id && updateResult.project_id != ProjectID.GENERIC) {
       const tooltip = document.createElement("div");
       tooltip.className = "speech-tooltip";
