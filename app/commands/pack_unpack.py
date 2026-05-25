@@ -18,7 +18,7 @@ from flask.cli import with_appcontext
 UPLOADS_REL_PATH = 'app/static/uploads'
 BACKUP_REL_PATH = 'instance/backup'
 OUTPUT_REL_PATH = 'instance'
-BACKUP_PATTERN = r'^backup_vpemaster_(\d{8})_(\d{6})\.sql$'
+BACKUP_PATTERN = r'^backup_(?:[a-zA-Z0-9_]+?)_(\d{8})_(\d{6})\.sql$'
 
 
 def get_app_root():
@@ -29,30 +29,34 @@ def get_app_root():
 def find_latest_backup(backup_dir):
     """
     Find the most recent backup file matching the pattern.
-    Returns (filename, datetime) tuple or (None, None) if not found.
+    Returns (filename, datetime, resolved_dir) tuple or (None, None, None) if not found.
     """
     latest_file = None
     latest_dt = None
+    latest_dir = None
     
-    if not os.path.exists(backup_dir):
-        return None, None
-    
+    # Search both backup_dir and backup_dir/db for database backups
+    search_dirs = [backup_dir, os.path.join(backup_dir, 'db')]
     pattern = re.compile(BACKUP_PATTERN)
     
-    for filename in os.listdir(backup_dir):
-        match = pattern.match(filename)
-        if match:
-            date_str = match.group(1)  # yyyymmdd
-            time_str = match.group(2)  # hhmmss
-            try:
-                dt = datetime.strptime(f"{date_str}_{time_str}", "%Y%m%d_%H%M%S")
-                if latest_dt is None or dt > latest_dt:
-                    latest_dt = dt
-                    latest_file = filename
-            except ValueError:
-                continue
+    for sdir in search_dirs:
+        if not os.path.exists(sdir):
+            continue
+        for filename in os.listdir(sdir):
+            match = pattern.match(filename)
+            if match:
+                date_str = match.group(1)  # yyyymmdd
+                time_str = match.group(2)  # hhmmss
+                try:
+                    dt = datetime.strptime(f"{date_str}_{time_str}", "%Y%m%d_%H%M%S")
+                    if latest_dt is None or dt > latest_dt:
+                        latest_dt = dt
+                        latest_file = filename
+                        latest_dir = sdir
+                except ValueError:
+                    continue
     
-    return latest_file, latest_dt
+    return latest_file, latest_dt, latest_dir
 
 
 @click.command('pack')
@@ -75,10 +79,10 @@ def pack(output):
     backup_dir = os.path.join(app_root, BACKUP_REL_PATH)
     
     # Find latest backup file
-    backup_file, backup_dt = find_latest_backup(backup_dir)
+    backup_file, backup_dt, resolved_dir = find_latest_backup(backup_dir)
     
     if backup_file is None:
-        click.echo("⚠️  Warning: No backup file matching pattern 'backup_vpemaster_yyyymmdd_hhmmss.sql' found.", err=True)
+        click.echo("⚠️  Warning: No backup file matching pattern 'backup_<dbname>_yyyymmdd_hhmmss.sql' found.", err=True)
     else:
         click.echo(f"📄 Found latest backup: {backup_file} ({backup_dt.strftime('%Y-%m-%d %H:%M:%S')})")
     
@@ -105,8 +109,8 @@ def pack(output):
                 click.echo(f"📁 Added {items_added} files from {UPLOADS_REL_PATH}")
             
             # Add latest backup SQL
-            if backup_file:
-                backup_file_path = os.path.join(backup_dir, backup_file)
+            if backup_file and resolved_dir:
+                backup_file_path = os.path.join(resolved_dir, backup_file)
                 arcname = os.path.join(BACKUP_REL_PATH, backup_file)
                 zipf.write(backup_file_path, arcname)
                 click.echo(f"📄 Added {backup_file}")

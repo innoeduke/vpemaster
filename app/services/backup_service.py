@@ -39,7 +39,7 @@ class BackupService:
         """Creates a database dump using mysqldump."""
         config = BackupService._get_db_config()
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"backup_{config['db']}_{timestamp}.sql"
+        filename = f"backup_db_full_{timestamp}.sql"
         filepath = os.path.join(backup_dir, filename)
         
         os.makedirs(backup_dir, exist_ok=True)
@@ -55,7 +55,6 @@ class BackupService:
             '--no-tablespaces',
             '--set-gtid-purged=OFF',
             '--single-transaction',
-            # f"--ignore-table={config['db']}.alembic_version", # Included version now for robustness
             config['db']
         ]
         
@@ -69,50 +68,113 @@ class BackupService:
                     os.remove(filepath)
                 return False, f"mysqldump error: {result.stderr}"
                 
+            # Apply rotation
+            BackupService._rotate_backups(backup_dir, 'db', 'sql')
+            
             return True, filepath
         except Exception as e:
             return False, str(e)
 
     @staticmethod
     def create_resources_backup(backup_dir):
-        """Creates a zip archive of static resource directories."""
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"resources_{timestamp}"
-        filepath = os.path.join(backup_dir, filename)
-        
+        """Creates a zip archive of static resource directories (legacy wrapper)."""
+        return BackupService.create_file_backup(
+            backup_dir,
+            ['static/images', 'static/club_resources', 'static/uploads/avatars'],
+            'resources',
+            strategy='full'
+        )
+
+    @staticmethod
+    def create_file_backup(backup_dir, target_dirs, resource_name, strategy='full'):
+        """Creates a full or incremental backup of file directories."""
+        import zipfile
         os.makedirs(backup_dir, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         
-        # Directories to backup relative to app root
-        resource_dirs = [
-            'static/images',
-            'static/club_resources',
-            'static/uploads/avatars'
-        ]
-        
-        # Use a temporary directory to gather files
-        temp_dir = os.path.join(current_app.instance_path, 'temp_backup')
-        os.makedirs(temp_dir, exist_ok=True)
-        
-        try:
-            for rdir in resource_dirs:
-                src = os.path.join(current_app.root_path, rdir)
-                if os.path.exists(src):
-                    dst = os.path.join(temp_dir, rdir)
-                    os.makedirs(os.path.dirname(dst), exist_ok=True)
-                    if os.path.isdir(src):
-                        shutil.copytree(src, dst, dirs_exist_ok=True)
-                    else:
-                        shutil.copy2(src, dst)
+        if strategy == 'increment':
+            all_backups = BackupService.get_backups_sorted(backup_dir, resource_name, 'zip')
+            if not all_backups:
+                # Fallback to full
+                return BackupService.create_file_backup(backup_dir, target_dirs, resource_name, strategy='full')
+                
+            latest_backup = all_backups[-1]
+            baseline_time = latest_backup['timestamp']
             
-            # Create archive
-            archive_path = shutil.make_archive(filepath, 'zip', temp_dir)
-            return True, archive_path
-        except Exception as e:
-            return False, str(e)
-        finally:
-            # Cleanup temp dir
-            if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
+            # Find changed files
+            changed_files = []
+            for target_dir in target_dirs:
+                full_path = os.path.join(current_app.root_path, target_dir)
+                if not os.path.exists(full_path):
+                    continue
+                if os.path.isdir(full_path):
+                    for root, _, files in os.walk(full_path):
+                        for file in files:
+                            # Skip hidden files
+                            if file.startswith('.'):
+                                continue
+                            file_path = os.path.join(root, file)
+                            try:
+                                file_mtime_dt = datetime.fromtimestamp(os.path.getmtime(file_path)).replace(microsecond=0)
+                                if file_mtime_dt > baseline_time:
+                                    arcname = os.path.relpath(file_path, current_app.root_path)
+                                    changed_files.append((file_path, arcname))
+                            except Exception:
+                                continue
+                else:
+                    try:
+                        file_mtime_dt = datetime.fromtimestamp(os.path.getmtime(full_path)).replace(microsecond=0)
+                        if file_mtime_dt > baseline_time:
+                            arcname = os.path.relpath(full_path, current_app.root_path)
+                            changed_files.append((full_path, arcname))
+                    except Exception:
+                        continue
+                        
+            if not changed_files:
+                return True, "No changes detected. Incremental backup skipped."
+                
+            filename = f"backup_{resource_name}_inc_{timestamp}.zip"
+            filepath = os.path.join(backup_dir, filename)
+            
+            try:
+                with zipfile.ZipFile(filepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                    for fpath, arcname in changed_files:
+                        zipf.write(fpath, arcname)
+                return True, filepath
+            except Exception as e:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                return False, str(e)
+                
+        else:  # strategy == 'full'
+            filename = f"backup_{resource_name}_full_{timestamp}.zip"
+            filepath = os.path.join(backup_dir, filename)
+            
+            try:
+                with zipfile.ZipFile(filepath, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                    for target_dir in target_dirs:
+                        full_path = os.path.join(current_app.root_path, target_dir)
+                        if not os.path.exists(full_path):
+                            continue
+                        if os.path.isdir(full_path):
+                            for root, _, files in os.walk(full_path):
+                                for file in files:
+                                    if file.startswith('.'):
+                                        continue
+                                    file_path = os.path.join(root, file)
+                                    arcname = os.path.relpath(file_path, current_app.root_path)
+                                    zipf.write(file_path, arcname)
+                        else:
+                            arcname = os.path.relpath(full_path, current_app.root_path)
+                            zipf.write(full_path, arcname)
+                            
+                # Apply rotation
+                BackupService._rotate_backups(backup_dir, resource_name, 'zip')
+                return True, filepath
+            except Exception as e:
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                return False, str(e)
 
     @staticmethod
     def restore_database(filepath, db_name=None, upgrade=True, stamp_version=None):
@@ -312,16 +374,68 @@ class BackupService:
     @staticmethod
     def restore_resources(filepath):
         """Restores static resources from a zip archive."""
-        if not os.path.exists(filepath):
-            return False, "Resource backup file not found"
+        return BackupService.restore_file_backup(os.path.dirname(filepath), target_file=filepath, resource_name='resources')
+
+    @staticmethod
+    def restore_file_backup(backup_dir, target_file=None, latest=False, resource_name=None):
+        """Restores full or incremental file backups."""
+        if not os.path.exists(backup_dir) and not (target_file and os.path.isabs(target_file)):
+            return False, f"Backup directory {backup_dir} does not exist."
             
+        if target_file:
+            if not os.path.isabs(target_file):
+                target_file = os.path.abspath(os.path.join(backup_dir, target_file))
+            backup_dir = os.path.dirname(target_file)
+            
+        all_backups = BackupService.get_backups_sorted(backup_dir, resource_name, 'zip')
+        
+        if latest:
+            if not all_backups:
+                return False, f"No backups found for {resource_name}."
+            target_backup = all_backups[-1]
+        else:
+            if not target_file:
+                return False, "Neither target file nor latest flag was specified."
+            found = [b for b in all_backups if b['filepath'] == target_file or b['filename'] == os.path.basename(target_file)]
+            if not found:
+                if os.path.exists(target_file):
+                    try:
+                        shutil.unpack_archive(target_file, current_app.root_path, 'zip')
+                        return True, f"Restored resource directly from file {os.path.basename(target_file)}."
+                    except Exception as e:
+                        return False, f"Failed to restore direct backup: {e}"
+                return False, f"Backup file {target_file} not found."
+            target_backup = found[0]
+            
+        # Perform restore
+        if target_backup['type'] == 'full':
+            try:
+                shutil.unpack_archive(target_backup['filepath'], current_app.root_path, 'zip')
+                return True, f"Full restore of {resource_name} successful from {target_backup['filename']}."
+            except Exception as e:
+                return False, f"Failed to restore {resource_name} full backup: {e}"
+                
+        # Incremental restore
+        parent_full = None
+        for b in reversed(all_backups):
+            if b['timestamp'] < target_backup['timestamp'] and b['type'] == 'full':
+                parent_full = b
+                break
+                
+        if not parent_full:
+            return False, f"Base full backup for incremental backup {target_backup['filename']} not found."
+            
+        chain = [parent_full]
+        for b in all_backups:
+            if parent_full['timestamp'] < b['timestamp'] <= target_backup['timestamp']:
+                chain.append(b)
+                
         try:
-            # Extract directly into app root? 
-            # The archive contains 'static/...' so we extract into app root
-            shutil.unpack_archive(filepath, current_app.root_path, 'zip')
-            return True, "Resources restore successful"
+            for b in chain:
+                shutil.unpack_archive(b['filepath'], current_app.root_path, 'zip')
+            return True, f"Incremental restore of {resource_name} successful. Applied {len(chain)} backup(s) in order starting from {parent_full['filename']}."
         except Exception as e:
-            return False, str(e)
+            return False, f"Failed to restore {resource_name} incremental backup chain: {e}"
 
     @classmethod
     def get_latest_backup(cls, backup_dir, prefix):
@@ -336,3 +450,69 @@ class BackupService:
         # Sort by mtime
         files.sort(key=lambda x: os.path.getmtime(os.path.join(backup_dir, x)), reverse=True)
         return os.path.join(backup_dir, files[0])
+
+    @staticmethod
+    def get_backups_sorted(backup_dir, resource_name, ext):
+        """Scans backup_dir, parses timestamps from filenames, and returns a list sorted chronologically."""
+        if not os.path.exists(backup_dir):
+            return []
+        
+        import re
+        backups = []
+        for filename in os.listdir(backup_dir):
+            if resource_name == 'db':
+                pattern = r"^backup_db_full_(\d{8})_(\d{6})\.sql$"
+            else:
+                pattern = rf"^backup_{resource_name}_(full|inc)_(\d{{8}})_(\d{{6}})\.{ext}$"
+                
+            match = re.match(pattern, filename)
+            if match:
+                if resource_name == 'db':
+                    date_str, time_str = match.group(1), match.group(2)
+                    btype = 'full'
+                else:
+                    btype, date_str, time_str = match.group(1), match.group(2), match.group(3)
+                    
+                try:
+                    dt = datetime.strptime(f"{date_str}_{time_str}", "%Y%m%d_%H%M%S")
+                    backups.append({
+                        'filename': filename,
+                        'filepath': os.path.join(backup_dir, filename),
+                        'timestamp': dt,
+                        'type': btype
+                    })
+                except ValueError:
+                    continue
+                    
+        # Sort chronologically
+        backups.sort(key=lambda x: x['timestamp'])
+        return backups
+
+    @staticmethod
+    def _rotate_backups(backup_dir, resource_name, ext):
+        """Rotates backups, keeping only the 5 most recent full backups and cleaning up associated incrementals."""
+        all_backups = BackupService.get_backups_sorted(backup_dir, resource_name, ext)
+        full_backups = [b for b in all_backups if b['type'] == 'full']
+        
+        if len(full_backups) > 5:
+            # We need to keep only the most recent 5
+            to_delete = full_backups[:-5]
+            for fb in to_delete:
+                # Delete full backup file
+                if os.path.exists(fb['filepath']):
+                    try:
+                        os.remove(fb['filepath'])
+                    except Exception:
+                        pass
+                        
+                # Also delete associated incremental backups
+                next_fb_idx = full_backups.index(fb) + 1
+                next_fb_time = full_backups[next_fb_idx]['timestamp'] if next_fb_idx < len(full_backups) else datetime.max
+                
+                for b in all_backups:
+                    if b['type'] == 'inc' and fb['timestamp'] <= b['timestamp'] < next_fb_time:
+                        if os.path.exists(b['filepath']):
+                            try:
+                                os.remove(b['filepath'])
+                            except Exception:
+                                pass
