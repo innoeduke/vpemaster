@@ -42,27 +42,31 @@
         </tr>
         <tr>
             <td>
-                <label class="required">Role:</label>
+                <label for="role_id" class="required">Role:</label>
             </td>
             <td>
-                <div class="roles-checkbox-list"
-                    style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; border-radius: 4px;">
+                {% set ns = namespace(has_clubadmin=false) %}
+                {% for r in all_auth_roles %}
+                    {% if r.id in user_role_ids and r.name == 'ClubAdmin' %}
+                        {% set ns.has_clubadmin = true %}
+                    {% endif %}
+                {% endfor %}
+                
+                <select id="role_id" name="role_id" class="form-control" {% if is_edit_self and ns.has_clubadmin %}disabled{% endif %}>
                     {% for r in all_auth_roles %}
-                    <label style="display: flex; align-items: center; margin-bottom: 5px; cursor: pointer;">
-                        {% if is_edit_self and r.id in user_role_ids and r.name == 'ClubAdmin' %}
-                        {# Prevent self-demotion: Disable if editing self and already has the role #}
-                        <input type="radio" checked disabled style="margin-right: 8px;">
-                        <input type="hidden" name="role_id" value="{{ r.id }}">
-                        {% elif r.id in user_role_ids or (not user_role_ids and r.name == 'User') %}
-                        <input type="radio" name="role_id" value="{{ r.id }}" checked style="margin-right: 8px;">
-                        {% else %}
-                        <input type="radio" name="role_id" value="{{ r.id }}" style="margin-right: 8px;">
-                        {% endif %}
-                        {% set role_class = 'role-' ~ r.name|lower if r.name|lower in ['clubadmin', 'operator', 'staff', 'user'] else 'role-other' %}
-                        <span class="roster-role-tag {{ role_class }}">{{ r.name }}</span>
-                    </label>
+                        <option value="{{ r.id }}" {% if r.id in user_role_ids or (not user_role_ids and r.name == 'User') %}selected{% endif %}>
+                            {{ r.name }}
+                        </option>
                     {% endfor %}
-                </div>
+                </select>
+                {% if is_edit_self and ns.has_clubadmin %}
+                    {% for r in all_auth_roles %}
+                        {% if r.id in user_role_ids and r.name == 'ClubAdmin' %}
+                            <input type="hidden" name="role_id" value="{{ r.id }}">
+                        {% endif %}
+                    {% endfor %}
+                    <small class="form-text text-muted" style="color: #666; display: block; margin-top: 5px;">Self-demotion is prevented. You cannot change your own ClubAdmin role.</small>
+                {% endif %}
             </td>
         </tr>
 

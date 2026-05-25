@@ -1,0 +1,33 @@
+<div id="addAuthRoleModal" class="modal" style="display: none;">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('addAuthRoleModal')">&times;</span>
+    <h2 id="auth-role-modal-title">Add New Authorization Role</h2>
+    <form id="addAuthRoleForm" action="/api/settings/auth-roles/add" method="POST">
+      <div class="form-group compact-form">
+        <label for="auth-role-name">Role Name:</label>
+        <input type="text" id="auth-role-name" name="name" required class="form-control" placeholder="e.g. Facilitator" />
+      </div>
+
+      <div class="form-group compact-form">
+        <label for="auth-role-template">Permission Template (Inherit Level & Permissions):</label>
+        <select id="auth-role-template" name="template_role" class="form-control">
+          <option value="User" selected>User (Level 1)</option>
+          <option value="Staff">Staff (Level 2)</option>
+          <option value="Operator">Operator (Level 3)</option>
+          <option value="ClubAdmin">ClubAdmin (Level 4)</option>
+        </select>
+        <small class="form-text text-muted">The new role will copy the permissions and priority level of the selected template.</small>
+      </div>
+
+      <div class="form-group compact-form">
+        <label for="auth-role-description">Description:</label>
+        <textarea id="auth-role-description" name="description" class="form-control" placeholder="Optional. Describe the purpose of this role..." rows="3"></textarea>
+      </div>
+
+      <div class="form-actions" style="margin-top: 40px;">
+        <button type="button" class="btn btn-danger" onclick="closeModal('addAuthRoleModal')">Cancel</button>
+        <button type="submit" id="auth-role-modal-submit" class="btn btn-success">Save</button>
+      </div>
+    </form>
+  </div>
+</div>

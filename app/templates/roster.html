@@ -70,10 +70,12 @@
                                 <input type="text" class="form-control" id="contact_name"
                                     placeholder="Member/Guest name" autocomplete="off" required>
                                 <input type="hidden" id="contact_id">
+                                {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) or is_authorized(Permissions.CONTACT_ADD_GUEST) %}
                                 <button class="btn btn-success" type="button" id="add-contact-btn"
                                     title="Add New Guest" onclick="openContactModalWithReferer()">
                                     <i class="fas fa-plus"></i>
                                 </button>
+                                {% endif %}
                             </div>
                         </div>
                         <div class="form-group-inline input-type">

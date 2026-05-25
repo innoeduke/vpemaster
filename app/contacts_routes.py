@@ -161,7 +161,10 @@ def member_cards():
 @contacts_bp.route('/contact/form/<int:contact_id>', methods=['GET', 'POST'])
 @login_required
 def contact_form(contact_id=None):
-    if not (is_authorized(Permissions.CONTACT_BOOK_EDIT) or (current_user.is_authenticated and contact_id and current_user.contact_id == contact_id)):
+    has_edit_permission = is_authorized(Permissions.CONTACT_BOOK_EDIT) or (current_user.is_authenticated and contact_id and current_user.contact_id == contact_id)
+    has_add_guest = not contact_id and is_authorized(Permissions.CONTACT_ADD_GUEST)
+    
+    if not (has_edit_permission or has_add_guest):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return jsonify(success=False, message="You don't have permission to perform this action."), 403
         flash("You don't have permission to perform this action.", 'error')
@@ -635,7 +638,7 @@ def merge_contacts_route():
 @contacts_bp.route('/api/contact', methods=['POST'])
 @login_required
 def create_contact_api():
-    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
+    if not is_authorized(Permissions.CONTACT_BOOK_EDIT) and not is_authorized(Permissions.CONTACT_ADD_GUEST):
         return jsonify({'error': 'Permission denied'}), 403
 
     try:

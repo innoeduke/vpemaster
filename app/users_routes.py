@@ -205,7 +205,9 @@ def user_form(user_id):
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 
     current_user_is_sysadmin = current_user.is_authenticated and current_user.is_sysadmin
-    all_auth_roles = AuthRole.query.order_by(AuthRole.level.desc()).all()
+    all_auth_roles = AuthRole.query.filter(
+        (AuthRole.club_id == club_id) | (AuthRole.club_id.is_(None))
+    ).order_by(AuthRole.level.desc()).all()
     
     # Filter roles based on permissions
     filtered_roles = []

@@ -97,7 +97,9 @@ def settings():
     project_types = []
 
     # Auth Roles for User Modal - SysAdmin is now account-based, so filter it out
-    all_auth_roles_query = AuthRole.query.order_by(AuthRole.level.desc()).all()
+    all_auth_roles_query = AuthRole.query.filter(
+        (AuthRole.club_id == club_id) | (AuthRole.club_id.is_(None))
+    ).order_by(AuthRole.level.desc()).all()
     # We'll pass them as a list of dicts for simplicity in logic
     all_auth_roles = [{'id': r.id, 'name': r.name, 'level': r.level} for r in all_auth_roles_query if r.name not in ('Guest', 'SysAdmin')]
 
@@ -1044,13 +1046,14 @@ def get_settings_users():
 def get_permissions_matrix():
     if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
         return jsonify(success=False, message="Permission denied"), 403
-    # club_id is implicitly used by is_authorized but if needed:
-    # club_id = get_current_club_id()
+    
+    club_id = get_current_club_id()
 
     # Exclude SysAdmin from the permissions matrix; Guest is included
     # so admins can configure what unauthenticated visitors can access
     roles = AuthRole.query.filter(
-        AuthRole.name.notin_(['SysAdmin'])
+        AuthRole.name.notin_(['SysAdmin']),
+        (AuthRole.club_id == club_id) | (AuthRole.club_id.is_(None))
     ).order_by(AuthRole.level.desc()).all()
     permissions = Permission.query.order_by(Permission.category, Permission.name).all()
     
@@ -1063,7 +1066,7 @@ def get_permissions_matrix():
         role_perms[m.role_id].append(m.permission_id)
 
     return jsonify({
-        'roles': [{'id': r.id, 'name': r.name} for r in roles],
+        'roles': [{'id': r.id, 'name': r.name, 'level': r.level, 'description': r.description or '', 'is_core': r.club_id is None} for r in roles],
         'permissions': [{
             'id': p.id, 
             'name': p.name, 
@@ -1196,3 +1199,133 @@ def update_user_roles():
     except Exception as e:
         db.session.rollback()
         return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/api/settings/auth-roles/add', methods=['POST'])
+@login_required
+@authorized_club_required
+def add_auth_role():
+    if not is_authorized(Permissions.SETTINGS_EDIT_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+    
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="Club context is required"), 400
+
+    name = request.form.get('name', '').strip()
+    description = request.form.get('description', '').strip()
+    template_role_name = request.form.get('template_role', 'User').strip()
+
+    if not name:
+        return jsonify(success=False, message="Role name is required"), 400
+        
+    # Check duplicate in this club or global (where club_id is null)
+    existing_role = AuthRole.query.filter(
+        (AuthRole.name == name) & 
+        ((AuthRole.club_id == club_id) | (AuthRole.club_id.is_(None)))
+    ).first()
+    
+    if existing_role:
+        return jsonify(success=False, message=f"Role with name '{name}' already exists in this club"), 400
+
+    # Retrieve template role to copy level and permissions
+    template_role = AuthRole.query.filter(
+        (AuthRole.name == template_role_name) & 
+        (AuthRole.club_id.is_(None))
+    ).first()
+    
+    if not template_role:
+        return jsonify(success=False, message=f"Template role '{template_role_name}' not found"), 400
+
+    try:
+        new_role = AuthRole(
+            name=name,
+            description=description,
+            level=template_role.level,
+            club_id=club_id
+        )
+        # Copy permissions
+        for perm in template_role.permissions:
+            new_role.permissions.append(perm)
+            
+        db.session.add(new_role)
+        db.session.flush()
+
+        # Audit log
+        audit = PermissionAudit(
+            admin_id=current_user.id,
+            action='ADD_AUTH_ROLE',
+            target_type='ROLE',
+            target_id=new_role.id,
+            target_name=name,
+            changes=f"Created auth role '{name}' (level {new_role.level}) in club {club_id} based on template '{template_role_name}'"
+        )
+        db.session.add(audit)
+        db.session.commit()
+
+        AuthRole.clear_role_cache()
+
+        return jsonify(success=True, message="Authorization role added successfully")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+
+
+@settings_bp.route('/api/settings/auth-roles/delete/<int:id>', methods=['POST'])
+@login_required
+@authorized_club_required
+def delete_auth_role(id):
+    if not is_authorized(Permissions.SETTINGS_EDIT_ALL):
+        return jsonify(success=False, message="Permission denied"), 403
+
+    club_id = get_current_club_id()
+    if not club_id:
+        return jsonify(success=False, message="Club context is required"), 400
+
+    role = db.session.get(AuthRole, id)
+    if not role:
+        return jsonify(success=False, message="Role not found"), 404
+
+    # Core system check
+    if role.club_id is None:
+        return jsonify(success=False, message="Cannot delete core system roles."), 400
+
+    if role.club_id != club_id:
+        return jsonify(success=False, message="Role not found or permission denied"), 404
+
+    try:
+        role_name = role.name
+        
+        # Detach users in bulk by reassigning them to the base 'User' role
+        user_role = AuthRole.query.filter((AuthRole.name == 'User') & (AuthRole.club_id.is_(None))).first()
+        if not user_role:
+            return jsonify(success=False, message="Base 'User' role not found"), 500
+            
+        affected_user_clubs = UserClub.query.filter_by(auth_role_id=id).all()
+        count = len(affected_user_clubs)
+        for uc in affected_user_clubs:
+            uc.auth_role_id = user_role.id
+            if uc.user:
+                uc.user._permission_cache = None
+        
+        db.session.delete(role)
+
+        # Audit log
+        audit = PermissionAudit(
+            admin_id=current_user.id,
+            action='DELETE_AUTH_ROLE',
+            target_type='ROLE',
+            target_id=id,
+            target_name=role_name,
+            changes=f"Deleted auth role '{role_name}' in club {club_id}. Reassigned {count} users to 'User' role."
+        )
+        db.session.add(audit)
+        db.session.commit()
+
+        AuthRole.clear_role_cache()
+
+        return jsonify(success=True, message=f"Deleted role '{role_name}' and reassigned {count} user(s) to 'User'")
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, message=str(e)), 500
+

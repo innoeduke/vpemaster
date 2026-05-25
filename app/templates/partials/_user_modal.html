@@ -37,22 +37,18 @@
           
           <!-- Right Col (Roles Merged) -->
           <div class="planner-form-group span-1 row-span-2 roles-selection-group">
-            <label>Roles</label>
-            <div class="roles-checkbox-list">
+            <label for="role_id_select">Role</label>
+            <select id="role_id_select" name="role_id" class="planner-form-control">
               {% if all_auth_roles %}
                 {% for role in all_auth_roles %}
-                <label class="role-checkbox-item">
-                  <input type="radio" name="role_id" value="{{ role.id }}" 
-                         data-name="{{ role.name }}"
-                         {% if role.name == 'User' %}checked{% endif %}>
-                  {% set role_class = 'role-' ~ role.name|lower if role.name|lower in ['sysadmin', 'clubadmin', 'operator', 'staff', 'user'] else 'role-other' %}
-                  <span class="roster-role-tag {{ role_class }}">{{ role.name }}</span>
-                </label>
+                  <option value="{{ role.id }}" data-name="{{ role.name }}" {% if role.name == 'User' %}selected{% endif %}>
+                    {{ role.name }}
+                  </option>
                 {% endfor %}
               {% else %}
-                <p class="text-muted">No roles found</p>
+                <option value="">No roles found</option>
               {% endif %}
-            </div>
+            </select>
           </div>
 
           <!-- Row 4 Left: Phone (3:1 Split) -->
