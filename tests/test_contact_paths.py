@@ -7,7 +7,7 @@ from datetime import date
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app import create_app, db
-from app.models import User, Club, Contact, UserClub, ContactClub, AuthRole, Permission, Pathway, ContactPath
+from app.models import User, Club, Contact, UserClub, ContactClub, AuthRole, Permission, Pathway, ContactPath, SessionLog
 from app.auth.permissions import Permissions
 from config import Config
 
@@ -215,6 +215,101 @@ class ContactPathsTestCase(unittest.TestCase):
         self.assertNotIn(pm_id, registered_path_ids)
         # DL should still be there
         self.assertIn(dl_id, registered_path_ids)
+
+    def test_migrate_contact_paths_session_logs(self):
+        from app.models import SessionLog, SessionType, Meeting, Project
+        from scripts.migrate_contact_paths import migrate_data
+
+        # Create a Project
+        project = Project(Project_Name="Ice Breaker", Format="Prepared Speech")
+        db.session.add(project)
+        db.session.flush()
+
+        # Create a session type
+        st = SessionType(Title="Prepared Speech", Valid_for_Project=True)
+        db.session.add(st)
+        db.session.flush()
+
+        # Create a meeting
+        m = Meeting(Meeting_Number=101, status='not started', club_id=self.club.id)
+        db.session.add(m)
+        db.session.flush()
+
+        # Create SessionLog 1: has Project_ID and pathway
+        log1 = SessionLog(
+            meeting_id=m.id,
+            Type_ID=st.id,
+            Project_ID=project.id,
+            pathway="Presentation Mastery"
+        )
+        # Create SessionLog 2: has no Project_ID but has pathway
+        log2 = SessionLog(
+            meeting_id=m.id,
+            Type_ID=st.id,
+            Project_ID=None,
+            pathway="Presentation Mastery"
+        )
+        db.session.add_all([log1, log2])
+        db.session.commit()
+
+        # Run migration
+        migrate_data()
+
+        # Refresh from database
+        db.session.refresh(log1)
+        db.session.refresh(log2)
+
+        # Assertions
+        self.assertEqual(log1.pathway, "Presentation Mastery")
+        self.assertIsNone(log2.pathway)
+
+    def test_migrate_owner_roles(self):
+        from app.models import OwnerMeetingRoles, Meeting, Contact, ContactPath
+        from scripts.migrate_owner_meeting_roles import migrate_owner_roles
+
+        # 1. Create a contact with a registered pathway and current path
+        c1 = Contact(Name="Alice Member", Type="Member", credentials="PM3")
+        db.session.add(c1)
+        db.session.flush()
+
+        # Add registered path for Alice
+        cp1 = ContactPath(
+            contact_id=c1.id,
+            path_id=self.pathway_pm.id,
+            status='working',
+            is_default=True,
+            registered_date=date(2026, 1, 1)
+        )
+        db.session.add(cp1)
+        db.session.flush()
+
+        # Update contact current path
+        c1.Current_Path = "Presentation Mastery"
+        db.session.commit()
+
+        # 2. Create a meeting
+        m = Meeting(Meeting_Number=102, status='not started', club_id=self.club.id, Meeting_Date=date(2026, 2, 1))
+        db.session.add(m)
+        db.session.flush()
+
+        # 3. Create OwnerMeetingRoles entry without target_pathway / target_level
+        omr = OwnerMeetingRoles(
+            meeting_id=m.id,
+            contact_id=c1.id,
+            target_pathway=None,
+            target_level=None
+        )
+        db.session.add(omr)
+        db.session.commit()
+
+        # 4. Run migrate_owner_roles
+        migrate_owner_roles()
+
+        # 5. Refresh and verify
+        db.session.refresh(omr)
+        self.assertEqual(omr.target_pathway, "Presentation Mastery")
+        # active level for Alice at the time (no achievements yet) should be L1
+        self.assertEqual(omr.target_level, "1")
 
 if __name__ == '__main__':
     unittest.main()

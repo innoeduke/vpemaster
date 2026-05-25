@@ -5,11 +5,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 import re
 from datetime import date
 from app import create_app, db
-from app.models import Contact, Pathway, ContactPath, Achievement
+from app.models import Contact, Pathway, ContactPath, Achievement, SessionLog
 
 def migrate_data():
-    app = create_app()
-    with app.app_context():
+    from flask import current_app
+    from contextlib import nullcontext
+    ctx = nullcontext() if current_app else create_app().app_context()
+    with ctx:
         print("Starting data migration for contact pathways...")
         
         # Load all pathways for reference
@@ -125,6 +127,19 @@ def migrate_data():
             
             migrated_count += 1
             
+        # 3. Update SessionLogs: if an entry has no project_id, then the pathway should be NULL
+        # (i.e. project_id and pathway are a pair).
+        print("\nUpdating SessionLogs to pair project_id and pathway...")
+        session_logs_updated = SessionLog.query.filter(
+            SessionLog.Project_ID.is_(None),
+            SessionLog.pathway.isnot(None)
+        ).all()
+        
+        for log in session_logs_updated:
+            log.pathway = None
+            
+        print(f"  - Set pathway to NULL for {len(session_logs_updated)} SessionLogs with no Project_ID.")
+
         db.session.commit()
         print(f"\nSuccessfully migrated {migrated_count} contacts!")
 
