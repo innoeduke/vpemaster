@@ -73,8 +73,7 @@ def system_backup(increment, full):
     
     target_dirs = [
         'static/images',
-        'static/uploads/avatars',
-        'static/uploads/club_logos'
+        'static/uploads/avatars'
     ]
     
     click.echo(f"Creating system resources backup ({strategy})...")
