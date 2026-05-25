@@ -90,6 +90,11 @@
                             {{ render_custom_select(ticket_opts, "", label='Ticket', select_id='ticket', placeholder='Select...') }}
                         </div>
 
+                        <div class="form-group-inline input-quantity">
+                            <label for="quantity">Qty</label>
+                            <input type="number" class="form-control" id="quantity" value="1" min="1" required>
+                        </div>
+
                         <div class="form-group-inline input-order">
                             <label for="order_number">Order#</label>
                             <input type="number" class="form-control" id="order_number" value="{{ next_unallocated_entry.order_number if next_unallocated_entry else 1 }}">
@@ -119,6 +124,7 @@
                         <th class="sortable header-name" data-column-index="1">Name</th>
                         <th class="sortable header-ticket" data-column-index="2">Ticket</th>
                         <th class="header-roles desktop-only">Roles</th>
+                        <th class="header-quantity">Qty</th>
                         <th class="header-amount desktop-only">Amount</th>
                         {% if is_authorized(Permissions.ROSTER_EDIT) %}
                         <th class="roster-header-actions">Actions</th>
@@ -181,9 +187,12 @@
                                 </div>
                             {% endif %}
                         </td>
+                        <td class="cell-quantity">
+                            <span class="roster-text"><span class="mobile-only-label">Qty: </span>{{ entry.quantity or 1 }}</span>
+                        </td>
                         <td class="cell-amount desktop-only">
                             <span class="roster-text">
-                                {{ "¥%.2f"|format(entry.ticket.price or 0) if entry.ticket else '-' }}
+                                {{ "¥%.2f"|format(entry.amount or 0) if entry.ticket else '-' }}
                             </span>
                         </td>
                         {% if is_authorized(Permissions.ROSTER_EDIT) %}
@@ -221,6 +230,7 @@
                         <td class="cell-name"></td>
                         <td></td>
                         <td class="desktop-only"></td>
+                        <td></td>
                         <td class="desktop-only"></td>
                         {% if is_authorized(Permissions.ROSTER_EDIT) %}
                         <td></td>

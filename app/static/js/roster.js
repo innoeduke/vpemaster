@@ -43,6 +43,7 @@ function cacheElements() {
     ticketSelect: document.getElementById("ticket"),
     submitBtn: document.getElementById("submit-roster"),
     formContainer: document.querySelector(".roster-form-container"),
+    quantityInput: document.getElementById("quantity"),
     isPopulating: false // Flag to prevent auto-calculations during form population
   };
 }
@@ -138,35 +139,6 @@ function selectContact(contact, elements) {
   if (!contact) return;
 
   console.log(`[Roster] Selecting contact: ${contact.Name} (ID: ${contact.id}, is_officer: ${contact.is_officer})`);
-
-  // Check if contact already exists in the roster table for this meeting
-  // Try ID first, then fallback to Name if ID is missing or not found
-  let existingRow = contact.id ? elements.tableBody.querySelector(`tr[data-contact-id="${contact.id}"]`) : null;
-
-  if (!existingRow) {
-    existingRow = Array.from(elements.tableBody.querySelectorAll('tr')).find(tr => {
-      const nameCell = tr.querySelector('.cell-name');
-      return nameCell && nameCell.textContent.trim().toLowerCase() === contact.Name.toLowerCase();
-    });
-  }
-
-  if (existingRow) {
-    const entryId = existingRow.dataset.entryId;
-    // Avoid re-populating if we're already editing this entry
-    if (elements.entryIdInput.value !== entryId) {
-      console.log(`[Roster] Found existing roster entry ${entryId} for ${contact.Name}. Loading for editing.`);
-      populateRosterEditForm(entryId, elements);
-    }
-    return;
-  }
-
-  // If not in roster, ensure we are in "Add" mode for this new contact
-  if (elements.entryIdInput.value) {
-    elements.entryIdInput.value = "";
-    elements.formTitle.textContent = "Add Entry";
-    if (elements.cancelEditBtn) elements.cancelEditBtn.style.display = "none";
-    if (elements.rosterForm) elements.rosterForm.classList.remove("editing-mode");
-  }
 
   elements.contactNameInput.value = contact.Name;
   elements.contactIdInput.value = contact.id;
@@ -435,6 +407,7 @@ function resetRosterForm(elements) {
     elements.submitBtn.innerHTML = '<i class="fas fa-save"></i> <span class="btn-label-text">Register</span>';
   }
   if (elements.orderNumberInput) elements.orderNumberInput.value = "";
+  if (elements.quantityInput) elements.quantityInput.value = "1";
 }
 
 // Populate form with data for editing
@@ -452,6 +425,9 @@ function populateRosterEditForm(rosterId, elements) {
 
       elements.contactIdInput.value = entry.contact_id;
       elements.contactNameInput.value = entry.contact_name;
+      if (elements.quantityInput) {
+        elements.quantityInput.value = entry.quantity || 1;
+      }
       // In roster view row, we set data-ticket-id on the row, but here from API we need the ID directly
       elements.ticketSelect.value = entry.ticket_id || entry.ticket;
 
@@ -515,6 +491,7 @@ function initializeFormHandlers(elements) {
         contact_id: elements.contactIdInput.value,
         contact_type: elements.contactTypeSelect.value,
         ticket_id: elements.ticketSelect.value,
+        quantity: elements.quantityInput ? elements.quantityInput.value : 1,
       };
 
       // Validation
@@ -864,6 +841,12 @@ function populateExportPages() {
     tdRoles.innerHTML = rolesCell ? rolesCell.innerHTML : '';
     tr.appendChild(tdRoles);
 
+    const qtyCell = row.querySelector('.cell-quantity');
+    const tdQty = document.createElement("td");
+    tdQty.className = "print-cell-qty";
+    tdQty.innerHTML = qtyCell ? qtyCell.innerHTML : '1';
+    tr.appendChild(tdQty);
+
     const tdV = document.createElement("td");
     tdV.className = "print-cell-v";
     tdV.innerHTML = '<div style="width: 20px; height: 20px; border: 2px solid #ccc; border-radius: 4px; display: inline-block; margin-top: 5px;"></div>';
@@ -934,8 +917,9 @@ function populateExportPages() {
           <tr>
               <th style="width: 70px; white-space: nowrap;">Order</th>
               <th style="width: 220px;">Name</th>
-              <th style="width: 160px;">Ticket</th>
+              <th style="width: 150px;">Ticket</th>
               <th style="width: 160px;">Roles</th>
+              <th style="width: 50px; text-align: center;">Qty</th>
               <th style="width: 64px; text-align: center;">V</th>
           </tr>
       </thead>

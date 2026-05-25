@@ -161,6 +161,15 @@
 	box-shadow: 0 0 0 0.2rem rgba(119, 36, 50, 0.15);
 }
 
+/* Custom Select trigger styling to match form-control exactly */
+.page-container #roster-form .custom-select-trigger {
+	height: 40px;
+	min-height: 40px;
+	border: 1px solid #ced4da;
+	border-radius: 6px;
+	box-sizing: border-box;
+}
+
 /* Edit Mode Highlighting */
 #roster-form.editing-mode .form-control,
 #roster-form.editing-mode .custom-select-trigger {
@@ -184,9 +193,14 @@
 	min-width: 60px;
 }
 
+.page-container .input-quantity {
+	flex: 0 0 60px;
+	min-width: 60px;
+}
+
 .page-container .input-name {
-	flex: 3;
-	min-width: 160px;
+	flex: 2;
+	min-width: 140px;
 	position: relative;
 }
 
@@ -219,14 +233,14 @@
 }
 
 .page-container .input-type {
-	flex: 1.2;
-	min-width: 120px;
+	flex: 1;
+	min-width: 80px;
 	flex-shrink: 0;
 }
 
 .page-container .input-ticket {
-	flex: 1.5;
-	min-width: 140px;
+	flex: 1.2;
+	min-width: 105px;
 	flex-shrink: 0;
 }
 
@@ -251,6 +265,37 @@
 		padding: 8px 12px;
 		min-width: 44px;
 		justify-content: center;
+	}
+
+	.page-container .input-type .custom-select-trigger {
+		font-size: 0.72rem;
+		padding: 8px 8px;
+	}
+
+	.page-container .input-type .custom-select-trigger .selected-text {
+		font-size: 0.72rem;
+	}
+
+	.page-container .input-type .custom-select-trigger .dropdown-icon {
+		margin-left: 6px;
+	}
+
+	.page-container .input-ticket .custom-select-trigger {
+		font-size: 0.72rem;
+		padding: 8px 8px;
+	}
+
+	.page-container .input-ticket .custom-select-trigger .selected-text {
+		font-size: 0.72rem;
+	}
+
+	.page-container .input-ticket .custom-select-trigger .select-item-icon {
+		font-size: 0.72rem;
+		margin-right: 6px;
+	}
+
+	.page-container .input-ticket .custom-select-trigger .dropdown-icon {
+		margin-left: 6px;
 	}
 }
 
@@ -382,9 +427,16 @@
 	white-space: nowrap;
 }
 
+.page-container .header-quantity,
+.page-container .cell-quantity {
+	width: 6%;
+	min-width: 50px;
+	text-align: center;
+}
+
 .page-container .header-roles {
-	width: 35%;
-	min-width: 150px;
+	width: 32%;
+	min-width: 140px;
 }
 
 .page-container .header-amount {
@@ -809,4 +861,12 @@ body .page-container .print-pages-container .print-page .print-table tbody tr:la
 
 .print-table td.print-cell-v {
 	text-align: center;
+}
+
+.print-table td.print-cell-qty {
+	text-align: center;
+}
+
+.page-container .mobile-only-label {
+	display: none;
 }

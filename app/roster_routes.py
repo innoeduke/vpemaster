@@ -97,7 +97,7 @@ def roster():
                 
         
         # Calculate total amount and attendees
-        total_amount = sum(entry.ticket.price for entry in roster_entries if entry.ticket and entry.ticket.price)
+        total_amount = sum(entry.amount for entry in roster_entries if entry.amount)
         total_attendees = sum(1 for entry in roster_entries if entry.ticket and entry.ticket.name != 'Cancelled')
 
         if roster_entries:
@@ -299,7 +299,8 @@ def create_roster_entry():
     new_entry = Roster(
         meeting_id=data['meeting_id'],
         order_number=data.get('order_number') if data.get('order_number') not in [None, '', 'null'] else None,
-        ticket_id=ticket_obj.id
+        ticket_id=ticket_obj.id,
+        quantity=int(data.get('quantity', 1))
     )
 
     if 'contact_id' in data and data['contact_id']:
@@ -345,7 +346,8 @@ def get_roster_entry(entry_id):
         'ticket': entry.ticket.name if entry.ticket else None,
         'contact_id': entry.contact_id,
         'contact_name': contact_name,
-        'contact_type': contact_type
+        'contact_type': contact_type,
+        'quantity': entry.quantity
     })
 
 
@@ -380,6 +382,8 @@ def update_roster_entry(entry_id):
             
     if 'contact_type' in data:
         entry.contact_type = data['contact_type']
+    if 'quantity' in data:
+        entry.quantity = int(data['quantity'])
 
     try:
         db.session.commit()
