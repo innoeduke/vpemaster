@@ -88,6 +88,7 @@ class Roster(db.Model):
         
     order_number = db.Column(db.Integer, nullable=True)
     ticket_id = db.Column(db.Integer, db.ForeignKey('tickets.id'), nullable=True)
+    quantity = db.Column(db.Integer, default=1, nullable=False)
     amount = db.Column(db.Float, default=0.0)
     
     ticket = db.relationship('Ticket')
@@ -322,12 +323,13 @@ class Waitlist(db.Model):
 @db.event.listens_for(Roster, 'before_insert')
 @db.event.listens_for(Roster, 'before_update')
 def update_roster_amount(mapper, connection, target):
-    """Automatically sync amount from ticket price on save/update."""
+    """Automatically sync amount from ticket price * quantity on save/update."""
     if target.ticket_id:
         from .ticket import Ticket
         # Fetch ticket directly to ensure we get the latest price for the given ticket_id
         ticket = db.session.get(Ticket, target.ticket_id)
         if ticket:
-            target.amount = ticket.price
+            qty = target.quantity if target.quantity is not None else 1
+            target.amount = ticket.price * qty
     else:
         target.amount = 0.0

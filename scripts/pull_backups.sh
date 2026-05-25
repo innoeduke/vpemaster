@@ -32,41 +32,40 @@ sleep 1.5
 # 2. Ensuring local folders exist
 echo "📂 Ensuring local folders exist..."
 mkdir -p "$PROJECT_ROOT/instance/backup/db"
-mkdir -p "$PROJECT_ROOT/instance/backup/resources"
+mkdir -p "$PROJECT_ROOT/instance/backup/system"
+mkdir -p "$PROJECT_ROOT/instance/backup/club"
 echo "✅ Local directories are ready."
 echo ""
 
-# 3. Querying remote server for database backup
-echo "🔍 Querying remote server for the newest database backup..."
-LATEST_DB=$(ssh -o ConnectTimeout=5 "$REMOTE_USER@$REMOTE_HOST" "ls -t $REMOTE_BASE_PATH/db/backup_*.sql 2>/dev/null | head -n 1")
-
-if [ -z "$LATEST_DB" ]; then
-    echo "⚠️  No backup files found in remote directory: $REMOTE_BASE_PATH/db"
-else
-    DB_FILENAME=$(basename "$LATEST_DB")
-    echo "📦 Found newest remote database: $DB_FILENAME"
-    echo "⬇️  Downloading database backup..."
-    scp -o ConnectTimeout=5 "$REMOTE_USER@$REMOTE_HOST:$LATEST_DB" "$PROJECT_ROOT/instance/backup/db/"
-    echo "✅ Database backup downloaded successfully to $PROJECT_ROOT/instance/backup/db/$DB_FILENAME"
-fi
+# 3. Syncing database backups
+echo "🔍 Syncing database backups from remote server..."
+rsync -avz --delete -e "ssh -o ConnectTimeout=5" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_BASE_PATH/db/" "$PROJECT_ROOT/instance/backup/db/"
+echo "✅ Database backups synced."
 echo ""
 
-# Solution B: Add a sleep delay between SSH sessions to prevent Clash/Mihomo/Firewall connection drops
 sleep 1.5
 
-# 4. Querying remote server for resources backup
-echo "🔍 Querying remote server for the newest resources backup..."
-LATEST_RES=$(ssh -o ConnectTimeout=5 "$REMOTE_USER@$REMOTE_HOST" "ls -t $REMOTE_BASE_PATH/resources/resources_*.zip 2>/dev/null | head -n 1")
+# 4. Syncing system resources backups
+echo "🔍 Syncing system resources backups from remote server..."
+rsync -avz --delete -e "ssh -o ConnectTimeout=5" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_BASE_PATH/system/" "$PROJECT_ROOT/instance/backup/system/"
+echo "✅ System resources backups synced."
+echo ""
 
-if [ -z "$LATEST_RES" ]; then
-    echo "⚠️  No backup files found in remote directory: $REMOTE_BASE_PATH/resources"
-else
-    RES_FILENAME=$(basename "$LATEST_RES")
-    echo "📦 Found newest remote resources: $RES_FILENAME"
-    echo "⬇️  Downloading resources backup..."
-    scp -o ConnectTimeout=5 "$REMOTE_USER@$REMOTE_HOST:$LATEST_RES" "$PROJECT_ROOT/instance/backup/resources/"
-    echo "✅ Resources backup downloaded successfully to $PROJECT_ROOT/instance/backup/resources/$RES_FILENAME"
-fi
+sleep 1.5
+
+# 5. Syncing club resources backups
+echo "🔍 Syncing club resources backups from remote server..."
+rsync -avz --delete -e "ssh -o ConnectTimeout=5" "$REMOTE_USER@$REMOTE_HOST:$REMOTE_BASE_PATH/club/" "$PROJECT_ROOT/instance/backup/club/"
+echo "✅ Club resources backups synced."
+echo ""
+
+# 6. Run post-pull data migrations
+echo "🛠️ Running data migrations..."
+echo "Running migrate_contact_paths.py..."
+python3 "$PROJECT_ROOT/scripts/migrate_contact_paths.py"
+echo "Running migrate_owner_meeting_roles.py..."
+python3 "$PROJECT_ROOT/scripts/migrate_owner_meeting_roles.py"
+echo "✅ Data migrations complete."
 echo ""
 
 echo "🎉 Pull complete!"

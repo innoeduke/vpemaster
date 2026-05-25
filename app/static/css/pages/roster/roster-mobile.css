@@ -253,9 +253,29 @@
   .desktop-only,
   .page-container .header-roles,
   .page-container .header-club,
+  .page-container .header-quantity,
   .page-container .cell-roles,
   .page-container .cell-club {
     display: none !important;
+  }
+
+  .page-container .cell-quantity {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+    justify-self: end;
+    margin-right: 15px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #772432;
+    display: flex !important;
+    align-items: center;
+  }
+
+  .page-container .mobile-only-label {
+    display: inline !important;
+    font-weight: normal;
+    color: #6c757d;
+    margin-right: 2px;
   }
 
   /* Fix empty blank rows */
