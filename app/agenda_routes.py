@@ -1659,18 +1659,50 @@ def _tally_votes_and_set_winners(meeting):
      .all()
 
     # Process votes for each category
-    winners = {}  # {'speaker': (contact_id, vote_count), ...}
+    category_votes = {}  # {'speaker': [(contact_id, count), ...]}
     for category, contact_id, count in vote_counts:
-        if category not in winners or count > winners[category][1]:
-            winners[category] = (contact_id, count)
-        # Simple tie-breaking: first one with max votes wins.
+        if not category:
+            continue
+        if category not in category_votes:
+            category_votes[category] = []
+        category_votes[category].append((contact_id, count))
+
+    winners = {}  # {'speaker': winner_contact_id}
+    for category, candidate_votes in category_votes.items():
+        if not candidate_votes:
+            continue
+        # Find maximum vote count for this category
+        max_votes = max(count for _, count in candidate_votes)
+        # Find all candidates with the maximum vote count
+        candidates = [contact_id for contact_id, count in candidate_votes if count == max_votes and contact_id is not None]
+        if not candidates:
+            continue
+
+        if len(candidates) == 1:
+            winners[category] = candidates[0]
+        else:
+            # Tie-breaker: choose the one who wins that award less historically in this club
+            award_attr = f"best_{category.replace('-', '_')}_id"
+            if hasattr(Meeting, award_attr):
+                win_counts = {}
+                for cid in candidates:
+                    win_count = db.session.query(func.count(Meeting.id)).filter(
+                        Meeting.club_id == meeting.club_id,
+                        getattr(Meeting, award_attr) == cid,
+                        Meeting.id != meeting.id
+                    ).scalar() or 0
+                    win_counts[cid] = win_count
+                
+                # Choose the candidate with the minimum win count (stable fallback if there's a tie in win count)
+                winners[category] = min(candidates, key=lambda cid: win_counts[cid])
+            else:
+                winners[category] = candidates[0]
 
     # Update meeting object with winners
-    for category, (winner_id, _) in winners.items():
-        if category:
-            award_attr = f"best_{category.replace('-', '_')}_id"
-            if hasattr(meeting, award_attr):
-                setattr(meeting, award_attr, winner_id)
+    for category, winner_id in winners.items():
+        award_attr = f"best_{category.replace('-', '_')}_id"
+        if hasattr(meeting, award_attr):
+            setattr(meeting, award_attr, winner_id)
 
     # Calculate Standard NPS: (Promoters - Detractors) / Total * 100
     # Promoters: 9-10, Detractors: 1-6, Passives: 7-8 (0s are excluded)
