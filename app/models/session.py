@@ -541,8 +541,8 @@ class SessionLog(db.Model):
             if hasattr(self, 'context_target') and self.context_target:
                 target_pathway = self.context_target.get('pathway')
                 if pathway == 'Non Pathway':
-                    # Non Pathway means target_pathway should be NULL
-                    if target_pathway is not None:
+                    # Non Pathway means target_pathway should be NULL or 'Non Pathway' or empty
+                    if target_pathway not in (None, '', 'Non Pathway'):
                         return False
                 else:
                     # For specific pathways, target_pathway must match
@@ -551,6 +551,14 @@ class SessionLog(db.Model):
             else:
                 # No target_pathway - fall back to original logic checking self.pathway
                 current_log_path = getattr(self, 'pathway', None)
+
+                # Special case: "Non Pathway" shows logs without a pathway OR with pathway='Non Pathway'
+                if pathway == 'Non Pathway':
+                    # Accept if pathway is None/NULL or equals 'Non Pathway'
+                    if current_log_path and current_log_path != 'Non Pathway':
+                        return False
+                    # If no pathway, it matches "Non Pathway" - accept it
+                    return True
 
                 # If log has a pathway and it doesn't match → reject
                 if current_log_path and current_log_path != pathway:
@@ -581,7 +589,6 @@ class SessionLog(db.Model):
                                  if path_obj and path_obj.abbr:
                                      if not context_cred.startswith(path_obj.abbr):
                                          return False
-
         # Status filter
         if status:
             if log_type == 'speech':

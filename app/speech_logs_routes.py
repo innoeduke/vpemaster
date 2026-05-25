@@ -238,13 +238,11 @@ def _get_pathway_info(viewed_contact, raw_pathway, filters):
     member_pathways = []
     if viewed_contact:
         member_pathways = viewed_contact.get_member_pathways()
-
         # Ensure selected pathway is in list
         if selected_pathway and selected_pathway not in ('all', 'Non Pathway'):
             if not any(p['name'] == selected_pathway for p in member_pathways):
                 member_pathways.append({'name': selected_pathway, 'status': 'unknown', 'abbr': '', 'path_id': None})
                 member_pathways.sort(key=lambda x: x['name'])
-
     return {
         'selected_pathway': selected_pathway,
         'member_pathways': member_pathways,
@@ -426,6 +424,20 @@ def _fetch_logs_with_filters(filters):
 
         # Filter out officer roles (SAA, President, etc.)
         logs = [l for l in logs if not (l.session_type and l.session_type.role and l.session_type.role.type == 'officer')]
+        
+        # Verify that each log actually has the speaker_id as an owner
+        # This ensures no cross-contamination between users' logs
+        try:
+            speaker_id_int = int(filters['speaker_id'])
+            filtered_logs = []
+            for log in logs:
+                # Check if speaker_id is in the list of owners for this log
+                owner_ids = [o.id for o in (log.owners if hasattr(log, 'owners') else [])]
+                if speaker_id_int in owner_ids:
+                    filtered_logs.append(log)
+            logs = filtered_logs
+        except (ValueError, TypeError):
+            pass
 
         # Apply remaining filters (meeting_id, role) manually
         if filters['meeting_id']:
