@@ -2,79 +2,117 @@
   <div class="modal-content">
     <h2>Edit Details</h2>
 
-    <form id="speechEditForm" onsubmit="saveSpeechChanges(event)">
+    <form id="speechEditForm" onsubmit="saveEditDetailsChanges(event)">
       <input type="hidden" id="edit-log-id" name="log_id" />
       <input type="hidden" id="edit-session-type-title" name="session_type_title" />
 
-      <div class="form-group">
-        <label for="edit-speech-title" class="modal-label">Speech Title:</label>
-        <input type="text" id="edit-speech-title" name="speech_title" required />
-      </div>
+      <!-- Speech Mode Fields Container -->
+      <div id="speech-mode-fields">
+        <input type="hidden" id="edit-session-owner" />
 
-      <div class="form-group">
-        <label for="edit-credential" class="modal-label">Credential:</label>
-        <input type="text" id="edit-credential" name="credential" placeholder="e.g. PM1, DL5" />
-      </div>
-
-      <div class="form-group" id="project-group" style="display: none;">
-        <div class="checkbox-input-wrapper" style="display: flex; align-items: center;">
-          <input type="checkbox" id="is-project-chk" name="is_project" class="scaled-checkbox">
-          <label for="is-project-chk" style="margin-left: 10px; cursor: pointer; margin-bottom: 0;">Is Project?</label>
-        </div>
-      </div>
-
-      <div id="project-mode-fields" style="display: none;">
-        <div class="form-group" id="pathway-group">
-          <label for="pathway-select-dropdown" class="modal-label">Pathway:</label>
-          <select id="pathway-select-dropdown" name="pathway_dropdown">
-            <option value="">-- Select Pathway --</option>
-          </select>
-        </div>
         <div class="form-group">
-          <label for="project-select-dropdown" class="modal-label">Project:</label>
-          <select id="project-select-dropdown" name="project_dropdown">
-            <option value="">-- Select Project --</option>
-          </select>
+          <label for="edit-credential" class="modal-label">Credential:</label>
+          <input type="text" id="edit-credential" name="credential" placeholder="e.g. DTM" />
+        </div>
+
+        <div class="form-group">
+          <label for="edit-speech-title" id="edit-speech-title-label" class="modal-label">Session Title:</label>
+          <input type="text" id="edit-speech-title" name="speech_title" required />
+        </div>
+
+        <!-- Card for Project Roles (Evaluation, Panel Discussion, Table Topics, Keynote Speech) -->
+        <div class="role-owner-card" id="pathway-group" style="display: none; flex-direction: column; margin-bottom: 20px;">
+          <div class="card-owner-name" id="project-role-owner-name">Owner Name</div>
+          
+          <div class="form-group">
+            <label for="pathway-select-dropdown">Pathway</label>
+            <select id="pathway-select-dropdown" name="pathway_dropdown">
+              <option value="">-- Select Pathway --</option>
+            </select>
+          </div>
+          <div class="form-group" id="level-group">
+            <label for="level-select-dropdown">Level</label>
+            <select id="level-select-dropdown" name="level_dropdown">
+              <option value="">-- Select Level --</option>
+              {% for i in range(1, 6) %}
+              <option value="{{ i }}">Level {{ i }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" id="project-group" style="display: none;">
+          <div class="checkbox-input-wrapper" style="display: flex; align-items: center;">
+            <input type="checkbox" id="is-project-chk" name="is_project" class="scaled-checkbox">
+            <label for="is-project-chk" style="margin-left: 10px; cursor: pointer; margin-bottom: 0;">Is Project?</label>
+          </div>
+        </div>
+
+        <div id="project-mode-fields" style="display: none;">
+          <div class="form-group">
+            <label for="project-select-dropdown" class="modal-label">Project:</label>
+            <select id="project-select-dropdown" name="project_dropdown">
+              <option value="">-- Select Project --</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="standard-selection" style="display: none;">
+          <!-- Card for Standard Speech (Prepared Speech, Pathway Speech, Presentation) -->
+          <div class="role-owner-card" id="speech-owner-card" style="display: flex; flex-direction: column; margin-bottom: 20px;">
+            <div class="card-owner-name" id="speech-owner-name">Owner Name</div>
+
+            <div class="form-group" id="pathway-generic-row">
+              <label for="edit-pathway" id="label-pathway-series">Pathway</label>
+              <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
+            </div>
+
+            <div class="form-group" id="level-select-group">
+              <label for="edit-level" id="label-level">Level</label>
+              <select id="edit-level" name="level" onchange="updateDynamicOptions()">
+                <option value="">-- Select Level --</option>
+                {% for i in range(1, 6) %}
+                <option value="{{ i }}">Level {{ i }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <!-- Is Project Checkbox stacked below the card -->
+          <div class="form-group" style="display: flex; align-items: center; margin-bottom: 15px;">
+            <input type="checkbox" id="edit-is-project" name="is_project" class="scaled-checkbox" checked />
+            <label for="edit-is-project" style="margin-left: 10px; cursor: pointer; font-weight: 700; margin-bottom: 0; color: #555;">Is Project?</label>
+          </div>
+
+          <div class="form-group" id="project-select-group">
+            <label for="edit-project" id="label-project-presentation" class="modal-label">Project:</label>
+            <select id="edit-project" name="project_id">
+              <option value="">-- Select a Project --</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="edit-speech-media-url" class="modal-label">Media URL:</label>
+          <input type="text" id="edit-speech-media-url" name="media_url" placeholder="e.g., https://youtu.be/..." />
         </div>
       </div>
 
-      <div id="standard-selection" style="display: none;">
-        <!-- Is Project Checkbox stacked first -->
-        <div class="form-group" style="display: flex; align-items: center; margin-bottom: 15px;">
-          <input type="checkbox" id="edit-is-project" name="is_project" class="scaled-checkbox" checked />
-          <label for="edit-is-project" style="margin-left: 10px; cursor: pointer; font-weight: 700; margin-bottom: 0; color: #555;">Is Project?</label>
+      <!-- Role Mode Fields Container -->
+      <div id="role-mode-fields" style="display: none;">
+        <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+          <label class="modal-label" style="font-weight: 700; color: #555; margin-bottom: 5px;">Role:</label>
+          <div id="role-name-display" style="font-size: 16px; font-weight: 600; padding: 6px 0; color: #333; border-bottom: 1px solid #eee;"></div>
         </div>
 
-        <!-- Pathway select container, now stacked and full-width -->
-        <div class="form-group" id="pathway-generic-row">
-          <label for="edit-pathway" id="label-pathway-series" class="modal-label">Pathway:</label>
-          <select id="edit-pathway" name="pathway" onchange="updateDynamicOptions()" required></select>
+        <!-- Horizontally scrollable container for per-owner cards -->
+        <div id="role-owners-scroll" class="role-owners-scroll">
+          <!-- Cards populated dynamically -->
         </div>
-        <div class="form-group" id="level-select-group">
-          <label for="edit-level" id="label-level" class="modal-label">Level:</label>
-          <select id="edit-level" name="level" onchange="updateDynamicOptions()">
-            <option value="">-- Select Level --</option>
-            {% for i in range(1, 6) %}
-            <option value="{{ i }}">Level {{ i }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <div class="form-group" id="project-select-group">
-          <label for="edit-project" id="label-project-presentation" class="modal-label">Project:</label>
-          <select id="edit-project" name="project_id">
-            <option value="">-- Select a Project --</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="edit-speech-media-url" class="modal-label">Media URL:</label>
-        <input type="text" id="edit-speech-media-url" name="media_url" placeholder="e.g., https://youtu.be/..." />
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn btn-speech-cancel" onclick="closeSpeechEditModal()">Cancel</button>
+        <button type="button" class="btn btn-speech-cancel" onclick="closeEditDetailsModal()">Cancel</button>
         <button type="submit" class="btn btn-speech-save">Save</button>
       </div>
     </form>

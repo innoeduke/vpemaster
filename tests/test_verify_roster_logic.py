@@ -28,30 +28,35 @@ class TestVerifyRosterLogic(unittest.TestCase):
         # Setup Data
         self.meeting_num = 9999
         
+        from app.models import Club
+        self.club = Club(id=1, club_no='000000', club_name='Test Club')
+        db.session.add(self.club)
+        db.session.flush()
+        
         self.officer_contact = Contact(Name="Test Officer", Type="Officer")
         self.member_contact = Contact(Name="Test Member", Type="Member")
         self.guest_contact = Contact(Name="Test Guest", Type="Guest")
         self.role = MeetingRole(name="Test Role", type="functionary", needs_approval=False, has_single_owner=False)
         
         from app.models import ContactClub
-        cc_officer = ContactClub(contact=self.officer_contact, club_id=1, is_officer=True)
-        cc_member = ContactClub(contact=self.member_contact, club_id=1, is_officer=False)
-        cc_guest = ContactClub(contact=self.guest_contact, club_id=1, is_officer=False)
+        cc_officer = ContactClub(contact=self.officer_contact, club_id=self.club.id, is_officer=True)
+        cc_member = ContactClub(contact=self.member_contact, club_id=self.club.id, is_officer=False)
+        cc_guest = ContactClub(contact=self.guest_contact, club_id=self.club.id, is_officer=False)
         
         db.session.add_all([self.officer_contact, self.member_contact, self.guest_contact, self.role, cc_officer, cc_member, cc_guest])
         
         # Seed Tickets
         from app.models import Ticket, Meeting
         tickets = [
-            Ticket(name="Officer", type="Officer", price=0, club_id=1),
-            Ticket(name="Early-bird", type="Member", price=0, club_id=1),
-            Ticket(name="Role-taker", type="Guest", price=0, club_id=1),
-            Ticket(name="Guest", type="Guest", price=0, club_id=1)
+            Ticket(name="Officer", type="Officer", price=0, club_id=self.club.id),
+            Ticket(name="Early-bird", type="Member", price=0, club_id=self.club.id),
+            Ticket(name="Role-taker", type="Guest", price=0, club_id=self.club.id),
+            Ticket(name="Guest", type="Guest", price=0, club_id=self.club.id)
         ]
         db.session.add_all(tickets)
         
         from datetime import date
-        self.meeting = Meeting(Meeting_Number=self.meeting_num, Meeting_Date=date(2025, 1, 1), club_id=1)
+        self.meeting = Meeting(Meeting_Number=self.meeting_num, Meeting_Date=date(2025, 1, 1), club_id=self.club.id)
         db.session.add(self.meeting)
         db.session.commit()
 

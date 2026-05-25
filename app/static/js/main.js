@@ -160,12 +160,32 @@ function openContactModal(contactId) {
         document.getElementById("phone_number").value =
           data.contact.Phone_Number || "";
 
-        let bioText = data.contact.Bio || "";
-        bioText = bioText.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
-        document.getElementById("bio").value = bioText;
-        document.getElementById("completed_paths").value =
-          data.contact.Completed_Paths || "";
-        document.getElementById("dtm").checked = data.contact.DTM;
+         let bioText = data.contact.Bio || "";
+         bioText = bioText.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n');
+         document.getElementById("bio").value = bioText;
+         
+         const registeredPathsEl = document.getElementById("registered_paths");
+         if (registeredPathsEl) {
+           registeredPathsEl.innerHTML = '';
+            if (data.contact.registered_paths && data.contact.registered_paths.length > 0) {
+              data.contact.registered_paths.forEach(p => {
+                const opt = document.createElement("option");
+                const statusIcon = p.status && p.status.toLowerCase() === 'completed' ? '✅' : '⏳';
+                opt.text = `${statusIcon} ${p.name}`;
+                opt.value = p.name;
+                if (data.contact.current_path && p.name === data.contact.current_path) {
+                  opt.selected = true;
+                }
+                registeredPathsEl.appendChild(opt);
+              });
+           } else {
+             const opt = document.createElement("option");
+             opt.text = "No Paths Registered";
+             opt.value = "";
+             registeredPathsEl.appendChild(opt);
+           }
+         }
+         document.getElementById("dtm").checked = data.contact.DTM;
         const officerCheckbox = document.getElementById("is_officer");
         if (officerCheckbox) {
           officerCheckbox.checked = data.contact.is_officer;

@@ -100,36 +100,29 @@
       <!-- Tab 2 Panel: Education & Awards -->
       <div id="panel-education" class="tab-panel" style="display: none; padding-top: 15px;">
         <div class="contact-form-grid">
-          <!-- Row 1: Completed Paths & Current Path -->
+          <!-- Row 1: Registered Paths & Default Path -->
           <div class="contact-form-item">
-            <label for="completed_paths">Completed Paths:</label>
-            <input type="text" id="completed_paths" name="completed_paths" readonly
-              placeholder="Derived from Achievements" />
+            <label for="registered_paths">Registered Paths:</label>
+            <select id="registered_paths" name="registered_paths" style="font-size: 13px; padding: 10px 8px; background-color: #fff; cursor: pointer;">
+                <option value="">No Paths Registered</option>
+            </select>
           </div>
           <div class="contact-form-item">
-            <label for="current_path">Current Path:</label>
-            <select id="current_path" name="current_path">
-              <option value="">-- Select Path --</option>
-              {% for type, p_list in pathways.items() %}
-              <optgroup label="{{ type }}">
-                {% for pathway in p_list %}
-                <option value="{{ pathway }}">{{ pathway }}</option>
-                {% endfor %}
-              </optgroup>
-              {% endfor %}
-            </select>
+            <label for="current_path">Default Path:</label>
+            <input type="text" id="current_path" name="current_path" readonly disabled
+              placeholder="Calculated from achievements" style="background-color: #f8f9fa; cursor: not-allowed;" />
           </div>
 
           <!-- Row 2: Next Project & Credentials -->
           <div class="contact-form-item">
             <label for="next_project">Next Project:</label>
-            <input type="text" id="next_project" name="next_project" readonly
-              placeholder="Calculated from logs" />
+            <input type="text" id="next_project" name="next_project" readonly disabled
+              placeholder="Calculated from logs" style="background-color: #f8f9fa; cursor: not-allowed;" />
           </div>
           <div class="contact-form-item">
             <label for="credentials">Credentials:</label>
-            <input type="text" id="credentials" name="credentials" readonly
-              placeholder="Derived from Achievements" />
+            <input type="text" id="credentials" name="credentials" readonly disabled
+              placeholder="Derived from Achievements" style="background-color: #f8f9fa; cursor: not-allowed;" />
           </div>
         </div>
       </div>

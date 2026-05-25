@@ -25,18 +25,18 @@
                     <!-- Populated dynamically -->
                 </select>
             </div>
-            <div id="pathway-group" class="planner-form-group" style="display: none;">
+            <div id="planner-pathway-group" class="planner-form-group" style="display: none;">
                 <label for="planner_pathway">Pathway</label>
                 <select id="planner_pathway" class="planner-form-control">
                     <option value="">Select Pathway</option>
                 </select>
             </div>
-            <div id="project-checkbox-group" class="planner-form-group" style="display: none; margin-bottom: 10px;">
+            <div id="planner-project-checkbox-group" class="planner-form-group" style="display: none; margin-bottom: 10px;">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     Project <input type="checkbox" id="has_project_chk">
                 </label>
             </div>
-            <div id="project-group" class="planner-form-group" style="display: none;">
+            <div id="planner-project-group" class="planner-form-group" style="display: none;">
                 <select id="project_id" class="planner-form-control">
                     <option value="">Select Project</option>
                     {% for level, projs in grouped_projects %}

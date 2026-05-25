@@ -789,7 +789,7 @@ class RoleService:
                     db.joinedload(SessionLog.session_type).joinedload(SessionType.role),
                     db.joinedload(SessionLog.project)
                 ).first()
-            elif role:
+            elif role and not role.has_single_owner:
                 # Shared role: Find the relevant session log for this meeting/role type
                 log = SessionLog.query.join(SessionType).filter(
                     SessionLog.meeting_id == meeting.id,

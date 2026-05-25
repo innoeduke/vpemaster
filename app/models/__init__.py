@@ -45,6 +45,8 @@ def load_user(user_id):
 
 login_manager.anonymous_user = AnonymousUser
 
+from .contact_path import ContactPath
+
 # Export all models for backward compatibility
 __all__ = [
     'db',
@@ -75,6 +77,7 @@ __all__ = [
     # Club and ExComm models
     'Club',
     'ContactClub',
+    'ContactPath',
     'ExComm',
     'ExcommOfficer',
     'UserClub',

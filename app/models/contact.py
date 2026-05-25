@@ -11,7 +11,7 @@ class Contact(db.Model):
     Email = db.Column(db.String(120), unique=False, nullable=True)
     Type = db.Column(db.String(50), nullable=False, default='Guest')
     Date_Created = db.Column(db.Date)
-    Completed_Paths = db.Column(db.String(255))
+    _Completed_Paths = db.Column('Completed_Paths', db.String(255))
     DTM = db.Column(db.Boolean, default=False)
     Phone_Number = db.Column(db.String(50), nullable=True)
     Bio = db.Column(db.Text, nullable=True)
@@ -19,7 +19,7 @@ class Contact(db.Model):
     # Migrated from User model
     Member_ID = db.Column(db.String(50), unique=False, nullable=True)
     Mentor_ID = db.Column(db.Integer, db.ForeignKey('Contacts.id'), nullable=True)
-    Current_Path = db.Column(db.String(50), nullable=True)
+    _Current_Path = db.Column('Current_Path', db.String(50), nullable=True)
     Next_Project = db.Column(db.String(100), nullable=True)
     credentials = db.Column(db.String(10), nullable=True)
     Avatar_URL = db.Column(db.String(255), nullable=True)
@@ -32,7 +32,102 @@ class Contact(db.Model):
     roster_entries = db.relationship('Roster', cascade='all, delete-orphan', back_populates='contact')
     user_club_records = db.relationship('UserClub', cascade='all, delete-orphan', back_populates='contact', foreign_keys='UserClub.contact_id')
     club_memberships = db.relationship('ContactClub', cascade='all, delete-orphan', back_populates='contact')
+    registered_paths = db.relationship('ContactPath', cascade='all, delete-orphan', back_populates='contact')
     
+    @property
+    def Current_Path(self):
+        default_path = next((cp for cp in self.registered_paths if cp.is_default), None)
+        if not default_path:
+            # Fallback: get the first working path
+            default_path = next((cp for cp in self.registered_paths if cp.status == 'working'), None)
+        if not default_path:
+            # Fallback: get the first completed path
+            default_path = next((cp for cp in self.registered_paths if cp.status == 'completed'), None)
+        
+        if default_path and default_path.pathway:
+            return default_path.pathway.name
+        
+        # Final fallback: legacy column value (for cases where Pathway record doesn't exist)
+        return self._Current_Path
+
+    @Current_Path.setter
+    def Current_Path(self, pathway_name):
+        if not pathway_name:
+            for cp in self.registered_paths:
+                cp.is_default = False
+            self._Current_Path = None
+            return
+
+        from .project import Pathway
+        from .contact_path import ContactPath
+        # Find pathway
+        pathway = Pathway.query.filter((Pathway.name == pathway_name) | (Pathway.abbr == pathway_name)).first()
+        if not pathway:
+            self._Current_Path = pathway_name # fallback for compatibility
+            return
+
+        # Find if registered
+        existing = next((cp for cp in self.registered_paths if cp.path_id == pathway.id), None)
+        if existing:
+            # Set this as default, unset others
+            for cp in self.registered_paths:
+                cp.is_default = (cp.id == existing.id)
+        else:
+            # Create a new working path
+            for cp in self.registered_paths:
+                cp.is_default = False
+            new_cp = ContactPath(contact_id=self.id, path_id=pathway.id, status='working', is_default=True)
+            self.registered_paths.append(new_cp)
+
+        self._Current_Path = pathway.name
+
+    @property
+    def Completed_Paths(self):
+        completed = []
+        for cp in self.registered_paths:
+            if cp.status == 'completed' and cp.pathway and cp.pathway.abbr:
+                completed.append(f"{cp.pathway.abbr}5")
+        return "/".join(sorted(completed)) if completed else None
+
+    @Completed_Paths.setter
+    def Completed_Paths(self, value):
+        self._Completed_Paths = value
+        
+        if not value:
+            # Mark all completed paths as working
+            for cp in self.registered_paths:
+                if cp.status == 'completed':
+                    cp.status = 'working'
+            return
+
+        parts = [p.strip() for p in str(value).split('/') if p.strip()]
+        from .project import Pathway
+        from .contact_path import ContactPath
+        import re
+        
+        specified_pathway_ids = set()
+        
+        for part in parts:
+            # Extract pathway abbreviation (e.g. "PM5" -> "PM")
+            match = re.match(r"^([A-Z]+)\d*$", part.upper())
+            abbr = match.group(1) if match else part
+            
+            pathway = Pathway.query.filter((Pathway.abbr == abbr) | (Pathway.name == part)).first()
+            if pathway:
+                specified_pathway_ids.add(pathway.id)
+                # Find if already registered
+                cp = next((x for x in self.registered_paths if x.path_id == pathway.id), None)
+                if cp:
+                    cp.status = 'completed'
+                else:
+                    new_cp = ContactPath(contact_id=self.id, path_id=pathway.id, status='completed', is_default=False)
+                    self.registered_paths.append(new_cp)
+                    
+        # Any other paths that were completed but not in parts could be set to working
+        for cp in self.registered_paths:
+            if cp.status == 'completed' and cp.path_id not in specified_pathway_ids:
+                cp.status = 'working'
+
     @property
     def user_id(self):
         """Returns the user_id associated with this contact if any."""
@@ -85,55 +180,19 @@ class Contact(db.Model):
 
     def get_member_pathways(self):
         """
-        Get distinct pathways for this contact from their session logs.
+        Get all registered pathways for this contact.
         Returns list of pathway names ordered alphabetically.
         """
-        from sqlalchemy import distinct, union
-        from .session import SessionLog, SessionType, OwnerMeetingRoles
-        from .meeting import Meeting
-        from .roster import MeetingRole
-        from .achievement import Achievement
-        
-        # 1. Get pathways from SessionLog (ONLY if Project_ID is set = Real Progress)
-        q_logs = db.session.query(SessionLog.pathway)\
-            .join(Meeting, SessionLog.meeting_id == Meeting.id)\
-            .join(SessionType, SessionLog.Type_ID == SessionType.id)\
-            .join(MeetingRole, SessionType.role_id == MeetingRole.id)\
-            .filter(
-                db.exists().where(
-                    db.and_(
-                        OwnerMeetingRoles.contact_id == self.id,
-                        OwnerMeetingRoles.meeting_id == Meeting.id,
-                        OwnerMeetingRoles.role_id == MeetingRole.id,
-                        db.or_(
-                            OwnerMeetingRoles.session_log_id == SessionLog.id,
-                            OwnerMeetingRoles.session_log_id.is_(None)
-                        )
-                    )
-                ),
-                SessionLog.pathway.isnot(None),
-                SessionLog.pathway != '',
-                SessionLog.Project_ID.isnot(None) # <--- CRITICAL FIX: Only real projects count
-            ).distinct()
-            
-        # 2. Get pathways from Achievements (Completed Levels/Paths)
-        uid = self.user_id
-        if uid:
-            q_ach = db.session.query(Achievement.path_name)\
-                .filter(
-                    Achievement.user_id == uid,
-                    Achievement.path_name.isnot(None),
-                    Achievement.path_name != ''
-                ).distinct()
-        else:
-            q_ach = db.session.query(Achievement.path_name).filter(db.literal_column('0 = 1'))  # No results
-            
-        # 3. Union results
-        final_query = q_logs.union(q_ach)
-        
-        results = [r[0] for r in final_query.all()]
-        results.sort()
-        return results
+        pathways = []
+        for cp in self.registered_paths:
+            if cp.pathway:
+                pathways.append({
+                    'name': cp.pathway.name,
+                    'status': cp.status,
+                    'abbr': cp.pathway.abbr,
+                    'path_id': cp.pathway.id
+                })
+        return sorted(pathways, key=lambda x: x['name'])
 
 
     def get_completed_levels(self, pathway_name):

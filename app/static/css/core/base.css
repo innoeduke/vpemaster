@@ -599,7 +599,7 @@ h1 {
 }
 
 .action-menu-item {
-    display: flex !important;
+    display: flex;
     padding: 10px 16px;
     align-items: center;
     gap: 12px;
@@ -630,14 +630,14 @@ h1 {
 
 /* Visibility Utilities */
 .mobile-only-item {
-    display: none !important;
+    display: none;
 }
 
 /* Dynamic compact mode (triggered by JS or Container Queries) */
 .compact-actions .desktop-only-btn {
-    display: none !important;
+    display: none;
 }
 .compact-actions .mobile-only-item,
 .compact-actions .action-dropdown {
-    display: flex !important;
+    display: flex;
 }

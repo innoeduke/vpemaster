@@ -1048,3 +1048,22 @@ function showFlashMessage(message, category, targetElement) {
     }, 5000);
   }
 }
+
+function addTableTopicsSpeech(meetingId) {
+  fetch(`/booking/${meetingId}/add_table_topics_speech`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      window.location.reload(true);
+    } else {
+      alert("Error: " + data.message);
+    }
+  })
+  .catch(error => {
+    console.error("addTableTopicsSpeech error:", error);
+    alert("An error occurred while adding the Table Topics speech session.");
+  });
+}

@@ -447,7 +447,6 @@ td.actions-column {
 /* --- Tooltip --- */
 .speech-tooltip-wrapper {
 	position: relative;
-	cursor: pointer;
 	display: inline-block;
 }
 
@@ -1383,4 +1382,130 @@ a.owner-link:hover {
 /* Adjust text to grow */
 .custom-option .custom-select-text {
     flex-grow: 1;
+}
+
+/* --- Role Edit Modal: Per-Owner Cards --- */
+.role-owners-scroll {
+	display: flex;
+	gap: 16px;
+	overflow-x: auto;
+	padding: 4px 2px 12px;
+	scroll-snap-type: x mandatory;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: #cbd5e0 transparent;
+}
+
+.role-owners-scroll::-webkit-scrollbar {
+	height: 6px;
+}
+
+.role-owners-scroll::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.role-owners-scroll::-webkit-scrollbar-thumb {
+	background-color: #cbd5e0;
+	border-radius: 3px;
+}
+
+.role-owner-card {
+	display: flex;
+	flex-direction: column;
+	flex: 0 0 auto;
+	min-width: 240px;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	padding: 16px;
+	scroll-snap-align: start;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* When there's only one card, let it fill the container */
+.role-owner-card:only-child {
+	flex: 1 1 100%;
+	min-width: unset;
+}
+
+.role-owner-card:hover {
+	border-color: #94a3b8;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.role-owner-card .card-owner-name {
+	font-size: 0.95em;
+	font-weight: 700;
+	color: #334155;
+	margin-bottom: 12px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid #e2e8f0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.role-owner-card .form-group {
+	text-align: left;
+	margin-bottom: 12px;
+}
+
+.role-owner-card .form-group:last-child {
+	margin-bottom: 0;
+}
+
+.role-owner-card .form-group label {
+	display: block;
+	font-weight: 600;
+	font-size: 0.8em;
+	color: #64748b;
+	margin-bottom: 4px;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.role-owner-card .form-group select {
+	width: 100%;
+	padding: 8px 10px;
+	border-radius: 6px;
+	border: 1px solid #cbd5e0;
+	font-size: 0.9em;
+	background-color: #fff;
+	transition: border-color 0.2s;
+}
+
+.role-owner-card .form-group select:focus {
+	border-color: #772432;
+	outline: none;
+	box-shadow: 0 0 0 2px rgba(119, 36, 50, 0.1);
+}
+
+/* Scroll indicator dots (optional, for multiple cards) */
+.role-owners-scroll-hint {
+	text-align: center;
+	font-size: 0.75em;
+	color: #94a3b8;
+	margin-top: 4px;
+	display: none;
+}
+
+.role-owners-scroll-hint.visible {
+	display: block;
+}
+
+/* Make Session Title column clickable to Edit Details */
+td.non-edit-mode-cell.col-session {
+	cursor: pointer;
+	position: relative;
+	transition: background-color 0.2s ease;
+}
+
+td.non-edit-mode-cell.col-session:hover {
+	background-color: #f8fafc;
+}
+
+/* Ensure links inside the cell still behave as links but don't prevent clicking the rest of the cell */
+td.non-edit-mode-cell.col-session a {
+	position: relative;
+	z-index: 2;
 }

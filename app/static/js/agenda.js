@@ -85,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
         GLOBAL_CLUB_ID = data.global_club_id || 1; // Update from server response
 
         // Make data available globally for speech_modal.js, which expects them as globals
+        window.allContacts = allContacts;
         window.allProjects = allProjects;
         window.pathways = data.pathways;
         window.pathwayMap = data.pathway_mapping;
@@ -276,6 +277,19 @@ document.addEventListener("DOMContentLoaded", () => {
       tableBody.addEventListener("click", (event) => {
         if (event.target.closest(".delete-btn")) {
           deleteLogRow(event.target.closest("tr"));
+          return;
+        }
+
+        const colSession = event.target.closest(".col-session");
+        if (colSession && !isEditing && editBtn) {
+          // If the user clicked a link (a element) inside the session column, don't trigger the modal
+          if (event.target.closest("a")) {
+            return;
+          }
+          const row = colSession.closest("tr");
+          if (row) {
+            handleSessionTitleClick(row);
+          }
         }
       });
     }
@@ -341,6 +355,53 @@ document.addEventListener("DOMContentLoaded", () => {
 
         submitForm(false);
       });
+    }
+  }
+
+  function handleSessionTitleClick(row) {
+    if (isEditing) return;
+    if (!editBtn) return;
+    if (allSessionTypes.length === 0) return;
+
+    const logId = row.dataset.id;
+    if (!logId || logId === "new") return;
+
+    const typeId = row.dataset.typeId;
+    const sessionType = allSessionTypes.find((st) => st.id == typeId);
+    if (!sessionType) return;
+
+    const hasRole = sessionType.Role && sessionType.Role.trim() !== "";
+    const rolesToHideFor = [
+      allMeetingRoles.PREPARED_SPEAKER
+        ? allMeetingRoles.PREPARED_SPEAKER.name
+        : "Prepared Speaker",
+      "Table Topics",
+    ];
+
+    const shouldShowProjectButton =
+      sessionType.Valid_for_Project || sessionType.Title === "Table Topics";
+    const shouldShowRoleButton =
+      hasRole && !rolesToHideFor.includes(sessionType.Role);
+
+    if (shouldShowProjectButton) {
+      const ownerId = row.dataset.ownerId;
+      const contact = allContacts.find((c) => c.id == ownerId);
+      let currentPath = null;
+      if (contact) {
+        const isGuestWithoutUser = (contact.Type === "Guest");
+        if (!isGuestWithoutUser && contact.Current_Path) {
+          currentPath = contact.Current_Path;
+        } else {
+          currentPath = "Non Pathway";
+        }
+      } else {
+        currentPath = "Non Pathway";
+      }
+      const nextProject = contact ? contact.Next_Project : null;
+      const sessionTypeTitle = sessionType.Title || null;
+      openEditDetailsModal(logId, currentPath, sessionTypeTitle, nextProject);
+    } else if (shouldShowRoleButton) {
+      openEditDetailsModal(logId);
     }
   }
 
@@ -498,8 +559,10 @@ document.addEventListener("DOMContentLoaded", () => {
       row.dataset.durationMax = log.Duration_Max !== null ? log.Duration_Max : '';
       row.dataset.status = log.status || '';
       row.dataset.role = log.role || '';
-      row.dataset.currentPathLevel = log.project_code || '';
-      row.dataset.projectCode = log.project_code || '';
+      row.dataset.currentPathLevel = log.project_code || log.Credentials || '';
+      row.dataset.projectCode = log.project_code || log.Credentials || '';
+      row.dataset.pathway = log.pathway || '';
+      row.dataset.ownerTargets = JSON.stringify(log.owner_targets || {});
 
       // --- Set Classes ---
       if (log.is_section) row.classList.add('section-row');
@@ -522,7 +585,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // 2. Session Title (Complex Logic)
         const tdSession = document.createElement('td');
-        tdSession.className = 'non-edit-mode-cell';
+        tdSession.className = 'non-edit-mode-cell col-session';
         const tooltipWrapper = document.createElement('div');
         tooltipWrapper.className = 'speech-tooltip-wrapper';
 
@@ -1067,6 +1130,7 @@ document.addEventListener("DOMContentLoaded", () => {
         session_title: row.dataset.sessionTitle,
         owner_ids: JSON.parse(row.dataset.ownerIds || '[]'),
         credentials: row.dataset.credentials,
+        owner_targets: JSON.parse(row.dataset.ownerTargets || '{}'),
         duration_min: row.dataset.durationMin,
         duration_max: row.dataset.durationMax,
         project_id: row.dataset.projectId,
@@ -1109,6 +1173,7 @@ document.addEventListener("DOMContentLoaded", () => {
       owner_id: ownerIds.length > 0 ? ownerIds[0] : "",
       credentials:
         row.querySelector('[data-field="Credentials"] input')?.value || null,
+      owner_targets: JSON.parse(row.dataset.ownerTargets || '{}'),
       duration_min:
         row.querySelector('[data-field="Duration_Min"] input')?.value || null,
       duration_max:
@@ -2044,7 +2109,17 @@ document.addEventListener("DOMContentLoaded", () => {
           const logId = row.dataset.id;
           const ownerId = row.dataset.ownerId; // Use allContacts
           const contact = allContacts.find((c) => c.id == ownerId);
-          const currentPath = contact ? contact.Current_Path : null;
+          let currentPath = null;
+          if (contact) {
+            const isGuestWithoutUser = (contact.Type === "Guest");
+            if (!isGuestWithoutUser && contact.Current_Path) {
+              currentPath = contact.Current_Path;
+            } else {
+              currentPath = "Non Pathway";
+            }
+          } else {
+            currentPath = "Non Pathway";
+          }
           const nextProject = contact ? contact.Next_Project : null;
           const typeId = row.querySelector(
             '[data-field="Type_ID"] select'
@@ -2054,7 +2129,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (logId === "new") {
             saveChanges();
           } else {
-            openSpeechEditModal(
+            openEditDetailsModal(
               logId,
               currentPath,
               sessionTypeTitle,
@@ -2070,7 +2145,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (logId === "new") {
             saveChanges();
           } else {
-            openRoleEditModal(logId);
+            openEditDetailsModal(logId);
           }
         };
       }
@@ -2105,97 +2180,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return cell;
   }
 
-  window.openRoleEditModal = function (logId) {
-    const row = tableBody.querySelector(`tr[data-id="${logId}"]`);
-    if (!row) return;
 
-    const roleName = row.dataset.role || "N/A";
-    const currentPathLevel = (row.dataset.projectCode || row.dataset.currentPathLevel || "").trim();
-
-    document.getElementById("edit-role-log-id").value = logId;
-    document.getElementById("role-name-display").textContent = roleName;
-
-    // Populate pathway dropdown dynamically if not done already
-    const pathwayDropdown = document.getElementById("edit-role-pathway");
-    if (pathwayDropdown && pathwayDropdown.options.length <= 1) {
-      if (typeof groupedPathways !== "undefined") {
-        for (const [groupLabel, items] of Object.entries(groupedPathways)) {
-          const optgroup = document.createElement("optgroup");
-          optgroup.label = groupLabel;
-          items.forEach((item) => {
-            const value = typeof item === 'object' ? item.name : item;
-            const text = typeof item === 'object' ? item.name : item;
-            optgroup.appendChild(new Option(text, value));
-          });
-          pathwayDropdown.appendChild(optgroup);
-        }
-      }
-    }
-
-    let selectedPathway = "";
-    let selectedLevel = "";
-
-    const pathLevelMatch = currentPathLevel.match(/^([A-Z]+)(\d+)$/);
-    if (pathLevelMatch) {
-      const abbr = pathLevelMatch[1];
-      const lvl = pathLevelMatch[2];
-      if (typeof pathwayMap !== "undefined") {
-        selectedPathway = Object.keys(pathwayMap).find(key => pathwayMap[key] === abbr) || "";
-      }
-      selectedLevel = lvl;
-    }
-
-    // Default to owner's working path and level if not specified
-    if (!selectedPathway || !selectedLevel) {
-      const ownerId = row.dataset.ownerId;
-      const contact = allContacts.find((c) => c.id == ownerId);
-      if (contact) {
-        if (!selectedPathway && contact.Current_Path) {
-          selectedPathway = contact.Current_Path;
-        }
-        if (!selectedLevel) {
-          const levelMatch = (contact.Credentials || "").match(/\d+/);
-          if (levelMatch) {
-            const completedLevel = parseInt(levelMatch[0], 10);
-            selectedLevel = Math.min(completedLevel + 1, 5).toString();
-          } else {
-            selectedLevel = "1"; // Default to Level 1
-          }
-        }
-      }
-    }
-
-    document.getElementById("edit-role-pathway").value = selectedPathway;
-    document.getElementById("edit-role-level").value = selectedLevel;
-
-    document.getElementById("roleEditModal").style.display = "flex";
-  };
-
-  window.closeRoleEditModal = function () {
-    document.getElementById("roleEditModal").style.display = "none";
-  };
-
-  window.saveRoleChanges = function (event) {
-    event.preventDefault();
-    const logId = document.getElementById("edit-role-log-id").value;
-    const row = tableBody.querySelector(`tr[data-id="${logId}"]`);
-    if (!row) return;
-
-    const pathwayName = document.getElementById("edit-role-pathway").value;
-    const levelVal = document.getElementById("edit-role-level").value;
-
-    let pathwayAbbr = "";
-    if (pathwayName && typeof pathwayMap !== "undefined") {
-      pathwayAbbr = pathwayMap[pathwayName] || "";
-    }
-
-    const newPathLevel = (pathwayAbbr && levelVal) ? `${pathwayAbbr}${levelVal}` : "";
-
-    row.dataset.currentPathLevel = newPathLevel;
-    row.dataset.projectCode = newPathLevel;
-
-    closeRoleEditModal();
-  };
   // --- Test Hooks ---
   if (typeof window !== 'undefined') {
     window._agendaTestHooks = {

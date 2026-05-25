@@ -90,6 +90,8 @@ class OwnerMeetingRoles(db.Model):
     # session_log_id is only populated if role.has_single_owner is True
     session_log_id = db.Column(db.Integer, db.ForeignKey('Session_Logs.id'), nullable=True)
     credential = db.Column(db.String(255), nullable=True)
+    target_pathway = db.Column(db.String(100), nullable=True)
+    target_level = db.Column(db.String(10), nullable=True)
 
     meeting = db.relationship('Meeting', backref='owner_roles')
     role = db.relationship('app.models.roster.MeetingRole')
@@ -180,9 +182,8 @@ class SessionLog(db.Model):
         )
         if has_single_owner:
              query = query.filter(OwnerMeetingRoles.session_log_id == self.id)
-        else:
-             # For shared roles, session_log_id is NULL
-             query = query.filter(OwnerMeetingRoles.session_log_id == None)
+        # For shared roles, don't filter by session_log_id — meeting_id+role_id is sufficient.
+        # Legacy OMR records may have a non-null session_log_id.
         return query.all()
 
     @owners.setter
@@ -227,13 +228,18 @@ class SessionLog(db.Model):
         
         contact = owner_contact or self.owner
         
-        # Determine pathway name: override > contact preference
+        # Determine pathway name: override > self.pathway > contact preference
         pathway_name = pathway_override
         if not pathway_name:
-            pathway_name = contact.Current_Path if contact else None
+            pathway_name = self.pathway
+        if not pathway_name:
+            if contact:
+                is_guest_without_user = (contact.Type == 'Guest') or (contact.user is None)
+                if not is_guest_without_user:
+                    pathway_name = contact.Current_Path
 
         if not pathway_name:
-            return None
+            pathway_name = "Non Pathway"
 
         path_obj = db.session.query(Pathway).filter(
             (Pathway.name == pathway_name) | (Pathway.abbr == pathway_name)
@@ -373,23 +379,30 @@ class SessionLog(db.Model):
         
         else:  # It's a role
             # Use context contact and context pathway to derive the correct level dynamically
-            context_cred = getattr(self, 'context_credential', None)
-            project_code = self.derive_project_code(
-                owner_contact=context_contact, 
-                pathway_override=context_pathway_name,
-                context_credential=context_cred
-            )
-            if project_code:
-                match = re.match(r"([A-Z]+)(\d+)", project_code)
-                if match:
-                    display_level = str(match.group(2))
+            context_target = getattr(self, 'context_target', None)
             
-            # Fallback to DB project_code if derivation failed
-            if not project_code and self.project_code:
-                project_code = self.project_code
-                match = re.match(r"([A-Z]+)(\d+)", self.project_code)
-                if match:
-                    display_level = str(match.group(2))
+            if context_target and context_target.get('pathway') and context_target.get('level'):
+                # We have an explicit target set via the role modal!
+                target_path = Pathway.query.filter_by(name=context_target['pathway']).first()
+                if target_path:
+                    project_code = f"{target_path.abbr}{context_target['level']}"
+                    display_level = str(context_target['level'])
+            else:
+                project_code = self.derive_project_code(
+                    owner_contact=context_contact, 
+                    pathway_override=context_pathway_name
+                )
+                if project_code:
+                    match = re.match(r"([A-Z]+)(\d+)", project_code)
+                    if match:
+                        display_level = str(match.group(2))
+                
+                # Fallback to DB project_code if derivation failed
+                if not project_code and self.project_code:
+                    project_code = self.project_code
+                    match = re.match(r"([A-Z]+)(\d+)", self.project_code)
+                    if match:
+                        display_level = str(match.group(2))
             
             # NEW: If still General, assign to the contact's active level AT THE TIME OF THE MEETING
             if display_level == "General" and target_path_name:
@@ -399,7 +412,10 @@ class SessionLog(db.Model):
                 if contact and meeting_date:
                     # Determine active level for this member at this meeting date
                     # For new members (no achievements) this will return 1 (Level 1)
-                    active_lvl = contact.get_active_level_at_date(target_path_name, meeting_date)
+                    query_path = target_path_name
+                    if query_path == "Non Pathway" and contact.Current_Path:
+                        query_path = contact.Current_Path
+                    active_lvl = contact.get_active_level_at_date(query_path, meeting_date)
                     display_level = str(active_lvl)
         
         return display_level, log_type, project_code
@@ -427,23 +443,16 @@ class SessionLog(db.Model):
         """
         from .project import Pathway
         
-        if not pathway_name:
+        if not pathway_name or pathway_name == "Non Pathway":
+            self.pathway = None
             return
             
-        # Verify the pathway type in the database
         path_obj = Pathway.query.filter_by(name=pathway_name).first()
-        if not path_obj or path_obj.type != 'pathway':
+        if not path_obj or path_obj.type not in ['pathway', 'others']:
             # Do not allow storing series/presentation-type paths in the main pathway column
             return
 
-        old_pathway = self.pathway
         self.pathway = pathway_name
-        
-        # Sync to user profile if relevant
-        if self.owner and old_pathway != pathway_name:
-            # Sync to the Contact's current path (ensures profile is updated)
-            self.owner.Current_Path = pathway_name
-            db.session.add(self.owner)
 
     def update_durations(self, data, updated_project=None):
         """
@@ -484,7 +493,13 @@ class SessionLog(db.Model):
         
         project_name = "N/A"
         project_code = ""
-        current_pathway = self.pathway or (self.owner.Current_Path if self.owner else "N/A")
+        current_pathway = self.pathway
+        if not current_pathway:
+             context_target = getattr(self, 'context_target', None)
+             if context_target and context_target.get('pathway'):
+                  current_pathway = context_target['pathway']
+        if not current_pathway:
+             current_pathway = self.owner.Current_Path if self.owner else "N/A"
 
         if self.Project_ID:
             project = db.session.get(Project, self.Project_ID)
@@ -504,13 +519,13 @@ class SessionLog(db.Model):
     def matches_filters(self, pathway=None, level=None, status=None, log_type=None):
         """
         Check if this log matches the given filters.
-        
+
         Args:
             pathway (str, optional): Pathway name to filter by (or 'all' for no filtering)
             level (str, optional): Level to filter by (e.g., "1", "2")
             status (str, optional): Status to filter by (e.g., "Completed")
             log_type (str, optional): Pre-determined log type ("speech" or "role")
-        
+
         Returns:
             bool: True if log matches all provided filters
         """
@@ -518,41 +533,62 @@ class SessionLog(db.Model):
         if level and hasattr(self, '_display_level'):
             if self._display_level != level:
                 return False
-        
-        # Pathway filter (only for speeches or if pathway is explicitly set)
+
+        # Pathway filter - check target_pathway from context_target first
         if pathway and pathway != 'all':
-            current_log_path = getattr(self, 'pathway', None)
-            
-            # If log has a pathway and it doesn't match → reject
-            if current_log_path and current_log_path != pathway:
-                return False
-            
-            # If log has no pathway:
-            # - Speeches must belong to the selected pathway OR be compatible with it
-            # - Roles are generic → accept but verify credential snapshot matches the selected pathway
-            if not current_log_path:
-                if log_type == 'speech':
-                     # Check if the project is valid for the requested pathway
-                     is_valid = False
-                     if self.project:
-                         for pp in self.project.pathway_projects:
-                             if pp.pathway and pp.pathway.name == pathway:
-                                 is_valid = True
-                                 break
-                     if not is_valid:
-                         return False
-                elif log_type == 'role':
-                     # Enforce credential snapshot matching for generic roles
-                     is_generic = not self.Project_ID or self.Project_ID == ProjectID.GENERIC
-                     if is_generic:
-                         context_cred = getattr(self, 'context_credential', None)
-                         if context_cred and context_cred not in ['DTM']:
-                             from .project import Pathway
-                             path_obj = Pathway.query.filter_by(name=pathway).first()
-                             if path_obj and path_obj.abbr:
-                                 if not context_cred.startswith(path_obj.abbr):
-                                     return False
-        
+            # If we have a target_pathway set in context_target (from OwnerMeetingRoles),
+            # use that for filtering instead of the log's pathway field
+            if hasattr(self, 'context_target') and self.context_target:
+                target_pathway = self.context_target.get('pathway')
+                if pathway == 'Non Pathway':
+                    # Non Pathway means target_pathway should be NULL or 'Non Pathway' or empty
+                    if target_pathway not in (None, '', 'Non Pathway'):
+                        return False
+                else:
+                    # For specific pathways, target_pathway must match
+                    if target_pathway != pathway:
+                        return False
+            else:
+                # No target_pathway - fall back to original logic checking self.pathway
+                current_log_path = getattr(self, 'pathway', None)
+
+                # Special case: "Non Pathway" shows logs without a pathway OR with pathway='Non Pathway'
+                if pathway == 'Non Pathway':
+                    # Accept if pathway is None/NULL or equals 'Non Pathway'
+                    if current_log_path and current_log_path != 'Non Pathway':
+                        return False
+                    # If no pathway, it matches "Non Pathway" - accept it
+                    return True
+
+                # If log has a pathway and it doesn't match → reject
+                if current_log_path and current_log_path != pathway:
+                    return False
+
+                # If log has no pathway:
+                # - Speeches must belong to the selected pathway OR be compatible with it
+                # - Roles are generic → accept but verify credential snapshot matches the selected pathway
+                if not current_log_path:
+                    if log_type == 'speech':
+                         # Check if the project is valid for the requested pathway
+                         is_valid = False
+                         if self.project:
+                             for pp in self.project.pathway_projects:
+                                 if pp.pathway and pp.pathway.name == pathway:
+                                     is_valid = True
+                                     break
+                         if not is_valid:
+                             return False
+                    elif log_type == 'role':
+                         # Enforce credential snapshot matching for generic roles
+                         is_generic = not self.Project_ID or self.Project_ID == ProjectID.GENERIC
+                         if is_generic:
+                             context_cred = getattr(self, 'context_credential', None)
+                             if context_cred and context_cred not in ['DTM']:
+                                 from .project import Pathway
+                                 path_obj = Pathway.query.filter_by(name=pathway).first()
+                                 if path_obj and path_obj.abbr:
+                                     if not context_cred.startswith(path_obj.abbr):
+                                         return False
         # Status filter
         if status:
             if log_type == 'speech':
@@ -562,7 +598,7 @@ class SessionLog(db.Model):
                 # For roles, only show if linked to project AND status matches
                 if not (self.Project_ID and self.Status == status):
                     return False
-        
+
         return True
 
     @classmethod
@@ -644,9 +680,7 @@ class SessionLog(db.Model):
             
             if is_single_owner:
                 delete_query = delete_query.filter(OwnerMeetingRoles.session_log_id == target_log.id)
-            else:
-                delete_query = delete_query.filter(OwnerMeetingRoles.session_log_id == None)
-                
+            
             delete_query.delete(synchronize_session=False)
             
             # Insertion
@@ -671,16 +705,32 @@ class SessionLog(db.Model):
             if sorted_contacts:
                 primary_owner = sorted_contacts[0]
             
+            import re
             for cid in unique_owner_ids:
                 contact = contacts_map.get(cid)
                 credential_snapshot = contact.credentials if contact else None
                 
+                t_pathway = None
+                t_level = None
+                if contact and contact.Current_Path and contact.Type != 'Guest':
+                    t_pathway = contact.Current_Path
+                    if contact.credentials:
+                        level_match = re.search(r'\d+', contact.credentials)
+                        if level_match:
+                            t_level = str(min(int(level_match.group(0)) + 1, 5))
+                        else:
+                            t_level = "1"
+                    else:
+                        t_level = "1"
+
                 new_omr = OwnerMeetingRoles(
                     meeting_id=meeting_id,
                     role_id=target_role_id,
                     contact_id=cid,
                     session_log_id=target_log.id if is_single_owner else None,
-                    credential=credential_snapshot
+                    credential=credential_snapshot,
+                    target_pathway=t_pathway,
+                    target_level=t_level
                 )
                 db.session.add(new_omr)
 

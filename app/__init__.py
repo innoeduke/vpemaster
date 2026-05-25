@@ -50,6 +50,16 @@ def create_app(config_class='config.Config'):
     # Load configuration from the config.py file
     app.config.from_object(config_class)
 
+    # Clean up SQLALCHEMY_ENGINE_OPTIONS for sqlite databases
+    db_uri = app.config.get('SQLALCHEMY_DATABASE_URI')
+    if db_uri and db_uri.startswith('sqlite'):
+        engine_options = app.config.get('SQLALCHEMY_ENGINE_OPTIONS', {})
+        if engine_options:
+            engine_options = dict(engine_options)
+            engine_options.pop('pool_size', None)
+            engine_options.pop('max_overflow', None)
+            app.config['SQLALCHEMY_ENGINE_OPTIONS'] = engine_options
+
     # (Optional) Load instance-specific config, e.g., /instance/config.py
     # app.config.from_pyfile('config.py', silent=True)
 
@@ -196,7 +206,7 @@ def create_app(config_class='config.Config'):
     from app.commands.create_club import create_club
     from app.commands.pack_unpack import pack, unpack
     from app.commands.blockchain import deploy_contract, upload_achievements
-    from app.commands.backup import backup
+    from app.commands.backup import resources
 
     app.cli.add_command(create_admin)
     app.cli.add_command(import_data)
@@ -206,7 +216,7 @@ def create_app(config_class='config.Config'):
     app.cli.add_command(fix_home_club_command)
     app.cli.add_command(pack)
     app.cli.add_command(unpack)
-    app.cli.add_command(backup)
+    app.cli.add_command(resources)
     
     # Add blockchain command group
     import click

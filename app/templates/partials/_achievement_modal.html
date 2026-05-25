@@ -44,8 +44,8 @@
           <label for="path_name">Path Name</label>
           <select id="path_name" name="path_name" class="planner-form-control">
             <option value="">Select Path...</option>
-            {% for path in member_pathways %}
-            <option value="{{ path }}" data-icon="fa-map-signs">{{ path }}</option>
+            {% for p in member_pathways %}
+            <option value="{{ p.name }}" data-icon="fa-map-signs">[{{ p.status|title }}] {{ p.name }}</option>
             {% endfor %}
           </select>
         </div>

@@ -22,22 +22,26 @@ class TestMeetingSlideService(unittest.TestCase):
     @patch('app.services.meeting_slide_service.MeetingExportContext')
     @patch('app.services.meeting_slide_service.Presentation')
     @patch('os.path.exists')
-    def test_generate_meeting_pptx_success(self, mock_exists, mock_presentation, mock_context_cls, mock_contact_model, mock_meeting_model, mock_get_logs):
+    @patch('app.services.meeting_slide_service.db')
+    def test_generate_meeting_pptx_success(self, mock_db, mock_exists, mock_presentation, mock_context_cls, mock_contact_model, mock_meeting_model, mock_get_logs):
         # Mock logs data
         mock_get_logs.return_value = ([], None)
         
-        # Mock Meeting Model Query
+        # Mock Meeting
         mock_meeting = Mock()
-        mock_meeting_model.query.get.return_value = mock_meeting
-        
-        # Mock Contact Model Query
-        mock_contact_model.query.get.return_value = Mock()
         mock_meeting.Meeting_Number = 100
         mock_meeting.Meeting_Date = Mock()
         mock_meeting.Meeting_Date.strftime.return_value = "16-Mar-2026"
         mock_meeting.club_id = 1
         mock_meeting.club.club_name = "Test Club"
         mock_meeting.get_excomm.return_value = None
+        
+        # Mock db.session.get
+        mock_contact = Mock()
+        mock_db.session.get.side_effect = lambda model, pk: mock_meeting if model == mock_meeting_model else mock_contact
+        
+        # Mock Contact Model Query (legacy fallback)
+        mock_contact_model.query.get.return_value = mock_contact
         
         # Mock Context
         mock_context = mock_context_cls.return_value
@@ -62,8 +66,9 @@ class TestMeetingSlideService(unittest.TestCase):
 
     @patch('app.services.meeting_slide_service.Meeting')
     @patch('app.services.meeting_slide_service.MeetingExportContext')
-    def test_generate_meeting_pptx_no_meeting(self, mock_context_cls, mock_meeting_model):
-        mock_meeting_model.query.get.return_value = None
+    @patch('app.services.meeting_slide_service.db')
+    def test_generate_meeting_pptx_no_meeting(self, mock_db, mock_context_cls, mock_meeting_model):
+        mock_db.session.get.return_value = None
         mock_context = mock_context_cls.return_value
         mock_context.meeting = None
         

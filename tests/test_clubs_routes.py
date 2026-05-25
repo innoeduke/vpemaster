@@ -190,7 +190,7 @@ def test_delete_club(client, sysadmin_user, app):
 
     response = client.post(f'/clubs/{club_id}/delete', follow_redirects=True)
     assert response.status_code == 200
-    assert b'Club, its meetings, and its specific contacts deleted successfully.' in response.data
+    assert b'Club, its meetings, its specific contacts, and its resource folder deleted successfully.' in response.data
     
     with app.app_context():
         deleted_club = Club.query.get(club_id)
