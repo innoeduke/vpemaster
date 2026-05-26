@@ -80,6 +80,19 @@ class MeetingSlideService:
 
             avatar_base_path = os.path.join(current_app.static_folder, 'uploads', 'avatars')
 
+            from ..models.roster import MeetingRole
+            from ..constants import GLOBAL_CLUB_ID
+            global_roles = db.session.query(MeetingRole).filter_by(club_id=GLOBAL_CLUB_ID).all()
+            local_roles = []
+            if meeting.club_id and meeting.club_id != GLOBAL_CLUB_ID:
+                local_roles = db.session.query(MeetingRole).filter_by(club_id=meeting.club_id).all()
+            merged_roles = {r.name: r for r in global_roles}
+            for r in local_roles:
+                merged_roles[r.name] = r
+            officer_role_names = {r.name for r in merged_roles.values() if r.type == 'officer'}
+
+            pending_section_layouts = []
+
             for log in logs_data:
                 session_title = (log.get('Session_Title') or "").strip()
                 session_type = (log.get('session_type_title') or "").strip()
@@ -100,7 +113,7 @@ class MeetingSlideService:
                     section_layout = layouts.get('section_voting')
                 
                 if section_layout:
-                    prs.slides.add_slide(section_layout)
+                    pending_section_layouts.append(section_layout)
                     continue
 
                 # Durations and visibility check
@@ -126,7 +139,17 @@ class MeetingSlideService:
                     continue
 
                 slide = prs.slides.add_slide(target_layout)
-                
+                slides_to_populate = [slide]
+
+                # Check if the meeting role of this session is a club officer
+                role_name = log.get('role')
+                if role_name and role_name in officer_role_names:
+                    # Find all layouts whose names start with `<officer role>` (case-insensitively)
+                    for layout in prs.slide_layouts:
+                        if layout.name.lower().startswith(role_name.lower()):
+                            extra_slide = prs.slides.add_slide(layout)
+                            slides_to_populate.append(extra_slide)
+
                 # Content preparation
                 if session_type == 'Evaluation':
                     title_text = f"Individual Evaluator for\n{session_title}"
@@ -144,45 +167,56 @@ class MeetingSlideService:
                     p_name = log.get('project_name') or ""
                     project_info_text = f"{p_code} - {p_name}" if p_code and p_name else (p_code or p_name)
 
-                # Placeholder assignment
-                for shape in slide.placeholders:
-                    idx = shape.placeholder_format.idx
-                    if idx == 0: shape.text = title_text
-                    elif idx == 1: shape.text = subtitle_text
-                    elif idx == 10: shape.text = duration_text
-                    elif idx == 12: shape.text = project_info_text
-                    elif idx == 11:
-                        # Avatar insertion with WEBP conversion
-                        primary_owner_id = log.get('Owner_ID')
-                        if primary_owner_id:
-                            contact = Contact.query.get(primary_owner_id)
-                            if contact and contact.Avatar_URL:
-                                avatar_path = os.path.join(avatar_base_path, contact.Avatar_URL)
-                                if os.path.exists(avatar_path):
-                                    try:
-                                        # Process all images to ensure transparency is filled with white
-                                        img = Image.open(avatar_path)
-                                        if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
-                                            background = Image.new('RGB', img.size, (255, 255, 255))
-                                            if img.mode == 'P':
-                                                img = img.convert('RGBA')
-                                            background.paste(img, mask=img.split()[-1])
-                                            img = background
-                                        elif img.mode != 'RGB':
-                                            img = img.convert('RGB')
-                                        
-                                        img_io = io.BytesIO()
-                                        img.save(img_io, format='PNG')
-                                        img_io.seek(0)
-                                        shape.insert_picture(img_io)
-                                    except Exception as e:
-                                        current_app.logger.error(f"Error inserting picture {avatar_path}: {e}")
+                # Placeholder assignment for all slides associated with this session
+                for s in slides_to_populate:
+                    for shape in s.placeholders:
+                        idx = shape.placeholder_format.idx
+                        if idx == 0: shape.text = title_text
+                        elif idx == 1: shape.text = subtitle_text
+                        elif idx == 10: shape.text = duration_text
+                        elif idx == 12: shape.text = project_info_text
+                        elif idx == 11:
+                            # Avatar insertion with WEBP conversion
+                            primary_owner_id = log.get('Owner_ID')
+                            if primary_owner_id:
+                                contact = Contact.query.get(primary_owner_id)
+                                if contact and contact.Avatar_URL:
+                                    avatar_path = os.path.join(avatar_base_path, contact.Avatar_URL)
+                                    if os.path.exists(avatar_path):
+                                        try:
+                                            # Process all images to ensure transparency is filled with white
+                                            img = Image.open(avatar_path)
+                                            if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                                                background = Image.new('RGB', img.size, (255, 255, 255))
+                                                if img.mode == 'P':
+                                                    img = img.convert('RGBA')
+                                                background.paste(img, mask=img.split()[-1])
+                                                img = background
+                                            elif img.mode != 'RGB':
+                                                img = img.convert('RGB')
+                                            
+                                            img_io = io.BytesIO()
+                                            img.save(img_io, format='PNG')
+                                            img_io.seek(0)
+                                            shape.insert_picture(img_io)
+                                        except Exception as e:
+                                            current_app.logger.error(f"Error inserting picture {avatar_path}: {e}")
                 
+                # Defer adding section layouts until after the current role-taker/session slides are generated
+                if pending_section_layouts:
+                    for sec_layout in pending_section_layouts:
+                        prs.slides.add_slide(sec_layout)
+                    pending_section_layouts.clear()
+
                 # Table Topics divider
                 if session_type == 'Table Topics':
                     tt_divider_layout = layouts.get('section_tabletopics')
                     if tt_divider_layout:
                         prs.slides.add_slide(tt_divider_layout)
+            
+            # If there are any remaining pending sections, add them at the end
+            for sec_layout in pending_section_layouts:
+                prs.slides.add_slide(sec_layout)
             
             output = io.BytesIO()
             prs.save(output)
