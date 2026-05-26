@@ -82,21 +82,41 @@ def sync_db(ctx):
 @click.pass_context
 @with_appcontext
 def sync_system(ctx):
-    """Sync system resources backups."""
+    """Sync system resources backups and restore locally."""
     run_sync_with_fallback(ctx, 'system')
+    
+    from flask import current_app
+    backup_dir = os.path.join(current_app.instance_path, 'backup', 'system')
+    click.echo("🔄 Restoring system resources...")
+    success, message = BackupService.restore_file_backup(backup_dir, latest=True, resource_name='system')
+    if success:
+        click.secho(f"✅ {message}", fg='green')
+    else:
+        click.secho(f"❌ System restore failed: {message}", fg='red')
+        raise click.ClickException(f"System restore failed: {message}")
 
 @sync.command('club')
 @click.pass_context
 @with_appcontext
 def sync_club(ctx):
-    """Sync club resources backups."""
+    """Sync club resources backups and restore locally."""
     run_sync_with_fallback(ctx, 'club')
+    
+    from flask import current_app
+    backup_dir = os.path.join(current_app.instance_path, 'backup', 'club')
+    click.echo("🔄 Restoring club resources...")
+    success, message = BackupService.restore_file_backup(backup_dir, latest=True, resource_name='club')
+    if success:
+        click.secho(f"✅ {message}", fg='green')
+    else:
+        click.secho(f"❌ Club restore failed: {message}", fg='red')
+        raise click.ClickException(f"Club restore failed: {message}")
 
 @sync.command('all')
 @click.pass_context
 @with_appcontext
 def sync_all(ctx):
-    """Sync db, system, and club backups, and restore database."""
+    """Sync db, system, and club backups, and restore locally."""
     user, host, path = get_connection_details(ctx)
     
     password = None
@@ -147,6 +167,26 @@ def sync_all(ctx):
         click.secho(f"❌ Database restore failed: {message}", fg='red')
         raise click.ClickException(f"Database restore failed: {message}")
     click.secho(f"✅ {message}", fg='green')
+    
+    # Restore system
+    system_backup_dir = os.path.join(current_app.instance_path, 'backup', 'system')
+    click.echo("🔄 Restoring system resources...")
+    success, message = BackupService.restore_file_backup(system_backup_dir, latest=True, resource_name='system')
+    if success:
+        click.secho(f"✅ {message}", fg='green')
+    else:
+        click.secho(f"❌ System restore failed: {message}", fg='red')
+        raise click.ClickException(f"System restore failed: {message}")
+        
+    # Restore club
+    club_backup_dir = os.path.join(current_app.instance_path, 'backup', 'club')
+    click.echo("🔄 Restoring club resources...")
+    success, message = BackupService.restore_file_backup(club_backup_dir, latest=True, resource_name='club')
+    if success:
+        click.secho(f"✅ {message}", fg='green')
+    else:
+        click.secho(f"❌ Club restore failed: {message}", fg='red')
+        raise click.ClickException(f"Club restore failed: {message}")
     
     # Run data migrations
     click.echo("🛠️ Running data migrations...")
