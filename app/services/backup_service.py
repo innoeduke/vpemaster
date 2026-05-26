@@ -516,3 +516,280 @@ class BackupService:
                                 os.remove(b['filepath'])
                             except Exception:
                                 pass
+
+    @staticmethod
+    def sync_remote_backup(resource_name, remote_user, remote_host, remote_base_path, password=None):
+        """Syncs backup files of the given resource_name from remote server to local."""
+        import tempfile
+        import stat
+        import shlex
+        import subprocess
+        import click
+        from flask import current_app
+
+        # 1. Pre-pull: check/prepare local directory
+        local_dir = os.path.abspath(os.path.join(current_app.instance_path, 'backup', resource_name))
+        os.makedirs(local_dir, exist_ok=True)
+
+        # 2. Check connection / set up env for SSH_ASKPASS
+        env = os.environ.copy()
+        askpass_path = None
+        if password:
+            fd, askpass_path = tempfile.mkstemp()
+            try:
+                with os.fdopen(fd, 'w') as f:
+                    f.write(f"#!/bin/sh\necho {shlex.quote(password)}\n")
+                os.chmod(askpass_path, stat.S_IRUSR | stat.S_IXUSR)
+                env['SSH_ASKPASS'] = askpass_path
+                env['DISPLAY'] = ':0'
+                env['SSH_ASKPASS_REQUIRE'] = 'force'
+            except Exception as e:
+                if askpass_path and os.path.exists(askpass_path):
+                    os.remove(askpass_path)
+                return False, f"Failed to prepare password agent: {e}"
+
+        try:
+            # Check SSH connection
+            ssh_cmd = ["ssh", "-o", "ConnectTimeout=5", f"{remote_user}@{remote_host}", "exit"]
+            res = subprocess.run(ssh_cmd, env=env, capture_output=True, text=True)
+            if res.returncode != 0:
+                err_msg = res.stderr.strip() or "SSH connection failed."
+                return False, f"SSH connection check failed: {err_msg}"
+
+            # 3. Pull: Sync directories using rsync
+            remote_path = f"{remote_user}@{remote_host}:{remote_base_path}/{resource_name}/"
+            local_path = local_dir + "/"
+
+            click.echo(f"Syncing remote {remote_path} to local {local_path}...")
+            rsync_cmd = [
+                "rsync",
+                "-avz",
+                "--delete",
+                "-e", "ssh -o ConnectTimeout=5",
+                remote_path,
+                local_path
+            ]
+            res_rsync = subprocess.run(rsync_cmd, env=env)
+            if res_rsync.returncode != 0:
+                return False, "Rsync command returned non-zero exit status."
+
+            # List synced files
+            files = [f for f in os.listdir(local_dir) if os.path.isfile(os.path.join(local_dir, f)) and not f.startswith('.')]
+            if files:
+                click.secho(f"📄 Synced files in backup/{resource_name}:", fg='cyan', bold=True)
+                for f in sorted(files):
+                    click.secho(f"  - {f}", fg='green')
+
+            return True, f"Successfully synced {resource_name} backups."
+        finally:
+            if askpass_path and os.path.exists(askpass_path):
+                try:
+                    os.remove(askpass_path)
+                except Exception:
+                    pass
+
+    @staticmethod
+    def migrate_contact_pathways():
+        """Migrate legacy contact pathway columns to ContactPath junction table."""
+        import re
+        from datetime import date
+        from app import db
+        from app.models import Contact, Pathway, ContactPath, Achievement, SessionLog
+
+        # Load all pathways for reference
+        pathways = Pathway.query.all()
+        pathway_by_name = {p.name.strip().lower(): p for p in pathways if p.name}
+        pathway_by_abbr = {p.abbr.strip().upper(): p for p in pathways if p.abbr}
+        
+        contacts = Contact.query.all()
+        contacts_updated_count = 0
+        
+        for contact in contacts:
+            legacy_current = contact._Current_Path
+            legacy_completed = contact._Completed_Paths
+            
+            if not legacy_current and not legacy_completed:
+                continue
+                
+            contact_header_printed = False
+            def print_contact_header():
+                nonlocal contact_header_printed, contacts_updated_count
+                if not contact_header_printed:
+                    print(f"\nProcessing Contact: {contact.Name} (ID: {contact.id})")
+                    contact_header_printed = True
+                    contacts_updated_count += 1
+
+            # Retrieve achievements for this contact's user
+            uid = contact.user_id
+            achievements = []
+            if uid:
+                achievements = Achievement.query.filter_by(user_id=uid).all()
+            
+            registered_pathway_ids = set()
+            
+            # 1. Migrate completed paths
+            if legacy_completed:
+                parts = [p.strip() for p in legacy_completed.split('/') if p.strip()]
+                for part in parts:
+                    match = re.match(r"^([A-Z]+)\d*$", part.upper())
+                    abbr = match.group(1) if match else part
+                    
+                    pathway = pathway_by_abbr.get(abbr.upper()) or pathway_by_name.get(part.lower())
+                    if pathway:
+                        if pathway.id in registered_pathway_ids:
+                            continue
+                            
+                        # Find completed date from achievements
+                        completed_date = None
+                        path_ach = next((a for a in achievements if a.achievement_type == 'path-completion' and a.path_name == pathway.name), None)
+                        if path_ach:
+                            completed_date = path_ach.issue_date
+                        else:
+                            lvl5_ach = next((a for a in achievements if a.achievement_type == 'level-completion' and a.path_name == pathway.name and a.level == 5), None)
+                            if lvl5_ach:
+                                completed_date = lvl5_ach.issue_date
+                        
+                        # Check if already registered
+                        existing_cp = ContactPath.query.filter_by(contact_id=contact.id, path_id=pathway.id).first()
+                        if existing_cp:
+                            continue
+
+                        # Create ContactPath
+                        cp = ContactPath(
+                            contact_id=contact.id,
+                            path_id=pathway.id,
+                            status='completed',
+                            is_default=False,
+                            registered_date=date.today(),
+                            completed_date=completed_date
+                        )
+                        db.session.add(cp)
+                        registered_pathway_ids.add(pathway.id)
+                        print_contact_header()
+                        print(f"  - Completed Path: {pathway.name} (Completed: {completed_date})")
+            
+            # 2. Migrate current (default) path
+            if contact.Type == 'Guest' and legacy_current:
+                contact._Current_Path = None
+                print_contact_header()
+                print(f"  - Cleared wrong Current_Path for Guest: {legacy_current}")
+            elif legacy_current:
+                pathway = pathway_by_name.get(legacy_current.strip().lower()) or pathway_by_abbr.get(legacy_current.strip().upper())
+                if pathway:
+                    if pathway.id in registered_pathway_ids:
+                        cp = ContactPath.query.filter_by(contact_id=contact.id, path_id=pathway.id).first()
+                        if cp and not cp.is_default:
+                            cp.is_default = True
+                            print_contact_header()
+                            print(f"  - Set existing completed path {pathway.name} as default")
+                    else:
+                        existing_cp = ContactPath.query.filter_by(contact_id=contact.id, path_id=pathway.id).first()
+                        if existing_cp:
+                            if not existing_cp.is_default or existing_cp.status != 'working':
+                                existing_cp.is_default = True
+                                existing_cp.status = 'working'
+                                print_contact_header()
+                                print(f"  - Updated existing ContactPath as default working: {pathway.name}")
+                        else:
+                            cp = ContactPath(
+                                contact_id=contact.id,
+                                path_id=pathway.id,
+                                status='working',
+                                is_default=True,
+                                registered_date=date.today(),
+                                completed_date=None
+                            )
+                            db.session.add(cp)
+                            print_contact_header()
+                            print(f"  - Working Path (Default): {pathway.name}")
+                        registered_pathway_ids.add(pathway.id)
+            
+        # 3. Update SessionLogs
+        session_logs_updated = SessionLog.query.filter(
+            SessionLog.Project_ID.is_(None),
+            SessionLog.pathway.isnot(None)
+        ).all()
+        
+        if session_logs_updated:
+            print("\nUpdating SessionLogs to pair project_id and pathway...")
+            for log in session_logs_updated:
+                log.pathway = None
+            print(f"  - Set pathway to NULL for {len(session_logs_updated)} SessionLogs with no Project_ID.")
+
+        db.session.commit()
+        if contacts_updated_count > 0:
+            print(f"\nSuccessfully migrated {contacts_updated_count} updated contacts!")
+
+    @staticmethod
+    def migrate_owner_meeting_roles():
+        """Back-fill target_pathway and target_level for owner_meeting_roles."""
+        from datetime import date
+        from app import db
+        from app.models import OwnerMeetingRoles
+
+        omrs = OwnerMeetingRoles.query.filter(
+            db.or_(
+                OwnerMeetingRoles.target_pathway.is_(None),
+                OwnerMeetingRoles.target_level.is_(None)
+            )
+        ).all()
+        
+        updated_count = 0
+        
+        for omr in omrs:
+            contact = omr.contact
+            meeting = omr.meeting
+            
+            # Skip guests or records with no contact
+            if not contact or contact.Type == 'Guest':
+                continue
+                
+            meeting_date = meeting.Meeting_Date if meeting and meeting.Meeting_Date else date.today()
+            
+            # 1. Resolve target_pathway
+            resolved_pathway = None
+            
+            # 1a. Check associated session log's pathway
+            if omr.session_log and omr.session_log.pathway:
+                resolved_pathway = omr.session_log.pathway
+                
+            # 1b. Check contact's active pathways at the time of the meeting
+            if not resolved_pathway:
+                active_paths = [
+                    cp for cp in contact.registered_paths
+                    if cp.registered_date and cp.registered_date <= meeting_date
+                    and (not cp.completed_date or cp.completed_date >= meeting_date)
+                ]
+                if active_paths:
+                    default_cp = next((cp for cp in active_paths if cp.is_default), active_paths[0])
+                    if default_cp.pathway:
+                        resolved_pathway = default_cp.pathway.name
+                        
+            # 1c. Fallback to Contact's Current_Path
+            if not resolved_pathway:
+                resolved_pathway = contact.Current_Path
+                
+            if not resolved_pathway:
+                continue
+                
+            # 2. Resolve target_level
+            resolved_level = str(contact.get_active_level_at_date(resolved_pathway, meeting_date))
+            
+            # 3. Apply updates
+            modified = False
+            if not omr.target_pathway:
+                omr.target_pathway = resolved_pathway
+                modified = True
+            if not omr.target_level:
+                omr.target_level = resolved_level
+                modified = True
+                
+            if modified:
+                if updated_count == 0:
+                    print("Starting back-fill of target_pathway and target_level for owner_meeting_roles...")
+                updated_count += 1
+                print(f"  - Updated OMR (ID: {omr.id}) for {contact.Name} at meeting on {meeting_date}: {resolved_pathway} L{resolved_level}")
+                
+        db.session.commit()
+        if updated_count > 0:
+            print(f"\nSuccessfully back-filled {updated_count} owner_meeting_roles records!")

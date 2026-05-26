@@ -19,39 +19,17 @@ head_extra %}
   </div>
 
   <div class="contacts-filter-container">
-    <!-- Term Filter for Metrics -->
+    <!-- Date Filter for Metrics -->
     <form method="GET" action="{{ url_for('contacts_bp.show_contacts') }}" id="contacts-term-filter-form"
-      class="term-filter-form">
-      <div class="form-group">
-        <label class="filter-label">Club Term:</label>
-
-        <div class="custom-dropdown-container" id="term-dropdown-container">
-          <button type="button" id="term-dropdown-btn" class="form-control term-dropdown-btn"
-            onclick="toggleTermDropdown(event)">
-            <span id="term-btn-text">
-              {% if selected_term_ids %} {{ selected_term_ids|length }} selected
-              {% else %} 0 selected {% endif %}
-            </span>
-            <i class="fas fa-caret-down"></i>
-          </button>
-
-          <div id="term-dropdown-menu" class="term-dropdown-menu">
-            <label class="term-select-all-label">
-              <input type="checkbox" id="term-select-all" class="term-checkbox-input" onchange="toggleAllTerms(this)" {%
-                if terms and selected_term_ids|length==terms|length %}checked{% endif %} />
-              Select / Deselect All
-            </label>
-
-            {% for term in terms %}
-            <label class="term-option-label {% if term.is_past %}past-term{% endif %}">
-              <input type="checkbox" name="term" value="{{ term.id }}" class="term-checkbox term-checkbox-input"
-                data-label="{{ term.label }}" data-start="{{ term.start }}" data-end="{{ term.end }}"
-                onchange="updateTermSelection()" {% if selected_term_ids and term.id in selected_term_ids %}checked{%
-                endif %} />
-              {{ term.label }}
-            </label>
-            {% endfor %}
-          </div>
+      class="date-filter-form">
+      <div class="date-filter-group">
+        <div class="date-input-wrapper">
+          <label class="filter-label" for="start_date">Start Date:</label>
+          <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date or (current_term['start'] if current_term else '') }}" onchange="updateDateSelection()">
+        </div>
+        <div class="date-input-wrapper">
+          <label class="filter-label" for="end_date">End Date:</label>
+          <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date or (current_term['end'] if current_term else '') }}" onchange="updateDateSelection()">
         </div>
       </div>
     </form>
@@ -247,7 +225,7 @@ include '_merge_modal.html' %}
   var canViewMembers = {{ 'true' if can_view_members else 'false' }};
   var canSendMessages = {{ 'true' if can_send_messages else 'false' }};
   var hasEditPermission = {{ 'true' if is_authorized(Permissions.CONTACT_BOOK_EDIT) else 'false' }};
-  var selectedTermIds = {{ selected_term_ids|tojson }};
+  // Dates are directly read from DOM instead of relying on injected global variables
 
   var INITIAL_CONTACTS = [];
   try {

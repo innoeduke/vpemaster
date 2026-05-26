@@ -1791,6 +1791,7 @@ def update_meeting_status(meeting_id):
         new_status = 'running'
     elif current_status == 'running':
         new_status = 'finished'
+        meeting.status = new_status
         # Tally votes when meeting finishes
         _tally_votes_and_set_winners(meeting)
 
@@ -1805,6 +1806,17 @@ def update_meeting_status(meeting_id):
             elif plan.status == 'waitlist':
                 plan.status = 'obsolete'
             # 'draft' stays 'draft' - user can move it to another meeting later
+
+        # Auto-complete all projects of this meeting
+        for log in meeting.session_logs:
+            is_prepared_speech = log.project and log.project.is_prepared_speech
+            is_project = (log.session_type and log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != ProjectID.GENERIC) or is_prepared_speech
+            if is_project:
+                log.Status = 'Completed'
+                # Sync metadata for owners
+                for owner in log.owners:
+                    from .utils import sync_contact_metadata
+                    sync_contact_metadata(owner.id, commit=False)
 
     elif current_status == 'finished':
         # Full deletion flow as requested

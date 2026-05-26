@@ -69,23 +69,20 @@ def show_contacts():
     from .utils import get_terms, get_active_term, get_date_ranges_for_terms
     terms = get_terms()
     
-    # Multi-select support
-    selected_term_ids = request.args.getlist('term')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
     
     current_term = get_active_term(terms)
     
-    if not selected_term_ids:
+    if not start_date and not end_date:
         # Default to current term
         if current_term:
-            selected_term_ids = [current_term['id']]
-        elif terms:
-            selected_term_ids = [terms[0]['id']]
+            start_date = current_term['start']
+            end_date = current_term['end']
             
-    date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
-    
     # Flag to distinguish between "User didn't filter" (show all? or default?) 
     # and "User filtered but found nothing" (show nothing).
-    should_filter = bool(selected_term_ids)
+    should_filter = bool(start_date and end_date)
 
 
     
@@ -137,7 +134,8 @@ def show_contacts():
                            can_view_members=can_view_members,
                            can_send_messages=can_view_all,
                            terms=terms,
-                           selected_term_ids=selected_term_ids,
+                           start_date=start_date,
+                           end_date=end_date,
                            current_term=current_term)
 
 
@@ -712,34 +710,18 @@ def get_all_contacts_api():
 
     club_id = get_current_club_id()
     
-    # --- TERM FILTER LOGIC ---
-    from .utils import get_terms, get_active_term, get_date_ranges_for_terms
-    terms = get_terms()
+    # --- DATE FILTER LOGIC ---
+    from .utils import get_terms, get_active_term
     
-    # Logic to mirror show_contacts: use default term if none selected, OR use 'term' param
-    selected_term_ids = request.args.getlist('term')
-    
-    # If no terms provided in API, and it's the initial fetch (convention needed?)
-    # But wait, filtering is usually explicit. 
-    # If NO term is provided, does it mean "All Time" or "Default Term"?
-    # In show_contacts, it defaults to current term.
-    # The frontend will likely pass the terms it thinks are selected. 
-    # If the frontend passes nothing, we should probably assume "No Filter" (All Time) or "Default".
-    # However, to maintain behavior, let's treat it as: if params present, use them. If not, don't filter (or use current logic).
-    # Actually, the frontend calls `/api/contacts/all?t=...`
-    # Let's inspect `selected_term_ids`.
-    
-    # If explicitly empty list passed? iterating `getlist` gives empty list if not present.
-    # We will rely on frontend to pass the default terms if needed. 
-    # BUT, for the *first* load if we want to mimic the previous server-side logic, we might need to apply default terms if none provided?
-    # Let's support an explicit "all" flag or just rely on IDs.
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
     
     date_ranges = []
     should_filter = False
     
-    if selected_term_ids:
+    if start_date and end_date:
         should_filter = True
-        date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
+        date_ranges = [(start_date, end_date)]
     
     from sqlalchemy import or_,  and_, false
     def apply_date_filter(query, date_column):
@@ -836,10 +818,11 @@ def get_all_contacts_api():
     contact_tt_count = {}
 
     for owner_id, _, _, role_name in distinct_roles:
-        role_map[owner_id] = role_map.get(owner_id, 0) + 1
         r_name = role_name.strip() if role_name else ""
         if r_name == "Topics Speaker":
             contact_tt_count[owner_id] = contact_tt_count.get(owner_id, 0) + 1
+        else:
+            role_map[owner_id] = role_map.get(owner_id, 0) + 1
 
     # 3. Awards
     award_map = {}

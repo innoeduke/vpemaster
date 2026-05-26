@@ -24,20 +24,21 @@ def planner():
     from .utils import get_terms, get_active_term, get_date_ranges_for_terms
     terms = get_terms()
     
-    # 3. Determine selected terms (support multi-select like contacts page)
-    selected_term_ids = request.args.getlist('term')
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
     
-    # Fallback: if no term selected, use the active term
+    # Fallback: if no dates selected, use the active term
     current_term = get_active_term(terms)
-    if not selected_term_ids:
+    if not start_date and not end_date:
         if current_term:
-            selected_term_ids = [current_term['id']]
-        elif terms:
-            selected_term_ids = [terms[0]['id']]
+            start_date = current_term['start']
+            end_date = current_term['end']
             
-    # 4. Fetch unpublished meetings filtered by term date ranges
+    # 4. Fetch unpublished meetings filtered by date ranges
     from sqlalchemy import or_
-    date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
+    date_ranges = []
+    if start_date and end_date:
+        date_ranges = [(start_date, end_date)]
     
     query = Meeting.query.filter_by(club_id=club_id, status='unpublished')
     if date_ranges:
@@ -68,7 +69,9 @@ def planner():
                          plans=plans, 
                          meetings=unpublished_meetings,
                          terms=terms,
-                         selected_term_ids=selected_term_ids,
+                         start_date=start_date,
+                         end_date=end_date,
+                         current_term=current_term,
                          grouped_projects=grouped_projects,
                          contact=contact,
                          pathways=dropdown_data['pathways'],

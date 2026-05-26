@@ -9,7 +9,7 @@ let allContactsCache = []; // Cache of all contacts from API
 let filteredContacts = []; // Contacts after applying tab and search filters
 let currentPage = 1;
 let pageSize = 10;
-let sortColumnIndex = 1; // Participation
+let sortColumnIndex = 2; // Metrics
 let sortDirection = 'desc';
 let selectedContactIds = new Set(); // Globally tracked selected IDs
 
@@ -27,20 +27,19 @@ async function fetchAndCacheContacts() {
   try {
     let url = '/api/contacts/all?t=' + new Date().getTime();
 
-    // Append selected term IDs if available (from global variable injected in template)
-    if (typeof selectedTermIds !== 'undefined' && Array.isArray(selectedTermIds) && selectedTermIds.length > 0) {
-      selectedTermIds.forEach(id => {
-        url += `&term=${encodeURIComponent(id)}`;
-      });
-    } else {
-      // If getting terms from URL params directly (fallback)
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    let startDate = startDateInput ? startDateInput.value : null;
+    let endDate = endDateInput ? endDateInput.value : null;
+
+    if (!startDate || !endDate) {
       const urlParams = new URLSearchParams(window.location.search);
-      const termsInfo = urlParams.getAll('term');
-      if (termsInfo.length > 0) {
-        termsInfo.forEach(id => {
-          url += `&term=${encodeURIComponent(id)}`;
-        });
-      }
+      if (!startDate) startDate = urlParams.get('start_date');
+      if (!endDate) endDate = urlParams.get('end_date');
+    }
+
+    if (startDate && endDate) {
+      url += `&start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
     }
 
     const response = await fetch(url);
@@ -121,8 +120,8 @@ function getContactSortValue(contact, index) {
     case 0: return (contact.Name || '').toLowerCase();
     case 1: return contact.is_officer ? '1' : '0';
     case 2:
-      // Participation: [Role Count]_[Qualified]_[TT Count]_[Attendance]_[Awards]
-      return `${String(contact.role_count || 0).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count || 0).padStart(3, '0')}_${String(contact.attendance_count || 0).padStart(3, '0')}_${String(contact.award_count || 0).padStart(3, '0')}`;
+      // Participation: [Attendance]_[Role Count]_[Qualified]_[TT Count]_[Awards]
+      return `${String(contact.attendance_count || 0).padStart(3, '0')}_${String(contact.role_count || 0).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count || 0).padStart(3, '0')}_${String(contact.award_count || 0).padStart(3, '0')}`;
     case 3: return (contact.Phone_Number || '').toLowerCase();
     case 4: return (contact.Date_Created || '').toLowerCase();
     case 5: return (contact.Club || '').toLowerCase();
@@ -177,7 +176,7 @@ function createContactRow(contact) {
   row.dataset.contactId = contact.id;
 
   // Build participation sort value
-  const sortValue = `${String(contact.role_count).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count).padStart(3, '0')}_${String(contact.attendance_count).padStart(3, '0')}_${String(contact.award_count).padStart(3, '0')}`;
+  const sortValue = `${String(contact.attendance_count).padStart(3, '0')}_${String(contact.role_count).padStart(3, '0')}_${contact.is_qualified ? '1' : '0'}_${String(contact.tt_count).padStart(3, '0')}_${String(contact.award_count).padStart(3, '0')}`;
 
   let html = '';
   if (hasEditPermission) {
@@ -222,27 +221,27 @@ function createContactRow(contact) {
       <div class="participation-container">
         ${contact.is_qualified ? '<i class="fas fa-star" title="Qualified Guest" style="color: #ffc107; font-size: 1.1em;"></i>' : ''}
         ${canViewMembers ? `
+          <a href="/speech_logs?speaker_id=${contact.id}" title="Attendance" class="participation-badge badge-attendance">
+            <i class="fas fa-calendar-check"></i> ${contact.attendance_count}
+          </a>
           <a href="/speech_logs?speaker_id=${contact.id}" title="Roles Taken" class="participation-badge badge-roles">
             <i class="fas fa-user-tag"></i> ${contact.role_count}
           </a>
           <a href="/speech_logs?speaker_id=${contact.id}" title="Topic Speeches" class="participation-badge badge-tt">
             <i class="fas fa-comment"></i> ${contact.tt_count}
           </a>
-          <a href="/speech_logs?speaker_id=${contact.id}" title="Attendance" class="participation-badge badge-attendance">
-            <i class="fas fa-calendar-check"></i> ${contact.attendance_count}
-          </a>
           <a href="/speech_logs?speaker_id=${contact.id}" title="Awards Won" class="participation-badge badge-awards">
             <i class="fas fa-trophy"></i> ${contact.award_count}
           </a>
         ` : `
+          <span title="Attendance" class="participation-badge badge-attendance">
+            <i class="fas fa-calendar-check"></i> ${contact.attendance_count}
+          </span>
           <span title="Roles Taken" class="participation-badge badge-roles">
             <i class="fas fa-user-tag"></i> ${contact.role_count}
           </span>
           <span title="Topic Speeches" class="participation-badge badge-tt">
             <i class="fas fa-comment"></i> ${contact.tt_count}
-          </span>
-          <span title="Attendance" class="participation-badge badge-attendance">
-            <i class="fas fa-calendar-check"></i> ${contact.attendance_count}
           </span>
           <span title="Awards Won" class="participation-badge badge-awards">
             <i class="fas fa-trophy"></i> ${contact.award_count}
@@ -696,7 +695,7 @@ function setupContactsTableSorting() {
       } else {
         sortColumnIndex = index;
         // Default to descending for Participation, ascending for others
-        sortDirection = (index === 1) ? 'desc' : 'asc';
+        sortDirection = (index === 2) ? 'desc' : 'asc';
       }
 
       // Update UI
@@ -885,170 +884,15 @@ window.handleMergeClick = handleMergeClick;
 window.closeMergeModal = closeMergeModal;
 window.refreshContactCache = refreshContactCache;
 
-// --- Term Filter Logic ---
+// --- Date Filter Logic ---
 
 /**
- * Toggles the term dropdown visibility
+ * Submits the form when date changes
  */
-function toggleTermDropdown(event) {
-  if (event) {
-    event.stopPropagation();
-    event.preventDefault();
-  }
-  const menu = document.getElementById('term-dropdown-menu');
-  if (menu) {
-    if (menu.style.display === 'none' || menu.style.display === '') {
-      menu.style.display = 'block';
-    } else {
-      closeDropdownAndSubmit();
-    }
-  }
-}
-
-/**
- * Toggles all term checkboxes based on the "Select All" checkbox state
- */
-function toggleAllTerms(source) {
-  const checkboxes = document.querySelectorAll('.term-checkbox');
-  checkboxes.forEach(cb => cb.checked = source.checked);
-  updateTermSelection();
-}
-
-/**
- * Updates the term selection display text and logic
- */
-function updateTermSelection() {
-  const checkboxes = document.querySelectorAll('.term-checkbox');
-  const selectedCheckboxes = Array.from(checkboxes).filter(cb => cb.checked);
-  const selectedCount = selectedCheckboxes.length;
-  const totalCount = checkboxes.length;
-
-  // Update Count/Range Text
-  const btnText = document.getElementById('term-btn-text');
-  if (!btnText) return;
-
-  if (selectedCount === totalCount && totalCount > 0) {
-    btnText.textContent = "All Terms";
-  } else if (selectedCount === 0) {
-    btnText.textContent = "0 selected";
-  } else {
-    const ranges = [];
-    // Logic to combine adjacent terms
-    // 1. Sort by start date
-    selectedCheckboxes.sort((a, b) => {
-      const dateA = a.dataset.start || '';
-      const dateB = b.dataset.start || '';
-      return dateA.localeCompare(dateB);
-    });
-
-    if (selectedCheckboxes.length > 0) {
-      let currentRange = {
-        startLabel: (selectedCheckboxes[0].dataset.label || '').split(' ')[1], // e.g. "Jan-Jun"
-        startYear: (selectedCheckboxes[0].dataset.label || '').split(' ')[0],
-        endLabel: (selectedCheckboxes[0].dataset.label || '').split(' ')[1],
-        endYear: (selectedCheckboxes[0].dataset.label || '').split(' ')[0],
-        fullStart: selectedCheckboxes[0].dataset.start,
-        fullEnd: selectedCheckboxes[0].dataset.end,
-        count: 1
-      };
-
-      for (let i = 1; i < selectedCheckboxes.length; i++) {
-        const next = selectedCheckboxes[i];
-        const prevEnd = new Date(currentRange.fullEnd);
-        const nextStart = new Date(next.dataset.start);
-
-        // Check if adjacent: next start is within 1 day of prev end
-        const diffTime = Math.abs(nextStart - prevEnd);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays <= 2) { // 1 day gap (e.g. Jun 30 to Jul 01)
-          currentRange.endLabel = (next.dataset.label || '').split(' ')[1];
-          currentRange.endYear = (next.dataset.label || '').split(' ')[0];
-          currentRange.fullEnd = next.dataset.end;
-          currentRange.count++;
-        } else {
-          ranges.push(formatRange(currentRange));
-          currentRange = {
-            startLabel: (next.dataset.label || '').split(' ')[1],
-            startYear: (next.dataset.label || '').split(' ')[0],
-            endLabel: (next.dataset.label || '').split(' ')[1],
-            endYear: (next.dataset.label || '').split(' ')[0],
-            fullStart: next.dataset.start,
-            fullEnd: next.dataset.end,
-            count: 1
-          };
-        }
-      }
-      ranges.push(formatRange(currentRange));
-    }
-
-    btnText.textContent = ranges.join(', ');
-  }
-
-  // Helper to format a single range
-  function formatRange(range) {
-    if (range.count === 1) {
-      return `${range.startYear} ${range.startLabel}`;
-    }
-    const s = (range.startLabel || '').split('-')[0]; // "Jan"
-    const e = (range.endLabel || '').split('-')[1];   // "Jun" or "Dec"
-    return `${range.startYear} ${s} - ${range.endYear} ${e}`;
-  }
-
-  // Update Select All Checkbox State
-  const selectAll = document.getElementById('term-select-all');
-  if (selectAll) {
-    if (selectedCount === totalCount && totalCount > 0) {
-      selectAll.checked = true;
-      selectAll.indeterminate = false;
-    } else if (selectedCount === 0) {
-      selectAll.checked = false;
-      selectAll.indeterminate = false;
-    } else {
-      selectAll.checked = false; // Or indeterminate logic if desired, but unchecked is safer default
-      // selectAll.indeterminate = true; // Optional based on preference
-    }
-  }
-}
-
-/**
- * Closes the term dropdown and submits the form
- */
-function closeDropdownAndSubmit() {
-  const menu = document.getElementById('term-dropdown-menu');
-  if (menu) {
-    menu.style.display = 'none';
-  }
+function updateDateSelection() {
   const form = document.getElementById('contacts-term-filter-form');
   if (form) form.submit();
 }
 
-// Make term functions globally available
-window.toggleTermDropdown = toggleTermDropdown;
-window.toggleAllTerms = toggleAllTerms;
-window.updateTermSelection = updateTermSelection;
-window.closeDropdownAndSubmit = closeDropdownAndSubmit;
+window.updateDateSelection = updateDateSelection;
 
-// Add event listeners specific to term logic
-document.addEventListener('DOMContentLoaded', function () {
-  // Initial term updates
-  updateTermSelection();
-
-  // Close on click outside
-  document.addEventListener('click', function (event) {
-    const container = document.getElementById('term-dropdown-container');
-    const menu = document.getElementById('term-dropdown-menu');
-
-    if (menu && menu.style.display === 'block' && container && !container.contains(event.target)) {
-      closeDropdownAndSubmit();
-    }
-  });
-
-  // Prevent clicks inside menu from closing it via the document listener
-  const termMenu = document.getElementById('term-dropdown-menu');
-  if (termMenu) {
-    termMenu.addEventListener('click', function (event) {
-      event.stopPropagation();
-    });
-  }
-});

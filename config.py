@@ -58,3 +58,9 @@ class Config:
     MAIL_PASSWORD = os.getenv('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER', 'support.memmaker@gmail.com')
 
+    # Sync settings
+    SYNC_REMOTE_USER = os.getenv('SYNC_REMOTE_USER', 'ubuntu')
+    SYNC_REMOTE_HOST = os.getenv('SYNC_REMOTE_HOST', 'moleqode.com')
+    SYNC_REMOTE_BASE_PATH = os.getenv('SYNC_REMOTE_BASE_PATH', '/var/www/vpemaster/instance/backup')
+
+
