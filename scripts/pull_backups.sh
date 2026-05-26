@@ -59,12 +59,32 @@ rsync -avz --delete -e "ssh -o ConnectTimeout=5" "$REMOTE_USER@$REMOTE_HOST:$REM
 echo "✅ Club resources backups synced."
 echo ""
 
-# 6. Run post-pull data migrations
+# 6. Restore local database
+echo "🔄 Restoring local database from backup..."
+if [ -f "$PROJECT_ROOT/venv/bin/flask" ]; then
+    FLASK_BIN="$PROJECT_ROOT/venv/bin/flask"
+    PYTHON_BIN="$PROJECT_ROOT/venv/bin/python"
+elif command -v flask >/dev/null 2>&1; then
+    FLASK_BIN="flask"
+    PYTHON_BIN="python3"
+else
+    echo "❌ Error: flask command not found."
+    exit 1
+fi
+
+if ! "$FLASK_BIN" resources db restore --latest; then
+    echo "❌ Error: Database restore failed."
+    exit 1
+fi
+echo "✅ Database restore complete."
+echo ""
+
+# 7. Run post-pull data migrations
 echo "🛠️ Running data migrations..."
 echo "Running migrate_contact_paths.py..."
-python3 "$PROJECT_ROOT/scripts/migrate_contact_paths.py"
+"$PYTHON_BIN" "$PROJECT_ROOT/scripts/migrate_contact_paths.py"
 echo "Running migrate_owner_meeting_roles.py..."
-python3 "$PROJECT_ROOT/scripts/migrate_owner_meeting_roles.py"
+"$PYTHON_BIN" "$PROJECT_ROOT/scripts/migrate_owner_meeting_roles.py"
 echo "✅ Data migrations complete."
 echo ""
 

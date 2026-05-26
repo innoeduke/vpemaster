@@ -819,6 +819,30 @@ def agenda():
     from .utils import get_dropdown_metadata
     dropdown_data = get_dropdown_metadata()
     
+    # Get qualified voting candidates from voting page context
+    from app.voting_routes import _get_roles_for_voting
+    voting_roles = []
+    if selected_meeting:
+        try:
+            voting_roles = _get_roles_for_voting(selected_meeting_id, selected_meeting)
+        except Exception:
+            pass
+
+    voting_candidates = {
+        'speaker': [],
+        'evaluator': [],
+        'table-topic': [],
+        'role-taker': []
+    }
+    for r in voting_roles:
+        cat = r.get('award_category')
+        if cat in voting_candidates:
+            oid = r.get('owner_id')
+            oname = r.get('owner_name')
+            if oid and oname:
+                if not any(c['id'] == oid for c in voting_candidates[cat]):
+                    voting_candidates[cat].append({'id': oid, 'name': oname})
+    
     # --- Render Template ---
     # Serialize ProjectID as a dictionary for safe JSON conversion in template
     project_id_dict = {
@@ -843,7 +867,8 @@ def agenda():
                            default_start_time=default_start_time,
                            next_meeting_num=next_meeting_num,
                            next_meeting_date=next_meeting_date,
-                           ProjectID=project_id_dict)
+                           ProjectID=project_id_dict,
+                           voting_candidates=voting_candidates)
 
 
 # --- API Endpoints for Asynchronous Data Loading ---
@@ -1527,6 +1552,26 @@ def update_logs():
              except ValueError:
                  pass # Ignore invalid ID
 
+        # Update Awards
+        def parse_award_id(val):
+            if val == "":
+                return None
+            elif val is not None:
+                try:
+                    return int(val)
+                except (ValueError, TypeError):
+                    pass
+            return None
+
+        if 'best_speaker_id' in data:
+            meeting.best_speaker_id = parse_award_id(data.get('best_speaker_id'))
+        if 'best_evaluator_id' in data:
+            meeting.best_evaluator_id = parse_award_id(data.get('best_evaluator_id'))
+        if 'best_table_topic_id' in data:
+            meeting.best_table_topic_id = parse_award_id(data.get('best_table_topic_id'))
+        if 'best_role_taker_id' in data:
+            meeting.best_role_taker_id = parse_award_id(data.get('best_role_taker_id'))
+
         new_media_id = None
         if new_media_url:
             existing_media = Media.query.filter_by(url=new_media_url).first()
@@ -1746,6 +1791,7 @@ def update_meeting_status(meeting_id):
         new_status = 'running'
     elif current_status == 'running':
         new_status = 'finished'
+        meeting.status = new_status
         # Tally votes when meeting finishes
         _tally_votes_and_set_winners(meeting)
 
@@ -1760,6 +1806,17 @@ def update_meeting_status(meeting_id):
             elif plan.status == 'waitlist':
                 plan.status = 'obsolete'
             # 'draft' stays 'draft' - user can move it to another meeting later
+
+        # Auto-complete all projects of this meeting
+        for log in meeting.session_logs:
+            is_prepared_speech = log.project and log.project.is_prepared_speech
+            is_project = (log.session_type and log.session_type.Valid_for_Project and log.Project_ID and log.Project_ID != ProjectID.GENERIC) or is_prepared_speech
+            if is_project:
+                log.Status = 'Completed'
+                # Sync metadata for owners
+                for owner in log.owners:
+                    from .utils import sync_contact_metadata
+                    sync_contact_metadata(owner.id, commit=False)
 
     elif current_status == 'finished':
         # Full deletion flow as requested

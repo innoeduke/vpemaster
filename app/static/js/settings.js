@@ -474,8 +474,13 @@ function setupGlobalFilter(searchInputId, searchClearId, tabNavSelector) {
       const tbody = table.querySelector("tbody");
       if (!tbody) return;
 
+      const categoryMatches = {};
       const rows = tbody.querySelectorAll("tr");
+      
       rows.forEach((row) => {
+        if (row.classList.contains('category-row')) {
+          return;
+        }
         let rowText = "";
         row.querySelectorAll("td").forEach((cell) => {
           if (cell.querySelector('input[type="checkbox"]')) {
@@ -488,43 +493,54 @@ function setupGlobalFilter(searchInputId, searchClearId, tabNavSelector) {
           }
         });
 
-        row.setAttribute('data-search-hidden', rowText.includes(filter) ? 'false' : 'true');
+        const isMatch = rowText.includes(filter);
+        row.setAttribute('data-search-hidden', isMatch ? 'false' : 'true');
+        
+        if (isMatch) {
+          const categoryClass = Array.from(row.classList).find(c => c.startsWith('category-group-'));
+          if (categoryClass) {
+            categoryMatches[categoryClass] = true;
+          }
+        }
       });
-
-      // Update visibility (paginated or not)
-      // Note: Paginator logic assumes one paginator per tab ID? 
-      // "window.activePaginators[activeTabId]" - this suggests one paginator per tab.
-      // If we have two tables, logic is complex. 
-      // But typically these tables are not paginated or we need separate paginators?
-      // existing code: "if (window.activePaginators) { ... }"
-      // The code implies one paginator per 'activeTabId'.
-      // If Global table is small (it is), maybe it's not paginated.
-      // Local table might be paginated.
-      // If we filter, we simply hide rows based on 'data-search-hidden'.
-      // If paginator exists, it manages display based on that attribute.
-      // If no paginator, we must manually toggle display.
-
-      const tabId = activeTab.id;
-      let hasPaginator = false;
-      if (window.activePaginators && window.activePaginators[tabId]) {
-        // This assumes the paginator controls THE table. Which one?
-        // The paginator class takes 'tableId'. 
-        // If we have multiple tables, we probably only paginate the main one (Club Specific)?
-        // Or none?
-        // Let's assume simplest case: Standard filtering visibility apply to non-paginated tables too.
-
-        // If this specific table has a paginator attached, use it.
-        // But we don't know easily.
-        // Fallback: Just update display if NO paginator attached to this specific table?
-        // Actually, let's keep it simple: Update display for all rows. 
-        // If paginator is active, it calls 'update()' which re-checks 'data-search-hidden'.
-        // So we just need to trigger paginator update ONCE after processing all rows?
-      }
 
       // Simple immediate visibility update for safety (overridden by paginator if active)
       rows.forEach(row => {
-        const shouldHide = row.getAttribute('data-search-hidden') === 'true';
-        row.style.display = shouldHide ? "none" : "";
+        if (row.classList.contains('category-row')) {
+          if (filter.length === 0) {
+            row.style.display = "";
+          } else {
+            const onclickAttr = row.getAttribute('onclick') || '';
+            const match = onclickAttr.match(/toggleCategory\('([^']+)'/);
+            const slug = match ? match[1] : '';
+            const hasMatch = categoryMatches[`category-group-${slug}`];
+            if (hasMatch) {
+              row.style.display = "";
+              row.classList.remove('collapsed');
+              const icon = row.querySelector('.toggle-icon');
+              if (icon) {
+                icon.className = 'fas fa-chevron-down toggle-icon';
+              }
+            } else {
+              row.style.display = "none";
+            }
+          }
+        } else {
+          const isSearchHidden = row.getAttribute('data-search-hidden') === 'true';
+          if (isSearchHidden) {
+            row.style.display = "none";
+          } else {
+            if (filter.length === 0) {
+              const categoryClass = Array.from(row.classList).find(c => c.startsWith('category-group-'));
+              const slug = categoryClass ? categoryClass.replace('category-group-', '') : '';
+              const catRow = tbody.querySelector(`.category-row[onclick*="'${slug}'"]`);
+              const isCollapsed = catRow ? catRow.classList.contains('collapsed') : false;
+              row.style.display = isCollapsed ? "none" : "";
+            } else {
+              row.style.display = "";
+            }
+          }
+        }
       });
     });
 
@@ -1204,6 +1220,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // --- 7. Permission Management & Audit Log ---
 let originalPermissions = {}; // role_id -> [perm_id, ...]
+let matrixRoles = [];
+let rolesByLevel = {};
+let mainRoleForLevel = {};
+let collapsedLevels = {};
 
 /**
  * Fetches and renders the permission matrix.
@@ -1221,6 +1241,7 @@ function loadPermissionsMatrix() {
     .then((r) => r.json())
     .then((data) => {
       renderPermissionsMatrix(data);
+      renderAuthRolesTable(data.roles);
       loading.style.display = "none";
       container.style.display = "block";
     })
@@ -1229,6 +1250,141 @@ function loadPermissionsMatrix() {
       loading.innerHTML = `<span class="text-danger">Error loading permissions: ${e.message}</span>`;
     });
 }
+
+function renderAuthRolesTable(roles) {
+  const tableBody = document.getElementById("auth-roles-table-body");
+  if (!tableBody) return;
+
+  if (roles.length === 0) {
+    tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">No authorization roles found.</td></tr>`;
+    return;
+  }
+
+  tableBody.innerHTML = roles.map(role => {
+    const isCore = role.is_core;
+    const badgeClass = isCore ? `role-${role.name.toLowerCase()}` : 'role-other';
+    const badgeHtml = `<span class="roster-role-tag ${badgeClass}">${role.name}</span>`;
+    
+    // Core system roles cannot be deleted
+    const deleteBtn = isCore 
+      ? `<button class="delete-btn icon-btn" disabled title="System Core Role (Protected)"><i class="fas fa-lock"></i></button>`
+      : (typeof HAS_SETTINGS_EDIT_ALL !== 'undefined' && HAS_SETTINGS_EDIT_ALL)
+        ? `<button class="delete-btn icon-btn" onclick="deleteAuthRole(${role.id}, '${role.name.replace(/'/g, "\\'")}')" title="Delete custom role"><i class="fas fa-trash-alt"></i></button>`
+        : `<button class="delete-btn icon-btn" disabled title="No edit permissions"><i class="fas fa-trash-alt"></i></button>`;
+
+    return `
+      <tr data-id="${role.id}">
+        <td>${badgeHtml}</td>
+        <td>Level ${role.level}</td>
+        <td>${role.description || '<em class="text-muted">No description</em>'}</td>
+        <td>
+          <div class="action-links">
+            ${deleteBtn}
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function deleteAuthRole(roleId, roleName) {
+  const confirmMsg = `Are you sure you want to delete the authorization role "${roleName}"?\n\nWARNING: All users currently assigned to this role will be automatically reassigned to the default 'User' role in bulk. This action cannot be undone.`;
+  if (confirm(confirmMsg)) {
+    fetch(`/api/settings/auth-roles/delete/${roleId}`, {
+      method: "POST"
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        loadPermissionsMatrix(); // Refresh roles list and matrix
+      } else {
+        showNotification(data.message, "error");
+      }
+    })
+    .catch(e => {
+      console.error("Error deleting role:", e);
+      showNotification(`Error: ${e.message}`, "error");
+    });
+  }
+}
+window.deleteAuthRole = deleteAuthRole;
+
+function openAddAuthRoleModal() {
+  const modal = document.getElementById("addAuthRoleModal");
+  if (modal) {
+    modal.style.display = "flex";
+  }
+}
+window.openAddAuthRoleModal = openAddAuthRoleModal;
+
+function toggleLevelGroup(level) {
+  const isCollapsed = !collapsedLevels[level];
+  collapsedLevels[level] = isCollapsed;
+  
+  // Find main role and other roles at this level
+  const mainRole = mainRoleForLevel[level];
+  if (!mainRole) return;
+  
+  const levelRoles = rolesByLevel[level];
+  const customRoleIds = levelRoles.filter(r => r.id !== mainRole.id).map(r => r.id);
+  
+  // Update Level Header colspan
+  const levelHeader = document.querySelector(`.level-header[data-level="${level}"]`);
+  if (levelHeader) {
+    levelHeader.colSpan = isCollapsed ? 1 : levelRoles.length;
+  }
+  
+  // Toggle columns visibility in DOM
+  customRoleIds.forEach(roleId => {
+    const subHeader = document.querySelector(`.role-header[data-role-id="${roleId}"]`);
+    if (subHeader) {
+      subHeader.style.display = isCollapsed ? "none" : "";
+    }
+    
+    document.querySelectorAll(`.perm-checkbox-cell[data-role-id="${roleId}"]`).forEach(cell => {
+      cell.style.display = isCollapsed ? "none" : "";
+    });
+  });
+  
+  // Update toggle button icon
+  const toggleBtn = document.querySelector(`.toggle-level-btn[data-level="${level}"]`);
+  if (toggleBtn) {
+    const icon = isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down';
+    toggleBtn.innerHTML = `<i class="fas ${icon}"></i>`;
+  }
+}
+function toggleCategory(categorySlug, rowElement) {
+  const permRows = document.querySelectorAll(`.category-group-${categorySlug}`);
+  const isCollapsed = rowElement.classList.contains('collapsed');
+  const icon = rowElement.querySelector('.toggle-icon');
+  
+  if (isCollapsed) {
+    const searchInput = document.getElementById('global-settings-search');
+    const filter = (searchInput && searchInput.value) ? searchInput.value.toUpperCase().trim() : '';
+    
+    permRows.forEach(row => {
+      if (filter.length > 0) {
+        const isSearchHidden = row.getAttribute('data-search-hidden') === 'true';
+        row.style.display = isSearchHidden ? 'none' : '';
+      } else {
+        row.style.display = '';
+      }
+    });
+    rowElement.classList.remove('collapsed');
+    if (icon) {
+      icon.className = 'fas fa-chevron-down toggle-icon';
+    }
+  } else {
+    permRows.forEach(row => {
+      row.style.display = 'none';
+    });
+    rowElement.classList.add('collapsed');
+    if (icon) {
+      icon.className = 'fas fa-chevron-right toggle-icon';
+    }
+  }
+}
+window.toggleCategory = toggleCategory;
 
 function renderPermissionsMatrix(data) {
   const container = document.getElementById("permissions-matrix");
@@ -1239,13 +1395,70 @@ function renderPermissionsMatrix(data) {
   originalPermissions = JSON.parse(JSON.stringify(role_perms));
   if (saveBtn) saveBtn.disabled = true;
 
+  // Group roles by level in descending order
+  matrixRoles = roles;
+  rolesByLevel = {};
+  roles.forEach(r => {
+    if (!rolesByLevel[r.level]) rolesByLevel[r.level] = [];
+    rolesByLevel[r.level].push(r);
+  });
+
+  const sortedLevels = Object.keys(rolesByLevel).map(Number).sort((a, b) => b - a);
+
+  const coreRoleNames = ['ClubAdmin', 'Operator', 'Staff', 'User', 'Guest'];
+  mainRoleForLevel = {};
+  sortedLevels.forEach(level => {
+    const levelRoles = rolesByLevel[level];
+    let main = levelRoles.find(r => coreRoleNames.includes(r.name));
+    if (!main) {
+      main = levelRoles[0];
+    }
+    mainRoleForLevel[level] = main;
+  });
+
+  // Header row 1: Level Groups
+  let levelHeadersHtml = `<th class="level-group-header">Module</th>`;
+  // Header row 2: Role Names
+  let roleHeadersHtml = `<th>Permission</th>`;
+
+  sortedLevels.forEach(level => {
+    const levelRoles = rolesByLevel[level];
+    const isCollapsed = collapsedLevels[level] || false;
+    const mainRole = mainRoleForLevel[level];
+
+    let groupLabel = `Level ${level}`;
+    if (level === 4) groupLabel = "Level 4 (Admin)";
+    else if (level === 3) groupLabel = "Level 3 (Operator)";
+    else if (level === 2) groupLabel = "Level 2 (Staff)";
+    else if (level === 1) groupLabel = "Level 1 (User)";
+    else if (level === 0) groupLabel = "Level 0 (Guest)";
+
+    const hasMultiple = levelRoles.length > 1;
+    let toggleBtn = "";
+    if (hasMultiple) {
+      const icon = isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down';
+      toggleBtn = `<button type="button" class="toggle-level-btn" data-level="${level}" onclick="toggleLevelGroup(${level})"><i class="fas ${icon}"></i></button>`;
+    }
+
+    const colSpan = isCollapsed ? 1 : levelRoles.length;
+    levelHeadersHtml += `<th class="level-group-header level-header" data-level="${level}" colspan="${colSpan}">${groupLabel}${toggleBtn}</th>`;
+
+    levelRoles.forEach(r => {
+      const isMain = r.id === mainRole.id;
+      const hideStyle = (!isMain && isCollapsed) ? 'style="display: none;"' : '';
+      roleHeadersHtml += `<th class="role-header" data-role-id="${r.id}" ${hideStyle}>${r.name}</th>`;
+    });
+  });
+
   let html = `
     <div class="table-responsive">
       <table class="table matrix-table">
         <thead>
           <tr>
-            <th>Permission</th>
-            ${roles.map((r) => `<th>${r.name}</th>`).join("")}
+            ${levelHeadersHtml}
+          </tr>
+          <tr>
+            ${roleHeadersHtml}
           </tr>
         </thead>
         <tbody>
@@ -1255,30 +1468,49 @@ function renderPermissionsMatrix(data) {
   permissions.forEach((p) => {
     // Handle null/undefined category safely
     const safeCategory = p.category || "General";
+    const catSlug = safeCategory.toLowerCase().replace(/[^a-z0-9]/g, '-');
 
     if (safeCategory !== currentCategory) {
       currentCategory = safeCategory;
+      let totalColumns = 1;
+      sortedLevels.forEach(level => {
+        const levelRoles = rolesByLevel[level];
+        const isCollapsed = collapsedLevels[level] || false;
+        totalColumns += isCollapsed ? 1 : levelRoles.length;
+      });
+
       html += `
-        <tr class="category-row">
-          <td colspan="${roles.length + 1}"><strong>${currentCategory.toUpperCase()}</strong></td>
+        <tr class="category-row collapsed" onclick="toggleCategory('${catSlug}', this)" style="cursor: pointer;">
+          <td colspan="${totalColumns}">
+            <i class="fas fa-chevron-right toggle-icon" style="margin-right: 8px;"></i>
+            <strong>${currentCategory.toUpperCase()}</strong>
+          </td>
         </tr>
       `;
     }
 
     html += `
-      <tr data-perm-id="${p.id}">
+      <tr data-perm-id="${p.id}" class="perm-row category-group-${catSlug}" style="display: none;">
         <td title="${p.description || ""}">
           ${p.name}
           <div class="small text-muted">${p.resource}:${p.description || ""}</div>
         </td>
-        ${roles
-        .map((r) => {
-          const checked = role_perms[r.id]?.includes(p.id) ? "checked" : "";
-          return `<td><input type="checkbox" class="perm-checkbox" data-role-id="${r.id}" data-perm-id="${p.id}" ${checked}></td>`;
-        })
-        .join("")}
-      </tr>
     `;
+
+    sortedLevels.forEach(level => {
+      const levelRoles = rolesByLevel[level];
+      const isCollapsed = collapsedLevels[level] || false;
+      const mainRole = mainRoleForLevel[level];
+      
+      levelRoles.forEach(r => {
+        const isMain = r.id === mainRole.id;
+        const hideStyle = (!isMain && isCollapsed) ? 'style="display: none;"' : '';
+        const checked = role_perms[r.id]?.includes(p.id) ? "checked" : "";
+        html += `<td class="perm-checkbox-cell" data-role-id="${r.id}" ${hideStyle}><input type="checkbox" class="perm-checkbox" data-role-id="${r.id}" data-perm-id="${p.id}" ${checked}></td>`;
+      });
+    });
+
+    html += `</tr>`;
   });
 
   html += `
@@ -1335,8 +1567,6 @@ function savePermissions() {
   const container = document.getElementById("permissions-matrix");
   if (!container) return;
 
-  const roles = [];
-  // Get all unique role IDs from checkboxes
   const roleIds = new Set();
   container.querySelectorAll(".perm-checkbox").forEach((cb) => {
     roleIds.add(cb.dataset.roleId);
@@ -1366,7 +1596,6 @@ function savePermissions() {
         const saveBtn = document.getElementById("save-permissions-btn");
         if (saveBtn) saveBtn.disabled = true;
 
-        // Success message removed per requirement
       } else {
         showNotification(data.message, "error");
       }
@@ -1420,6 +1649,44 @@ document.addEventListener("DOMContentLoaded", () => {
   const saveBtn = document.getElementById("save-permissions-btn");
   if (saveBtn) {
     saveBtn.addEventListener("click", savePermissions);
+  }
+
+  // Add auth role button disable check
+  const addAuthRoleBtn = document.getElementById("add-auth-role-btn");
+  if (addAuthRoleBtn && typeof HAS_SETTINGS_EDIT_ALL !== 'undefined') {
+    if (!HAS_SETTINGS_EDIT_ALL) {
+      addAuthRoleBtn.disabled = true;
+      addAuthRoleBtn.title = "Permission denied";
+    }
+  }
+
+  // Add auth role form submit
+  const addAuthRoleForm = document.getElementById("addAuthRoleForm");
+  if (addAuthRoleForm) {
+    addAuthRoleForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      const formData = new FormData(this);
+      const url = this.action;
+      
+      fetch(url, {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          closeModal("addAuthRoleModal");
+          this.reset();
+          loadPermissionsMatrix(); // Refresh matrix and roles table
+        } else {
+          showNotification(data.message, "error");
+        }
+      })
+      .catch(error => {
+        console.error("Error:", error);
+        showNotification(`An error occurred: ${error.message}`, "error");
+      });
+    });
   }
 
   // Load matrix when tab is clicked
@@ -1872,17 +2139,17 @@ function openUserModal(userId = null, btn = null) {
   document.getElementById('user_id').value = '';
   document.getElementById('user_contact_id').value = '';
 
-  // Reset checkboxes
-  const radios = form.querySelectorAll('input[name="role_id"]');
-  radios.forEach(rb => {
-    // Note: dataset.name is used in the partial's radio items
-    const roleName = rb.dataset.name;
-    if (roleName === 'User') {
-      rb.checked = true;
-    } else {
-      rb.checked = false;
-    }
-  });
+  // Reset select input
+  const roleSelect = document.getElementById('role_id_select');
+  if (roleSelect) {
+    Array.from(roleSelect.options).forEach(opt => {
+      if (opt.dataset.name === 'User' || opt.text.trim() === 'User') {
+        opt.selected = true;
+      } else {
+        opt.selected = false;
+      }
+    });
+  }
 
   if (userId && btn) {
     const tr = btn.closest('tr');
@@ -1898,10 +2165,12 @@ function openUserModal(userId = null, btn = null) {
     // Populate role
     try {
       const userRoles = JSON.parse(tr.dataset.roles || '[]');
-      if (userRoles.length > 0) {
-        radios.forEach(rb => {
-          if (userRoles.includes(parseInt(rb.value))) {
-            rb.checked = true;
+      if (userRoles.length > 0 && roleSelect) {
+        Array.from(roleSelect.options).forEach(opt => {
+          if (userRoles.includes(parseInt(opt.value))) {
+            opt.selected = true;
+          } else {
+            opt.selected = false;
           }
         });
       }

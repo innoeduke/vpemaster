@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function () {
 				} else {
 					alert(result.message);
 				}
-				setTimeout(() => location.reload(), 1000);
+				location.reload();
 			} else {
 				alert(result.message || `Error during achievement ${action}`);
 			}

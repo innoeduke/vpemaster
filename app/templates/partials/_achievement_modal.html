@@ -45,7 +45,8 @@
           <select id="path_name" name="path_name" class="planner-form-control">
             <option value="">Select Path...</option>
             {% for p in member_pathways %}
-            <option value="{{ p.name }}" data-icon="fa-map-signs">[{{ p.status|title }}] {{ p.name }}</option>
+            {% set status_icon = '✅' if p.status|lower == 'completed' else '⏳' %}
+            <option value="{{ p.name }}" data-icon="fa-map-signs">{{ status_icon }} {{ p.name }}</option>
             {% endfor %}
           </select>
         </div>

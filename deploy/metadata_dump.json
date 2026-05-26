@@ -36,7 +36,7 @@
       "founded_date": "2007-06-20",
       "current_excomm_id": 1,
       "created_at": "2026-02-01 16:23:24",
-      "updated_at": "2026-02-13 17:11:24"
+      "updated_at": "2026-04-02 05:02:35"
     },
     {
       "id": 3,
@@ -56,6 +56,44 @@
       "current_excomm_id": null,
       "created_at": "2026-02-01 16:25:49",
       "updated_at": "2026-02-01 16:29:41"
+    },
+    {
+      "id": 4,
+      "club_no": "12345678",
+      "club_name": "Shanghai People's Square Toastmasters Club",
+      "short_name": "PSTMC",
+      "district": "85",
+      "division": "",
+      "area": "",
+      "club_address": "1st Floor, No.501 Jiu Jiang Road, Huangpu District",
+      "meeting_date": "Every Tuesday",
+      "meeting_time": "19:00:00",
+      "contact_phone_number": "",
+      "website": "",
+      "logo_url": null,
+      "founded_date": "2023-01-01",
+      "current_excomm_id": null,
+      "created_at": "2026-04-22 05:09:00",
+      "updated_at": "2026-04-22 05:09:00"
+    },
+    {
+      "id": 5,
+      "club_no": "88888888",
+      "club_name": "Playground TMC",
+      "short_name": "",
+      "district": "",
+      "division": "",
+      "area": "",
+      "club_address": "",
+      "meeting_date": "",
+      "meeting_time": null,
+      "contact_phone_number": "",
+      "website": "",
+      "logo_url": null,
+      "founded_date": null,
+      "current_excomm_id": null,
+      "created_at": "2026-04-22 09:04:33",
+      "updated_at": "2026-04-22 09:04:33"
     }
   ],
   "excomm": [
@@ -67,7 +105,7 @@
       "end_date": "2026-06-30",
       "excomm_name": "Memory Makers",
       "created_at": "2026-02-02 03:49:03",
-      "updated_at": "2026-02-13 17:11:24"
+      "updated_at": "2026-04-02 05:02:35"
     },
     {
       "id": 3,
@@ -1222,11 +1260,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Successful Club Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "A club\u2019s climate is the deciding factor in whether or not guests become members and whether those members continue to participate and remain active.\n\n\u0017 The following conditions affect operations, members, attitudes toward a club, and the willingness of guests to join:\n\n\u25a0 Learning environment: cleanliness, room arrangements, adequate supply of materials, room temperature, etc.\n\u25a0 Member interactions: encouragement, feedback, support, and room to learn and grow\n\n\u0017 The unique dynamic of a Toastmasters club influences the performance and growth of its members.",
+      "Overview": "",
+      "Purpose": "In this presentation, you discuss the actions that every club must take in setting the stage for meeting excellence. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 62,
@@ -1294,11 +1332,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Successful Club Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
-      "Requirements": "View resources",
-      "Resources": null
+      "Introduction": "How to Be a Distinguished Club discusses the importance and benefits of becoming Distinguished \nthrough club planning, goal setting, goal achievement, and recognition.",
+      "Overview": "A club\u2019s purpose is to provide an environment in which each member can achieve their goals. \nWhen a club offers plenty of speaking opportunities, provides helpful speech evaluations, and has \nenough members to conduct the program, members\u2019 personal learning goals are achieved. \n\nJust as each member has their own goals, the club, likewise, has goals to accomplish. When \neach member strives to reach these objectives, the purpose of the club is fulfilled and the member \nexperience is enriched.",
+      "Purpose": "The purpose of this speech is defined by the member. The member may present a well-organized, well-supported \nspeech on any topic.",
+      "Requirements": "The member completing this speech may be presenting on any topic. He or she may be speaking to fulfill a \nPathways project or about a topic outside of the Pathways learning experience.\n\nAbout this speech:\n\u25a0 The member will present a well-organized, well-delivered speech. \n\u25a0 The speech may be humorous, informational, or any style the member chooses. The speech content and style \nshould work well together. \n\u25a0 This speech should not be a report on the content of any Pathways project.",
+      "Resources": ""
     },
     {
       "id": 68,
@@ -1318,11 +1356,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Better Speaker Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "The first moments of a speech are critical to its success. If they are dull, lifeless, and unimaginative, the audience can lose interest in the rest of the speech. However, an exciting, creative beginning will help grab and keep listeners\u2019 attention.",
+      "Overview": "",
+      "Purpose": "\u201cBeginning Your Speech\u201d emphasizes how a speaker\u2019s opening words are critical. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 70,
@@ -1330,11 +1368,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Better Speaker Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "A conclusion is important to the success of any speech. All too often, an otherwise excellent speech loses its effectiveness because of a poor closing. People remember the last thing they hear more than any other part of your speech. If you want people to remember and be favorably impressed with it, you must strive to conclude your speech positively and forcefully.",
+      "Overview": "",
+      "Purpose": "\u201cConcluding Your Speech\u201d helps members learn effective ways to end a speech. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 71,
@@ -1342,11 +1380,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Better Speaker Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "It is common for both experienced and beginning speakers to be nervous about giving a speech. The difference is that the experienced speaker knows how to control this nervousness and use it to enhance the speech. By understanding the causes and symptoms of the fear, a speaker can harness that seemingly negative energy and channel it toward a positive outcome. The experienced speaker also knows how to appear confident in front of an audience. To obtain a confident appearance, a seasoned orator applies the proper methods and techniques for relaxation.",
+      "Overview": "",
+      "Purpose": "\u201cControlling Your Fear\u201d helps participants identify the fears that trigger their anxiety and offers\n\u00ad techniques for managing it. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 72,
@@ -1354,11 +1392,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Better Speaker Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "People encounter impromptu speaking situations every day. An impromptu speech can take the form of a job interview, a telephone conversation, or a chat with customer service people or co-workers. With enough practice, anyone can develop the ability to present ideas clearly in any impromptu speaking situation.",
+      "Overview": "",
+      "Purpose": "\u201cImpromptu Speaking\u201d addresses those occasions when you are expected to speak without preparation. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 73,
@@ -1366,11 +1404,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Better Speaker Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "As a Toastmaster, you are encouraged to give manual speeches that follow specific guidelines. However, there will be times outside of your Toastmasters experience when speaking assignments may not be so well defined. Even within the organization, you may occasionally find it difficult to select a topic for a manual speech. Do not be discouraged - there are techniques you can apply to help you select a great topic with a minimum of effort.",
+      "Overview": "",
+      "Purpose": "\u201cSelecting Your Topic\u201d identifies several different approaches for choosing a subject that will suit the audience, the occasion, and the abilities of the speaker. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 74,
@@ -1378,11 +1416,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Better Speaker Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "Speakers want to share knowledge and move an audience to share their viewpoint. To do this, they must send their message in such a way that it is easy for the audience to receive and understand it. The speaker must know who the audience is and fine-tune how the message is sent to the audience in order to succeed.",
+      "Overview": "",
+      "Purpose": "\u201cKnow Your Audience\u201d addresses the importance of researching and understanding the people who will be listening to your speech so that you might best serve their needs\u2014as well as your own.",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 75,
@@ -1390,11 +1428,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Better Speaker Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "Speech organization is more than just the order in which you introduce the points in your speech.\n\nThe words in a well-organized speech work together to obtain and keep the audience\u2019s attention. Likewise, the order of the words and ideas let the audience know the importance of each point in the speech and how each point relates to the others.\n\nThere are many facets to organizing speeches but there are some basic speech organization methods one can apply.",
+      "Overview": "",
+      "Purpose": "\u201cOrganizing Your Speech\u201d offers several strategies for planning an effective presentation.",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 76,
@@ -1402,11 +1440,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Better Speaker Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "Not everyone is comfortable with the concept of a speech introduction. An inaccurate or unexpected introduction can fluster even the most prepared speaker. While speech introductions can be challenging to organize and present, they are also a very necessary part of our Toastmasters meetings.",
+      "Overview": "",
+      "Purpose": "\u201cCreating an Introduction\u201d focuses on the need for effective speech introductions and the process of creating them. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 77,
@@ -1414,11 +1452,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Better Speaker Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "The majority of speakers recognize the value of careful preparation and regular rehearsal before delivering a speech. But successful speechmaking consists of more than devising an idea, writing down notes, and staying up at the lectern for a specified length of time. The difference between a truly excellent speaker and an average one lies in the amount of preparation that goes into their presentation.",
+      "Overview": "",
+      "Purpose": "\u201cPreparation and Practice\u201d offers several strategies for planning and executing an effective presentation. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 78,
@@ -1426,11 +1464,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Better Speaker Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "The body can be an effective tool for adding emphasis and clarity to a speaker\u2019s words. It can also be a powerful instrument for convincing an audience of a speaker\u2019s sincerity, passion, and commitment.\n\nAudiences base their judgment of a speaker and the speaker\u2019s message on what they see as well as upon what they hear. A speaker\u2019s stance, facial expressions, hand gestures, effectively the movement of the entire body, communicate more to an audience than actual spoken words.\n\nBody language can also help release nervous energy. Displays of discomfort through nervous habits distract the audience. Speakers can harness this nervous energy and use it to contribute to their message instead.\n\nMovement attracts and keeps an audience\u2019s attention. A stationary speaker is more likely to lose the audience\u2019s interest.",
+      "Overview": "",
+      "Purpose": "\u201cUsing Body Language\u201d offers information on using facial expressions, gestures, and whole body movement to enhance a presentation. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 79,
@@ -1474,11 +1512,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "A leader\u2019s role is to serve the team members by helping the group work together, to provide structure, and to facilitate discussion. Team leaders are focused on goals and team members. They offer knowledge and skills to help others and encourage team members to challenge themselves and grow while working to accomplish the team\u2019s goals.",
+      "Overview": "",
+      "Purpose": "\u201cService and Leadership\u201d discusses how leaders serve others by offering their knowledge and skills to help others achieve a goal. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 83,
@@ -1486,11 +1524,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "The world needs strong, competent leaders now more than ever before. Effective leaders are needed not only in government and industry, but in our communities and civic organizations as well. Even in Toastmasters, the difference between a successful club and an unsuccessful club is the quality of leadership within the club. Leadership abilities are not inherited. Just like communication skills, leadership skills are learned and honed through experience by facing challenges and learning from failures and successes.",
+      "Overview": "",
+      "Purpose": "\u201cThe Leader as a Coach\u201d discusses how leaders can help their teams improve performance by applying specific principles and techniques. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 84,
@@ -1498,11 +1536,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "The mission of an organization plays a major role in directing the organization to achieve its goals.\n\nThe majority of people today have not created a mission statement or even aided in the development of one. \u201cDeveloping a Mission\u201d will help you an",
+      "Overview": "",
+      "Purpose": "\u201cDeveloping a Mission\u201d discusses how successful leaders create and cultivate an organizational mission that defines the organization and guides its members and/or employees to attain their goals and objectives. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 85,
@@ -1510,11 +1548,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "Motivating people is a complex undertaking. Leaders must understand what motivates team members and then use this understanding to create and maintain an environment where team members have the opportunity to fulfill their personal motives, wants, and desires while contributing to a larger enterprise.\n\nEven though a leader provides the appropriate environment and encourages team members toward motivation, it is the individual who sparks their own momentum. But a successful leader understands what these sparks are and uses them to develop reward systems that match team members\u2019 values.",
+      "Overview": "",
+      "Purpose": "\u201cMotivating People\u201d discusses how to create and maintain an environment in which team members will become motivated. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 86,
@@ -1522,11 +1560,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "A team is a group of people who work together to accomplish specific, common goals. They share responsibility for their tasks and depend upon one another to achieve them. Teams are the most effective means of achieving an organization\u2019s mission and goals.",
+      "Overview": "",
+      "Purpose": "\u201cBuilding a Team\u201d discusses how to select and work with a team. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 87,
@@ -1534,11 +1572,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "Leaders cannot accomplish goals alone. Others may need to act on the leader\u2019s behalf. A leader relies on others to do some of the necessary work. There\u2019s only a limited amount that you can do, however hard you work, the number of people you can help is limited, your success is limited.",
+      "Overview": "",
+      "Purpose": "\u201cDelegate to Empower\u201d discusses how to effectively assign tasks and responsibilities to team members. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 88,
@@ -1546,11 +1584,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "Conflict is a part of life. People will always have differences. In the workplace, people can disagree over anything, such as policies, decisions, ideas, and strategies. Even in a Toastmasters club, members can have disagreements over programming, meeting assignments, speeches, and people.\n\nConflict is not always bad. When it is addressed and resolved, conflict often leads to positive changes, increased productivity, better decisions, innovation, and bonding among people. Adversely, unresolved conflict can lead to poor productivity, low morale, distrust, and failure. A leader must know how to handle conflict.",
+      "Overview": "",
+      "Purpose": "\u201cResolving Conflict\u201d discusses why conflict occurs and what a leader can do to resolve it. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 89,
@@ -1558,11 +1596,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "Vision is the ability to perceive the many possibilities that are available to an organization and to create a picture of where that organization will be in the future. A vision sets a clear, focused, desirable direction that will take an organization to some specific destination.\n\nPeople are motivated to perform when they have a clear understanding of the purpose and meaning of a task or activity. A leader must provide this purpose and meaning by developing their vision and then communicating it to their team.\n\nA vision statement is a means of communicating a vision to others.",
+      "Overview": "",
+      "Purpose": "The Visionary Leader\u201d discusses how leaders create and communicate a vision for their organization to help it be successful. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 90,
@@ -1570,11 +1608,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "Values affect the way leaders conduct business. Successful leaders recognize the importance of understanding their own values as well as those of their team and knowing how these values influence decisions and behavior.",
+      "Overview": "",
+      "Purpose": "\u201cValues and Leadership\u201d discusses values and the need to ensure the alignment of a team\u2019s and leader\u2019s values in order to achieve a goal. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 91,
@@ -1582,11 +1620,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "Successful leaders focus on what they want to achieve. They know what they want, and they devise ways to get it. The secret to their success is their ability to set and achieve specific goals. The abilities to set clear goals and plan how to achieve them are important leadership skills. If you cannot identify and communicate goals and plan how to achieve them, you will have difficulty fulfilling other leadership responsibilities.",
+      "Overview": "",
+      "Purpose": "\u201cGoal Setting and Planning\u201d discusses the processes leaders use to set goals and develop plans to achieve those goals. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     },
     {
       "id": 92,
@@ -1594,11 +1632,11 @@
       "Format": "Presentation",
       "Duration_Min": 10,
       "Duration_Max": 15,
-      "Introduction": "Presentation from series: Leadership Excellence Series",
-      "Overview": null,
-      "Purpose": "Educational Presentation",
+      "Introduction": "In order for a team to be effective, its leader must be able to comfortably offer feedback to team members. Feedback is information concerning the team\u2019s behavior, attitude, relationships, and progress toward achieving objectives. Leaders that skillfully provide feedback help the team achieve its goals, build the team\u2019s confidence and pride, and help them to succeed.",
+      "Overview": "",
+      "Purpose": "\u201cGiving Effective Feedback\u201d discusses how to provide effective performance feedback to team members, and how to recognize positive performers. ",
       "Requirements": "View resources",
-      "Resources": null
+      "Resources": ""
     }
   ],
   "level_roles": [
@@ -4650,6 +4688,42 @@
       "resource": "booking",
       "action": "view_all",
       "created_at": "2026-03-01 18:05:01"
+    },
+    {
+      "id": 46,
+      "name": "AGENDA_DELETE",
+      "description": "Allow deleting a meeting",
+      "category": "agenda",
+      "resource": "agenda",
+      "action": "delete",
+      "created_at": "2026-04-23 08:03:26"
+    },
+    {
+      "id": 47,
+      "name": "AGENDA_CREATE",
+      "description": "Allow creating a new meeting",
+      "category": "agenda",
+      "resource": "agenda",
+      "action": "create",
+      "created_at": "2026-04-23 08:03:26"
+    },
+    {
+      "id": 48,
+      "name": "AGENDA_VIEW_UNPUBLISHED",
+      "description": "View unpublished meetings",
+      "category": "agenda",
+      "resource": "agenda",
+      "action": "view_unpublished",
+      "created_at": "2026-05-14 11:33:37"
+    },
+    {
+      "id": 49,
+      "name": "CONTACT_ADD_GUEST",
+      "description": "Add Guest contact from roster",
+      "category": "contacts",
+      "resource": "contact_book",
+      "action": null,
+      "created_at": "2026-05-25 11:04:27"
     }
   ],
   "auth_roles": [
@@ -4658,6 +4732,7 @@
       "name": "SysAdmin",
       "description": "Admin role",
       "level": 8,
+      "club_id": null,
       "created_at": "2026-01-15 07:42:37"
     },
     {
@@ -4665,6 +4740,7 @@
       "name": "ClubAdmin",
       "description": "VPE role",
       "level": 4,
+      "club_id": null,
       "created_at": "2026-01-15 07:42:37"
     },
     {
@@ -4672,6 +4748,7 @@
       "name": "Staff",
       "description": "Officer role",
       "level": 2,
+      "club_id": null,
       "created_at": "2026-01-15 07:42:37"
     },
     {
@@ -4679,6 +4756,7 @@
       "name": "User",
       "description": "Member role",
       "level": 1,
+      "club_id": null,
       "created_at": "2026-01-15 07:42:37"
     },
     {
@@ -4686,14 +4764,24 @@
       "name": "Guest",
       "description": null,
       "level": 0,
+      "club_id": null,
       "created_at": "2026-01-16 13:55:24"
     },
     {
       "id": 6,
       "name": "Operator",
-      "description": "Operator role for managing meetings and bookings",
+      "description": "Operator role",
       "level": 3,
-      "created_at": "2026-04-07 08:07:37"
+      "club_id": null,
+      "created_at": "2026-04-09 17:50:00"
+    },
+    {
+      "id": 7,
+      "name": "Welcome Officer",
+      "description": "manage check-ins",
+      "level": 1,
+      "club_id": 2,
+      "created_at": "2026-05-25 10:46:11"
     }
   ],
   "role_permissions": [
@@ -4773,6 +4861,16 @@
       "permission_id": 40
     },
     {
+      "id": 170,
+      "role_id": 1,
+      "permission_id": 46
+    },
+    {
+      "id": 172,
+      "role_id": 1,
+      "permission_id": 47
+    },
+    {
       "id": 102,
       "role_id": 2,
       "permission_id": 1
@@ -4846,6 +4944,11 @@
       "id": 98,
       "role_id": 2,
       "permission_id": 15
+    },
+    {
+      "id": 143,
+      "role_id": 2,
+      "permission_id": 16
     },
     {
       "id": 135,
@@ -4933,6 +5036,21 @@
       "permission_id": 45
     },
     {
+      "id": 171,
+      "role_id": 2,
+      "permission_id": 46
+    },
+    {
+      "id": 173,
+      "role_id": 2,
+      "permission_id": 47
+    },
+    {
+      "id": 174,
+      "role_id": 2,
+      "permission_id": 48
+    },
+    {
       "id": 34,
       "role_id": 3,
       "permission_id": 2
@@ -4966,6 +5084,11 @@
       "id": 39,
       "role_id": 3,
       "permission_id": 15
+    },
+    {
+      "id": 169,
+      "role_id": 3,
+      "permission_id": 16
     },
     {
       "id": 37,
@@ -5008,9 +5131,24 @@
       "permission_id": 43
     },
     {
+      "id": 122,
+      "role_id": 3,
+      "permission_id": 44
+    },
+    {
       "id": 138,
       "role_id": 3,
       "permission_id": 45
+    },
+    {
+      "id": 176,
+      "role_id": 3,
+      "permission_id": 48
+    },
+    {
+      "id": 190,
+      "role_id": 3,
+      "permission_id": 49
     },
     {
       "id": 40,
@@ -5078,109 +5216,194 @@
       "permission_id": 32
     },
     {
-      "id": 143,
+      "id": 144,
       "role_id": 6,
       "permission_id": 2
     },
     {
-      "id": 161,
+      "id": 145,
       "role_id": 6,
       "permission_id": 3
     },
     {
-      "id": 144,
+      "id": 146,
       "role_id": 6,
       "permission_id": 4
     },
     {
-      "id": 162,
+      "id": 147,
       "role_id": 6,
       "permission_id": 5
     },
     {
-      "id": 145,
+      "id": 148,
       "role_id": 6,
       "permission_id": 6
     },
     {
-      "id": 163,
+      "id": 149,
       "role_id": 6,
       "permission_id": 7
     },
     {
-      "id": 146,
+      "id": 150,
       "role_id": 6,
       "permission_id": 8
     },
     {
-      "id": 147,
+      "id": 151,
       "role_id": 6,
       "permission_id": 10
     },
     {
-      "id": 148,
+      "id": 152,
       "role_id": 6,
       "permission_id": 11
     },
     {
-      "id": 149,
+      "id": 153,
       "role_id": 6,
       "permission_id": 15
     },
     {
-      "id": 160,
-      "role_id": 6,
-      "permission_id": 17
-    },
-    {
-      "id": 150,
-      "role_id": 6,
-      "permission_id": 18
-    },
-    {
-      "id": 151,
-      "role_id": 6,
-      "permission_id": 25
-    },
-    {
-      "id": 152,
-      "role_id": 6,
-      "permission_id": 32
-    },
-    {
-      "id": 153,
-      "role_id": 6,
-      "permission_id": 39
-    },
-    {
       "id": 154,
       "role_id": 6,
-      "permission_id": 40
+      "permission_id": 16
     },
     {
       "id": 155,
       "role_id": 6,
-      "permission_id": 41
+      "permission_id": 17
     },
     {
       "id": 156,
       "role_id": 6,
-      "permission_id": 42
+      "permission_id": 18
     },
     {
       "id": 157,
       "role_id": 6,
-      "permission_id": 43
+      "permission_id": 25
     },
     {
       "id": 158,
       "role_id": 6,
-      "permission_id": 44
+      "permission_id": 32
     },
     {
       "id": 159,
       "role_id": 6,
+      "permission_id": 34
+    },
+    {
+      "id": 160,
+      "role_id": 6,
+      "permission_id": 35
+    },
+    {
+      "id": 161,
+      "role_id": 6,
+      "permission_id": 36
+    },
+    {
+      "id": 162,
+      "role_id": 6,
+      "permission_id": 39
+    },
+    {
+      "id": 163,
+      "role_id": 6,
+      "permission_id": 40
+    },
+    {
+      "id": 164,
+      "role_id": 6,
+      "permission_id": 41
+    },
+    {
+      "id": 165,
+      "role_id": 6,
+      "permission_id": 42
+    },
+    {
+      "id": 166,
+      "role_id": 6,
+      "permission_id": 43
+    },
+    {
+      "id": 167,
+      "role_id": 6,
+      "permission_id": 44
+    },
+    {
+      "id": 168,
+      "role_id": 6,
       "permission_id": 45
+    },
+    {
+      "id": 175,
+      "role_id": 6,
+      "permission_id": 48
+    },
+    {
+      "id": 182,
+      "role_id": 7,
+      "permission_id": 4
+    },
+    {
+      "id": 186,
+      "role_id": 7,
+      "permission_id": 6
+    },
+    {
+      "id": 179,
+      "role_id": 7,
+      "permission_id": 8
+    },
+    {
+      "id": 184,
+      "role_id": 7,
+      "permission_id": 10
+    },
+    {
+      "id": 188,
+      "role_id": 7,
+      "permission_id": 11
+    },
+    {
+      "id": 185,
+      "role_id": 7,
+      "permission_id": 16
+    },
+    {
+      "id": 187,
+      "role_id": 7,
+      "permission_id": 25
+    },
+    {
+      "id": 183,
+      "role_id": 7,
+      "permission_id": 32
+    },
+    {
+      "id": 180,
+      "role_id": 7,
+      "permission_id": 39
+    },
+    {
+      "id": 178,
+      "role_id": 7,
+      "permission_id": 40
+    },
+    {
+      "id": 181,
+      "role_id": 7,
+      "permission_id": 42
+    },
+    {
+      "id": 189,
+      "role_id": 7,
+      "permission_id": 49
     }
   ],
   "tickets": [
@@ -5192,7 +5415,7 @@
       "icon": "fa-dove",
       "color": "#20c997",
       "club_id": 2,
-      "expired_at": "18:00:00"
+      "expired_at": "15:00:00"
     },
     {
       "id": 2,
@@ -5202,7 +5425,7 @@
       "icon": "fa-dove",
       "color": "#20c997",
       "club_id": 2,
-      "expired_at": "18:00:00"
+      "expired_at": "15:00:00"
     },
     {
       "id": 3,
@@ -5282,6 +5505,36 @@
       "icon": "fa-user-shield",
       "color": "#fd7e14",
       "club_id": 2,
+      "expired_at": null
+    },
+    {
+      "id": 1007,
+      "name": "Guest",
+      "price": 40.0,
+      "type": "Guest",
+      "icon": "fa-user-tie",
+      "color": "#00c800",
+      "club_id": 4,
+      "expired_at": null
+    },
+    {
+      "id": 1008,
+      "name": "Student",
+      "price": 20.0,
+      "type": "Guest",
+      "icon": "fa-graduation-cap",
+      "color": "#00c8c8",
+      "club_id": 4,
+      "expired_at": null
+    },
+    {
+      "id": 1009,
+      "name": "Other Club Member",
+      "price": 30.0,
+      "type": "Guest",
+      "icon": "fa-users",
+      "color": "#c80000",
+      "club_id": 4,
       "expired_at": null
     }
   ]

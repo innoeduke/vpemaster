@@ -107,7 +107,8 @@
                             {% endif %}
                         {% endif %}
 
-                        <div class="custom-dropdown-container" style="position: relative; display: inline-block; min-width: 300px;">
+                        <div style="display: flex; align-items: center; width: 100%; gap: 10px;">
+                            <div class="custom-dropdown-container" style="position: relative; flex: 1;">
                             <div class="custom-select-trigger" onclick="document.getElementById('pathway-dropdown-menu').style.display = document.getElementById('pathway-dropdown-menu').style.display === 'none' ? 'block' : 'none'; event.stopPropagation();" style="display: flex; align-items: center; justify-content: space-between; padding: 6px 12px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer; height: 36px; user-select: none;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
                                     {% if ns.is_non_pathway %}
@@ -151,6 +152,7 @@
                                 <i class="fas fa-check-circle" style="font-size: 1.2rem;"></i>
                             </button>
                         {% endif %}
+                        </div>
 
                         <script>
                             document.addEventListener('click', function(e) {
@@ -183,6 +185,19 @@
                     </div>
                 </form>
             </div>
+            
+            {% if can_view_all %}
+            <div class="search-container filter-group-premium" style="margin-left: auto;">
+                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative; width: 100%;">
+                    <input type="hidden" name="view_mode" value="search">
+                    <input type="text" name="q" class="search-box" placeholder="Search sessions (e.g. name, role)..." value="{{ request.args.get('q', '') }}" style="width: 100%; max-width: 100%; padding-left: 35px; border-radius: 6px; border: 1px solid #ddd; height: 36px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;"></i>
+                    {% if request.args.get('q') %}
+                    <button type="button" class="clear-search-btn" onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}'" style="right: 12px;">&times;</button>
+                    {% endif %}
+                </form>
+            </div>
+            {% endif %}
 
 			<div class="view-mode-toggle">
 
@@ -190,10 +205,6 @@
 					<i class="fas fa-user-circle"></i> Member
 				</a>
 				{% if can_view_all %}
-				<a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='admin') }}"
-					class="btn-view-control btn-meeting-view">
-					<i class="fas fa-users"></i> Meeting
-				</a>
 				<a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn-view-control btn-project-view">
 					<i class="fas fa-chart-line"></i> Project
 				</a>

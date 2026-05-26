@@ -4,7 +4,7 @@ from app.system_messaging import send_system_message
 from app.models.user import User
 from app.models.meeting import Meeting
 from app.club_context import get_current_club_id
-from app.utils import get_terms, get_active_term, get_date_ranges_for_terms
+from app.utils import get_terms, get_active_term
 from sqlalchemy import or_
 from sqlalchemy.orm import joinedload
 from collections import OrderedDict
@@ -22,22 +22,24 @@ def index():
 def calendar():
     club_id = get_current_club_id()
     
-    # 1. Fetch all terms for the club to show in the filter
+    # 1. Fetch all terms for the club
     terms = get_terms()
     
-    # 2. Determine selected terms
-    selected_term_ids = request.args.getlist('term')
+    # 2. Determine date range from query params
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
     
-    # Fallback: if no term selected, use the active term
+    # Fallback: if no dates selected, use the active term
     current_term = get_active_term(terms)
-    if not selected_term_ids:
+    if not start_date and not end_date:
         if current_term:
-            selected_term_ids = [current_term['id']]
-        elif terms:
-            selected_term_ids = [terms[0]['id']]
+            start_date = current_term['start']
+            end_date = current_term['end']
             
-    # 3. Fetch meetings filtered by term date ranges
-    date_ranges = get_date_ranges_for_terms(selected_term_ids, terms)
+    # 3. Fetch meetings filtered by date range
+    date_ranges = []
+    if start_date and end_date:
+        date_ranges = [(start_date, end_date)]
     
     query = Meeting.query.options(joinedload(Meeting.manager)).filter_by(club_id=club_id)
     if date_ranges:
@@ -76,8 +78,9 @@ def calendar():
 
     return render_template('calendar.html',
                          meetings_by_month=meetings_by_month,
-                         terms=terms,
-                         selected_term_ids=selected_term_ids,
+                         start_date=start_date,
+                         end_date=end_date,
+                         current_term=current_term,
                          header_title="Calendar",
                          today=datetime.now().date(),
                          next_meeting_id=next_meeting_id)

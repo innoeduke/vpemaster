@@ -29,30 +29,95 @@
   }
 
   /* Permissions Matrix Table Styles */
+  .permissions-matrix-container {
+    overflow-x: auto;
+    max-width: 100%;
+    position: relative;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: none !important;
+  }
   .matrix-table {
-    table-layout: fixed;
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
   }
 
-  /* Permission Name Column (Width: 40%) */
+  /* Permission Name Column (Sticky) */
   .matrix-table th:first-child,
   .matrix-table td:first-child {
-    width: 40%;
+    width: 300px;
+    min-width: 300px;
+    max-width: 300px;
+    position: sticky;
+    left: 0;
+    background-color: var(--card-bg, #fff);
+    z-index: 3;
+    border-right: 2px solid #ccc;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+    text-align: left;
+    padding: 10px;
+  }
+  
+  .matrix-table th:first-child {
+    z-index: 4;
   }
 
-  /* Role Columns (Width: 12% each for 5 roles) */
+  /* Role Columns */
   .matrix-table th:not(:first-child),
   .matrix-table td:not(:first-child) {
-    width: 12%;
+    width: 150px;
+    min-width: 150px;
     text-align: center;
     vertical-align: middle;
+    border-right: 1px solid #eee;
+    padding: 10px;
   }
 
   .matrix-table .perm-checkbox {
     width: 18px;
     height: 18px;
     cursor: pointer;
+  }
+
+  /* Level Header styles */
+  .matrix-table .level-group-header {
+    background-color: #f5f5f5;
+    font-weight: bold;
+    border-bottom: 2px solid #ddd;
+    text-align: center;
+  }
+  .matrix-table .level-group-header:first-child {
+    text-align: left;
+  }
+
+  /* Toggle level group button */
+  .toggle-level-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #004165;
+    margin-left: 5px;
+    font-size: 0.9em;
+  }
+  .toggle-level-btn:hover {
+    color: #002244;
+  }
+
+  /* Category Row Font Color and Background styling */
+  .matrix-table .category-row td {
+    background-color: #fdf8f9 !important;
+    color: maroon !important;
+    font-weight: bold;
+    border-bottom: 2px solid maroon !important;
+    border-right: none !important;
+    box-shadow: none !important;
+    text-align: left;
+  }
+
+  /* Add space between icon and text on buttons */
+  .btn i.fas, .btn i.far, .btn i.fab {
+    margin-right: 5px;
   }
 </style>
 {% endblock %}
@@ -511,7 +576,36 @@
 
   <div id="roles-permissions" class="tab-content">
     <div class="settings-header">
-      <h2>Permissions</h2>
+      <h2>Authorization Roles</h2>
+      <div class="button-group">
+        <button id="add-auth-role-btn" class="btn btn-success" onclick="openAddAuthRoleModal()" title="Add custom authorization role">
+          <i class="fas fa-plus"></i> Add New Role
+        </button>
+      </div>
+    </div>
+    
+    <div class="table-container" style="margin-bottom: 40px;">
+      <table id="auth-roles-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Level</th>
+            <th>Description</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="auth-roles-table-body">
+          <tr>
+            <td colspan="4" class="text-center py-4">
+              <i class="fas fa-spinner fa-spin"></i> Loading roles...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="settings-header">
+      <h2>Permissions Matrix</h2>
       <div class="button-group">
         <button id="save-permissions-btn" class="btn btn-success" title="Save changes to role permissions" disabled>
           <i class="fas fa-save"></i> Save Changes
@@ -557,6 +651,7 @@
   {% include '_role_modal.html' %}
   {% include 'partials/_user_modal.html' %}
   {% include '_ticket_modal.html' %}
+  {% include '_auth_role_modal.html' %}
 </div>
 
 <!-- Mobile Warning Modal -->
@@ -638,6 +733,7 @@
     var ROLES_DATA = {{ roles| tojson }};
     const ALL_CONTACTS = {{ all_contacts| tojson }};
     const CURRENT_CLUB_ID = {{ club_id }};
+    const HAS_SETTINGS_EDIT_ALL = {{ is_authorized(Permissions.SETTINGS_EDIT_ALL) | tojson }};
 </script>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}?v={{ range(1, 10000) | random }}"></script>

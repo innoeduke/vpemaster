@@ -8,11 +8,16 @@ class Role(db.Model):
     __tablename__ = 'auth_roles'
     
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(50), nullable=False, index=True)
     description = db.Column(db.Text)
     level = db.Column(db.Integer)  # For hierarchy: SysAdmin=8, ClubAdmin=4, Operator=3, Staff=2, User=1
+    club_id = db.Column(db.Integer, db.ForeignKey('clubs.id', ondelete='CASCADE'), nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     
+    __table_args__ = (
+        db.UniqueConstraint('club_id', 'name', name='uq_club_role_name'),
+    )
+
     # Relationships
     permissions = db.relationship('Permission', secondary='role_permissions', back_populates='roles', lazy='joined')
     

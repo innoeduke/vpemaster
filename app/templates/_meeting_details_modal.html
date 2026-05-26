@@ -87,6 +87,70 @@
                    value="{{ selected_meeting.WOD or '' }}" 
                    placeholder="Enter Word of the Day">
         </div>
+        <div class="meta-item">
+            <span><strong>Best Speaker:</strong></span>
+            <select id="edit-best-speaker" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
+                <option value="">-- Select Best Speaker --</option>
+                {% set found_winner = namespace(val=false) %}
+                {% for candidate in (voting_candidates['speaker'] if voting_candidates else []) %}
+                {% if selected_meeting and selected_meeting.best_speaker_id == candidate.id %}
+                    {% set found_winner.val = true %}
+                {% endif %}
+                <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.best_speaker_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+                {% endfor %}
+                {% if selected_meeting and selected_meeting.best_speaker_id and not found_winner.val and selected_meeting.best_speaker %}
+                <option value="{{ selected_meeting.best_speaker_id }}" selected>{{ selected_meeting.best_speaker.Name }}</option>
+                {% endif %}
+            </select>
+        </div>
+        <div class="meta-item">
+            <span><strong>Best Evaluator:</strong></span>
+            <select id="edit-best-evaluator" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
+                <option value="">-- Select Best Evaluator --</option>
+                {% set found_winner = namespace(val=false) %}
+                {% for candidate in (voting_candidates['evaluator'] if voting_candidates else []) %}
+                {% if selected_meeting and selected_meeting.best_evaluator_id == candidate.id %}
+                    {% set found_winner.val = true %}
+                {% endif %}
+                <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.best_evaluator_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+                {% endfor %}
+                {% if selected_meeting and selected_meeting.best_evaluator_id and not found_winner.val and selected_meeting.best_evaluator %}
+                <option value="{{ selected_meeting.best_evaluator_id }}" selected>{{ selected_meeting.best_evaluator.Name }}</option>
+                {% endif %}
+            </select>
+        </div>
+        <div class="meta-item">
+            <span><strong>Best Table Topic:</strong></span>
+            <select id="edit-best-table-topic" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
+                <option value="">-- Select Best Table Topic --</option>
+                {% set found_winner = namespace(val=false) %}
+                {% for candidate in (voting_candidates['table-topic'] if voting_candidates else []) %}
+                {% if selected_meeting and selected_meeting.best_table_topic_id == candidate.id %}
+                    {% set found_winner.val = true %}
+                {% endif %}
+                <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.best_table_topic_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+                {% endfor %}
+                {% if selected_meeting and selected_meeting.best_table_topic_id and not found_winner.val and selected_meeting.best_table_topic_speaker %}
+                <option value="{{ selected_meeting.best_table_topic_id }}" selected>{{ selected_meeting.best_table_topic_speaker.Name }}</option>
+                {% endif %}
+            </select>
+        </div>
+        <div class="meta-item">
+            <span><strong>Best Role Taker:</strong></span>
+            <select id="edit-best-role-taker" class="edit-mode-field" {% if not selected_meeting or selected_meeting.status != 'finished' %}disabled{% endif %}>
+                <option value="">-- Select Best Role Taker --</option>
+                {% set found_winner = namespace(val=false) %}
+                {% for candidate in (voting_candidates['role-taker'] if voting_candidates else []) %}
+                {% if selected_meeting and selected_meeting.best_role_taker_id == candidate.id %}
+                    {% set found_winner.val = true %}
+                {% endif %}
+                <option value="{{ candidate.id }}" {% if selected_meeting and selected_meeting.best_role_taker_id == candidate.id %}selected{% endif %}>{{ candidate.name }}</option>
+                {% endfor %}
+                {% if selected_meeting and selected_meeting.best_role_taker_id and not found_winner.val and selected_meeting.best_role_taker %}
+                <option value="{{ selected_meeting.best_role_taker_id }}" selected>{{ selected_meeting.best_role_taker.Name }}</option>
+                {% endif %}
+            </select>
+        </div>
         <div class="meta-item full-width">
             <span><strong>Media URL:</strong></span>
             <input type="url" 

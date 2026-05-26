@@ -1,0 +1,90 @@
+{% extends "speech_logs.html" %}
+{% from "partials/_speech_log_macros.html" import render_log_card %}
+
+{% block speech_view_title %}Search Results - "{{ request.args.get('q', '') }}"{% endblock %}
+
+{% block speech_log_toolbar %}
+    <div class="filters-container">
+        <div class="filter-row-premium">
+            <div class="search-container filter-group-premium" style="flex-grow: 1;">
+                <form method="GET" action="{{ url_for('speech_logs_bp.show_speech_logs') }}" id="global-search-form" style="display: flex; align-items: center; position: relative; width: 100%; max-width: 400px;">
+                    <input type="hidden" name="view_mode" value="search">
+                    <input type="text" name="q" class="search-box" placeholder="Search sessions (e.g. name, role)..." value="{{ request.args.get('q', '') }}" style="width: 100%; padding-left: 35px; border-radius: 6px; border: 1px solid #ddd; height: 38px; box-sizing: border-box; font-family: 'Montserrat', sans-serif;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #888; pointer-events: none;"></i>
+                    {% if request.args.get('q') %}
+                    <button type="button" class="clear-search-btn" onclick="window.location.href='{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}'" style="right: 12px; font-size: 22px;">&times;</button>
+                    {% endif %}
+                </form>
+            </div>
+            
+            <div class="view-mode-toggle">
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn-view-control btn-member-view">
+                    <i class="fas fa-user-circle"></i> Member
+                </a>
+                {% if can_view_all %}
+                <a href="{{ url_for('speech_logs_bp.show_project_view') }}" class="btn-view-control btn-project-view">
+                    <i class="fas fa-chart-line"></i> Project
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block speech_log_main %}
+    <div class="search-results-header" style="margin-bottom: 20px;">
+        <h2 style="color: #2d3748; font-weight: 600; font-family: 'Montserrat', sans-serif;">
+            Search Results for <span style="color: #772432;">"{{ request.args.get('q', '') }}"</span>
+        </h2>
+    </div>
+
+    {% if grouped_logs and grouped_logs.get('Search Results') %}
+        <div class="search-results-table-container" style="overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <table class="table" style="width: 100%; border-collapse: collapse; text-align: left; font-family: 'Montserrat', sans-serif;">
+                <thead>
+                    <tr style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0; color: #4a5568;">
+                        <th style="padding: 12px 15px; font-weight: 600;">Meeting</th>
+                        <th style="padding: 12px 15px; font-weight: 600;">Date</th>
+                        <th style="padding: 12px 15px; font-weight: 600;">Member</th>
+                        <th style="padding: 12px 15px; font-weight: 600;">Role</th>
+                        <th style="padding: 12px 15px; font-weight: 600;">Project Code</th>
+                        <th style="padding: 12px 15px; font-weight: 600;">Speech Title</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in grouped_logs.get('Search Results') %}
+                    <tr style="border-bottom: 1px solid #e2e8f0; transition: background-color 0.2s; cursor: pointer;" onmouseover="this.style.backgroundColor='#f1f5f9';" onmouseout="this.style.backgroundColor='transparent';" onclick="{% if log.meeting %}window.location.href='{{ url_for('agenda_bp.agenda', meeting_id=log.meeting.id) }}'{% endif %}">
+                        <td style="padding: 12px 15px;">{{ log.meeting.Meeting_Number if log.meeting else '' }}</td>
+                        <td style="padding: 12px 15px; white-space: nowrap;">{{ log.meeting.Meeting_Date.strftime('%b %d, %Y') if log.meeting and log.meeting.Meeting_Date else '' }}</td>
+                        <td style="padding: 12px 15px;">
+                            {% if log._cached_owners %}
+                                {{ log._cached_owners | map(attribute='Name') | join(', ') }}
+                            {% elif log.owners %}
+                                {{ log.owners | map(attribute='Name') | join(', ') }}
+                            {% elif log.owner %}
+                                {{ log.owner.Name }}
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 15px;">
+                            {{ log.session_type.role.name if log.session_type and log.session_type.role else (log.session_type.Title if log.session_type else 'Speech') }}
+                        </td>
+                        <td style="padding: 12px 15px;">{{ log.project_code or '' }}</td>
+                        <td style="padding: 12px 15px;">{{ log.Session_Title or '' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="no-search-results" style="text-align: center; padding: 60px 20px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 20px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);">
+            <div style="font-size: 48px; color: #cbd5e1; margin-bottom: 15px;">
+                <i class="fas fa-search-minus"></i>
+            </div>
+            <h3 style="margin-bottom: 10px; color: #4a5568; font-family: 'Montserrat', sans-serif;">No activities found</h3>
+            <p style="color: #718096; max-width: 500px; margin: 0 auto 20px;">We couldn't find any activities matching "{{ request.args.get('q', '') }}". Try searching for another contact name, role, project code, or meeting number.</p>
+            <a href="{{ url_for('speech_logs_bp.show_speech_logs', view_mode='member') }}" class="btn btn-primary" style="min-width: 150px; background-color: #772432;">
+                Go Back to Journal
+            </a>
+        </div>
+    {% endif %}
+{% endblock %}

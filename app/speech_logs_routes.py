@@ -120,6 +120,87 @@ def _attach_owners(logs):
         l._cached_owner_targets = targets_map.get(l.id, {})
 
 
+def _search_logs(query_str, can_view_all, current_club_id):
+    """
+    Search session logs matching the given query string.
+    Supports multiple keywords (AND combination of OR clauses for each keyword).
+    """
+    if not query_str:
+        return []
+        
+    keywords = query_str.strip().split()
+    if not keywords:
+        return []
+        
+    # Start with base query for the current club
+    query = db.session.query(SessionLog).options(
+        joinedload(SessionLog.media),
+        joinedload(SessionLog.session_type).joinedload(SessionType.role),
+        joinedload(SessionLog.meeting),
+        joinedload(SessionLog.project)
+    ).join(SessionType).join(MeetingRole).join(Meeting, SessionLog.meeting_id == Meeting.id).filter(
+        MeetingRole.name.isnot(None),
+        MeetingRole.name != '',
+        MeetingRole.type.in_(['standard', 'club-specific']),
+        Meeting.club_id == current_club_id
+    )
+    
+    # Outer join to retrieve owners
+    query = query.outerjoin(
+        OwnerMeetingRoles,
+        or_(
+            SessionLog.id == OwnerMeetingRoles.session_log_id,
+            db.and_(
+                OwnerMeetingRoles.session_log_id.is_(None),
+                SessionLog.meeting_id == OwnerMeetingRoles.meeting_id,
+                SessionType.role_id == OwnerMeetingRoles.role_id
+            )
+        )
+    ).outerjoin(
+        Contact,
+        OwnerMeetingRoles.contact_id == Contact.id
+    )
+    
+    # Outer join to retrieve Pathway and PathwayProject for dynamically constructed project codes
+    query = query.outerjoin(PathwayProject, SessionLog.Project_ID == PathwayProject.project_id) \
+                 .outerjoin(Pathway, PathwayProject.path_id == Pathway.id)
+    
+    # Add guest check (if user is guest, restrict finished meetings)
+    is_guest = False
+    try:
+        if not current_user.is_authenticated or \
+           (hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'Guest'):
+            is_guest = True
+    except (RuntimeError, AttributeError):
+        pass
+    if is_guest:
+        query = query.filter(Meeting.status != 'finished')
+        
+    # Build the filters for each keyword
+    for kw in keywords:
+        kw_like = f"%{kw}%"
+        
+        # Build conditions for this keyword
+        conds = [
+            Contact.Name.like(kw_like),
+            Contact.first_name.like(kw_like),
+            Contact.last_name.like(kw_like),
+            SessionLog.Session_Title.like(kw_like),
+            MeetingRole.name.like(kw_like),
+            SessionType.Title.like(kw_like),
+            SessionLog.project_code.like(kw_like),
+            db.cast(Meeting.Meeting_Number, db.String).like(kw_like),
+            db.func.concat(db.func.coalesce(Pathway.abbr, ''), db.func.coalesce(PathwayProject.code, '')).like(kw_like)
+        ]
+        
+        query = query.filter(or_(*conds))
+        
+    # Retrieve all matched logs, order by meeting number desc
+    results = query.order_by(Meeting.Meeting_Number.desc()).all()
+    
+    return results
+
+
 def _get_view_settings():
     """
     Determine view permissions and mode.
@@ -128,16 +209,14 @@ def _get_view_settings():
     can_view_all = is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL)
     view_mode = request.args.get('view_mode', 'member')
     
-    # NEW: Force Admin View for SysAdmin (they should not see the member 'Journal' view)
-    is_sysadmin = current_user.is_authenticated and hasattr(current_user, 'primary_role_name') and current_user.primary_role_name == 'SysAdmin'
-    
-    if is_sysadmin:
-        view_mode = 'admin'
-        is_member_view = False
-    elif can_view_all and view_mode == 'admin':
-        is_member_view = False
-    else:
-        is_member_view = True
+    if view_mode == 'admin':
+        view_mode = 'member'
+        
+    q = request.args.get('q', '').strip()
+    if q and can_view_all:
+        view_mode = 'search'
+        
+    is_member_view = (view_mode in ('member', 'search'))
     
     return can_view_all, view_mode, is_member_view
 
@@ -614,7 +693,7 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
             processed_roles.add(dedup_key)
         
         # Apply filters using model method
-        if not log.matches_filters(
+        if view_mode != 'search' and not log.matches_filters(
             pathway=filters['pathway'],
             level=filters['level'],
             status=filters['status'],
@@ -624,7 +703,7 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
             
         # Additional Date-Based Filter for Generic Roles
         # If it's a generic role (no project ID) and we have a pathway filter active
-        if log_type == 'role' and not log.Project_ID and filters['pathway'] and filters['pathway'] != 'all':
+        if view_mode != 'search' and log_type == 'role' and not log.Project_ID and filters['pathway'] and filters['pathway'] != 'all':
             # Strict mode: If date range is None (path not found/valid), hide generic roles
             if path_start_date is None and path_end_date is None:
                  continue
@@ -639,11 +718,13 @@ def _process_logs(all_logs, filters, pathway_cache, view_mode='member'):
                     continue
         
         # Special check for speeches without project
-        if filters['pathway'] and log_type == 'speech' and not log.Project_ID:
+        if view_mode != 'search' and filters['pathway'] and log_type == 'speech' and not log.Project_ID:
             continue
         
         # Add to group
-        if view_mode == 'admin':
+        if view_mode == 'search':
+            group_key = 'Search Results'
+        elif view_mode == 'admin':
             # Group by Award Category for Meeting View
             category = 'Other'
             if log.session_type and log.session_type.role and log.session_type.role.award_category:
@@ -1519,7 +1600,12 @@ def show_speech_logs():
     dropdown_data = get_dropdown_metadata()
     
     # 5. Fetch logs
-    all_logs = _fetch_logs_with_filters(filters)
+    if view_mode == 'search':
+        from .club_context import get_current_club_id
+        club_id = get_current_club_id()
+        all_logs = _search_logs(request.args.get('q', ''), can_view_all, club_id)
+    else:
+        all_logs = _fetch_logs_with_filters(filters)
     _attach_owners(all_logs)
     
     # 6. Build pathway cache for performance
@@ -1531,7 +1617,7 @@ def show_speech_logs():
     sorted_grouped_logs = _sort_and_consolidate(grouped_logs)
     
     # 7.1 Filter for display in Member View: Only show logs linked to non-generic projects
-    if is_member_view:
+    if is_member_view and view_mode != 'search':
         filtered_logs = {}
         for group, logs in sorted_grouped_logs.items():
             group_filtered = []
@@ -1594,7 +1680,10 @@ def show_speech_logs():
         planner_projects = [(level, projects_by_level[level]) for level in sorted_levels]
 
     # 12. Render template
-    template_name = 'member_view.html' if is_member_view else 'meeting_view.html'
+    if view_mode == 'search':
+        template_name = 'search_view.html'
+    else:
+        template_name = 'member_view.html'
     return render_template(
         template_name,
         meetings=planner_meetings,            # For Planner Modal
@@ -1634,8 +1723,8 @@ def show_project_view():
     Accessible to admins mainly, but logic could allow others.
     """
     if not is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL):
-        # Or redirect to member view if not admin? 
-        pass 
+        from flask import redirect, url_for
+        return redirect(url_for('speech_logs_bp.show_speech_logs', view_mode='member')) 
              
     from .utils import get_terms, get_active_term, get_date_ranges_for_terms
              
@@ -1781,7 +1870,8 @@ def show_project_view():
         max_count=current_max_count,
         active_pathways=active_pathways,
         inactive_pathways=inactive_pathways,
-        selected_pathway=selected_pathway_id
+        selected_pathway=selected_pathway_id,
+        can_view_all=True
     )
 
 

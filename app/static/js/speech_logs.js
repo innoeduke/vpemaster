@@ -157,18 +157,7 @@ function completeSpeechLog(button, logId) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        const statusContainer = button.parentNode;
-        // Replace buttons with the checkmark icon
-        statusContainer.innerHTML =
-          '<i class="fas fa-check-circle" title="Completed"></i>';
-
-        // Update progress summary if provided
-        if (data.progress_html && data.level) {
-          const progressContainer = document.getElementById("progress-" + data.level);
-          if (progressContainer) {
-            progressContainer.innerHTML = data.progress_html;
-          }
-        }
+        location.reload();
       } else {
         alert("Error updating status: " + data.message);
       }
@@ -195,17 +184,7 @@ function suspendSpeechLog(button, logId) {
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {
-        // Update button/status UI without reload
-        const statusContainer = button.parentNode;
-        statusContainer.innerHTML = '<span class="status-delivered">Delivered</span>';
-
-        // Update progress summary if provided
-        if (data.progress_html && data.level) {
-          const progressContainer = document.getElementById("progress-" + data.level);
-          if (progressContainer) {
-            progressContainer.innerHTML = data.progress_html;
-          }
-        }
+        location.reload();
       } else {
         alert("Error suspending status: " + data.message);
       }

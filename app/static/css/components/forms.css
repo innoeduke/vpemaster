@@ -4,6 +4,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-height: 30px;
   /* Reduced for mobile */
   padding: 4px 12px;
