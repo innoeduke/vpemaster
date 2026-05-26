@@ -307,6 +307,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const viewDetailsBtn = document.getElementById("view-details-btn");
     if (viewDetailsBtn) {
       viewDetailsBtn.addEventListener("click", () => {
+        const currentStatus = meetingStatusBtn ? meetingStatusBtn.dataset.currentStatus : '';
+        const isFinished = (currentStatus === 'finished');
+        const awardSelects = [
+          "edit-best-speaker",
+          "edit-best-evaluator",
+          "edit-best-table-topic",
+          "edit-best-role-taker"
+        ];
+        awardSelects.forEach(id => {
+          const select = document.getElementById(id);
+          if (select) {
+            select.disabled = !isFinished;
+          }
+        });
         document.getElementById("meetingDetailsModal").style.display = "flex";
       });
     }
@@ -490,6 +504,10 @@ document.addEventListener("DOMContentLoaded", () => {
         wod: document.getElementById("edit-wod").value,
         media_url: document.getElementById("edit-media-url").value,
         manager_id: document.getElementById("edit-manager").value,
+        best_speaker_id: document.getElementById("edit-best-speaker") ? document.getElementById("edit-best-speaker").value : null,
+        best_evaluator_id: document.getElementById("edit-best-evaluator") ? document.getElementById("edit-best-evaluator").value : null,
+        best_table_topic_id: document.getElementById("edit-best-table-topic") ? document.getElementById("edit-best-table-topic").value : null,
+        best_role_taker_id: document.getElementById("edit-best-role-taker") ? document.getElementById("edit-best-role-taker").value : null,
       }),
     })
       .then((response) => response.json())
