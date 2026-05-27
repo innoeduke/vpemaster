@@ -244,5 +244,44 @@ class RouteAccessTestCase(unittest.TestCase):
         # Should default to the running meeting (102) if one exists
         self.assertIn(b'Meeting 102', response.data)
 
+    def test_voting_page_date_persistence_and_bypass(self):
+        import json
+        # 1. Test that when meeting_id is missing, but there is a meeting on the meeting date (today),
+        # an authorized user (staff) defaults to today's meeting (which is m_unpublished with number 100).
+        self.login('staff@test.com', 'password')
+        response = self.client.get('/voting')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(f'"selectedMeetingId": {self.m_unpublished.id}'.encode(), response.data)
+        # And it bypasses the status notice because of the status override (normally shows under_planning.webp)
+        self.assertNotIn(b'under_planning.webp', response.data)
+
+        # Test casting a vote on today's unpublished meeting
+        response = self.client.post('/voting/vote', data=json.dumps({
+            'meeting_id': self.m_unpublished.id,
+            'contact_id': self.staff_contact.id,
+            'award_category': 'speaker'
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        res_data = json.loads(response.data)
+        self.assertTrue(res_data['success'])
+        self.logout()
+        db.session.remove()
+
+        # 2. Test that a regular user (user@test.com) who does NOT have VOTING_VIEW_RESULTS permission
+        # still sees the notice image for today's unpublished meeting.
+        self.login('user@test.com', 'password')
+        response = self.client.get(f'/voting/{self.m_unpublished.id}')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'under_planning.webp', response.data)
+
+        # And cannot cast a vote on it
+        response = self.client.post('/voting/vote', data=json.dumps({
+            'meeting_id': self.m_unpublished.id,
+            'contact_id': self.user_contact.id,
+            'award_category': 'speaker'
+        }), content_type='application/json')
+        self.assertEqual(response.status_code, 403)
+        self.logout()
+
 if __name__ == '__main__':
     unittest.main()

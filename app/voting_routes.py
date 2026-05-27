@@ -253,13 +253,25 @@ def _get_voting_page_context(meeting_id):
         columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number])
  
     if not meeting_id:
-        # Prefer the default meeting IF it is in our filtered list (running/finished)
-        valid_ids = [m[0] for m in upcoming_meetings]
-        if default_meeting_id and default_meeting_id in valid_ids:
-            meeting_id = default_meeting_id
+        # Stay on the meeting of today's date if the user has VOTING_VIEW_RESULTS permission
+        today_date = datetime.today().date()
+        today_meeting = None
+        if is_authorized(Permissions.VOTING_VIEW_RESULTS):
+            today_meeting_query = Meeting.query.filter(Meeting.Meeting_Date == today_date)
+            if club_id:
+                today_meeting_query = today_meeting_query.filter(Meeting.club_id == club_id)
+            today_meeting = today_meeting_query.first()
+
+        if today_meeting:
+            meeting_id = today_meeting.id
         else:
-            # Otherwise take the most recent meeting from the list
-            meeting_id = upcoming_meetings[0][0] if upcoming_meetings else None
+            # Prefer the default meeting IF it is in our filtered list (running/finished)
+            valid_ids = [m[0] for m in upcoming_meetings]
+            if default_meeting_id and default_meeting_id in valid_ids:
+                meeting_id = default_meeting_id
+            else:
+                # Otherwise take the most recent meeting from the list
+                meeting_id = upcoming_meetings[0][0] if upcoming_meetings else None
  
     context = {
         'upcoming_meetings': upcoming_meetings,
@@ -286,6 +298,18 @@ def _get_voting_page_context(meeting_id):
     selected_meeting = Meeting.query.get(meeting_id)
     if not selected_meeting or (club_id and selected_meeting.club_id != club_id):
         return context
+
+    # Check if we should override status for display and bypass notices
+    is_meeting_date = selected_meeting.Meeting_Date == datetime.today().date()
+    has_voting_view_results = is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=selected_meeting)
+    
+    if is_meeting_date and has_voting_view_results:
+        # Expunge from session so in-memory changes are never committed
+        db.session.expunge(selected_meeting)
+        # Override status to 'running' if it's not already 'running' or 'finished'
+        # so that it displays the voting form correctly and allows submissions.
+        if selected_meeting.status not in ('running', 'finished'):
+            selected_meeting.status = 'running'
 
     user, current_user_contact_id = get_current_user_info()
     context['current_user_contact_id'] = current_user_contact_id
@@ -393,7 +417,10 @@ def batch_vote():
     if not meeting:
         return jsonify(success=False, message="Meeting not found."), 404
 
-    if meeting.status != 'running':
+    is_meeting_date = meeting.Meeting_Date == datetime.today().date()
+    has_voting_view_results = is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=meeting)
+
+    if meeting.status != 'running' and not (meeting.status != 'finished' and is_meeting_date and has_voting_view_results):
         return jsonify(success=False, message="Voting is not active for this meeting."), 403
 
     # Determine voter identity
@@ -467,7 +494,10 @@ def vote_for_award():
 
     is_admin = is_authorized(Permissions.BOOKING_ASSIGN_ALL)
 
-    if not (meeting.status == 'running' or (meeting.status == 'finished' and is_admin)):
+    is_meeting_date = meeting.Meeting_Date == datetime.today().date()
+    has_voting_view_results = is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=meeting)
+
+    if not (meeting.status == 'running' or (meeting.status == 'finished' and is_admin) or (meeting.status != 'finished' and is_meeting_date and has_voting_view_results)):
         return jsonify(success=False, message="Voting is not active for this meeting."), 403
 
     # Determine voter identity
