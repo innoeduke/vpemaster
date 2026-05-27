@@ -3,7 +3,14 @@ import click
 from flask.cli import with_appcontext
 from ..services.backup_service import BackupService
 
-@click.group('resources')
+class DefaultGroup(click.Group):
+    def resolve_command(self, ctx, args):
+        if args and args[0] not in self.commands:
+            if not args[0].startswith('-'):
+                args.insert(0, 'all')
+        return super().resolve_command(ctx, args)
+
+@click.group('resources', cls=DefaultGroup)
 def resources():
     """Database and resource backup management."""
     pass

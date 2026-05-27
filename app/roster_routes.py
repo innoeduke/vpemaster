@@ -298,9 +298,32 @@ def create_roster_entry():
     if not ticket_obj:
          return jsonify({'error': f'Invalid ticket id: {ticket_id}'}), 400
 
+    order_number = data.get('order_number') if data.get('order_number') not in [None, '', 'null'] else None
+
+    existing_entry = None
+    if 'contact_id' in data and data['contact_id']:
+        existing_entry = Roster.query.filter_by(
+            meeting_id=data['meeting_id'],
+            contact_id=data['contact_id']
+        ).filter(Roster.order_number.is_(None)).first()
+
+    if existing_entry:
+        existing_entry.order_number = order_number
+        existing_entry.ticket_id = ticket_obj.id
+        existing_entry.quantity = int(data.get('quantity', 1))
+        if 'contact_type' in data:
+            existing_entry.contact_type = data['contact_type']
+        
+        try:
+            db.session.commit()
+            return jsonify({'message': 'Entry created successfully', 'id': existing_entry.id}), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'error': str(e)}), 500
+
     new_entry = Roster(
         meeting_id=data['meeting_id'],
-        order_number=data.get('order_number') if data.get('order_number') not in [None, '', 'null'] else None,
+        order_number=order_number,
         ticket_id=ticket_obj.id,
         quantity=int(data.get('quantity', 1))
     )

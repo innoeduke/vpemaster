@@ -2500,7 +2500,7 @@ async function loadUsersAsync() {
           <td>${user.phone || ''}</td>
           <td>${user.mentor_name}</td>
           <td>${pathHtml}</td>
-          <td>${user.next_project}</td>
+          <td>${(user.next_project && user.next_project !== 'null') ? user.next_project : '-'}</td>
           <td>${actionsHtml}</td>
         `;
 

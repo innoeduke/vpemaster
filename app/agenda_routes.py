@@ -1274,7 +1274,7 @@ def _upsert_meeting_record(data, media_id):
                 roster_entry = Roster(
                     meeting_id=meeting.id,
                     contact_id=membership.contact_id,
-                    order_number=1000 + i,
+                    order_number=None,
                     ticket=officer_ticket,
                     contact_type='Officer'
                 )
