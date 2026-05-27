@@ -1,0 +1,563 @@
+/* CSS stylesheet for VPEMaster File Upload Feature */
+
+/* --- Glassmorphism Containers & Cards --- */
+.uploads-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px 15px;
+}
+
+.premium-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px 0 rgba(0, 65, 101, 0.08);
+    padding: 24px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    margin-bottom: 25px;
+}
+
+.premium-card:hover {
+    box-shadow: 0 12px 40px 0 rgba(0, 65, 101, 0.12);
+}
+
+.uploads-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.uploads-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #004165;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.uploads-title i {
+    font-size: 0.8em;
+    opacity: 0.9;
+}
+
+/* --- Badges --- */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: 30px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    gap: 6px;
+}
+
+.status-badge.active {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.status-badge.expired {
+    background-color: rgba(149, 165, 166, 0.15);
+    color: #7f8c8d;
+    border: 1px solid rgba(149, 165, 166, 0.3);
+}
+
+.status-badge.disabled {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+/* --- Manage Upload Links Grid --- */
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 25px;
+}
+
+.link-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.link-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.link-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.link-description {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    margin-bottom: 20px;
+    flex-grow: 1;
+    line-height: 1.5;
+}
+
+.link-meta {
+    font-size: 0.85rem;
+    color: #95a5a6;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.link-meta i {
+    width: 16px;
+    text-align: center;
+    color: #004165;
+}
+
+.link-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 15px;
+    border-top: 1px solid #ecf0f1;
+    padding-top: 15px;
+    flex-wrap: wrap;
+}
+
+/* --- Form Switch Styling --- */
+.switch-container {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.switch-input {
+    display: none;
+}
+
+.switch-label {
+    position: relative;
+    width: 44px;
+    height: 22px;
+    background-color: #bdc3c7;
+    border-radius: 20px;
+    transition: background-color 0.3s;
+    margin-right: 8px;
+}
+
+.switch-label::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background-color: white;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.switch-input:checked + .switch-label {
+    background-color: #2ecc71;
+}
+
+.switch-input:checked + .switch-label::after {
+    transform: translateX(22px);
+}
+
+/* --- Dropzone Area --- */
+.dropzone-area {
+    border: 2px dashed rgba(0, 65, 101, 0.3);
+    border-radius: 16px;
+    padding: 50px 30px;
+    text-align: center;
+    background: rgba(244, 246, 249, 0.5);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 30px;
+}
+
+.dropzone-area:hover, .dropzone-area.dragover {
+    border-color: #004165;
+    background: rgba(0, 65, 101, 0.04);
+}
+
+.dropzone-icon {
+    font-size: 3rem;
+    color: #004165;
+    margin-bottom: 15px;
+    animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-8px); }
+    60% { transform: translateY(-4px); }
+}
+
+.dropzone-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #34495e;
+    margin-bottom: 8px;
+}
+
+.dropzone-hint {
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+/* --- Files Upload Queue & View List --- */
+.files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 25px;
+}
+
+.file-card {
+    position: relative;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.file-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.05);
+}
+
+.file-card.selected {
+    border-color: #004165;
+    background-color: rgba(0, 65, 101, 0.02);
+}
+
+.file-card-checkbox {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    z-index: 5;
+}
+
+.file-icon {
+    font-size: 2.5rem;
+    color: #004165;
+    margin-bottom: 12px;
+}
+
+.file-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2c3e50;
+    word-break: break-all;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 36px;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.file-size {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    margin-bottom: 12px;
+}
+
+.file-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: auto;
+    width: 100%;
+}
+
+.file-card-actions .btn {
+    flex: 1;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+}
+
+/* --- Floating Bulk Actions Bar --- */
+.floating-actions-bar {
+    position: fixed;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 65, 101, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    padding: 12px 30px;
+    border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    z-index: 999;
+}
+
+.floating-actions-bar.show {
+    bottom: 25px;
+}
+
+.floating-bar-text {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* --- Progress Bars & Overlays --- */
+.progress-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 65, 101, 0.7);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.progress-card {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 8px;
+    background-color: #ecf0f1;
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 20px 0 10px 0;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #004165, #00779b);
+    transition: width 0.1s ease;
+    border-radius: 10px;
+}
+
+.progress-text {
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+/* --- Click to Copy Tooltip --- */
+.copy-btn-container {
+    position: relative;
+    display: inline-block;
+}
+
+.copy-tooltip {
+    visibility: hidden;
+    background-color: #2c3e50;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 10px;
+    position: absolute;
+    z-index: 10;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -40px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.copy-tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #2c3e50 transparent transparent transparent;
+}
+
+.copy-btn-container:hover .copy-tooltip.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* --- Success / Complete State --- */
+.success-checkmark-wrapper {
+    margin: 30px 0;
+    text-align: center;
+}
+
+.success-icon {
+    font-size: 4.5rem;
+    color: #2ecc71;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.upload-success-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+/* --- Modal Form Input Alignment & Heights --- */
+.modal-content input.form-control {
+    height: 40px !important;
+    box-sizing: border-box !important;
+    padding: 8px 12px !important;
+}
+
+/* --- Card Actions Button Styles --- */
+.link-actions {
+    display: flex !important;
+    gap: 8px !important;
+    width: 100% !important;
+    justify-content: flex-start !important;
+    margin-top: 15px !important;
+    border-top: 1px solid #ecf0f1 !important;
+    padding-top: 15px !important;
+}
+
+.link-actions .btn {
+    height: 38px !important;
+    padding: 8px 16px !important;
+    font-size: 0.85rem !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: auto !important;
+    margin: 0 !important;
+    flex: 0 0 auto;
+}
+
+.link-actions .btn-primary {
+    background-color: #772432 !important;
+    color: white !important;
+    border: none !important;
+    flex: 1 1 auto; /* View Files button can grow */
+}
+
+.link-actions .btn-primary:hover {
+    background-color: #5a1b26 !important;
+}
+
+.link-actions .btn-secondary {
+    background-color: #f1f2f6 !important;
+    color: #2c3e50 !important;
+    border: 1px solid #dcdde1 !important;
+}
+
+.link-actions .btn-secondary:hover {
+    background-color: #dcdde1 !important;
+    color: #2c3e50 !important;
+}
+
+.link-actions .btn-danger {
+    background-color: #d63031 !important;
+    color: white !important;
+    border: 1px solid #d63031 !important;
+}
+
+.link-actions .btn-danger:hover {
+    background-color: #ff7675 !important;
+}
+
+/* --- Responsive fixes --- */
+@media (max-width: 576px) {
+    .uploads-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 12px;
+    }
+    .uploads-title {
+        justify-content: center;
+        font-size: 1.5rem !important;
+    }
+    .uploads-header .note {
+        font-size: 0.8rem !important;
+        line-height: 1.4 !important;
+        color: #7f8c8d !important;
+        font-style: normal !important;
+        margin: 8px auto 0 auto !important;
+        max-width: 320px;
+        display: block;
+    }
+    .uploads-header .btn {
+        width: 100%;
+    }
+    .links-grid {
+        grid-template-columns: 1fr;
+    }
+    .modal-content label {
+        font-size: 0.8rem !important;
+        white-space: nowrap;
+    }
+    .link-card {
+        padding: 16px !important;
+    }
+    .link-card-header {
+        align-items: center !important;
+    }
+    .link-title {
+        font-size: 1.1rem !important;
+    }
+    .link-actions .btn {
+        padding: 8px 4px !important;
+        font-size: 0.8rem !important;
+    }
+    .link-actions .btn-primary {
+        flex: 1 1 auto !important;
+    }
+    .link-actions .btn-secondary,
+    .link-actions .btn-danger {
+        flex: 0 0 50px !important;
+    }
+}

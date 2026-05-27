@@ -114,6 +114,15 @@
         </li>
         {% endif %}
 
+        {% if is_authorized(Permissions.FILE_UPLOAD_MANAGE) %}
+        <li class="{% if request.endpoint and request.endpoint.startswith('uploads_bp') %}active{% endif %}">
+          <a href="{{ url_for('uploads_bp.manage_uploads') }}" title="Manage upload links and retrieve files">
+            <i class="fas fa-cloud-upload-alt nav-icon"></i>
+            <span>Upload Links</span>
+          </a>
+        </li>
+        {% endif %}
+
         {% if is_authorized(Permissions.SETTINGS_VIEW_ALL) and current_user.primary_role_name != 'Guest' %}
         <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}active{% endif %}">
           <a href="{{ url_for('settings_bp.settings', default_tab='user-settings') }}"

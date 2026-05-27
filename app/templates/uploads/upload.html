@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>{% if error_message %}Upload Error{% else %}Upload Files - {{ link.title }}{% endif %}</title>
+  <link rel="preconnect" href="https://fonts.loli.net">
+  <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
+  <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+  {% assets "css_all" %}
+  <link rel="stylesheet" href="{{ ASSET_URL }}">
+  {% endassets %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}" />
+  <style>
+      body {
+          background-color: #f4f4f9;
+          font-family: 'Inter', sans-serif;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+          margin: 0;
+      }
+      .upload-wrapper {
+          width: 100%;
+          max-width: 600px;
+      }
+      .form-actions-row {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 20px;
+      }
+      .upload-queue-item {
+          display: flex;
+          align-items: center;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          padding: 10px 15px;
+          border-radius: 8px;
+          margin-bottom: 8px;
+          text-align: left;
+      }
+      .queue-item-name {
+          flex-grow: 1;
+          font-size: 0.85rem;
+          font-weight: 600;
+          color: #2c3e50;
+          word-break: break-all;
+          margin-right: 10px;
+      }
+      .queue-item-size {
+          font-size: 0.75rem;
+          color: #7f8c8d;
+          white-space: nowrap;
+          margin-right: 15px;
+      }
+      .queue-item-progress {
+          width: 80px;
+          height: 6px;
+          background-color: #e2e8f0;
+          border-radius: 4px;
+          overflow: hidden;
+          margin-right: 15px;
+          flex-shrink: 0;
+          display: none;
+      }
+      .queue-item-progress-fill {
+          height: 100%;
+          width: 0%;
+          background-color: #2ecc71;
+          transition: width 0.1s ease;
+      }
+      .queue-item-status-text {
+          font-size: 0.75rem;
+          font-weight: bold;
+          color: #7f8c8d;
+          margin-right: 10px;
+          display: none;
+      }
+  </style>
+</head>
+
+<body>
+  <div class="upload-wrapper">
+    <div class="text-center" style="margin-bottom: 25px;">
+        <img src="{{ url_for('static', filename='images/logo.webp') }}" alt="Memory Maker Logo" style="width: 60px; height: 60px; margin-bottom: 10px;" />
+        <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 700; color: #004165; margin: 0; font-size: 1.5rem;">Memory Maker</h2>
+    </div>
+
+    {% if error_message %}
+    <div class="premium-card text-center" style="padding: 40px 20px; border-top: 4px solid #e74c3c;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 3.5rem; color: #e74c3c; margin-bottom: 20px;"></i>
+        <h2 style="color: #2c3e50; font-size: 1.3rem; margin-bottom: 10px;">Link Unavailable</h2>
+        <p style="color: #7f8c8d; margin-bottom: 25px; line-height: 1.5;">{{ error_message }}</p>
+        <a href="/" class="btn btn-secondary">Go to Homepage</a>
+    </div>
+    {% else %}
+    
+    <!-- Uploader Card -->
+    <div class="premium-card" id="uploaderCard">
+        <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 600; color: #2c3e50; font-size: 1.25rem; margin-top: 0; margin-bottom: 5px;">{{ link.title }}</h2>
+        {% if link.description %}
+        <p style="color: #7f8c8d; font-size: 0.9rem; margin-bottom: 20px; line-height: 1.4;">{{ link.description }}</p>
+        {% endif %}
+        
+        {% if link.meeting %}
+        <div class="note" style="margin-bottom: 15px;">
+            <i class="fas fa-calendar-alt" style="color: #004165; margin-right: 5px;"></i> Linked with <strong>Meeting #{{ link.meeting.Meeting_Number }}</strong>
+        </div>
+        {% endif %}
+
+        <!-- Inline Warning Container -->
+        <div id="inlineWarning" style="display: none; padding: 12px 15px; background-color: #fdf2f2; border: 1px solid #fbd5d5; border-radius: 8px; color: #9b1c1c; font-size: 0.875rem; margin-bottom: 15px; align-items: start; gap: 10px;">
+            <i class="fas fa-exclamation-circle" style="margin-top: 2px; flex-shrink: 0; color: #f05252;"></i>
+            <div id="inlineWarningText" style="flex-grow: 1; word-break: break-word; text-align: left;"></div>
+            <button type="button" onclick="hideWarning()" style="background: none; border: none; padding: 0; color: #9b1c1c; cursor: pointer; font-size: 1.25rem; line-height: 1; opacity: 0.7; font-weight: bold; margin-left: 5px;" title="Dismiss warning">&times;</button>
+        </div>
+
+        <!-- Dropzone -->
+        <div id="dropzone" class="dropzone-area" onclick="triggerFileInput()">
+            <i class="fas fa-cloud-upload-alt dropzone-icon"></i>
+            <div class="dropzone-text">Drag & drop files here or click to browse</div>
+            <div class="dropzone-hint">
+                Supported: Photos, Documents, PDFs
+                {% if link.max_file_size %}
+                (max {{ link.max_file_size }} MB per file)
+                {% endif %}
+            </div>
+            <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileSelection(event)">
+        </div>
+
+        <!-- Selection Queue -->
+        <div id="queueContainer" style="display: none;">
+            <h4 style="margin-bottom: 10px; color: #2c3e50; font-size: 0.95rem; text-align: left;">Files to Upload (<span id="queueCount">0</span>)</h4>
+            <div id="queueItemsList" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
+            
+            <div class="form-actions-row">
+                <button type="button" class="btn btn-secondary" onclick="clearQueue()" id="clearQueueBtn">
+                    Clear List
+                </button>
+                <button type="button" class="btn btn-primary" onclick="startUpload()" id="uploadBtn">
+                    <i class="fas fa-upload"></i> Upload Files
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Card (Hidden by default) -->
+    <div class="premium-card text-center" id="successCard" style="display: none; padding: 40px 20px;">
+        <div class="success-checkmark-wrapper">
+            <i class="fas fa-check-circle success-icon"></i>
+        </div>
+        <h2 class="upload-success-title">Upload Complete!</h2>
+        <p style="color: #7f8c8d; margin-bottom: 25px;" id="successMsg">Files uploaded successfully.</p>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn btn-secondary" onclick="closePage()">Close Page</button>
+            <button class="btn btn-primary" onclick="resetUploader()">Upload More Files</button>
+        </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+      const code = "{{ link.code if link else '' }}";
+      const maxFileSizeMB = {{ link.max_file_size if (link and link.max_file_size is not none) else 'null' }};
+      const maxFilesAllowed = {{ link.max_files if (link and link.max_files is not none) else 'null' }};
+      
+      let uploadQueue = [];
+
+      // Setup dropzone drag & drop events
+      const dropzone = document.getElementById("dropzone");
+      if (dropzone) {
+          ['dragenter', 'dragover'].forEach(eventName => {
+              dropzone.addEventListener(eventName, (e) => {
+                  e.preventDefault();
+                  dropzone.classList.add('dragover');
+              }, false);
+          });
+
+          ['dragleave', 'drop'].forEach(eventName => {
+              dropzone.addEventListener(eventName, (e) => {
+                  e.preventDefault();
+                  dropzone.classList.remove('dragover');
+              }, false);
+          });
+
+          dropzone.addEventListener('drop', (e) => {
+              const dt = e.dataTransfer;
+              const files = dt.files;
+              addFilesToQueue(files);
+          }, false);
+      }
+
+      function triggerFileInput() {
+          document.getElementById("fileInput").click();
+      }
+
+      function handleFileSelection(event) {
+          const files = event.target.files;
+          addFilesToQueue(files);
+      }
+
+      function formatSize(bytes) {
+          if (bytes < 1024) return bytes + " B";
+          else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+          else return (bytes / 1048576).toFixed(1) + " MB";
+      }
+
+      function addFilesToQueue(files) {
+          hideWarning();
+          for (let i = 0; i < files.length; i++) {
+              const file = files[i];
+              
+              // Validate duplicate filename in queue
+              if (uploadQueue.some(q => q.name === file.name)) {
+                  continue; 
+              }
+              
+              // Client-side file size validation
+              if (maxFileSizeMB !== null) {
+                  const sizeInMB = file.size / (1024 * 1024);
+                  if (sizeInMB > maxFileSizeMB) {
+                      showWarning(`File '${file.name}' exceeds the size limit of ${maxFileSizeMB} MB.`);
+                      continue;
+                  }
+              }
+              
+              uploadQueue.push(file);
+          }
+          
+          // Client-side max files check
+          if (maxFilesAllowed !== null && uploadQueue.length > maxFilesAllowed) {
+              showWarning(`You can only upload up to ${maxFilesAllowed} files. Selected file list truncated.`);
+              uploadQueue = uploadQueue.slice(0, maxFilesAllowed);
+          }
+          
+          renderQueue();
+      }
+
+      function removeQueueItem(index) {
+          hideWarning();
+          uploadQueue.splice(index, 1);
+          renderQueue();
+      }
+
+      function clearQueue() {
+          hideWarning();
+          uploadQueue = [];
+          renderQueue();
+      }
+
+      function renderQueue() {
+          const queueContainer = document.getElementById("queueContainer");
+          const queueList = document.getElementById("queueItemsList");
+          const queueCount = document.getElementById("queueCount");
+          
+          queueList.innerHTML = "";
+          queueCount.textContent = uploadQueue.length;
+          
+          if (uploadQueue.length === 0) {
+              queueContainer.style.display = "none";
+              return;
+          }
+          
+          uploadQueue.forEach((file, index) => {
+              const item = document.createElement("div");
+              item.className = "upload-queue-item";
+              item.id = `queue-item-${index}`;
+              
+              item.innerHTML = `
+                  <span class="queue-item-name">${file.name}</span>
+                  <span class="queue-item-size">${formatSize(file.size)}</span>
+                  <div class="queue-item-progress" id="progress-container-${index}">
+                      <div class="queue-item-progress-fill" id="progress-fill-${index}"></div>
+                  </div>
+                  <span class="queue-item-status-text" id="status-text-${index}">Ready</span>
+                  <button type="button" class="icon-btn remove-btn" onclick="removeQueueItem(${index})" style="color: #e74c3c;">
+                      <i class="fas fa-times-circle"></i>
+                  </button>
+              `;
+              queueList.appendChild(item);
+          });
+          
+          queueContainer.style.display = "block";
+      }
+
+      function startUpload() {
+          if (uploadQueue.length === 0) return;
+          hideWarning();
+          
+          // Lock controls
+          document.getElementById("clearQueueBtn").disabled = true;
+          document.getElementById("uploadBtn").disabled = true;
+          document.getElementById("dropzone").style.pointerEvents = "none";
+          document.getElementById("dropzone").style.opacity = "0.6";
+          
+          // Remove remove buttons
+          const removeBtns = document.querySelectorAll(".remove-btn");
+          removeBtns.forEach(btn => btn.style.display = "none");
+          
+          // Show progress bars and status text
+          uploadQueue.forEach((_, index) => {
+              document.getElementById(`progress-container-${index}`).style.display = "block";
+              document.getElementById(`status-text-${index}`).style.display = "block";
+              document.getElementById(`status-text-${index}`).textContent = "Queued";
+          });
+          
+          uploadFileSequential(0);
+      }
+
+      function uploadFileSequential(index) {
+          if (index >= uploadQueue.length) {
+              // Upload completed!
+              setTimeout(() => {
+                  document.getElementById("uploaderCard").style.display = "none";
+                  document.getElementById("successCard").style.display = "block";
+                  document.getElementById("successMsg").textContent = `Uploaded ${uploadQueue.length} files successfully.`;
+              }, 600);
+              return;
+          }
+          
+          const file = uploadQueue[index];
+          const formData = new FormData();
+          formData.append("files[]", file);
+          
+          const xhr = new XMLHttpRequest();
+          xhr.open("POST", `/upload/${code}`, true);
+          
+          const progressFill = document.getElementById(`progress-fill-${index}`);
+          const statusText = document.getElementById(`status-text-${index}`);
+          
+          statusText.textContent = "Uploading...";
+          statusText.style.color = "#004165";
+          
+          xhr.upload.onprogress = function(e) {
+              if (e.lengthComputable) {
+                  const percent = Math.round((e.loaded / e.total) * 100);
+                  progressFill.style.width = percent + "%";
+              }
+          };
+          
+          xhr.onload = function() {
+              if (xhr.status === 200) {
+                  progressFill.style.width = "100%";
+                  statusText.textContent = "Success";
+                  statusText.style.color = "#2ecc71";
+                  
+                  // Proceed to next file
+                  uploadFileSequential(index + 1);
+              } else {
+                  let errMsg = "Failed";
+                  try {
+                      const res = JSON.parse(xhr.responseText);
+                      errMsg = res.error || "Failed";
+                  } catch(e) {}
+                  
+                  progressFill.style.backgroundColor = "#e74c3c";
+                  statusText.textContent = errMsg;
+                  statusText.style.color = "#e74c3c";
+                  
+                  // Unlock only upload controls so user can try fixing remaining files
+                  showWarning(`Failed to upload '${file.name}': ${errMsg}`);
+                  unlockControls();
+              }
+          };
+          
+          xhr.onerror = function() {
+              progressFill.style.backgroundColor = "#e74c3c";
+              statusText.textContent = "Network Error";
+              statusText.style.color = "#e74c3c";
+              showWarning(`Network error uploading file '${file.name}'.`);
+              unlockControls();
+          };
+          
+          xhr.send(formData);
+      }
+
+      function unlockControls() {
+          document.getElementById("clearQueueBtn").disabled = false;
+          document.getElementById("uploadBtn").disabled = false;
+          document.getElementById("dropzone").style.pointerEvents = "auto";
+          document.getElementById("dropzone").style.opacity = "1";
+          
+          // Re-show delete buttons
+          const removeBtns = document.querySelectorAll(".remove-btn");
+          removeBtns.forEach(btn => btn.style.display = "block");
+      }
+
+      function resetUploader() {
+          uploadQueue = [];
+          document.getElementById("fileInput").value = "";
+          renderQueue();
+          
+          // Reset controls look
+          unlockControls();
+          hideWarning();
+          
+          document.getElementById("successCard").style.display = "none";
+          document.getElementById("uploaderCard").style.display = "block";
+      }
+
+      function showWarning(message) {
+          const banner = document.getElementById("inlineWarning");
+          const bannerText = document.getElementById("inlineWarningText");
+          if (banner && bannerText) {
+              bannerText.textContent = message;
+              banner.style.display = "flex";
+              banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+      }
+
+      function hideWarning() {
+          const banner = document.getElementById("inlineWarning");
+          if (banner) {
+              banner.style.display = "none";
+          }
+      }
+
+      function closePage() {
+          // Attempt standard browser workarounds to close script-initiated tab context
+          try {
+              window.open('', '_self', '');
+              window.close();
+          } catch (e) {}
+          try {
+              window.open('about:blank', '_self').close();
+          } catch (e) {}
+          
+          // Fallback inline message instead of a popup modal
+          setTimeout(function() {
+              const successMsg = document.getElementById("successMsg");
+              if (successMsg) {
+                  successMsg.innerHTML = '<span style="color: #dc3545; font-weight: 500;"><i class="fas fa-info-circle"></i> Browser blocked automatic tab closing. Please close this tab manually.</span>';
+              }
+          }, 250);
+      }
+  </script>
+</body>
+
+</html>

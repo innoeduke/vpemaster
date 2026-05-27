@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Uploaded Files - {{ link.title }}{% endblock %}
+
+{% block header_title %}Files Manager{% endblock %}
+
+{% block content %}
+<div class="uploads-container">
+    <div class="uploads-header" style="margin-bottom: 20px;">
+        <div>
+            <h1 class="uploads-title" style="text-align: left; margin-bottom: 5px;"><i class="fas fa-folder-open"></i> {{ link.title }}</h1>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                <span class="note" style="margin: 0;"><i class="fas fa-link"></i> Code: <strong>{{ link.code }}</strong></span>
+                {% if link.meeting %}
+                <span class="note" style="margin: 0;"><i class="fas fa-calendar-alt"></i> Meeting: <strong>#{{ link.meeting.Meeting_Number }}</strong></span>
+                {% endif %}
+                <span class="note" style="margin: 0;"><i class="fas fa-file-alt"></i> Files: <strong>{{ total_files }}</strong></span>
+                <span class="note" style="margin: 0;"><i class="fas fa-database"></i> Total Size: <strong>{{ total_size_formatted }}</strong></span>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px;">
+            <a href="{{ url_for('uploads_bp.manage_uploads') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            {% if total_files > 0 %}
+            <button class="btn btn-primary" onclick="downloadAllZip('{{ link.code }}', '{{ link.title|escape }}')">
+                <i class="fas fa-file-archive"></i> Download All (ZIP)
+            </button>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not files %}
+    <div class="premium-card text-center" style="padding: 60px 20px;">
+        <i class="fas fa-folder-open" style="font-size: 4rem; color: #bdc3c7; margin-bottom: 20px;"></i>
+        <h3 style="color: #2c3e50; margin-bottom: 10px;">No Files Uploaded Yet</h3>
+        <p style="color: #7f8c8d; max-width: 500px; margin: 0 auto 20px auto;">Share the public upload link with participants to collect files here.</p>
+        <div class="copy-btn-container">
+            <button class="btn btn-primary" onclick="copyLink('{{ url_for('uploads_bp.upload_page', code=link.code, _external=True) }}', this)">
+                <i class="fas fa-copy"></i> Copy Public Upload Link
+            </button>
+            <span class="copy-tooltip" style="bottom: 110%;">Copied!</span>
+        </div>
+    </div>
+    {% else %}
+    
+    <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
+        <label class="switch-container" style="cursor: pointer;">
+            <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" style="margin-right: 8px;">
+            <span style="font-size: 0.9rem; font-weight: 600; color: #2c3e50;">Select All Files</span>
+        </label>
+        <span class="note" style="margin: 0;">Hover over cards to select multiple files for bulk actions.</span>
+    </div>
+
+    <div class="files-grid">
+        {% for file in files %}
+        <div class="file-card" id="file-card-{{ loop.index }}" data-filename="{{ file.name }}">
+            <input type="checkbox" class="file-card-checkbox" data-index="{{ loop.index }}" onchange="handleFileSelect(this)">
+            
+            <div class="file-icon">
+                <i class="fas {{ file.icon }}"></i>
+            </div>
+            
+            <div class="file-name" title="{{ file.name }}">{{ file.name }}</div>
+            <div class="file-size">{{ file.size }}</div>
+            <div class="note" style="font-size: 0.75rem; margin-bottom: 15px;">{{ file.mtime.strftime('%Y-%m-%d %H:%M') }}</div>
+            
+            <div class="file-card-actions">
+                <a href="{{ url_for('uploads_bp.download_file', code=link.code, filename=file.name) }}" class="btn btn-secondary" title="Download file">
+                    <i class="fas fa-download"></i>
+                </a>
+                <button class="btn btn-danger" onclick="deleteSingleFile('{{ file.name }}')" title="Delete file">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- Floating Bulk Actions Bar -->
+<div id="bulkActionsBar" class="floating-actions-bar">
+    <span class="floating-bar-text"><span id="selectedCountText">0</span> files selected</span>
+    <button class="btn btn-secondary" onclick="deselectAll()" style="padding: 6px 12px; font-size: 0.85rem;">Deselect All</button>
+    <button class="btn btn-danger" onclick="deleteSelectedFiles()" style="padding: 6px 12px; font-size: 0.85rem; background-color: #d63031; border: none;">
+        <i class="fas fa-trash-alt"></i> Delete Selected
+    </button>
+</div>
+
+<!-- Progressive Download Progress Overlay -->
+<div id="progressOverlay" class="progress-overlay">
+    <div class="progress-card">
+        <h3 id="progressCardTitle">Preparing Download</h3>
+        <div class="progress-bar-container">
+            <div id="progressBarFill" class="progress-bar-fill"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #7f8c8d; margin-top: 5px;">
+            <span id="progressText">Packaging files...</span>
+            <span id="progressPercent" style="font-weight: bold; color: #004165;">0%</span>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const code = "{{ link.code }}";
+    let selectedFilenames = new Set();
+
+    // --- Progressive ZIP Downloader ---
+    async function downloadAllZip(linkCode, linkTitle) {
+        const progressOverlay = document.getElementById("progressOverlay");
+        const progressBarFill = document.getElementById("progressBarFill");
+        const progressText = document.getElementById("progressText");
+        const progressPercent = document.getElementById("progressPercent");
+        const cardTitle = document.getElementById("progressCardTitle");
+        
+        cardTitle.textContent = "Downloading Files Archive";
+        progressOverlay.style.display = "flex";
+        progressBarFill.style.width = "0%";
+        progressPercent.textContent = "0%";
+        progressText.textContent = "Compiling package on server...";
+        
+        const safeTitle = linkTitle.replace(/[^a-zA-Z0-9]/g, ' ') || "uploads";
+        const zipFilename = `${safeTitle.trim()}.zip`;
+        
+        try {
+            const response = await fetch(`/uploads/${linkCode}/zip`);
+            if (!response.ok) {
+                throw new Error(`Server returned status ${response.status}`);
+            }
+            
+            const contentLength = response.headers.get('Content-Length');
+            if (!contentLength) {
+                // Indeterminate progress fallback if Content-Length header is omitted (e.g. gzip compression)
+                progressText.textContent = "Downloading package (size unknown)...";
+                progressBarFill.style.width = "100%";
+                progressPercent.textContent = "⏳";
+                const blob = await response.blob();
+                triggerBlobDownload(blob, zipFilename);
+                progressOverlay.style.display = "none";
+                return;
+            }
+            
+            const total = parseInt(contentLength, 10);
+            let loaded = 0;
+            
+            const reader = response.body.getReader();
+            const chunks = [];
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) {
+                    break;
+                }
+                chunks.push(value);
+                loaded += value.length;
+                
+                const percent = Math.round((loaded / total) * 100);
+                progressBarFill.style.width = `${percent}%`;
+                progressPercent.textContent = `${percent}%`;
+                progressText.textContent = `Downloading: ${(loaded / (1024 * 1024)).toFixed(1)} MB of ${(total / (1024 * 1024)).toFixed(1)} MB`;
+            }
+            
+            progressText.textContent = "Saving to disk...";
+            const blob = new Blob(chunks, { type: 'application/zip' });
+            triggerBlobDownload(blob, zipFilename);
+            
+            setTimeout(() => {
+                progressOverlay.style.display = "none";
+            }, 800);
+            
+        } catch (error) {
+            console.error("ZIP download failed:", error);
+            alert("Failed to download ZIP file: " + error.message);
+            progressOverlay.style.display = "none";
+        }
+    }
+
+    function triggerBlobDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // --- Bulk Selection Logic ---
+    function handleFileSelect(checkbox) {
+        const index = checkbox.dataset.index;
+        const card = document.getElementById(`file-card-${index}`);
+        const filename = card.dataset.filename;
+        
+        if (checkbox.checked) {
+            card.classList.add('selected');
+            selectedFilenames.add(filename);
+        } else {
+            card.classList.remove('selected');
+            selectedFilenames.delete(filename);
+            
+            // Uncheck the select all box if any single checkbox is unchecked
+            document.getElementById('selectAllCheckbox').checked = false;
+        }
+        
+        updateBulkActionsBar();
+    }
+
+    function toggleSelectAll(selectAllCheckbox) {
+        const checkboxes = document.querySelectorAll('.file-card-checkbox');
+        checkboxes.forEach(cb => {
+            cb.checked = selectAllCheckbox.checked;
+            handleFileSelect(cb);
+        });
+    }
+
+    function deselectAll() {
+        document.getElementById('selectAllCheckbox').checked = false;
+        toggleSelectAll(document.getElementById('selectAllCheckbox'));
+    }
+
+    function updateBulkActionsBar() {
+        const bar = document.getElementById('bulkActionsBar');
+        const countText = document.getElementById('selectedCountText');
+        const count = selectedFilenames.size;
+        
+        countText.textContent = count;
+        
+        if (count > 0) {
+            bar.classList.add('show');
+        } else {
+            bar.classList.remove('show');
+        }
+    }
+
+    // --- Deletion Logic ---
+    function deleteSingleFile(filename) {
+        if (confirm(`Are you sure you want to delete '${filename}'?`)) {
+            sendDeleteRequest([filename]);
+        }
+    }
+
+    function deleteSelectedFiles() {
+        const count = selectedFilenames.size;
+        if (count === 0) return;
+        
+        if (confirm(`Are you sure you want to delete ${count} selected files? This action cannot be undone.`)) {
+            sendDeleteRequest(Array.from(selectedFilenames));
+        }
+    }
+
+    function sendDeleteRequest(filenamesList) {
+        fetch(`/uploads/${code}/delete-files`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ filenames: filenamesList })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Reload page to refresh file list
+                window.location.reload();
+            } else {
+                alert("Error deleting files: " + (data.error || data.message));
+            }
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("An error occurred during file deletion.");
+        });
+    }
+
+    // --- Click to Copy utility ---
+    function copyLink(text, button) {
+        navigator.clipboard.writeText(text).then(() => {
+            const container = button.closest('.copy-btn-container');
+            const tooltip = container.querySelector('.copy-tooltip');
+            if (tooltip) {
+                tooltip.classList.add('show');
+                setTimeout(() => {
+                    tooltip.classList.remove('show');
+                }, 1500);
+            }
+        }).catch(err => {
+            console.error('Could not copy text: ', err);
+        });
+    }
+</script>
+{% endblock %}

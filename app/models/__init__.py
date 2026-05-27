@@ -21,6 +21,7 @@ from .message import Message
 from .ticket import Ticket
 from .planner import Planner
 from .verification_task import VerificationTask
+from .upload_link import UploadLink
 
 # Import permission system models
 from .permission import Permission
@@ -84,4 +85,5 @@ __all__ = [
     'OwnerMeetingRoles',
     'Planner',
     'VerificationTask',
+    'UploadLink',
 ]

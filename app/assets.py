@@ -51,6 +51,7 @@ css_all = Bundle(
     'css/pages/tools/tools-desktop.css',
     'css/pages/tools/tools-ipad.css',
     'css/pages/tools/tools-mobile.css',
+    'css/pages/uploads.css',
     # Roster CSS (modular structure)
     'css/pages/roster/roster-base.css',
     'css/pages/roster/roster-desktop.css',

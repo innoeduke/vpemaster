@@ -172,6 +172,7 @@ def create_app(config_class='config.Config'):
         from .roster_routes import roster_bp
         from .lucky_draw_routes import lucky_draw_bp
         from .planner_routes import planner_bp
+        from .uploads_routes import uploads_bp
 
         # Import models so SQLAlchemy knows about them
         from . import models
@@ -195,6 +196,7 @@ def create_app(config_class='config.Config'):
         from .messages_routes import messages_bp
         app.register_blueprint(messages_bp)
         app.register_blueprint(planner_bp)
+        app.register_blueprint(uploads_bp)
         from .about_club_routes import about_club_bp
         app.register_blueprint(about_club_bp)
 

@@ -27,6 +27,7 @@ class Config:
 
     # Upload settings
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB limit
+    MAX_CLUB_STORAGE = 100 * 1024 * 1024  # 100MB limit per club
 
     # Cache settings
     CACHE_TYPE = 'SimpleCache'
