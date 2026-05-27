@@ -753,3 +753,44 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 300);
   }, 3000);
 }
+
+/**
+ * Safely copies text to the clipboard, with fallback for insecure/non-supported contexts.
+ * Returns a Promise that resolves when the text is copied.
+ * @param {string} text The text to copy
+ * @returns {Promise<void>}
+ */
+function safeCopyText(text) {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    return navigator.clipboard.writeText(text);
+  }
+  
+  // Fallback using older document.execCommand API
+  return new Promise((resolve, reject) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      // Prevent scrolling on mobile/focused views
+      textArea.style.top = '0';
+      textArea.style.left = '0';
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (successful) {
+        resolve();
+      } else {
+        reject(new Error('execCommand copy returned false'));
+      }
+    } catch (err) {
+      reject(err);
+    }
+  });
+}
+window.safeCopyText = safeCopyText;
+

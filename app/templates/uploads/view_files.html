@@ -278,7 +278,7 @@
 
     // --- Click to Copy utility ---
     function copyLink(text, button) {
-        navigator.clipboard.writeText(text).then(() => {
+        safeCopyText(text).then(() => {
             const container = button.closest('.copy-btn-container');
             const tooltip = container.querySelector('.copy-tooltip');
             if (tooltip) {
