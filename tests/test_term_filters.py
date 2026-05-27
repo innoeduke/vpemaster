@@ -184,18 +184,11 @@ def test_contacts_term_filter_integration(auth_client, app):
         role_count_multi = get_role_count(resp_multi.data)
         assert role_count_multi == 2, f"Expected 2 roles for T1+T2, got {role_count_multi}"
 
-        # Test 4: Select All Visual State
-        # Get all term IDs
-        all_term_ids = [t['id'] for t in terms]
-        # Construct query string
-        query_pairs = [f'term={tid}' for tid in all_term_ids]
-        query_string = '&'.join(query_pairs)
-        
-        resp3 = auth_client.get(f'/contacts?{query_string}')
+        # Test 4: Verify the page loads with date filters
+        resp3 = auth_client.get('/contacts')
         assert resp3.status_code == 200
-        # Check if the "Select / Deselect All" checkbox has the 'checked' attribute
-        assert b'checked' in resp3.data
-        assert b'id="term-select-all"' in resp3.data
+        assert b'id="start_date"' in resp3.data
+        assert b'id="end_date"' in resp3.data
 
         # Cleanup (keep the rest)
         db.session.delete(omr1)

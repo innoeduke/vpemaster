@@ -950,7 +950,7 @@ def process_avatar(file, contact_id):
         filename = secure_filename(f"avatar_{contact_id}_{int(time.time())}.webp")
         
         # Use configured root directory
-        root_dir = current_app.config.get('AVATAR_ROOT_DIR', 'uploads/avatars')
+        root_dir = current_app.config.get('AVATAR_ROOT_DIR', 'avatars')
         upload_folder = os.path.join(current_app.root_path, 'static', root_dir)
         
         os.makedirs(upload_folder, exist_ok=True)

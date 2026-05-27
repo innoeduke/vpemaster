@@ -150,7 +150,7 @@
                 list.innerHTML = data.messages.map(msg => {
                     let avatarSrc = msg.avatar_url;
                     if (avatarSrc && avatarSrc.indexOf('/') === -1) {
-                        const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+                        const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
                         avatarSrc = `/static/${root}/${avatarSrc}`;
                     }
                     return `
@@ -198,7 +198,7 @@
         const avatarContainer = document.getElementById('detail-avatar');
         let detailAvatarSrc = msg.avatar_url;
         if (detailAvatarSrc && detailAvatarSrc.indexOf('/') === -1) {
-            const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+            const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
             detailAvatarSrc = `/static/${root}/${detailAvatarSrc}`;
         }
         avatarContainer.innerHTML = detailAvatarSrc 

@@ -722,6 +722,15 @@ def get_all_contacts_api():
     if start_date and end_date:
         should_filter = True
         date_ranges = [(start_date, end_date)]
+        
+    terms_list = request.args.getlist('term')
+    if terms_list:
+        should_filter = True
+        all_terms = get_terms()
+        term_map = {t['id']: t for t in all_terms}
+        for term_id in terms_list:
+            if term_id in term_map:
+                date_ranges.append((term_map[term_id]['start'], term_map[term_id]['end']))
     
     from sqlalchemy import or_,  and_, false
     def apply_date_filter(query, date_column):

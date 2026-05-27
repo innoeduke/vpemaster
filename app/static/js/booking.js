@@ -852,7 +852,7 @@ function updateSessionRow(sessionData) {
     if (sessionData.owner_avatar_url) {
       let avatarPath = sessionData.owner_avatar_url;
       if (avatarPath.indexOf('/') === -1) {
-        const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+        const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
         avatarPath = `${root}/${avatarPath}`;
       }
       avatarContainer.innerHTML = `<img src="/static/${avatarPath}" alt="User Avatar">`;

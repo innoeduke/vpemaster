@@ -16,6 +16,7 @@ from flask.cli import with_appcontext
 
 # Constants for paths (relative to app root)
 UPLOADS_REL_PATH = 'app/static/uploads'
+AVATARS_REL_PATH = 'app/static/avatars'
 BACKUP_REL_PATH = 'instance/backup'
 OUTPUT_REL_PATH = 'instance'
 BACKUP_PATTERN = r'^backup_(?:[a-zA-Z0-9_]+?)_(\d{8})_(\d{6})\.sql$'
@@ -90,6 +91,11 @@ def pack(output):
     if not os.path.exists(uploads_path):
         click.echo(f"⚠️  Warning: Uploads folder not found at {UPLOADS_REL_PATH}", err=True)
     
+    # Check if avatars folder exists
+    avatars_path = os.path.join(app_root, AVATARS_REL_PATH)
+    if not os.path.exists(avatars_path):
+        click.echo(f"⚠️  Warning: Avatars folder not found at {AVATARS_REL_PATH}", err=True)
+    
     # Create zip file
     try:
         with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as zipf:
@@ -97,6 +103,7 @@ def pack(output):
             
             # Add uploads folder
             if os.path.exists(uploads_path):
+                upload_items = 0
                 for root, dirs, files in os.walk(uploads_path):
                     for file in files:
                         if file.startswith('.'):  # Skip hidden files
@@ -106,7 +113,23 @@ def pack(output):
                         arcname = os.path.relpath(file_path, app_root)
                         zipf.write(file_path, arcname)
                         items_added += 1
-                click.echo(f"📁 Added {items_added} files from {UPLOADS_REL_PATH}")
+                        upload_items += 1
+                click.echo(f"📁 Added {upload_items} files from {UPLOADS_REL_PATH}")
+
+            # Add avatars folder
+            if os.path.exists(avatars_path):
+                avatar_items = 0
+                for root, dirs, files in os.walk(avatars_path):
+                    for file in files:
+                        if file.startswith('.'):  # Skip hidden files
+                            continue
+                        file_path = os.path.join(root, file)
+                        # Store with relative path preserving folder structure
+                        arcname = os.path.relpath(file_path, app_root)
+                        zipf.write(file_path, arcname)
+                        items_added += 1
+                        avatar_items += 1
+                click.echo(f"📁 Added {avatar_items} files from {AVATARS_REL_PATH}")
             
             # Add latest backup SQL
             if backup_file and resolved_dir:
@@ -159,20 +182,22 @@ def unpack(zipfile_path):
             namelist = zipf.namelist()
             
             upload_files = [n for n in namelist if n.startswith(UPLOADS_REL_PATH)]
+            avatar_files = [n for n in namelist if n.startswith(AVATARS_REL_PATH)]
             backup_files = [n for n in namelist if n.startswith(BACKUP_REL_PATH) and n.endswith('.sql')]
             
             click.echo(f"📦 Zip contains:")
             click.echo(f"   - {len(upload_files)} upload file(s)")
+            click.echo(f"   - {len(avatar_files)} avatar file(s)")
             click.echo(f"   - {len(backup_files)} backup SQL file(s)")
             
-            if not upload_files and not backup_files:
+            if not upload_files and not avatar_files and not backup_files:
                 click.echo("❌ No recognized files in zip!", err=True)
                 return
             
             # Extract files (overwrite existing)
             extracted_count = 0
             for name in namelist:
-                if name.startswith(UPLOADS_REL_PATH) or (name.startswith(BACKUP_REL_PATH) and name.endswith('.sql')):
+                if name.startswith(UPLOADS_REL_PATH) or name.startswith(AVATARS_REL_PATH) or (name.startswith(BACKUP_REL_PATH) and name.endswith('.sql')):
                     target_path = os.path.join(app_root, name)
                     
                     # Ensure parent directory exists
@@ -188,6 +213,8 @@ def unpack(zipfile_path):
             
             if upload_files:
                 click.echo(f"   📁 Uploads restored to: {UPLOADS_REL_PATH}")
+            if avatar_files:
+                click.echo(f"   📁 Avatars restored to: {AVATARS_REL_PATH}")
             if backup_files:
                 for bf in backup_files:
                     click.echo(f"   📄 Backup restored: {os.path.basename(bf)}")

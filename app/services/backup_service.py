@@ -80,7 +80,7 @@ class BackupService:
         """Creates a zip archive of static resource directories (legacy wrapper)."""
         return BackupService.create_file_backup(
             backup_dir,
-            ['static/images', 'static/club_resources', 'static/uploads/avatars'],
+            ['static/images', 'static/club_resources', 'static/avatars'],
             'resources',
             strategy='full'
         )

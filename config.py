@@ -49,7 +49,7 @@ class Config:
     DEFAULT_ROLE_ICON = "fa-question-circle"
 
     # Email configuration
-    AVATAR_ROOT_DIR = 'uploads/avatars'
+    AVATAR_ROOT_DIR = 'avatars'
 
     MAIL_SERVER = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.getenv('MAIL_PORT', 465))

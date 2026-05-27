@@ -6,6 +6,10 @@ from app import create_app
 from app.services.backup_service import BackupService
 
 def migrate_owner_roles():
+    from flask import current_app
+    if current_app:
+        BackupService.migrate_owner_meeting_roles()
+        return
     app = create_app()
     with app.app_context():
         BackupService.migrate_owner_meeting_roles()

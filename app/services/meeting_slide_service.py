@@ -78,7 +78,7 @@ class MeetingSlideService:
             if action_layout:
                 prs.slides.add_slide(action_layout)
 
-            avatar_base_path = os.path.join(current_app.static_folder, 'uploads', 'avatars')
+            avatar_base_path = os.path.join(current_app.static_folder, 'avatars')
 
             from ..models.roster import MeetingRole
             from ..constants import GLOBAL_CLUB_ID
@@ -602,7 +602,7 @@ class MeetingSlideService:
                         if url.startswith('/static/'): url = url[8:]
                         elif url.startswith('static/'): url = url[7:]
                         if '/' not in url and '\\' not in url:
-                            url = os.path.join(current_app.config.get('AVATAR_ROOT_DIR', 'uploads/avatars'), url)
+                            url = os.path.join(current_app.config.get('AVATAR_ROOT_DIR', 'avatars'), url)
                         ip = os.path.join(current_app.static_folder, url.lstrip('/'))
                         if not os.path.exists(ip): ip = None
                     if not ip:
@@ -610,7 +610,7 @@ class MeetingSlideService:
                             tp = os.path.join(current_app.static_folder, dn)
                             if os.path.exists(tp): ip = tp; break
                         if not ip:
-                            tp = os.path.join(current_app.static_folder, current_app.config.get('AVATAR_ROOT_DIR', 'uploads/avatars'), "default.jpg")
+                            tp = os.path.join(current_app.static_folder, current_app.config.get('AVATAR_ROOT_DIR', 'avatars'), "default.jpg")
                             if os.path.exists(tp): ip = tp
                     try:
                         cp = MeetingSlideService._crop_image_to_aspect_ratio(ip, sh.width, sh.height)

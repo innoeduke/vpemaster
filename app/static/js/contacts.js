@@ -197,7 +197,7 @@ function createContactRow(contact) {
       let avatarPath = contact.Avatar_URL;
       // If just a filename, prepend root dir
       if (avatarPath.indexOf('/') === -1) {
-        const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'uploads/avatars';
+        const root = (typeof avatarRootDir !== 'undefined') ? avatarRootDir : 'avatars';
         avatarPath = `${root}/${avatarPath}`;
       }
       return `<img src="/static/${avatarPath}" alt="Avatar" class="contact-avatar-small">`;

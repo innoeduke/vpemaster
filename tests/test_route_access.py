@@ -256,9 +256,13 @@ class RouteAccessTestCase(unittest.TestCase):
         self.assertNotIn(b'under_planning.webp', response.data)
 
         # Test casting a vote on today's unpublished meeting
+        m_unpublished_id = self.m_unpublished.id
+        staff_contact_id = self.staff_contact.id
+        user_contact_id = self.user_contact.id
+
         response = self.client.post('/voting/vote', data=json.dumps({
-            'meeting_id': self.m_unpublished.id,
-            'contact_id': self.staff_contact.id,
+            'meeting_id': m_unpublished_id,
+            'contact_id': staff_contact_id,
             'award_category': 'speaker'
         }), content_type='application/json')
         self.assertEqual(response.status_code, 200)
@@ -270,14 +274,14 @@ class RouteAccessTestCase(unittest.TestCase):
         # 2. Test that a regular user (user@test.com) who does NOT have VOTING_VIEW_RESULTS permission
         # still sees the notice image for today's unpublished meeting.
         self.login('user@test.com', 'password')
-        response = self.client.get(f'/voting/{self.m_unpublished.id}')
+        response = self.client.get(f'/voting/{m_unpublished_id}')
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'under_planning.webp', response.data)
 
         # And cannot cast a vote on it
         response = self.client.post('/voting/vote', data=json.dumps({
-            'meeting_id': self.m_unpublished.id,
-            'contact_id': self.user_contact.id,
+            'meeting_id': m_unpublished_id,
+            'contact_id': user_contact_id,
             'award_category': 'speaker'
         }), content_type='application/json')
         self.assertEqual(response.status_code, 403)
