@@ -1461,6 +1461,7 @@ def _get_achievement_status(speaker_id, speaker_user, selected_pathway):
     Uses Contact.get_completed_levels() model method.
     """
     completed_levels = set()
+    achievement_dates = {}
     target_path_name = selected_pathway
     
     if not target_path_name and speaker_user:
@@ -1475,6 +1476,7 @@ def _get_achievement_status(speaker_id, speaker_user, selected_pathway):
             contact = db.session.get(Contact, int(speaker_id))
             if contact:
                 completed_levels = contact.get_completed_levels(target_path_name)
+                achievement_dates = contact.get_level_achievement_dates(target_path_name)
         except (ValueError, TypeError):
             pass
     
@@ -1488,7 +1490,7 @@ def _get_achievement_status(speaker_id, speaker_user, selected_pathway):
     if all(i in completed_levels for i in range(1, 6)):
         active_level = 5
     
-    return completed_levels, active_level
+    return completed_levels, active_level, achievement_dates
 
 
 def _get_role_metadata():
@@ -1641,7 +1643,7 @@ def show_speech_logs():
     completion_summary = _calculate_completion_summary(grouped_logs, pp_mapping, selected_pathway_name=filters['pathway'])
     
     # 9. Get achievement status
-    completed_levels, active_level = _get_achievement_status(
+    completed_levels, active_level, achievement_dates = _get_achievement_status(
         filters['speaker_id'], speaker_user, filters['pathway']
     )
     
@@ -1695,6 +1697,7 @@ def show_speech_logs():
         pathways=dropdown_data['pathways'],
         levels=range(1, 6),
         completed_levels=completed_levels,
+        achievement_dates=achievement_dates,
         projects=dropdown_data['projects'],
         today_date=datetime.today().date(),
         completion_summary=completion_summary,

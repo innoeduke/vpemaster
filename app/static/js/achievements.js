@@ -4,7 +4,7 @@
  * from the Member View roadmap.
  */
 
-function openAchievementModal(action, userId, memberName, memberId, achievementType, pathName, level) {
+function openAchievementModal(action, userId, memberName, memberId, achievementType, pathName, level, issueDate) {
 	const modal = document.getElementById('achievementModal');
 	if (!modal) return;
 
@@ -16,11 +16,11 @@ function openAchievementModal(action, userId, memberName, memberId, achievementT
 	if (action === 'revoke') {
 		title.textContent = 'Revoke Achievement';
 		saveBtn.textContent = 'Revoke';
-		saveBtn.className = 'planner-btn planner-btn-revoke';
+		saveBtn.className = 'planner-btn planner-btn-danger';
 	} else {
 		title.textContent = 'Record Achievement';
 		saveBtn.textContent = 'Save';
-		saveBtn.className = 'planner-btn btn-success';
+		saveBtn.className = 'planner-btn planner-btn-success';
 	}
 
 	// Store action in form dataset
@@ -44,8 +44,12 @@ function openAchievementModal(action, userId, memberName, memberId, achievementT
 	if (typeSelect) typeSelect.value = achievementType || 'level-completion';
 
 	const dateInput = document.getElementById('issue_date');
-	if (dateInput && !dateInput.value) {
-		dateInput.value = new Date().toISOString().split('T')[0]; // Default to today
+	if (dateInput) {
+	    if (issueDate) {
+	        dateInput.value = issueDate;
+	    } else if (!dateInput.value) {
+		    dateInput.value = new Date().toISOString().split('T')[0]; // Default to today
+		}
 	}
 
 	// Pre-fill path from the member view's Pathways selector

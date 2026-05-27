@@ -281,7 +281,7 @@
                             {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
                             {% if row.level|int in completed_levels %}
                             <button class="btn btn-xs btn-outline-danger btn-roadmap-action" 
-                                    onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ row.level }}')"
+                                    onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ row.level }}', '{{ achievement_dates.get(row.level|int, '') }}')"
                                     title="Revoke Level Achievement">
                                 <i class="fas fa-undo"></i> <span class="btn-label-text">Revoke</span>
                             </button>
@@ -363,7 +363,7 @@
                 {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
                 {% if level|int in completed_levels %}
                 <button class="btn btn-sm btn-outline-danger btn-achievement-revoke" 
-                        onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}')"
+                        onclick="event.stopPropagation(); openAchievementModal('revoke', '{{ viewed_contact.user_id }}', '{{ viewed_contact.Name }}', '{{ viewed_contact.Member_ID or '' }}', 'level-completion', '{{ pathway_name }}', '{{ level }}', '{{ achievement_dates.get(level|int, '') }}')"
                         title="Revoke Level Achievement">
                     <i class="fas fa-undo"></i> <span class="btn-label-text">Revoke</span>
                 </button>

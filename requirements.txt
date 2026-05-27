@@ -29,6 +29,8 @@ Flask-Mail==0.10.0
 Flask-Principal==0.4.0
 Pillow==11.0.0
 python-pptx==1.0.2
+pandas==2.3.3
+python-calamine==0.4.0
 
 # Testing dependencies
 pytest>=9.0.0

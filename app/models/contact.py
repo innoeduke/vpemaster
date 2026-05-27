@@ -223,6 +223,34 @@ class Contact(db.Model):
         res = {a.level for a in achievements if a.level}
         setattr(self, cache_key, res)
         return res
+        
+    def get_level_achievement_dates(self, pathway_name):
+        """
+        Get achievement issue dates for the given pathway.
+        Returns dict of {level: issue_date (str)}.
+        """
+        from .achievement import Achievement
+        
+        if not pathway_name:
+            return {}
+            
+        cache_key = f'_level_achievement_dates_{pathway_name}'
+        if hasattr(self, cache_key):
+            return getattr(self, cache_key)
+            
+        uid = self.user_id
+        if uid:
+            achievements = Achievement.query.filter_by(
+                user_id=uid,
+                path_name=pathway_name,
+                achievement_type='level-completion'
+            ).all()
+        else:
+            achievements = []
+            
+        res = {int(a.level): a.issue_date.strftime('%Y-%m-%d') for a in achievements if a.level and a.issue_date}
+        setattr(self, cache_key, res)
+        return res
     
     def get_active_level_at_date(self, pathway_name, reference_date):
         """
