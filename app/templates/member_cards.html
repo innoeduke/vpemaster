@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Member Cards{% endblock %}
+{% block title %}{{ _('Member Cards') }}{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/contacts/member-cards.css') }}" />
@@ -10,20 +10,20 @@
 <div class="cards-page-container">
     <div class="member-cards-header no-print">
         <div class="cards-header-info">
-            <h1><i class="fas fa-id-card"></i> Member Directory</h1>
-            <p class="cards-subtitle">Member card directory for quick reference</p>
+            <h1><i class="fas fa-id-card"></i> {{ _('Member Directory') }}</h1>
+            <p class="cards-subtitle">{{ _('Member card directory for quick reference') }}</p>
         </div>
         <div class="cards-header-actions">
             <div class="search-wrapper">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="cardSearch" placeholder="Search members..." onkeyup="filterCards()" />
+                <input type="text" id="cardSearch" placeholder="{{ _('Search members...') }}" onkeyup="filterCards()" />
             </div>
             <div class="cards-header-buttons">
                 <button onclick="window.print()" class="btn btn-export">
-                    <i class="fas fa-file-pdf"></i> Export
+                    <i class="fas fa-file-pdf"></i> {{ _('Export') }}
                 </button>
                 <a href="{{ url_for('contacts_bp.show_contacts') }}" class="btn btn-outline-secondary btn-table-view">
-                    <i class="fas fa-table"></i> Table View
+                    <i class="fas fa-table"></i> {{ _('Table View') }}
                 </a>
             </div>
         </div>
@@ -33,7 +33,7 @@
     <div id="cardsLoadingSpinner" class="loading-spinner-container no-print">
         <div class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
-            <p>Loading member data...</p>
+            <p>{{ _('Loading member data...') }}</p>
         </div>
     </div>
 
@@ -43,7 +43,7 @@
 
     <div id="noResults" class="no-results" style="display: none;">
         <i class="fas fa-search"></i>
-        <p>No members found matching your search.</p>
+        <p>{{ _('No members found matching your search.') }}</p>
     </div>
 </div>
 
@@ -85,7 +85,7 @@
             spinner.style.display = 'none';
         } catch (error) {
             console.error('Error loading members:', error);
-            grid.innerHTML = '<p class="error">Error loading member data. Please try again later.</p>';
+            grid.innerHTML = '<p class="error">{{ _("Error loading member data. Please try again later.") }}</p>';
             spinner.style.display = 'none';
         }
     }
@@ -123,11 +123,11 @@
                 </div>
                 <div class="card-details">
                     <div class="detail-item">
-                        <span class="detail-label">Member ID</span>
+                        <span class="detail-label">${"{{ _('Member ID') }}"}</span>
                         <span class="detail-value">${member.Member_ID || '-'}</span>
                     </div>
                     <div class="detail-item">
-                        <span class="detail-label">Email</span>
+                        <span class="detail-label">${"{{ _('Email') }}"}</span>
                         <span class="detail-value email-text">${member.Email || '-'}</span>
                     </div>
                 </div>

@@ -85,7 +85,8 @@ function performLuckyDraw(elements) {
     const validEntries = getFilteredEntries();
 
     if (validEntries.length === 0) {
-        showNotification('No eligible entries for drawing with current filter', 'warning');
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+        showNotification(isChinese ? '当前筛选条件下没有符合条件的参与者' : 'No eligible entries for drawing with current filter', 'warning');
         return;
     }
 
@@ -109,16 +110,17 @@ function resetDraws(elements) {
     elements.winnersWall.innerHTML = '';
 
     // Restore placeholder
+    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
     const placeholder = document.createElement('div');
     placeholder.className = 'wall-placeholder';
     placeholder.innerHTML = `
     <i class="fas fa-trophy"></i>
-    <p>Winners will appear here</p>
+    <p>${isChinese ? '获奖者将显示在这里' : 'Winners will appear here'}</p>
   `;
     elements.winnersWall.appendChild(placeholder);
 
     // Show notification
-    showNotification('All winners cleared', 'info');
+    showNotification(isChinese ? '已清除所有获奖者' : 'All winners cleared', 'info');
 }
 
 // Add winner tile to the wall

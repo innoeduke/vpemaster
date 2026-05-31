@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% from "components/stacked_chart.html" import render_chart_container, render_comments_section %}
 
-{% block title %}NPS Trend{% endblock %}
+{% block title %}{{ _('NPS Trend') }}{% endblock %}
 
-{% block header_title %}NPS Trend{% endblock %}
+{% block header_title %}{{ _('NPS Trend') }}{% endblock %}
 
 {% block head_extra %}
 <script src="{{ url_for('static', filename='vendor/js/chart.umd.min.js') }}"></script>
@@ -17,13 +17,13 @@
 {% block content %}
 <div class="page-container">
 	{% set legend_items = [
-		{'label': 'Votes', 'color': '#772432', 'type': 'line'},
-		{'label': 'NPS', 'color': 'rgba(0, 65, 101, 0.8)', 'border_color': '#ffffff', 'type': 'bar'},
-		{'label': 'Detractors %', 'color': 'rgba(211, 158, 0, 0.6)', 'border_color': '#ffffff', 'type': 'bar'}
+		{'label': _('Votes'), 'color': '#772432', 'type': 'line'},
+		{'label': _('NPS'), 'color': 'rgba(0, 65, 101, 0.8)', 'border_color': '#ffffff', 'type': 'bar'},
+		{'label': _('Detractors %'), 'color': 'rgba(211, 158, 0, 0.6)', 'border_color': '#ffffff', 'type': 'bar'}
 	] %}
-	{% set axis_labels = {'left': 'Score / Percentage', 'right': 'Vote Count', 'bottom': 'Meeting Number'} %}
+	{% set axis_labels = {'left': _('Score / Percentage'), 'right': _('Vote Count'), 'bottom': _('Meeting Number')} %}
 	
-	{% call render_chart_container('npsChart', 'NPS Trend', 'User Feedback and Satisfaction', url_for('voting_bp.voting', club_id=get_current_club_id()), 'Back to Voting', legend_items, axis_labels, question='How likely are you to recommend this meeting to a friend or colleague?') %}
+	{% call render_chart_container('npsChart', _('NPS Trend'), _('User Feedback and Satisfaction'), url_for('voting_bp.voting', club_id=get_current_club_id()), _('Back to Voting'), legend_items, axis_labels, question=_('How likely are you to recommend this meeting to a friend or colleague?')) %}
 		{{ render_comments_section('npsCommentsContainer', 'commentsMeetingNumber', 'commentsMeetingDate', 'commentsList') }}
 	{% endcall %}
 </div>
@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			beginAtZero: true,
 			min: 0,
 			max: 100, // Strictly 0-100 for percentage/score
-			title: { display: true, text: 'Score / Percentage', font: { weight: 'bold' } },
+			title: { display: true, text: '{{ _("Score / Percentage") }}', font: { weight: 'bold' } },
 			grid: { color: 'rgba(0, 0, 0, 0.05)' }
 		},
 		y1: {
@@ -87,11 +87,11 @@ document.addEventListener('DOMContentLoaded', function() {
 			beginAtZero: true,
 			min: 0,
 			suggestedMax: suggestedMaxVote,
-			title: { display: true, text: 'Vote Count', font: { weight: 'bold' } },
+			title: { display: true, text: '{{ _("Vote Count") }}', font: { weight: 'bold' } },
 			grid: { drawOnChartArea: false }
 		},
 		x: {
-			title: { display: true, text: 'Meeting Number', font: { weight: 'bold' } },
+			title: { display: true, text: '{{ _("Meeting Number") }}', font: { weight: 'bold' } },
 			grid: { display: false },
 			ticks: { padding: 12 } // Prevent baseline overlap
 		}
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			beginAtZero: true,
 			min: 0,
 			max: 100,
-			title: { display: true, text: 'Score / Percentage', font: { weight: 'bold' } }
+			title: { display: true, text: '{{ _("Score / Percentage") }}', font: { weight: 'bold' } }
 		},
 		x1: {
 			type: 'linear',
@@ -113,12 +113,12 @@ document.addEventListener('DOMContentLoaded', function() {
 			beginAtZero: true,
 			min: 0,
 			suggestedMax: suggestedMaxVote,
-			title: { display: true, text: 'Vote Count', font: { weight: 'bold' } }
+			title: { display: true, text: '{{ _("Vote Count") }}', font: { weight: 'bold' } }
 		},
 		y: {
 			type: 'category',
 			position: 'left',
-			title: { display: true, text: 'Meeting', font: { weight: 'bold' } },
+			title: { display: true, text: '{{ _("Meeting") }}', font: { weight: 'bold' } },
 			grid: { display: false } // Disable horizontal grid lines on mobile
 		}
 	};
@@ -148,13 +148,13 @@ document.addEventListener('DOMContentLoaded', function() {
 				boxPadding: 6,
 				usePointStyle: true,
 				callbacks: {
-					title: (context) => `Meeting #${meetingNumbers[context[0].dataIndex]}`,
+					title: (context) => `{{ _("Meeting") }} #${meetingNumbers[context[0].dataIndex]}`,
 					afterTitle: (context) => meetingDates[context[0].dataIndex] || '',
 					label: (context) => {
 						const idx = context.dataIndex;
-						if (context.dataset.label === 'Votes') return `Votes: ${voteCounts[idx]}`;
-						if (context.dataset.label === 'NPS Score') return `NPS: ${npsScores[idx].toFixed(1)}`;
-						return `Detractors: ${detractorPercentages[idx].toFixed(1)}%`;
+						if (context.dataset.label === '{{ _("Votes") }}') return `{{ _("Votes") }}: ${voteCounts[idx]}`;
+						if (context.dataset.label === '{{ _("NPS Score") }}') return `{{ _("NPS") }}: ${npsScores[idx].toFixed(1)}`;
+						return `{{ _("Detractors") }}: ${detractorPercentages[idx].toFixed(1)}%`;
 					}
 				}
 			}
@@ -168,11 +168,11 @@ document.addEventListener('DOMContentLoaded', function() {
 	const titleRight = document.getElementById('axisTitleRight');
 
 	if (isMobile) {
-		if (titleTop) titleTop.innerText = 'Vote Count';
-		titleBottom.innerText = 'Score / Percentage';
+		if (titleTop) titleTop.innerText = '{{ _("Vote Count") }}';
+		titleBottom.innerText = '{{ _("Score / Percentage") }}';
 	} else {
 		if (titleTop) titleTop.style.display = 'none';
-		titleBottom.innerText = 'Meeting Number';
+		titleBottom.innerText = '{{ _("Meeting Number") }}';
 	}
 
 	// 1. AXIS CHART (Fixed Background)
@@ -209,7 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			datasets: [
 				{
 					type: 'line',
-					label: 'Votes',
+					label: '{{ _("Votes") }}',
 					data: voteCounts,
 					xAxisID: isMobile ? 'x1' : 'x',
 					yAxisID: isMobile ? 'y' : 'y1',
@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					order: 1
 				},
 				{
-					label: 'NPS Score',
+					label: '{{ _("NPS Score") }}',
 					data: npsScores,
 					xAxisID: isMobile ? 'x' : 'x',
 					yAxisID: isMobile ? 'y' : 'y',
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					order: 2
 				},
 				{
-					label: 'Detractors %',
+					label: '{{ _("Detractors %") }}',
 					data: detractorPercentages,
 					xAxisID: isMobile ? 'x' : 'x',
 					yAxisID: isMobile ? 'y' : 'y',
@@ -313,7 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		
 		// Show loading state
 		container.style.display = 'block';
-		commentsList.innerHTML = '<div class="comment-loading"><i class="fas fa-spinner fa-spin"></i> Loading feedback...</div>';
+		commentsList.innerHTML = '<div class="comment-loading"><i class="fas fa-spinner fa-spin"></i> {{ _("Loading feedback...") }}</div>';
 		meetingNumEl.textContent = '#' + meetingNumber;
 		meetingDateEl.textContent = '';
 		
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					commentsList.innerHTML = `
 						<div class="no-comments">
 							<i class="fas fa-comment-slash"></i>
-							<p>No feedback comments for this meeting</p>
+							<p>{{ _("No feedback comments for this meeting") }}</p>
 						</div>
 					`;
 				}
@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				commentsList.innerHTML = `
 					<div class="no-comments error">
 						<i class="fas fa-exclamation-triangle"></i>
-						<p>Failed to load comments</p>
+						<p>{{ _("Failed to load comments") }}</p>
 					</div>
 				`;
 			});

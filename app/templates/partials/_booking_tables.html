@@ -7,15 +7,15 @@
         <div class="role-cell-inner">
             {% if role.role_level_status %}
             <span class="role-badge {{ role.role_level_status }}"
-                title="{{ 'Required' if role.role_level_status == 'required' else 'Elective' }} for your current level">
-                {{ 'Required' if role.role_level_status == 'required' else 'Elective' }}
+                title="{{ _('Required') if role.role_level_status == 'required' else _('Elective') }} {{ _('for your current level') }}">
+                {{ _('Required') if role.role_level_status == 'required' else _('Elective') }}
             </span>
             {% endif %}
             <div class="role-cell-content">
                 <i class="fas {{ role.icon }}"></i>
                 <div class="role-display-text">
-                    <span>{{ role.role }}</span>
-                    {% if role.speaker_name %}<span class="speaker-for">for {{ role.speaker_name }}</span>{% endif %}
+                    <span>{{ _(role.role) }}</span>
+                    {% if role.speaker_name %}<span class="speaker-for">{{ _('for') }} {{ role.speaker_name }}</span>{% endif %}
                 </div>
             </div>
         </div>
@@ -47,7 +47,7 @@
 
                 {% if is_admin_view and role.owner_id %}
                 <button class="avatar-remove-btn"
-                    onclick="removeOwner('{{ role.session_id }}', '{{ role.owner_id }}')" title="Remove">
+                    onclick="removeOwner('{{ role.session_id }}', '{{ role.owner_id }}')" title="{{ _('Remove') }}">
                     <i class="fas fa-times"></i>
                 </button>
                 {% endif %}
@@ -78,7 +78,7 @@
 
                 {% if is_admin_view %}
                 <button class="avatar-remove-btn" onclick="removeOwner('{{ role.session_id }}', '{{ owner.id }}')"
-                    title="Remove">
+                    title="{{ _('Remove') }}">
                     <i class="fas fa-times"></i>
                 </button>
                 {% endif %}
@@ -94,7 +94,7 @@
             {% if status in ['not started', 'unpublished'] and role.waitlist %}
             {% for user in role.waitlist %}
             <div class="role-avatar waitlist-avatar {% if can_view_details %}clickable-avatar{% endif %}"
-                title="{{ user.name }} (Waitlist)"
+                title="{{ user.name }} ({{ _('Waitlist') }})"
                 {% if can_view_details %}
                 onclick="showWaitlistDetails(this)"
                 data-name="{{ user.name }}"
@@ -124,7 +124,7 @@
 
                 {% if is_admin_view %}
                 <button class="avatar-remove-btn" onclick="event.stopPropagation(); removeWaitlist('{{ role.session_id }}', '{{ user.id }}')"
-                    title="Remove">
+                    title="{{ _('Remove') }}">
                     <i class="fas fa-times"></i>
                 </button>
                 {% endif %}
@@ -144,7 +144,7 @@
             {% for owner in role.all_owners %}
             <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}"
                 data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
-                <input type="text" class="admin-assign-input" placeholder="--- Select ---" value="{{ owner.name }}"
+                <input type="text" class="admin-assign-input" placeholder="{{ _('--- Select ---') }}" value="{{ owner.name }}"
                     data-current-id="{{ owner.id }}" autocomplete="off">
                 <div class="autocomplete-results"></div>
             </div>
@@ -155,7 +155,7 @@
             <div class="autocomplete-container" data-session-id="{{ role.session_id }}" data-role="{{ role.role }}"
                 data-is-member-only="{{ 'true' if role.is_member_only else 'false' }}">
                 <input type="text" class="admin-assign-input {% if not role.owner_id %}unassigned-role{% endif %}"
-                    placeholder="--- Select ---" value="{% if role.owner_id %}{{ role.owner_name }}{% endif %}"
+                    placeholder="{{ _('--- Select ---') }}" value="{% if role.owner_id %}{{ role.owner_name }}{% endif %}"
                     data-current-id="{{ role.owner_id or 0 }}"
                     data-norm-role="{{ role.role|lower|replace(' ', '') }}" autocomplete="off">
                 <div class="autocomplete-results"></div>
@@ -166,31 +166,31 @@
         {% if role.owner_id %}
         {% if role.owner_id == current_user_contact_id %}
         <button class="btn btn-cancel"
-            onclick="bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role }}')">Cancel</button>
+            onclick="bookOrCancelRole('{{ role.session_id }}', 'cancel', '{{ role.role }}')">{{ _('Cancel') }}</button>
         {% else %}
         {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
         {% if current_user_contact_id in waitlist_ids %}
         <button class="btn btn-leave-waitlist"
-            onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role }}')">Leave Waitlist</button>
+            onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role }}')">{{ _('Leave Waitlist') }}</button>
         {% else %}
         <button class="btn btn-join-waitlist"
-            onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role }}')">Join Waitlist</button>
+            onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role }}')">{{ _('Join Waitlist') }}</button>
         {% endif %}
         {% endif %}
         {% else %}
         {% set waitlist_ids = role.waitlist|map(attribute='id')|list %}
         {% if current_user_contact_id in waitlist_ids %}
         <button class="btn btn-leave-waitlist"
-            onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role }}')">Leave Waitlist</button>
+            onclick="leaveWaitlist('{{ role.session_id }}', '{{ role.role }}')">{{ _('Leave Waitlist') }}</button>
         {% else %}
         {# For shared roles with existing owners, show Join Waitlist instead of Book #}
         {% set has_existing_owners = role.all_owners is defined and role.all_owners|length > 0 %}
         {% if role.needs_approval or has_existing_owners %}
         <button class="btn btn-join-waitlist"
-            onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role }}')">Join Waitlist</button>
+            onclick="joinWaitlist('{{ role.session_id }}', '{{ role.role }}')">{{ _('Join Waitlist') }}</button>
         {% else %}
         <button class="btn btn-book"
-            onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role }}')">Book</button>
+            onclick="bookOrCancelRole('{{ role.session_id }}', 'book', '{{ role.role }}')">{{ _('Book') }}</button>
         {% endif %}
         {% endif %}
         {% endif %}
@@ -202,7 +202,7 @@
     {% if is_admin_view %}
     <td class="icon-cell">
         <div class="button-group">
-            {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="Approve top of waitlist"
+            {% if role.waitlist %}<button class="icon-btn btn-approve-waitlist" title="{{ _('Approve top of waitlist') }}"
                 onclick="approveWaitlist('{{ role.session_id }}', '{{ role.role }}')"><i
                     class="fas fa-user-check"></i></button>{% endif %}
 
@@ -210,7 +210,7 @@
             <div class="reset-icon-container">
                 {% set has_owners = (role.all_owners is defined and role.all_owners|length > 0) or role.owner_id %}
                 <button class="icon-btn btn-reset-role" onclick="resetRole(this, '{{ role.session_id }}')"
-                    title="Unassign All" style="color: #6c757d; {% if not has_owners %}display: none;{% endif %}">
+                    title="{{ _('Unassign All') }}" style="color: #6c757d; {% if not has_owners %}display: none;{% endif %}">
                     <i class="fas fa-undo"></i>
                 </button>
             </div>
@@ -227,7 +227,7 @@
     %}>
     <td colspan="4">
         <div class="recommended-members-container" data-session-id="{{ role.session_id }}">
-            <div class="recommended-label"><i class="fas fa-magic"></i> Recommended (Required for current level):
+            <div class="recommended-label"><i class="fas fa-magic"></i> {{ _('Recommended (Required for current level):') }}
             </div>
             <div class="recommendation-badges">
                 {% for member in required_roles_by_role[norm_role] %}
@@ -259,16 +259,16 @@
             <div class="header-left">
                 <span class="accordion-title">
                     {% if category == 'role-taker' %}
-                        Functional Roles
+                        {{ _('Functional Roles') }}
                     {% else %}
-                        {{ (category or 'Other')|replace('-', ' ')|title }} Roles
+                        {{ _((category or 'Other')|replace('-', ' ')|title + ' Roles') }}
                     {% endif %}
                 </span>
             </div>
             <div class="accordion-header-right">
                 {% if category == 'table-topic' and is_authorized(Permissions.AGENDA_EDIT) %}
                 <button class="btn-add-topics-speech" onclick="event.stopPropagation(); addTableTopicsSpeech(selectedMeetingId);">
-                    <i class="fas fa-plus"></i> Add
+                    <i class="fas fa-plus"></i> {{ _('Add') }}
                 </button>
                 {% endif %}
                 <i class="fas fa-chevron-down"></i>

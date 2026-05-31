@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% from "components/stacked_chart.html" import render_chart_container %}
 
-{% block title %}Amount Trend{% endblock %}
+{% block title %}{{ _('Amount Trend') }}{% endblock %}
 
-{% block header_title %}Amount Trend{% endblock %}
+{% block header_title %}{{ _('Amount Trend') }}{% endblock %}
 
 {% block head_extra %}
 <script src="{{ url_for('static', filename='vendor/js/chart.umd.min.js') }}"></script>
@@ -18,11 +18,11 @@
 <div class="page-container">
 	{% set legend_items = [] %}
 	{% for ds in datasets %}
-		{% set _ = legend_items.append({'label': ds.label, 'color': ds.color, 'type': 'bar'}) %}
+		{% set _ = legend_items.append({'label': _(ds.label), 'color': ds.color, 'type': 'bar'}) %}
 	{% endfor %}
-	{% set axis_labels = {'left': 'Amount (¥)', 'bottom': 'Meeting Number'} %}
+	{% set axis_labels = {'left': _('Amount (¥)'), 'bottom': _('Meeting Number')} %}
 	
-	{{ render_chart_container('amountChart', 'Ticket Sales', 'CNY Amount by Contact Type', url_for('roster_bp.roster'), 'Back to Roster', legend_items, axis_labels) }}
+	{{ render_chart_container('amountChart', _('Ticket Sales'), _('CNY Amount by Contact Type'), url_for('roster_bp.roster'), _('Back to Roster'), legend_items, axis_labels) }}
 </div>
 
 <script>
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			beginAtZero: true,
 			min: 0,
 			suggestedMax: suggestedMax,
-			title: { display: true, text: 'Amount (¥)', font: { weight: 'bold' } },
+			title: { display: true, text: '{{ _("Amount (¥)") }}', font: { weight: 'bold' } },
 			grid: { color: 'rgba(0, 0, 0, 0.05)' },
 			stacked: true,
             ticks: {
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 		},
 		x: {
-			title: { display: true, text: 'Meeting Number', font: { weight: 'bold' } },
+			title: { display: true, text: '{{ _("Meeting Number") }}', font: { weight: 'bold' } },
 			grid: { display: false },
 			ticks: { padding: 12 },
 			stacked: true
@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			beginAtZero: true,
 			min: 0,
 			suggestedMax: suggestedMax,
-			title: { display: true, text: 'Amount (¥)', font: { weight: 'bold' } },
+			title: { display: true, text: '{{ _("Amount (¥)") }}', font: { weight: 'bold' } },
 			stacked: true,
             ticks: {
                 callback: function(value) {
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		y: {
 			type: 'category',
 			position: 'left',
-			title: { display: true, text: 'Meeting', font: { weight: 'bold' } },
+			title: { display: true, text: '{{ _("Meeting") }}', font: { weight: 'bold' } },
 			grid: { display: false },
 			stacked: true,
 			offset: false
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
 				boxPadding: 6,
 				usePointStyle: true,
 				callbacks: {
-					title: (context) => `Meeting #${meetingNumbers[context[0].dataIndex]}`,
+					title: (context) => `{{ _("Meeting") }} #${meetingNumbers[context[0].dataIndex]}`,
 					afterTitle: (context) => meetingDates[context[0].dataIndex] || '',
                     label: (context) => {
                         let label = context.dataset.label || '';
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', function() {
 					footer: (context) => {
 						const idx = context[0].dataIndex;
 						const total = datasetsRaw.reduce((sum, ds) => sum + (ds.data[idx] || 0), 0);
-						return `Total: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'CNY' }).format(total)}`;
+						return `{{ _("Total") }}: ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'CNY' }).format(total)}`;
 					}
 				}
 			}
@@ -178,10 +178,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
 	if (isMobile) {
 		if (titleTop) titleTop.style.display = 'none';
-		titleBottom.innerText = 'Amount (¥)';
+		titleBottom.innerText = '{{ _("Amount (¥)") }}';
 	} else {
 		if (titleTop) titleTop.style.display = 'none';
-		titleBottom.innerText = 'Meeting Number';
+		titleBottom.innerText = '{{ _("Meeting Number") }}';
 	}
 
 	// Build Chart.js datasets

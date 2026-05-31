@@ -19,14 +19,14 @@
     {% endif %}
 
     {% if selected_value|string == opt_val|string %}
-        {% set ns.selected_text = opt_text %}
+        {% set ns.selected_text = _(opt_text) %}
         {% set ns.selected_icon = opt_icon %}
         {% set ns.selected_color = opt_color %}
     {% endif %}
 {% endfor %}
 
 {% if label %}
-<label for="{{ select_id }}" id="{{ select_id }}-label" class="custom-select-label">{{ label }}</label>
+<label for="{{ select_id }}" id="{{ select_id }}-label" class="custom-select-label">{{ _(label) }}</label>
 {% endif %}
 <div class="custom-select-wrapper {{ extra_classes }}">
 
@@ -41,7 +41,7 @@
                 <i class="{{ ns.selected_icon }} select-item-icon" {% if ns.selected_color %}style="color: {{ ns.selected_color }};"{% endif %}></i>
                 {% endif %}
                 <span class="selected-text" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                    {{ ns.selected_text if ns.selected_text else placeholder }}
+                    {{ ns.selected_text if ns.selected_text else _(placeholder) }}
                 </span>
             </div>
             <!-- <i class="fas fa-chevron-down dropdown-icon" style="margin-left: 5px; font-size: 0.8rem;"></i> -->
@@ -65,19 +65,19 @@
                     {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_icon = '' %}{% set opt_color = '' %}{% set opt_type = '' %}{% set opt_expired_at = '' %}{% set opt_price = 0 %}
                 {% endif %}
                 <div class="autocomplete-result-item {{ 'selected' if selected_value|string == opt_val|string else '' }}" 
-                     data-value="{{ opt_val }}" data-text="{{ opt_text }}" data-icon="{{ opt_icon }}" data-color="{{ opt_color }}" data-type="{{ opt_type }}" data-expired-at="{{ opt_expired_at }}" data-price="{{ opt_price }}" role="option"
+                     data-value="{{ opt_val }}" data-text="{{ _(opt_text) }}" data-icon="{{ opt_icon }}" data-color="{{ opt_color }}" data-type="{{ opt_type }}" data-expired-at="{{ opt_expired_at }}" data-price="{{ opt_price }}" role="option"
                      aria-selected="{{ 'true' if selected_value|string == opt_val|string else 'false' }}">
                     {% if opt_icon %}
                     <i class="{{ opt_icon }} result-item-icon" style="margin-right: 8px; width: 16px; text-align: center; {% if opt_color %}color: {{ opt_color }};{% endif %}"></i>
                     {% endif %}
-                    <span>{{ opt_text }}</span>
+                    <span>{{ _(opt_text) }}</span>
                 </div>
             {% endfor %}
         </div>
 
         {# Hidden real select to maintain compatibility with existing JS #}
         <select id="{{ select_id }}" name="{{ select_id }}" style="display: none;" {% if is_disabled %}disabled{% endif %}>
-            <option value="">{{ placeholder }}</option>
+            <option value="">{{ _(placeholder) }}</option>
             {% for opt in options %}
                 {% if opt is string %}
                     {% set opt_val = opt %}{% set opt_text = opt %}
@@ -90,7 +90,7 @@
                 {% else %}
                     {% set opt_val = opt %}{% set opt_text = opt %}{% set opt_type = '' %}
                 {% endif %}
-                <option value="{{ opt_val }}" data-type="{{ opt_type }}" {% if selected_value|string == opt_val|string %}selected{% endif %}>{{ opt_text }}</option>
+                <option value="{{ opt_val }}" data-type="{{ opt_type }}" {% if selected_value|string == opt_val|string %}selected{% endif %}>{{ _(opt_text) }}</option>
             {% endfor %}
         </select>
     </div>
@@ -228,7 +228,7 @@
                 iconElement.remove();
             }
         } else if (!realSelect.value) {
-            selectedTextSpan.textContent = '{{ placeholder }}';
+            selectedTextSpan.textContent = '{{ _(placeholder) }}';
             if (iconElement) iconElement.remove();
         }
         updateHighlight();

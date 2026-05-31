@@ -214,6 +214,16 @@
     /* Keep fixed size */
 }
 
+.header-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-nav-actions .profile-container {
+    margin-left: 0;
+}
+
 .header-title {
     margin: 0;
     font-size: 1.2rem;
@@ -249,6 +259,13 @@
 .profile-trigger i {
     font-size: 1.2rem;
     color: #004165;
+}
+
+.profile-avatar-img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
 }
 
 .profile-menu {
@@ -336,4 +353,39 @@
 
 .logout-container a:hover {
     opacity: 0.8;
+}
+
+/* Language Selector styling */
+.language-selector {
+    margin-right: 15px;
+    z-index: 2000;
+}
+
+.lang-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    color: #333;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.lang-toggle-btn:hover {
+    background-color: #f5f5f5;
+    border-color: #ccc;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+}
+
+.lang-toggle-btn i {
+    font-size: 1rem;
+    color: #004165;
 }

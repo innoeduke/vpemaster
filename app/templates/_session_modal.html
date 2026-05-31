@@ -1,7 +1,7 @@
 <div id="addSessionModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal('addSessionModal')">&times;</span>
-    <h2 id="session-modal-title">Add New Session Type</h2>
+    <h2 id="session-modal-title">{{ _('Add New Session Type') }}</h2>
     <form
       id="addSessionForm"
       action="{{ url_for('settings_bp.add_session_type') }}"
@@ -10,57 +10,57 @@
       <input type="hidden" id="session_id_input" name="id" value="">
 
       <div class="form-group compact-form">
-        <label for="title">Title:</label>
+        <label for="title">{{ _('Title:') }}</label>
         <input type="text" id="title" name="title" required class="form-control" placeholder="e.g. Speech Section" />
       </div>
 
       <div class="form-group compact-form">
-        <label for="role_id">Role:</label>
+        <label for="role_id">{{ _('Role:') }}</label>
         <select id="role_id" name="role_id" class="form-control">
-          <option value="">None</option>
+          <option value="">{{ _('None') }}</option>
           {% for role in roles %}
-          <option value="{{ role.id }}">{{ role.name }}</option>
+          <option value="{{ role.id }}">{{ _(role.name) }}</option>
           {% endfor %}
         </select>
       </div>
 
       <fieldset class="modal-frame">
-        <legend>Duration:</legend>
+        <legend>{{ _('Duration:') }}</legend>
         <div class="form-group-row" style="display: flex; gap: 15px;">
           <div class="form-group compact-form" style="flex: 1;">
-            <label for="duration_min">Min Duration:</label>
+            <label for="duration_min">{{ _('Min Duration:') }}</label>
             <input type="number" id="duration_min" name="duration_min" class="form-control" placeholder="mins" />
           </div>
           <div class="form-group compact-form" style="flex: 1;">
-            <label for="duration_max">Max Duration:</label>
+            <label for="duration_max">{{ _('Max Duration:') }}</label>
             <input type="number" id="duration_max" name="duration_max" class="form-control" placeholder="mins" />
           </div>
         </div>
       </fieldset>
 
       <fieldset class="modal-frame">
-        <legend>Others:</legend>
+        <legend>{{ _('Others:') }}</legend>
         <div class="radio-group">
           <label class="radio-item">
             <input type="checkbox" id="is_section" name="is_section">
-            <span>Is Section</span>
+            <span>{{ _('Is Section') }}</span>
           </label>
 
           <label class="radio-item">
             <input type="checkbox" id="valid_for_project" name="valid_for_project">
-            <span>For Project</span>
+            <span>{{ _('For Project') }}</span>
           </label>
 
           <label class="radio-item">
             <input type="checkbox" id="is_hidden" name="is_hidden">
-            <span>Is Hidden</span>
+            <span>{{ _('Is Hidden') }}</span>
           </label>
         </div>
       </fieldset>
 
       <div class="form-actions" style="margin-top: 40px;">
-        <button type="button" class="btn btn-danger" onclick="closeModal('addSessionModal')">Cancel</button>
-        <button type="submit" id="session-modal-submit" class="btn btn-success">Save</button>
+        <button type="button" class="btn btn-danger" onclick="closeModal('addSessionModal')">{{ _('Cancel') }}</button>
+        <button type="submit" id="session-modal-submit" class="btn btn-success">{{ _('Save') }}</button>
 
       </div>
     </form>

@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "components/meeting_filter.html" import render_meeting_filter %}
 
-{% block title %}Role Booking{% endblock %}
+{% block title %}{{ _('Role Booking') }}{% endblock %}
 
 {% block content %}
 
@@ -12,7 +12,7 @@
     {# Macros moved to partials/_booking_tables.html #}
 
     <div class="page-container">
-        <h1><i class="fas fa-calendar-check"></i> Booking Assistant</h1>
+        <h1><i class="fas fa-calendar-check"></i> {{ _('Booking Assistant') }}</h1>
         {% if user_role != 'Guest' and notice_image != 'under_planning.webp' %}
         <div class="filters-control premium">
             <div class="filter-row-premium">
@@ -24,7 +24,7 @@
                         {% if not notice_image and not show_booking_closed_image %}
                         <a href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}"
                             target="_blank" class="btn btn-info role-guide-link">
-                            <i class="fas fa-book-open"></i> View Role Guide
+                            <i class="fas fa-book-open"></i> {{ _('View Role Guide') }}
                         </a>
                         {% elif selected_meeting %}
                         <div class="meeting-status-alert">
@@ -32,9 +32,9 @@
                                 <i class="fas fa-info-circle"></i>
                             </div>
                             <div class="alert-content">
-                                <div class="alert-title">Notice</div>
+                                <div class="alert-title">{{ _('Notice') }}</div>
                                 <div class="alert-description">
-                                    Meeting #{{ selected_meeting.Meeting_Number }} is {{ selected_meeting.status }}.
+                                    {{ _('Meeting #%(num)s is %(status)s', num=selected_meeting.Meeting_Number, status=_(selected_meeting.status)) }}
                                 </div>
                             </div>
                         </div>
@@ -65,7 +65,7 @@
                 <div class="accordion-item" data-category="booked-roles">
                     <button class="accordion-header active">
                         <div class="header-left">
-                            <span class="accordion-title">Booked Roles</span>
+                            <span class="accordion-title">{{ _('Booked Roles') }}</span>
                         </div>
                         <div class="accordion-header-right">
                             <i class="fas fa-chevron-down"></i>
@@ -84,7 +84,7 @@
                                     <div class="timeline-roles-list">
                                         {% for booking in group.bookings %}
                                         <div class="timeline-role">
-                                            <i class="fas {{ booking.icon }}"></i> {{ booking.role }}
+                                            <i class="fas {{ booking.icon }}"></i> {{ _(booking.role) }}
                                         </div>
                                         {% endfor %}
                                     </div>

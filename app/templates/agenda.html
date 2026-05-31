@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "components/meeting_filter.html" import render_meeting_filter %}
 
-{% block title %}Meeting Agenda{% endblock %}
+{% block title %}{{ _('Meeting Agenda') }}{% endblock %}
 
 
 
@@ -70,8 +70,8 @@
     {# This is the updated warning block for the full-screen overlay #}
     <div class="orientation-warning">
         <i class="fas fa-mobile-alt warning-icon"></i>
-        <h2>Please Rotate Your Device</h2>
-        <p>For the best experience, please rotate your device to landscape mode to edit the agenda.</p>
+        <h2>{{ _('Please Rotate Your Device') }}</h2>
+        <p>{{ _('For the best experience, please rotate your device to landscape mode to edit the agenda.') }}</p>
     </div>
 
     <br />
@@ -90,10 +90,10 @@
                 <div class="button-group status-group">
                     {% if selected_meeting.status %}
                     <span class="meeting-status-display status-{{ selected_meeting.status|replace(' ', '-') }}"
-                        title="Meeting Status: {{ selected_meeting.status.replace('_', ' ').title() }}">
+                        title="{{ _('Meeting Status:') }} {{ _(selected_meeting.status) }}">
                         <i
                             class="fas fa-fw {% if selected_meeting.status == 'unpublished' %}fa-eye-slash{% elif selected_meeting.status == 'not started' %}fa-play-circle{% elif selected_meeting.status == 'running' %}fa-broadcast-tower{% elif selected_meeting.status == 'finished' %}fa-check-circle{% elif selected_meeting.status == 'cancelled' %}fa-ban{% endif %}"></i>{{
-                        selected_meeting.status.replace('_', ' ').title() }}
+                        _(selected_meeting.status) }}
                     </span>
                     {% endif %}
 
@@ -106,26 +106,26 @@
                         data-meeting-id="{{ selected_meeting.id }}"
                         data-current-status="{{ selected_meeting.status }}"
                         {% if selected_meeting.status == 'unpublished' %}
-                        title="Publish to allow members to book roles."
+                        title="{{ _('Publish to allow members to book roles.') }}"
                         {% elif selected_meeting.status == 'not started' %}
-                        title="Start to let audience vote."
+                        title="{{ _('Start to let audience vote.') }}"
                         {% elif selected_meeting.status == 'running' %}
-                        title="Stop to end voting and show results."
+                        title="{{ _('Stop to end voting and show results.') }}"
                         {% endif %}
                         {% if selected_meeting.status=='cancelled'
                         %}disabled{% endif %}>
                         {% if selected_meeting.status == 'unpublished' %}
-                        Publish
+                        {{ _('Publish') }}
                         {% elif selected_meeting.status == 'not started' %}
-                        Start
+                        {{ _('Start') }}
                         {% elif selected_meeting.status == 'running' %}
-                        Stop
+                        {{ _('Stop') }}
                         {% elif selected_meeting.status == 'finished' %}
-                        Delete
+                        {{ _('Delete') }}
                         {% elif selected_meeting.status == 'cancelled' %}
-                        Cancelled
+                        {{ _('Cancelled') }}
                         {% else %}
-                        {{ selected_meeting.status.replace('_', ' ').title() }}
+                        {{ _(selected_meeting.status) }}
                         {% endif %}
                     </button>
                     {% endif %}
@@ -134,43 +134,43 @@
 
                 <div class="button-group action-group">
                     {% if selected_meeting %}
-                    <button id="jpg-btn" class="btn btn-secondary action-icon-btn" title="Export as Image"><i class="fas fa-print"></i></button>
-                    <a id="role-guide-btn" href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}" target="_blank" class="btn btn-secondary action-icon-btn" title="View Role Guide"><i class="fas fa-book-open"></i></a>
+                    <button id="jpg-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Export as Image') }}"><i class="fas fa-print"></i></button>
+                    <a id="role-guide-btn" href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}" target="_blank" class="btn btn-secondary action-icon-btn" title="{{ _('View Role Guide') }}"><i class="fas fa-book-open"></i></a>
                     {% endif %}
 
                     {% set can_edit = selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
                     {% set can_view_unpublished = is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED) %}
 
                     {% if can_edit %}
-                    <button id="xlsx-btn" class="btn btn-secondary action-icon-btn" title="Export to Excel"><i class="fas fa-file-excel"></i></button>
+                    <button id="xlsx-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Export to Excel') }}"><i class="fas fa-file-excel"></i></button>
                     {% endif %}
                     {% if can_edit or can_view_unpublished %}
-                    <button id="ppt-btn" class="btn btn-secondary action-icon-btn" title="Download PPT"><i class="fas fa-file-powerpoint"></i></button>
+                    <button id="ppt-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Download PPT') }}"><i class="fas fa-file-powerpoint"></i></button>
                     {% endif %}
                     {% if can_edit %}
-                    <button id="edit-btn" class="btn btn-primary">Edit</button>
+                    <button id="edit-btn" class="btn btn-primary">{{ _('Edit') }}</button>
                     {% endif %}
 
                     {% if is_authorized(Permissions.AGENDA_CREATE) %}
-                    <button id="create-btn" class="btn btn-success">New</button>
+                    <button id="create-btn" class="btn btn-success">{{ _('New') }}</button>
                     {% endif %}
                     
                     {% if is_authorized(Permissions.AGENDA_EDIT) or is_authorized(Permissions.CLUBADMIN) or can_view_unpublished %}
                     <div class="action-dropdown">
-                        <button id="action-btn" class="btn btn-secondary action-icon-btn" title="Actions"><i class="fas fa-ellipsis-v"></i></button>
+                        <button id="action-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Actions') }}"><i class="fas fa-ellipsis-v"></i></button>
                         <div id="action-menu" class="action-menu">
                             {% if is_authorized(Permissions.AGENDA_CREATE) %}
-                            <div class="action-menu-item mobile-only-item" id="action-new-opt"><i class="fas fa-plus"></i> New</div>
+                            <div class="action-menu-item mobile-only-item" id="action-new-opt"><i class="fas fa-plus"></i> {{ _('New') }}</div>
                             {% endif %}
                             {% if can_edit %}
-                            <div class="action-menu-item mobile-only-item" id="action-edit-opt"><i class="fas fa-edit"></i> Edit</div>
-                            <div class="action-menu-item" id="action-xlsx-opt"><i class="fas fa-file-excel"></i> Excel</div>
+                            <div class="action-menu-item mobile-only-item" id="action-edit-opt"><i class="fas fa-edit"></i> {{ _('Edit') }}</div>
+                            <div class="action-menu-item" id="action-xlsx-opt"><i class="fas fa-file-excel"></i> {{ _('Excel') }}</div>
                             {% endif %}
                             {% if can_edit or can_view_unpublished %}
-                            <div class="action-menu-item" id="action-ppt-opt"><i class="fas fa-file-powerpoint"></i> PPT</div>
+                            <div class="action-menu-item" id="action-ppt-opt"><i class="fas fa-file-powerpoint"></i> {{ _('PPT') }}</div>
                             {% endif %}
                             {% if selected_meeting %}
-                            <div class="action-menu-item" id="action-jpg-opt"><i class="fas fa-print"></i> Image</div>
+                            <div class="action-menu-item" id="action-jpg-opt"><i class="fas fa-print"></i> {{ _('Image') }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -191,11 +191,11 @@
     {# Edit Mode Buttons (Only visible if authorized) #}
     {% if is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
     <div class="button-group" id="edit-mode-buttons" style="display: none;">
-        <button id="cancel-edit-btn" class="btn btn-secondary">Cancel</button>
-        <button id="view-details-btn" class="btn btn-primary">Details</button>
-        <button id="add-row-btn" class="btn btn-primary">+Section</button>
-        <button id="export-template-btn" class="btn btn-primary">Export</button>
-        <button id="edit-logs-btn" class="btn btn-primary">Save</button>
+        <button id="cancel-edit-btn" class="btn btn-secondary">{{ _('Cancel') }}</button>
+        <button id="view-details-btn" class="btn btn-primary">{{ _('Details') }}</button>
+        <button id="add-row-btn" class="btn btn-primary">{{ _('+Section') }}</button>
+        <button id="export-template-btn" class="btn btn-primary">{{ _('Export') }}</button>
+        <button id="edit-logs-btn" class="btn btn-primary">{{ _('Save') }}</button>
     </div>
     {% endif %}
 
@@ -204,19 +204,19 @@
             <thead>
                 <tr class="non-edit-mode-header">
                     <th><i class="fas fa-clock"></i></th>
-                    <th><i class="fas fa-file-alt"></i> Session</th>
-                    <th><i class="fas fa-user"></i> Owner</th>
-                    <th class="col-view-duration-header"><i class="fas fa-hourglass-half"></i> Min'</th>
+                    <th><i class="fas fa-file-alt"></i> {{ _('Session') }}</th>
+                    <th><i class="fas fa-user"></i> {{ _('Owner') }}</th>
+                    <th class="col-view-duration-header"><i class="fas fa-hourglass-half"></i> {{ _("Min'") }}</th>
                 </tr>
                 <tr class="edit-mode-header" style="display: none;">
-                    <th class="col-no">No</th>
-                    <th class="col-start-time">Start Time</th>
-                    <th class="col-session-type">Session Type</th>
-                    <th class="col-session-title">Session Title</th>
-                    <th class="col-owner">Owner</th>
-                    <th class="col-duration-min">Min</th>
-                    <th class="col-duration-max">Max</th>
-                    <th class="actions-column">Actions</th>
+                    <th class="col-no">{{ _('No') }}</th>
+                    <th class="col-start-time">{{ _('Start Time') }}</th>
+                    <th class="col-session-type">{{ _('Session Type') }}</th>
+                    <th class="col-session-title">{{ _('Session Title') }}</th>
+                    <th class="col-owner">{{ _('Owner') }}</th>
+                    <th class="col-duration-min">{{ _('Min') }}</th>
+                    <th class="col-duration-max">{{ _('Max') }}</th>
+                    <th class="actions-column">{{ _('Actions') }}</th>
                 </tr>
             </thead>
             {% set ns = namespace(displayed_awards=[]) %}
@@ -265,7 +265,7 @@
                             {% endif %}
 
                             {% if log_dict.media_url and current_user.has_permission('MEDIA_ACCESS') %}
-                            <a href="{{ log_dict.media_url }}" target="_blank" title="Watch Media">
+                            <a href="{{ log_dict.media_url }}" target="_blank" title="{{ _('Watch Media') }}">
                                 {{ display_title }}
                             </a>
                             {% else %}
@@ -279,11 +279,11 @@
                             {% if log_dict.project_code_display %}
                             {% if log_dict.Project_ID and log_dict.pathway_code %}
                             <a href="{{ url_for('pathways_bp.pathway_library') }}?path={{ log_dict.pathway_code }}&level={{ log_dict.level }}&project_id={{ log_dict.Project_ID }}"
-                                class="project-code-link" title="View in Pathway Library">
+                                class="project-code-link" title="{{ _('View in Pathway Library') }}">
                                 ({{ log_dict.project_code_display }})
                             </a>
                             {% else %}
-                            <span class="project-code-link" title="Project Code">
+                            <span class="project-code-link" title="{{ _('Project Code') }}">
                                 ({{ log_dict.project_code_display }})
                             </span>
                             {% endif %}
@@ -320,7 +320,7 @@
 
                             {# Show trophy for award winners #}
                             {% if loop.first and log_dict.award_type and log_dict.role not in ns.displayed_awards %}
-                            <span class="award-badge" title="{{ log_dict.award_type }} Winner" style="margin-left: 4px;">
+                            <span class="award-badge" title="{{ _(log_dict.award_type|replace('-', ' ')|title) }} {{ _('Winner') }}" style="margin-left: 4px;">
                                 <i class="fas fa-award"></i>
                             </span>
                             {% set ns.displayed_awards = ns.displayed_awards + [log_dict.role] %}
@@ -347,12 +347,11 @@
     {# Pathways Info (Dismissible) - Moved down here #}
     <div id="pathways-info-box" class="dismissible-info" style="display: none;">
         <span class="close-info" onclick="dismissAgendaMessage('pathways-info-box')">&times;</span>
-        <p><a href="https://www.toastmasters.org/education/education-programs-faq#faqTop" target="_blank">Pathways
-                award credentials</a> are written as follows:</p>
+        <p><a href="https://www.toastmasters.org/education/education-programs-faq#faqTop" target="_blank">{{ _('Pathways award credentials') }}</a> {{ _('are written as follows:') }}</p>
         <ul>
-            <li>Only the most recently achieved award will show</li>
-            <li>Any Pathways award credential overwrites a traditional education program award credential</li>
-            <li>DTM overwrites all education award credentials</li>
+            <li>{{ _('Only the most recently achieved award will show') }}</li>
+            <li>{{ _('Any Pathways award credential overwrites a traditional education program award credential') }}</li>
+            <li>{{ _('DTM overwrites all education award credentials') }}</li>
         </ul>
     </div>
 
@@ -373,54 +372,54 @@
         <div class="modal-content">
             <span class="close" onclick="closeCreateAgendaModal()">&times;</span>
             <div class="modal-header">
-                <h2>Create New Agenda</h2>
+                <h2>{{ _('Create New Agenda') }}</h2>
             </div>
             <form id="create-meeting-form">
                 <div class="contact-form-grid">
                     <div class="contact-form-item">
-                        <label for="meeting_number">Meeting Number:</label>
+                        <label for="meeting_number">{{ _('Meeting Number:') }}</label>
                         <input type="number" id="meeting_number" name="meeting_number" value="{{ next_meeting_num }}"
                             autocomplete="off" required>
                     </div>
 
                     <div class="contact-form-item">
-                        <label for="meeting_title">Meeting Title:</label>
+                        <label for="meeting_title">{{ _('Meeting Title:') }}</label>
                         <input type="text" id="meeting_title" name="meeting_title" autocomplete="off">
                     </div>
 
                     <div class="contact-form-item">
-                        <label for="meeting_date">Meeting Date:</label>
+                        <label for="meeting_date">{{ _('Meeting Date:') }}</label>
                         <input type="date" id="meeting_date" name="meeting_date" value="{{ next_meeting_date }}"
                             autocomplete="off" required>
                     </div>
 
                     <div class="contact-form-item">
-                        <label for="start_time">Start Time:</label>
+                        <label for="start_time">{{ _('Start Time:') }}</label>
                         <input type="time" id="start_time" name="start_time" value="{{ default_start_time }}"
                             autocomplete="off" required>
                     </div>
 
                     <div class="contact-form-item full-width">
-                        <label for="meeting_type">Meeting Type:</label>
+                        <label for="meeting_type">{{ _('Meeting Type:') }}</label>
                         <select id="meeting_type" name="meeting_type" autocomplete="off" required>
                             {% for type_name in meeting_types.keys() %}
                             <option value="{{ type_name }}" {% if type_name=='Keynote Speech' %}selected{% endif %}>
-                                {{ type_name }}</option>
+                                {{ _(type_name) }}</option>
                             {% endfor %}
                         </select>
                     </div>
 
                     <div class="contact-form-item full-width">
-                        <label for="ge_mode">GE Style:</label>
+                        <label for="ge_mode">{{ _('GE Style:') }}</label>
                         <select id="ge_mode" name="ge_mode" autocomplete="off" required>
-                            <option value="1">Distributed (1ms+3m)</option>
-                            <option value="0" selected>Traditional (5m)</option>
+                            <option value="1">{{ _('Distributed (1ms+3m)') }}</option>
+                            <option value="0" selected>{{ _('Traditional (5m)') }}</option>
                         </select>
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-success">Create Meeting</button>
-                    <button type="button" class="btn btn-primary" onclick="closeCreateAgendaModal()">Cancel</button>
+                    <button type="submit" class="btn btn-success">{{ _('Create Meeting') }}</button>
+                    <button type="button" class="btn btn-primary" onclick="closeCreateAgendaModal()">{{ _('Cancel') }}</button>
                 </div>
             </form>
         </div>
@@ -474,8 +473,8 @@
             <div id="custom-modal-title" class="custom-modal-title"></div>
             <div id="custom-modal-message" class="custom-modal-message"></div>
             <div id="custom-modal-actions" class="custom-modal-actions">
-                <button id="custom-modal-cancel" class="custom-modal-btn btn-cancel" style="display: none;">Cancel</button>
-                <button id="custom-modal-ok" class="custom-modal-btn btn-confirm">OK</button>
+                <button id="custom-modal-cancel" class="custom-modal-btn btn-cancel" style="display: none;">{{ _('Cancel') }}</button>
+                <button id="custom-modal-ok" class="custom-modal-btn btn-confirm">{{ _('OK') }}</button>
             </div>
         </div>
     </div>

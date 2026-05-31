@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Calendar{% endblock %}
+{% block title %}{{ _('Calendar') }}{% endblock %}
 
-{% block header_title %}Club Calendar{% endblock %}
+{% block header_title %}{{ _('Club Calendar') }}{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/calendar.css') }}">
@@ -10,18 +10,18 @@
 
 {% block content %}
 <div class="calendar-page-container">
-    <h1><i class="fas fa-calendar-alt"></i> Club Calendar</h1>
+    <h1><i class="fas fa-calendar-alt"></i> {{ _('Club Calendar') }}</h1>
     <div class="filters-control premium">
         <div class="filter-row-premium">
             <div class="filter-left">
                 <form method="GET" action="{{ url_for('main_bp.calendar') }}" id="calendar-date-filter-form" class="date-filter-form">
                     <div class="date-filter-group">
                         <div class="date-input-wrapper">
-                            <label class="filter-label" for="start_date">Start Date:</label>
+                            <label class="filter-label" for="start_date">{{ _('Start Date:') }}</label>
                             <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date or (current_term['start'] if current_term else '') }}" onchange="updateDateSelection()">
                         </div>
                         <div class="date-input-wrapper">
-                            <label class="filter-label" for="end_date">End Date:</label>
+                            <label class="filter-label" for="end_date">{{ _('End Date:') }}</label>
                             <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date or (current_term['end'] if current_term else '') }}" onchange="updateDateSelection()">
                         </div>
                     </div>
@@ -32,11 +32,11 @@
 
     <div class="calendar-grid-container">
         <div class="calendar-grid-header">
-            <div>Month</div>
-            <div>Week 1</div>
-            <div>Week 2</div>
-            <div>Week 3</div>
-            <div>Week 4</div>
+            <div>{{ _('Month') }}</div>
+            <div>{{ _('Week 1') }}</div>
+            <div>{{ _('Week 2') }}</div>
+            <div>{{ _('Week 3') }}</div>
+            <div>{{ _('Week 4') }}</div>
         </div>
         <div class="calendar-body">
             {% for month_key, data in meetings_by_month.items() %}
@@ -50,8 +50,14 @@
                     {% set is_upcoming = (meeting.Meeting_Date > today and not is_next and not is_ongoing and meeting.status != 'cancelled') %}
                     <a href="{{ url_for('agenda_bp.agenda', meeting_id=meeting.id) }}" 
                        class="meeting-card status-{{ meeting.status|lower|replace(' ', '-') }} type-{{ meeting.type|lower|replace(' ', '-') }} {% if is_next or is_ongoing %}highlight{% endif %} {% if is_upcoming %}is-upcoming{% endif %}">
-                        <div class="meeting-date">{{ meeting.Meeting_Date.strftime('%b %d') }}</div>
-                        <div class="meeting-title">{{ meeting.Meeting_Title or 'Regular Meeting' }}</div>
+                        <div class="meeting-date">
+                            {% if get_locale() == 'zh_CN' %}
+                            {{ meeting.Meeting_Date.strftime('%m月%d日') }}
+                            {% else %}
+                            {{ meeting.Meeting_Date.strftime('%b %d') }}
+                            {% endif %}
+                        </div>
+                        <div class="meeting-title">{{ meeting.Meeting_Title or _('Regular Meeting') }}</div>
                         {% if meeting.manager %}
                         <div class="meeting-manager">
                             <i class="fas fa-user-tie"></i> {{ meeting.manager.Name }}
@@ -68,7 +74,7 @@
             </div>
             {% else %}
             <div class="calendar-row" style="grid-template-columns: 1fr; justify-content: center; align-items: center; min-height: 100px;">
-                <div style="text-align: center; width: 100%; color: #64748b;">No meetings found for the selected date range.</div>
+                <div style="text-align: center; width: 100%; color: #64748b;">{{ _('No meetings found for the selected date range.') }}</div>
             </div>
             {% endfor %}
         </div>

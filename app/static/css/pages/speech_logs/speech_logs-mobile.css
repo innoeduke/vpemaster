@@ -185,7 +185,7 @@
     justify-content: center;
   }
 
-  .header-right {
+  .speech-log-header .header-right {
     order: 2;
     width: 100%;
     align-items: center;

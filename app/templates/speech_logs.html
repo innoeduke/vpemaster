@@ -1,12 +1,12 @@
 {% extends "base.html" %}
 
 {% block title %}
-    {% block speech_view_title %}Speech Logs{% endblock %}
+    {% block speech_view_title %}{{ _('Speech Logs') }}{% endblock %}
 {% endblock %}
 
 {% block content %}
 <div class="speech-logs-content {% block content_class %}{% endblock %}">
-    <h1><i class="fas fa-book-open"></i> Educational Activities</h1></br>
+    <h1><i class="fas fa-book-open"></i> {{ _('Educational Activities') }}</h1></br>
     
     {% block speech_log_header %}{% endblock %}
     {% block speech_log_toolbar %}{% endblock %}
@@ -24,7 +24,7 @@
 <div id="roleHistoryModal" class="history-modal">
     <div class="history-modal-content">
         <div class="history-modal-header">
-            <h3 id="historyRoleName">Role History</h3>
+            <h3 id="historyRoleName">{{ _('Role History') }}</h3>
             <span class="close-history" onclick="closeHistoryModal()">&times;</span>
         </div>
         <div id="historyList" class="history-list">

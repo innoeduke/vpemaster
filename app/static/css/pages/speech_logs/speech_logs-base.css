@@ -951,7 +951,7 @@
 	position: relative;
 }
 
-.header-right {
+.speech-log-header .header-right {
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;

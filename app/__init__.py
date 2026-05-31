@@ -72,6 +72,11 @@ def create_app(config_class='config.Config'):
     assets.init_app(app)
     cache.init_app(app)
     
+    # Register global translation function
+    from .translations.translations import translate as _, get_locale
+    app.jinja_env.globals['_'] = _
+    app.jinja_env.globals['get_locale'] = get_locale
+    
     # Set up identity loader for Flask-Principal
     from flask_login import user_loaded_from_request, user_loaded_from_cookie, user_logged_in
     from flask_principal import identity_changed, RoleNeed, UserNeed
@@ -111,6 +116,7 @@ def create_app(config_class='config.Config'):
         from .models import Meeting, Club
         from .auth.permissions import Permissions
         from .club_context import get_or_set_default_club, get_current_club_id
+        from .translations.translations import translate as _
         
         # Ensure club context is initialized
         club_id = get_or_set_default_club()
@@ -151,7 +157,8 @@ def create_app(config_class='config.Config'):
             hide_voting_nav=hide_voting_nav,
             Permissions=Permissions,
             club=club,
-            get_current_club_id=get_current_club_id
+            get_current_club_id=get_current_club_id,
+            _=_,
         )
 
     # Register Blueprints
@@ -210,6 +217,7 @@ def create_app(config_class='config.Config'):
     from app.commands.blockchain import deploy_contract, upload_achievements
     from app.commands.backup import resources
     from app.commands.sync import sync
+    from app.commands.translate import translate_scan
 
     app.cli.add_command(create_admin)
     app.cli.add_command(import_data)
@@ -221,6 +229,7 @@ def create_app(config_class='config.Config'):
     app.cli.add_command(unpack)
     app.cli.add_command(resources)
     app.cli.add_command(sync)
+    app.cli.add_command(translate_scan)
 
     
     # Add blockchain command group

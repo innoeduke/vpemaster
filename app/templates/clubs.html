@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Club Management{% endblock %}
+{% block title %}{{ _('Club Management') }}{% endblock %}
 
 {% block flash_messages %}{% endblock %}
 
@@ -356,19 +356,19 @@
 {% block content %}
 <div class="clubs-container">
     <div class="clubs-header">
-        <h1>Club Management</h1>
+        <h1>{{ _('Club Management') }}</h1>
         <div class="header-actions">
             <!-- Search Form -->
             <form method="GET" action="{{ url_for('clubs_bp.list_clubs') }}" id="searchForm" class="search-form">
                 <div class="search-container">
                     <i class="fas fa-search search-icon"></i>
                     <input type="text" name="q" class="form-control search-input" 
-                           placeholder="Search Club No or Name..." 
+                           placeholder="{{ _('Search Club No or Name...') }}" 
                            value="{{ search_query }}" 
                            autocomplete="off"
                            onfocus="this.select()">
                     {% if search_query %}
-                    <a href="{{ url_for('clubs_bp.list_clubs') }}" class="clear-search" title="Clear Search">
+                    <a href="{{ url_for('clubs_bp.list_clubs') }}" class="clear-search" title="{{ _('Clear Search') }}">
                         <i class="fas fa-times"></i>
                     </a>
                     {% endif %}
@@ -376,7 +376,7 @@
             </form>
             <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary btn-create">
                 <i class="fas fa-plus"></i>
-                Create New Club
+                {{ _('Create New Club') }}
             </a>
         </div>
     </div>
@@ -503,11 +503,11 @@
             <table class="table align-middle">
                 <thead>
                     <tr>
-                        <th style="width: 140px;">Club No</th>
-                        <th>Club Identity</th>
-                        <th>Organisation</th>
-                        <th>Schedule</th>
-                        <th style="width: 120px; text-align: right;">Actions</th>
+                        <th style="width: 140px;">{{ _('Club No') }}</th>
+                        <th>{{ _('Club Identity') }}</th>
+                        <th>{{ _('Organisation') }}</th>
+                        <th>{{ _('Schedule') }}</th>
+                        <th style="width: 120px; text-align: right;">{{ _('Actions') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -538,7 +538,7 @@
                                 {% if club.division %}<span class="text-muted mx-1">/</span> Div {{ club.division }}{% endif %}
                                 {% if club.area %}<span class="text-muted mx-1">/</span> Area {{ club.area }}{% endif %}
                                 {% if not club.district and not club.division and not club.area %}
-                                <span class="text-muted italic small">Not specified</span>
+                                <span class="text-muted italic small">{{ _('Not specified') }}</span>
                                 {% endif %}
                             </div>
                         </td>
@@ -557,19 +557,19 @@
                                 </div>
                                 {% endif %}
                                 {% if not club.meeting_date and not club.meeting_time %}
-                                <span class="text-muted italic small">TBD</span>
+                                <span class="text-muted italic small">{{ _('TBD') }}</span>
                                 {% endif %}
                             </div>
                         </td>
                         <td>
                             <div class="action-btns">
-                                <a href="{{ url_for('users_bp.user_form', club_id=club.id, role='ClubAdmin') }}" class="action-btn" title="Create ClubAdmin">
+                                <a href="{{ url_for('users_bp.user_form', club_id=club.id, role='ClubAdmin') }}" class="action-btn" title="{{ _('Create ClubAdmin') }}">
                                     <i class="fas fa-user-shield"></i>
                                 </a>
-                                <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="action-btn" title="Edit Club">
+                                <a href="{{ url_for('clubs_bp.edit_club', club_id=club.id) }}" class="action-btn" title="{{ _('Edit Club') }}">
                                     <i class="fas fa-pencil-alt"></i>
                                 </a>
-                                <button type="button" class="action-btn delete" data-bs-toggle="modal" data-bs-target="#deleteModal{{ club.id }}" title="Delete Club">
+                                <button type="button" class="action-btn delete" data-bs-toggle="modal" data-bs-target="#deleteModal{{ club.id }}" title="{{ _('Delete Club') }}">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
@@ -580,9 +580,9 @@
                         <td colspan="5">
                             <div class="empty-state">
                                 <i class="fas fa-layer-group"></i>
-                                <p>You haven't added any clubs yet.</p>
+                                <p>{{ _("You haven't added any clubs yet.") }}</p>
                                 <a href="{{ url_for('clubs_bp.create_club') }}" class="btn btn-primary">
-                                    Add Your First Club
+                                    {{ _('Add Your First Club') }}
                                 </a>
                             </div>
                         </td>
@@ -596,14 +596,18 @@
     {% if pagination and pagination.pages > 1 %}
     <div class="pagination-container">
         <div class="pagination-info">
+            {% if get_locale() == 'zh_CN' %}
+            显示第 {{ (pagination.page - 1) * pagination.per_page + 1 }} - {{ [pagination.page * pagination.per_page, pagination.total]|min }} 家俱乐部，共 {{ pagination.total }} 家
+            {% else %}
             Showing {{ (pagination.page - 1) * pagination.per_page + 1 }} - {{ [pagination.page * pagination.per_page, pagination.total]|min }} of {{ pagination.total }} clubs
+            {% endif %}
         </div>
         
         <div class="pagination-controls">
             <!-- First Page -->
             <a href="{{ url_for('clubs_bp.list_clubs', page=1, per_page=pagination.per_page) }}" 
             class="pagination-btn" 
-            title="First Page"
+            title="{{ _('First Page') }}"
             {% if pagination.page == 1 %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
             <i class="fas fa-angle-double-left"></i>
             </a>
@@ -611,19 +615,19 @@
             <!-- Prev Page -->
             <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.prev_num, per_page=pagination.per_page) if pagination.has_prev else '#' }}" 
             class="pagination-btn" 
-            title="Previous Page"
+            title="{{ _('Previous Page') }}"
             {% if not pagination.has_prev %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
             <i class="fas fa-angle-left"></i>
             </a>
             
             <span class="page-indicator">
-            Page <span class="current-page-display">{{ pagination.page }}</span> of <span class="total-pages-display">{{ pagination.pages }}</span>
+            {{ _('Page') }} <span class="current-page-display">{{ pagination.page }}</span> {{ _('of') }} <span class="total-pages-display">{{ pagination.pages }}</span>
             </span>
             
             <!-- Next Page -->
             <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.next_num, per_page=pagination.per_page) if pagination.has_next else '#' }}" 
             class="pagination-btn" 
-            title="Next Page"
+            title="{{ _('Next Page') }}"
             {% if not pagination.has_next %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
             <i class="fas fa-angle-right"></i>
             </a>
@@ -631,20 +635,20 @@
             <!-- Last Page -->
             <a href="{{ url_for('clubs_bp.list_clubs', page=pagination.pages, per_page=pagination.per_page) }}" 
             class="pagination-btn" 
-            title="Last Page"
+            title="{{ _('Last Page') }}"
             {% if pagination.page == pagination.pages %}style="pointer-events: none; opacity: 0.5;"{% endif %}>
             <i class="fas fa-angle-double-right"></i>
             </a>
         </div>
         
         <div class="pagination-size">
-            <label for="pageSizeSelect">Show:</label>
+            <label for="pageSizeSelect">{{ _('Show:') }}</label>
             <select id="pageSizeSelect" class="page-size-select" onchange="window.location.href=this.value">
             {% for size in [12, 25, 50, 100] %}
             <option value="{{ url_for('clubs_bp.list_clubs', page=1, per_page=size) }}" {% if pagination.per_page == size %}selected{% endif %}>{{ size }}</option>
             {% endfor %}
             </select>
-            <span>per page</span>
+            <span>{{ _('per page') }}</span>
         </div>
     </div>
     {% endif %}
@@ -655,20 +659,20 @@
 <div class="modal" id="deleteModal{{ club.id }}">
     <div class="modal-content delete-modal-content">
         <div class="delete-modal-header">
-            <h3>Delete Club?</h3>
+            <h3>{{ _('Delete Club?') }}</h3>
             <button type="button" class="close" data-bs-dismiss="modal">&times;</button>
         </div>
         <div class="delete-modal-body">
-            <p>Are you sure you want to delete <strong>{{ club.club_name }}</strong>?</p>
+            <p>{{ _('Are you sure you want to delete') }} <strong>{{ club.club_name }}</strong>?</p>
             <div class="warning-box">
                 <i class="fas fa-exclamation-triangle"></i>
-                <span>All data associated with this club might be affected. This action cannot be undone.</span>
+                <span>{{ _('All data associated with this club might be affected. This action cannot be undone.') }}</span>
             </div>
         </div>
         <div class="delete-modal-footer">
-            <button type="button" class="btn-cancel" data-bs-dismiss="modal">Keep Club</button>
+            <button type="button" class="btn-cancel" data-bs-dismiss="modal">{{ _('Keep Club') }}</button>
             <form action="{{ url_for('clubs_bp.delete_club', club_id=club.id) }}" method="POST" style="margin: 0;">
-                <button type="submit" class="btn-delete-confirm">Delete Permanently</button>
+                <button type="submit" class="btn-delete-confirm">{{ _('Delete Permanently') }}</button>
             </form>
         </div>
     </div>

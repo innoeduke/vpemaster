@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Uploaded Files - {{ link.title }}{% endblock %}
+{% block title %}{{ _('Uploaded Files') }} - {{ link.title }}{% endblock %}
 
-{% block header_title %}Files Manager{% endblock %}
+{% block header_title %}{{ _('Files Manager') }}{% endblock %}
 
 {% block content %}
 <div class="uploads-container">
@@ -10,22 +10,22 @@
         <div>
             <h1 class="uploads-title" style="text-align: left; margin-bottom: 5px;"><i class="fas fa-folder-open"></i> {{ link.title }}</h1>
             <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
-                <span class="note" style="margin: 0;"><i class="fas fa-link"></i> Code: <strong>{{ link.code }}</strong></span>
+                <span class="note" style="margin: 0;"><i class="fas fa-link"></i> {{ _('Code:') }} <strong>{{ link.code }}</strong></span>
                 {% if link.meeting %}
-                <span class="note" style="margin: 0;"><i class="fas fa-calendar-alt"></i> Meeting: <strong>#{{ link.meeting.Meeting_Number }}</strong></span>
+                <span class="note" style="margin: 0;"><i class="fas fa-calendar-alt"></i> {{ _('Meeting:') }} <strong>#{{ link.meeting.Meeting_Number }}</strong></span>
                 {% endif %}
-                <span class="note" style="margin: 0;"><i class="fas fa-file-alt"></i> Files: <strong>{{ total_files }}</strong></span>
-                <span class="note" style="margin: 0;"><i class="fas fa-database"></i> Total Size: <strong>{{ total_size_formatted }}</strong></span>
+                <span class="note" style="margin: 0;"><i class="fas fa-file-alt"></i> {{ _('Files:') }} <strong>{{ total_files }}</strong></span>
+                <span class="note" style="margin: 0;"><i class="fas fa-database"></i> {{ _('Total Size:') }} <strong>{{ total_size_formatted }}</strong></span>
             </div>
         </div>
         
         <div style="display: flex; gap: 10px;">
             <a href="{{ url_for('uploads_bp.manage_uploads') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                <i class="fas fa-arrow-left"></i> {{ _('Back to Dashboard') }}
             </a>
             {% if total_files > 0 %}
             <button class="btn btn-primary" onclick="downloadAllZip('{{ link.code }}', '{{ link.title|escape }}')">
-                <i class="fas fa-file-archive"></i> Download All (ZIP)
+                <i class="fas fa-file-archive"></i> {{ _('Download All (ZIP)') }}
             </button>
             {% endif %}
         </div>
@@ -34,13 +34,13 @@
     {% if not files %}
     <div class="premium-card text-center" style="padding: 60px 20px;">
         <i class="fas fa-folder-open" style="font-size: 4rem; color: #bdc3c7; margin-bottom: 20px;"></i>
-        <h3 style="color: #2c3e50; margin-bottom: 10px;">No Files Uploaded Yet</h3>
-        <p style="color: #7f8c8d; max-width: 500px; margin: 0 auto 20px auto;">Share the public upload link with participants to collect files here.</p>
+        <h3 style="color: #2c3e50; margin-bottom: 10px;">{{ _('No Files Uploaded Yet') }}</h3>
+        <p style="color: #7f8c8d; max-width: 500px; margin: 0 auto 20px auto;">{{ _('Share the public upload link with participants to collect files here.') }}</p>
         <div class="copy-btn-container">
             <button class="btn btn-primary" onclick="copyLink('{{ url_for('uploads_bp.upload_page', code=link.code, _external=True) }}', this)">
-                <i class="fas fa-copy"></i> Copy Public Upload Link
+                <i class="fas fa-copy"></i> {{ _('Copy Public Upload Link') }}
             </button>
-            <span class="copy-tooltip" style="bottom: 110%;">Copied!</span>
+            <span class="copy-tooltip" style="bottom: 110%;">{{ _('Copied!') }}</span>
         </div>
     </div>
     {% else %}
@@ -48,9 +48,9 @@
     <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;">
         <label class="switch-container" style="cursor: pointer;">
             <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" style="margin-right: 8px;">
-            <span style="font-size: 0.9rem; font-weight: 600; color: #2c3e50;">Select All Files</span>
+            <span style="font-size: 0.9rem; font-weight: 600; color: #2c3e50;">{{ _('Select All Files') }}</span>
         </label>
-        <span class="note" style="margin: 0;">Hover over cards to select multiple files for bulk actions.</span>
+        <span class="note" style="margin: 0;">{{ _('Hover over cards to select multiple files for bulk actions.') }}</span>
     </div>
 
     <div class="files-grid">
@@ -67,10 +67,10 @@
             <div class="note" style="font-size: 0.75rem; margin-bottom: 15px;">{{ file.mtime.strftime('%Y-%m-%d %H:%M') }}</div>
             
             <div class="file-card-actions">
-                <a href="{{ url_for('uploads_bp.download_file', code=link.code, filename=file.name) }}" class="btn btn-secondary" title="Download file">
+                <a href="{{ url_for('uploads_bp.download_file', code=link.code, filename=file.name) }}" class="btn btn-secondary" title="{{ _('Download file') }}">
                     <i class="fas fa-download"></i>
                 </a>
-                <button class="btn btn-danger" onclick="deleteSingleFile('{{ file.name }}')" title="Delete file">
+                <button class="btn btn-danger" onclick="deleteSingleFile('{{ file.name }}')" title="{{ _('Delete file') }}">
                     <i class="fas fa-trash-alt"></i>
                 </button>
             </div>
@@ -82,22 +82,28 @@
 
 <!-- Floating Bulk Actions Bar -->
 <div id="bulkActionsBar" class="floating-actions-bar">
-    <span class="floating-bar-text"><span id="selectedCountText">0</span> files selected</span>
-    <button class="btn btn-secondary" onclick="deselectAll()" style="padding: 6px 12px; font-size: 0.85rem;">Deselect All</button>
+    <span class="floating-bar-text">
+        {% if get_locale() == 'zh_CN' %}
+        已选择 <span id="selectedCountText">0</span> 个文件
+        {% else %}
+        <span id="selectedCountText">0</span> files selected
+        {% endif %}
+    </span>
+    <button class="btn btn-secondary" onclick="deselectAll()" style="padding: 6px 12px; font-size: 0.85rem;">{{ _('Deselect All') }}</button>
     <button class="btn btn-danger" onclick="deleteSelectedFiles()" style="padding: 6px 12px; font-size: 0.85rem; background-color: #d63031; border: none;">
-        <i class="fas fa-trash-alt"></i> Delete Selected
+        <i class="fas fa-trash-alt"></i> {{ _('Delete Selected') }}
     </button>
 </div>
 
 <!-- Progressive Download Progress Overlay -->
 <div id="progressOverlay" class="progress-overlay">
     <div class="progress-card">
-        <h3 id="progressCardTitle">Preparing Download</h3>
+        <h3 id="progressCardTitle">{{ _('Preparing Download') }}</h3>
         <div class="progress-bar-container">
             <div id="progressBarFill" class="progress-bar-fill"></div>
         </div>
         <div style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #7f8c8d; margin-top: 5px;">
-            <span id="progressText">Packaging files...</span>
+            <span id="progressText">{{ _('Packaging files...') }}</span>
             <span id="progressPercent" style="font-weight: bold; color: #004165;">0%</span>
         </div>
     </div>
@@ -106,22 +112,24 @@
 
 {% block scripts %}
 <script>
+    const CURRENT_LOCALE = "{{ get_locale() }}";
     const code = "{{ link.code }}";
     let selectedFilenames = new Set();
 
     // --- Progressive ZIP Downloader ---
     async function downloadAllZip(linkCode, linkTitle) {
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
         const progressOverlay = document.getElementById("progressOverlay");
         const progressBarFill = document.getElementById("progressBarFill");
         const progressText = document.getElementById("progressText");
         const progressPercent = document.getElementById("progressPercent");
         const cardTitle = document.getElementById("progressCardTitle");
         
-        cardTitle.textContent = "Downloading Files Archive";
+        cardTitle.textContent = isChinese ? "正在下载文件归档" : "Downloading Files Archive";
         progressOverlay.style.display = "flex";
         progressBarFill.style.width = "0%";
         progressPercent.textContent = "0%";
-        progressText.textContent = "Compiling package on server...";
+        progressText.textContent = isChinese ? "正在服务器上打包文件..." : "Compiling package on server...";
         
         const safeTitle = linkTitle.replace(/[^a-zA-Z0-9]/g, ' ') || "uploads";
         const zipFilename = `${safeTitle.trim()}.zip`;
@@ -135,7 +143,7 @@
             const contentLength = response.headers.get('Content-Length');
             if (!contentLength) {
                 // Indeterminate progress fallback if Content-Length header is omitted (e.g. gzip compression)
-                progressText.textContent = "Downloading package (size unknown)...";
+                progressText.textContent = isChinese ? "正在下载文件包 (大小未知)..." : "Downloading package (size unknown)...";
                 progressBarFill.style.width = "100%";
                 progressPercent.textContent = "⏳";
                 const blob = await response.blob();
@@ -161,10 +169,12 @@
                 const percent = Math.round((loaded / total) * 100);
                 progressBarFill.style.width = `${percent}%`;
                 progressPercent.textContent = `${percent}%`;
-                progressText.textContent = `Downloading: ${(loaded / (1024 * 1024)).toFixed(1)} MB of ${(total / (1024 * 1024)).toFixed(1)} MB`;
+                progressText.textContent = isChinese 
+                    ? `正在下载: 已下载 ${(loaded / (1024 * 1024)).toFixed(1)} MB / 共 ${(total / (1024 * 1024)).toFixed(1)} MB`
+                    : `Downloading: ${(loaded / (1024 * 1024)).toFixed(1)} MB of ${(total / (1024 * 1024)).toFixed(1)} MB`;
             }
             
-            progressText.textContent = "Saving to disk...";
+            progressText.textContent = isChinese ? "正在保存到磁盘..." : "Saving to disk...";
             const blob = new Blob(chunks, { type: 'application/zip' });
             triggerBlobDownload(blob, zipFilename);
             
@@ -174,7 +184,7 @@
             
         } catch (error) {
             console.error("ZIP download failed:", error);
-            alert("Failed to download ZIP file: " + error.message);
+            alert((isChinese ? "下载 ZIP 文件失败: " : "Failed to download ZIP file: ") + error.message);
             progressOverlay.style.display = "none";
         }
     }
@@ -239,21 +249,26 @@
 
     // --- Deletion Logic ---
     function deleteSingleFile(filename) {
-        if (confirm(`Are you sure you want to delete '${filename}'?`)) {
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+        if (confirm(isChinese ? `您确定要删除 '${filename}' 吗？` : `Are you sure you want to delete '${filename}'?`)) {
             sendDeleteRequest([filename]);
         }
     }
 
     function deleteSelectedFiles() {
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
         const count = selectedFilenames.size;
         if (count === 0) return;
         
-        if (confirm(`Are you sure you want to delete ${count} selected files? This action cannot be undone.`)) {
+        if (confirm(isChinese 
+            ? `您确定要删除所选的 ${count} 个文件吗？此操作无法撤回。` 
+            : `Are you sure you want to delete ${count} selected files? This action cannot be undone.`)) {
             sendDeleteRequest(Array.from(selectedFilenames));
         }
     }
 
     function sendDeleteRequest(filenamesList) {
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
         fetch(`/uploads/${code}/delete-files`, {
             method: 'POST',
             headers: {
@@ -267,12 +282,12 @@
                 // Reload page to refresh file list
                 window.location.reload();
             } else {
-                alert("Error deleting files: " + (data.error || data.message));
+                alert((isChinese ? "删除文件时出错: " : "Error deleting files: ") + (data.error || data.message));
             }
         })
         .catch(error => {
             console.error("Error:", error);
-            alert("An error occurred during file deletion.");
+            alert(isChinese ? "删除文件时发生错误。" : "An error occurred during file deletion.");
         });
     }
 

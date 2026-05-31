@@ -3,7 +3,7 @@
   <div class="planner-modal-content planner-modal-medium">
     <span class="planner-close-modal" onclick="closeUserModal()"><i class="fas fa-times"></i></span>
     <div class="planner-modal-header text-center">
-      <h3 id="user-modal-title">Add New User</h3>
+      <h3 id="user-modal-title">{{ _('Add New User') }}</h3>
     </div>
     <form id="user-form" onsubmit="handleUserSubmit(event)">
       <div class="planner-modal-body">
@@ -14,67 +14,67 @@
         <div class="user-grid">
           <!-- Row 1: Username (Full Width) -->
           <div class="planner-form-group span-4">
-            <label for="username">Username <span class="required-field">*</span></label>
-            <input type="text" id="username" name="username" class="planner-form-control" required placeholder="User's login name" />
+            <label for="username">{{ _('Username') }} <span class="required-field">*</span></label>
+            <input type="text" id="username" name="username" class="planner-form-control" required placeholder="{{ _("User's login name") }}" />
           </div>
 
           <!-- Row 2: First Name | Last Name -->
           <div class="planner-form-group span-2">
-            <label for="first_name">First Name <span class="required-field">*</span></label>
-            <input type="text" id="first_name" name="first_name" class="planner-form-control" required placeholder="First Name" />
+            <label for="first_name">{{ _('First Name') }} <span class="required-field">*</span></label>
+            <input type="text" id="first_name" name="first_name" class="planner-form-control" required placeholder="{{ _('First Name') }}" />
           </div>
           <div class="planner-form-group span-2">
-            <label for="last_name">Last Name <span class="required-field">*</span></label>
-            <input type="text" id="last_name" name="last_name" class="planner-form-control" required placeholder="Last Name" />
+            <label for="last_name">{{ _('Last Name') }} <span class="required-field">*</span></label>
+            <input type="text" id="last_name" name="last_name" class="planner-form-control" required placeholder="{{ _('Last Name') }}" />
           </div>
 
           <!-- Row 3 & 4: (Left 3: Right 1) -->
           <!-- Left Col (Email & Phone) -->
           <div class="planner-form-group span-3">
-            <label for="email">Email <span class="required-field">*</span></label>
+            <label for="email">{{ _('Email') }} <span class="required-field">*</span></label>
             <input type="email" id="email" name="email" class="planner-form-control" required placeholder="email@example.com" />
           </div>
           
           <!-- Right Col (Roles Merged) -->
           <div class="planner-form-group span-1 row-span-2 roles-selection-group">
-            <label for="role_id_select">Role</label>
+            <label for="role_id_select">{{ _('Role') }}</label>
             <select id="role_id_select" name="role_id" class="planner-form-control">
               {% if all_auth_roles %}
                 {% for role in all_auth_roles %}
                   <option value="{{ role.id }}" data-name="{{ role.name }}" {% if role.name == 'User' %}selected{% endif %}>
-                    {{ role.name }}
+                    {{ _(role.name) }}
                   </option>
                 {% endfor %}
               {% else %}
-                <option value="">No roles found</option>
+                <option value="">{{ _('No roles found') }}</option>
               {% endif %}
             </select>
           </div>
 
           <!-- Row 4 Left: Phone (3:1 Split) -->
           <div class="planner-form-group span-3">
-            <label for="phone">Phone</label>
-            <input type="text" id="phone" name="phone" class="planner-form-control" placeholder="Phone Number" />
+            <label for="phone">{{ _('Phone') }}</label>
+            <input type="text" id="phone" name="phone" class="planner-form-control" placeholder="{{ _('Phone Number') }}" />
           </div>
 
           <!-- Row 5: Password (Full Width) -->
           <div class="planner-form-group span-4">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" class="planner-form-control" placeholder="Leave blank to keep current" />
-            <small class="text-muted">Default is 'toastmasters' for new users.</small>
+            <label for="password">{{ _('Password') }}</label>
+            <input type="password" id="password" name="password" class="planner-form-control" placeholder="{{ _('Leave blank to keep current') }}" />
+            <small class="text-muted">{{ _("Default is 'toastmasters' for new users.") }}</small>
           </div>
         </div>
 
         <!-- Alert for club context -->
         {% if club_name %}
         <div class="modal-info-bar mt-3">
-          <i class="fas fa-info-circle"></i> Roles will be applied to: <strong>{{ club_name }}</strong>
+          <i class="fas fa-info-circle"></i> {{ _('Roles will be applied to:') }} <strong>{{ club_name }}</strong>
         </div>
         {% endif %}
       </div>
       <div class="planner-modal-footer">
-        <button type="button" class="planner-btn btn-danger" onclick="closeUserModal()">Cancel</button>
-        <button type="submit" class="planner-btn btn-success" id="user-submit-btn">Save</button>
+        <button type="button" class="planner-btn btn-danger" onclick="closeUserModal()">{{ _('Cancel') }}</button>
+        <button type="submit" class="planner-btn btn-success" id="user-submit-btn">{{ _('Save') }}</button>
       </div>
     </form>
   </div>
@@ -85,11 +85,11 @@
   <div class="planner-modal-content duplicate-modal-content">
     <span class="planner-close-modal" id="closeDuplicateModal"><i class="fas fa-times"></i></span>
     <div class="planner-modal-header text-center">
-      <h3>Potential Duplicate Found</h3>
+      <h3>{{ _('Potential Duplicate Found') }}</h3>
     </div>
     
     <div class="planner-modal-body">
-      <p class="text-muted mb-3">The following existing users/contacts match the information you entered. Would you like to use one of them instead?</p>
+      <p class="text-muted mb-3">{{ _('The following existing users/contacts match the information you entered. Would you like to use one of them instead?') }}</p>
       
       <div id="duplicateList" class="duplicate-list">
         <!-- Duplicates will be injected here -->
@@ -97,8 +97,8 @@
     </div>
     
     <div class="planner-modal-footer">
-      <button type="button" class="planner-btn planner-btn-secondary" id="proceedWithNew">Continue Anyway</button>
-      <button type="button" class="planner-btn planner-btn-danger" id="cancelSave">Cancel</button>
+      <button type="button" class="planner-btn planner-btn-secondary" id="proceedWithNew">{{ _('Continue Anyway') }}</button>
+      <button type="button" class="planner-btn planner-btn-danger" id="cancelSave">{{ _('Cancel') }}</button>
     </div>
   </div>
 </div>

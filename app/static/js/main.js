@@ -140,7 +140,7 @@ function openContactModal(contactId) {
 
   contactForm.reset();
   if (contactId) {
-    contactModalTitle.textContent = "Edit Contact";
+    contactModalTitle.textContent = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') ? "编辑联系人" : "Edit Contact";
     const actionUrl = new URL(`/contact/form/${contactId}`, window.location.origin);
     actionUrl.searchParams.set("referer", window.location.href);
     contactForm.action = actionUrl.pathname + actionUrl.search;
@@ -180,7 +180,7 @@ function openContactModal(contactId) {
               });
            } else {
              const opt = document.createElement("option");
-             opt.text = "No Paths Registered";
+             opt.text = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') ? "未注册路径" : "No Paths Registered";
              opt.value = "";
              registeredPathsEl.appendChild(opt);
            }
@@ -216,7 +216,7 @@ function openContactModal(contactId) {
           avatarContainer.dataset.contactType = type;
           if (type === 'Member' || type === 'Officer') {
             avatarContainer.style.cursor = 'pointer';
-            avatarContainer.title = "View Speech Logs";
+            avatarContainer.title = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') ? "查看演讲记录" : "View Speech Logs";
           } else {
             avatarContainer.style.cursor = 'default';
             avatarContainer.removeAttribute('title');
@@ -252,10 +252,10 @@ function openContactModal(contactId) {
           if (!data.home_club_id) {
             const noneOption = document.createElement("option");
             noneOption.value = "";
-            noneOption.textContent = "None";
+            noneOption.textContent = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') ? "无" : "None";
             homeClubSelect.appendChild(noneOption);
           }
-
+ 
           if (clubsToShow.length > 0) {
             clubsToShow.forEach(club => {
               const option = document.createElement("option");
@@ -263,7 +263,7 @@ function openContactModal(contactId) {
               
               // Handle labels: Exactly as in DB
               option.textContent = club.name;
-
+ 
               // Handle disabling particular options for Club Admins
               if (!isSysAdmin && club.id !== currentClubId) {
                   option.disabled = true;
@@ -275,7 +275,7 @@ function openContactModal(contactId) {
               homeClubSelect.value = data.home_club_id;
             }
           }
-
+ 
           // Visibility and Disabling logic
           homeClubRow.style.display = 'flex'; // Always show now
           
@@ -286,12 +286,13 @@ function openContactModal(contactId) {
              homeClubSelect.disabled = false;
           }
         }
-
+ 
         // Populate Mentor Dropdown
         const mentorSelect = document.getElementById("mentor_id");
         if (mentorSelect) {
           const candidates = data.mentor_candidates || (typeof MENTOR_CANDIDATES !== 'undefined' ? MENTOR_CANDIDATES : []);
-          mentorSelect.innerHTML = '<option value="0">None</option>';
+          const noneTextVal = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') ? "无" : "None";
+          mentorSelect.innerHTML = `<option value="0">${noneTextVal}</option>`;
           candidates.forEach(m => {
             // Don't list self as mentor
             if (m.id !== data.contact.id) {
@@ -325,7 +326,7 @@ function openContactModal(contactId) {
         switchContactTab('basic-info');
       });
   } else {
-    contactModalTitle.textContent = "Add Guest";
+    contactModalTitle.textContent = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') ? "添加来宾" : "Add Guest";
     const actionUrl = new URL("/contact/form", window.location.origin);
     actionUrl.searchParams.set("referer", window.location.href);
     contactForm.action = actionUrl.pathname + actionUrl.search;

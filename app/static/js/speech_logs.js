@@ -65,14 +65,17 @@ function showRoleHistory(badge) {
   const roleNameEl = document.getElementById('historyRoleName');
   const historyListEl = document.getElementById('historyList');
 
-  roleNameEl.innerText = `${roleName} History`;
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+  roleNameEl.innerText = isChinese ? `${roleName} 历史记录` : `${roleName} History`;
   historyListEl.innerHTML = '';
 
   // Filter items to show in history (completed, booked, or waitlist)
   const displayHistory = historyData.filter(item => ['completed', 'booked', 'waitlist'].includes(item.status));
 
   if (displayHistory.length === 0) {
-    historyListEl.innerHTML = '<div class="history-empty">No activity found for this role.</div>';
+    historyListEl.innerHTML = isChinese 
+      ? '<div class="history-empty">未找到该角色的活动记录。</div>' 
+      : '<div class="history-empty">No activity found for this role.</div>';
   } else {
     displayHistory.forEach(item => {
       const historyItem = document.createElement('div');
@@ -83,9 +86,13 @@ function showRoleHistory(badge) {
       // Add status tag for booked/waitlist
       let statusTag = '';
       if (item.status === 'booked') {
-        statusTag = '<span class="history-status-tag badge-status-booked">BOOKED</span>';
+        statusTag = isChinese 
+          ? '<span class="history-status-tag badge-status-booked">已预约</span>' 
+          : '<span class="history-status-tag badge-status-booked">BOOKED</span>';
       } else if (item.status === 'waitlist') {
-        statusTag = '<span class="history-status-tag badge-status-waitlist">WAITLIST</span>';
+        statusTag = isChinese 
+          ? '<span class="history-status-tag badge-status-waitlist">候补</span>' 
+          : '<span class="history-status-tag badge-status-waitlist">WAITLIST</span>';
       }
 
       // Determine full project code (use backend provided if available)
@@ -96,7 +103,7 @@ function showRoleHistory(badge) {
       if (!item.speech_title && fullCode && displayTitle.startsWith(fullCode)) {
         displayTitle = displayTitle.replace(fullCode, '').trim();
       }
-      if (!displayTitle) displayTitle = 'Project Details';
+      if (!displayTitle) displayTitle = isChinese ? '项目详情' : 'Project Details';
 
       // Build Title HTML with media link if available
       const titleContent = item.media_url ?
@@ -106,13 +113,15 @@ function showRoleHistory(badge) {
       // Build Evaluator HTML
       let evaluatorHtml = '';
       if (item.evaluator) {
-        evaluatorHtml = `<div class="history-evaluator">Evaluated by: ${item.evaluator}</div>`;
+        evaluatorHtml = isChinese 
+          ? `<div class="history-evaluator">评估人: ${item.evaluator}</div>` 
+          : `<div class="history-evaluator">Evaluated by: ${item.evaluator}</div>`;
       }
 
       historyItem.innerHTML = `
                 <div class="history-item-top" style="display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center;">
-                        <span class="history-meeting-num">Meeting #${item.meeting_number} ${roleInfo}</span>
+                        <span class="history-meeting-num">${isChinese ? '会议 #' : 'Meeting #'}${item.meeting_number} ${roleInfo}</span>
                         ${statusTag}
                     </div>
                     <span class="history-date">${item.meeting_date}</span>
@@ -150,6 +159,7 @@ function closeHistoryModal() {
 
 
 function completeSpeechLog(button, logId) {
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   fetch(`/speech_log/complete/${logId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -159,19 +169,22 @@ function completeSpeechLog(button, logId) {
       if (data.success) {
         location.reload();
       } else {
-        alert("Error updating status: " + data.message);
+        alert(isChinese ? "更新状态出错: " + data.message : "Error updating status: " + data.message);
       }
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert("An error occurred while updating the status.");
+      alert(isChinese ? "更新状态时发生错误。" : "An error occurred while updating the status.");
     });
 }
 
 function suspendSpeechLog(button, logId) {
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   if (
     !confirm(
-      "Are you sure you want to mark this speech as Delivered (but not Completed for pathway)?"
+      isChinese 
+        ? "确定要将此演讲标记为“已交付”（但不在路径中标记为“已完成”）吗？" 
+        : "Are you sure you want to mark this speech as Delivered (but not Completed for pathway)?"
     )
   ) {
     return;
@@ -186,12 +199,12 @@ function suspendSpeechLog(button, logId) {
       if (data.success) {
         location.reload();
       } else {
-        alert("Error suspending status: " + data.message);
+        alert(isChinese ? "挂起状态出错: " + data.message : "Error suspending status: " + data.message);
       }
     })
     .catch((error) => {
       console.error("Error:", error);
-      alert("An error occurred while suspending the status.");
+      alert(isChinese ? "挂起状态时发生错误。" : "An error occurred while suspending the status.");
     });
 }
 

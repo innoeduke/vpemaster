@@ -55,7 +55,12 @@ def calendar():
             continue
             
         month_key = m.Meeting_Date.strftime('%Y-%m')
-        month_label = m.Meeting_Date.strftime('%B %Y')
+        
+        from app.translations.translations import get_locale
+        if get_locale() == 'zh_CN':
+            month_label = m.Meeting_Date.strftime('%Y年%m月')
+        else:
+            month_label = m.Meeting_Date.strftime('%B %Y')
         
         if month_key not in meetings_by_month:
             meetings_by_month[month_key] = {
@@ -119,3 +124,15 @@ def report_bug():
     except Exception as e:
         print(f"Error reporting bug: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@main_bp.route('/set_language/<language>')
+def set_language(language):
+    from flask import session, request, redirect, url_for
+    if language in ['en', 'zh_CN']:
+        session['locale'] = language
+    
+    referrer = request.referrer
+    if referrer and referrer.startswith(request.host_url):
+        return redirect(referrer)
+    return redirect(url_for('main_bp.index'))

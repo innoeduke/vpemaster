@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}File Upload{% endblock %}
+{% block title %}{{ _('File Upload') }}{% endblock %}
 
-{% block header_title %}File Upload{% endblock %}
+{% block header_title %}{{ _('File Upload') }}{% endblock %}
 
 {% block head_extra %}
 <!-- No extra head elements needed, styles are loaded in packed CSS -->
@@ -12,11 +12,11 @@
 <div class="uploads-container">
     <div class="uploads-header">
         <div>
-            <h1 class="uploads-title"><i class="fas fa-cloud-upload-alt"></i> File Upload</h1>
-            <p class="note" style="margin: 5px 0 0 0;">Create and manage public links for members or guests to upload files directly to your club resources.</p>
+            <h1 class="uploads-title"><i class="fas fa-cloud-upload-alt"></i> {{ _('File Upload') }}</h1>
+            <p class="note" style="margin: 5px 0 0 0;">{{ _('Create and manage public links for members or guests to upload files directly to your club resources.') }}</p>
         </div>
         <button class="btn btn-primary" onclick="openCreateModal()">
-            <i class="fas fa-plus"></i> Create Link
+            <i class="fas fa-plus"></i> {{ _('Create Link') }}
         </button>
     </div>
 
@@ -24,10 +24,10 @@
     <div class="premium-card storage-card" style="margin-bottom: 25px;">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h3 style="margin: 0; font-size: 1.1rem; color: #2c3e50; font-weight: 600;">
-                <i class="fas fa-hdd" style="color: #004165; margin-right: 8px;"></i>Club Storage Usage
+                <i class="fas fa-hdd" style="color: #004165; margin-right: 8px;"></i>{{ _('Club Storage Usage') }}
             </h3>
             <span style="font-size: 0.9rem; color: #7f8c8d; font-weight: 600;">
-                {{ storage_used }} / {{ storage_max }} ({{ storage_percentage }}% used)
+                {{ storage_used }} / {{ storage_max }} ({{ storage_percentage }}% {{ _('used') }})
             </span>
         </div>
         <div class="progress-bar-container" style="margin-top: 12px; margin-bottom: 0; background-color: #e2e8f0; height: 10px;">
@@ -38,8 +38,8 @@
     {% if not upload_links %}
     <div class="premium-card text-center" style="padding: 50px 20px;">
         <i class="fas fa-cloud-upload-alt" style="font-size: 4rem; color: #bdc3c7; margin-bottom: 20px;"></i>
-        <h3 style="color: #2c3e50; margin-bottom: 10px;">No Upload Links Yet</h3>
-        <p style="color: #7f8c8d; max-width: 500px; margin: 0 auto;">Create your first link to collect photos, contest materials, or slides from meeting participants.</p>
+        <h3 style="color: #2c3e50; margin-bottom: 10px;">{{ _('No Upload Links Yet') }}</h3>
+        <p style="color: #7f8c8d; max-width: 500px; margin: 0 auto;">{{ _('Create your first link to collect photos, contest materials, or slides from meeting participants.') }}</p>
     </div>
     {% else %}
     <div class="links-grid">
@@ -50,41 +50,41 @@
                 <label class="switch-container" title="Toggle active status" style="margin-bottom: 0;">
                     <input type="checkbox" class="switch-input" {% if link.is_active %}checked{% endif %} onchange="toggleLinkStatus({{ link.id }}, this)">
                     <span class="switch-label"></span>
-                    <span style="font-size: 0.85rem; font-weight: 600; color: #2c3e50;" class="switch-text">{% if link.is_active %}Active{% else %}Disabled{% endif %}</span>
+                    <span style="font-size: 0.85rem; font-weight: 600; color: #2c3e50;" class="switch-text">{% if link.is_active %}{{ _('Active') }}{% else %}{{ _('Disabled') }}{% endif %}</span>
                 </label>
             </div>
 
             {% if link.description %}
             <p class="link-description">{{ link.description }}</p>
             {% else %}
-            <p class="link-description" style="font-style: italic; color: #b2bec3;">No description provided.</p>
+            <p class="link-description" style="font-style: italic; color: #b2bec3;">{{ _('No description provided.') }}</p>
             {% endif %}
 
             <div class="link-meta">
                 <i class="fas fa-link"></i>
                 <span style="font-family: monospace; font-weight: 600; color: #2c3e50;">{{ link.code }}</span>
                 <div class="copy-btn-container">
-                    <button class="icon-btn" onclick="copyLink('{{ url_for('uploads_bp.upload_page', code=link.code, _external=True) }}', this)" title="Copy public link">
+                    <button class="icon-btn" onclick="copyLink('{{ url_for('uploads_bp.upload_page', code=link.code, _external=True) }}', this)" title="{{ _('Copy public link') }}">
                         <i class="fas fa-copy"></i>
                     </button>
-                    <span class="copy-tooltip">Copied!</span>
+                    <span class="copy-tooltip">{{ _('Copied!') }}</span>
                 </div>
             </div>
 
             <div class="link-meta">
                 <i class="fas fa-calendar-alt"></i>
-                <span>Linked Meeting: {% if link.meeting %}#{{ link.meeting.Meeting_Number }} ({{ link.meeting.Meeting_Date }}){% else %}None{% endif %}</span>
+                <span>{{ _('Linked Meeting:') }} {% if link.meeting %}#{{ link.meeting.Meeting_Number }} ({{ link.meeting.Meeting_Date }}){% else %}{{ _('None') }}{% endif %}</span>
             </div>
 
             <div class="link-meta">
                 <i class="fas fa-folder-open"></i>
-                <span>Files: <strong>{{ stats[link.id]['file_count'] }}</strong> ({{ stats[link.id]['total_size_formatted'] }})</span>
+                <span>{{ _('Files:') }} <strong>{{ stats[link.id]['file_count'] }}</strong> ({{ stats[link.id]['total_size_formatted'] }})</span>
             </div>
 
             {% if link.expires_at %}
             <div class="link-meta">
                 <i class="fas fa-hourglass-half"></i>
-                <span>Expires: {{ link.expires_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                <span>{{ _('Expires:') }} {{ link.expires_at.strftime('%Y-%m-%d %H:%M') }}</span>
             </div>
             {% endif %}
 
@@ -92,17 +92,17 @@
             <div class="link-meta" style="font-size: 0.8rem; color: #7f8c8d;">
                 <i class="fas fa-info-circle"></i>
                 <span>
-                    Constraints: 
-                    {% if link.max_files %}max {{ link.max_files }} files{% endif %}
+                    {{ _('Constraints:') }} 
+                    {% if link.max_files %}{{ _('max') }} {{ link.max_files }} {{ _('files') }}{% endif %}
                     {% if link.max_files and link.max_file_size %}, {% endif %}
-                    {% if link.max_file_size %}max {{ link.max_file_size }} MB/file{% endif %}
+                    {% if link.max_file_size %}{{ _('max') }} {{ link.max_file_size }} {{ _('MB/file') }}{% endif %}
                 </span>
             </div>
             {% endif %}
 
             <div class="link-actions">
                 <a href="{{ url_for('uploads_bp.view_upload_files', code=link.code) }}" class="btn btn-primary">
-                    <i class="fas fa-folder-open"></i> View Files
+                    <i class="fas fa-folder-open"></i> {{ _('View Files') }}
                 </a>
                 
                 <button class="btn btn-secondary" 
@@ -134,39 +134,39 @@
 <div id="createLinkModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
-            <h3 class="modal-title">Create Upload Link</h3>
+            <h3 class="modal-title">{{ _('Create Upload Link') }}</h3>
         </div>
         <form action="{{ url_for('uploads_bp.create_upload_link') }}" method="POST">
             <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 5px;">
                 <div class="form-group" style="flex: 1;">
-                    <label for="create_meeting_number">Meeting Number</label>
+                    <label for="create_meeting_number">{{ _('Meeting Number') }}</label>
                     <input type="number" id="create_meeting_number" name="meeting_number" class="form-control" value="{{ default_meeting_number }}" placeholder="e.g. 120">
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <label for="create_expires_at">Expired by</label>
+                    <label for="create_expires_at">{{ _('Expired by') }}</label>
                     <input type="datetime-local" id="create_expires_at" name="expires_at" class="form-control" value="{{ default_expiry }}">
                 </div>
             </div>
 
             <div class="form-row" style="display: flex; gap: 15px;">
                 <div class="form-group" style="flex: 1;">
-                    <label for="create_max_files">Max File Count</label>
+                    <label for="create_max_files">{{ _('Max File Count') }}</label>
                     <input type="number" id="create_max_files" name="max_files" class="form-control" min="1" value="5">
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <label for="create_max_file_size">Max Size Per File (MB)</label>
+                    <label for="create_max_file_size">{{ _('Max Size Per File (MB)') }}</label>
                     <input type="number" id="create_max_file_size" name="max_file_size" class="form-control" min="1" value="10">
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="create_description">Upload Instructions / Notes</label>
-                <textarea id="create_description" name="description" class="form-control" rows="3" placeholder="Explain what files users should upload and any formatting requirements..."></textarea>
+                <label for="create_description">{{ _('Upload Instructions / Notes') }}</label>
+                <textarea id="create_description" name="description" class="form-control" rows="3" placeholder="{{ _('Explain what files users should upload and any formatting requirements...') }}"></textarea>
             </div>
 
             <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-                <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Create Link</button>
+                <button type="button" class="btn btn-secondary" onclick="closeCreateModal()">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary">{{ _('Create Link') }}</button>
             </div>
         </form>
     </div>
@@ -176,44 +176,44 @@
 <div id="editLinkModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 500px;">
         <div class="modal-header">
-            <h3 class="modal-title">Edit Upload Link</h3>
+            <h3 class="modal-title">{{ _('Edit Upload Link') }}</h3>
         </div>
         <form id="editLinkForm" action="" method="POST">
             <div class="form-group">
-                <label>Upload Code</label>
+                <label>{{ _('Upload Code') }}</label>
                 <input type="text" id="edit_code_display" class="form-control" disabled style="background-color: #f1f2f6;">
             </div>
             
             <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
                 <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                    <label for="edit_meeting_number">Meeting Number</label>
+                    <label for="edit_meeting_number">{{ _('Meeting Number') }}</label>
                     <input type="number" id="edit_meeting_number" name="meeting_number" class="form-control">
                 </div>
                 <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                    <label for="edit_expires_at">Expired by</label>
+                    <label for="edit_expires_at">{{ _('Expired by') }}</label>
                     <input type="datetime-local" id="edit_expires_at" name="expires_at" class="form-control">
                 </div>
             </div>
 
             <div class="form-row" style="display: flex; gap: 15px;">
                 <div class="form-group" style="flex: 1;">
-                    <label for="edit_max_files">Max File Count</label>
+                    <label for="edit_max_files">{{ _('Max File Count') }}</label>
                     <input type="number" id="edit_max_files" name="max_files" class="form-control" min="1">
                 </div>
                 <div class="form-group" style="flex: 1;">
-                    <label for="edit_max_file_size">Max Size Per File (MB)</label>
+                    <label for="edit_max_file_size">{{ _('Max Size Per File (MB)') }}</label>
                     <input type="number" id="edit_max_file_size" name="max_file_size" class="form-control" min="1">
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="edit_description">Upload Instructions / Notes</label>
+                <label for="edit_description">{{ _('Upload Instructions / Notes') }}</label>
                 <textarea id="edit_description" name="description" class="form-control" rows="3"></textarea>
             </div>
 
             <div class="modal-footer" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
-                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn-primary">{{ _('Save Changes') }}</button>
             </div>
         </form>
     </div>
@@ -258,6 +258,7 @@
 
     // --- Toggle Active Switch AJAX Logic ---
     function toggleLinkStatus(linkId, checkbox) {
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
         fetch(`/uploads/toggle/${linkId}`, {
             method: 'POST',
             headers: {
@@ -272,18 +273,20 @@
                 if (container) {
                     const switchText = container.querySelector('.switch-text');
                     if (switchText) {
-                        switchText.textContent = data.is_active ? 'Active' : 'Disabled';
+                        switchText.textContent = data.is_active 
+                            ? (isChinese ? '激活' : 'Active') 
+                            : (isChinese ? '禁用' : 'Disabled');
                     }
                 }
             } else {
                 checkbox.checked = !checkbox.checked; // Revert switch if failure
-                alert("Failed to update status: " + data.message);
+                alert((isChinese ? "无法更新状态: " : "Failed to update status: ") + data.message);
             }
         })
         .catch(error => {
             checkbox.checked = !checkbox.checked; // Revert
             console.error("Error:", error);
-            alert("An error occurred. Please try again.");
+            alert(isChinese ? "发生错误，请重试。" : "An error occurred. Please try again.");
         });
     }
 

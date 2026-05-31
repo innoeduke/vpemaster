@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ get_locale() }}">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>{% if error_message %}Upload Error{% else %}Upload Files - {{ link.title }}{% endif %}</title>
+  <title>{% if error_message %}{{ _('Upload Error') }}{% else %}{{ _('Upload Files') }} - {{ link.title }}{% endif %}</title>
   <link rel="preconnect" href="https://fonts.loli.net">
   <link rel="preconnect" href="https://gstatic.loli.net" crossorigin>
   <link href="https://fonts.loli.net/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
@@ -92,9 +92,9 @@
     {% if error_message %}
     <div class="premium-card text-center" style="padding: 40px 20px; border-top: 4px solid #e74c3c;">
         <i class="fas fa-exclamation-triangle" style="font-size: 3.5rem; color: #e74c3c; margin-bottom: 20px;"></i>
-        <h2 style="color: #2c3e50; font-size: 1.3rem; margin-bottom: 10px;">Link Unavailable</h2>
+        <h2 style="color: #2c3e50; font-size: 1.3rem; margin-bottom: 10px;">{{ _('Link Unavailable') }}</h2>
         <p style="color: #7f8c8d; margin-bottom: 25px; line-height: 1.5;">{{ error_message }}</p>
-        <a href="/" class="btn btn-secondary">Go to Homepage</a>
+        <a href="/" class="btn btn-secondary">{{ _('Go to Homepage') }}</a>
     </div>
     {% else %}
     
@@ -107,7 +107,7 @@
         
         {% if link.meeting %}
         <div class="note" style="margin-bottom: 15px;">
-            <i class="fas fa-calendar-alt" style="color: #004165; margin-right: 5px;"></i> Linked with <strong>Meeting #{{ link.meeting.Meeting_Number }}</strong>
+            <i class="fas fa-calendar-alt" style="color: #004165; margin-right: 5px;"></i> {{ _('Linked with') }} <strong>{{ _('Meeting #') }}{{ link.meeting.Meeting_Number }}</strong>
         </div>
         {% endif %}
 
@@ -115,17 +115,17 @@
         <div id="inlineWarning" style="display: none; padding: 12px 15px; background-color: #fdf2f2; border: 1px solid #fbd5d5; border-radius: 8px; color: #9b1c1c; font-size: 0.875rem; margin-bottom: 15px; align-items: start; gap: 10px;">
             <i class="fas fa-exclamation-circle" style="margin-top: 2px; flex-shrink: 0; color: #f05252;"></i>
             <div id="inlineWarningText" style="flex-grow: 1; word-break: break-word; text-align: left;"></div>
-            <button type="button" onclick="hideWarning()" style="background: none; border: none; padding: 0; color: #9b1c1c; cursor: pointer; font-size: 1.25rem; line-height: 1; opacity: 0.7; font-weight: bold; margin-left: 5px;" title="Dismiss warning">&times;</button>
+            <button type="button" onclick="hideWarning()" style="background: none; border: none; padding: 0; color: #9b1c1c; cursor: pointer; font-size: 1.25rem; line-height: 1; opacity: 0.7; font-weight: bold; margin-left: 5px;" title="{{ _('Dismiss warning') }}">&times;</button>
         </div>
 
         <!-- Dropzone -->
         <div id="dropzone" class="dropzone-area" onclick="triggerFileInput()">
             <i class="fas fa-cloud-upload-alt dropzone-icon"></i>
-            <div class="dropzone-text">Drag & drop files here or click to browse</div>
+            <div class="dropzone-text">{{ _('Drag & drop files here or click to browse') }}</div>
             <div class="dropzone-hint">
-                Supported: Photos, Documents, PDFs
+                {{ _('Supported: Photos, Documents, PDFs') }}
                 {% if link.max_file_size %}
-                (max {{ link.max_file_size }} MB per file)
+                ({{ _('max') }} {{ link.max_file_size }} {{ _('MB per file') }})
                 {% endif %}
             </div>
             <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileSelection(event)">
@@ -133,15 +133,15 @@
 
         <!-- Selection Queue -->
         <div id="queueContainer" style="display: none;">
-            <h4 style="margin-bottom: 10px; color: #2c3e50; font-size: 0.95rem; text-align: left;">Files to Upload (<span id="queueCount">0</span>)</h4>
+            <h4 style="margin-bottom: 10px; color: #2c3e50; font-size: 0.95rem; text-align: left;">{{ _('Files to Upload') }} (<span id="queueCount">0</span>)</h4>
             <div id="queueItemsList" style="max-height: 250px; overflow-y: auto; margin-bottom: 15px; padding-right: 5px;"></div>
             
             <div class="form-actions-row">
                 <button type="button" class="btn btn-secondary" onclick="clearQueue()" id="clearQueueBtn">
-                    Clear List
+                    {{ _('Clear List') }}
                 </button>
                 <button type="button" class="btn btn-primary" onclick="startUpload()" id="uploadBtn">
-                    <i class="fas fa-upload"></i> Upload Files
+                    <i class="fas fa-upload"></i> {{ _('Upload Files') }}
                 </button>
             </div>
         </div>
@@ -152,17 +152,18 @@
         <div class="success-checkmark-wrapper">
             <i class="fas fa-check-circle success-icon"></i>
         </div>
-        <h2 class="upload-success-title">Upload Complete!</h2>
-        <p style="color: #7f8c8d; margin-bottom: 25px;" id="successMsg">Files uploaded successfully.</p>
+        <h2 class="upload-success-title">{{ _('Upload Complete!') }}</h2>
+        <p style="color: #7f8c8d; margin-bottom: 25px;" id="successMsg">{{ _('Files uploaded successfully.') }}</p>
         <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-            <button class="btn btn-secondary" onclick="closePage()">Close Page</button>
-            <button class="btn btn-primary" onclick="resetUploader()">Upload More Files</button>
+            <button class="btn btn-secondary" onclick="closePage()">{{ _('Close Page') }}</button>
+            <button class="btn btn-primary" onclick="resetUploader()">{{ _('Upload More Files') }}</button>
         </div>
     </div>
     {% endif %}
   </div>
 
   <script>
+      const CURRENT_LOCALE = "{{ get_locale() }}";
       const code = "{{ link.code if link else '' }}";
       const maxFileSizeMB = {{ link.max_file_size if (link and link.max_file_size is not none) else 'null' }};
       const maxFilesAllowed = {{ link.max_files if (link and link.max_files is not none) else 'null' }};
@@ -209,6 +210,7 @@
       }
 
       function addFilesToQueue(files) {
+          const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
           hideWarning();
           for (let i = 0; i < files.length; i++) {
               const file = files[i];
@@ -222,7 +224,9 @@
               if (maxFileSizeMB !== null) {
                   const sizeInMB = file.size / (1024 * 1024);
                   if (sizeInMB > maxFileSizeMB) {
-                      showWarning(`File '${file.name}' exceeds the size limit of ${maxFileSizeMB} MB.`);
+                      showWarning(isChinese 
+                          ? `文件 '${file.name}' 超过了 ${maxFileSizeMB} MB 的大小限制。` 
+                          : `File '${file.name}' exceeds the size limit of ${maxFileSizeMB} MB.`);
                       continue;
                   }
               }
@@ -232,7 +236,9 @@
           
           // Client-side max files check
           if (maxFilesAllowed !== null && uploadQueue.length > maxFilesAllowed) {
-              showWarning(`You can only upload up to ${maxFilesAllowed} files. Selected file list truncated.`);
+              showWarning(isChinese
+                  ? `您最多只能上传 ${maxFilesAllowed} 个文件。已选择的文件列表已被截断。`
+                  : `You can only upload up to ${maxFilesAllowed} files. Selected file list truncated.`);
               uploadQueue = uploadQueue.slice(0, maxFilesAllowed);
           }
           
@@ -252,6 +258,7 @@
       }
 
       function renderQueue() {
+          const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
           const queueContainer = document.getElementById("queueContainer");
           const queueList = document.getElementById("queueItemsList");
           const queueCount = document.getElementById("queueCount");
@@ -275,7 +282,7 @@
                   <div class="queue-item-progress" id="progress-container-${index}">
                       <div class="queue-item-progress-fill" id="progress-fill-${index}"></div>
                   </div>
-                  <span class="queue-item-status-text" id="status-text-${index}">Ready</span>
+                  <span class="queue-item-status-text" id="status-text-${index}">${isChinese ? '就绪' : 'Ready'}</span>
                   <button type="button" class="icon-btn remove-btn" onclick="removeQueueItem(${index})" style="color: #e74c3c;">
                       <i class="fas fa-times-circle"></i>
                   </button>
@@ -287,6 +294,7 @@
       }
 
       function startUpload() {
+          const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
           if (uploadQueue.length === 0) return;
           hideWarning();
           
@@ -304,19 +312,22 @@
           uploadQueue.forEach((_, index) => {
               document.getElementById(`progress-container-${index}`).style.display = "block";
               document.getElementById(`status-text-${index}`).style.display = "block";
-              document.getElementById(`status-text-${index}`).textContent = "Queued";
+              document.getElementById(`status-text-${index}`).textContent = isChinese ? "排队中" : "Queued";
           });
           
           uploadFileSequential(0);
       }
 
       function uploadFileSequential(index) {
+          const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
           if (index >= uploadQueue.length) {
               // Upload completed!
               setTimeout(() => {
                   document.getElementById("uploaderCard").style.display = "none";
                   document.getElementById("successCard").style.display = "block";
-                  document.getElementById("successMsg").textContent = `Uploaded ${uploadQueue.length} files successfully.`;
+                  document.getElementById("successMsg").textContent = isChinese
+                      ? `成功上传了 ${uploadQueue.length} 个文件。`
+                      : `Uploaded ${uploadQueue.length} files successfully.`;
               }, 600);
               return;
           }
@@ -331,7 +342,7 @@
           const progressFill = document.getElementById(`progress-fill-${index}`);
           const statusText = document.getElementById(`status-text-${index}`);
           
-          statusText.textContent = "Uploading...";
+          statusText.textContent = isChinese ? "上传中..." : "Uploading...";
           statusText.style.color = "#004165";
           
           xhr.upload.onprogress = function(e) {
@@ -344,16 +355,16 @@
           xhr.onload = function() {
               if (xhr.status === 200) {
                   progressFill.style.width = "100%";
-                  statusText.textContent = "Success";
+                  statusText.textContent = isChinese ? "成功" : "Success";
                   statusText.style.color = "#2ecc71";
                   
                   // Proceed to next file
                   uploadFileSequential(index + 1);
               } else {
-                  let errMsg = "Failed";
+                  let errMsg = isChinese ? "失败" : "Failed";
                   try {
                       const res = JSON.parse(xhr.responseText);
-                      errMsg = res.error || "Failed";
+                      errMsg = res.error || (isChinese ? "失败" : "Failed");
                   } catch(e) {}
                   
                   progressFill.style.backgroundColor = "#e74c3c";
@@ -361,16 +372,20 @@
                   statusText.style.color = "#e74c3c";
                   
                   // Unlock only upload controls so user can try fixing remaining files
-                  showWarning(`Failed to upload '${file.name}': ${errMsg}`);
+                  showWarning(isChinese
+                      ? `上传 '${file.name}' 失败: ${errMsg}`
+                      : `Failed to upload '${file.name}': ${errMsg}`);
                   unlockControls();
               }
           };
           
           xhr.onerror = function() {
               progressFill.style.backgroundColor = "#e74c3c";
-              statusText.textContent = "Network Error";
+              statusText.textContent = isChinese ? "网络错误" : "Network Error";
               statusText.style.color = "#e74c3c";
-              showWarning(`Network error uploading file '${file.name}'.`);
+              showWarning(isChinese
+                  ? `上传文件 '${file.name}' 时发生网络错误。`
+                  : `Network error uploading file '${file.name}'.`);
               unlockControls();
           };
           
@@ -419,6 +434,7 @@
       }
 
       function closePage() {
+          const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
           // Attempt standard browser workarounds to close script-initiated tab context
           try {
               window.open('', '_self', '');
@@ -432,7 +448,9 @@
           setTimeout(function() {
               const successMsg = document.getElementById("successMsg");
               if (successMsg) {
-                  successMsg.innerHTML = '<span style="color: #dc3545; font-weight: 500;"><i class="fas fa-info-circle"></i> Browser blocked automatic tab closing. Please close this tab manually.</span>';
+                  successMsg.innerHTML = isChinese
+                      ? '<span style="color: #dc3545; font-weight: 500;"><i class="fas fa-info-circle"></i> 浏览器阻止了自动关闭窗口。请手动关闭此页面。</span>'
+                      : '<span style="color: #dc3545; font-weight: 500;"><i class="fas fa-info-circle"></i> Browser blocked automatic tab closing. Please close this tab manually.</span>';
               }
           }, 250);
       }

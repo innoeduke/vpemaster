@@ -330,9 +330,13 @@ function updatePaginationControls(startIndex, endIndex, totalContacts, totalPage
   const paginationInfo = document.getElementById('paginationInfo');
   if (paginationInfo) {
     if (totalContacts === 0) {
-      paginationInfo.textContent = 'No contacts found';
+      paginationInfo.textContent = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') ? '没有找到联系人' : 'No contacts found';
     } else {
-      paginationInfo.textContent = `Showing ${startIndex + 1} - ${endIndex} of ${totalContacts} contacts`;
+      if (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN') {
+        paginationInfo.textContent = `显示第 ${startIndex + 1} - ${endIndex} 项，共 ${totalContacts} 个联系人`;
+      } else {
+        paginationInfo.textContent = `Showing ${startIndex + 1} - ${endIndex} of ${totalContacts} contacts`;
+      }
     }
   }
 

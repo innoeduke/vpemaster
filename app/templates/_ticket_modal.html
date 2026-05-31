@@ -1,23 +1,23 @@
 <div id="ticket-modal" class="modal" style="display: none;">
   <div class="modal-content" style="max-width: 900px; width: 90%;">
     <span class="close" onclick="closeModal('ticket-modal')">&times;</span>
-    <h2 id="ticket-modal-title" style="margin-top: 5px;">Add/Edit Ticket</h2>
+    <h2 id="ticket-modal-title" style="margin-top: 5px;">{{ _('Add/Edit Ticket') }}</h2>
     <form id="ticket-form" method="POST">
       <input type="hidden" id="ticket-id" name="id">
 
       <!-- Row 1: Name and Type -->
       <div style="display: flex; flex-wrap: wrap; margin-bottom: 25px; align-items: flex-start; justify-content: center; gap: 40px; text-align: left;">
         <div style="flex: 0 0 45%; max-width: 350px;">
-          <label for="ticket-name" style="font-weight: 700; color: #555; display: block; text-align: center; margin-bottom: 8px;">Name:</label>
+          <label for="ticket-name" style="font-weight: 700; color: #555; display: block; text-align: center; margin-bottom: 8px;">{{ _('Name:') }}</label>
           <input type="text" id="ticket-name" name="name" required class="form-control" autocomplete="off" placeholder="e.g. VIP Ticket" style="width: 100%;">
         </div>
         <div style="flex: 0 0 45%; max-width: 350px;">
-          <label for="ticket-type" style="font-weight: 700; color: #555; display: block; text-align: center; margin-bottom: 8px;">Type:</label>
+          <label for="ticket-type" style="font-weight: 700; color: #555; display: block; text-align: center; margin-bottom: 8px;">{{ _('Type:') }}</label>
           <select id="ticket-type" name="type" class="form-control" style="width: 100%;">
-            <option value="">-- Select Type --</option>
-            <option value="Member">Member</option>
-            <option value="Guest">Guest</option>
-            <option value="Officer">Officer</option>
+            <option value="">{{ _('-- Select Type --') }}</option>
+            <option value="Member">{{ _('Member') }}</option>
+            <option value="Guest">{{ _('Guest') }}</option>
+            <option value="Officer">{{ _('Officer') }}</option>
           </select>
         </div>
       </div>
@@ -25,17 +25,17 @@
       <!-- Row 2: Price and Color -->
       <div style="display: flex; flex-wrap: wrap; margin-bottom: 25px; align-items: flex-start; justify-content: center; gap: 40px; text-align: left;">
         <div style="flex: 0 0 45%; max-width: 350px;">
-          <label for="ticket-price" style="font-weight: 700; color: #555; display: block; text-align: center; margin-bottom: 8px;">Price:</label>
+          <label for="ticket-price" style="font-weight: 700; color: #555; display: block; text-align: center; margin-bottom: 8px;">{{ _('Price:') }}</label>
           <div class="input-group" style="width: 100%;">
             <span class="input-group-text bg-white border-end-0" style="padding-right: 5px;">¥</span>
             <input type="number" step="0.01" min="0" id="ticket-price" name="price" class="form-control" value="0.00">
           </div>
         </div>
         <div style="flex: 0 0 45%; max-width: 350px;">
-          <label for="ticket-color" style="font-weight: 700; color: #555; display: block; text-align: center; margin-bottom: 8px;">Color:</label>
+          <label for="ticket-color" style="font-weight: 700; color: #555; display: block; text-align: center; margin-bottom: 8px;">{{ _('Color:') }}</label>
           <div class="d-flex align-items-center justify-content-center gap-2">
-            <input type="color" id="ticket-color" name="color" style="width: 45px; height: 35px; cursor: pointer; border: 1px solid #ced4da; border-radius: 0.25rem; background-color: #f8f9fa; padding: 2px;" title="Choose your color" value="#000000">
-            <button type="button" class="btn btn-light" style="font-weight: 600; color: #fff; background-color: #e0e0e0; border: none; padding: 5px 15px;" onclick="document.getElementById('ticket-color').value='#000000'">Clear</button>
+            <input type="color" id="ticket-color" name="color" style="width: 45px; height: 35px; cursor: pointer; border: 1px solid #ced4da; border-radius: 0.25rem; background-color: #f8f9fa; padding: 2px;" title="{{ _('Choose your color') }}" value="#000000">
+            <button type="button" class="btn btn-light" style="font-weight: 600; color: #fff; background-color: #e0e0e0; border: none; padding: 5px 15px;" onclick="document.getElementById('ticket-color').value='#000000'">{{ _('Clear') }}</button>
           </div>
         </div>
       </div>
@@ -43,7 +43,7 @@
       <!-- Row 3: Expired At -->
       <div style="display: flex; flex-wrap: wrap; margin-bottom: 25px; align-items: flex-start; justify-content: center; gap: 40px; text-align: left;">
         <div style="flex: 0 0 45%; max-width: 350px;">
-          <label for="ticket-expired-at" style="font-weight: 700; color: #555; display: block; text-align: center; margin-bottom: 8px;">Expired At:</label>
+          <label for="ticket-expired-at" style="font-weight: 700; color: #555; display: block; text-align: center; margin-bottom: 8px;">{{ _('Expired At:') }}</label>
           <input type="time" id="ticket-expired-at" name="expired_at" class="form-control" style="width: 100%;">
         </div>
         <div style="flex: 0 0 45%; max-width: 350px;">
@@ -52,12 +52,12 @@
       </div>
 
       <div class="form-group row mb-3">
-        <label class="col-sm-12 col-form-label pt-2" style="font-weight: 600;">Icon:</label>
+        <label class="col-sm-12 col-form-label pt-2" style="font-weight: 600;">{{ _('Icon:') }}</label>
         <div class="col-sm-12">
           <input type="hidden" id="ticket-icon" name="icon">
           <div class="icon-selection-area">
              <div class="icon-search-container mb-2">
-                <input type="text" id="ticket-icon-search" class="form-control form-control-sm" placeholder="Search icons..." onkeyup="filterTicketIcons(this.value)">
+                <input type="text" id="ticket-icon-search" class="form-control form-control-sm" placeholder="{{ _('Search icons...') }}" onkeyup="filterTicketIcons(this.value)">
              </div>
              <div id="ticket-icon-matrix-container" class="icon-matrix-scrollable">
                 <!-- Javascript will populate this -->
@@ -69,8 +69,8 @@
       <div class="alert alert-danger" id="ticket-modal-error" style="display: none; margin-bottom: 20px;"></div>
 
       <div class="modal-buttons" style="margin-top: 15px;">
-        <button type="button" class="btn btn-danger" onclick="closeModal('ticket-modal')">Cancel</button>
-        <button type="submit" class="btn btn-success" id="ticketModalSubmitBtn">Save Ticket</button>
+        <button type="button" class="btn btn-danger" onclick="closeModal('ticket-modal')">{{ _('Cancel') }}</button>
+        <button type="submit" class="btn btn-success" id="ticketModalSubmitBtn">{{ _('Save Ticket') }}</button>
       </div>
     </form>
   </div>

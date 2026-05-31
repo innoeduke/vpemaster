@@ -2,7 +2,7 @@
 {% from "components/meeting_filter.html" import render_meeting_filter %}
 {% from "components/custom_select.html" import render_custom_select %}
 
-{% block title %}Roster{% endblock %}
+{% block title %}{{ _('Roster') }}{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}">
@@ -24,15 +24,15 @@
     data-server-now="{{ now.strftime('%Y-%m-%d %H:%M:%S') if now else '' }}"
 >
     <div class="roster-header-grid">
-        <h1><i class="fas fa-users"></i> Meeting Roster</h1>
+        <h1><i class="fas fa-users"></i> {{ _('Meeting Roster') }}</h1>
         {% if selected_meeting %}
         <div class="kpi-container">
             <div class="attendance-kpi">
-                <span class="kpi-label">Attendees</span>
+                <span class="kpi-label">{{ _('Attendees') }}</span>
                 <span class="kpi-value">{{ total_attendees|default(0) }}</span>
             </div>
             <div class="revenue-kpi">
-                <span class="kpi-label">Amount</span>
+                <span class="kpi-label">{{ _('Amount') }}</span>
                 <span class="kpi-value">¥{{ "%.2f"|format(total_amount|default(0)) }}</span>
             </div>
         </div>
@@ -42,11 +42,11 @@
             <div class="filter-row-premium">
                 {{ render_meeting_filter(all_meetings, selected_meeting_id, label='', data_format='tuple', render_outer_container=False) }}
                 <div class="filter-right">
-                    <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn btn-secondary trend-btn" title="View Attendance Trend">
-                        <i class="fas fa-chart-line"></i> Attendance 
+                    <a href="{{ url_for('roster_bp.roster_participation_trend') }}" class="btn btn-secondary trend-btn" title="{{ _('View Attendance Trend') }}">
+                        <i class="fas fa-chart-line"></i> {{ _('Attendance') }} 
                     </a>
-                    <a href="{{ url_for('roster_bp.roster_amount_trend') }}" class="btn btn-secondary trend-btn" title="View Amount Trend" style="margin-left: 10px;">
-                        <i class="fas fa-coins"></i> Ticket Sales
+                    <a href="{{ url_for('roster_bp.roster_amount_trend') }}" class="btn btn-secondary trend-btn" title="{{ _('View Amount Trend') }}" style="margin-left: 10px;">
+                        <i class="fas fa-coins"></i> {{ _('Ticket Sales') }}
                     </a>
                 </div>
             </div>
@@ -62,24 +62,24 @@
                 <div class="card-body">
                     <form id="roster-form">
                         <input type="hidden" id="entry-id" value="">
-                        <h3 class="card-title" id="form-title" style="display:none;">Add Entry</h3> <!-- Hidden title -->
+                        <h3 class="card-title" id="form-title" style="display:none;">{{ _('Add Entry') }}</h3> <!-- Hidden title -->
 
                         <div class="form-group-inline input-name" style="position: relative;">
-                            <label for="contact_name">Name</label>
+                            <label for="contact_name">{{ _('Name') }}</label>
                             <div class="contact-input-container">
                                 <input type="text" class="form-control" id="contact_name"
-                                    placeholder="Member/Guest name" autocomplete="off" required>
+                                    placeholder="{{ _('Member/Guest name') }}" autocomplete="off" required>
                                 <input type="hidden" id="contact_id">
                                 {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) or is_authorized(Permissions.CONTACT_ADD_GUEST) %}
                                 <button class="btn btn-success" type="button" id="add-contact-btn"
-                                    title="Add New Guest" onclick="openContactModalWithReferer()">
+                                    title="{{ _('Add New Guest') }}" onclick="openContactModalWithReferer()">
                                     <i class="fas fa-plus"></i>
                                 </button>
                                 {% endif %}
                             </div>
                         </div>
                         <div class="form-group-inline input-type">
-                            {{ render_custom_select(["Guest", "Member", "Officer"], "", label='Contact Type', select_id='contact_type', placeholder='Select...') }}
+                            {{ render_custom_select(["Guest", "Member", "Officer"], "", label=_('Contact Type'), select_id='contact_type', placeholder=_('Select...')) }}
                         </div>
                         <div class="form-group-inline input-ticket">
                             {% set ticket_opts = [] %}
@@ -89,23 +89,23 @@
                                 {% set t_expired = t.expired_at.strftime('%H:%M') if t.expired_at else '' %}
                                 {% set _ = ticket_opts.append({'value': t.id, 'text': t_name_clean, 'icon': 'fas ' ~ t_icon, 'color': t.color, 'type': t.type, 'expired_at': t_expired, 'price': t.price}) %}
                             {% endfor %}
-                            {{ render_custom_select(ticket_opts, "", label='Ticket', select_id='ticket', placeholder='Select...') }}
+                            {{ render_custom_select(ticket_opts, "", label=_('Ticket'), select_id='ticket', placeholder=_('Select...')) }}
                         </div>
 
                         <div class="form-group-inline input-quantity">
-                            <label for="quantity">Qty</label>
+                            <label for="quantity">{{ _('Qty') }}</label>
                             <input type="number" class="form-control" id="quantity" value="1" min="1" required>
                         </div>
 
                         <div class="form-group-inline input-order">
-                            <label for="order_number">Order#</label>
+                            <label for="order_number">{{ _('Order#') }}</label>
                             <input type="number" class="form-control" id="order_number" value="{{ next_unallocated_entry.order_number if next_unallocated_entry else 1 }}">
                         </div>
 
                         <div class="form-buttons">
-                            <button type="submit" id="submit-roster" class="btn btn-success" title="Register/Save Entry"><i class="fas fa-save"></i> <span class="btn-label-text">Register</span></button>
-                            <button type="button" class="btn btn-secondary" id="cancel-edit" style="display: none;" title="Cancel Edit"><i class="fas fa-times"></i> <span class="btn-label-text">Cancel</span></button>
-                            <button type="button" id="roster-export-btn" class="btn btn-secondary action-icon-btn" title="Export Options"><i class="fas fa-file-export"></i></button>
+                            <button type="submit" id="submit-roster" class="btn btn-success" title="{{ _('Register/Save Entry') }}"><i class="fas fa-save"></i> <span class="btn-label-text">{{ _('Register') }}</span></button>
+                            <button type="button" class="btn btn-secondary" id="cancel-edit" style="display: none;" title="{{ _('Cancel Edit') }}"><i class="fas fa-times"></i> <span class="btn-label-text">{{ _('Cancel') }}</span></button>
+                            <button type="button" id="roster-export-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Export Options') }}"><i class="fas fa-file-export"></i></button>
                         </div>
                     </form>
                 </div>
@@ -123,13 +123,13 @@
                 <thead>
                     <tr>
                         <th class="sortable header-order" data-column-index="0">#</th>
-                        <th class="sortable header-name" data-column-index="1">Name</th>
-                        <th class="sortable header-ticket" data-column-index="2">Ticket</th>
-                        <th class="header-roles desktop-only">Roles</th>
-                        <th class="header-quantity">Qty</th>
-                        <th class="header-amount desktop-only">Amount</th>
+                        <th class="sortable header-name" data-column-index="1">{{ _('Name') }}</th>
+                        <th class="sortable header-ticket" data-column-index="2">{{ _('Ticket') }}</th>
+                        <th class="header-roles desktop-only">{{ _('Roles') }}</th>
+                        <th class="header-quantity">{{ _('Qty') }}</th>
+                        <th class="header-amount desktop-only">{{ _('Amount') }}</th>
                         {% if is_authorized(Permissions.ROSTER_EDIT) %}
-                        <th class="roster-header-actions">Actions</th>
+                        <th class="roster-header-actions">{{ _('Actions') }}</th>
                         {% endif %}
                     </tr>
                 </thead>
@@ -140,9 +140,9 @@
                         <td class="cell-order">{{ entry.order_number if entry.order_number is not none else '' }}</td>
                         <td class="cell-name">
                             {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) and entry.contact_id %}
-                            <a href="#" class="roster-contact-link" data-contact-id="{{ entry.contact_id }}">{{ entry.contact.Name if entry.contact else 'N/A' }}</a>
+                            <a href="#" class="roster-contact-link" data-contact-id="{{ entry.contact_id }}">{{ entry.contact.Name if entry.contact else _('N/A') }}</a>
                             {% else %}
-                            {{ entry.contact.Name if entry.contact else 'N/A' }}
+                            {{ entry.contact.Name if entry.contact else _('N/A') }}
                             {% endif %}
                             {% if entry.contact_type %}
                             {% set c_type = entry.contact_type %}
@@ -171,7 +171,7 @@
 
                             <span class="ticket-badge {% if entry.order_number is none and entry.ticket and entry.ticket.expired_at and now > datetime.combine(selected_meeting.Meeting_Date, entry.ticket.expired_at) %}ticket-expired{% endif %}">
                                 <i class="fas {{ icon_class }}" style="color: {{ icon_color }};" title="{{ entry.ticket.name if entry.ticket else '' }}"></i>
-                                {{ entry.ticket.name.split('(')[0].strip() if entry.ticket else '' }}
+                                {{ _(entry.ticket.name.split('(')[0].strip()) if entry.ticket else '' }}
                             </span>
                         </td>
                         <td class="cell-roles desktop-only">
@@ -184,13 +184,13 @@
                                     {% if role['type'] == 'officer' %}
                                         {% set role_class = 'role-officer' %}
                                     {% endif %}
-                                    <span class="roster-role-tag roster-text {{ role_class }} role-{{ role['name']|lower|replace(' ', '-')|replace('/', '-') }}">{{ role['name'] }}</span>
+                                    <span class="roster-role-tag roster-text {{ role_class }} role-{{ role['name']|lower|replace(' ', '-')|replace('/', '-') }}">{{ _(role['name']) }}</span>
                                 {% endfor %}
                                 </div>
                             {% endif %}
                         </td>
                         <td class="cell-quantity">
-                            <span class="roster-text"><span class="mobile-only-label">Qty: </span>{{ entry.quantity or 1 }}</span>
+                            <span class="roster-text"><span class="mobile-only-label">{{ _('Qty') }}: </span>{{ entry.quantity or 1 }}</span>
                         </td>
                         <td class="cell-amount desktop-only">
                             <span class="roster-text">
@@ -201,22 +201,22 @@
                         <td class="cell-actions">
                             <button class="{% if entry.ticket and entry.ticket.name != 'Cancelled' %}icon-btn{% endif %} edit-entry"
                                 data-id="{{ entry.id }}" 
-                                title="{{ 'Uncancel to edit' if entry.ticket and entry.ticket.name == 'Cancelled' else 'Edit' }}" 
+                                title="{{ _('Uncancel to edit') if entry.ticket and entry.ticket.name == 'Cancelled' else _('Edit') }}" 
                                 {% if entry.ticket and entry.ticket.name == 'Cancelled' %}disabled{% endif %}>
                                 <i class="fas fa-edit"></i>
                             </button>
                             {% if entry.ticket and entry.ticket.name == 'Cancelled' %}
                             <button class="icon-btn restore-entry"
-                                data-id="{{ entry.id }}" title="Restore">
+                                data-id="{{ entry.id }}" title="{{ _('Restore') }}">
                                 <i class="fas fa-undo"></i>
                             </button>
                             {% else %}
                             <button class="icon-btn cancel-entry"
-                                data-id="{{ entry.id }}" title="Cancel">
+                                data-id="{{ entry.id }}" title="{{ _('Cancel') }}">
                                 <i class="fas fa-ban"></i>
                             </button>
                             {% endif %}
-                            <button class="icon-btn delete-entry" data-id="{{ entry.id }}" title="Delete">
+                            <button class="icon-btn delete-entry" data-id="{{ entry.id }}" title="{{ _('Delete') }}">
                                 <i class="fas fa-trash-alt"></i>
                             </button>
                         </td>
@@ -250,11 +250,11 @@
         <div class="custom-modal-content export-modal-content">
             <span class="export-close-btn" onclick="closeExportModal()">&times;</span>
             <div class="export-actions">
-                <button type="button" class="btn btn-secondary" onclick="exportFromModalJPG()" title="Download as Image">
-                    <i class="fas fa-image"></i> Export Image
+                <button type="button" class="btn btn-secondary" onclick="exportFromModalJPG()" title="{{ _('Download as Image') }}">
+                    <i class="fas fa-image"></i> {{ _('Export Image') }}
                 </button>
-                <button type="button" class="btn btn-secondary" onclick="exportFromModalPDF()" title="Download as PDF">
-                    <i class="fas fa-file-pdf"></i> Export PDF
+                <button type="button" class="btn btn-secondary" onclick="exportFromModalPDF()" title="{{ _('Download as PDF') }}">
+                    <i class="fas fa-file-pdf"></i> {{ _('Export PDF') }}
                 </button>
             </div>
             
@@ -263,11 +263,11 @@
             </div>
         </div>
     </div>
-
+ 
     {% include '_contact_modal.html' %}
     {% include '_duplicate_modal.html' %}
     {% else %}
-    <p class="text-center mt-5" style="color: #6c757d; font-size: 1.2rem;">Please select a meeting to view or manage roster entries.</p>
+    <p class="text-center mt-5" style="color: #6c757d; font-size: 1.2rem;">{{ _('Please select a meeting to view or manage roster entries.') }}</p>
     {% endif %}
 </div>
 

@@ -3,44 +3,44 @@
     <div class="planner-modal-content">
         <span class="planner-close-modal" onclick="closeModal()"><i class="fas fa-times"></i></span>
         <div class="planner-modal-header">
-            <h3>Item Detail</h3>
+            <h3>{{ _('Item Detail') }}</h3>
         </div>
         <form id="planForm">
             <input type="hidden" id="plan-id">
             <input type="hidden" id="plan-status" value="draft">
             <div class="planner-form-group">
-                <label for="meeting_id">Meeting</label>
+                <label for="meeting_id">{{ _('Meeting') }}</label>
                 <select id="meeting_id" class="planner-form-control" required>
-                    <option value="">Select Meeting</option>
+                    <option value="">{{ _('Select Meeting') }}</option>
                     {% for meeting in meetings %}
                     <option value="{{ meeting.id }}" data-number="{{ meeting.Meeting_Number }}">#{{ meeting.Meeting_Number }} &nbsp; {{
-                        meeting.Meeting_Date.strftime('%b %d, %Y') if meeting.Meeting_Date else 'N/A' }}</option>
+                        meeting.Meeting_Date.strftime('%b %d, %Y') if meeting.Meeting_Date else _('N/A') }}</option>
                     {% endfor %}
                 </select>
             </div>
             <div class="planner-form-group">
-                <label for="meeting_role_id">Meeting Role</label>
+                <label for="meeting_role_id">{{ _('Meeting Role') }}</label>
                 <select id="meeting_role_id" class="planner-form-control" required>
-                    <option value="">Select Role</option>
+                    <option value="">{{ _('Select Role') }}</option>
                     <!-- Populated dynamically -->
                 </select>
             </div>
             <div id="planner-pathway-group" class="planner-form-group" style="display: none;">
-                <label for="planner_pathway">Pathway</label>
+                <label for="planner_pathway">{{ _('Pathway') }}</label>
                 <select id="planner_pathway" class="planner-form-control">
-                    <option value="">Select Pathway</option>
+                    <option value="">{{ _('Select Pathway') }}</option>
                 </select>
             </div>
             <div id="planner-project-checkbox-group" class="planner-form-group" style="display: none; margin-bottom: 10px;">
                 <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    Project <input type="checkbox" id="has_project_chk">
+                    {{ _('Project') }} <input type="checkbox" id="has_project_chk">
                 </label>
             </div>
             <div id="planner-project-group" class="planner-form-group" style="display: none;">
                 <select id="project_id" class="planner-form-control">
-                    <option value="">Select Project</option>
+                    <option value="">{{ _('Select Project') }}</option>
                     {% for level, projs in grouped_projects %}
-                    <optgroup label="Level {{ level }}">
+                    <optgroup label="{{ _('Level') }} {{ level }}">
                         {% for project in projs %}
                         <option value="{{ project.id }}" data-format="{{ project.Format }}"
                             data-code="{{ project.full_code }}"
@@ -53,18 +53,18 @@
                 </select>
             </div>
             <div id="title-group" class="planner-form-group" style="display: none;">
-                <label for="title">Title</label>
-                <input type="text" id="title" class="planner-form-control" placeholder="Speech Title">
+                <label for="title">{{ _('Title') }}</label>
+                <input type="text" id="title" class="planner-form-control" placeholder="{{ _('Speech Title') }}">
             </div>
             <div class="planner-form-group">
-                <label for="notes">Notes</label>
+                <label for="notes">{{ _('Notes') }}</label>
                 <textarea id="notes" class="planner-form-control" rows="3"></textarea>
             </div>
             <div class="planner-modal-footer">
-                <button type="button" class="planner-btn planner-btn-secondary" onclick="closeModal()">Cancel</button>
-                <button type="submit" id="save-plan-btn" class="planner-btn planner-btn-primary">Draft Box</button>
+                <button type="button" class="planner-btn planner-btn-secondary" onclick="closeModal()">{{ _('Cancel') }}</button>
+                <button type="submit" id="save-plan-btn" class="planner-btn planner-btn-primary">{{ _('Draft Box') }}</button>
                 <button type="button" id="book-btn" class="planner-btn planner-btn-success" style="display: none;"
-                    onclick="bookPlan()">Book</button>
+                    onclick="bookPlan()">{{ _('Book') }}</button>
             </div>
         </form>
     </div>

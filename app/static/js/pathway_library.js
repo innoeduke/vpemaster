@@ -150,11 +150,12 @@ function displayProjectDetails() {
 }
 
 function updateLevelOptions(selectedPathway) {
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   const levelSelect = document.getElementById("level");
   const currentSelection = levelSelect.value;
 
   // Clear existing options
-  levelSelect.innerHTML = '<option value="">All Levels</option>';
+  levelSelect.innerHTML = `<option value="">${isChinese ? '所有级别' : 'All Levels'}</option>`;
 
   if (selectedPathway && selectedPathway.projects) {
     // Get unique levels
@@ -170,7 +171,7 @@ function updateLevelOptions(selectedPathway) {
     sortedLevels.forEach(level => {
       const option = document.createElement("option");
       option.value = level;
-      option.textContent = `Level ${level}`;
+      option.textContent = isChinese ? `级别 ${level}` : `Level ${level}`;
       levelSelect.appendChild(option);
     });
   }
@@ -187,6 +188,7 @@ function updateLevelOptions(selectedPathway) {
 }
 
 function filterProjects() {
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
   const pathSelect = document.getElementById("path");
   const levelSelect = document.getElementById("level");
   const projectSelect = document.getElementById("project");
@@ -194,7 +196,7 @@ function filterProjects() {
   const selectedPathway = pathways.find((p) => p.abbr === pathSelect.value);
   const levelValue = levelSelect.value; // string
 
-  projectSelect.innerHTML = '<option value="">-- Select a Project --</option>';
+  projectSelect.innerHTML = `<option value="">${isChinese ? '-- 选择一个项目 --' : '-- Select a Project --'}</option>`;
 
   if (selectedPathway) {
     let filteredProjects = selectedPathway.projects;
@@ -262,12 +264,14 @@ function saveProjectChanges() {
         }
         toggleEditView(); // This will exit edit mode
       } else {
-        alert("Failed to save changes.");
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+        alert(isChinese ? "保存修改失败。" : "Failed to save changes.");
       }
     })
     .catch((error) => {
+      const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
       console.error("Error:", error);
-      alert("An error occurred while saving.");
+      alert(isChinese ? "保存时发生错误。" : "An error occurred while saving.");
     });
 }
 

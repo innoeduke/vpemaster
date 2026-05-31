@@ -1,18 +1,18 @@
 <div id="addRoleModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal('addRoleModal')">&times;</span>
-    <h2 id="role-modal-title">Add New Role</h2>
+    <h2 id="role-modal-title">{{ _('Add New Role') }}</h2>
     <form id="addRoleForm" action="{{ url_for('settings_bp.add_role') }}" method="POST">
       <input type="hidden" id="role_id_input" name="id" value="">
 
       
       <div class="form-group compact-form">
-        <label for="name">Name:</label>
+        <label for="name">{{ _('Name:') }}</label>
         <input type="text" id="name" name="name" required class="form-control" placeholder="e.g. Toastmaster" />
       </div>
 
       <div class="form-group compact-form">
-        <label>Icon Selection:</label>
+        <label>{{ _('Icon Selection:') }}</label>
         <div class="icon-matrix-container" id="icon-matrix-container">
           <input type="hidden" id="icon" name="icon" value="">
           <div class="icon-matrix" id="icon-matrix">
@@ -22,91 +22,91 @@
       </div>
 
       <fieldset class="modal-frame">
-        <legend>Type:</legend>
+        <legend>{{ _('Type:') }}</legend>
         <div class="radio-group" id="type-radio-group">
           <label class="radio-item">
             <input type="radio" name="type" value="standard" required>
-            <span>Standard</span>
+            <span>{{ _('Standard') }}</span>
           </label>
           <label class="radio-item">
             <input type="radio" name="type" value="club-specific">
-            <span>Club Specific</span>
+            <span>{{ _('Club Specific') }}</span>
           </label>
           <label class="radio-item">
             <input type="radio" name="type" value="officer">
-            <span>Officer</span>
+            <span>{{ _('Officer') }}</span>
           </label>
         </div>
       </fieldset>
 
       <fieldset class="modal-frame">
-        <legend>Award Category:</legend>
+        <legend>{{ _('Award Category:') }}</legend>
         <div class="radio-group">
           <label class="radio-item">
             <input type="radio" name="award_category" value="" checked>
-            <span>None</span>
+            <span>{{ _('None') }}</span>
           </label>
           <label class="radio-item">
             <input type="radio" name="award_category" value="speaker">
-            <span>Speaker</span>
+            <span>{{ _('Speaker') }}</span>
           </label>
           <label class="radio-item">
             <input type="radio" name="award_category" value="evaluator">
-            <span>Evaluator</span>
+            <span>{{ _('Evaluator') }}</span>
           </label>
           <label class="radio-item">
             <input type="radio" name="award_category" value="table-topic">
-            <span>Table Topic</span>
+            <span>{{ _('Table Topic') }}</span>
           </label>
           <label class="radio-item">
             <input type="radio" name="award_category" value="role-taker">
-            <span>Role-taker</span>
+            <span>{{ _('Role-taker') }}</span>
           </label>
           <label class="radio-item">
             <input type="radio" name="award_category" value="debater">
-            <span>Debater</span>
+            <span>{{ _('Debater') }}</span>
           </label>
         </div>
       </fieldset>
 
       <fieldset class="modal-frame">
-        <legend>Others:</legend>
+        <legend>{{ _('Others:') }}</legend>
         <div class="radio-group" style="display: flex; flex-wrap: wrap;">
           <label class="radio-item">
             <input type="checkbox" id="needs_approval" name="needs_approval">
-            <span>Needs Approval</span>
+            <span>{{ _('Needs Approval') }}</span>
           </label>
 
           <label class="radio-item">
             <input type="checkbox" id="has_single_owner" name="has_single_owner">
-            <span>Single Owner Only</span>
+            <span>{{ _('Single Owner Only') }}</span>
           </label>
 
           <label class="radio-item">
             <input type="checkbox" id="is_member_only" name="is_member_only">
-            <span>Member Only</span>
+            <span>{{ _('Member Only') }}</span>
           </label>
         </div>
 
         <div class="form-group compact-form" style="margin-top: 20px;">
-          <label for="ticket_type">Default Ticket Type:</label>
+          <label for="ticket_type">{{ _('Default Ticket Type:') }}</label>
           <select id="ticket_type" name="ticket_type" class="form-control">
-            <option value="">-- Use Standard Defaults --</option>
+            <option value="">{{ _('-- Use Standard Defaults --') }}</option>
             {% set unique_names = [] %}
             {% for t in tickets %}
               {% if t.name not in unique_names %}
-                <option value="{{ t.name }}">{{ t.name }}</option>
+                <option value="{{ t.name }}">{{ _(t.name) }}</option>
                 {% set _ = unique_names.append(t.name) %}
               {% endif %}
             {% endfor %}
           </select>
-          <small class="form-text text-muted">Automatically assigns this ticket when the role is booked.</small>
+          <small class="form-text text-muted">{{ _('Automatically assigns this ticket when the role is booked.') }}</small>
         </div>
       </fieldset>
 
       <div class="form-actions" style="margin-top: 40px;">
-        <button type="button" class="btn btn-danger" onclick="closeModal('addRoleModal')">Cancel</button>
-        <button type="submit" id="role-modal-submit" class="btn btn-success">Save</button>
+        <button type="button" class="btn btn-danger" onclick="closeModal('addRoleModal')">{{ _('Cancel') }}</button>
+        <button type="submit" id="role-modal-submit" class="btn btn-success">{{ _('Save') }}</button>
 
       </div>
     </form>

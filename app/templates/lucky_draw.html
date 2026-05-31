@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Lucky Draw{% endblock %}
+{% block title %}{{ _('Lucky Draw') }}{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/pages/tools/tools-base.css') }}">
@@ -16,32 +16,32 @@
     {% include 'tools/_tabs.html' %}
 
     <div class="lucky-draw-container">
-        <h1 class="page-title"><i class="fas fa-gift"></i> Lucky Draw</h1>
+        <h1 class="page-title"><i class="fas fa-gift"></i> {{ _('Lucky Draw') }}</h1>
 
         {% if current_meeting %}
         <div class="meeting-info">
             <i class="fas fa-calendar-alt"></i>
-            <span>Meeting #{{ current_meeting.Meeting_Number }} - {{ current_meeting.Meeting_Date.strftime('%B %d %Y')
-                if current_meeting.Meeting_Date else 'No Date' }}</span>
+            <span>{{ _('Meeting #') }}{{ current_meeting.Meeting_Number }} - {{ current_meeting.Meeting_Date.strftime('%B %d %Y')
+                if current_meeting.Meeting_Date else _('No Date') }}</span>
         </div>
 
         <div class="draw-controls">
             <div class="draw-type-selector">
                 {{ render_custom_select([
-                ('all-audience', 'All Audience', 'fas fa-users'),
-                ('members', 'Members Only', 'fas fa-user-friends'),
-                ('guests', 'Guests Only', 'fas fa-user-plus'),
-                ('table-topics', 'Table Topic Speakers', 'fas fa-microphone'),
-                ('full-house', 'Full House', 'fas fa-home')
-                ], 'all-audience', label='Eligible Audience:', select_id='drawType') }}
+                ('all-audience', _('All Audience'), 'fas fa-users'),
+                ('members', _('Members Only'), 'fas fa-user-friends'),
+                ('guests', _('Guests Only'), 'fas fa-user-plus'),
+                ('table-topics', _('Table Topic Speakers'), 'fas fa-microphone'),
+                ('full-house', _('Full House'), 'fas fa-home')
+                ], 'all-audience', label=_('Eligible Audience:'), select_id='drawType') }}
             </div>
 
             <div class="draw-buttons">
                 <button id="resetButton" class="btn btn-secondary reset-button">
-                    <i class="fas fa-redo"></i> Reset
+                    <i class="fas fa-redo"></i> {{ _('Reset') }}
                 </button>
                 <button id="drawButton" class="btn btn-primary draw-button">
-                    <i class="fas fa-gift"></i> Draw
+                    <i class="fas fa-gift"></i> {{ _('Draw') }}
                 </button>
             </div>
         </div>
@@ -50,7 +50,7 @@
         <div class="winners-wall" id="winnersWall">
             <div class="wall-placeholder">
                 <i class="fas fa-trophy"></i>
-                <p>Winners will appear here</p>
+                <p>{{ _('Winners will appear here') }}</p>
             </div>
         </div>
 
@@ -68,7 +68,7 @@
         </div>
 
         {% else %}
-        <p class="no-meeting-message">No meeting available for lucky draw.</p>
+        <p class="no-meeting-message">{{ _('No meeting available for lucky draw.') }}</p>
         {% endif %}
     </div>
 </div>

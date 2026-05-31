@@ -14,16 +14,15 @@
         </div>
 
         <div class="upload-btn-wrapper">
-          <button type="button" class="btn-upload" onclick="document.getElementById('avatar-input').click()">Change
-            Photo</button>
+          <button type="button" class="btn-upload" onclick="document.getElementById('avatar-input').click()">{{ _('Change Photo') }}</button>
           <input type="file" id="avatar-input" name="avatar" accept="image/*" onchange="previewAvatar(this)"
             style="display: none;" />
         </div>
       </div>
       <!-- Tabs Header -->
       <div class="nav-tabs contact-modal-tabs" style="display: none; margin-bottom: 20px;">
-        <button type="button" class="nav-item active" id="tab-basic-info" onclick="switchContactTab('basic-info')">Basic Information</button>
-        <button type="button" class="nav-item" id="tab-education" onclick="switchContactTab('education')">Education & Awards</button>
+        <button type="button" class="nav-item active" id="tab-basic-info" onclick="switchContactTab('basic-info')">{{ _('Basic Information') }}</button>
+        <button type="button" class="nav-item" id="tab-education" onclick="switchContactTab('education')">{{ _('Education & Awards') }}</button>
       </div>
 
       <!-- Tab 1 Panel: Basic Information -->
@@ -34,22 +33,22 @@
 
           <!-- Row 1: First Name & Last Name -->
           <div class="contact-form-item first-name-column">
-            <label for="first_name">First Name: <span class="required-field">*</span></label>
+            <label for="first_name">{{ _('First Name') }}: <span class="required-field">*</span></label>
             <input type="text" id="first_name" name="first_name" required />
           </div>
           <div class="contact-form-item last-name-column">
-            <label for="last_name">Last Name:</label>
+            <label for="last_name">{{ _('Last Name') }}:</label>
             <input type="text" id="last_name" name="last_name" />
           </div>
 
           <!-- Row 2: Email & DTM -->
           <div class="contact-form-item email-column">
-            <label for="email">Email:</label>
+            <label for="email">{{ _('Email') }}:</label>
             <input type="email" id="email" name="email" />
           </div>
 
           <div class="contact-form-item dtm-item">
-            <label for="dtm">DTM:</label>
+            <label for="dtm">{{ _('DTM') }}:</label>
             <div class="checkbox-box">
               <input type="checkbox" id="dtm" name="dtm" />
             </div>
@@ -57,12 +56,12 @@
 
           <!-- Row 3: Phone & Officer -->
           <div class="contact-form-item phone-column">
-            <label for="phone_number">Phone:</label>
+            <label for="phone_number">{{ _('Phone') }}:</label>
             <input type="text" id="phone_number" name="phone_number" />
           </div>
 
           <div class="contact-form-item officer-item">
-            <label for="is_officer">Officer:</label>
+            <label for="is_officer">{{ _('Officer') }}:</label>
             <div class="checkbox-box">
               <input type="checkbox" id="is_officer" name="is_officer" {% if not is_authorized(Permissions.CLUBADMIN) %}disabled class="disabled-checkbox"{% endif %} />
             </div>
@@ -70,20 +69,20 @@
 
           <!-- Row 4: Member ID & Mentor -->
           <div class="contact-form-item" id="member_id_container" style="display: none;">
-            <label for="member_id">Member ID:</label>
-            <input type="text" id="member_id" name="member_id" placeholder="Optional" />
+            <label for="member_id">{{ _('Member ID') }}:</label>
+            <input type="text" id="member_id" name="member_id" placeholder="{{ _('Optional') }}" />
           </div>
           <div class="contact-form-item" id="mentor_id_container" style="display: none;">
-            <label for="mentor_id">Mentor:</label>
+            <label for="mentor_id">{{ _('Mentor') }}:</label>
             <select id="mentor_id" name="mentor_id">
-              <option value="0">None</option>
+              <option value="0">{{ _('None') }}</option>
               <!-- Populated by JS -->
             </select>
           </div>
 
           <!-- Row 5: Home Club -->
           <div class="contact-form-item full-width" id="home_club_container" style="display: none;">
-            <label for="home_club_id">Home Club:</label>
+            <label for="home_club_id">{{ _('Home Club') }}:</label>
             <select id="home_club_id" name="home_club_id">
               <!-- Populated by JS -->
             </select>
@@ -91,7 +90,7 @@
 
           <!-- Row 5: Bio (Full Width) -->
           <div class="contact-form-item full-width">
-            <label for="bio">Bio:</label>
+            <label for="bio">{{ _('Bio') }}:</label>
             <textarea id="bio" name="bio" rows="3"></textarea>
           </div>
         </div>
@@ -102,34 +101,34 @@
         <div class="contact-form-grid">
           <!-- Row 1: Registered Paths & Default Path -->
           <div class="contact-form-item">
-            <label for="registered_paths">Registered Paths:</label>
+            <label for="registered_paths">{{ _('Registered Paths') }}:</label>
             <select id="registered_paths" name="registered_paths" style="font-size: 13px; padding: 10px 8px; background-color: #fff; cursor: pointer;">
-                <option value="">No Paths Registered</option>
+                <option value="">{{ _('No Paths Registered') }}</option>
             </select>
           </div>
           <div class="contact-form-item">
-            <label for="current_path">Default Path:</label>
+            <label for="current_path">{{ _('Default Path') }}:</label>
             <input type="text" id="current_path" name="current_path" readonly disabled
-              placeholder="Calculated from achievements" style="background-color: #f8f9fa; cursor: not-allowed;" />
+              placeholder="{{ _('Calculated from achievements') }}" style="background-color: #f8f9fa; cursor: not-allowed;" />
           </div>
 
           <!-- Row 2: Next Project & Credentials -->
           <div class="contact-form-item">
-            <label for="next_project">Next Project:</label>
+            <label for="next_project">{{ _('Next Project') }}:</label>
             <input type="text" id="next_project" name="next_project" readonly disabled
-              placeholder="Calculated from logs" style="background-color: #f8f9fa; cursor: not-allowed;" />
+              placeholder="{{ _('Calculated from logs') }}" style="background-color: #f8f9fa; cursor: not-allowed;" />
           </div>
           <div class="contact-form-item">
-            <label for="credentials">Credentials:</label>
+            <label for="credentials">{{ _('Credentials') }}:</label>
             <input type="text" id="credentials" name="credentials" readonly disabled
-              placeholder="Derived from Achievements" style="background-color: #f8f9fa; cursor: not-allowed;" />
+              placeholder="{{ _('Derived from Achievements') }}" style="background-color: #f8f9fa; cursor: not-allowed;" />
           </div>
         </div>
       </div>
 
       <div class="form-actions">
-        <button type="button" class="btn btn-speech-cancel" onclick="closeContactModal()">Cancel</button>
-        <button type="submit" class="btn btn-speech-save">Save</button>
+        <button type="button" class="btn btn-speech-cancel" onclick="closeContactModal()">{{ _('Cancel') }}</button>
+        <button type="submit" class="btn btn-speech-save">{{ _('Save') }}</button>
       </div>
     </form>
   </div>

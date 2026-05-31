@@ -1,27 +1,27 @@
 <div id="reportBugModal" class="modal">
 	<div class="modal-content">
 		<span class="close" onclick="closeReportBugModal()">&times;</span>
-		<h2 style="text-align: center; margin-top: 0;">Report a Bug</h2>
+		<h2 style="text-align: center; margin-top: 0;">{{ _('Report a Bug') }}</h2>
 		<div id="bugReportSuccess" style="display: none; text-align: center; padding: 20px;">
 			<i class="fas fa-check-circle" style="color: #28a745; font-size: 3em; margin-bottom: 15px;"></i>
-			<h3>Report Sent Successfully</h3>
-			<p>Thank you for your feedback.</p>
-			<button type="button" class="btn btn-primary" onclick="closeReportBugModal()">Close</button>
+			<h3>{{ _('Report Sent Successfully') }}</h3>
+			<p>{{ _('Thank you for your feedback.') }}</p>
+			<button type="button" class="btn btn-primary" onclick="closeReportBugModal()">{{ _('Close') }}</button>
 		</div>
 
 		<form id="reportBugForm" onsubmit="submitBugReport(event)">
 			<div class="form-group">
-				<label for="bugSubject">Subject</label>
-				<input type="text" id="bugSubject" name="subject" class="form-control" value="Bug Report" required>
+				<label for="bugSubject">{{ _('Subject') }}</label>
+				<input type="text" id="bugSubject" name="subject" class="form-control" value="{{ _('Bug Report') }}" required>
 			</div>
 			<div class="form-group">
-				<label for="bugDescription">Description</label>
+				<label for="bugDescription">{{ _('Description') }}</label>
 				<textarea id="bugDescription" name="description" class="form-control" rows="5" required
-					placeholder="Please describe the issue..."></textarea>
+					placeholder="{{ _('Please describe the issue...') }}"></textarea>
 			</div>
 			<div class="modal-actions">
-				<button type="button" class="btn btn-secondary" onclick="closeReportBugModal()">Cancel</button>
-				<button type="submit" class="btn btn-primary">Send Report</button>
+				<button type="button" class="btn btn-secondary" onclick="closeReportBugModal()">{{ _('Cancel') }}</button>
+				<button type="submit" class="btn btn-primary">{{ _('Send Report') }}</button>
 			</div>
 		</form>
 	</div>
@@ -73,11 +73,11 @@
 				document.getElementById('bugReportSuccess').style.display = 'block';
 			} else {
 				console.error('Failed to send bug report:', result.error);
-				alert('Failed to send report: ' + (result.error || 'Unknown error'));
+				alert("{{ _('Failed to send report: ') }}" + (result.error || 'Unknown error'));
 			}
 		} catch (error) {
 			console.error('Error sending bug report:', error);
-			alert('Error sending report. Please try again.');
+			alert("{{ _('Error sending report. Please try again.') }}");
 		}
 	}
 

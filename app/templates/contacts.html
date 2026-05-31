@@ -1,44 +1,44 @@
-{% extends "base.html" %} {% block title %}Contacts{% endblock %} {% block
+{% extends "base.html" %} {% block title %}{{ _('Contacts') }}{% endblock %} {% block
 head_extra %}
-
+ 
 {% endblock %} {% block content %}
-<h1><i class="fas fa-address-book"></i> Contacts</h1>
-
+<h1><i class="fas fa-address-book"></i> {{ _('Contacts') }}</h1>
+ 
 <div class="contact-action-bar">
   <div class="stats-container">
     <div class="stat-item">
       <div class="stat-value" style="color: #007bff">{{ total_contacts }}</div>
-      <div class="stat-label">Total Contacts</div>
+      <div class="stat-label">{{ _('Total Contacts') }}</div>
     </div>
     <div class="stat-item">
       <div class="stat-value" style="color: #28a745">
         {{ type_counts.get('Member', 0) }}
       </div>
-      <div class="stat-label">Total Members</div>
+      <div class="stat-label">{{ _('Total Members') }}</div>
     </div>
   </div>
-
+ 
   <div class="contacts-filter-container">
     <!-- Date Filter for Metrics -->
     <form method="GET" action="{{ url_for('contacts_bp.show_contacts') }}" id="contacts-term-filter-form"
       class="date-filter-form">
       <div class="date-filter-group">
         <div class="date-input-wrapper">
-          <label class="filter-label" for="start_date">Start Date:</label>
+          <label class="filter-label" for="start_date">{{ _('Start Date') }}:</label>
           <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date or (current_term['start'] if current_term else '') }}" onchange="updateDateSelection()">
         </div>
         <div class="date-input-wrapper">
-          <label class="filter-label" for="end_date">End Date:</label>
+          <label class="filter-label" for="end_date">{{ _('End Date') }}:</label>
           <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date or (current_term['end'] if current_term else '') }}" onchange="updateDateSelection()">
         </div>
       </div>
     </form>
-
+ 
     <div class="search-and-buttons">
       <div class="search-container">
-        <label for="searchInput" class="filter-label">Search Contact:</label>
+        <label for="searchInput" class="filter-label">{{ _('Search Contact') }}:</label>
         <div style="position: relative">
-          <input type="text" id="searchInput" placeholder="Search all columns..." class="search-box" />
+          <input type="text" id="searchInput" placeholder="{{ _('Search all columns...') }}" class="search-box" />
           <button id="clear-searchInput" class="clear-search-btn" style="display: none">
             &times;
           </button>
@@ -47,47 +47,47 @@ head_extra %}
       <div class="button-group">
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
         <button class="btn btn-success desktop-only-btn" onclick="openContactModal()">
-          New
+          {{ _('New') }}
         </button>
         <button id="mergeContactsBtn" class="btn btn-warning" onclick="handleMergeClick()" style="display: none"
-          title="Select at least 2 contacts to merge">
-          Merge
+          title="{{ _('Select at least 2 contacts to merge') }}">
+          {{ _('Merge') }}
         </button>
         {% endif %}
         
         {% if is_authorized(Permissions.ROSTER_VIEW) %}
         <button class="btn btn-primary desktop-only-btn" onclick="window.location.href='{{ url_for('roster_bp.roster') }}';">
-          Roster
+          {{ _('Roster') }}
         </button>
         {% endif %}
         
         {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
-        <button class="btn btn-maroon desktop-only-btn" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="Grid View">
+        <button class="btn btn-maroon desktop-only-btn" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="{{ _('Grid View') }}">
           <i class="fas fa-th-large"></i>
         </button>
         {% endif %}
-
+ 
         <!-- Mobile Action Dropdown -->
         <div class="action-dropdown mobile-only-item">
-          <button id="action-btn" class="btn btn-secondary action-icon-btn" title="Actions">
+          <button id="action-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Actions') }}">
             <i class="fas fa-ellipsis-v"></i>
           </button>
           <div id="action-menu" class="action-menu">
             {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
             <div class="action-menu-item" onclick="openContactModal()">
-              <i class="fas fa-plus"></i> New
+              <i class="fas fa-plus"></i> {{ _('New') }}
             </div>
             {% endif %}
-
+ 
             {% if is_authorized(Permissions.ROSTER_VIEW) %}
             <div class="action-menu-item" onclick="window.location.href='{{ url_for('roster_bp.roster') }}';">
-              <i class="fas fa-users"></i> Roster
+              <i class="fas fa-users"></i> {{ _('Roster') }}
             </div>
             {% endif %}
-
+ 
             {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
             <div class="action-menu-item" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';">
-              <i class="fas fa-th-large"></i> Grid View
+              <i class="fas fa-th-large"></i> {{ _('Grid View') }}
             </div>
             {% endif %}
           </div>
@@ -96,13 +96,13 @@ head_extra %}
     </div>
   </div>
 </div>
-
+ 
 <!-- Contact Tabs -->
 {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
 <div class="nav-tabs" id="contactsTabs">
   {% for contact_type in contact_types %}
   <div class="nav-item {% if loop.first %}active{% endif %}" data-type="{{ contact_type }}">
-    {{ contact_type }}
+    {{ _(contact_type) }}
     <span class="tab-badge">{{ type_counts[contact_type] }}</span>
   </div>
   {% endfor %}
@@ -114,10 +114,10 @@ head_extra %}
   <div id="contactsLoadingSpinner" class="loading-spinner-container">
     <div class="loading-spinner">
       <i class="fas fa-spinner fa-spin"></i>
-      <p>Loading contacts...</p>
+      <p>{{ _('Loading contacts...') }}</p>
     </div>
   </div>
-
+ 
   <table id="contactsTable" style="display: none">
     <thead>
       <tr>
@@ -127,34 +127,34 @@ head_extra %}
         </th>
         {% endif %}
         <th class="sortable col-name" data-column-index="0" data-sort-type="string">
-          Name
+          {{ _('Name') }}
         </th>
         <th class="sortable col-officer" data-column-index="1" data-sort-type="boolean">
-          Officer
+          {{ _('Officer') }}
         </th>
         <th class="sortable col-part" data-column-index="2" data-sort-type="string">
-          Metrics
+          {{ _('Metrics') }}
         </th>
         <th class="sortable col-phone" data-column-index="3" data-sort-type="string">
-          Phone
+          {{ _('Phone') }}
         </th>
         <th class="sortable col-date" data-column-index="4" data-sort-type="date">
-          Date Created
+          {{ _('Date Created') }}
         </th>
         <th class="sortable col-club" data-column-index="5" data-sort-type="string">
-          Club
+          {{ _('Club') }}
         </th>
         <th class="sortable col-paths" data-column-index="6" data-sort-type="string">
-          Completed Paths
+          {{ _('Completed Paths') }}
         </th>
         <th class="sortable col-creds" data-column-index="7" data-sort-type="string">
-          Credentials
+          {{ _('Credentials') }}
         </th>
         <th class="sortable col-next" data-column-index="8" data-sort-type="string">
-          Next Project
+          {{ _('Next Project') }}
         </th>
         <th class="sortable col-mentor" data-column-index="9" data-sort-type="string">
-          Mentor
+          {{ _('Mentor') }}
         </th>
         {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
         <th class="action-header col-actions" data-column-index="10"></th>
@@ -166,42 +166,42 @@ head_extra %}
     </tbody>
   </table>
 </div>
-
+ 
 <!-- Pagination Controls -->
 <div class="pagination-container" id="paginationContainer">
   <div class="pagination-info">
-    <span id="paginationInfo">Showing 0 - 0 of 0 contacts</span>
+    <span id="paginationInfo">{{ _('Showing 0 - 0 of 0 contacts') }}</span>
   </div>
-
+ 
   <div class="pagination-controls">
-    <button id="firstPageBtn" class="pagination-btn" title="First Page">
+    <button id="firstPageBtn" class="pagination-btn" title="{{ _('First Page') }}">
       <i class="fas fa-angle-double-left"></i>
     </button>
-    <button id="prevPageBtn" class="pagination-btn" title="Previous Page">
+    <button id="prevPageBtn" class="pagination-btn" title="{{ _('Previous Page') }}">
       <i class="fas fa-angle-left"></i>
     </button>
-
+ 
     <span class="page-indicator">
-      Page <span id="currentPage">1</span> of <span id="totalPages">1</span>
+      {{ _('Page') }} <span id="currentPage">1</span> {{ _('of') }} <span id="totalPages">1</span>
     </span>
-
-    <button id="nextPageBtn" class="pagination-btn" title="Next Page">
+ 
+    <button id="nextPageBtn" class="pagination-btn" title="{{ _('Next Page') }}">
       <i class="fas fa-angle-right"></i>
     </button>
-    <button id="lastPageBtn" class="pagination-btn" title="Last Page">
+    <button id="lastPageBtn" class="pagination-btn" title="{{ _('Last Page') }}">
       <i class="fas fa-angle-double-right"></i>
     </button>
   </div>
-
+ 
   <div class="pagination-size">
-    <label for="pageSizeSelect">Show:</label>
+    <label for="pageSizeSelect">{{ _('Show') }}:</label>
     <select id="pageSizeSelect" class="page-size-select">
       <option value="10" selected>10</option>
       <option value="25">25</option>
       <option value="50">50</option>
       <option value="100">100</option>
     </select>
-    <span>per page</span>
+    <span>{{ _('per page') }}</span>
   </div>
 </div>
 

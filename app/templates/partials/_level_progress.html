@@ -2,18 +2,18 @@
 {% if summary.required %}
 <div class="summary-section {% if summary.required_completed %}completed{% endif %}">
 	<span class="section-label {% if summary.required_completed %}completed{% endif %}">
-		Required ({{ summary.required_count }}/{{ summary.required_total }}):
+		{{ _('Required') }} ({{ summary.required_count }}/{{ summary.required_total }}):
 		{% if summary.required_completed %}
-		<i class="fas fa-check-circle text-success" title="All required roles completed"></i>
+		<i class="fas fa-check-circle text-success" title="{{ _('All required roles completed') }}"></i>
 		{% endif %}
 	</span>
 	<div class="items-grid">
 		{% for req in summary.required %}
-		<div class="progress-item {% if req.count >= req.required %}completed{% endif %}" title="{{ req.role }}">
-			<span class="item-label">{{ req.role }}</span>
+		<div class="progress-item {% if req.count >= req.required %}completed{% endif %}" title="{{ _(req.role) }}">
+			<span class="item-label">{{ _(req.role) }}</span>
 			<div class="item-dots">
 				{% for item in req.requirement_items %}
-				<span class="dot {{ item.status }}" title="{{ item.name }}"></span>
+				<span class="dot {{ item.status }}" title="{{ _(item.name) }}"></span>
 				{% endfor %}
 			</div>
 		</div>
@@ -24,18 +24,18 @@
 {% if summary.elective %}
 <div class="summary-section elective-section {% if summary.elective_completed %}completed{% endif %}">
 	<span class="section-label {% if summary.elective_completed %}completed{% endif %}">
-		Electives ({{ summary.elective_count }}/{{ summary.elective_required }}):
+		{{ _('Electives') }} ({{ summary.elective_count }}/{{ summary.elective_required }}):
 		{% if summary.elective_completed %}
-		<i class="fas fa-check-circle text-success" title="Elective requirement met"></i>
+		<i class="fas fa-check-circle text-success" title="{{ _('Elective requirement met') }}"></i>
 		{% endif %}
 	</span>
 	<div class="items-grid">
 		{% for req in summary.elective %}
-		<div class="progress-item {% if req.count >= req.required %}completed{% endif %}" title="{{ req.role }}">
-			<span class="item-label">{{ req.role }}</span>
+		<div class="progress-item {% if req.count >= req.required %}completed{% endif %}" title="{{ _(req.role) }}">
+			<span class="item-label">{{ _(req.role) }}</span>
 			<div class="item-dots">
 				{% for item in req.requirement_items %}
-				<span class="dot {{ item.status }}" title="{{ item.name }}"></span>
+				<span class="dot {{ item.status }}" title="{{ _(item.name) }}"></span>
 				{% endfor %}
 			</div>
 		</div>

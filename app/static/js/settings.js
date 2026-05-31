@@ -314,11 +314,14 @@ class TablePaginator {
     });
 
     // Update displays
+    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
     if (this.infoDisplay) {
       if (rows.length === 0) {
-        this.infoDisplay.textContent = 'No records found';
+        this.infoDisplay.textContent = isChinese ? '没有找到记录' : 'No records found';
       } else {
-        this.infoDisplay.textContent = `Showing ${startIndex + 1} - ${Math.min(endIndex, rows.length)} of ${rows.length}`;
+        this.infoDisplay.textContent = isChinese
+          ? `显示第 ${startIndex + 1} - ${Math.min(endIndex, rows.length)} 条记录，共 ${rows.length} 条`
+          : `Showing ${startIndex + 1} - ${Math.min(endIndex, rows.length)} of ${rows.length}`;
       }
     }
 
@@ -383,14 +386,16 @@ function saveTableChanges(config) {
             });
           }
         });
-        showNotification("Changes saved successfully!", "success");
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+        showNotification(isChinese ? "修改保存成功！" : "Changes saved successfully!", "success");
       } else {
         throw new Error(data.message || "Request failed");
       }
     })
     .catch((error) => {
       console.error("Save error:", error);
-      showNotification(`Error saving changes: ${error.message}`, "error");
+      const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+      showNotification(isChinese ? `保存修改时出错: ${error.message}` : `Error saving changes: ${error.message}`, "error");
     });
 }
 
@@ -409,7 +414,10 @@ function toggleEditMode(config) {
   } = config;
 
   // Update state
-  editBtn.textContent = enable ? "Save" : "Edit";
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+  editBtn.textContent = enable 
+    ? (isChinese ? "保存" : "Save") 
+    : (isChinese ? "编辑" : "Edit");
   cancelBtn.style.display = enable ? "inline-block" : "none";
 
   tableBody.querySelectorAll("tr").forEach((row) => {
@@ -863,8 +871,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("addSessionForm");
 
       if (modal && title && submitBtn && form) {
-        title.textContent = "Add New Session Type";
-        submitBtn.textContent = "Save";
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+        title.textContent = isChinese ? "添加新环节类型" : "Add New Session Type";
+        submitBtn.textContent = isChinese ? "保存" : "Save";
         form.reset();
         document.getElementById("session_id_input").value = "";
         modal.style.display = "flex";
@@ -882,8 +891,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("addRoleForm");
 
       if (modal && title && submitBtn && form) {
-        title.textContent = "Add New Role";
-        submitBtn.textContent = "Save";
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+        title.textContent = isChinese ? "添加新角色" : "Add New Role";
+        submitBtn.textContent = isChinese ? "保存" : "Save";
         form.reset();
         document.getElementById("role_id_input").value = "";
 
@@ -1761,8 +1771,9 @@ function openEditRoleModal(roleId) {
   if (!modal || !title || !submitBtn || !form) return;
 
   // Set modal to edit mode
-  title.textContent = "Edit Role";
-  submitBtn.textContent = "Save";
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+  title.textContent = isChinese ? "编辑角色" : "Edit Role";
+  submitBtn.textContent = isChinese ? "保存" : "Save";
   document.getElementById("role_id_input").value = roleId;
 
   // Populate fields
@@ -1852,8 +1863,9 @@ function openEditSessionModal(sessionId) {
   if (!modal || !title || !submitBtn || !form) return;
 
   // Set modal to edit mode
-  title.textContent = "Edit Session Type";
-  submitBtn.textContent = "Save";
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+  title.textContent = isChinese ? "编辑会议环节类型" : "Edit Session Type";
+  submitBtn.textContent = isChinese ? "保存" : "Save";
   document.getElementById("session_id_input").value = sessionId;
 
   // Populate fields
@@ -1967,8 +1979,9 @@ function openAchievementModal(id = null) {
   if (window.achievementPathSelect) window.achievementPathSelect.refresh();
 
   if (id) {
-    title.textContent = "Edit Achievement";
-    submitBtn.textContent = "Save Changes";
+    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+    title.textContent = isChinese ? "编辑成就" : "Edit Achievement";
+    submitBtn.textContent = isChinese ? "保存修改" : "Save Changes";
     idInput.value = id;
 
     // Fetch achievement data – we can find it in the table or fetch via API
@@ -2015,8 +2028,9 @@ function openAchievementModal(id = null) {
       if (window.achievementPathSelect) window.achievementPathSelect.refresh();
     }
   } else {
-    title.textContent = "Add New";
-    submitBtn.textContent = "Save";
+    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+    title.textContent = isChinese ? "添加新成就" : "Add New";
+    submitBtn.textContent = isChinese ? "保存" : "Save";
     idInput.value = "";
   }
 
@@ -2152,8 +2166,9 @@ function openUserModal(userId = null, btn = null) {
   }
 
   if (userId && btn) {
+    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
     const tr = btn.closest('tr');
-    title.textContent = 'Edit User';
+    title.textContent = isChinese ? '编辑用户' : 'Edit User';
     document.getElementById('user_id').value = userId;
     document.getElementById('user_contact_id').value = tr.dataset.contactId || '';
     document.getElementById('username').value = tr.dataset.username || '';
@@ -2179,10 +2194,11 @@ function openUserModal(userId = null, btn = null) {
     }
 
     // Password placeholder
-    document.getElementById('password').placeholder = 'Leave blank to keep current';
+    document.getElementById('password').placeholder = isChinese ? '留空以保持当前密码' : 'Leave blank to keep current';
   } else {
-    title.textContent = 'Add New User';
-    document.getElementById('password').placeholder = 'Enter password...';
+    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+    title.textContent = isChinese ? '添加新用户' : 'Add New User';
+    document.getElementById('password').placeholder = isChinese ? '输入密码...' : 'Enter password...';
   }
 
   modal.style.display = 'flex';
@@ -2318,19 +2334,20 @@ async function checkUserDuplicates() {
 
         const info = document.createElement('div');
         info.className = 'duplicate-info';
-        const clubsText = dup.clubs && dup.clubs.length > 0 ? dup.clubs.join(', ') : 'No club memberships';
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+        const clubsText = dup.clubs && dup.clubs.length > 0 ? dup.clubs.join(', ') : (isChinese ? '无俱乐部成员身份' : 'No club memberships');
 
         let membershipNotice = '';
-        let buttonText = 'Invite User';
+        let buttonText = isChinese ? '邀请用户' : 'Invite User';
 
         if (dup.in_current_club) {
           if (dup.type === 'User' || dup.has_user) {
-            membershipNotice = `<div class="status-text" style="color: #dc3545;">Already a member of this club.</div>`;
-            buttonText = 'View Member';
+            membershipNotice = `<div class="status-text" style="color: #dc3545;">${isChinese ? '已经是该俱乐部的成员。' : 'Already a member of this club.'}</div>`;
+            buttonText = isChinese ? '查看成员' : 'View Member';
             hasHardDuplicate = true;
           } else {
-            membershipNotice = `<div class="status-text" style="color: #28a745;">Existing guest in this club.</div>`;
-            buttonText = 'Convert to User';
+            membershipNotice = `<div class="status-text" style="color: #28a745;">${isChinese ? '该俱乐部的现有宾客。' : 'Existing guest in this club.'}</div>`;
+            buttonText = isChinese ? '转为用户' : 'Convert to User';
           }
         }
 
@@ -2402,7 +2419,10 @@ async function checkUserDuplicates() {
       });
 
       if (modalTitle) {
-        modalTitle.textContent = hasHardDuplicate ? 'User Already Exists' : 'Potential Duplicate Found';
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+        modalTitle.textContent = hasHardDuplicate 
+          ? (isChinese ? '用户已存在' : 'User Already Exists') 
+          : (isChinese ? '发现潜在的重复用户' : 'Potential Duplicate Found');
       }
       if (proceedWithNewBtn) {
         proceedWithNewBtn.style.display = hasHardDuplicate ? 'none' : 'block';
@@ -2461,15 +2481,24 @@ async function loadUsersAsync() {
         tr.dataset.roles = user.roles_json;
 
         // Roles HTML
+        const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
         let rolesHtml = '';
         if (user.best_role) {
           const roleName = user.best_role.name;
           const roleNameLower = roleName.toLowerCase();
           const knownRoles = ['sysadmin', 'clubadmin', 'operator', 'staff', 'user'];
           const badgeClass = knownRoles.includes(roleNameLower) ? `role-${roleNameLower}` : 'role-other';
-          rolesHtml = `<span class="roster-role-tag ${badgeClass}">${roleName}</span>`;
+          let roleDisplay = roleName;
+          if (isChinese) {
+            if (roleNameLower === 'sysadmin') roleDisplay = '系统管理员';
+            else if (roleNameLower === 'clubadmin') roleDisplay = '俱乐部管理员';
+            else if (roleNameLower === 'operator') roleDisplay = '操作员';
+            else if (roleNameLower === 'staff') roleDisplay = '工作人员';
+            else if (roleNameLower === 'user') roleDisplay = '普通用户';
+          }
+          rolesHtml = `<span class="roster-role-tag ${badgeClass}">${roleDisplay}</span>`;
         } else {
-          rolesHtml = `<em class="text-muted">No Role</em>`;
+          rolesHtml = `<em class="text-muted">${isChinese ? '无角色' : 'No Role'}</em>`;
         }
 
         // Path HTML
@@ -2478,15 +2507,15 @@ async function loadUsersAsync() {
           pathHtml = `<span class="badge-path path-${user.path_abbr}">${user.current_path}</span>`;
         }
 
-        const contactDisplay = user.contact_name ? `${user.contact_name} (${user.username})` : `<em class="user-not-linked">Not Linked</em>`;
+        const contactDisplay = user.contact_name ? `${user.contact_name} (${user.username})` : `<em class="user-not-linked">${isChinese ? '未关联' : 'Not Linked'}</em>`;
 
         const escapedName = (user.contact_name || user.username).replace(/'/g, "\\'").replace(/"/g, '&quot;');
         let actionsHtml = `
           <div class="action-links">
-            <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="Edit">
+            <button type="button" class="icon-btn edit-user-btn" onclick="openUserModal('${user.id}', this)" title="${isChinese ? '编辑' : 'Edit'}">
               <i class="fas fa-edit"></i>
             </button>
-            <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}')" title="Remove from Club">
+            <button class="delete-btn icon-btn" onclick="openRemoveUserModal('/user/delete/${user.id}', '${escapedName}')" title="${isChinese ? '移出俱乐部' : 'Remove from Club'}">
               <i class="fas fa-user-minus"></i>
             </button>
           </div>
@@ -2519,11 +2548,13 @@ async function loadUsersAsync() {
       }
 
     } else {
-      tableBody.innerHTML = `<tr><td colspan="9" class="text-danger text-center">Failed to load users: ${data.message}</td></tr>`;
+      const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+      tableBody.innerHTML = `<tr><td colspan="9" class="text-danger text-center">${isChinese ? '无法加载用户' : 'Failed to load users'}: ${data.message}</td></tr>`;
     }
   } catch (error) {
     console.error("Error loading users:", error);
-    tableBody.innerHTML = `<tr><td colspan="9" class="text-danger text-center">Error loading users.</td></tr>`;
+    const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+    tableBody.innerHTML = `<tr><td colspan="9" class="text-danger text-center">${isChinese ? '加载用户时出错。' : 'Error loading users.'}</td></tr>`;
   }
 }
 
