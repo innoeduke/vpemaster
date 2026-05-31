@@ -190,21 +190,160 @@
 
     <header class="page-header" id="page-header">
       <div class="header-left">
+        <!-- Logo & Brand (desktop only) -->
+        <a href="/" class="desktop-logo-brand">
+          <span class="logo-title">Memory Maker</span>
+          <span class="beta-badge-mini">{{ _('Beta') }}</span>
+        </a>
+        
+        <div class="header-brand-divider"></div>
+        
         <a href="#" class="nav-toggle" id="mobile-nav-toggle"><i class="fas fa-bars"></i></a>
         <h1 class="header-title">{% block header_title %}{% endblock %}</h1>
+        {% if club %}
+        <div class="header-divider"></div>
+        <a href="{{ url_for('about_club_bp.about_club') if is_authorized(Permissions.ABOUT_CLUB_VIEW) else '#' }}" 
+           class="header-club-badge" 
+           title="{{ club.club_name }} (No. {{ club.club_no }})">
+          <img src="{{ url_for('static', filename=club.effective_logo_url) }}" class="header-club-logo" alt="Club Logo" />
+          <span class="header-club-info">
+            <span class="club-name-text">{{ club.club_name }}</span>
+            <span class="club-meta-divider">|</span>
+            <span class="club-meta-text">Club No.{{ club.club_no }} &nbsp;|&nbsp; Area {{ club.area or '?' }}, Division {{ club.division or '?' }}, D{{ club.district or '?' }}</span>
+          </span>
+        </a>
+        {% endif %}
       </div>
+      
+      <!-- Top Navigation Links (desktop only) -->
+      <div class="header-center-nav">
+        <ul class="header-nav-links">
+          <!-- 1. Meetings Dropdown -->
+          {% set meetings_active = request.endpoint and (request.endpoint == 'main_bp.calendar' or request.endpoint.startswith('agenda_bp') or request.endpoint.startswith('booking_bp') or request.endpoint.startswith('voting_bp') or request.endpoint.startswith('roster_bp')) %}
+          <li class="nav-dropdown-wrapper {% if meetings_active %}active{% endif %}">
+            <a href="#" class="nav-dropdown-trigger">
+              <span>{{ _('Meetings') }}</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="nav-submenu">
+              {% if is_authorized(Permissions.BOOKING_BOOK_OWN) %}
+              <li class="{% if request.endpoint and request.endpoint == 'main_bp.calendar' %}submenu-active{% endif %}">
+                <a href="{{ url_for('main_bp.calendar') }}">
+                  <i class="fas fa-calendar-alt"></i> {{ _('Calendar') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_authorized(Permissions.AGENDA_VIEW) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('agenda_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('agenda_bp.agenda') }}">
+                  <i class="fas fa-clipboard-list"></i> {{ _('Agenda') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_authorized(Permissions.BOOKING_BOOK_OWN) and has_meetings and not hide_booking_nav %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('booking_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('booking_bp.booking', club_id=get_current_club_id()) }}">
+                  <i class="fas fa-calendar-check"></i> {{ _('Booking') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if has_meetings and not hide_voting_nav %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('voting_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('voting_bp.voting', club_id=get_current_club_id()) }}">
+                  <i class="fas fa-vote-yea"></i> {{ _('Voting') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_authorized(Permissions.ROSTER_VIEW) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('roster_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('roster_bp.roster') }}">
+                  <i class="fas fa-users"></i> {{ _('Roster') }}
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </li>
+
+          <!-- 2. Personal Dropdown -->
+          {% set personal_active = request.endpoint and (request.endpoint.startswith('speech_logs_bp') or request.endpoint.startswith('planner_bp')) %}
+          <li class="nav-dropdown-wrapper {% if personal_active %}active{% endif %}">
+            <a href="#" class="nav-dropdown-trigger">
+              <span>{{ _('Personal') }}</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="nav-submenu">
+              {% if is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and has_meetings %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('speech_logs_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('speech_logs_bp.show_speech_logs') }}">
+                  <i class="fas fa-book-open"></i> {{ _('Journals') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if current_user.is_authenticated %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('planner_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('planner_bp.planner') }}">
+                  <i class="fas fa-tasks"></i> {{ _('Planner') }}
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </li>
+
+          <!-- 3. Management Dropdown -->
+          {% set management_active = request.endpoint and (request.endpoint.startswith('contacts_bp') or request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp') or request.endpoint.startswith('uploads_bp') or request.endpoint.startswith('settings_bp') or request.endpoint.startswith('clubs_bp')) %}
+          <li class="nav-dropdown-wrapper {% if management_active %}active{% endif %}">
+            <a href="#" class="nav-dropdown-trigger">
+              <span>{{ _('Management') }}</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="nav-submenu">
+              {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('contacts_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('contacts_bp.show_contacts') }}">
+                  <i class="fas fa-address-book"></i> {{ _('Contacts') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_authorized(Permissions.LUCKY_DRAW_VIEW) or is_authorized(Permissions.PATHWAY_LIB_VIEW) %}
+              <li class="{% if request.endpoint and (request.endpoint.startswith('tools_bp') or request.endpoint.startswith('lucky_draw_bp') or request.endpoint.startswith('pathways_bp')) %}submenu-active{% endif %}">
+                <a href="{{ url_for('tools_bp.tools') }}">
+                  <i class="fas fa-tools"></i> {{ _('Tools') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_authorized(Permissions.FILE_UPLOAD_MANAGE) %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('uploads_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('uploads_bp.manage_uploads') }}">
+                  <i class="fas fa-cloud-upload-alt"></i> {{ _('Upload') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if is_authorized(Permissions.SETTINGS_VIEW_ALL) and current_user.primary_role_name != 'Guest' %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('settings_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('settings_bp.settings', default_tab='user-settings') }}">
+                  <i class="fas fa-cog"></i> {{ _('Settings') }}
+                </a>
+              </li>
+              {% endif %}
+              {% if current_user.is_authenticated and current_user.primary_role_name == 'SysAdmin' %}
+              <li class="{% if request.endpoint and request.endpoint.startswith('clubs_bp') %}submenu-active{% endif %}">
+                <a href="{{ url_for('clubs_bp.list_clubs') }}">
+                  <i class="fas fa-network-wired"></i> {{ _('Manage Clubs') }}
+                </a>
+              </li>
+              {% endif %}
+            </ul>
+          </li>
+        </ul>
+      </div>
+      
       <div class="header-right">
         <div class="header-nav-actions">
-          <div class="language-selector">
-            {% if get_locale() == 'zh_CN' %}
-            <a href="{{ url_for('main_bp.set_language', language='en') }}" class="lang-toggle-btn" title="Switch to English">
-              <i class="fas fa-globe"></i> <span>EN</span>
-            </a>
-            {% else %}
-            <a href="{{ url_for('main_bp.set_language', language='zh_CN') }}" class="lang-toggle-btn" title="切换到简体中文">
-              <i class="fas fa-globe"></i> <span>中文</span>
-            </a>
-            {% endif %}
+          <div class="language-toggler" title="Switch Language / 切换语言">
+            <i class="fas fa-globe lang-icon"></i>
+            <a href="{{ url_for('main_bp.set_language', language='en') }}" class="lang-toggle-item {% if get_locale() == 'en' %}active{% endif %}">EN</a>
+            <span class="lang-toggle-separator">/</span>
+            <a href="{{ url_for('main_bp.set_language', language='zh_CN') }}" class="lang-toggle-item {% if get_locale() == 'zh_CN' %}active{% endif %}">中文</a>
           </div>
           {% if current_user.is_authenticated %}
           <div class="profile-container">

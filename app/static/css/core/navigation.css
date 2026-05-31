@@ -355,37 +355,49 @@
     opacity: 0.8;
 }
 
-/* Language Selector styling */
-.language-selector {
-    margin-right: 15px;
-    z-index: 2000;
-}
-
-.lang-toggle-btn {
+/* Language Toggler styling */
+.language-toggler {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    background-color: #fff;
-    border: 1px solid #ddd;
-    border-radius: 20px;
-    color: #333;
+    gap: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    z-index: 2000;
+    margin-right: 15px;
+}
+
+.lang-icon {
     font-size: 0.9rem;
-    font-weight: 500;
+    color: #64748b;
+    margin-right: 2px;
+}
+
+.lang-toggle-item {
+    color: #94a3b8;
     text-decoration: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: color 0.2s ease;
+    padding: 2px 4px;
 }
 
-.lang-toggle-btn:hover {
-    background-color: #f5f5f5;
-    border-color: #ccc;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08);
+.lang-toggle-item:hover {
+    color: #475569;
 }
 
-.lang-toggle-btn i {
-    font-size: 1rem;
-    color: #004165;
+.lang-toggle-item.active {
+    color: #0f172a;
+    pointer-events: none;
+}
+
+.lang-toggle-separator {
+    color: #cbd5e1;
+    user-select: none;
+}
+
+/* Top Navbar Desktop Elements (hidden by default on mobile) */
+.desktop-logo-brand,
+.header-brand-divider,
+.header-center-nav,
+.header-divider,
+.header-club-badge {
+    display: none;
 }

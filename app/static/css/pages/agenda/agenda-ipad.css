@@ -11,29 +11,21 @@
 		padding: 0 15px;
 	}
 
-	/* iPad header layout - horizontal like desktop but smaller */
+	/* iPad header layout */
 	.agenda-header-container {
-		display: flex;
-		align-items: center;
-		gap: 15px;
+		padding-bottom: 15px;
 	}
 
 	.agenda-header-logo img {
-		max-width: 120px;
+		max-width: 110px;
 	}
 
 	.agenda-header-info .meeting-title {
 		font-size: 2em;
-		margin: 20px 20px;
 	}
 
 	.agenda-header-info .subtitle {
-		margin: -15px 20px 15px;
-		font-size: 1.2em;
-	}
-
-	.agenda-header-info .club-info {
-		font-size: 0.85em;
+		font-size: 1.1em;
 	}
 
 	/* Action bar for iPad */

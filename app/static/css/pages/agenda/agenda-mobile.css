@@ -58,44 +58,20 @@
 
   /* Agenda Page Responsive Fixes */
   .agenda-header-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    justify-items: center;
-    gap: 10px;
-  }
-
-  .agenda-header-info {
-    display: contents;
-  }
-
-  .club-info {
-    grid-row: 1;
-    text-align: center;
-    font-size: 0.75em;
-  }
-
-  .agenda-header-logo {
-    grid-row: 2;
+    padding-bottom: 15px;
   }
 
   .agenda-header-logo img {
-    max-width: 50%;
-    height: auto;
-    display: block;
-    margin: 0 auto;
+    max-width: 100px;
   }
 
-  .meeting-title {
-    grid-row: 3;
-    margin-top: 10px;
-    margin-bottom: 10px;
-    text-align: center;
+  .agenda-header-info .meeting-title {
+    font-size: 1.6em;
+    margin: 4px 15px 8px;
   }
 
-  .subtitle {
-    grid-row: 4;
-    margin: 0;
-    text-align: center;
+  .agenda-header-info .subtitle {
+    margin: 0 15px 6px;
   }
 
   .agenda-header-info .video-icon-btn {

@@ -40,15 +40,10 @@
 
 	/* Larger meeting title for desktop */
 	.agenda-header-info .meeting-title {
-		font-size: 2.6em;
-	}
-
-	/* Desktop agenda header layout */
-	.agenda-header-container {
-		gap: 25px;
+		font-size: 2.4em;
 	}
 
 	.agenda-header-logo img {
-		max-width: 160px;
+		max-width: 140px;
 	}
 }

@@ -1,6 +1,7 @@
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for
 from datetime import datetime
 from flask_login import current_user
+from .translations.translations import translate as _
 from .auth.utils import login_required, is_authorized
 from .auth.permissions import Permissions, permission_required
 from .models import Roster, Meeting, Contact, ContactClub, Pathway, Ticket
@@ -265,7 +266,7 @@ def roster_amount_trend():
             
         if sum(data) > 0:
             datasets.append({
-                'label': name,
+                'label': _(name),
                 'data': data,
                 'color': c_type_info['color']
             })

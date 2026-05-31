@@ -14,6 +14,14 @@
     data-can-delete="{{ is_authorized(Permissions.AGENDA_DELETE)|lower }}"
     data-can-view-contacts="{{ (is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW))|lower }}"
 > {# Wrapper for edit-mode class #}
+    <div class="agenda-export-club-info">
+        {% if club %}
+        Club No.{{ club.club_no }} &nbsp;|&nbsp; Area {{ club.area or '?' }}, Division {{ club.division or '?' }}, D{{ club.district or '?' }} &nbsp;|&nbsp; {{ club.club_name }}
+        {% else %}
+        Club No.868941 &nbsp;|&nbsp; Area K1, Division K, D85 &nbsp;|&nbsp; Shanghai Leadership Toastmasters Club
+        {% endif %}
+    </div>
+
     <div class="agenda-header-container">
         <div class="agenda-header-logo">
             {% if club %}
@@ -24,18 +32,12 @@
         </div>
 
         <div class="agenda-header-info">
-            <p class="club-info">
-                {% if club %}
-                Club No.{{ club.club_no }} | Area {{ club.area or '?' }}, Division {{ club.division or '?' }}, D{{ club.district or '?' }} | {{
-                club.club_name }}
-                {% else %}
-                Club No.868941 | Area K1 | Division K | Shanghai Leadership Toastmasters Club
-                {% endif %}
-            </p>
-            <h1 class="meeting-title view-mode">
-                {% if selected_meeting.type %}
+            {% if selected_meeting.type %}
+            <div class="meeting-type-badge-container">
                 <span class="meeting-type-badge">{{ selected_meeting.type }}</span>
-                {% endif %}
+            </div>
+            {% endif %}
+            <h1 class="meeting-title view-mode">
                 {% if selected_meeting and selected_meeting.media and selected_meeting.media.url and current_user.has_permission('MEDIA_ACCESS') %}
                 <a href="{{ selected_meeting.media.url }}" target="_blank">
                     {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
@@ -44,14 +46,14 @@
                 {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
                 {% endif %}
             </h1>
-                {% if selected_meeting.Subtitle %}
-                <p class="subtitle view-mode">
-                    {{ selected_meeting.Subtitle }}
-                </p>
-                {% endif %}
-                {% if selected_meeting %}
-                <p class="jpg-export-info">Meeting #{{ selected_meeting.Meeting_Number }} | {{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') if selected_meeting.Meeting_Date else '' }}</p>
-                {% endif %}
+            {% if selected_meeting.Subtitle %}
+            <p class="subtitle view-mode">
+                {{ selected_meeting.Subtitle }}
+            </p>
+            {% endif %}
+            {% if selected_meeting %}
+            <p class="jpg-export-info">Meeting #{{ selected_meeting.Meeting_Number }} | {{ selected_meeting.Meeting_Date.strftime('%B %d, %Y') if selected_meeting.Meeting_Date else '' }}</p>
+            {% endif %}
         </div>
     </div>
 

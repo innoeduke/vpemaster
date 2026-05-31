@@ -808,10 +808,28 @@ function handleMergeClick() {
 
   if (countSpan) countSpan.textContent = selectedContacts.length;
   if (primaryDetails) primaryDetails.textContent = primary.Name;
-  if (primaryMeta) primaryMeta.textContent = `${primary.Type} • Created: ${primary.Date_Created}`;
+
+  const isChinese = typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN';
+  const translateType = (type) => {
+    if (isChinese) {
+      const mapping = {
+        'Guest': '宾客',
+        'Member': '会员',
+        'Officer': '官员'
+      };
+      return mapping[type] || type;
+    }
+    return type;
+  };
+
+  if (primaryMeta) {
+    const translatedType = translateType(primary.Type);
+    const createdLabel = isChinese ? '创建日期' : 'Created';
+    primaryMeta.textContent = `${translatedType} • ${createdLabel}: ${primary.Date_Created}`;
+  }
 
   if (secondaryList) {
-    secondaryList.innerHTML = others.map(c => `<li><strong>${c.Name}</strong> (${c.Type})</li>`).join('');
+    secondaryList.innerHTML = others.map(c => `<li><strong>${c.Name}</strong> (${translateType(c.Type)})</li>`).join('');
   }
 
   // Setup Confirm Button with once listener
