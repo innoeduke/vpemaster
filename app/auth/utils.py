@@ -35,7 +35,12 @@ def is_authorized(user_role_or_permission, permission=None, **kwargs):
     # Imports inside function to avoid circular dependency
     from app.auth.permissions import Permissions
 
-    # 1. SysAdmin Override: Full access to all resources/actions of all clubs
+    # 1. Global privileges bypass:
+    # PROFILE_OWN is a global account privilege; any authenticated user can view/manage their own profile.
+    if target_perm == Permissions.PROFILE_OWN:
+        return True
+
+    # 2. SysAdmin Override: Full access to all resources/actions of all clubs
     # Relies on the helper method on User model
     if hasattr(current_user, 'is_sysadmin') and current_user.is_sysadmin:
         return True

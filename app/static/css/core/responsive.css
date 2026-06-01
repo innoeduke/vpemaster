@@ -377,6 +377,11 @@
         min-width: 0;
     }
 
+    .header-login-container {
+        display: block;
+        margin-left: auto;
+    }
+
     .header-club-badge {
         display: flex;
         align-items: center;

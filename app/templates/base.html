@@ -346,7 +346,7 @@
             <span class="lang-toggle-separator">/</span>
             <a href="{{ url_for('main_bp.set_language', language='zh_CN') }}" class="lang-toggle-item {% if get_locale() == 'zh_CN' %}active{% endif %}">中文</a>
           </div>
-          {% if current_user.is_authenticated %}
+          {% if is_authorized(Permissions.PROFILE_OWN) %}
           <div class="profile-container">
             <div class="profile-trigger" id="profile-trigger">
               {% if current_user.contact and current_user.contact.Avatar_URL %}
@@ -373,6 +373,13 @@
               <div class="menu-divider"></div>
               <a href="{{ url_for('auth_bp.logout') }}"><i class="fas fa-sign-out-alt"></i> {{ _('Logout') }}</a>
             </div>
+          </div>
+          {% else %}
+          <div class="header-login-container">
+            <a href="{{ url_for('auth_bp.login') }}" class="header-login-btn">
+              <i class="fas fa-sign-in-alt"></i>
+              <span>{{ _('Login') }}</span>
+            </a>
           </div>
           {% endif %}
         </div>

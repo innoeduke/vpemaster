@@ -420,6 +420,31 @@
 .header-brand-divider,
 .header-center-nav,
 .header-divider,
-.header-club-container {
+.header-club-container,
+.header-login-container {
     display: none;
+}
+
+.header-login-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(169, 178, 177, 0.3);
+    border-radius: 20px; /* pill shape matches profile-trigger */
+    padding: 6px 14px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.header-login-btn:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    border-color: rgba(169, 178, 177, 0.5);
+    transform: translateY(-0.5px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
