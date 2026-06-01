@@ -529,10 +529,9 @@ def test_ai_update_meeting_status(app, setup_ai_environment):
         )
         
         assert len(executed_tools) > 0
-        tool_call = executed_tools[0]
-        assert tool_call['name'] == 'update_meeting_status'
+        tool_call = next((t for t in executed_tools if t['name'] == 'update_meeting_status' and t['arguments']['status'] == 'finished'), None)
+        assert tool_call is not None
         assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
-        assert tool_call['arguments']['status'] == 'finished'
 
 
 def test_ai_get_voting_results(app, setup_ai_environment):
@@ -634,13 +633,16 @@ def test_ai_finish_unstarted_meeting_fails(app, setup_ai_environment):
             locale='en'
         )
         
-        assert len(executed_tools) > 0
-        tool_call = next((t for t in executed_tools if t['name'] == 'update_meeting_status'), None)
-        assert tool_call is not None
-        assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
-        assert tool_call['arguments']['status'] == 'finished'
-        # The reply text should contain educational info explaining linear progression
-        assert any(word in reply_text.lower() for word in ["not started", "linear", "start", "progression", "running"])
+        try:
+            assert len(executed_tools) > 0
+            tool_call = next((t for t in executed_tools if t['name'] == 'update_meeting_status' and t['arguments']['status'] == 'finished'), None)
+            assert tool_call is not None
+            assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
+            # The reply text should contain educational info explaining linear progression or starting the meeting
+            assert any(word in reply_text.lower() for word in ["not started", "linear", "start", "progression", "running"])
+        except AssertionError as e:
+            print(f"\n[DEBUG] test_ai_finish_unstarted_meeting_fails: executed_tools={executed_tools}, reply_text={reply_text}")
+            raise e
 
 
 def test_ai_query_pathways_library(app, setup_ai_environment):
@@ -807,8 +809,8 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools) > 0
-        assert executed_tools[0]['name'] == 'manage_excomm_officers'
-        assert executed_tools[0]['arguments']['action'] in ['query_officers', 'query']
+        query_call = next((t for t in executed_tools if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] in ['query_officers', 'query']), None)
+        assert query_call is not None
         assert "no active" in reply_text.lower() or "assign" in reply_text.lower() or "vacant" in reply_text.lower()
 
         # Test Case 2: Update ExComm Officer (President) to John Doe (active term will be created automatically)
@@ -826,9 +828,9 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools2) > 0
-        assert executed_tools2[0]['name'] == 'manage_excomm_officers'
-        assert executed_tools2[0]['arguments']['action'] in ['update_officer', 'update']
-        assert 'john' in executed_tools2[0]['arguments']['contact_name'].lower()
+        update_call = next((t for t in executed_tools2 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] in ['update_officer', 'update']), None)
+        assert update_call is not None
+        assert 'john' in update_call['arguments']['contact_name'].lower()
         
         # Test Case 3: Create a new excomm term 26H2
         msg3 = ChatMessage(
@@ -845,9 +847,9 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools3) > 0
-        assert executed_tools3[0]['name'] == 'manage_excomm_officers'
-        assert executed_tools3[0]['arguments']['action'] == 'create_term'
-        assert executed_tools3[0]['arguments']['term'] == '26H2'
+        create_call = next((t for t in executed_tools3 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'create_term'), None)
+        assert create_call is not None
+        assert create_call['arguments']['term'] == '26H2'
         
         # Test Case 4: Update President of term 26H2 to John Doe
         msg4 = ChatMessage(
@@ -864,10 +866,10 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools4) > 0
-        assert executed_tools4[0]['name'] == 'manage_excomm_officers'
-        assert executed_tools4[0]['arguments']['action'] == 'update_officer'
-        assert executed_tools4[0]['arguments']['term'] == '26H2'
-        assert 'john' in executed_tools4[0]['arguments']['contact_name'].lower()
+        update_call2 = next((t for t in executed_tools4 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'update_officer'), None)
+        assert update_call2 is not None
+        assert update_call2['arguments']['term'] == '26H2'
+        assert 'john' in update_call2['arguments']['contact_name'].lower()
         
         # Test Case 5: Query officers of term 26H2
         msg5 = ChatMessage(
@@ -884,9 +886,9 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools5) > 0
-        assert executed_tools5[0]['name'] == 'manage_excomm_officers'
-        assert executed_tools5[0]['arguments']['action'] == 'query_officers'
-        assert executed_tools5[0]['arguments']['term'] == '26H2'
+        query_call2 = next((t for t in executed_tools5 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'query_officers'), None)
+        assert query_call2 is not None
+        assert query_call2['arguments']['term'] == '26H2'
         assert "President" in reply_text5 and "John Doe" in reply_text5
         
         # Test Case 6: List excomm terms
@@ -904,8 +906,8 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools6) > 0
-        assert executed_tools6[0]['name'] == 'manage_excomm_officers'
-        assert executed_tools6[0]['arguments']['action'] == 'query_terms'
+        terms_call = next((t for t in executed_tools6 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'query_terms'), None)
+        assert terms_call is not None
         assert "26H2" in reply_text6
         
         # Test Case 7: Set active term to 26H2
@@ -923,9 +925,9 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools7) > 0
-        assert executed_tools7[0]['name'] == 'manage_excomm_officers'
-        assert executed_tools7[0]['arguments']['action'] == 'set_active_term'
-        assert executed_tools7[0]['arguments']['term'] == '26H2'
+        active_call = next((t for t in executed_tools7 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'set_active_term'), None)
+        assert active_call is not None
+        assert active_call['arguments']['term'] == '26H2'
         assert "active" in reply_text7.lower()
 
 

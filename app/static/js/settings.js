@@ -1503,7 +1503,7 @@ function renderPermissionsMatrix(data) {
       <tr data-perm-id="${p.id}" class="perm-row category-group-${catSlug}" style="display: none;">
         <td title="${p.description || ""}">
           ${p.name}
-          <div class="small text-muted">${p.resource}:${p.description || ""}</div>
+          <div class="small text-muted">${p.resource ? p.resource + ':' : ''}${p.description || ""}</div>
         </td>
     `;
 

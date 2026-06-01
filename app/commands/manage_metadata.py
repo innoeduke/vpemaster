@@ -24,7 +24,7 @@ def to_dict(model_instance):
     return d
 
 @metadata.command()
-@click.option('--file', '-f', default='deploy/metadata_dump.json', help='Output JSON file path relative to project root')
+@click.option('--file', '-f', default='instance/metadata_dump.json', help='Output JSON file path relative to project root')
 @with_appcontext
 def backup(file):
     """
@@ -102,7 +102,7 @@ def backup(file):
     print(f"\nTotal: {total_records} metadata records exported")
 
 @metadata.command()
-@click.option('--file', '-f', default='deploy/metadata_dump.json', help='Input JSON file path relative to project root')
+@click.option('--file', '-f', default='instance/metadata_dump.json', help='Input JSON file path relative to project root')
 @with_appcontext
 def restore(file):
     """

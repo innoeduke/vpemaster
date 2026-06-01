@@ -2,7 +2,7 @@
 class SessionTypeID:
     """
     Constants for SessionType IDs to avoid hardcoding in the codebase.
-    These IDs must match the seed data in scripts/metadata_dump.json.
+    These IDs must match the seed data in the database.
     """
     TABLE_TOPICS = 7
     KEYNOTE_SPEECH = 20

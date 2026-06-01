@@ -46,12 +46,15 @@ if [ $? -ne 0 ]; then
 fi
 
 # 4. Restore metadata (Depends on Club 1 existing)
-echo "🧩 Restoring core metadata..."
-flask metadata restore
-
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to restore metadata. Aborting."
-    exit 1
+if [ -f "instance/metadata_dump.json" ]; then
+    echo "🧩 Restoring core metadata from instance/metadata_dump.json..."
+    flask metadata restore --file "instance/metadata_dump.json"
+    if [ $? -ne 0 ]; then
+        echo "❌ Failed to restore metadata. Aborting."
+        exit 1
+    fi
+else
+    echo "⚠️  No metadata dump found at instance/metadata_dump.json. Skipping metadata restore."
 fi
 
 # 5. Create sysadmin user
