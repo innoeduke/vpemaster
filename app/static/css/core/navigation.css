@@ -38,7 +38,7 @@
 .nav-pane h2 {
     margin: 0;
     font-size: 1.2rem;
-    color: #f2c94c;
+    color: #F2DF74;
     opacity: 0;
     max-width: 0;
     /* Fully hide in collapsed */
@@ -61,8 +61,7 @@
     top: 6px;
     left: -24px;
     transform: rotate(-45deg);
-    background-color: #f2c94c;
-    /* Contrasting yellow */
+    background-color: #F2DF74;
     color: #004165;
     /* Dark theme blue for text */
     padding: 5px 30px;
@@ -194,8 +193,8 @@
     justify-content: space-between;
     padding: 0 25px;
     z-index: 1001;
-    background-color: transparent;
-    /* Transparent on PC/iPad by default */
+    background-color: #004165;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.2);
     transition: left 0.3s ease-in-out;
 }
 
@@ -245,20 +244,33 @@
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background-color: #fff;
-    border: 1px solid #ddd;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(169, 178, 177, 0.3);
     border-radius: 20px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.2s ease;
+    color: white;
+    font-size: 0.85rem;
 }
 
 .profile-trigger:hover {
-    background-color: #f0f0f0;
+    background-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(169, 178, 177, 0.5);
 }
 
 .profile-trigger i {
     font-size: 1.2rem;
-    color: #004165;
+    color: white;
+}
+
+.profile-trigger span {
+    color: white;
+}
+
+.profile-trigger .fa-caret-down {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.55);
+    margin-left: -2px;
 }
 
 .profile-avatar-img {
@@ -271,14 +283,14 @@
 .profile-menu {
     display: none;
     position: absolute;
-    top: 100%;
+    top: calc(100% + 6px);
     right: 0;
-    margin-top: 5px;
-    background-color: white;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
     min-width: 180px;
+    padding: 6px 0;
     overflow: hidden;
 }
 
@@ -290,23 +302,33 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 15px;
+    padding: 8px 16px;
     text-decoration: none;
-    color: #333;
-    transition: background-color 0.2s;
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 550;
+    transition: background-color 0.2s, color 0.2s;
+    white-space: nowrap;
 }
 
 .profile-menu a:hover {
-    background-color: #f5f5f5;
+    background-color: #f1f5f9;
+    color: #0f172a;
 }
 
 .profile-menu a i {
-    width: 20px;
+    width: 16px;
     text-align: center;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.profile-menu a:hover i {
+    color: #475569;
 }
 
 .menu-divider {
-    border-top: 1px solid #eee;
+    border-top: 1px solid #f1f5f9;
     margin: 4px 0;
 }
 
@@ -368,28 +390,28 @@
 
 .lang-icon {
     font-size: 0.9rem;
-    color: #64748b;
+    color: #A9B2B1;
     margin-right: 2px;
 }
 
 .lang-toggle-item {
-    color: #94a3b8;
+    color: rgba(255, 255, 255, 0.45);
     text-decoration: none;
     transition: color 0.2s ease;
     padding: 2px 4px;
 }
 
 .lang-toggle-item:hover {
-    color: #475569;
+    color: #ffffff;
 }
 
 .lang-toggle-item.active {
-    color: #0f172a;
+    color: #ffffff;
     pointer-events: none;
 }
 
 .lang-toggle-separator {
-    color: #cbd5e1;
+    color: rgba(255, 255, 255, 0.25);
     user-select: none;
 }
 
@@ -398,6 +420,6 @@
 .header-brand-divider,
 .header-center-nav,
 .header-divider,
-.header-club-badge {
+.header-club-container {
     display: none;
 }
