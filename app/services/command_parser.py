@@ -160,6 +160,20 @@ class CommandParser:
             res = ChatToolExecutor.execute('get_voting_results', params, user, club_id)
             return res['success'], res['message']
 
+        elif cmd == '/query-pathways':
+            params = {}
+            if len(args) >= 2 and args[0] in ('--project', '--proj', '-p'):
+                params['project_name'] = args[1]
+            elif len(args) == 1 and args[0].startswith('--project='):
+                params['project_name'] = args[0].split('=', 1)[1]
+            else:
+                if len(args) >= 1:
+                    params['pathway_name'] = args[0]
+                if len(args) >= 2:
+                    params['level'] = args[1]
+            res = ChatToolExecutor.execute('query_pathways_library', params, user, club_id)
+            return res['success'], res['message']
+
         return False, f"Unknown command '{cmd}'. Type `/help` to see available commands."
 
     @staticmethod
@@ -180,5 +194,6 @@ class CommandParser:
             "* **/available-roles** `<meeting_id>` - Show open roles. Example: `/available-roles 350`\n"
             "* **/status** `<meeting_id>` `<new_status>` - Change meeting status. Example: `/status 350 running`\n"
             "* **/voting-results** `<meeting_id>` - View best award voting results. Example: `/voting-results 350`\n"
+            "* **/query-pathways** `[pathway_name]` `[level]` `[--project name]` - Query pathways and projects library. Example: `/query-pathways PM 3` or `/query-pathways --project \"Ice Breaker\"`\n"
             "* **/help** - Show this menu."
         )

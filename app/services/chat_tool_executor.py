@@ -4,7 +4,8 @@ from app import db
 from app.models import (
     Meeting, Contact, SessionLog, SessionType, MeetingRole, 
     ChatMessage, Achievement, Roster, Ticket, Vote, ContactClub,
-    ContactPath, Pathway, User, UserClub
+    ContactPath, Pathway, User, UserClub, Club, ExComm, ExcommOfficer,
+    Project, PathwayProject
 )
 from app.auth.permissions import Permissions
 from app.auth.utils import is_authorized
@@ -594,6 +595,52 @@ class ChatToolExecutor:
         return {'success': True, 'message': info}
 
     @classmethod
+    def tool_get_meeting_agenda(cls, params, user, club_id):
+        if not is_authorized(Permissions.AGENDA_VIEW):
+            return {'success': False, 'message': "You do not have permission to view meetings (AGENDA_VIEW)."}
+            
+        meeting_ident = params.get('meeting_identifier')
+        meeting = cls.resolve_meeting(meeting_ident, club_id)
+        
+        if not meeting:
+            return {'success': False, 'message': f"Meeting '{meeting_ident}' not found."}
+            
+        logs = SessionLog.query.filter(
+            SessionLog.meeting_id == meeting.id,
+            SessionLog.state != 'cancelled'
+        ).order_by(SessionLog.Meeting_Seq).all()
+        
+        if not logs:
+            return {'success': True, 'message': f"The agenda for Meeting #{meeting.Meeting_Number} has no items."}
+            
+        m_date = meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting.Meeting_Date else 'N/A'
+        res = f"I went ahead and pulled the official agenda for **Meeting #{meeting.Meeting_Number} ({m_date})** — here it is:\n"
+        res += f"📋 **Meeting #{meeting.Meeting_Number} Agenda — {meeting.Meeting_Title or 'No Theme'}**\n\n"
+        res += "| # | Time | Item | Owner |\n"
+        res += "|---|------|------|-------|\n"
+        
+        for log in logs:
+            time_str = log.Start_Time.strftime('%H:%M') if log.Start_Time else "—"
+            
+            # Format item/title
+            item_title = log.Session_Title.strip() if log.Session_Title else ""
+            if not item_title and log.session_type:
+                item_title = log.session_type.Title
+            if not item_title:
+                item_title = "Untitled Item"
+                
+            # If section divider
+            is_section = log.session_type and log.session_type.Title == "Section"
+            if is_section:
+                item_title = f"**{item_title}**"
+                
+            owner_name = log.owner.Name if log.owner else "—"
+            
+            res += f"| {log.Meeting_Seq} | {time_str} | {item_title} | {owner_name} |\n"
+            
+        return {'success': True, 'message': res}
+
+    @classmethod
     def tool_list_meetings(cls, params, user, club_id):
         if not is_authorized(Permissions.AGENDA_VIEW):
             return {'success': False, 'message': "You do not have permission to view meetings (AGENDA_VIEW)."}
@@ -713,7 +760,24 @@ class ChatToolExecutor:
             return {'success': False, 'message': "Cancelling/deleting a meeting requires agenda deletion permission (AGENDA_DELETE)."}
 
         try:
-            old_status = meeting.status
+            old_status = meeting.status or 'unpublished'
+            
+            # Enforce linear progression: unpublished -> not started -> running -> finished
+            # Cancelled is allowed from any state, and transitioning to the same state is allowed.
+            if new_status != 'cancelled' and new_status != old_status:
+                allowed = False
+                if old_status == 'unpublished' and new_status == 'not started':
+                    allowed = True
+                elif old_status == 'not started' and new_status == 'running':
+                    allowed = True
+                elif old_status == 'running' and new_status == 'finished':
+                    allowed = True
+                    
+                if not allowed:
+                    return {
+                        'success': False, 
+                        'message': f"Cannot transition meeting status directly from '{old_status}' to '{new_status}'. Meetings must follow the linear progression: unpublished -> not started -> running -> finished."
+                    }
             
             # Implement status transition side effects matching routes logic
             if new_status == 'finished' and old_status != 'finished':
@@ -814,3 +878,430 @@ class ChatToolExecutor:
                         res += f"* Best {title}: **{contact.Name}**\n"
                         
         return {'success': True, 'message': res}
+
+    @classmethod
+    def tool_manage_excomm_officers(cls, params, user, club_id):
+        action = params.get('action')
+        if not action:
+            return {'success': False, 'message': "Action is required ('query_terms', 'query_officers', 'create_term', 'update_officer', 'set_active_term')."}
+            
+        action = action.strip().lower()
+        valid_actions = ['query_terms', 'query_officers', 'create_term', 'update_officer', 'set_active_term']
+        if action not in valid_actions:
+            return {'success': False, 'message': f"Invalid action '{action}'. Valid actions are: {', '.join(valid_actions)}."}
+            
+        if action == 'query_terms':
+            if not is_authorized(Permissions.ABOUT_CLUB_VIEW):
+                return {'success': False, 'message': "You do not have permission to view excomm terms (ABOUT_CLUB_VIEW)."}
+                
+            club = db.session.get(Club, club_id)
+            if not club:
+                return {'success': False, 'message': "Club not found."}
+                
+            excomms = ExComm.query.filter_by(club_id=club_id).order_by(ExComm.start_date.desc(), ExComm.excomm_term.desc()).all()
+            if not excomms:
+                return {'success': True, 'message': "No ExComm terms have been defined for this club yet."}
+                
+            msg = f"**ExComm Terms for {club.club_name}**:\n"
+            for ec in excomms:
+                is_active = (club.current_excomm_id == ec.id)
+                active_str = " **(Active Term)**" if is_active else ""
+                name_str = f" ({ec.excomm_name})" if ec.excomm_name else ""
+                date_str = ""
+                if ec.start_date or ec.end_date:
+                    s = ec.start_date.strftime('%Y-%m-%d') if ec.start_date else "N/A"
+                    e = ec.end_date.strftime('%Y-%m-%d') if ec.end_date else "N/A"
+                    date_str = f" [{s} to {e}]"
+                msg += f"* **{ec.excomm_term}**{name_str}{date_str}{active_str}\n"
+            return {'success': True, 'message': msg}
+            
+        elif action == 'query_officers':
+            if not is_authorized(Permissions.ABOUT_CLUB_VIEW):
+                return {'success': False, 'message': "You do not have permission to view excomm officers (ABOUT_CLUB_VIEW)."}
+                
+            club = db.session.get(Club, club_id)
+            if not club:
+                return {'success': False, 'message': "Club not found."}
+                
+            term = params.get('term')
+            excomm = None
+            if term:
+                term = term.strip()
+                excomm = ExComm.query.filter_by(club_id=club_id, excomm_term=term).first()
+                if not excomm:
+                    return {'success': False, 'message': f"ExComm term '{term}' not found."}
+            else:
+                if club.current_excomm_id:
+                    excomm = db.session.get(ExComm, club.current_excomm_id)
+                if not excomm:
+                    return {'success': True, 'message': "There is no active ExComm team defined for this club. Specify a term or use create_term action to create one."}
+            
+            # Retrieve active officers for this term
+            active_officers = excomm.get_officers()
+            term_str = f"Term: {excomm.excomm_term or 'N/A'}"
+            if excomm.excomm_name:
+                term_str += f" ({excomm.excomm_name})"
+            if club.current_excomm_id == excomm.id:
+                term_str += " [Active]"
+                
+            msg = f"**ExComm Officers Roster** — {term_str}:\n"
+            standard_roles = ['President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', 'IPP']
+            for role in standard_roles:
+                contact = active_officers.get(role)
+                contact_name = contact.Name if contact else "—"
+                msg += f"* **{role}**: {contact_name}\n"
+            return {'success': True, 'message': msg}
+            
+        elif action == 'create_term':
+            if not is_authorized(Permissions.ABOUT_CLUB_EDIT):
+                return {'success': False, 'message': "You do not have permission to edit excomm settings (ABOUT_CLUB_EDIT)."}
+                
+            club = db.session.get(Club, club_id)
+            if not club:
+                return {'success': False, 'message': "Club not found."}
+                
+            term = params.get('term')
+            if not term:
+                return {'success': False, 'message': "Term code (e.g. '26H2') is required to create a new term."}
+            term = term.strip()
+            
+            # Check if term already exists
+            existing = ExComm.query.filter_by(club_id=club_id, excomm_term=term).first()
+            if existing:
+                return {'success': False, 'message': f"ExComm term '{term}' already exists for this club."}
+                
+            term_name = params.get('term_name')
+            start_date_str = params.get('start_date')
+            end_date_str = params.get('end_date')
+            
+            start_date = None
+            end_date = None
+            if start_date_str:
+                try:
+                    start_date = datetime.strptime(start_date_str.strip(), '%Y-%m-%d').date()
+                except ValueError:
+                    return {'success': False, 'message': "Invalid start_date format. Use YYYY-MM-DD."}
+            if end_date_str:
+                try:
+                    end_date = datetime.strptime(end_date_str.strip(), '%Y-%m-%d').date()
+                except ValueError:
+                    return {'success': False, 'message': "Invalid end_date format. Use YYYY-MM-DD."}
+                    
+            try:
+                new_ec = ExComm(
+                    club_id=club_id,
+                    excomm_term=term,
+                    excomm_name=term_name,
+                    start_date=start_date,
+                    end_date=end_date
+                )
+                db.session.add(new_ec)
+                db.session.commit()
+                return {'success': True, 'message': f"Successfully created new ExComm term '{term}'."}
+            except Exception as e:
+                db.session.rollback()
+                return {'success': False, 'message': f"Failed to create term: {str(e)}"}
+                
+        elif action == 'update_officer':
+            if not is_authorized(Permissions.ABOUT_CLUB_EDIT):
+                return {'success': False, 'message': "You do not have permission to edit excomm officers (ABOUT_CLUB_EDIT)."}
+                
+            role_name_raw = params.get('role_name')
+            contact_name = params.get('contact_name')
+            term = params.get('term')
+            
+            if not role_name_raw:
+                return {'success': False, 'message': "Role name is required for update."}
+                
+            # Normalize role name
+            role_name_norm = role_name_raw.strip().lower()
+            role_map = {
+                'president': 'President',
+                'vpe': 'VPE',
+                'vp education': 'VPE',
+                'vice president education': 'VPE',
+                'education': 'VPE',
+                'vpm': 'VPM',
+                'vp membership': 'VPM',
+                'vice president membership': 'VPM',
+                'membership': 'VPM',
+                'vppr': 'VPPR',
+                'vp public relations': 'VPPR',
+                'vice president public relations': 'VPPR',
+                'pr': 'VPPR',
+                'public relations': 'VPPR',
+                'secretary': 'Secretary',
+                'treasurer': 'Treasurer',
+                'saa': 'SAA',
+                'sergeant at arms': 'SAA',
+                'sergeant': 'SAA',
+                'ipp': 'IPP',
+                'immediate past president': 'IPP',
+                'past president': 'IPP'
+            }
+            
+            target_role = role_map.get(role_name_norm)
+            if not target_role:
+                return {'success': False, 'message': f"Invalid officer role '{role_name_raw}'. Valid roles are: President, VPE, VPM, VPPR, Secretary, Treasurer, SAA, IPP."}
+                
+            club = db.session.get(Club, club_id)
+            if not club:
+                return {'success': False, 'message': "Club not found."}
+                
+            excomm = None
+            if term:
+                term = term.strip()
+                excomm = ExComm.query.filter_by(club_id=club_id, excomm_term=term).first()
+                if not excomm:
+                    return {'success': False, 'message': f"ExComm term '{term}' not found."}
+            else:
+                if club.current_excomm_id:
+                    excomm = db.session.get(ExComm, club.current_excomm_id)
+                # If no term specified and no active excomm exists, create one with default term code
+                if not excomm:
+                    now = datetime.now()
+                    default_term = f"{now.year % 100}{'H1' if now.month <= 6 else 'H2'}"
+                    excomm = ExComm(
+                        club_id=club.id,
+                        excomm_term=default_term
+                    )
+                    db.session.add(excomm)
+                    db.session.flush()
+                    club.current_excomm_id = excomm.id
+            
+            # Resolve role MeetingRole from DB
+            from app.models import MeetingRole
+            role_obj = MeetingRole.query.filter_by(name=target_role).first()
+            if not role_obj:
+                return {'success': False, 'message': f"MeetingRole '{target_role}' not found in database."}
+                
+            is_clear = not contact_name or str(contact_name).strip().lower() in ['none', 'clear', 'empty', 'null', '']
+            affected_contact_ids = set()
+            
+            if is_clear:
+                officer_entry = ExcommOfficer.query.filter_by(
+                    excomm_id=excomm.id,
+                    meeting_role_id=role_obj.id
+                ).first()
+                if officer_entry:
+                    affected_contact_ids.add(officer_entry.contact_id)
+                    db.session.delete(officer_entry)
+                    
+                # Sync status in ContactClub if updating the active term
+                if club.current_excomm_id == excomm.id and affected_contact_ids:
+                    from app.utils import sync_club_officer_status
+                    sync_club_officer_status(club_id, list(affected_contact_ids))
+                    
+                db.session.commit()
+                return {'success': True, 'message': f"Successfully cleared the {target_role} officer position for term '{excomm.excomm_term}'."}
+                
+            else:
+                # Find the contact
+                contact = cls.resolve_contact(contact_name, club_id)
+                if not contact:
+                    return {'success': False, 'message': f"Contact '{contact_name}' not found."}
+                    
+                officer_entry = ExcommOfficer.query.filter_by(
+                    excomm_id=excomm.id,
+                    meeting_role_id=role_obj.id
+                ).first()
+                
+                if officer_entry:
+                    affected_contact_ids.add(officer_entry.contact_id)
+                    officer_entry.contact_id = contact.id
+                else:
+                    new_officer = ExcommOfficer(
+                        excomm_id=excomm.id,
+                        contact_id=contact.id,
+                        meeting_role_id=role_obj.id
+                    )
+                    db.session.add(new_officer)
+                    
+                affected_contact_ids.add(contact.id)
+                
+                # Sync status in ContactClub if updating the active term
+                if club.current_excomm_id == excomm.id:
+                    from app.utils import sync_club_officer_status
+                    sync_club_officer_status(club_id, list(affected_contact_ids))
+                    
+                db.session.commit()
+                return {'success': True, 'message': f"Successfully updated the {target_role} officer to {contact.Name} for term '{excomm.excomm_term}'."}
+                
+        elif action == 'set_active_term':
+            if not is_authorized(Permissions.ABOUT_CLUB_EDIT):
+                return {'success': False, 'message': "You do not have permission to edit excomm settings (ABOUT_CLUB_EDIT)."}
+                
+            club = db.session.get(Club, club_id)
+            if not club:
+                return {'success': False, 'message': "Club not found."}
+                
+            term = params.get('term')
+            if not term:
+                return {'success': False, 'message': "Term code (e.g. '26H2') is required to set it active."}
+            term = term.strip()
+            
+            excomm = ExComm.query.filter_by(club_id=club_id, excomm_term=term).first()
+            if not excomm:
+                return {'success': False, 'message': f"ExComm term '{term}' not found."}
+                
+            try:
+                club.current_excomm_id = excomm.id
+                
+                # Sync officer flag for all contacts in the club
+                from app.utils import sync_club_officer_status
+                sync_club_officer_status(club_id, contact_ids=None)
+                
+                db.session.commit()
+                return {'success': True, 'message': f"Successfully set ExComm term '{term}' as the active term for the club."}
+            except Exception as e:
+                db.session.rollback()
+                return {'success': False, 'message': f"Failed to set active term: {str(e)}"}
+
+    @classmethod
+    def tool_query_pathways_library(cls, params, user, club_id):
+        pathway_name = params.get('pathway_name')
+        level_val = params.get('level')
+        project_name = params.get('project_name')
+
+        # 1. Query by specific project name
+        if project_name:
+            projects = Project.query.filter(Project.Project_Name.ilike(f"%{project_name}%")).all()
+            if not projects:
+                return {'success': False, 'message': f"No project matching '{project_name}' was found in the library."}
+            
+            if len(projects) > 1:
+                exact_matches = [p for p in projects if p.Project_Name.lower() == project_name.lower()]
+                if len(exact_matches) == 1:
+                    projects = exact_matches
+                else:
+                    lines = [f"* **{p.Project_Name}** (ID: {p.id})" for p in projects]
+                    return {
+                        'success': True,
+                        'message': f"Multiple projects matched '{project_name}':\n" + "\n".join(lines) + "\n\nPlease specify the exact project name."
+                    }
+
+            proj = projects[0]
+            pps = PathwayProject.query.filter_by(project_id=proj.id).all()
+            links = []
+            for pp in pps:
+                p_status = pp.pathway.status if pp.pathway else 'active'
+                if p_status == 'active':
+                    type_str = pp.type.value if hasattr(pp.type, 'value') else str(pp.type)
+                    links.append(f"  - **{pp.pathway.name}** ({pp.pathway.abbr}): Level {pp.level} ({type_str}) [Code: {pp.code}]")
+            
+            dur_str = f"{proj.Duration_Min}-{proj.Duration_Max} min" if proj.Duration_Min and proj.Duration_Max else "N/A"
+            msg = (
+                f"📖 **Project Details: {proj.Project_Name}**\n"
+                f"* **Format**: {proj.Format or 'N/A'}\n"
+                f"* **Duration**: {dur_str}\n"
+                f"* **Purpose**: {proj.Purpose or 'N/A'}\n"
+                f"* **Overview**: {proj.Overview or 'N/A'}\n"
+                f"* **Requirements**: {proj.Requirements or 'N/A'}\n"
+            )
+            if proj.Introduction:
+                msg += f"* **Introduction**: {proj.Introduction}\n"
+            if proj.Resources:
+                msg += f"* **Resources**: {proj.Resources}\n"
+            if links:
+                msg += "\n**Pathways & Levels containing this project**:\n" + "\n".join(links)
+            else:
+                msg += "\nThis project is not linked to any active pathways."
+            return {'success': True, 'message': msg}
+
+        # 2. Query by level but without pathway name
+        if level_val is not None and not pathway_name:
+            all_paths = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
+            path_list = [f"* **{p.name}** ({p.abbr})" for p in all_paths]
+            return {
+                'success': False,
+                'message': "Please specify a pathway name to query projects by level. Available pathways:\n" + "\n".join(path_list)
+            }
+
+        # 3. Query by pathway name (and optional level)
+        if pathway_name:
+            pathway = Pathway.query.filter(
+                (Pathway.name.ilike(pathway_name)) | (Pathway.abbr.ilike(pathway_name))
+            ).first()
+            
+            if not pathway:
+                all_paths = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
+                path_list = [f"* **{p.name}** ({p.abbr})" for p in all_paths]
+                return {
+                    'success': False,
+                    'message': f"Pathway '{pathway_name}' not found. Available active pathways:\n" + "\n".join(path_list)
+                }
+
+            level = None
+            if level_val is not None:
+                try:
+                    level = int(level_val)
+                    if level < 1 or level > 5:
+                        raise ValueError()
+                except ValueError:
+                    return {'success': False, 'message': "Level must be an integer between 1 and 5."}
+
+            if level:
+                pps = PathwayProject.query.filter_by(path_id=pathway.id, level=level).order_by(PathwayProject.type, PathwayProject.code).all()
+                if not pps:
+                    return {'success': True, 'message': f"No projects found under Level {level} of the **{pathway.name}** pathway."}
+                
+                reqs = []
+                electives = []
+                others = []
+                for pp in pps:
+                    p_name = pp.project.Project_Name if pp.project else "Unknown"
+                    type_str = pp.type.value if hasattr(pp.type, 'value') else str(pp.type)
+                    proj_line = f"* **{p_name}** [Code: {pp.code}]"
+                    if type_str == 'required':
+                        reqs.append(proj_line)
+                    elif type_str == 'elective':
+                        electives.append(proj_line)
+                    else:
+                        others.append(proj_line)
+                
+                msg = f"🏫 **{pathway.name} ({pathway.abbr}) - Level {level} Projects**\n"
+                if reqs:
+                    msg += "\n**Required Projects**:\n" + "\n".join(reqs)
+                if electives:
+                    msg += "\n**Elective Projects**:\n" + "\n".join(electives)
+                if others:
+                    msg += "\n**Other Projects**:\n" + "\n".join(others)
+                return {'success': True, 'message': msg}
+            else:
+                pps = PathwayProject.query.filter_by(path_id=pathway.id).order_by(PathwayProject.level, PathwayProject.type, PathwayProject.code).all()
+                if not pps:
+                    return {'success': True, 'message': f"No projects registered for the **{pathway.name}** pathway."}
+                
+                levels_data = {l: {'required': [], 'elective': [], 'other': []} for l in range(1, 6)}
+                for pp in pps:
+                    lvl = pp.level
+                    if lvl not in levels_data:
+                        continue
+                    p_name = pp.project.Project_Name if pp.project else "Unknown"
+                    type_str = pp.type.value if hasattr(pp.type, 'value') else str(pp.type)
+                    levels_data[lvl][type_str].append(f"  - **{p_name}** [Code: {pp.code}]")
+
+                msg = f"🏫 **{pathway.name} ({pathway.abbr}) Pathways Library**\n"
+                for lvl in range(1, 6):
+                    msg += f"\n**Level {lvl}**\n"
+                    reqs = levels_data[lvl]['required']
+                    elects = levels_data[lvl]['elective']
+                    others = levels_data[lvl]['other']
+                    
+                    if reqs:
+                        msg += "  *Required:\n" + "\n".join(reqs) + "\n"
+                    if elects:
+                        msg += "  *Elective:\n" + "\n".join(elects) + "\n"
+                    if others:
+                        msg += "  *Other:\n" + "\n".join(others) + "\n"
+                    if not reqs and not elects and not others:
+                        msg += "  No projects listed for this level.\n"
+                return {'success': True, 'message': msg.strip()}
+
+        # 4. No parameters: list all active pathways
+        all_paths = Pathway.query.filter_by(status='active').order_by(Pathway.name).all()
+        msg = "🏫 **Toastmasters Pathways Library**\n\nActive Pathways:\n"
+        for p in all_paths:
+            msg += f"* **{p.name}** ({p.abbr}) - {p.type or 'Pathway'}\n"
+        msg += "\nTo query a specific pathway, use: `/query-pathways <pathway_name> [level]` or ask me directly."
+        return {'success': True, 'message': msg}

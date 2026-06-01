@@ -15,6 +15,26 @@ document.addEventListener('DOMContentLoaded', function() {
     let historyLoaded = false;
     let isSending = false;
 
+    // Helper to render table rows into HTML table
+    function renderHtmlTable(rows, hasHeader) {
+        let html = '<div class="chat-table-wrapper"><table class="chat-table">';
+        
+        for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+            let cells = rows[rowIndex];
+            let isHeader = (rowIndex === 0 && hasHeader);
+            
+            html += '<tr>';
+            for (let cell of cells) {
+                let tag = isHeader ? 'th' : 'td';
+                html += `<${tag}>${cell}</${tag}>`;
+            }
+            html += '</tr>';
+        }
+        
+        html += '</table></div>';
+        return html;
+    }
+
     // Helper: Escape HTML & format Markdown-like syntax
     function renderMarkdown(text) {
         if (!text) return '';
@@ -37,13 +57,53 @@ document.addEventListener('DOMContentLoaded', function() {
         // Keep file:// or http/https links active
         html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
         
-        // Split lines to format paragraphs & lists
+        // Split lines to format paragraphs, lists & tables
         let lines = html.split('\n');
         let formatted = [];
         let inList = false;
+        let inTable = false;
+        let tableRows = [];
 
-        for (let line of lines) {
+        for (let i = 0; i < lines.length; i++) {
+            let line = lines[i];
             let trimmed = line.trim();
+
+            // Detect table rows
+            if (trimmed.startsWith('|') && trimmed.endsWith('|') && trimmed.length > 2) {
+                // If we are in a list, close it first
+                if (inList) {
+                    formatted.push('</ul>');
+                    inList = false;
+                }
+                
+                // Parse cells: split by '|', skip the first and last empty elements
+                let cells = trimmed.split('|').map(c => c.trim());
+                cells = cells.slice(1, -1);
+
+                // Check if this is the divider line (e.g. |---|---|)
+                let isDivider = cells.every(c => /^[:\s-]+$/.test(c));
+                
+                if (isDivider) {
+                    // Skip the divider line, but mark that we found a table divider
+                    if (!inTable && tableRows.length > 0) {
+                        inTable = true;
+                    }
+                    continue;
+                }
+
+                tableRows.push(cells);
+                continue;
+            } else {
+                // If we were parsing a table and this line is not a table row, flush the table
+                if (tableRows.length > 0) {
+                    let tableHtml = renderHtmlTable(tableRows, inTable);
+                    formatted.push(tableHtml);
+                    tableRows = [];
+                    inTable = false;
+                }
+            }
+
+            // Normal list and paragraph parsing
             if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
                 if (!inList) {
                     formatted.push('<ul>');
@@ -59,6 +119,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     formatted.push('<p>' + trimmed + '</p>');
                 }
             }
+        }
+
+        // Flush any remaining list or table at the end of loop
+        if (tableRows.length > 0) {
+            let tableHtml = renderHtmlTable(tableRows, inTable);
+            formatted.push(tableHtml);
         }
         if (inList) {
             formatted.push('</ul>');

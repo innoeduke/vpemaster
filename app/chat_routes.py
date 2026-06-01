@@ -78,28 +78,64 @@ def chat_send():
             # Pre-parse matching patterns for factual queries to ensure 100% accurate results and zero hallucination
             import re
             from app.services.chat_tool_executor import ChatToolExecutor
-            vote_match = re.search(r"(?:voting|vote|votign|tally|tallies)\s+results?(?:\s+of|\s+for)?\s+(?:meeting\s+)?#?(\d+|[0-9\-]+)", message_text, re.IGNORECASE)
+            
+            # 1. Intercept voting results, winners, awards, or tallies for a meeting number
+            vote_match = re.search(
+                r"(?:voting|vote|votign|tally|tallies|winner|won|award|result)s?(?:\s+(?:results?|tallies|winners?|awards?))?(?:\s+of|\s+for)?\s+(?:meeting\s+)?#?(\d+|[0-9\-]+)"
+                r"|"
+                r"(?:meeting\s+)?#?(\d+|[0-9\-]+)\s+(?:voting|vote|votign|tally|tallies|winner|won|award|result)s?(?:\s+(?:results?|tallies|winners?|awards?))?",
+                message_text,
+                re.IGNORECASE
+            )
             if vote_match:
-                meeting_ident = vote_match.group(1)
+                meeting_ident = vote_match.group(1) or vote_match.group(2)
                 res = ChatToolExecutor.execute('get_voting_results', {'meeting_identifier': meeting_ident}, current_user, club_id)
-                if res['success']:
-                    reply_text = res['message']
-                    assistant_msg = ChatMessage(
-                        user_id=current_user.id,
-                        club_id=club_id,
-                        role='assistant',
-                        content=reply_text,
-                        mode='ai'
-                    )
-                    db.session.add(assistant_msg)
-                    db.session.commit()
-                    return jsonify({
-                        'success': True,
-                        'role': 'assistant',
-                        'content': reply_text,
-                        'mode': 'ai',
-                        'executed_tools': [{'id': 'hybrid_route_vote', 'name': 'get_voting_results', 'arguments': {'meeting_identifier': meeting_ident}}]
-                    })
+                reply_text = res['message']
+                assistant_msg = ChatMessage(
+                    user_id=current_user.id,
+                    club_id=club_id,
+                    role='assistant',
+                    content=reply_text,
+                    mode='ai'
+                )
+                db.session.add(assistant_msg)
+                db.session.commit()
+                return jsonify({
+                    'success': True,
+                    'role': 'assistant',
+                    'content': reply_text,
+                    'mode': 'ai',
+                    'executed_tools': [{'id': 'hybrid_route_vote', 'name': 'get_voting_results', 'arguments': {'meeting_identifier': meeting_ident}}]
+                })
+
+            # 2. Intercept agenda or schedule requests for a meeting number
+            agenda_match = re.search(
+                r"(?:agenda|schedule)\s*(?:items?)?(?:\s+of|\s+for)?\s+(?:meeting\s+)?#?(\d+|[0-9\-]+)"
+                r"|"
+                r"(?:meeting\s+)?#?(\d+|[0-9\-]+)\s+(?:agenda|schedule)",
+                message_text,
+                re.IGNORECASE
+            )
+            if agenda_match:
+                meeting_ident = agenda_match.group(1) or agenda_match.group(2)
+                res = ChatToolExecutor.execute('get_meeting_agenda', {'meeting_identifier': meeting_ident}, current_user, club_id)
+                reply_text = res['message']
+                assistant_msg = ChatMessage(
+                    user_id=current_user.id,
+                    club_id=club_id,
+                    role='assistant',
+                    content=reply_text,
+                    mode='ai'
+                )
+                db.session.add(assistant_msg)
+                db.session.commit()
+                return jsonify({
+                    'success': True,
+                    'role': 'assistant',
+                    'content': reply_text,
+                    'mode': 'ai',
+                    'executed_tools': [{'id': 'hybrid_route_agenda', 'name': 'get_meeting_agenda', 'arguments': {'meeting_identifier': meeting_ident}}]
+                })
 
             # Load preceding context
             history = ChatMessage.query.filter_by(

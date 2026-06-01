@@ -258,6 +258,79 @@ CHAT_TOOLS = [
             },
             "required": ["meeting_identifier"]
         }
+    },
+    {
+        "name": "get_meeting_agenda",
+        "description": "Get the detailed agenda items (sequence of events, timings, titles, and owners) for a specific meeting. You MUST call this tool when the user asks for agenda items or meeting agenda.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "meeting_identifier": {
+                    "type": "string",
+                    "description": "Meeting number or date."
+                }
+            },
+            "required": ["meeting_identifier"]
+        }
+    },
+    {
+        "name": "manage_excomm_officers",
+        "description": "Query or manage the club's ExComm (Executive Committee) terms and officer rosters.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "description": "The action to perform: 'query_terms' (list all terms), 'query_officers' (list roster for a term), 'create_term' (add new term), 'update_officer' (assign/clear officer for a term), 'set_active_term' (make a term active)."
+                },
+                "term": {
+                    "type": "string",
+                    "description": "The excomm term code (e.g. '26H1', '26H2'). Used/optional in query_officers, create_term, update_officer, set_active_term. Defaults to current active term if omitted."
+                },
+                "term_name": {
+                    "type": "string",
+                    "description": "Optional name for a term (e.g. 'Memory Makers'). Used in create_term."
+                },
+                "start_date": {
+                    "type": "string",
+                    "description": "Optional term start date in YYYY-MM-DD format. Used in create_term."
+                },
+                "end_date": {
+                    "type": "string",
+                    "description": "Optional term end date in YYYY-MM-DD format. Used in create_term."
+                },
+                "role_name": {
+                    "type": "string",
+                    "description": "Used in update_officer. The officer role name: 'President', 'VPE', 'VPM', 'VPPR', 'Secretary', 'Treasurer', 'SAA', or 'IPP'."
+                },
+                "contact_name": {
+                    "type": "string",
+                    "description": "Used in update_officer. The name of the member contact to assign. To clear/remove the assignment, pass 'none' or leave it empty."
+                }
+            },
+            "required": ["action"]
+        }
+    },
+    {
+        "name": "query_pathways_library",
+        "description": "Query details of pathways, levels, and specific projects from the Toastmasters pathways library.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "pathway_name": {
+                    "type": "string",
+                    "description": "Optional name or abbreviation of the pathway (e.g. 'Presentation Mastery' or 'PM')."
+                },
+                "level": {
+                    "type": "integer",
+                    "description": "Optional level number (1 to 5) to filter projects."
+                },
+                "project_name": {
+                    "type": "string",
+                    "description": "Optional specific project name (e.g. 'Ice Breaker') to query its full details."
+                }
+            }
+        }
     }
 ]
 
@@ -265,6 +338,25 @@ class ChatService:
     """
     Service that interacts with MiniMax Anthropic-compatible API endpoint.
     """
+    _tools_guidelines = None
+
+    @classmethod
+    def get_tools_guidelines(cls):
+        if cls._tools_guidelines is None:
+            import os
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            tools_md_path = os.path.join(current_dir, 'tools.md')
+            try:
+                if os.path.exists(tools_md_path):
+                    with open(tools_md_path, 'r', encoding='utf-8') as f:
+                        cls._tools_guidelines = f.read()
+                else:
+                    cls._tools_guidelines = ""
+            except Exception as e:
+                current_app.logger.error(f"Error loading tools.md guidelines: {str(e)}")
+                cls._tools_guidelines = ""
+        return cls._tools_guidelines
+
 
     @staticmethod
     def get_client():
@@ -296,10 +388,11 @@ class ChatService:
             f"- User Locale: {locale}\n\n"
             f"Rules:\n"
             f"1. You must respond in the same language the user is speaking (e.g. English or Chinese).\n"
-            f"2. You do not have direct database access; any past actions or info retrieval shown in the chat history was performed by executing tools. You MUST always execute the appropriate function/tool to retrieve database details, roles, roster checks, or voting results for the current request. Never guess, assume, or hallucinate database records, contacts, roles, or voting results under any circumstances.\n"
+            f"2. You do not have direct database access; any past actions or info retrieval shown in the chat history was performed by executing tools. You MUST always execute the appropriate function/tool to retrieve database details, roles, roster checks, or voting results, or to make operational/status modifications (e.g. starting or finishing a meeting, assigning or cancelling roles, checking in contacts, creating meetings, or recording achievements) for the current request. Never guess, assume, or hallucinate database records, contacts, roles, or voting results under any circumstances.\n"
             f"3. When creating a meeting, if the user doesn't specify a template, you MUST ask the user to choose from available templates returned by the tool.\n"
             f"4. If a contact name is ambiguous, call the search contact tool first or ask the user for clarification.\n"
-            f"5. Always confirm the execution of operational changes (creating, assigning, checking in, completions) in a polite, concise manner."
+            f"5. Always confirm the execution of operational changes (creating, assigning, checking in, completions, status updates) in a polite, concise manner, but only after executing the appropriate tool and verifying its success.\n"
+            f"6. Never claim, assume, or confirm that an action succeeded or was completed unless the tool execution returned `success=True`. If the tool failed, report the failure reason faithfully to the user. Specifically, starting a meeting requires calling `update_meeting_status` with `status='running'`, and finishing/ending/completing a meeting requires calling `update_meeting_status` with `status='finished'`."
         )
         return prompt
 
@@ -413,7 +506,8 @@ class ChatService:
             'status', 'publish', 'start', 'finish',
             'tme', 'speaker', 'evaluator', 'topicsmaster',
             'timer', 'counter', 'grammarian', 'general evaluator',
-            'who', 'what', 'where', 'when', 'show', 'list', 'details', 'info'
+            'who', 'what', 'where', 'when', 'show', 'list', 'details', 'info',
+            'excomm'
         ]
         
         # Standard Chinese indicators for database queries, lookups, or actions
@@ -426,7 +520,8 @@ class ChatService:
             '投票', '计票', '结果', '赢家', '获奖', '得票',
             '状态', '发布', '开始', '结束',
             '谁', '什么', '哪里', '什么时候', '显示', '列表',
-            '主持', '点评', '演讲', '即兴'
+            '主持', '点评', '演讲', '即兴',
+            '执委'
         ]
         
         # Check if any English database trigger word is in the message
@@ -482,9 +577,15 @@ class ChatService:
         if query_context:
             system_prompt += "\n\n" + query_context
 
+        # Dynamically inject tool guidelines if we might use tools
+        if cls.should_enforce_tools(user_message):
+            tools_guidelines = cls.get_tools_guidelines()
+            if tools_guidelines:
+                system_prompt += "\n\n" + tools_guidelines
+
         # Append tool reminder to the last user message to enforce tool usage
         if messages and messages[-1]["role"] == "user":
-            messages[-1]["content"] += "\n(System: You do not have direct database access. You MUST execute the appropriate function/tool to retrieve any database details, dates, or results. Never guess or hallucinate records.)"
+            messages[-1]["content"] += "\n(System: You do not have direct database access. You MUST execute the appropriate function/tool to retrieve or modify any database details, status, dates, or results. Never guess or hallucinate records. If you perform an action, you must call its tool first and verify it succeeded.)"
 
         executed_tools = []
         max_turns = 5
@@ -505,6 +606,8 @@ class ChatService:
                 max_tokens=2000,
                 temperature=0.0
             )
+            # Downgrade tool_choice to auto for subsequent turns
+            tool_choice = {"type": "auto"}
 
             # Check if model wants to call tools
             if response.stop_reason == "tool_use":

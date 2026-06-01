@@ -32,7 +32,7 @@
 }
 
 .chat-widget-toggle:hover {
-  transform: scale(1.1) rotate(5deg);
+  transform: scale(1.08);
   box-shadow: 0 6px 20px rgba(53, 122, 189, 0.6);
 }
 
@@ -42,11 +42,23 @@
 
 .chat-widget-toggle i {
   font-size: 24px;
-  transition: transform 0.3s ease;
+  position: absolute;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s ease;
 }
 
-.chat-widget-toggle.active i {
-  transform: rotate(90deg);
+.chat-widget-toggle .chat-icon-close {
+  opacity: 0;
+  transform: rotate(-90deg) scale(0);
+}
+
+.chat-widget-toggle.active .chat-icon-open {
+  opacity: 0;
+  transform: rotate(90deg) scale(0);
+}
+
+.chat-widget-toggle.active .chat-icon-close {
+  opacity: 1;
+  transform: rotate(0) scale(1);
 }
 
 .chat-widget-toggle .badge-dot {
@@ -428,4 +440,62 @@
 
 .chat-widget-panel.maximized + .chat-widget-toggle {
   display: none !important;
+}
+
+/* Tables inside chat bubbles */
+.chat-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  margin: 12px 0;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.chat-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+  background: white;
+  font-family: inherit;
+}
+
+.chat-table th {
+  background: #f8f9fa;
+  color: #495057;
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 2px solid #e9ecef;
+  white-space: nowrap;
+}
+
+.chat-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f3f5;
+  color: #333333;
+}
+
+.chat-table tr:last-child td {
+  border-bottom: none;
+}
+
+.chat-table tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+/* Scrollbar styling for table wrapper */
+.chat-table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+.chat-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f3f5;
+  border-radius: 4px;
+}
+.chat-table-wrapper::-webkit-scrollbar-thumb {
+  background: #ced4da;
+  border-radius: 4px;
+}
+.chat-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #adb5bd;
 }

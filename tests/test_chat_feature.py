@@ -152,4 +152,191 @@ def test_get_query_context(app, default_club):
             db.session.commit()
 
 
+def test_tool_get_meeting_agenda(app, default_club, staff_user):
+    """Test retrieving meeting agenda via ChatToolExecutor."""
+    from app.services.chat_tool_executor import ChatToolExecutor
+    from app.models import Meeting, SessionLog, SessionType, Contact, AuthRole as Role, Permission
+    from app.auth.permissions import Permissions
+    from datetime import date, time
+    with app.app_context():
+        # Ensure AGENDA_VIEW permission exists and is granted to Staff role
+        role = Role.query.filter_by(name='Staff').first()
+        agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        if not agenda_perm:
+            agenda_perm = Permission(name=Permissions.AGENDA_VIEW, description="View agenda", category="Agenda")
+            db.session.add(agenda_perm)
+            db.session.flush()
+        if agenda_perm not in role.permissions:
+            role.permissions.append(agenda_perm)
+        db.session.commit()
+
+        # Create a test meeting and agenda
+        test_meeting = Meeting(club_id=default_club.id, Meeting_Number=999, Meeting_Date=date.today(), status="not started")
+        db.session.add(test_meeting)
+        db.session.flush()
+        
+        # Ensure a SessionType exists or create one
+        st = SessionType.query.filter_by(Title="Prepared Speech").first()
+        if not st:
+            st = SessionType(Title="Prepared Speech", Duration_Min=5, Duration_Max=7)
+            db.session.add(st)
+            db.session.flush()
+            
+        test_owner = Contact(Name="Agenda Owner Test", Type="Member")
+        db.session.add(test_owner)
+        db.session.flush()
+        
+        log = SessionLog(
+            meeting_id=test_meeting.id,
+            Meeting_Seq=1,
+            Session_Title="Custom Speech",
+            Type_ID=st.id,
+            Start_Time=time(19, 15, 0),
+            state="active"
+        )
+        db.session.add(log)
+        db.session.flush()
+        
+        # Set owner (needs junction table)
+        log.owners = [test_owner.id]
+        db.session.commit()
+        
+        try:
+            with app.test_request_context():
+                from flask_login import login_user
+                from flask import session
+                session['current_club_id'] = default_club.id
+                login_user(staff_user)
+                # Execute tool
+                params = {'meeting_identifier': '999'}
+                res = ChatToolExecutor.execute('get_meeting_agenda', params, staff_user, default_club.id)
+                assert res['success'] is True
+                assert "Meeting #999 Agenda" in res['message']
+                assert "19:15" in res['message']
+                assert "Custom Speech" in res['message']
+                assert "Agenda Owner Test" in res['message']
+        finally:
+            # Clean up
+            # Clear junction table first
+            from app.models import OwnerMeetingRoles
+            OwnerMeetingRoles.query.filter_by(meeting_id=test_meeting.id).delete()
+            db.session.delete(log)
+            db.session.delete(test_owner)
+            db.session.delete(test_meeting)
+            db.session.commit()
+
+
+def test_route_interception_winners_and_agenda(client, auth, staff_user, default_club, chat_permissions, app):
+    """Test router-level regex interception for winners and agendas."""
+    # Grant permissions
+    with app.app_context():
+        role = Role.query.filter_by(name='Staff').first()
+        cmd_perm = Permission.query.filter_by(name=Permissions.CHAT_COMMANDS).first()
+        ai_perm = Permission.query.filter_by(name=Permissions.CHAT_AI).first()
+        agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        voting_perm = Permission.query.filter_by(name=Permissions.VOTING_VIEW_RESULTS).first()
+        
+        # Ensure voting permission exists
+        if not voting_perm:
+            voting_perm = Permission(name=Permissions.VOTING_VIEW_RESULTS, description="View voting", category="Voting")
+            db.session.add(voting_perm)
+            db.session.flush()
+            
+        for p in [cmd_perm, ai_perm, agenda_perm, voting_perm]:
+            if p not in role.permissions:
+                role.permissions.append(p)
+        db.session.commit()
+
+    # Log in
+    auth.login(username=staff_user.username, password='password', club_id=default_club.id)
+
+    with app.app_context():
+        # Create a test meeting with number 777
+        from datetime import date
+        test_meeting = Meeting(club_id=default_club.id, Meeting_Number=777, Meeting_Date=date.today(), status="finished")
+        db.session.add(test_meeting)
+        db.session.commit()
+
+    try:
+        # 1. Test Winners Interception
+        response = client.post('/chat/send', json={'message': 'who are the winners of meeting 777'})
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'Voting results for **Meeting #777**' in data['content']
+        assert data['executed_tools'][0]['name'] == 'get_voting_results'
+        
+        # 2. Test Agenda Interception
+        response = client.post('/chat/send', json={'message': 'show me the agenda of 777'})
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert 'agenda for Meeting #777' in data['content']
+        assert data['executed_tools'][0]['name'] == 'get_meeting_agenda'
+    finally:
+        with app.app_context():
+            Meeting.query.filter_by(Meeting_Number=777).delete()
+            db.session.commit()
+
+
+def test_tools_guidelines_loading_and_injection(app):
+    """Test loading, caching, and dynamic injection of tools guidelines."""
+    from app.services.chat_service import ChatService
+    with app.app_context():
+        # Clear cache first to force reload
+        ChatService._tools_guidelines = None
+        
+        # 1. Test loader method
+        guidelines = ChatService.get_tools_guidelines()
+        assert guidelines is not None
+        assert "Chatbot Tool Guidelines & Constraints" in guidelines
+        assert "No Database Hallucinations" in guidelines
+        assert "Linear Progression" in guidelines
+        
+        # 2. Test cache works
+        guidelines_again = ChatService.get_tools_guidelines()
+        assert guidelines_again is guidelines
+        
+        # 3. Test dynamic injection in process_chat_completion logic
+        from unittest.mock import MagicMock, patch
+        
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.stop_reason = "text"
+        mock_response.content = [MagicMock(type="text", text="Mock reply")]
+        mock_client.messages.create.return_value = mock_response
+        
+        from app.models import ChatMessage
+        mock_user = MagicMock()
+        mock_user.username = "test_user"
+        mock_user.id = 1
+        
+        mock_user.get_contact = MagicMock(return_value=None)
+        mock_user.primary_role_name = "Member"
+        
+        chat_msg = ChatMessage(role="user", content="show me the meeting agenda details")
+        
+        with patch.object(ChatService, 'get_client', return_value=mock_client), \
+             patch('app.services.chat_service.db.session.get', return_value=None), \
+             patch('app.services.chat_service.current_app.config.get', side_effect=lambda k, d=None: d if k != 'ANTHROPIC_API_KEY' else 'mock-api-key'):
+            
+            reply, executed = ChatService.process_chat_completion(
+                chat_history_list=[chat_msg],
+                user=mock_user,
+                club_id=1,
+                locale="en"
+            )
+            
+            assert reply == "Mock reply"
+            
+            # Verify system prompt passed to client.messages.create contains guidelines
+            call_kwargs = mock_client.messages.create.call_args[1]
+            system_prompt = call_kwargs.get('system', '')
+            assert "Chatbot Tool Guidelines & Constraints" in system_prompt
+            assert "No Database Hallucinations" in system_prompt
+
+
+
+
+
 
