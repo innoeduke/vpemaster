@@ -142,7 +142,7 @@ CHAT_TOOLS = [
     },
     {
         "name": "get_pathway_status",
-        "description": "Get a contact's current registered pathways and completed levels.",
+        "description": "Get a contact's current Toastmasters pathway progress and achievements. You MUST call this tool to retrieve pathway status. Do not guess or invent progress.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -170,7 +170,7 @@ CHAT_TOOLS = [
     },
     {
         "name": "get_meeting_info",
-        "description": "Get detailed metadata for a specific meeting.",
+        "description": "Get details of a specific meeting (title, date, manager, WOD, etc.). You MUST call this tool to retrieve meeting details. Do not guess or invent info.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -247,7 +247,7 @@ CHAT_TOOLS = [
     },
     {
         "name": "get_voting_results",
-        "description": "Get voting tallies and winners for a meeting.",
+        "description": "Get voting tallies and winners for a specific meeting. You MUST call this tool to retrieve voting results. Do not guess or invent winners.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -296,12 +296,153 @@ class ChatService:
             f"- User Locale: {locale}\n\n"
             f"Rules:\n"
             f"1. You must respond in the same language the user is speaking (e.g. English or Chinese).\n"
-            f"2. Use the available functions to retrieve info or make updates. Do not assume or hallucinate info you do not have.\n"
+            f"2. You do not have direct database access; any past actions or info retrieval shown in the chat history was performed by executing tools. You MUST always execute the appropriate function/tool to retrieve database details, roles, roster checks, or voting results for the current request. Never guess, assume, or hallucinate database records, contacts, roles, or voting results under any circumstances.\n"
             f"3. When creating a meeting, if the user doesn't specify a template, you MUST ask the user to choose from available templates returned by the tool.\n"
             f"4. If a contact name is ambiguous, call the search contact tool first or ask the user for clarification.\n"
             f"5. Always confirm the execution of operational changes (creating, assigning, checking in, completions) in a polite, concise manner."
         )
         return prompt
+
+    @staticmethod
+    def get_query_context(message_text, club_id):
+        """
+        Queries the database for relevant meetings or contacts matching keywords 
+        in the user's query and returns a structured context string to guide the LLM.
+        """
+        if not message_text:
+            return ""
+            
+        context_parts = []
+        message_lower = message_text.lower()
+        import re
+        
+        # 1. Look for meeting numbers (e.g. #973, 973)
+        meeting_nums = re.findall(r'#?(\d+)', message_text)
+        if meeting_nums:
+            from app.models import Meeting
+            for num_str in meeting_nums:
+                try:
+                    num = int(num_str)
+                    meeting = Meeting.query.filter_by(club_id=club_id, Meeting_Number=num).first()
+                    if meeting:
+                        context_parts.append(
+                            f"- Meeting #{meeting.Meeting_Number} exists (ID: {meeting.id}, Date: {meeting.Meeting_Date}, Status: {meeting.status}, Title: '{meeting.Meeting_Title or 'N/A'}')"
+                        )
+                except ValueError:
+                    continue
+                    
+        # 2. Look for "upcoming" or "next" meeting query
+        if any(w in message_lower for w in {'upcoming', 'next', '下一次', '下次', '后面', '新', '创建'}):
+            from app.models import Meeting
+            upcoming = Meeting.query.filter(
+                Meeting.club_id == club_id,
+                Meeting.status != 'finished',
+                Meeting.status != 'cancelled'
+            ).order_by(Meeting.Meeting_Date.asc()).limit(3).all()
+            for m in upcoming:
+                context_parts.append(
+                    f"- Upcoming/Active Meeting #{m.Meeting_Number}: Date={m.Meeting_Date}, Status='{m.status}', Title='{m.Meeting_Title or 'N/A'}' (ID: {m.id})"
+                )
+
+        # 3. Look for potential contact names (capitalized words or specific name substrings)
+        # Match alphabetical words >= 2 chars, or Chinese characters
+        words = re.findall(r'[A-Za-z\u4e00-\u9fa5]+', message_text)
+        potential_names = []
+        skip_words = {
+            'meeting', 'agenda', 'role', 'assign', 'cancel', 'check', 'show', 'tally', 'results', 
+            'voting', 'vote', 'hello', 'who', 'what', 'when', 'where', 'list', 'details', 'info', 
+            'the', 'votign', 'results', 'of', 'for', 'to', 'in', 'tme', 'speaker', 'evaluator',
+            '会议', '分配', '结果', '查询', '角色', '签到'
+        }
+        for w in words:
+            if w.lower() in skip_words:
+                continue
+            if len(w) >= 2 or re.match(r'[\u4e00-\u9fa5]', w):
+                potential_names.append(w)
+                
+        if potential_names:
+            from app.models import Contact
+            from app.models.contact_club import ContactClub
+            for name in potential_names:
+                contacts = Contact.query.join(ContactClub).filter(
+                    ContactClub.club_id == club_id,
+                    Contact.Name.like(f"%{name}%")
+                ).limit(5).all()
+                for c in contacts:
+                    context_parts.append(
+                        f"- Contact in directory: Name='{c.Name}' (ID: {c.id}, Type: '{c.Type}', Email: '{c.Email or 'N/A'}')"
+                    )
+                    
+        if context_parts:
+            # Sort to keep prompt output deterministic for identical inputs
+            sorted_context = sorted(list(set(context_parts)))
+            return "\n[Database Context for Current Query]:\n" + "\n".join(sorted_context) + "\n"
+            
+        return ""
+
+    @staticmethod
+    def should_enforce_tools(message_text):
+        """
+        Determines whether the user's message requests factual data, actions, 
+        or lookups that MUST use database tools rather than allowing LLM hallucination.
+        Supports both English and Chinese triggers.
+        """
+        if not message_text:
+            return False
+            
+        message_lower = message_text.lower()
+        
+        # Generic greetings and meta-conversation that don't need tools
+        greetings = {'hello', 'hi', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening', 'thanks', 'thank you', 'ok', 'okay', 'yes', 'no'}
+        if message_lower.strip() in greetings:
+            return False
+            
+        # Self-identification or help queries
+        meta_words = {'who are you', 'what is your name', 'what can you do', 'how can you help', 'help me', 'show help', 'chat help'}
+        if any(w in message_lower for w in meta_words):
+            return False
+            
+        # Standard English indicators for database queries, lookups, or actions
+        english_triggers = [
+            'meeting', 'agenda', 'schedule', 'template',
+            'role', 'book', 'assign', 'unassign', 'cancel',
+            'contact', 'member', 'guest', 'officer', 'search', 'find', 'lookup',
+            'check in', 'check-in', 'checkin', 'roster', 'ticket',
+            'complete', 'completion', 'level', 'pathway', 'achievement',
+            'vote', 'voting', 'votign', 'tally', 'tallies', 'result', 'winner', 'award',
+            'status', 'publish', 'start', 'finish',
+            'tme', 'speaker', 'evaluator', 'topicsmaster',
+            'timer', 'counter', 'grammarian', 'general evaluator',
+            'who', 'what', 'where', 'when', 'show', 'list', 'details', 'info'
+        ]
+        
+        # Standard Chinese indicators for database queries, lookups, or actions
+        chinese_triggers = [
+            '会议', '日程', '模板',
+            '角色', '预订', '分配', '指派', '取消',
+            '联系人', '会员', '嘉宾', '官员', '搜索', '查找', '查询',
+            '签到',
+            '完成', '级别', '路径', '成就',
+            '投票', '计票', '结果', '赢家', '获奖', '得票',
+            '状态', '发布', '开始', '结束',
+            '谁', '什么', '哪里', '什么时候', '显示', '列表',
+            '主持', '点评', '演讲', '即兴'
+        ]
+        
+        # Check if any English database trigger word is in the message
+        if any(trigger in message_lower for trigger in english_triggers):
+            return True
+            
+        # Check if any Chinese database trigger word is in the message
+        if any(trigger in message_lower for trigger in chinese_triggers):
+            return True
+            
+        # Check for numbers (like meeting numbers #973) or date-like patterns
+        import re
+        if re.search(r'\d+', message_text):
+            return True
+            
+        return False
 
     @classmethod
     def process_chat_completion(cls, chat_history_list, user, club_id, locale):
@@ -329,9 +470,28 @@ class ChatService:
             # Fallback welcome is triggered client side, but just in case:
             messages.append({"role": "user", "content": "Hello"})
 
+        # Get the latest user message text for tool choice enforcement detection
+        user_message = ""
+        for msg in reversed(chat_history_list):
+            if msg.role == 'user':
+                user_message = msg.content
+                break
+
+        # Dynamically inject database context to guide the model's tool calling
+        query_context = cls.get_query_context(user_message, club_id)
+        if query_context:
+            system_prompt += "\n\n" + query_context
+
+        # Append tool reminder to the last user message to enforce tool usage
+        if messages and messages[-1]["role"] == "user":
+            messages[-1]["content"] += "\n(System: You do not have direct database access. You MUST execute the appropriate function/tool to retrieve any database details, dates, or results. Never guess or hallucinate records.)"
+
         executed_tools = []
         max_turns = 5
         turn = 0
+
+        # Determine if we should enforce tool usage at the API level (any vs auto)
+        tool_choice = {"type": "any"} if cls.should_enforce_tools(user_message) else {"type": "auto"}
 
         while turn < max_turns:
             turn += 1
@@ -341,6 +501,7 @@ class ChatService:
                 system=system_prompt,
                 messages=messages,
                 tools=CHAT_TOOLS,
+                tool_choice=tool_choice,
                 max_tokens=2000,
                 temperature=0.0
             )

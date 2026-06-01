@@ -317,7 +317,7 @@ class ChatToolExecutor:
                 return {'success': False, 'message': f"A contact with email '{email}' already exists in this club."}
                 
         if phone:
-            dup_phone = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id, Contact.Phone == phone).first()
+            dup_phone = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id, Contact.Phone_Number == phone).first()
             if dup_phone:
                 return {'success': False, 'message': f"A contact with phone '{phone}' already exists in this club."}
 
@@ -325,7 +325,7 @@ class ChatToolExecutor:
             new_contact = Contact(
                 Name=name,
                 Email=email,
-                Phone=phone,
+                Phone_Number=phone,
                 Type='Guest', # Always create as Guest per standard route rules
                 Date_Created=date.today()
             )
@@ -563,7 +563,7 @@ class ChatToolExecutor:
             
         res = f"Found {len(contacts)} contacts:\n"
         for c in contacts:
-            res += f"* **{c.Name}** ({c.Type}) - Email: {c.Email or 'N/A'}, Phone: {c.Phone or 'N/A'}\n"
+            res += f"* **{c.Name}** ({c.Type}) - Email: {c.Email or 'N/A'}, Phone: {c.Phone_Number or 'N/A'}\n"
         return {'success': True, 'message': res}
 
     @classmethod

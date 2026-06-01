@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleBtn = document.getElementById('chatWidgetToggle');
     const panel = document.getElementById('chatWidgetPanel');
     const minimizeBtn = document.getElementById('chatMinimizeBtn');
+    const maximizeBtn = document.getElementById('chatMaximizeBtn');
     const clearBtn = document.getElementById('chatClearBtn');
     const sendBtn = document.getElementById('chatSendBtn');
     const inputText = document.getElementById('chatInputText');
@@ -115,6 +116,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const isOpen = panel.classList.contains('open');
         if (isOpen) {
             panel.classList.remove('open');
+            panel.classList.remove('maximized');
+            if (maximizeBtn) {
+                maximizeBtn.title = "Maximize";
+                maximizeBtn.innerHTML = '<i class="fa fa-expand"></i>';
+            }
             toggleBtn.classList.remove('active');
         } else {
             panel.classList.add('open');
@@ -130,8 +136,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     minimizeBtn.addEventListener('click', function() {
         panel.classList.remove('open');
+        panel.classList.remove('maximized');
+        if (maximizeBtn) {
+            maximizeBtn.title = "Maximize";
+            maximizeBtn.innerHTML = '<i class="fa fa-expand"></i>';
+        }
         toggleBtn.classList.remove('active');
     });
+
+    if (maximizeBtn) {
+        maximizeBtn.addEventListener('click', function() {
+            const isMaximized = panel.classList.contains('maximized');
+            if (isMaximized) {
+                panel.classList.remove('maximized');
+                maximizeBtn.title = "Maximize";
+                maximizeBtn.innerHTML = '<i class="fa fa-expand"></i>';
+            } else {
+                panel.classList.add('maximized');
+                maximizeBtn.title = "Restore";
+                maximizeBtn.innerHTML = '<i class="fa fa-compress"></i>';
+            }
+            scrollToBottom();
+        });
+    }
 
     // Load Chat History
     function loadHistory() {

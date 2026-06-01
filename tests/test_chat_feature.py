@@ -92,3 +92,64 @@ def test_chat_service_prompt(app, staff_user, default_club):
         assert "AI Assistant" in prompt
         assert default_club.club_name in prompt
 
+def test_should_enforce_tools(app):
+    """Test tool enforcement classifier triggers for English and Chinese queries."""
+    from app.services.chat_service import ChatService
+    with app.app_context():
+        # Things that SHOULD trigger tool enforcement
+        assert ChatService.should_enforce_tools("show me the voting results of meeting 973") is True
+        assert ChatService.should_enforce_tools("who is Vijay Vasant?") is True
+        assert ChatService.should_enforce_tools("assign TME role to Bing Zhang") is True
+        assert ChatService.should_enforce_tools("meeting 975 results") is True
+        assert ChatService.should_enforce_tools("会议 973 结果") is True
+        assert ChatService.should_enforce_tools("指派 TME 角色给 Bing") is True
+        assert ChatService.should_enforce_tools("What's the status of meeting 173?") is True
+        
+        # Things that SHOULD NOT trigger tool enforcement (conversational)
+        assert ChatService.should_enforce_tools("Hello") is False
+        assert ChatService.should_enforce_tools("hi") is False
+        assert ChatService.should_enforce_tools("thanks") is False
+        assert ChatService.should_enforce_tools("who are you") is False
+        assert ChatService.should_enforce_tools("help") is False
+
+def test_get_query_context(app, default_club):
+    """Test dynamic query context generation from database."""
+    from app.services.chat_service import ChatService
+    from app.models import Contact, ContactClub, Meeting
+    from datetime import date
+    with app.app_context():
+        # Create a test contact and meeting for verification
+        test_contact = Contact(Name="John Doe Test", Type="Member", Email="john@test.com")
+        db.session.add(test_contact)
+        db.session.flush()
+        
+        cc = ContactClub(contact_id=test_contact.id, club_id=default_club.id)
+        db.session.add(cc)
+        
+        test_meeting = Meeting(club_id=default_club.id, Meeting_Number=888, Meeting_Date=date.today(), status="not started")
+        db.session.add(test_meeting)
+        db.session.commit()
+        
+        try:
+            # Test contact search context
+            ctx = ChatService.get_query_context("who is John Doe?", default_club.id)
+            assert "Contact in directory: Name='John Doe Test'" in ctx
+            assert "ID:" in ctx
+            
+            # Test meeting search context
+            ctx = ChatService.get_query_context("meeting 888 details", default_club.id)
+            assert "Meeting #888 exists" in ctx
+            assert "Date:" in ctx
+            
+            # Test upcoming meetings context
+            ctx = ChatService.get_query_context("what is the upcoming meeting?", default_club.id)
+            assert "Upcoming/Active Meeting #888" in ctx
+        finally:
+            # Clean up
+            db.session.delete(cc)
+            db.session.delete(test_contact)
+            db.session.delete(test_meeting)
+            db.session.commit()
+
+
+
