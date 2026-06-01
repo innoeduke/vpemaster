@@ -13,6 +13,7 @@
   {% block head_extra %}{% endblock %}
 
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/css/fontawesome.min.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}" />
   <link rel="preconnect" href="https://gstatic.loli.net" crossorigin />
   <link href="{{ url_for('static', filename='vendor/css/fonts.css') }}" rel="stylesheet" />
   <link href="{{ url_for('static', filename='vendor/css/indie-flower.css') }}" rel="stylesheet" />
@@ -516,6 +517,11 @@
     document.addEventListener('DOMContentLoaded', updateUnreadCount);
     setInterval(updateUnreadCount, 60000);
   </script>
+
+  {% if current_user.is_authenticated and (is_authorized(Permissions.CHAT_AI) or is_authorized(Permissions.CHAT_COMMANDS)) %}
+    {% include 'partials/_chat_widget.html' %}
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+  {% endif %}
 </body>
 
 </html>

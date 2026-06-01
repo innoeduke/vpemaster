@@ -1,0 +1,62 @@
+<!-- AI Chat Widget Component -->
+<div id="chatWidgetPanel" class="chat-widget-panel">
+  <!-- Header -->
+  <div class="chat-panel-header">
+    <div class="chat-header-info">
+      <i class="fa fa-magic"></i>
+      <h3 class="chat-header-title">
+        {% if is_authorized(Permissions.CHAT_AI) %}
+          {{ _('AI Assistant') }}
+        {% else %}
+          {{ _('Command Terminal') }}
+        {% endif %}
+      </h3>
+      <span class="chat-header-mode-badge" id="chatModeBadge">
+        {% if is_authorized(Permissions.CHAT_AI) %}
+          AI
+        {% else %}
+          CMD
+        {% endif %}
+      </span>
+    </div>
+    <div class="chat-header-actions">
+      <button class="chat-header-btn" id="chatClearBtn" title="{{ _('Clear Chat History') }}">
+        <i class="fa fa-trash"></i>
+      </button>
+      <button class="chat-header-btn" id="chatMinimizeBtn" title="{{ _('Minimize') }}">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Messages Pane -->
+  <div class="chat-panel-messages" id="chatPanelMessages">
+    <!-- Messages loaded dynamically -->
+  </div>
+
+  <!-- Typing Indicator (hidden by default) -->
+  <div class="chat-typing-indicator" id="chatTypingIndicator" style="display: none;">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+
+  <!-- Input Bar -->
+  <div class="chat-panel-input-container">
+    <textarea 
+      id="chatInputText" 
+      class="chat-input-textarea" 
+      placeholder="{% if is_authorized(Permissions.CHAT_AI) %}{{ _('Ask me anything...') }}{% else %}{{ _('Type /help for commands...') }}{% endif %}"
+      rows="1"
+    ></textarea>
+    <button id="chatSendBtn" class="chat-send-btn">
+      <i class="fa fa-paper-plane"></i>
+    </button>
+  </div>
+</div>
+
+<!-- Toggle Switch Button -->
+<button id="chatWidgetToggle" class="chat-widget-toggle" title="{{ _('Open AI Chat') }}">
+  <i class="fa fa-comments"></i>
+  <span class="badge-dot" id="chatUnreadDot" style="display: none;"></span>
+</button>

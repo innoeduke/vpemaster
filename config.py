@@ -64,4 +64,9 @@ class Config:
     SYNC_REMOTE_HOST = os.getenv('SYNC_REMOTE_HOST', 'moleqode.com')
     SYNC_REMOTE_BASE_PATH = os.getenv('SYNC_REMOTE_BASE_PATH', '/var/www/vpemaster/instance/backup')
 
+    # Anthropic API Configuration
+    ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
+    ANTHROPIC_MODEL = os.getenv('ANTHROPIC_MODEL', 'MiniMax-M3')
+    ANTHROPIC_BASE_URL = os.getenv('ANTHROPIC_BASE_URL', 'https://api.minimaxi.com/anthropic')
+
 

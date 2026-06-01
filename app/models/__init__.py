@@ -22,6 +22,7 @@ from .ticket import Ticket
 from .planner import Planner
 from .verification_task import VerificationTask
 from .upload_link import UploadLink
+from .chat_message import ChatMessage
 
 # Import permission system models
 from .permission import Permission
@@ -86,4 +87,5 @@ __all__ = [
     'Planner',
     'VerificationTask',
     'UploadLink',
+    'ChatMessage',
 ]
