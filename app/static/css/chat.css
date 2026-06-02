@@ -3,12 +3,20 @@
 :root {
   --chat-bg: rgba(255, 255, 255, 0.85);
   --chat-border: rgba(220, 224, 230, 0.5);
-  --chat-primary-gradient: linear-gradient(135deg, #4A90E2, #357ABD);
-  --chat-user-bubble: linear-gradient(135deg, #5c93e6, #4172be);
+  --chat-primary-gradient: linear-gradient(135deg, #005a8b, #004165);
+  --chat-user-bubble: linear-gradient(135deg, #e8f4fd, #dbeeff);
   --chat-assistant-bubble: #f1f3f5;
   --chat-assistant-color: #212529;
   --chat-card-bg: rgba(248, 249, 250, 0.9);
   --chat-shadow: 0 12px 28px rgba(0, 0, 0, 0.12), 0 8px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Fix icon colors to inherit container colors and prevent global overrides */
+.chat-panel-header .fa,
+.chat-header-btn .fa,
+.chat-widget-toggle .fa,
+.chat-send-btn .fa {
+  color: inherit;
 }
 
 /* Toggle Button */
@@ -19,10 +27,10 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--chat-primary-gradient);
-  color: white;
-  border: none;
-  box-shadow: 0 4px 16px rgba(53, 122, 189, 0.4);
+  background: #ffffff;
+  color: #004165;
+  border: 1px solid rgba(0, 65, 101, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 65, 101, 0.15);
   cursor: pointer;
   z-index: 9999;
   display: flex;
@@ -33,7 +41,9 @@
 
 .chat-widget-toggle:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 20px rgba(53, 122, 189, 0.6);
+  background: #f8fafc;
+  border-color: rgba(0, 65, 101, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 65, 101, 0.25);
 }
 
 .chat-widget-toggle:active {
@@ -196,9 +206,9 @@
 .chat-msg-bubble.user {
   align-self: flex-end;
   background: var(--chat-user-bubble);
-  color: white;
+  color: #004165;
   border-bottom-right-radius: 2px;
-  box-shadow: 0 2px 6px rgba(65, 114, 190, 0.2);
+  box-shadow: 0 2px 6px rgba(0, 65, 101, 0.08);
 }
 
 .chat-msg-bubble.assistant {
@@ -277,7 +287,7 @@
 }
 
 .chat-input-textarea:focus {
-  border-color: #4A90E2;
+  border-color: #004165;
 }
 
 .chat-send-btn {
@@ -351,11 +361,11 @@
 }
 
 .chat-msg-bubble a {
-  color: #007bff;
+  color: #004165;
   text-decoration: underline;
 }
 .chat-msg-bubble.user a {
-  color: #fff;
+  color: #004165;
   text-decoration: underline;
 }
 
@@ -367,7 +377,7 @@
   font-size: 85%;
 }
 .chat-msg-bubble.user code {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(0, 65, 101, 0.08);
 }
 
 /* Animations */

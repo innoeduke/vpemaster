@@ -395,7 +395,15 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
         'user_role': user.primary_role_name if user else 'Guest',
         'current_user_id': user.id if user and user.is_authenticated else None,
         'best_award_ids': set(),
-        'required_roles_by_role': {} # {norm_role: [ {id, name, avatar_url} ]}
+        'required_roles_by_role': {}, # {norm_role: [ {id, name, avatar_url} ]}
+        'initial_hash': '',
+        'notice_image': None,
+        'show_booking_closed_image': False,
+        'grouped_projects': [],
+        'grouped_pathways': {},
+        'pathway_mapping': {},
+        'all_projects': [],
+        'working_path': None
     }
 
     if not meeting_id:

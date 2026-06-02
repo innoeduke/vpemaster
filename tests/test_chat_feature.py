@@ -65,12 +65,34 @@ def test_chat_access_granted_with_permission(client, auth, staff_user, default_c
     assert len(history_data['messages']) >= 2
 
 def test_command_parser_help(app, staff_user):
-    """Test the command parser help response."""
+    """Test the command parser help response with and without permissions."""
     from app.services.command_parser import CommandParser
+    from app.models import Permission, AuthRole as Role
+    from app.auth.permissions import Permissions
     with app.app_context():
+        # 1. Without meeting view permissions: meeting commands should be hidden
         success, reply = CommandParser.parse_and_execute('/help', staff_user, 1)
         assert success is True
         assert 'Available Chat Commands' in reply
+        assert '/search' in reply
+        assert '/query-pathways' in reply
+        assert '/meeting-info' not in reply
+        assert '<meeting_number>' not in reply
+        assert '<meeting_id>' not in reply
+
+        # 2. Grant meeting view permission: meeting commands should now show up
+        role = Role.query.filter_by(name='Staff').first()
+        agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        if agenda_perm not in role.permissions:
+            role.permissions.append(agenda_perm)
+            db.session.commit()
+
+        success, reply = CommandParser.parse_and_execute('/help', staff_user, 1)
+        assert success is True
+        assert 'Available Chat Commands' in reply
+        assert '/meeting-info' in reply
+        assert '<meeting_number>' in reply
+        assert '<meeting_id>' not in reply
 
 def test_command_parser_invalid_command(app, staff_user):
     """Test how command parser handles invalid formats."""
@@ -334,6 +356,216 @@ def test_tools_guidelines_loading_and_injection(app):
             system_prompt = call_kwargs.get('system', '')
             assert "Chatbot Tool Guidelines & Constraints" in system_prompt
             assert "No Database Hallucinations" in system_prompt
+
+
+def test_chat_assistant_language_toggle(app, client, auth, staff_user, default_club, chat_permissions):
+    """Test that toggling language changes the AI prompt, system reminders, and intercepted tool outputs."""
+    from app.services.chat_service import ChatService
+    from unittest.mock import MagicMock, patch
+    
+    with app.app_context():
+        # 1. Test get_system_prompt instructions
+        prompt_en = ChatService.get_system_prompt(staff_user, default_club.id, 'en')
+        assert "if 'zh_CN', you must always respond in Chinese" in prompt_en
+        assert "User Locale: en" in prompt_en
+
+        prompt_zh = ChatService.get_system_prompt(staff_user, default_club.id, 'zh_CN')
+        assert "if 'zh_CN', you must always respond in Chinese" in prompt_zh
+        assert "User Locale: zh_CN" in prompt_zh
+
+        # 2. Test language reminder injection in process_chat_completion
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.stop_reason = "text"
+        mock_response.content = [MagicMock(type="text", text="Mock reply")]
+        mock_client.messages.create.return_value = mock_response
+        
+        chat_msg = ChatMessage(role="user", content="hello")
+        
+        with patch.object(ChatService, 'get_client', return_value=mock_client), \
+             patch('app.services.chat_service.db.session.get', return_value=None), \
+             patch('app.services.chat_service.current_app.config.get', side_effect=lambda k, d=None: d if k != 'ANTHROPIC_API_KEY' else 'mock-api-key'):
+            
+            # Locale en
+            ChatService.process_chat_completion(
+                chat_history_list=[chat_msg],
+                user=staff_user,
+                club_id=default_club.id,
+                locale="en"
+            )
+            call_kwargs_en = mock_client.messages.create.call_args[1]
+            last_msg_en = call_kwargs_en.get('messages', [])[-1]['content']
+            assert "Remember, you must respond in English because the User Locale is 'en'." in last_msg_en
+
+            # Locale zh_CN
+            ChatService.process_chat_completion(
+                chat_history_list=[chat_msg],
+                user=staff_user,
+                club_id=default_club.id,
+                locale="zh_CN"
+            )
+            call_kwargs_zh = mock_client.messages.create.call_args[1]
+            last_msg_zh = call_kwargs_zh.get('messages', [])[-1]['content']
+            assert "Remember, you must respond in Chinese because the User Locale is 'zh_CN'." in last_msg_zh
+
+    # Grant permissions for intercepts
+    with app.app_context():
+        from app.models import AuthRole as Role, Permission
+        role = Role.query.filter_by(name='Staff').first()
+        cmd_perm = Permission.query.filter_by(name=Permissions.CHAT_COMMANDS).first()
+        ai_perm = Permission.query.filter_by(name=Permissions.CHAT_AI).first()
+        agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        voting_perm = Permission.query.filter_by(name=Permissions.VOTING_VIEW_RESULTS).first()
+        for p in [cmd_perm, ai_perm, agenda_perm, voting_perm]:
+            if p not in role.permissions:
+                role.permissions.append(p)
+        db.session.commit()
+
+        # Create a finished test meeting
+        from datetime import date
+        test_meeting = Meeting(club_id=default_club.id, Meeting_Number=555, Meeting_Date=date.today(), status="finished")
+        db.session.add(test_meeting)
+        db.session.commit()
+
+    try:
+        # Log in
+        auth.login(username=staff_user.username, password='password', club_id=default_club.id)
+
+        # 3. Test intercepted agenda outputs with locale zh_CN vs en
+        with client.session_transaction() as sess:
+            sess['locale'] = 'zh_CN'
+        response = client.post('/chat/send', json={'message': 'show me the agenda of 555'})
+        assert response.status_code == 200
+        data = response.get_json()
+        assert "会议 #555" in data['content']
+        assert "日程表暂无内容" in data['content']
+
+        with client.session_transaction() as sess:
+            sess['locale'] = 'en'
+        response = client.post('/chat/send', json={'message': 'show me the agenda of 555'})
+        assert response.status_code == 200
+        data = response.get_json()
+        assert "agenda for Meeting #555" in data['content']
+
+        # 4. Test intercepted voting outputs with locale zh_CN vs en
+        with client.session_transaction() as sess:
+            sess['locale'] = 'zh_CN'
+        response = client.post('/chat/send', json={'message': 'who are the winners of meeting 555'})
+        assert response.status_code == 200
+        data = response.get_json()
+        assert "会议 **#555** 的投票结果" in data['content']
+
+        with client.session_transaction() as sess:
+            sess['locale'] = 'en'
+        response = client.post('/chat/send', json={'message': 'who are the winners of meeting 555'})
+        assert response.status_code == 200
+        data = response.get_json()
+        assert "Voting results for **Meeting #555**" in data['content']
+
+    finally:
+        with app.app_context():
+            Meeting.query.filter_by(Meeting_Number=555).delete()
+            db.session.commit()
+
+
+def test_slash_command_in_ai_mode_with_permission(client, auth, staff_user, default_club, chat_permissions, app):
+    """Test that slash command in AI mode works if the user has CHAT_COMMANDS permission."""
+    # Grant both CHAT_AI and CHAT_COMMANDS permissions to the user's role
+    with app.app_context():
+        role = Role.query.filter_by(name='Staff').first()
+        cmd_perm = Permission.query.filter_by(name=Permissions.CHAT_COMMANDS).first()
+        ai_perm = Permission.query.filter_by(name=Permissions.CHAT_AI).first()
+        if cmd_perm not in role.permissions:
+            role.permissions.append(cmd_perm)
+        if ai_perm not in role.permissions:
+            role.permissions.append(ai_perm)
+        db.session.commit()
+
+    # Log in
+    auth.login(username=staff_user.username, password='password', club_id=default_club.id)
+
+    # Test slash command in AI mode
+    response = client.post('/chat/send', json={'message': '/help'})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data['success'] is True
+    assert data['mode'] == 'ai'
+    assert 'Available Chat Commands' in data['content']
+
+
+def test_slash_command_in_ai_mode_without_permission(client, auth, staff_user, default_club, chat_permissions, app):
+    """Test that slash command in AI mode returns 403 if the user does NOT have CHAT_COMMANDS permission."""
+    # Grant CHAT_AI but revoke CHAT_COMMANDS
+    with app.app_context():
+        role = Role.query.filter_by(name='Staff').first()
+        cmd_perm = Permission.query.filter_by(name=Permissions.CHAT_COMMANDS).first()
+        ai_perm = Permission.query.filter_by(name=Permissions.CHAT_AI).first()
+        if cmd_perm in role.permissions:
+            role.permissions.remove(cmd_perm)
+        if ai_perm not in role.permissions:
+            role.permissions.append(ai_perm)
+        db.session.commit()
+
+    # Log in
+    auth.login(username=staff_user.username, password='password', club_id=default_club.id)
+
+    # Test slash command in AI mode
+    response = client.post('/chat/send', json={'message': '/help'})
+    assert response.status_code == 403
+    data = response.get_json()
+    assert data['success'] is False
+    assert 'Permission denied' in data['message']
+
+
+def test_slash_command_status_query(client, auth, staff_user, default_club, chat_permissions, app):
+    """Test that /status <meeting_number> acts as a query when status is omitted."""
+    # Ensure CHAT_COMMANDS & AGENDA_EDIT permission
+    with app.app_context():
+        role = Role.query.filter_by(name='Staff').first()
+        cmd_perm = Permission.query.filter_by(name=Permissions.CHAT_COMMANDS).first()
+        agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_EDIT).first()
+        if cmd_perm not in role.permissions:
+            role.permissions.append(cmd_perm)
+        if agenda_perm not in role.permissions:
+            role.permissions.append(agenda_perm)
+        db.session.commit()
+
+        # Create a test meeting
+        from datetime import date
+        test_meeting = Meeting(club_id=default_club.id, Meeting_Number=666, Meeting_Date=date.today(), status="not started")
+        db.session.add(test_meeting)
+        db.session.commit()
+
+    try:
+        # Log in
+        auth.login(username=staff_user.username, password='password', club_id=default_club.id)
+
+        # 1. Query status
+        response = client.post('/chat/send', json={'message': '/status 666'})
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert "Meeting #666 status is `not started`" in data['content']
+
+        # 2. Update status
+        response = client.post('/chat/send', json={'message': '/status 666 running'})
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+
+        # 3. Query status again to verify update
+        response = client.post('/chat/send', json={'message': '/status 666'})
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data['success'] is True
+        assert "Meeting #666 status is `running`" in data['content']
+    finally:
+        with app.app_context():
+            Meeting.query.filter_by(Meeting_Number=666).delete()
+            db.session.commit()
+
+
+
 
 
 

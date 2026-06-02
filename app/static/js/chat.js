@@ -152,18 +152,59 @@ document.addEventListener('DOMContentLoaded', function() {
         const card = document.createElement('div');
         card.className = 'chat-tool-card';
         
+        const isZh = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN');
         let readableName = toolName.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase());
+        
+        if (isZh) {
+            const nameMap = {
+                'assign_role': '分配角色',
+                'cancel_role': '取消角色指派',
+                'create_meeting': '创建会议',
+                'add_contact': '添加联系人',
+                'check_in': '签到',
+                'complete_level': '记录级别成就',
+                'get_pathway_status': '查询路径进度',
+                'search_contacts': '搜索联系人',
+                'get_meeting_info': '获取会议详情',
+                'list_meetings': '列出会议',
+                'get_role_assignments': '获取角色指派列表',
+                'get_available_roles': '查询空缺角色',
+                'update_meeting_status': '更新会议状态',
+                'get_voting_results': '获取投票结果',
+                'get_meeting_agenda': '获取会议日程',
+                'manage_excomm_officers': '执委会管理',
+                'query_pathways_library': '查询 Pathways 库'
+            };
+            if (nameMap[toolName]) {
+                readableName = nameMap[toolName];
+            }
+        }
+
         let details = '';
-        if (toolName === 'assign_role') {
-            details = `Assigned ${args.contact_name} as ${args.role_name} for meeting ${args.meeting_identifier}.`;
-        } else if (toolName === 'create_meeting') {
-            details = `Created meeting on ${args.date}.`;
-        } else if (toolName === 'check_in') {
-            details = `Checked in ${args.contact_name}.`;
-        } else if (toolName === 'complete_level') {
-            details = `Completed level ${args.level} of ${args.pathway_name} for ${args.contact_name}.`;
+        if (isZh) {
+            if (toolName === 'assign_role') {
+                details = `已指派 ${args.contact_name} 担任会议 ${args.meeting_identifier} 的 ${args.role_name}。`;
+            } else if (toolName === 'create_meeting') {
+                details = `已在 ${args.date} 创建会议。`;
+            } else if (toolName === 'check_in') {
+                details = `已签到 ${args.contact_name}。`;
+            } else if (toolName === 'complete_level') {
+                details = `已为 ${args.contact_name} 记录 ${args.pathway_name} 级别 ${args.level} 的完成成就。`;
+            } else {
+                details = `已成功执行 ${readableName} 操作。`;
+            }
         } else {
-            details = `Executed ${readableName} operation.`;
+            if (toolName === 'assign_role') {
+                details = `Assigned ${args.contact_name} as ${args.role_name} for meeting ${args.meeting_identifier}.`;
+            } else if (toolName === 'create_meeting') {
+                details = `Created meeting on ${args.date}.`;
+            } else if (toolName === 'check_in') {
+                details = `Checked in ${args.contact_name}.`;
+            } else if (toolName === 'complete_level') {
+                details = `Completed level ${args.level} of ${args.pathway_name} for ${args.contact_name}.`;
+            } else {
+                details = `Executed ${readableName} operation.`;
+            }
         }
 
         card.innerHTML = `
@@ -242,42 +283,63 @@ document.addEventListener('DOMContentLoaded', function() {
                         });
                     } else {
                         // Welcome message
-                        let welcome = data.mode === 'ai' 
-                            ? "Hello! I am your VPE Master AI Assistant. I can help you book roles, check in contacts, create meetings, complete levels, and look up records. Ask me anything!"
-                            : "Hello! Command Terminal is active. Type `/help` to see list of available commands.";
+                        const isZh = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN');
+                        let welcome = '';
+                        if (isZh) {
+                            welcome = data.mode === 'ai'
+                                ? "你好！我是您的 Memory Maker AI 助手。我可以帮助您预订角色、签到联系人、创建会议、记录级别成就并查询记录。问我任何问题吧！"
+                                : "你好！命令终端已激活。输入 `/help` 查看可用命令列表。";
+                        } else {
+                            welcome = data.mode === 'ai' 
+                                ? "Hello! I am your Memory Maker AI Assistant. I can help you book roles, check in contacts, create meetings, complete levels, and look up records. Ask me anything!"
+                                : "Hello! Command Terminal is active. Type `/help` to see list of available commands.";
+                        }
                         appendMessage('assistant', welcome);
                     }
                     historyLoaded = true;
                     scrollToBottom();
                 } else {
-                    appendMessage('system', 'Error loading history: ' + data.message);
+                    const isZh = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN');
+                    const errMsg = isZh ? '加载历史记录出错：' : 'Error loading history: ';
+                    appendMessage('system', errMsg + data.message);
                 }
             })
             .catch(err => {
                 showTyping(false);
-                appendMessage('system', 'Failed to connect to history server.');
+                const isZh = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN');
+                const errMsg = isZh ? '连接历史记录服务器失败。' : 'Failed to connect to history server.';
+                appendMessage('system', errMsg);
                 console.error(err);
             });
     }
 
     // Clear Chat History
     clearBtn.addEventListener('click', function() {
-        if (confirm("Are you sure you want to clear your chat history?")) {
-            fetch('/chat/clear', { method: 'POST' })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        messagesPane.innerHTML = '';
-                        let welcome = document.getElementById('chatModeBadge').textContent.trim() === 'AI'
+        fetch('/chat/clear', { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    messagesPane.innerHTML = '';
+                    const isZh = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN');
+                    const isAi = document.getElementById('chatModeBadge').textContent.trim() === 'AI';
+                    let welcome = '';
+                    if (isZh) {
+                        welcome = isAi
+                            ? "历史记录已清除。问我任何问题吧！"
+                            : "历史记录已清除。输入 `/help` 查看命令。";
+                    } else {
+                        welcome = isAi
                             ? "History cleared. Ask me anything!"
                             : "History cleared. Type `/help` for commands.";
-                        appendMessage('assistant', welcome);
-                    } else {
-                        alert("Failed to clear chat: " + data.message);
                     }
-                })
-                .catch(err => console.error(err));
-        }
+                    appendMessage('assistant', welcome);
+                } else {
+                    const isZh = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN');
+                    const errMsg = isZh ? "清除聊天失败：" : "Failed to clear chat: ";
+                    alert(errMsg + data.message);
+                }
+            })
+            .catch(err => console.error(err));
     });
 
     // Show/Hide Typing Indicator
@@ -330,14 +392,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     unreadDot.style.display = 'block';
                 }
             } else {
-                appendMessage('system', data.message || 'Error occurred.');
+                const isZh = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN');
+                const errMsg = isZh ? '发生错误。' : 'Error occurred.';
+                appendMessage('system', data.message || errMsg);
             }
         })
         .catch(err => {
             showTyping(false);
             isSending = false;
             sendBtn.disabled = false;
-            appendMessage('system', 'Network error. Could not send message.');
+            const isZh = (typeof CURRENT_LOCALE !== 'undefined' && CURRENT_LOCALE === 'zh_CN');
+            const errMsg = isZh ? '网络错误。无法发送消息。' : 'Network error. Could not send message.';
+            appendMessage('system', errMsg);
             console.error(err);
         });
     }

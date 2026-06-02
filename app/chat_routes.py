@@ -50,7 +50,10 @@ def chat_send():
         db.session.add(user_msg)
         db.session.commit()
 
-        if mode == 'command':
+        if message_text.startswith('/') or mode == 'command':
+            if message_text.startswith('/') and not has_cmd:
+                return jsonify({'success': False, 'message': 'Permission denied.'}), 403
+
             # Execute locally via regex command parser
             success, reply_text = CommandParser.parse_and_execute(message_text, current_user, club_id)
             
@@ -69,7 +72,7 @@ def chat_send():
                 'success': True,
                 'role': 'assistant',
                 'content': reply_text,
-                'mode': 'command',
+                'mode': mode,
                 'executed_tools': []
             })
             

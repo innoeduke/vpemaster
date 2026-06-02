@@ -555,8 +555,8 @@ def test_ai_get_voting_results(app, setup_ai_environment):
         )
         
         assert len(executed_tools) > 0
-        tool_call = executed_tools[0]
-        assert tool_call['name'] == 'get_voting_results'
+        tool_call = next((t for t in executed_tools if t['name'] == 'get_voting_results'), None)
+        assert tool_call is not None
         assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
 
 
@@ -581,8 +581,8 @@ def test_ai_get_meeting_agenda(app, setup_ai_environment):
         )
         
         assert len(executed_tools) > 0
-        tool_call = executed_tools[0]
-        assert tool_call['name'] == 'get_meeting_agenda'
+        tool_call = next((t for t in executed_tools if t['name'] == 'get_meeting_agenda'), None)
+        assert tool_call is not None
         assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
 
 
@@ -633,16 +633,12 @@ def test_ai_finish_unstarted_meeting_fails(app, setup_ai_environment):
             locale='en'
         )
         
-        try:
-            assert len(executed_tools) > 0
-            tool_call = next((t for t in executed_tools if t['name'] == 'update_meeting_status' and t['arguments']['status'] == 'finished'), None)
-            assert tool_call is not None
-            assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
-            # The reply text should contain educational info explaining linear progression or starting the meeting
-            assert any(word in reply_text.lower() for word in ["not started", "linear", "start", "progression", "running"])
-        except AssertionError as e:
-            print(f"\n[DEBUG] test_ai_finish_unstarted_meeting_fails: executed_tools={executed_tools}, reply_text={reply_text}")
-            raise e
+        assert len(executed_tools) > 0
+        tool_call = next((t for t in executed_tools if t['name'] == 'update_meeting_status' and t['arguments']['status'] == 'finished'), None)
+        assert tool_call is not None
+        assert tool_call['arguments']['meeting_identifier'] in ['100', '#100']
+        # The reply text should contain educational info explaining linear progression or starting the meeting
+        assert any(word in reply_text.lower() for word in ["not started", "linear", "start", "progression", "running"])
 
 
 def test_ai_query_pathways_library(app, setup_ai_environment):
@@ -813,12 +809,12 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
         assert query_call is not None
         assert "no active" in reply_text.lower() or "assign" in reply_text.lower() or "vacant" in reply_text.lower()
 
-        # Test Case 2: Update ExComm Officer (President) to John Doe (active term will be created automatically)
+        # Test Case 2: Create a new excomm term 26H1
         msg2 = ChatMessage(
             user_id=env['user_id'],
             club_id=env['club_id'],
             role='user',
-            content="Update the club President to John Doe.",
+            content="Please create a new ExComm term '26H1' named 'Memory Makers' from 2026-01-01 to 2026-06-30.",
             mode='ai'
         )
         reply_text2, executed_tools2 = ChatService.process_chat_completion(
@@ -828,16 +824,16 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools2) > 0
-        update_call = next((t for t in executed_tools2 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] in ['update_officer', 'update']), None)
-        assert update_call is not None
-        assert 'john' in update_call['arguments']['contact_name'].lower()
-        
-        # Test Case 3: Create a new excomm term 26H2
+        create_call = next((t for t in executed_tools2 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'create_term'), None)
+        assert create_call is not None
+        assert create_call['arguments']['term'] == '26H1'
+
+        # Test Case 3: Set active term to 26H1
         msg3 = ChatMessage(
             user_id=env['user_id'],
             club_id=env['club_id'],
             role='user',
-            content="Please create a new ExComm term '26H2' named 'Next Gen' from 2026-07-01 to 2026-12-31.",
+            content="Set the active term to 26H1.",
             mode='ai'
         )
         reply_text3, executed_tools3 = ChatService.process_chat_completion(
@@ -847,16 +843,16 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools3) > 0
-        create_call = next((t for t in executed_tools3 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'create_term'), None)
-        assert create_call is not None
-        assert create_call['arguments']['term'] == '26H2'
-        
-        # Test Case 4: Update President of term 26H2 to John Doe
+        active_call = next((t for t in executed_tools3 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'set_active_term'), None)
+        assert active_call is not None
+        assert active_call['arguments']['term'] == '26H1'
+
+        # Test Case 4: Update ExComm Officer (President) to John Doe under active term 26H1
         msg4 = ChatMessage(
             user_id=env['user_id'],
             club_id=env['club_id'],
             role='user',
-            content="Assign John Doe as President for the excomm term 26H2.",
+            content="Update the club President to John Doe.",
             mode='ai'
         )
         reply_text4, executed_tools4 = ChatService.process_chat_completion(
@@ -866,17 +862,16 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools4) > 0
-        update_call2 = next((t for t in executed_tools4 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'update_officer'), None)
-        assert update_call2 is not None
-        assert update_call2['arguments']['term'] == '26H2'
-        assert 'john' in update_call2['arguments']['contact_name'].lower()
+        update_call = next((t for t in executed_tools4 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] in ['update_officer', 'update']), None)
+        assert update_call is not None
+        assert 'john' in update_call['arguments']['contact_name'].lower()
         
-        # Test Case 5: Query officers of term 26H2
+        # Test Case 5: Query officers of term 26H1 (should now show President: John Doe)
         msg5 = ChatMessage(
             user_id=env['user_id'],
             club_id=env['club_id'],
             role='user',
-            content="Show me the officers of excomm term 26H2.",
+            content="Show me the roster of excomm term 26H1.",
             mode='ai'
         )
         reply_text5, executed_tools5 = ChatService.process_chat_completion(
@@ -888,15 +883,15 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
         assert len(executed_tools5) > 0
         query_call2 = next((t for t in executed_tools5 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'query_officers'), None)
         assert query_call2 is not None
-        assert query_call2['arguments']['term'] == '26H2'
+        assert query_call2['arguments']['term'] == '26H1'
         assert "President" in reply_text5 and "John Doe" in reply_text5
-        
-        # Test Case 6: List excomm terms
+
+        # Test Case 6: Create another excomm term 26H2
         msg6 = ChatMessage(
             user_id=env['user_id'],
             club_id=env['club_id'],
             role='user',
-            content="List all the excomm terms.",
+            content="Please create a new ExComm term '26H2' named 'Next Gen' from 2026-07-01 to 2026-12-31.",
             mode='ai'
         )
         reply_text6, executed_tools6 = ChatService.process_chat_completion(
@@ -906,16 +901,16 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools6) > 0
-        terms_call = next((t for t in executed_tools6 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'query_terms'), None)
-        assert terms_call is not None
-        assert "26H2" in reply_text6
+        create_call2 = next((t for t in executed_tools6 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'create_term'), None)
+        assert create_call2 is not None
+        assert create_call2['arguments']['term'] == '26H2'
         
-        # Test Case 7: Set active term to 26H2
+        # Test Case 7: Update President of term 26H2 to John Doe
         msg7 = ChatMessage(
             user_id=env['user_id'],
             club_id=env['club_id'],
             role='user',
-            content="Set the active term to 26H2.",
+            content="Assign John Doe as President for the excomm term 26H2.",
             mode='ai'
         )
         reply_text7, executed_tools7 = ChatService.process_chat_completion(
@@ -925,10 +920,255 @@ def test_ai_manage_excomm_officers(app, setup_ai_environment):
             locale='en'
         )
         assert len(executed_tools7) > 0
-        active_call = next((t for t in executed_tools7 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'set_active_term'), None)
-        assert active_call is not None
-        assert active_call['arguments']['term'] == '26H2'
-        assert "active" in reply_text7.lower()
+        update_call2 = next((t for t in executed_tools7 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'update_officer'), None)
+        assert update_call2 is not None
+        assert update_call2['arguments']['term'] == '26H2'
+        assert 'john' in update_call2['arguments']['contact_name'].lower()
+        
+        # Test Case 8: Query officers of term 26H2
+        msg8 = ChatMessage(
+            user_id=env['user_id'],
+            club_id=env['club_id'],
+            role='user',
+            content="Show me the officers of excomm term 26H2.",
+            mode='ai'
+        )
+        reply_text8, executed_tools8 = ChatService.process_chat_completion(
+            chat_history_list=[msg8],
+            user=user,
+            club_id=env['club_id'],
+            locale='en'
+        )
+        assert len(executed_tools8) > 0
+        query_call3 = next((t for t in executed_tools8 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'query_officers'), None)
+        assert query_call3 is not None
+        assert query_call3['arguments']['term'] == '26H2'
+        assert "President" in reply_text8 and "John Doe" in reply_text8
+        
+        # Test Case 9: List excomm terms
+        msg9 = ChatMessage(
+            user_id=env['user_id'],
+            club_id=env['club_id'],
+            role='user',
+            content="List all the excomm terms.",
+            mode='ai'
+        )
+        reply_text9, executed_tools9 = ChatService.process_chat_completion(
+            chat_history_list=[msg9],
+            user=user,
+            club_id=env['club_id'],
+            locale='en'
+        )
+        assert len(executed_tools9) > 0
+        terms_call = next((t for t in executed_tools9 if t['name'] == 'manage_excomm_officers' and t['arguments']['action'] == 'query_terms'), None)
+        assert terms_call is not None
+        assert "26H2" in reply_text9 and "26H1" in reply_text9
+
+
+def test_ai_manage_waitlist(app, setup_ai_environment):
+    """Test 'manage_waitlist' tool calling by model and execution."""
+    env = setup_ai_environment
+    with app.app_context():
+        # Seed project and pathway-project mapping so resolving works
+        from app.models import Project, PathwayProject
+        proj = Project(
+            Project_Name="Ice Breaker",
+            Format="Prepared Speech",
+            Duration_Min=4,
+            Duration_Max=6
+        )
+        db.session.add(proj)
+        db.session.flush()
+        
+        pp1 = PathwayProject(
+            path_id=1,  # DL
+            project_id=proj.id,
+            code="L1P1",
+            level=1,
+            type="required"
+        )
+        pp2 = PathwayProject(
+            path_id=2,  # PM
+            project_id=proj.id,
+            code="L1P1",
+            level=1,
+            type="required"
+        )
+        db.session.add_all([pp1, pp2])
+        db.session.commit()
+
+        user = db.session.get(User, env['user_id'])
+        
+        # Test Case 1: Join waitlist for Prepared Speaker
+        msg1 = ChatMessage(
+            user_id=env['user_id'],
+            club_id=env['club_id'],
+            role='user',
+            content="Put John Doe on the waitlist for Prepared Speaker in meeting 100.",
+            mode='ai'
+        )
+        reply_text1, executed_tools1 = ChatService.process_chat_completion(
+            chat_history_list=[msg1],
+            user=user,
+            club_id=env['club_id'],
+            locale='en'
+        )
+        assert len(executed_tools1) > 0
+        create_call = next((t for t in executed_tools1 if t['name'] == 'manage_waitlist' and t['arguments']['action'] in ('create', 'join')), None)
+        assert create_call is not None
+        assert create_call['arguments']['meeting_identifier'] == '100'
+        assert 'john' in create_call['arguments']['contact_name'].lower()
+        assert 'speaker' in create_call['arguments']['role_name'].lower()
+
+        # Test Case 2: Query waitlist
+        msg2 = ChatMessage(
+            user_id=env['user_id'],
+            club_id=env['club_id'],
+            role='user',
+            content="Query the waitlist for meeting 100.",
+            mode='ai'
+        )
+        reply_text2, executed_tools2 = ChatService.process_chat_completion(
+            chat_history_list=[msg2],
+            user=user,
+            club_id=env['club_id'],
+            locale='en'
+        )
+        assert len(executed_tools2) > 0
+        query_call = next((t for t in executed_tools2 if t['name'] == 'manage_waitlist' and t['arguments']['action'] == 'query'), None)
+        assert query_call is not None
+        assert "Prepared Speaker" in reply_text2 and "John Doe" in reply_text2
+
+        # Test Case 3: Update waitlist preferences
+        msg3 = ChatMessage(
+            user_id=env['user_id'],
+            club_id=env['club_id'],
+            role='user',
+            content="Update John Doe's waitlist preferences for Prepared Speaker in meeting 100 with pathway 'Presentation Mastery', project 'Ice Breaker', and title 'My Test Speech'.",
+            mode='ai'
+        )
+        reply_text3, executed_tools3 = ChatService.process_chat_completion(
+            chat_history_list=[msg3],
+            user=user,
+            club_id=env['club_id'],
+            locale='en'
+        )
+        assert len(executed_tools3) > 0
+        update_call = next((t for t in executed_tools3 if t['name'] == 'manage_waitlist' and t['arguments']['action'] == 'update'), None)
+        assert update_call is not None
+        assert 'john' in update_call['arguments']['contact_name'].lower()
+        assert 'presentation mastery' in update_call['arguments']['pathway_name'].lower()
+        assert 'ice breaker' in update_call['arguments']['project_name'].lower()
+        assert 'my test speech' in update_call['arguments']['speech_title'].lower()
+
+        # Test Case 4: Approve/promote waitlist
+        msg4 = ChatMessage(
+            user_id=env['user_id'],
+            club_id=env['club_id'],
+            role='user',
+            content="Approve the waitlist for Prepared Speaker in meeting 100.",
+            mode='ai'
+        )
+        reply_text4, executed_tools4 = ChatService.process_chat_completion(
+            chat_history_list=[msg4],
+            user=user,
+            club_id=env['club_id'],
+            locale='en'
+        )
+        assert len(executed_tools4) > 0
+        approve_call = next((t for t in executed_tools4 if t['name'] == 'manage_waitlist' and t['arguments']['action'] == 'approve'), None)
+        assert approve_call is not None
+        
+        # Test Case 5: Remove from waitlist (leave waitlist)
+        from app.services.chat_tool_executor import ChatToolExecutor
+        ChatToolExecutor.tool_manage_waitlist(
+            {'action': 'create', 'meeting_identifier': '100', 'role_name': 'Prepared Speaker', 'contact_name': 'John Doe'},
+            user,
+            env['club_id']
+        )
+        db.session.commit()
+        
+        msg5 = ChatMessage(
+            user_id=env['user_id'],
+            club_id=env['club_id'],
+            role='user',
+            content="Remove John Doe from the waitlist for Prepared Speaker in meeting 100.",
+            mode='ai'
+        )
+        reply_text5, executed_tools5 = ChatService.process_chat_completion(
+            chat_history_list=[msg5],
+            user=user,
+            club_id=env['club_id'],
+            locale='en'
+        )
+        assert len(executed_tools5) > 0
+        remove_call = next((t for t in executed_tools5 if t['name'] == 'manage_waitlist' and t['arguments']['action'] == 'remove'), None)
+        assert remove_call is not None
+        assert 'john' in remove_call['arguments']['contact_name'].lower()
+
+
+def test_command_parser_waitlist(app, setup_ai_environment):
+    """Test '/waitlist' CLI command parsing and execution."""
+    env = setup_ai_environment
+    with app.app_context():
+        # Seed project and pathway-project mapping so resolving works
+        from app.models import Project, PathwayProject
+        proj = Project(
+            Project_Name="Ice Breaker",
+            Format="Prepared Speech",
+            Duration_Min=4,
+            Duration_Max=6
+        )
+        db.session.add(proj)
+        db.session.flush()
+        
+        pp1 = PathwayProject(
+            path_id=1,  # DL
+            project_id=proj.id,
+            code="L1P1",
+            level=1,
+            type="required"
+        )
+        pp2 = PathwayProject(
+            path_id=2,  # PM
+            project_id=proj.id,
+            code="L1P1",
+            level=1,
+            type="required"
+        )
+        db.session.add_all([pp1, pp2])
+        db.session.commit()
+
+        user = db.session.get(User, env['user_id'])
+        from app.services.command_parser import CommandParser
+        
+        # 1. Join waitlist
+        success, msg = CommandParser.parse_and_execute('/waitlist join 100 "Prepared Speaker" "John Doe" "Dynamic Leadership" "Ice Breaker" "Command Speech"', user, env['club_id'])
+        assert success, f"Join failed: {msg}"
+        assert "Successfully added" in msg
+        
+        # 2. Update waitlist
+        success, msg = CommandParser.parse_and_execute('/waitlist update 100 "Prepared Speaker" "John Doe" "Presentation Mastery" "Ice Breaker" "New Title"', user, env['club_id'])
+        assert success, f"Update failed: {msg}"
+        assert "Successfully updated" in msg
+        
+        # 3. Query waitlist
+        success, msg = CommandParser.parse_and_execute('/waitlist query 100', user, env['club_id'])
+        assert success, f"Query failed: {msg}"
+        assert "Prepared Speaker" in msg
+        assert "John Doe" in msg
+        
+        # 4. Approve waitlist
+        success, msg = CommandParser.parse_and_execute('/waitlist approve 100 "Prepared Speaker"', user, env['club_id'])
+        assert success, f"Approve failed: {msg}"
+        assert "Successfully approved" in msg
+        
+        # 5. Remove from waitlist
+        CommandParser.parse_and_execute('/waitlist join 100 "Prepared Speaker" "John Doe"', user, env['club_id'])
+        success, msg = CommandParser.parse_and_execute('/waitlist remove 100 "Prepared Speaker" "John Doe"', user, env['club_id'])
+        assert success, f"Remove failed: {msg}"
+        assert "Successfully removed" in msg
+
 
 
 

@@ -610,15 +610,26 @@ class ChatToolExecutor:
             SessionLog.state != 'cancelled'
         ).order_by(SessionLog.Meeting_Seq).all()
         
+        from app.translations.translations import get_locale
+        locale = get_locale()
+
         if not logs:
-            return {'success': True, 'message': f"The agenda for Meeting #{meeting.Meeting_Number} has no items."}
+            msg = f"会议 #{meeting.Meeting_Number} 的日程表暂无内容。" if locale == 'zh_CN' else f"The agenda for Meeting #{meeting.Meeting_Number} has no items."
+            return {'success': True, 'message': msg}
             
-        m_date = meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting.Meeting_Date else 'N/A'
-        res = f"I went ahead and pulled the official agenda for **Meeting #{meeting.Meeting_Number} ({m_date})** — here it is:\n"
-        res += f"📋 **Meeting #{meeting.Meeting_Number} Agenda — {meeting.Meeting_Title or 'No Theme'}**\n\n"
-        res += "| # | Time | Item | Owner |\n"
-        res += "|---|------|------|-------|\n"
+        m_date = meeting.Meeting_Date.strftime('%Y-%m-%d') if meeting.Meeting_Date else ('无日期' if locale == 'zh_CN' else 'N/A')
         
+        if locale == 'zh_CN':
+            res = f"我已经为您获取了 **会议 #{meeting.Meeting_Number} ({m_date})** 的官方日程表 —— 如下：\n"
+            res += f"📋 **会议 #{meeting.Meeting_Number} 日程表 — {meeting.Meeting_Title or '无主题'}**\n\n"
+            res += "| 序号 | 时间 | 环节 | 负责人 |\n"
+            res += "|---|------|------|-------|\n"
+        else:
+            res = f"I went ahead and pulled the official agenda for **Meeting #{meeting.Meeting_Number} ({m_date})** — here it is:\n"
+            res += f"📋 **Meeting #{meeting.Meeting_Number} Agenda — {meeting.Meeting_Title or 'No Theme'}**\n\n"
+            res += "| # | Time | Item | Owner |\n"
+            res += "|---|------|------|-------|\n"
+            
         for log in logs:
             time_str = log.Start_Time.strftime('%H:%M') if log.Start_Time else "—"
             
@@ -627,7 +638,7 @@ class ChatToolExecutor:
             if not item_title and log.session_type:
                 item_title = log.session_type.Title
             if not item_title:
-                item_title = "Untitled Item"
+                item_title = "未命名环节" if locale == 'zh_CN' else "Untitled Item"
                 
             # If section divider
             is_section = log.session_type and log.session_type.Title == "Section"
@@ -850,21 +861,55 @@ class ChatToolExecutor:
                 cat_map[category] = []
             cat_map[category].append((contact_name, count))
 
-        res = f"Voting results for **Meeting #{meeting.Meeting_Number}** ({meeting.status}):\n"
-        if not vote_counts:
-            res += "* No votes have been cast yet."
-            return {'success': True, 'message': res}
+        from app.translations.translations import get_locale
+        locale = get_locale()
+
+        if locale == 'zh_CN':
+            status_translation = {
+                'unpublished': '未发布',
+                'not started': '未开始',
+                'running': '进行中',
+                'finished': '已结束',
+                'cancelled': '已取消'
+            }
+            status_zh = status_translation.get(meeting.status, meeting.status)
+            res = f"会议 **#{meeting.Meeting_Number}** 的投票结果 ({status_zh})：\n"
+            if not vote_counts:
+                res += "* 暂无投票记录。"
+                return {'success': True, 'message': res}
+        else:
+            res = f"Voting results for **Meeting #{meeting.Meeting_Number}** ({meeting.status}):\n"
+            if not vote_counts:
+                res += "* No votes have been cast yet."
+                return {'success': True, 'message': res}
 
         for cat, candidates in cat_map.items():
             # Sort candidates by vote count descending
             sorted_candidates = sorted(candidates, key=lambda x: x[1], reverse=True)
-            res += f"\n**Best {cat.capitalize().replace('-', ' ')}**:\n"
-            for name, count in sorted_candidates:
-                res += f"* {name}: {count} vote(s)\n"
+            if locale == 'zh_CN':
+                cat_zh = {
+                    'speaker': '最佳演讲者',
+                    'evaluator': '最佳评估者',
+                    'table-topic-speaker': '最佳即兴演讲者',
+                    'table topics speaker': '最佳即兴演讲者',
+                    'role-taker': '最佳角色扮演者',
+                    'role taker': '最佳角色扮演者',
+                    'debater': '最佳辩手'
+                }.get(cat.lower(), cat.capitalize().replace('-', ' '))
+                res += f"\n**{cat_zh}**：\n"
+                for name, count in sorted_candidates:
+                    res += f"* {name}: {count} 票\n"
+            else:
+                res += f"\n**Best {cat.capitalize().replace('-', ' ')}**:\n"
+                for name, count in sorted_candidates:
+                    res += f"* {name}: {count} vote(s)\n"
 
         # Stored winners (for finished meetings)
         if meeting.status == 'finished':
-            res += "\n🏆 **Official Award Winners**:\n"
+            if locale == 'zh_CN':
+                res += "\n🏆 **官方获奖名单**：\n"
+            else:
+                res += "\n🏆 **Official Award Winners**:\n"
             awards = [
                 ('Speaker', meeting.best_speaker_id),
                 ('Evaluator', meeting.best_evaluator_id),
@@ -875,7 +920,16 @@ class ChatToolExecutor:
                 if cid:
                     contact = db.session.get(Contact, cid)
                     if contact:
-                        res += f"* Best {title}: **{contact.Name}**\n"
+                        if locale == 'zh_CN':
+                            title_zh = {
+                                'Speaker': '最佳演讲者',
+                                'Evaluator': '最佳评估者',
+                                'Table Topics Speaker': '最佳即兴演讲者',
+                                'Role Taker': '最佳角色扮演者'
+                            }.get(title, title)
+                            res += f"* {title_zh}：**{contact.Name}**\n"
+                        else:
+                            res += f"* Best {title}: **{contact.Name}**\n"
                         
         return {'success': True, 'message': res}
 
@@ -1305,3 +1359,256 @@ class ChatToolExecutor:
             msg += f"* **{p.name}** ({p.abbr}) - {p.type or 'Pathway'}\n"
         msg += "\nTo query a specific pathway, use: `/query-pathways <pathway_name> [level]` or ask me directly."
         return {'success': True, 'message': msg}
+
+    @classmethod
+    def tool_manage_waitlist(cls, params, user, club_id):
+        from app.models.roster import Waitlist
+        from app.models.planner import Planner
+        from sqlalchemy import or_
+
+        action = params.get('action')
+        if not action:
+            return {'success': False, 'message': "Action is required ('query', 'create', 'update', 'remove', 'approve')."}
+            
+        action = action.strip().lower()
+        valid_actions = ['query', 'create', 'update', 'remove', 'approve']
+        if action not in valid_actions:
+            return {'success': False, 'message': f"Invalid action '{action}'. Valid actions are: {', '.join(valid_actions)}."}
+            
+        meeting_ident = params.get('meeting_identifier')
+        if not meeting_ident:
+            return {'success': False, 'message': "Meeting identifier is required."}
+            
+        meeting = cls.resolve_meeting(meeting_ident, club_id)
+        if not meeting:
+            return {'success': False, 'message': f"Meeting '{meeting_ident}' not found."}
+            
+        # Check permissions
+        if action == 'query':
+            if not is_authorized(Permissions.BOOKING_VIEW_ALL):
+                return {'success': False, 'message': "You do not have permission to view role bookings (BOOKING_VIEW_ALL)."}
+        elif action == 'approve':
+            if not is_authorized(Permissions.BOOKING_ASSIGN_ALL):
+                return {'success': False, 'message': "You do not have permission to assign roles or approve waitlists (BOOKING_ASSIGN_ALL)."}
+        else: # create, update, remove
+            user_contact = user.get_contact(club_id) if user else None
+            current_user_contact_id = user_contact.id if user_contact else None
+            
+            # Resolve target contact first to check if they are self
+            contact_name = params.get('contact_name')
+            if not contact_name:
+                return {'success': False, 'message': "Contact name is required."}
+            contact = cls.resolve_contact(contact_name, club_id)
+            if not contact:
+                return {'success': False, 'message': f"Contact '{contact_name}' not found."}
+                
+            is_admin = is_authorized(Permissions.BOOKING_ASSIGN_ALL) or is_authorized(Permissions.AGENDA_EDIT)
+            is_self = (current_user_contact_id and contact.id == current_user_contact_id)
+            
+            if not is_admin:
+                if not is_self:
+                    return {'success': False, 'message': "You do not have permission to manage other contacts' waitlist entries."}
+                if not is_authorized(Permissions.BOOKING_BOOK_OWN):
+                    return {'success': False, 'message': "You do not have permission to book roles or manage your own waitlist."}
+                    
+        # Check if meeting is finished (no modifications allowed)
+        if action != 'query' and meeting.status == 'finished':
+            return {'success': False, 'message': f"Meeting #{meeting.Meeting_Number} has already finished. Waitlist modifications are not allowed."}
+
+        # Resolve role_name for create, update, remove, approve
+        log = None
+        role_name = params.get('role_name')
+        if action != 'query' or role_name:
+            if not role_name:
+                return {'success': False, 'message': "Role name is required."}
+            log = cls.resolve_session_log(meeting.id, role_name, club_id)
+            if not log:
+                return {'success': False, 'message': f"Role '{role_name}' not found in Meeting #{meeting.Meeting_Number} agenda."}
+
+        # Execute actions
+        if action == 'query':
+            if log:
+                # Query specific role waitlist
+                related_session_ids = RoleService._get_related_session_ids(log)
+                waitlist_entries = Waitlist.query.filter(Waitlist.session_log_id.in_(related_session_ids)).order_by(Waitlist.timestamp.asc()).all()
+            else:
+                # Query all waitlists for the meeting
+                session_logs = SessionLog.query.filter_by(meeting_id=meeting.id).all()
+                session_log_ids = [sl.id for sl in session_logs]
+                waitlist_entries = Waitlist.query.filter(Waitlist.session_log_id.in_(session_log_ids)).order_by(Waitlist.session_log_id, Waitlist.timestamp.asc()).all()
+                
+            if not waitlist_entries:
+                role_msg = f" for '{log.session_type.role.name}'" if log else ""
+                return {'success': True, 'message': f"No waitlist entries found{role_msg} in Meeting #{meeting.Meeting_Number}."}
+                
+            msg = f"📋 **Waitlist for Meeting #{meeting.Meeting_Number}**:\n\n"
+            msg += "| Role | Name | Joined At | Pathway | Project | Speech Title |\n"
+            msg += "|---|---|---|---|---|---|\n"
+            
+            for entry in waitlist_entries:
+                r_name = entry.session_log.session_type.role.name if (entry.session_log and entry.session_log.session_type and entry.session_log.session_type.role) else "Unknown"
+                c_name = entry.contact.Name if entry.contact else "Unknown"
+                joined_at = entry.timestamp.strftime('%Y-%m-%d %H:%M') if entry.timestamp else "N/A"
+                
+                # Fetch speech details from Planner if available
+                pathway = "—"
+                project_title = "—"
+                speech_title = "—"
+                
+                if entry.contact and entry.contact.user_id and entry.session_log and entry.session_log.session_type:
+                    role_id = entry.session_log.session_type.role_id
+                    plan = Planner.query.filter_by(
+                        user_id=entry.contact.user_id,
+                        meeting_id=meeting.id,
+                        meeting_role_id=role_id
+                    ).first()
+                    if plan:
+                        pathway = plan.pathway if plan.pathway else "—"
+                        project_title = plan.project.Project_Name if (plan.project and plan.project.Project_Name) else "—"
+                        speech_title = plan.title if plan.title else "—"
+                        
+                msg += f"| {r_name} | {c_name} | {joined_at} | {pathway} | {project_title} | {speech_title} |\n"
+                
+            return {'success': True, 'message': msg}
+            
+        elif action == 'create':
+            # Resolve pathway & project if provided
+            pathway_name = params.get('pathway_name')
+            pathway = None
+            if pathway_name:
+                pathway = Pathway.query.filter(
+                    or_(Pathway.name.ilike(pathway_name), Pathway.abbr.ilike(pathway_name))
+                ).first()
+                if not pathway:
+                    return {'success': False, 'message': f"Pathway '{pathway_name}' not found."}
+                    
+            project_name = params.get('project_name')
+            project = None
+            if project_name:
+                projects = Project.query.filter(Project.Project_Name.ilike(f"%{project_name}%")).all()
+                if not projects:
+                    return {'success': False, 'message': f"Project '{project_name}' not found."}
+                if len(projects) > 1:
+                    exact_matches = [p for p in projects if p.Project_Name.lower() == project_name.lower()]
+                    if len(exact_matches) == 1:
+                        project = exact_matches[0]
+                    else:
+                        lines = [f"* {p.Project_Name}" for p in projects]
+                        return {'success': False, 'message': f"Multiple projects matched '{project_name}':\n" + "\n".join(lines) + "\n\nPlease specify the exact project name."}
+                else:
+                    project = projects[0]
+                    
+            speech_title = params.get('speech_title')
+            
+            try:
+                success, msg = RoleService.join_waitlist(
+                    log,
+                    contact.id,
+                    project_id=project.id if project else None,
+                    title=speech_title,
+                    pathway=pathway.name if pathway else None
+                )
+                if success:
+                    db.session.commit()
+                    return {'success': True, 'message': f"Successfully added {contact.Name} to the waitlist for {log.session_type.role.name}."}
+                else:
+                    return {'success': False, 'message': f"Failed to add to waitlist: {msg}"}
+            except Exception as e:
+                db.session.rollback()
+                return {'success': False, 'message': f"Error during join waitlist: {str(e)}"}
+                
+        elif action == 'update':
+            # Check if user is waitlisted
+            waitlist_entry = Waitlist.query.filter_by(session_log_id=log.id, contact_id=contact.id).first()
+            if not waitlist_entry:
+                return {'success': False, 'message': f"{contact.Name} is not on the waitlist for {log.session_type.role.name}."}
+                
+            role_id = log.session_type.role_id if log.session_type else None
+            if not role_id:
+                return {'success': False, 'message': "Cannot determine role ID."}
+                
+            # Resolve pathway & project if provided
+            pathway_name = params.get('pathway_name')
+            pathway = None
+            if pathway_name:
+                pathway = Pathway.query.filter(
+                    or_(Pathway.name.ilike(pathway_name), Pathway.abbr.ilike(pathway_name))
+                ).first()
+                if not pathway:
+                    return {'success': False, 'message': f"Pathway '{pathway_name}' not found."}
+                    
+            project_name = params.get('project_name')
+            project = None
+            if project_name:
+                projects = Project.query.filter(Project.Project_Name.ilike(f"%{project_name}%")).all()
+                if not projects:
+                    return {'success': False, 'message': f"Project '{project_name}' not found."}
+                if len(projects) > 1:
+                    exact_matches = [p for p in projects if p.Project_Name.lower() == project_name.lower()]
+                    if len(exact_matches) == 1:
+                        project = exact_matches[0]
+                    else:
+                        lines = [f"* {p.Project_Name}" for p in projects]
+                        return {'success': False, 'message': f"Multiple projects matched '{project_name}':\n" + "\n".join(lines) + "\n\nPlease specify the exact project name."}
+                else:
+                    project = projects[0]
+                    
+            speech_title = params.get('speech_title')
+            
+            # Find/create planner details
+            plan = Planner.query.filter_by(
+                user_id=contact.user_id,
+                meeting_id=meeting.id,
+                meeting_role_id=role_id
+            ).first()
+            
+            if not plan:
+                plan = Planner(
+                    user_id=contact.user_id,
+                    meeting_id=meeting.id,
+                    meeting_role_id=role_id,
+                    club_id=club_id
+                )
+                db.session.add(plan)
+                
+            if pathway:
+                plan.pathway = pathway.name
+            if project:
+                plan.project_id = project.id
+            if speech_title is not None:
+                plan.title = speech_title
+                
+            plan.status = 'waitlist'
+            
+            try:
+                db.session.commit()
+                RoleService._clear_meeting_cache(meeting.id)
+                RoleService.sync_planner_statuses(meeting.id, role_id)
+                return {'success': True, 'message': f"Successfully updated waitlist preferences for {contact.Name}."}
+            except Exception as e:
+                db.session.rollback()
+                return {'success': False, 'message': f"Failed to update waitlist preferences: {str(e)}"}
+                
+        elif action == 'remove':
+            try:
+                success, msg = RoleService.leave_waitlist(log, contact.id)
+                if success:
+                    db.session.commit()
+                    return {'success': True, 'message': f"Successfully removed {contact.Name} from the waitlist."}
+                else:
+                    return {'success': False, 'message': f"Failed to remove from waitlist: {msg}"}
+            except Exception as e:
+                db.session.rollback()
+                return {'success': False, 'message': f"Error during remove waitlist: {str(e)}"}
+                
+        elif action == 'approve':
+            try:
+                success, msg = RoleService.approve_waitlist(log)
+                if success:
+                    db.session.commit()
+                    return {'success': True, 'message': f"Successfully approved next user in waitlist for {log.session_type.role.name}."}
+                else:
+                    return {'success': False, 'message': f"Failed to approve waitlist: {msg}"}
+            except Exception as e:
+                db.session.rollback()
+                return {'success': False, 'message': f"Error during waitlist approval: {str(e)}"}

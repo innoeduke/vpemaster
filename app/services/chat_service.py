@@ -331,6 +331,44 @@ CHAT_TOOLS = [
                 }
             }
         }
+    },
+    {
+        "name": "manage_waitlist",
+        "description": "Query or manage the waitlist for meeting roles (join waitlist, leave/remove from waitlist, update speech/project details on waitlist, query waitlist, approve/promote from waitlist).",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "description": "The action to perform: 'query' (list waitlist entries), 'create' (add contact to waitlist), 'update' (update waitlisted speech/project details), 'remove' (remove contact from waitlist), 'approve' (promote next waitlisted person to role owner)."
+                },
+                "meeting_identifier": {
+                    "type": "string",
+                    "description": "Meeting number or date. Required for all actions."
+                },
+                "role_name": {
+                    "type": "string",
+                    "description": "The name of the meeting role (e.g. 'Prepared Speaker', 'Ah Counter'). Required for create, update, remove, and approve. Optional for query."
+                },
+                "contact_name": {
+                    "type": "string",
+                    "description": "The full name of the contact. Required for create, update, and remove."
+                },
+                "pathway_name": {
+                    "type": "string",
+                    "description": "Optional pathway name (e.g. 'Dynamic Leadership') to update or set speech details."
+                },
+                "project_name": {
+                    "type": "string",
+                    "description": "Optional project name (e.g. 'Ice Breaker') to update or set speech details."
+                },
+                "speech_title": {
+                    "type": "string",
+                    "description": "Optional speech title to update or set."
+                }
+            },
+            "required": ["action", "meeting_identifier"]
+        }
     }
 ]
 
@@ -380,19 +418,20 @@ class ChatService:
         today = datetime.now().strftime('%Y-%m-%d %A')
 
         prompt = (
-            f"You are the VPE Master AI Assistant for '{club_name}' Toastmasters Club.\n"
+            f"You are the Memory Maker AI Assistant for '{club_name}' Toastmasters Club.\n"
             f"You assist club officers and members in managing meetings, role bookings, rosters, and educational achievements.\n\n"
             f"Context Info:\n"
             f"- Today is: {today}\n"
             f"- Current User: {user_name} (Role level: {role_name})\n"
             f"- User Locale: {locale}\n\n"
             f"Rules:\n"
-            f"1. You must respond in the same language the user is speaking (e.g. English or Chinese).\n"
+            f"1. You must respond in the language set by the language switch toggler, which is specified by User Locale: if 'zh_CN', you must always respond in Chinese; if 'en', you must always respond in English. Do not follow the language of the user's message if it differs from the language switch toggler. Translate any retrieved database information, tool outputs, meeting details, and agenda tables to the target language (Chinese for 'zh_CN', English for 'en') when replying to the user.\n"
             f"2. You do not have direct database access; any past actions or info retrieval shown in the chat history was performed by executing tools. You MUST always execute the appropriate function/tool to retrieve database details, roles, roster checks, or voting results, or to make operational/status modifications (e.g. starting or finishing a meeting, assigning or cancelling roles, checking in contacts, creating meetings, or recording achievements) for the current request. Never guess, assume, or hallucinate database records, contacts, roles, or voting results under any circumstances.\n"
             f"3. When creating a meeting, if the user doesn't specify a template, you MUST ask the user to choose from available templates returned by the tool.\n"
             f"4. If a contact name is ambiguous, call the search contact tool first or ask the user for clarification.\n"
             f"5. Always confirm the execution of operational changes (creating, assigning, checking in, completions, status updates) in a polite, concise manner, but only after executing the appropriate tool and verifying its success.\n"
-            f"6. Never claim, assume, or confirm that an action succeeded or was completed unless the tool execution returned `success=True`. If the tool failed, report the failure reason faithfully to the user. Specifically, starting a meeting requires calling `update_meeting_status` with `status='running'`, and finishing/ending/completing a meeting requires calling `update_meeting_status` with `status='finished'`."
+            f"6. Never claim, assume, or confirm that an action succeeded or was completed unless the tool execution returned `success=True`. If the tool failed, report the failure reason faithfully to the user. Specifically, starting a meeting requires calling `update_meeting_status` with `status='running'`, and finishing/ending/completing a meeting requires calling `update_meeting_status` with `status='finished'`.\n"
+            f"7. The scope of this chat window is strictly limited to the current club '{club_name}' (ID: {club_id}). You must only query, create, or modify meetings, contacts, roles, achievements, or officers that belong to this club."
         )
         return prompt
 
@@ -507,7 +546,7 @@ class ChatService:
             'tme', 'speaker', 'evaluator', 'topicsmaster',
             'timer', 'counter', 'grammarian', 'general evaluator',
             'who', 'what', 'where', 'when', 'show', 'list', 'details', 'info',
-            'excomm'
+            'excomm', 'waitlist'
         ]
         
         # Standard Chinese indicators for database queries, lookups, or actions
@@ -521,7 +560,7 @@ class ChatService:
             '状态', '发布', '开始', '结束',
             '谁', '什么', '哪里', '什么时候', '显示', '列表',
             '主持', '点评', '演讲', '即兴',
-            '执委'
+            '执委', '候补', '等候', '排队'
         ]
         
         # Check if any English database trigger word is in the message
@@ -583,9 +622,17 @@ class ChatService:
             if tools_guidelines:
                 system_prompt += "\n\n" + tools_guidelines
 
-        # Append tool reminder to the last user message to enforce tool usage
+        # Append tool and language reminder to the last user message to enforce rules
         if messages and messages[-1]["role"] == "user":
-            messages[-1]["content"] += "\n(System: You do not have direct database access. You MUST execute the appropriate function/tool to retrieve or modify any database details, status, dates, or results. Never guess or hallucinate records. If you perform an action, you must call its tool first and verify it succeeded.)"
+            lang_reminder = (
+                f"\n(System: Remember, you must respond in Chinese because the User Locale is '{locale}'.)"
+                if locale == 'zh_CN' else
+                f"\n(System: Remember, you must respond in English because the User Locale is '{locale}'.)"
+            )
+            messages[-1]["content"] += (
+                f"\n(System: You do not have direct database access. You MUST execute the appropriate function/tool to retrieve or modify any database details, status, dates, or results. Never guess or hallucinate records. If you perform an action, you must call its tool first and verify it succeeded.)"
+                f"{lang_reminder}"
+            )
 
         executed_tools = []
         max_turns = 5

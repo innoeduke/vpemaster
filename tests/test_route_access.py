@@ -219,6 +219,22 @@ class RouteAccessTestCase(unittest.TestCase):
         
         self.logout()
 
+    def test_booking_no_upcoming_meetings(self):
+        self.login('user@test.com', 'password')
+        
+        # Mark all meetings as finished so there are no upcoming/unfinished meetings for the user
+        self.m_unpublished.status = 'finished'
+        self.m_not_started.status = 'finished'
+        self.m_running.status = 'finished'
+        db.session.commit()
+        
+        # Accessing /booking should NOT crash and should return 200
+        response = self.client.get('/booking')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'under_planning.webp', response.data)
+        
+        self.logout()
+
     def test_staff_access(self):
         self.login('staff@test.com', 'password')
         

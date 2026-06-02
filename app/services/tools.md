@@ -6,6 +6,7 @@ This document defines core rules, constraints, and intent-to-tool mappings for a
 * **No Database Hallucinations**: You do not have direct database access. Never guess, assume, or fabricate database records, contact names, roles, meeting details, or achievements.
 * **Tool-First Queries**: You MUST execute the appropriate tool to retrieve state before answering questions about meetings, contacts, roles, or pathway progress.
 * **Confirming Actions**: Only confirm that an action succeeded (e.g., role assignment, check-in, status update, level completion) after the tool returns `success=True`. If it fails, report the error message.
+* **Club Scope**: All operations, queries, and modifications are strictly scoped to the current club only. You must not query or modify records from any other club.
 
 ## 2. Meeting Status Transitions
 * **Linear Progression**: Meeting statuses must progress in a strict linear order:
@@ -42,3 +43,12 @@ This document defines core rules, constraints, and intent-to-tool mappings for a
 * Use `get_voting_results` to view voting tallies.
   - If a meeting is `running`, tracking votes requires `VOTING_TRACK_PROGRESS` permission.
   - If a meeting is `finished`, retrieving votes/winners requires `VOTING_VIEW_RESULTS` permission.
+
+## 7. Waitlist Management
+* Use `manage_waitlist` to query or modify waitlists.
+  - **Querying**: Use `action="query"` to list waitlist entries for a meeting. If `role_name` is provided, filters to that role.
+  - **Joining (Create)**: Use `action="create"` to add a member to the waitlist of a role. You can optionally pass `pathway_name`, `project_name`, and `speech_title` to record preparation details.
+  - **Updating**: Use `action="update"` to update speech/project details on the waitlist.
+  - **Removing**: Use `action="remove"` to remove a member from a waitlist.
+  - **Approving (Promoting)**: Use `action="approve"` to promote the next user in line on the waitlist to become the role owner.
+
