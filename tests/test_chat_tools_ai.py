@@ -1197,12 +1197,22 @@ def _make_prepared_speech_log(meeting, st, seq, title, owner=None, pathway='Dyna
 
 
 def test_manage_sessions_add_prepared_speech(app, setup_ai_environment):
-    """Adding a new Prepared Speech row lands after the last Prepared Speech and gets a project_code."""
+    """Adding a new Prepared Speech row lands after the last Prepared Speech and gets a project_code.
+
+    Regression: this test now binds the fixture's SessionType to the real club_id
+    so the SessionType.get_id_by_title() helper returns a real ID. The bug was
+    that the helper returns an int, and the add() method was using the int as
+    a SessionType object (accessing .Duration_Min on it), which worked in tests
+    with a club_id-less SessionType (helper returned None → fallback to a real
+    object) but crashed at runtime in production.
+    """
     from app.services.chat_tool_executor import ChatToolExecutor
     env = setup_ai_environment
     with app.app_context():
         user = db.session.get(User, env['user_id'])
         st = SessionType.query.filter_by(Title='Prepared Speech').first()
+        # Bind the SessionType to the real club_id to mirror production
+        st.club_id = env['club_id']
         meeting = db.session.get(Meeting, env['meeting_id'])
         # Give John a Current_Path so derive_project_code can resolve a project_code
         john = db.session.get(Contact, env['john_id'])

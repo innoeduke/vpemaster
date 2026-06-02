@@ -1986,12 +1986,18 @@ class ChatToolExecutor:
         if not st_title:
             return {'success': False, 'message': "session_type is required for action='add' (e.g. 'Prepared Speech', 'Evaluation', 'Table Topics Speaker')."}
 
-        st = SessionType.get_id_by_title(st_title, club_id)
+        st = db.session.query(SessionType).filter(
+            func.lower(SessionType.Title) == st_title.lower(),
+            db.or_(SessionType.club_id == club_id,
+                   SessionType.club_id == GLOBAL_CLUB_ID,
+                   SessionType.club_id.is_(None))
+        ).order_by(SessionType.club_id.desc()).first()
         if not st:
-            st_id_fallback = db.session.query(SessionType).filter(
+            # Last-ditch: any session type with this title (catches seeded data
+            # with non-null club_id that didn't match the query above)
+            st = db.session.query(SessionType).filter(
                 func.lower(SessionType.Title) == st_title.lower()
             ).first()
-            st = st_id_fallback  # may still be None
         if not st:
             available = [s.Title for s in SessionType.query.all()][:20]
             return {'success': False, 'message': f"Session type '{st_title}' not found. Available types include: {', '.join(available)}."}
