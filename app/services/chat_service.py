@@ -426,11 +426,12 @@ class ChatService:
             f"Rules:\n"
             f"1. You must respond in the language set by the language switch toggler, which is specified by User Locale: if 'zh_CN', you must always respond in Chinese; if 'en', you must always respond in English. Do not follow the language of the user's message if it differs from the language switch toggler. Translate any retrieved database information, tool outputs, meeting details, and agenda tables to the target language (Chinese for 'zh_CN', English for 'en') when replying to the user.\n"
             f"2. You do not have direct database access; any past actions or info retrieval shown in the chat history was performed by executing tools. You MUST always execute the appropriate function/tool to retrieve database details, roles, roster checks, or voting results, or to make operational/status modifications (e.g. starting or finishing a meeting, assigning or cancelling roles, checking in contacts, creating meetings, or recording achievements) for the current request. Never guess, assume, or hallucinate database records, contacts, roles, or voting results under any circumstances.\n"
-            f"3. When creating a meeting, if the user doesn't specify a template, you MUST ask the user to choose from available templates returned by the tool.\n"
-            f"4. If a contact name is ambiguous, call the search contact tool first or ask the user for clarification.\n"
-            f"5. Always confirm the execution of operational changes (creating, assigning, checking in, completions, status updates) in a polite, concise manner, but only after executing the appropriate tool and verifying its success.\n"
-            f"6. Never claim, assume, or confirm that an action succeeded or was completed unless the tool execution returned `success=True`. If the tool failed, report the failure reason faithfully to the user. Specifically, starting a meeting requires calling `update_meeting_status` with `status='running'`, and finishing/ending/completing a meeting requires calling `update_meeting_status` with `status='finished'`.\n"
-            f"7. The scope of this chat window is strictly limited to the current club '{club_name}' (ID: {club_id}). You must only query, create, or modify meetings, contacts, roles, achievements, or officers that belong to this club."
+            f"3. When a tool returns success=False with helpful guidance about missing parameters or available options, extract and clearly present that guidance to the user. Do NOT say you were unable to execute. Instead, explain specifically what additional information is needed and list the available options. For example: 'To create a meeting, I need to know which template you prefer. Available options are: Keynote Speech, Speech Marathon, etc.'\n"
+            f"4. When creating a meeting, if the user doesn't specify a template, you MUST ask the user to choose from available templates returned by the tool.\n"
+            f"5. If a contact name is ambiguous, call the search contact tool first or ask the user for clarification.\n"
+            f"6. Always confirm the execution of operational changes (creating, assigning, checking in, completions, status updates) in a polite, concise manner, but only after executing the appropriate tool and verifying its success.\n"
+            f"7. Never claim, assume, or confirm that an action succeeded or was completed unless the tool execution returned `success=True`. If the tool failed, report the failure reason faithfully to the user. Specifically, starting a meeting requires calling `update_meeting_status` with `status='running'`, and finishing/ending/completing a meeting requires calling `update_meeting_status` with `status='finished'`.\n"
+            f"8. The scope of this chat window is strictly limited to the current club '{club_name}' (ID: {club_id}). You must only query, create, or modify meetings, contacts, roles, achievements, or officers that belong to this club."
         )
         return prompt
 
@@ -747,9 +748,39 @@ class ChatService:
             else:
                 if turn >= max_turns and not text_response:
                     return "The request was too complex and reached the maximum execution limit.", executed_tools
+                # Allow LLM to process tool results before returning
+                if executed_tools and not text_response:
+                    continue
                 return text_response, executed_tools
 
-        # Retries exhausted
+        # Retries exhausted - let LLM generate constructive feedback from tool guidance
+        for tool in executed_tools:
+            tool_result = tool.get('result', {})
+            if not tool_result.get('success') and tool_result.get('message'):
+                # Inject tool's guidance as a user message for LLM to formulate a helpful response
+                guidance_msg = tool_result['message']
+                lang_suffix = " 请您根据情况给用户提供帮助。" if locale == 'zh_CN' else " Please provide helpful guidance to the user based on this information."
+                messages_run.append({
+                    "role": "user",
+                    "content": f"System Note: {guidance_msg}{lang_suffix}"
+                })
+                # Give LLM one more turn to respond constructively
+                response = client.messages.create(
+                    model=model_name,
+                    system=system_prompt,
+                    messages=messages_run,
+                    tools=CHAT_TOOLS,
+                    tool_choice={"type": "auto"},
+                    max_tokens=2000,
+                    temperature=0.0
+                )
+                text_block = next((block.text for block in response.content if block.type == "text"), "")
+                if text_block:
+                    return text_block, executed_tools
+                # Fallback to guidance message if LLM still didn't respond helpfully
+                return guidance_msg, executed_tools
+
+        # No guidance found, return generic error
         if locale == 'zh_CN':
             return "抱歉，系统未能成功执行数据库操作工具。请尝试输入更具体的信息，或刷新页面后重试。", []
         else:

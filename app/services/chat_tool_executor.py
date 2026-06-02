@@ -265,9 +265,10 @@ class ChatToolExecutor:
             # List templates and request selection
             return {
                 'success': False,
+                'needs_clarification': True,
                 'need_template': True,
                 'templates': list(type_to_template.keys()),
-                'message': "Please specify a meeting template. Available options: " + ", ".join(type_to_template.keys())
+                'message': "To create a meeting, I need to know which template you'd like to use. Available options are: " + ", ".join(type_to_template.keys())
             }
             
         template_file = type_to_template.get(template_name)
@@ -283,9 +284,10 @@ class ChatToolExecutor:
             if not found:
                 return {
                     'success': False,
+                    'needs_clarification': True,
                     'need_template': True,
                     'templates': list(type_to_template.keys()),
-                    'message': f"Invalid template '{template_name}'. Available options: " + ", ".join(type_to_template.keys())
+                    'message': f"The template '{template_name}' was not found. Available templates are: " + ", ".join(type_to_template.keys())
                 }
             template_name = found
 
