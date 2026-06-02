@@ -365,7 +365,7 @@ CHAT_TOOLS = [
                 },
                 "session_title": {
                     "type": "string",
-                    "description": "Used by add/update. Custom label for the session row, e.g. 'Ice Breaker by Kyle Wei'."
+                    "description": "Used by add/update. Custom label for the session row. Format depends on session_type (the agenda UI has hard-coded rendering rules): (a) 'Evaluation' rows: pass only the speaker's name or speech title (e.g. 'Shark Liu' or 'Ice Breaker'). The UI auto-prepends 'Evaluator for ', so passing 'Evaluation for Shark Liu' or 'Evaluator for Shark Liu' would render as 'Evaluator for Evaluation for Shark Liu' / 'Evaluator for Evaluator for Shark Liu'. (b) 'Individual Evaluator' rows: pass the full 'Evaluator for <Speaker Name>' phrase (the UI does not auto-prepend). (c) 'Prepared Speech' / 'Pathway Speech' / 'Presentation': pass the speech title — the UI wraps it in quotes. (d) Anything else: pass a human-readable label."
                 },
                 "pathway": {
                     "type": "string",

@@ -26,7 +26,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # Good practice
 
     # Upload settings
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB limit
+    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # 50MB limit
     MAX_CLUB_STORAGE = 100 * 1024 * 1024  # 100MB limit per club
 
     # Cache settings

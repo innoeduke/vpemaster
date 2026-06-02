@@ -1459,10 +1459,51 @@ def test_manage_sessions_add_chain_companion_evaluation(app, setup_ai_environmen
         meeting = db.session.get(Meeting, env['meeting_id'])
         titles = sorted([l.Session_Title for l in meeting.session_logs if l.Session_Title])
         assert 'Speech 2' in titles
-        assert 'Evaluation for John Doe' in titles
+        # The Evaluation title was normalized to just the speaker name
+        # (the UI auto-prepends 'Evaluator for ', so the stored title must
+        # not contain a prefix or the display would double up).
+        assert 'John Doe' in titles
+        assert 'Evaluation for John Doe' not in titles
         # The new rows sit at the end of the agenda
         assert r1['new_seq'] >= 2
         assert r2['new_seq'] > r1['new_seq']
+
+
+def test_manage_sessions_evaluation_title_normalization(app, setup_ai_environment):
+    """Regression: when the LLM passes a 'for X' / 'of X' prefix on an
+    Evaluation row, the tool strips it so the UI's auto-prepend doesn't
+    double up. The agenda template renders 'Evaluator for ' + Session_Title
+    for Evaluation rows (see app/templates/agenda.html:260-261)."""
+    from app.services.chat_tool_executor import ChatToolExecutor
+    env = setup_ai_environment
+    with app.app_context():
+        user = db.session.get(User, env['user_id'])
+        eval_st = SessionType.query.filter(func.lower(SessionType.Title) == 'evaluation').first()
+        if not eval_st:
+            eval_st = SessionType(Title='Evaluation', Duration_Min=2, Duration_Max=3)
+            db.session.add(eval_st)
+            db.session.flush()
+
+        cases = [
+            ('Evaluation for Shark Liu',  'Shark Liu'),
+            ('evaluation for Shark Liu',  'Shark Liu'),  # case-insensitive
+            ('Evaluator for Kyle Wei',    'Kyle Wei'),   # wrong prefix also caught
+            ('EVALUATION FOR Kyle Wei',   'Kyle Wei'),
+            ('Evaluation of Shark Liu',   'Shark Liu'),  # "of " variant
+            ('Evaluation: Shark Liu',     'Shark Liu'),  # colon variant
+            ('Shark Liu',                 'Shark Liu'),  # already-clean input passes through
+        ]
+        for passed_title, expected_stored in cases:
+            r = ChatToolExecutor.tool_manage_meeting_sessions(
+                {'action': 'add', 'meeting_identifier': '100',
+                 'session_type': 'Evaluation', 'session_title': passed_title,
+                 'owner_name': 'John Doe'},
+                user, env['club_id'],
+            )
+            assert r['success'], f"add failed for {passed_title!r}: {r.get('message')}"
+            stored = db.session.get(SessionLog, r['session_log_id'])
+            assert stored.Session_Title == expected_stored, \
+                f"input {passed_title!r} stored as {stored.Session_Title!r}, expected {expected_stored!r}"
 
 
 
