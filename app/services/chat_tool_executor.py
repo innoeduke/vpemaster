@@ -5,14 +5,26 @@ from app.models import (
     Meeting, Contact, SessionLog, SessionType, MeetingRole, 
     ChatMessage, Achievement, Roster, Ticket, Vote, ContactClub,
     ContactPath, Pathway, User, UserClub, Club, ExComm, ExcommOfficer,
-    Project, PathwayProject
+    Project, PathwayProject, Waitlist
 )
 from app.auth.permissions import Permissions
 from app.auth.utils import is_authorized
 from app.services.role_service import RoleService
 from app.services.achievement_service import AchievementService
+from app.utils import derive_credentials
+from app.constants import GLOBAL_CLUB_ID
 from flask import current_app, url_for
 from sqlalchemy import func, or_
+
+
+def _safe_int(val):
+    """Safely converts a value to int, handling None, 'null', '', and invalid strings."""
+    if val in [None, "", "null", "None"]:
+        return None
+    try:
+        return int(float(val))  # Handle "5.0" strings just in case
+    except (ValueError, TypeError):
+        return None
 
 class ChatToolExecutor:
     """
@@ -1734,3 +1746,523 @@ class ChatToolExecutor:
             except Exception as e:
                 db.session.rollback()
                 return {'success': False, 'message': f"Error during waitlist approval: {str(e)}"}
+
+    # --- Session Structure Management (add / update / move / delete / query) ---
+
+    # Block positions used by _infer_default_position to land new sessions
+    # in the right place relative to existing agenda structure.
+    _BLOCK_BY_SESSION_TYPE = {
+        'Prepared Speech': 'prepared_speeches',
+        'Individual Evaluator': 'individual_evaluators',
+        'Evaluation': 'evaluations',
+        'Table Topics Speaker': 'table_topics',
+        'Topicsmaster': 'table_topics',
+    }
+
+    @classmethod
+    def tool_manage_meeting_sessions(cls, params, user, club_id):
+        action = (params.get('action') or '').strip().lower()
+        if not action:
+            return {'success': False, 'message': "Action is required ('add', 'update', 'move', 'delete', 'query')."}
+
+        meeting = cls.resolve_meeting(params.get('meeting_identifier'), club_id)
+        if not meeting:
+            return {'success': False, 'message': f"Meeting '{params.get('meeting_identifier')}' not found."}
+
+        # query is read-only; the other four require agenda edit/delete perms and a non-finished meeting.
+        if action == 'query':
+            if not is_authorized(Permissions.AGENDA_VIEW):
+                return {'success': False, 'message': "You do not have permission to view agenda (AGENDA_VIEW)."}
+            return cls._sessions_query(meeting, params)
+
+        if action == 'delete':
+            if not is_authorized(Permissions.AGENDA_DELETE):
+                return {'success': False, 'message': "You do not have permission to delete agenda sessions (AGENDA_DELETE)."}
+        else:
+            if not is_authorized(Permissions.AGENDA_EDIT):
+                return {'success': False, 'message': "You do not have permission to modify agenda sessions (AGENDA_EDIT)."}
+
+        if meeting.status in ('finished', 'cancelled'):
+            return {'success': False, 'message': f"Meeting #{meeting.Meeting_Number} is {meeting.status}; agenda modifications are not allowed."}
+        if meeting.status == 'running':
+            return {'success': False, 'message': f"Meeting #{meeting.Meeting_Number} is currently running; please finish it before editing the agenda."}
+
+        if action == 'add':
+            return cls._sessions_add(meeting, params, club_id)
+        if action == 'update':
+            return cls._sessions_update(meeting, params, club_id)
+        if action == 'move':
+            return cls._sessions_move(meeting, params, club_id)
+        if action == 'delete':
+            return cls._sessions_delete(meeting, params, club_id)
+
+        return {'success': False, 'message': f"Invalid action '{action}'. Use 'add', 'update', 'move', 'delete', or 'query'."}
+
+    # ---- helpers ----
+
+    @classmethod
+    def _shift_seqs(cls, meeting_id, from_seq, delta, exclude_log_id=None):
+        """Bulk-shift Meeting_Seq values in [from_seq, ∞) by delta. Two-phase to dodge transient collisions."""
+        logs = SessionLog.query.filter(
+            SessionLog.meeting_id == meeting_id,
+            SessionLog.Meeting_Seq >= from_seq
+        ).all()
+        if exclude_log_id is not None:
+            logs = [l for l in logs if l.id != exclude_log_id]
+        # Two-phase: bump all to a negative placeholder, then assign final values.
+        placeholder_base = -100000
+        for i, l in enumerate(logs):
+            l.Meeting_Seq = placeholder_base - i
+        db.session.flush()
+        for i, l in enumerate(logs):
+            l.Meeting_Seq = from_seq + delta + i
+
+    @classmethod
+    def _infer_default_position(cls, meeting, session_type_title):
+        """Pick a sensible insert seq for a new session of the given type.
+
+        Strategy: place the new row immediately after the last existing row of
+        the same session_type title (i.e. at the end of that type's block).
+        If no rows of this type exist, append to the end of the meeting.
+        """
+        norm = (session_type_title or '').strip().lower()
+        max_seq = SessionLog.query.filter_by(meeting_id=meeting.id)\
+            .with_entities(func.max(SessionLog.Meeting_Seq)).scalar() or 0
+        if not norm:
+            return max_seq + 1
+        same_type_max = db.session.query(func.max(SessionLog.Meeting_Seq))\
+            .join(SessionType, SessionLog.Type_ID == SessionType.id)\
+            .filter(SessionLog.meeting_id == meeting.id,
+                    func.lower(SessionType.Title) == norm)\
+            .scalar() or 0
+        if same_type_max:
+            return same_type_max + 1
+        return max_seq + 1
+
+    @classmethod
+    def _resolve_session_log_for_chat(cls, meeting, params):
+        """Resolve a session log for update/move/delete. Tries session_log_id, then
+        (session_type, slot_index), then (session_type, owner_name)."""
+        log_id = _safe_int(params.get('session_log_id'))
+        if log_id:
+            log = db.session.get(SessionLog, log_id)
+            if log and log.meeting_id == meeting.id:
+                return log
+            return None
+
+        st_title = (params.get('session_type') or '').strip()
+        if not st_title:
+            return None
+
+        norm = st_title.lower()
+        candidates = db.session.query(SessionLog).join(SessionType)\
+            .filter(SessionLog.meeting_id == meeting.id,
+                    func.lower(SessionType.Title) == norm)\
+            .order_by(SessionLog.Meeting_Seq.asc()).all()
+        if not candidates:
+            return None
+
+        slot_index = _safe_int(params.get('slot_index'))
+        if slot_index is not None and 1 <= slot_index <= len(candidates):
+            return candidates[slot_index - 1]
+
+        owner_name = (params.get('owner_name') or '').strip()
+        if owner_name:
+            owner = cls.resolve_contact(owner_name, None)
+            for log in candidates:
+                if any(o.id == owner.id for o in (log.owners or [])) if owner else False:
+                    return log
+            # Fallback: substring match on owner name
+            for log in candidates:
+                if any(owner_name.lower() in o.Name.lower() for o in (log.owners or [])):
+                    return log
+                if log.Session_Title and owner_name.lower() in log.Session_Title.lower():
+                    return log
+
+        return candidates[0]
+
+    @classmethod
+    def _find_companion_logs(cls, log, meeting):
+        """Given a session log, find its companion Evaluation and Individual Evaluator.
+
+        Convention: a Prepared Speech at seq=N with owner X has companions:
+        - Individual Evaluator whose Session_Title contains X's name
+        - Evaluation whose Session_Title contains X's name
+        """
+        if not log or not log.session_type or log.session_type.Title != 'Prepared Speech':
+            return {'evaluation_id': None, 'evaluator_id': None}
+
+        # Determine speaker name from owner (preferred) or session title
+        speaker_name = None
+        if log.owners:
+            speaker_name = log.owners[0].Name
+        if not speaker_name and log.Session_Title:
+            # Strip "Speech by " prefix patterns
+            speaker_name = log.Session_Title
+
+        if not speaker_name:
+            return {'evaluation_id': None, 'evaluator_id': None}
+
+        result = {'evaluation_id': None, 'evaluator_id': None}
+        companions = db.session.query(SessionLog).join(SessionType)\
+            .filter(SessionLog.meeting_id == meeting.id,
+                    SessionLog.id != log.id,
+                    SessionType.Title.in_(['Evaluation', 'Individual Evaluator']))\
+            .all()
+        for c in companions:
+            if c.Session_Title and speaker_name.lower() in c.Session_Title.lower():
+                if c.session_type.Title == 'Evaluation' and not result['evaluation_id']:
+                    result['evaluation_id'] = c.id
+                elif c.session_type.Title == 'Individual Evaluator' and not result['evaluator_id']:
+                    result['evaluator_id'] = c.id
+        return result
+
+    @classmethod
+    def _build_session_dict(cls, log, include_companions=True, meeting=None):
+        d = {
+            'id': log.id,
+            'seq': log.Meeting_Seq,
+            'session_type': log.session_type.Title if log.session_type else None,
+            'title': log.Session_Title,
+            'role': log.session_type.role.name if log.session_type and log.session_type.role else None,
+            'owner': log.owners[0].Name if log.owners else None,
+            'project_code': log.project_code,
+            'pathway': log.pathway,
+            'project_id': log.Project_ID,
+            'duration_min': log.Duration_Min,
+            'duration_max': log.Duration_Max,
+            'is_hidden': bool(log.hidden),
+            'state': log.state,
+            'waitlist_count': len(log.waitlists) if log.waitlists else 0,
+        }
+        if include_companions and meeting is not None:
+            d['companions'] = cls._find_companion_logs(log, meeting)
+        return d
+
+    @classmethod
+    def _sessions_query(cls, meeting, params):
+        include_companions = bool(params.get('include_companions', True))
+        st_filter = (params.get('session_type') or '').strip()
+        owner_filter = (params.get('owner_name') or '').strip().lower()
+
+        logs = db.session.query(SessionLog).join(SessionType)\
+            .filter(SessionLog.meeting_id == meeting.id)\
+            .order_by(SessionLog.Meeting_Seq.asc()).all()
+
+        if st_filter:
+            norm = st_filter.lower()
+            logs = [l for l in logs if l.session_type and l.session_type.Title.lower() == norm]
+        if owner_filter:
+            filtered = []
+            for l in logs:
+                if any(owner_filter in o.Name.lower() for o in (l.owners or [])):
+                    filtered.append(l)
+                    continue
+                if l.Session_Title and owner_filter in l.Session_Title.lower():
+                    filtered.append(l)
+            logs = filtered
+
+        # Deep-dive mode
+        log_id = _safe_int(params.get('session_log_id'))
+        if log_id:
+            target = next((l for l in logs if l.id == log_id), None)
+            if not target:
+                return {'success': False, 'message': f"Session log {log_id} not found in Meeting #{meeting.Meeting_Number}."}
+            return {'success': True, 'session': cls._build_session_dict(target, include_companions, meeting)}
+
+        sessions = [cls._build_session_dict(l, include_companions, meeting) for l in logs]
+        return {
+            'success': True,
+            'message': f"Found {len(sessions)} session(s) in Meeting #{meeting.Meeting_Number}.",
+            'meeting_id': meeting.id,
+            'meeting_number': meeting.Meeting_Number,
+            'count': len(sessions),
+            'sessions': sessions,
+        }
+
+    @classmethod
+    def _sessions_add(cls, meeting, params, club_id):
+        st_title = (params.get('session_type') or '').strip()
+        if not st_title:
+            return {'success': False, 'message': "session_type is required for action='add' (e.g. 'Prepared Speech', 'Evaluation', 'Table Topics Speaker')."}
+
+        st = SessionType.get_id_by_title(st_title, club_id)
+        if not st:
+            st_id_fallback = db.session.query(SessionType).filter(
+                func.lower(SessionType.Title) == st_title.lower()
+            ).first()
+            st = st_id_fallback  # may still be None
+        if not st:
+            available = [s.Title for s in SessionType.query.all()][:20]
+            return {'success': False, 'message': f"Session type '{st_title}' not found. Available types include: {', '.join(available)}."}
+
+        # Optional owner
+        owner_contact = None
+        owner_name = (params.get('owner_name') or '').strip()
+        if owner_name:
+            owner_contact = cls.resolve_contact(owner_name, club_id)
+            if not owner_contact:
+                return {'success': False, 'message': f"Contact '{owner_name}' not found."}
+
+        project_id = _safe_int(params.get('project_id'))
+        pathway_val = (params.get('pathway') or '').strip() or None
+        session_title = params.get('session_title') or st_title
+        is_hidden = bool(params.get('is_hidden', False))
+
+        duration_min = _safe_int(params.get('duration_min'))
+        duration_max = _safe_int(params.get('duration_max'))
+        if duration_min is None and duration_max is None:
+            duration_min = st.Duration_Min
+            duration_max = st.Duration_Max
+
+        # Build a transient log to compute project_code, then persist a real one.
+        tmp = SessionLog(
+            Project_ID=project_id,
+            Type_ID=st.id,
+            Session_Title=session_title,
+            Duration_Min=duration_min,
+            Duration_Max=duration_max,
+        )
+        tmp.session_type = st
+        project_code = tmp.derive_project_code(owner_contact, pathway_override=pathway_val)
+
+        # Resolve final pathway (default to owner's current path)
+        if not pathway_val and owner_contact:
+            is_guest = (owner_contact.Type == 'Guest') or (owner_contact.user is None)
+            pathway_val = None if is_guest else (owner_contact.Current_Path or None)
+        if not pathway_val:
+            pathway_val = 'Non Pathway'
+
+        # Determine insert position
+        insert_position = _safe_int(params.get('insert_position'))
+        if insert_position is None:
+            insert_position = cls._infer_default_position(meeting, st_title)
+        max_seq = SessionLog.query.filter_by(meeting_id=meeting.id)\
+            .with_entities(func.max(SessionLog.Meeting_Seq)).scalar() or 0
+        if insert_position < 1:
+            insert_position = 1
+        if insert_position > max_seq + 1:
+            insert_position = max_seq + 1
+
+        try:
+            # Make room: shift existing seqs >= insert_position up by 1.
+            if insert_position <= max_seq:
+                cls._shift_seqs(meeting.id, insert_position, +1)
+
+            new_log = SessionLog(
+                meeting_id=meeting.id,
+                Meeting_Seq=insert_position,
+                Type_ID=st.id,
+                Duration_Min=duration_min,
+                Duration_Max=duration_max,
+                Project_ID=project_id,
+                Session_Title=session_title,
+                Status='Booked',
+                project_code=project_code,
+                pathway=pathway_val,
+                hidden=is_hidden,
+                state='active',
+            )
+            db.session.add(new_log)
+            db.session.flush()
+            db.session.refresh(new_log)
+
+            if owner_contact:
+                RoleService.assign_meeting_role(new_log, [owner_contact.id], is_admin=True)
+                db.session.flush()
+
+            from app.agenda_routes import _recalculate_start_times
+            _recalculate_start_times([meeting])
+            db.session.commit()
+            RoleService._clear_meeting_cache(meeting.id)
+
+            return {
+                'success': True,
+                'message': f"Added '{session_title}' as session #{insert_position} in Meeting #{meeting.Meeting_Number} (Type: {st_title}).",
+                'session_log_id': new_log.id,
+                'meeting_id': meeting.id,
+                'meeting_number': meeting.Meeting_Number,
+                'new_seq': insert_position,
+                'session_type': st_title,
+                'session_title': session_title,
+            }
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': f"Failed to add session: {str(e)}"}
+
+    @classmethod
+    def _sessions_update(cls, meeting, params, club_id):
+        log = cls._resolve_session_log_for_chat(meeting, params)
+        if not log:
+            return {'success': False, 'message': "Could not resolve target session. Provide session_log_id, or session_type (+ optional slot_index or owner_name)."}
+
+        try:
+            if 'session_title' in params and params['session_title'] is not None:
+                log.Session_Title = params['session_title']
+            if 'duration_min' in params:
+                v = _safe_int(params.get('duration_min'))
+                if v is not None:
+                    log.Duration_Min = v
+            if 'duration_max' in params:
+                v = _safe_int(params.get('duration_max'))
+                if v is not None:
+                    log.Duration_Max = v
+            if 'is_hidden' in params:
+                log.hidden = bool(params.get('is_hidden'))
+            if 'project_id' in params:
+                log.Project_ID = _safe_int(params.get('project_id'))
+
+            new_pathway = params.get('pathway')
+            if new_pathway is not None:
+                log.update_pathway(new_pathway.strip() if isinstance(new_pathway, str) else new_pathway)
+
+            # Recompute project_code if project or pathway changed
+            owner = log.owner
+            log.project_code = log.derive_project_code(owner)
+
+            # Optional owner reassignment
+            owner_name = params.get('owner_name')
+            new_owner = None
+            if owner_name is not None:
+                owner_name = owner_name.strip()
+                if owner_name:
+                    new_owner = cls.resolve_contact(owner_name, club_id)
+                    if not new_owner:
+                        return {'success': False, 'message': f"Contact '{owner_name}' not found."}
+                    if log.owners:
+                        for o in list(log.owners):
+                            RoleService.cancel_meeting_role(log, o.id, is_admin=True)
+                            db.session.flush()
+                    RoleService.assign_meeting_role(log, [new_owner.id], is_admin=True)
+                    db.session.flush()
+                    log.project_code = log.derive_project_code(new_owner)
+
+            from app.agenda_routes import _recalculate_start_times
+            _recalculate_start_times([meeting])
+            db.session.commit()
+            RoleService._clear_meeting_cache(meeting.id)
+
+            return {
+                'success': True,
+                'message': f"Updated session #{log.Meeting_Seq} in Meeting #{meeting.Meeting_Number}.",
+                'session_log_id': log.id,
+                'meeting_id': meeting.id,
+                'new_owner': new_owner.Name if new_owner else None,
+            }
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': f"Failed to update session: {str(e)}"}
+
+    @classmethod
+    def _sessions_move(cls, meeting, params, club_id):
+        log = cls._resolve_session_log_for_chat(meeting, params)
+        if not log:
+            return {'success': False, 'message': "Could not resolve target session. Provide session_log_id, or session_type (+ optional slot_index or owner_name)."}
+
+        max_seq = SessionLog.query.filter_by(meeting_id=meeting.id)\
+            .with_entities(func.max(SessionLog.Meeting_Seq)).scalar() or 0
+        current_seq = log.Meeting_Seq
+
+        target_seq = _safe_int(params.get('insert_position'))
+        if target_seq is None:
+            after_id = _safe_int(params.get('after_session_log_id'))
+            before_id = _safe_int(params.get('before_session_log_id'))
+            if before_id == 0 or (isinstance(params.get('before_session_log_id'), str)
+                                  and params.get('before_session_log_id', '').lower() == 'start'):
+                target_seq = 1
+            elif after_id == 0 or (isinstance(params.get('after_session_log_id'), str)
+                                    and params.get('after_session_log_id', '').lower() == 'end'):
+                target_seq = max_seq
+            elif after_id:
+                anchor = db.session.get(SessionLog, after_id)
+                if not anchor or anchor.meeting_id != meeting.id:
+                    return {'success': False, 'message': f"after_session_log_id={after_id} not found in this meeting."}
+                target_seq = anchor.Meeting_Seq + 1
+            elif before_id:
+                anchor = db.session.get(SessionLog, before_id)
+                if not anchor or anchor.meeting_id != meeting.id:
+                    return {'success': False, 'message': f"before_session_log_id={before_id} not found in this meeting."}
+                target_seq = anchor.Meeting_Seq
+
+        if target_seq is None:
+            return {'success': False, 'message': "Provide one of: insert_position, after_session_log_id, or before_session_log_id."}
+        if target_seq < 1:
+            target_seq = 1
+        if target_seq > max_seq:
+            target_seq = max_seq
+
+        if target_seq == current_seq:
+            return {'success': True, 'message': f"Session is already at position {current_seq}; no change.", 'session_log_id': log.id, 'new_seq': current_seq}
+
+        try:
+            if target_seq < current_seq:
+                # Moving up: shift [target_seq, current_seq-1] down by 1
+                cls._shift_seqs(meeting.id, target_seq, +1, exclude_log_id=log.id)
+                db.session.flush()
+                log.Meeting_Seq = target_seq
+            else:
+                # Moving down: shift [current_seq+1, target_seq] up by 1
+                cls._shift_seqs(meeting.id, current_seq + 1, -1, exclude_log_id=log.id)
+                db.session.flush()
+                log.Meeting_Seq = target_seq
+
+            from app.agenda_routes import _recalculate_start_times
+            _recalculate_start_times([meeting])
+            db.session.commit()
+            RoleService._clear_meeting_cache(meeting.id)
+
+            return {
+                'success': True,
+                'message': f"Moved session to position {target_seq} in Meeting #{meeting.Meeting_Number}.",
+                'session_log_id': log.id,
+                'old_seq': current_seq,
+                'new_seq': target_seq,
+            }
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': f"Failed to move session: {str(e)}"}
+
+    @classmethod
+    def _sessions_delete(cls, meeting, params, club_id):
+        log = cls._resolve_session_log_for_chat(meeting, params)
+        if not log:
+            return {'success': False, 'message': "Could not resolve target session. Provide session_log_id, or session_type (+ optional slot_index or owner_name)."}
+
+        try:
+            deleted_seq = log.Meeting_Seq
+            deleted_title = log.Session_Title
+            if log.owners:
+                for owner in list(log.owners):
+                    RoleService.cancel_meeting_role(log, owner.id, is_admin=True)
+                    db.session.flush()
+
+            # Clear waitlists for this log
+            Waitlist.query.filter_by(session_log_id=log.id).delete(synchronize_session=False)
+            db.session.flush()
+
+            db.session.delete(log)
+            db.session.flush()
+
+            # Renumber remaining siblings to a contiguous 1..N
+            remaining = SessionLog.query.filter_by(meeting_id=meeting.id)\
+                .order_by(SessionLog.Meeting_Seq.asc()).all()
+            for i, l in enumerate(remaining, 1):
+                if l.Meeting_Seq != i:
+                    l.Meeting_Seq = i
+            db.session.flush()
+
+            from app.agenda_routes import _recalculate_start_times
+            _recalculate_start_times([meeting])
+            db.session.commit()
+            RoleService._clear_meeting_cache(meeting.id)
+
+            return {
+                'success': True,
+                'message': f"Deleted session '{deleted_title}' (was at position {deleted_seq}) from Meeting #{meeting.Meeting_Number}.",
+                'session_log_id': log.id,
+                'meeting_id': meeting.id,
+                'deleted_seq': deleted_seq,
+            }
+        except Exception as e:
+            db.session.rollback()
+            return {'success': False, 'message': f"Failed to delete session: {str(e)}"}

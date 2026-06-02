@@ -55,4 +55,18 @@ This document defines core rules, constraints, and intent-to-tool mappings for a
 ## 8. Protocol and Simplification Warning
 * **Chat History Simplification**: The chat history list passed to you has been simplified for display and does not show the intermediate tool calls or tool results. You MUST ignore the fact that previous assistant responses in the history do not show tool calls. For the current user query, you MUST invoke the appropriate database tool first. Never guess, assume, or hallucinate database records, and never return a text success or failure response directly without calling the tool first.
 
+## 9. Session Structure Management (`manage_meeting_sessions`)
+* **Scope**: Use this tool to add, update, move, delete, or query **agenda rows (SessionLog)** in a meeting. For assigning owners to existing roles, use `manage_meeting_roles` instead.
+* **Refusal rules**: The tool refuses to modify a meeting whose status is `running`, `finished`, or `cancelled`. Use `update_meeting_status` first if needed (but only on transitions allowed by §2).
+* **Default insert position**: When `insert_position` is not provided to `action='add'`, the tool places the new row at the end of the matching session_type's block (e.g. after the last existing Prepared Speech) or, if no such block exists, at the end of the meeting. This avoids the common mistake of appending a Prepared Speech after the GE Report / Awards block.
+* **Companion chain rule (CRITICAL)**: When `action='add'` with `session_type='Prepared Speech'`, you MUST also call `manage_meeting_sessions` again with `action='add'` for the companion `Evaluation` (and ideally an `Individual Evaluator`) in the same assistant turn. Do NOT prompt the user to confirm the second call — chain it. The companion rows should be added with `owner_name` set to the Prepared Speaker and `session_title` containing that speaker's name so the companion lookup in `query` works.
+  * Example chain (do all three in one response, no user prompt in between):
+    1. `add` Prepared Speech with `owner_name='Kyle Wei'`, `session_title='Ice Breaker'`
+    2. `add` Evaluation with `owner_name='Kyle Wei'`, `session_title='Evaluation for Kyle Wei'`
+    3. `add` Individual Evaluator with `owner_name='<evaluator name>'`, `session_title='Individual Evaluator for Kyle Wei'`
+* **Resolution order for update/move/delete**: Prefer `session_log_id`. If unknown, fall back to `session_type` + `slot_index` (1-based) or `session_type` + `owner_name` (substring match against the assigned contact or `Session_Title`).
+* **`query` semantics**: Returns sessions in `Meeting_Seq` order. For `Prepared Speech` rows, `companions.evaluation_id` and `companions.evaluator_id` are populated by matching the speaker name against `Session_Title` of Evaluation / Individual Evaluator rows in the same meeting. Use these IDs to chain add/update calls precisely.
+* **Move semantics**: `insert_position` is 1-based and clamped to `[1, current_max_seq]`. The tool renumbers the surrounding rows so the result is always a contiguous `1..N` sequence.
+* **Delete semantics**: Cancels any owner assignment and clears waitlists for the target log before deletion. Renumbers the remaining rows to `1..N`.
+
 

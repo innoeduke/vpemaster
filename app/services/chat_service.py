@@ -303,7 +303,7 @@ CHAT_TOOLS = [
                 },
                 "meeting_identifier": {
                     "type": "string",
-                    "description": "Meeting number or date. Required for all actions."
+                    "description": "Meeting number (e.g. '350') or meeting date (YYYY-MM-DD). Required for all actions."
                 },
                 "role_name": {
                     "type": "string",
@@ -328,6 +328,80 @@ CHAT_TOOLS = [
                 "speaker_name": {
                     "type": "string",
                     "description": "Optional target name. For roles tied to a specific speaker or session (e.g. 'Individual Evaluator' evaluating a specific Prepared Speaker), specify the name of that speaker."
+                }
+            },
+            "required": ["action", "meeting_identifier"]
+        }
+    },
+    {
+        "name": "manage_meeting_sessions",
+        "description": "Add, update, move, delete, or query agenda sessions (rows) in a meeting. Use this to add a new session like a 3rd Prepared Speech to an existing meeting's agenda. Read-only 'query' returns sessions with companion evaluation links. For 'add' with session_type='Prepared Speech', you MUST also call this tool again with action='add' for the companion 'Evaluation' (and ideally an 'Individual Evaluator') in the same response — chain them, do not prompt the user. See tools.md section 9 for the full companion-chain rule. Refuses on running/finished meetings.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "description": "The action to perform: 'add' (insert a new session row), 'update' (modify an existing session), 'move' (reorder a session), 'delete' (remove a session), 'query' (list or deep-dive sessions)."
+                },
+                "meeting_identifier": {
+                    "type": "string",
+                    "description": "Meeting number (e.g. '350') or meeting date (YYYY-MM-DD). Required for all actions."
+                },
+                "session_log_id": {
+                    "type": "integer",
+                    "description": "Used by update/move/delete/query. The numeric ID of the target SessionLog row. Preferred over fuzzy lookup."
+                },
+                "session_type": {
+                    "type": "string",
+                    "description": "Used by add (required) and by update/move/delete/query (optional fuzzy lookup). The SessionType.Title, e.g. 'Prepared Speech', 'Evaluation', 'Individual Evaluator', 'Table Topics Speaker'."
+                },
+                "slot_index": {
+                    "type": "integer",
+                    "description": "Used by update/move/delete/query when session_log_id is not known. 1-based position among rows of the matching session_type in the meeting."
+                },
+                "owner_name": {
+                    "type": "string",
+                    "description": "Used by add (optional pre-assign) and by update (owner reassignment) / query (filter). Full name of the contact."
+                },
+                "session_title": {
+                    "type": "string",
+                    "description": "Used by add/update. Custom label for the session row, e.g. 'Ice Breaker by Kyle Wei'."
+                },
+                "pathway": {
+                    "type": "string",
+                    "description": "Used by add/update. Pathway name (e.g. 'Dynamic Leadership'). Defaults to owner's current path or 'Non Pathway'."
+                },
+                "project_id": {
+                    "type": "integer",
+                    "description": "Used by add/update. Numeric Project ID (e.g. 60 for Generic, or a specific project). Omit to let it default."
+                },
+                "duration_min": {
+                    "type": "integer",
+                    "description": "Used by add/update. Minimum duration in minutes. Defaults to the SessionType's default."
+                },
+                "duration_max": {
+                    "type": "integer",
+                    "description": "Used by add/update. Maximum duration in minutes. Defaults to the SessionType's default."
+                },
+                "is_hidden": {
+                    "type": "boolean",
+                    "description": "Used by add/update. Whether the row is a hidden/section row (no start-time accumulation)."
+                },
+                "insert_position": {
+                    "type": "integer",
+                    "description": "Used by add/move. 1-based seq. If omitted on add, defaults to the end of the matching session_type's block, or end of meeting. If omitted on move, supply after_session_log_id or before_session_log_id."
+                },
+                "after_session_log_id": {
+                    "type": "integer",
+                    "description": "Used by move. Insert after this session log (e.g. 'end' to move to the end)."
+                },
+                "before_session_log_id": {
+                    "type": "integer",
+                    "description": "Used by move. Insert before this session log (e.g. 'start' to move to the beginning)."
+                },
+                "include_companions": {
+                    "type": "boolean",
+                    "description": "Used by query. Default true. When true, Prepared Speech rows include companion evaluation/evaluator log IDs."
                 }
             },
             "required": ["action", "meeting_identifier"]
