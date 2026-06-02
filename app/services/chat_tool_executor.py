@@ -100,17 +100,31 @@ class ChatToolExecutor:
         return None
 
     @staticmethod
-    def resolve_session_log(meeting_id, role_name, club_id, contact_id=None, for_assign=False):
+    def resolve_session_log(meeting_id, role_name, club_id, contact_id=None, for_assign=False, speaker_name=None):
         """
         Resolves a session log in a meeting for a role name.
         If contact_id is provided, tries to find a log already owned/waitlisted by the contact.
         If for_assign is True and contact is not assigned, tries to find a vacant log of this role.
         """
+        import re
         norm_name = str(role_name).strip().lower().replace('-', '').replace(' ', '')
         
+        # If speaker_name is not explicitly passed, try to extract it from role_name
+        # e.g., "Individual Evaluator for Stacey Pedder" or "Individual Evaluator (for Stacey Pedder)"
+        if not speaker_name:
+            match = re.search(r'for\s+([^)]+)', str(role_name), re.I)
+            if match:
+                speaker_name = match.group(1).strip()
+                # Clean up role_name to just "Individual Evaluator" for matching purposes
+                role_name = re.sub(r'\s*\(?for\s+[^)]+\)?', '', str(role_name), flags=re.I).strip()
+                norm_name = role_name.strip().lower().replace('-', '').replace(' ', '')
+
         logs = SessionLog.query.join(SessionType).join(MeetingRole).filter(
             SessionLog.meeting_id == meeting_id
         ).all()
+        
+        # Sort logs by Meeting_Seq to ensure correct ordering of slots
+        logs.sort(key=lambda l: l.Meeting_Seq)
         
         matching_logs = []
         # Filter matching logs first
@@ -122,6 +136,74 @@ class ChatToolExecutor:
                     
         if not matching_logs:
             return None
+
+        # Check if we have speaker_name to resolve to a target log index
+        if speaker_name:
+            target_log = None
+            # 1. Resolve speaker_name contact
+            target_contact = ChatToolExecutor.resolve_contact(speaker_name, club_id)
+            if target_contact:
+                # Find any log in this meeting owned by the target contact
+                for log in logs:
+                    if any(owner.id == target_contact.id for owner in log.owners):
+                        target_log = log
+                        break
+            
+            # 2. If contact resolution didn't find the owner, try case-insensitive title search or substring matches on owners
+            if not target_log:
+                for log in logs:
+                    if any(speaker_name.lower() in owner.Name.lower() for owner in log.owners):
+                        target_log = log
+                        break
+                    if log.Session_Title and speaker_name.lower() in log.Session_Title.lower():
+                        target_log = log
+                        break
+                        
+            # 3. If target_log is found, get its relative index among all logs of the same session type
+            if target_log and target_log.session_type:
+                target_type_id = target_log.Type_ID
+                same_type_logs = [l for l in logs if l.Type_ID == target_type_id]
+                try:
+                    target_idx = same_type_logs.index(target_log)
+                    if 0 <= target_idx < len(matching_logs):
+                        return matching_logs[target_idx]
+                except ValueError:
+                    pass
+
+            # 4. If target is specified by digits (e.g. "Speaker 2", "2")
+            digits = re.findall(r'\d+', speaker_name)
+            if digits:
+                idx = int(digits[0]) - 1
+                if 0 <= idx < len(matching_logs):
+                    return matching_logs[idx]
+            else:
+                lower_name = speaker_name.lower()
+                idx = None
+                if 'first' in lower_name or '1st' in lower_name:
+                    idx = 0
+                elif 'second' in lower_name or '2nd' in lower_name:
+                    idx = 1
+                elif 'third' in lower_name or '3rd' in lower_name:
+                    idx = 2
+                if idx is not None and 0 <= idx < len(matching_logs):
+                    return matching_logs[idx]
+
+        # Check if a specific slot number/index is requested in role_name for other multi-slot roles
+        slot_index = None
+        digits = re.findall(r'\d+', str(role_name))
+        if digits:
+            slot_index = int(digits[0]) - 1
+        else:
+            lower_name = str(role_name).lower()
+            if 'first' in lower_name or '1st' in lower_name:
+                slot_index = 0
+            elif 'second' in lower_name or '2nd' in lower_name:
+                slot_index = 1
+            elif 'third' in lower_name or '3rd' in lower_name:
+                slot_index = 2
+
+        if slot_index is not None and 0 <= slot_index < len(matching_logs):
+            return matching_logs[slot_index]
             
         # 1. If contact_id is provided, check if contact already owns one of the matching logs
         if contact_id:
@@ -141,6 +223,7 @@ class ChatToolExecutor:
                     
         # 3. Fallback to the first matching log
         return matching_logs[0]
+
 
     @classmethod
     def execute(cls, tool_name, params, user, club_id):
@@ -248,68 +331,135 @@ class ChatToolExecutor:
             return {'success': False, 'message': f"Failed to create meeting: {str(e)}"}
 
     @classmethod
-    def tool_assign_role(cls, params, user, club_id):
-        if not is_authorized(Permissions.BOOKING_ASSIGN_ALL):
-            return {'success': False, 'message': "You do not have permission to assign roles (BOOKING_ASSIGN_ALL)."}
+    def tool_manage_meeting_roles(cls, params, user, club_id):
+        action = params.get('action')
+        if not action:
+            return {'success': False, 'message': "Action is required ('assign', 'cancel', 'query', 'query_available')."}
             
+        action = action.strip().lower()
         meeting_ident = params.get('meeting_identifier')
         role_name = params.get('role_name')
         contact_name = params.get('contact_name')
+        speaker_name = params.get('speaker_name')
         
         meeting = cls.resolve_meeting(meeting_ident, club_id)
         if not meeting:
             return {'success': False, 'message': f"Meeting '{meeting_ident}' not found."}
             
-        contact = cls.resolve_contact(contact_name, club_id)
-        if not contact:
-            return {'success': False, 'message': f"Contact '{contact_name}' not found."}
+        if action == 'query':
+            if not is_authorized(Permissions.BOOKING_VIEW_ALL):
+                return {'success': False, 'message': "You do not have permission to view role assignments (BOOKING_VIEW_ALL)."}
+            roles_list = RoleService.get_meeting_roles(meeting.id, club_id)
+            res = f"Role assignments for **Meeting #{meeting.Meeting_Number}**:\n"
+            assigned_count = 0
+            for r in roles_list:
+                role_display_name = r['role']
+                if r.get('speaker_name'):
+                    role_display_name += f" (for {r['speaker_name']})"
+                    
+                if r.get('has_single_owner'):
+                    if r.get('owner_name'):
+                        res += f"* **{role_display_name}**: {r['owner_name']}\n"
+                        assigned_count += 1
+                else:
+                    owners = r.get('all_owners', [])
+                    if owners:
+                        names = ", ".join(o['name'] for o in owners)
+                        res += f"* **{role_display_name}**: {names}\n"
+                        assigned_count += len(owners)
+            if assigned_count == 0:
+                res += "* No roles assigned yet."
+            return {'success': True, 'message': res}
             
-        log = cls.resolve_session_log(meeting.id, role_name, club_id, contact_id=contact.id, for_assign=True)
-        if not log:
-            return {'success': False, 'message': f"Role '{role_name}' not found in Meeting #{meeting.Meeting_Number} agenda."}
+        elif action == 'query_available':
+            if not is_authorized(Permissions.BOOKING_VIEW_ALL):
+                return {'success': False, 'message': "You do not have permission to view role assignments (BOOKING_VIEW_ALL)."}
+            roles_list = RoleService.get_meeting_roles(meeting.id, club_id)
+            res = f"Available (unassigned) roles for **Meeting #{meeting.Meeting_Number}**:\n"
+            available_count = 0
+            for r in roles_list:
+                role_display_name = r['role']
+                if r.get('speaker_name'):
+                    role_display_name += f" (for {r['speaker_name']})"
+                    
+                if r.get('has_single_owner'):
+                    if not r.get('owner_name'):
+                        res += f"* **{role_display_name}**\n"
+                        available_count += 1
+                else:
+                    owners = r.get('all_owners', [])
+                    if not owners:
+                        res += f"* **{role_display_name}**\n"
+                        available_count += 1
+            if available_count == 0:
+                res += "* All roles are fully booked!"
+            return {'success': True, 'message': res}
             
-        try:
-            RoleService.assign_meeting_role(log, [contact.id], is_admin=True)
-            db.session.commit()
-            return {
-                'success': True,
-                'message': f"Successfully assigned {contact.Name} as {log.session_type.role.name} for Meeting #{meeting.Meeting_Number}."
-            }
-        except Exception as e:
-            db.session.rollback()
-            return {'success': False, 'message': f"Failed to assign role: {str(e)}"}
+        elif action in ('assign', 'book'):
+            if not is_authorized(Permissions.BOOKING_ASSIGN_ALL):
+                return {'success': False, 'message': "You do not have permission to assign roles (BOOKING_ASSIGN_ALL)."}
+            if not role_name or not contact_name:
+                return {'success': False, 'message': "role_name and contact_name are required for assign action."}
+            contact = cls.resolve_contact(contact_name, club_id)
+            if not contact:
+                return {'success': False, 'message': f"Contact '{contact_name}' not found."}
+            log = cls.resolve_session_log(meeting.id, role_name, club_id, contact_id=contact.id, for_assign=True, speaker_name=speaker_name)
+            if not log:
+                return {'success': False, 'message': f"Role '{role_name}' not found in Meeting #{meeting.Meeting_Number} agenda."}
+            try:
+                RoleService.assign_meeting_role(log, [contact.id], is_admin=True)
+                db.session.commit()
+                role_display = log.session_type.role.name
+                if log.Session_Title:
+                    role_display += f" (for {log.Session_Title})"
+                return {
+                    'success': True,
+                    'message': f"Successfully assigned {contact.Name} as {role_display} for Meeting #{meeting.Meeting_Number}."
+                }
+            except Exception as e:
+                db.session.rollback()
+                return {'success': False, 'message': f"Failed to assign role: {str(e)}"}
+                
+        elif action in ('cancel', 'unassign'):
+            if not is_authorized(Permissions.BOOKING_ASSIGN_ALL):
+                return {'success': False, 'message': "You do not have permission to cancel role assignments (BOOKING_ASSIGN_ALL)."}
+            if not role_name or not contact_name:
+                return {'success': False, 'message': "role_name and contact_name are required for cancel action."}
+            contact = cls.resolve_contact(contact_name, club_id)
+            if not contact:
+                return {'success': False, 'message': f"Contact '{contact_name}' not found."}
+            log = cls.resolve_session_log(meeting.id, role_name, club_id, contact_id=contact.id, for_assign=False, speaker_name=speaker_name)
+            if not log:
+                return {'success': False, 'message': f"Role '{role_name}' not found in Meeting #{meeting.Meeting_Number} agenda."}
+            try:
+                success, msg = RoleService.cancel_meeting_role(log, contact.id, is_admin=True)
+                if success:
+                    db.session.commit()
+                    role_display = log.session_type.role.name
+                    if log.Session_Title:
+                        role_display += f" (for {log.Session_Title})"
+                    return {'success': True, 'message': f"Successfully cancelled assignment for {contact.Name} as {role_display}."}
+                else:
+                    return {'success': False, 'message': f"Failed to cancel role: {msg}"}
+            except Exception as e:
+                db.session.rollback()
+                return {'success': False, 'message': f"Error during cancellation: {str(e)}"}
+                
+        else:
+            return {'success': False, 'message': f"Invalid action '{action}' for manage_meeting_roles."}
+
+    @classmethod
+    def tool_assign_role(cls, params, user, club_id):
+        params = params.copy()
+        params['action'] = 'assign'
+        return cls.tool_manage_meeting_roles(params, user, club_id)
 
     @classmethod
     def tool_cancel_role(cls, params, user, club_id):
-        if not is_authorized(Permissions.BOOKING_ASSIGN_ALL):
-            return {'success': False, 'message': "You do not have permission to cancel role assignments (BOOKING_ASSIGN_ALL)."}
-            
-        meeting_ident = params.get('meeting_identifier')
-        role_name = params.get('role_name')
-        contact_name = params.get('contact_name')
-        
-        meeting = cls.resolve_meeting(meeting_ident, club_id)
-        if not meeting:
-            return {'success': False, 'message': f"Meeting '{meeting_ident}' not found."}
-            
-        contact = cls.resolve_contact(contact_name, club_id)
-        if not contact:
-            return {'success': False, 'message': f"Contact '{contact_name}' not found."}
-            
-        log = cls.resolve_session_log(meeting.id, role_name, club_id, contact_id=contact.id, for_assign=False)
-        if not log:
-            return {'success': False, 'message': f"Role '{role_name}' not found in Meeting #{meeting.Meeting_Number} agenda."}
-            
-        try:
-            success, msg = RoleService.cancel_meeting_role(log, contact.id, is_admin=True)
-            if success:
-                db.session.commit()
-                return {'success': True, 'message': f"Successfully cancelled assignment for {contact.Name} as {log.session_type.role.name}."}
-            else:
-                return {'success': False, 'message': f"Failed to cancel role: {msg}"}
-        except Exception as e:
-            db.session.rollback()
-            return {'success': False, 'message': f"Error during cancellation: {str(e)}"}
+        params = params.copy()
+        params['action'] = 'cancel'
+        return cls.tool_manage_meeting_roles(params, user, club_id)
+
 
     @classmethod
     def tool_add_contact(cls, params, user, club_id):
@@ -698,68 +848,15 @@ class ChatToolExecutor:
 
     @classmethod
     def tool_get_role_assignments(cls, params, user, club_id):
-        if not is_authorized(Permissions.BOOKING_VIEW_ALL):
-            return {'success': False, 'message': "You do not have permission to view role assignments (BOOKING_VIEW_ALL)."}
-            
-        meeting_ident = params.get('meeting_identifier')
-        meeting = cls.resolve_meeting(meeting_ident, club_id)
-        
-        if not meeting:
-            return {'success': False, 'message': f"Meeting '{meeting_ident}' not found."}
-            
-        roles_list = RoleService.get_meeting_roles(meeting.id, club_id)
-        
-        res = f"Role assignments for **Meeting #{meeting.Meeting_Number}**:\n"
-        assigned_count = 0
-        
-        for r in roles_list:
-            if r.get('has_single_owner'):
-                if r.get('owner_name'):
-                    res += f"* **{r['role']}**: {r['owner_name']}\n"
-                    assigned_count += 1
-            else:
-                owners = r.get('all_owners', [])
-                if owners:
-                    names = ", ".join(o['name'] for o in owners)
-                    res += f"* **{r['role']}**: {names}\n"
-                    assigned_count += len(owners)
-                    
-        if assigned_count == 0:
-            res += "* No roles assigned yet."
-            
-        return {'success': True, 'message': res}
+        params = params.copy()
+        params['action'] = 'query'
+        return cls.tool_manage_meeting_roles(params, user, club_id)
 
     @classmethod
     def tool_get_available_roles(cls, params, user, club_id):
-        if not is_authorized(Permissions.BOOKING_VIEW_ALL):
-            return {'success': False, 'message': "You do not have permission to view role assignments (BOOKING_VIEW_ALL)."}
-            
-        meeting_ident = params.get('meeting_identifier')
-        meeting = cls.resolve_meeting(meeting_ident, club_id)
-        
-        if not meeting:
-            return {'success': False, 'message': f"Meeting '{meeting_ident}' not found."}
-            
-        roles_list = RoleService.get_meeting_roles(meeting.id, club_id)
-        
-        res = f"Available (unassigned) roles for **Meeting #{meeting.Meeting_Number}**:\n"
-        available_count = 0
-        
-        for r in roles_list:
-            if r.get('has_single_owner'):
-                if not r.get('owner_name'):
-                    res += f"* **{r['role']}**\n"
-                    available_count += 1
-            else:
-                owners = r.get('all_owners', [])
-                if not owners:
-                    res += f"* **{r['role']}**\n"
-                    available_count += 1
-                    
-        if available_count == 0:
-            res += "* All roles are fully booked!"
-            
-        return {'success': True, 'message': res}
+        params = params.copy()
+        params['action'] = 'query_available'
+        return cls.tool_manage_meeting_roles(params, user, club_id)
 
     @classmethod
     def tool_update_meeting_status(cls, params, user, club_id):
@@ -1442,7 +1539,8 @@ class ChatToolExecutor:
                 role_name, 
                 club_id, 
                 contact_id=contact.id if 'contact' in locals() and contact else None, 
-                for_assign=(action == 'create')
+                for_assign=(action == 'create'),
+                speaker_name=params.get('speaker_name')
             )
             if not log:
                 return {'success': False, 'message': f"Role '{role_name}' not found in Meeting #{meeting.Meeting_Number} agenda."}

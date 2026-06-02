@@ -235,6 +235,11 @@ def chat_clear():
             club_id=club_id
         ).delete()
         db.session.commit()
+        
+        # Clear cached chat summary
+        from app import cache
+        cache.delete(f"chat_summary_{current_user.id}_{club_id}")
+        
         return jsonify({'success': True, 'message': 'Chat history cleared successfully.'})
     except Exception as e:
         db.session.rollback()

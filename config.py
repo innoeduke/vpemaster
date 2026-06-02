@@ -68,5 +68,6 @@ class Config:
     ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
     ANTHROPIC_MODEL = os.getenv('ANTHROPIC_MODEL', 'MiniMax-M3')
     ANTHROPIC_BASE_URL = os.getenv('ANTHROPIC_BASE_URL', 'https://api.minimaxi.com/anthropic')
+    CHAT_HISTORY_ACTIVE_LIMIT = int(os.getenv('CHAT_HISTORY_ACTIVE_LIMIT', 20))
 
 

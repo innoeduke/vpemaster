@@ -228,7 +228,8 @@ def test_ai_assign_role(app, setup_ai_environment):
         
         assert len(executed_tools) > 0
         tool_call = executed_tools[0]
-        assert tool_call['name'] == 'assign_role'
+        assert tool_call['name'] == 'manage_meeting_roles'
+        assert tool_call['arguments']['action'] == 'assign'
         assert tool_call['arguments']['meeting_identifier'] == '100'
         assert 'john' in tool_call['arguments']['contact_name'].lower()
         assert 'speaker' in tool_call['arguments']['role_name'].lower()
@@ -240,8 +241,8 @@ def test_ai_cancel_role(app, setup_ai_environment):
     with app.app_context():
         # First assign John Doe to role so cancel makes sense
         from app.services.chat_tool_executor import ChatToolExecutor
-        ChatToolExecutor.tool_assign_role(
-            {'meeting_identifier': '100', 'role_name': 'Prepared Speaker', 'contact_name': 'John Doe'},
+        ChatToolExecutor.tool_manage_meeting_roles(
+            {'action': 'assign', 'meeting_identifier': '100', 'role_name': 'Prepared Speaker', 'contact_name': 'John Doe'},
             db.session.get(User, env['user_id']),
             env['club_id']
         )
@@ -265,7 +266,8 @@ def test_ai_cancel_role(app, setup_ai_environment):
         
         assert len(executed_tools) > 0
         tool_call = executed_tools[0]
-        assert tool_call['name'] == 'cancel_role'
+        assert tool_call['name'] == 'manage_meeting_roles'
+        assert tool_call['arguments']['action'] == 'cancel'
         assert tool_call['arguments']['meeting_identifier'] == '100'
         assert 'john' in tool_call['arguments']['contact_name'].lower()
         assert 'speaker' in tool_call['arguments']['role_name'].lower()

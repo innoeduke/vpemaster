@@ -27,47 +27,33 @@ CHAT_TOOLS = [
         }
     },
     {
-        "name": "assign_role",
-        "description": "Assign a contact to a role for a specific meeting.",
+        "name": "manage_meeting_roles",
+        "description": "Query or manage role bookings and assignments for a meeting (assign, cancel/unassign, list assignments, list available slots).",
         "input_schema": {
             "type": "object",
             "properties": {
+                "action": {
+                    "type": "string",
+                    "description": "The action to perform: 'assign' (assign contact to role), 'cancel' (cancel contact's role assignment), 'query' (list all current assignments), 'query_available' (list all vacant/unassigned roles)."
+                },
                 "meeting_identifier": {
                     "type": "string",
-                    "description": "Meeting number (e.g. '350') or meeting date (YYYY-MM-DD)."
+                    "description": "Meeting number (e.g. '350') or meeting date (YYYY-MM-DD). Required for all actions."
                 },
                 "role_name": {
                     "type": "string",
-                    "description": "Name of the role (e.g. 'Ah Counter', 'Prepared Speaker')."
+                    "description": "Name of the role (e.g. 'Ah Counter', 'Prepared Speaker', 'Individual Evaluator'). Required for 'assign' and 'cancel'."
                 },
                 "contact_name": {
                     "type": "string",
-                    "description": "The full name of the contact being assigned."
+                    "description": "The full name of the contact being assigned or cancelled. Required for 'assign' and 'cancel'."
+                },
+                "speaker_name": {
+                    "type": "string",
+                    "description": "Optional target name. For roles tied to a specific speaker, speech, or session (e.g. 'Individual Evaluator' evaluating a specific Prepared Speaker, or 'Topics Speaker' under a specific Topicsmaster), specify the name of that speaker, topicsmaster, or moderator."
                 }
             },
-            "required": ["meeting_identifier", "role_name", "contact_name"]
-        }
-    },
-    {
-        "name": "cancel_role",
-        "description": "Cancel a contact's role assignment for a meeting.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "meeting_identifier": {
-                    "type": "string",
-                    "description": "Meeting number or date."
-                },
-                "role_name": {
-                    "type": "string",
-                    "description": "The role to cancel."
-                },
-                "contact_name": {
-                    "type": "string",
-                    "description": "The contact's name."
-                }
-            },
-            "required": ["meeting_identifier", "role_name", "contact_name"]
+            "required": ["action", "meeting_identifier"]
         }
     },
     {
@@ -199,34 +185,7 @@ CHAT_TOOLS = [
             }
         }
     },
-    {
-        "name": "get_role_assignments",
-        "description": "Get the current role bookings/assignments list for a meeting.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "meeting_identifier": {
-                    "type": "string",
-                    "description": "Meeting number or date."
-                }
-            },
-            "required": ["meeting_identifier"]
-        }
-    },
-    {
-        "name": "get_available_roles",
-        "description": "Get all unbooked role slots for a specific meeting.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "meeting_identifier": {
-                    "type": "string",
-                    "description": "Meeting number or date."
-                }
-            },
-            "required": ["meeting_identifier"]
-        }
-    },
+
     {
         "name": "update_meeting_status",
         "description": "Change the operational status of a meeting.",
@@ -365,6 +324,10 @@ CHAT_TOOLS = [
                 "speech_title": {
                     "type": "string",
                     "description": "Optional speech title to update or set."
+                },
+                "speaker_name": {
+                    "type": "string",
+                    "description": "Optional target name. For roles tied to a specific speaker or session (e.g. 'Individual Evaluator' evaluating a specific Prepared Speaker), specify the name of that speaker."
                 }
             },
             "required": ["action", "meeting_identifier"]
@@ -405,6 +368,42 @@ class ChatService:
             raise ValueError("ANTHROPIC_API_KEY environment variable is not configured.")
             
         return anthropic.Anthropic(api_key=api_key, base_url=base_url)
+
+    @classmethod
+    def generate_summary(cls, previous_summary, new_messages_text):
+        """
+        Uses the LLM to update or create a running summary of the chat history.
+        """
+        client = cls.get_client()
+        model_name = current_app.config.get('ANTHROPIC_MODEL', 'MiniMax-M3')
+        
+        system_prompt = (
+            "You are an assistant tasked to maintain a running summary of a chat conversation.\n"
+            "Keep the summary concise (under 300 words), focusing on actions taken, "
+            "confirmed meeting roles, or user preferences.\n"
+            "Integrate the new messages into the previous summary dynamically."
+        )
+        
+        user_prompt = f"Previous summary:\n{previous_summary or 'No previous summary.'}\n\nNew messages:\n{new_messages_text}\n\nProvide the updated summary:"
+        
+        try:
+            response = client.messages.create(
+                model=model_name,
+                system=system_prompt,
+                messages=[
+                    {"role": "user", "content": user_prompt}
+                ],
+                max_tokens=1000,
+                temperature=0.0
+            )
+            # Retrieve text response
+            text_block = next((block.text for block in response.content if block.type == "text"), "")
+            return text_block.strip()
+        except Exception as e:
+            current_app.logger.error(f"Error generating chat summary: {str(e)}")
+            if previous_summary:
+                return previous_summary + "\n[Error updating summary context]"
+            return "[Error generating summary context]"
 
     @staticmethod
     def get_system_prompt(user, club_id, locale):
@@ -548,7 +547,8 @@ class ChatService:
             'toastmaster', 'toastmasters', 'prepared speaker', 'topics speaker',
             'individual evaluator', 'photographer', 'welcome officer',
             'who', 'what', 'where', 'when', 'show', 'list', 'details', 'info',
-            'excomm', 'waitlist'
+            'excomm', 'waitlist', 'update', 'set', 'president', 'vpe', 'vpm', 'vppr',
+            'secretary', 'treasurer', 'saa', 'ipp'
         ]
         
         # Standard Chinese indicators for database queries, lookups, or actions
@@ -563,7 +563,8 @@ class ChatService:
             '谁', '什么', '哪里', '什么时候', '显示', '列表',
             '主持', '点评', '演讲', '即兴',
             '执委', '候补', '等候', '排队',
-            '主持人', '时间官', '语法官', '阿哈计数器', '阿计数器', '摄影官', '接待官'
+            '主持人', '时间官', '语法官', '阿哈计数器', '阿计数器', '摄影官', '接待官',
+            '更新', '修改', '设置', '会长', '教育', '公关', '秘书', '财务', '接待', '安全'
         ]
         
         # Check if any English database trigger word is in the message
@@ -588,24 +589,6 @@ class ChatService:
         """
         client = cls.get_client()
         model_name = current_app.config.get('ANTHROPIC_MODEL', 'MiniMax-M3')
-
-        # system prompt passed separately in Anthropic
-        system_prompt = cls.get_system_prompt(user, club_id, locale)
-        
-        # Build messages history (filter out any system messages from DB, only user/assistant)
-        messages = []
-        for msg in chat_history_list[-15:]:
-            if msg.role in ['user', 'assistant']:
-                messages.append({
-                    "role": msg.role,
-                    "content": msg.content
-                })
-
-        # Ensure history is not empty and starts with user role if present
-        # If there's no preceding messages, Claude expects user role first
-        if not messages:
-            # Fallback welcome is triggered client side, but just in case:
-            messages.append({"role": "user", "content": "Hello"})
 
         # Get the latest user message text for tool choice enforcement detection
         user_message = ""
@@ -648,16 +631,16 @@ class ChatService:
                     warning_message = "I'm sorry, I couldn't identify the specific database action or query in your request. Please use clear keywords (such as 'assign', 'cancel', 'schedule', 'results'), or type `/help` to see available commands."
                 return warning_message, []
 
-        # Dynamically inject database context to guide the model's tool calling
-        query_context = cls.get_query_context(user_message, club_id)
-        if query_context:
-            system_prompt += "\n\n" + query_context
+        from app.services.chat_history_context import ChatHistoryContext
 
-        # Dynamically inject tool guidelines if we might use tools
-        if cls.should_enforce_tools(user_message):
-            tools_guidelines = cls.get_tools_guidelines()
-            if tools_guidelines:
-                system_prompt += "\n\n" + tools_guidelines
+        # Run within the ChatHistoryContext manager to load messages, database context, and running summary dynamically
+        with ChatHistoryContext(user, club_id, chat_history_list=chat_history_list, user_message=user_message, locale=locale) as chat_ctx:
+            system_prompt = chat_ctx.system_prompt
+            messages = chat_ctx.messages
+
+        # Ensure history is not empty and starts with user role if present
+        if not messages:
+            messages.append({"role": "user", "content": "Hello"})
 
         # Append tool and language reminder to the last user message to enforce rules
         if messages and messages[-1]["role"] == "user":
@@ -720,15 +703,16 @@ class ChatService:
                         tool_name = tu.name
                         params = tu.input # Anthropic parses arguments into dict automatically
 
-                        # Audit tool execution
+                        # Execute tool locally
+                        tool_result = ChatToolExecutor.execute(tool_name, params, user, club_id)
+
+                        # Audit tool execution (including result)
                         executed_tools.append({
                             'id': tu.id,
                             'name': tool_name,
-                            'arguments': params
+                            'arguments': params,
+                            'result': tool_result
                         })
-
-                        # Execute tool locally
-                        tool_result = ChatToolExecutor.execute(tool_name, params, user, club_id)
                         
                         tool_results_content.append({
                             "type": "tool_result",

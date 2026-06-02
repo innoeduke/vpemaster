@@ -658,6 +658,39 @@ def test_tool_bypass_retry(app, staff_user):
             assert mock_client.messages.create.call_count == 2
 
 
+def test_clarification_bypass(app, staff_user):
+    """Test that unrecognized/non-conversational queries bypass the warning if replying to clarification."""
+    from app.services.chat_service import ChatService
+    from app.models import ChatMessage
+    from unittest.mock import MagicMock, patch
+
+    with app.app_context():
+        # Assistant asked a question
+        msg_assistant = ChatMessage(role="assistant", content="Which Stacey do you mean? Stacey Pedder or Stacey Zhang?")
+        # User replies with a simple name (no triggers)
+        msg_user = ChatMessage(role="user", content="Stacey Pedder")
+        
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.stop_reason = "text"
+        mock_response.content = [MagicMock(type="text", text="Mock confirmation response")]
+        mock_client.messages.create.return_value = mock_response
+
+        with patch.object(ChatService, 'get_client', return_value=mock_client), \
+             patch('app.services.chat_service.db.session.get', return_value=None), \
+             patch('app.services.chat_service.current_app.config.get', side_effect=lambda k, d=None: d if k != 'ANTHROPIC_API_KEY' else 'mock-api-key'):
+            
+            # Since the user is answering a clarification question, it should bypass the warning interceptor
+            # and invoke the LLM.
+            reply, executed = ChatService.process_chat_completion(
+                chat_history_list=[msg_assistant, msg_user],
+                user=staff_user,
+                club_id=1,
+                locale="en"
+            )
+            assert reply == "Mock confirmation response"
+
+
 
 
 

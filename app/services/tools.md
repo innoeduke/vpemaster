@@ -52,3 +52,7 @@ This document defines core rules, constraints, and intent-to-tool mappings for a
   - **Removing**: Use `action="remove"` to remove a member from a waitlist.
   - **Approving (Promoting)**: Use `action="approve"` to promote the next user in line on the waitlist to become the role owner.
 
+## 8. Protocol and Simplification Warning
+* **Chat History Simplification**: The chat history list passed to you has been simplified for display and does not show the intermediate tool calls or tool results. You MUST ignore the fact that previous assistant responses in the history do not show tool calls. For the current user query, you MUST invoke the appropriate database tool first. Never guess, assume, or hallucinate database records, and never return a text success or failure response directly without calling the tool first.
+
+
