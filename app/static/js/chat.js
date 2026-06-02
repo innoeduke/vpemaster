@@ -14,6 +14,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     let historyLoaded = false;
     let isSending = false;
+    let lastCustomWidth = '';
+    let lastCustomHeight = '';
+
+    // Helper to revert panel to non-maximized state
+    function removeMaximizedState() {
+        if (panel.classList.contains('maximized')) {
+            panel.classList.remove('maximized');
+            if (maximizeBtn) {
+                maximizeBtn.title = "Maximize";
+                maximizeBtn.innerHTML = '<i class="fa fa-expand"></i>';
+            }
+            panel.style.width = lastCustomWidth || '';
+            panel.style.height = lastCustomHeight || '';
+        }
+    }
 
     // Helper to render table rows into HTML table
     function renderHtmlTable(rows, hasHeader) {
@@ -223,11 +238,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const isOpen = panel.classList.contains('open');
         if (isOpen) {
             panel.classList.remove('open');
-            panel.classList.remove('maximized');
-            if (maximizeBtn) {
-                maximizeBtn.title = "Maximize";
-                maximizeBtn.innerHTML = '<i class="fa fa-expand"></i>';
-            }
+            removeMaximizedState();
             toggleBtn.classList.remove('active');
         } else {
             panel.classList.add('open');
@@ -243,11 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     minimizeBtn.addEventListener('click', function() {
         panel.classList.remove('open');
-        panel.classList.remove('maximized');
-        if (maximizeBtn) {
-            maximizeBtn.title = "Maximize";
-            maximizeBtn.innerHTML = '<i class="fa fa-expand"></i>';
-        }
+        removeMaximizedState();
         toggleBtn.classList.remove('active');
     });
 
@@ -255,13 +262,17 @@ document.addEventListener('DOMContentLoaded', function() {
         maximizeBtn.addEventListener('click', function() {
             const isMaximized = panel.classList.contains('maximized');
             if (isMaximized) {
-                panel.classList.remove('maximized');
-                maximizeBtn.title = "Maximize";
-                maximizeBtn.innerHTML = '<i class="fa fa-expand"></i>';
+                removeMaximizedState();
             } else {
+                lastCustomWidth = panel.style.width;
+                lastCustomHeight = panel.style.height;
+                
                 panel.classList.add('maximized');
                 maximizeBtn.title = "Restore";
                 maximizeBtn.innerHTML = '<i class="fa fa-compress"></i>';
+                
+                panel.style.width = '';
+                panel.style.height = '';
             }
             scrollToBottom();
         });
@@ -429,4 +440,82 @@ document.addEventListener('DOMContentLoaded', function() {
             unreadDot.style.display = 'block';
         }
     }, 2000);
+
+    // Drag-to-Resize implementation
+    const resizeHandles = [
+        { el: document.getElementById('chatResizeN'), direction: 'n' },
+        { el: document.getElementById('chatResizeW'), direction: 'w' },
+        { el: document.getElementById('chatResizeNW'), direction: 'nw' }
+    ];
+
+    let isResizing = false;
+    let startWidth = 0;
+    let startHeight = 0;
+    let startX = 0;
+    let startY = 0;
+    let currentDirection = '';
+    let maxWidth = Infinity;
+    let maxHeight = Infinity;
+
+    const minWidth = 380;
+    const minHeight = 520;
+
+    resizeHandles.forEach(handle => {
+        if (!handle.el) return;
+        handle.el.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            isResizing = true;
+            currentDirection = handle.direction;
+            startWidth = panel.offsetWidth;
+            startHeight = panel.offsetHeight;
+            startX = e.clientX;
+            startY = e.clientY;
+            
+            if (panel.classList.contains('maximized')) {
+                maxWidth = Math.max(0.4 * window.innerWidth, minWidth);
+                maxHeight = Math.max(0.9 * window.innerHeight, minHeight);
+            } else {
+                maxWidth = Infinity;
+                maxHeight = Infinity;
+            }
+            
+            let cursor = 'nwse-resize';
+            if (handle.direction === 'n') cursor = 'ns-resize';
+            if (handle.direction === 'w') cursor = 'ew-resize';
+            document.body.style.cursor = cursor;
+            document.body.classList.add('chat-resizing');
+            
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+        });
+    });
+
+    function handleMouseMove(e) {
+        if (!isResizing) return;
+        
+        if (currentDirection === 'w' || currentDirection === 'nw') {
+            let newWidth = startWidth + (startX - e.clientX);
+            newWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+            panel.style.width = newWidth + 'px';
+        }
+        
+        if (currentDirection === 'n' || currentDirection === 'nw') {
+            let newHeight = startHeight + (startY - e.clientY);
+            newHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
+            panel.style.height = newHeight + 'px';
+        }
+        
+        scrollToBottom();
+    }
+
+    function handleMouseUp() {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = '';
+            document.body.classList.remove('chat-resizing');
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        }
+    }
 });
+

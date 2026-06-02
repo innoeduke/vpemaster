@@ -126,6 +126,9 @@ def test_should_enforce_tools(app):
         assert ChatService.should_enforce_tools("会议 973 结果") is True
         assert ChatService.should_enforce_tools("指派 TME 角色给 Bing") is True
         assert ChatService.should_enforce_tools("What's the status of meeting 173?") is True
+        assert ChatService.should_enforce_tools("Toastmaster") is True
+        assert ChatService.should_enforce_tools("主持人") is True
+        assert ChatService.should_enforce_tools("时间官") is True
         
         # Things that SHOULD NOT trigger tool enforcement (conversational)
         assert ChatService.should_enforce_tools("Hello") is False
@@ -323,10 +326,18 @@ def test_tools_guidelines_loading_and_injection(app):
         from unittest.mock import MagicMock, patch
         
         mock_client = MagicMock()
-        mock_response = MagicMock()
-        mock_response.stop_reason = "text"
-        mock_response.content = [MagicMock(type="text", text="Mock reply")]
-        mock_client.messages.create.return_value = mock_response
+        
+        mock_response_tool = MagicMock()
+        mock_response_tool.stop_reason = "tool_use"
+        tool_use_block = MagicMock(type="tool_use", id="call_1", name="get_meeting_agenda")
+        tool_use_block.input = {"meeting_identifier": "100"}
+        mock_response_tool.content = [tool_use_block]
+        
+        mock_response_text = MagicMock()
+        mock_response_text.stop_reason = "text"
+        mock_response_text.content = [MagicMock(type="text", text="Mock reply")]
+        
+        mock_client.messages.create.side_effect = [mock_response_tool, mock_response_text]
         
         from app.models import ChatMessage
         mock_user = MagicMock()
@@ -563,6 +574,90 @@ def test_slash_command_status_query(client, auth, staff_user, default_club, chat
         with app.app_context():
             Meeting.query.filter_by(Meeting_Number=666).delete()
             db.session.commit()
+
+def test_unrecognized_query_warning(app, staff_user):
+    """Test that unrecognized non-conversational queries return a warning directly."""
+    from app.services.chat_service import ChatService
+    from app.models import ChatMessage
+    with app.app_context():
+        # 1. Unrecognized/Non-conversational query
+        msg = ChatMessage(role="user", content="I want to go to the park.")
+        reply, executed = ChatService.process_chat_completion(
+            chat_history_list=[msg],
+            user=staff_user,
+            club_id=1,
+            locale="en"
+        )
+        assert "couldn't identify the specific database action" in reply
+        assert len(executed) == 0
+
+        # Chinese unrecognized query
+        reply_zh, _ = ChatService.process_chat_completion(
+            chat_history_list=[msg],
+            user=staff_user,
+            club_id=1,
+            locale="zh_CN"
+        )
+        assert "我无法识别您请求中的具体数据库操作" in reply_zh
+
+        # 2. Conversational greetings should NOT be blocked
+        msg_hello = ChatMessage(role="user", content="Hello")
+        
+        # Mock/Patch Anthropic client to return fake text response
+        from unittest.mock import MagicMock, patch
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.stop_reason = "text"
+        mock_response.content = [MagicMock(type="text", text="Hello back!")]
+        mock_client.messages.create.return_value = mock_response
+        
+        with patch.object(ChatService, 'get_client', return_value=mock_client), \
+             patch('app.services.chat_service.db.session.get', return_value=None), \
+             patch('app.services.chat_service.current_app.config.get', side_effect=lambda k, d=None: d if k != 'ANTHROPIC_API_KEY' else 'mock-api-key'):
+            
+            reply_hello, _ = ChatService.process_chat_completion(
+                chat_history_list=[msg_hello],
+                user=staff_user,
+                club_id=1,
+                locale="en"
+            )
+            assert reply_hello == "Hello back!"
+
+
+def test_tool_bypass_retry(app, staff_user):
+    """Test that process_chat_completion retries when tool calling is bypassed."""
+    from app.services.chat_service import ChatService
+    from app.models import ChatMessage
+    from unittest.mock import MagicMock, patch
+
+    with app.app_context():
+        msg = ChatMessage(role="user", content="assign the Timer role to Lucy Chai")
+        
+        # We mock client.messages.create to return a text response directly on BOTH attempts.
+        # This will trigger the retry loop, exhaust retries, and return the final warning message.
+        mock_client = MagicMock()
+        mock_response = MagicMock()
+        mock_response.stop_reason = "text"
+        mock_response.content = [MagicMock(type="text", text="✅ 角色分配成功！")]
+        mock_client.messages.create.return_value = mock_response
+
+        with patch.object(ChatService, 'get_client', return_value=mock_client), \
+             patch('app.services.chat_service.db.session.get', return_value=None), \
+             patch('app.services.chat_service.current_app.config.get', side_effect=lambda k, d=None: d if k != 'ANTHROPIC_API_KEY' else 'mock-api-key'):
+            
+            # Since locale is en, it should return the English exhausted retries warning
+            reply, executed = ChatService.process_chat_completion(
+                chat_history_list=[msg],
+                user=staff_user,
+                club_id=1,
+                locale="en"
+            )
+            assert "unable to execute the database tool" in reply
+            assert len(executed) == 0
+            # Verify client.messages.create was called 2 times (2 attempts)
+            assert mock_client.messages.create.call_count == 2
+
+
 
 
 

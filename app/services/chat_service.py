@@ -545,6 +545,8 @@ class ChatService:
             'status', 'publish', 'start', 'finish',
             'tme', 'speaker', 'evaluator', 'topicsmaster',
             'timer', 'counter', 'grammarian', 'general evaluator',
+            'toastmaster', 'toastmasters', 'prepared speaker', 'topics speaker',
+            'individual evaluator', 'photographer', 'welcome officer',
             'who', 'what', 'where', 'when', 'show', 'list', 'details', 'info',
             'excomm', 'waitlist'
         ]
@@ -560,7 +562,8 @@ class ChatService:
             '状态', '发布', '开始', '结束',
             '谁', '什么', '哪里', '什么时候', '显示', '列表',
             '主持', '点评', '演讲', '即兴',
-            '执委', '候补', '等候', '排队'
+            '执委', '候补', '等候', '排队',
+            '主持人', '时间官', '语法官', '阿哈计数器', '阿计数器', '摄影官', '接待官'
         ]
         
         # Check if any English database trigger word is in the message
@@ -611,6 +614,40 @@ class ChatService:
                 user_message = msg.content
                 break
 
+        # Stop and warn the user for unrecognized queries to reduce database hallucination
+        if user_message:
+            is_enforced = cls.should_enforce_tools(user_message)
+            message_lower = user_message.lower().strip()
+            greetings = {'hello', 'hi', 'hey', 'greetings', 'good morning', 'good afternoon', 'good evening', 'thanks', 'thank you', 'ok', 'okay', 'yes', 'no'}
+            meta_words = {'who are you', 'what is your name', 'what can you do', 'how can you help', 'help me', 'show help', 'chat help'}
+            
+            is_greeting = message_lower in greetings
+            is_meta = any(w in message_lower for w in meta_words)
+            
+            # Check if the user is replying to a clarification question from the assistant
+            is_clarification_reply = False
+            found_user = False
+            for msg in reversed(chat_history_list):
+                if not found_user:
+                    if msg.role == 'user' and msg.content == user_message:
+                        found_user = True
+                    continue
+                if msg.role == 'assistant':
+                    content = msg.content or ""
+                    content_lower = content.lower()
+                    if (any(q in content for q in ["哪位", "确认", "哪个", "谁", "请问", "请选择", "输入"]) or
+                        any(q in content_lower for q in ["which", "whom", "who", "confirm", "select", "please specify", "please choose"]) or
+                        content.strip().endswith("?") or content.strip().endswith("？")):
+                        is_clarification_reply = True
+                    break
+            
+            if not is_enforced and not is_greeting and not is_meta and not is_clarification_reply:
+                if locale == 'zh_CN':
+                    warning_message = "抱歉，我无法识别您请求中的具体数据库操作或查询。请使用明确的关键词（例如'分配'、'取消'、'日程'、'结果'等），或输入 `/help` 查看可用命令。"
+                else:
+                    warning_message = "I'm sorry, I couldn't identify the specific database action or query in your request. Please use clear keywords (such as 'assign', 'cancel', 'schedule', 'results'), or type `/help` to see available commands."
+                return warning_message, []
+
         # Dynamically inject database context to guide the model's tool calling
         query_context = cls.get_query_context(user_message, club_id)
         if query_context:
@@ -636,69 +673,100 @@ class ChatService:
 
         executed_tools = []
         max_turns = 5
-        turn = 0
 
         # Determine if we should enforce tool usage at the API level (any vs auto)
-        tool_choice = {"type": "any"} if cls.should_enforce_tools(user_message) else {"type": "auto"}
+        is_enforced = cls.should_enforce_tools(user_message)
+        tool_choice = {"type": "any"} if is_enforced else {"type": "auto"}
 
-        while turn < max_turns:
-            turn += 1
+        retry_count = 0
+        max_retries = 2
+        
+        while retry_count < max_retries:
+            import copy
+            messages_run = copy.deepcopy(messages)
+            executed_tools = []
+            turn = 0
+            text_response = ""
             
-            response = client.messages.create(
-                model=model_name,
-                system=system_prompt,
-                messages=messages,
-                tools=CHAT_TOOLS,
-                tool_choice=tool_choice,
-                max_tokens=2000,
-                temperature=0.0
-            )
-            # Downgrade tool_choice to auto for subsequent turns
-            tool_choice = {"type": "auto"}
-
-            # Check if model wants to call tools
-            if response.stop_reason == "tool_use":
-                # Find all tool uses in response blocks
-                tool_uses = [block for block in response.content if block.type == "tool_use"]
+            while turn < max_turns:
+                turn += 1
                 
-                # Append assistant's response (which contains the tool requests) to the history
-                messages.append({
-                    "role": "assistant",
-                    "content": response.content
-                })
+                response = client.messages.create(
+                    model=model_name,
+                    system=system_prompt,
+                    messages=messages_run,
+                    tools=CHAT_TOOLS,
+                    tool_choice=tool_choice,
+                    max_tokens=2000,
+                    temperature=0.0
+                )
+                # Downgrade tool_choice to auto for subsequent turns
+                tool_choice = {"type": "auto"}
 
-                # Process tool calls
-                tool_results_content = []
-                for tu in tool_uses:
-                    tool_name = tu.name
-                    params = tu.input # Anthropic parses arguments into dict automatically
-
-                    # Audit tool execution
-                    executed_tools.append({
-                        'id': tu.id,
-                        'name': tool_name,
-                        'arguments': params
-                    })
-
-                    # Execute tool locally
-                    tool_result = ChatToolExecutor.execute(tool_name, params, user, club_id)
+                # Check if model wants to call tools
+                if response.stop_reason == "tool_use":
+                    # Find all tool uses in response blocks
+                    tool_uses = [block for block in response.content if block.type == "tool_use"]
                     
-                    tool_results_content.append({
-                        "type": "tool_result",
-                        "tool_use_id": tu.id,
-                        "content": json.dumps(tool_result)
+                    # Append assistant's response (which contains the tool requests) to the history
+                    messages_run.append({
+                        "role": "assistant",
+                        "content": response.content
                     })
 
-                # Append tool results as a single user message containing tool results
-                messages.append({
-                    "role": "user",
-                    "content": tool_results_content
-                })
+                    # Process tool calls
+                    tool_results_content = []
+                    for tu in tool_uses:
+                        tool_name = tu.name
+                        params = tu.input # Anthropic parses arguments into dict automatically
 
+                        # Audit tool execution
+                        executed_tools.append({
+                            'id': tu.id,
+                            'name': tool_name,
+                            'arguments': params
+                        })
+
+                        # Execute tool locally
+                        tool_result = ChatToolExecutor.execute(tool_name, params, user, club_id)
+                        
+                        tool_results_content.append({
+                            "type": "tool_result",
+                            "tool_use_id": tu.id,
+                            "content": json.dumps(tool_result)
+                        })
+
+                    # Append tool results as a single user message containing tool results
+                    messages_run.append({
+                        "role": "user",
+                        "content": tool_results_content
+                    })
+
+                else:
+                    # Text response (no tool uses)
+                    # Find the text content block
+                    text_block = next((block.text for block in response.content if block.type == "text"), "")
+                    text_response = text_block
+                    break
+                    
+            if is_enforced and not executed_tools:
+                retry_count += 1
+                current_app.logger.warning(f"Enforced database query but model returned text directly without calling tools. Retrying... (Attempt {retry_count}/{max_retries})")
+                
+                # Insert warning to enforce tool usage
+                if messages and messages[-1]["role"] == "user":
+                    messages[-1]["content"] += "\n(System Warning: You did not call any database tools. You MUST invoke a database tool to query or perform this action. Do not reply with text success or failure directly.)"
+                
+                # Reset tool_choice for retry
+                tool_choice = {"type": "any"}
+                continue
             else:
-                # Text response (no tool uses)
-                # Find the text content block
-                text_block = next((block.text for block in response.content if block.type == "text"), "")
-                return text_block, executed_tools
+                if turn >= max_turns and not text_response:
+                    return "The request was too complex and reached the maximum execution limit.", executed_tools
+                return text_response, executed_tools
 
-        return "The request was too complex and reached the maximum execution limit.", executed_tools
+        # Retries exhausted
+        if locale == 'zh_CN':
+            return "抱歉，系统未能成功执行数据库操作工具。请尝试输入更具体的信息，或刷新页面后重试。", []
+        else:
+            return "I'm sorry, I was unable to execute the database tool for your request. Please try with more specific details, or refresh and try again.", []

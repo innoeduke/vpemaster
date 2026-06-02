@@ -100,9 +100,11 @@ class ChatToolExecutor:
         return None
 
     @staticmethod
-    def resolve_session_log(meeting_id, role_name, club_id):
+    def resolve_session_log(meeting_id, role_name, club_id, contact_id=None, for_assign=False):
         """
         Resolves a session log in a meeting for a role name.
+        If contact_id is provided, tries to find a log already owned/waitlisted by the contact.
+        If for_assign is True and contact is not assigned, tries to find a vacant log of this role.
         """
         norm_name = str(role_name).strip().lower().replace('-', '').replace(' ', '')
         
@@ -110,21 +112,35 @@ class ChatToolExecutor:
             SessionLog.meeting_id == meeting_id
         ).all()
         
-        # Exact match check
+        matching_logs = []
+        # Filter matching logs first
         for log in logs:
             if log.session_type and log.session_type.role:
                 r_name = log.session_type.role.name.strip().lower().replace('-', '').replace(' ', '')
-                if r_name == norm_name:
+                if r_name == norm_name or norm_name in r_name or r_name in norm_name:
+                    matching_logs.append(log)
+                    
+        if not matching_logs:
+            return None
+            
+        # 1. If contact_id is provided, check if contact already owns one of the matching logs
+        if contact_id:
+            for log in matching_logs:
+                if any(owner.id == contact_id for owner in log.owners):
+                    return log
+            # Or is on waitlist for one of the matching logs
+            for log in matching_logs:
+                if any(wl.contact_id == contact_id for wl in log.waitlists):
                     return log
                     
-        # Partial match check
-        for log in logs:
-            if log.session_type and log.session_type.role:
-                r_name = log.session_type.role.name.strip().lower().replace('-', '').replace(' ', '')
-                if norm_name in r_name or r_name in norm_name:
+        # 2. If for_assign is True, find the first vacant log
+        if for_assign:
+            for log in matching_logs:
+                if not log.owners:
                     return log
                     
-        return None
+        # 3. Fallback to the first matching log
+        return matching_logs[0]
 
     @classmethod
     def execute(cls, tool_name, params, user, club_id):
@@ -248,7 +264,7 @@ class ChatToolExecutor:
         if not contact:
             return {'success': False, 'message': f"Contact '{contact_name}' not found."}
             
-        log = cls.resolve_session_log(meeting.id, role_name, club_id)
+        log = cls.resolve_session_log(meeting.id, role_name, club_id, contact_id=contact.id, for_assign=True)
         if not log:
             return {'success': False, 'message': f"Role '{role_name}' not found in Meeting #{meeting.Meeting_Number} agenda."}
             
@@ -280,7 +296,7 @@ class ChatToolExecutor:
         if not contact:
             return {'success': False, 'message': f"Contact '{contact_name}' not found."}
             
-        log = cls.resolve_session_log(meeting.id, role_name, club_id)
+        log = cls.resolve_session_log(meeting.id, role_name, club_id, contact_id=contact.id, for_assign=False)
         if not log:
             return {'success': False, 'message': f"Role '{role_name}' not found in Meeting #{meeting.Meeting_Number} agenda."}
             
@@ -1421,7 +1437,13 @@ class ChatToolExecutor:
         if action != 'query' or role_name:
             if not role_name:
                 return {'success': False, 'message': "Role name is required."}
-            log = cls.resolve_session_log(meeting.id, role_name, club_id)
+            log = cls.resolve_session_log(
+                meeting.id, 
+                role_name, 
+                club_id, 
+                contact_id=contact.id if 'contact' in locals() and contact else None, 
+                for_assign=(action == 'create')
+            )
             if not log:
                 return {'success': False, 'message': f"Role '{role_name}' not found in Meeting #{meeting.Meeting_Number} agenda."}
 
