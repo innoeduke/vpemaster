@@ -6,23 +6,25 @@
 
 {% block content %}
 <div class="uploads-container">
-    <div class="uploads-header" style="margin-bottom: 20px;">
-        <div>
-            <h1 class="uploads-title" style="text-align: left; margin-bottom: 5px;"><i class="fas fa-folder-open"></i> {{ link.title }}</h1>
-            <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
-                <span class="note" style="margin: 0;"><i class="fas fa-link"></i> {{ _('Code:') }} <strong>{{ link.code }}</strong></span>
+    <div class="uploads-header" style="margin-bottom: 15px;">
+        <div style="display: flex; flex-direction: column; gap: 8px; flex-grow: 1;">
+            <div class="title-row">
+                <a href="{{ url_for('uploads_bp.manage_uploads') }}" class="btn-back" title="{{ _('Back to Dashboard') }}">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="uploads-title"><i class="fas fa-folder-open"></i> {{ link.title }}</h1>
+            </div>
+            <div class="header-meta">
+                <span class="note"><i class="fas fa-link"></i> {{ _('Code:') }} <strong>{{ link.code }}</strong></span>
                 {% if link.meeting %}
-                <span class="note" style="margin: 0;"><i class="fas fa-calendar-alt"></i> {{ _('Meeting:') }} <strong>#{{ link.meeting.Meeting_Number }}</strong></span>
+                <span class="note"><i class="fas fa-calendar-alt"></i> {{ _('Meeting:') }} <strong>#{{ link.meeting.Meeting_Number }}</strong></span>
                 {% endif %}
-                <span class="note" style="margin: 0;"><i class="fas fa-file-alt"></i> {{ _('Files:') }} <strong>{{ total_files }}</strong></span>
-                <span class="note" style="margin: 0;"><i class="fas fa-database"></i> {{ _('Total Size:') }} <strong>{{ total_size_formatted }}</strong></span>
+                <span class="note"><i class="fas fa-file-alt"></i> {{ _('Files:') }} <strong>{{ total_files }}</strong></span>
+                <span class="note"><i class="fas fa-database"></i> {{ _('Total Size:') }} <strong>{{ total_size_formatted }}</strong></span>
             </div>
         </div>
         
-        <div style="display: flex; gap: 10px;">
-            <a href="{{ url_for('uploads_bp.manage_uploads') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> {{ _('Back to Dashboard') }}
-            </a>
+        <div class="header-actions">
             {% if total_files > 0 %}
             <button class="btn btn-primary" onclick="downloadAllZip('{{ link.code }}', '{{ link.title|escape }}')">
                 <i class="fas fa-file-archive"></i> {{ _('Download All (ZIP)') }}
@@ -30,6 +32,8 @@
             {% endif %}
         </div>
     </div>
+    
+    <hr style="border: 0; height: 1px; background-color: #e2e8f0; margin: 0 0 20px 0;">
 
     {% if not files %}
     <div class="premium-card text-center" style="padding: 60px 20px;">
