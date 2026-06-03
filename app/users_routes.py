@@ -41,7 +41,7 @@ def _save_user_data(user=None, **kwargs):
         # Calculate permissions
         is_home_club_admin = False
         if current_user.is_authenticated and user.home_club:
-            is_home_club_admin = current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, user.home_club.id)
+            is_home_club_admin = current_user.has_club_permission(Permissions.SETTINGS_EDIT, user.home_club.id)
 
         if is_sysadmin:
             if kwargs.get('username'):
@@ -129,7 +129,7 @@ def _save_user_data(user=None, **kwargs):
 @users_bp.route('/users')
 @login_required
 def show_users():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return redirect(url_for('agenda_bp.agenda'))
 
     return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
@@ -139,7 +139,7 @@ def show_users():
 @users_bp.route('/user/form/<int:user_id>', methods=['GET', 'POST'])
 @login_required
 def user_form(user_id):
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return redirect(url_for('agenda_bp.agenda'))
 
     from .models import AuthRole, UserClub
@@ -260,7 +260,7 @@ def user_form(user_id):
         if current_user_is_sysadmin:
             is_home_club_admin = True
             can_reset_password = True
-        elif user.home_club and current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, user.home_club.id):
+        elif user.home_club and current_user.has_club_permission(Permissions.SETTINGS_EDIT, user.home_club.id):
             is_home_club_admin = True
             # New Requirement: Disable password reset if home club is not the current club
             if user.home_club.id == club_id:
@@ -428,7 +428,7 @@ def check_duplicates():
 @users_bp.route('/user/delete/<int:user_id>', methods=['POST'])
 @login_required
 def delete_user(user_id):
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return redirect(url_for('agenda_bp.agenda'))
 
     user = db.get_or_404(User, user_id)
@@ -503,7 +503,7 @@ def delete_user(user_id):
 @users_bp.route('/user/bulk_import', methods=['POST'])
 @login_required
 def bulk_import_users():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         flash("You don't have permission to perform this action.", 'error')
         return redirect(url_for('settings_bp.settings', default_tab='user-settings'))
 

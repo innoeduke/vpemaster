@@ -82,7 +82,7 @@ def test_command_parser_help(app, staff_user):
 
         # 2. Grant meeting view permission: meeting commands should now show up
         role = Role.query.filter_by(name='Staff').first()
-        agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        agenda_perm = Permission.query.filter_by(name=Permissions.MEETING_VIEW_PUBLISHED).first()
         if agenda_perm not in role.permissions:
             role.permissions.append(agenda_perm)
             db.session.commit()
@@ -184,11 +184,11 @@ def test_tool_get_meeting_agenda(app, default_club, staff_user):
     from app.auth.permissions import Permissions
     from datetime import date, time
     with app.app_context():
-        # Ensure AGENDA_VIEW permission exists and is granted to Staff role
+        # Ensure MEETING_VIEW_PUBLISHED permission exists and is granted to Staff role
         role = Role.query.filter_by(name='Staff').first()
-        agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        agenda_perm = Permission.query.filter_by(name=Permissions.MEETING_VIEW_PUBLISHED).first()
         if not agenda_perm:
-            agenda_perm = Permission(name=Permissions.AGENDA_VIEW, description="View agenda", category="Agenda")
+            agenda_perm = Permission(name=Permissions.MEETING_VIEW_PUBLISHED, description="View agenda", category="Agenda")
             db.session.add(agenda_perm)
             db.session.flush()
         if agenda_perm not in role.permissions:
@@ -258,7 +258,7 @@ def test_route_interception_winners_and_agenda(client, auth, staff_user, default
         role = Role.query.filter_by(name='Staff').first()
         cmd_perm = Permission.query.filter_by(name=Permissions.CHAT_COMMANDS).first()
         ai_perm = Permission.query.filter_by(name=Permissions.CHAT_AI).first()
-        agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        agenda_perm = Permission.query.filter_by(name=Permissions.MEETING_VIEW_PUBLISHED).first()
         voting_perm = Permission.query.filter_by(name=Permissions.VOTING_VIEW_RESULTS).first()
         
         # Ensure voting permission exists
@@ -425,7 +425,7 @@ def test_chat_assistant_language_toggle(app, client, auth, staff_user, default_c
         role = Role.query.filter_by(name='Staff').first()
         cmd_perm = Permission.query.filter_by(name=Permissions.CHAT_COMMANDS).first()
         ai_perm = Permission.query.filter_by(name=Permissions.CHAT_AI).first()
-        agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        agenda_perm = Permission.query.filter_by(name=Permissions.MEETING_VIEW_PUBLISHED).first()
         voting_perm = Permission.query.filter_by(name=Permissions.VOTING_VIEW_RESULTS).first()
         for p in [cmd_perm, ai_perm, agenda_perm, voting_perm]:
             if p not in role.permissions:
@@ -530,11 +530,11 @@ def test_slash_command_in_ai_mode_without_permission(client, auth, staff_user, d
 
 def test_slash_command_status_query(client, auth, staff_user, default_club, chat_permissions, app):
     """Test that /status <meeting_number> acts as a query when status is omitted."""
-    # Ensure CHAT_COMMANDS & AGENDA_EDIT permission
+    # Ensure CHAT_COMMANDS & MEETING_MANAGE permission
     with app.app_context():
         role = Role.query.filter_by(name='Staff').first()
         cmd_perm = Permission.query.filter_by(name=Permissions.CHAT_COMMANDS).first()
-        agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_EDIT).first()
+        agenda_perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
         if cmd_perm not in role.permissions:
             role.permissions.append(cmd_perm)
         if agenda_perm not in role.permissions:

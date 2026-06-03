@@ -624,7 +624,7 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
         from .auth.permissions import Permissions
         effective_status_filter = status_filter
         # Strip 'unpublished' if user doesn't have permission to view them
-        if 'unpublished' in effective_status_filter and not is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED):
+        if 'unpublished' in effective_status_filter and not is_authorized(Permissions.MEETING_VIEW_ALL):
             effective_status_filter = [s for s in effective_status_filter if s != 'unpublished']
 
         query = db.session.query(*query_cols)\
@@ -648,7 +648,7 @@ def get_meetings_by_status(limit_past=8, columns=None, status_filter=None, only_
     from .auth.utils import is_authorized
     from .auth.permissions import Permissions
     active_statuses = ['not started', 'running']
-    if is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED):
+    if is_authorized(Permissions.MEETING_VIEW_ALL):
         active_statuses.append('unpublished')
     active_query = db.session.query(*query_cols)\
         .filter(Meeting.status.in_(active_statuses))
@@ -740,10 +740,10 @@ def get_default_meeting_id():
         return running_meeting.id
 
     # 2. Check for nearest unfinished meeting (not started, unpublished, or cancelled)
-    # Only include 'unpublished' if user has AGENDA_VIEW_UNPUBLISHED permission
+    # Only include 'unpublished' if user has MEETING_VIEW_ALL permission
     from .models import SessionLog
     upcoming_statuses = ['not started', 'cancelled']
-    if is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED):
+    if is_authorized(Permissions.MEETING_VIEW_ALL):
         upcoming_statuses.append('unpublished')
     
     upcoming_query = Meeting.query \

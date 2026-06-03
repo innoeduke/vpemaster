@@ -42,9 +42,9 @@ class TestMeetingDeletion(unittest.TestCase):
         from app.models import Permission, AuthRole as Role
         from app.auth.permissions import Permissions
         
-        perm = Permission(name=Permissions.ABOUT_CLUB_VIEW, description="View Club")
-        perm_agenda = Permission(name=Permissions.AGENDA_VIEW, description="View Agenda")
-        perm_delete = Permission(name=Permissions.AGENDA_DELETE, description="Delete Agenda")
+        perm = Permission(name=Permissions.LIBRARY_VIEW, description="View Club")
+        perm_agenda = Permission(name=Permissions.MEETING_VIEW_PUBLISHED, description="View Agenda")
+        perm_delete = Permission(name=Permissions.MEETING_CREATE, description="Delete Agenda")
         role = Role(name='Guest', description='Guest')
         role.permissions.append(perm)
         role.permissions.append(perm_agenda)

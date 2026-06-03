@@ -839,7 +839,7 @@ class SessionLog(db.Model):
             .filter(cls.meeting_id == selected_meeting_id)\
             .filter(MeetingRole.name != '', MeetingRole.name.isnot(None))
 
-        if not is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting_obj):
+        if not is_authorized(Permissions.MEETING_MANAGE, meeting=meeting_obj):
             query = query.filter(MeetingRole.type != 'officer')
 
         return query.all()

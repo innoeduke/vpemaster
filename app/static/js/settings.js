@@ -1278,7 +1278,7 @@ function renderAuthRolesTable(roles) {
     // Core system roles cannot be deleted
     const deleteBtn = isCore 
       ? `<button class="delete-btn icon-btn" disabled title="System Core Role (Protected)"><i class="fas fa-lock"></i></button>`
-      : (typeof HAS_SETTINGS_EDIT_ALL !== 'undefined' && HAS_SETTINGS_EDIT_ALL)
+      : (typeof HAS_SETTINGS_EDIT !== 'undefined' && HAS_SETTINGS_EDIT)
         ? `<button class="delete-btn icon-btn" onclick="deleteAuthRole(${role.id}, '${role.name.replace(/'/g, "\\'")}')" title="Delete custom role"><i class="fas fa-trash-alt"></i></button>`
         : `<button class="delete-btn icon-btn" disabled title="No edit permissions"><i class="fas fa-trash-alt"></i></button>`;
 
@@ -1663,8 +1663,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Add auth role button disable check
   const addAuthRoleBtn = document.getElementById("add-auth-role-btn");
-  if (addAuthRoleBtn && typeof HAS_SETTINGS_EDIT_ALL !== 'undefined') {
-    if (!HAS_SETTINGS_EDIT_ALL) {
+  if (addAuthRoleBtn && typeof HAS_SETTINGS_EDIT !== 'undefined') {
+    if (!HAS_SETTINGS_EDIT) {
       addAuthRoleBtn.disabled = true;
       addAuthRoleBtn.title = "Permission denied";
     }

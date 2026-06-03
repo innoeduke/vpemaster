@@ -37,7 +37,7 @@
         <tr>
             <td><label for="completed_paths">Completed Paths:</label></td>
             <td>
-                {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
+                {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
                 <select id="completed_paths" name="completed_paths" multiple style="width: 100%; height: 100px;">
                     {% for type, p_list in pathways.items() %}
                     <optgroup label="{{ type }}">

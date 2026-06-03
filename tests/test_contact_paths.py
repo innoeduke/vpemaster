@@ -37,9 +37,9 @@ class ContactPathsTestCase(unittest.TestCase):
         self.role_club_admin = AuthRole(name="ClubAdmin", level=4)
         self.role_member = AuthRole(name="Member", level=1)
         
-        self.perm_ach_edit = Permission(name=Permissions.ACHIEVEMENTS_EDIT, description="Edit Achievements")
-        self.perm_ach_view = Permission(name=Permissions.ACHIEVEMENTS_VIEW, description="View Achievements")
-        self.perm_cb_edit = Permission(name=Permissions.CONTACT_BOOK_EDIT, description="Edit Contact Book")
+        self.perm_ach_edit = Permission(name=Permissions.SPEECH_LOGS_MANAGE, description="Edit Achievements")
+        self.perm_ach_view = Permission(name=Permissions.LIBRARY_VIEW, description="View Achievements")
+        self.perm_cb_edit = Permission(name=Permissions.ROSTER_EDIT, description="Edit Contact Book")
         
         self.role_club_admin.permissions.extend([self.perm_ach_edit, self.perm_cb_edit, self.perm_ach_view])
         self.role_member.permissions.append(self.perm_ach_view)

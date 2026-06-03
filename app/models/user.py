@@ -246,7 +246,10 @@ class User(UserMixin, db.Model):
             user_contact_id = getattr(self, 'contact_id', None)
             if user_contact_id and user_contact_id == meeting.manager_id:
                 # Grant Operator-level permissions relevant to meeting management
-                if permission_name in {'AGENDA_EDIT', 'BOOKING_ASSIGN_ALL', 'BOOKING_BOOK_OWN', 'VOTING_VIEW_RESULTS', 'VOTING_TRACK_PROGRESS', 'ROSTER_EDIT', 'BOOKING_VIEW_ALL', 'ROSTER_VIEW'}:
+                if permission_name in {
+                    'MEETING_MANAGE', 'BOOKING_OWN', 'VOTING_VIEW_RESULTS', 
+                    'VOTING_TRACK_PROGRESS', 'ROSTER_EDIT', 'MEETING_VIEW_PUBLISHED', 'ROSTER_VIEW'
+                }:
                     return True
                     
         if not club_id:

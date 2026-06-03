@@ -26,7 +26,7 @@ def settings():
     """
     Renders the settings page, visible only to administrators.
     """
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return redirect(url_for('agenda_bp.agenda'))
 
     # Get current club context
@@ -139,7 +139,7 @@ def settings():
 @login_required
 @authorized_club_required
 def add_excomm():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     
     club_id = get_current_club_id()
@@ -187,7 +187,7 @@ def add_excomm():
 @login_required
 @authorized_club_required
 def update_excomm():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     
     club_id = get_current_club_id()
@@ -243,7 +243,7 @@ def update_excomm():
 @login_required
 @authorized_club_required
 def delete_excomm(id):
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     
     club_id = get_current_club_id()
@@ -279,7 +279,7 @@ def delete_excomm(id):
 @settings_bp.route('/settings/sessions/add', methods=['POST'])
 @login_required
 def add_session_type():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
 
     # Get current club context
@@ -389,7 +389,7 @@ def add_session_type():
 @settings_bp.route('/settings/sessions/update', methods=['POST'])
 @login_required
 def update_session_types():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
     try:
@@ -423,7 +423,7 @@ def update_session_types():
 @settings_bp.route('/settings/sessions/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_session_type(id):
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
     try:
@@ -469,7 +469,7 @@ def delete_session_type(id):
 @login_required
 def delete_session_type_logs(id):
     """Delete all session logs associated with a session type."""
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
     try:
@@ -512,7 +512,7 @@ def delete_session_type_logs(id):
 @login_required
 def delete_role_logs(id):
     """Delete all meeting assignments (OwnerMeetingRoles) for a role."""
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
     try:
@@ -551,7 +551,7 @@ def delete_role_logs(id):
 @settings_bp.route('/settings/roles/add', methods=['POST'])
 @login_required
 def add_role():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
     trimmed_name = request.form.get('name', '').strip()
@@ -627,7 +627,7 @@ def add_role():
 @settings_bp.route('/settings/roles/update', methods=['POST'])
 @login_required
 def update_roles():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
     try:
@@ -652,7 +652,7 @@ def update_roles():
 @settings_bp.route('/settings/roles/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_role(id):
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
     try:
@@ -712,7 +712,7 @@ def delete_role(id):
 @settings_bp.route('/settings/roles/import', methods=['POST'])
 @login_required
 def import_roles():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
 
@@ -787,7 +787,7 @@ def import_roles():
 @settings_bp.route('/settings/tickets/add', methods=['POST'])
 @login_required
 def add_ticket():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
     trimmed_name = request.form.get('name', '').strip()
@@ -877,7 +877,7 @@ def add_ticket():
 @settings_bp.route('/settings/tickets/update', methods=['POST'])
 @login_required
 def update_tickets():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
     data = request.json
@@ -914,7 +914,7 @@ def update_tickets():
 @settings_bp.route('/settings/tickets/delete/<int:id>', methods=['POST'])
 @login_required
 def delete_ticket(id):
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     club_id = get_current_club_id()
     try:
@@ -951,7 +951,7 @@ def delete_ticket(id):
 @login_required
 @authorized_club_required
 def get_settings_users():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
 
     club_id = get_current_club_id()
@@ -1044,7 +1044,7 @@ def get_settings_users():
 @settings_bp.route('/api/permissions/matrix', methods=['GET'])
 @login_required
 def get_permissions_matrix():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     
     club_id = get_current_club_id()
@@ -1080,7 +1080,7 @@ def get_permissions_matrix():
 @settings_bp.route('/api/permissions/update', methods=['POST'])
 @login_required
 def update_permission_matrix():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     # club_id = get_current_club_id()
 
@@ -1131,7 +1131,7 @@ def update_permission_matrix():
 @settings_bp.route('/api/audit-log', methods=['GET'])
 @login_required
 def get_audit_log():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     # club_id = get_current_club_id()
 
@@ -1141,7 +1141,7 @@ def get_audit_log():
 @settings_bp.route('/api/user-roles/update', methods=['POST'])
 @login_required
 def update_user_roles():
-    if not is_authorized(Permissions.SETTINGS_VIEW_ALL):
+    if not is_authorized(Permissions.SETTINGS_VIEW):
         return jsonify(success=False, message="Permission denied"), 403
     # club_id = get_current_club_id()
 
@@ -1205,7 +1205,7 @@ def update_user_roles():
 @login_required
 @authorized_club_required
 def add_auth_role():
-    if not is_authorized(Permissions.SETTINGS_EDIT_ALL):
+    if not is_authorized(Permissions.SETTINGS_EDIT):
         return jsonify(success=False, message="Permission denied"), 403
     
     club_id = get_current_club_id()
@@ -1275,7 +1275,7 @@ def add_auth_role():
 @login_required
 @authorized_club_required
 def delete_auth_role(id):
-    if not is_authorized(Permissions.SETTINGS_EDIT_ALL):
+    if not is_authorized(Permissions.SETTINGS_EDIT):
         return jsonify(success=False, message="Permission denied"), 403
 
     club_id = get_current_club_id()

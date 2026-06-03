@@ -176,7 +176,7 @@ def authorized_club_required(f):
        - SysAdmin: Can access any club
        - ClubAdmin: Can access clubs where they are an ExComm officer
        - Other users: Must have a membership record for the current club
-    3. For anonymous users: Allows access if they have ABOUT_CLUB_VIEW permission.
+    3. For anonymous users: Allows access if they have MEETING_VIEW_PUBLISHED permission.
     """
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -211,7 +211,7 @@ def authorized_club_required(f):
         else:
             # Anonymous guests: check if they have general agenda view permission
             # (The 'Guest' role in DB should typically have this)
-            if hasattr(current_user, 'can') and not current_user.can(Permissions.AGENDA_VIEW):
+            if hasattr(current_user, 'can') and not current_user.can(Permissions.MEETING_VIEW_PUBLISHED):
                 from flask import redirect, url_for
                 return redirect(url_for('auth_bp.login'))
             elif not hasattr(current_user, 'can'):

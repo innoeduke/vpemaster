@@ -31,8 +31,8 @@ def _cleanup_old_tasks():
 
 @tools_bp.route('/', methods=['GET'])
 def tools():
-    has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
-    has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
+    has_lucky_draw_access = current_user.is_authenticated
+    has_pathways_access = is_authorized(Permissions.LIBRARY_VIEW)
 
     if has_pathways_access:
         return redirect(url_for('pathways_bp.pathway_library'))
@@ -46,13 +46,13 @@ def tools():
 def validator():
     """Level Validator tool. GET renders UI, POST starts async verification."""
     from .auth.utils import is_authorized
-    if not is_authorized(Permissions.PATHWAY_LIB_VIEW):
+    if not is_authorized(Permissions.LIBRARY_VIEW):
         from flask import abort
         abort(403)
 
     if request.method == 'GET':
-        has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
-        has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
+        has_lucky_draw_access = current_user.is_authenticated
+        has_pathways_access = is_authorized(Permissions.LIBRARY_VIEW)
         
         # Pathways list for dropdown
         from .models import Pathway

@@ -381,7 +381,7 @@ class CommandParser:
         commands = []
 
         # Check /create-meeting
-        if check_perm(Permissions.AGENDA_CREATE):
+        if check_perm(Permissions.MEETING_CREATE):
             try:
                 from app.models import Meeting
                 type_to_template = Meeting.get_type_to_template(club_id)
@@ -392,15 +392,15 @@ class CommandParser:
             commands.append(f"* **/create-meeting** `<date>` `[template]` - Create meeting.{tpl_suffix} Example: `/create-meeting 2026-06-15 \"Keynote Speech\"`\n")
 
         # Check /assign
-        if check_perm(Permissions.BOOKING_ASSIGN_ALL):
+        if check_perm(Permissions.MEETING_MANAGE):
             commands.append("* **/assign** `<meeting_number>` `<role_name>` `[contact_name]` - Assign role, or query assignee if name omitted. Example: `/assign 350 \"Ah Counter\" \"Kyle Wei\"`\n")
 
         # Check /cancel-role
-        if check_perm(Permissions.BOOKING_ASSIGN_ALL):
+        if check_perm(Permissions.MEETING_MANAGE):
             commands.append("* **/cancel-role** `<meeting_number>` `<role_name>` `[contact_name]` - Cancel assignment, or query assignee if name omitted. Example: `/cancel-role 350 \"Ah Counter\" \"Kyle Wei\"`\n")
 
         # Check /add-contact
-        if check_perm(Permissions.CONTACT_BOOK_EDIT) or check_perm(Permissions.CONTACT_ADD_GUEST):
+        if check_perm(Permissions.ROSTER_EDIT):
             commands.append("* **/add-contact** `<name>` `[email]` `[phone]` - Add guest contact. Example: `/add-contact \"John Smith\"`\n")
 
         # Check /check-in
@@ -421,34 +421,34 @@ class CommandParser:
             commands.append(f"* **/check-in** `<meeting_number>` `[contact_name]` `[ticket_type]` - Check in participant, or query check-ins if name omitted.{tkt_suffix} Example: `/check-in 350 \"Kyle Wei\"`\n")
 
         # Check /complete-level
-        if check_perm(Permissions.ACHIEVEMENTS_EDIT):
+        if check_perm(Permissions.SPEECH_LOGS_MANAGE):
             commands.append("* **/complete-level** `<contact_name>` `<pathway_name>` `[level]` - Record achievement, or query completed levels if level omitted. Example: `/complete-level \"Kyle Wei\" \"Dynamic Leadership\" 3`\n")
 
         # Check /pathway-status
-        if check_perm(Permissions.ACHIEVEMENTS_VIEW):
+        if check_perm(Permissions.LIBRARY_VIEW):
             commands.append("* **/pathway-status** `<contact_name>` - Show pathway progress. Example: `/pathway-status \"Kyle Wei\"`\n")
 
         # Check /search
         commands.append("* **/search** `<name_query>` - Search contacts. Example: `/search Kyle`\n")
 
         # Check /meeting-info
-        if check_perm(Permissions.AGENDA_VIEW):
+        if check_perm(Permissions.MEETING_VIEW_PUBLISHED):
             commands.append("* **/meeting-info** `<meeting_number>` - Get meeting summary. Example: `/meeting-info 350`\n")
 
         # Check /list-meetings
-        if check_perm(Permissions.AGENDA_VIEW):
+        if check_perm(Permissions.MEETING_VIEW_PUBLISHED):
             commands.append("* **/list-meetings** `[status]` `[limit]` - List recent/upcoming. (Available statuses: 'unpublished', 'not started', 'running', 'finished', 'cancelled') Example: `/list-meetings running 5`\n")
 
         # Check /roles
-        if check_perm(Permissions.BOOKING_VIEW_ALL):
+        if check_perm(Permissions.MEETING_VIEW_PUBLISHED):
             commands.append("* **/roles** `<meeting_number>` - Show assigned roles. Example: `/roles 350`\n")
 
         # Check /available-roles
-        if check_perm(Permissions.BOOKING_VIEW_ALL):
+        if check_perm(Permissions.MEETING_VIEW_PUBLISHED):
             commands.append("* **/available-roles** `<meeting_number>` - Show open roles. Example: `/available-roles 350`\n")
 
         # Check /status
-        if check_perm(Permissions.AGENDA_EDIT):
+        if check_perm(Permissions.MEETING_MANAGE):
             commands.append("* **/status** `<meeting_number>` `[new_status]` - Change meeting status, or query status if new status omitted. (Available statuses: 'unpublished', 'not started', 'running', 'finished', 'cancelled') Example: `/status 350 running`\n")
 
         # Check /voting-results
@@ -459,7 +459,7 @@ class CommandParser:
         commands.append("* **/query-pathways** `[pathway_name]` `[level]` `[--project name]` - Query pathways and projects library. Example: `/query-pathways PM 3` or `/query-pathways --project \"Ice Breaker\"`\n")
         
         # Check /waitlist
-        if check_perm(Permissions.BOOKING_VIEW_ALL):
+        if check_perm(Permissions.MEETING_VIEW_PUBLISHED):
             commands.append("* **/waitlist** `<action> <meeting_number> [args...]` - Manage waitlists (actions: query, join, update, remove, approve).\n")
 
         # Check /help

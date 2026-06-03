@@ -81,7 +81,7 @@ class VotingRealtimeTestCase(unittest.TestCase):
                 Permissions.VOTING_VIEW_RESULTS
             ],
             'User': [
-                Permissions.AGENDA_VIEW
+                Permissions.MEETING_VIEW_PUBLISHED
             ]
         }
         

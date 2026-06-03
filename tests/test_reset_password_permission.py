@@ -30,9 +30,9 @@ class TestPasswordResetPermission(unittest.TestCase):
              pass # Assuming test DB might be empty, might need minimal seeding
              
         # Seed Permissions if testing environment is empty
-        perm = Permission.query.filter_by(name=Permissions.RESET_PASSWORD_CLUB).first()
+        perm = Permission.query.filter_by(name=Permissions.SETTINGS_EDIT).first()
         if not perm:
-            perm = Permission(name=Permissions.RESET_PASSWORD_CLUB, description="Test Perm")
+            perm = Permission(name=Permissions.SETTINGS_EDIT, description="Test Perm")
             db.session.add(perm)
         
         club_admin_role = AuthRole.query.filter_by(name='ClubAdmin').first()
@@ -88,10 +88,10 @@ class TestPasswordResetPermission(unittest.TestCase):
         user_b = self.create_user("user_b", self.club_b, "Member", is_home=True)
         
         # Admin A should have permission in Club A
-        self.assertTrue(admin_a.has_club_permission(Permissions.RESET_PASSWORD_CLUB, self.club_a.id))
+        self.assertTrue(admin_a.has_club_permission(Permissions.SETTINGS_EDIT, self.club_a.id))
         
         # Admin A should NOT have permission in Club B
-        self.assertFalse(admin_a.has_club_permission(Permissions.RESET_PASSWORD_CLUB, self.club_b.id))
+        self.assertFalse(admin_a.has_club_permission(Permissions.SETTINGS_EDIT, self.club_b.id))
         
     def test_logic_simulation(self):
         # Logic: if is_own or (home_club and has_club_permission(home_club))
@@ -103,12 +103,12 @@ class TestPasswordResetPermission(unittest.TestCase):
         # Case 1: Admin A resetting User A (Same Home Club) -> SHOULD ALLOW
         # user_a.home_club is Club A. Admin A has permission in Club A.
         self.assertTrue(user_a.home_club)
-        self.assertTrue(admin_a.has_club_permission(Permissions.RESET_PASSWORD_CLUB, user_a.home_club.id))
+        self.assertTrue(admin_a.has_club_permission(Permissions.SETTINGS_EDIT, user_a.home_club.id))
         
         # Case 2: Admin A resetting User B (Different Home Club) -> SHOULD DENY
         # user_b.home_club is Club B. Admin A does NOT have permission in Club B.
         self.assertTrue(user_b.home_club)
-        self.assertFalse(admin_a.has_club_permission(Permissions.RESET_PASSWORD_CLUB, user_b.home_club.id))
+        self.assertFalse(admin_a.has_club_permission(Permissions.SETTINGS_EDIT, user_b.home_club.id))
 
 if __name__ == '__main__':
     unittest.main()

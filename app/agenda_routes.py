@@ -721,7 +721,7 @@ def agenda():
     selected_meeting = None
     
     if selected_meeting_id:
-        logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_id, is_authorized(Permissions.MEDIA_ACCESS))
+        logs_data, selected_meeting = _get_processed_logs_data(selected_meeting_id, is_authorized(Permissions.MEDIA_MANAGE))
         
         if not selected_meeting:
              # Handle meeting not found (deleted or invalid number)
@@ -729,9 +729,9 @@ def agenda():
              return redirect(url_for('agenda_bp.agenda'))
 
         # Custom Security Check based on Status
-        # 1. Unpublished: Only users with AGENDA_VIEW_UNPUBLISHED can view full details
+        # 1. Unpublished: Only users with MEETING_VIEW_ALL can view full details
         if selected_meeting.status == 'unpublished':
-            if not is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED, meeting=selected_meeting):
+            if not is_authorized(Permissions.MEETING_VIEW_ALL, meeting=selected_meeting):
                 # Unauthorized users cannot view unpublished meetings
                 # Instead of redirecting, show notice image and hide booking/voting nav
                 return render_template('agenda.html',
@@ -753,9 +753,9 @@ def agenda():
                                        next_meeting_date='',
                                        project_speakers=[])
 
-        # 2. Published meetings (not started, running, finished): require AGENDA_VIEW
+        # 2. Published meetings (not started, running, finished): require MEETING_VIEW_PUBLISHED
         if selected_meeting.status in ('not started', 'running', 'finished'):
-            if not is_authorized(Permissions.AGENDA_VIEW, meeting=selected_meeting):
+            if not is_authorized(Permissions.MEETING_VIEW_PUBLISHED, meeting=selected_meeting):
                 return render_template('agenda.html',
                                        logs_data=[],
                                        meeting_ids=all_meetings,
@@ -1012,7 +1012,7 @@ def export_meeting_template():
     Exports the current meeting structure as a CSV template file
     in the club's resource folder.
     """
-    if not is_authorized(Permissions.AGENDA_EDIT):
+    if not is_authorized(Permissions.MEETING_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
 
     data = request.get_json()
@@ -1084,7 +1084,7 @@ def delete_meeting_template():
     """
     Deletes a club-specific meeting template CSV file.
     """
-    if not is_authorized(Permissions.AGENDA_EDIT):
+    if not is_authorized(Permissions.MEETING_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
 
     data = request.get_json()
@@ -1456,7 +1456,7 @@ def _generate_logs_from_template(meeting, template_file):
 @authorized_club_required
 def create_from_template():
     # Check if user has permission to create agenda
-    if not is_authorized(Permissions.AGENDA_CREATE):
+    if not is_authorized(Permissions.MEETING_CREATE):
         return jsonify({'success': False, 'message': "You don't have permission to create meetings."}), 403
     
     try:
@@ -1508,7 +1508,7 @@ def create_from_template():
 @agenda_bp.route('/agenda/update', methods=['POST'])
 @login_required
 @authorized_club_required
-@permission_required(Permissions.AGENDA_EDIT)
+@permission_required(Permissions.MEETING_MANAGE)
 def update_logs():
     data = request.get_json()
 
@@ -1624,7 +1624,7 @@ def update_logs():
         RoleService._clear_meeting_cache(meeting_id)
 
         # Return updated logs for client-side rendering
-        logs_data, _ = _get_processed_logs_data(meeting_id, is_authorized(Permissions.MEDIA_ACCESS))
+        logs_data, _ = _get_processed_logs_data(meeting_id, is_authorized(Permissions.MEDIA_MANAGE))
         project_speakers = _get_project_speakers(meeting_id)
 
         return jsonify(success=True, logs_data=logs_data, project_speakers=project_speakers)
@@ -1647,7 +1647,7 @@ def get_logs(meeting_id):
         if not meeting or (club_id and meeting.club_id != club_id):
              return jsonify(success=False, message="Meeting not found or access denied"), 404
  
-        logs_data, _ = _get_processed_logs_data(meeting_id, is_authorized(Permissions.MEDIA_ACCESS))
+        logs_data, _ = _get_processed_logs_data(meeting_id, is_authorized(Permissions.MEDIA_MANAGE))
         project_speakers = _get_project_speakers(meeting_id)
         
         meeting_info = {
@@ -1792,7 +1792,7 @@ def update_meeting_status(meeting_id):
 
     current_status = meeting.status
     if current_status != 'finished':
-        if not is_authorized(Permissions.AGENDA_EDIT, meeting=meeting):
+        if not is_authorized(Permissions.MEETING_MANAGE, meeting=meeting):
             return jsonify(success=False, message="Permission denied"), 403
     
     new_status = current_status
@@ -1833,7 +1833,7 @@ def update_meeting_status(meeting_id):
     elif current_status == 'finished':
         # Full deletion flow as requested
         # Check if user has permission to delete meetings
-        if not is_authorized(Permissions.AGENDA_DELETE):
+        if not is_authorized(Permissions.MEETING_CREATE):
             return jsonify(success=False, message="You do not have permission to delete meetings."), 403
             
         try:

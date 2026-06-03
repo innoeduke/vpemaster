@@ -9,7 +9,7 @@ def test_meeting_details_awards_saving(client, app, default_club, staff_user):
         from app.models import AuthRole, Permission
         from app.auth.permissions import Permissions
         staff_role = AuthRole.query.filter_by(name='Staff').first()
-        agenda_edit_perm = Permission.query.filter_by(name=Permissions.AGENDA_EDIT).first()
+        agenda_edit_perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
         if staff_role and agenda_edit_perm and agenda_edit_perm not in staff_role.permissions:
             staff_role.permissions.append(agenda_edit_perm)
             db.session.commit()

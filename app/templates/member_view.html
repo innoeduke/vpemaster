@@ -51,12 +51,12 @@
             {% endif %}
 
             <div class="header-profile-action">
-                {% if is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+                {% if is_authorized(Permissions.ROSTER_VIEW) %}
                 <a href="{{ url_for('auth_bp.profile', contact_id=viewed_contact.id) }}" class="btn-view-control btn-profile-small"
                     title="{{ _('View Profile') }}">
                     <i class="fas fa-id-card"></i> {{ _('Profile') }}
                 </a>
-                {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) or is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+                {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) or is_authorized(Permissions.ROSTER_EDIT) %}
                 <button type="button" class="btn-view-control btn-profile-small" id="btnManagePathways"
                     title="{{ _('Manage Pathways') }}" onclick="openManagePathwaysModal()">
                     <i class="fas fa-graduation-cap"></i> {{ _('Pathways') }}
@@ -215,7 +215,7 @@
     
     {% if is_member_view %}
         {% include 'partials/_planner_modal.html' %}
-        {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
+        {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
             {% include 'partials/_achievement_modal.html' %}
         {% endif %}
     {% endif %}
@@ -276,7 +276,7 @@
                             {{ _('Level') }} {{ row.level }}
                         </div>
                         
-                        {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) and viewed_contact.user_id %}
+                        {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) and viewed_contact.user_id %}
                         <div class="achievement-quick-actions">
                             {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
                             {% if row.level|int in completed_levels %}
@@ -358,7 +358,7 @@
                 {% endif %}
             </div>
             
-            {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) and viewed_contact.user_id %}
+            {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) and viewed_contact.user_id %}
             <div class="achievement-actions">
                 {% set pathway_name = selected_filters.pathway if selected_filters.pathway and selected_filters.pathway != 'all' else viewed_contact.Current_Path %}
                 {% if level|int in completed_levels %}
@@ -419,7 +419,7 @@
                 <!-- Dynamic pathways list loaded here -->
             </div>
 
-            {% if is_authorized(Permissions.ACHIEVEMENTS_EDIT) %}
+            {% if is_authorized(Permissions.SPEECH_LOGS_MANAGE) %}
             <div style="border-top: 1px solid #dee2e6; padding-top: 20px; margin-top: 20px;">
                 <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 1rem; color: #004165; font-weight: 600;">{{ _('Register New Pathway') }}</h4>
                 <div style="display: flex; gap: 10px; align-items: center;">
@@ -464,8 +464,8 @@
     });
 
     const contactId = {{ viewed_contact.id }};
-    const canEditAchievements = {{ 'true' if is_authorized(Permissions.ACHIEVEMENTS_EDIT) else 'false' }};
-    const canEditDefault = {{ 'true' if is_authorized(Permissions.CONTACT_BOOK_EDIT) else 'false' }};
+    const canEditAchievements = {{ 'true' if is_authorized(Permissions.SPEECH_LOGS_MANAGE) else 'false' }};
+    const canEditDefault = {{ 'true' if is_authorized(Permissions.ROSTER_EDIT) else 'false' }};
 
     function openManagePathwaysModal() {
         const modal = document.getElementById("pathwaysModal");

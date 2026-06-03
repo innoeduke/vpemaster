@@ -45,7 +45,7 @@ head_extra %}
         </div>
       </div>
       <div class="button-group">
-        {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+        {% if is_authorized(Permissions.ROSTER_EDIT) %}
         <button class="btn btn-success desktop-only-btn" onclick="openContactModal()">
           {{ _('New') }}
         </button>
@@ -61,7 +61,7 @@ head_extra %}
         </button>
         {% endif %}
         
-        {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+        {% if is_authorized(Permissions.ROSTER_VIEW) %}
         <button class="btn btn-maroon desktop-only-btn" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';" title="{{ _('Grid View') }}">
           <i class="fas fa-th-large"></i>
         </button>
@@ -73,7 +73,7 @@ head_extra %}
             <i class="fas fa-ellipsis-v"></i>
           </button>
           <div id="action-menu" class="action-menu">
-            {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+            {% if is_authorized(Permissions.ROSTER_EDIT) %}
             <div class="action-menu-item" onclick="openContactModal()">
               <i class="fas fa-plus"></i> {{ _('New') }}
             </div>
@@ -85,7 +85,7 @@ head_extra %}
             </div>
             {% endif %}
  
-            {% if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW) %}
+            {% if is_authorized(Permissions.ROSTER_VIEW) %}
             <div class="action-menu-item" onclick="window.location.href='{{ url_for('contacts_bp.member_cards') }}';">
               <i class="fas fa-th-large"></i> {{ _('Grid View') }}
             </div>
@@ -98,7 +98,7 @@ head_extra %}
 </div>
  
 <!-- Contact Tabs -->
-{% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+{% if is_authorized(Permissions.ROSTER_EDIT) %}
 <div class="nav-tabs" id="contactsTabs">
   {% for contact_type in contact_types %}
   <div class="nav-item {% if loop.first %}active{% endif %}" data-type="{{ contact_type }}">
@@ -121,7 +121,7 @@ head_extra %}
   <table id="contactsTable" style="display: none">
     <thead>
       <tr>
-        {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+        {% if is_authorized(Permissions.ROSTER_EDIT) %}
         <th class="checkbox-header" style="width: 40px; text-align: center">
           <input type="checkbox" id="selectAllContacts" onclick="toggleSelectAll(this)" />
         </th>
@@ -156,7 +156,7 @@ head_extra %}
         <th class="sortable col-mentor" data-column-index="9" data-sort-type="string">
           {{ _('Mentor') }}
         </th>
-        {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) %}
+        {% if is_authorized(Permissions.ROSTER_EDIT) %}
         <th class="action-header col-actions" data-column-index="10"></th>
         {% endif %}
       </tr>
@@ -224,7 +224,7 @@ include '_merge_modal.html' %}
   var canViewAllLogs = {{ 'true' if can_view_all_logs else 'false' }};
   var canViewMembers = {{ 'true' if can_view_members else 'false' }};
   var canSendMessages = {{ 'true' if can_send_messages else 'false' }};
-  var hasEditPermission = {{ 'true' if is_authorized(Permissions.CONTACT_BOOK_EDIT) else 'false' }};
+  var hasEditPermission = {{ 'true' if is_authorized(Permissions.ROSTER_EDIT) else 'false' }};
   // Dates are directly read from DOM instead of relying on injected global variables
 
   var INITIAL_CONTACTS = [];

@@ -13,7 +13,7 @@ clubs_bp = Blueprint('clubs_bp', __name__)
 @clubs_bp.route('/clubs')
 @login_required
 def list_clubs():
-    if not is_authorized(Permissions.CLUBS_MANAGE):
+    if not is_authorized(Permissions.SETTINGS_EDIT):
         flash('You do not have permission to view this page.', 'danger')
         return redirect(url_for('agenda_bp.agenda'))
     
@@ -40,7 +40,7 @@ def list_clubs():
 @clubs_bp.route('/clubs/new', methods=['GET', 'POST'])
 @login_required
 def create_club():
-    if not is_authorized(Permissions.CLUBS_MANAGE):
+    if not is_authorized(Permissions.SETTINGS_EDIT):
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('agenda_bp.agenda'))
         
@@ -112,7 +112,7 @@ def create_club():
 @clubs_bp.route('/clubs/<int:club_id>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_club(club_id):
-    if not is_authorized(Permissions.CLUBS_MANAGE):
+    if not is_authorized(Permissions.SETTINGS_EDIT):
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('agenda_bp.agenda'))
         
@@ -167,7 +167,7 @@ def edit_club(club_id):
 @clubs_bp.route('/clubs/<int:club_id>/delete', methods=['POST'])
 @login_required
 def delete_club(club_id):
-    if not is_authorized(Permissions.CLUBS_MANAGE):
+    if not is_authorized(Permissions.SETTINGS_EDIT):
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('agenda_bp.agenda'))
         
@@ -243,7 +243,7 @@ def request_home(club_id):
 
     # If the user IS a club admin, approve immediately
     from app.auth.permissions import Permissions
-    if current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, club_id):
+    if current_user.has_club_permission(Permissions.SETTINGS_EDIT, club_id):
         current_user.set_home_club(club_id)
         return jsonify({'success': True, 'message': f'{club.club_name} has been set as your home club.'})
 
@@ -256,7 +256,7 @@ def request_home(club_id):
     
     admins = []
     for m in members:
-        if m.has_club_permission(Permissions.SETTINGS_EDIT_ALL, club_id):
+        if m.has_club_permission(Permissions.SETTINGS_EDIT, club_id):
             admins.append(m)
             
     if not admins:
@@ -308,7 +308,7 @@ def respond_home_request():
     target_club_id = int(match.group(2))
     
     # SECURITY CHECK: Verifying Admin Permission
-    if not current_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, target_club_id):
+    if not current_user.has_club_permission(Permissions.SETTINGS_EDIT, target_club_id):
         # Silent failure as requested
         return jsonify({'success': False, 'error': 'Unauthorized'}), 200
         
@@ -356,7 +356,7 @@ def respond_home_request():
             # Let's broadcast to all admins found.
             old_members = User.query.join(UserClub).filter(UserClub.club_id == old_home_club.id).all()
             for m in old_members:
-                if m.has_club_permission(Permissions.SETTINGS_EDIT_ALL, old_home_club.id):
+                if m.has_club_permission(Permissions.SETTINGS_EDIT, old_home_club.id):
                     admin_msg = Message(
                         sender_id=current_user.id,
                         recipient_id=m.id,

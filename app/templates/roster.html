@@ -70,7 +70,7 @@
                                 <input type="text" class="form-control" id="contact_name"
                                     placeholder="{{ _('Member/Guest name') }}" autocomplete="off" required>
                                 <input type="hidden" id="contact_id">
-                                {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) or is_authorized(Permissions.CONTACT_ADD_GUEST) %}
+                                {% if is_authorized(Permissions.ROSTER_EDIT) %}
                                 <button class="btn btn-success" type="button" id="add-contact-btn"
                                     title="{{ _('Add New Guest') }}" onclick="openContactModalWithReferer()">
                                     <i class="fas fa-plus"></i>
@@ -139,7 +139,7 @@
                         data-contact-id="{{ entry.contact_id or '' }}" data-ticket-id="{{ entry.ticket.id if entry.ticket else '' }}">
                         <td class="cell-order">{{ entry.order_number if entry.order_number is not none else '' }}</td>
                         <td class="cell-name">
-                            {% if is_authorized(Permissions.CONTACT_BOOK_EDIT) and entry.contact_id %}
+                            {% if is_authorized(Permissions.ROSTER_EDIT) and entry.contact_id %}
                             <a href="#" class="roster-contact-link" data-contact-id="{{ entry.contact_id }}">{{ entry.contact.Name if entry.contact else _('N/A') }}</a>
                             {% else %}
                             {{ entry.contact.Name if entry.contact else _('N/A') }}

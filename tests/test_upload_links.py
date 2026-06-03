@@ -30,7 +30,7 @@ class UploadLinksTestCase(unittest.TestCase):
         self.role_club_admin = AuthRole(name="ClubAdmin", level=4)
         self.role_member = AuthRole(name="Member", level=1)
         
-        self.perm_upload_manage = Permission(name=Permissions.FILE_UPLOAD_MANAGE, description="Manage Uploads")
+        self.perm_upload_manage = Permission(name=Permissions.MEDIA_MANAGE, description="Manage Uploads")
         self.role_club_admin.permissions.append(self.perm_upload_manage)
         
         db.session.add_all([self.role_club_admin, self.role_member, self.perm_upload_manage])

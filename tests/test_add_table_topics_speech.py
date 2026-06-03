@@ -34,7 +34,7 @@ class AddTableTopicsSpeechTestCase(unittest.TestCase):
 
     def setup_data(self):
         # 1. Create permissions
-        self.perm_agenda_edit = Permission(name=Permissions.AGENDA_EDIT, description="Edit Agenda", category="agenda")
+        self.perm_agenda_edit = Permission(name=Permissions.MEETING_MANAGE, description="Edit Agenda", category="agenda")
         db.session.add(self.perm_agenda_edit)
         
         # 2. Create roles

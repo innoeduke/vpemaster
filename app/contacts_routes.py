@@ -25,11 +25,8 @@ def search_contacts_by_name():
     query = Contact.query.join(ContactClub).filter(ContactClub.club_id == club_id)
     
     # Permission filtering
-    if not is_authorized(Permissions.CONTACT_BOOK_VIEW):
-        if is_authorized(Permissions.CONTACTS_MEMBERS_VIEW):
-            query = query.filter(Contact.Type == 'Member')
-        else:
-            return jsonify([]), 403
+    if not is_authorized(Permissions.ROSTER_VIEW):
+        return jsonify([]), 403
     
     if search_term:
         contacts = query.filter(Contact.Name.ilike(f'%{search_term}%')).all()
@@ -59,10 +56,10 @@ def search_contacts_by_name():
 @login_required
 def show_contacts():
     # Regular users only see Members; Staff and above see all.
-    can_view_all = is_authorized(Permissions.CONTACT_BOOK_VIEW)
-    can_view_members = is_authorized(Permissions.CONTACTS_MEMBERS_VIEW)
+    can_view_all = is_authorized(Permissions.ROSTER_VIEW)
+    can_view_members = is_authorized(Permissions.ROSTER_VIEW)
 
-    if not can_view_all and not can_view_members:
+    if not can_view_all:
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -119,7 +116,7 @@ def show_contacts():
         Contact.Type.in_(['Member', 'Past Member'])
     ).order_by(Contact.Name.asc()).all()
 
-    can_view_all_logs = is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL)
+    can_view_all_logs = is_authorized(Permissions.SPEECH_LOGS_MANAGE)
 
 
     return render_template('contacts.html', 
@@ -143,10 +140,10 @@ def show_contacts():
 @login_required
 def member_cards():
     """Renders the member cards view page."""
-    can_view_all = is_authorized(Permissions.CONTACT_BOOK_VIEW)
-    can_view_members = is_authorized(Permissions.CONTACTS_MEMBERS_VIEW)
+    can_view_all = is_authorized(Permissions.ROSTER_VIEW)
+    can_view_members = is_authorized(Permissions.ROSTER_VIEW)
 
-    if not can_view_all and not can_view_members:
+    if not can_view_all:
         flash("You don't have permission to view this page.", 'error')
         return redirect(url_for('agenda_bp.agenda'))
 
@@ -159,8 +156,8 @@ def member_cards():
 @contacts_bp.route('/contact/form/<int:contact_id>', methods=['GET', 'POST'])
 @login_required
 def contact_form(contact_id=None):
-    has_edit_permission = is_authorized(Permissions.CONTACT_BOOK_EDIT) or (current_user.is_authenticated and contact_id and current_user.contact_id == contact_id)
-    has_add_guest = not contact_id and is_authorized(Permissions.CONTACT_ADD_GUEST)
+    has_edit_permission = is_authorized(Permissions.ROSTER_EDIT) or (current_user.is_authenticated and contact_id and current_user.contact_id == contact_id)
+    has_add_guest = not contact_id and is_authorized(Permissions.ROSTER_EDIT)
     
     if not (has_edit_permission or has_add_guest):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -292,7 +289,7 @@ def contact_form(contact_id=None):
             if 'completed_paths' in request.form:
                 new_completed = request.form.get('completed_paths')
                 if contact.Completed_Paths != new_completed:
-                    if not is_authorized(Permissions.ACHIEVEMENTS_EDIT):
+                    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
                         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                             return jsonify(success=False, message="You don't have permission to modify completed paths."), 403
                         flash("You don't have permission to modify completed paths.", 'error')
@@ -546,7 +543,7 @@ def contact_form(contact_id=None):
 @contacts_bp.route('/contact/delete/<int:contact_id>', methods=['POST'])
 @login_required
 @authorized_club_required
-@permission_required(Permissions.CONTACT_BOOK_EDIT)
+@permission_required(Permissions.ROSTER_EDIT)
 def delete_contact(contact_id):
     contact = Contact.query.get_or_404(contact_id)
     if contact.Type != 'Guest':
@@ -596,7 +593,7 @@ def delete_contact(contact_id):
 @login_required
 @authorized_club_required
 def merge_contacts_route():
-    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
+    if not is_authorized(Permissions.ROSTER_EDIT):
         return jsonify(success=False, message="Permission denied"), 403
         
     data = request.get_json()
@@ -636,7 +633,7 @@ def merge_contacts_route():
 @contacts_bp.route('/api/contact', methods=['POST'])
 @login_required
 def create_contact_api():
-    if not is_authorized(Permissions.CONTACT_BOOK_EDIT) and not is_authorized(Permissions.CONTACT_ADD_GUEST):
+    if not is_authorized(Permissions.ROSTER_EDIT):
         return jsonify({'error': 'Permission denied'}), 403
 
     try:
@@ -702,10 +699,10 @@ def create_contact_api():
 @login_required
 def get_all_contacts_api():
     """API endpoint to fetch all contacts for client-side caching."""
-    can_view_all = is_authorized(Permissions.CONTACT_BOOK_VIEW)
-    can_view_members = is_authorized(Permissions.CONTACTS_MEMBERS_VIEW)
+    can_view_all = is_authorized(Permissions.ROSTER_VIEW)
+    can_view_members = is_authorized(Permissions.ROSTER_VIEW)
 
-    if not can_view_all and not can_view_members:
+    if not can_view_all:
         return jsonify({'error': 'Permission denied'}), 403
 
     club_id = get_current_club_id()
@@ -913,7 +910,7 @@ def get_all_contacts_api():
 @contacts_bp.route('/contact/toggle_connection/<int:contact_id>', methods=['POST'])
 @login_required
 def toggle_contact_connection(contact_id):
-    if not is_authorized(Permissions.CONTACT_BOOK_EDIT):
+    if not is_authorized(Permissions.ROSTER_EDIT):
         return jsonify(success=False, message="Permission denied"), 403
     
     contact = Contact.query.get_or_404(contact_id)

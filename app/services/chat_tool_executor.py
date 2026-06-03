@@ -256,8 +256,8 @@ class ChatToolExecutor:
 
     @classmethod
     def tool_create_meeting(cls, params, user, club_id):
-        if not is_authorized(Permissions.AGENDA_CREATE):
-            return {'success': False, 'message': "You do not have permission to create meetings (AGENDA_CREATE)."}
+        if not is_authorized(Permissions.MEETING_CREATE):
+            return {'success': False, 'message': "You do not have permission to create meetings (MEETING_CREATE)."}
             
         meeting_date_str = params.get('date')
         template_name = params.get('template_name')
@@ -360,8 +360,8 @@ class ChatToolExecutor:
             return {'success': False, 'message': f"Meeting '{meeting_ident}' not found."}
             
         if action == 'query':
-            if not is_authorized(Permissions.BOOKING_VIEW_ALL):
-                return {'success': False, 'message': "You do not have permission to view role assignments (BOOKING_VIEW_ALL)."}
+            if not is_authorized(Permissions.MEETING_VIEW_PUBLISHED):
+                return {'success': False, 'message': "You do not have permission to view role assignments (MEETING_VIEW_PUBLISHED)."}
             roles_list = RoleService.get_meeting_roles(meeting.id, club_id)
             res = f"Role assignments for **Meeting #{meeting.Meeting_Number}**:\n"
             assigned_count = 0
@@ -385,8 +385,8 @@ class ChatToolExecutor:
             return {'success': True, 'message': res}
             
         elif action == 'query_available':
-            if not is_authorized(Permissions.BOOKING_VIEW_ALL):
-                return {'success': False, 'message': "You do not have permission to view role assignments (BOOKING_VIEW_ALL)."}
+            if not is_authorized(Permissions.MEETING_VIEW_PUBLISHED):
+                return {'success': False, 'message': "You do not have permission to view role assignments (MEETING_VIEW_PUBLISHED)."}
             roles_list = RoleService.get_meeting_roles(meeting.id, club_id)
             res = f"Available (unassigned) roles for **Meeting #{meeting.Meeting_Number}**:\n"
             available_count = 0
@@ -409,8 +409,8 @@ class ChatToolExecutor:
             return {'success': True, 'message': res}
             
         elif action in ('assign', 'book'):
-            if not is_authorized(Permissions.BOOKING_ASSIGN_ALL):
-                return {'success': False, 'message': "You do not have permission to assign roles (BOOKING_ASSIGN_ALL)."}
+            if not is_authorized(Permissions.MEETING_MANAGE):
+                return {'success': False, 'message': "You do not have permission to assign roles (MEETING_MANAGE)."}
             if not role_name or not contact_name:
                 return {'success': False, 'message': "role_name and contact_name are required for assign action."}
             contact = cls.resolve_contact(contact_name, club_id)
@@ -434,8 +434,8 @@ class ChatToolExecutor:
                 return {'success': False, 'message': f"Failed to assign role: {str(e)}"}
                 
         elif action in ('cancel', 'unassign'):
-            if not is_authorized(Permissions.BOOKING_ASSIGN_ALL):
-                return {'success': False, 'message': "You do not have permission to cancel role assignments (BOOKING_ASSIGN_ALL)."}
+            if not is_authorized(Permissions.MEETING_MANAGE):
+                return {'success': False, 'message': "You do not have permission to cancel role assignments (MEETING_MANAGE)."}
             if not role_name or not contact_name:
                 return {'success': False, 'message': "role_name and contact_name are required for cancel action."}
             contact = cls.resolve_contact(contact_name, club_id)
@@ -476,8 +476,8 @@ class ChatToolExecutor:
 
     @classmethod
     def tool_add_contact(cls, params, user, club_id):
-        if not (is_authorized(Permissions.CONTACT_BOOK_EDIT) or is_authorized(Permissions.CONTACT_ADD_GUEST)):
-            return {'success': False, 'message': "You do not have permission to add contacts (CONTACT_ADD_GUEST)."}
+        if not is_authorized(Permissions.ROSTER_EDIT):
+            return {'success': False, 'message': "You do not have permission to add contacts (ROSTER_EDIT)."}
             
         name = params.get('name')
         email = params.get('email')
@@ -591,8 +591,8 @@ class ChatToolExecutor:
 
     @classmethod
     def tool_complete_level(cls, params, user, club_id):
-        if not is_authorized(Permissions.ACHIEVEMENTS_EDIT):
-            return {'success': False, 'message': "You do not have permission to record achievements (ACHIEVEMENTS_EDIT)."}
+        if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
+            return {'success': False, 'message': "You do not have permission to record achievements (SPEECH_LOGS_MANAGE)."}
             
         contact_name = params.get('contact_name')
         pathway_name = params.get('pathway_name')
@@ -681,8 +681,8 @@ class ChatToolExecutor:
 
     @classmethod
     def tool_get_pathway_status(cls, params, user, club_id):
-        if not is_authorized(Permissions.ACHIEVEMENTS_VIEW):
-            return {'success': False, 'message': "You do not have permission to view achievements (ACHIEVEMENTS_VIEW)."}
+        if not is_authorized(Permissions.LIBRARY_VIEW):
+            return {'success': False, 'message': "You do not have permission to view achievements (LIBRARY_VIEW)."}
             
         contact_name = params.get('contact_name')
         
@@ -748,8 +748,8 @@ class ChatToolExecutor:
 
     @classmethod
     def tool_get_meeting_info(cls, params, user, club_id):
-        if not is_authorized(Permissions.AGENDA_VIEW):
-            return {'success': False, 'message': "You do not have permission to view meetings (AGENDA_VIEW)."}
+        if not is_authorized(Permissions.MEETING_VIEW_PUBLISHED):
+            return {'success': False, 'message': "You do not have permission to view meetings (MEETING_VIEW_PUBLISHED)."}
             
         meeting_ident = params.get('meeting_identifier')
         meeting = cls.resolve_meeting(meeting_ident, club_id)
@@ -775,8 +775,8 @@ class ChatToolExecutor:
 
     @classmethod
     def tool_get_meeting_agenda(cls, params, user, club_id):
-        if not is_authorized(Permissions.AGENDA_VIEW):
-            return {'success': False, 'message': "You do not have permission to view meetings (AGENDA_VIEW)."}
+        if not is_authorized(Permissions.MEETING_VIEW_PUBLISHED):
+            return {'success': False, 'message': "You do not have permission to view meetings (MEETING_VIEW_PUBLISHED)."}
             
         meeting_ident = params.get('meeting_identifier')
         meeting = cls.resolve_meeting(meeting_ident, club_id)
@@ -832,8 +832,8 @@ class ChatToolExecutor:
 
     @classmethod
     def tool_list_meetings(cls, params, user, club_id):
-        if not is_authorized(Permissions.AGENDA_VIEW):
-            return {'success': False, 'message': "You do not have permission to view meetings (AGENDA_VIEW)."}
+        if not is_authorized(Permissions.MEETING_VIEW_PUBLISHED):
+            return {'success': False, 'message': "You do not have permission to view meetings (MEETING_VIEW_PUBLISHED)."}
             
         status = params.get('status')
         limit = params.get('limit', 5)
@@ -890,11 +890,11 @@ class ChatToolExecutor:
 
         # Check permission based on status transition
         # Typically changing status requires AGENDA_EDIT
-        if not is_authorized(Permissions.AGENDA_EDIT):
-            return {'success': False, 'message': "You do not have permission to modify meetings (AGENDA_EDIT)."}
+        if not is_authorized(Permissions.MEETING_MANAGE):
+            return {'success': False, 'message': "You do not have permission to modify meetings (MEETING_MANAGE)."}
             
-        if new_status == 'cancelled' and not is_authorized(Permissions.AGENDA_DELETE):
-            return {'success': False, 'message': "Cancelling/deleting a meeting requires agenda deletion permission (AGENDA_DELETE)."}
+        if new_status == 'cancelled' and not is_authorized(Permissions.MEETING_CREATE):
+            return {'success': False, 'message': "Cancelling/deleting a meeting requires meeting creation/deletion permission (MEETING_CREATE)."}
 
         try:
             old_status = meeting.status or 'unpublished'
@@ -1071,8 +1071,8 @@ class ChatToolExecutor:
             return {'success': False, 'message': f"Invalid action '{action}'. Valid actions are: {', '.join(valid_actions)}."}
             
         if action == 'query_terms':
-            if not is_authorized(Permissions.ABOUT_CLUB_VIEW):
-                return {'success': False, 'message': "You do not have permission to view excomm terms (ABOUT_CLUB_VIEW)."}
+            if not is_authorized(Permissions.LIBRARY_VIEW):
+                return {'success': False, 'message': "You do not have permission to view excomm terms (LIBRARY_VIEW)."}
                 
             club = db.session.get(Club, club_id)
             if not club:
@@ -1096,8 +1096,8 @@ class ChatToolExecutor:
             return {'success': True, 'message': msg}
             
         elif action == 'query_officers':
-            if not is_authorized(Permissions.ABOUT_CLUB_VIEW):
-                return {'success': False, 'message': "You do not have permission to view excomm officers (ABOUT_CLUB_VIEW)."}
+            if not is_authorized(Permissions.LIBRARY_VIEW):
+                return {'success': False, 'message': "You do not have permission to view excomm officers (LIBRARY_VIEW)."}
                 
             club = db.session.get(Club, club_id)
             if not club:
@@ -1133,8 +1133,8 @@ class ChatToolExecutor:
             return {'success': True, 'message': msg}
             
         elif action == 'create_term':
-            if not is_authorized(Permissions.ABOUT_CLUB_EDIT):
-                return {'success': False, 'message': "You do not have permission to edit excomm settings (ABOUT_CLUB_EDIT)."}
+            if not is_authorized(Permissions.ROSTER_EDIT):
+                return {'success': False, 'message': "You do not have permission to edit excomm settings (ROSTER_EDIT)."}
                 
             club = db.session.get(Club, club_id)
             if not club:
@@ -1183,8 +1183,8 @@ class ChatToolExecutor:
                 return {'success': False, 'message': f"Failed to create term: {str(e)}"}
                 
         elif action == 'update_officer':
-            if not is_authorized(Permissions.ABOUT_CLUB_EDIT):
-                return {'success': False, 'message': "You do not have permission to edit excomm officers (ABOUT_CLUB_EDIT)."}
+            if not is_authorized(Permissions.ROSTER_EDIT):
+                return {'success': False, 'message': "You do not have permission to edit excomm officers (ROSTER_EDIT)."}
                 
             role_name_raw = params.get('role_name')
             contact_name = params.get('contact_name')
@@ -1308,8 +1308,8 @@ class ChatToolExecutor:
                 return {'success': True, 'message': f"Successfully updated the {target_role} officer to {contact.Name} for term '{excomm.excomm_term}'."}
                 
         elif action == 'set_active_term':
-            if not is_authorized(Permissions.ABOUT_CLUB_EDIT):
-                return {'success': False, 'message': "You do not have permission to edit excomm settings (ABOUT_CLUB_EDIT)."}
+            if not is_authorized(Permissions.ROSTER_EDIT):
+                return {'success': False, 'message': "You do not have permission to edit excomm settings (ROSTER_EDIT)."}
                 
             club = db.session.get(Club, club_id)
             if not club:
@@ -1511,11 +1511,11 @@ class ChatToolExecutor:
             
         # Check permissions
         if action == 'query':
-            if not is_authorized(Permissions.BOOKING_VIEW_ALL):
-                return {'success': False, 'message': "You do not have permission to view role bookings (BOOKING_VIEW_ALL)."}
+            if not is_authorized(Permissions.MEETING_VIEW_PUBLISHED):
+                return {'success': False, 'message': "You do not have permission to view role bookings (MEETING_VIEW_PUBLISHED)."}
         elif action == 'approve':
-            if not is_authorized(Permissions.BOOKING_ASSIGN_ALL):
-                return {'success': False, 'message': "You do not have permission to assign roles or approve waitlists (BOOKING_ASSIGN_ALL)."}
+            if not is_authorized(Permissions.MEETING_MANAGE):
+                return {'success': False, 'message': "You do not have permission to assign roles or approve waitlists (MEETING_MANAGE)."}
         else: # create, update, remove
             user_contact = user.get_contact(club_id) if user else None
             current_user_contact_id = user_contact.id if user_contact else None
@@ -1528,13 +1528,13 @@ class ChatToolExecutor:
             if not contact:
                 return {'success': False, 'message': f"Contact '{contact_name}' not found."}
                 
-            is_admin = is_authorized(Permissions.BOOKING_ASSIGN_ALL) or is_authorized(Permissions.AGENDA_EDIT)
+            is_admin = is_authorized(Permissions.MEETING_MANAGE)
             is_self = (current_user_contact_id and contact.id == current_user_contact_id)
             
             if not is_admin:
                 if not is_self:
                     return {'success': False, 'message': "You do not have permission to manage other contacts' waitlist entries."}
-                if not is_authorized(Permissions.BOOKING_BOOK_OWN):
+                if not is_authorized(Permissions.BOOKING_OWN):
                     return {'success': False, 'message': "You do not have permission to book roles or manage your own waitlist."}
                     
         # Check if meeting is finished (no modifications allowed)
@@ -1770,16 +1770,16 @@ class ChatToolExecutor:
 
         # query is read-only; the other four require agenda edit/delete perms and a non-finished meeting.
         if action == 'query':
-            if not is_authorized(Permissions.AGENDA_VIEW):
-                return {'success': False, 'message': "You do not have permission to view agenda (AGENDA_VIEW)."}
+            if not is_authorized(Permissions.MEETING_VIEW_PUBLISHED):
+                return {'success': False, 'message': "You do not have permission to view agenda (MEETING_VIEW_PUBLISHED)."}
             return cls._sessions_query(meeting, params)
 
         if action == 'delete':
-            if not is_authorized(Permissions.AGENDA_DELETE):
-                return {'success': False, 'message': "You do not have permission to delete agenda sessions (AGENDA_DELETE)."}
+            if not is_authorized(Permissions.MEETING_CREATE):
+                return {'success': False, 'message': "You do not have permission to delete agenda sessions (MEETING_CREATE)."}
         else:
-            if not is_authorized(Permissions.AGENDA_EDIT):
-                return {'success': False, 'message': "You do not have permission to modify agenda sessions (AGENDA_EDIT)."}
+            if not is_authorized(Permissions.MEETING_MANAGE):
+                return {'success': False, 'message': "You do not have permission to modify agenda sessions (MEETING_MANAGE)."}
 
         if meeting.status in ('finished', 'cancelled'):
             return {'success': False, 'message': f"Meeting #{meeting.Meeting_Number} is {meeting.status}; agenda modifications are not allowed."}
@@ -2317,13 +2317,13 @@ class ChatToolExecutor:
 
         user_contact = user.get_contact(club_id) if user else None
         current_user_contact_id = user_contact.id if user_contact else None
-        is_admin = is_authorized(Permissions.AGENDA_EDIT) or is_authorized(Permissions.BOOKING_ASSIGN_ALL)
+        is_admin = is_authorized(Permissions.MEETING_MANAGE)
         is_self = (current_user_contact_id and contact.id == current_user_contact_id)
 
         if not is_admin:
             if not is_self:
                 return {'success': False, 'message': "You do not have permission to manage other contacts' project details."}
-            if not is_authorized(Permissions.BOOKING_BOOK_OWN):
+            if not is_authorized(Permissions.BOOKING_OWN):
                 return {'success': False, 'message': "You do not have permission to manage your own project details."}
 
         project_obj = None

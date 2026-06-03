@@ -72,11 +72,11 @@ class RouteAccessTestCase(unittest.TestCase):
             db.session.add(staff_role)
             db.session.flush()
         
-        # Add AGENDA_VIEW and VOTING_VIEW_RESULTS permissions to Officer role
+        # Add MEETING_VIEW_PUBLISHED and VOTING_VIEW_RESULTS permissions to Officer role
         from app.auth.permissions import Permissions
-        agenda_view_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        agenda_view_perm = Permission.query.filter_by(name=Permissions.MEETING_VIEW_PUBLISHED).first()
         if not agenda_view_perm:
-            agenda_view_perm = Permission(name=Permissions.AGENDA_VIEW, description='View Agenda')
+            agenda_view_perm = Permission(name=Permissions.MEETING_VIEW_PUBLISHED, description='View Agenda')
             db.session.add(agenda_view_perm)
         
         voting_results_perm = Permission.query.filter_by(name=Permissions.VOTING_VIEW_RESULTS).first()
@@ -159,13 +159,13 @@ class RouteAccessTestCase(unittest.TestCase):
             db.session.add(guest_role)
             db.session.flush()
         
-        # Assign AGENDA_VIEW and ABOUT_CLUB_VIEW to Guest (Required for Authorized Club Context)
+        # Assign MEETING_VIEW_PUBLISHED and LIBRARY_VIEW to Guest (Required for Authorized Club Context)
         if agenda_view_perm not in guest_role.permissions:
             guest_role.permissions.append(agenda_view_perm)
             
-        about_club_perm = Permission.query.filter_by(name=Permissions.ABOUT_CLUB_VIEW).first()
+        about_club_perm = Permission.query.filter_by(name=Permissions.LIBRARY_VIEW).first()
         if not about_club_perm:
-             about_club_perm = Permission(name=Permissions.ABOUT_CLUB_VIEW, description='View Club Info')
+             about_club_perm = Permission(name=Permissions.LIBRARY_VIEW, description='View Club Info')
              db.session.add(about_club_perm)
              db.session.flush()
 

@@ -11,8 +11,8 @@
     data-club-short-name="{{ club.short_name if club and club.short_name else '' }}"
     data-meeting-number="{{ selected_meeting.Meeting_Number if selected_meeting else '' }}"
     data-meeting-date="{{ selected_meeting.Meeting_Date.strftime('%Y-%m-%d') if selected_meeting and selected_meeting.Meeting_Date else '' }}"
-    data-can-delete="{{ is_authorized(Permissions.AGENDA_DELETE)|lower }}"
-    data-can-view-contacts="{{ (is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or is_authorized(Permissions.CONTACT_BOOK_VIEW))|lower }}"
+    data-can-delete="{{ is_authorized(Permissions.MEETING_CREATE)|lower }}"
+    data-can-view-contacts="{{ is_authorized(Permissions.ROSTER_VIEW)|lower }}"
 > {# Wrapper for edit-mode class #}
     <div class="agenda-export-club-info">
         {% if club %}
@@ -38,7 +38,7 @@
             </div>
             {% endif %}
             <h1 class="meeting-title view-mode">
-                {% if selected_meeting and selected_meeting.media and selected_meeting.media.url and current_user.has_permission('MEDIA_ACCESS') %}
+                {% if selected_meeting and selected_meeting.media and selected_meeting.media.url and current_user.has_permission('MEDIA_MANAGE') %}
                 <a href="{{ selected_meeting.media.url }}" target="_blank">
                     {{ selected_meeting.Meeting_Title or ('Meeting ' ~ selected_meeting.Meeting_Number) }}
                 </a>
@@ -58,7 +58,7 @@
     </div>
 
     {% if not notice_image %}
-    {% if selected_meeting and selected_meeting.WOD and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
+    {% if selected_meeting and selected_meeting.WOD and is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
     <div class="wod-display">
         <div class="envelope-flap"></div>
         <div class="letter">
@@ -99,8 +99,8 @@
                     </span>
                     {% endif %}
 
-                    {% set can_edit = is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
-                    {% set can_delete = is_authorized(Permissions.AGENDA_DELETE, meeting=selected_meeting) %}
+                    {% set can_edit = is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
+                    {% set can_delete = is_authorized(Permissions.MEETING_CREATE, meeting=selected_meeting) %}
                     
                     {% if (selected_meeting.status != 'finished' and can_edit) or (selected_meeting.status == 'finished' and can_delete) %}
                     <button id="meeting-status-btn"
@@ -140,8 +140,8 @@
                     <a id="role-guide-btn" href="{{ url_for('static', filename='files/club-meeting-roles-resource-library.pdf') }}" target="_blank" class="btn btn-secondary action-icon-btn" title="{{ _('View Role Guide') }}"><i class="fas fa-book-open"></i></a>
                     {% endif %}
 
-                    {% set can_edit = selected_meeting and is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
-                    {% set can_view_unpublished = is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED) %}
+                    {% set can_edit = selected_meeting and is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
+                    {% set can_view_unpublished = is_authorized(Permissions.MEETING_VIEW_ALL) %}
 
                     {% if can_edit %}
                     <button id="xlsx-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Export to Excel') }}"><i class="fas fa-file-excel"></i></button>
@@ -153,15 +153,15 @@
                     <button id="edit-btn" class="btn btn-primary">{{ _('Edit') }}</button>
                     {% endif %}
 
-                    {% if is_authorized(Permissions.AGENDA_CREATE) %}
+                    {% if is_authorized(Permissions.MEETING_CREATE) %}
                     <button id="create-btn" class="btn btn-success">{{ _('New') }}</button>
                     {% endif %}
                     
-                    {% if is_authorized(Permissions.AGENDA_EDIT) or is_authorized(Permissions.CLUBADMIN) or can_view_unpublished %}
+                    {% if is_authorized(Permissions.MEETING_MANAGE) or is_authorized(Permissions.CLUBADMIN) or can_view_unpublished %}
                     <div class="action-dropdown">
                         <button id="action-btn" class="btn btn-secondary action-icon-btn" title="{{ _('Actions') }}"><i class="fas fa-ellipsis-v"></i></button>
                         <div id="action-menu" class="action-menu">
-                            {% if is_authorized(Permissions.AGENDA_CREATE) %}
+                            {% if is_authorized(Permissions.MEETING_CREATE) %}
                             <div class="action-menu-item mobile-only-item" id="action-new-opt"><i class="fas fa-plus"></i> {{ _('New') }}</div>
                             {% endif %}
                             {% if can_edit %}
@@ -191,7 +191,7 @@
 
     {% if not notice_image %}
     {# Edit Mode Buttons (Only visible if authorized) #}
-    {% if is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
+    {% if is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
     <div class="button-group" id="edit-mode-buttons" style="display: none;">
         <button id="cancel-edit-btn" class="btn btn-secondary">{{ _('Cancel') }}</button>
         <button id="view-details-btn" class="btn btn-primary">{{ _('Details') }}</button>
@@ -266,7 +266,7 @@
                             {% set display_title = cleaned_title %}
                             {% endif %}
 
-                            {% if log_dict.media_url and current_user.has_permission('MEDIA_ACCESS') %}
+                            {% if log_dict.media_url and current_user.has_permission('MEDIA_MANAGE') %}
                             <a href="{{ log_dict.media_url }}" target="_blank" title="{{ _('Watch Media') }}">
                                 {{ display_title }}
                             </a>
@@ -305,7 +305,7 @@
                         {% if log_dict.owners_data %}
                         {% for owner_info in log_dict.owners_data %}
                         <div class="owner-row">
-                            {% if is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting) %}
+                            {% if is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) %}
                             <a href="javascript:void(0);" onclick="openContactModal({{ owner_info.id }});" class="owner-name owner-link">{{ owner_info.name }}</a>
                             {% else %}
                             <span class="owner-name">{{ owner_info.name }}</span>

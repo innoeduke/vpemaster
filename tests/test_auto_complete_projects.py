@@ -103,9 +103,9 @@ class TestAutoCompleteProjects(unittest.TestCase):
         from app.models import Permission, AuthRole as Role
         from app.auth.permissions import Permissions
         
-        perm_view = Permission(name=Permissions.ABOUT_CLUB_VIEW, description="View Club")
-        perm_agenda = Permission(name=Permissions.AGENDA_VIEW, description="View Agenda")
-        perm_edit = Permission(name=Permissions.AGENDA_EDIT, description="Edit Agenda")
+        perm_view = Permission(name=Permissions.LIBRARY_VIEW, description="View Club")
+        perm_agenda = Permission(name=Permissions.MEETING_VIEW_PUBLISHED, description="View Agenda")
+        perm_edit = Permission(name=Permissions.MEETING_MANAGE, description="Edit Agenda")
         role = Role(name='Guest', description='Guest')
         role.permissions.extend([perm_view, perm_agenda, perm_edit])
         db.session.add_all([perm_view, perm_agenda, perm_edit, role])

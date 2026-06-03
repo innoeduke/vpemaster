@@ -18,7 +18,7 @@ booking_bp = Blueprint('booking_bp', __name__)
 
 def _apply_user_filters_and_rules(roles, current_user_contact_id, meeting_id):
     """Applies filtering and business rules based on user permissions."""
-    if is_authorized(Permissions.BOOKING_ASSIGN_ALL) or is_authorized(Permissions.AGENDA_EDIT):
+    if is_authorized(Permissions.MEETING_MANAGE):
         return roles
 
     # --- Rule: Hide roles without award category (other roles) for non-admins ---
@@ -137,7 +137,7 @@ def _sort_roles_for_booking(roles, current_user_contact_id, is_past_meeting):
         cat = role.get('award_category', '') or ''
         return CATEGORY_ORDER.get(cat, 99)
 
-    if is_past_meeting or is_authorized(Permissions.BOOKING_ASSIGN_ALL):
+    if is_past_meeting or is_authorized(Permissions.MEETING_MANAGE):
         roles.sort(key=lambda x: (
             get_category_priority(x),
             x.get('award_category', '') or '', 
@@ -273,7 +273,7 @@ def _get_roles_for_booking(meeting_id, current_user_contact_id, selected_meeting
         filtered_roles, current_user_contact_id, is_past_meeting)
 
     # For 'not started' or 'unpublished' meetings, only show Topics Speaker to admins
-    is_admin_booker = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting) or is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting)
+    is_admin_booker = is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting)
     if selected_meeting and selected_meeting.status in ['not started', 'unpublished'] and not is_admin_booker:
         sorted_roles = [
             role for role in sorted_roles
@@ -379,7 +379,7 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
         limit_past=limit_past, columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number])
 
     # Filter meetings based on permissions
-    if not is_authorized(Permissions.AGENDA_EDIT):
+    if not is_authorized(Permissions.MEETING_MANAGE):
         upcoming_meetings = [m for m in upcoming_meetings if (m.status if hasattr(m, 'status') else m[2]) != 'finished']
 
     context = {
@@ -389,8 +389,8 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
         'user_bookings_by_date': [],
         'contacts': [],
         'selected_meeting': None,
-        'is_admin_view': is_authorized(Permissions.BOOKING_ASSIGN_ALL),
-        'can_view_details': is_authorized(Permissions.BOOKING_ASSIGN_ALL) or is_authorized(Permissions.BOOKING_BOOK_OWN),
+        'is_admin_view': is_authorized(Permissions.MEETING_MANAGE),
+        'can_view_details': is_authorized(Permissions.MEETING_MANAGE) or is_authorized(Permissions.BOOKING_OWN),
         'current_user_contact_id': current_user_contact_id,
         'user_role': user.primary_role_name if user else 'Guest',
         'current_user_id': user.id if user and user.is_authenticated else None,
@@ -416,7 +416,7 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
             meeting_id = upcoming_meetings[0][0] if hasattr(upcoming_meetings[0], 'id') else upcoming_meetings[0][0]
         else:
             meeting_id = None
-            if not is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED):
+            if not is_authorized(Permissions.MEETING_VIEW_ALL):
                 context['notice_image'] = 'under_planning.webp'
         
         context['selected_meeting_id'] = meeting_id
@@ -433,19 +433,19 @@ def _get_booking_page_context(meeting_id, user, current_user_contact_id):
     contact = user.get_contact(club_id) if (user and selected_meeting) else None
     is_manager = (contact and contact.id == selected_meeting.manager_id) if selected_meeting else False
     
-    # 1. Published meetings: require AGENDA_VIEW permission
+    # 1. Published meetings: require MEETING_VIEW_PUBLISHED permission
     if selected_meeting and selected_meeting.status in ('not started', 'running', 'finished'):
-        if not is_authorized(Permissions.AGENDA_VIEW, meeting=selected_meeting):
+        if not is_authorized(Permissions.MEETING_VIEW_PUBLISHED, meeting=selected_meeting):
             context['notice_image'] = 'not_started.webp'
             return context
 
     context['selected_meeting'] = selected_meeting
-    context['is_admin_view'] = is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting)
-    context['can_view_details'] = context['is_admin_view'] or is_authorized(Permissions.BOOKING_BOOK_OWN, meeting=selected_meeting)
+    context['is_admin_view'] = is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting)
+    context['can_view_details'] = context['is_admin_view'] or is_authorized(Permissions.BOOKING_OWN, meeting=selected_meeting)
 
-    # 2. Unpublished check - Show notice for those without AGENDA_VIEW_UNPUBLISHED
+    # 2. Unpublished check - Show notice for those without MEETING_VIEW_ALL
     if selected_meeting and selected_meeting.status == 'unpublished':
-        if not is_authorized(Permissions.AGENDA_VIEW_UNPUBLISHED, meeting=selected_meeting):
+        if not is_authorized(Permissions.MEETING_VIEW_ALL, meeting=selected_meeting):
             context['notice_image'] = 'under_planning.webp'
             # We continue for members so they can see their own bookings later down the page
             # But the template will conditionally hide the booking tables if notice_image is set
@@ -595,7 +595,7 @@ def booking_tables_html(meeting_id):
 @authorized_club_required
 def add_table_topics_speech(meeting_id):
     """Add a new, hidden Topics Speech session at the end of the meeting's agenda."""
-    if not is_authorized(Permissions.AGENDA_EDIT):
+    if not is_authorized(Permissions.MEETING_MANAGE):
         return jsonify(success=False, message="Unauthorized"), 403
 
     meeting = db.session.get(Meeting, meeting_id)
@@ -670,7 +670,7 @@ def book_or_assign_role():
     try:
         if action == 'book':
             # Validation: Block booking for roles without award category if not admin
-            if session_type.role and session_type.role.award_category in ['none', None, ''] and not is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
+            if session_type.role and session_type.role.award_category in ['none', None, ''] and not is_authorized(Permissions.MEETING_MANAGE, meeting=meeting):
                 return jsonify(success=False, message="This role is not available for booking."), 403
 
             success, msg = RoleService.book_meeting_role(log, current_user_contact_id, project_id=project_id, title=title, pathway=pathway_name)
@@ -692,7 +692,7 @@ def book_or_assign_role():
             return jsonify(success=success, message=msg)
 
         # Admin Actions
-        elif action == 'remove_owner' and is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
+        elif action == 'remove_owner' and is_authorized(Permissions.MEETING_MANAGE, meeting=meeting):
             # Remove a specific owner from a shared role
             owner_id_to_remove = data.get('contact_id')
             try:
@@ -710,7 +710,7 @@ def book_or_assign_role():
             db.session.commit()
             return jsonify(success=True, message="Owner removed")
 
-        elif action == 'assign' and is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
+        elif action == 'assign' and is_authorized(Permissions.MEETING_MANAGE, meeting=meeting):
             contact_id = data.get('contact_id', '0')
             previous_contact_id = data.get('previous_contact_id')
             
@@ -747,7 +747,7 @@ def book_or_assign_role():
             db.session.commit()
             return jsonify(success=True, updated_sessions=updated_sessions)
 
-        elif action == 'approve_waitlist' and is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
+        elif action == 'approve_waitlist' and is_authorized(Permissions.MEETING_MANAGE, meeting=meeting):
             success, msg = RoleService.approve_waitlist(log)
             if not success:
                  return jsonify(success=False, message=msg), 404
@@ -788,7 +788,7 @@ def book_or_assign_role():
 
             return jsonify(success=True, updated_sessions=updated_sessions)
 
-        elif action == 'remove_waitlist' and is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting):
+        elif action == 'remove_waitlist' and is_authorized(Permissions.MEETING_MANAGE, meeting=meeting):
             contact_id_to_remove = data.get('contact_id')
             success, msg = RoleService.leave_waitlist(log, contact_id_to_remove)
             return jsonify(success=success, message=msg)

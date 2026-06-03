@@ -61,7 +61,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
 
     # Vote counts for officers
     vote_counts = {}
-    if (is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=selected_meeting)) and selected_meeting and selected_meeting.status in ['running', 'finished']:
+    if (is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=selected_meeting)) and selected_meeting and selected_meeting.status in ['running', 'finished']:
         counts = db.session.query(Vote.contact_id, Vote.award_category, func.count(Vote.id)).filter(
             Vote.meeting_id == selected_meeting.id
         ).group_by(Vote.contact_id, Vote.award_category).all()
@@ -185,7 +185,7 @@ def _get_roles_for_voting(meeting_id, meeting):
 
     # Vote counts for role-takers (admins only)
     vote_counts = {}
-    if (is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=meeting)) and meeting.status in ['running', 'finished']:
+    if (is_authorized(Permissions.MEETING_MANAGE, meeting=meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=meeting)) and meeting.status in ['running', 'finished']:
         counts = db.session.query(Vote.contact_id, func.count(Vote.id)).filter(
             Vote.meeting_id == meeting_id,
             Vote.award_category == 'role-taker'
@@ -247,7 +247,7 @@ def _get_voting_page_context(meeting_id):
     club_id = get_current_club_id()
     
     # Show active meetings in dropdown
-    limit_past = None if is_authorized(Permissions.MEDIA_ACCESS) else 8
+    limit_past = None if is_authorized(Permissions.MEDIA_MANAGE) else 8
     upcoming_meetings, default_meeting_id = get_meetings_by_status(
         limit_past=limit_past, status_filter=['unpublished', 'not started', 'running', 'finished'],
         columns=[Meeting.id, Meeting.Meeting_Date, Meeting.status, Meeting.Meeting_Number])
@@ -302,7 +302,7 @@ def _get_voting_page_context(meeting_id):
         return context
 
     context['db_status'] = selected_meeting.status
-    context['can_edit_meeting_status'] = is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting)
+    context['can_edit_meeting_status'] = is_authorized(Permissions.MEETING_MANAGE, meeting=selected_meeting)
 
     # Check if we should override status for display and bypass notices
     is_meeting_date = selected_meeting.Meeting_Date == datetime.today().date()
@@ -345,7 +345,7 @@ def _get_voting_page_context(meeting_id):
     elif status in ('not started', 'running', 'finished'):
         if status == 'not started':
             context['notice_image'] = 'not_started.webp'
-        elif not is_authorized(Permissions.AGENDA_VIEW, meeting=selected_meeting):
+        elif not is_authorized(Permissions.MEETING_VIEW_PUBLISHED, meeting=selected_meeting):
             context['notice_image'] = 'not_started.webp'
         elif status == 'finished':
             # Finished: only those with VOTING_VIEW_RESULTS can see results
@@ -496,8 +496,8 @@ def vote_for_award():
     meeting = meeting_query.first()
     if not meeting:
         return jsonify(success=False, message="Meeting not found."), 404
-
-    is_admin = is_authorized(Permissions.BOOKING_ASSIGN_ALL)
+ 
+    is_admin = is_authorized(Permissions.MEETING_MANAGE)
 
     is_meeting_date = meeting.Meeting_Date == datetime.today().date()
     has_voting_view_results = is_authorized(Permissions.VOTING_VIEW_RESULTS, meeting=meeting)

@@ -87,11 +87,11 @@ def get_pathway_library_data():
 
 @pathways_bp.route('/pathway_library')
 def pathway_library():
-    if not is_authorized(Permissions.PATHWAY_LIB_VIEW):
+    if not is_authorized(Permissions.LIBRARY_VIEW):
         return redirect(url_for('agenda_bp.agenda'))
 
-    has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
-    has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
+    has_lucky_draw_access = True
+    has_pathways_access = is_authorized(Permissions.LIBRARY_VIEW)
     
     data = get_pathway_library_data()
     return render_template(
@@ -107,7 +107,7 @@ def pathway_library():
 @pathways_bp.route('/pathway_library/update_project/<int:project_id>', methods=['POST'])
 @login_required
 def update_project(project_id):
-    if not is_authorized(Permissions.PATHWAY_LIB_EDIT):
+    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
 
     project = Project.query.get_or_404(project_id)
@@ -136,7 +136,7 @@ def update_project(project_id):
 @pathways_bp.route('/api/contacts/<int:contact_id>/pathways', methods=['GET'])
 @login_required
 def get_contact_pathways(contact_id):
-    if not (is_authorized(Permissions.ACHIEVEMENTS_EDIT) or is_authorized(Permissions.CONTACT_BOOK_EDIT) or (current_user.is_authenticated and current_user.contact_id == contact_id)):
+    if not (is_authorized(Permissions.SPEECH_LOGS_MANAGE) or is_authorized(Permissions.ROSTER_EDIT) or (current_user.is_authenticated and current_user.contact_id == contact_id)):
         return jsonify(success=False, message="Permission denied"), 403
 
     contact = db.session.get(Contact, contact_id)
@@ -163,7 +163,7 @@ def get_contact_pathways(contact_id):
 @pathways_bp.route('/api/contacts/<int:contact_id>/pathways/register', methods=['POST'])
 @login_required
 def register_contact_pathway(contact_id):
-    if not is_authorized(Permissions.ACHIEVEMENTS_EDIT):
+    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
 
     contact = db.session.get(Contact, contact_id)
@@ -211,7 +211,7 @@ def register_contact_pathway(contact_id):
 @pathways_bp.route('/api/contacts/<int:contact_id>/pathways/<int:pathway_id>/complete', methods=['POST'])
 @login_required
 def complete_contact_pathway(contact_id, pathway_id):
-    if not is_authorized(Permissions.ACHIEVEMENTS_EDIT):
+    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
 
     contact = db.session.get(Contact, contact_id)
@@ -258,7 +258,7 @@ def complete_contact_pathway(contact_id, pathway_id):
 @pathways_bp.route('/api/contacts/<int:contact_id>/pathways/<int:pathway_id>/set_default', methods=['POST'])
 @login_required
 def set_default_contact_pathway(contact_id, pathway_id):
-    if not is_authorized(Permissions.CONTACT_BOOK_EDIT) and current_user.contact_id != contact_id:
+    if not is_authorized(Permissions.ROSTER_EDIT) and current_user.contact_id != contact_id:
         return jsonify(success=False, message="Permission denied"), 403
 
     contact = db.session.get(Contact, contact_id)
@@ -287,7 +287,7 @@ def set_default_contact_pathway(contact_id, pathway_id):
 @pathways_bp.route('/api/contacts/<int:contact_id>/pathways/<int:pathway_id>/deregister', methods=['POST'])
 @login_required
 def deregister_contact_pathway(contact_id, pathway_id):
-    if not is_authorized(Permissions.ACHIEVEMENTS_EDIT):
+    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
 
     contact = db.session.get(Contact, contact_id)

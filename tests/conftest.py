@@ -158,14 +158,18 @@ def seeded_permissions(app):
     
     with app.app_context():
         # Get all constants from Permissions class
-        perms = []
+        unique_names = set()
         for attr in dir(Permissions):
             if attr.isupper() and not attr.startswith('_'):
                 name = getattr(Permissions, attr)
-                if attr in ['SYSADMIN', 'CLUBADMIN', 'STAFF', 'USER']:
+                if attr in ['SYSADMIN', 'CLUBADMIN', 'OPERATOR', 'STAFF', 'USER']:
                     continue
-                if not Permission.query.filter_by(name=name).first():
-                    perms.append(Permission(name=name, category='test'))
+                unique_names.add(name)
+        
+        perms = []
+        for name in unique_names:
+            if not Permission.query.filter_by(name=name).first():
+                perms.append(Permission(name=name, category='test'))
         
         if perms:
             db.session.add_all(perms)

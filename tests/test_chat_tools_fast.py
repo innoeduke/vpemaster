@@ -62,11 +62,15 @@ def setup_ai_environment(app):
 
         # 2. Grant all permissions
         perms_to_seed = []
+        seen_names = set()
         for attr in dir(Permissions):
             if attr.isupper() and not attr.startswith('_'):
                 name = getattr(Permissions, attr)
                 if attr in ['SYSADMIN', 'CLUBADMIN', 'STAFF', 'USER']:
                     continue
+                if name in seen_names:
+                    continue
+                seen_names.add(name)
                 perm = Permission.query.filter_by(name=name).first()
                 if not perm:
                     perm = Permission(name=name, category='chat_test')

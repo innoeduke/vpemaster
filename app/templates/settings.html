@@ -733,7 +733,7 @@
     var ROLES_DATA = {{ roles| tojson }};
     const ALL_CONTACTS = {{ all_contacts| tojson }};
     const CURRENT_CLUB_ID = {{ club_id }};
-    const HAS_SETTINGS_EDIT_ALL = {{ is_authorized(Permissions.SETTINGS_EDIT_ALL) | tojson }};
+    const HAS_SETTINGS_EDIT = {{ is_authorized(Permissions.SETTINGS_EDIT) | tojson }};
 </script>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/settings.js') }}?v={{ range(1, 10000) | random }}"></script>

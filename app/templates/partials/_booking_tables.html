@@ -266,7 +266,7 @@
                 </span>
             </div>
             <div class="accordion-header-right">
-                {% if category == 'table-topic' and is_authorized(Permissions.AGENDA_EDIT) %}
+                {% if category == 'table-topic' and is_authorized(Permissions.MEETING_MANAGE) %}
                 <button class="btn-add-topics-speech" onclick="event.stopPropagation(); addTableTopicsSpeech(selectedMeetingId);">
                     <i class="fas fa-plus"></i> {{ _('Add') }}
                 </button>

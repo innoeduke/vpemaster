@@ -15,7 +15,7 @@ about_club_bp = Blueprint('about_club_bp', __name__)
 @authorized_club_required
 def about_club():
     """Renders the About Club page."""
-    if not is_authorized(Permissions.ABOUT_CLUB_VIEW):
+    if not is_authorized(Permissions.LIBRARY_VIEW):
         return redirect(url_for('agenda_bp.agenda'))
 
     # Get club from database using current context
@@ -69,7 +69,7 @@ def about_club():
 @authorized_club_required
 def about_club_update():
     """Update club settings from the about club page."""
-    if not is_authorized(Permissions.ABOUT_CLUB_EDIT):
+    if not is_authorized(Permissions.ROSTER_EDIT):
         return jsonify(success=False, message="Permission denied"), 403
     
     try:
@@ -219,7 +219,7 @@ def about_club_update():
 @authorized_club_required
 def upload_club_logo():
     """Handle club logo upload."""
-    if not is_authorized(Permissions.ABOUT_CLUB_EDIT):
+    if not is_authorized(Permissions.ROSTER_EDIT):
         return jsonify(success=False, message="Permission denied"), 403
     
     try:

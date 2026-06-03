@@ -35,11 +35,10 @@ class ContactsPermissionTestCase(unittest.TestCase):
 
     def setup_data(self):
         # 1. Create permissions
-        self.perm_cb_view = Permission(name=Permissions.CONTACT_BOOK_VIEW, description="View All Contacts", category="contacts")
-        self.perm_cm_view = Permission(name=Permissions.CONTACTS_MEMBERS_VIEW, description="View Member Contacts", category="contacts")
-        self.perm_sl_view_own = Permission(name=Permissions.SPEECH_LOGS_VIEW_OWN, description="View Own Speech Logs", category="speech_logs")
-        self.perm_sl_edit_all = Permission(name=Permissions.SPEECH_LOGS_EDIT_ALL, description="Edit All Speech Logs", category="speech_logs")
-        db.session.add_all([self.perm_cb_view, self.perm_cm_view, self.perm_sl_view_own, self.perm_sl_edit_all])
+        self.perm_roster_view = Permission(name=Permissions.ROSTER_VIEW, description="View Roster", category="roster")
+        self.perm_booking_own = Permission(name=Permissions.BOOKING_OWN, description="Own Bookings", category="meeting")
+        self.perm_sl_manage = Permission(name=Permissions.SPEECH_LOGS_MANAGE, description="Manage Speech Logs", category="speech_logs")
+        db.session.add_all([self.perm_roster_view, self.perm_booking_own, self.perm_sl_manage])
         
         # 2. Create roles
         self.role_staff = AuthRole(name="Staff", level=2)
@@ -48,8 +47,8 @@ class ContactsPermissionTestCase(unittest.TestCase):
         db.session.flush()
         
         # 3. Assign permissions
-        self.role_staff.permissions.extend([self.perm_cb_view, self.perm_cm_view, self.perm_sl_view_own, self.perm_sl_edit_all])
-        self.role_user.permissions.extend([self.perm_cm_view, self.perm_sl_view_own])
+        self.role_staff.permissions.extend([self.perm_roster_view, self.perm_booking_own, self.perm_sl_manage])
+        self.role_user.permissions.extend([self.perm_roster_view, self.perm_booking_own])
         
         # 4. Create club
         self.club = Club(club_no='000000', club_name='Test Club')
@@ -93,16 +92,15 @@ class ContactsPermissionTestCase(unittest.TestCase):
             password=password
         ), follow_redirects=True)
 
-    def test_user_sees_only_members(self):
-        """Test that a regular user only sees Member type contacts."""
+    def test_user_without_roster_view_cannot_see_contacts(self):
+        """Test that a user without ROSTER_VIEW permission cannot see contacts."""
+        self.role_user.permissions.remove(self.perm_roster_view)
+        db.session.commit()
+        
         self.login("user", "password")
         # Contact list is now fetched via API
         response = self.client.get('/api/contacts/all')
-        self.assertEqual(response.status_code, 200)
-        data = response.get_json()
-        names = [c['Name'] for c in data]
-        self.assertIn("Member User", names)
-        self.assertNotIn("Guest User", names)
+        self.assertEqual(response.status_code, 403)
 
     def test_staff_sees_all_contacts(self):
         """Test that staff sees all contacts."""

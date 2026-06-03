@@ -14,11 +14,9 @@ lucky_draw_bp = Blueprint('lucky_draw_bp', __name__)
 @login_required
 @authorized_club_required
 def lucky_draw():
-    if not is_authorized(Permissions.LUCKY_DRAW_VIEW):
-        return redirect(url_for('agenda_bp.agenda'))
-    
-    has_lucky_draw_access = is_authorized(Permissions.LUCKY_DRAW_VIEW)
-    has_pathways_access = is_authorized(Permissions.PATHWAY_LIB_VIEW)
+    # Open to all logged-in users in the club
+    has_lucky_draw_access = True
+    has_pathways_access = is_authorized(Permissions.LIBRARY_VIEW)
 
     # Get current meeting (using same logic as agenda page)
     selected_meeting_id = get_default_meeting_id()

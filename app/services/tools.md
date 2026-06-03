@@ -15,7 +15,7 @@ This document defines core rules, constraints, and intent-to-tool mappings for a
   - To **start** a meeting: Transition status from `not started` to `running`.
   - To **end/finish/complete** a meeting: Transition status from `running` to `finished`.
   - Transitioning to the same status is allowed.
-  - Transitioning to `cancelled` is allowed from any status (requires `AGENDA_DELETE` permission).
+  - Transitioning to `cancelled` is allowed from any status (requires `MEETING_CREATE` permission).
 * **Winners Tally**: Transitioning a meeting to `finished` automatically tallies votes and records official winners.
 
 ## 3. Agenda, Roles, and Bookings
@@ -80,7 +80,7 @@ This document defines core rules, constraints, and intent-to-tool mappings for a
 * **Resolution logic**:
   - The tool accepts a user-friendly `project_code` (e.g. `EH4.1`) or `project_name` (e.g. `Ice Breaker`) and maps it under the hood.
   - If a `project_code` corresponds to multiple elective projects (e.g., `EH4.2` has multiple options), the tool will fail and return all possible elective project names. In this case, you must request clarification from the user or provide the `project_name` argument alongside the code.
-* **Permission rules**: Requires `AGENDA_EDIT` or `BOOKING_ASSIGN_ALL` permission. Normal members can only modify their own speech details and must have `BOOKING_BOOK_OWN`.
+* **Permission rules**: Requires `MEETING_MANAGE` permission. Normal members can only modify their own speech details and must have `BOOKING_OWN`.
 * **Meeting limits**: Refuses to update projects for running, finished, or cancelled meetings.
 
 

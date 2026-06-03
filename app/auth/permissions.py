@@ -26,7 +26,7 @@ def permission_required(permission_name):
     Decorator to require a specific permission for a route.
     
     Usage:
-        @permission_required('AGENDA_EDIT')
+        @permission_required('MEETING_MANAGE')
         def edit_agenda():
             ...
     """
@@ -72,7 +72,7 @@ def any_permission_required(*permission_names):
     Decorator to require ANY of the specified permissions.
     
     Usage:
-        @any_permission_required('AGENDA_EDIT', 'AGENDA_VIEW')
+        @any_permission_required('MEETING_MANAGE', 'MEETING_VIEW_PUBLISHED')
         def view_or_edit_agenda():
             ...
     """
@@ -97,7 +97,7 @@ def all_permissions_required(*permission_names):
     Decorator to require ALL of the specified permissions.
     
     Usage:
-        @all_permissions_required('AGENDA_VIEW', 'BOOKING_VIEW')
+        @all_permissions_required('MEETING_VIEW_PUBLISHED', 'BOOKING_OWN')
         def view_combined():
             ...
     """
@@ -119,44 +119,37 @@ def all_permissions_required(*permission_names):
 # Export commonly used permissions as constants
 class Permissions:
     """Centralized permission constants."""
-    AGENDA_EDIT = 'AGENDA_EDIT'
-    AGENDA_VIEW = 'AGENDA_VIEW'
-    BOOKING_ASSIGN_ALL = 'BOOKING_ASSIGN_ALL'
-    BOOKING_VIEW_ALL = 'BOOKING_VIEW_ALL'
-    BOOKING_BOOK_OWN = 'BOOKING_BOOK_OWN'
-    SPEECH_LOGS_EDIT_ALL = 'SPEECH_LOGS_EDIT_ALL'
-    SPEECH_LOGS_VIEW_ALL = 'SPEECH_LOGS_VIEW_ALL'
-    SPEECH_LOGS_VIEW_OWN = 'SPEECH_LOGS_VIEW_OWN'
-    PATHWAY_LIB_EDIT = 'PATHWAY_LIB_EDIT'
-    PATHWAY_LIB_VIEW = 'PATHWAY_LIB_VIEW'
-    PROFILE_OWN = 'PROFILE_OWN'
-    PROFILE_VIEW = 'PROFILE_VIEW'
-    PROFILE_EDIT = 'PROFILE_EDIT'
-    LUCKY_DRAW_VIEW = 'LUCKY_DRAW_VIEW'
-    LUCKY_DRAW_EDIT = 'LUCKY_DRAW_EDIT'
-    CONTACT_BOOK_EDIT = 'CONTACT_BOOK_EDIT'
-    CONTACT_BOOK_VIEW = 'CONTACT_BOOK_VIEW'
-    CONTACT_ADD_GUEST = 'CONTACT_ADD_GUEST'
-    SETTINGS_EDIT_ALL = 'SETTINGS_EDIT_ALL'
-    SETTINGS_VIEW_ALL = 'SETTINGS_VIEW_ALL'
-    ACHIEVEMENTS_EDIT = 'ACHIEVEMENTS_EDIT'
-    ACHIEVEMENTS_VIEW = 'ACHIEVEMENTS_VIEW'
+    # Settings (Category: settings)
+    SETTINGS_VIEW = 'SETTINGS_VIEW'
+    SETTINGS_EDIT = 'SETTINGS_EDIT'
+    MEDIA_MANAGE = 'MEDIA_MANAGE'
+
+    # Meeting & Booking (Category: meeting)
+    MEETING_VIEW_PUBLISHED = 'MEETING_VIEW_PUBLISHED'
+    MEETING_VIEW_ALL = 'MEETING_VIEW_ALL'
+    MEETING_CREATE = 'MEETING_CREATE'
+    MEETING_MANAGE = 'MEETING_MANAGE'
+    BOOKING_OWN = 'BOOKING_OWN'
     VOTING_VIEW_RESULTS = 'VOTING_VIEW_RESULTS'
     VOTING_TRACK_PROGRESS = 'VOTING_TRACK_PROGRESS'
+
+    # Member Speeches (Category: speech_logs)
+    SPEECH_LOGS_MANAGE = 'SPEECH_LOGS_MANAGE'
+
+    # Roster & Contacts (Category: roster)
     ROSTER_VIEW = 'ROSTER_VIEW'
     ROSTER_EDIT = 'ROSTER_EDIT'
-    ABOUT_CLUB_VIEW = 'ABOUT_CLUB_VIEW'
-    ABOUT_CLUB_EDIT = 'ABOUT_CLUB_EDIT'
-    CLUBS_MANAGE = 'CLUBS_MANAGE'
-    MEDIA_ACCESS = 'MEDIA_ACCESS'
-    RESET_PASSWORD_CLUB = 'RESET_PASSWORD_CLUB'
-    CONTACTS_MEMBERS_VIEW = 'CONTACTS_MEMBERS_VIEW'
-    AGENDA_DELETE = 'AGENDA_DELETE'
-    AGENDA_CREATE = 'AGENDA_CREATE'
-    AGENDA_VIEW_UNPUBLISHED = 'AGENDA_VIEW_UNPUBLISHED'
-    FILE_UPLOAD_MANAGE = 'FILE_UPLOAD_MANAGE'
+
+    # Tools (Category: tools)
+    LIBRARY_VIEW = 'LIBRARY_VIEW'
+    LUCKY_DRAW_EDIT = 'LUCKY_DRAW_EDIT'
+
+    # Chat & AI (Category: chat)
     CHAT_COMMANDS = 'CHAT_COMMANDS'
     CHAT_AI = 'CHAT_AI'
+
+    # Special global account privilege bypass
+    PROFILE_OWN = 'PROFILE_OWN'
     
     # Roles
     SYSADMIN = 'SysAdmin'

@@ -92,33 +92,32 @@ class AccessMatrixTestCase(unittest.TestCase):
         # Define Permissions
         all_perms_map = {
             'SysAdmin': [
-                Permissions.AGENDA_VIEW, Permissions.AGENDA_EDIT,
-                Permissions.BOOKING_BOOK_OWN, Permissions.BOOKING_ASSIGN_ALL,
-                Permissions.SETTINGS_VIEW_ALL, Permissions.ROSTER_VIEW, Permissions.ROSTER_EDIT,
-                Permissions.CONTACT_BOOK_VIEW, Permissions.CONTACT_BOOK_EDIT,
-                Permissions.SPEECH_LOGS_VIEW_ALL, Permissions.VOTING_VIEW_RESULTS,
-                Permissions.VOTING_TRACK_PROGRESS, Permissions.LUCKY_DRAW_VIEW, Permissions.LUCKY_DRAW_EDIT,
-                Permissions.PATHWAY_LIB_EDIT, Permissions.PATHWAY_LIB_VIEW
+                Permissions.MEETING_VIEW_PUBLISHED, Permissions.MEETING_MANAGE,
+                Permissions.BOOKING_OWN,
+                Permissions.SETTINGS_VIEW, Permissions.ROSTER_VIEW, Permissions.ROSTER_EDIT,
+                Permissions.SPEECH_LOGS_MANAGE, Permissions.VOTING_VIEW_RESULTS,
+                Permissions.VOTING_TRACK_PROGRESS, Permissions.LIBRARY_VIEW, Permissions.LUCKY_DRAW_EDIT,
+                Permissions.MEDIA_MANAGE
             ],
             'ClubAdmin': [
-                Permissions.AGENDA_VIEW, Permissions.BOOKING_ASSIGN_ALL, 
-                Permissions.SETTINGS_VIEW_ALL, Permissions.ROSTER_VIEW, Permissions.ROSTER_EDIT,
-                Permissions.CONTACT_BOOK_VIEW, Permissions.SPEECH_LOGS_VIEW_ALL,
+                Permissions.MEETING_VIEW_PUBLISHED, Permissions.MEETING_MANAGE, 
+                Permissions.SETTINGS_VIEW, Permissions.ROSTER_VIEW, Permissions.ROSTER_EDIT,
+                Permissions.SPEECH_LOGS_MANAGE,
                 Permissions.VOTING_VIEW_RESULTS, Permissions.VOTING_TRACK_PROGRESS,
-                Permissions.LUCKY_DRAW_VIEW, Permissions.LUCKY_DRAW_EDIT,
-                Permissions.PATHWAY_LIB_EDIT, Permissions.PATHWAY_LIB_VIEW
+                Permissions.LIBRARY_VIEW, Permissions.LUCKY_DRAW_EDIT,
+                Permissions.MEDIA_MANAGE
             ],
             'Staff': [
-                Permissions.AGENDA_VIEW, Permissions.ROSTER_VIEW, 
-                Permissions.CONTACT_BOOK_VIEW, Permissions.SPEECH_LOGS_VIEW_ALL,
-                Permissions.VOTING_VIEW_RESULTS, Permissions.LUCKY_DRAW_VIEW, 
-                Permissions.PATHWAY_LIB_VIEW
+                Permissions.MEETING_VIEW_PUBLISHED, Permissions.ROSTER_VIEW, 
+                Permissions.SPEECH_LOGS_MANAGE,
+                Permissions.VOTING_VIEW_RESULTS, 
+                Permissions.LIBRARY_VIEW
             ],
             'User': [
-                Permissions.AGENDA_VIEW, Permissions.BOOKING_BOOK_OWN, Permissions.PATHWAY_LIB_VIEW
+                Permissions.MEETING_VIEW_PUBLISHED, Permissions.BOOKING_OWN, Permissions.LIBRARY_VIEW
             ],
             'Guest': [
-                Permissions.AGENDA_VIEW, Permissions.PATHWAY_LIB_VIEW, Permissions.ABOUT_CLUB_VIEW
+                Permissions.MEETING_VIEW_PUBLISHED, Permissions.LIBRARY_VIEW
             ]
         }
         
@@ -172,13 +171,13 @@ class AccessMatrixTestCase(unittest.TestCase):
     def test_role_definitions(self):
         """Verify that roles have the expected permissions."""
         admin_perms = self.role_permissions_map['sysadmin']
-        self.assertIn(Permissions.LUCKY_DRAW_VIEW, admin_perms)
+        self.assertIn(Permissions.LUCKY_DRAW_EDIT, admin_perms)
         self.assertIn(Permissions.ROSTER_EDIT, admin_perms)
         self.assertIn(Permissions.VOTING_TRACK_PROGRESS, admin_perms)
         
         staff_perms = self.role_permissions_map['staff']
         self.assertIn(Permissions.ROSTER_VIEW, staff_perms)
-        self.assertIn(Permissions.LUCKY_DRAW_VIEW, staff_perms)
+        self.assertNotIn(Permissions.LUCKY_DRAW_EDIT, staff_perms)
         self.assertNotIn(Permissions.ROSTER_EDIT, staff_perms)
 
     def check_matrix(self, role, status, resource_template):
@@ -250,8 +249,8 @@ class AccessMatrixTestCase(unittest.TestCase):
 
             # Resource Logic
             if '/lucky_draw' in resource_template:
-                if Permissions.LUCKY_DRAW_VIEW not in perms:
-                    expected_code = 302
+                # Open to all logged-in users
+                pass
             
             if '/roster' in resource_template:
                 if Permissions.ROSTER_VIEW not in perms:
@@ -260,7 +259,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                     expected_code = 200
             
             if '/contacts' in resource_template:
-                 if Permissions.CONTACT_BOOK_VIEW not in perms:
+                 if Permissions.ROSTER_VIEW not in perms:
                      expected_code = 302
 
             if '/speech_logs' in resource_template:
@@ -269,7 +268,7 @@ class AccessMatrixTestCase(unittest.TestCase):
                  pass
 
             if '/settings' in resource_template or '/users' in resource_template:
-                 if Permissions.SETTINGS_VIEW_ALL not in perms:
+                 if Permissions.SETTINGS_VIEW not in perms:
                      expected_code = 302
                  elif '/users' in resource_template:
                      expected_code = 302 # Redirect to settings tab

@@ -34,8 +34,8 @@ class PermissionSystemTestCase(unittest.TestCase):
 
     def setup_permissions(self):
         # 1. Create permissions
-        self.perm_view = Permission(name=Permissions.AGENDA_VIEW, description="View Agenda")
-        self.perm_edit = Permission(name=Permissions.AGENDA_EDIT, description="Edit Agenda")
+        self.perm_view = Permission(name=Permissions.MEETING_VIEW_PUBLISHED, description="View Agenda")
+        self.perm_edit = Permission(name=Permissions.MEETING_MANAGE, description="Edit Agenda")
         db.session.add_all([self.perm_view, self.perm_edit])
         
         # 2. Create roles
@@ -93,12 +93,12 @@ class PermissionSystemTestCase(unittest.TestCase):
     def test_model_has_permission(self):
         """Test User.has_permission method."""
         # Admin should have both
-        self.assertTrue(self.user_admin.has_permission(Permissions.AGENDA_VIEW))
-        self.assertTrue(self.user_admin.has_permission(Permissions.AGENDA_EDIT))
+        self.assertTrue(self.user_admin.has_permission(Permissions.MEETING_VIEW_PUBLISHED))
+        self.assertTrue(self.user_admin.has_permission(Permissions.MEETING_MANAGE))
         
         # User should only have view
-        self.assertTrue(self.user_user.has_permission(Permissions.AGENDA_VIEW))
-        self.assertFalse(self.user_user.has_permission(Permissions.AGENDA_EDIT))
+        self.assertTrue(self.user_user.has_permission(Permissions.MEETING_VIEW_PUBLISHED))
+        self.assertFalse(self.user_user.has_permission(Permissions.MEETING_MANAGE))
 
     def test_model_has_role(self):
         """Test User.has_role method."""
@@ -113,7 +113,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         from app.models import UserClub
         # Create a new role with a unique permission
         perm_special = Permission(name="SPECIAL_PERM", description="Special Permission")
-        perm_view = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        perm_view = Permission.query.filter_by(name=Permissions.MEETING_VIEW_PUBLISHED).first()
         role_special = AuthRole(name="Specialist", description="Specialist Role", level=5)
         role_special.permissions.append(perm_special)
         role_special.permissions.append(perm_view)  # Also give view permission
@@ -129,9 +129,9 @@ class PermissionSystemTestCase(unittest.TestCase):
         db.session.expire(self.user_user)
         
         # Should now have both view and special permissions from the Specialist role
-        self.assertTrue(self.user_user.has_permission(Permissions.AGENDA_VIEW))
+        self.assertTrue(self.user_user.has_permission(Permissions.MEETING_VIEW_PUBLISHED))
         self.assertTrue(self.user_user.has_permission("SPECIAL_PERM"))
-        self.assertFalse(self.user_user.has_permission(Permissions.AGENDA_EDIT))
+        self.assertFalse(self.user_user.has_permission(Permissions.MEETING_MANAGE))
 
     def test_context_aware_is_authorized(self):
         """Test is_authorized with meeting manager context."""
@@ -148,12 +148,12 @@ class PermissionSystemTestCase(unittest.TestCase):
             login_user(self.user_user)
             
             # Member normally can't edit agenda
-            # But since they are manager, is_authorized(AGENDA_EDIT, meeting=meeting) should be True
-            self.assertTrue(is_authorized(Permissions.AGENDA_EDIT, meeting=meeting))
+            # But since they are manager, is_authorized(MEETING_MANAGE, meeting=meeting) should be True
+            self.assertTrue(is_authorized(Permissions.MEETING_MANAGE, meeting=meeting))
             
             # Non-managed meeting should still be False
             other_meeting = Meeting(Meeting_Number=501, Meeting_Date=date.today(), status='not started', manager_id=self.contact_admin.id, club_id=self.club.id)
-            self.assertFalse(is_authorized(Permissions.AGENDA_EDIT, meeting=other_meeting))
+            self.assertFalse(is_authorized(Permissions.MEETING_MANAGE, meeting=other_meeting))
 
     def test_guest_access_fallback(self):
         """Test is_authorized guest fallback logic."""
@@ -162,11 +162,11 @@ class PermissionSystemTestCase(unittest.TestCase):
         with self.app.test_request_context():
             # No user logged in
             # Default Guest permissions are defined in app/auth/utils.py: ROLE_PERMISSIONS['Guest']
-            # Let's verify AGENDA_VIEW is granted to guests
-            self.assertTrue(is_authorized(Permissions.AGENDA_VIEW))
+            # Let's verify MEETING_VIEW_PUBLISHED is granted to guests
+            self.assertTrue(is_authorized(Permissions.MEETING_VIEW_PUBLISHED))
             
-            # AGENDA_EDIT should NOT be granted to guests
-            self.assertFalse(is_authorized(Permissions.AGENDA_EDIT))
+            # MEETING_MANAGE should NOT be granted to guests
+            self.assertFalse(is_authorized(Permissions.MEETING_MANAGE))
 
     def test_decorators(self):
         """Test permission_required and role_required decorators."""
@@ -174,7 +174,7 @@ class PermissionSystemTestCase(unittest.TestCase):
         from flask import jsonify
 
         @self.app.route('/test-permission')
-        @permission_required(Permissions.AGENDA_EDIT)
+        @permission_required(Permissions.MEETING_MANAGE)
         def test_perm():
             return jsonify(status="ok")
 
@@ -231,8 +231,8 @@ class PermissionSystemTestCase(unittest.TestCase):
         self.assertGreater(initial_count, 0, "Initial call should trigger database queries")
         
         # Subsequent calls should NOT trigger more queries
-        user.has_permission(Permissions.AGENDA_VIEW)
-        user.has_permission(Permissions.AGENDA_EDIT)
+        user.has_permission(Permissions.MEETING_VIEW_PUBLISHED)
+        user.has_permission(Permissions.MEETING_MANAGE)
         
         self.assertEqual(count[0], initial_count, "Database should not be queried again after first permission check")
         

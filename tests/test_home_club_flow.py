@@ -18,10 +18,10 @@ def test_home_club_flow(client, app, default_club, seeded_permissions):
              db.session.commit()
              
         # Ensure Permission exists (seeded_permissions fixture guarantees it, but let's get it)
-        perm = Permission.query.filter_by(name=P.SETTINGS_EDIT_ALL).first()
+        perm = Permission.query.filter_by(name=P.SETTINGS_EDIT).first()
         if not perm:
             # Fallback if seed failed or fixture issue
-            perm = Permission(name=P.SETTINGS_EDIT_ALL, category='Settings')
+            perm = Permission(name=P.SETTINGS_EDIT, category='Settings')
             db.session.add(perm)
             db.session.commit()
             
@@ -39,9 +39,9 @@ def test_home_club_flow(client, app, default_club, seeded_permissions):
              db.session.commit()
              
         # Ensure User has basic permissions (like AGENDA_VIEW) to access dashboard
-        perm_agenda = Permission.query.filter_by(name=P.AGENDA_VIEW).first()
+        perm_agenda = Permission.query.filter_by(name=P.MEETING_VIEW_PUBLISHED).first()
         if not perm_agenda:
-             perm_agenda = Permission(name=P.AGENDA_VIEW, category='Agenda')
+             perm_agenda = Permission(name=P.MEETING_VIEW_PUBLISHED, category='Agenda')
              db.session.add(perm_agenda)
              db.session.commit()
              

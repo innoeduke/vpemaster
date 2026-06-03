@@ -46,7 +46,7 @@ def get_club_storage_used(club_id):
     return total_size
 
 @uploads_bp.route('/uploads/', methods=['GET'])
-@permission_required(Permissions.FILE_UPLOAD_MANAGE)
+@permission_required(Permissions.MEDIA_MANAGE)
 def manage_uploads():
     club_id = get_current_club_id()
     if not club_id:
@@ -104,7 +104,7 @@ def manage_uploads():
     )
 
 @uploads_bp.route('/uploads/create', methods=['POST'])
-@permission_required(Permissions.FILE_UPLOAD_MANAGE)
+@permission_required(Permissions.MEDIA_MANAGE)
 def create_upload_link():
     club_id = get_current_club_id()
     if not club_id:
@@ -189,7 +189,7 @@ def create_upload_link():
     return redirect(url_for('uploads_bp.manage_uploads'))
 
 @uploads_bp.route('/uploads/edit/<int:link_id>', methods=['POST'])
-@permission_required(Permissions.FILE_UPLOAD_MANAGE)
+@permission_required(Permissions.MEDIA_MANAGE)
 def edit_upload_link(link_id):
     club_id = get_current_club_id()
     link = UploadLink.query.filter_by(id=link_id, club_id=club_id).first_or_404()
@@ -253,7 +253,7 @@ def edit_upload_link(link_id):
     return redirect(url_for('uploads_bp.manage_uploads'))
 
 @uploads_bp.route('/uploads/toggle/<int:link_id>', methods=['POST'])
-@permission_required(Permissions.FILE_UPLOAD_MANAGE)
+@permission_required(Permissions.MEDIA_MANAGE)
 def toggle_upload_link(link_id):
     club_id = get_current_club_id()
     link = UploadLink.query.filter_by(id=link_id, club_id=club_id).first_or_404()
@@ -265,7 +265,7 @@ def toggle_upload_link(link_id):
     return jsonify(success=True, is_active=link.is_active, message=f"Upload link {state} successfully.")
 
 @uploads_bp.route('/uploads/delete/<int:link_id>', methods=['POST'])
-@permission_required(Permissions.FILE_UPLOAD_MANAGE)
+@permission_required(Permissions.MEDIA_MANAGE)
 def delete_upload_link(link_id):
     club_id = get_current_club_id()
     link = UploadLink.query.filter_by(id=link_id, club_id=club_id).first_or_404()
@@ -286,7 +286,7 @@ def delete_upload_link(link_id):
     return redirect(url_for('uploads_bp.manage_uploads'))
 
 @uploads_bp.route('/uploads/<code>/files', methods=['GET'])
-@permission_required(Permissions.FILE_UPLOAD_MANAGE)
+@permission_required(Permissions.MEDIA_MANAGE)
 def view_upload_files(code):
     club_id = get_current_club_id()
     link = UploadLink.query.filter_by(code=code, club_id=club_id).first_or_404()
@@ -343,7 +343,7 @@ def view_upload_files(code):
     )
 
 @uploads_bp.route('/uploads/<code>/download/<path:filename>', methods=['GET'])
-@permission_required(Permissions.FILE_UPLOAD_MANAGE)
+@permission_required(Permissions.MEDIA_MANAGE)
 def download_file(code, filename):
     club_id = get_current_club_id()
     # Verify ownership
@@ -354,7 +354,7 @@ def download_file(code, filename):
     return send_from_directory(directory, filename, as_attachment=True)
 
 @uploads_bp.route('/uploads/<code>/delete-files', methods=['POST'])
-@permission_required(Permissions.FILE_UPLOAD_MANAGE)
+@permission_required(Permissions.MEDIA_MANAGE)
 def delete_files(code):
     club_id = get_current_club_id()
     # Verify ownership
@@ -396,7 +396,7 @@ def delete_files(code):
     return jsonify(success=True, deleted_count=deleted_count, message=f"Successfully deleted {deleted_count} files.")
 
 @uploads_bp.route('/uploads/<code>/zip', methods=['GET'])
-@permission_required(Permissions.FILE_UPLOAD_MANAGE)
+@permission_required(Permissions.MEDIA_MANAGE)
 def download_zip(code):
     club_id = get_current_club_id()
     link = UploadLink.query.filter_by(code=code, club_id=club_id).first_or_404()

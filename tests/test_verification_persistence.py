@@ -22,9 +22,9 @@ def test_verification_task_persistence(client, app, auth, default_club):
                 db.session.add(role)
                 db.session.flush()
             
-            perm = Permission.query.filter_by(name=Permissions.SETTINGS_VIEW_ALL).first()
+            perm = Permission.query.filter_by(name=Permissions.SETTINGS_VIEW).first()
             if not perm:
-                perm = Permission(name=Permissions.SETTINGS_VIEW_ALL, category='test')
+                perm = Permission(name=Permissions.SETTINGS_VIEW, category='test')
                 db.session.add(perm)
                 db.session.flush()
             

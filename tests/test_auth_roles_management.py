@@ -18,10 +18,10 @@ def setup_roles_and_permissions(app, seeded_permissions):
             roles[name] = role
         db.session.commit()
 
-        # Add SETTINGS_EDIT_ALL to ClubAdmin
-        edit_settings_perm = Permission.query.filter_by(name=Permissions.SETTINGS_EDIT_ALL).first()
+        # Add SETTINGS_EDIT to ClubAdmin
+        edit_settings_perm = Permission.query.filter_by(name=Permissions.SETTINGS_EDIT).first()
         if not edit_settings_perm:
-            edit_settings_perm = Permission(name=Permissions.SETTINGS_EDIT_ALL, description="Edit Settings", category="settings")
+            edit_settings_perm = Permission(name=Permissions.SETTINGS_EDIT, description="Edit Settings", category="settings")
             db.session.add(edit_settings_perm)
             db.session.flush()
 
@@ -30,9 +30,9 @@ def setup_roles_and_permissions(app, seeded_permissions):
             club_admin_role.permissions.append(edit_settings_perm)
             
         # Add basic permissions to User template for copy verification
-        view_agenda_perm = Permission.query.filter_by(name=Permissions.AGENDA_VIEW).first()
+        view_agenda_perm = Permission.query.filter_by(name=Permissions.MEETING_VIEW_PUBLISHED).first()
         if not view_agenda_perm:
-            view_agenda_perm = Permission(name=Permissions.AGENDA_VIEW, description="View Agenda", category="agenda")
+            view_agenda_perm = Permission(name=Permissions.MEETING_VIEW_PUBLISHED, description="View Agenda", category="agenda")
             db.session.add(view_agenda_perm)
             db.session.flush()
             
@@ -98,7 +98,7 @@ def test_users(app, default_club):
         }
 
 def test_add_auth_role_permission_denied(app, client, auth, default_club, test_users):
-    """Test that users without SETTINGS_EDIT_ALL permission cannot add a role."""
+    """Test that users without SETTINGS_EDIT permission cannot add a role."""
     with app.app_context():
         # Login as normal user
         auth.login(username=test_users['normal_username'], password=test_users['password'], club_id=default_club.id)
@@ -250,7 +250,7 @@ def test_delete_auth_role_blocks_core_roles(app, client, auth, default_club, tes
         assert 'cannot delete core' in json.loads(response.data)['message'].lower()
 
 def test_delete_auth_role_permissions_and_scoping(app, client, auth, default_club, test_users):
-    """Test that users must have SETTINGS_EDIT_ALL and role must belong to current club context to delete."""
+    """Test that users must have SETTINGS_EDIT and role must belong to current club context to delete."""
     with app.app_context():
         # Setup second club
         club2 = Club(club_name="Second Test Club", club_no="999992")
@@ -327,4 +327,4 @@ def test_delete_auth_role_and_bulk_detaching(app, client, auth, default_club, te
 def test_direct_permission_check(app, default_club, test_users):
     with app.app_context():
         admin_user = User.query.filter_by(username="clubadmin").first()
-        assert admin_user.has_club_permission(Permissions.SETTINGS_EDIT_ALL, default_club.id) is True
+        assert admin_user.has_club_permission(Permissions.SETTINGS_EDIT, default_club.id) is True

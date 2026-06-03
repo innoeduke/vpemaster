@@ -39,7 +39,7 @@ class UserRefactorTestCase(unittest.TestCase):
         db.session.commit()
 
         # 2. Key Permissions
-        perm_settings = Permission(name=Permissions.SETTINGS_VIEW_ALL, description="View Settings")
+        perm_settings = Permission(name=Permissions.SETTINGS_VIEW, description="View Settings")
         perm_sysadmin = Permission(name=Permissions.SYSADMIN, description="Super Admin")
         db.session.add_all([perm_settings, perm_sysadmin])
         

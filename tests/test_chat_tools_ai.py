@@ -27,11 +27,15 @@ def setup_ai_environment(app):
         # 2. Grant all permissions
         # Seed permissions
         perms_to_seed = []
+        seen_names = set()
         for attr in dir(Permissions):
             if attr.isupper() and not attr.startswith('_'):
                 name = getattr(Permissions, attr)
                 if attr in ['SYSADMIN', 'CLUBADMIN', 'STAFF', 'USER']:
                     continue
+                if name in seen_names:
+                    continue
+                seen_names.add(name)
                 perm = Permission.query.filter_by(name=name).first()
                 if not perm:
                     perm = Permission(name=name, category='chat_test')
@@ -1236,7 +1240,7 @@ def test_manage_sessions_add_prepared_speech(app, setup_ai_environment):
 
 
 def test_manage_sessions_add_no_perm(app, setup_ai_environment):
-    """is_authorized(Permissions.AGENDA_EDIT) returns False for a permless user.
+    """is_authorized(Permissions.MEETING_MANAGE) returns False for a permless user.
 
     The test fixture logs in a user with the Staff role (all permissions), so
     we cannot rely on Flask-Login's current_user. Instead we call is_authorized
@@ -1263,8 +1267,8 @@ def test_manage_sessions_add_no_perm(app, setup_ai_environment):
         from unittest.mock import patch
         from app.auth import utils as auth_utils
         with patch.object(auth_utils, 'current_user', no_perm_user):
-            assert is_authorized(Permissions.AGENDA_EDIT) is False
-            assert is_authorized(Permissions.AGENDA_DELETE) is False
+            assert is_authorized(Permissions.MEETING_MANAGE) is False
+            assert is_authorized(Permissions.MEETING_CREATE) is False
 
 
 def test_manage_sessions_update_title_and_duration(app, setup_ai_environment):
@@ -1359,11 +1363,11 @@ def test_manage_sessions_delete_no_perm(app, setup_ai_environment):
     from app.auth import utils as auth_utils
     env = setup_ai_environment
     with app.app_context():
-        # Create a user that has AGENDA_EDIT but NOT AGENDA_DELETE
+        # Create a user that has MEETING_MANAGE but NOT MEETING_CREATE
         editor_role = AuthRole(name='EditorNoDelete', level=1)
         db.session.add(editor_role)
         db.session.flush()
-        edit_perm = Permission.query.filter_by(name='AGENDA_EDIT').first()
+        edit_perm = Permission.query.filter_by(name=Permissions.MEETING_MANAGE).first()
         if edit_perm:
             editor_role.permissions.append(edit_perm)
         db.session.flush()
@@ -1377,8 +1381,8 @@ def test_manage_sessions_delete_no_perm(app, setup_ai_environment):
         db.session.commit()
 
         with patch.object(auth_utils, 'current_user', edit_user):
-            assert is_authorized(Permissions.AGENDA_EDIT) is True
-            assert is_authorized(Permissions.AGENDA_DELETE) is False
+            assert is_authorized(Permissions.MEETING_MANAGE) is True
+            assert is_authorized(Permissions.MEETING_CREATE) is False
 
 
 def test_manage_sessions_query_returns_companion(app, setup_ai_environment):

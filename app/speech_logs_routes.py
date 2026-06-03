@@ -206,7 +206,7 @@ def _get_view_settings():
     Determine view permissions and mode.
     Returns: (can_view_all, view_mode, is_member_view)
     """
-    can_view_all = is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL)
+    can_view_all = is_authorized(Permissions.SPEECH_LOGS_MANAGE)
     view_mode = request.args.get('view_mode', 'member')
     
     if view_mode == 'admin':
@@ -237,7 +237,7 @@ def _parse_filters(is_member_view, can_view_all):
 
     # Handle speaker_id for member view
     if is_member_view:
-        can_view_other_members = is_authorized(Permissions.CONTACTS_MEMBERS_VIEW) or can_view_all
+        can_view_other_members = is_authorized(Permissions.ROSTER_VIEW) or can_view_all
         is_authorized_speaker = False
         
         if can_view_other_members and filters['speaker_id']:
@@ -1725,7 +1725,7 @@ def show_project_view():
     Display speech logs in a project-centric view (bar chart style).
     Accessible to admins mainly, but logic could allow others.
     """
-    if not is_authorized(Permissions.SPEECH_LOGS_VIEW_ALL):
+    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
         from flask import redirect, url_for
         return redirect(url_for('speech_logs_bp.show_speech_logs', view_mode='member')) 
              
@@ -1896,7 +1896,7 @@ def get_speech_log_details(log_id):
     contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
     current_user_contact_id = contact.id if contact else None
 
-    if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
+    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
         current_owners = [o.id for o in log.owners]
         if current_user_contact_id not in current_owners:
             return jsonify(success=False, message="Permission denied. You can only view details for your own speech logs."), 403
@@ -2062,7 +2062,7 @@ def get_speech_log_details(log_id):
         "registered_paths": [p['name'] for p in target_contact.get_member_pathways()] if (log.owners and target_contact_id and target_contact) else [],
         "target_pathway": target_pathway,
         "target_level": target_level,
-        "Media_URL": log.media.url if (is_authorized(Permissions.MEDIA_ACCESS) and log.media) else "",
+        "Media_URL": log.media.url if (is_authorized(Permissions.MEDIA_MANAGE) and log.media) else "",
         "session_type_title": log.session_type.Title if log.session_type else "Pathway Speech",
         "owner_ids": owner_ids,
         "owner_targets": owner_targets,
@@ -2091,11 +2091,11 @@ def update_speech_log(log_id):
     contact = current_user.get_contact(club_id) if current_user.is_authenticated else None
     current_user_contact_id = contact.id if contact else None
     
-    if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
+    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
         # Check if user is ONE OF the owners
         current_owners = [o.id for o in log.owners]
         is_owner = (current_user_contact_id in current_owners)
-        if not (is_authorized(Permissions.SPEECH_LOGS_VIEW_OWN) and is_owner):
+        if not (is_authorized(Permissions.BOOKING_OWN) and is_owner):
             return jsonify(success=False, message="Permission denied. You can only edit your own speech logs."), 403
 
     data = request.get_json()
@@ -2114,7 +2114,7 @@ def update_speech_log(log_id):
              owner_ids = [int(val)]
 
     if 'owner_ids' in data or 'owner_id' in data:
-        RoleService.assign_meeting_role(log, owner_ids, is_admin=is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL))
+        RoleService.assign_meeting_role(log, owner_ids, is_admin=is_authorized(Permissions.SPEECH_LOGS_MANAGE))
         # Flush changes and refresh log to ensure we have the latest owners
         db.session.flush()
         db.session.refresh(log)
@@ -2275,7 +2275,7 @@ def update_speech_log(log_id):
 @speech_logs_bp.route('/speech_log/suspend/<int:log_id>', methods=['POST'])
 @login_required
 def suspend_speech_log(log_id):
-    if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
+    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
         return jsonify(success=False, message="Permission denied"), 403
 
     log = SessionLog.query.get_or_404(log_id)
@@ -2314,7 +2314,7 @@ def complete_speech_log(log_id):
 
     current_user_contact_id = current_user.contact_id if current_user.is_authenticated else None
 
-    if not is_authorized(Permissions.SPEECH_LOGS_EDIT_ALL):
+    if not is_authorized(Permissions.SPEECH_LOGS_MANAGE):
         current_owners = [o.id for o in log.owners]
         if current_user_contact_id not in current_owners:
             return jsonify(success=False, message="Permission denied."), 403

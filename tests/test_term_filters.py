@@ -64,7 +64,7 @@ def auth_client(client, app, default_club, default_contact):
         db.session.commit()
         
         # Give permissions
-        perms = [Permissions.CONTACT_BOOK_VIEW, Permissions.SPEECH_LOGS_VIEW_ALL]
+        perms = [Permissions.ROSTER_VIEW, Permissions.SPEECH_LOGS_MANAGE]
         for p_name in perms:
             perm = Permission.query.filter_by(name=p_name).first()
             if not perm:
