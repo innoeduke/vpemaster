@@ -105,9 +105,10 @@ class TestAutoCompleteProjects(unittest.TestCase):
         
         perm_view = Permission(name=Permissions.ABOUT_CLUB_VIEW, description="View Club")
         perm_agenda = Permission(name=Permissions.AGENDA_VIEW, description="View Agenda")
+        perm_edit = Permission(name=Permissions.AGENDA_EDIT, description="Edit Agenda")
         role = Role(name='Guest', description='Guest')
-        role.permissions.extend([perm_view, perm_agenda])
-        db.session.add_all([perm_view, perm_agenda, role])
+        role.permissions.extend([perm_view, perm_agenda, perm_edit])
+        db.session.add_all([perm_view, perm_agenda, perm_edit, role])
         
         db.session.commit()
         from app.utils import sync_contact_metadata

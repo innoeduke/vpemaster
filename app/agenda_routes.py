@@ -1791,6 +1791,10 @@ def update_meeting_status(meeting_id):
         return jsonify(success=False, message="Meeting not found"), 404
 
     current_status = meeting.status
+    if current_status != 'finished':
+        if not is_authorized(Permissions.AGENDA_EDIT, meeting=meeting):
+            return jsonify(success=False, message="Permission denied"), 403
+    
     new_status = current_status
 
     if current_status == 'unpublished':

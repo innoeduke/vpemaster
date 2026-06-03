@@ -6,6 +6,59 @@
 {% block header_title %}{{ _('Voting Form') }}{% endblock %}
 
 {% block content %}
+<style>
+.start-stop-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 18px;
+    color: #fff !important;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+    border: none;
+    gap: 10px;
+    height: 40px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+}
+
+.start-stop-btn.btn-success {
+    background-color: #2ecc71;
+    box-shadow: 0 4px 6px rgba(46, 204, 113, 0.25);
+}
+
+.start-stop-btn.btn-success:hover {
+    background-color: #27ae60;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(46, 204, 113, 0.35);
+}
+
+.start-stop-btn.btn-danger {
+    background-color: #e74c3c;
+    box-shadow: 0 4px 6px rgba(231, 76, 60, 0.25);
+}
+
+.start-stop-btn.btn-danger:hover {
+    background-color: #c0392b;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(231, 76, 60, 0.35);
+}
+
+@media (max-width: 768px) {
+    body .filter-row-premium .filter-right .start-stop-btn {
+        width: 100%;
+        justify-content: center;
+        font-size: 0.85rem;
+        padding: 8px 10px;
+        height: 36px;
+        border-radius: 50px;
+    }
+}
+</style>
+
 <div class="page-container">
     <h1><i class="fas fa-vote-yea"></i> {{ _('Voting Form') }}</h1>
     {% if is_admin_view %}
@@ -20,6 +73,15 @@
                     <span class="count">{{ total_voters }}</span>
                     <span class="label">{{ _('Votes') }}</span>
                 </div>
+                {% if can_edit_meeting_status and db_status in ('unpublished', 'not started', 'running') %}
+                <button type="button" class="btn {% if db_status == 'running' %}btn-danger{% else %}btn-success{% endif %} start-stop-btn" id="start-stop-btn" data-meeting-id="{{ selected_meeting_id }}" data-current-status="{{ db_status }}" title="{% if db_status == 'running' %}{{ _('Stop Meeting') }}{% else %}{{ _('Start Meeting') }}{% endif %}">
+                    {% if db_status == 'running' %}
+                    <i class="fas fa-stop"></i> {{ _('Stop') }}
+                    {% else %}
+                    <i class="fas fa-play"></i> {{ _('Start') }}
+                    {% endif %}
+                </button>
+                {% endif %}
                 <a href="{{ url_for('voting_bp.voting_nps', club_id=get_current_club_id()) }}" class="btn btn-info trend-btn" title="{{ _('NPS Trend') }}">
                     <i class="fas fa-chart-line"></i> {{ _('NPS Trend') }}
                 </a>
@@ -75,11 +137,17 @@
                             <i class="fas fa-user-circle"></i>
                             {% endif %}
                         </div>
-                        {% if is_admin_view and role.vote_count and role.vote_count > 0 and (can_track_progress or status == 'finished') %}
-                        <div class="vote-bricks-container" title="{{ role.vote_count }} Votes">
-                            {% for n in range(role.vote_count) %}
-                            <div class="vote-brick"></div>
-                            {% endfor %}
+                        {% if is_admin_view and (can_track_progress or status == 'finished') %}
+                        <div class="vote-bricks-container" 
+                             data-contact-id="{{ role.owner_id }}" 
+                             data-award-category="{{ role.award_category }}"
+                             title="{{ role.vote_count or 0 }} {{ _('Votes') }}"
+                             {% if not role.vote_count or role.vote_count == 0 %}style="display: none;"{% endif %}>
+                            {% if role.vote_count %}
+                                {% for n in range(role.vote_count) %}
+                                <div class="vote-brick"></div>
+                                {% endfor %}
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>
@@ -280,7 +348,9 @@
 	"clubId": {{ get_current_club_id()|tojson }},
 	"canTrackProgress": {{ can_track_progress|tojson }},
 	"initialMeetingRating": {{ meeting_rating_score|tojson }},
-	"initialMeetingFeedback": {{ meeting_feedback_comment|tojson }}
+	"initialMeetingFeedback": {{ meeting_feedback_comment|tojson }},
+	"meetingStatus": {{ selected_meeting.status|tojson if selected_meeting else None }},
+	"dbStatus": {{ db_status|tojson if db_status else None }}
 }
 </script>
 <script src="{{ url_for('static', filename='js/voting.js') }}"></script>

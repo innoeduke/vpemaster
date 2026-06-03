@@ -8,6 +8,9 @@ let canTrackProgress = false;
 let localVotes = {};
 let localMeetingRating = null;
 let localMeetingFeedback = "";
+let clubId = null;
+let meetingStatus = null;
+let dbStatus = null;
 
 // Function to initialize configuration
 function initVotingConfig() {
@@ -19,6 +22,9 @@ function initVotingConfig() {
 			selectedMeetingId = votingConfig.selectedMeetingId;
 			userRole = votingConfig.userRole;
 			canTrackProgress = votingConfig.canTrackProgress;
+			clubId = votingConfig.clubId;
+			meetingStatus = votingConfig.meetingStatus;
+			dbStatus = votingConfig.dbStatus;
 
 			// Initialize rating if provided
 			if (votingConfig.initialMeetingRating !== undefined && votingConfig.initialMeetingRating !== null) {
@@ -134,6 +140,17 @@ document.addEventListener("DOMContentLoaded", function () {
 		});
 		// Initial status check
 		updateDoneButtonState();
+	}
+
+	// Start live vote refresh if eligible
+	startLiveVoteRefresh();
+
+	// Start/Stop Meeting Status Button
+	const startStopBtn = document.getElementById('start-stop-btn');
+	if (startStopBtn) {
+		startStopBtn.addEventListener('click', function () {
+			handleMeetingStatusToggle(startStopBtn);
+		});
 	}
 
 }); // End of DOMContentLoaded listener
@@ -395,4 +412,138 @@ function updateDoneButtonState() {
 	} else {
 		doneBtn.setAttribute('disabled', 'disabled');
 	}
+}
+
+
+function startLiveVoteRefresh() {
+	if (!canTrackProgress || meetingStatus !== 'running' || !selectedMeetingId) {
+		return;
+	}
+
+	// Poll every 5 seconds
+	setInterval(fetchLiveResults, 5000);
+}
+
+function fetchLiveResults() {
+	let fetchUrl = `/voting/${selectedMeetingId}/live_results`;
+	if (typeof clubId !== 'undefined' && clubId) {
+		fetchUrl += `?club_id=${clubId}`;
+	} else if (typeof window.clubId !== 'undefined' && window.clubId) {
+		fetchUrl += `?club_id=${window.clubId}`;
+	}
+
+	fetch(fetchUrl)
+		.then(response => {
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			return response.json();
+		})
+		.then(data => {
+			if (data.success) {
+				updateLiveResultsUI(data.total_voters, data.votes);
+			}
+		})
+		.catch(error => {
+			console.error("Error fetching live vote results:", error);
+		});
+}
+
+function updateLiveResultsUI(totalVoters, votesList) {
+	// 1. Update total voters count badge if present
+	const totalVotersCountEl = document.querySelector('.vote-count-badge .count');
+	if (totalVotersCountEl) {
+		totalVotersCountEl.textContent = totalVoters;
+	}
+
+	// Create a lookup map for faster access: contactId_category -> count
+	const votesMap = {};
+	votesList.forEach(v => {
+		const key = `${v.contact_id}_${v.award_category}`;
+		votesMap[key] = v.count;
+	});
+
+	// Find all vote brick containers
+	const brickContainers = document.querySelectorAll('.vote-bricks-container[data-contact-id][data-award-category]');
+	brickContainers.forEach(container => {
+		const contactId = container.dataset.contactId;
+		const category = container.dataset.awardCategory;
+		const key = `${contactId}_${category}`;
+		const count = votesMap[key] || 0;
+
+		// Update title
+		container.title = `${count} Votes`;
+
+		if (count > 0) {
+			// Update bricks (ensure the count matches)
+			let currentBricks = container.querySelectorAll('.vote-brick');
+			if (currentBricks.length !== count) {
+				container.innerHTML = '';
+				for (let i = 0; i < count; i++) {
+					const brick = document.createElement('div');
+					brick.className = 'vote-brick';
+					container.appendChild(brick);
+				}
+			}
+			container.style.display = '';
+		} else {
+			container.innerHTML = '';
+			container.style.display = 'none';
+		}
+	});
+}
+
+function handleMeetingStatusToggle(button) {
+	const meetingId = button.dataset.meetingId;
+	const currentStatus = button.dataset.currentStatus;
+
+	if (!meetingId) {
+		alert("No meeting selected.");
+		return;
+	}
+
+	let confirmMessage = "";
+	if (currentStatus === "unpublished") {
+		confirmMessage = "Please make sure the meeting theme and structure are finalized before publishing.\n\nPublishing opens booking roles and speeches to all members. Do you want to proceed?";
+	} else if (currentStatus === "not started") {
+		confirmMessage = "Please only click this when the meeting has already started.\n\nStarting will open voting to the audience. Do you want to proceed?";
+	} else if (currentStatus === "running") {
+		confirmMessage = "Stopping the meeting ends voting and shows the final vote results.\n\nDo you want to proceed?";
+	} else {
+		return;
+	}
+
+	if (!confirm(confirmMessage)) {
+		return;
+	}
+
+	// Perform Status Update
+	fetch(`/agenda/status/${meetingId}`, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+	})
+	.then((response) => response.json())
+	.then((data) => {
+		if (data.success) {
+			const newStatus = data.new_status;
+			if (currentStatus === "unpublished" && newStatus === "not started") {
+				// Transitioned to "not started", ask if they want to start it now
+				if (confirm("Meeting published successfully. Do you want to start the meeting now?")) {
+					// Recursively transition to 'running'
+					button.dataset.currentStatus = "not started";
+					handleMeetingStatusToggle(button);
+					return;
+				}
+			}
+			window.location.reload();
+		} else {
+			alert("Error updating status: " + data.message);
+		}
+	})
+	.catch((error) => {
+		console.error("Error:", error);
+		alert("An error occurred while updating the meeting status.");
+	});
 }

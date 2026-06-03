@@ -61,7 +61,7 @@ def _enrich_role_data_for_voting(roles_dict, selected_meeting):
 
     # Vote counts for officers
     vote_counts = {}
-    if is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting) and selected_meeting and selected_meeting.status in ['running', 'finished']:
+    if (is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=selected_meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=selected_meeting)) and selected_meeting and selected_meeting.status in ['running', 'finished']:
         counts = db.session.query(Vote.contact_id, Vote.award_category, func.count(Vote.id)).filter(
             Vote.meeting_id == selected_meeting.id
         ).group_by(Vote.contact_id, Vote.award_category).all()
@@ -185,7 +185,7 @@ def _get_roles_for_voting(meeting_id, meeting):
 
     # Vote counts for role-takers (admins only)
     vote_counts = {}
-    if is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting) and meeting.status in ['running', 'finished']:
+    if (is_authorized(Permissions.BOOKING_ASSIGN_ALL, meeting=meeting) or is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=meeting)) and meeting.status in ['running', 'finished']:
         counts = db.session.query(Vote.contact_id, func.count(Vote.id)).filter(
             Vote.meeting_id == meeting_id,
             Vote.award_category == 'role-taker'
@@ -277,6 +277,8 @@ def _get_voting_page_context(meeting_id):
         'upcoming_meetings': upcoming_meetings,
         'selected_meeting_id': meeting_id,
         'selected_meeting': None,
+        'db_status': None,
+        'can_edit_meeting_status': False,
         'enriched_role_groups': [],
         'guest_info': None,
         'roles': [],
@@ -298,6 +300,9 @@ def _get_voting_page_context(meeting_id):
     selected_meeting = Meeting.query.get(meeting_id)
     if not selected_meeting or (club_id and selected_meeting.club_id != club_id):
         return context
+
+    context['db_status'] = selected_meeting.status
+    context['can_edit_meeting_status'] = is_authorized(Permissions.AGENDA_EDIT, meeting=selected_meeting)
 
     # Check if we should override status for display and bypass notices
     is_meeting_date = selected_meeting.Meeting_Date == datetime.today().date()
@@ -685,6 +690,44 @@ def get_nps_comments(meeting_id):
         'comments': all_comments,
         'meeting_date': meeting_date
     })
+
+
+@voting_bp.route('/voting/<int:meeting_id>/live_results', methods=['GET'])
+@login_required
+@authorized_club_required
+def voting_live_results(meeting_id):
+    """AJAX endpoint to get real-time vote totals for a running meeting."""
+    meeting = Meeting.query.get_or_404(meeting_id)
+    
+    # Authorize: user must have VOTING_TRACK_PROGRESS permission for this meeting
+    if not is_authorized(Permissions.VOTING_TRACK_PROGRESS, meeting=meeting):
+        return jsonify(success=False, message="Permission denied."), 403
+
+    # Get total votes received (unique voters)
+    total_voters = db.session.query(func.count(distinct(Vote.voter_identifier)))\
+        .filter(Vote.meeting_id == meeting_id)\
+        .scalar() or 0
+
+    # Get vote counts for award categories
+    counts = db.session.query(Vote.contact_id, Vote.award_category, func.count(Vote.id)).filter(
+        Vote.meeting_id == meeting_id,
+        Vote.award_category.isnot(None)
+    ).group_by(Vote.contact_id, Vote.award_category).all()
+    
+    vote_data = []
+    for cid, cat, count in counts:
+        if cid:
+            vote_data.append({
+                'contact_id': cid,
+                'award_category': cat,
+                'count': count
+            })
+            
+    return jsonify(
+        success=True,
+        total_voters=total_voters,
+        votes=vote_data
+    )
 
 
 
